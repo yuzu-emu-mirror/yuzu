@@ -364,12 +364,19 @@ SectionID ElfReader::GetSectionByName(const char* name, int firstSection) const 
 namespace Loader {
 
 FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file) {
-    u32 magic;
+    static constexpr u16 ELF_MACHINE_ARM{0x28};
+
+    u32 magic = 0;
     file.Seek(0, SEEK_SET);
     if (1 != file.ReadArray<u32>(&magic, 1))
         return FileType::Error;
 
-    if (MakeMagic('\x7f', 'E', 'L', 'F') == magic)
+    u16 machine = 0;
+    file.Seek(18, SEEK_SET);
+    if (1 != file.ReadArray<u16>(&machine, 1))
+        return FileType::Error;
+
+    if (MakeMagic('\x7f', 'E', 'L', 'F') == magic && ELF_MACHINE_ARM == machine)
         return FileType::ELF;
 
     return FileType::Error;
