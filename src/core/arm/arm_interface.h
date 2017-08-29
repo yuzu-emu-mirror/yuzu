@@ -14,14 +14,14 @@ public:
     virtual ~ARM_Interface() {}
 
     struct ThreadContext {
-        u32 cpu_registers[13];
-        u32 sp;
-        u32 lr;
-        u32 pc;
-        u32 cpsr;
-        u32 fpu_registers[64];
-        u32 fpscr;
-        u32 fpexc;
+        u64 cpu_registers[30];
+        u64 lr;
+        u64 sp;
+        u64 pc;
+        u64 cpsr;
+        u64 fpu_registers[64];
+        u64 fpscr;
+        u64 fpexc;
     };
 
     /**
@@ -45,27 +45,27 @@ public:
      * Set the Program Counter to an address
      * @param addr Address to set PC to
      */
-    virtual void SetPC(u32 addr) = 0;
+    virtual void SetPC(u64 addr) = 0;
 
     /*
      * Get the current Program Counter
      * @return Returns current PC
      */
-    virtual u32 GetPC() const = 0;
+    virtual u64 GetPC() const = 0;
 
     /**
      * Get an ARM register
-     * @param index Register index (0-15)
+     * @param index Register index
      * @return Returns the value in the register
      */
-    virtual u32 GetReg(int index) const = 0;
+    virtual u64 GetReg(int index) const = 0;
 
     /**
      * Set an ARM register
-     * @param index Register index (0-15)
+     * @param index Register index
      * @param value Value to set register to
      */
-    virtual void SetReg(int index, u32 value) = 0;
+    virtual void SetReg(int index, u64 value) = 0;
 
     /**
      * Gets the value of a VFP register

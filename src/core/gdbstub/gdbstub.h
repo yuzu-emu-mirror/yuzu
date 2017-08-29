@@ -69,7 +69,7 @@ void HandlePacket();
  * @param addr Address to search from.
  * @param type Type of breakpoint.
  */
-BreakpointAddress GetNextBreakpointFromAddress(u32 addr, GDBStub::BreakpointType type);
+BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, GDBStub::BreakpointType type);
 
 /**
  * Check if a breakpoint of the specified type exists at the given address.
@@ -77,7 +77,7 @@ BreakpointAddress GetNextBreakpointFromAddress(u32 addr, GDBStub::BreakpointType
  * @param addr Address of breakpoint.
  * @param type Type of breakpoint.
  */
-bool CheckBreakpoint(u32 addr, GDBStub::BreakpointType type);
+bool CheckBreakpoint(PAddr addr, GDBStub::BreakpointType type);
 
 // If set to true, the CPU will halt at the beginning of the next CPU loop.
 bool GetCpuHaltFlag();

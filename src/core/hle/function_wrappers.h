@@ -20,7 +20,7 @@ namespace HLE {
  * HLE a function return from the current ARM11 userland process
  * @param res Result to return
  */
-static inline void FuncReturn(u32 res) {
+static inline void FuncReturn(u64 res) {
     Core::CPU().SetReg(0, res);
 }
 

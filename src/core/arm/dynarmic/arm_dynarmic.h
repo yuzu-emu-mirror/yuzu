@@ -14,10 +14,10 @@ class ARM_Dynarmic final : public ARM_Interface {
 public:
     ARM_Dynarmic(PrivilegeMode initial_mode);
 
-    void SetPC(u32 pc) override;
-    u32 GetPC() const override;
-    u32 GetReg(int index) const override;
-    void SetReg(int index, u32 value) override;
+    void SetPC(u64 pc) override;
+    u64 GetPC() const override;
+    u64 GetReg(int index) const override;
+    void SetReg(int index, u64 value) override;
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
     u32 GetVFPSystemReg(VFPSystemRegister reg) const override;

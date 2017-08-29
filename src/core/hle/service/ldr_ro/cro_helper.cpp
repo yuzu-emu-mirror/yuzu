@@ -274,7 +274,7 @@ ResultVal<VAddr> CROHelper::RebaseSegmentTable(u32 cro_size, VAddr data_segment_
         }
         SetEntry(i, segment);
     }
-    return MakeResult<u32>(prev_data_segment + module_address);
+    return MakeResult<VAddr>(prev_data_segment + module_address);
 }
 
 ResultCode CROHelper::RebaseExportNamedSymbolTable() {

@@ -25,19 +25,19 @@ void ARM_DynCom::ClearInstructionCache() {
     trans_cache_buf_top = 0;
 }
 
-void ARM_DynCom::SetPC(u32 pc) {
+void ARM_DynCom::SetPC(u64 pc) {
     state->Reg[15] = pc;
 }
 
-u32 ARM_DynCom::GetPC() const {
+u64 ARM_DynCom::GetPC() const {
     return state->Reg[15];
 }
 
-u32 ARM_DynCom::GetReg(int index) const {
+u64 ARM_DynCom::GetReg(int index) const {
     return state->Reg[index];
 }
 
-void ARM_DynCom::SetReg(int index, u32 value) {
+void ARM_DynCom::SetReg(int index, u64 value) {
     state->Reg[index] = value;
 }
 
