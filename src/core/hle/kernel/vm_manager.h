@@ -63,7 +63,7 @@ struct VirtualMemoryArea {
     /// Virtual base address of the region.
     VAddr base = 0;
     /// Size of the region.
-    u32 size = 0;
+    u64 size = 0;
 
     VMAType type = VMAType::Free;
     VMAPermission permissions = VMAPermission::None;
@@ -109,7 +109,7 @@ public:
      * used.
      * @note This is the limit used by the New 3DS kernel. Old 3DS used 0x20000000.
      */
-    static const u32 MAX_ADDRESS = 0x40000000;
+    static const VAddr MAX_ADDRESS = 0x8000000000;
 
     /**
      * A map covering the entirety of the managed address space, keyed by the `base` field of each
@@ -142,7 +142,7 @@ public:
      * @param state MemoryState tag to attach to the VMA.
      */
     ResultVal<VMAHandle> MapMemoryBlock(VAddr target, std::shared_ptr<std::vector<u8>> block,
-                                        size_t offset, u32 size, MemoryState state);
+                                        size_t offset, u64 size, MemoryState state);
 
     /**
      * Maps an unmanaged host memory pointer at a given address.
@@ -152,7 +152,7 @@ public:
      * @param size Size of the mapping.
      * @param state MemoryState tag to attach to the VMA.
      */
-    ResultVal<VMAHandle> MapBackingMemory(VAddr target, u8* memory, u32 size, MemoryState state);
+    ResultVal<VMAHandle> MapBackingMemory(VAddr target, u8* memory, u64 size, MemoryState state);
 
     /**
      * Maps a memory-mapped IO region at a given address.
@@ -163,17 +163,17 @@ public:
      * @param state MemoryState tag to attach to the VMA.
      * @param mmio_handler The handler that will implement read and write for this MMIO region.
      */
-    ResultVal<VMAHandle> MapMMIO(VAddr target, PAddr paddr, u32 size, MemoryState state,
+    ResultVal<VMAHandle> MapMMIO(VAddr target, PAddr paddr, u64 size, MemoryState state,
                                  Memory::MMIORegionPointer mmio_handler);
 
     /// Unmaps a range of addresses, splitting VMAs as necessary.
-    ResultCode UnmapRange(VAddr target, u32 size);
+    ResultCode UnmapRange(VAddr target, u64 size);
 
     /// Changes the permissions of the given VMA.
     VMAHandle Reprotect(VMAHandle vma, VMAPermission new_perms);
 
     /// Changes the permissions of a range of addresses, splitting VMAs as necessary.
-    ResultCode ReprotectRange(VAddr target, u32 size, VMAPermission new_perms);
+    ResultCode ReprotectRange(VAddr target, u64 size, VMAPermission new_perms);
 
     /**
      * Scans all VMAs and updates the page table range of any that use the given vector as backing
@@ -197,19 +197,19 @@ private:
      * Carves a VMA of a specific size at the specified address by splitting Free VMAs while doing
      * the appropriate error checking.
      */
-    ResultVal<VMAIter> CarveVMA(VAddr base, u32 size);
+    ResultVal<VMAIter> CarveVMA(VAddr base, u64 size);
 
     /**
      * Splits the edges of the given range of non-Free VMAs so that there is a VMA split at each
      * end of the range.
      */
-    ResultVal<VMAIter> CarveVMARange(VAddr base, u32 size);
+    ResultVal<VMAIter> CarveVMARange(VAddr base, u64 size);
 
     /**
      * Splits a VMA in two, at the specified offset.
      * @returns the right side of the split, with the original iterator becoming the left side.
      */
-    VMAIter SplitVMA(VMAIter vma, u32 offset_in_vma);
+    VMAIter SplitVMA(VMAIter vma, u64 offset_in_vma);
 
     /**
      * Checks for and merges the specified VMA with adjacent ones if possible.

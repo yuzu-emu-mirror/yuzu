@@ -18,7 +18,7 @@ void InitMemoryMap();
  * @param size The amount of bytes to map. Must be page-aligned.
  * @param target Buffer with the memory backing the mapping. Must be of length at least `size`.
  */
-void MapMemoryRegion(VAddr base, u32 size, u8* target);
+void MapMemoryRegion(VAddr base, u64 size, u8* target);
 
 /**
  * Maps a region of the emulated process address space as a IO region.
@@ -26,7 +26,7 @@ void MapMemoryRegion(VAddr base, u32 size, u8* target);
  * @param size The amount of bytes to map. Must be page-aligned.
  * @param mmio_handler The handler that backs the mapping.
  */
-void MapIoRegion(VAddr base, u32 size, MMIORegionPointer mmio_handler);
+void MapIoRegion(VAddr base, u64 size, MMIORegionPointer mmio_handler);
 
-void UnmapRegion(VAddr base, u32 size);
+void UnmapRegion(VAddr base, u64 size);
 }

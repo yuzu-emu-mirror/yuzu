@@ -56,7 +56,7 @@ void VMManager::Reset() {
     initial_vma.size = MAX_ADDRESS;
     vma_map.emplace(initial_vma.base, initial_vma);
 
-    UpdatePageTableForVMA(initial_vma);
+    //UpdatePageTableForVMA(initial_vma);
 }
 
 VMManager::VMAHandle VMManager::FindVMA(VAddr target) const {
@@ -69,7 +69,7 @@ VMManager::VMAHandle VMManager::FindVMA(VAddr target) const {
 
 ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
                                                           std::shared_ptr<std::vector<u8>> block,
-                                                          size_t offset, u32 size,
+                                                          size_t offset, u64 size,
                                                           MemoryState state) {
     ASSERT(block != nullptr);
     ASSERT(offset + size <= block->size());
@@ -89,7 +89,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     return MakeResult<VMAHandle>(MergeAdjacent(vma_handle));
 }
 
-ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* memory, u32 size,
+ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* memory, u64 size,
                                                             MemoryState state) {
     ASSERT(memory != nullptr);
 
@@ -107,7 +107,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* me
     return MakeResult<VMAHandle>(MergeAdjacent(vma_handle));
 }
 
-ResultVal<VMManager::VMAHandle> VMManager::MapMMIO(VAddr target, PAddr paddr, u32 size,
+ResultVal<VMManager::VMAHandle> VMManager::MapMMIO(VAddr target, PAddr paddr, u64 size,
                                                    MemoryState state,
                                                    Memory::MMIORegionPointer mmio_handler) {
     // This is the appropriately sized VMA that will turn into our allocation.
@@ -141,7 +141,7 @@ VMManager::VMAIter VMManager::Unmap(VMAIter vma_handle) {
     return MergeAdjacent(vma_handle);
 }
 
-ResultCode VMManager::UnmapRange(VAddr target, u32 size) {
+ResultCode VMManager::UnmapRange(VAddr target, u64 size) {
     CASCADE_RESULT(VMAIter vma, CarveVMARange(target, size));
     VAddr target_end = target + size;
 
@@ -166,7 +166,7 @@ VMManager::VMAHandle VMManager::Reprotect(VMAHandle vma_handle, VMAPermission ne
     return MergeAdjacent(iter);
 }
 
-ResultCode VMManager::ReprotectRange(VAddr target, u32 size, VMAPermission new_perms) {
+ResultCode VMManager::ReprotectRange(VAddr target, u64 size, VMAPermission new_perms) {
     CASCADE_RESULT(VMAIter vma, CarveVMARange(target, size));
     VAddr target_end = target + size;
 
@@ -209,7 +209,7 @@ VMManager::VMAIter VMManager::StripIterConstness(const VMAHandle& iter) {
     return vma_map.erase(iter, iter); // Erases an empty range of elements
 }
 
-ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u32 size) {
+ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u64 size) {
     ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%8X", size);
     ASSERT_MSG((base & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%08X", base);
 
@@ -225,8 +225,8 @@ ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u32 size) {
         return ERR_INVALID_ADDRESS_STATE;
     }
 
-    u32 start_in_vma = base - vma.base;
-    u32 end_in_vma = start_in_vma + size;
+    u64 start_in_vma = base - vma.base;
+    u64 end_in_vma = start_in_vma + size;
 
     if (end_in_vma > vma.size) {
         // Requested allocation doesn't fit inside VMA
@@ -245,7 +245,7 @@ ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u32 size) {
     return MakeResult<VMAIter>(vma_handle);
 }
 
-ResultVal<VMManager::VMAIter> VMManager::CarveVMARange(VAddr target, u32 size) {
+ResultVal<VMManager::VMAIter> VMManager::CarveVMARange(VAddr target, u64 size) {
     ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%8X", size);
     ASSERT_MSG((target & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%08X", target);
 
@@ -274,7 +274,7 @@ ResultVal<VMManager::VMAIter> VMManager::CarveVMARange(VAddr target, u32 size) {
     return MakeResult<VMAIter>(begin_vma);
 }
 
-VMManager::VMAIter VMManager::SplitVMA(VMAIter vma_handle, u32 offset_in_vma) {
+VMManager::VMAIter VMManager::SplitVMA(VMAIter vma_handle, u64 offset_in_vma) {
     VirtualMemoryArea& old_vma = vma_handle->second;
     VirtualMemoryArea new_vma = old_vma; // Make a copy of the VMA
 

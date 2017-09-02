@@ -16,10 +16,10 @@ namespace Memory {
  * Page size used by the ARM architecture. This is the smallest granularity with which memory can
  * be mapped.
  */
-const u32 PAGE_SIZE = 0x1000;
-const u32 PAGE_MASK = PAGE_SIZE - 1;
 const int PAGE_BITS = 12;
-const size_t PAGE_TABLE_NUM_ENTRIES = 1 << (32 - PAGE_BITS);
+const u64 PAGE_SIZE = 1 << PAGE_BITS;
+const u64 PAGE_MASK = PAGE_SIZE - 1;
+const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (64 - PAGE_BITS);
 
 /// Physical memory regions as seen from the ARM11
 enum : PAddr {
@@ -178,17 +178,17 @@ u8* GetPhysicalPointer(PAddr address);
  * Adds the supplied value to the rasterizer resource cache counter of each
  * page touching the region.
  */
-void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta);
+void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta);
 
 /**
  * Flushes any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushRegion(PAddr start, u32 size);
+void RasterizerFlushRegion(PAddr start, u64 size);
 
 /**
  * Flushes and invalidates any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size);
+void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size);
 
 enum class FlushMode {
     /// Write back modified surfaces to RAM
@@ -201,12 +201,12 @@ enum class FlushMode {
  * Flushes and invalidates any externally cached rasterizer resources touching the given virtual
  * address region.
  */
-void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode);
+void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode);
 
 /**
  * Dynarmic has an optimization to memory accesses when the pointer to the page exists that
  * can be used by setting up the current page table as a callback. This function is used to
  * retrieve the current page table for that purpose.
  */
-std::array<u8*, PAGE_TABLE_NUM_ENTRIES>* GetCurrentPageTablePointers();
+//std::array<u8*, PAGE_TABLE_NUM_ENTRIES>* GetCurrentPageTablePointers();
 }

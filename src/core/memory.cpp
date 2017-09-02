@@ -34,7 +34,7 @@ enum class PageType {
 
 struct SpecialRegion {
     VAddr base;
-    u32 size;
+    u64 size;
     MMIORegionPointer handler;
 };
 
@@ -49,7 +49,7 @@ struct PageTable {
      * Array of memory pointers backing each page. An entry can only be non-null if the
      * corresponding entry in the `attributes` array is of type `Memory`.
      */
-    std::array<u8*, PAGE_TABLE_NUM_ENTRIES> pointers;
+    std::map<u64, u8*> pointers;
 
     /**
      * Contains MMIO handlers that back memory regions whose entries in the `attribute` array is of
@@ -61,13 +61,13 @@ struct PageTable {
      * Array of fine grained page attributes. If it is set to any value other than `Memory`, then
      * the corresponding entry in `pointers` MUST be set to null.
      */
-    std::array<PageType, PAGE_TABLE_NUM_ENTRIES> attributes;
+    std::map<u64, PageType> attributes;
 
     /**
      * Indicates the number of externally cached resources touching a page that should be
      * flushed before the memory is accessed
      */
-    std::array<u8, PAGE_TABLE_NUM_ENTRIES> cached_res_count;
+    std::map<u64, u8> cached_res_count;
 };
 
 /// Singular page table used for the singleton process
@@ -75,18 +75,18 @@ static PageTable main_page_table;
 /// Currently active page table
 static PageTable* current_page_table = &main_page_table;
 
-std::array<u8*, PAGE_TABLE_NUM_ENTRIES>* GetCurrentPageTablePointers() {
-    return &current_page_table->pointers;
-}
+//std::array<u8*, PAGE_TABLE_NUM_ENTRIES>* GetCurrentPageTablePointers() {
+//    return &current_page_table->pointers;
+//}
 
-static void MapPages(u32 base, u32 size, u8* memory, PageType type) {
+static void MapPages(u64 base, u64 size, u8* memory, PageType type) {
     LOG_DEBUG(HW_Memory, "Mapping %p onto %08X-%08X", memory, base * PAGE_SIZE,
               (base + size) * PAGE_SIZE);
 
     RasterizerFlushVirtualRegion(base << PAGE_BITS, size * PAGE_SIZE,
                                  FlushMode::FlushAndInvalidate);
 
-    u32 end = base + size;
+    u64 end = base + size;
     while (base != end) {
         ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at %08X", base);
 
@@ -101,18 +101,18 @@ static void MapPages(u32 base, u32 size, u8* memory, PageType type) {
 }
 
 void InitMemoryMap() {
-    main_page_table.pointers.fill(nullptr);
-    main_page_table.attributes.fill(PageType::Unmapped);
-    main_page_table.cached_res_count.fill(0);
+    //main_page_table.pointers.fill(nullptr);
+    //main_page_table.attributes.fill(PageType::Unmapped);
+    //main_page_table.cached_res_count.fill(0);
 }
 
-void MapMemoryRegion(VAddr base, u32 size, u8* target) {
+void MapMemoryRegion(VAddr base, u64 size, u8* target) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(base / PAGE_SIZE, size / PAGE_SIZE, target, PageType::Memory);
 }
 
-void MapIoRegion(VAddr base, u32 size, MMIORegionPointer mmio_handler) {
+void MapIoRegion(VAddr base, u64 size, MMIORegionPointer mmio_handler) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
@@ -120,7 +120,7 @@ void MapIoRegion(VAddr base, u32 size, MMIORegionPointer mmio_handler) {
     current_page_table->special_regions.emplace_back(SpecialRegion{base, size, mmio_handler});
 }
 
-void UnmapRegion(VAddr base, u32 size) {
+void UnmapRegion(VAddr base, u64 size) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Unmapped);
@@ -222,7 +222,7 @@ void Write(const VAddr vaddr, const T data) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u32)data,
+        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u64)data,
                   vaddr);
         return;
     case PageType::Memory:
@@ -304,12 +304,12 @@ u8* GetPhysicalPointer(PAddr address) {
     return vaddr ? GetPointer(*vaddr) : nullptr;
 }
 
-void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta) {
+void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta) {
     if (start == 0) {
         return;
     }
 
-    u32 num_pages = ((start + size - 1) >> PAGE_BITS) - (start >> PAGE_BITS) + 1;
+    u64 num_pages = ((start + size - 1) >> PAGE_BITS) - (start >> PAGE_BITS) + 1;
     PAddr paddr = start;
 
     for (unsigned i = 0; i < num_pages; ++i, paddr += PAGE_SIZE) {
@@ -368,13 +368,13 @@ void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta) {
     }
 }
 
-void RasterizerFlushRegion(PAddr start, u32 size) {
+void RasterizerFlushRegion(PAddr start, u64 size) {
     if (VideoCore::g_renderer != nullptr) {
         VideoCore::g_renderer->Rasterizer()->FlushRegion(start, size);
     }
 }
 
-void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size) {
+void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size) {
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
     if (VideoCore::g_renderer != nullptr) {
@@ -382,7 +382,7 @@ void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size) {
     }
 }
 
-void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode) {
+void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
     if (VideoCore::g_renderer != nullptr) {
@@ -398,7 +398,7 @@ void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode) {
             VAddr overlap_end = std::min(end, region_end);
 
             PAddr physical_start = TryVirtualToPhysicalAddress(overlap_start).value();
-            u32 overlap_size = overlap_end - overlap_start;
+            u64 overlap_size = overlap_end - overlap_start;
 
             auto* rasterizer = VideoCore::g_renderer->Rasterizer();
             switch (mode) {
