@@ -171,8 +171,8 @@ public:
     u32 thread_id;
 
     u32 status;
-    u32 entry_point;
-    u32 stack_top;
+    VAddr entry_point;
+    VAddr stack_top;
 
     s32 nominal_priority; ///< Nominal thread priority, as set by the emulated application
     s32 current_priority; ///< Current thread priority, can be temporarily changed
@@ -216,7 +216,7 @@ private:
  * @param priority The priority to give the main thread
  * @return A shared pointer to the main thread
  */
-SharedPtr<Thread> SetupMainThread(u32 entry_point, s32 priority);
+SharedPtr<Thread> SetupMainThread(VAddr entry_point, s32 priority);
 
 /**
  * Returns whether there are any threads that are ready to run.
@@ -232,13 +232,13 @@ void Reschedule();
  * Arbitrate the highest priority thread that is waiting
  * @param address The address for which waiting threads should be arbitrated
  */
-Thread* ArbitrateHighestPriorityThread(u32 address);
+Thread* ArbitrateHighestPriorityThread(VAddr address);
 
 /**
  * Arbitrate all threads currently waiting.
  * @param address The address for which waiting threads should be arbitrated
  */
-void ArbitrateAllThreads(u32 address);
+void ArbitrateAllThreads(VAddr address);
 
 /**
  * Gets the current thread

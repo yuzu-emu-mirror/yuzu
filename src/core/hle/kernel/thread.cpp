@@ -341,8 +341,8 @@ std::tuple<u32, u32, bool> GetFreeThreadLocalSlot(std::vector<std::bitset<8>>& t
  * @param entry_point Address of entry point for execution
  * @param arg User argument for thread
  */
-static void ResetThreadContext(ARM_Interface::ThreadContext& context, u32 stack_top,
-                               u32 entry_point, u32 arg) {
+static void ResetThreadContext(ARM_Interface::ThreadContext& context, VAddr stack_top,
+                               VAddr entry_point, u64 arg) {
     memset(&context, 0, sizeof(ARM_Interface::ThreadContext));
 
     context.cpu_registers[0] = arg;
@@ -477,7 +477,7 @@ void Thread::BoostPriority(s32 priority) {
     current_priority = priority;
 }
 
-SharedPtr<Thread> SetupMainThread(u32 entry_point, s32 priority) {
+SharedPtr<Thread> SetupMainThread(VAddr entry_point, s32 priority) {
     DEBUG_ASSERT(!GetCurrentThread());
 
     // Initialize new "main" thread
