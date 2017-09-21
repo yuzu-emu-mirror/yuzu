@@ -184,7 +184,7 @@ T Read(const VAddr vaddr) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%08X", sizeof(T) * 8, vaddr);
+        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%llx", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
         ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
@@ -222,7 +222,7 @@ void Write(const VAddr vaddr, const T data) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u64)data,
+        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%llx @ 0x%llx", sizeof(data) * 8, (u64)data,
                   vaddr);
         return;
     case PageType::Memory:
@@ -280,7 +280,7 @@ u8* GetPointer(const VAddr vaddr) {
         return GetPointerFromVMA(vaddr);
     }
 
-    LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%08x", vaddr);
+    LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%llx", vaddr);
     return nullptr;
 }
 
@@ -444,7 +444,7 @@ void ReadBlock(const VAddr src_addr, void* dest_buffer, const size_t size) {
 
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%llx (start address = 0x%llx, size = %zu)",
                       current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
@@ -512,7 +512,7 @@ void WriteBlock(const VAddr dest_addr, const void* src_buffer, const size_t size
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped: {
             LOG_ERROR(HW_Memory,
-                      "unmapped WriteBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+                      "unmapped WriteBlock @ 0x%llx (start address = 0x%llx, size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
         }
@@ -564,7 +564,7 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
 
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped ZeroBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory, "unmapped ZeroBlock @ 0x%llx (start address = 0x%llx, size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
         }
@@ -613,7 +613,7 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
 
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped CopyBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory, "unmapped CopyBlock @ 0x%llx (start address = 0x%llx, size = %zu)",
                       current_vaddr, src_addr, size);
             ZeroBlock(dest_addr, copy_amount);
             break;
@@ -721,7 +721,7 @@ boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
 PAddr VirtualToPhysicalAddress(const VAddr addr) {
     auto paddr = TryVirtualToPhysicalAddress(addr);
     if (!paddr) {
-        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x%08X", addr);
+        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x%llx", addr);
         // To help with debugging, set bit on address so that it's obviously invalid.
         return addr | 0x80000000;
     }
