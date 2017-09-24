@@ -28,6 +28,11 @@ add_subdirectory(glad)
 # inih
 add_subdirectory(inih)
 
+# lz4
+set(LZ4_BUNDLED_MODE ON)
+add_subdirectory(lz4/contrib/cmake_unofficial)
+target_include_directories(lz4_static INTERFACE ./lz4/lib)
+
 # MicroProfile
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
