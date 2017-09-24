@@ -33,7 +33,7 @@ u32 Process::next_process_id;
 SharedPtr<Process> Process::Create(SharedPtr<CodeSet> code_set) {
     SharedPtr<Process> process(new Process);
 
-    process->codeset = std::move(code_set);
+    process->codeset = code_set;
     process->flags.raw = 0;
     process->flags.memory_region.Assign(MemoryRegion::APPLICATION);
 
@@ -113,24 +113,6 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
 }
 
 void Process::Run(s32 main_thread_priority, u32 stack_size) {
-    memory_region = GetMemoryRegion(flags.memory_region);
-
-    auto MapSegment = [&](CodeSet::Segment& segment, VMAPermission permissions,
-                          MemoryState memory_state) {
-        auto vma = vm_manager
-                       .MapMemoryBlock(segment.addr, codeset->memory, segment.offset, segment.size,
-                                       memory_state)
-                       .Unwrap();
-        vm_manager.Reprotect(vma, permissions);
-        misc_memory_used += segment.size;
-        memory_region->used += segment.size;
-    };
-
-    // Map CodeSet segments
-    MapSegment(codeset->code, VMAPermission::ReadExecute, MemoryState::Code);
-    MapSegment(codeset->rodata, VMAPermission::Read, MemoryState::Code);
-    MapSegment(codeset->data, VMAPermission::ReadWrite, MemoryState::Private);
-
     // Allocate and map stack
     vm_manager
         .MapMemoryBlock(Memory::HEAP_VADDR_END - stack_size,
@@ -148,6 +130,25 @@ void Process::Run(s32 main_thread_priority, u32 stack_size) {
 
     vm_manager.LogLayout(Log::Level::Debug);
     Kernel::SetupMainThread(codeset->entrypoint, main_thread_priority);
+
+void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
+    memory_region = GetMemoryRegion(flags.memory_region);
+
+    auto MapSegment = [&](CodeSet::Segment& segment, VMAPermission permissions,
+        MemoryState memory_state) {
+        auto vma = vm_manager
+            .MapMemoryBlock(segment.addr + base_addr, module_->memory, segment.offset, segment.size,
+                memory_state)
+            .Unwrap();
+        vm_manager.Reprotect(vma, permissions);
+        misc_memory_used += segment.size;
+        memory_region->used += segment.size;
+    };
+
+    // Map CodeSet segments
+    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::Code);
+    MapSegment(module_->rodata, VMAPermission::Read, MemoryState::Code);
+    MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::Private);
 }
 
 VAddr Process::GetLinearHeapAreaAddress() const {

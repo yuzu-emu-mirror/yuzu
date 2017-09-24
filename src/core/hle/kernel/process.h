@@ -79,7 +79,11 @@ struct CodeSet final : public Object {
         u32 size = 0;
     };
 
-    Segment code, rodata, data;
+    Segment segments[3];
+    Segment& code = segments[0];
+    Segment& rodata = segments[1];
+    Segment& data = segments[2];
+
     VAddr entrypoint;
 
 private:
@@ -135,6 +139,8 @@ public:
      * Applies address space changes and launches the process main thread.
      */
     void Run(s32 main_thread_priority, u32 stack_size);
+
+    void LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Memory Management
