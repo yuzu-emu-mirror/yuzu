@@ -176,6 +176,7 @@ set(SRCS
             loader/elf.cpp
             loader/loader.cpp
             loader/ncch.cpp
+            loader/nso.cpp
             loader/smdh.cpp
             tracer/recorder.cpp
             memory.cpp
@@ -375,6 +376,7 @@ set(HEADERS
             loader/elf.h
             loader/loader.h
             loader/ncch.h
+            loader/nso.h
             loader/smdh.h
             tracer/recorder.h
             tracer/citrace.h
