@@ -267,7 +267,8 @@ ResultStatus AppLoader_THREEDSX::Load() {
         return ResultStatus::Error;
     codeset->name = filename;
 
-    Kernel::g_current_process = Kernel::Process::Create(std::move(codeset));
+    Kernel::g_current_process = Kernel::Process::Create("main");
+    Kernel::g_current_process->LoadModule(codeset, codeset->entrypoint);
     Kernel::g_current_process->svc_access_mask.set();
     Kernel::g_current_process->address_mappings = default_address_mappings;
 
@@ -275,7 +276,7 @@ ResultStatus AppLoader_THREEDSX::Load() {
     Kernel::g_current_process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
 
-    Kernel::g_current_process->Run(48, Kernel::DEFAULT_STACK_SIZE);
+    Kernel::g_current_process->Run(codeset->entrypoint, 48, Kernel::DEFAULT_STACK_SIZE);
 
     Service::FS::RegisterArchiveType(std::make_unique<FileSys::ArchiveFactory_SelfNCCH>(*this),
                                      Service::FS::ArchiveIdCode::SelfNCCH);

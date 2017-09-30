@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <map>
-#include <string>
 #include <vector>
 #include <lz4.h>
 
@@ -14,22 +12,20 @@
 #include "core/loader/nso.h"
 #include "core/memory.h"
 
-using Kernel::CodeSet;
-using Kernel::SharedPtr;
-
 namespace Loader {
 
-FileType AppLoader_NSO::IdentifyType(FileUtil::IOFile& file) {
-    u32 magic = 0;
-    file.Seek(0, SEEK_SET);
-    if (1 != file.ReadArray<u32>(&magic, 1))
-        return FileType::Error;
+enum class RelocationType : u32 { ABS64 = 257, GLOB_DAT = 1025, JUMP_SLOT = 1026, RELATIVE = 1027 };
 
-    if (MakeMagic('N', 'S', 'O', '0') == magic)
-        return FileType::NSO;
-
-    return FileType::Error;
-}
+enum DynamicType : u32 {
+    DT_NULL = 0,
+    DT_PLTRELSZ = 2,
+    DT_STRTAB = 5,
+    DT_SYMTAB = 6,
+    DT_RELA = 7,
+    DT_RELASZ = 8,
+    DT_STRSZ = 10,
+    DT_JMPREL = 23,
+};
 
 struct NsoSegmentHeader {
     u32_le offset;
@@ -42,12 +38,39 @@ static_assert(sizeof(NsoSegmentHeader) == 0x10, "NsoSegmentHeader has incorrect 
 struct NsoHeader {
     u32_le magic;
     INSERT_PADDING_BYTES(0xc);
-    std::array<NsoSegmentHeader, 3> segments; // Text, Data, RoData (in that order)
-    INSERT_PADDING_BYTES(0x20);
+    std::array<NsoSegmentHeader, 3> segments; // Text, RoData, Data (in that order)
+    u32_le bss_size;
+    INSERT_PADDING_BYTES(0x1c);
     std::array<u32_le, 3> segments_compressed_size;
 };
-
 static_assert(sizeof(NsoHeader) == 0x6c, "NsoHeader has incorrect size.");
+
+struct ModHeader {
+    INSERT_PADDING_BYTES(0x4);
+    u32_le offset_to_start; // Always 8
+    u32_le magic;
+    u32_le dynamic_offset;
+    u32_le bss_start_offset;
+    u32_le bss_end_offset;
+    u32_le eh_frame_hdr_start_offset;
+    u32_le eh_frame_hdr_end_offset;
+    u32_le module_offset; // Offset to runtime-generated module object. typically equal to .bss base
+};
+static_assert(sizeof(ModHeader) == 0x24, "ModHeader has incorrect size.");
+
+FileType AppLoader_NSO::IdentifyType(FileUtil::IOFile& file) {
+    u32 magic = 0;
+    file.Seek(0, SEEK_SET);
+    if (1 != file.ReadArray<u32>(&magic, 1)) {
+        return FileType::Error;
+    }
+
+    if (MakeMagic('N', 'S', 'O', '0') == magic) {
+        return FileType::NSO;
+    }
+
+    return FileType::Error;
+}
 
 static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeader& header,
                                    int compressed_size) {
@@ -72,40 +95,10 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeade
     return uncompressed_data;
 }
 
-struct Symbol {
-    Symbol(std::string&& name, u64 value) : name(std::move(name)), value(value) {}
-    std::string name;
-    u64 value;
-};
-
-struct Import {
-    VAddr ea;
-    s64 addend;
-};
-
-enum class RelocationType : u32 {
-    ABS64 = 257,
-    GLOB_DAT = 1025,
-    JUMP_SLOT = 1026,
-    RELATIVE = 1027
-};
-
-enum DynamicType : u32 {
-    DT_NULL = 0,
-    DT_PLTRELSZ = 2,
-    DT_STRTAB = 5,
-    DT_SYMTAB = 6,
-    DT_RELA = 7,
-    DT_RELASZ = 8,
-    DT_STRSZ = 10,
-    DT_JMPREL = 23,
-};
-
-void WriteRelocations(const std::vector<Symbol>& symbols, VAddr loadbase, u64 roff, u64 size,
-                      bool is_jump_relocation, std::map<std::string, Import>& imports,
-                      std::map<std::string, VAddr>& exports) {
+void AppLoader_NSO::WriteRelocations(const std::vector<Symbol>& symbols, VAddr load_base,
+                                     u64 relocation_offset, u64 size, bool is_jump_relocation) {
     for (u64 i = 0; i < size; i += 0x18) {
-        VAddr addr = loadbase + roff + i;
+        VAddr addr = load_base + relocation_offset + i;
         u64 offset = Memory::Read64(addr);
         u64 info = Memory::Read64(addr + 8);
         u64 addend_unsigned = Memory::Read64(addr + 16);
@@ -114,16 +107,16 @@ void WriteRelocations(const std::vector<Symbol>& symbols, VAddr loadbase, u64 ro
 
         RelocationType rtype = static_cast<RelocationType>(info & 0xFFFFFFFF);
         u32 rsym = static_cast<u32>(info >> 32);
-        VAddr ea = loadbase + offset;
+        VAddr ea = load_base + offset;
 
         const Symbol& symbol = symbols[rsym];
 
         switch (rtype) {
         case RelocationType::RELATIVE:
             if (!symbol.name.empty()) {
-                exports[symbol.name] = loadbase + addend;
+                exports[symbol.name] = load_base + addend;
             }
-            Memory::Write64(ea, loadbase + addend);
+            Memory::Write64(ea, load_base + addend);
             break;
         case RelocationType::JUMP_SLOT:
         case RelocationType::GLOB_DAT:
@@ -149,18 +142,12 @@ void WriteRelocations(const std::vector<Symbol>& symbols, VAddr loadbase, u64 ro
     }
 }
 
-void Relocate(VAddr loadbase, std::map<std::string, Import>& imports,
-              std::map<std::string, VAddr>& exports) {
-    u32 modoff = Memory::Read32(loadbase + 4);
-    ASSERT_MSG(Memory::Read32(loadbase + modoff) == MakeMagic('M', 'O', 'D', '0'),
-               "Expected MOD section");
-
-    u64 dynoff = loadbase + modoff + Memory::Read32(loadbase + modoff + 4);
+void AppLoader_NSO::Relocate(VAddr load_base, VAddr dynamic_section_addr) {
     std::map<u64, u64> dynamic;
     while (1) {
-        u64 tag = Memory::Read64(dynoff);
-        u64 value = Memory::Read64(dynoff + 8);
-        dynoff += 16;
+        u64 tag = Memory::Read64(dynamic_section_addr);
+        u64 value = Memory::Read64(dynamic_section_addr + 8);
+        dynamic_section_addr += 16;
 
         if (tag == DT_NULL) {
             break;
@@ -171,9 +158,9 @@ void Relocate(VAddr loadbase, std::map<std::string, Import>& imports,
     u64 strtabsize = dynamic[DT_STRSZ];
     std::vector<u8> strtab;
     strtab.resize(strtabsize);
-    Memory::ReadBlock(loadbase + dynamic[DT_STRTAB], strtab.data(), strtabsize);
+    Memory::ReadBlock(load_base + dynamic[DT_STRTAB], strtab.data(), strtabsize);
 
-    VAddr addr = loadbase + dynamic[DT_SYMTAB];
+    VAddr addr = load_base + dynamic[DT_SYMTAB];
     std::vector<Symbol> symbols;
     while (1) {
         const u32 stname = Memory::Read32(addr);
@@ -187,96 +174,108 @@ void Relocate(VAddr loadbase, std::map<std::string, Import>& imports,
 
         std::string name = reinterpret_cast<char*>(&strtab[stname]);
         if (stvalue) {
-            exports[name] = loadbase + stvalue;
-            symbols.emplace_back(std::move(name), loadbase + stvalue);
+            exports[name] = load_base + stvalue;
+            symbols.emplace_back(std::move(name), load_base + stvalue);
         } else {
             symbols.emplace_back(std::move(name), 0);
         }
     }
 
     if (dynamic.find(DT_RELA) != dynamic.end()) {
-        WriteRelocations(symbols, loadbase, dynamic[DT_RELA], dynamic[DT_RELASZ], false, imports,
-                         exports);
+        WriteRelocations(symbols, load_base, dynamic[DT_RELA], dynamic[DT_RELASZ], false);
     }
 
     if (dynamic.find(DT_JMPREL) != dynamic.end()) {
-        WriteRelocations(symbols, loadbase, dynamic[DT_JMPREL], dynamic[DT_PLTRELSZ], true, imports,
-                         exports);
+        WriteRelocations(symbols, load_base, dynamic[DT_JMPREL], dynamic[DT_PLTRELSZ], true);
     }
 }
 
-static VAddr GetEntryPoint(const std::map<std::string, VAddr>& exports) {
+VAddr AppLoader_NSO::GetEntryPoint() const {
     // Find nnMain function, set entrypoint to that address
     const auto& search = exports.find("nnMain");
     if (search != exports.end()) {
         return search->second;
     }
+    ASSERT_MSG(false, "Unable to find entrypoint");
     return {};
 }
 
-static SharedPtr<CodeSet> LoadModule(const std::string& filepath, VAddr loadbase,
-                                     std::map<std::string, Import>& imports,
-                                     std::map<std::string, VAddr>& exports) {
-    FileUtil::IOFile file(filepath, "rb");
+static constexpr u32 PageAlignSize(u32 size) {
+    return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
+}
 
-    if (!file.IsOpen())
+bool AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
+    FileUtil::IOFile file(path, "rb");
+    if (!file.IsOpen()) {
         return {};
+    }
 
-    NsoHeader header{};
+    // Read NSO header
+    NsoHeader nso_header{};
     file.Seek(0, SEEK_SET);
-    if (sizeof(NsoHeader) != file.ReadBytes(&header, sizeof(NsoHeader)))
+    if (sizeof(NsoHeader) != file.ReadBytes(&nso_header, sizeof(NsoHeader))) {
         return {};
+    }
+    if (nso_header.magic != MakeMagic('N', 'S', 'O', '0')) {
+        return {};
+    }
 
     // Build program image
-    SharedPtr<CodeSet> codeset = CodeSet::Create("", 0);
+    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("", 0);
     std::vector<u8> program_image;
-    for (int i = 0; i < header.segments.size(); ++i) {
+    for (int i = 0; i < nso_header.segments.size(); ++i) {
         std::vector<u8> data =
-            ReadSegment(file, header.segments[i], header.segments_compressed_size[i]);
-        program_image.resize(header.segments[i].location);
+            ReadSegment(file, nso_header.segments[i], nso_header.segments_compressed_size[i]);
+        program_image.resize(nso_header.segments[i].location);
         program_image.insert(program_image.end(), data.begin(), data.end());
-        codeset->segments[i].addr = header.segments[i].location;
-        codeset->segments[i].offset = header.segments[i].location;
-        codeset->segments[i].size = (data.size() + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
+        codeset->segments[i].addr = nso_header.segments[i].location;
+        codeset->segments[i].offset = nso_header.segments[i].location;
+        codeset->segments[i].size = static_cast<u32>(data.size());
     }
-    program_image.resize((program_image.size() + Memory::PAGE_MASK) & ~Memory::PAGE_MASK);
 
-    codeset->name = filepath;
-    codeset->entrypoint = 0; // Set after relocation
+    // Read MOD header
+    ModHeader mod_header{};
+    std::memcpy(&mod_header, program_image.data(), sizeof(ModHeader));
+    if (mod_header.magic != MakeMagic('M', 'O', 'D', '0')) {
+        return {};
+    }
+
+    // Resize program image to include .bss section and page align each section
+    const u32 bss_size = mod_header.bss_end_offset - mod_header.bss_start_offset;
+    codeset->code.size = PageAlignSize(codeset->code.size);
+    codeset->rodata.size = PageAlignSize(codeset->rodata.size);
+    codeset->data.size = PageAlignSize(codeset->data.size + bss_size);
+    program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
+
+    // Load codeset for current process
+    codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
+    Kernel::g_current_process->LoadModule(codeset, load_base);
+    Relocate(load_base, load_base + mod_header.offset_to_start + mod_header.dynamic_offset);
 
-    return codeset;
+    return true;
 }
 
 ResultStatus AppLoader_NSO::Load() {
-    if (is_loaded)
+    if (is_loaded) {
         return ResultStatus::ErrorAlreadyLoaded;
-
-    if (!file.IsOpen())
+    }
+    if (!file.IsOpen()) {
         return ResultStatus::Error;
+    }
 
-    static constexpr VAddr loadbase = 0x7100000000;
-    std::map<std::string, Import> imports;
-    std::map<std::string, VAddr> exports;
+    // Load and relocate "main" and "sdk" NSO
+    const std::string sdkpath = filepath.substr(0, filepath.find_last_of("/\\")) + "/sdk";
+    Kernel::g_current_process = Kernel::Process::Create("main");
+    if (!LoadNso(filepath, 0x10000000) || !LoadNso(sdkpath, 0x20000000)) {
+        return ResultStatus::ErrorInvalidFormat;
+    }
 
-    // Load and relocate "main" NSO
-    auto codeset = LoadModule(filepath, loadbase, imports, exports);
-    Kernel::g_current_process = Kernel::Process::Create(codeset);
     Kernel::g_current_process->svc_access_mask.set();
     Kernel::g_current_process->address_mappings = default_address_mappings;
     Kernel::g_current_process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->LoadModule(codeset, loadbase);
-    Relocate(loadbase, imports, exports);
-    codeset->entrypoint = GetEntryPoint(exports);
-    Kernel::g_current_process->Run(48, Kernel::DEFAULT_STACK_SIZE);
-
-    // Load and relocate "sdk" NSO
-    static constexpr VAddr sdkbase = 0x7200000000;
-    const std::string sdkpath = filepath.substr(0, filepath.find_last_of("/\\")) + "/sdk";
-    auto sdk_codeset = LoadModule(sdkpath, sdkbase, imports, exports);
-    Kernel::g_current_process->LoadModule(sdk_codeset, sdkbase);
-    Relocate(sdkbase, imports, exports);
+    Kernel::g_current_process->Run(GetEntryPoint(), 48, Kernel::DEFAULT_STACK_SIZE);
 
     // Resolve imports
     for (const auto& import : imports) {
@@ -284,7 +283,7 @@ ResultStatus AppLoader_NSO::Load() {
         if (search != exports.end()) {
             Memory::Write64(import.second.ea, search->second + import.second.addend);
         } else {
-            LOG_CRITICAL(Loader, "Unresolved import: %s", import.first.c_str());
+            LOG_ERROR(Loader, "Unresolved import: %s", import.first.c_str());
         }
     }
 

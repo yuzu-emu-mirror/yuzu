@@ -93,13 +93,13 @@ private:
 
 class Process final : public Object {
 public:
-    static SharedPtr<Process> Create(SharedPtr<CodeSet> code_set);
+    static SharedPtr<Process> Create(std::string&& name);
 
     std::string GetTypeName() const override {
         return "Process";
     }
     std::string GetName() const override {
-        return codeset->name;
+        return name;
     }
 
     static const HandleType HANDLE_TYPE = HandleType::Process;
@@ -109,7 +109,6 @@ public:
 
     static u32 next_process_id;
 
-    SharedPtr<CodeSet> codeset;
     /// Resource limit descriptor for this process
     SharedPtr<ResourceLimit> resource_limit;
 
@@ -138,7 +137,7 @@ public:
     /**
      * Applies address space changes and launches the process main thread.
      */
-    void Run(s32 main_thread_priority, u32 stack_size);
+    void Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size);
 
     void LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr);
 
@@ -165,6 +164,8 @@ public:
     /// page as a bitmask.
     /// This vector will grow as more pages are allocated for new threads.
     std::vector<std::bitset<8>> tls_slots;
+
+    std::string name;
 
     VAddr GetLinearHeapAreaAddress() const;
     VAddr GetLinearHeapBase() const;

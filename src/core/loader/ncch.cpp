@@ -168,7 +168,8 @@ ResultStatus AppLoader_NCCH::LoadExec() {
         codeset->entrypoint = codeset->code.addr;
         codeset->memory = std::make_shared<std::vector<u8>>(std::move(code));
 
-        Kernel::g_current_process = Kernel::Process::Create(std::move(codeset));
+        Kernel::g_current_process = Kernel::Process::Create("main");
+        Kernel::g_current_process->LoadModule(codeset, codeset->entrypoint);
 
         // Attach a resource limit to the process based on the resource limit category
         Kernel::g_current_process->resource_limit =
@@ -187,7 +188,7 @@ ResultStatus AppLoader_NCCH::LoadExec() {
 
         s32 priority = exheader_header.arm11_system_local_caps.priority;
         u32 stack_size = exheader_header.codeset_info.stack_size;
-        Kernel::g_current_process->Run(priority, stack_size);
+        Kernel::g_current_process->Run(codeset->entrypoint, priority, stack_size);
         return ResultStatus::Success;
     }
     return ResultStatus::Error;

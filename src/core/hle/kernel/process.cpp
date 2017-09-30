@@ -30,10 +30,10 @@ CodeSet::~CodeSet() {}
 
 u32 Process::next_process_id;
 
-SharedPtr<Process> Process::Create(SharedPtr<CodeSet> code_set) {
+SharedPtr<Process> Process::Create(std::string&& name) {
     SharedPtr<Process> process(new Process);
 
-    process->codeset = code_set;
+    process->name = std::move(name);
     process->flags.raw = 0;
     process->flags.memory_region.Assign(MemoryRegion::APPLICATION);
 
@@ -112,7 +112,7 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
     }
 }
 
-void Process::Run(s32 main_thread_priority, u32 stack_size) {
+void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
     // Allocate and map stack
     vm_manager
         .MapMemoryBlock(Memory::HEAP_VADDR_END - stack_size,
@@ -129,7 +129,8 @@ void Process::Run(s32 main_thread_priority, u32 stack_size) {
     }
 
     vm_manager.LogLayout(Log::Level::Debug);
-    Kernel::SetupMainThread(codeset->entrypoint, main_thread_priority);
+    Kernel::SetupMainThread(entry_point, main_thread_priority);
+}
 
 void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
     memory_region = GetMemoryRegion(flags.memory_region);
