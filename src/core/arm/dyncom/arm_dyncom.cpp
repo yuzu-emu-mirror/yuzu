@@ -73,6 +73,13 @@ void ARM_DynCom::SetCP15Register(CP15Register reg, u32 value) {
     state->CP15[reg] = value;
 }
 
+VAddr ARM_DynCom::GetTlsAddress() const {
+    return {};
+}
+
+void ARM_DynCom::SetTlsAddress(VAddr /*address*/) {
+}
+
 void ARM_DynCom::AddTicks(u64 ticks) {
     down_count -= ticks;
     if (down_count < 0)

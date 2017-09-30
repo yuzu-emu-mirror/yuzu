@@ -157,6 +157,14 @@ void ARM_Dynarmic::SetCP15Register(CP15Register reg, u32 value) {
     interpreter_state->CP15[reg] = value;
 }
 
+VAddr ARM_Dynarmic::GetTlsAddress() const {
+    return jit->TlsAddr();
+}
+
+void ARM_Dynarmic::SetTlsAddress(VAddr address) {
+    jit->TlsAddr() = address;
+}
+
 void ARM_Dynarmic::AddTicks(u64 ticks) {
     down_count -= ticks;
     if (down_count < 0) {
@@ -185,6 +193,9 @@ void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
 
     ctx.fpscr = jit->Fpscr();
     ctx.fpexc = interpreter_state->VFP[VFP_FPEXC];
+
+    // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
+    ctx.tls_address = jit->TlsAddr();
 }
 
 void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
@@ -198,6 +209,9 @@ void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
 
     jit->SetFpscr(ctx.fpscr);
     interpreter_state->VFP[VFP_FPEXC] = ctx.fpexc;
+
+    // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
+    jit->TlsAddr() = ctx.tls_address;
 }
 
 void ARM_Dynarmic::PrepareReschedule() {

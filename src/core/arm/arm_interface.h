@@ -22,6 +22,9 @@ public:
         u64 fpu_registers[64];
         u64 fpscr;
         u64 fpexc;
+
+        // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
+        VAddr tls_address;
     };
 
     /**
@@ -120,6 +123,10 @@ public:
      * @param value The value to store into the CP15 register.
      */
     virtual void SetCP15Register(CP15Register reg, u32 value) = 0;
+
+    virtual VAddr GetTlsAddress() const = 0;
+
+    virtual void SetTlsAddress(VAddr address) = 0;
 
     /**
      * Advance the CPU core by the specified number of ticks (e.g. to simulate CPU execution time)
