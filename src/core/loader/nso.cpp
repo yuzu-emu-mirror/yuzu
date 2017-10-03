@@ -190,14 +190,14 @@ void AppLoader_NSO::Relocate(VAddr load_base, VAddr dynamic_section_addr) {
     }
 }
 
-VAddr AppLoader_NSO::GetEntryPoint() const {
+VAddr AppLoader_NSO::GetEntryPoint(VAddr load_base) const {
     // Find nnMain function, set entrypoint to that address
     const auto& search = exports.find("nnMain");
     if (search != exports.end()) {
         return search->second;
     }
-    ASSERT_MSG(false, "Unable to find entrypoint");
-    return {};
+    LOG_ERROR(Loader, "Unable to find entrypoint, defaulting to: 0x%llx", load_base);
+    return load_base;
 }
 
 static constexpr u32 PageAlignSize(u32 size) {
@@ -230,29 +230,31 @@ bool AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
         program_image.insert(program_image.end(), data.begin(), data.end());
         codeset->segments[i].addr = nso_header.segments[i].location;
         codeset->segments[i].offset = nso_header.segments[i].location;
-        codeset->segments[i].size = static_cast<u32>(data.size());
+        codeset->segments[i].size = PageAlignSize(static_cast<u32>(data.size()));
     }
 
     // Read MOD header
     ModHeader mod_header{};
+    u32 bss_size{Memory::PAGE_SIZE}; // Default .bss to page size if MOD0 section doesn't exist
     std::memcpy(&mod_header, program_image.data(), sizeof(ModHeader));
-    if (mod_header.magic != MakeMagic('M', 'O', 'D', '0')) {
-        return {};
+    const bool has_mod_header{mod_header.magic == MakeMagic('M', 'O', 'D', '0')};
+    if (has_mod_header) {
+        // Resize program image to include .bss section and page align each section
+        bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);
+        codeset->data.size += bss_size;
     }
-
-    // Resize program image to include .bss section and page align each section
-    const u32 bss_size = mod_header.bss_end_offset - mod_header.bss_start_offset;
-    codeset->code.size = PageAlignSize(codeset->code.size);
-    codeset->rodata.size = PageAlignSize(codeset->rodata.size);
-    codeset->data.size = PageAlignSize(codeset->data.size + bss_size);
     program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
 
     // Load codeset for current process
     codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
     Kernel::g_current_process->LoadModule(codeset, load_base);
-    Relocate(load_base, load_base + mod_header.offset_to_start + mod_header.dynamic_offset);
 
+    // Relocate symbols if there was a proper MOD header - This must happen after the image has been
+    // loaded into memory
+    if (has_mod_header) {
+        Relocate(load_base, load_base + mod_header.offset_to_start + mod_header.dynamic_offset);
+    }
     return true;
 }
 
@@ -265,17 +267,21 @@ ResultStatus AppLoader_NSO::Load() {
     }
 
     // Load and relocate "main" and "sdk" NSO
-    const std::string sdkpath = filepath.substr(0, filepath.find_last_of("/\\")) + "/sdk";
+    static constexpr VAddr main_base{0x10000000};
     Kernel::g_current_process = Kernel::Process::Create("main");
-    if (!LoadNso(filepath, 0x10000000) || !LoadNso(sdkpath, 0x20000000)) {
+    if (!LoadNso(filepath, main_base)) {
         return ResultStatus::ErrorInvalidFormat;
+    }
+    const std::string sdkpath = filepath.substr(0, filepath.find_last_of("/\\")) + "/sdk";
+    if (!LoadNso(sdkpath, 0x20000000)) {
+        LOG_WARNING(Loader, "failed to find SDK NSO");
     }
 
     Kernel::g_current_process->svc_access_mask.set();
     Kernel::g_current_process->address_mappings = default_address_mappings;
     Kernel::g_current_process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->Run(GetEntryPoint(), 48, Kernel::DEFAULT_STACK_SIZE);
+    Kernel::g_current_process->Run(GetEntryPoint(main_base), 48, Kernel::DEFAULT_STACK_SIZE);
 
     // Resolve imports
     for (const auto& import : imports) {

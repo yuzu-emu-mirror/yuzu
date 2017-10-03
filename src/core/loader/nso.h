@@ -47,7 +47,7 @@ private:
 
     void WriteRelocations(const std::vector<Symbol>& symbols, VAddr load_base,
                           u64 relocation_offset, u64 size, bool is_jump_relocation);
-    VAddr GetEntryPoint() const;
+    VAddr GetEntryPoint(VAddr load_base) const;
     bool LoadNso(const std::string& path, VAddr load_base);
     void Relocate(VAddr load_base, VAddr dynamic_section_addr);
 
