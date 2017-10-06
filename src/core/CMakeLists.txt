@@ -174,8 +174,10 @@ set(SRCS
             hw/y2r.cpp
             loader/3dsx.cpp
             loader/elf.cpp
+            loader/linker.cpp
             loader/loader.cpp
             loader/ncch.cpp
+            loader/nro.cpp
             loader/nso.cpp
             loader/smdh.cpp
             tracer/recorder.cpp
@@ -374,8 +376,10 @@ set(HEADERS
             hw/y2r.h
             loader/3dsx.h
             loader/elf.h
+            loader/linker.h
             loader/loader.h
             loader/ncch.h
+            loader/nro.h
             loader/nso.h
             loader/smdh.h
             tracer/recorder.h

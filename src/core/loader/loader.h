@@ -33,6 +33,7 @@ enum class FileType {
     ELF,
     THREEDSX, // 3DSX
     NSO,
+    NRO,
 };
 
 /**

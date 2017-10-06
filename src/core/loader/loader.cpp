@@ -10,6 +10,7 @@
 #include "core/loader/3dsx.h"
 #include "core/loader/elf.h"
 #include "core/loader/ncch.h"
+#include "core/loader/nro.h"
 #include "core/loader/nso.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,6 +35,7 @@ FileType IdentifyFile(FileUtil::IOFile& file) {
     CHECK_TYPE(ELF)
     CHECK_TYPE(NCCH)
     CHECK_TYPE(NSO)
+    CHECK_TYPE(NRO)
 
 #undef CHECK_TYPE
 
@@ -120,6 +122,10 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileTyp
     // NX NSO file format.
     case FileType::NSO:
         return std::make_unique<AppLoader_NSO>(std::move(file), filename, filepath);
+
+    // NX NRO file format.
+    case FileType::NRO:
+        return std::make_unique<AppLoader_NRO>(std::move(file), filename, filepath);
 
     default:
         return nullptr;

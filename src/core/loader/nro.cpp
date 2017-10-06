@@ -1,0 +1,173 @@
+// Copyright 2017 Citra Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#include <vector>
+
+#include "common/logging/log.h"
+#include "common/swap.h"
+#include "core/hle/kernel/process.h"
+#include "core/hle/kernel/resource_limit.h"
+#include "core/loader/nro.h"
+#include "core/memory.h"
+
+namespace Loader {
+
+struct NroSegmentHeader {
+    u32_le offset;
+    u32_le size;
+};
+static_assert(sizeof(NroSegmentHeader) == 0x8, "NroSegmentHeader has incorrect size.");
+
+struct NroHeader {
+    INSERT_PADDING_BYTES(0x4);
+    u32_le module_header_offset;
+    INSERT_PADDING_BYTES(0x8);
+    u32_le magic;
+    INSERT_PADDING_BYTES(0x4);
+    u32_le file_size;
+    INSERT_PADDING_BYTES(0x4);
+    std::array<NroSegmentHeader, 3> segments; // Text, RoData, Data (in that order)
+    u32_le bss_size;
+    INSERT_PADDING_BYTES(0x44);
+};
+static_assert(sizeof(NroHeader) == 0x80, "NroHeader has incorrect size.");
+
+struct ModHeader {
+    u32_le magic;
+    u32_le dynamic_offset;
+    u32_le bss_start_offset;
+    u32_le bss_end_offset;
+    u32_le unwind_start_offset;
+    u32_le unwind_end_offset;
+    u32_le module_offset; // Offset to runtime-generated module object. typically equal to .bss base
+};
+static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
+
+FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file) {
+    // Read NSO header
+    NroHeader nro_header{};
+    file.Seek(0, SEEK_SET);
+    if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
+        return FileType::Error;
+    }
+    if (nro_header.magic == MakeMagic('N', 'R', 'O', '0')) {
+        return FileType::NRO;
+    }
+    return FileType::Error;
+}
+
+static constexpr u32 PageAlignSize(u32 size) {
+    return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
+}
+
+static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NroSegmentHeader& header) {
+    std::vector<u8> data;
+    data.resize(header.size);
+
+    file.Seek(header.offset + sizeof(NroHeader), SEEK_SET);
+    size_t bytes_read{file.ReadBytes(data.data(), header.size)};
+    if (header.size != PageAlignSize(static_cast<u32>(bytes_read))) {
+        LOG_CRITICAL(Loader, "Failed to read NRO segment bytes", header.size);
+        return {};
+    }
+
+    return data;
+}
+
+VAddr AppLoader_NRO::GetEntryPoint(VAddr load_base) const {
+    // Find nnMain function, set entrypoint to that address
+    const auto& search = exports.find("nnMain");
+    if (search != exports.end()) {
+        return load_base + search->second;
+    }
+    const VAddr entry_point{load_base + sizeof(NroHeader)};
+    LOG_ERROR(Loader, "Unable to find entrypoint, defaulting to: 0x%llx", entry_point);
+    return entry_point;
+}
+
+bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
+    FileUtil::IOFile file(path, "rb");
+    if (!file.IsOpen()) {
+        return {};
+    }
+
+    // Read NSO header
+    NroHeader nro_header{};
+    file.Seek(0, SEEK_SET);
+    if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
+        return {};
+    }
+    if (nro_header.magic != MakeMagic('N', 'R', 'O', '0')) {
+        return {};
+    }
+
+    // Build program image
+    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("", 0);
+    std::vector<u8> program_image;
+    program_image.resize(PageAlignSize(nro_header.file_size + nro_header.bss_size));
+    file.Seek(0, SEEK_SET);
+    file.ReadBytes(program_image.data(), nro_header.file_size);
+
+    for (int i = 0; i < nro_header.segments.size(); ++i) {
+        codeset->segments[i].addr = nro_header.segments[i].offset;
+        codeset->segments[i].offset = nro_header.segments[i].offset;
+        codeset->segments[i].size = PageAlignSize(nro_header.segments[i].size);
+    }
+
+    // Read MOD header
+    ModHeader mod_header{};
+    u32 bss_size{Memory::PAGE_SIZE}; // Default .bss to page size if MOD0 section doesn't exist
+    std::memcpy(&mod_header, program_image.data() + nro_header.module_header_offset,
+                sizeof(ModHeader));
+    const bool has_mod_header{mod_header.magic == MakeMagic('M', 'O', 'D', '0')};
+    if (has_mod_header) {
+        // Resize program image to include .bss section and page align each section
+        bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);
+        codeset->data.size += bss_size;
+    }
+    program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
+
+    // Relocate symbols if there was a proper MOD header - This must happen after the image has been
+    // loaded into memory
+    if (has_mod_header) {
+        Relocate(program_image, nro_header.module_header_offset + mod_header.dynamic_offset,
+                 load_base);
+    }
+
+    // Load codeset for current process
+    codeset->name = path;
+    codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
+    Kernel::g_current_process->LoadModule(codeset, load_base);
+
+    return true;
+}
+
+ResultStatus AppLoader_NRO::Load() {
+    if (is_loaded) {
+        return ResultStatus::ErrorAlreadyLoaded;
+    }
+    if (!file.IsOpen()) {
+        return ResultStatus::Error;
+    }
+
+    // Load and relocate "main" and "sdk" NSO
+    static constexpr VAddr main_base{0x10000000};
+    Kernel::g_current_process = Kernel::Process::Create("main");
+    if (!LoadNro(filepath, main_base)) {
+        return ResultStatus::ErrorInvalidFormat;
+    }
+
+    Kernel::g_current_process->svc_access_mask.set();
+    Kernel::g_current_process->address_mappings = default_address_mappings;
+    Kernel::g_current_process->resource_limit =
+        Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
+    Kernel::g_current_process->Run(GetEntryPoint(main_base), 48, Kernel::DEFAULT_STACK_SIZE);
+
+    ResolveImports();
+
+    is_loaded = true;
+    return ResultStatus::Success;
+}
+
+} // namespace Loader

@@ -14,10 +14,10 @@
 
 namespace Loader {
 
-/// Loads an NSO file
-class AppLoader_NSO final : public AppLoader, Linker {
+/// Loads an NRO file
+class AppLoader_NRO final : public AppLoader, Linker {
 public:
-    AppLoader_NSO(FileUtil::IOFile&& file, std::string filename, std::string filepath)
+    AppLoader_NRO(FileUtil::IOFile&& file, std::string filename, std::string filepath)
         : AppLoader(std::move(file)), filename(std::move(filename)), filepath(std::move(filepath)) {
     }
 
@@ -36,7 +36,7 @@ public:
 
 private:
     VAddr GetEntryPoint(VAddr load_base) const;
-    bool LoadNso(const std::string& path, VAddr load_base);
+    bool LoadNro(const std::string& path, VAddr load_base);
 
     std::string filename;
     std::string filepath;
