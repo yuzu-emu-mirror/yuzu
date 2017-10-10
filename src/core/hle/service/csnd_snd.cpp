@@ -47,7 +47,7 @@ static void Initialize(Interface* self) {
                                                  MemoryPermission::ReadWrite, 0,
                                                  Kernel::MemoryRegion::BASE, "CSND:SharedMemory");
 
-    mutex = Kernel::Mutex::Create(false, "CSND:mutex");
+    mutex = Kernel::Mutex::Create(false, 0, "CSND:mutex");
 
     cmd_buff[1] = RESULT_SUCCESS.raw;
     cmd_buff[2] = IPC::CopyHandleDesc(2);

@@ -21,7 +21,7 @@ public:
      * @param name Optional name of mutex
      * @return Pointer to new Mutex object
      */
-    static SharedPtr<Mutex> Create(bool initial_locked, std::string name = "Unknown");
+    static SharedPtr<Mutex> Create(bool initial_locked, VAddr addr, std::string name = "Unknown");
 
     std::string GetTypeName() const override {
         return "Mutex";
@@ -39,6 +39,7 @@ public:
     u32 priority;                     ///< The priority of the mutex, used for priority inheritance.
     std::string name;                 ///< Name of mutex (optional)
     SharedPtr<Thread> holding_thread; ///< Thread that has acquired the mutex
+    VAddr addr;
 
     /**
      * Elevate the mutex priority to the best priority

@@ -13,7 +13,7 @@ namespace Kernel {
 Semaphore::Semaphore() {}
 Semaphore::~Semaphore() {}
 
-ResultVal<SharedPtr<Semaphore>> Semaphore::Create(s32 initial_count, s32 max_count,
+ResultVal<SharedPtr<Semaphore>> Semaphore::Create(s32 initial_count, s32 max_count, VAddr address,
                                                   std::string name) {
 
     if (initial_count > max_count)
@@ -25,6 +25,7 @@ ResultVal<SharedPtr<Semaphore>> Semaphore::Create(s32 initial_count, s32 max_cou
     // and the rest is reserved for the caller thread
     semaphore->max_count = max_count;
     semaphore->available_count = initial_count;
+    semaphore->address = address;
     semaphore->name = std::move(name);
 
     return MakeResult<SharedPtr<Semaphore>>(std::move(semaphore));

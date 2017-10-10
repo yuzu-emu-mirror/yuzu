@@ -72,6 +72,8 @@ enum class SignalType : u32 {
 
 /// App Id's used by APT functions
 enum class AppletId : u32 {
+    None = 0,
+    AnySystemApplet = 0x100,
     HomeMenu = 0x101,
     AlternateMenu = 0x103,
     Camera = 0x110,
@@ -83,6 +85,7 @@ enum class AppletId : u32 {
     Miiverse = 0x117,
     MiiversePost = 0x118,
     AmiiboSettings = 0x119,
+    AnySysLibraryApplet = 0x200,
     SoftwareKeyboard1 = 0x201,
     Ed1 = 0x202,
     PnoteApp = 0x204,
@@ -115,6 +118,13 @@ enum class ScreencapPostPermission : u32 {
     EnableScreenshotPostingToMiiverse = 2,
     DisableScreenshotPostingToMiiverse = 3
 };
+
+namespace ErrCodes {
+enum {
+    ParameterPresent = 2,
+    InvalidAppletSlot = 4,
+};
+} // namespace ErrCodes
 
 /// Send a parameter to the currently-running application, which will read it via ReceiveParameter
 void SendParameter(const MessageParameter& parameter);
@@ -408,6 +418,16 @@ void GetAppCpuTimeLimit(Service::Interface* self);
  *      1 : Result of function, 0 on success, otherwise error code
  */
 void PrepareToStartLibraryApplet(Service::Interface* self);
+
+/**
+ * APT::PrepareToStartNewestHomeMenu service function
+ *  Inputs:
+ *      0 : Command header [0x001A0000]
+ *  Outputs:
+ *      0 : Return header
+ *      1 : Result of function
+ */
+void PrepareToStartNewestHomeMenu(Service::Interface* self);
 
 /**
  * APT::PreloadLibraryApplet service function

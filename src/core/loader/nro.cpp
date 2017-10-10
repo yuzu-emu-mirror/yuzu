@@ -132,7 +132,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     return true;
 }
 
-ResultStatus AppLoader_NRO::Load() {
+ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     if (is_loaded) {
         return ResultStatus::ErrorAlreadyLoaded;
     }
@@ -142,16 +142,16 @@ ResultStatus AppLoader_NRO::Load() {
 
     // Load and relocate "main" and "sdk" NSO
     static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
-    Kernel::g_current_process = Kernel::Process::Create("main");
+    process = Kernel::Process::Create("main");
     if (!LoadNro(filepath, base_addr)) {
         return ResultStatus::ErrorInvalidFormat;
     }
 
-    Kernel::g_current_process->svc_access_mask.set();
-    Kernel::g_current_process->address_mappings = default_address_mappings;
-    Kernel::g_current_process->resource_limit =
+    process->svc_access_mask.set();
+    process->address_mappings = default_address_mappings;
+    process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
 
     ResolveImports();
 

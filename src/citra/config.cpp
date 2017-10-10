@@ -76,6 +76,11 @@ void Config::ReadValues() {
             Settings::values.analogs[i] = default_param;
     }
 
+    Settings::values.motion_device = sdl2_config->Get(
+        "Controls", "motion_device", "engine:motion_emu,update_period:100,sensitivity:0.01");
+    Settings::values.touch_device =
+        sdl2_config->Get("Controls", "touch_device", "engine:emu_window");
+
     // Core
     Settings::values.use_cpu_jit = sdl2_config->GetBoolean("Core", "use_cpu_jit", true);
 
@@ -153,8 +158,14 @@ void Config::ReadValues() {
         static_cast<u16>(sdl2_config->GetInteger("Debugging", "gdbstub_port", 24689));
 
     // Web Service
+    Settings::values.enable_telemetry =
+        sdl2_config->GetBoolean("WebService", "enable_telemetry", true);
     Settings::values.telemetry_endpoint_url = sdl2_config->Get(
         "WebService", "telemetry_endpoint_url", "https://services.citra-emu.org/api/telemetry");
+    Settings::values.verify_endpoint_url = sdl2_config->Get(
+        "WebService", "verify_endpoint_url", "https://services.citra-emu.org/api/profile");
+    Settings::values.citra_username = sdl2_config->Get("WebService", "citra_username", "");
+    Settings::values.citra_token = sdl2_config->Get("WebService", "citra_token", "");
 }
 
 void Config::Reload() {

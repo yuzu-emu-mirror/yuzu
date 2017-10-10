@@ -29,7 +29,7 @@ namespace GPU {
 Regs g_regs;
 
 /// 268MHz CPU clocks / 60Hz frames per second
-const u64 frame_ticks = BASE_CLOCK_RATE_ARM11 / SCREEN_REFRESH_RATE;
+const u64 frame_ticks = static_cast<u64>(BASE_CLOCK_RATE_ARM11 / SCREEN_REFRESH_RATE);
 /// Event id for CoreTiming
 static int vblank_event;
 
@@ -515,15 +515,15 @@ template void Write<u8>(u32 addr, const u8 data);
 
 /// Update hardware
 static void VBlankCallback(u64 userdata, int cycles_late) {
-    VideoCore::g_renderer->SwapBuffers();
+    //VideoCore::g_renderer->SwapBuffers();
 
-    // Signal to GSP that GPU interrupt has occurred
-    // TODO(yuriks): hwtest to determine if PDC0 is for the Top screen and PDC1 for the Sub
-    // screen, or if both use the same interrupts and these two instead determine the
-    // beginning and end of the VBlank period. If needed, split the interrupt firing into
-    // two different intervals.
-    Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PDC0);
-    Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PDC1);
+    //// Signal to GSP that GPU interrupt has occurred
+    //// TODO(yuriks): hwtest to determine if PDC0 is for the Top screen and PDC1 for the Sub
+    //// screen, or if both use the same interrupts and these two instead determine the
+    //// beginning and end of the VBlank period. If needed, split the interrupt firing into
+    //// two different intervals.
+    //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PDC0);
+    //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PDC1);
 
     // Reschedule recurrent event
     CoreTiming::ScheduleEvent(frame_ticks - cycles_late, vblank_event);

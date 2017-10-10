@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <boost/optional.hpp>
 #include "common/common_paths.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
@@ -18,6 +19,7 @@
 #include "core/hle/service/apt/apt_s.h"
 #include "core/hle/service/apt/apt_u.h"
 #include "core/hle/service/apt/bcfnt/bcfnt.h"
+#include "core/hle/service/cfg/cfg.h"
 #include "core/hle/service/fs/archive.h"
 #include "core/hle/service/ptm/ptm.h"
 #include "core/hle/service/service.h"
@@ -33,8 +35,6 @@ static bool shared_font_loaded = false;
 static bool shared_font_relocated = false;
 
 static Kernel::SharedPtr<Kernel::Mutex> lock;
-static Kernel::SharedPtr<Kernel::Event> notification_event; ///< APT notification event
-static Kernel::SharedPtr<Kernel::Event> parameter_event;    ///< APT parameter event
 
 static u32 cpu_percent; ///< CPU time available to the running application
 
@@ -43,43 +43,344 @@ static u8 unknown_ns_state_field;
 
 static ScreencapPostPermission screen_capture_post_permission;
 
-/// Parameter data to be returned in the next call to Glance/ReceiveParameter
-static MessageParameter next_parameter;
+/// Parameter data to be returned in the next call to Glance/ReceiveParameter.
+/// TODO(Subv): Use std::optional once we migrate to C++17.
+static boost::optional<MessageParameter> next_parameter;
+
+enum class AppletPos { Application = 0, Library = 1, System = 2, SysLibrary = 3, Resident = 4 };
+
+static constexpr size_t NumAppletSlot = 4;
+
+enum class AppletSlot : u8 {
+    Application,
+    SystemApplet,
+    HomeMenu,
+    LibraryApplet,
+
+    // An invalid tag
+    Error,
+};
+
+union AppletAttributes {
+    u32 raw;
+
+    BitField<0, 3, u32> applet_pos;
+    BitField<29, 1, u32> is_home_menu;
+
+    AppletAttributes() : raw(0) {}
+    AppletAttributes(u32 attributes) : raw(attributes) {}
+};
+
+struct AppletSlotData {
+    AppletId applet_id;
+    AppletSlot slot;
+    bool registered;
+    AppletAttributes attributes;
+    Kernel::SharedPtr<Kernel::Event> notification_event;
+    Kernel::SharedPtr<Kernel::Event> parameter_event;
+};
+
+// Holds data about the concurrently running applets in the system.
+static std::array<AppletSlotData, NumAppletSlot> applet_slots = {};
+
+// This overload returns nullptr if no applet with the specified id has been started.
+static AppletSlotData* GetAppletSlotData(AppletId id) {
+    auto GetSlot = [](AppletSlot slot) -> AppletSlotData* {
+        return &applet_slots[static_cast<size_t>(slot)];
+    };
+
+    if (id == AppletId::Application) {
+        auto* slot = GetSlot(AppletSlot::Application);
+        if (slot->applet_id != AppletId::None)
+            return slot;
+
+        return nullptr;
+    }
+
+    if (id == AppletId::AnySystemApplet) {
+        auto* system_slot = GetSlot(AppletSlot::SystemApplet);
+        if (system_slot->applet_id != AppletId::None)
+            return system_slot;
+
+        // The Home Menu is also a system applet, but it lives in its own slot to be able to run
+        // concurrently with other system applets.
+        auto* home_slot = GetSlot(AppletSlot::HomeMenu);
+        if (home_slot->applet_id != AppletId::None)
+            return home_slot;
+
+        return nullptr;
+    }
+
+    if (id == AppletId::AnyLibraryApplet || id == AppletId::AnySysLibraryApplet) {
+        auto* slot = GetSlot(AppletSlot::LibraryApplet);
+        if (slot->applet_id == AppletId::None)
+            return nullptr;
+
+        u32 applet_pos = slot->attributes.applet_pos;
+
+        if (id == AppletId::AnyLibraryApplet && applet_pos == static_cast<u32>(AppletPos::Library))
+            return slot;
+
+        if (id == AppletId::AnySysLibraryApplet &&
+            applet_pos == static_cast<u32>(AppletPos::SysLibrary))
+            return slot;
+
+        return nullptr;
+    }
+
+    if (id == AppletId::HomeMenu || id == AppletId::AlternateMenu) {
+        auto* slot = GetSlot(AppletSlot::HomeMenu);
+        if (slot->applet_id != AppletId::None)
+            return slot;
+
+        return nullptr;
+    }
+
+    for (auto& slot : applet_slots) {
+        if (slot.applet_id == id)
+            return &slot;
+    }
+
+    return nullptr;
+}
+
+static AppletSlotData* GetAppletSlotData(AppletAttributes attributes) {
+    // Mapping from AppletPos to AppletSlot
+    static constexpr std::array<AppletSlot, 6> applet_position_slots = {
+        AppletSlot::Application,   AppletSlot::LibraryApplet, AppletSlot::SystemApplet,
+        AppletSlot::LibraryApplet, AppletSlot::Error,         AppletSlot::LibraryApplet};
+
+    u32 applet_pos = attributes.applet_pos;
+    if (applet_pos >= applet_position_slots.size())
+        return nullptr;
+
+    AppletSlot slot = applet_position_slots[applet_pos];
+
+    if (slot == AppletSlot::Error)
+        return nullptr;
+
+    // The Home Menu is a system applet, however, it has its own applet slot so that it can run
+    // concurrently with other system applets.
+    if (slot == AppletSlot::SystemApplet && attributes.is_home_menu)
+        return &applet_slots[static_cast<size_t>(AppletSlot::HomeMenu)];
+
+    return &applet_slots[static_cast<size_t>(slot)];
+}
 
 void SendParameter(const MessageParameter& parameter) {
     next_parameter = parameter;
-    // Signal the event to let the application know that a new parameter is ready to be read
-    parameter_event->Signal();
+    // Signal the event to let the receiver know that a new parameter is ready to be read
+    auto* const slot_data = GetAppletSlotData(static_cast<AppletId>(parameter.destination_id));
+    if (slot_data == nullptr) {
+        LOG_DEBUG(Service_APT, "No applet was registered with the id %03X",
+                  parameter.destination_id);
+        return;
+    }
+
+    slot_data->parameter_event->Signal();
 }
 
 void Initialize(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x2, 2, 0); // 0x20080
     u32 app_id = rp.Pop<u32>();
-    u32 flags = rp.Pop<u32>();
+    u32 attributes = rp.Pop<u32>();
+
+    LOG_DEBUG(Service_APT, "called app_id=0x%08X, attributes=0x%08X", app_id, attributes);
+
+    auto* const slot_data = GetAppletSlotData(attributes);
+
+    // Note: The real NS service does not check if the attributes value is valid before accessing
+    // the data in the array
+    ASSERT_MSG(slot_data, "Invalid application attributes");
+
+    if (slot_data->registered) {
+        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+        rb.Push(ResultCode(ErrorDescription::AlreadyExists, ErrorModule::Applet,
+                           ErrorSummary::InvalidState, ErrorLevel::Status));
+        return;
+    }
+
+    slot_data->applet_id = static_cast<AppletId>(app_id);
+    slot_data->attributes.raw = attributes;
+
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 3);
     rb.Push(RESULT_SUCCESS);
-    rb.PushCopyHandles(Kernel::g_handle_table.Create(notification_event).Unwrap(),
-                       Kernel::g_handle_table.Create(parameter_event).Unwrap());
+    rb.PushCopyHandles(Kernel::g_handle_table.Create(slot_data->notification_event).Unwrap(),
+                       Kernel::g_handle_table.Create(slot_data->parameter_event).Unwrap());
 
-    // TODO(bunnei): Check if these events are cleared every time Initialize is called.
-    notification_event->Clear();
-    parameter_event->Clear();
+    if (slot_data->applet_id == AppletId::Application ||
+        slot_data->applet_id == AppletId::HomeMenu) {
+        // Initialize the APT parameter to wake up the application.
+        next_parameter.emplace();
+        next_parameter->signal = static_cast<u32>(SignalType::Wakeup);
+        next_parameter->sender_id = static_cast<u32>(AppletId::None);
+        next_parameter->destination_id = app_id;
+        // Not signaling the parameter event will cause the application (or Home Menu) to hang
+        // during startup. In the real console, it is usually the Kernel and Home Menu who cause NS
+        // to signal the HomeMenu and Application parameter events, respectively.
+        slot_data->parameter_event->Signal();
+    }
+}
 
-    ASSERT_MSG((nullptr != lock), "Cannot initialize without lock");
-    lock->Release();
+static u32 DecompressLZ11(const u8* in, u8* out) {
+    u32_le decompressed_size;
+    memcpy(&decompressed_size, in, sizeof(u32));
+    in += 4;
 
-    LOG_DEBUG(Service_APT, "called app_id=0x%08X, flags=0x%08X", app_id, flags);
+    u8 type = decompressed_size & 0xFF;
+    ASSERT(type == 0x11);
+    decompressed_size >>= 8;
+
+    u32 current_out_size = 0;
+    u8 flags = 0, mask = 1;
+    while (current_out_size < decompressed_size) {
+        if (mask == 1) {
+            flags = *(in++);
+            mask = 0x80;
+        } else {
+            mask >>= 1;
+        }
+
+        if (flags & mask) {
+            u8 byte1 = *(in++);
+            u32 length = byte1 >> 4;
+            u32 offset;
+            if (length == 0) {
+                u8 byte2 = *(in++);
+                u8 byte3 = *(in++);
+                length = (((byte1 & 0x0F) << 4) | (byte2 >> 4)) + 0x11;
+                offset = (((byte2 & 0x0F) << 8) | byte3) + 0x1;
+            } else if (length == 1) {
+                u8 byte2 = *(in++);
+                u8 byte3 = *(in++);
+                u8 byte4 = *(in++);
+                length = (((byte1 & 0x0F) << 12) | (byte2 << 4) | (byte3 >> 4)) + 0x111;
+                offset = (((byte3 & 0x0F) << 8) | byte4) + 0x1;
+            } else {
+                u8 byte2 = *(in++);
+                length = (byte1 >> 4) + 0x1;
+                offset = (((byte1 & 0x0F) << 8) | byte2) + 0x1;
+            }
+
+            for (u32 i = 0; i < length; i++) {
+                *out = *(out - offset);
+                ++out;
+            }
+
+            current_out_size += length;
+        } else {
+            *(out++) = *(in++);
+            current_out_size++;
+        }
+    }
+    return decompressed_size;
+}
+
+static bool LoadSharedFont() {
+    u8 font_region_code;
+    switch (CFG::GetRegionValue()) {
+    case 4: // CHN
+        font_region_code = 2;
+        break;
+    case 5: // KOR
+        font_region_code = 3;
+        break;
+    case 6: // TWN
+        font_region_code = 4;
+        break;
+    default: // JPN/EUR/USA
+        font_region_code = 1;
+        break;
+    }
+
+    const u64_le shared_font_archive_id_low = 0x0004009b00014002 | ((font_region_code - 1) << 8);
+    const u64_le shared_font_archive_id_high = 0x00000001ffffff00;
+    std::vector<u8> shared_font_archive_id(16);
+    std::memcpy(&shared_font_archive_id[0], &shared_font_archive_id_low, sizeof(u64));
+    std::memcpy(&shared_font_archive_id[8], &shared_font_archive_id_high, sizeof(u64));
+    FileSys::Path archive_path(shared_font_archive_id);
+    auto archive_result = Service::FS::OpenArchive(Service::FS::ArchiveIdCode::NCCH, archive_path);
+    if (archive_result.Failed())
+        return false;
+
+    std::vector<u8> romfs_path(20, 0); // 20-byte all zero path for opening RomFS
+    FileSys::Path file_path(romfs_path);
+    FileSys::Mode open_mode = {};
+    open_mode.read_flag.Assign(1);
+    auto file_result = Service::FS::OpenFileFromArchive(*archive_result, file_path, open_mode);
+    if (file_result.Failed())
+        return false;
+
+    auto romfs = std::move(file_result).Unwrap();
+    std::vector<u8> romfs_buffer(romfs->backend->GetSize());
+    romfs->backend->Read(0, romfs_buffer.size(), romfs_buffer.data());
+    romfs->backend->Close();
+
+    const char16_t* file_name[4] = {u"cbf_std.bcfnt.lz", u"cbf_zh-Hans-CN.bcfnt.lz",
+                                    u"cbf_ko-Hang-KR.bcfnt.lz", u"cbf_zh-Hant-TW.bcfnt.lz"};
+    const u8* font_file =
+        RomFS::GetFilePointer(romfs_buffer.data(), {file_name[font_region_code - 1]});
+    if (font_file == nullptr)
+        return false;
+
+    struct {
+        u32_le status;
+        u32_le region;
+        u32_le decompressed_size;
+        INSERT_PADDING_WORDS(0x1D);
+    } shared_font_header{};
+    static_assert(sizeof(shared_font_header) == 0x80, "shared_font_header has incorrect size");
+
+    shared_font_header.status = 2; // successfully loaded
+    shared_font_header.region = font_region_code;
+    shared_font_header.decompressed_size =
+        DecompressLZ11(font_file, shared_font_mem->GetPointer(0x80));
+    std::memcpy(shared_font_mem->GetPointer(), &shared_font_header, sizeof(shared_font_header));
+    *shared_font_mem->GetPointer(0x83) = 'U'; // Change the magic from "CFNT" to "CFNU"
+
+    return true;
+}
+
+static bool LoadLegacySharedFont() {
+    // This is the legacy method to load shared font.
+    // The expected format is a decrypted, uncompressed BCFNT file with the 0x80 byte header
+    // generated by the APT:U service. The best way to get is by dumping it from RAM. We've provided
+    // a homebrew app to do this: https://github.com/citra-emu/3dsutils. Put the resulting file
+    // "shared_font.bin" in the Citra "sysdata" directory.
+    std::string filepath = FileUtil::GetUserPath(D_SYSDATA_IDX) + SHARED_FONT;
+
+    FileUtil::CreateFullPath(filepath); // Create path if not already created
+    FileUtil::IOFile file(filepath, "rb");
+    if (file.IsOpen()) {
+        file.ReadBytes(shared_font_mem->GetPointer(), file.GetSize());
+        return true;
+    }
+
+    return false;
 }
 
 void GetSharedFont(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x44, 0, 0); // 0x00440000
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 2);
+
+    // Log in telemetry if the game uses the shared font
+    Core::Telemetry().AddField(Telemetry::FieldType::Session, "RequiresSharedFont", true);
+
     if (!shared_font_loaded) {
-        LOG_ERROR(Service_APT, "shared font file missing - go dump it from your 3ds");
-        rb.Push<u32>(-1); // TODO: Find the right error code
-        rb.Skip(1 + 2, true);
-        Core::System::GetInstance().SetStatus(Core::System::ResultStatus::ErrorSharedFont);
-        return;
+        // On real 3DS, font loading happens on booting. However, we load it on demand to coordinate
+        // with CFG region auto configuration, which happens later than APT initialization.
+        if (LoadSharedFont()) {
+            shared_font_loaded = true;
+        } else if (LoadLegacySharedFont()) {
+            LOG_WARNING(Service_APT, "Loaded shared font by legacy method");
+            shared_font_loaded = true;
+        } else {
+            LOG_ERROR(Service_APT, "shared font file missing - go dump it from your 3ds");
+            rb.Push<u32>(-1); // TODO: Find the right error code
+            rb.Skip(1 + 2, true);
+            Core::System::GetInstance().SetStatus(Core::System::ResultStatus::ErrorSharedFont);
+            return;
+        }
     }
 
     // The shared font has to be relocated to the new address before being passed to the
@@ -115,7 +416,12 @@ void GetLockHandle(Service::Interface* self) {
     // this will cause the app to wait until parameter_event is signaled.
     u32 applet_attributes = rp.Pop<u32>();
     IPC::RequestBuilder rb = rp.MakeBuilder(3, 2);
-    rb.Push(RESULT_SUCCESS);    // No error
+    rb.Push(RESULT_SUCCESS); // No error
+
+    // TODO(Subv): The output attributes should have an AppletPos of either Library or System |
+    // Library (depending on the type of the last launched applet) if the input attributes'
+    // AppletPos has the Library bit set.
+
     rb.Push(applet_attributes); // Applet Attributes, this value is passed to Enable.
     rb.Push<u32>(0);            // Least significant bit = power button state
     Kernel::Handle handle_copy = Kernel::g_handle_table.Create(lock).Unwrap();
@@ -128,10 +434,22 @@ void GetLockHandle(Service::Interface* self) {
 void Enable(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x3, 1, 0); // 0x30040
     u32 attributes = rp.Pop<u32>();
+
+    LOG_DEBUG(Service_APT, "called attributes=0x%08X", attributes);
+
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-    rb.Push(RESULT_SUCCESS);   // No error
-    parameter_event->Signal(); // Let the application know that it has been started
-    LOG_WARNING(Service_APT, "(STUBBED) called attributes=0x%08X", attributes);
+
+    auto* const slot_data = GetAppletSlotData(attributes);
+
+    if (!slot_data) {
+        rb.Push(ResultCode(ErrCodes::InvalidAppletSlot, ErrorModule::Applet,
+                           ErrorSummary::InvalidState, ErrorLevel::Status));
+        return;
+    }
+
+    slot_data->registered = true;
+
+    rb.Push(RESULT_SUCCESS);
 }
 
 void GetAppletManInfo(Service::Interface* self) {
@@ -149,22 +467,27 @@ void GetAppletManInfo(Service::Interface* self) {
 
 void IsRegistered(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x9, 1, 0); // 0x90040
-    u32 app_id = rp.Pop<u32>();
+    AppletId app_id = static_cast<AppletId>(rp.Pop<u32>());
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
     rb.Push(RESULT_SUCCESS); // No error
 
-    // TODO(Subv): An application is considered "registered" if it has already called APT::Enable
-    // handle this properly once we implement multiprocess support.
-    bool is_registered = false; // Set to not registered by default
+    auto* const slot_data = GetAppletSlotData(app_id);
 
-    if (app_id == static_cast<u32>(AppletId::AnyLibraryApplet)) {
-        is_registered = HLE::Applets::IsLibraryAppletRunning();
-    } else if (auto applet = HLE::Applets::Applet::Get(static_cast<AppletId>(app_id))) {
-        is_registered = true; // Set to registered
+    // Check if an LLE applet was registered first, then fallback to HLE applets
+    bool is_registered = slot_data && slot_data->registered;
+
+    if (!is_registered) {
+        if (app_id == AppletId::AnyLibraryApplet) {
+            is_registered = HLE::Applets::IsLibraryAppletRunning();
+        } else if (auto applet = HLE::Applets::Applet::Get(app_id)) {
+            // The applet exists, set it as registered.
+            is_registered = true;
+        }
     }
+
     rb.Push(is_registered);
 
-    LOG_WARNING(Service_APT, "(STUBBED) called app_id=0x%08X", app_id);
+    LOG_DEBUG(Service_APT, "called app_id=0x%08X", static_cast<u32>(app_id));
 }
 
 void InquireNotification(Service::Interface* self) {
@@ -186,14 +509,17 @@ void SendParameter(Service::Interface* self) {
     size_t size;
     VAddr buffer = rp.PopStaticBuffer(&size);
 
-    std::shared_ptr<HLE::Applets::Applet> dest_applet =
-        HLE::Applets::Applet::Get(static_cast<AppletId>(dst_app_id));
+    LOG_DEBUG(Service_APT,
+              "called src_app_id=0x%08X, dst_app_id=0x%08X, signal_type=0x%08X,"
+              "buffer_size=0x%08X, handle=0x%08X, size=0x%08zX, in_param_buffer_ptr=0x%08X",
+              src_app_id, dst_app_id, signal_type, buffer_size, handle, size, buffer);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
 
-    if (dest_applet == nullptr) {
-        LOG_ERROR(Service_APT, "Unknown applet id=0x%08X", dst_app_id);
-        rb.Push<u32>(-1); // TODO(Subv): Find the right error code
+    // A new parameter can not be sent if the previous one hasn't been consumed yet
+    if (next_parameter) {
+        rb.Push(ResultCode(ErrCodes::ParameterPresent, ErrorModule::Applet,
+                           ErrorSummary::InvalidState, ErrorLevel::Status));
         return;
     }
 
@@ -205,12 +531,14 @@ void SendParameter(Service::Interface* self) {
     param.buffer.resize(buffer_size);
     Memory::ReadBlock(buffer, param.buffer.data(), param.buffer.size());
 
-    rb.Push(dest_applet->ReceiveParameter(param));
+    SendParameter(param);
 
-    LOG_WARNING(Service_APT,
-                "(STUBBED) called src_app_id=0x%08X, dst_app_id=0x%08X, signal_type=0x%08X,"
-                "buffer_size=0x%08X, handle=0x%08X, size=0x%08zX, in_param_buffer_ptr=0x%08X",
-                src_app_id, dst_app_id, signal_type, buffer_size, handle, size, buffer);
+    // If the applet is running in HLE mode, use the HLE interface to communicate with it.
+    if (auto dest_applet = HLE::Applets::Applet::Get(static_cast<AppletId>(dst_app_id))) {
+        rb.Push(dest_applet->ReceiveParameter(param));
+    } else {
+        rb.Push(RESULT_SUCCESS);
+    }
 }
 
 void ReceiveParameter(Service::Interface* self) {
@@ -226,21 +554,40 @@ void ReceiveParameter(Service::Interface* self) {
             "buffer_size is bigger than the size in the buffer descriptor (0x%08X > 0x%08zX)",
             buffer_size, static_buff_size);
 
+    LOG_DEBUG(Service_APT, "called app_id=0x%08X, buffer_size=0x%08zX", app_id, buffer_size);
+
+    if (!next_parameter) {
+        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+        rb.Push(ResultCode(ErrorDescription::NoData, ErrorModule::Applet,
+                           ErrorSummary::InvalidState, ErrorLevel::Status));
+        return;
+    }
+
+    if (next_parameter->destination_id != app_id) {
+        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+        rb.Push(ResultCode(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+                           ErrorLevel::Status));
+        return;
+    }
+
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 4);
+
     rb.Push(RESULT_SUCCESS); // No error
-    rb.Push(next_parameter.sender_id);
-    rb.Push(next_parameter.signal); // Signal type
-    ASSERT_MSG(next_parameter.buffer.size() <= buffer_size, "Input static buffer is too small !");
-    rb.Push(static_cast<u32>(next_parameter.buffer.size())); // Parameter buffer size
+    rb.Push(next_parameter->sender_id);
+    rb.Push(next_parameter->signal); // Signal type
+    ASSERT_MSG(next_parameter->buffer.size() <= buffer_size, "Input static buffer is too small !");
+    rb.Push(static_cast<u32>(next_parameter->buffer.size())); // Parameter buffer size
 
-    rb.PushMoveHandles((next_parameter.object != nullptr)
-                           ? Kernel::g_handle_table.Create(next_parameter.object).Unwrap()
+    rb.PushMoveHandles((next_parameter->object != nullptr)
+                           ? Kernel::g_handle_table.Create(next_parameter->object).Unwrap()
                            : 0);
-    rb.PushStaticBuffer(buffer, static_cast<u32>(next_parameter.buffer.size()), 0);
 
-    Memory::WriteBlock(buffer, next_parameter.buffer.data(), next_parameter.buffer.size());
+    rb.PushStaticBuffer(buffer, next_parameter->buffer.size(), 0);
 
-    LOG_WARNING(Service_APT, "called app_id=0x%08X, buffer_size=0x%08zX", app_id, buffer_size);
+    Memory::WriteBlock(buffer, next_parameter->buffer.data(), next_parameter->buffer.size());
+
+    // Clear the parameter
+    next_parameter = boost::none;
 }
 
 void GlanceParameter(Service::Interface* self) {
@@ -256,37 +603,74 @@ void GlanceParameter(Service::Interface* self) {
             "buffer_size is bigger than the size in the buffer descriptor (0x%08X > 0x%08zX)",
             buffer_size, static_buff_size);
 
+    LOG_DEBUG(Service_APT, "called app_id=0x%08X, buffer_size=0x%08zX", app_id, buffer_size);
+
+    if (!next_parameter) {
+        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+        rb.Push(ResultCode(ErrorDescription::NoData, ErrorModule::Applet,
+                           ErrorSummary::InvalidState, ErrorLevel::Status));
+        return;
+    }
+
+    if (next_parameter->destination_id != app_id) {
+        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+        rb.Push(ResultCode(ErrorDescription::NotFound, ErrorModule::Applet, ErrorSummary::NotFound,
+                           ErrorLevel::Status));
+        return;
+    }
+
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 4);
     rb.Push(RESULT_SUCCESS); // No error
-    rb.Push(next_parameter.sender_id);
-    rb.Push(next_parameter.signal); // Signal type
-    ASSERT_MSG(next_parameter.buffer.size() <= buffer_size, "Input static buffer is too small !");
-    rb.Push(static_cast<u32>(next_parameter.buffer.size())); // Parameter buffer size
+    rb.Push(next_parameter->sender_id);
+    rb.Push(next_parameter->signal); // Signal type
+    ASSERT_MSG(next_parameter->buffer.size() <= buffer_size, "Input static buffer is too small !");
+    rb.Push(static_cast<u32>(next_parameter->buffer.size())); // Parameter buffer size
 
-    rb.PushCopyHandles((next_parameter.object != nullptr)
-                           ? Kernel::g_handle_table.Create(next_parameter.object).Unwrap()
+    rb.PushMoveHandles((next_parameter->object != nullptr)
+                           ? Kernel::g_handle_table.Create(next_parameter->object).Unwrap()
                            : 0);
-    rb.PushStaticBuffer(buffer, static_cast<u32>(next_parameter.buffer.size()), 0);
 
-    Memory::WriteBlock(buffer, next_parameter.buffer.data(), next_parameter.buffer.size());
+    rb.PushStaticBuffer(buffer, next_parameter->buffer.size(), 0);
 
-    LOG_WARNING(Service_APT, "called app_id=0x%08X, buffer_size=0x%08zX", app_id, buffer_size);
+    Memory::WriteBlock(buffer, next_parameter->buffer.data(), next_parameter->buffer.size());
+
+    // Note: The NS module always clears the DSPSleep and DSPWakeup signals even in GlanceParameter.
+    if (next_parameter->signal == static_cast<u32>(SignalType::DspSleep) ||
+        next_parameter->signal == static_cast<u32>(SignalType::DspWakeup))
+        next_parameter = boost::none;
 }
 
 void CancelParameter(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0xF, 4, 0); // 0xF0100
 
-    u32 check_sender = rp.Pop<u32>();
+    bool check_sender = rp.Pop<bool>();
     u32 sender_appid = rp.Pop<u32>();
-    u32 check_receiver = rp.Pop<u32>();
+    bool check_receiver = rp.Pop<bool>();
     u32 receiver_appid = rp.Pop<u32>();
-    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
-    rb.Push(RESULT_SUCCESS); // No error
-    rb.Push(true);           // Set to Success
 
-    LOG_WARNING(Service_APT, "(STUBBED) called check_sender=0x%08X, sender_appid=0x%08X, "
-                             "check_receiver=0x%08X, receiver_appid=0x%08X",
-                check_sender, sender_appid, check_receiver, receiver_appid);
+    bool cancellation_success = true;
+
+    if (!next_parameter) {
+        cancellation_success = false;
+    } else {
+        if (check_sender && next_parameter->sender_id != sender_appid)
+            cancellation_success = false;
+
+        if (check_receiver && next_parameter->destination_id != receiver_appid)
+            cancellation_success = false;
+    }
+
+    if (cancellation_success)
+        next_parameter = boost::none;
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0);
+
+    rb.Push(RESULT_SUCCESS); // No error
+    rb.Push(cancellation_success);
+
+    LOG_DEBUG(Service_APT, "called check_sender=%u, sender_appid=0x%08X, "
+                           "check_receiver=%u, receiver_appid=0x%08X",
+              check_sender, sender_appid, check_receiver, receiver_appid);
 }
 
 void PrepareToStartApplication(Service::Interface* self) {
@@ -383,7 +767,12 @@ void PrepareToStartLibraryApplet(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x18, 1, 0); // 0x180040
     AppletId applet_id = static_cast<AppletId>(rp.Pop<u32>());
 
+    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
+
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+
+    // TODO(Subv): Launch the requested applet application.
+
     auto applet = HLE::Applets::Applet::Get(applet_id);
     if (applet) {
         LOG_WARNING(Service_APT, "applet has already been started id=%08X", applet_id);
@@ -391,14 +780,32 @@ void PrepareToStartLibraryApplet(Service::Interface* self) {
     } else {
         rb.Push(HLE::Applets::Applet::Create(applet_id));
     }
-    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
+}
+
+void PrepareToStartNewestHomeMenu(Service::Interface* self) {
+    IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x1A, 0, 0); // 0x1A0000
+    IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+
+    // TODO(Subv): This command can only be called by a System Applet (return 0xC8A0CC04 otherwise).
+
+    // This command must return an error when called, otherwise the Home Menu will try to reboot the
+    // system.
+    rb.Push(ResultCode(ErrorDescription::AlreadyExists, ErrorModule::Applet,
+                       ErrorSummary::InvalidState, ErrorLevel::Status));
+
+    LOG_DEBUG(Service_APT, "called");
 }
 
 void PreloadLibraryApplet(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x16, 1, 0); // 0x160040
     AppletId applet_id = static_cast<AppletId>(rp.Pop<u32>());
 
+    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
+
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
+
+    // TODO(Subv): Launch the requested applet application.
+
     auto applet = HLE::Applets::Applet::Get(applet_id);
     if (applet) {
         LOG_WARNING(Service_APT, "applet has already been started id=%08X", applet_id);
@@ -406,34 +813,40 @@ void PreloadLibraryApplet(Service::Interface* self) {
     } else {
         rb.Push(HLE::Applets::Applet::Create(applet_id));
     }
-    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
 }
 
 void StartLibraryApplet(Service::Interface* self) {
     IPC::RequestParser rp(Kernel::GetCommandBuffer(), 0x1E, 2, 4); // 0x1E0084
     AppletId applet_id = static_cast<AppletId>(rp.Pop<u32>());
-    std::shared_ptr<HLE::Applets::Applet> applet = HLE::Applets::Applet::Get(applet_id);
-
-    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
-
-    if (applet == nullptr) {
-        LOG_ERROR(Service_APT, "unknown applet id=%08X", applet_id);
-        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0, false);
-        rb.Push<u32>(-1); // TODO(Subv): Find the right error code
-        return;
-    }
 
     size_t buffer_size = rp.Pop<u32>();
     Kernel::Handle handle = rp.PopHandle();
     VAddr buffer_addr = rp.PopStaticBuffer();
 
-    AppletStartupParameter parameter;
-    parameter.object = Kernel::g_handle_table.GetGeneric(handle);
-    parameter.buffer.resize(buffer_size);
-    Memory::ReadBlock(buffer_addr, parameter.buffer.data(), parameter.buffer.size());
+    LOG_DEBUG(Service_APT, "called applet_id=%08X", applet_id);
 
     IPC::RequestBuilder rb = rp.MakeBuilder(1, 0);
-    rb.Push(applet->Start(parameter));
+
+    // Send the Wakeup signal to the applet
+    MessageParameter param;
+    param.destination_id = static_cast<u32>(applet_id);
+    param.sender_id = static_cast<u32>(AppletId::Application);
+    param.object = Kernel::g_handle_table.GetGeneric(handle);
+    param.signal = static_cast<u32>(SignalType::Wakeup);
+    param.buffer.resize(buffer_size);
+    Memory::ReadBlock(buffer_addr, param.buffer.data(), param.buffer.size());
+    SendParameter(param);
+
+    // In case the applet is being HLEd, attempt to communicate with it.
+    if (auto applet = HLE::Applets::Applet::Get(applet_id)) {
+        AppletStartupParameter parameter;
+        parameter.object = Kernel::g_handle_table.GetGeneric(handle);
+        parameter.buffer.resize(buffer_size);
+        Memory::ReadBlock(buffer_addr, parameter.buffer.data(), parameter.buffer.size());
+        rb.Push(applet->Start(parameter));
+    } else {
+        rb.Push(RESULT_SUCCESS);
+    }
 }
 
 void CancelLibraryApplet(Service::Interface* self) {
@@ -647,125 +1060,6 @@ void CheckNew3DS(Service::Interface* self) {
     LOG_WARNING(Service_APT, "(STUBBED) called");
 }
 
-static u32 DecompressLZ11(const u8* in, u8* out) {
-    u32_le decompressed_size;
-    memcpy(&decompressed_size, in, sizeof(u32));
-    in += 4;
-
-    u8 type = decompressed_size & 0xFF;
-    ASSERT(type == 0x11);
-    decompressed_size >>= 8;
-
-    u32 current_out_size = 0;
-    u8 flags = 0, mask = 1;
-    while (current_out_size < decompressed_size) {
-        if (mask == 1) {
-            flags = *(in++);
-            mask = 0x80;
-        } else {
-            mask >>= 1;
-        }
-
-        if (flags & mask) {
-            u8 byte1 = *(in++);
-            u32 length = byte1 >> 4;
-            u32 offset;
-            if (length == 0) {
-                u8 byte2 = *(in++);
-                u8 byte3 = *(in++);
-                length = (((byte1 & 0x0F) << 4) | (byte2 >> 4)) + 0x11;
-                offset = (((byte2 & 0x0F) << 8) | byte3) + 0x1;
-            } else if (length == 1) {
-                u8 byte2 = *(in++);
-                u8 byte3 = *(in++);
-                u8 byte4 = *(in++);
-                length = (((byte1 & 0x0F) << 12) | (byte2 << 4) | (byte3 >> 4)) + 0x111;
-                offset = (((byte3 & 0x0F) << 8) | byte4) + 0x1;
-            } else {
-                u8 byte2 = *(in++);
-                length = (byte1 >> 4) + 0x1;
-                offset = (((byte1 & 0x0F) << 8) | byte2) + 0x1;
-            }
-
-            for (u32 i = 0; i < length; i++) {
-                *out = *(out - offset);
-                ++out;
-            }
-
-            current_out_size += length;
-        } else {
-            *(out++) = *(in++);
-            current_out_size++;
-        }
-    }
-    return decompressed_size;
-}
-
-static bool LoadSharedFont() {
-    // TODO (wwylele): load different font archive for region CHN/KOR/TWN
-    const u64_le shared_font_archive_id_low = 0x0004009b00014002;
-    const u64_le shared_font_archive_id_high = 0x00000001ffffff00;
-    std::vector<u8> shared_font_archive_id(16);
-    std::memcpy(&shared_font_archive_id[0], &shared_font_archive_id_low, sizeof(u64));
-    std::memcpy(&shared_font_archive_id[8], &shared_font_archive_id_high, sizeof(u64));
-    FileSys::Path archive_path(shared_font_archive_id);
-    auto archive_result = Service::FS::OpenArchive(Service::FS::ArchiveIdCode::NCCH, archive_path);
-    if (archive_result.Failed())
-        return false;
-
-    std::vector<u8> romfs_path(20, 0); // 20-byte all zero path for opening RomFS
-    FileSys::Path file_path(romfs_path);
-    FileSys::Mode open_mode = {};
-    open_mode.read_flag.Assign(1);
-    auto file_result = Service::FS::OpenFileFromArchive(*archive_result, file_path, open_mode);
-    if (file_result.Failed())
-        return false;
-
-    auto romfs = std::move(file_result).Unwrap();
-    std::vector<u8> romfs_buffer(romfs->backend->GetSize());
-    romfs->backend->Read(0, romfs_buffer.size(), romfs_buffer.data());
-    romfs->backend->Close();
-
-    const u8* font_file = RomFS::GetFilePointer(romfs_buffer.data(), {u"cbf_std.bcfnt.lz"});
-    if (font_file == nullptr)
-        return false;
-
-    struct {
-        u32_le status;
-        u32_le region;
-        u32_le decompressed_size;
-        INSERT_PADDING_WORDS(0x1D);
-    } shared_font_header{};
-    static_assert(sizeof(shared_font_header) == 0x80, "shared_font_header has incorrect size");
-
-    shared_font_header.status = 2; // successfully loaded
-    shared_font_header.region = 1; // region JPN/EUR/USA
-    shared_font_header.decompressed_size =
-        DecompressLZ11(font_file, shared_font_mem->GetPointer(0x80));
-    std::memcpy(shared_font_mem->GetPointer(), &shared_font_header, sizeof(shared_font_header));
-    *shared_font_mem->GetPointer(0x83) = 'U'; // Change the magic from "CFNT" to "CFNU"
-
-    return true;
-}
-
-static bool LoadLegacySharedFont() {
-    // This is the legacy method to load shared font.
-    // The expected format is a decrypted, uncompressed BCFNT file with the 0x80 byte header
-    // generated by the APT:U service. The best way to get is by dumping it from RAM. We've provided
-    // a homebrew app to do this: https://github.com/citra-emu/3dsutils. Put the resulting file
-    // "shared_font.bin" in the Citra "sysdata" directory.
-    std::string filepath = FileUtil::GetUserPath(D_SYSDATA_IDX) + SHARED_FONT;
-
-    FileUtil::CreateFullPath(filepath); // Create path if not already created
-    FileUtil::IOFile file(filepath, "rb");
-    if (file.IsOpen()) {
-        file.ReadBytes(shared_font_mem->GetPointer(), file.GetSize());
-        return true;
-    }
-
-    return false;
-}
-
 void Init() {
     AddService(new APT_A_Interface);
     AddService(new APT_S_Interface);
@@ -789,19 +1083,24 @@ void Init() {
         shared_font_loaded = false;
     }
 
-    lock = Kernel::Mutex::Create(false, "APT_U:Lock");
+    lock = Kernel::Mutex::Create(false, 0, "APT_U:Lock");
 
     cpu_percent = 0;
     unknown_ns_state_field = 0;
     screen_capture_post_permission =
         ScreencapPostPermission::CleanThePermission; // TODO(JamePeng): verify the initial value
 
-    // TODO(bunnei): Check if these are created in Initialize or on APT process startup.
-    notification_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "APT_U:Notification");
-    parameter_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "APT_U:Start");
-
-    next_parameter.signal = static_cast<u32>(SignalType::Wakeup);
-    next_parameter.destination_id = 0x300;
+    for (size_t slot = 0; slot < applet_slots.size(); ++slot) {
+        auto& slot_data = applet_slots[slot];
+        slot_data.slot = static_cast<AppletSlot>(slot);
+        slot_data.applet_id = AppletId::None;
+        slot_data.attributes.raw = 0;
+        slot_data.registered = false;
+        slot_data.notification_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "APT:Notification");
+        slot_data.parameter_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "APT:Parameter");
+    }
 }
 
 void Shutdown() {
@@ -809,10 +1108,14 @@ void Shutdown() {
     shared_font_loaded = false;
     shared_font_relocated = false;
     lock = nullptr;
-    notification_event = nullptr;
-    parameter_event = nullptr;
 
-    next_parameter.object = nullptr;
+    for (auto& slot : applet_slots) {
+        slot.registered = false;
+        slot.notification_event = nullptr;
+        slot.parameter_event = nullptr;
+    }
+
+    next_parameter = boost::none;
 
     HLE::Applets::Shutdown();
 }

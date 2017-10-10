@@ -20,6 +20,7 @@
 #include "core/file_sys/archive_savedata.h"
 #include "core/file_sys/archive_sdmc.h"
 #include "core/file_sys/archive_sdmcwriteonly.h"
+#include "core/file_sys/archive_selfncch.h"
 #include "core/file_sys/archive_systemsavedata.h"
 #include "core/file_sys/directory_backend.h"
 #include "core/file_sys/errors.h"
@@ -48,7 +49,7 @@ struct hash<Service::FS::ArchiveIdCode> {
         return std::hash<Type>()(static_cast<Type>(id_code));
     }
 };
-}
+} // namespace std
 
 static constexpr Kernel::Handle INVALID_HANDLE{};
 
@@ -216,7 +217,7 @@ void Directory::HandleSyncRequest(Kernel::SharedPtr<Kernel::ServerSession> serve
         LOG_TRACE(Service_FS, "Read %s: count=%d", GetName().c_str(), count);
 
         // Number of entries actually read
-        u32 read = backend->Read(entries.size(), entries.data());
+        u32 read = backend->Read(static_cast<u32>(entries.size()), entries.data());
         cmd_buff[2] = read;
         Memory::WriteBlock(address, entries.data(), read * sizeof(FileSys::Entry));
         break;
@@ -564,6 +565,21 @@ void RegisterArchiveTypes() {
     auto systemsavedata_factory =
         std::make_unique<FileSys::ArchiveFactory_SystemSaveData>(nand_directory);
     RegisterArchiveType(std::move(systemsavedata_factory), ArchiveIdCode::SystemSaveData);
+
+    auto selfncch_factory = std::make_unique<FileSys::ArchiveFactory_SelfNCCH>();
+    RegisterArchiveType(std::move(selfncch_factory), ArchiveIdCode::SelfNCCH);
+}
+
+void RegisterSelfNCCH(Loader::AppLoader& app_loader) {
+    auto itr = id_code_map.find(ArchiveIdCode::SelfNCCH);
+    if (itr == id_code_map.end()) {
+        LOG_ERROR(Service_FS,
+                  "Could not register a new NCCH because the SelfNCCH archive hasn't been created");
+        return;
+    }
+
+    auto* factory = static_cast<FileSys::ArchiveFactory_SelfNCCH*>(itr->second.get());
+    factory->Register(app_loader);
 }
 
 void UnregisterArchiveTypes() {

@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <boost/smart_ptr/intrusive_ptr.hpp>
+#include "common/assert.h"
 #include "common/common_types.h"
 
 namespace Kernel {
@@ -84,6 +85,8 @@ public:
         case HandleType::ClientSession:
             return false;
         }
+
+        UNREACHABLE();
     }
 
 public:
@@ -129,4 +132,4 @@ void Init(u32 system_mode);
 /// Shutdown the kernel
 void Shutdown();
 
-} // namespace
+} // namespace Kernel

@@ -15,7 +15,7 @@
 #include "core/hle/kernel/wait_object.h"
 #include "core/hle/result.h"
 
-enum ThreadPriority : s32 {
+enum ThreadPriority : u32 {
     THREADPRIO_HIGHEST = 0,       ///< Highest thread priority
     THREADPRIO_USERLAND_MAX = 24, ///< Highest thread priority for userland apps
     THREADPRIO_DEFAULT = 48,      ///< Default thread priority for userland apps
@@ -41,6 +41,11 @@ enum ThreadStatus {
     THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
 };
 
+enum class ThreadWakeupReason {
+    Signal, // The thread was woken up by WakeupAllWaitingThreads due to an object signal.
+    Timeout // The thread was woken up due to a wait timeout.
+};
+
 namespace Kernel {
 
 class Mutex;
@@ -56,10 +61,12 @@ public:
      * @param arg User data to pass to the thread
      * @param processor_id The ID(s) of the processors on which the thread is desired to be run
      * @param stack_top The address of the thread's stack top
+     * @param owner_process The parent process for the thread
      * @return A shared pointer to the newly created thread
      */
     static ResultVal<SharedPtr<Thread>> Create(std::string name, VAddr entry_point, u32 priority,
-                                               u32 arg, s32 processor_id, VAddr stack_top);
+                                               u32 arg, s32 processor_id, VAddr stack_top,
+                                               SharedPtr<Process> owner_process);
 
     std::string GetName() const override {
         return name;
@@ -80,7 +87,7 @@ public:
      * Gets the thread's current priority
      * @return The current thread's priority
      */
-    s32 GetPriority() const {
+    u32 GetPriority() const {
         return current_priority;
     }
 
@@ -88,7 +95,7 @@ public:
      * Sets the thread's current priority
      * @param priority The new priority
      */
-    void SetPriority(s32 priority);
+    void SetPriority(u32 priority);
 
     /**
      * Boost's a thread's priority to the best priority among the thread's held mutexes.
@@ -100,7 +107,7 @@ public:
      * Temporarily boosts the thread's priority until the next time it is scheduled
      * @param priority The new priority
      */
-    void BoostPriority(s32 priority);
+    void BoostPriority(u32 priority);
 
     /**
      * Gets the thread's thread ID
@@ -116,9 +123,9 @@ public:
     void ResumeFromWait();
 
     /**
-    * Schedules an event to wake up the specified thread after the specified delay
-    * @param nanoseconds The time this thread will be allowed to sleep for
-    */
+     * Schedules an event to wake up the specified thread after the specified delay
+     * @param nanoseconds The time this thread will be allowed to sleep for
+     */
     void WakeAfterDelay(s64 nanoseconds);
 
     /**
@@ -157,6 +164,12 @@ public:
         return tls_address;
     }
 
+    /*
+     * Returns the address of the current thread's command buffer, located in the TLS.
+     * @returns VAddr of the thread's command buffer.
+     */
+    VAddr GetCommandBufferAddress() const;
+
     /**
      * Returns whether this thread is waiting for all the objects in
      * its wait list to become ready, as a result of a WaitSynchronizationN call
@@ -174,8 +187,8 @@ public:
     VAddr entry_point;
     VAddr stack_top;
 
-    s32 nominal_priority; ///< Nominal thread priority, as set by the emulated application
-    s32 current_priority; ///< Current thread priority, can be temporarily changed
+    u32 nominal_priority; ///< Nominal thread priority, as set by the emulated application
+    u32 current_priority; ///< Current thread priority, can be temporarily changed
 
     u64 last_running_ticks; ///< CPU tick when thread was last running
 
@@ -197,13 +210,17 @@ public:
 
     VAddr wait_address; ///< If waiting on an AddressArbiter, this is the arbitration address
 
-    /// True if the WaitSynchronizationN output parameter should be set on thread wakeup.
-    bool wait_set_output;
-
     std::string name;
 
     /// Handle used as userdata to reference this object when inserting into the CoreTiming queue.
     Handle callback_handle;
+
+    using WakeupCallback = void(ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                SharedPtr<WaitObject> object);
+    // Callback that will be invoked when the thread is resumed from a waiting state. If the thread
+    // was waiting via WaitSynchronizationN then the object will be the last object that became
+    // available. In case of a timeout, the object will be nullptr.
+    std::function<WakeupCallback> wakeup_callback;
 
 private:
     Thread();
@@ -214,9 +231,10 @@ private:
  * Sets up the primary application thread
  * @param entry_point The address at which the thread should start execution
  * @param priority The priority to give the main thread
+ * @param owner_process The parent process for the main thread
  * @return A shared pointer to the main thread
  */
-SharedPtr<Thread> SetupMainThread(VAddr entry_point, s32 priority);
+SharedPtr<Thread> SetupMainThread(u32 entry_point, u32 priority, SharedPtr<Process> owner_process);
 
 /**
  * Returns whether there are any threads that are ready to run.
@@ -276,4 +294,4 @@ void ThreadingShutdown();
  */
 const std::vector<SharedPtr<Thread>>& GetThreadList();
 
-} // namespace
+} // namespace Kernel

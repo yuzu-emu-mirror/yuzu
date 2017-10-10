@@ -28,6 +28,9 @@ MICROPROFILE_DEFINE(OpenGL_Blits, "OpenGL", "Blits", MP_RGB(100, 100, 255));
 MICROPROFILE_DEFINE(OpenGL_CacheManagement, "OpenGL", "Cache Mgmt", MP_RGB(100, 255, 100));
 
 RasterizerOpenGL::RasterizerOpenGL() : shader_dirty(true) {
+    // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
+    state.clip_distance[0] = true;
+
     // Create sampler objects
     for (size_t i = 0; i < texture_samplers.size(); ++i) {
         texture_samplers[i].Create();
@@ -166,6 +169,8 @@ RasterizerOpenGL::RasterizerOpenGL() : shader_dirty(true) {
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, proctex_diff_lut_buffer.handle);
 
     // Sync fixed function OpenGL state
+    SyncClipEnabled();
+    SyncClipCoef();
     SyncCullMode();
     SyncBlendEnabled();
     SyncBlendFuncs();
@@ -232,13 +237,24 @@ void RasterizerOpenGL::DrawTriangles() {
 
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                            color_surface != nullptr ? color_surface->texture.handle : 0, 0);
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                           depth_surface != nullptr ? depth_surface->texture.handle : 0, 0);
-    bool has_stencil =
-        regs.framebuffer.framebuffer.depth_format == Pica::FramebufferRegs::DepthFormat::D24S8;
-    glFramebufferTexture2D(
-        GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-        (has_stencil && depth_surface != nullptr) ? depth_surface->texture.handle : 0, 0);
+    if (depth_surface != nullptr) {
+        if (regs.framebuffer.framebuffer.depth_format ==
+            Pica::FramebufferRegs::DepthFormat::D24S8) {
+            // attach both depth and stencil
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+        } else {
+            // attach depth
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+            // clear stencil attachment
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        }
+    } else {
+        // clear both depth and stencil attachment
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
+    }
 
     // Sync the viewport
     // These registers hold half-width and half-height, so must be multiplied by 2
@@ -396,6 +412,18 @@ void RasterizerOpenGL::NotifyPicaRegisterChanged(u32 id) {
     // Culling
     case PICA_REG_INDEX(rasterizer.cull_mode):
         SyncCullMode();
+        break;
+
+    // Clipping plane
+    case PICA_REG_INDEX(rasterizer.clip_enable):
+        SyncClipEnabled();
+        break;
+
+    case PICA_REG_INDEX_WORKAROUND(rasterizer.clip_coef[0], 0x48):
+    case PICA_REG_INDEX_WORKAROUND(rasterizer.clip_coef[1], 0x49):
+    case PICA_REG_INDEX_WORKAROUND(rasterizer.clip_coef[2], 0x4a):
+    case PICA_REG_INDEX_WORKAROUND(rasterizer.clip_coef[3], 0x4b):
+        SyncClipCoef();
         break;
 
     // Depth modifiers
@@ -1274,6 +1302,20 @@ void RasterizerOpenGL::SetShader() {
             SyncFogColor();
             SyncProcTexNoise();
         }
+    }
+}
+
+void RasterizerOpenGL::SyncClipEnabled() {
+    state.clip_distance[1] = Pica::g_state.regs.rasterizer.clip_enable != 0;
+}
+
+void RasterizerOpenGL::SyncClipCoef() {
+    const auto raw_clip_coef = Pica::g_state.regs.rasterizer.GetClipCoef();
+    const GLvec4 new_clip_coef = {raw_clip_coef.x.ToFloat32(), raw_clip_coef.y.ToFloat32(),
+                                  raw_clip_coef.z.ToFloat32(), raw_clip_coef.w.ToFloat32()};
+    if (new_clip_coef != uniform_block_data.data.clip_coef) {
+        uniform_block_data.data.clip_coef = new_clip_coef;
+        uniform_block_data.dirty = true;
     }
 }
 

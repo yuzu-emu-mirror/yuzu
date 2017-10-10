@@ -16,11 +16,14 @@ public:
     ~ARM_DynCom();
 
     void ClearInstructionCache() override;
+    void PageTableChanged() override;
 
     void SetPC(u64 pc) override;
     u64 GetPC() const override;
     u64 GetReg(int index) const override;
     void SetReg(int index, u64 value) override;
+    const u128& GetExtReg(int index) const override;
+    void SetExtReg(int index, u128& value) override;
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
     u32 GetVFPSystemReg(VFPSystemRegister reg) const override;
@@ -31,8 +34,6 @@ public:
     void SetCP15Register(CP15Register reg, u32 value) override;
     VAddr GetTlsAddress() const override;
     void SetTlsAddress(VAddr address) override;
-
-    void AddTicks(u64 ticks) override;
 
     void SaveContext(ThreadContext& ctx) override;
     void LoadContext(const ThreadContext& ctx) override;

@@ -29,6 +29,10 @@ void ARM_DynCom::SetPC(u64 pc) {
     state->Reg[15] = pc;
 }
 
+void ARM_DynCom::PageTableChanged() {
+    ClearInstructionCache();
+}
+
 u64 ARM_DynCom::GetPC() const {
     return state->Reg[15];
 }
@@ -39,6 +43,13 @@ u64 ARM_DynCom::GetReg(int index) const {
 
 void ARM_DynCom::SetReg(int index, u64 value) {
     state->Reg[index] = value;
+}
+
+const u128& ARM_DynCom::GetExtReg(int index) const {
+    return {};
+}
+
+void ARM_DynCom::SetExtReg(int index, u128& value) {
 }
 
 u32 ARM_DynCom::GetVFPReg(int index) const {
@@ -80,12 +91,6 @@ VAddr ARM_DynCom::GetTlsAddress() const {
 void ARM_DynCom::SetTlsAddress(VAddr /*address*/) {
 }
 
-void ARM_DynCom::AddTicks(u64 ticks) {
-    down_count -= ticks;
-    if (down_count < 0)
-        CoreTiming::Advance();
-}
-
 void ARM_DynCom::ExecuteInstructions(int num_instructions) {
     state->NumInstrsToExecute = num_instructions;
 
@@ -93,7 +98,7 @@ void ARM_DynCom::ExecuteInstructions(int num_instructions) {
     // executing one instruction at a time. Otherwise, if a block is being executed, more
     // instructions may actually be executed than specified.
     unsigned ticks_executed = InterpreterMainLoop(state.get());
-    AddTicks(ticks_executed);
+    CoreTiming::AddTicks(ticks_executed);
 }
 
 void ARM_DynCom::SaveContext(ThreadContext& ctx) {

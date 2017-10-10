@@ -22,7 +22,7 @@ public:
      * @param name Optional name of semaphore
      * @return The created semaphore
      */
-    static ResultVal<SharedPtr<Semaphore>> Create(s32 initial_count, s32 max_count,
+    static ResultVal<SharedPtr<Semaphore>> Create(s32 initial_count, s32 max_count, VAddr address,
                                                   std::string name = "Unknown");
 
     std::string GetTypeName() const override {
@@ -39,6 +39,7 @@ public:
 
     s32 max_count;       ///< Maximum number of simultaneous holders the semaphore can have
     s32 available_count; ///< Number of free slots left in the semaphore
+    VAddr address;
     std::string name;    ///< Name of semaphore (optional)
 
     bool ShouldWait(Thread* thread) const override;

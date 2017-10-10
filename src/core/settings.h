@@ -15,6 +15,7 @@ enum class LayoutOption {
     Default,
     SingleScreen,
     LargeScreen,
+    SideScreen,
 };
 
 namespace NativeButton {
@@ -70,7 +71,7 @@ enum Values {
 static const std::array<const char*, NumAnalogs> mapping = {{
     "circle_pad", "c_stick",
 }};
-} // namespace NumAnalog
+} // namespace NativeAnalog
 
 struct Values {
     // CheckNew3DS
@@ -79,6 +80,8 @@ struct Values {
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;
+    std::string motion_device;
+    std::string touch_device;
 
     // Core
     bool use_cpu_jit;
@@ -128,7 +131,11 @@ struct Values {
     u16 gdbstub_port;
 
     // WebService
+    bool enable_telemetry;
     std::string telemetry_endpoint_url;
+    std::string verify_endpoint_url;
+    std::string citra_username;
+    std::string citra_token;
 } extern values;
 
 // a special value for Values::region_value indicating that citra will automatically select a region
@@ -136,4 +143,4 @@ struct Values {
 static constexpr int REGION_VALUE_AUTO_SELECT = -1;
 
 void Apply();
-}
+} // namespace Settings

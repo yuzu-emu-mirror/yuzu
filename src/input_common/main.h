@@ -11,13 +11,18 @@ namespace InputCommon {
 /// Initializes and registers all built-in input device factories.
 void Init();
 
-/// Unresisters all build-in input device factories and shut them down.
+/// Deregisters all built-in input device factories and shuts them down.
 void Shutdown();
 
 class Keyboard;
 
 /// Gets the keyboard button device factory.
 Keyboard* GetKeyboard();
+
+class MotionEmu;
+
+/// Gets the motion emulation factory.
+MotionEmu* GetMotionEmu();
 
 /// Generates a serialized param package for creating a keyboard button device
 std::string GenerateKeyboardParam(int key_code);

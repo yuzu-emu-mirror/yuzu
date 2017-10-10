@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/common_types.h"
+#include "core/hle/kernel/vm_manager.h"
 #include "core/arm/skyeye_common/arm_regformat.h"
 #include "core/arm/skyeye_common/vfp/asm_vfp.h"
 
@@ -19,9 +20,10 @@ public:
         u64 sp;
         u64 pc;
         u64 cpsr;
-        u64 fpu_registers[64];
+        u128 fpu_registers[32];
         u64 fpscr;
         u64 fpexc;
+
 
         // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
         VAddr tls_address;
@@ -41,8 +43,13 @@ public:
         Run(1);
     }
 
+    virtual void MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) {}
+
     /// Clear all instruction cache
     virtual void ClearInstructionCache() = 0;
+
+    /// Notify CPU emulation that page tables have changed
+    virtual void PageTableChanged() = 0;
 
     /**
      * Set the Program Counter to an address
@@ -69,6 +76,10 @@ public:
      * @param value Value to set register to
      */
     virtual void SetReg(int index, u64 value) = 0;
+
+    virtual const u128& GetExtReg(int index) const = 0;
+
+    virtual void SetExtReg(int index, u128& value) = 0;
 
     /**
      * Gets the value of a VFP register
@@ -129,12 +140,6 @@ public:
     virtual void SetTlsAddress(VAddr address) = 0;
 
     /**
-     * Advance the CPU core by the specified number of ticks (e.g. to simulate CPU execution time)
-     * @param ticks Number of ticks to advance the CPU core
-     */
-    virtual void AddTicks(u64 ticks) = 0;
-
-    /**
      * Saves the current CPU context
      * @param ctx Thread context to save
      */
@@ -153,9 +158,6 @@ public:
     u64 GetNumInstructions() const {
         return num_instructions;
     }
-
-    s64 down_count = 0; ///< A decreasing counter of remaining cycles before the next event,
-                        /// decreased by the cpu run loop
 
 protected:
     /**

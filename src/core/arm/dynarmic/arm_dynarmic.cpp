@@ -16,24 +16,6 @@
 
 static void InterpreterFallback(u64 pc, Dynarmic::Jit* jit, void* user_arg) {
     UNIMPLEMENTED_MSG("InterpreterFallback for ARM64 JIT does not exist!");
-    //ARMul_State* state = static_cast<ARMul_State*>(user_arg);
-
-    //state->Reg = jit->Regs();
-    //state->Cpsr = jit->Cpsr();
-    //state->Reg[15] = static_cast<u32>(pc);
-    //state->ExtReg = jit->ExtRegs();
-    //state->VFP[VFP_FPSCR] = jit->Fpscr();
-    //state->NumInstrsToExecute = 1;
-
-    //InterpreterMainLoop(state);
-
-    //bool is_thumb = (state->Cpsr & (1 << 5)) != 0;
-    //state->Reg[15] &= (is_thumb ? 0xFFFFFFFE : 0xFFFFFFFC);
-
-    //jit->Regs() = state->Reg;
-    //jit->Cpsr() = state->Cpsr;
-    //jit->ExtRegs() = state->ExtReg;
-    //jit->SetFpscr(state->VFP[VFP_FPSCR]);
 }
 
 static bool IsReadOnlyMemory(u64 vaddr) {
@@ -73,11 +55,10 @@ void MemoryWrite64(const u64 addr, const u64 data) {
     Memory::Write64(static_cast<VAddr>(addr), data);
 }
 
-static Dynarmic::UserCallbacks GetUserCallbacks(
-    const std::shared_ptr<ARMul_State>& interpeter_state) {
+static Dynarmic::UserCallbacks GetUserCallbacks(ARM_Dynarmic* this_) {
     Dynarmic::UserCallbacks user_callbacks{};
-    //user_callbacks.InterpreterFallback = &InterpreterFallback;
-    //user_callbacks.user_arg = static_cast<void*>(interpeter_state.get());
+    user_callbacks.InterpreterFallback = &InterpreterFallback;
+    user_callbacks.user_arg = static_cast<void*>(this_);
     user_callbacks.CallSVC = &SVC::CallSVC;
     user_callbacks.memory.IsReadOnlyMemory = &IsReadOnlyMemory;
     user_callbacks.memory.ReadCode = &MemoryRead32;
@@ -90,13 +71,13 @@ static Dynarmic::UserCallbacks GetUserCallbacks(
     user_callbacks.memory.Write32 = &MemoryWrite32;
     user_callbacks.memory.Write64 = &MemoryWrite64;
     //user_callbacks.page_table = Memory::GetCurrentPageTablePointers();
-    user_callbacks.coprocessors[15] = std::make_shared<DynarmicCP15>(interpeter_state);
     return user_callbacks;
 }
 
 ARM_Dynarmic::ARM_Dynarmic(PrivilegeMode initial_mode) {
-    interpreter_state = std::make_shared<ARMul_State>(initial_mode);
-    jit = std::make_unique<Dynarmic::Jit>(GetUserCallbacks(interpreter_state), Dynarmic::Arch::ARM64);
+}
+
+void ARM_Dynarmic::MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) {
 }
 
 void ARM_Dynarmic::SetPC(u64 pc) {
@@ -115,30 +96,26 @@ void ARM_Dynarmic::SetReg(int index, u64 value) {
     jit->Regs64()[index] = value;
 }
 
+const u128& ARM_Dynarmic::GetExtReg(int index) const {
+    return jit->ExtRegs64()[index];
+}
+
+void ARM_Dynarmic::SetExtReg(int index, u128& value) {
+    jit->ExtRegs64()[index] = value;
+}
+
 u32 ARM_Dynarmic::GetVFPReg(int index) const {
-    return jit->ExtRegs()[index];
+    return {};
 }
 
 void ARM_Dynarmic::SetVFPReg(int index, u32 value) {
-    jit->ExtRegs()[index] = value;
 }
 
 u32 ARM_Dynarmic::GetVFPSystemReg(VFPSystemRegister reg) const {
-    if (reg == VFP_FPSCR) {
-        return jit->Fpscr();
-    }
-
-    // Dynarmic does not implement and/or expose other VFP registers, fallback to interpreter state
-    return interpreter_state->VFP[reg];
+    return {};
 }
 
 void ARM_Dynarmic::SetVFPSystemReg(VFPSystemRegister reg, u32 value) {
-    if (reg == VFP_FPSCR) {
-        jit->SetFpscr(value);
-    }
-
-    // Dynarmic does not implement and/or expose other VFP registers, fallback to interpreter state
-    interpreter_state->VFP[reg] = value;
 }
 
 u32 ARM_Dynarmic::GetCPSR() const {
@@ -150,11 +127,10 @@ void ARM_Dynarmic::SetCPSR(u32 cpsr) {
 }
 
 u32 ARM_Dynarmic::GetCP15Register(CP15Register reg) {
-    return interpreter_state->CP15[reg];
+    return {};
 }
 
 void ARM_Dynarmic::SetCP15Register(CP15Register reg, u32 value) {
-    interpreter_state->CP15[reg] = value;
 }
 
 VAddr ARM_Dynarmic::GetTlsAddress() const {
@@ -165,34 +141,25 @@ void ARM_Dynarmic::SetTlsAddress(VAddr address) {
     jit->TlsAddr() = address;
 }
 
-void ARM_Dynarmic::AddTicks(u64 ticks) {
-    down_count -= ticks;
-    if (down_count < 0) {
-        CoreTiming::Advance();
-    }
-}
-
 MICROPROFILE_DEFINE(ARM_Jit, "ARM JIT", "ARM JIT", MP_RGB(255, 64, 64));
 
 void ARM_Dynarmic::ExecuteInstructions(int num_instructions) {
+    ASSERT(Memory::GetCurrentPageTable() == current_page_table);
     MICROPROFILE_SCOPE(ARM_Jit);
 
-    unsigned ticks_executed = jit->Run(1 /*static_cast<unsigned>(num_instructions)*/);
+    std::size_t ticks_executed = jit->Run(static_cast<unsigned>(num_instructions));
 
-    AddTicks(ticks_executed);
+    CoreTiming::AddTicks(ticks_executed);
 }
 
 void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     memcpy(ctx.cpu_registers, jit->Regs64().data(), sizeof(ctx.cpu_registers));
-    //memcpy(ctx.fpu_registers, jit->ExtRegs().data(), sizeof(ctx.fpu_registers));
+    memcpy(ctx.fpu_registers, jit->ExtRegs64().data(), sizeof(ctx.fpu_registers));
 
     ctx.lr = jit->Regs64()[30];
     ctx.sp = jit->Regs64()[31];
     ctx.pc = jit->Regs64()[32];
     ctx.cpsr = jit->Cpsr();
-
-    ctx.fpscr = jit->Fpscr();
-    ctx.fpexc = interpreter_state->VFP[VFP_FPEXC];
 
     // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
     ctx.tls_address = jit->TlsAddr();
@@ -200,15 +167,12 @@ void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
 
 void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     memcpy(jit->Regs64().data(), ctx.cpu_registers, sizeof(ctx.cpu_registers));
-    //memcpy(jit->ExtRegs().data(), ctx.fpu_registers, sizeof(ctx.fpu_registers));
+    memcpy(jit->ExtRegs64().data(), ctx.fpu_registers, sizeof(ctx.fpu_registers));
 
     jit->Regs64()[30] = ctx.lr;
     jit->Regs64()[31] = ctx.sp;
     jit->Regs64()[32] = ctx.pc;
     jit->Cpsr() = ctx.cpsr;
-
-    jit->SetFpscr(ctx.fpscr);
-    interpreter_state->VFP[VFP_FPEXC] = ctx.fpexc;
 
     // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
     jit->TlsAddr() = ctx.tls_address;
@@ -222,4 +186,17 @@ void ARM_Dynarmic::PrepareReschedule() {
 
 void ARM_Dynarmic::ClearInstructionCache() {
     jit->ClearCache();
+}
+
+void ARM_Dynarmic::PageTableChanged() {
+    current_page_table = Memory::GetCurrentPageTable();
+
+    auto iter = jits.find(current_page_table);
+    if (iter != jits.end()) {
+        jit = iter->second.get();
+        return;
+    }
+
+    jit = new Dynarmic::Jit(GetUserCallbacks(this), Dynarmic::Arch::ARM64);
+    jits.emplace(current_page_table, std::unique_ptr<Dynarmic::Jit>(jit));
 }

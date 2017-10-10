@@ -644,7 +644,7 @@ static void ReadMemory() {
 
     auto start_offset = command_buffer + 1;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    VAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
     u32 len =
@@ -656,12 +656,14 @@ static void ReadMemory() {
         SendReply("E01");
     }
 
-    const u8* data = Memory::GetPointer(addr);
-    if (!data) {
+    if (!Memory::IsValidVirtualAddress(addr)) {
         return SendReply("E00");
     }
 
-    MemToGdbHex(reply, data, len);
+    std::vector<u8> data(len);
+    Memory::ReadBlock(addr, data.data(), len);
+
+    MemToGdbHex(reply, data.data(), len);
     reply[len * 2] = '\0';
     SendReply(reinterpret_cast<char*>(reply));
 }
@@ -670,18 +672,20 @@ static void ReadMemory() {
 static void WriteMemory() {
     auto start_offset = command_buffer + 1;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    VAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
     auto len_pos = std::find(start_offset, command_buffer + command_length, ':');
     u32 len = HexToInt(start_offset, static_cast<u32>(len_pos - start_offset));
 
-    u8* dst = Memory::GetPointer(addr);
-    if (!dst) {
+    if (!Memory::IsValidVirtualAddress(addr)) {
         return SendReply("E00");
     }
 
-    GdbHexToMem(dst, len_pos + 1, len);
+    std::vector<u8> data(len);
+
+    GdbHexToMem(data.data(), len_pos + 1, len);
+    Memory::WriteBlock(addr, data.data(), len);
     SendReply("OK");
 }
 
@@ -946,7 +950,7 @@ static void Init(u16 port) {
     WSAStartup(MAKEWORD(2, 2), &InitData);
 #endif
 
-    int tmpsock = socket(PF_INET, SOCK_STREAM, 0);
+    int tmpsock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (tmpsock == -1) {
         LOG_ERROR(Debug_GDBStub, "Failed to create gdb socket");
     }
@@ -973,7 +977,7 @@ static void Init(u16 port) {
     sockaddr_in saddr_client;
     sockaddr* client_addr = reinterpret_cast<sockaddr*>(&saddr_client);
     socklen_t client_addrlen = sizeof(saddr_client);
-    gdbserver_socket = accept(tmpsock, client_addr, &client_addrlen);
+    gdbserver_socket = static_cast<int>(accept(tmpsock, client_addr, &client_addrlen));
     if (gdbserver_socket < 0) {
         // In the case that we couldn't start the server for whatever reason, just start CPU
         // execution like normal.

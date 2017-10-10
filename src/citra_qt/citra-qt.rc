@@ -1,3 +1,4 @@
+#include "winresrc.h"
 /////////////////////////////////////////////////////////////////////////////
 //
 // Icon
@@ -5,5 +6,14 @@
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-CITRA_ICON              ICON                    "../../dist/citra.ico"
+// QT requires that the default application icon is named IDI_ICON1
 
+IDI_ICON1               ICON                    "../../dist/citra.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+1                       RT_MANIFEST             "../../dist/citra.manifest"

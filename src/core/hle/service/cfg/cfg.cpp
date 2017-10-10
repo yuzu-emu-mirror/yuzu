@@ -141,7 +141,7 @@ void GetCountryCodeString(Service::Interface* self) {
 
 void GetCountryCodeID(Service::Interface* self) {
     u32* cmd_buff = Kernel::GetCommandBuffer();
-    u16 country_code = cmd_buff[1];
+    u16 country_code = static_cast<u16>(cmd_buff[1]);
     u16 country_code_id = 0;
 
     // The following algorithm will fail if the first country code isn't 0.
@@ -168,7 +168,7 @@ void GetCountryCodeID(Service::Interface* self) {
     cmd_buff[2] = country_code_id;
 }
 
-static u32 GetRegionValue() {
+u32 GetRegionValue() {
     if (Settings::values.region_value == Settings::REGION_VALUE_AUTO_SELECT)
         return preferred_region_code;
 
@@ -681,7 +681,7 @@ void GenerateConsoleUniqueId(u32& random_number, u64& console_id) {
     CryptoPP::AutoSeededRandomPool rng;
     random_number = rng.GenerateWord32(0, 0xFFFF);
     u64_le local_friend_code_seed;
-    rng.GenerateBlock(reinterpret_cast<byte*>(&local_friend_code_seed),
+    rng.GenerateBlock(reinterpret_cast<CryptoPP::byte*>(&local_friend_code_seed),
                       sizeof(local_friend_code_seed));
     console_id = (local_friend_code_seed & 0x3FFFFFFFF) | (static_cast<u64>(random_number) << 48);
 }

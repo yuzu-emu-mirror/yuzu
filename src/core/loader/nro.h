@@ -31,7 +31,7 @@ public:
         return IdentifyType(file);
     }
 
-    ResultStatus Load() override;
+    ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
 private:
     bool LoadNro(const std::string& path, VAddr load_base);

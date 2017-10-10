@@ -90,8 +90,9 @@ public:
         x -= other.x;
         y -= other.y;
     }
-    template <typename Q = T, class = typename std::enable_if<std::is_signed<Q>::value>::type>
-    Vec2<decltype(-T{})> operator-() const {
+
+    template <typename U = T>
+    Vec2<std::enable_if_t<std::is_signed<U>::value, U>> operator-() const {
         return MakeVec(-x, -y);
     }
     Vec2<decltype(T{} * T{})> operator*(const Vec2& other) const {
@@ -103,8 +104,7 @@ public:
     }
     template <typename V>
     void operator*=(const V& f) {
-        x *= f;
-        y *= f;
+        *this = *this * f;
     }
     template <typename V>
     Vec2<decltype(T{} / V{})> operator/(const V& f) const {
@@ -247,8 +247,9 @@ public:
         y -= other.y;
         z -= other.z;
     }
-    template <typename Q = T, class = typename std::enable_if<std::is_signed<Q>::value>::type>
-    Vec3<decltype(-T{})> operator-() const {
+
+    template <typename U = T>
+    Vec3<std::enable_if_t<std::is_signed<U>::value, U>> operator-() const {
         return MakeVec(-x, -y, -z);
     }
     Vec3<decltype(T{} * T{})> operator*(const Vec3& other) const {
@@ -260,9 +261,7 @@ public:
     }
     template <typename V>
     void operator*=(const V& f) {
-        x *= f;
-        y *= f;
-        z *= f;
+        *this = *this * f;
     }
     template <typename V>
     Vec3<decltype(T{} / V{})> operator/(const V& f) const {
@@ -462,8 +461,9 @@ public:
         z -= other.z;
         w -= other.w;
     }
-    template <typename Q = T, class = typename std::enable_if<std::is_signed<Q>::value>::type>
-    Vec4<decltype(-T{})> operator-() const {
+
+    template <typename U = T>
+    Vec4<std::enable_if_t<std::is_signed<U>::value, U>> operator-() const {
         return MakeVec(-x, -y, -z, -w);
     }
     Vec4<decltype(T{} * T{})> operator*(const Vec4& other) const {
@@ -475,10 +475,7 @@ public:
     }
     template <typename V>
     void operator*=(const V& f) {
-        x *= f;
-        y *= f;
-        z *= f;
-        w *= f;
+        *this = *this * f;
     }
     template <typename V>
     Vec4<decltype(T{} / V{})> operator/(const V& f) const {
@@ -721,4 +718,4 @@ static inline Vec4<T> MakeVec(const T& x, const Vec3<T>& yzw) {
     return MakeVec(x, yzw[0], yzw[1], yzw[2]);
 }
 
-} // namespace
+} // namespace Math

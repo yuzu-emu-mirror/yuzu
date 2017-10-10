@@ -21,7 +21,8 @@ namespace Pica {
 
 namespace Shader {
 
-OutputVertex OutputVertex::FromAttributeBuffer(const RasterizerRegs& regs, AttributeBuffer& input) {
+OutputVertex OutputVertex::FromAttributeBuffer(const RasterizerRegs& regs,
+                                               const AttributeBuffer& input) {
     // Setup output data
     union {
         OutputVertex ret{};
@@ -51,7 +52,8 @@ OutputVertex OutputVertex::FromAttributeBuffer(const RasterizerRegs& regs, Attri
     // The hardware takes the absolute and saturates vertex colors like this, *before* doing
     // interpolation
     for (unsigned i = 0; i < 4; ++i) {
-        ret.color[i] = float24::FromFloat32(std::fmin(std::fabs(ret.color[i].ToFloat32()), 1.0f));
+        float c = std::fabs(ret.color[i].ToFloat32());
+        ret.color[i] = float24::FromFloat32(c < 1.0f ? c : 1.0f);
     }
 
     LOG_TRACE(HW_GPU, "Output vertex: pos(%.2f, %.2f, %.2f, %.2f), quat(%.2f, %.2f, %.2f, %.2f), "
@@ -80,6 +82,44 @@ void UnitState::WriteOutput(const ShaderRegs& config, AttributeBuffer& output) {
     for (unsigned int reg : Common::BitSet<u32>(config.output_mask)) {
         output.attr[output_i++] = registers.output[reg];
     }
+}
+
+UnitState::UnitState(GSEmitter* emitter) : emitter_ptr(emitter) {}
+
+GSEmitter::GSEmitter() {
+    handlers = new Handlers;
+}
+
+GSEmitter::~GSEmitter() {
+    delete handlers;
+}
+
+void GSEmitter::Emit(Math::Vec4<float24> (&vertex)[16]) {
+    ASSERT(vertex_id < 3);
+    std::copy(std::begin(vertex), std::end(vertex), buffer[vertex_id].begin());
+    if (prim_emit) {
+        if (winding)
+            handlers->winding_setter();
+        for (size_t i = 0; i < buffer.size(); ++i) {
+            AttributeBuffer output;
+            unsigned int output_i = 0;
+            for (unsigned int reg : Common::BitSet<u32>(output_mask)) {
+                output.attr[output_i++] = buffer[i][reg];
+            }
+            handlers->vertex_handler(output);
+        }
+    }
+}
+
+GSUnitState::GSUnitState() : UnitState(&emitter) {}
+
+void GSUnitState::SetVertexHandler(VertexHandler vertex_handler, WindingSetter winding_setter) {
+    emitter.handlers->vertex_handler = std::move(vertex_handler);
+    emitter.handlers->winding_setter = std::move(winding_setter);
+}
+
+void GSUnitState::ConfigOutput(const ShaderRegs& config) {
+    emitter.output_mask = config.output_mask;
 }
 
 MICROPROFILE_DEFINE(GPU_Shader, "GPU", "Shader", MP_RGB(50, 50, 240));

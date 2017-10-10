@@ -13,10 +13,12 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "common/file_util.h"
+#include "core/hle/kernel/kernel.h"
 
 namespace Kernel {
 struct AddressMapping;
-}
+class Process;
+} // namespace Kernel
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Loader namespace
@@ -94,10 +96,11 @@ public:
     virtual FileType GetFileType() = 0;
 
     /**
-     * Load the application
-     * @return ResultStatus result of function
+     * Load the application and return the created Process instance
+     * @param process The newly created process.
+     * @return The status result of the operation.
      */
-    virtual ResultStatus Load() = 0;
+    virtual ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) = 0;
 
     /**
      * Loads the system mode that this application needs.
@@ -168,6 +171,28 @@ public:
         return ResultStatus::ErrorNotImplemented;
     }
 
+    /**
+     * Get the update RomFS of the application
+     * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
+     * @param romfs_file The file containing the RomFS
+     * @param offset The offset the romfs begins on
+     * @param size The size of the romfs
+     * @return ResultStatus result of function
+     */
+    virtual ResultStatus ReadUpdateRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                                         u64& size) {
+        return ResultStatus::ErrorNotImplemented;
+    }
+
+    /**
+     * Get the title of the application
+     * @param title Reference to store the application title into
+     * @return ResultStatus result of function
+     */
+    virtual ResultStatus ReadTitle(std::string& title) {
+        return ResultStatus::ErrorNotImplemented;
+    }
+
 protected:
     FileUtil::IOFile file;
     bool is_loaded = false;
@@ -186,4 +211,4 @@ extern const std::initializer_list<Kernel::AddressMapping> default_address_mappi
  */
 std::unique_ptr<AppLoader> GetLoader(const std::string& filename);
 
-} // namespace
+} // namespace Loader

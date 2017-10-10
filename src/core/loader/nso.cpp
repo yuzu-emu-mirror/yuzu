@@ -144,7 +144,7 @@ VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base, bool relo
     return load_base + image_size;
 }
 
-ResultStatus AppLoader_NSO::Load() {
+ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     if (is_loaded) {
         return ResultStatus::ErrorAlreadyLoaded;
     }
@@ -154,7 +154,7 @@ ResultStatus AppLoader_NSO::Load() {
 
     // Load and relocate "rtld" NSO
     static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
-    Kernel::g_current_process = Kernel::Process::Create("main");
+    process = Kernel::Process::Create("main");
     VAddr next_base_addr{LoadNso(filepath, base_addr)};
     if (!next_base_addr) {
         return ResultStatus::ErrorInvalidFormat;
@@ -170,11 +170,11 @@ ResultStatus AppLoader_NSO::Load() {
         }
     }
 
-    Kernel::g_current_process->svc_access_mask.set();
-    Kernel::g_current_process->address_mappings = default_address_mappings;
-    Kernel::g_current_process->resource_limit =
+    process->svc_access_mask.set();
+    process->address_mappings = default_address_mappings;
+    process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
 
     ResolveImports();
 

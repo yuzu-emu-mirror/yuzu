@@ -631,8 +631,24 @@ static void RunInterpreter(const ShaderSetup& setup, UnitState& state, DebugData
                 state.address_registers[2] = loop_param.y;
 
                 Record<DebugDataRecord::LOOP_INT_IN>(debug_data, iteration, loop_param);
-                call(program_counter + 1, instr.flow_control.dest_offset - program_counter + 1,
+                call(program_counter + 1, instr.flow_control.dest_offset - program_counter,
                      instr.flow_control.dest_offset + 1, loop_param.x, loop_param.z);
+                break;
+            }
+
+            case OpCode::Id::EMIT: {
+                GSEmitter* emitter = state.emitter_ptr;
+                ASSERT_MSG(emitter, "Execute EMIT on VS");
+                emitter->Emit(state.registers.output);
+                break;
+            }
+
+            case OpCode::Id::SETEMIT: {
+                GSEmitter* emitter = state.emitter_ptr;
+                ASSERT_MSG(emitter, "Execute SETEMIT on VS");
+                emitter->vertex_id = instr.setemit.vertex_id;
+                emitter->prim_emit = instr.setemit.prim_emit != 0;
+                emitter->winding = instr.setemit.winding != 0;
                 break;
             }
 

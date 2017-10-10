@@ -9,16 +9,19 @@
 #include "core/arm/arm_interface.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/arm/dyncom/arm_dyncom.h"
+#include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/service/service.h"
 #include "core/hw/hw.h"
 #include "core/loader/loader.h"
 #include "core/memory_setup.h"
 #include "core/settings.h"
+#include "network/network.h"
 #include "video_core/video_core.h"
 
 namespace Core {
@@ -99,7 +102,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
         return init_result;
     }
 
-    const Loader::ResultStatus load_result{app_loader->Load()};
+    const Loader::ResultStatus load_result{app_loader->Load(Kernel::g_current_process)};
     if (Loader::ResultStatus::Success != load_result) {
         LOG_CRITICAL(Core, "Failed to load ROM (Error %i)!", load_result);
         System::Shutdown();
@@ -136,7 +139,6 @@ void System::Reschedule() {
 }
 
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
-    Memory::InitMemoryMap();
     LOG_DEBUG(HW_Memory, "initialized OK");
 
     if (Settings::values.use_cpu_jit) {
@@ -188,8 +190,12 @@ void System::Shutdown() {
     cpu_core = nullptr;
     app_loader = nullptr;
     telemetry_session = nullptr;
+    if (auto room_member = Network::GetRoomMember().lock()) {
+        Network::GameInfo game_info{};
+        room_member->SendGameInfo(game_info);
+    }
 
     LOG_DEBUG(Core, "Shutdown OK");
 }
 
-} // namespace
+} // namespace Core

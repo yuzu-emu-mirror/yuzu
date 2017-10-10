@@ -6,9 +6,16 @@
 
 #include <array>
 #include <cstddef>
+#include <map>
 #include <string>
+#include <vector>
 #include <boost/optional.hpp>
 #include "common/common_types.h"
+#include "core/mmio.h"
+
+namespace Kernel {
+class Process;
+}
 
 namespace Memory {
 
@@ -19,7 +26,60 @@ namespace Memory {
 const int PAGE_BITS = 12;
 const u64 PAGE_SIZE = 1 << PAGE_BITS;
 const u64 PAGE_MASK = PAGE_SIZE - 1;
-const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (64 - PAGE_BITS);
+const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (32 - PAGE_BITS);
+
+enum class PageType {
+    /// Page is unmapped and should cause an access error.
+    Unmapped,
+    /// Page is mapped to regular memory. This is the only type you can get pointers to.
+    Memory,
+    /// Page is mapped to regular memory, but also needs to check for rasterizer cache flushing and
+    /// invalidation
+    RasterizerCachedMemory,
+    /// Page is mapped to a I/O region. Writing and reading to this page is handled by functions.
+    Special,
+    /// Page is mapped to a I/O region, but also needs to check for rasterizer cache flushing and
+    /// invalidation
+    RasterizerCachedSpecial,
+};
+
+struct SpecialRegion {
+    VAddr base;
+    u32 size;
+    MMIORegionPointer handler;
+};
+
+/**
+ * A (reasonably) fast way of allowing switchable and remappable process address spaces. It loosely
+ * mimics the way a real CPU page table works, but instead is optimized for minimal decoding and
+ * fetching requirements when accessing. In the usual case of an access to regular memory, it only
+ * requires an indexed fetch and a check for NULL.
+ */
+struct PageTable {
+    /**
+     * Array of memory pointers backing each page. An entry can only be non-null if the
+     * corresponding entry in the `attributes` array is of type `Memory`.
+     */
+    std::array<u8*, PAGE_TABLE_NUM_ENTRIES> pointers;
+
+    /**
+     * Contains MMIO handlers that back memory regions whose entries in the `attribute` array is of
+     * type `Special`.
+     */
+    std::vector<SpecialRegion> special_regions;
+
+    /**
+     * Array of fine grained page attributes. If it is set to any value other than `Memory`, then
+     * the corresponding entry in `pointers` MUST be set to null.
+     */
+    std::array<PageType, PAGE_TABLE_NUM_ENTRIES> attributes;
+
+    /**
+     * Indicates the number of externally cached resources touching a page that should be
+     * flushed before the memory is accessed
+     */
+    std::array<u8, PAGE_TABLE_NUM_ENTRIES> cached_res_count;
+};
 
 /// Physical memory regions as seen from the ARM11
 enum : PAddr {
@@ -126,7 +186,14 @@ enum : VAddr {
     NEW_LINEAR_HEAP_VADDR_END = NEW_LINEAR_HEAP_VADDR + NEW_LINEAR_HEAP_SIZE,
 };
 
+/// Currently active page table
+void SetCurrentPageTable(PageTable* page_table);
+PageTable* GetCurrentPageTable();
+
+/// Determines if the given VAddr is valid for the specified process.
+bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr);
 bool IsValidVirtualAddress(const VAddr addr);
+
 bool IsValidPhysicalAddress(const PAddr addr);
 
 u8 Read8(VAddr addr);
@@ -139,7 +206,11 @@ void Write16(VAddr addr, u16 data);
 void Write32(VAddr addr, u32 data);
 void Write64(VAddr addr, u64 data);
 
+void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
+               size_t size);
 void ReadBlock(const VAddr src_addr, void* dest_buffer, size_t size);
+void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const void* src_buffer,
+                size_t size);
 void WriteBlock(const VAddr dest_addr, const void* src_buffer, size_t size);
 void ZeroBlock(const VAddr dest_addr, const size_t size);
 void CopyBlock(VAddr dest_addr, VAddr src_addr, size_t size);
@@ -169,8 +240,6 @@ boost::optional<VAddr> PhysicalToVirtualAddress(PAddr addr);
 
 /**
  * Gets a pointer to the memory region beginning at the specified physical address.
- *
- * @note This is currently implemented using PhysicalToVirtualAddress().
  */
 u8* GetPhysicalPointer(PAddr address);
 
@@ -178,17 +247,17 @@ u8* GetPhysicalPointer(PAddr address);
  * Adds the supplied value to the rasterizer resource cache counter of each
  * page touching the region.
  */
-void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta);
+void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta);
 
 /**
  * Flushes any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushRegion(PAddr start, u64 size);
+void RasterizerFlushRegion(PAddr start, u32 size);
 
 /**
  * Flushes and invalidates any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size);
+void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size);
 
 enum class FlushMode {
     /// Write back modified surfaces to RAM
@@ -201,12 +270,6 @@ enum class FlushMode {
  * Flushes and invalidates any externally cached rasterizer resources touching the given virtual
  * address region.
  */
-void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode);
+void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode);
 
-/**
- * Dynarmic has an optimization to memory accesses when the pointer to the page exists that
- * can be used by setting up the current page table as a callback. This function is used to
- * retrieve the current page table for that purpose.
- */
-//std::array<u8*, PAGE_TABLE_NUM_ENTRIES>* GetCurrentPageTablePointers();
-}
+} // namespace Memory

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <future>
 #include <memory>
 #include "common/telemetry.h"
 
@@ -34,5 +35,26 @@ private:
     Telemetry::FieldCollection field_collection; ///< Tracks all added fields for the session
     std::unique_ptr<Telemetry::VisitorInterface> backend; ///< Backend interface that logs fields
 };
+
+/**
+ * Gets TelemetryId, a unique identifier used for the user's telemetry sessions.
+ * @returns The current TelemetryId for the session.
+ */
+u64 GetTelemetryId();
+
+/**
+ * Regenerates TelemetryId, a unique identifier used for the user's telemetry sessions.
+ * @returns The new TelemetryId that was generated.
+ */
+u64 RegenerateTelemetryId();
+
+/**
+ * Verifies the username and token.
+ * @param username Citra username to use for authentication.
+ * @param token Citra token to use for authentication.
+ * @param func A function that gets exectued when the verification is finished
+ * @returns Future with bool indicating whether the verification succeeded
+ */
+std::future<bool> VerifyLogin(std::string username, std::string token, std::function<void()> func);
 
 } // namespace Core

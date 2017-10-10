@@ -12,6 +12,7 @@ set(SRCS
             configuration/configure_graphics.cpp
             configuration/configure_input.cpp
             configuration/configure_system.cpp
+            configuration/configure_web.cpp
             debugger/graphics/graphics.cpp
             debugger/graphics/graphics_breakpoint_observer.cpp
             debugger/graphics/graphics_breakpoints.cpp
@@ -42,6 +43,7 @@ set(HEADERS
             configuration/configure_graphics.h
             configuration/configure_input.h
             configuration/configure_system.h
+            configuration/configure_web.h
             debugger/graphics/graphics.h
             debugger/graphics/graphics_breakpoint_observer.h
             debugger/graphics/graphics_breakpoints.h
@@ -71,11 +73,13 @@ set(UIS
             configuration/configure_graphics.ui
             configuration/configure_input.ui
             configuration/configure_system.ui
+            configuration/configure_web.ui
             debugger/registers.ui
             hotkeys.ui
             main.ui
             )
 
+file(GLOB_RECURSE ICONS ${CMAKE_SOURCE_DIR}/dist/icons/*)
 file(GLOB_RECURSE THEMES ${CMAKE_SOURCE_DIR}/dist/qt_themes/*)
 
 create_directory_groups(${SRCS} ${HEADERS} ${UIS})
@@ -89,10 +93,10 @@ endif()
 if (APPLE)
     set(MACOSX_ICON "../../dist/citra.icns")
     set_source_files_properties(${MACOSX_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    add_executable(citra-qt MACOSX_BUNDLE ${SRCS} ${HEADERS} ${UI_HDRS} ${THEMES} ${MACOSX_ICON})
+    add_executable(citra-qt MACOSX_BUNDLE ${SRCS} ${HEADERS} ${UI_HDRS} ${ICONS} ${THEMES} ${MACOSX_ICON})
     set_target_properties(citra-qt PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 else()
-    add_executable(citra-qt ${SRCS} ${HEADERS} ${UI_HDRS} ${THEMES})
+    add_executable(citra-qt ${SRCS} ${HEADERS} ${UI_HDRS} ${ICONS} ${THEMES})
 endif()
 target_link_libraries(citra-qt PRIVATE audio_core common core input_common network video_core)
 target_link_libraries(citra-qt PRIVATE Boost::boost glad nihstro-headers Qt5::OpenGL Qt5::Widgets)

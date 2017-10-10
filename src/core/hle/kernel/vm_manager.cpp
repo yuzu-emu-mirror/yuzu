@@ -4,8 +4,10 @@
 
 #include <iterator>
 #include "common/assert.h"
+#include "core/arm/arm_interface.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/vm_manager.h"
+#include "core/core.h"
 #include "core/memory.h"
 #include "core/memory_setup.h"
 #include "core/mmio.h"
@@ -56,6 +58,10 @@ void VMManager::Reset() {
     initial_vma.size = MAX_ADDRESS;
     vma_map.emplace(initial_vma.base, initial_vma);
 
+    page_table.pointers.fill(nullptr);
+    page_table.attributes.fill(Memory::PageType::Unmapped);
+    page_table.cached_res_count.fill(0);
+
     //UpdatePageTableForVMA(initial_vma);
 }
 
@@ -79,6 +85,8 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     VirtualMemoryArea& final_vma = vma_handle->second;
     ASSERT(final_vma.size == size);
 
+    Core::CPU().MapBackingMemory(target, size, block->data() + offset, VMAPermission::ReadWriteExecute);
+
     final_vma.type = VMAType::AllocatedMemoryBlock;
     final_vma.permissions = VMAPermission::ReadWrite;
     final_vma.meminfo_state = state;
@@ -97,6 +105,8 @@ ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* me
     CASCADE_RESULT(VMAIter vma_handle, CarveVMA(target, size));
     VirtualMemoryArea& final_vma = vma_handle->second;
     ASSERT(final_vma.size == size);
+
+    Core::CPU().MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
 
     final_vma.type = VMAType::BackingMemory;
     final_vma.permissions = VMAPermission::ReadWrite;
@@ -328,16 +338,17 @@ VMManager::VMAIter VMManager::MergeAdjacent(VMAIter iter) {
 void VMManager::UpdatePageTableForVMA(const VirtualMemoryArea& vma) {
     switch (vma.type) {
     case VMAType::Free:
-        Memory::UnmapRegion(vma.base, vma.size);
+        Memory::UnmapRegion(page_table, vma.base, vma.size);
         break;
     case VMAType::AllocatedMemoryBlock:
-        Memory::MapMemoryRegion(vma.base, vma.size, vma.backing_block->data() + vma.offset);
+        Memory::MapMemoryRegion(page_table, vma.base, vma.size,
+                                vma.backing_block->data() + vma.offset);
         break;
     case VMAType::BackingMemory:
-        Memory::MapMemoryRegion(vma.base, vma.size, vma.backing_memory);
+        Memory::MapMemoryRegion(page_table, vma.base, vma.size, vma.backing_memory);
         break;
     case VMAType::MMIO:
-        Memory::MapIoRegion(vma.base, vma.size, vma.mmio_handler);
+        Memory::MapIoRegion(page_table, vma.base, vma.size, vma.mmio_handler);
         break;
     }
 }

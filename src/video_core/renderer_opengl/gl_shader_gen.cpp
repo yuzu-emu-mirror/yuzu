@@ -8,6 +8,7 @@
 #include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "video_core/regs_framebuffer.h"
 #include "video_core/regs_lighting.h"
 #include "video_core/regs_rasterizer.h"
@@ -23,6 +24,42 @@ using Pica::TexturingRegs;
 using TevStageConfig = TexturingRegs::TevStageConfig;
 
 namespace GLShader {
+
+static const std::string UniformBlockDef = R"(
+#define NUM_TEV_STAGES 6
+#define NUM_LIGHTS 8
+
+struct LightSrc {
+    vec3 specular_0;
+    vec3 specular_1;
+    vec3 diffuse;
+    vec3 ambient;
+    vec3 position;
+    vec3 spot_direction;
+    float dist_atten_bias;
+    float dist_atten_scale;
+};
+
+layout (std140) uniform shader_data {
+    vec2 framebuffer_scale;
+    int alphatest_ref;
+    float depth_scale;
+    float depth_offset;
+    int scissor_x1;
+    int scissor_y1;
+    int scissor_x2;
+    int scissor_y2;
+    vec3 fog_color;
+    vec2 proctex_noise_f;
+    vec2 proctex_noise_a;
+    vec2 proctex_noise_p;
+    vec3 lighting_global_ambient;
+    LightSrc light_src[NUM_LIGHTS];
+    vec4 const_color[NUM_TEV_STAGES];
+    vec4 tev_combiner_buffer_color;
+    vec4 clip_coef;
+};
+)";
 
 PicaShaderConfig PicaShaderConfig::BuildFromRegs(const Pica::Regs& regs) {
     PicaShaderConfig res;
@@ -525,11 +562,12 @@ static void WriteLighting(std::string& out, const PicaShaderConfig& config) {
            "float geo_factor = 1.0;\n";
 
     // Compute fragment normals and tangents
-    const std::string pertubation =
-        "2.0 * (" + SampleTexture(config, lighting.bump_selector) + ").rgb - 1.0";
+    auto Perturbation = [&]() {
+        return "2.0 * (" + SampleTexture(config, lighting.bump_selector) + ").rgb - 1.0";
+    };
     if (lighting.bump_mode == LightingRegs::LightingBumpMode::NormalMap) {
         // Bump mapping is enabled using a normal map
-        out += "vec3 surface_normal = " + pertubation + ";\n";
+        out += "vec3 surface_normal = " + Perturbation() + ";\n";
 
         // Recompute Z-component of perturbation if 'renorm' is enabled, this provides a higher
         // precision result
@@ -543,7 +581,7 @@ static void WriteLighting(std::string& out, const PicaShaderConfig& config) {
         out += "vec3 surface_tangent = vec3(1.0, 0.0, 0.0);\n";
     } else if (lighting.bump_mode == LightingRegs::LightingBumpMode::TangentMap) {
         // Bump mapping is enabled using a tangent map
-        out += "vec3 surface_tangent = " + pertubation + ";\n";
+        out += "vec3 surface_tangent = " + Perturbation() + ";\n";
         // Mathematically, recomputing Z-component of the tangent vector won't affect the relevant
         // computation below, which is also confirmed on 3DS. So we don't bother recomputing here
         // even if 'renorm' is enabled.
@@ -593,8 +631,8 @@ static void WriteLighting(std::string& out, const PicaShaderConfig& config) {
                 // Note: even if the normal vector is modified by normal map, which is not the
                 // normal of the tangent plane anymore, the half angle vector is still projected
                 // using the modified normal vector.
-                std::string half_angle_proj = "normalize(half_vector) - normal / dot(normal, "
-                                              "normal) * dot(normal, normalize(half_vector))";
+                std::string half_angle_proj =
+                    "normalize(half_vector) - normal * dot(normal, normalize(half_vector))";
                 // Note: the half angle vector projection is confirmed not normalized before the dot
                 // product. The result is in fact not cos(phi) as the name suggested.
                 index = "dot(" + half_angle_proj + ", tangent)";
@@ -749,7 +787,8 @@ static void WriteLighting(std::string& out, const PicaShaderConfig& config) {
         }
 
         // Fresnel
-        if (lighting.lut_fr.enable &&
+        // Note: only the last entry in the light slots applies the Fresnel factor
+        if (light_index == lighting.src_num - 1 && lighting.lut_fr.enable &&
             LightingRegs::IsLightingSamplerSupported(lighting.config,
                                                      LightingRegs::LightingSampler::Fresnel)) {
             // Lookup fresnel LUT value
@@ -758,17 +797,17 @@ static void WriteLighting(std::string& out, const PicaShaderConfig& config) {
                             lighting.lut_fr.type, lighting.lut_fr.abs_input);
             value = "(" + std::to_string(lighting.lut_fr.scale) + " * " + value + ")";
 
-            // Enabled for difffuse lighting alpha component
+            // Enabled for diffuse lighting alpha component
             if (lighting.fresnel_selector == LightingRegs::LightingFresnelSelector::PrimaryAlpha ||
                 lighting.fresnel_selector == LightingRegs::LightingFresnelSelector::Both) {
-                out += "diffuse_sum.a  *= " + value + ";\n";
+                out += "diffuse_sum.a = " + value + ";\n";
             }
 
             // Enabled for the specular lighting alpha component
             if (lighting.fresnel_selector ==
                     LightingRegs::LightingFresnelSelector::SecondaryAlpha ||
                 lighting.fresnel_selector == LightingRegs::LightingFresnelSelector::Both) {
-                out += "specular_sum.a *= " + value + ";\n";
+                out += "specular_sum.a = " + value + ";\n";
             }
         }
 
@@ -1007,8 +1046,6 @@ std::string GenerateFragmentShader(const PicaShaderConfig& config) {
 
     std::string out = R"(
 #version 330 core
-#define NUM_TEV_STAGES 6
-#define NUM_LIGHTS 8
 
 in vec4 primary_color;
 in vec2 texcoord[3];
@@ -1020,36 +1057,6 @@ in vec4 gl_FragCoord;
 
 out vec4 color;
 
-struct LightSrc {
-    vec3 specular_0;
-    vec3 specular_1;
-    vec3 diffuse;
-    vec3 ambient;
-    vec3 position;
-    vec3 spot_direction;
-    float dist_atten_bias;
-    float dist_atten_scale;
-};
-
-layout (std140) uniform shader_data {
-    vec2 framebuffer_scale;
-    int alphatest_ref;
-    float depth_scale;
-    float depth_offset;
-    int scissor_x1;
-    int scissor_y1;
-    int scissor_x2;
-    int scissor_y2;
-    vec3 fog_color;
-    vec2 proctex_noise_f;
-    vec2 proctex_noise_a;
-    vec2 proctex_noise_p;
-    vec3 lighting_global_ambient;
-    LightSrc light_src[NUM_LIGHTS];
-    vec4 const_color[NUM_TEV_STAGES];
-    vec4 tev_combiner_buffer_color;
-};
-
 uniform sampler2D tex[3];
 uniform samplerBuffer lighting_lut;
 uniform samplerBuffer fog_lut;
@@ -1058,7 +1065,11 @@ uniform samplerBuffer proctex_color_map;
 uniform samplerBuffer proctex_alpha_map;
 uniform samplerBuffer proctex_lut;
 uniform samplerBuffer proctex_diff_lut;
+)";
 
+    out += UniformBlockDef;
+
+    out += R"(
 // Rotate the vector v by the quaternion q
 vec3 quaternion_rotate(vec4 q, vec3 v) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
@@ -1111,7 +1122,10 @@ vec4 secondary_fragment_color = vec4(0.0);
                "gl_FragCoord.y < scissor_y2)) discard;\n";
     }
 
-    out += "float z_over_w = 1.0 - gl_FragCoord.z * 2.0;\n";
+    // After perspective divide, OpenGL transform z_over_w from [-1, 1] to [near, far]. Here we use
+    // default near = 0 and far = 1, and undo the transformation to get the original z_over_w, then
+    // do our own transformation according to PICA specification.
+    out += "float z_over_w = 2.0 * gl_FragCoord.z - 1.0;\n";
     out += "float depth = z_over_w * depth_scale + depth_offset;\n";
     if (state.depthmap_enable == RasterizerRegs::DepthBuffering::WBuffering) {
         out += "depth /= gl_FragCoord.w;\n";
@@ -1151,6 +1165,11 @@ vec4 secondary_fragment_color = vec4(0.0);
 
         // Blend the fog
         out += "last_tex_env_out.rgb = mix(fog_color.rgb, last_tex_env_out.rgb, fog_factor);\n";
+    } else if (state.fog_mode == TexturingRegs::FogMode::Gas) {
+        Core::Telemetry().AddField(Telemetry::FieldType::Session, "VideoCore_Pica_UseGasMode",
+                                   true);
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented gas mode");
+        UNIMPLEMENTED();
     }
 
     out += "gl_FragDepth = depth;\n";
@@ -1186,6 +1205,12 @@ out float texcoord0_w;
 out vec4 normquat;
 out vec3 view;
 
+)";
+
+    out += UniformBlockDef;
+
+    out += R"(
+
 void main() {
     primary_color = vert_color;
     texcoord[0] = vert_texcoord0;
@@ -1194,7 +1219,9 @@ void main() {
     texcoord0_w = vert_texcoord0_w;
     normquat = vert_normquat;
     view = vert_view;
-    gl_Position = vec4(vert_position.x, vert_position.y, -vert_position.z, vert_position.w);
+    gl_Position = vert_position;
+    gl_ClipDistance[0] = -vert_position.z; // fixed PICA clipping plane z <= 0
+    gl_ClipDistance[1] = dot(clip_coef, vert_position);
 }
 )";
 
