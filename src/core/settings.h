@@ -7,7 +7,6 @@
 #include <array>
 #include <string>
 #include "common/common_types.h"
-#include "core/hle/service/cam/cam.h"
 
 namespace Settings {
 
@@ -121,10 +120,6 @@ struct Values {
     std::string sink_id;
     bool enable_audio_stretching;
     std::string audio_device_id;
-
-    // Camera
-    std::array<std::string, Service::CAM::NumCameras> camera_name;
-    std::array<std::string, Service::CAM::NumCameras> camera_config;
 
     // Debugging
     bool use_gdbstub;

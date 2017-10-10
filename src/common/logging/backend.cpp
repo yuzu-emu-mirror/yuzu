@@ -33,32 +33,11 @@ namespace Log {
     SUB(Kernel, SVC)                                                                               \
     CLS(Service)                                                                                   \
     SUB(Service, SRV)                                                                              \
-    SUB(Service, FRD)                                                                              \
     SUB(Service, FS)                                                                               \
-    SUB(Service, ERR)                                                                              \
-    SUB(Service, APT)                                                                              \
-    SUB(Service, BOSS)                                                                             \
     SUB(Service, GSP)                                                                              \
-    SUB(Service, AC)                                                                               \
-    SUB(Service, AM)                                                                               \
-    SUB(Service, PTM)                                                                              \
-    SUB(Service, LDR)                                                                              \
-    SUB(Service, MIC)                                                                              \
-    SUB(Service, NDM)                                                                              \
-    SUB(Service, NFC)                                                                              \
-    SUB(Service, NIM)                                                                              \
-    SUB(Service, NWM)                                                                              \
-    SUB(Service, CAM)                                                                              \
-    SUB(Service, CECD)                                                                             \
     SUB(Service, CFG)                                                                              \
-    SUB(Service, CSND)                                                                             \
     SUB(Service, DSP)                                                                              \
-    SUB(Service, DLP)                                                                              \
     SUB(Service, HID)                                                                              \
-    SUB(Service, HTTP)                                                                             \
-    SUB(Service, SOC)                                                                              \
-    SUB(Service, IR)                                                                               \
-    SUB(Service, Y2R)                                                                              \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \
     SUB(HW, LCD)                                                                                   \

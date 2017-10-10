@@ -32,18 +32,10 @@ set(SRCS
             file_sys/path_parser.cpp
             file_sys/savedata_archive.cpp
             file_sys/title_metadata.cpp
-            frontend/camera/blank_camera.cpp
-            frontend/camera/factory.cpp
-            frontend/camera/interface.cpp
             frontend/emu_window.cpp
             frontend/framebuffer_layout.cpp
             gdbstub/gdbstub.cpp
             hle/config_mem.cpp
-            hle/applets/applet.cpp
-            hle/applets/erreula.cpp
-            hle/applets/mii_selector.cpp
-            hle/applets/mint.cpp
-            hle/applets/swkbd.cpp
             hle/kernel/address_arbiter.cpp
             hle/kernel/client_port.cpp
             hle/kernel/client_session.cpp
@@ -65,49 +57,12 @@ set(SRCS
             hle/kernel/wait_object.cpp
             hle/lock.cpp
             hle/romfs.cpp
-            hle/service/ac/ac.cpp
-            hle/service/ac/ac_i.cpp
-            hle/service/ac/ac_u.cpp
-            hle/service/act/act.cpp
-            hle/service/act/act_a.cpp
-            hle/service/act/act_u.cpp
-            hle/service/am/am.cpp
-            hle/service/am/am_app.cpp
-            hle/service/am/am_net.cpp
-            hle/service/am/am_sys.cpp
-            hle/service/am/am_u.cpp
-            hle/service/apt/apt.cpp
-            hle/service/apt/apt_a.cpp
-            hle/service/apt/apt_s.cpp
-            hle/service/apt/apt_u.cpp
-            hle/service/apt/bcfnt/bcfnt.cpp
-            hle/service/boss/boss.cpp
-            hle/service/boss/boss_p.cpp
-            hle/service/boss/boss_u.cpp
-            hle/service/cam/cam.cpp
-            hle/service/cam/cam_c.cpp
-            hle/service/cam/cam_q.cpp
-            hle/service/cam/cam_s.cpp
-            hle/service/cam/cam_u.cpp
-            hle/service/cecd/cecd.cpp
-            hle/service/cecd/cecd_ndm.cpp
-            hle/service/cecd/cecd_s.cpp
-            hle/service/cecd/cecd_u.cpp
             hle/service/cfg/cfg.cpp
             hle/service/cfg/cfg_i.cpp
             hle/service/cfg/cfg_nor.cpp
             hle/service/cfg/cfg_s.cpp
             hle/service/cfg/cfg_u.cpp
-            hle/service/csnd_snd.cpp
-            hle/service/dlp/dlp.cpp
-            hle/service/dlp/dlp_clnt.cpp
-            hle/service/dlp/dlp_fkcl.cpp
-            hle/service/dlp/dlp_srvr.cpp
             hle/service/dsp_dsp.cpp
-            hle/service/err_f.cpp
-            hle/service/frd/frd.cpp
-            hle/service/frd/frd_a.cpp
-            hle/service/frd/frd_u.cpp
             hle/service/fs/archive.cpp
             hle/service/fs/fs_user.cpp
             hle/service/gsp_gpu.cpp
@@ -115,60 +70,11 @@ set(SRCS
             hle/service/hid/hid.cpp
             hle/service/hid/hid_spvr.cpp
             hle/service/hid/hid_user.cpp
-            hle/service/http_c.cpp
-            hle/service/ir/extra_hid.cpp
-            hle/service/ir/ir.cpp
-            hle/service/ir/ir_rst.cpp
-            hle/service/ir/ir_u.cpp
-            hle/service/ir/ir_user.cpp
-            hle/service/ldr_ro/cro_helper.cpp
-            hle/service/ldr_ro/ldr_ro.cpp
-            hle/service/ldr_ro/memory_synchronizer.cpp
-            hle/service/mic_u.cpp
-            hle/service/mvd/mvd.cpp
-            hle/service/mvd/mvd_std.cpp
-            hle/service/ndm/ndm.cpp
-            hle/service/ndm/ndm_u.cpp
-            hle/service/nfc/nfc.cpp
-            hle/service/nfc/nfc_m.cpp
-            hle/service/nfc/nfc_u.cpp
-            hle/service/news/news.cpp
-            hle/service/news/news_s.cpp
-            hle/service/news/news_u.cpp
-            hle/service/nim/nim.cpp
-            hle/service/nim/nim_aoc.cpp
-            hle/service/nim/nim_s.cpp
-            hle/service/nim/nim_u.cpp
             hle/service/ns/ns.cpp
             hle/service/ns/ns_s.cpp
-            hle/service/nwm/nwm.cpp
-            hle/service/nwm/nwm_cec.cpp
-            hle/service/nwm/nwm_ext.cpp
-            hle/service/nwm/nwm_inf.cpp
-            hle/service/nwm/nwm_sap.cpp
-            hle/service/nwm/nwm_soc.cpp
-            hle/service/nwm/nwm_tst.cpp
-            hle/service/nwm/nwm_uds.cpp
-            hle/service/nwm/uds_beacon.cpp
-            hle/service/nwm/uds_connection.cpp
-            hle/service/nwm/uds_data.cpp
-            hle/service/pm_app.cpp
-            hle/service/ptm/ptm.cpp
-            hle/service/ptm/ptm_gets.cpp
-            hle/service/ptm/ptm_play.cpp
-            hle/service/ptm/ptm_sets.cpp
-            hle/service/ptm/ptm_sysm.cpp
-            hle/service/ptm/ptm_u.cpp
-            hle/service/qtm/qtm.cpp
-            hle/service/qtm/qtm_s.cpp
-            hle/service/qtm/qtm_sp.cpp
-            hle/service/qtm/qtm_u.cpp
             hle/service/service.cpp
             hle/service/sm/sm.cpp
             hle/service/sm/srv.cpp
-            hle/service/soc_u.cpp
-            hle/service/ssl_c.cpp
-            hle/service/y2r_u.cpp
             hle/shared_page.cpp
             hle/svc.cpp
             hw/aes/arithmetic128.cpp
@@ -177,7 +83,6 @@ set(SRCS
             hw/gpu.cpp
             hw/hw.cpp
             hw/lcd.cpp
-            hw/y2r.cpp
             loader/3dsx.cpp
             loader/elf.cpp
             loader/linker.cpp
@@ -231,9 +136,6 @@ set(HEADERS
             file_sys/ivfc_archive.h
             file_sys/path_parser.h
             file_sys/savedata_archive.h
-            frontend/camera/blank_camera.h
-            frontend/camera/factory.h
-            frontend/camera/interface.h
             frontend/emu_window.h
             frontend/framebuffer_layout.h
             frontend/input.h
@@ -242,11 +144,6 @@ set(HEADERS
             hle/function_wrappers.h
             hle/ipc.h
             hle/ipc_helpers.h
-            hle/applets/applet.h
-            hle/applets/erreula.h
-            hle/applets/mii_selector.h
-            hle/applets/mint.h
-            hle/applets/swkbd.h
             hle/kernel/address_arbiter.h
             hle/kernel/client_port.h
             hle/kernel/client_session.h
@@ -271,49 +168,12 @@ set(HEADERS
             hle/lock.h
             hle/result.h
             hle/romfs.h
-            hle/service/ac/ac.h
-            hle/service/ac/ac_i.h
-            hle/service/ac/ac_u.h
-            hle/service/act/act.h
-            hle/service/act/act_a.h
-            hle/service/act/act_u.h
-            hle/service/am/am.h
-            hle/service/am/am_app.h
-            hle/service/am/am_net.h
-            hle/service/am/am_sys.h
-            hle/service/am/am_u.h
-            hle/service/apt/apt.h
-            hle/service/apt/apt_a.h
-            hle/service/apt/apt_s.h
-            hle/service/apt/apt_u.h
-            hle/service/apt/bcfnt/bcfnt.h
-            hle/service/boss/boss.h
-            hle/service/boss/boss_p.h
-            hle/service/boss/boss_u.h
-            hle/service/cam/cam.h
-            hle/service/cam/cam_c.h
-            hle/service/cam/cam_q.h
-            hle/service/cam/cam_s.h
-            hle/service/cam/cam_u.h
-            hle/service/cecd/cecd.h
-            hle/service/cecd/cecd_ndm.h
-            hle/service/cecd/cecd_s.h
-            hle/service/cecd/cecd_u.h
             hle/service/cfg/cfg.h
             hle/service/cfg/cfg_i.h
             hle/service/cfg/cfg_nor.h
             hle/service/cfg/cfg_s.h
             hle/service/cfg/cfg_u.h
-            hle/service/csnd_snd.h
-            hle/service/dlp/dlp.h
-            hle/service/dlp/dlp_clnt.h
-            hle/service/dlp/dlp_fkcl.h
-            hle/service/dlp/dlp_srvr.h
             hle/service/dsp_dsp.h
-            hle/service/err_f.h
-            hle/service/frd/frd.h
-            hle/service/frd/frd_a.h
-            hle/service/frd/frd_u.h
             hle/service/fs/archive.h
             hle/service/fs/fs_user.h
             hle/service/gsp_gpu.h
@@ -321,60 +181,11 @@ set(HEADERS
             hle/service/hid/hid.h
             hle/service/hid/hid_spvr.h
             hle/service/hid/hid_user.h
-            hle/service/http_c.h
-            hle/service/ir/extra_hid.h
-            hle/service/ir/ir.h
-            hle/service/ir/ir_rst.h
-            hle/service/ir/ir_u.h
-            hle/service/ir/ir_user.h
-            hle/service/ldr_ro/cro_helper.h
-            hle/service/ldr_ro/ldr_ro.h
-            hle/service/ldr_ro/memory_synchronizer.h
-            hle/service/mic_u.h
-            hle/service/mvd/mvd.h
-            hle/service/mvd/mvd_std.h
-            hle/service/ndm/ndm.h
-            hle/service/ndm/ndm_u.h
-            hle/service/nfc/nfc.h
-            hle/service/nfc/nfc_m.h
-            hle/service/nfc/nfc_u.h
-            hle/service/news/news.h
-            hle/service/news/news_s.h
-            hle/service/news/news_u.h
-            hle/service/nim/nim.h
-            hle/service/nim/nim_aoc.h
-            hle/service/nim/nim_s.h
-            hle/service/nim/nim_u.h
             hle/service/ns/ns.h
             hle/service/ns/ns_s.h
-            hle/service/nwm/nwm.h
-            hle/service/nwm/nwm_cec.h
-            hle/service/nwm/nwm_ext.h
-            hle/service/nwm/nwm_inf.h
-            hle/service/nwm/nwm_sap.h
-            hle/service/nwm/nwm_soc.h
-            hle/service/nwm/nwm_tst.h
-            hle/service/nwm/nwm_uds.h
-            hle/service/nwm/uds_beacon.h
-            hle/service/nwm/uds_connection.h
-            hle/service/nwm/uds_data.h
-            hle/service/pm_app.h
-            hle/service/ptm/ptm.h
-            hle/service/ptm/ptm_gets.h
-            hle/service/ptm/ptm_play.h
-            hle/service/ptm/ptm_sets.h
-            hle/service/ptm/ptm_sysm.h
-            hle/service/ptm/ptm_u.h
-            hle/service/qtm/qtm.h
-            hle/service/qtm/qtm_s.h
-            hle/service/qtm/qtm_sp.h
-            hle/service/qtm/qtm_u.h
             hle/service/service.h
             hle/service/sm/sm.h
             hle/service/sm/srv.h
-            hle/service/soc_u.h
-            hle/service/ssl_c.h
-            hle/service/y2r_u.h
             hle/shared_page.h
             hle/svc.h
             hw/aes/arithmetic128.h
@@ -383,7 +194,6 @@ set(HEADERS
             hw/gpu.h
             hw/hw.h
             hw/lcd.h
-            hw/y2r.h
             loader/3dsx.h
             loader/elf.h
             loader/linker.h
