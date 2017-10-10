@@ -121,11 +121,11 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileTyp
 
     // NX NSO file format.
     case FileType::NSO:
-        return std::make_unique<AppLoader_NSO>(std::move(file), filename, filepath);
+        return std::make_unique<AppLoader_NSO>(std::move(file), filepath);
 
     // NX NRO file format.
     case FileType::NRO:
-        return std::make_unique<AppLoader_NRO>(std::move(file), filename, filepath);
+        return std::make_unique<AppLoader_NRO>(std::move(file), filepath);
 
     default:
         return nullptr;

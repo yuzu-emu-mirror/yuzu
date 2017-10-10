@@ -70,31 +70,21 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeade
 
     std::vector<u8> uncompressed_data;
     uncompressed_data.resize(header.size);
-    const int bytes_uncompressed =
-        LZ4_decompress_safe_partial(reinterpret_cast<const char*>(compressed_data.data()),
-                                    reinterpret_cast<char*>(uncompressed_data.data()),
-                                    compressed_size, header.size, header.size);
+    const int bytes_uncompressed = LZ4_decompress_safe(
+        reinterpret_cast<const char*>(compressed_data.data()),
+        reinterpret_cast<char*>(uncompressed_data.data()), compressed_size, header.size);
 
-    ASSERT_MSG(bytes_uncompressed == header.size, "%d != %d", bytes_uncompressed, header.size);
+    ASSERT_MSG(bytes_uncompressed == header.size && bytes_uncompressed == uncompressed_data.size(),
+               "%d != %d != %d", bytes_uncompressed, header.size, uncompressed_data.size());
 
     return uncompressed_data;
-}
-
-VAddr AppLoader_NSO::GetEntryPoint(VAddr load_base) const {
-    // Find nnMain function, set entrypoint to that address
-    const auto& search = exports.find("nnMain");
-    if (search != exports.end()) {
-        return search->second;
-    }
-    LOG_ERROR(Loader, "Unable to find entrypoint, defaulting to: 0x%llx", load_base);
-    return load_base;
 }
 
 static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-bool AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
+VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base, bool relocate) {
     FileUtil::IOFile file(path, "rb");
     if (!file.IsOpen()) {
         return {};
@@ -137,11 +127,12 @@ bool AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
         bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);
         codeset->data.size += bss_size;
     }
-    program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
+    const u32 image_size{PageAlignSize(static_cast<u32>(program_image.size()) + bss_size)};
+    program_image.resize(image_size);
 
     // Relocate symbols if there was a proper MOD header - This must happen after the image has been
     // loaded into memory
-    if (has_mod_header) {
+    if (has_mod_header && relocate) {
         Relocate(program_image, module_offset + mod_header.dynamic_offset, load_base);
     }
 
@@ -150,7 +141,7 @@ bool AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
     Kernel::g_current_process->LoadModule(codeset, load_base);
 
-    return true;
+    return load_base + image_size;
 }
 
 ResultStatus AppLoader_NSO::Load() {
@@ -161,22 +152,29 @@ ResultStatus AppLoader_NSO::Load() {
         return ResultStatus::Error;
     }
 
-    // Load and relocate "main" and "sdk" NSO
-    static constexpr VAddr main_base{0x710000000};
+    // Load and relocate "rtld" NSO
+    static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
     Kernel::g_current_process = Kernel::Process::Create("main");
-    if (!LoadNso(filepath, main_base)) {
+    VAddr next_base_addr{LoadNso(filepath, base_addr)};
+    if (!next_base_addr) {
         return ResultStatus::ErrorInvalidFormat;
     }
-    const std::string sdkpath = filepath.substr(0, filepath.find_last_of("/\\")) + "/sdk";
-    if (!LoadNso(sdkpath, 0x720000000)) {
-        LOG_WARNING(Loader, "failed to find SDK NSO");
+
+    // Load and relocate remaining submodules
+    for (const auto& module_name : {"main", "sdk", "subsdk0", "subsdk1"}) {
+        const std::string module_path =
+            filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module_name;
+        next_base_addr = LoadNso(module_path, next_base_addr);
+        if (!next_base_addr) {
+            LOG_WARNING(Loader, "failed to find load module: %s", module_name);
+        }
     }
 
     Kernel::g_current_process->svc_access_mask.set();
     Kernel::g_current_process->address_mappings = default_address_mappings;
     Kernel::g_current_process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->Run(GetEntryPoint(main_base), 48, Kernel::DEFAULT_STACK_SIZE);
+    Kernel::g_current_process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
 
     ResolveImports();
 

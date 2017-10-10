@@ -75,17 +75,6 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NroSegmentHeade
     return data;
 }
 
-VAddr AppLoader_NRO::GetEntryPoint(VAddr load_base) const {
-    // Find nnMain function, set entrypoint to that address
-    const auto& search = exports.find("nnMain");
-    if (search != exports.end()) {
-        return load_base + search->second;
-    }
-    const VAddr entry_point{load_base + sizeof(NroHeader)};
-    LOG_ERROR(Loader, "Unable to find entrypoint, defaulting to: 0x%llx", entry_point);
-    return entry_point;
-}
-
 bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     FileUtil::IOFile file(path, "rb");
     if (!file.IsOpen()) {
@@ -152,9 +141,9 @@ ResultStatus AppLoader_NRO::Load() {
     }
 
     // Load and relocate "main" and "sdk" NSO
-    static constexpr VAddr main_base{0x10000000};
+    static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
     Kernel::g_current_process = Kernel::Process::Create("main");
-    if (!LoadNro(filepath, main_base)) {
+    if (!LoadNro(filepath, base_addr)) {
         return ResultStatus::ErrorInvalidFormat;
     }
 
@@ -162,7 +151,7 @@ ResultStatus AppLoader_NRO::Load() {
     Kernel::g_current_process->address_mappings = default_address_mappings;
     Kernel::g_current_process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    Kernel::g_current_process->Run(GetEntryPoint(main_base), 48, Kernel::DEFAULT_STACK_SIZE);
+    Kernel::g_current_process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
 
     ResolveImports();
 

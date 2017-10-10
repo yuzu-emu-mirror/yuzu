@@ -17,9 +17,8 @@ namespace Loader {
 /// Loads an NRO file
 class AppLoader_NRO final : public AppLoader, Linker {
 public:
-    AppLoader_NRO(FileUtil::IOFile&& file, std::string filename, std::string filepath)
-        : AppLoader(std::move(file)), filename(std::move(filename)), filepath(std::move(filepath)) {
-    }
+    AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath)
+        : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
     /**
      * Returns the type of the file
@@ -35,10 +34,8 @@ public:
     ResultStatus Load() override;
 
 private:
-    VAddr GetEntryPoint(VAddr load_base) const;
     bool LoadNro(const std::string& path, VAddr load_base);
 
-    std::string filename;
     std::string filepath;
 };
 

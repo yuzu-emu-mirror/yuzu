@@ -65,8 +65,8 @@ enum : PAddr {
 /// Virtual user-space memory regions
 enum : VAddr {
     /// Where the application text, data and bss reside.
-    PROCESS_IMAGE_VADDR = 0x00100000,
-    PROCESS_IMAGE_MAX_SIZE = 0x03F00000,
+    PROCESS_IMAGE_VADDR = 0x08000000,
+    PROCESS_IMAGE_MAX_SIZE = 0x08000000,
     PROCESS_IMAGE_VADDR_END = PROCESS_IMAGE_VADDR + PROCESS_IMAGE_MAX_SIZE,
 
     /// Area where IPC buffers are mapped onto.
