@@ -15,7 +15,6 @@
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/service/dsp_dsp.h"
 #include "core/hle/service/gsp_gpu.h"
-#include "core/hle/service/gsp_lcd.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
@@ -190,7 +189,6 @@ void Init() {
 
     AddService(new DSP_DSP::Interface);
     AddService(new GSP::GSP_GPU);
-    AddService(new GSP::GSP_LCD);
 
     LOG_DEBUG(Service, "initialized OK");
 }

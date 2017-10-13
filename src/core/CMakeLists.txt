@@ -50,7 +50,6 @@ set(SRCS
             hle/romfs.cpp
             hle/service/dsp_dsp.cpp
             hle/service/gsp_gpu.cpp
-            hle/service/gsp_lcd.cpp
             hle/service/hid/hid.cpp
             hle/service/service.cpp
             hle/service/sm/sm.cpp
@@ -139,7 +138,6 @@ set(HEADERS
             hle/romfs.h
             hle/service/dsp_dsp.h
             hle/service/gsp_gpu.h
-            hle/service/gsp_lcd.h
             hle/service/hid/hid.h
             hle/service/service.h
             hle/service/sm/sm.h

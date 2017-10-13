@@ -6,7 +6,7 @@
 #include "citra_qt/debugger/graphics/graphics.h"
 #include "citra_qt/util/util.h"
 
-extern GraphicsDebugger g_debugger;
+GraphicsDebugger g_debugger;
 
 GPUCommandStreamItemModel::GPUCommandStreamItemModel(QObject* parent)
     : QAbstractListModel(parent), command_count(0) {
