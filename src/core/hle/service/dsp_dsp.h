@@ -16,16 +16,6 @@ enum class DspPipe;
 namespace Service {
 namespace DSP_DSP {
 
-class Interface final : public Service::Interface {
-public:
-    Interface();
-    ~Interface() override;
-
-    std::string GetPortName() const override {
-        return "dsp::DSP";
-    }
-};
-
 /**
  * Signal a specific DSP related interrupt of type == InterruptType::Pipe, pipe == pipe.
  * @param pipe The DSP pipe for which to signal an interrupt for.

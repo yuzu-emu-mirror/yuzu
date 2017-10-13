@@ -420,9 +420,9 @@ inline void Write(u32 addr, const T data) {
             // TODO: hwtest this
             if (config.GetStartAddress() != 0) {
                 if (!is_second_filler) {
-                    Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PSC0);
+                    //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PSC0);
                 } else {
-                    Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PSC1);
+                    //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PSC1);
                 }
             }
 
@@ -463,7 +463,7 @@ inline void Write(u32 addr, const T data) {
             }
 
             g_regs.display_transfer_config.trigger = 0;
-            Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PPF);
+            //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::PPF);
         }
         break;
     }

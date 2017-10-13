@@ -174,16 +174,6 @@ struct CommandBuffer {
 };
 static_assert(sizeof(CommandBuffer) == 0x200, "CommandBuffer struct has incorrect size");
 
-class GSP_GPU final : public Interface {
-public:
-    GSP_GPU();
-    ~GSP_GPU() override;
-
-    std::string GetPortName() const override {
-        return "gsp::Gpu";
-    }
-};
-
 /**
  * Signals that the specified interrupt type has occurred to userland code
  * @param interrupt_id ID of interrupt that is being signalled

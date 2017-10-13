@@ -13,14 +13,5 @@ namespace DSP_DSP {
 void SignalPipeInterrupt(DspPipe pipe) {
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interface class
-
-Interface::Interface() {
-}
-
-Interface::~Interface() {
-}
-
 } // namespace DSP_DSP
 } // namespace Service
