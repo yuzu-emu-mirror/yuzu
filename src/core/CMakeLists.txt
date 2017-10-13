@@ -17,15 +17,6 @@ set(SRCS
             core.cpp
             core_timing.cpp
             file_sys/archive_backend.cpp
-            file_sys/archive_extsavedata.cpp
-            file_sys/archive_ncch.cpp
-            file_sys/archive_other_savedata.cpp
-            file_sys/archive_savedata.cpp
-            file_sys/archive_sdmc.cpp
-            file_sys/archive_sdmcwriteonly.cpp
-            file_sys/archive_selfncch.cpp
-            file_sys/archive_source_sd_savedata.cpp
-            file_sys/archive_systemsavedata.cpp
             file_sys/disk_archive.cpp
             file_sys/ivfc_archive.cpp
             file_sys/ncch_container.cpp
@@ -57,21 +48,10 @@ set(SRCS
             hle/kernel/wait_object.cpp
             hle/lock.cpp
             hle/romfs.cpp
-            hle/service/cfg/cfg.cpp
-            hle/service/cfg/cfg_i.cpp
-            hle/service/cfg/cfg_nor.cpp
-            hle/service/cfg/cfg_s.cpp
-            hle/service/cfg/cfg_u.cpp
             hle/service/dsp_dsp.cpp
-            hle/service/fs/archive.cpp
-            hle/service/fs/fs_user.cpp
             hle/service/gsp_gpu.cpp
             hle/service/gsp_lcd.cpp
             hle/service/hid/hid.cpp
-            hle/service/hid/hid_spvr.cpp
-            hle/service/hid/hid_user.cpp
-            hle/service/ns/ns.cpp
-            hle/service/ns/ns_s.cpp
             hle/service/service.cpp
             hle/service/sm/sm.cpp
             hle/service/sm/srv.cpp
@@ -83,11 +63,9 @@ set(SRCS
             hw/gpu.cpp
             hw/hw.cpp
             hw/lcd.cpp
-            loader/3dsx.cpp
             loader/elf.cpp
             loader/linker.cpp
             loader/loader.cpp
-            loader/ncch.cpp
             loader/nro.cpp
             loader/nso.cpp
             loader/smdh.cpp
@@ -120,15 +98,6 @@ set(HEADERS
             core.h
             core_timing.h
             file_sys/archive_backend.h
-            file_sys/archive_extsavedata.h
-            file_sys/archive_ncch.h
-            file_sys/archive_other_savedata.h
-            file_sys/archive_savedata.h
-            file_sys/archive_sdmc.h
-            file_sys/archive_sdmcwriteonly.h
-            file_sys/archive_selfncch.h
-            file_sys/archive_source_sd_savedata.h
-            file_sys/archive_systemsavedata.h
             file_sys/directory_backend.h
             file_sys/disk_archive.h
             file_sys/errors.h
@@ -168,21 +137,10 @@ set(HEADERS
             hle/lock.h
             hle/result.h
             hle/romfs.h
-            hle/service/cfg/cfg.h
-            hle/service/cfg/cfg_i.h
-            hle/service/cfg/cfg_nor.h
-            hle/service/cfg/cfg_s.h
-            hle/service/cfg/cfg_u.h
             hle/service/dsp_dsp.h
-            hle/service/fs/archive.h
-            hle/service/fs/fs_user.h
             hle/service/gsp_gpu.h
             hle/service/gsp_lcd.h
             hle/service/hid/hid.h
-            hle/service/hid/hid_spvr.h
-            hle/service/hid/hid_user.h
-            hle/service/ns/ns.h
-            hle/service/ns/ns_s.h
             hle/service/service.h
             hle/service/sm/sm.h
             hle/service/sm/srv.h
@@ -194,11 +152,9 @@ set(HEADERS
             hw/gpu.h
             hw/hw.h
             hw/lcd.h
-            loader/3dsx.h
             loader/elf.h
             loader/linker.h
             loader/loader.h
-            loader/ncch.h
             loader/nro.h
             loader/nso.h
             loader/smdh.h

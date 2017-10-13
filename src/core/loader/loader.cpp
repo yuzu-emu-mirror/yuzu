@@ -7,9 +7,7 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/hle/kernel/process.h"
-#include "core/loader/3dsx.h"
 #include "core/loader/elf.h"
-#include "core/loader/ncch.h"
 #include "core/loader/nro.h"
 #include "core/loader/nso.h"
 

@@ -13,13 +13,10 @@
 #include "core/hle/kernel/server_port.h"
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/handle_table.h"
-#include "core/hle/service/cfg/cfg.h"
 #include "core/hle/service/dsp_dsp.h"
-#include "core/hle/service/fs/archive.h"
 #include "core/hle/service/gsp_gpu.h"
 #include "core/hle/service/gsp_lcd.h"
 #include "core/hle/service/hid/hid.h"
-#include "core/hle/service/ns/ns.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sm/srv.h"
@@ -189,10 +186,6 @@ void Init() {
     SM::g_service_manager = std::make_shared<SM::ServiceManager>();
     SM::ServiceManager::InstallInterfaces(SM::g_service_manager);
 
-    NS::InstallInterfaces(*SM::g_service_manager);
-
-    FS::ArchiveInit();
-    CFG::Init();
     HID::Init();
 
     AddService(new DSP_DSP::Interface);
@@ -205,8 +198,6 @@ void Init() {
 /// Shutdown ServiceManager
 void Shutdown() {
     HID::Shutdown();
-    CFG::Shutdown();
-    FS::ArchiveShutdown();
 
     SM::g_service_manager = nullptr;
     g_kernel_named_ports.clear();
