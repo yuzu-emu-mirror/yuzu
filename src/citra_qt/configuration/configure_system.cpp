@@ -6,8 +6,6 @@
 #include "citra_qt/configuration/configure_system.h"
 #include "citra_qt/ui_settings.h"
 #include "core/core.h"
-#include "core/hle/service/cfg/cfg.h"
-#include "core/hle/service/fs/archive.h"
 #include "ui_configure_system.h"
 
 static const std::array<int, 12> days_in_month = {{
@@ -29,100 +27,14 @@ ConfigureSystem::~ConfigureSystem() {}
 
 void ConfigureSystem::setConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
-
-    if (!enabled) {
-        ReadSystemSettings();
-        ui->group_system_settings->setEnabled(false);
-    } else {
-        // This tab is enabled only when game is not running (i.e. all service are not initialized).
-        // Temporarily register archive types and load the config savegame file to memory.
-        Service::FS::RegisterArchiveTypes();
-        ResultCode result = Service::CFG::LoadConfigNANDSaveFile();
-        Service::FS::UnregisterArchiveTypes();
-
-        if (result.IsError()) {
-            ui->label_disable_info->setText(tr("Failed to load system settings data."));
-            ui->group_system_settings->setEnabled(false);
-            enabled = false;
-            return;
-        }
-
-        ReadSystemSettings();
-        ui->label_disable_info->hide();
-    }
 }
 
 void ConfigureSystem::ReadSystemSettings() {
-    // set username
-    username = Service::CFG::GetUsername();
-    // TODO(wwylele): Use this when we move to Qt 5.5
-    // ui->edit_username->setText(QString::fromStdU16String(username));
-    ui->edit_username->setText(
-        QString::fromUtf16(reinterpret_cast<const ushort*>(username.data())));
-
-    // set birthday
-    std::tie(birthmonth, birthday) = Service::CFG::GetBirthday();
-    ui->combo_birthmonth->setCurrentIndex(birthmonth - 1);
-    updateBirthdayComboBox(
-        birthmonth -
-        1); // explicitly update it because the signal from setCurrentIndex is not reliable
-    ui->combo_birthday->setCurrentIndex(birthday - 1);
-
-    // set system language
-    language_index = Service::CFG::GetSystemLanguage();
-    ui->combo_language->setCurrentIndex(language_index);
-
-    // set sound output mode
-    sound_index = Service::CFG::GetSoundOutputMode();
-    ui->combo_sound->setCurrentIndex(sound_index);
-
-    // set the console id
-    u64 console_id = Service::CFG::GetConsoleUniqueId();
-    ui->label_console_id->setText(
-        tr("Console ID: 0x%1").arg(QString::number(console_id, 16).toUpper()));
 }
 
 void ConfigureSystem::applyConfiguration() {
     if (!enabled)
         return;
-
-    bool modified = false;
-
-    // apply username
-    // TODO(wwylele): Use this when we move to Qt 5.5
-    // std::u16string new_username = ui->edit_username->text().toStdU16String();
-    std::u16string new_username(
-        reinterpret_cast<const char16_t*>(ui->edit_username->text().utf16()));
-    if (new_username != username) {
-        Service::CFG::SetUsername(new_username);
-        modified = true;
-    }
-
-    // apply birthday
-    int new_birthmonth = ui->combo_birthmonth->currentIndex() + 1;
-    int new_birthday = ui->combo_birthday->currentIndex() + 1;
-    if (birthmonth != new_birthmonth || birthday != new_birthday) {
-        Service::CFG::SetBirthday(new_birthmonth, new_birthday);
-        modified = true;
-    }
-
-    // apply language
-    int new_language = ui->combo_language->currentIndex();
-    if (language_index != new_language) {
-        Service::CFG::SetSystemLanguage(static_cast<Service::CFG::SystemLanguage>(new_language));
-        modified = true;
-    }
-
-    // apply sound
-    int new_sound = ui->combo_sound->currentIndex();
-    if (sound_index != new_sound) {
-        Service::CFG::SetSoundOutputMode(static_cast<Service::CFG::SoundOutputMode>(new_sound));
-        modified = true;
-    }
-
-    // update the config savegame if any item is modified.
-    if (modified)
-        Service::CFG::UpdateConfigNANDSavegame();
 }
 
 void ConfigureSystem::updateBirthdayComboBox(int birthmonth_index) {
@@ -160,10 +72,6 @@ void ConfigureSystem::refreshConsoleID() {
                                   QMessageBox::No | QMessageBox::Yes);
     if (reply == QMessageBox::No)
         return;
-    u32 random_number;
-    u64 console_id;
-    Service::CFG::GenerateConsoleUniqueId(random_number, console_id);
-    Service::CFG::SetConsoleUniqueId(random_number, console_id);
-    Service::CFG::UpdateConfigNANDSavegame();
+    u64 console_id{};
     ui->label_console_id->setText("Console ID: 0x" + QString::number(console_id, 16).toUpper());
 }

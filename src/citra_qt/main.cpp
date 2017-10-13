@@ -39,7 +39,6 @@
 #include "common/scope_exit.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/file_sys/archive_source_sd_savedata.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
@@ -541,18 +540,7 @@ void GMainWindow::OnGameListLoadFile(QString game_path) {
 }
 
 void GMainWindow::OnGameListOpenSaveFolder(u64 program_id) {
-    std::string sdmc_dir = FileUtil::GetUserPath(D_SDMC_IDX);
-    std::string path = FileSys::ArchiveSource_SDSaveData::GetSaveDataPathFor(sdmc_dir, program_id);
-    QString qpath = QString::fromStdString(path);
-
-    QDir dir(qpath);
-    if (!dir.exists()) {
-        QMessageBox::critical(this, tr("Error Opening Save Folder"), tr("Folder does not exist!"));
-        return;
-    }
-
-    LOG_INFO(Frontend, "Opening save data path for program_id=%" PRIu64, program_id);
-    QDesktopServices::openUrl(QUrl::fromLocalFile(qpath));
+    UNIMPLEMENTED();
 }
 
 void GMainWindow::OnMenuLoadFile() {

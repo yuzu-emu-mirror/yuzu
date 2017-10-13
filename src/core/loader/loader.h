@@ -29,11 +29,7 @@ namespace Loader {
 enum class FileType {
     Error,
     Unknown,
-    CCI,
-    CXI,
-    CIA,
     ELF,
-    THREEDSX, // 3DSX
     NSO,
     NRO,
 };

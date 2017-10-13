@@ -31,9 +31,7 @@ FileType IdentifyFile(FileUtil::IOFile& file) {
     if (FileType::Error != type)                                                                   \
         return type;
 
-    CHECK_TYPE(THREEDSX)
     CHECK_TYPE(ELF)
-    CHECK_TYPE(NCCH)
     CHECK_TYPE(NSO)
     CHECK_TYPE(NRO)
 
@@ -58,33 +56,13 @@ FileType GuessFromExtension(const std::string& extension_) {
     if (extension == ".elf" || extension == ".axf")
         return FileType::ELF;
 
-    if (extension == ".cci" || extension == ".3ds")
-        return FileType::CCI;
-
-    if (extension == ".cxi")
-        return FileType::CXI;
-
-    if (extension == ".3dsx")
-        return FileType::THREEDSX;
-
-    if (extension == ".cia")
-        return FileType::CIA;
-
     return FileType::Unknown;
 }
 
 const char* GetFileTypeString(FileType type) {
     switch (type) {
-    case FileType::CCI:
-        return "NCSD";
-    case FileType::CXI:
-        return "NCCH";
-    case FileType::CIA:
-        return "CIA";
     case FileType::ELF:
         return "ELF";
-    case FileType::THREEDSX:
-        return "3DSX";
     case FileType::Error:
     case FileType::Unknown:
         break;
@@ -106,18 +84,9 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileTyp
                                                 const std::string& filepath) {
     switch (type) {
 
-    // 3DSX file format.
-    case FileType::THREEDSX:
-        return std::make_unique<AppLoader_THREEDSX>(std::move(file), filename, filepath);
-
     // Standard ELF file format.
     case FileType::ELF:
         return std::make_unique<AppLoader_ELF>(std::move(file), filename);
-
-    // NCCH/NCSD container formats.
-    case FileType::CXI:
-    case FileType::CCI:
-        return std::make_unique<AppLoader_NCCH>(std::move(file), filepath);
 
     // NX NSO file format.
     case FileType::NSO:
