@@ -162,6 +162,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     // Load and relocate remaining submodules
     for (const auto& module_name : {"main", "sdk", "subsdk0", "subsdk1"}) {
+        LOG_INFO(Loader, "loading %s @ 0x%08x", module_name, next_base_addr);
         const std::string module_path =
             filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module_name;
         next_base_addr = LoadNso(module_path, next_base_addr);
