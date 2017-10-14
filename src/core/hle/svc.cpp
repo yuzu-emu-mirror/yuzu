@@ -34,7 +34,7 @@ static ResultCode ConnectToPort(Kernel::Handle* out_handle, VAddr port_name_addr
     if (port_name.size() > PortNameMaxLength)
         return Kernel::ERR_PORT_NAME_TOO_LONG;
 
-    LOG_INFO(Kernel_SVC, "called port_name=%s", port_name.c_str());
+    LOG_TRACE(Kernel_SVC, "called port_name=%s", port_name.c_str());
 
     auto it = Service::g_kernel_named_ports.find(port_name);
     if (it == Service::g_kernel_named_ports.end()) {
@@ -84,7 +84,7 @@ static void OutputDebugString(VAddr address, int len) {
 }
 
 static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id) {
-    LOG_INFO(Kernel_SVC, "called, info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id, info_sub_id, handle);
+    LOG_TRACE(Kernel_SVC, "called, info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id, info_sub_id, handle);
 
     if (!handle) {
         switch (info_id) {
@@ -98,7 +98,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
 
 /// Gets the priority for the specified thread
 static ResultCode GetThreadPriority(s32* priority, Kernel::Handle handle) {
-    LOG_INFO(Kernel_SVC, "called, handle=0x%08X", handle);
+    LOG_TRACE(Kernel_SVC, "called, handle=0x%08X", handle);
     const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(handle);
     *priority = thread ? thread->GetPriority() : 0;
     return RESULT_SUCCESS;
@@ -137,7 +137,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
 
 /// Query memory
 static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAddr addr) {
-    LOG_INFO(Kernel_SVC, "called, addr=%llx", addr);
+    LOG_TRACE(Kernel_SVC, "called, addr=%llx", addr);
     return QueryProcessMemory(memory_info, page_info, Kernel::CurrentProcess, addr);
 }
 
@@ -161,7 +161,7 @@ static void SleepThread(s64 nanoseconds) {
 
 /// Signal process wide key
 static ResultCode SignalProcessWideKey(VAddr address, u32 target) {
-    LOG_INFO(Kernel_SVC, "called, address=0x%llx, target=0x%08x", address, target);
+    LOG_TRACE(Kernel_SVC, "called, address=0x%llx, target=0x%08x", address, target);
     return RESULT_SUCCESS;
 }
 
@@ -338,8 +338,6 @@ void CallSVC(u32 immediate) {
     } else {
         LOG_CRITICAL(Kernel_SVC, "unknown SVC function 0x%x", immediate);
     }
-
-    LOG_CRITICAL(Kernel_SVC, "PC = 0x%08X", Core::CPU().GetPC());
 }
 
 } // namespace SVC
