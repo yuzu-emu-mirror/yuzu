@@ -10,14 +10,14 @@
 // SVC types
 
 struct MemoryInfo {
-    u32 base_address;
-    u32 size;
-    u32 permission;
-    u32 state;
+    u64 base_address;
+    u64 size;
+    u64 permission;
+    u64 state;
 };
 
 struct PageInfo {
-    u32 flags;
+    u64 flags;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
