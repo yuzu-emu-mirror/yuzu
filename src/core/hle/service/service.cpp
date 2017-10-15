@@ -15,6 +15,8 @@
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/handle_table.h"
+#include "core/hle/service/am/am.h"
+#include "core/hle/service/apm/apm.h"
 #include "core/hle/service/dsp_dsp.h"
 #include "core/hle/service/gsp_gpu.h"
 #include "core/hle/service/hid/hid.h"
@@ -157,6 +159,8 @@ void Init() {
     SM::g_service_manager = std::make_shared<SM::ServiceManager>();
     SM::ServiceManager::InstallInterfaces(SM::g_service_manager);
 
+    AM::InstallInterfaces(*SM::g_service_manager);
+    APM::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
 
     HID::Init();

@@ -48,6 +48,9 @@ set(SRCS
             hle/kernel/wait_object.cpp
             hle/lock.cpp
             hle/romfs.cpp
+            hle/service/am/am.cpp
+            hle/service/am/applet_oe.cpp
+            hle/service/apm/apm.cpp
             hle/service/dsp_dsp.cpp
             hle/service/gsp_gpu.cpp
             hle/service/hid/hid.cpp
@@ -137,6 +140,9 @@ set(HEADERS
             hle/lock.h
             hle/result.h
             hle/romfs.h
+            hle/service/am/am.h
+            hle/service/am/applet_oe.h
+            hle/service/apm/apm.h
             hle/service/dsp_dsp.h
             hle/service/gsp_gpu.h
             hle/service/hid/hid.h

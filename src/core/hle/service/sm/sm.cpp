@@ -103,7 +103,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u32 unk1 = rp.Pop<u32>();
     u32 unk2 = rp.Pop<u32>();
-    auto name_buf = rp.PopRaw<std::array<char, 6>>();
+    auto name_buf = rp.PopRaw<std::array<char, 9>>();
     std::string name(name_buf.data());
 
     // TODO(yuriks): Permission checks go here

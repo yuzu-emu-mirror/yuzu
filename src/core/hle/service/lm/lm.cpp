@@ -14,7 +14,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
 }
 
 /**
- * SRV::Initialize service function
+ * LM::Initialize service function
  *  Inputs:
  *      0: 0x00000000
  *  Outputs:
