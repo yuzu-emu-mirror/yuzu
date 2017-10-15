@@ -91,6 +91,14 @@ public:
     /// TODO(Subv): Find a better name for this.
     SharedPtr<Thread> currently_handling;
 
+    void ConvertToDomain() {
+        is_domain = true;
+    }
+
+    bool IsDomain() const {
+        return is_domain;
+    }
+
 private:
     ServerSession();
     ~ServerSession() override;
@@ -102,6 +110,8 @@ private:
      * @return The created server session
      */
     static ResultVal<SharedPtr<ServerSession>> Create(std::string name = "Unknown");
+
+    bool is_domain{};
 };
 
 /**

@@ -119,7 +119,7 @@ public:
      */
     void ClearIncomingObjects();
 
-    void ParseCommandBuffer(u32_le* src_cmdbuf);
+    void ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming);
 
     /// Populates this context with data from the requesting process/thread.
     ResultCode PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf, Process& src_process,
@@ -149,6 +149,7 @@ private:
     std::unique_ptr<IPC::CommandHeader> command_header;
     std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
     std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
+    std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
 
     unsigned data_payload_offset{};
     u32_le command{};

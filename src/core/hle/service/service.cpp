@@ -10,11 +10,11 @@
 #include "core/hle/ipc.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
+#include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/server_port.h"
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/thread.h"
-#include "core/hle/kernel/handle_table.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/dsp_dsp.h"
@@ -82,7 +82,8 @@ void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* function
     }
 }
 
-void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx, const FunctionInfoBase* info) {
+void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx,
+                                                       const FunctionInfoBase* info) {
     auto cmd_buf = ctx.CommandBuffer();
     std::string function_name = info == nullptr ? fmt::format("{:#08x}", cmd_buf[0]) : info->name;
 
@@ -96,7 +97,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
 
     LOG_ERROR(Service, "unknown / unimplemented %s", w.c_str());
     // TODO(bunnei): Hack - ignore error
-    IPC::RequestBuilder rb{ ctx, 1 };
+    IPC::RequestBuilder rb{ctx, 1};
     rb.Push(RESULT_SUCCESS);
 }
 
@@ -107,13 +108,14 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
         return ReportUnimplementedFunction(ctx, info);
     }
 
-    LOG_TRACE(Service, "%s",
+    LOG_TRACE(
+        Service, "%s",
         MakeFunctionString(info->name, GetServiceName().c_str(), ctx.CommandBuffer()).c_str());
     handler_invoker(this, info->handler_callback, ctx);
 }
 
 void ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_session) {
-    u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());;
+    u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
 
     // TODO(yuriks): The kernel should be the one handling this as part of translation after
     // everything else is migrated
@@ -122,19 +124,16 @@ void ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_ses
                                               Kernel::g_handle_table);
 
     switch (context.GetCommandType()) {
-    case IPC::CommandType::Close:
-    {
+    case IPC::CommandType::Close: {
         IPC::RequestBuilder rb{context, 1};
         rb.Push(RESULT_SUCCESS);
         break;
     }
-    case IPC::CommandType::Control:
-    {
+    case IPC::CommandType::Control: {
         SM::g_service_manager->InvokeControlRequest(context);
         break;
     }
-    case IPC::CommandType::Request:
-    {
+    case IPC::CommandType::Request: {
         InvokeRequest(context);
         break;
     }
@@ -176,4 +175,4 @@ void Shutdown() {
     g_kernel_named_ports.clear();
     LOG_DEBUG(Service, "shutdown OK");
 }
-}
+} // namespace Service

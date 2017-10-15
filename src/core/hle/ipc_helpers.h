@@ -80,7 +80,7 @@ public:
         AlignWithPadding();
 
         IPC::DataPayloadHeader data_payload_header{};
-        data_payload_header.magic = 0x4f434653;
+        data_payload_header.magic = Common::MakeMagic('S', 'F', 'C', 'O');
         PushRaw(data_payload_header);
     }
 

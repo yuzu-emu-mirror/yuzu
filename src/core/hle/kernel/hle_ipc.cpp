@@ -4,6 +4,7 @@
 
 #include <boost/range/algorithm_ext/erase.hpp>
 #include "common/assert.h"
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/handle_table.h"
@@ -45,9 +46,14 @@ void HLERequestContext::ClearIncomingObjects() {
     request_handles.clear();
 }
 
-void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf) {
+void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     IPC::RequestParser rp(src_cmdbuf);
     command_header = std::make_unique<IPC::CommandHeader>(rp.PopRaw<IPC::CommandHeader>());
+
+    if (command_header->type == IPC::CommandType::Close) {
+        // Close does not populate the rest of the IPC header
+        return;
+    }
 
     // If handle descriptor is present, add size of it
     if (command_header->enable_handle_descriptor) {
@@ -80,9 +86,18 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf) {
         UNIMPLEMENTED();
     }
 
+    if (incoming && Session()->IsDomain()) {
+        domain_message_header = std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+    }
+
     data_payload_header =
         std::make_unique<IPC::DataPayloadHeader>(rp.PopRaw<IPC::DataPayloadHeader>());
-    ASSERT(data_payload_header->magic == 0x49434653 || data_payload_header->magic == 0x4F434653);
+
+    if (incoming) {
+        ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'I'));
+    } else {
+        ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'O'));
+    }
 
     data_payload_offset = rp.GetCurrentOffset();
     command = rp.Pop<u32_le>();
@@ -91,7 +106,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf) {
 ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf,
                                                                 Process& src_process,
                                                                 HandleTable& src_table) {
-    ParseCommandBuffer(src_cmdbuf);
+    ParseCommandBuffer(src_cmdbuf, true);
     size_t untranslated_size = data_payload_offset + command_header->data_size;
     std::copy_n(src_cmdbuf, untranslated_size, cmd_buf.begin());
 
@@ -106,7 +121,7 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdb
 
 ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
                                                            HandleTable& dst_table) {
-    ParseCommandBuffer(&cmd_buf[0]);
+    ParseCommandBuffer(&cmd_buf[0], false);
     size_t untranslated_size = data_payload_offset + command_header->data_size;
     std::copy_n(cmd_buf.begin(), untranslated_size, dst_cmdbuf);
 

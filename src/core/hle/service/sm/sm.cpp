@@ -80,7 +80,7 @@ std::shared_ptr<ServiceManager> g_service_manager;
  *  Inputs:
  *      0: 0x00000000
  *  Outputs:
- *      1: ResultCode
+ *      0: ResultCode
  */
 void SM::Initialize(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 1};
@@ -89,15 +89,14 @@ void SM::Initialize(Kernel::HLERequestContext& ctx) {
 }
 
 /**
- * SM::GetServiceHandle service function
+ * SM::GetService service function
  *  Inputs:
  *      0: 0x00000001
  *      1: Unknown
  *      2: Unknown
  *      3-4: 8-byte UTF-8 service name
  *  Outputs:
- *      1: ResultCode
- *      3: Service handle
+ *      0: ResultCode
  */
 void SM::GetService(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};

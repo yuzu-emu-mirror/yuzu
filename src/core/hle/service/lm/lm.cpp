@@ -18,7 +18,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
  *  Inputs:
  *      0: 0x00000000
  *  Outputs:
- *      1: ResultCode
+ *      0: ResultCode
  */
 void LM::Initialize(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 1};
@@ -29,10 +29,6 @@ void LM::Initialize(Kernel::HLERequestContext& ctx) {
 LM::LM() : ServiceFramework("lm") {
     static const FunctionInfo functions[] = {
         {0x00000000, &LM::Initialize, "Initialize"},
-        {0x00000001, nullptr, "Unknown2"},
-        {0x00000002, nullptr, "Unknown3"},
-        {0x00000003, nullptr, "Unknown4"},
-        {0x00000004, nullptr, "Unknown5"},
     };
     RegisterHandlers(functions);
 }

@@ -15,6 +15,7 @@ public:
     ~Controller();
 
 private:
+    void ConvertSessionToDomain(Kernel::HLERequestContext& ctx);
     void QueryPointerBufferSize(Kernel::HLERequestContext& ctx);
 };
 
