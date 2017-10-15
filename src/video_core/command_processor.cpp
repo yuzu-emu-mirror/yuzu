@@ -366,7 +366,7 @@ static void WritePicaReg(u32 id, u32 value, u32 mask) {
     switch (id) {
     // Trigger IRQ
     case PICA_REG_INDEX(trigger_irq):
-        Service::GSP::SignalInterrupt(Service::GSP::InterruptId::P3D);
+        //Service::GSP::SignalInterrupt(Service::GSP::InterruptId::P3D);
         break;
 
     case PICA_REG_INDEX(pipeline.triangle_topology):

@@ -119,18 +119,39 @@ public:
      */
     void ClearIncomingObjects();
 
+    void ParseCommandBuffer(u32_le* src_cmdbuf);
+
     /// Populates this context with data from the requesting process/thread.
-    ResultCode PopulateFromIncomingCommandBuffer(const u32_le* src_cmdbuf, Process& src_process,
+    ResultCode PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf, Process& src_process,
                                                  HandleTable& src_table);
     /// Writes data from this context back to the requesting process/thread.
     ResultCode WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                            HandleTable& dst_table) const;
+                                            HandleTable& dst_table);
+
+    u32_le GetCommand() const {
+        return command;
+    }
+
+    IPC::CommandType GetCommandType() const {
+        return command_header->type;
+    }
+
+    unsigned GetDataPayloadOffset() const {
+        return data_payload_offset;
+    }
 
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<ServerSession> session;
     // TODO(yuriks): Check common usage of this and optimize size accordingly
     boost::container::small_vector<SharedPtr<Object>, 8> request_handles;
+
+    std::unique_ptr<IPC::CommandHeader> command_header;
+    std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
+    std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
+
+    unsigned data_payload_offset{};
+    u32_le command{};
 };
 
 } // namespace Kernel

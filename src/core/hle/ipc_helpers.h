@@ -19,24 +19,17 @@ class RequestHelperBase {
 protected:
     Kernel::HLERequestContext* context = nullptr;
     u32* cmdbuf;
-    ptrdiff_t index = 1;
-    Header header;
+    ptrdiff_t index = 0;
 
 public:
-    RequestHelperBase(Kernel::HLERequestContext& context, Header desired_header)
-        : context(&context), cmdbuf(context.CommandBuffer()), header(desired_header) {}
+    RequestHelperBase(u32* command_buffer) : cmdbuf(command_buffer) {}
 
-    RequestHelperBase(u32* command_buffer, Header command_header)
-        : cmdbuf(command_buffer), header(command_header) {}
-
-    /// Returns the total size of the request in words
-    size_t TotalSize() const {
-        return 1 /* command header */ + header.normal_params_size + header.translate_params_size;
-    }
+    RequestHelperBase(Kernel::HLERequestContext& context)
+        : context(&context), cmdbuf(context.CommandBuffer()) {}
 
     void ValidateHeader() {
-        DEBUG_ASSERT_MSG(index == TotalSize(), "Operations do not match the header (cmd 0x%x)",
-                         header.raw);
+        // DEBUG_ASSERT_MSG(index == TotalSize(), "Operations do not match the header (cmd 0x%x)",
+        //                 header.raw);
     }
 
     void Skip(unsigned size_in_words, bool set_to_null) {
@@ -46,45 +39,50 @@ public:
     }
 
     /**
-     * @brief Retrieves the address of a static buffer, used when a buffer is needed for output
-     * @param buffer_id The index of the static buffer
-     * @param data_size If non-null, will store the size of the buffer
+     * Aligns the current position forward to a 16-byte boundary, padding with zeros. Jumps forward
+     * by 16-bytes at a minimum.
      */
-    VAddr PeekStaticBuffer(u8 buffer_id, size_t* data_size = nullptr) const {
-        u32* static_buffer = cmdbuf + Kernel::kStaticBuffersOffset / sizeof(u32) + buffer_id * 2;
-        if (data_size)
-            *data_size = StaticBufferDescInfo{static_buffer[0]}.size;
-        return static_buffer[1];
+    void AlignWithPadding() {
+        Skip(4 - (index & 3), true);
+    }
+
+    unsigned GetCurrentOffset() const {
+        return static_cast<unsigned>(index);
     }
 };
 
 class RequestBuilder : public RequestHelperBase {
 public:
-    RequestBuilder(Kernel::HLERequestContext& context, Header command_header)
-        : RequestHelperBase(context, command_header) {
-        // From this point we will start overwriting the existing command buffer, so it's safe to
-        // release all previous incoming Object pointers since they won't be usable anymore.
+    RequestBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+
+    RequestBuilder(Kernel::HLERequestContext& context, unsigned normal_params_size,
+                   u32 num_handles_to_copy = 0, u32 num_handles_to_move = 0)
+        : RequestHelperBase(context) {
+        memset(cmdbuf, 0, 64);
+
         context.ClearIncomingObjects();
-        cmdbuf[0] = header.raw;
+
+        IPC::CommandHeader header{};
+        header.data_size.Assign(normal_params_size * sizeof(u32));
+        if (num_handles_to_copy || num_handles_to_move) {
+            header.enable_handle_descriptor.Assign(1);
+        }
+        PushRaw(header);
+
+        if (header.enable_handle_descriptor) {
+            IPC::HandleDescriptorHeader handle_descriptor_header{};
+            handle_descriptor_header.num_handles_to_copy.Assign(num_handles_to_copy);
+            handle_descriptor_header.num_handles_to_move.Assign(num_handles_to_move);
+            PushRaw(handle_descriptor_header);
+            Skip(num_handles_to_copy + num_handles_to_move, true);
+        }
+
+        AlignWithPadding();
+
+        IPC::DataPayloadHeader data_payload_header{};
+        data_payload_header.magic = 0x4f434653;
+        PushRaw(data_payload_header);
     }
-
-    RequestBuilder(Kernel::HLERequestContext& context, u16 command_id, unsigned normal_params_size,
-                   unsigned translate_params_size)
-        : RequestBuilder(
-              context, Header{MakeHeader(command_id, normal_params_size, translate_params_size)}) {}
-
-    RequestBuilder(u32* command_buffer, Header command_header)
-        : RequestHelperBase(command_buffer, command_header) {
-        cmdbuf[0] = header.raw;
-    }
-
-    explicit RequestBuilder(u32* command_buffer, u32 command_header)
-        : RequestBuilder(command_buffer, Header{command_header}) {}
-
-    RequestBuilder(u32* command_buffer, u16 command_id, unsigned normal_params_size,
-                   unsigned translate_params_size)
-        : RequestBuilder(command_buffer,
-                         MakeHeader(command_id, normal_params_size, translate_params_size)) {}
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
     ~RequestBuilder() {
@@ -131,7 +129,6 @@ inline void RequestBuilder::Push(u32 value) {
 
 template <typename T>
 void RequestBuilder::PushRaw(const T& value) {
-    static_assert(std::is_trivially_copyable<T>(), "Raw types should be trivially copyable");
     std::memcpy(cmdbuf + index, &value, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
@@ -203,36 +200,20 @@ inline void RequestBuilder::PushMappedBuffer(VAddr buffer_vaddr, size_t size,
 
 class RequestParser : public RequestHelperBase {
 public:
-    RequestParser(Kernel::HLERequestContext& context, Header desired_header)
-        : RequestHelperBase(context, desired_header) {}
+    RequestParser(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    RequestParser(Kernel::HLERequestContext& context, u16 command_id, unsigned normal_params_size,
-                  unsigned translate_params_size)
-        : RequestParser(context,
-                        Header{MakeHeader(command_id, normal_params_size, translate_params_size)}) {
+    RequestParser(Kernel::HLERequestContext& context) : RequestHelperBase(context) {
+        ASSERT_MSG(context.GetDataPayloadOffset(), "context is incomplete");
+        Skip(context.GetDataPayloadOffset(), false);
     }
 
-    RequestParser(u32* command_buffer, Header command_header)
-        : RequestHelperBase(command_buffer, command_header) {}
-
-    explicit RequestParser(u32* command_buffer, u32 command_header)
-        : RequestParser(command_buffer, Header{command_header}) {}
-
-    RequestParser(u32* command_buffer, u16 command_id, unsigned normal_params_size,
-                  unsigned translate_params_size)
-        : RequestParser(command_buffer,
-                        MakeHeader(command_id, normal_params_size, translate_params_size)) {}
-
-    RequestBuilder MakeBuilder(u32 normal_params_size, u32 translate_params_size,
-                               bool validateHeader = true) {
-        if (validateHeader)
+    RequestBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
+                               u32 num_handles_to_move, bool validate_header = true) {
+        if (validate_header) {
             ValidateHeader();
-        Header builderHeader{MakeHeader(static_cast<u16>(header.command_id), normal_params_size,
-                                        translate_params_size)};
-        if (context != nullptr)
-            return {*context, builderHeader};
-        else
-            return {cmdbuf, builderHeader};
+        }
+
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move};
     }
 
     template <typename T>
@@ -342,7 +323,6 @@ inline u32 RequestParser::Pop() {
 
 template <typename T>
 void RequestParser::PopRaw(T& value) {
-    static_assert(std::is_trivially_copyable<T>(), "Raw types should be trivially copyable");
     std::memcpy(&value, cmdbuf + index, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }

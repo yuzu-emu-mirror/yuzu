@@ -5,42 +5,9 @@
 #pragma once
 
 #include "common/common_types.h"
+#include "common/swap.h"
 #include "core/hle/kernel/errors.h"
-#include "core/hle/kernel/thread.h"
 #include "core/memory.h"
-
-namespace Kernel {
-
-/// Offset into command buffer of header
-static const int kCommandHeaderOffset = 0x80;
-
-/**
- * Returns a pointer to the command buffer in the current thread's TLS
- * TODO(Subv): This is not entirely correct, the command buffer should be copied from
- * the thread's TLS to an intermediate buffer in kernel memory, and then copied again to
- * the service handler process' memory.
- * @param offset Optional offset into command buffer
- * @param offset Optional offset into command buffer (in bytes)
- * @return Pointer to command buffer
- */
-inline u32* GetCommandBuffer(const int offset = 0) {
-    return (u32*)Memory::GetPointer(GetCurrentThread()->GetTLSAddress() + kCommandHeaderOffset +
-                                    offset);
-}
-
-/// Offset into static buffers, relative to command buffer header
-static const int kStaticBuffersOffset = 0x100;
-
-/**
- * Returns a pointer to the static buffers area in the current thread's TLS
- * TODO(Subv): cf. GetCommandBuffer
- * @param offset Optional offset into static buffers area (in bytes)
- * @return Pointer to static buffers area
- */
-inline u32* GetStaticBuffers(const int offset = 0) {
-    return GetCommandBuffer(kStaticBuffersOffset + offset);
-}
-}
 
 namespace IPC {
 
@@ -53,6 +20,130 @@ constexpr size_t COMMAND_BUFFER_LENGTH = 0x100 / sizeof(u32);
 using Kernel::ERR_INVALID_BUFFER_DESCRIPTOR;
 constexpr auto ERR_INVALID_HANDLE = Kernel::ERR_INVALID_HANDLE_OS;
 
+
+enum class ControlCommand : u32 {
+    ConvertSessionToDomain = 0,
+    ConvertDomainToSession = 1,
+    DuplicateSession = 2,
+    QueryPointerBufferSize = 3,
+    DuplicateSessionEx = 4,
+    Unspecified,
+};
+
+enum class CommandType : u32 {
+    Close = 2,
+    Request = 4,
+    Control = 5,
+    Unspecified,
+};
+
+struct CommandHeader {
+    union {
+        u32_le raw_low;
+        BitField<0, 16, CommandType> type;
+        BitField<16, 4, u32_le> num_buf_x_descriptors;
+        BitField<20, 4, u32_le> num_buf_a_descriptors;
+        BitField<24, 4, u32_le> num_buf_b_descriptors;
+        BitField<28, 4, u32_le> num_buf_w_descriptors;
+    };
+
+    enum class BufferDescriptorCFlag : u32 {
+        Disabled = 0,
+        NoDescriptor = 1,
+        TwoDesciptors = 2,
+    };
+
+    union {
+        u32_le raw_high;
+        BitField<0, 10, u32_le> data_size;
+        BitField<10, 4, BufferDescriptorCFlag> buf_c_descriptor_flags;
+        BitField<31, 1, u32_le> enable_handle_descriptor;
+    };
+};
+static_assert(sizeof(CommandHeader) == 8, "CommandHeader size is incorrect");
+
+union HandleDescriptorHeader {
+    u32_le raw_high;
+    BitField<0, 1, u32_le> send_current_pid;
+    BitField<1, 4, u32_le> num_handles_to_copy;
+    BitField<5, 4, u32_le> num_handles_to_move;
+};
+static_assert(sizeof(HandleDescriptorHeader) == 4, "HandleDescriptorHeader size is incorrect");
+
+struct BufferDescriptorX {
+    union {
+        BitField<0, 6, u32_le> counter_bits_0_5;
+        BitField<6, 3, u32_le> address_bits_36_38;
+        BitField<9, 3, u32_le> counter_bits_9_11;
+        BitField<12, 4, u32_le> address_bits_32_35;
+        BitField<16, 16, u32_le> size;
+    };
+
+    u32_le address_bits_0_31;
+
+    u32_le Counter() const {
+        u32_le counter{ counter_bits_0_5 };
+        counter |= counter_bits_9_11 << 9;
+        return counter;
+    }
+
+    VAddr Address() const {
+        VAddr address{ address_bits_0_31 };
+        address |= static_cast<VAddr>(address_bits_32_35) << 32;
+        address |= static_cast<VAddr>(address_bits_36_38) << 36;
+        return address;
+    }
+};
+static_assert(sizeof(BufferDescriptorX) == 8, "BufferDescriptorX size is incorrect");
+
+struct BufferDescriptorABW {
+    u32_le size_bits_0_31;
+    u32_le address_bits_0_31;
+
+    union {
+        BitField<0, 2, u32_le> flags;
+        BitField<2, 3, u32_le> address_bits_36_38;
+        BitField<24, 4, u32_le> size_bits_32_35;
+        BitField<28, 4, u32_le> address_bits_32_35;
+    };
+
+    VAddr Address() const {
+        VAddr address{ address_bits_0_31 };
+        address |= static_cast<VAddr>(address_bits_32_35) << 32;
+        address |= static_cast<VAddr>(address_bits_36_38) << 36;
+        return address;
+    }
+
+    u64 Size() const {
+        u64 size{ size_bits_0_31 };
+        size |= static_cast<u64>(size_bits_32_35) << 32;
+        return size;
+    }
+};
+static_assert(sizeof(BufferDescriptorABW) == 12, "BufferDescriptorABW size is incorrect");
+
+struct BufferDescriptorC {
+    u32_le address_bits_0_31;
+
+    union {
+        BitField<0, 16, u32_le> address_bits_32_47;
+        BitField<16, 16, u32_le> size;
+    };
+
+    VAddr Address() const {
+        VAddr address{ address_bits_0_31 };
+        address |= static_cast<VAddr>(address_bits_32_47) << 32;
+        return address;
+    }
+};
+static_assert(sizeof(BufferDescriptorC) == 8, "BufferDescriptorC size is incorrect");
+
+struct DataPayloadHeader {
+    u32_le magic;
+    INSERT_PADDING_WORDS(1);
+};
+static_assert(sizeof(DataPayloadHeader) == 8, "DataPayloadRequest size is incorrect");
+
 enum DescriptorType : u32 {
     // Buffer related desciptors types (mask : 0x0F)
     StaticBuffer = 0x02,
@@ -64,36 +155,6 @@ enum DescriptorType : u32 {
     MoveHandle = 0x10,
     CallingPid = 0x20,
 };
-
-union Header {
-    u32 raw;
-    BitField<0, 6, u32> translate_params_size;
-    BitField<6, 6, u32> normal_params_size;
-    BitField<16, 16, u32> command_id;
-};
-
-/**
- * @brief Creates a command header to be used for IPC
- * @param command_id            ID of the command to create a header for.
- * @param normal_params_size         Size of the normal parameters in words. Up to 63.
- * @param translate_params_size Size of the translate parameters in words. Up to 63.
- * @return The created IPC header.
- *
- * Normal parameters are sent directly to the process while the translate parameters might go
- * through modifications and checks by the kernel.
- * The translate parameters are described by headers generated with the IPC::*Desc functions.
- *
- * @note While @p normal_params_size is equivalent to the number of normal parameters,
- * @p translate_params_size includes the size occupied by the translate parameters headers.
- */
-inline u32 MakeHeader(u16 command_id, unsigned int normal_params_size,
-                      unsigned int translate_params_size) {
-    Header header{};
-    header.command_id.Assign(command_id);
-    header.normal_params_size.Assign(normal_params_size);
-    header.translate_params_size.Assign(translate_params_size);
-    return header.raw;
-}
 
 constexpr u32 MoveHandleDesc(u32 num_handles = 1) {
     return MoveHandle | ((num_handles - 1) << 26);

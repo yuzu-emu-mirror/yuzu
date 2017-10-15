@@ -20,7 +20,20 @@ class SessionRequestHandler;
 namespace Service {
 namespace SM {
 
-class SRV;
+/// Interface to "sm:" service
+class SM final : public ServiceFramework<SM> {
+public:
+    explicit SM(std::shared_ptr<ServiceManager> service_manager);
+    ~SM();
+
+private:
+    void Initialize(Kernel::HLERequestContext& ctx);
+    void GetService(Kernel::HLERequestContext& ctx);
+
+    std::shared_ptr<ServiceManager> service_manager;
+};
+
+class Controller;
 
 constexpr ResultCode ERR_SERVICE_NOT_REGISTERED(1, ErrorModule::SRV, ErrorSummary::WouldBlock,
                                                 ErrorLevel::Temporary); // 0xD0406401
@@ -45,8 +58,11 @@ public:
     ResultVal<Kernel::SharedPtr<Kernel::ClientPort>> GetServicePort(const std::string& name);
     ResultVal<Kernel::SharedPtr<Kernel::ClientSession>> ConnectToService(const std::string& name);
 
+    void InvokeControlRequest(Kernel::HLERequestContext& context);
+
 private:
-    std::weak_ptr<SRV> srv_interface;
+    std::weak_ptr<SM> sm_interface;
+    std::unique_ptr<Controller> controller_interface;
 
     /// Map of registered services, retrieved using GetServicePort or ConnectToService.
     std::unordered_map<std::string, Kernel::SharedPtr<Kernel::ClientPort>> registered_services;

@@ -5,6 +5,7 @@
 #include <boost/range/algorithm_ext/erase.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
+#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -44,88 +45,103 @@ void HLERequestContext::ClearIncomingObjects() {
     request_handles.clear();
 }
 
-ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const u32_le* src_cmdbuf,
-                                                                Process& src_process,
-                                                                HandleTable& src_table) {
-    IPC::Header header{src_cmdbuf[0]};
+void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf) {
+    IPC::RequestParser rp(src_cmdbuf);
+    command_header = std::make_unique<IPC::CommandHeader>(rp.PopRaw<IPC::CommandHeader>());
 
-    size_t untranslated_size = 1u + header.normal_params_size;
-    size_t command_size = untranslated_size + header.translate_params_size;
-    ASSERT(command_size <= IPC::COMMAND_BUFFER_LENGTH); // TODO(yuriks): Return error
-
-    std::copy_n(src_cmdbuf, untranslated_size, cmd_buf.begin());
-
-    size_t i = untranslated_size;
-    while (i < command_size) {
-        u32 descriptor = cmd_buf[i] = src_cmdbuf[i];
-        i += 1;
-
-        switch (IPC::GetDescriptorType(descriptor)) {
-        case IPC::DescriptorType::CopyHandle:
-        case IPC::DescriptorType::MoveHandle: {
-            u32 num_handles = IPC::HandleNumberFromDesc(descriptor);
-            ASSERT(i + num_handles <= command_size); // TODO(yuriks): Return error
-            for (u32 j = 0; j < num_handles; ++j) {
-                Handle handle = src_cmdbuf[i];
-                SharedPtr<Object> object = nullptr;
-                if (handle != 0) {
-                    object = src_table.GetGeneric(handle);
-                    ASSERT(object != nullptr); // TODO(yuriks): Return error
-                    if (descriptor == IPC::DescriptorType::MoveHandle) {
-                        src_table.Close(handle);
-                    }
-                }
-
-                cmd_buf[i++] = AddOutgoingHandle(std::move(object));
-            }
-            break;
+    // If handle descriptor is present, add size of it
+    if (command_header->enable_handle_descriptor) {
+        handle_descriptor_header =
+            std::make_unique<IPC::HandleDescriptorHeader>(rp.PopRaw<IPC::HandleDescriptorHeader>());
+        if (handle_descriptor_header->send_current_pid) {
+            rp.Skip(2, false);
         }
-        case IPC::DescriptorType::CallingPid: {
-            cmd_buf[i++] = src_process.process_id;
-            break;
-        }
-        default:
-            UNIMPLEMENTED_MSG("Unsupported handle translation: 0x%08X", descriptor);
-        }
+        rp.Skip(handle_descriptor_header->num_handles_to_copy, false);
+        rp.Skip(handle_descriptor_header->num_handles_to_move, false);
     }
 
+    // Padding to align to 16 bytes
+    rp.AlignWithPadding();
+
+    if (command_header->num_buf_x_descriptors) {
+        UNIMPLEMENTED();
+    }
+    if (command_header->num_buf_a_descriptors) {
+        UNIMPLEMENTED();
+    }
+    if (command_header->num_buf_b_descriptors) {
+        UNIMPLEMENTED();
+    }
+    if (command_header->num_buf_w_descriptors) {
+        UNIMPLEMENTED();
+    }
+    if (command_header->buf_c_descriptor_flags !=
+        IPC::CommandHeader::BufferDescriptorCFlag::Disabled) {
+        UNIMPLEMENTED();
+    }
+
+    data_payload_header =
+        std::make_unique<IPC::DataPayloadHeader>(rp.PopRaw<IPC::DataPayloadHeader>());
+    ASSERT(data_payload_header->magic == 0x49434653 || data_payload_header->magic == 0x4F434653);
+
+    data_payload_offset = rp.GetCurrentOffset();
+    command = rp.Pop<u32_le>();
+}
+
+ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf,
+                                                                Process& src_process,
+                                                                HandleTable& src_table) {
+    ParseCommandBuffer(src_cmdbuf);
+    size_t untranslated_size = data_payload_offset + command_header->data_size;
+    std::copy_n(src_cmdbuf, untranslated_size, cmd_buf.begin());
+
+    if (command_header->enable_handle_descriptor) {
+        if (handle_descriptor_header->num_handles_to_copy ||
+            handle_descriptor_header->num_handles_to_move) {
+            UNIMPLEMENTED();
+        }
+    }
     return RESULT_SUCCESS;
 }
 
 ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                                           HandleTable& dst_table) const {
-    IPC::Header header{cmd_buf[0]};
-
-    size_t untranslated_size = 1u + header.normal_params_size;
-    size_t command_size = untranslated_size + header.translate_params_size;
-    ASSERT(command_size <= IPC::COMMAND_BUFFER_LENGTH);
-
+                                                           HandleTable& dst_table) {
+    ParseCommandBuffer(&cmd_buf[0]);
+    size_t untranslated_size = data_payload_offset + command_header->data_size;
     std::copy_n(cmd_buf.begin(), untranslated_size, dst_cmdbuf);
 
-    size_t i = untranslated_size;
-    while (i < command_size) {
-        u32 descriptor = dst_cmdbuf[i] = cmd_buf[i];
-        i += 1;
+    if (command_header->enable_handle_descriptor) {
+        size_t command_size = untranslated_size + handle_descriptor_header->num_handles_to_copy +
+                              handle_descriptor_header->num_handles_to_move;
+        ASSERT(command_size <= IPC::COMMAND_BUFFER_LENGTH);
 
-        switch (IPC::GetDescriptorType(descriptor)) {
-        case IPC::DescriptorType::CopyHandle:
-        case IPC::DescriptorType::MoveHandle: {
-            // HLE services don't use handles, so we treat both CopyHandle and MoveHandle equally
-            u32 num_handles = IPC::HandleNumberFromDesc(descriptor);
-            ASSERT(i + num_handles <= command_size);
-            for (u32 j = 0; j < num_handles; ++j) {
-                SharedPtr<Object> object = GetIncomingHandle(cmd_buf[i]);
-                Handle handle = 0;
-                if (object != nullptr) {
-                    // TODO(yuriks): Figure out the proper error handling for if this fails
-                    handle = dst_table.Create(object).Unwrap();
+        size_t untranslated_index = untranslated_size;
+        size_t handle_write_offset = 3;
+        while (untranslated_index < command_size) {
+            u32 descriptor = cmd_buf[untranslated_index];
+            untranslated_index += 1;
+
+            switch (IPC::GetDescriptorType(descriptor)) {
+            case IPC::DescriptorType::CopyHandle:
+            case IPC::DescriptorType::MoveHandle: {
+                // HLE services don't use handles, so we treat both CopyHandle and MoveHandle
+                // equally
+                u32 num_handles = IPC::HandleNumberFromDesc(descriptor);
+                for (u32 j = 0; j < num_handles; ++j) {
+                    SharedPtr<Object> object = GetIncomingHandle(cmd_buf[untranslated_index]);
+                    Handle handle = 0;
+                    if (object != nullptr) {
+                        // TODO(yuriks): Figure out the proper error handling for if this fails
+                        handle = dst_table.Create(object).Unwrap();
+                    }
+                    dst_cmdbuf[handle_write_offset++] = handle;
+                    untranslated_index++;
                 }
-                dst_cmdbuf[i++] = handle;
+                break;
             }
-            break;
-        }
-        default:
-            UNIMPLEMENTED_MSG("Unsupported handle translation: 0x%08X", descriptor);
+            default:
+                UNIMPLEMENTED_MSG("Unsupported handle translation: 0x%08X", descriptor);
+            }
         }
     }
 

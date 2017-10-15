@@ -10,6 +10,7 @@
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/thread.h"
 #include "core/hle/lock.h"
 #include "core/hle/result.h"
 #include "core/hle/service/service.h"

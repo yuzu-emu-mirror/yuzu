@@ -20,6 +20,7 @@ namespace Kernel {
 class ClientPort;
 class ServerPort;
 class ServerSession;
+class HLERequestContext;
 }
 
 namespace Service {
@@ -31,83 +32,6 @@ class ServiceManager;
 static const int kMaxPortSize = 8; ///< Maximum size of a port name (8 characters)
 /// Arbitrary default number of maximum connections to an HLE service.
 static const u32 DefaultMaxSessions = 10;
-
-/**
- * Framework for implementing HLE service handlers which dispatch incoming SyncRequests based on a
- * table mapping header ids to handler functions.
- *
- * @deprecated Use ServiceFramework for new services instead. It allows services to be stateful and
- *     is more extensible going forward.
- */
-class Interface : public Kernel::SessionRequestHandler {
-public:
-    /**
-     * Creates an HLE interface with the specified max sessions.
-     * @param max_sessions Maximum number of sessions that can be
-     * connected to this service at the same time.
-     */
-    Interface(u32 max_sessions = DefaultMaxSessions);
-
-    virtual ~Interface();
-
-    std::string GetName() const {
-        return GetPortName();
-    }
-
-    virtual void SetVersion(u32 raw_version) {
-        version.raw = raw_version;
-    }
-
-    /**
-     * Gets the maximum allowed number of sessions that can be connected to this service
-     * at the same time.
-     * @returns The maximum number of connections allowed.
-     */
-    u32 GetMaxSessions() const {
-        return max_sessions;
-    }
-
-    typedef void (*Function)(Interface*);
-
-    struct FunctionInfo {
-        u32 id;
-        Function func;
-        const char* name;
-    };
-
-    /**
-     * Gets the string name used by CTROS for a service
-     * @return Port name of service
-     */
-    virtual std::string GetPortName() const {
-        return "[UNKNOWN SERVICE PORT]";
-    }
-
-protected:
-    void HandleSyncRequest(Kernel::SharedPtr<Kernel::ServerSession> server_session) override;
-
-    /**
-     * Registers the functions in the service
-     */
-    template <size_t N>
-    inline void Register(const FunctionInfo (&functions)[N]) {
-        Register(functions, N);
-    }
-
-    void Register(const FunctionInfo* functions, size_t n);
-
-    union {
-        u32 raw;
-        BitField<0, 8, u32> major;
-        BitField<8, 8, u32> minor;
-        BitField<16, 8, u32> build;
-        BitField<24, 8, u32> revision;
-    } version = {};
-
-private:
-    u32 max_sessions; ///< Maximum number of concurrent sessions that this service can handle.
-    boost::container::flat_map<u32, FunctionInfo> m_functions;
-};
 
 /**
  * This is an non-templated base of ServiceFramework to reduce code bloat and compilation times, it
@@ -135,6 +59,8 @@ public:
     /// Creates a port pair and registers it on the kernel's global port registry.
     void InstallAsNamedPort();
 
+    void InvokeRequest(Kernel::HLERequestContext& ctx);
+
     void HandleSyncRequest(Kernel::SharedPtr<Kernel::ServerSession> server_session) override;
 
 protected:
@@ -159,7 +85,7 @@ private:
     ~ServiceFrameworkBase();
 
     void RegisterHandlersBase(const FunctionInfoBase* functions, size_t n);
-    void ReportUnimplementedFunction(u32* cmd_buf, const FunctionInfoBase* info);
+    void ReportUnimplementedFunction(Kernel::HLERequestContext& ctx, const FunctionInfoBase* info);
 
     /// Identifier string used to connect to the service.
     std::string service_name;
@@ -260,7 +186,5 @@ extern std::unordered_map<std::string, Kernel::SharedPtr<Kernel::ClientPort>> g_
 
 /// Adds a port to the named port table
 void AddNamedPort(std::string name, Kernel::SharedPtr<Kernel::ClientPort> port);
-/// Adds a service to the services table
-void AddService(Interface* interface_);
 
 } // namespace

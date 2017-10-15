@@ -51,9 +51,10 @@ set(SRCS
             hle/service/dsp_dsp.cpp
             hle/service/gsp_gpu.cpp
             hle/service/hid/hid.cpp
+            hle/service/lm/lm.cpp
             hle/service/service.cpp
+            hle/service/sm/controller.cpp
             hle/service/sm/sm.cpp
-            hle/service/sm/srv.cpp
             hle/shared_page.cpp
             hle/svc.cpp
             hw/aes/arithmetic128.cpp
@@ -139,9 +140,10 @@ set(HEADERS
             hle/service/dsp_dsp.h
             hle/service/gsp_gpu.h
             hle/service/hid/hid.h
+            hle/service/lm/lm.h
             hle/service/service.h
+            hle/service/sm/controller.h
             hle/service/sm/sm.h
-            hle/service/sm/srv.h
             hle/shared_page.h
             hle/svc.h
             hw/aes/arithmetic128.h

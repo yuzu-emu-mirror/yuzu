@@ -49,7 +49,7 @@ enum class Class : ClassType {
     Kernel_SVC,        ///< Kernel system calls
     Service,           ///< HLE implementation of system services. Each major service
                        ///  should have its own subclass.
-    Service_SRV,       ///< The SRV (Service Directory) implementation
+    Service_SM,        ///< The SRV (Service Directory) implementation
     Service_FS,        ///< The FS (Filesystem) service implementation
     Service_GSP,       ///< The GSP (GPU control) service
     Service_CFG,       ///< The CFG (Configuration) service
