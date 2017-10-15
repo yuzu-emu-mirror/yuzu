@@ -11,21 +11,6 @@
 #include <QString>
 #include "citra_qt/util/util.h"
 #include "common/string_util.h"
-#include "core/loader/smdh.h"
-
-/**
- * Gets the game icon from SMDH data.
- * @param smdh SMDH data
- * @param large If true, returns large icon (48x48), otherwise returns small icon (24x24)
- * @return QPixmap game icon
- */
-static QPixmap GetQPixmapFromSMDH(const Loader::SMDH& smdh, bool large) {
-    std::vector<u16> icon_data = smdh.GetIcon(large);
-    const uchar* data = reinterpret_cast<const uchar*>(icon_data.data());
-    int size = large ? 48 : 24;
-    QImage icon(data, size, size, QImage::Format::Format_RGB16);
-    return QPixmap::fromImage(icon);
-}
 
 /**
  * Gets the default icon (for games without valid SMDH)
@@ -37,17 +22,6 @@ static QPixmap GetDefaultIcon(bool large) {
     QPixmap icon(size, size);
     icon.fill(Qt::transparent);
     return icon;
-}
-
-/**
- * Gets the short game title from SMDH data.
- * @param smdh SMDH data
- * @param language title language
- * @return QString short title
- */
-static QString GetQStringShortTitleFromSMDH(const Loader::SMDH& smdh,
-                                            Loader::SMDH::TitleLanguage language) {
-    return QString::fromUtf16(smdh.GetShortTitle(language).data());
 }
 
 class GameListItem : public QStandardItem {
@@ -76,22 +50,6 @@ public:
         : GameListItem() {
         setData(game_path, FullPathRole);
         setData(qulonglong(program_id), ProgramIdRole);
-
-        if (!Loader::IsValidSMDH(smdh_data)) {
-            // SMDH is not valid, set a default icon
-            setData(GetDefaultIcon(true), Qt::DecorationRole);
-            return;
-        }
-
-        Loader::SMDH smdh;
-        memcpy(&smdh, smdh_data.data(), sizeof(Loader::SMDH));
-
-        // Get icon from SMDH
-        setData(GetQPixmapFromSMDH(smdh, true), Qt::DecorationRole);
-
-        // Get title form SMDH
-        setData(GetQStringShortTitleFromSMDH(smdh, Loader::SMDH::TitleLanguage::English),
-                TitleRole);
     }
 
     QVariant data(int role) const override {

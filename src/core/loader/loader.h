@@ -75,10 +75,6 @@ enum class ResultStatus {
     ErrorEncrypted,
 };
 
-constexpr u32 MakeMagic(char a, char b, char c, char d) {
-    return a | b << 8 | c << 16 | d << 24;
-}
-
 /// Interface for loading an application
 class AppLoader : NonCopyable {
 public:

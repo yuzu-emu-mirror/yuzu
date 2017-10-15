@@ -5,6 +5,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
@@ -376,7 +377,7 @@ FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file) {
     if (1 != file.ReadArray<u16>(&machine, 1))
         return FileType::Error;
 
-    if (MakeMagic('\x7f', 'E', 'L', 'F') == magic && ELF_MACHINE_ARM == machine)
+    if (Common::MakeMagic('\x7f', 'E', 'L', 'F') == magic && ELF_MACHINE_ARM == machine)
         return FileType::ELF;
 
     return FileType::Error;

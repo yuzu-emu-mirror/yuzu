@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include "common/common_funcs.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/hle/kernel/process.h"
@@ -51,7 +52,7 @@ FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file) {
     if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
         return FileType::Error;
     }
-    if (nro_header.magic == MakeMagic('N', 'R', 'O', '0')) {
+    if (nro_header.magic == Common::MakeMagic('N', 'R', 'O', '0')) {
         return FileType::NRO;
     }
     return FileType::Error;
@@ -87,7 +88,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
         return {};
     }
-    if (nro_header.magic != MakeMagic('N', 'R', 'O', '0')) {
+    if (nro_header.magic != Common::MakeMagic('N', 'R', 'O', '0')) {
         return {};
     }
 
@@ -109,7 +110,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     u32 bss_size{Memory::PAGE_SIZE}; // Default .bss to page size if MOD0 section doesn't exist
     std::memcpy(&mod_header, program_image.data() + nro_header.module_header_offset,
                 sizeof(ModHeader));
-    const bool has_mod_header{mod_header.magic == MakeMagic('M', 'O', 'D', '0')};
+    const bool has_mod_header{mod_header.magic == Common::MakeMagic('M', 'O', 'D', '0')};
     if (has_mod_header) {
         // Resize program image to include .bss section and page align each section
         bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);

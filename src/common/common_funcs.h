@@ -98,3 +98,11 @@ __declspec(dllimport) void __stdcall DebugBreak(void);
 // This function might change the error code.
 // Defined in Misc.cpp.
 const char* GetLastErrorMsg();
+
+namespace Common {
+
+constexpr u32 MakeMagic(char a, char b, char c, char d) {
+    return a | b << 8 | c << 16 | d << 24;
+}
+
+} // namespace Common

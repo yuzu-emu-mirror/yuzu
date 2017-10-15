@@ -19,7 +19,6 @@ set(SRCS
             file_sys/archive_backend.cpp
             file_sys/disk_archive.cpp
             file_sys/ivfc_archive.cpp
-            file_sys/ncch_container.cpp
             file_sys/path_parser.cpp
             file_sys/savedata_archive.cpp
             file_sys/title_metadata.cpp
@@ -71,7 +70,6 @@ set(SRCS
             loader/loader.cpp
             loader/nro.cpp
             loader/nso.cpp
-            loader/smdh.cpp
             tracer/recorder.cpp
             memory.cpp
             perf_stats.cpp
@@ -163,7 +161,6 @@ set(HEADERS
             loader/loader.h
             loader/nro.h
             loader/nso.h
-            loader/smdh.h
             tracer/recorder.h
             tracer/citrace.h
             memory.h
