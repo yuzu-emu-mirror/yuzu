@@ -85,7 +85,7 @@ void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* function
 void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx,
                                                        const FunctionInfoBase* info) {
     auto cmd_buf = ctx.CommandBuffer();
-    std::string function_name = info == nullptr ? fmt::format("{:#08x}", cmd_buf[0]) : info->name;
+    std::string function_name = info == nullptr ? fmt::format("{:#08x}", ctx.GetCommand()) : info->name;
 
     fmt::MemoryWriter w;
     w.write("function '{}': port='{}' cmd_buf={{[0]={:#x}", function_name, service_name,
