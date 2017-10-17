@@ -39,11 +39,12 @@ public:
     }
 
     /**
-     * Aligns the current position forward to a 16-byte boundary, padding with zeros. Jumps forward
-     * by 16-bytes at a minimum.
+     * Aligns the current position forward to a 16-byte boundary, padding with zeros.
      */
     void AlignWithPadding() {
-        Skip(4 - (index & 3), true);
+        if (index & 3) {
+            Skip(4 - (index & 3), true);
+        }
     }
 
     unsigned GetCurrentOffset() const {
