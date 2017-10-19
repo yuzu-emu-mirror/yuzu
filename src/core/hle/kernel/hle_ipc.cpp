@@ -120,7 +120,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
                                                            HandleTable& dst_table) {
     ParseCommandBuffer(&cmd_buf[0], false);
     size_t untranslated_size = data_payload_offset + command_header->data_size;
-    std::copy_n(cmd_buf.begin(), 64, dst_cmdbuf);
+    std::copy_n(cmd_buf.begin(), untranslated_size, dst_cmdbuf);
 
     if (command_header->enable_handle_descriptor) {
         size_t command_size = untranslated_size + handle_descriptor_header->num_handles_to_copy +
