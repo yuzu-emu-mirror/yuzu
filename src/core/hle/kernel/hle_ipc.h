@@ -140,6 +140,10 @@ public:
         return data_payload_offset;
     }
 
+    const std::vector<IPC::BufferDescriptorX>& BufferDescriptorX() const {
+        return buffer_x_desciptors;
+    }
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<ServerSession> session;
@@ -150,6 +154,10 @@ private:
     std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
     std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
     std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
+    std::vector<IPC::BufferDescriptorX> buffer_x_desciptors;
+    std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
+    std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;
+    std::vector<IPC::BufferDescriptorABW> buffer_w_desciptors;
 
     unsigned data_payload_offset{};
     u32_le command{};

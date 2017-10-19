@@ -66,28 +66,25 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         rp.Skip(handle_descriptor_header->num_handles_to_move, false);
     }
 
-    // Padding to align to 16 bytes
-    rp.AlignWithPadding();
-
-    if (command_header->num_buf_x_descriptors) {
-        UNIMPLEMENTED();
+    for (int i = 0; i < command_header->num_buf_x_descriptors; ++i) {
+        buffer_x_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorX>());
     }
-    if (command_header->num_buf_a_descriptors) {
-        UNIMPLEMENTED();
+    for (int i = 0; i < command_header->num_buf_a_descriptors; ++i) {
+        buffer_a_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
-    if (command_header->num_buf_b_descriptors) {
-        UNIMPLEMENTED();
+    for (int i = 0; i < command_header->num_buf_b_descriptors; ++i) {
+        buffer_b_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
-    if (command_header->num_buf_w_descriptors) {
-        UNIMPLEMENTED();
+    for (int i = 0; i < command_header->num_buf_w_descriptors; ++i) {
+        buffer_w_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
     if (command_header->buf_c_descriptor_flags !=
         IPC::CommandHeader::BufferDescriptorCFlag::Disabled) {
         UNIMPLEMENTED();
     }
 
-    if (incoming && Session()->IsDomain()) {
-        domain_message_header = std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+    // Padding to align to 16 bytes
+    rp.AlignWithPadding();
     }
 
     data_payload_header =
@@ -123,7 +120,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
                                                            HandleTable& dst_table) {
     ParseCommandBuffer(&cmd_buf[0], false);
     size_t untranslated_size = data_payload_offset + command_header->data_size;
-    std::copy_n(cmd_buf.begin(), untranslated_size, dst_cmdbuf);
+    std::copy_n(cmd_buf.begin(), 64, dst_cmdbuf);
 
     if (command_header->enable_handle_descriptor) {
         size_t command_size = untranslated_size + handle_descriptor_header->num_handles_to_copy +
