@@ -152,7 +152,7 @@ T Read(const VAddr vaddr) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%08X", sizeof(T) * 8, vaddr);
+        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%llx", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
         ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
@@ -492,7 +492,7 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0xllx, size = %zu)",
                       current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
