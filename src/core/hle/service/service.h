@@ -58,6 +58,8 @@ public:
     void InstallAsService(SM::ServiceManager& service_manager);
     /// Creates a port pair and registers it on the kernel's global port registry.
     void InstallAsNamedPort();
+    /// Creates and returns an unregistered port for the service.
+    Kernel::SharedPtr<Kernel::ClientPort> CreatePort();
 
     void InvokeRequest(Kernel::HLERequestContext& ctx);
 

@@ -74,6 +74,16 @@ void ServiceFrameworkBase::InstallAsNamedPort() {
     AddNamedPort(service_name, std::move(client_port));
 }
 
+Kernel::SharedPtr<Kernel::ClientPort> ServiceFrameworkBase::CreatePort() {
+    ASSERT(port == nullptr);
+    Kernel::SharedPtr<Kernel::ServerPort> server_port;
+    Kernel::SharedPtr<Kernel::ClientPort> client_port;
+    std::tie(server_port, client_port) = Kernel::ServerPort::CreatePortPair(max_sessions, service_name);
+    port = MakeResult<Kernel::SharedPtr<Kernel::ServerPort>>(std::move(server_port)).Unwrap();
+    port->SetHleHandler(shared_from_this());
+    return client_port;
+}
+
 void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* functions, size_t n) {
     handlers.reserve(handlers.size() + n);
     for (size_t i = 0; i < n; ++i) {
