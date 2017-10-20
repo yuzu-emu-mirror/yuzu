@@ -117,7 +117,7 @@ void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
     vm_manager
         .MapMemoryBlock(Memory::HEAP_VADDR_END - stack_size,
                         std::make_shared<std::vector<u8>>(stack_size, 0), 0, stack_size,
-                        MemoryState::Locked)
+                        MemoryState::Heap)
         .Unwrap();
     misc_memory_used += stack_size;
     memory_region->used += stack_size;
@@ -148,7 +148,7 @@ void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
     };
 
     // Map CodeSet segments
-    MapSegment(module_->code, VMAPermission::ReadWrite, MemoryState::Private);
+    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::Code);
     MapSegment(module_->rodata, VMAPermission::Read, MemoryState::Static);
     MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::Static);
 }
@@ -193,7 +193,7 @@ ResultVal<VAddr> Process::HeapAllocate(VAddr target, u32 size, VMAPermission per
     ASSERT(heap_end - heap_start == heap_memory->size());
 
     CASCADE_RESULT(auto vma, vm_manager.MapMemoryBlock(target, heap_memory, target - heap_start,
-                                                       size, MemoryState::Private));
+                                                       size, MemoryState::Heap));
     vm_manager.Reprotect(vma, perms);
 
     heap_used += size;
@@ -223,40 +223,8 @@ ResultCode Process::HeapFree(VAddr target, u32 size) {
 }
 
 ResultVal<VAddr> Process::LinearAllocate(VAddr target, u32 size, VMAPermission perms) {
-    auto& linheap_memory = memory_region->linear_heap_memory;
-
-    VAddr heap_end = GetLinearHeapBase() + (u32)linheap_memory->size();
-    // Games and homebrew only ever seem to pass 0 here (which lets the kernel decide the address),
-    // but explicit addresses are also accepted and respected.
-    if (target == 0) {
-        target = heap_end;
-    }
-
-    if (target < GetLinearHeapBase() || target + size > GetLinearHeapLimit() || target > heap_end ||
-        target + size < target) {
-
-        return ERR_INVALID_ADDRESS;
-    }
-
-    // Expansion of the linear heap is only allowed if you do an allocation immediately at its
-    // end. It's possible to free gaps in the middle of the heap and then reallocate them later,
-    // but expansions are only allowed at the end.
-    if (target == heap_end) {
-        linheap_memory->insert(linheap_memory->end(), size, 0);
-        vm_manager.RefreshMemoryBlockMappings(linheap_memory.get());
-    }
-
-    // TODO(yuriks): As is, this lets processes map memory allocated by other processes from the
-    // same region. It is unknown if or how the 3DS kernel checks against this.
-    size_t offset = target - GetLinearHeapBase();
-    CASCADE_RESULT(auto vma, vm_manager.MapMemoryBlock(target, linheap_memory, offset, size,
-                                                       MemoryState::Continuous));
-    vm_manager.Reprotect(vma, perms);
-
-    linear_heap_used += size;
-    memory_region->used += size;
-
-    return MakeResult<VAddr>(target);
+    UNIMPLEMENTED();
+    return {};
 }
 
 ResultCode Process::LinearFree(VAddr target, u32 size) {

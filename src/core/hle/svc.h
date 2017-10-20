@@ -12,8 +12,9 @@
 struct MemoryInfo {
     u64 base_address;
     u64 size;
-    u64 permission;
-    u64 state;
+    u32 type;
+    u32 attributes;
+    u32 permission;
 };
 
 struct PageInfo {

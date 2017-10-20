@@ -133,22 +133,10 @@ void Wrap() {
 
     Memory::Write64(PARAM(0), memory_info.base_address);
     Memory::Write64(PARAM(0) + 8, memory_info.size);
-    Memory::Write64(PARAM(0) + 16, memory_info.permission);
-    Memory::Write64(PARAM(0) + 24, memory_info.state);
+    Memory::Write32(PARAM(0) + 16, memory_info.type);
+    Memory::Write32(PARAM(0) + 20, memory_info.attributes);
+    Memory::Write32(PARAM(0) + 24, memory_info.permission);
 
-    FuncReturn(retval);
-}
-
-template <ResultCode func(MemoryInfo*, PageInfo*, Kernel::Handle, u32)>
-void Wrap() {
-    MemoryInfo memory_info = {};
-    PageInfo page_info = {};
-    u32 retval = func(&memory_info, &page_info, PARAM(2), PARAM(3)).raw;
-    Core::CPU().SetReg(1, memory_info.base_address);
-    Core::CPU().SetReg(2, memory_info.size);
-    Core::CPU().SetReg(3, memory_info.permission);
-    Core::CPU().SetReg(4, memory_info.state);
-    Core::CPU().SetReg(5, page_info.flags);
     FuncReturn(retval);
 }
 

@@ -96,75 +96,9 @@ MemoryRegionInfo* GetMemoryRegion(MemoryRegion region) {
 }
 
 void HandleSpecialMapping(VMManager& address_space, const AddressMapping& mapping) {
-    using namespace Memory;
-
-    struct MemoryArea {
-        VAddr vaddr_base;
-        PAddr paddr_base;
-        u32 size;
-    };
-
-    // The order of entries in this array is important. The VRAM and IO VAddr ranges overlap, and
-    // VRAM must be tried first.
-    static constexpr MemoryArea memory_areas[] = {
-        {VRAM_VADDR, VRAM_PADDR, VRAM_SIZE},
-        {IO_AREA_VADDR, IO_AREA_PADDR, IO_AREA_SIZE},
-        {DSP_RAM_VADDR, DSP_RAM_PADDR, DSP_RAM_SIZE},
-        {N3DS_EXTRA_RAM_VADDR, N3DS_EXTRA_RAM_PADDR, N3DS_EXTRA_RAM_SIZE - 0x20000},
-    };
-
-    VAddr mapping_limit = mapping.address + mapping.size;
-    if (mapping_limit < mapping.address) {
-        LOG_CRITICAL(Loader, "Mapping size overflowed: address=0x%08" PRIX32 " size=0x%" PRIX32,
-                     mapping.address, mapping.size);
-        return;
-    }
-
-    auto area =
-        std::find_if(std::begin(memory_areas), std::end(memory_areas), [&](const auto& area) {
-            return mapping.address >= area.vaddr_base &&
-                   mapping_limit <= area.vaddr_base + area.size;
-        });
-    if (area == std::end(memory_areas)) {
-        LOG_ERROR(Loader, "Unhandled special mapping: address=0x%08" PRIX32 " size=0x%" PRIX32
-                          " read_only=%d unk_flag=%d",
-                  mapping.address, mapping.size, mapping.read_only, mapping.unk_flag);
-        return;
-    }
-
-    u32 offset_into_region = mapping.address - area->vaddr_base;
-    if (area->paddr_base == IO_AREA_PADDR) {
-        LOG_ERROR(Loader, "MMIO mappings are not supported yet. phys_addr=0x%08" PRIX32,
-                  area->paddr_base + offset_into_region);
-        return;
-    }
-
-    u8* target_pointer = Memory::GetPhysicalPointer(area->paddr_base + offset_into_region);
-
-    // TODO(yuriks): This flag seems to have some other effect, but it's unknown what
-    MemoryState memory_state = mapping.unk_flag ? MemoryState::Static : MemoryState::IO;
-
-    auto vma =
-        address_space.MapBackingMemory(mapping.address, target_pointer, mapping.size, memory_state)
-            .Unwrap();
-    address_space.Reprotect(vma,
-                            mapping.read_only ? VMAPermission::Read : VMAPermission::ReadWrite);
 }
 
 void MapSharedPages(VMManager& address_space) {
-    auto cfg_mem_vma = address_space
-                           .MapBackingMemory(Memory::CONFIG_MEMORY_VADDR,
-                                             reinterpret_cast<u8*>(&ConfigMem::config_mem),
-                                             Memory::CONFIG_MEMORY_SIZE, MemoryState::Shared)
-                           .Unwrap();
-    address_space.Reprotect(cfg_mem_vma, VMAPermission::Read);
-
-    auto shared_page_vma = address_space
-                               .MapBackingMemory(Memory::SHARED_PAGE_VADDR,
-                                                 reinterpret_cast<u8*>(&SharedPage::shared_page),
-                                                 Memory::SHARED_PAGE_SIZE, MemoryState::Shared)
-                               .Unwrap();
-    address_space.Reprotect(shared_page_vma, VMAPermission::Read);
 }
 
 } // namespace Kernel

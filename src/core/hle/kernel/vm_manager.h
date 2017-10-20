@@ -40,19 +40,16 @@ enum class VMAPermission : u8 {
 };
 
 /// Set of values returned in MemoryInfo.state by svcQueryMemory.
-enum class MemoryState : u8 {
+enum class MemoryState : u32 {
     Free = 0,
-    Reserved = 1,
-    IO = 2,
-    Static = 3,
-    Code = 4,
-    Private = 5,
+    IO = 1,
+    Normal = 2,
+    Code = 3,
+    Static = 4,
+    Heap = 5,
     Shared = 6,
-    Continuous = 7,
-    Aliased = 8,
-    Alias = 9,
-    AliasCode = 10,
-    Locked = 11,
+    Mapped = 6,
+    ThreadLocalStorage = 12,
 };
 
 /**

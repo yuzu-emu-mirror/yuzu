@@ -110,28 +110,22 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
                                      Kernel::Handle process_handle, u64 addr) {
     using Kernel::Process;
     Kernel::SharedPtr<Process> process = Kernel::g_handle_table.Get<Process>(process_handle);
-    if (process == nullptr)
+    if (process == nullptr) {
         return ERR_INVALID_HANDLE;
-
-    auto vma = process->vm_manager.FindVMA(addr);
-
-    if (vma == Kernel::g_current_process->vm_manager.vma_map.end())
-    {
-        //return Kernel::ERR_INVALID_ADDRESS;
-
-        memory_info->base_address = 0;
-        memory_info->permission = static_cast<u64>(Kernel::VMAPermission::None);
-        memory_info->size = 0;
-        memory_info->state = static_cast<u64>(Kernel::MemoryState::Free);
-
-        return RESULT_SUCCESS;
     }
-
-    memory_info->base_address = vma->second.base;
-    memory_info->permission = static_cast<u64>(vma->second.permissions);
-    memory_info->size = vma->second.size;
-    memory_info->state = static_cast<u64>(vma->second.meminfo_state);
-
+    auto vma = process->vm_manager.FindVMA(addr);
+    memory_info->attributes = 0;
+    if (vma == Kernel::g_current_process->vm_manager.vma_map.end()) {
+        memory_info->base_address = 0;
+        memory_info->permission = static_cast<u32>(Kernel::VMAPermission::None);
+        memory_info->size = 0;
+        memory_info->type = static_cast<u32>(Kernel::MemoryState::Free);
+    } else {
+        memory_info->base_address = vma->second.base;
+        memory_info->permission = static_cast<u32>(vma->second.permissions);
+        memory_info->size = vma->second.size;
+        memory_info->type = static_cast<u32>(vma->second.meminfo_state);
+    }
     LOG_TRACE(Kernel_SVC, "called process=0x%08X addr=%llx", process_handle, addr);
     return RESULT_SUCCESS;
 }
