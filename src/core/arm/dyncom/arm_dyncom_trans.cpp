@@ -185,7 +185,7 @@ static ARM_INST_PTR INTERPRETER_TRANSLATE(cdp)(unsigned int inst, int index) {
     inst_cream->opcode_1 = BITS(inst, 20, 23);
     inst_cream->inst = inst;
 
-    LOG_TRACE(Core_ARM11, "inst %x index %x", inst, index);
+    LOG_TRACE(Core_ARM, "inst %x index %x", inst, index);
     return inst_base;
 }
 static ARM_INST_PTR INTERPRETER_TRANSLATE(clrex)(unsigned int inst, int index) {

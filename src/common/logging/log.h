@@ -37,7 +37,7 @@ enum class Class : ClassType {
     Common_Filesystem, ///< Filesystem interface library
     Common_Memory,     ///< Memory mapping and management functions
     Core,              ///< LLE emulation core
-    Core_ARM11,        ///< ARM11 CPU core
+    Core_ARM,          ///< ARM CPU core
     Core_Timing,       ///< CoreTiming functions
     Config,            ///< Emulator configuration (including commandline)
     Debug,             ///< Debugging tools

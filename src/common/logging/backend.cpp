@@ -21,7 +21,7 @@ namespace Log {
     SUB(Common, Filesystem)                                                                        \
     SUB(Common, Memory)                                                                            \
     CLS(Core)                                                                                      \
-    SUB(Core, ARM11)                                                                               \
+    SUB(Core, ARM)                                                                                 \
     SUB(Core, Timing)                                                                              \
     CLS(Config)                                                                                    \
     CLS(Debug)                                                                                     \

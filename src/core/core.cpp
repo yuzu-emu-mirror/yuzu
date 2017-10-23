@@ -52,7 +52,7 @@ System::ResultStatus System::RunLoop(int tight_loop) {
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread
     if (Kernel::GetCurrentThread() == nullptr) {
-        LOG_TRACE(Core_ARM11, "Idling");
+        LOG_TRACE(Core_ARM, "Idling");
         CoreTiming::Idle();
         CoreTiming::Advance();
         PrepareReschedule();
