@@ -71,6 +71,33 @@ static ResultCode SendSyncRequest(Kernel::Handle handle) {
     return session->SendSyncRequest(Kernel::GetCurrentThread());
 }
 
+/// Get the ID for the specified thread.
+static ResultCode GetThreadId(u32* thread_id, Kernel::Handle handle) {
+    LOG_TRACE(Kernel_SVC, "called thread=0x%08X", handle);
+
+    const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(handle);
+    if (thread == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    *thread_id = thread->GetThreadId();
+    return RESULT_SUCCESS;
+}
+
+/// Get the ID of the specified process
+static ResultCode GetProcessId(u32* process_id, Kernel::Handle process_handle) {
+    LOG_TRACE(Kernel_SVC, "called process=0x%08X", process_handle);
+
+    const SharedPtr<Kernel::Process> process =
+        Kernel::g_handle_table.Get<Kernel::Process>(process_handle);
+    if (process == nullptr) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    *process_id = process->process_id;
+    return RESULT_SUCCESS;
+}
+
 /// Break program execution
 static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
     LOG_CRITICAL(Debug_Emulated, "Emulated program broke execution!");
@@ -213,8 +240,8 @@ static const FunctionDef SVC_Table[] = {
     {0x21, HLE::Wrap<SendSyncRequest>, "svcSendSyncRequest"},
     {0x22, nullptr, "svcSendSyncRequestWithUserBuffer"},
     {0x23, nullptr, "svcSendAsyncRequestWithUserBuffer"},
-    {0x24, nullptr, "svcGetProcessId"},
-    {0x25, nullptr, "svcGetThreadId"},
+    {0x24, HLE::Wrap<GetProcessId>, "svcGetProcessId"},
+    {0x25, HLE::Wrap<GetThreadId>, "svcGetThreadId"},
     {0x26, HLE::Wrap<Break>, "svcBreak"},
     {0x27, HLE::Wrap<OutputDebugString>, "svcOutputDebugString"},
     {0x28, nullptr, "svcReturnFromException"},
