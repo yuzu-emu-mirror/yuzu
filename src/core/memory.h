@@ -26,7 +26,7 @@ namespace Memory {
 const int PAGE_BITS = 12;
 const u64 PAGE_SIZE = 1 << PAGE_BITS;
 const u64 PAGE_MASK = PAGE_SIZE - 1;
-const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (32 - PAGE_BITS);
+const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (36 - PAGE_BITS);
 
 enum class PageType {
     /// Page is unmapped and should cause an access error.
@@ -135,7 +135,7 @@ enum : VAddr {
     IPC_MAPPING_VADDR_END = IPC_MAPPING_VADDR + IPC_MAPPING_SIZE,
 
     /// Application heap (includes stack).
-    HEAP_VADDR = 0x08000000,
+    HEAP_VADDR = 0x108000000,
     HEAP_SIZE = 0x08000000,
     HEAP_VADDR_END = HEAP_VADDR + HEAP_SIZE,
 
