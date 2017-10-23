@@ -153,22 +153,18 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    // Load and relocate "rtld" NSO
-    static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
     process = Kernel::Process::Create("main");
-    VAddr next_base_addr{LoadNso(filepath, base_addr)};
-    if (!next_base_addr) {
-        return ResultStatus::ErrorInvalidFormat;
-    }
 
-    // Load and relocate remaining submodules
-    for (const auto& module_name : {"main", "sdk", "subsdk0", "subsdk1"}) {
-        LOG_INFO(Loader, "loading %s @ 0x%llx", module_name, next_base_addr);
-        const std::string module_path =
-            filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module_name;
-        next_base_addr = LoadNso(module_path, next_base_addr);
-        if (!next_base_addr) {
-            LOG_WARNING(Loader, "failed to find load module: %s", module_name);
+    // Load NSO modules
+    VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
+    for (const auto& module : {"rtld", "main", "sdk", "subsdk0", "subsdk1", "subsdk2", "subsdk3"}) {
+        const std::string path = filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module;
+        const VAddr load_addr = next_load_addr;
+        next_load_addr = LoadNso(path, load_addr);
+        if (next_load_addr) {
+            LOG_DEBUG(Loader, "loaded module %s @ 0x%llx", module, load_addr);
+        } else {
+            next_load_addr = load_addr;
         }
     }
 
@@ -176,7 +172,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->address_mappings = default_address_mappings;
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
 
     ResolveImports();
 
