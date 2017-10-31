@@ -63,7 +63,7 @@ public:
 
     void InvokeRequest(Kernel::HLERequestContext& ctx);
 
-    void HandleSyncRequest(Kernel::SharedPtr<Kernel::ServerSession> server_session) override;
+    ResultCode HandleSyncRequest(Kernel::SharedPtr<Kernel::ServerSession> server_session) override;
 
 protected:
     /// Member-function pointer type of SyncRequest handlers.

@@ -124,7 +124,7 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
     handler_invoker(this, info->handler_callback, ctx);
 }
 
-void ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_session) {
+ResultCode ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_session) {
     u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
 
     // TODO(yuriks): The kernel should be the one handling this as part of translation after
@@ -137,7 +137,7 @@ void ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_ses
     case IPC::CommandType::Close: {
         IPC::RequestBuilder rb{context, 1};
         rb.Push(RESULT_SUCCESS);
-        break;
+        return ResultCode(ErrorModule::HIPC, ErrorDescription::RemoteProcessDead);
     }
     case IPC::CommandType::Control: {
         SM::g_service_manager->InvokeControlRequest(context);
@@ -153,6 +153,8 @@ void ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_ses
 
     context.WriteToOutgoingCommandBuffer(cmd_buf, *Kernel::g_current_process,
                                          Kernel::g_handle_table);
+
+    return RESULT_SUCCESS;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

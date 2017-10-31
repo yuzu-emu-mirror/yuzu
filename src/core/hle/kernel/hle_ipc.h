@@ -40,7 +40,7 @@ public:
      * this request (ServerSession, Originator thread, Translated command buffer, etc).
      * @returns ResultCode the result code of the translate operation.
      */
-    virtual void HandleSyncRequest(SharedPtr<ServerSession> server_session) = 0;
+    virtual ResultCode HandleSyncRequest(SharedPtr<ServerSession> server_session) = 0;
 
     /**
      * Signals that a client has just connected to this HLE handler and keeps the
