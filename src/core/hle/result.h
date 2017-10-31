@@ -11,41 +11,14 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 
-// All the constants in this file come from http://3dbrew.org/wiki/Error_codes
+// All the constants in this file come from http://switchbrew.org/index.php?title=Error_codes
 
 /**
- * Detailed description of the error. Code 0 always means success. Codes 1000 and above are
- * considered "well-known" and have common values between all modules. The meaning of other codes
- * vary by module.
+ * Detailed description of the error. Code 0 always means success.
  */
 enum class ErrorDescription : u32 {
     Success = 0,
-
-    // Codes 1000 and above are considered "well-known" and have common values between all modules.
-    InvalidSection = 1000,
-    TooLarge = 1001,
-    NotAuthorized = 1002,
-    AlreadyDone = 1003,
-    InvalidSize = 1004,
-    InvalidEnumValue = 1005,
-    InvalidCombination = 1006,
-    NoData = 1007,
-    Busy = 1008,
-    MisalignedAddress = 1009,
-    MisalignedSize = 1010,
-    OutOfMemory = 1011,
-    NotImplemented = 1012,
-    InvalidAddress = 1013,
-    InvalidPointer = 1014,
-    InvalidHandle = 1015,
-    NotInitialized = 1016,
-    AlreadyInitialized = 1017,
-    NotFound = 1018,
-    CancelRequested = 1019,
-    AlreadyExists = 1020,
-    OutOfRange = 1021,
-    Timeout = 1022,
-    InvalidResultValue = 1023,
+    RemoteProcessDead = 301,
 };
 
 /**
@@ -56,150 +29,64 @@ enum class ErrorDescription : u32 {
 enum class ErrorModule : u32 {
     Common = 0,
     Kernel = 1,
-    Util = 2,
-    FileServer = 3,
-    LoaderServer = 4,
-    TCB = 5,
-    OS = 6,
-    DBG = 7,
-    DMNT = 8,
-    PDN = 9,
-    GX = 10,
-    I2C = 11,
-    GPIO = 12,
-    DD = 13,
-    CODEC = 14,
-    SPI = 15,
-    PXI = 16,
-    FS = 17,
-    DI = 18,
-    HID = 19,
-    CAM = 20,
-    PI = 21,
-    PM = 22,
-    PM_LOW = 23,
-    FSI = 24,
-    SRV = 25,
-    NDM = 26,
-    NWM = 27,
-    SOC = 28,
-    LDR = 29,
-    ACC = 30,
-    RomFS = 31,
-    AM = 32,
-    HIO = 33,
-    Updater = 34,
-    MIC = 35,
-    FND = 36,
-    MP = 37,
-    MPWL = 38,
-    AC = 39,
-    HTTP = 40,
-    DSP = 41,
-    SND = 42,
-    DLP = 43,
-    HIO_LOW = 44,
-    CSND = 45,
-    SSL = 46,
-    AM_LOW = 47,
-    NEX = 48,
-    Friends = 49,
-    RDT = 50,
-    Applet = 51,
-    NIM = 52,
-    PTM = 53,
-    MIDI = 54,
-    MC = 55,
-    SWC = 56,
-    FatFS = 57,
-    NGC = 58,
-    CARD = 59,
-    CARDNOR = 60,
-    SDMC = 61,
-    BOSS = 62,
-    DBM = 63,
-    Config = 64,
-    PS = 65,
-    CEC = 66,
-    IR = 67,
-    UDS = 68,
-    PL = 69,
-    CUP = 70,
-    Gyroscope = 71,
-    MCU = 72,
-    NS = 73,
-    News = 74,
-    RO = 75,
-    GD = 76,
-    CardSPI = 77,
-    EC = 78,
-    WebBrowser = 79,
-    Test = 80,
-    ENC = 81,
-    PIA = 82,
-    ACT = 83,
-    VCTL = 84,
-    OLV = 85,
-    NEIA = 86,
-    NPNS = 87,
-
-    AVD = 90,
-    L2B = 91,
-    MVD = 92,
-    NFC = 93,
-    UART = 94,
-    SPM = 95,
-    QTM = 96,
-    NFP = 97,
-
-    Application = 254,
-    InvalidResult = 255
-};
-
-/// A less specific error cause.
-enum class ErrorSummary : u32 {
-    Success = 0,
-    NothingHappened = 1,
-    WouldBlock = 2,
-    OutOfResource = 3, ///< There are no more kernel resources (memory, table slots) to
-                       ///< execute the operation.
-    NotFound = 4,      ///< A file or resource was not found.
-    InvalidState = 5,
-    NotSupported = 6,    ///< The operation is not supported or not implemented.
-    InvalidArgument = 7, ///< Returned when a passed argument is invalid in the current runtime
-                         ///< context. (Invalid handle, out-of-bounds pointer or size, etc.)
-    WrongArgument = 8,   ///< Returned when a passed argument is in an incorrect format for use
-                         ///< with the function. (E.g. Invalid enum value)
-    Canceled = 9,
-    StatusChanged = 10,
-    Internal = 11,
-
-    InvalidResult = 63
-};
-
-/// The severity of the error.
-enum class ErrorLevel : u32 {
-    Success = 0,
-    Info = 1,
-
-    Status = 25,
-    Temporary = 26,
-    Permanent = 27,
-    Usage = 28,
-    Reinitialize = 29,
-    Reset = 30,
-    Fatal = 31
+    FS = 2,
+    NvidiaTransferMemory = 3,
+    NCM = 5,
+    DD = 6,
+    LR = 8,
+    Loader = 9,
+    CMIF = 10,
+    HIPC = 11,
+    PM = 15,
+    NS = 16,
+    HTC = 18,
+    SM = 21,
+    RO = 22,
+    SDMMC = 24,
+    SPL = 26,
+    ETHC = 100,
+    I2C = 101,
+    Settings = 105,
+    NIFM = 110,
+    Display = 114,
+    NTC = 116,
+    FGM = 117,
+    PCIE = 120,
+    Friends = 121,
+    SSL = 123,
+    Account = 124,
+    Mii = 126,
+    AM = 128,
+    PlayReport = 129,
+    PCV = 133,
+    OMM = 134,
+    NIM = 137,
+    PSC = 138,
+    USB = 140,
+    BTM = 143,
+    ERPT = 147,
+    APM = 148,
+    NPNS = 154,
+    ARP = 157,
+    BOOT = 158,
+    NFC = 161,
+    UserlandAssert = 162,
+    UserlandCrash = 168,
+    HID = 203,
+    Capture = 206,
+    TC = 651,
+    GeneralWebApplet = 800,
+    WifiWebAuthApplet = 809,
+    WhitelistedApplet = 810,
+    ShopN = 811,
 };
 
 /// Encapsulates a CTR-OS error code, allowing it to be separated into its constituent fields.
 union ResultCode {
     u32 raw;
 
-    BitField<0, 10, u32> description;
-    BitField<10, 8, ErrorModule> module;
-
-    BitField<21, 6, ErrorSummary> summary;
-    BitField<27, 5, ErrorLevel> level;
+    BitField<0, 9, ErrorModule> module;
+    BitField<9, 13, u32> description;
 
     // The last bit of `level` is checked by apps and the kernel to determine if a result code is an
     // error
@@ -207,14 +94,11 @@ union ResultCode {
 
     constexpr explicit ResultCode(u32 raw) : raw(raw) {}
 
-    constexpr ResultCode(ErrorDescription description, ErrorModule module, ErrorSummary summary,
-                         ErrorLevel level)
-        : ResultCode(static_cast<u32>(description), module, summary, level) {}
+    constexpr ResultCode(ErrorModule module, ErrorDescription description)
+        : ResultCode(module, static_cast<u32>(description)) {}
 
-    constexpr ResultCode(u32 description_, ErrorModule module_, ErrorSummary summary_,
-                         ErrorLevel level_)
-        : raw(description.FormatValue(description_) | module.FormatValue(module_) |
-              summary.FormatValue(summary_) | level.FormatValue(level_)) {}
+    constexpr ResultCode(ErrorModule module_, u32 description_)
+        : raw(module.FormatValue(module_) | description.FormatValue(description_)) {}
 
     constexpr ResultCode& operator=(const ResultCode& o) {
         raw = o.raw;
@@ -242,12 +126,6 @@ constexpr bool operator!=(const ResultCode& a, const ResultCode& b) {
 
 /// The default success `ResultCode`.
 constexpr ResultCode RESULT_SUCCESS(0);
-
-/// Might be returned instead of a dummy success for unimplemented APIs.
-constexpr ResultCode UnimplementedFunction(ErrorModule module) {
-    return ResultCode(ErrorDescription::NotImplemented, module, ErrorSummary::NotSupported,
-                      ErrorLevel::Permanent);
-}
 
 /**
  * This is an optional value type. It holds a `ResultCode` and, if that code is a success code,

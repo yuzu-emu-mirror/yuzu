@@ -17,7 +17,6 @@ constexpr size_t COMMAND_BUFFER_LENGTH = 0x100 / sizeof(u32);
 // These errors are commonly returned by invalid IPC translations, so alias them here for
 // convenience.
 // TODO(yuriks): These will probably go away once translation is implemented inside the kernel.
-using Kernel::ERR_INVALID_BUFFER_DESCRIPTOR;
 constexpr auto ERR_INVALID_HANDLE = Kernel::ERR_INVALID_HANDLE_OS;
 
 

@@ -386,9 +386,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 
     if (!Memory::IsValidVirtualAddress(*owner_process, entry_point)) {
         LOG_ERROR(Kernel_SVC, "(name=%s): invalid entry %08x", name.c_str(), entry_point);
-        // TODO: Verify error
-        return ResultCode(ErrorDescription::InvalidAddress, ErrorModule::Kernel,
-                          ErrorSummary::InvalidArgument, ErrorLevel::Permanent);
+        // TODO (bunnei): Find the correct error code to use here
+        return ResultCode(-1);
     }
 
     SharedPtr<Thread> thread(new Thread);

@@ -128,10 +128,8 @@ ResultCode SaveDataArchive::RenameFile(const Path& src_path, const Path& dest_pa
         return RESULT_SUCCESS;
     }
 
-    // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
-    // exist or similar. Verify.
-    return ResultCode(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
-                      ErrorSummary::NothingHappened, ErrorLevel::Status);
+    // TODO(bunnei): Use correct error code
+    return ResultCode(-1);
 }
 
 template <typename T>
@@ -223,8 +221,9 @@ ResultCode SaveDataArchive::CreateFile(const FileSys::Path& path, u64 size) cons
     }
 
     LOG_ERROR(Service_FS, "Too large file");
-    return ResultCode(ErrorDescription::TooLarge, ErrorModule::FS, ErrorSummary::OutOfResource,
-                      ErrorLevel::Info);
+
+    // TODO(bunnei): Use correct error code
+    return ResultCode(-1);
 }
 
 ResultCode SaveDataArchive::CreateDirectory(const Path& path) const {
@@ -260,8 +259,9 @@ ResultCode SaveDataArchive::CreateDirectory(const Path& path) const {
     }
 
     LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating %s", mount_point.c_str());
-    return ResultCode(ErrorDescription::NoData, ErrorModule::FS, ErrorSummary::Canceled,
-                      ErrorLevel::Status);
+
+    // TODO(bunnei): Use correct error code
+    return ResultCode(-1);
 }
 
 ResultCode SaveDataArchive::RenameDirectory(const Path& src_path, const Path& dest_path) const {
@@ -287,10 +287,8 @@ ResultCode SaveDataArchive::RenameDirectory(const Path& src_path, const Path& de
         return RESULT_SUCCESS;
     }
 
-    // TODO(yuriks): This code probably isn't right, it'll return a Status even if the file didn't
-    // exist or similar. Verify.
-    return ResultCode(ErrorDescription::NoData, ErrorModule::FS, // TODO: verify description
-                      ErrorSummary::NothingHappened, ErrorLevel::Status);
+    // TODO(bunnei): Use correct error code
+    return ResultCode(-1);
 }
 
 ResultVal<std::unique_ptr<DirectoryBackend>> SaveDataArchive::OpenDirectory(
