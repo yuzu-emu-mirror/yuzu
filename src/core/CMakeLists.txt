@@ -49,6 +49,7 @@ set(SRCS
             hle/romfs.cpp
             hle/service/am/am.cpp
             hle/service/am/applet_oe.cpp
+            hle/service/aoc/aoc_u.cpp
             hle/service/apm/apm.cpp
             hle/service/dsp_dsp.cpp
             hle/service/gsp_gpu.cpp
@@ -140,6 +141,7 @@ set(HEADERS
             hle/romfs.h
             hle/service/am/am.h
             hle/service/am/applet_oe.h
+            hle/service/aoc/aoc_u.h
             hle/service/apm/apm.h
             hle/service/dsp_dsp.h
             hle/service/gsp_gpu.h

@@ -1,0 +1,18 @@
+// Copyright 2017 Citra Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#include <string>
+#include "core/hle/service/aoc/aoc_u.h"
+
+namespace Service {
+namespace AOC {
+
+void InstallInterfaces(SM::ServiceManager& service_manager) {
+    std::make_shared<AOC_U>()->InstallAsService(service_manager);
+}
+
+AOC_U::AOC_U() : ServiceFramework("aoc:u") {}
+
+} // namespace AOC
+} // namespace Service
