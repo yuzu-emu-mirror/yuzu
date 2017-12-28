@@ -16,7 +16,5 @@ AppletOE::AppletOE() : ServiceFramework("appletOE") {
     RegisterHandlers(functions);
 }
 
-AppletOE::~AppletOE() = default;
-
 } // namespace AM
 } // namespace Service

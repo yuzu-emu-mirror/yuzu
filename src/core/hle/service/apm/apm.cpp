@@ -21,7 +21,5 @@ APM::APM() : ServiceFramework("apm") {
     RegisterHandlers(functions);
 }
 
-APM::~APM() = default;
-
 } // namespace APM
 } // namespace Service

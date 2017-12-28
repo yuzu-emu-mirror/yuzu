@@ -147,7 +147,5 @@ SM::SM(std::shared_ptr<ServiceManager> service_manager)
     RegisterHandlers(functions);
 }
 
-SM::~SM() = default;
-
 } // namespace SM
 } // namespace Service

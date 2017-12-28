@@ -14,8 +14,8 @@ namespace LM {
 
 class LM final : public ServiceFramework<LM> {
 public:
-    explicit LM();
-    ~LM();
+    LM();
+    ~LM() = default;
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx);

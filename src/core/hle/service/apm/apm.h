@@ -11,8 +11,8 @@ namespace APM {
 
 class APM final : public ServiceFramework<APM> {
 public:
-    explicit APM();
-    ~APM();
+    APM();
+    ~APM() = default;
 };
 
 /// Registers all AM services with the specified service manager.

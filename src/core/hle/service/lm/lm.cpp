@@ -92,7 +92,5 @@ LM::LM() : ServiceFramework("lm") {
     RegisterHandlers(functions);
 }
 
-LM::~LM() = default;
-
 } // namespace LM
 } // namespace Service

@@ -23,8 +23,8 @@ namespace SM {
 /// Interface to "sm:" service
 class SM final : public ServiceFramework<SM> {
 public:
-    explicit SM(std::shared_ptr<ServiceManager> service_manager);
-    ~SM();
+    SM(std::shared_ptr<ServiceManager> service_manager);
+    ~SM() = default;
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx);

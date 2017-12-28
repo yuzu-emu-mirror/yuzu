@@ -11,8 +11,8 @@ namespace AM {
 
 class AppletOE final : public ServiceFramework<AppletOE> {
 public:
-    explicit AppletOE();
-    ~AppletOE();
+    AppletOE();
+    ~AppletOE() = default;
 };
 
 } // namespace AM
