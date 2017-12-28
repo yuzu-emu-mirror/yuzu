@@ -96,7 +96,7 @@ void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* function
 void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx,
                                                        const FunctionInfoBase* info) {
     auto cmd_buf = ctx.CommandBuffer();
-    std::string function_name = info == nullptr ? fmt::format("{:#08x}", ctx.GetCommand()) : info->name;
+    std::string function_name = info == nullptr ? fmt::format("{}", ctx.GetCommand()) : info->name;
 
     fmt::MemoryWriter w;
     w.write("function '{}': port='{}' cmd_buf={{[0]={:#x}", function_name, service_name,
@@ -107,9 +107,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     w << '}';
 
     LOG_ERROR(Service, "unknown / unimplemented %s", w.c_str());
-    // TODO(bunnei): Hack - ignore error
-    IPC::RequestBuilder rb{ctx, 1};
-    rb.Push(RESULT_SUCCESS);
+    UNIMPLEMENTED();
 }
 
 void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
