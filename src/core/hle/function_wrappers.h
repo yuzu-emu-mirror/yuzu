@@ -42,9 +42,17 @@ void Wrap() {
     FuncReturn(func(PARAM(0), PARAM(1)).raw);
 }
 
-template <ResultCode func(u64, u64, u64)>
+template <ResultCode func(u64, u64, s64)>
 void Wrap() {
-    FuncReturn(func(PARAM(0), PARAM(1), PARAM(2)).raw);
+    FuncReturn(func(PARAM(1), PARAM(2), (s64)PARAM(3)).raw);
+}
+
+template <ResultCode func(u64*, u64)>
+void Wrap() {
+    u64 param_1 = 0;
+    u32 retval = func(&param_1, PARAM(1)).raw;
+    Core::CPU().SetReg(1, param_1);
+    FuncReturn(retval);
 }
 
 template <ResultCode func(u64*, u64, u64, u64)>
