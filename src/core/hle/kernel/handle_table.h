@@ -17,6 +17,8 @@ enum KernelHandle : Handle {
     CurrentProcess = 0xFFFF8001,
 };
 
+class Session;
+
 /**
  * This class allows the creation of Handles, which are references to objects that can be tested
  * for validity and looked up. Here they are used to pass references to kernel objects to/from the
@@ -58,6 +60,11 @@ public:
      *           - Any errors returned by `Create()`.
      */
     ResultVal<Handle> Duplicate(Handle handle);
+
+    /**
+     * Convert all handles of the specified Session to the specified Domain.
+     */
+    void ConvertSessionToDomain(const Session& session, SharedPtr<Object> domain);
 
     /**
      * Closes a handle, removing it from the table and decreasing the object's ref-count.

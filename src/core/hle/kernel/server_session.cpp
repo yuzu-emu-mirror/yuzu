@@ -6,7 +6,9 @@
 
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/session.h"
 #include "core/hle/kernel/thread.h"
@@ -66,8 +68,13 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
         ResultCode translate_result = TranslateHLERequest(this);
         if (translate_result.IsError())
             return translate_result;
-        result = hle_handler->HandleSyncRequest(SharedPtr<ServerSession>(this));
-        // TODO(Subv): Translate the response command buffer.
+
+        Kernel::HLERequestContext context(this);
+        u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
+        context.PopulateFromIncomingCommandBuffer(cmd_buf, *Kernel::g_current_process,
+                                                  Kernel::g_handle_table);
+
+        result = hle_handler->HandleSyncRequest(context);
     } else {
         // Add the thread to the list of threads that have issued a sync request with this
         // server.

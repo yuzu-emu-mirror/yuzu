@@ -7,6 +7,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -25,8 +26,12 @@ void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_s
     boost::range::remove_erase(connected_sessions, server_session);
 }
 
-HLERequestContext::HLERequestContext(SharedPtr<ServerSession> session)
-    : session(std::move(session)) {
+HLERequestContext::HLERequestContext(SharedPtr<Kernel::Domain> domain) : domain(std::move(domain)) {
+    cmd_buf[0] = 0;
+}
+
+HLERequestContext::HLERequestContext(SharedPtr<Kernel::ServerSession> server_session)
+    : server_session(std::move(server_session)) {
     cmd_buf[0] = 0;
 }
 
@@ -66,16 +71,16 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         rp.Skip(handle_descriptor_header->num_handles_to_move, false);
     }
 
-    for (int i = 0; i < command_header->num_buf_x_descriptors; ++i) {
+    for (unsigned i = 0; i < command_header->num_buf_x_descriptors; ++i) {
         buffer_x_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorX>());
     }
-    for (int i = 0; i < command_header->num_buf_a_descriptors; ++i) {
+    for (unsigned i = 0; i < command_header->num_buf_a_descriptors; ++i) {
         buffer_a_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
-    for (int i = 0; i < command_header->num_buf_b_descriptors; ++i) {
+    for (unsigned i = 0; i < command_header->num_buf_b_descriptors; ++i) {
         buffer_b_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
-    for (int i = 0; i < command_header->num_buf_w_descriptors; ++i) {
+    for (unsigned i = 0; i < command_header->num_buf_w_descriptors; ++i) {
         buffer_w_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
     if (command_header->buf_c_descriptor_flags !=
@@ -85,6 +90,12 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
 
     // Padding to align to 16 bytes
     rp.AlignWithPadding();
+
+    if (IsDomain() && (command_header->type == IPC::CommandType::Request || !incoming)) {
+        // If this is an incoming message, only CommandType "Request" has a domain header
+        // All outgoing domain messages have the domain header
+        domain_message_header =
+            std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
     }
 
     data_payload_header =
@@ -106,13 +117,6 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdb
     ParseCommandBuffer(src_cmdbuf, true);
     size_t untranslated_size = data_payload_offset + command_header->data_size;
     std::copy_n(src_cmdbuf, untranslated_size, cmd_buf.begin());
-
-    if (command_header->enable_handle_descriptor) {
-        if (handle_descriptor_header->num_handles_to_copy ||
-            handle_descriptor_header->num_handles_to_move) {
-            UNIMPLEMENTED();
-        }
-    }
     return RESULT_SUCCESS;
 }
 

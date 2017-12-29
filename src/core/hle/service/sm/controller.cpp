@@ -4,27 +4,21 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/domain.h"
 #include "core/hle/service/sm/controller.h"
 
 namespace Service {
 namespace SM {
 
-/**
- * Controller::ConvertSessionToDomain service function
- *  Inputs:
- *      0: 0x00000000
- *  Outputs:
- *      0: ResultCode
- *      2: Handle of domain
- */
 void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
-    ctx.Session()->ConvertToDomain();
+    auto domain = Kernel::Domain::CreateFromSession(*ctx.ServerSession()->parent).Unwrap();
+
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Skip(1, true);
-    Kernel::Handle handle = Kernel::g_handle_table.Create(ctx.Session()).Unwrap();
-    rb.Push(handle);
-    LOG_DEBUG(Service, "called, handle=0x%08x", handle);
+    rb.Push<u32>(static_cast<u32>(domain->request_handlers.size()));
+
+    LOG_DEBUG(Service, "called, domain=%d", domain->GetObjectId());
 }
 
 /**

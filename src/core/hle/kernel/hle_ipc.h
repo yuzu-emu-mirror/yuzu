@@ -20,7 +20,9 @@ class ServiceFrameworkBase;
 
 namespace Kernel {
 
+class Domain;
 class HandleTable;
+class HLERequestContext;
 class Process;
 
 /**
@@ -40,7 +42,7 @@ public:
      * this request (ServerSession, Originator thread, Translated command buffer, etc).
      * @returns ResultCode the result code of the translate operation.
      */
-    virtual ResultCode HandleSyncRequest(SharedPtr<ServerSession> server_session) = 0;
+    virtual ResultCode HandleSyncRequest(Kernel::HLERequestContext& context) = 0;
 
     /**
      * Signals that a client has just connected to this HLE handler and keeps the
@@ -84,7 +86,8 @@ protected:
  */
 class HLERequestContext {
 public:
-    HLERequestContext(SharedPtr<ServerSession> session);
+    HLERequestContext(SharedPtr<Kernel::Domain> domain);
+    HLERequestContext(SharedPtr<Kernel::ServerSession> session);
     ~HLERequestContext();
 
     /// Returns a pointer to the IPC command buffer for this request.
@@ -93,11 +96,18 @@ public:
     }
 
     /**
+     * Returns the domain through which this request was made.
+     */
+    const SharedPtr<Kernel::Domain>& Domain() const {
+        return domain;
+    }
+
+    /**
      * Returns the session through which this request was made. This can be used as a map key to
      * access per-client data on services.
      */
-    SharedPtr<ServerSession> Session() const {
-        return session;
+    const SharedPtr<Kernel::ServerSession>& ServerSession() const {
+        return server_session;
     }
 
     /**
@@ -144,9 +154,18 @@ public:
         return buffer_x_desciptors;
     }
 
+    const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
+        return domain_message_header;
+    }
+
+    bool IsDomain() const {
+        return domain != nullptr;
+    }
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
-    SharedPtr<ServerSession> session;
+    SharedPtr<Kernel::Domain> domain;
+    SharedPtr<Kernel::ServerSession> server_session;
     // TODO(yuriks): Check common usage of this and optimize size accordingly
     boost::container::small_vector<SharedPtr<Object>, 8> request_handles;
 

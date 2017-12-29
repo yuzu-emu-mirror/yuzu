@@ -13,7 +13,6 @@
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/server_port.h"
-#include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/aoc/aoc_u.h"
@@ -29,7 +28,6 @@
 
 using Kernel::ClientPort;
 using Kernel::ServerPort;
-using Kernel::ServerSession;
 using Kernel::SharedPtr;
 
 namespace Service {
@@ -124,15 +122,7 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
     handler_invoker(this, info->handler_callback, ctx);
 }
 
-ResultCode ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> server_session) {
-    u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
-
-    // TODO(yuriks): The kernel should be the one handling this as part of translation after
-    // everything else is migrated
-    Kernel::HLERequestContext context(std::move(server_session));
-    context.PopulateFromIncomingCommandBuffer(cmd_buf, *Kernel::g_current_process,
-                                              Kernel::g_handle_table);
-
+ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& context) {
     switch (context.GetCommandType()) {
     case IPC::CommandType::Close: {
         IPC::RequestBuilder rb{context, 1};
@@ -151,6 +141,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(SharedPtr<ServerSession> serv
         UNIMPLEMENTED_MSG("command_type=%d", context.GetCommandType());
     }
 
+    u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
     context.WriteToOutgoingCommandBuffer(cmd_buf, *Kernel::g_current_process,
                                          Kernel::g_handle_table);
 

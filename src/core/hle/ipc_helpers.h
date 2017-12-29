@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <utility>
 #include "core/hle/ipc.h"
+#include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -80,9 +81,22 @@ public:
 
         AlignWithPadding();
 
+        if (context.IsDomain()) {
+            PushRaw(IPC::DomainMessageHeader{});
+        }
+
         IPC::DataPayloadHeader data_payload_header{};
         data_payload_header.magic = Common::MakeMagic('S', 'F', 'C', 'O');
         PushRaw(data_payload_header);
+    }
+
+    template <class T>
+    void PushIpcInterface() {
+        auto& request_handlers = context->Domain()->request_handlers;
+        request_handlers.push_back(std::move(std::make_shared<T>()->shared_from_this()));
+        Push(RESULT_SUCCESS);
+        AlignWithPadding();
+        Push<u32>(static_cast<u32>(request_handlers.size()));
     }
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
