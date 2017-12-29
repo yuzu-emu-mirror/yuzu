@@ -56,6 +56,8 @@ set(SRCS
             hle/service/gsp_gpu.cpp
             hle/service/hid/hid.cpp
             hle/service/lm/lm.cpp
+            hle/service/pctl/pctl.cpp
+            hle/service/pctl/pctl_a.cpp
             hle/service/service.cpp
             hle/service/sm/controller.cpp
             hle/service/sm/sm.cpp
@@ -150,6 +152,8 @@ set(HEADERS
             hle/service/gsp_gpu.h
             hle/service/hid/hid.h
             hle/service/lm/lm.h
+            hle/service/pctl/pctl.h
+            hle/service/pctl/pctl_a.h
             hle/service/service.h
             hle/service/sm/controller.h
             hle/service/sm/sm.h
