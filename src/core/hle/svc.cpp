@@ -10,6 +10,7 @@
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/sync_object.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/lock.h"
 #include "core/hle/result.h"
@@ -71,8 +72,7 @@ static ResultCode ConnectToPort(Kernel::Handle* out_handle, VAddr port_name_addr
 
 /// Makes a blocking IPC call to an OS service.
 static ResultCode SendSyncRequest(Kernel::Handle handle) {
-    SharedPtr<Kernel::ClientSession> session =
-        Kernel::g_handle_table.Get<Kernel::ClientSession>(handle);
+    SharedPtr<Kernel::SyncObject> session = Kernel::g_handle_table.Get<Kernel::SyncObject>(handle);
     if (session == nullptr) {
         LOG_ERROR(Kernel_SVC, "called with invalid handle=0x%08X", handle);
         return ERR_INVALID_HANDLE;

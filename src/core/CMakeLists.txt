@@ -132,6 +132,7 @@ set(HEADERS
             hle/kernel/server_session.h
             hle/kernel/session.h
             hle/kernel/shared_memory.h
+            hle/kernel/sync_object.h
             hle/kernel/thread.h
             hle/kernel/timer.h
             hle/kernel/vm_manager.h

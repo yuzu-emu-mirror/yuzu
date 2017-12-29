@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 #include "common/common_types.h"
-#include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/sync_object.h"
 #include "core/hle/result.h"
 
 namespace Kernel {
@@ -16,7 +16,7 @@ class ServerSession;
 class Session;
 class Thread;
 
-class ClientSession final : public Object {
+class ClientSession final : public SyncObject {
 public:
     friend class ServerSession;
 
@@ -33,12 +33,7 @@ public:
         return HANDLE_TYPE;
     }
 
-    /**
-     * Sends an SyncRequest from the current emulated thread.
-     * @param thread Thread that initiated the request.
-     * @return ResultCode of the operation.
-     */
-    ResultCode SendSyncRequest(SharedPtr<Thread> thread);
+    ResultCode SendSyncRequest(SharedPtr<Thread> thread) override;
 
     std::string name; ///< Name of client port (optional)
 
