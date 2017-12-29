@@ -167,7 +167,7 @@ VAddr Process::GetLinearHeapLimit() const {
     return GetLinearHeapBase() + memory_region->size;
 }
 
-ResultVal<VAddr> Process::HeapAllocate(VAddr target, u32 size, VMAPermission perms) {
+ResultVal<VAddr> Process::HeapAllocate(VAddr target, u64 size, VMAPermission perms) {
     if (target < Memory::HEAP_VADDR || target + size > Memory::HEAP_VADDR_END ||
         target + size < target) {
         return ERR_INVALID_ADDRESS;

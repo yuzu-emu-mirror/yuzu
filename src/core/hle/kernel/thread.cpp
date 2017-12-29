@@ -103,8 +103,8 @@ void Thread::Stop() {
     ReleaseThreadMutexes(this);
 
     // Mark the TLS slot in the thread's page as free.
-    u32 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
-    u32 tls_slot =
+    u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
+    u64 tls_slot =
         ((tls_address - Memory::TLS_AREA_VADDR) % Memory::PAGE_SIZE) / Memory::TLS_ENTRY_SIZE;
     Kernel::g_current_process->tls_slots[tls_page].reset(tls_slot);
 }
@@ -184,7 +184,7 @@ static void SwitchContext(Thread* new_thread) {
         }
 
         Core::CPU().LoadContext(new_thread->context);
-        Core::CPU().SetCP15Register(CP15_THREAD_URO, new_thread->GetTLSAddress());
+        Core::CPU().SetTlsAddress(new_thread->GetTLSAddress());
     } else {
         current_thread = nullptr;
         // Note: We do not reset the current process and current page table when idling because
@@ -369,7 +369,7 @@ static void ResetThreadContext(ARM_Interface::ThreadContext& context, VAddr stac
 }
 
 ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point, u32 priority,
-                                            u32 arg, s32 processor_id, VAddr stack_top,
+                                            u64 arg, s32 processor_id, VAddr stack_top,
                                             SharedPtr<Process> owner_process) {
     // Check if priority is in ranged. Lowest priority -> highest priority id.
     if (priority > THREADPRIO_LOWEST) {
@@ -493,7 +493,7 @@ void Thread::BoostPriority(u32 priority) {
     current_priority = priority;
 }
 
-SharedPtr<Thread> SetupMainThread(u32 entry_point, u32 priority, SharedPtr<Process> owner_process) {
+SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority, SharedPtr<Process> owner_process) {
     // Setup page table so we can write to memory
     SetCurrentPageTable(&Kernel::g_current_process->vm_manager.page_table);
 

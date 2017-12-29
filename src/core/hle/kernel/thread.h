@@ -65,7 +65,7 @@ public:
      * @return A shared pointer to the newly created thread
      */
     static ResultVal<SharedPtr<Thread>> Create(std::string name, VAddr entry_point, u32 priority,
-                                               u32 arg, s32 processor_id, VAddr stack_top,
+                                               u64 arg, s32 processor_id, VAddr stack_top,
                                                SharedPtr<Process> owner_process);
 
     std::string GetName() const override {
@@ -234,7 +234,7 @@ private:
  * @param owner_process The parent process for the main thread
  * @return A shared pointer to the main thread
  */
-SharedPtr<Thread> SetupMainThread(u32 entry_point, u32 priority, SharedPtr<Process> owner_process);
+SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority, SharedPtr<Process> owner_process);
 
 /**
  * Returns whether there are any threads that are ready to run.

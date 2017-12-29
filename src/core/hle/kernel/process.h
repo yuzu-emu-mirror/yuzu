@@ -19,7 +19,7 @@ namespace Kernel {
 struct AddressMapping {
     // Address and size must be page-aligned
     VAddr address;
-    u32 size;
+    u64 size;
     bool read_only;
     bool unk_flag;
 };
@@ -154,7 +154,7 @@ public:
     // The left/right bounds of the address space covered by heap_memory.
     VAddr heap_start = 0, heap_end = 0;
 
-    u32 heap_used = 0, linear_heap_used = 0, misc_memory_used = 0;
+    u64 heap_used = 0, linear_heap_used = 0, misc_memory_used = 0;
 
     MemoryRegionInfo* memory_region = nullptr;
 
@@ -171,7 +171,7 @@ public:
     VAddr GetLinearHeapBase() const;
     VAddr GetLinearHeapLimit() const;
 
-    ResultVal<VAddr> HeapAllocate(VAddr target, u32 size, VMAPermission perms);
+    ResultVal<VAddr> HeapAllocate(VAddr target, u64 size, VMAPermission perms);
     ResultCode HeapFree(VAddr target, u32 size);
 
     ResultVal<VAddr> LinearAllocate(VAddr target, u32 size, VMAPermission perms);
