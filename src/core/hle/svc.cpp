@@ -26,10 +26,18 @@ namespace SVC {
 
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
 static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
-    LOG_TRACE(Kernel_SVC, "called, heap_size=%ull", heap_size);
+    LOG_TRACE(Kernel_SVC, "called, heap_size=0x%llx", heap_size);
     auto& process = *Kernel::g_current_process;
-    CASCADE_RESULT(*heap_addr, process.HeapAllocate(Memory::HEAP_VADDR, heap_size, Kernel::VMAPermission::ReadWrite));
+    CASCADE_RESULT(*heap_addr, process.HeapAllocate(Memory::HEAP_VADDR, heap_size,
+                                                    Kernel::VMAPermission::ReadWrite));
     return RESULT_SUCCESS;
+}
+
+/// Maps a memory range into a different range.
+static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
+    LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
+              src_addr, size);
+    return Kernel::g_current_process->MirrorMemory(dst_addr, src_addr, size);
 }
 
 /// Connect to an OS service given the port name, returns the handle to the port to out
@@ -216,7 +224,7 @@ static const FunctionDef SVC_Table[] = {
     {0x01, HLE::Wrap<SetHeapSize>, "svcSetHeapSize"},
     {0x02, nullptr, "svcSetMemoryPermission"},
     {0x03, nullptr, "svcSetMemoryAttribute"},
-    {0x04, nullptr, "svcMapMemory"},
+    {0x04, HLE::Wrap<MapMemory>, "svcMapMemory"},
     {0x05, nullptr, "svcUnmapMemory"},
     {0x06, HLE::Wrap<QueryMemory>, "svcQueryMemory"},
     {0x07, nullptr, "svcExitProcess"},

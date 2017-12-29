@@ -136,7 +136,7 @@ enum : VAddr {
 
     /// Application heap (includes stack).
     HEAP_VADDR = 0x108000000,
-    HEAP_SIZE = 0x08000000,
+    HEAP_SIZE = 0x18000000,
     HEAP_VADDR_END = HEAP_VADDR + HEAP_SIZE,
 
     /// Area where shared memory buffers are mapped onto.

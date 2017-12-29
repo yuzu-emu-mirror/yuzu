@@ -42,6 +42,11 @@ void Wrap() {
     FuncReturn(func(PARAM(0), PARAM(1)).raw);
 }
 
+template <ResultCode func(u64, u64, u64)>
+void Wrap() {
+    FuncReturn(func(PARAM(0), PARAM(1), PARAM(2)).raw);
+}
+
 template <ResultCode func(u64, u64, s64)>
 void Wrap() {
     FuncReturn(func(PARAM(1), PARAM(2), (s64)PARAM(3)).raw);
