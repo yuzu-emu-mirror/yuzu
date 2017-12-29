@@ -267,6 +267,31 @@ ResultCode Process::LinearFree(VAddr target, u32 size) {
     return RESULT_SUCCESS;
 }
 
+ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
+    auto vma = vm_manager.FindVMA(src_addr);
+
+    ASSERT_MSG(vma != vm_manager.vma_map.end(), "Invalid memory address");
+    ASSERT_MSG(vma->second.backing_block, "Backing block doesn't exist for address");
+
+    // The returned VMA might be a bigger one encompassing the desired address.
+    auto vma_offset = src_addr - vma->first;
+    ASSERT_MSG(vma_offset + size <= vma->second.size,
+               "Shared memory exceeds bounds of mapped block");
+
+    const std::shared_ptr<std::vector<u8>>& backing_block = vma->second.backing_block;
+    size_t backing_block_offset = vma->second.offset + vma_offset;
+
+    CASCADE_RESULT(auto new_vma,
+                   vm_manager.MapMemoryBlock(dst_addr, backing_block, backing_block_offset, size,
+                                             vma->second.meminfo_state));
+    // Protect mirror with permissions from old region
+    vm_manager.Reprotect(new_vma, vma->second.permissions);
+    // Remove permissions from old region
+    vm_manager.Reprotect(vma, VMAPermission::None);
+
+    return RESULT_SUCCESS;
+}
+
 Kernel::Process::Process() {}
 Kernel::Process::~Process() {}
 

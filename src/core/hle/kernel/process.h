@@ -177,6 +177,8 @@ public:
     ResultVal<VAddr> LinearAllocate(VAddr target, u32 size, VMAPermission perms);
     ResultCode LinearFree(VAddr target, u32 size);
 
+    ResultCode MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size);
+
 private:
     Process();
     ~Process() override;
