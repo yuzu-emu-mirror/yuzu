@@ -15,7 +15,7 @@ public:
     ~AOC_U() = default;
 };
 
-/// Registers all LM services with the specified service manager.
+/// Registers all AOC services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
 } // namespace AOC

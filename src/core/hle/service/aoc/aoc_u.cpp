@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <string>
 #include "core/hle/service/aoc/aoc_u.h"
 
 namespace Service {
