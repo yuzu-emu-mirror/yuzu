@@ -21,19 +21,20 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called, domain=%d", domain->GetObjectId());
 }
 
-/**
- * Controller::QueryPointerBufferSize service function
- *  Inputs:
- *      0: 0x00000003
- *  Outputs:
- *      0: ResultCode
- *      2: Size of memory
- */
+void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
+    IPC::RequestBuilder rb{ctx, 1, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushObjects(ctx.ServerSession());
+
+    LOG_DEBUG(Service, "called");
+}
+
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Skip(1, true);
     rb.Push<u32>(0x500);
+
     LOG_WARNING(Service, "(STUBBED) called");
 }
 
@@ -41,7 +42,7 @@ Controller::Controller() : ServiceFramework("IpcController") {
     static const FunctionInfo functions[] = {
         {0x00000000, &Controller::ConvertSessionToDomain, "ConvertSessionToDomain"},
         {0x00000001, nullptr, "ConvertDomainToSession"},
-        {0x00000002, nullptr, "DuplicateSession"},
+        {0x00000002, &Controller::DuplicateSession, "DuplicateSession"},
         {0x00000003, &Controller::QueryPointerBufferSize, "QueryPointerBufferSize"},
         {0x00000004, nullptr, "DuplicateSessionEx"},
     };
