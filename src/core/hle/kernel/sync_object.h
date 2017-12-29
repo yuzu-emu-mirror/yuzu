@@ -16,10 +16,10 @@ class Thread;
 class SyncObject : public Object {
 public:
     /**
-    * Handle a sync request from the emulated application.
-    * @param thread Thread that initiated the request.
-    * @returns ResultCode from the operation.
-    */
+     * Handle a sync request from the emulated application.
+     * @param thread Thread that initiated the request.
+     * @returns ResultCode from the operation.
+     */
     virtual ResultCode SendSyncRequest(SharedPtr<Thread> thread) = 0;
 };
 

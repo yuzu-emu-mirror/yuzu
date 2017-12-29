@@ -29,6 +29,7 @@ set(SRCS
             hle/kernel/address_arbiter.cpp
             hle/kernel/client_port.cpp
             hle/kernel/client_session.cpp
+            hle/kernel/domain.cpp
             hle/kernel/event.cpp
             hle/kernel/handle_table.cpp
             hle/kernel/hle_ipc.cpp
@@ -118,6 +119,7 @@ set(HEADERS
             hle/kernel/address_arbiter.h
             hle/kernel/client_port.h
             hle/kernel/client_session.h
+            hle/kernel/domain.h
             hle/kernel/errors.h
             hle/kernel/event.h
             hle/kernel/handle_table.h
