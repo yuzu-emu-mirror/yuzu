@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/service.h"
 
 namespace Service {
@@ -13,6 +14,9 @@ class AppletOE final : public ServiceFramework<AppletOE> {
 public:
     AppletOE();
     ~AppletOE() = default;
+
+private:
+    void OpenApplicationProxy(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace AM
