@@ -179,6 +179,21 @@ static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAdd
     return QueryProcessMemory(memory_info, page_info, Kernel::CurrentProcess, addr);
 }
 
+/// Starts the thread for the provided handle.
+static ResultCode StartThread(Handle thread_handle) {
+    LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
+
+    const SharedPtr<Kernel::Thread> thread =
+        Kernel::g_handle_table.Get<Kernel::Thread>(thread_handle);
+    if (!thread) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    thread->ResumeFromWait();
+
+    return RESULT_SUCCESS;
+}
+
 /// Sleep the current thread
 static void SleepThread(s64 nanoseconds) {
     LOG_TRACE(Kernel_SVC, "called nanoseconds=%lld", nanoseconds);
@@ -230,6 +245,7 @@ static const FunctionDef SVC_Table[] = {
     {0x07, nullptr, "svcExitProcess"},
     {0x08, nullptr, "svcCreateThread"},
     {0x09, nullptr, "svcStartThread"},
+    {0x09, HLE::Wrap<StartThread>, "svcStartThread"},
     {0x0A, nullptr, "svcExitThread"},
     {0x0B, HLE::Wrap<SleepThread>, "svcSleepThread"},
     {0x0C, HLE::Wrap<GetThreadPriority>, "svcGetThreadPriority"},
