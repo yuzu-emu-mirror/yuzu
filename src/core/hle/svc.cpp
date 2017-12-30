@@ -73,7 +73,7 @@ static ResultCode ConnectToPort(Kernel::Handle* out_handle, VAddr port_name_addr
 /// Makes a blocking IPC call to an OS service.
 static ResultCode SendSyncRequest(Kernel::Handle handle) {
     SharedPtr<Kernel::SyncObject> session = Kernel::g_handle_table.Get<Kernel::SyncObject>(handle);
-    if (session == nullptr) {
+    if (!session) {
         LOG_ERROR(Kernel_SVC, "called with invalid handle=0x%08X", handle);
         return ERR_INVALID_HANDLE;
     }
@@ -88,11 +88,11 @@ static ResultCode SendSyncRequest(Kernel::Handle handle) {
 }
 
 /// Get the ID for the specified thread.
-static ResultCode GetThreadId(u32* thread_id, Kernel::Handle handle) {
-    LOG_TRACE(Kernel_SVC, "called thread=0x%08X", handle);
+static ResultCode GetThreadId(u32* thread_id, Kernel::Handle thread_handle) {
+    LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
 
-    const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(handle);
-    if (thread == nullptr) {
+    const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(thread_handle);
+    if (!thread) {
         return ERR_INVALID_HANDLE;
     }
 
@@ -106,7 +106,7 @@ static ResultCode GetProcessId(u32* process_id, Kernel::Handle process_handle) {
 
     const SharedPtr<Kernel::Process> process =
         Kernel::g_handle_table.Get<Kernel::Process>(process_handle);
-    if (process == nullptr) {
+    if (!process) {
         return ERR_INVALID_HANDLE;
     }
 
@@ -153,7 +153,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
                                      Kernel::Handle process_handle, u64 addr) {
     using Kernel::Process;
     Kernel::SharedPtr<Process> process = Kernel::g_handle_table.Get<Process>(process_handle);
-    if (process == nullptr) {
+    if (!process) {
         return ERR_INVALID_HANDLE;
     }
     auto vma = process->vm_manager.FindVMA(addr);
@@ -169,6 +169,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
         memory_info->size = vma->second.size;
         memory_info->type = static_cast<u32>(vma->second.meminfo_state);
     }
+
     LOG_TRACE(Kernel_SVC, "called process=0x%08X addr=%llx", process_handle, addr);
     return RESULT_SUCCESS;
 }
@@ -179,7 +180,7 @@ static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAdd
     return QueryProcessMemory(memory_info, page_info, Kernel::CurrentProcess, addr);
 }
 
-/// Starts the thread for the provided handle.
+/// Starts the thread for the provided handle
 static ResultCode StartThread(Handle thread_handle) {
     LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
 
