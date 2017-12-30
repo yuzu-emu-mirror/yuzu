@@ -457,9 +457,6 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     // to initialize the context
     ResetThreadContext(thread->context, stack_top, entry_point, arg);
 
-    ready_queue.push_back(thread->current_priority, thread.get());
-    thread->status = THREADSTATUS_READY;
-
     return MakeResult<SharedPtr<Thread>>(std::move(thread));
 }
 
@@ -506,7 +503,9 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority, SharedPtr<Pro
     thread->context.fpscr =
         FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO | FPSCR_IXC; // 0x03C00010
 
-    // Note: The newly created thread will be run when the scheduler fires.
+    // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
+    thread->ResumeFromWait();
+
     return thread;
 }
 
