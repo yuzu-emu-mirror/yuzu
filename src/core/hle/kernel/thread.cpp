@@ -365,7 +365,7 @@ static void ResetThreadContext(ARM_Interface::ThreadContext& context, VAddr stac
     context.cpu_registers[0] = arg;
     context.pc = entry_point;
     context.sp = stack_top;
-    context.cpsr = USER32MODE | ((entry_point & 1) << 5); // Usermode and THUMB mode
+    context.cpsr = USER32MODE;
 }
 
 ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point, u32 priority,
