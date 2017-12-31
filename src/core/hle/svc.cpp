@@ -149,10 +149,12 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
 }
 
 /// Gets the priority for the specified thread
-static ResultCode GetThreadPriority(s32* priority, Kernel::Handle handle) {
-    LOG_TRACE(Kernel_SVC, "called, handle=0x%08X", handle);
+static ResultCode GetThreadPriority(u32* priority, Handle handle) {
     const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(handle);
-    *priority = thread ? thread->GetPriority() : 0;
+    if (!thread)
+        return ERR_INVALID_HANDLE;
+
+    *priority = thread->GetPriority();
     return RESULT_SUCCESS;
 }
 
