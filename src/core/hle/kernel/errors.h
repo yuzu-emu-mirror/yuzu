@@ -37,6 +37,9 @@ constexpr ResultCode ERR_OUT_OF_MEMORY(-1);
 constexpr ResultCode ERR_INVALID_ADDRESS(-1);
 constexpr ResultCode ERR_INVALID_ADDRESS_STATE(-1);
 constexpr ResultCode ERR_INVALID_HANDLE(-1);
+constexpr ResultCode ERR_INVALID_POINTER(-1);
+constexpr ResultCode ERR_INVALID_OBJECT_ADDR(-1);
+constexpr ResultCode ERR_NOT_AUTHORIZED(-1);
 /// Alternate code returned instead of ERR_INVALID_HANDLE in some code paths.
 constexpr ResultCode ERR_INVALID_HANDLE_OS(-1);
 constexpr ResultCode ERR_NOT_FOUND(-1);
