@@ -221,8 +221,8 @@ static void SleepThread(s64 nanoseconds) {
 }
 
 /// Signal process wide key
-static ResultCode SignalProcessWideKey(VAddr address, u32 target) {
-    LOG_TRACE(Kernel_SVC, "called, address=0x%llx, target=0x%08x", address, target);
+static ResultCode SignalProcessWideKey(VAddr addr, u32 target) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, address=0x%llx, target=0x%08x", addr, target);
     return RESULT_SUCCESS;
 }
 
