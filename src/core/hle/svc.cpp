@@ -224,6 +224,62 @@ static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAdd
     return QueryProcessMemory(memory_info, page_info, Kernel::CurrentProcess, addr);
 }
 
+/// Creates a new thread
+static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, VAddr stack_top,
+                               u32 priority, s32 processor_id) {
+    std::string name = Common::StringFromFormat("unknown-%016" PRIX64, entry_point);
+
+    if (priority > THREADPRIO_LOWEST) {
+        return Kernel::ERR_OUT_OF_RANGE;
+    }
+
+    SharedPtr<Kernel::ResourceLimit>& resource_limit = Kernel::g_current_process->resource_limit;
+    if (resource_limit->GetMaxResourceValue(Kernel::ResourceTypes::PRIORITY) > priority) {
+        return Kernel::ERR_NOT_AUTHORIZED;
+    }
+
+    if (processor_id == THREADPROCESSORID_DEFAULT) {
+        // Set the target CPU to the one specified in the process' exheader.
+        processor_id = Kernel::g_current_process->ideal_processor;
+        ASSERT(processor_id != THREADPROCESSORID_DEFAULT);
+    }
+
+    switch (processor_id) {
+    case THREADPROCESSORID_0:
+        break;
+    case THREADPROCESSORID_ALL:
+        LOG_INFO(Kernel_SVC,
+                 "Newly created thread is allowed to be run in any Core, unimplemented.");
+        break;
+    case THREADPROCESSORID_1:
+        LOG_ERROR(Kernel_SVC,
+                  "Newly created thread must run in the SysCore (Core1), unimplemented.");
+        break;
+    default:
+        // TODO(bunnei): Implement support for other processor IDs
+        ASSERT_MSG(false, "Unsupported thread processor ID: %d", processor_id);
+        break;
+    }
+
+    CASCADE_RESULT(SharedPtr<Kernel::Thread> thread,
+                   Kernel::Thread::Create(name, entry_point, priority, arg, processor_id, stack_top,
+                                          Kernel::g_current_process));
+
+    thread->context.fpscr =
+        FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO; // 0x03C00000
+
+    CASCADE_RESULT(*out_handle, Kernel::g_handle_table.Create(std::move(thread)));
+
+    Core::System::GetInstance().PrepareReschedule();
+
+    LOG_TRACE(Kernel_SVC,
+              "called entrypoint=0x%08X (%s), arg=0x%08X, stacktop=0x%08X, "
+              "threadpriority=0x%08X, processorid=0x%08X : created handle=0x%08X",
+              entry_point, name.c_str(), arg, stack_top, priority, processor_id, *out_handle);
+
+    return RESULT_SUCCESS;
+}
+
 /// Starts the thread for the provided handle
 static ResultCode StartThread(Handle thread_handle) {
     LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
@@ -288,8 +344,7 @@ static const FunctionDef SVC_Table[] = {
     {0x05, HLE::Wrap<UnmapMemory>, "svcUnmapMemory"},
     {0x06, HLE::Wrap<QueryMemory>, "svcQueryMemory"},
     {0x07, nullptr, "svcExitProcess"},
-    {0x08, nullptr, "svcCreateThread"},
-    {0x09, nullptr, "svcStartThread"},
+    {0x08, HLE::Wrap<CreateThread>, "svcCreateThread"},
     {0x09, HLE::Wrap<StartThread>, "svcStartThread"},
     {0x0A, nullptr, "svcExitThread"},
     {0x0B, HLE::Wrap<SleepThread>, "svcSleepThread"},
