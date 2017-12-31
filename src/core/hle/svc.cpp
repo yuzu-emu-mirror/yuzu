@@ -268,7 +268,8 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     thread->context.fpscr =
         FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO; // 0x03C00000
 
-    CASCADE_RESULT(*out_handle, Kernel::g_handle_table.Create(std::move(thread)));
+    CASCADE_RESULT(thread->guest_handle, Kernel::g_handle_table.Create(thread));
+    *out_handle = thread->guest_handle;
 
     Core::System::GetInstance().PrepareReschedule();
 

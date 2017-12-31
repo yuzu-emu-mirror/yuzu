@@ -212,6 +212,9 @@ public:
 
     std::string name;
 
+    /// Handle used by guest emulated application to access this thread
+    Handle guest_handle;
+
     /// Handle used as userdata to reference this object when inserting into the CoreTiming queue.
     Handle callback_handle;
 

@@ -502,7 +502,8 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
     SharedPtr<Thread> thread = std::move(thread_res).Unwrap();
 
     // Register 1 must be a handle to the main thread
-    thread->context.cpu_registers[1] = Kernel::g_handle_table.Create(thread).Unwrap();
+    thread->guest_handle = Kernel::g_handle_table.Create(thread).Unwrap();;
+    thread->context.cpu_registers[1] = thread->guest_handle;
     thread->context.fpscr =
         FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO | FPSCR_IXC; // 0x03C00010
 
