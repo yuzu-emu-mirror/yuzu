@@ -295,6 +295,14 @@ static ResultCode StartThread(Handle thread_handle) {
     return RESULT_SUCCESS;
 }
 
+/// Called when a thread exits
+static void ExitThread() {
+    LOG_TRACE(Kernel_SVC, "called, pc=0x%08X", Core::CPU().GetPC());
+
+    Kernel::ExitCurrentThread();
+    Core::System::GetInstance().PrepareReschedule();
+}
+
 /// Sleep the current thread
 static void SleepThread(s64 nanoseconds) {
     LOG_TRACE(Kernel_SVC, "called nanoseconds=%lld", nanoseconds);
@@ -346,7 +354,7 @@ static const FunctionDef SVC_Table[] = {
     {0x07, nullptr, "svcExitProcess"},
     {0x08, HLE::Wrap<CreateThread>, "svcCreateThread"},
     {0x09, HLE::Wrap<StartThread>, "svcStartThread"},
-    {0x0A, nullptr, "svcExitThread"},
+    {0x0A, HLE::Wrap<ExitThread>, "svcExitThread"},
     {0x0B, HLE::Wrap<SleepThread>, "svcSleepThread"},
     {0x0C, HLE::Wrap<GetThreadPriority>, "svcGetThreadPriority"},
     {0x0D, HLE::Wrap<SetThreadPriority>, "svcSetThreadPriority"},
