@@ -179,6 +179,9 @@ public:
 
     ResultCode MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size);
 
+    ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size);
+
+
 private:
     Process();
     ~Process() override;

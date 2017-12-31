@@ -292,6 +292,10 @@ ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     return RESULT_SUCCESS;
 }
 
+ResultCode Process::UnmapMemory(VAddr dst_addr, VAddr /*src_addr*/, u64 size) {
+    return vm_manager.UnmapRange(dst_addr, size);
+}
+
 Kernel::Process::Process() {}
 Kernel::Process::~Process() {}
 

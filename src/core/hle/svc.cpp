@@ -41,6 +41,13 @@ static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     return Kernel::g_current_process->MirrorMemory(dst_addr, src_addr, size);
 }
 
+/// Unmaps a region that was previously mapped with svcMapMemory
+static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
+    LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
+        src_addr, size);
+    return Kernel::g_current_process->UnmapMemory(dst_addr, src_addr, size);
+}
+
 /// Connect to an OS service given the port name, returns the handle to the port to out
 static ResultCode ConnectToPort(Kernel::Handle* out_handle, VAddr port_name_address) {
     if (!Memory::IsValidVirtualAddress(port_name_address))
@@ -241,7 +248,7 @@ static const FunctionDef SVC_Table[] = {
     {0x02, nullptr, "svcSetMemoryPermission"},
     {0x03, nullptr, "svcSetMemoryAttribute"},
     {0x04, HLE::Wrap<MapMemory>, "svcMapMemory"},
-    {0x05, nullptr, "svcUnmapMemory"},
+    {0x05, HLE::Wrap<UnmapMemory>, "svcUnmapMemory"},
     {0x06, HLE::Wrap<QueryMemory>, "svcQueryMemory"},
     {0x07, nullptr, "svcExitProcess"},
     {0x08, nullptr, "svcCreateThread"},
