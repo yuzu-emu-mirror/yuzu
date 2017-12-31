@@ -10,6 +10,7 @@
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/sync_object.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/lock.h"
@@ -155,6 +156,34 @@ static ResultCode GetThreadPriority(s32* priority, Kernel::Handle handle) {
     return RESULT_SUCCESS;
 }
 
+/// Sets the priority for the specified thread
+static ResultCode SetThreadPriority(Handle handle, u32 priority) {
+    if (priority > THREADPRIO_LOWEST) {
+        return Kernel::ERR_OUT_OF_RANGE;
+    }
+
+    SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(handle);
+    if (!thread)
+        return Kernel::ERR_INVALID_HANDLE;
+
+    // Note: The kernel uses the current process's resource limit instead of
+    // the one from the thread owner's resource limit.
+    SharedPtr<Kernel::ResourceLimit>& resource_limit = Kernel::g_current_process->resource_limit;
+    if (resource_limit->GetMaxResourceValue(Kernel::ResourceTypes::PRIORITY) > priority) {
+        return Kernel::ERR_NOT_AUTHORIZED;
+    }
+
+    thread->SetPriority(priority);
+    thread->UpdatePriority();
+
+    // Update the mutexes that this thread is waiting for
+    for (auto& mutex : thread->pending_mutexes)
+        mutex->UpdatePriority();
+
+    Core::System::GetInstance().PrepareReschedule();
+    return RESULT_SUCCESS;
+}
+
 /// Query process memory
 static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_info*/,
                                      Kernel::Handle process_handle, u64 addr) {
@@ -257,7 +286,7 @@ static const FunctionDef SVC_Table[] = {
     {0x0A, nullptr, "svcExitThread"},
     {0x0B, HLE::Wrap<SleepThread>, "svcSleepThread"},
     {0x0C, HLE::Wrap<GetThreadPriority>, "svcGetThreadPriority"},
-    {0x0D, nullptr, "svcSetThreadPriority"},
+    {0x0D, HLE::Wrap<SetThreadPriority>, "svcSetThreadPriority"},
     {0x0E, nullptr, "svcGetThreadCoreMask"},
     {0x0F, nullptr, "svcSetThreadCoreMask"},
     {0x10, nullptr, "svcGetCurrentProcessorNumber"},
