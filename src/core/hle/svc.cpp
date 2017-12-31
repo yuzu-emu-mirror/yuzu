@@ -184,6 +184,12 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
     return RESULT_SUCCESS;
 }
 
+/// Get which CPU core is executing the current thread
+static u32 GetCurrentProcessorNumber() {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, defaulting to processor 0");
+    return 0;
+}
+
 /// Query process memory
 static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_info*/,
                                      Kernel::Handle process_handle, u64 addr) {
@@ -289,7 +295,7 @@ static const FunctionDef SVC_Table[] = {
     {0x0D, HLE::Wrap<SetThreadPriority>, "svcSetThreadPriority"},
     {0x0E, nullptr, "svcGetThreadCoreMask"},
     {0x0F, nullptr, "svcSetThreadCoreMask"},
-    {0x10, nullptr, "svcGetCurrentProcessorNumber"},
+    {0x10, HLE::Wrap<GetCurrentProcessorNumber>, "svcGetCurrentProcessorNumber"},
     {0x11, nullptr, "svcSignalEvent"},
     {0x12, nullptr, "svcClearEvent"},
     {0x13, nullptr, "svcMapSharedMemory"},
