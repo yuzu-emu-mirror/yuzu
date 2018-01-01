@@ -889,12 +889,12 @@ void RasterizerOpenGL::FlushAll() {
     res_cache.FlushAll();
 }
 
-void RasterizerOpenGL::FlushRegion(PAddr addr, u32 size) {
+void RasterizerOpenGL::FlushRegion(PAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size, nullptr, false);
 }
 
-void RasterizerOpenGL::FlushAndInvalidateRegion(PAddr addr, u32 size) {
+void RasterizerOpenGL::FlushAndInvalidateRegion(PAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size, nullptr, true);
 }

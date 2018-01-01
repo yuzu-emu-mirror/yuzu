@@ -21,7 +21,7 @@ class SWRasterizer : public RasterizerInterface {
     void DrawTriangles() override {}
     void NotifyPicaRegisterChanged(u32 id) override {}
     void FlushAll() override {}
-    void FlushRegion(PAddr addr, u32 size) override {}
-    void FlushAndInvalidateRegion(PAddr addr, u32 size) override {}
+    void FlushRegion(PAddr addr, u64 size) override {}
+    void FlushAndInvalidateRegion(PAddr addr, u64 size) override {}
 };
 }

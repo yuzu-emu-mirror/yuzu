@@ -45,7 +45,7 @@ enum class PageType {
 
 struct SpecialRegion {
     VAddr base;
-    u32 size;
+    u64 size;
     MMIORegionPointer handler;
 };
 
@@ -247,17 +247,17 @@ u8* GetPhysicalPointer(PAddr address);
  * Adds the supplied value to the rasterizer resource cache counter of each
  * page touching the region.
  */
-void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta);
+void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta);
 
 /**
  * Flushes any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushRegion(PAddr start, u32 size);
+void RasterizerFlushRegion(PAddr start, u64 size);
 
 /**
  * Flushes and invalidates any externally cached rasterizer resources touching the given region.
  */
-void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size);
+void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size);
 
 enum class FlushMode {
     /// Write back modified surfaces to RAM
@@ -270,6 +270,6 @@ enum class FlushMode {
  * Flushes and invalidates any externally cached rasterizer resources touching the given virtual
  * address region.
  */
-void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode);
+void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode);
 
 } // namespace Memory

@@ -37,7 +37,7 @@ PageTable* GetCurrentPageTable() {
     return current_page_table;
 }
 
-static void MapPages(PageTable& page_table, VAddr base, u32 size, u8* memory, PageType type) {
+static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, PageType type) {
     LOG_DEBUG(HW_Memory, "Mapping %p onto %08X-%08X", memory, base * PAGE_SIZE,
               (base + size) * PAGE_SIZE);
 
@@ -58,13 +58,13 @@ static void MapPages(PageTable& page_table, VAddr base, u32 size, u8* memory, Pa
     }
 }
 
-void MapMemoryRegion(PageTable& page_table, VAddr base, u32 size, u8* target) {
+void MapMemoryRegion(PageTable& page_table, VAddr base, u64 size, u8* target) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, PageType::Memory);
 }
 
-void MapIoRegion(PageTable& page_table, VAddr base, u32 size, MMIORegionPointer mmio_handler) {
+void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MMIORegionPointer mmio_handler) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
@@ -72,7 +72,7 @@ void MapIoRegion(PageTable& page_table, VAddr base, u32 size, MMIORegionPointer 
     page_table.special_regions.emplace_back(SpecialRegion{base, size, mmio_handler});
 }
 
-void UnmapRegion(PageTable& page_table, VAddr base, u32 size) {
+void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Unmapped);
@@ -334,7 +334,7 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta) {
+void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta) {
     if (start == 0) {
         return;
     }
@@ -413,13 +413,13 @@ void RasterizerMarkRegionCached(PAddr start, u32 size, int count_delta) {
     }
 }
 
-void RasterizerFlushRegion(PAddr start, u32 size) {
+void RasterizerFlushRegion(PAddr start, u64 size) {
     if (VideoCore::g_renderer != nullptr) {
         VideoCore::g_renderer->Rasterizer()->FlushRegion(start, size);
     }
 }
 
-void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size) {
+void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size) {
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
     if (VideoCore::g_renderer != nullptr) {
@@ -427,7 +427,7 @@ void RasterizerFlushAndInvalidateRegion(PAddr start, u32 size) {
     }
 }
 
-void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode) {
+void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
     if (VideoCore::g_renderer != nullptr) {

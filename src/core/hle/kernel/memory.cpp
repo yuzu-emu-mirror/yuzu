@@ -69,8 +69,8 @@ void MemoryInit(u32 mem_type) {
     // app_mem_malloc does not always match the configured size for memory_region[0]: in case the
     // n3DS type override is in effect it reports the size the game expects, not the real one.
     config_mem.app_mem_alloc = memory_region_sizes[mem_type][0];
-    config_mem.sys_mem_alloc = memory_regions[1].size;
-    config_mem.base_mem_alloc = memory_regions[2].size;
+    config_mem.sys_mem_alloc = static_cast<u32_le>(memory_regions[1].size);
+    config_mem.base_mem_alloc = static_cast<u32_le>(memory_regions[2].size);
 }
 
 void MemoryShutdown() {
