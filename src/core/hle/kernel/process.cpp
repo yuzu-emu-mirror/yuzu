@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <memory>
 #include "common/assert.h"
 #include "common/common_funcs.h"
@@ -15,6 +16,9 @@
 #include "core/memory.h"
 
 namespace Kernel {
+
+// Lists all processes that exist in the current session.
+static std::vector<SharedPtr<Process>> process_list;
 
 SharedPtr<CodeSet> CodeSet::Create(std::string name, u64 program_id) {
     SharedPtr<CodeSet> codeset(new CodeSet);
@@ -36,7 +40,9 @@ SharedPtr<Process> Process::Create(std::string&& name) {
     process->name = std::move(name);
     process->flags.raw = 0;
     process->flags.memory_region.Assign(MemoryRegion::APPLICATION);
+    process->status = ProcessStatus::Created;
 
+    process_list.push_back(process);
     return process;
 }
 
@@ -129,6 +135,7 @@ void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
     }
 
     vm_manager.LogLayout(Log::Level::Debug);
+    status = ProcessStatus::Running;
 
     Kernel::SetupMainThread(entry_point, main_thread_priority, this);
 }
@@ -137,11 +144,11 @@ void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
     memory_region = GetMemoryRegion(flags.memory_region);
 
     auto MapSegment = [&](CodeSet::Segment& segment, VMAPermission permissions,
-        MemoryState memory_state) {
+                          MemoryState memory_state) {
         auto vma = vm_manager
-            .MapMemoryBlock(segment.addr + base_addr, module_->memory, segment.offset, segment.size,
-                memory_state)
-            .Unwrap();
+                       .MapMemoryBlock(segment.addr + base_addr, module_->memory, segment.offset,
+                                       segment.size, memory_state)
+                       .Unwrap();
         vm_manager.Reprotect(vma, permissions);
         misc_memory_used += segment.size;
         memory_region->used += segment.size;
@@ -299,5 +306,20 @@ ResultCode Process::UnmapMemory(VAddr dst_addr, VAddr /*src_addr*/, u64 size) {
 Kernel::Process::Process() {}
 Kernel::Process::~Process() {}
 
-SharedPtr<Process> g_current_process;
+void ClearProcessList() {
+    process_list.clear();
 }
+
+SharedPtr<Process> GetProcessById(u32 process_id) {
+    auto itr = std::find_if(
+        process_list.begin(), process_list.end(),
+        [&](const SharedPtr<Process>& process) { return process->process_id == process_id; });
+
+    if (itr == process_list.end())
+        return nullptr;
+
+    return *itr;
+}
+
+SharedPtr<Process> g_current_process;
+} // namespace Kernel

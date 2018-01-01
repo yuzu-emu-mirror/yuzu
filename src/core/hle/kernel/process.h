@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <vector>
 #include <boost/container/static_vector.hpp>
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -47,6 +48,8 @@ union ProcessFlags {
         memory_region;                ///< Default region for memory allocations for this process
     BitField<12, 1, u16> loaded_high; ///< Application loaded high (not at 0x00100000).
 };
+
+enum class ProcessStatus { Created, Running, Exited };
 
 class ResourceLimit;
 struct MemoryRegionInfo;
@@ -124,6 +127,8 @@ public:
     u16 kernel_version = 0;
     /// The default CPU for this process, threads are scheduled on this cpu by default.
     u8 ideal_processor = 0;
+    /// Current status of the process
+    ProcessStatus status;
 
     /// The id of this process
     u32 process_id = next_process_id++;
@@ -181,11 +186,15 @@ public:
 
     ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size);
 
-
 private:
     Process();
     ~Process() override;
 };
 
+void ClearProcessList();
+
+/// Retrieves a process from the current list of processes.
+SharedPtr<Process> GetProcessById(u32 process_id);
+
 extern SharedPtr<Process> g_current_process;
-}
+} // namespace Kernel

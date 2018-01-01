@@ -9,6 +9,8 @@
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/handle_table.h"
+#include "core/hle/kernel/mutex.h"
+#include "core/hle/kernel/object_address_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/sync_object.h"
@@ -45,7 +47,7 @@ static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
 /// Unmaps a region that was previously mapped with svcMapMemory
 static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
-        src_addr, size);
+              src_addr, size);
     return Kernel::g_current_process->UnmapMemory(dst_addr, src_addr, size);
 }
 
@@ -99,7 +101,8 @@ static ResultCode SendSyncRequest(Kernel::Handle handle) {
 static ResultCode GetThreadId(u32* thread_id, Kernel::Handle thread_handle) {
     LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
 
-    const SharedPtr<Kernel::Thread> thread = Kernel::g_handle_table.Get<Kernel::Thread>(thread_handle);
+    const SharedPtr<Kernel::Thread> thread =
+        Kernel::g_handle_table.Get<Kernel::Thread>(thread_handle);
     if (!thread) {
         return ERR_INVALID_HANDLE;
     }
@@ -177,7 +180,7 @@ static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
 }
 
 /// Used to output a message on a debug hardware unit - does nothing on a retail unit
-static void OutputDebugString(VAddr address, int len) {
+static void OutputDebugString(VAddr address, s32 len) {
     std::vector<char> string(len);
     Memory::ReadBlock(address, string.data(), len);
     LOG_DEBUG(Debug_Emulated, "%.*s", len, string.data());
@@ -270,6 +273,38 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
 static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAddr addr) {
     LOG_TRACE(Kernel_SVC, "called, addr=%llx", addr);
     return QueryProcessMemory(memory_info, page_info, Kernel::CurrentProcess, addr);
+}
+
+/// Exits the current process
+static void ExitProcess() {
+    LOG_INFO(Kernel_SVC, "Process %u exiting", Kernel::g_current_process->process_id);
+
+    ASSERT_MSG(Kernel::g_current_process->status == Kernel::ProcessStatus::Running,
+               "Process has already exited");
+
+    Kernel::g_current_process->status = Kernel::ProcessStatus::Exited;
+
+    // Stop all the process threads that are currently waiting for objects.
+    auto& thread_list = Kernel::GetThreadList();
+    for (auto& thread : thread_list) {
+        if (thread->owner_process != Kernel::g_current_process)
+            continue;
+
+        if (thread == Kernel::GetCurrentThread())
+            continue;
+
+        // TODO(Subv): When are the other running/ready threads terminated?
+        ASSERT_MSG(thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
+                       thread->status == THREADSTATUS_WAIT_SYNCH_ALL,
+                   "Exiting processes with non-waiting threads is currently unimplemented");
+
+        thread->Stop();
+    }
+
+    // Kill the current thread
+    Kernel::GetCurrentThread()->Stop();
+
+    Core::System::GetInstance().PrepareReschedule();
 }
 
 /// Creates a new thread
@@ -400,7 +435,7 @@ static const FunctionDef SVC_Table[] = {
     {0x04, HLE::Wrap<MapMemory>, "svcMapMemory"},
     {0x05, HLE::Wrap<UnmapMemory>, "svcUnmapMemory"},
     {0x06, HLE::Wrap<QueryMemory>, "svcQueryMemory"},
-    {0x07, nullptr, "svcExitProcess"},
+    {0x07, HLE::Wrap<ExitProcess>, "svcExitProcess"},
     {0x08, HLE::Wrap<CreateThread>, "svcCreateThread"},
     {0x09, HLE::Wrap<StartThread>, "svcStartThread"},
     {0x0A, HLE::Wrap<ExitThread>, "svcExitThread"},
