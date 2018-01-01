@@ -194,16 +194,38 @@ static void OutputDebugString(VAddr address, s32 len) {
     LOG_DEBUG(Debug_Emulated, "%.*s", len, string.data());
 }
 
+/// Gets system/memory information for the current process
 static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id) {
-    LOG_TRACE(Kernel_SVC, "called, info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id, info_sub_id, handle);
+    LOG_TRACE(Kernel_SVC, "called info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id,
+              info_sub_id, handle);
 
-    if (!handle) {
-        switch (info_id) {
-        case 0xB:
-            *result = 0; // Used for PRNG seed
-            return RESULT_SUCCESS;
-        }
+    auto& vm_manager = Kernel::g_current_process->vm_manager;
+    switch (static_cast<GetInfoType>(info_id)) {
+    case GetInfoType::TotalMemoryUsage:
+        *result = vm_manager.GetTotalMemoryUsage();
+        break;
+    case GetInfoType::TotalHeapUsage:
+        *result = vm_manager.GetTotalHeapUsage();
+        break;
+    case GetInfoType::RandomEntropy:
+        *result = 0;
+        break;
+    case GetInfoType::AddressSpaceBaseAddr:
+        *result = vm_manager.GetAddressSpaceBaseAddr();
+        break;
+    case GetInfoType::AddressSpaceSize:
+        *result = vm_manager.GetAddressSpaceSize();
+        break;
+    case GetInfoType::NewMapRegionBaseAddr:
+        *result = vm_manager.GetNewMapRegionBaseAddr();
+        break;
+    case GetInfoType::NewMapRegionSize:
+        *result = vm_manager.GetNewMapRegionSize();
+        break;
+    default:
+        UNIMPLEMENTED();
     }
+
     return RESULT_SUCCESS;
 }
 

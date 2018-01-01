@@ -26,35 +26,19 @@ struct PageInfo {
 
 namespace SVC {
 
-/// Values accepted by svcGetSystemInfo's type parameter.
-enum class SystemInfoType {
-    /**
-     * Reports total used memory for all regions or a specific one, according to the extra
-     * parameter. See `SystemInfoMemUsageRegion`.
-     */
-    REGION_MEMORY_USAGE = 0,
-    /**
-     * Returns the memory usage for certain allocations done internally by the kernel.
-     */
-    KERNEL_ALLOCATED_PAGES = 2,
-    /**
-     * "This returns the total number of processes which were launched directly by the kernel.
-     * For the ARM11 NATIVE_FIRM kernel, this is 5, for processes sm, fs, pm, loader, and pxi."
-     */
-    KERNEL_SPAWNED_PIDS = 26,
-};
-
-/**
- * Accepted by svcGetSystemInfo param with REGION_MEMORY_USAGE type. Selects a region to query
- * memory usage of.
- */
-enum class SystemInfoMemUsageRegion {
-    ALL = 0,
-    APPLICATION = 1,
-    SYSTEM = 2,
-    BASE = 3,
+/// Values accepted by svcGetInfo
+enum class GetInfoType : u64 {
+    // 1.0.0+
+    TotalMemoryUsage = 6,
+    TotalHeapUsage = 7,
+    RandomEntropy = 11,
+    // 2.0.0+
+    AddressSpaceBaseAddr = 12,
+    AddressSpaceSize = 13,
+    NewMapRegionBaseAddr = 14,
+    NewMapRegionSize = 15,
 };
 
 void CallSVC(u32 immediate);
 
-} // namespace
+} // namespace SVC
