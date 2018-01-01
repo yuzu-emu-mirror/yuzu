@@ -125,6 +125,14 @@ static ResultCode GetProcessId(u32* process_id, Kernel::Handle process_handle) {
     return RESULT_SUCCESS;
 }
 
+/// Wait for the given handles to synchronize, timeout after the specified nanoseconds
+static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s64 nano_seconds) {
+    LOG_WARNING(Kernel_SVC,
+                "(STUBBED) called handles_address=0x%llx, handle_count=%d, nano_seconds=%d",
+                handles_address, handle_count, nano_seconds);
+    return RESULT_SUCCESS;
+}
+
 /// Attempts to locks a mutex, creating it if it does not already exist
 static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
                             Handle requesting_thread_handle) {
@@ -452,7 +460,7 @@ static const FunctionDef SVC_Table[] = {
     {0x15, nullptr, "svcCreateTransferMemory"},
     {0x16, HLE::Wrap<CloseHandle>, "svcCloseHandle"},
     {0x17, nullptr, "svcResetSignal"},
-    {0x18, nullptr, "svcWaitSynchronization"},
+    {0x18, HLE::Wrap<WaitSynchronization>, "svcWaitSynchronization"},
     {0x19, nullptr, "svcCancelSynchronization"},
     {0x1A, HLE::Wrap<LockMutex>, "svcLockMutex"},
     {0x1B, HLE::Wrap<UnlockMutex>, "svcUnlockMutex"},
