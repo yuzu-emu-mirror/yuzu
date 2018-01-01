@@ -6,8 +6,10 @@
 
 #include <string>
 #include "common/common_types.h"
+#include "common/swap.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/wait_object.h"
+#include "core/hle/result.h"
 
 namespace Kernel {
 
@@ -17,11 +19,15 @@ class Mutex final : public WaitObject {
 public:
     /**
      * Creates a mutex.
-     * @param initial_locked Specifies if the mutex should be locked initially
+     * @param holding_thread Specifies a thread already holding the mutex. If not nullptr, this
+     * thread will acquire the mutex.
+     * @param guest_addr Address of the object tracking the mutex in guest memory. If specified,
+     * this mutex will update the guest object when its state changes.
      * @param name Optional name of mutex
      * @return Pointer to new Mutex object
      */
-    static SharedPtr<Mutex> Create(bool initial_locked, VAddr addr, std::string name = "Unknown");
+    static SharedPtr<Mutex> Create(SharedPtr<Kernel::Thread> holding_thread, VAddr guest_addr = 0,
+                                   std::string name = "Unknown");
 
     std::string GetTypeName() const override {
         return "Mutex";
@@ -39,7 +45,7 @@ public:
     u32 priority;                     ///< The priority of the mutex, used for priority inheritance.
     std::string name;                 ///< Name of mutex (optional)
     SharedPtr<Thread> holding_thread; ///< Thread that has acquired the mutex
-    VAddr addr;
+    VAddr guest_addr;                 ///< Address of the guest mutex value
 
     /**
      * Elevate the mutex priority to the best priority
@@ -53,11 +59,32 @@ public:
     void AddWaitingThread(SharedPtr<Thread> thread) override;
     void RemoveWaitingThread(Thread* thread) override;
 
-    void Release();
+    /**
+     * Attempts to release the mutex from the specified thread.
+     * @param thread Thread that wants to release the mutex.
+     * @returns The result code of the operation.
+     */
+    ResultCode Release(Thread* thread);
 
 private:
     Mutex();
     ~Mutex() override;
+
+    /// Object in guest memory used to track the mutex state
+    union GuestState {
+        u32_le raw;
+        /// Handle of the thread that currently holds the mutex, 0 if available
+        BitField<0, 30, u32_le> holding_thread_handle;
+        /// 1 when there are threads waiting for this mutex, otherwise 0
+        BitField<30, 1, u32_le> has_waiters;
+    };
+    static_assert(sizeof(GuestState) == 4, "GuestState size is incorrect");
+
+    /// Updates the state of the object tracking this mutex in guest memory
+    void UpdateGuestState();
+
+    /// Verifies the state of the object tracking this mutex in guest memory
+    void VerifyGuestState();
 };
 
 /**
@@ -66,4 +93,4 @@ private:
  */
 void ReleaseThreadMutexes(Thread* thread);
 
-} // namespace
+} // namespace Kernel

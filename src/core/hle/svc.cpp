@@ -122,6 +122,44 @@ static ResultCode GetProcessId(u32* process_id, Kernel::Handle process_handle) {
     return RESULT_SUCCESS;
 }
 
+/// Attempts to locks a mutex, creating it if it does not already exist
+static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
+                            Handle requesting_thread_handle) {
+    LOG_TRACE(Kernel_SVC,
+              "called holding_thread_handle=0x%08X, mutex_addr=0x%llx, "
+              "requesting_current_thread_handle=0x%08X",
+              holding_thread_handle, mutex_addr, requesting_thread_handle);
+
+    SharedPtr<Kernel::Thread> holding_thread =
+        Kernel::g_handle_table.Get<Kernel::Thread>(holding_thread_handle);
+    SharedPtr<Kernel::Thread> requesting_thread =
+        Kernel::g_handle_table.Get<Kernel::Thread>(requesting_thread_handle);
+
+    ASSERT(holding_thread);
+    ASSERT(requesting_thread);
+
+    SharedPtr<Kernel::Mutex> mutex = Kernel::g_object_address_table.Get<Kernel::Mutex>(mutex_addr);
+    if (!mutex) {
+        // Create a new mutex for the specified address if one does not already exist
+        mutex = Kernel::Mutex::Create(holding_thread, mutex_addr);
+        mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
+    }
+
+    if (mutex->ShouldWait(requesting_thread.get())) {
+        // If we cannot lock the mutex, then put the thread too sleep and trigger a reschedule
+        requesting_thread->wait_objects = {mutex};
+        mutex->AddWaitingThread(requesting_thread);
+        requesting_thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
+
+        Core::System::GetInstance().PrepareReschedule();
+    } else {
+        // The mutex is available, lock it
+        mutex->Acquire(requesting_thread.get());
+    }
+
+    return RESULT_SUCCESS;
+}
+
 /// Break program execution
 static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
     LOG_CRITICAL(Debug_Emulated, "Emulated program broke execution!");
@@ -371,8 +409,8 @@ static const FunctionDef SVC_Table[] = {
     {0x17, nullptr, "svcResetSignal"},
     {0x18, nullptr, "svcWaitSynchronization"},
     {0x19, nullptr, "svcCancelSynchronization"},
-    {0x1A, nullptr, "svcLockMutex"},
     {0x1B, nullptr, "svcUnlockMutex"},
+    {0x1A, HLE::Wrap<LockMutex>, "svcLockMutex"},
     {0x1C, nullptr, "svcWaitProcessWideKeyAtomic"},
     {0x1D, HLE::Wrap<SignalProcessWideKey>, "svcSignalProcessWideKey"},
     {0x1E, nullptr, "svcGetSystemTick"},
