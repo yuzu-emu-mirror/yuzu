@@ -318,7 +318,7 @@ static void ExitProcess() {
 /// Creates a new thread
 static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, VAddr stack_top,
                                u32 priority, s32 processor_id) {
-    std::string name = Common::StringFromFormat("unknown-%016" PRIX64, entry_point);
+    std::string name = Common::StringFromFormat("unknown-%llx", entry_point);
 
     if (priority > THREADPRIO_LOWEST) {
         return Kernel::ERR_OUT_OF_RANGE;
