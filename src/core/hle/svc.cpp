@@ -160,6 +160,16 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
     return RESULT_SUCCESS;
 }
 
+/// Unlock a mutex
+static ResultCode UnlockMutex(VAddr mutex_addr) {
+    LOG_TRACE(Kernel_SVC, "called mutex_addr=0x%llx", mutex_addr);
+
+    SharedPtr<Kernel::Mutex> mutex = Kernel::g_object_address_table.Get<Kernel::Mutex>(mutex_addr);
+    ASSERT(mutex);
+
+    return mutex->Release(Kernel::GetCurrentThread());
+}
+
 /// Break program execution
 static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
     LOG_CRITICAL(Debug_Emulated, "Emulated program broke execution!");
@@ -409,8 +419,8 @@ static const FunctionDef SVC_Table[] = {
     {0x17, nullptr, "svcResetSignal"},
     {0x18, nullptr, "svcWaitSynchronization"},
     {0x19, nullptr, "svcCancelSynchronization"},
-    {0x1B, nullptr, "svcUnlockMutex"},
     {0x1A, HLE::Wrap<LockMutex>, "svcLockMutex"},
+    {0x1B, HLE::Wrap<UnlockMutex>, "svcUnlockMutex"},
     {0x1C, nullptr, "svcWaitProcessWideKeyAtomic"},
     {0x1D, HLE::Wrap<SignalProcessWideKey>, "svcSignalProcessWideKey"},
     {0x1E, nullptr, "svcGetSystemTick"},
