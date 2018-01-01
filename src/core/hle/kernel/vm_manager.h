@@ -181,6 +181,24 @@ public:
     /// Dumps the address space layout to the log, for debugging
     void LogLayout(Log::Level log_level) const;
 
+    /// Gets the total memory usage, used by svcGetInfo
+    u64 GetTotalMemoryUsage();
+
+    /// Gets the total heap usage, used by svcGetInfo
+    u64 GetTotalHeapUsage();
+
+    /// Gets the total address space base address, used by svcGetInfo
+    VAddr GetAddressSpaceBaseAddr();
+
+    /// Gets the total address space address size, used by svcGetInfo
+    u64 GetAddressSpaceSize();
+
+    /// Gets the base address for a new memory region, used by svcGetInfo
+    VAddr GetNewMapRegionBaseAddr();
+
+    /// Gets the size for a new memory region, used by svcGetInfo
+    u64 GetNewMapRegionSize();
+
     /// Each VMManager has its own page table, which is set as the main one when the owning process
     /// is scheduled.
     Memory::PageTable page_table;

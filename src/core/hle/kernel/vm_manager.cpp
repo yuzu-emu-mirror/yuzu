@@ -4,6 +4,7 @@
 
 #include <iterator>
 #include "common/assert.h"
+#include "common/logging/log.h"
 #include "core/arm/arm_interface.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/vm_manager.h"
@@ -62,7 +63,7 @@ void VMManager::Reset() {
     page_table.attributes.fill(Memory::PageType::Unmapped);
     page_table.cached_res_count.fill(0);
 
-    //UpdatePageTableForVMA(initial_vma);
+    UpdatePageTableForVMA(initial_vma);
 }
 
 VMManager::VMAHandle VMManager::FindVMA(VAddr target) const {
@@ -352,4 +353,35 @@ void VMManager::UpdatePageTableForVMA(const VirtualMemoryArea& vma) {
         break;
     }
 }
+
+u64 VMManager::GetTotalMemoryUsage() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return 0x400000;
 }
+
+u64 VMManager::GetTotalHeapUsage() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return 0x10000;
+}
+
+VAddr VMManager::GetAddressSpaceBaseAddr() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return 0x8000000;
+}
+
+u64 VMManager::GetAddressSpaceSize() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return MAX_ADDRESS;
+}
+
+VAddr VMManager::GetNewMapRegionBaseAddr() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return 0x8000000;
+}
+
+u64 VMManager::GetNewMapRegionSize() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return 0x8000000;
+}
+
+} // namespace Kernel
