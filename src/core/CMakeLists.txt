@@ -36,6 +36,7 @@ set(SRCS
             hle/kernel/kernel.cpp
             hle/kernel/memory.cpp
             hle/kernel/mutex.cpp
+            hle/kernel/object_address_table.cpp
             hle/kernel/process.cpp
             hle/kernel/resource_limit.cpp
             hle/kernel/semaphore.cpp
@@ -129,6 +130,7 @@ set(HEADERS
             hle/kernel/kernel.h
             hle/kernel/memory.h
             hle/kernel/mutex.h
+            hle/kernel/object_address_table.h
             hle/kernel/process.h
             hle/kernel/resource_limit.h
             hle/kernel/semaphore.h
