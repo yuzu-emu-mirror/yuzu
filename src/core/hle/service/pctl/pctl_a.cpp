@@ -9,10 +9,6 @@
 namespace Service {
 namespace PCTL {
 
-void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<PCTL_A>()->InstallAsService(service_manager);
-}
-
 void PCTL_A::GetService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 1};
