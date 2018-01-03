@@ -1,7 +1,6 @@
 set(SRCS
             common/param_package.cpp
             core/arm/arm_test_common.cpp
-            core/arm/dyncom/arm_dyncom_vfp_tests.cpp
             core/file_sys/path_parser.cpp
             core/memory/memory.cpp
             glad.cpp

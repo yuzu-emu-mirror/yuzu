@@ -26,8 +26,8 @@ namespace Kernel {
 static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
     LOG_TRACE(Kernel_SVC, "called, heap_size=0x%llx", heap_size);
     auto& process = *g_current_process;
-    CASCADE_RESULT(*heap_addr, process.HeapAllocate(Memory::HEAP_VADDR, heap_size,
-                                                    VMAPermission::ReadWrite));
+    CASCADE_RESULT(*heap_addr,
+                   process.HeapAllocate(Memory::HEAP_VADDR, heap_size, VMAPermission::ReadWrite));
     return RESULT_SUCCESS;
 }
 
@@ -95,8 +95,7 @@ static ResultCode SendSyncRequest(Handle handle) {
 static ResultCode GetThreadId(u32* thread_id, Handle thread_handle) {
     LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
 
-    const SharedPtr<Thread> thread =
-        g_handle_table.Get<Thread>(thread_handle);
+    const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
         return ERR_INVALID_HANDLE;
     }
@@ -109,8 +108,7 @@ static ResultCode GetThreadId(u32* thread_id, Handle thread_handle) {
 static ResultCode GetProcessId(u32* process_id, Handle process_handle) {
     LOG_TRACE(Kernel_SVC, "called process=0x%08X", process_handle);
 
-    const SharedPtr<Process> process =
-        g_handle_table.Get<Process>(process_handle);
+    const SharedPtr<Process> process = g_handle_table.Get<Process>(process_handle);
     if (!process) {
         return ERR_INVALID_HANDLE;
     }
@@ -135,10 +133,8 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
               "requesting_current_thread_handle=0x%08X",
               holding_thread_handle, mutex_addr, requesting_thread_handle);
 
-    SharedPtr<Thread> holding_thread =
-        g_handle_table.Get<Thread>(holding_thread_handle);
-    SharedPtr<Thread> requesting_thread =
-        g_handle_table.Get<Thread>(requesting_thread_handle);
+    SharedPtr<Thread> holding_thread = g_handle_table.Get<Thread>(holding_thread_handle);
+    SharedPtr<Thread> requesting_thread = g_handle_table.Get<Thread>(requesting_thread_handle);
 
     ASSERT(holding_thread);
     ASSERT(requesting_thread);
@@ -302,8 +298,7 @@ static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAdd
 static void ExitProcess() {
     LOG_INFO(Kernel_SVC, "Process %u exiting", g_current_process->process_id);
 
-    ASSERT_MSG(g_current_process->status == ProcessStatus::Running,
-               "Process has already exited");
+    ASSERT_MSG(g_current_process->status == ProcessStatus::Running, "Process has already exited");
 
     g_current_process->status = ProcessStatus::Exited;
 
@@ -369,11 +364,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 
     CASCADE_RESULT(SharedPtr<Thread> thread,
                    Thread::Create(name, entry_point, priority, arg, processor_id, stack_top,
-                                          g_current_process));
-
-    thread->context.fpscr =
-        FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO; // 0x03C00000
-
+                                  g_current_process));
     CASCADE_RESULT(thread->guest_handle, g_handle_table.Create(thread));
     *out_handle = thread->guest_handle;
 
@@ -391,8 +382,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 static ResultCode StartThread(Handle thread_handle) {
     LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
 
-    const SharedPtr<Thread> thread =
-        g_handle_table.Get<Thread>(thread_handle);
+    const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
         return ERR_INVALID_HANDLE;
     }

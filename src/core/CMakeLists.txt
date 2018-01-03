@@ -1,19 +1,7 @@
 set(SRCS
             arm/dynarmic/arm_dynarmic.cpp
-            arm/dynarmic/arm_dynarmic_cp15.cpp
-            arm/dyncom/arm_dyncom.cpp
-            arm/dyncom/arm_dyncom_dec.cpp
-            arm/dyncom/arm_dyncom_interpreter.cpp
-            arm/dyncom/arm_dyncom_thumb.cpp
-            arm/dyncom/arm_dyncom_trans.cpp
             arm/unicorn/arm_unicorn.cpp
             arm/unicorn/unicorn_dynload.c
-            arm/skyeye_common/armstate.cpp
-            arm/skyeye_common/armsupp.cpp
-            arm/skyeye_common/vfp/vfp.cpp
-            arm/skyeye_common/vfp/vfpdouble.cpp
-            arm/skyeye_common/vfp/vfpinstr.cpp
-            arm/skyeye_common/vfp/vfpsingle.cpp
             core.cpp
             core_timing.cpp
             file_sys/archive_backend.cpp
@@ -86,21 +74,8 @@ set(HEADERS
             3ds.h
             arm/arm_interface.h
             arm/dynarmic/arm_dynarmic.h
-            arm/dynarmic/arm_dynarmic_cp15.h
-            arm/dyncom/arm_dyncom.h
-            arm/dyncom/arm_dyncom_dec.h
-            arm/dyncom/arm_dyncom_interpreter.h
-            arm/dyncom/arm_dyncom_run.h
-            arm/dyncom/arm_dyncom_thumb.h
-            arm/dyncom/arm_dyncom_trans.h
             arm/unicorn/arm_unicorn.h
             arm/unicorn/unicorn_dynload.h
-            arm/skyeye_common/arm_regformat.h
-            arm/skyeye_common/armstate.h
-            arm/skyeye_common/armsupp.h
-            arm/skyeye_common/vfp/asm_vfp.h
-            arm/skyeye_common/vfp/vfp.h
-            arm/skyeye_common/vfp/vfp_helper.h
             core.h
             core_timing.h
             file_sys/archive_backend.h

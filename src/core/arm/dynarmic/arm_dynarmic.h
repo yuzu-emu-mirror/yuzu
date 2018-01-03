@@ -9,7 +9,6 @@
 #include <dynarmic/dynarmic.h>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
-#include "core/arm/skyeye_common/armstate.h"
 
 namespace Memory {
 struct PageTable;
@@ -17,7 +16,7 @@ struct PageTable;
 
 class ARM_Dynarmic final : public ARM_Interface {
 public:
-    ARM_Dynarmic(PrivilegeMode initial_mode);
+    ARM_Dynarmic();
 
     void MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) override;
 
@@ -29,12 +28,8 @@ public:
     void SetExtReg(int index, u128& value) override;
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
-    u32 GetVFPSystemReg(VFPSystemRegister reg) const override;
-    void SetVFPSystemReg(VFPSystemRegister reg, u32 value) override;
     u32 GetCPSR() const override;
     void SetCPSR(u32 cpsr) override;
-    u32 GetCP15Register(CP15Register reg) override;
-    void SetCP15Register(CP15Register reg, u32 value) override;
     VAddr GetTlsAddress() const override;
     void SetTlsAddress(VAddr address) override;
 

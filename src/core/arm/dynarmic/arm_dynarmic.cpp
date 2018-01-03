@@ -7,11 +7,9 @@
 #include "common/assert.h"
 #include "common/microprofile.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
-#include "core/arm/dynarmic/arm_dynarmic_cp15.h"
-#include "core/arm/dyncom/arm_dyncom_interpreter.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/svc.h"
+#include "core/hle/kernel/svc.h"
 #include "core/memory.h"
 
 static void InterpreterFallback(u64 pc, Dynarmic::Jit* jit, void* user_arg) {
@@ -55,11 +53,11 @@ void MemoryWrite64(const u64 addr, const u64 data) {
     Memory::Write64(static_cast<VAddr>(addr), data);
 }
 
-static Dynarmic::UserCallbacks GetUserCallbacks(ARM_Dynarmic* this_) {
+static Dynarmic::UserCallbacks GetUserCallbacks(ARM_Interface* interpreter_fallback) {
     Dynarmic::UserCallbacks user_callbacks{};
     user_callbacks.InterpreterFallback = &InterpreterFallback;
-    user_callbacks.user_arg = static_cast<void*>(this_);
-    user_callbacks.CallSVC = &SVC::CallSVC;
+    user_callbacks.user_arg = static_cast<void*>(interpreter_fallback);
+    user_callbacks.CallSVC = &Kernel::CallSVC;
     user_callbacks.memory.IsReadOnlyMemory = &IsReadOnlyMemory;
     user_callbacks.memory.ReadCode = &MemoryRead32;
     user_callbacks.memory.Read8 = &MemoryRead8;
@@ -74,7 +72,7 @@ static Dynarmic::UserCallbacks GetUserCallbacks(ARM_Dynarmic* this_) {
     return user_callbacks;
 }
 
-ARM_Dynarmic::ARM_Dynarmic(PrivilegeMode initial_mode) {
+ARM_Dynarmic::ARM_Dynarmic() {
 }
 
 void ARM_Dynarmic::MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) {
@@ -111,26 +109,12 @@ u32 ARM_Dynarmic::GetVFPReg(int index) const {
 void ARM_Dynarmic::SetVFPReg(int index, u32 value) {
 }
 
-u32 ARM_Dynarmic::GetVFPSystemReg(VFPSystemRegister reg) const {
-    return {};
-}
-
-void ARM_Dynarmic::SetVFPSystemReg(VFPSystemRegister reg, u32 value) {
-}
-
 u32 ARM_Dynarmic::GetCPSR() const {
     return jit->Cpsr();
 }
 
 void ARM_Dynarmic::SetCPSR(u32 cpsr) {
     jit->Cpsr() = cpsr;
-}
-
-u32 ARM_Dynarmic::GetCP15Register(CP15Register reg) {
-    return {};
-}
-
-void ARM_Dynarmic::SetCP15Register(CP15Register reg, u32 value) {
 }
 
 VAddr ARM_Dynarmic::GetTlsAddress() const {

@@ -70,7 +70,6 @@ void RegistersWidget::OnDebugModeEntered() {
             1, QString("0x%1").arg(Core::CPU().GetVFPReg(i), 8, 16, QLatin1Char('0')));
 
     UpdateCPSRValues();
-    UpdateVFPSystemRegisterValues();
 }
 
 void RegistersWidget::OnDebugModeLeft() {}
@@ -191,48 +190,5 @@ void RegistersWidget::CreateVFPSystemRegisterChildren() {
 }
 
 void RegistersWidget::UpdateVFPSystemRegisterValues() {
-    const u32 fpscr_val = Core::CPU().GetVFPSystemReg(VFP_FPSCR);
-    const u32 fpexc_val = Core::CPU().GetVFPSystemReg(VFP_FPEXC);
-    const u32 fpinst_val = Core::CPU().GetVFPSystemReg(VFP_FPINST);
-    const u32 fpinst2_val = Core::CPU().GetVFPSystemReg(VFP_FPINST2);
-
-    QTreeWidgetItem* const fpscr = vfp_system_registers->child(0);
-    fpscr->setText(1, QString("0x%1").arg(fpscr_val, 8, 16, QLatin1Char('0')));
-    fpscr->child(0)->setText(1, QString::number(fpscr_val & 1));
-    fpscr->child(1)->setText(1, QString::number((fpscr_val >> 1) & 1));
-    fpscr->child(2)->setText(1, QString::number((fpscr_val >> 2) & 1));
-    fpscr->child(3)->setText(1, QString::number((fpscr_val >> 3) & 1));
-    fpscr->child(4)->setText(1, QString::number((fpscr_val >> 4) & 1));
-    fpscr->child(5)->setText(1, QString::number((fpscr_val >> 7) & 1));
-    fpscr->child(6)->setText(1, QString::number((fpscr_val >> 8) & 1));
-    fpscr->child(7)->setText(1, QString::number((fpscr_val >> 9) & 1));
-    fpscr->child(8)->setText(1, QString::number((fpscr_val >> 10) & 1));
-    fpscr->child(9)->setText(1, QString::number((fpscr_val >> 11) & 1));
-    fpscr->child(10)->setText(1, QString::number((fpscr_val >> 12) & 1));
-    fpscr->child(11)->setText(1, QString::number((fpscr_val >> 15) & 1));
-    fpscr->child(12)->setText(1, QString("b%1").arg((fpscr_val >> 16) & 7, 3, 2, QLatin1Char('0')));
-    fpscr->child(13)->setText(1, QString("b%1").arg((fpscr_val >> 20) & 3, 2, 2, QLatin1Char('0')));
-    fpscr->child(14)->setText(1, QString("b%1").arg((fpscr_val >> 22) & 3, 2, 2, QLatin1Char('0')));
-    fpscr->child(15)->setText(1, QString::number((fpscr_val >> 24) & 1));
-    fpscr->child(16)->setText(1, QString::number((fpscr_val >> 25) & 1));
-    fpscr->child(17)->setText(1, QString::number((fpscr_val >> 28) & 1));
-    fpscr->child(18)->setText(1, QString::number((fpscr_val >> 29) & 1));
-    fpscr->child(19)->setText(1, QString::number((fpscr_val >> 30) & 1));
-    fpscr->child(20)->setText(1, QString::number((fpscr_val >> 31) & 1));
-
-    QTreeWidgetItem* const fpexc = vfp_system_registers->child(1);
-    fpexc->setText(1, QString("0x%1").arg(fpexc_val, 8, 16, QLatin1Char('0')));
-    fpexc->child(0)->setText(1, QString::number(fpexc_val & 1));
-    fpexc->child(1)->setText(1, QString::number((fpexc_val >> 2) & 1));
-    fpexc->child(2)->setText(1, QString::number((fpexc_val >> 3) & 1));
-    fpexc->child(3)->setText(1, QString::number((fpexc_val >> 7) & 1));
-    fpexc->child(4)->setText(1, QString("b%1").arg((fpexc_val >> 8) & 7, 3, 2, QLatin1Char('0')));
-    fpexc->child(5)->setText(1, QString::number((fpexc_val >> 28) & 1));
-    fpexc->child(6)->setText(1, QString::number((fpexc_val >> 30) & 1));
-    fpexc->child(7)->setText(1, QString::number((fpexc_val >> 31) & 1));
-
-    vfp_system_registers->child(2)->setText(
-        1, QString("0x%1").arg(fpinst_val, 8, 16, QLatin1Char('0')));
-    vfp_system_registers->child(3)->setText(
-        1, QString("0x%1").arg(fpinst2_val, 8, 16, QLatin1Char('0')));
+    UNIMPLEMENTED();
 }

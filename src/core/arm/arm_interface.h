@@ -6,8 +6,6 @@
 
 #include "common/common_types.h"
 #include "core/hle/kernel/vm_manager.h"
-#include "core/arm/skyeye_common/arm_regformat.h"
-#include "core/arm/skyeye_common/vfp/asm_vfp.h"
 
 /// Generic ARM11 CPU interface
 class ARM_Interface : NonCopyable {
@@ -96,20 +94,6 @@ public:
     virtual void SetVFPReg(int index, u32 value) = 0;
 
     /**
-     * Gets the current value within a given VFP system register
-     * @param reg The VFP system register
-     * @return The value within the VFP system register
-     */
-    virtual u32 GetVFPSystemReg(VFPSystemRegister reg) const = 0;
-
-    /**
-     * Sets the VFP system register to the given value
-     * @param reg   The VFP system register
-     * @param value Value to set the VFP system register to
-     */
-    virtual void SetVFPSystemReg(VFPSystemRegister reg, u32 value) = 0;
-
-    /**
      * Get the current CPSR register
      * @return Returns the value of the CPSR register
      */
@@ -120,20 +104,6 @@ public:
      * @param cpsr Value to set CPSR to
      */
     virtual void SetCPSR(u32 cpsr) = 0;
-
-    /**
-     * Gets the value stored in a CP15 register.
-     * @param reg The CP15 register to retrieve the value from.
-     * @return the value stored in the given CP15 register.
-     */
-    virtual u32 GetCP15Register(CP15Register reg) = 0;
-
-    /**
-     * Stores the given value into the indicated CP15 register.
-     * @param reg   The CP15 register to store the value into.
-     * @param value The value to store into the CP15 register.
-     */
-    virtual void SetCP15Register(CP15Register reg, u32 value) = 0;
 
     virtual VAddr GetTlsAddress() const = 0;
 

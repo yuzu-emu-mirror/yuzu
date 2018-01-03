@@ -547,8 +547,7 @@ static void ReadRegister() {
                                id - CPSR_REGISTER -
                                1)); // VFP registers should start at 26, so one after CSPR_REGISTER
     } else if (id == FPSCR_REGISTER) {
-        IntToGdbHex(reply, Core::CPU().GetVFPSystemReg(VFP_FPSCR)); // Get FPSCR
-        IntToGdbHex(reply + 8, 0);
+        UNIMPLEMENTED();
     } else {
         return SendReply("E01");
     }
@@ -579,8 +578,6 @@ static void ReadRegisters() {
 
     bufptr += (32 * CHAR_BIT);
 
-    IntToGdbHex(bufptr, Core::CPU().GetVFPSystemReg(VFP_FPSCR));
-
     SendReply(reinterpret_cast<char*>(buffer));
 }
 
@@ -602,7 +599,7 @@ static void WriteRegister() {
     } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
         Core::CPU().SetVFPReg(id - CPSR_REGISTER - 1, GdbHexToInt(buffer_ptr));
     } else if (id == FPSCR_REGISTER) {
-        Core::CPU().SetVFPSystemReg(VFP_FPSCR, GdbHexToInt(buffer_ptr));
+        UNIMPLEMENTED();
     } else {
         return SendReply("E01");
     }
@@ -631,7 +628,7 @@ static void WriteRegisters() {
             Core::CPU().SetVFPReg(reg - CPSR_REGISTER - 1, GdbHexToInt(buffer_ptr + i * CHAR_BIT));
             i++; // Skip padding
         } else if (reg == FPSCR_REGISTER) {
-            Core::CPU().SetVFPSystemReg(VFP_FPSCR, GdbHexToInt(buffer_ptr + i * CHAR_BIT));
+            UNIMPLEMENTED();
         }
     }
 

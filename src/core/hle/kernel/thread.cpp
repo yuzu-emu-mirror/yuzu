@@ -11,7 +11,6 @@
 #include "common/math_util.h"
 #include "common/thread_queue_list.h"
 #include "core/arm/arm_interface.h"
-#include "core/arm/skyeye_common/armstate.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/errors.h"
@@ -365,7 +364,8 @@ static void ResetThreadContext(ARM_Interface::ThreadContext& context, VAddr stac
     context.cpu_registers[0] = arg;
     context.pc = entry_point;
     context.sp = stack_top;
-    context.cpsr = USER32MODE;
+    context.cpsr = 0;
+    context.fpscr = 0;
 }
 
 ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point, u32 priority,
@@ -504,8 +504,6 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
     // Register 1 must be a handle to the main thread
     thread->guest_handle = Kernel::g_handle_table.Create(thread).Unwrap();;
     thread->context.cpu_registers[1] = thread->guest_handle;
-    thread->context.fpscr =
-        FPSCR_DEFAULT_NAN | FPSCR_FLUSH_TO_ZERO | FPSCR_ROUND_TOZERO | FPSCR_IXC; // 0x03C00010
 
     // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
     thread->ResumeFromWait();
