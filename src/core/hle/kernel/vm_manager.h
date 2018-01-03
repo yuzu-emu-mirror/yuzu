@@ -102,11 +102,10 @@ struct VirtualMemoryArea {
 class VMManager final {
 public:
     /**
-     * The maximum amount of address space managed by the kernel. Addresses above this are never
-     * used.
-     * @note This is the limit used by the New 3DS kernel. Old 3DS used 0x20000000.
+     * The maximum amount of address space managed by the kernel.
+     * @todo This was selected arbitrarily, and should be verified for Switch OS.
      */
-    static const VAddr MAX_ADDRESS = 0x8000000000;
+    static constexpr VAddr MAX_ADDRESS{0x1000000000ULL};
 
     /**
      * A map covering the entirety of the managed address space, keyed by the `base` field of each
@@ -239,4 +238,4 @@ private:
     /// Updates the pages corresponding to this VMA so they match the VMA's attributes.
     void UpdatePageTableForVMA(const VirtualMemoryArea& vma);
 };
-}
+} // namespace Kernel
