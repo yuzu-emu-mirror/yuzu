@@ -1,4 +1,4 @@
-// Copyright 2017 Citra Emulator Project
+// Copyright 2018 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -7,11 +7,11 @@
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
+#include "core/hle/kernel/svc.h"
 #include "core/hle/result.h"
-#include "core/hle/svc.h"
 #include "core/memory.h"
 
-namespace HLE {
+namespace Kernel {
 
 #define PARAM(n) Core::CPU().GetReg(n)
 
@@ -27,22 +27,22 @@ static inline void FuncReturn(u64 res) {
 // Function wrappers that return type ResultCode
 
 template <ResultCode func(u64)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func(PARAM(0)).raw);
 }
 
 template <ResultCode func(u32)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func((u32)PARAM(0)).raw);
 }
 
 template <ResultCode func(u32, u32)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func((u32)PARAM(0), (u32)PARAM(1)).raw);
 }
 
 template <ResultCode func(u32*, u32)>
-void Wrap() {
+void SvcWrap() {
     u32 param_1 = 0;
     u32 retval = func(&param_1, (u32)PARAM(1)).raw;
     Core::CPU().SetReg(1, param_1);
@@ -50,7 +50,7 @@ void Wrap() {
 }
 
 template <ResultCode func(u32*, u64)>
-void Wrap() {
+void SvcWrap() {
     u32 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1)).raw;
     Core::CPU().SetReg(1, param_1);
@@ -58,12 +58,12 @@ void Wrap() {
 }
 
 template <ResultCode func(u64, u32)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func(PARAM(0), (u32)PARAM(1)).raw);
 }
 
 template <ResultCode func(u64*, u64)>
-void Wrap() {
+void SvcWrap() {
     u64 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1)).raw;
     Core::CPU().SetReg(1, param_1);
@@ -71,22 +71,22 @@ void Wrap() {
 }
 
 template <ResultCode func(u32, u64, u32)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func((u32)PARAM(0), PARAM(1), (u32)PARAM(2)).raw);
 }
 
 template <ResultCode func(u64, u64, u64)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func(PARAM(0), PARAM(1), PARAM(2)).raw);
 }
 
 template <ResultCode func(u64, u64, s64)>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func(PARAM(1), PARAM(2), (s64)PARAM(3)).raw);
 }
 
 template <ResultCode func(u64*, u64, u64, u64)>
-void Wrap() {
+void SvcWrap() {
     u64 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1), PARAM(2), PARAM(3)).raw;
     Core::CPU().SetReg(1, param_1);
@@ -94,7 +94,7 @@ void Wrap() {
 }
 
 template <ResultCode func(u32*, u64, u64, u64, u32, s32)>
-void Wrap() {
+void SvcWrap() {
     u32 param_1 = 0;
     u32 retval =
         func(&param_1, PARAM(1), PARAM(2), PARAM(3), (u32)PARAM(4), (s32)(PARAM(5) & 0xFFFFFFFF))
@@ -104,7 +104,7 @@ void Wrap() {
 }
 
 template <ResultCode func(MemoryInfo*, PageInfo*, u64)>
-void Wrap() {
+void SvcWrap() {
     MemoryInfo memory_info = {};
     PageInfo page_info = {};
     u32 retval = func(&memory_info, &page_info, PARAM(2)).raw;
@@ -122,7 +122,7 @@ void Wrap() {
 // Function wrappers that return type u32
 
 template <u32 func()>
-void Wrap() {
+void SvcWrap() {
     FuncReturn(func());
 }
 
@@ -130,26 +130,26 @@ void Wrap() {
 /// Function wrappers that return type void
 
 template <void func()>
-void Wrap() {
+void SvcWrap() {
     func();
 }
 
 template <void func(s64)>
-void Wrap() {
+void SvcWrap() {
     func((s64)PARAM(0));
 }
 
 template <void func(u64, s32 len)>
-void Wrap() {
+void SvcWrap() {
     func(PARAM(0), (s32)(PARAM(1) & 0xFFFFFFFF));
 }
 
 template <void func(u64, u64, u64)>
-void Wrap() {
+void SvcWrap() {
     func(PARAM(0), PARAM(1), PARAM(2));
 }
 
 #undef PARAM
 #undef FuncReturn
 
-} // namespace HLE
+} // namespace Kernel

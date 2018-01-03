@@ -43,6 +43,7 @@ set(SRCS
             hle/kernel/server_port.cpp
             hle/kernel/server_session.cpp
             hle/kernel/shared_memory.cpp
+            hle/kernel/svc.cpp
             hle/kernel/thread.cpp
             hle/kernel/timer.cpp
             hle/kernel/vm_manager.cpp
@@ -63,7 +64,6 @@ set(SRCS
             hle/service/sm/controller.cpp
             hle/service/sm/sm.cpp
             hle/shared_page.cpp
-            hle/svc.cpp
             hw/aes/arithmetic128.cpp
             hw/aes/ccm.cpp
             hw/aes/key.cpp
@@ -116,7 +116,6 @@ set(HEADERS
             frontend/input.h
             gdbstub/gdbstub.h
             hle/config_mem.h
-            hle/function_wrappers.h
             hle/ipc.h
             hle/ipc_helpers.h
             hle/kernel/address_arbiter.h
@@ -139,6 +138,8 @@ set(HEADERS
             hle/kernel/session.h
             hle/kernel/shared_memory.h
             hle/kernel/sync_object.h
+            hle/kernel/svc.h
+            hle/kernel/svc_wrap.h
             hle/kernel/thread.h
             hle/kernel/timer.h
             hle/kernel/vm_manager.h
@@ -160,7 +161,6 @@ set(HEADERS
             hle/service/sm/controller.h
             hle/service/sm/sm.h
             hle/shared_page.h
-            hle/svc.h
             hw/aes/arithmetic128.h
             hw/aes/ccm.h
             hw/aes/key.h

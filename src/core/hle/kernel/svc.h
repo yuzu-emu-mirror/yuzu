@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -6,8 +6,7 @@
 
 #include "common/common_types.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// SVC types
+namespace Kernel {
 
 struct MemoryInfo {
     u64 base_address;
@@ -20,11 +19,6 @@ struct MemoryInfo {
 struct PageInfo {
     u64 flags;
 };
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Namespace SVC
-
-namespace SVC {
 
 /// Values accepted by svcGetInfo
 enum class GetInfoType : u64 {
@@ -41,4 +35,4 @@ enum class GetInfoType : u64 {
 
 void CallSVC(u32 immediate);
 
-} // namespace SVC
+} // namespace Kernel
