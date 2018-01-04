@@ -6,8 +6,6 @@
 #include <utility>
 #include "audio_core/audio_core.h"
 #include "common/logging/log.h"
-#include "core/arm/arm_interface.h"
-#include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -140,12 +138,7 @@ void System::Reschedule() {
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
-    if (Settings::values.use_cpu_jit) {
-        cpu_core = std::make_unique<ARM_Dynarmic>();
-    } else {
-        cpu_core = std::make_unique<ARM_Unicorn>();
-    }
-
+    cpu_core = std::make_unique<ARM_Unicorn>();
     telemetry_session = std::make_unique<Core::TelemetrySession>();
 
     CoreTiming::Init();

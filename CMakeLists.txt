@@ -12,6 +12,8 @@ option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
+option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" OFF)
+
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 option(CITRA_USE_BUNDLED_CURL "FOR MINGW ONLY: Download curl configured against winssl instead of openssl" OFF)
 if (ENABLE_WEB_SERVICE AND CITRA_USE_BUNDLED_CURL AND WINDOWS AND MSVC)
@@ -208,6 +210,35 @@ if (ENABLE_SDL2)
     endif()
 else()
     set(SDL2_FOUND NO)
+endif()
+
+if (YUZU_USE_BUNDLED_UNICORN)
+    # Detect toolchain and platform
+    if (MSVC14 AND ARCHITECTURE_x86_64)
+        set(UNICORN_VER "unicorn-1.0.1-yuzu")
+    else()
+        message(FATAL_ERROR "No bundled Unicorn binaries for your toolchain. Disable YUZU_USE_BUNDLED_UNICORN and provide your own.")
+    endif()
+
+    if (DEFINED UNICORN_VER)
+        download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
+    endif()
+
+    if (DEFINED UNICORN_VER)
+        download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
+    endif()
+
+    set(UNICORN_FOUND YES)
+    set(UNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers")
+    set(UNICORN_LIBRARY "${UNICORN_PREFIX}/lib/x64/unicorn_static.lib" CACHE PATH "Path to Unicorn library")
+else()
+    find_package(unicorn REQUIRED)
+endif()
+
+if (UNICORN_FOUND)
+    add_library(unicorn INTERFACE)
+    target_link_libraries(unicorn INTERFACE "${UNICORN_LIBRARY}")
+    target_include_directories(unicorn INTERFACE "${UNICORN_INCLUDE_DIR}")
 endif()
 
 if (ENABLE_QT)
