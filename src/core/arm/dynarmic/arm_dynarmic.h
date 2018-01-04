@@ -1,4 +1,4 @@
-// Copyright 2016 Citra Emulator Project
+// Copyright 2018 Yuzu Emulator Team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -6,7 +6,6 @@
 
 #include <map>
 #include <memory>
-#include <dynarmic/dynarmic.h>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
 
@@ -18,7 +17,8 @@ class ARM_Dynarmic final : public ARM_Interface {
 public:
     ARM_Dynarmic();
 
-    void MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) override;
+    void MapBackingMemory(VAddr address, size_t size, u8* memory,
+                          Kernel::VMAPermission perms) override;
 
     void SetPC(u64 pc) override;
     u64 GetPC() const override;
@@ -41,9 +41,4 @@ public:
 
     void ClearInstructionCache() override;
     void PageTableChanged() override;
-
-private:
-    Dynarmic::Jit* jit = nullptr;
-    Memory::PageTable* current_page_table = nullptr;
-    std::map<Memory::PageTable*, std::unique_ptr<Dynarmic::Jit>> jits;
 };
