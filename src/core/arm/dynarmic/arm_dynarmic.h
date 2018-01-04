@@ -4,14 +4,8 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
-
-namespace Memory {
-struct PageTable;
-} // namespace Memory
 
 class ARM_Dynarmic final : public ARM_Interface {
 public:
