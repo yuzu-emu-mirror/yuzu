@@ -29,5 +29,7 @@ endif()
 
 if (MSVC)
     include(CopyCitraSDLDeps)
+    include(CopyYuzuUnicornDeps)
     copy_citra_SDL_deps(citra)
+    copy_yuzu_unicorn_deps(citra)
 endif()
