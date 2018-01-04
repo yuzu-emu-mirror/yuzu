@@ -10,6 +10,22 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
 
+// Load Unicorn DLL once on Windows using RAII
+#ifdef _WIN32
+#include <unicorn_dynload.h>
+struct LoadDll {
+private:
+    LoadDll() {
+        ASSERT(uc_dyn_load(NULL, 0));
+    }
+    ~LoadDll() {
+        ASSERT(uc_dyn_free());
+    }
+    static LoadDll g_load_dll;
+};
+LoadDll LoadDll::g_load_dll;
+#endif
+
 #define CHECKED(expr)                                                                              \
     do {                                                                                           \
         if (auto _cerr = (expr)) {                                                                 \
