@@ -10,13 +10,6 @@ target_include_directories(catch-single-include INTERFACE catch/single_include)
 # Crypto++
 add_subdirectory(cryptopp)
 
-# Dynarmic
-# Dynarmic will skip defining xbyak if it's already defined, we then define it below
-add_library(xbyak INTERFACE)
-option(DYNARMIC_TESTS OFF)
-set(DYNARMIC_NO_BUNDLED_FMT ON)
-add_subdirectory(dynarmic)
-
 # libfmt
 add_subdirectory(fmt)
 
@@ -56,7 +49,7 @@ target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
 # Xbyak
 if (ARCHITECTURE_x86_64)
     # Defined before "dynarmic" above
-    # add_library(xbyak INTERFACE)
+    add_library(xbyak INTERFACE)
     target_include_directories(xbyak INTERFACE ./xbyak/xbyak)
     target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
 endif()
