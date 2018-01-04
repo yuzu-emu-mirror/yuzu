@@ -1,7 +1,6 @@
 set(SRCS
             arm/dynarmic/arm_dynarmic.cpp
             arm/unicorn/arm_unicorn.cpp
-            arm/unicorn/unicorn_dynload.c
             core.cpp
             core_timing.cpp
             file_sys/archive_backend.cpp
@@ -75,7 +74,6 @@ set(HEADERS
             arm/arm_interface.h
             arm/dynarmic/arm_dynarmic.h
             arm/unicorn/arm_unicorn.h
-            arm/unicorn/unicorn_dynload.h
             core.h
             core_timing.h
             file_sys/archive_backend.h
