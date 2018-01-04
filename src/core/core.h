@@ -53,7 +53,7 @@ public:
      * @param tight_loop Number of instructions to execute.
      * @return Result status, indicating whethor or not the operation succeeded.
      */
-    ResultStatus RunLoop(int tight_loop = 1000);
+    ResultStatus RunLoop(int tight_loop = 100000);
 
     /**
      * Step the CPU one instruction
