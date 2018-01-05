@@ -4,6 +4,7 @@
 
 #include "common/logging/log.h"
 #include "common/microprofile.h"
+#include "common/string_util.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
