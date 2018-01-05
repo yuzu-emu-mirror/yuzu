@@ -24,17 +24,31 @@ public:
 
 private:
     struct MessageHeader {
+        enum Flags : u32_le {
+            IsHead = 1,
+            IsTail = 2,
+        };
+
         u64_le pid;
         u64_le threadContext;
         union {
-            BitField<0, 16, u32_le> flags;
+            BitField<0, 16, Flags> flags;
             BitField<16, 8, u32_le> severity;
             BitField<24, 8, u32_le> verbosity;
         };
         u32_le payload_size;
-        INSERT_PADDING_WORDS(2);
     };
-    static_assert(sizeof(MessageHeader) == 0x20, "MessageHeader is incorrect size");
+    static_assert(sizeof(MessageHeader) == 0x18, "MessageHeader is incorrect size");
+
+    /// Log field type
+    enum class Field : u8 {
+        Message = 2,
+        Line = 3,
+        Filename = 4,
+        Function = 5,
+        Module = 6,
+        Thread = 7,
+    };
 
     /**
      * LM::Initialize service function
@@ -44,16 +58,67 @@ private:
      *      0: ResultCode
      */
     void Log(Kernel::HLERequestContext& ctx) {
-        MessageHeader header{};
-        Memory::ReadBlock(ctx.BufferDescriptorX()[0].Address(), &header, sizeof(MessageHeader));
-
-        std::vector<char> string(header.payload_size);
-        Memory::ReadBlock(ctx.BufferDescriptorX()[0].Address() + sizeof(MessageHeader),
-                          string.data(), header.payload_size);
-        LOG_DEBUG(Debug_Emulated, "%.*s", header.payload_size, string.data());
-
+        // This function only succeeds - Get that out of the way
         IPC::RequestBuilder rb{ctx, 1};
         rb.Push(RESULT_SUCCESS);
+
+        // Read MessageHeader, despite not doing anything with it right now
+        MessageHeader header{};
+        VAddr addr{ctx.BufferDescriptorX()[0].Address()};
+        const VAddr end_addr{addr + ctx.BufferDescriptorX()[0].size};
+        Memory::ReadBlock(addr, &header, sizeof(MessageHeader));
+        addr += sizeof(MessageHeader);
+
+        // Parse out log metadata
+        u32 line{};
+        std::string message, filename, function;
+        while (addr < end_addr) {
+            const Field field{static_cast<Field>(Memory::Read8(addr++))};
+            size_t length{Memory::Read8(addr++)};
+            switch (field) {
+            case Field::Message:
+                message = Memory::ReadCString(addr, length);
+                break;
+            case Field::Line:
+                line = Memory::Read32(addr);
+                break;
+            case Field::Filename:
+                filename = Memory::ReadCString(addr, length);
+                break;
+            case Field::Function:
+                function = Memory::ReadCString(addr, length);
+                break;
+            }
+            addr += length;
+        }
+
+        // Empty log - nothing to do here
+        if (message.size() <= 1) {
+            return;
+        }
+
+        // Remove trailing new line
+        if (message[message.length() - 1] == '\n') {
+            message.erase(message.length() - 1);
+        }
+
+        // Format a nicely printable string out of the log metadata
+        std::string output;
+        if (filename.size()) {
+            output += filename + ':';
+        }
+        if (function.size()) {
+            output += function + ':';
+        }
+        if (line) {
+            output += std::to_string(line) + ':';
+        }
+        if (output.back() == ':') {
+            output += ' ';
+        }
+        output += message;
+
+        LOG_DEBUG(Debug_Emulated, "%s", output.c_str());
     }
 };
 
