@@ -13,6 +13,7 @@
 #include "core/hle/kernel/object_address_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
+#include "core/hle/kernel/semaphore.h"
 #include "core/hle/kernel/svc.h"
 #include "core/hle/kernel/svc_wrap.h"
 #include "core/hle/kernel/sync_object.h"
@@ -471,6 +472,53 @@ static void SleepThread(s64 nanoseconds) {
     Core::System::GetInstance().PrepareReschedule();
 }
 
+/// Signal process wide key atomic
+static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_addr,
+                                           Handle thread_handle, s64 nano_seconds) {
+    LOG_TRACE(Kernel_SVC,
+              "called mutex_addr=%llx, semaphore_addr=%llx, thread_handle=0x%08X, timeout=%d",
+              mutex_addr, semaphore_addr, thread_handle, nano_seconds);
+
+    SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
+    ASSERT(thread);
+
+    SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
+    if (!mutex) {
+        // Create a new mutex for the specified address if one does not already exist
+        mutex = Mutex::Create(thread, mutex_addr);
+        mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
+    }
+
+    SharedPtr<Semaphore> semaphore = g_object_address_table.Get<Semaphore>(semaphore_addr);
+    if (!semaphore) {
+        // Create a new semaphore for the specified address if one does not already exist
+        semaphore = Semaphore::Create(semaphore_addr, mutex_addr).Unwrap();
+        semaphore->name = Common::StringFromFormat("semaphore-%llx", semaphore_addr);
+    }
+
+    ASSERT(semaphore->available_count == 0);
+    ASSERT(semaphore->mutex_addr == mutex_addr);
+
+    CASCADE_CODE(WaitSynchronization1(
+        semaphore, thread.get(), nano_seconds,
+        [mutex](ThreadWakeupReason reason, SharedPtr<Thread> thread, SharedPtr<WaitObject> object) {
+            ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+
+            if (reason == ThreadWakeupReason::Timeout) {
+                thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
+                return;
+            }
+
+            ASSERT(reason == ThreadWakeupReason::Signal);
+            thread->SetWaitSynchronizationResult(WaitSynchronization1(mutex, thread.get()));
+            thread->SetWaitSynchronizationOutput(thread->GetWaitObjectIndex(object.get()));
+        }));
+
+    mutex->Release(thread.get());
+
+    return RESULT_SUCCESS;
+}
+
 /// Signal process wide key
 static ResultCode SignalProcessWideKey(VAddr addr, u32 target) {
     LOG_WARNING(Kernel_SVC, "(STUBBED) called, address=0x%llx, target=0x%08x", addr, target);
@@ -522,7 +570,7 @@ static const FunctionDef SVC_Table[] = {
     {0x19, nullptr, "CancelSynchronization"},
     {0x1A, SvcWrap<LockMutex>, "LockMutex"},
     {0x1B, SvcWrap<UnlockMutex>, "UnlockMutex"},
-    {0x1C, nullptr, "WaitProcessWideKeyAtomic"},
+    {0x1C, SvcWrap<WaitProcessWideKeyAtomic>, "WaitProcessWideKeyAtomic"},
     {0x1D, SvcWrap<SignalProcessWideKey>, "SignalProcessWideKey"},
     {0x1E, nullptr, "GetSystemTick"},
     {0x1F, SvcWrap<ConnectToPort>, "ConnectToPort"},
