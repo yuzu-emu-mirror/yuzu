@@ -118,6 +118,50 @@ static ResultCode GetProcessId(u32* process_id, Handle process_handle) {
     return RESULT_SUCCESS;
 }
 
+/// Default thread wakeup callback for WaitSynchronization
+static void DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                        SharedPtr<WaitObject> object) {
+    ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+
+    if (reason == ThreadWakeupReason::Timeout) {
+        thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
+        return;
+    }
+
+    ASSERT(reason == ThreadWakeupReason::Signal);
+    thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
+};
+
+/// Wait for a kernel object to synchronize, timeout after the specified nanoseconds
+static ResultCode WaitSynchronization1(
+    SharedPtr<WaitObject> object, Thread* thread, s64 nano_seconds = -1,
+    std::function<Thread::WakeupCallback> wakeup_callback = DefaultThreadWakeupCallback) {
+
+    if (!object) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    if (object->ShouldWait(thread)) {
+        if (nano_seconds == 0) {
+            return RESULT_TIMEOUT;
+        }
+
+        thread->wait_objects = {object};
+        object->AddWaitingThread(thread);
+        thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
+
+        // Create an event to wake the thread up after the specified nanosecond delay has passed
+        thread->WakeAfterDelay(nano_seconds);
+        thread->wakeup_callback = wakeup_callback;
+
+        Core::System::GetInstance().PrepareReschedule();
+    } else {
+        object->Acquire(thread);
+    }
+
+    return RESULT_SUCCESS;
+}
+
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
 static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s64 nano_seconds) {
     LOG_WARNING(Kernel_SVC,
@@ -147,19 +191,7 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
         mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
     }
 
-    if (mutex->ShouldWait(requesting_thread.get())) {
-        // If we cannot lock the mutex, then put the thread too sleep and trigger a reschedule
-        requesting_thread->wait_objects = {mutex};
-        mutex->AddWaitingThread(requesting_thread);
-        requesting_thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
-
-        Core::System::GetInstance().PrepareReschedule();
-    } else {
-        // The mutex is available, lock it
-        mutex->Acquire(requesting_thread.get());
-    }
-
-    return RESULT_SUCCESS;
+    return WaitSynchronization1(mutex, requesting_thread.get());
 }
 
 /// Unlock a mutex
