@@ -164,10 +164,30 @@ static ResultCode WaitSynchronization1(
 
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
 static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s64 nano_seconds) {
-    LOG_WARNING(Kernel_SVC,
-                "(STUBBED) called handles_address=0x%llx, handle_count=%d, nano_seconds=%d",
-                handles_address, handle_count, nano_seconds);
-    return RESULT_SUCCESS;
+    LOG_TRACE(Kernel_SVC, "called handles_address=0x%llx, handle_count=%d, nano_seconds=%d",
+              handles_address, handle_count, nano_seconds);
+
+    if (!Memory::IsValidVirtualAddress(handles_address))
+        return ERR_INVALID_POINTER;
+
+    // Check if 'handle_count' is invalid
+    if (handle_count < 0)
+        return ERR_OUT_OF_RANGE;
+
+    using ObjectPtr = SharedPtr<WaitObject>;
+    std::vector<ObjectPtr> objects(handle_count);
+
+    for (int i = 0; i < handle_count; ++i) {
+        Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
+        auto object = g_handle_table.Get<WaitObject>(handle);
+        if (object == nullptr)
+            return ERR_INVALID_HANDLE;
+        objects[i] = object;
+    }
+
+    // Just implement for a single handle for now
+    ASSERT(handle_count == 1);
+    return WaitSynchronization1(objects[0], GetCurrentThread(), nano_seconds);
 }
 
 /// Attempts to locks a mutex, creating it if it does not already exist
