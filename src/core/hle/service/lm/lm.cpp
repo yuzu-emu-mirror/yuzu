@@ -37,6 +37,11 @@ private:
             BitField<24, 8, u32_le> verbosity;
         };
         u32_le payload_size;
+
+        /// Returns true if this is part of a single log message
+        bool IsSingleMessage() const {
+            return (flags & Flags::IsHead) && (flags & Flags::IsTail);
+        }
     };
     static_assert(sizeof(MessageHeader) == 0x18, "MessageHeader is incorrect size");
 
@@ -68,6 +73,10 @@ private:
         const VAddr end_addr{addr + ctx.BufferDescriptorX()[0].size};
         Memory::ReadBlock(addr, &header, sizeof(MessageHeader));
         addr += sizeof(MessageHeader);
+
+        if (!header.IsSingleMessage()) {
+            UNIMPLEMENTED_MSG("Multi message logs are unimplemeneted");
+        }
 
         // Parse out log metadata
         u32 line{};
