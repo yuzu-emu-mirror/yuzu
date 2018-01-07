@@ -21,7 +21,7 @@
 // inside callback:
 //   ScheduleEvent(periodInCycles - cycles_late, callback, "whatever")
 
-constexpr int BASE_CLOCK_RATE_ARM11 = 268123480;
+constexpr int BASE_CLOCK_RATE = 383778816; // Switch clock speed is 384MHz docked
 extern int g_clock_rate_arm11;
 
 inline s64 msToCycles(int ms) {
