@@ -157,7 +157,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
-    for (const auto& module : {"rtld", "main", "sdk", "subsdk0", "subsdk1", "subsdk2", "subsdk3"}) {
+    for (const auto& module : {"rtld", "sdk", "subsdk0", "subsdk1", "subsdk2", "subsdk3"}) {
         const std::string path = filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module;
         const VAddr load_addr = next_load_addr;
         next_load_addr = LoadNso(path, load_addr);
@@ -167,6 +167,8 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
             next_load_addr = load_addr;
         }
     }
+    // Load "main" module
+    LoadNso(filepath, next_load_addr);
 
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;
