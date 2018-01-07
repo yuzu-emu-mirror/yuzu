@@ -50,11 +50,11 @@ public:
     void Acquire(Thread* thread) override;
 
     /**
-     * Releases a certain number of slots from a semaphore.
-     * @param release_count The number of slots to release
-     * @return The number of free slots the semaphore had before this call
+     * Releases a slot from a semaphore.
+     * @param target The number of threads to wakeup, -1 is all.
+     * @return ResultCode indicating if the operation succeeded.
      */
-    ResultVal<s32> Release(s32 release_count);
+    ResultCode Release(s32 target);
 
 private:
     Semaphore();
