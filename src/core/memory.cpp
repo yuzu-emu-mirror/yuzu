@@ -487,7 +487,7 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
     size_t page_offset = src_addr & PAGE_MASK;
 
     while (remaining_size > 0) {
-        const size_t copy_amount = std::min(PAGE_SIZE - page_offset, remaining_size);
+        const size_t copy_amount = std::min<size_t>(PAGE_SIZE - page_offset, remaining_size);
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (page_table.attributes[page_index]) {
@@ -563,7 +563,7 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
     size_t page_offset = dest_addr & PAGE_MASK;
 
     while (remaining_size > 0) {
-        const size_t copy_amount = std::min(PAGE_SIZE - page_offset, remaining_size);
+        const size_t copy_amount = std::min<size_t>(PAGE_SIZE - page_offset, remaining_size);
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (page_table.attributes[page_index]) {
@@ -623,7 +623,7 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
     static const std::array<u8, PAGE_SIZE> zeros = {};
 
     while (remaining_size > 0) {
-        const size_t copy_amount = std::min(PAGE_SIZE - page_offset, remaining_size);
+        const size_t copy_amount = std::min<size_t>(PAGE_SIZE - page_offset, remaining_size);
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (current_page_table->attributes[page_index]) {
@@ -674,7 +674,7 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
     size_t page_offset = src_addr & PAGE_MASK;
 
     while (remaining_size > 0) {
-        const size_t copy_amount = std::min(PAGE_SIZE - page_offset, remaining_size);
+        const size_t copy_amount = std::min<size_t>(PAGE_SIZE - page_offset, remaining_size);
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (current_page_table->attributes[page_index]) {

@@ -238,8 +238,8 @@ endif()
 
 if (UNICORN_FOUND)
     add_library(unicorn INTERFACE)
-    target_link_libraries(unicorn INTERFACE "${UNICORN_LIBRARY}")
-    target_include_directories(unicorn INTERFACE "${UNICORN_INCLUDE_DIR}")
+    target_link_libraries(unicorn INTERFACE "${LIBUNICORN_LIBRARY}")
+    target_include_directories(unicorn INTERFACE "${LIBUNICORN_INCLUDE_DIR}")
 endif()
 
 if (ENABLE_QT)
