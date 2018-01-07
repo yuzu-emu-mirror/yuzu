@@ -143,6 +143,13 @@ void RequestBuilder::PushRaw(const T& value) {
 }
 
 template <>
+inline void RequestBuilder::Push(ResultCode value) {
+    // Result codes are actually 64-bit in the IPC buffer, but only the high part is discarded.
+    Push(value.raw);
+    Push<u32>(0);
+}
+
+template <>
 inline void RequestBuilder::Push(u8 value) {
     PushRaw(value);
 }
@@ -161,11 +168,6 @@ inline void RequestBuilder::Push(u64 value) {
 template <>
 inline void RequestBuilder::Push(bool value) {
     Push(static_cast<u8>(value));
-}
-
-template <>
-inline void RequestBuilder::Push(ResultCode value) {
-    Push(value.raw);
 }
 
 template <typename First, typename... Other>
