@@ -102,6 +102,11 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdb
                                                                 Process& src_process,
                                                                 HandleTable& src_table) {
     ParseCommandBuffer(src_cmdbuf, true);
+    if (command_header->type == IPC::CommandType::Close) {
+        // Close does not populate the rest of the IPC header
+        return RESULT_SUCCESS;
+    }
+
     // The data_size already includes the payload header, the padding and the domain header.
     size_t size = data_payload_offset + command_header->data_size -
                   sizeof(IPC::DataPayloadHeader) / sizeof(u32) - 4;
