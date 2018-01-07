@@ -107,8 +107,9 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'O'));
     }
 
-    data_payload_offset = rp.GetCurrentOffset();
     command = rp.Pop<u32_le>();
+    rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
+    data_payload_offset = rp.GetCurrentOffset();
 }
 
 ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf,

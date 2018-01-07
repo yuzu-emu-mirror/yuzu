@@ -100,8 +100,6 @@ void SM::Initialize(Kernel::HLERequestContext& ctx) {
  */
 void SM::GetService(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    u32 unk1 = rp.Pop<u32>();
-    u32 unk2 = rp.Pop<u32>();
     auto name_buf = rp.PopRaw<std::array<char, 9>>();
     std::string name(name_buf.data());
 
@@ -117,22 +115,13 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     }
 
     auto session = client_port.Unwrap()->Connect();
+    ASSERT(session.Succeeded());
     if (session.Succeeded()) {
         LOG_DEBUG(Service_SM, "called service=%s -> session=%u", name.c_str(),
                   (*session)->GetObjectId());
-        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0, 1);
-        rb.Push(session.Code());
+        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 1);
+        rb.Push<u64>(0);
         rb.PushObjects(std::move(session).Unwrap());
-    } else if (session.Code() == Kernel::ERR_MAX_CONNECTIONS_REACHED /*&& return_port_on_failure*/) {
-        LOG_WARNING(Service_SM, "called service=%s -> ERR_MAX_CONNECTIONS_REACHED, *port*=%u",
-                    name.c_str(), (*client_port)->GetObjectId());
-        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0, 1);
-        rb.Push(ERR_MAX_CONNECTIONS_REACHED);
-        rb.PushObjects(std::move(client_port).Unwrap());
-    } else {
-        LOG_ERROR(Service_SM, "called service=%s -> error 0x%08X", name.c_str(), session.Code());
-        IPC::RequestBuilder rb = rp.MakeBuilder(1, 0, 0);
-        rb.Push(session.Code());
     }
 }
 
