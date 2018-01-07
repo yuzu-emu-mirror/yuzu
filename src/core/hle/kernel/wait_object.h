@@ -44,6 +44,12 @@ public:
      */
     virtual void WakeupAllWaitingThreads();
 
+    /**
+     * Wakes up a single thread waiting on this object.
+     * @param thread Thread that is waiting on this object to wakeup.
+     */
+    void WakeupWaitingThread(SharedPtr<Thread> thread);
+
     /// Obtains the highest priority thread that is ready to run from this object's waiting list.
     SharedPtr<Thread> GetHighestPriorityReadyThread();
 
