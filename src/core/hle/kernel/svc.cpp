@@ -520,8 +520,27 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
 }
 
 /// Signal process wide key
-static ResultCode SignalProcessWideKey(VAddr addr, u32 target) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called, address=0x%llx, target=0x%08x", addr, target);
+static ResultCode SignalProcessWideKey(VAddr semaphore_addr, s32 target) {
+    LOG_TRACE(Kernel_SVC, "called, semaphore_addr=0x%llx, target=0x%08x", semaphore_addr, target);
+
+    // Wakeup all or one thread - Any other value is unimplemented
+    ASSERT(target == -1 || target == 1);
+
+    SharedPtr<Semaphore> semaphore = g_object_address_table.Get<Semaphore>(semaphore_addr);
+    if (!semaphore) {
+        // Create a new semaphore for the specified address if one does not already exist
+        semaphore = Semaphore::Create(semaphore_addr).Unwrap();
+        semaphore->name = Common::StringFromFormat("semaphore-%llx", semaphore_addr);
+    }
+
+    CASCADE_CODE(semaphore->Release(target));
+
+    if (semaphore->mutex_addr) {
+        // If a mutex was created for this semaphore, wait the current thread on it
+        SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(semaphore->mutex_addr);
+        return WaitSynchronization1(mutex, GetCurrentThread());
+    }
+
     return RESULT_SUCCESS;
 }
 
