@@ -23,14 +23,14 @@ public:
 private:
     void GetAppletResourceUserId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::RequestBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(0);
     }
 
     void AcquireForegroundRights(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 };
@@ -79,7 +79,7 @@ private:
     }
 
     void ReceiveMessage(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::RequestBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Skip(1, true);
         rb.Push<u32>(1);
@@ -118,48 +118,57 @@ public:
 
 private:
     void GetAudioController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAudioController>();
     }
 
     void GetDisplayController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDisplayController>();
     }
 
     void GetDebugFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDebugFunctions>();
     }
 
     void GetWindowController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IWindowController>();
     }
 
     void GetSelfController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ISelfController>();
     }
 
     void GetCommonStateGetter(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ICommonStateGetter>();
     }
 
     void GetLibraryAppletCreator(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ILibraryAppletCreator>();
     }
 
     void GetApplicationFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IApplicationFunctions>();
     }
 };
 
 void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IApplicationProxy>();
 }
 
