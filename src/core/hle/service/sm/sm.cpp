@@ -99,7 +99,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
 
     auto client_port = service_manager->GetServicePort(name);
     if (client_port.Failed()) {
-        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
         rb.Push(client_port.Code());
         LOG_ERROR(Service_SM, "called service=%s -> error 0x%08X", name.c_str(),
                   client_port.Code().raw);
@@ -111,7 +111,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     if (session.Succeeded()) {
         LOG_DEBUG(Service_SM, "called service=%s -> session=%u", name.c_str(),
                   (*session)->GetObjectId());
-        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 1);
+        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 1, 0);
         rb.Push(session.Code());
         rb.PushMoveObjects(std::move(session).Unwrap());
     }

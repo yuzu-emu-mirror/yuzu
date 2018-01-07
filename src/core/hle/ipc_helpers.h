@@ -205,12 +205,14 @@ public:
     }
 
     RequestBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
-                               u32 num_handles_to_move, bool validate_header = true) {
+                               u32 num_handles_to_move, u32 num_domain_objects,
+                               bool validate_header = true) {
         if (validate_header) {
             ValidateHeader();
         }
 
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move};
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move,
+                num_domain_objects};
     }
 
     template <typename T>
