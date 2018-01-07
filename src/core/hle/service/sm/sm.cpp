@@ -88,20 +88,12 @@ void SM::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SM, "called");
 }
 
-/**
- * SM::GetService service function
- *  Inputs:
- *      0: 0x00000001
- *      1: Unknown
- *      2: Unknown
- *      3-4: 8-byte UTF-8 service name
- *  Outputs:
- *      0: ResultCode
- */
 void SM::GetService(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto name_buf = rp.PopRaw<std::array<char, 9>>();
-    std::string name(name_buf.data());
+    auto name_buf = rp.PopRaw<std::array<char, 8>>();
+    auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
+
+    std::string name(name_buf.begin(), end);
 
     // TODO(yuriks): Permission checks go here
 
