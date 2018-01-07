@@ -11,8 +11,9 @@ namespace PCTL {
 
 void PCTL_A::GetService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
-    IPC::RequestBuilder rb{ctx, 1};
+    IPC::RequestBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
+    // TODO(Subv): This should return an IParentalControlService interface.
 }
 
 PCTL_A::PCTL_A() : ServiceFramework("pctl:a") {
