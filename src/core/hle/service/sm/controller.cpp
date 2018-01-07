@@ -24,7 +24,7 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 1, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushObjects(ctx.ServerSession());
+    rb.PushMoveObjects(ctx.ServerSession());
 
     LOG_DEBUG(Service, "called");
 }

@@ -121,7 +121,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
                   (*session)->GetObjectId());
         IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 1);
         rb.Push<u64>(0);
-        rb.PushObjects(std::move(session).Unwrap());
+        rb.PushMoveObjects(std::move(session).Unwrap());
     }
 }
 

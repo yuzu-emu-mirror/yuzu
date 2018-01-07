@@ -150,7 +150,7 @@ void LM::Initialize(Kernel::HLERequestContext& ctx) {
                   (*session)->GetObjectId());
         IPC::RequestBuilder rb{ctx, 1, 0, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushObjects(std::move(session).Unwrap());
+        rb.PushMoveObjects(std::move(session).Unwrap());
         registered_loggers.emplace_back(std::move(client_port));
     } else {
         UNIMPLEMENTED();

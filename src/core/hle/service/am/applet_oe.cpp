@@ -73,7 +73,7 @@ private:
 
         IPC::RequestBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushObjects(event);
+        rb.PushCopyObjects(event);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }

@@ -37,20 +37,6 @@ HLERequestContext::HLERequestContext(SharedPtr<Kernel::ServerSession> server_ses
 
 HLERequestContext::~HLERequestContext() = default;
 
-SharedPtr<Object> HLERequestContext::GetIncomingHandle(u32 id_from_cmdbuf) const {
-    ASSERT(id_from_cmdbuf < request_handles.size());
-    return request_handles[id_from_cmdbuf];
-}
-
-u32 HLERequestContext::AddOutgoingHandle(SharedPtr<Object> object) {
-    request_handles.push_back(std::move(object));
-    return static_cast<u32>(request_handles.size() - 1);
-}
-
-void HLERequestContext::ClearIncomingObjects() {
-    request_handles.clear();
-}
-
 void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     IPC::RequestParser rp(src_cmdbuf);
     command_header = std::make_unique<IPC::CommandHeader>(rp.PopRaw<IPC::CommandHeader>());
@@ -95,7 +81,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         // If this is an incoming message, only CommandType "Request" has a domain header
         // All outgoing domain messages have the domain header
         domain_message_header =
-            std::make_unique<IPC::DomainRequestMessageHeader>(rp.PopRaw<IPC::DomainRequestMessageHeader>());
+            std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
     }
 
     data_payload_header =
@@ -107,61 +93,78 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'O'));
     }
 
+    data_payload_offset = rp.GetCurrentOffset();
     command = rp.Pop<u32_le>();
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
-    data_payload_offset = rp.GetCurrentOffset();
 }
 
 ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf,
                                                                 Process& src_process,
                                                                 HandleTable& src_table) {
     ParseCommandBuffer(src_cmdbuf, true);
-    size_t untranslated_size = data_payload_offset + command_header->data_size;
-    std::copy_n(src_cmdbuf, untranslated_size, cmd_buf.begin());
+    // The data_size already includes the payload header, the padding and the domain header.
+    size_t size = data_payload_offset + command_header->data_size -
+                  sizeof(IPC::DataPayloadHeader) / sizeof(u32) - 4;
+    if (domain_message_header)
+        size -= sizeof(IPC::DomainMessageHeader) / sizeof(u32);
+    std::copy_n(src_cmdbuf, size, cmd_buf.begin());
     return RESULT_SUCCESS;
 }
 
 ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
                                                            HandleTable& dst_table) {
-    ParseCommandBuffer(&cmd_buf[0], false);
-    size_t untranslated_size = data_payload_offset + command_header->data_size;
-    std::copy_n(cmd_buf.begin(), untranslated_size, dst_cmdbuf);
+    // The header was already built in the internal command buffer. Attempt to parse it to verify
+    // the integrity and then copy it over to the target command buffer.
+    ParseCommandBuffer(cmd_buf.data(), false);
+
+    // The data_size already includes the payload header, the padding and the domain header.
+    size_t size = data_payload_offset + command_header->data_size -
+                  sizeof(IPC::DataPayloadHeader) / sizeof(u32) - 4;
+    if (domain_message_header)
+        size -= sizeof(IPC::DomainMessageHeader) / sizeof(u32);
+
+    std::copy_n(cmd_buf.begin(), size, dst_cmdbuf);
 
     if (command_header->enable_handle_descriptor) {
-        size_t command_size = untranslated_size + handle_descriptor_header->num_handles_to_copy +
-                              handle_descriptor_header->num_handles_to_move;
-        ASSERT(command_size <= IPC::COMMAND_BUFFER_LENGTH);
+        ASSERT_MSG(!move_objects.empty() || !copy_objects.empty(),
+                   "Handle descriptor bit set but no handles to translate");
+        // We write the translated handles at a specific offset in the command buffer, this space
+        // was already reserved when writing the header.
+        size_t current_offset =
+            (sizeof(IPC::CommandHeader) + sizeof(IPC::HandleDescriptorHeader)) / sizeof(u32);
+        ASSERT_MSG(!handle_descriptor_header->send_current_pid, "Sending PID is not implemented");
 
-        size_t untranslated_index = untranslated_size;
-        size_t handle_write_offset = 3;
-        while (untranslated_index < command_size) {
-            u32 descriptor = cmd_buf[untranslated_index];
-            untranslated_index += 1;
+        ASSERT_MSG(copy_objects.size() == handle_descriptor_header->num_handles_to_copy);
+        ASSERT_MSG(move_objects.size() == handle_descriptor_header->num_handles_to_move);
 
-            switch (IPC::GetDescriptorType(descriptor)) {
-            case IPC::DescriptorType::CopyHandle:
-            case IPC::DescriptorType::MoveHandle: {
-                // HLE services don't use handles, so we treat both CopyHandle and MoveHandle
-                // equally
-                u32 num_handles = IPC::HandleNumberFromDesc(descriptor);
-                for (u32 j = 0; j < num_handles; ++j) {
-                    SharedPtr<Object> object = GetIncomingHandle(cmd_buf[untranslated_index]);
-                    Handle handle = 0;
-                    if (object != nullptr) {
-                        // TODO(yuriks): Figure out the proper error handling for if this fails
-                        handle = dst_table.Create(object).Unwrap();
-                    }
-                    dst_cmdbuf[handle_write_offset++] = handle;
-                    untranslated_index++;
-                }
-                break;
-            }
-            default:
-                UNIMPLEMENTED_MSG("Unsupported handle translation: 0x%08X", descriptor);
-            }
+        // We don't make a distinction between copy and move handles when translating since HLE
+        // services don't deal with handles directly. However, the guest applications might check
+        // for specific values in each of these descriptors.
+        for (auto& object : copy_objects) {
+            ASSERT(object != nullptr);
+            dst_cmdbuf[current_offset++] = Kernel::g_handle_table.Create(object).Unwrap();
+        }
+
+        for (auto& object : move_objects) {
+            ASSERT(object != nullptr);
+            dst_cmdbuf[current_offset++] = Kernel::g_handle_table.Create(object).Unwrap();
         }
     }
 
+    // TODO(Subv): Translate the X/A/B/W buffers.
+
+    if (IsDomain()) {
+        ASSERT(domain_message_header->num_objects == domain_objects.size());
+        // Write the domain objects to the command buffer, these go after the raw untranslated data.
+        // TODO(Subv): This completely ignores C buffers.
+        size_t domain_offset = size - domain_message_header->num_objects;
+        auto& request_handlers = domain->request_handlers;
+
+        for (auto& object : domain_objects) {
+            request_handlers.emplace_back(object);
+            dst_cmdbuf[domain_offset++] = request_handlers.size();
+        }
+    }
     return RESULT_SUCCESS;
 }
 

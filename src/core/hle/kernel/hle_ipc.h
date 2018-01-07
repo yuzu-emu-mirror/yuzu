@@ -110,25 +110,6 @@ public:
         return server_session;
     }
 
-    /**
-     * Resolves a object id from the request command buffer into a pointer to an object. See the
-     * "HLE handle protocol" section in the class documentation for more details.
-     */
-    SharedPtr<Object> GetIncomingHandle(u32 id_from_cmdbuf) const;
-
-    /**
-     * Adds an outgoing object to the response, returning the id which should be used to reference
-     * it. See the "HLE handle protocol" section in the class documentation for more details.
-     */
-    u32 AddOutgoingHandle(SharedPtr<Object> object);
-
-    /**
-     * Discards all Objects from the context, invalidating all ids. This may be called after reading
-     * out all incoming objects, so that the buffer memory can be re-used for outgoing handles, but
-     * this is not required.
-     */
-    void ClearIncomingObjects();
-
     void ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming);
 
     /// Populates this context with data from the requesting process/thread.
@@ -158,7 +139,7 @@ public:
         return buffer_a_desciptors;
     }
 
-    const std::unique_ptr<IPC::DomainRequestMessageHeader>& GetDomainMessageHeader() const {
+    const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
         return domain_message_header;
     }
 
@@ -166,17 +147,31 @@ public:
         return domain != nullptr;
     }
 
+    void AddMoveObject(SharedPtr<Object> object) {
+        move_objects.emplace_back(std::move(object));
+    }
+
+    void AddCopyObject(SharedPtr<Object> object) {
+        copy_objects.emplace_back(std::move(object));
+    }
+
+    void AddDomainObject(std::shared_ptr<SessionRequestHandler> object) {
+        domain_objects.emplace_back(std::move(object));
+    }
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<Kernel::Domain> domain;
     SharedPtr<Kernel::ServerSession> server_session;
     // TODO(yuriks): Check common usage of this and optimize size accordingly
-    boost::container::small_vector<SharedPtr<Object>, 8> request_handles;
+    boost::container::small_vector<SharedPtr<Object>, 8> move_objects;
+    boost::container::small_vector<SharedPtr<Object>, 8> copy_objects;
+    boost::container::small_vector<std::shared_ptr<SessionRequestHandler>, 8> domain_objects;
 
     std::unique_ptr<IPC::CommandHeader> command_header;
     std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
     std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
-    std::unique_ptr<IPC::DomainRequestMessageHeader> domain_message_header;
+    std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
     std::vector<IPC::BufferDescriptorX> buffer_x_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;
