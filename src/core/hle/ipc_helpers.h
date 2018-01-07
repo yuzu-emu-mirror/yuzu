@@ -58,14 +58,20 @@ public:
     RequestBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
     RequestBuilder(Kernel::HLERequestContext& context, unsigned normal_params_size,
-                   u32 num_handles_to_copy = 0, u32 num_handles_to_move = 0)
+                   u32 num_handles_to_copy = 0, u32 num_handles_to_move = 0, u32 num_domain_objects = 0)
         : RequestHelperBase(context) {
         memset(cmdbuf, 0, 64);
 
         context.ClearIncomingObjects();
 
         IPC::CommandHeader header{};
-        header.data_size.Assign(normal_params_size * sizeof(u32));
+
+        // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory padding.
+        u32 raw_data_size = sizeof(IPC::DataPayloadHeader) / 4 + 4 + normal_params_size;
+        if (context.IsDomain())
+            raw_data_size += sizeof(DomainResponseMessageHeader) / 4 + num_domain_objects;
+
+        header.data_size.Assign(raw_data_size);
         if (num_handles_to_copy || num_handles_to_move) {
             header.enable_handle_descriptor.Assign(1);
         }
@@ -82,7 +88,9 @@ public:
         AlignWithPadding();
 
         if (context.IsDomain()) {
-            PushRaw(IPC::DomainMessageHeader{});
+            IPC::DomainResponseMessageHeader domain_header{};
+            domain_header.num_objects = num_domain_objects;
+            PushRaw(domain_header);
         }
 
         IPC::DataPayloadHeader data_payload_header{};
@@ -93,9 +101,10 @@ public:
     template <class T>
     void PushIpcInterface() {
         auto& request_handlers = context->Domain()->request_handlers;
-        request_handlers.push_back(std::move(std::make_shared<T>()->shared_from_this()));
+        request_handlers.emplace_back(std::make_shared<T>());
         Push(RESULT_SUCCESS);
-        AlignWithPadding();
+        Push<u32>(0); // The error code is the lower word of an u64, so we fill the rest with 0.
+        // Now push the id of the newly-added object.
         Push<u32>(static_cast<u32>(request_handlers.size()));
     }
 

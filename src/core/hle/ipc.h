@@ -143,7 +143,7 @@ struct DataPayloadHeader {
 };
 static_assert(sizeof(DataPayloadHeader) == 8, "DataPayloadRequest size is incorrect");
 
-struct DomainMessageHeader {
+struct DomainRequestMessageHeader {
     union {
         BitField<0, 8, u32_le> command;
         BitField<16, 16, u32_le> size;
@@ -151,7 +151,13 @@ struct DomainMessageHeader {
     u32_le object_id;
     INSERT_PADDING_WORDS(2);
 };
-static_assert(sizeof(DomainMessageHeader) == 16, "DomainMessageHeader size is incorrect");
+static_assert(sizeof(DomainRequestMessageHeader) == 16, "DomainRequestMessageHeader size is incorrect");
+
+struct DomainResponseMessageHeader {
+    u32_le num_objects;
+    INSERT_PADDING_WORDS(3);
+};
+static_assert(sizeof(DomainResponseMessageHeader) == 16, "DomainResponseMessageHeader size is incorrect");
 
 enum DescriptorType : u32 {
     // Buffer related desciptors types (mask : 0x0F)

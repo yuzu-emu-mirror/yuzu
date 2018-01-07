@@ -154,7 +154,11 @@ public:
         return buffer_x_desciptors;
     }
 
-    const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
+    const std::vector<IPC::BufferDescriptorABW>& BufferDescriptorA() const {
+        return buffer_a_desciptors;
+    }
+
+    const std::unique_ptr<IPC::DomainRequestMessageHeader>& GetDomainMessageHeader() const {
         return domain_message_header;
     }
 
@@ -172,7 +176,7 @@ private:
     std::unique_ptr<IPC::CommandHeader> command_header;
     std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
     std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
-    std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
+    std::unique_ptr<IPC::DomainRequestMessageHeader> domain_message_header;
     std::vector<IPC::BufferDescriptorX> buffer_x_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;
