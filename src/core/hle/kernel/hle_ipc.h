@@ -147,6 +147,18 @@ public:
         return domain != nullptr;
     }
 
+    template<typename T>
+    SharedPtr<T> GetCopyObject(size_t index) {
+        ASSERT(index < copy_objects.size());
+        return DynamicObjectCast(copy_objects[index]);
+    }
+
+    template<typename T>
+    SharedPtr<T> GetMoveObject(size_t index) {
+        ASSERT(index < move_objects.size());
+        return DynamicObjectCast(move_objects[index]);
+    }
+
     void AddMoveObject(SharedPtr<Object> object) {
         move_objects.emplace_back(std::move(object));
     }

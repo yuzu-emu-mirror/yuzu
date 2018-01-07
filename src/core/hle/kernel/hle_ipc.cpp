@@ -53,8 +53,20 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         if (handle_descriptor_header->send_current_pid) {
             rp.Skip(2, false);
         }
-        rp.Skip(handle_descriptor_header->num_handles_to_copy, false);
-        rp.Skip(handle_descriptor_header->num_handles_to_move, false);
+        if (incoming) {
+            // Populate the object lists with the data in the IPC request.
+            for (u32 handle = 0; handle < handle_descriptor_header->num_handles_to_copy; ++handle) {
+                copy_objects.push_back(Kernel::g_handle_table.GetGeneric(rp.Pop<Handle>()));
+            }
+            for (u32 handle = 0; handle < handle_descriptor_header->num_handles_to_move; ++handle) {
+                move_objects.push_back(Kernel::g_handle_table.GetGeneric(rp.Pop<Handle>()));
+            }
+        } else {
+            // For responses we just ignore the handles, they're empty and will be populated when
+            // translating the response.
+            rp.Skip(handle_descriptor_header->num_handles_to_copy, false);
+            rp.Skip(handle_descriptor_header->num_handles_to_move, false);
+        }
     }
 
     for (unsigned i = 0; i < command_header->num_buf_x_descriptors; ++i) {

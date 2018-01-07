@@ -233,6 +233,12 @@ public:
      */
     template <typename T>
     T PopRaw();
+
+    template <typename T>
+    Kernel::SharedPtr<T> GetMoveObject(size_t index);
+
+    template <typename T>
+    Kernel::SharedPtr<T> GetCopyObject(size_t index);
 };
 
 /// Pop ///
@@ -291,6 +297,16 @@ template <typename First, typename... Other>
 void RequestParser::Pop(First& first_value, Other&... other_values) {
     first_value = Pop<First>();
     Pop(other_values...);
+}
+
+template <typename T>
+Kernel::SharedPtr<T> RequestParser::GetMoveObject(size_t index) {
+    return context->GetMoveObject<T>(index);
+}
+
+template <typename T>
+Kernel::SharedPtr<T> RequestParser::GetCopyObject(size_t index) {
+    return context->GetCopyObject<T>(index);
 }
 
 } // namespace IPC
