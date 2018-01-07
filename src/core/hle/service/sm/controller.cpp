@@ -15,14 +15,13 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
 
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Skip(1, true);
-    rb.Push<u32>(static_cast<u32>(domain->request_handlers.size()));
+    rb.Push(static_cast<u32>(domain->request_handlers.size()));
 
     LOG_DEBUG(Service, "called, domain=%d", domain->GetObjectId());
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 1, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushMoveObjects(ctx.ServerSession());
 
@@ -32,7 +31,6 @@ void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Skip(1, true);
     rb.Push<u32>(0x500);
 
     LOG_WARNING(Service, "(STUBBED) called");
