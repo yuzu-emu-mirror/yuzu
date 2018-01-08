@@ -48,8 +48,8 @@ struct CommandHeader {
 
     enum class BufferDescriptorCFlag : u32 {
         Disabled = 0,
-        NoDescriptor = 1,
-        TwoDesciptors = 2,
+        InlineDescriptor = 1,
+        OneDescriptor = 2,
     };
 
     union {

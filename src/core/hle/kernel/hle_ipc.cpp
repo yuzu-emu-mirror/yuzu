@@ -83,7 +83,10 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     }
     if (command_header->buf_c_descriptor_flags !=
         IPC::CommandHeader::BufferDescriptorCFlag::Disabled) {
-        UNIMPLEMENTED();
+        if (command_header->buf_c_descriptor_flags !=
+            IPC::CommandHeader::BufferDescriptorCFlag::OneDescriptor) {
+            UNIMPLEMENTED();
+        }
     }
 
     // Padding to align to 16 bytes
