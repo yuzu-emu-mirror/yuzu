@@ -98,9 +98,9 @@ public:
         PushRaw(data_payload_header);
     }
 
-    template <class T>
-    void PushIpcInterface() {
-        context->AddDomainObject(std::make_shared<T>());
+    template <class T, class... Args>
+    void PushIpcInterface(Args&&... args) {
+        context->AddDomainObject(std::make_shared<T>(std::forward<Args>(args)...));
     }
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
