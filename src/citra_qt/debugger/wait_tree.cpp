@@ -257,10 +257,9 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutex::GetChildren() const {
     std::vector<std::unique_ptr<WaitTreeItem>> list(WaitTreeWaitObject::GetChildren());
 
     const auto& mutex = static_cast<const Kernel::Mutex&>(object);
-    if (mutex.lock_count) {
-        list.push_back(
-            std::make_unique<WaitTreeText>(tr("locked %1 times by thread:").arg(mutex.lock_count)));
-        list.push_back(std::make_unique<WaitTreeThread>(*mutex.holding_thread));
+    if (mutex.GetHasWaiters()) {
+        list.push_back(std::make_unique<WaitTreeText>(tr("locked by thread:")));
+        list.push_back(std::make_unique<WaitTreeThread>(*mutex.GetHoldingThread()));
     } else {
         list.push_back(std::make_unique<WaitTreeText>(tr("free")));
     }

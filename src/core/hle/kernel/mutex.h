@@ -41,10 +41,8 @@ public:
         return HANDLE_TYPE;
     }
 
-    int lock_count;                   ///< Number of times the mutex has been acquired
     u32 priority;                     ///< The priority of the mutex, used for priority inheritance.
     std::string name;                 ///< Name of mutex (optional)
-    SharedPtr<Thread> holding_thread; ///< Thread that has acquired the mutex
     VAddr guest_addr;                 ///< Address of the guest mutex value
 
     /**
@@ -66,6 +64,19 @@ public:
      */
     ResultCode Release(Thread* thread);
 
+    /// Gets the handle to the holding process stored in the guest state.
+    Handle GetOwnerHandle() const;
+
+    /// Gets the Thread pointed to by the owner handle
+    SharedPtr<Thread> GetHoldingThread() const;
+    /// Sets the holding process handle in the guest state.
+    void SetHoldingThread(SharedPtr<Thread> thread);
+
+    /// Returns the has_waiters bit in the guest state.
+    bool GetHasWaiters() const;
+    /// Sets the has_waiters bit in the guest state.
+    void SetHasWaiters(bool has_waiters);
+
 private:
     Mutex();
     ~Mutex() override;
@@ -79,12 +90,6 @@ private:
         BitField<30, 1, u32_le> has_waiters;
     };
     static_assert(sizeof(GuestState) == 4, "GuestState size is incorrect");
-
-    /// Updates the state of the object tracking this mutex in guest memory
-    void UpdateGuestState();
-
-    /// Verifies the state of the object tracking this mutex in guest memory
-    void VerifyGuestState();
 };
 
 /**

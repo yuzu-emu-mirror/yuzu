@@ -204,7 +204,6 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
     SharedPtr<Thread> holding_thread = g_handle_table.Get<Thread>(holding_thread_handle);
     SharedPtr<Thread> requesting_thread = g_handle_table.Get<Thread>(requesting_thread_handle);
 
-    ASSERT(holding_thread);
     ASSERT(requesting_thread);
 
     SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
@@ -213,6 +212,8 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
         mutex = Mutex::Create(holding_thread, mutex_addr);
         mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
     }
+
+    ASSERT(holding_thread == mutex->GetHoldingThread());
 
     return WaitSynchronization1(mutex, requesting_thread.get());
 }
@@ -490,6 +491,8 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
         mutex = Mutex::Create(thread, mutex_addr);
         mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
     }
+
+    ASSERT(mutex->GetOwnerHandle() == thread_handle);
 
     SharedPtr<Semaphore> semaphore = g_object_address_table.Get<Semaphore>(semaphore_addr);
     if (!semaphore) {

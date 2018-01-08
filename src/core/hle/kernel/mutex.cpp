@@ -17,8 +17,8 @@ namespace Kernel {
 
 void ReleaseThreadMutexes(Thread* thread) {
     for (auto& mtx : thread->held_mutexes) {
-        mtx->lock_count = 0;
-        mtx->holding_thread = nullptr;
+        mtx->SetHasWaiters(false);
+        mtx->SetHoldingThread(nullptr);
         mtx->WakeupAllWaitingThreads();
     }
     thread->held_mutexes.clear();
@@ -31,10 +31,8 @@ SharedPtr<Mutex> Mutex::Create(SharedPtr<Kernel::Thread> holding_thread, VAddr g
                                std::string name) {
     SharedPtr<Mutex> mutex(new Mutex);
 
-    mutex->lock_count = 0;
     mutex->guest_addr = guest_addr;
     mutex->name = std::move(name);
-    mutex->holding_thread = nullptr;
 
     // If mutex was initialized with a holding thread, acquire it by the holding thread
     if (holding_thread) {
@@ -51,56 +49,32 @@ SharedPtr<Mutex> Mutex::Create(SharedPtr<Kernel::Thread> holding_thread, VAddr g
 }
 
 bool Mutex::ShouldWait(Thread* thread) const {
-    return lock_count > 0 && thread != holding_thread;
+    auto holding_thread = GetHoldingThread();
+    return holding_thread != nullptr && thread != holding_thread;
 }
 
 void Mutex::Acquire(Thread* thread) {
     ASSERT_MSG(!ShouldWait(thread), "object unavailable!");
 
-    // Actually "acquire" the mutex only if we don't already have it
-    if (lock_count == 0) {
-        priority = thread->current_priority;
-        thread->held_mutexes.insert(this);
-        holding_thread = thread;
-        thread->UpdatePriority();
-        UpdateGuestState();
-        Core::System::GetInstance().PrepareReschedule();
-    }
-
-    lock_count++;
+    priority = thread->current_priority;
+    thread->held_mutexes.insert(this);
+    SetHoldingThread(thread);
+    thread->UpdatePriority();
+    Core::System::GetInstance().PrepareReschedule();
 }
 
 ResultCode Mutex::Release(Thread* thread) {
+    auto holding_thread = GetHoldingThread();
+    ASSERT(holding_thread);
+
     // We can only release the mutex if it's held by the calling thread.
-    if (thread != holding_thread) {
-        if (holding_thread) {
-            LOG_ERROR(
-                Kernel,
-                "Tried to release a mutex (owned by thread id %u) from a different thread id %u",
-                holding_thread->thread_id, thread->thread_id);
-        }
-        // TODO(bunnei): Use correct error code
-        return ResultCode(-1);
-    }
+    ASSERT(thread == holding_thread);
 
-    // Note: It should not be possible for the situation where the mutex has a holding thread with a
-    // zero lock count to occur. The real kernel still checks for this, so we do too.
-    if (lock_count <= 0) {
-        // TODO(bunnei): Use correct error code
-        return ResultCode(-1);
-    }
-
-    lock_count--;
-
-    // Yield to the next thread only if we've fully released the mutex
-    if (lock_count == 0) {
-        holding_thread->held_mutexes.erase(this);
-        holding_thread->UpdatePriority();
-        holding_thread = nullptr;
-        WakeupAllWaitingThreads();
-        UpdateGuestState();
-        Core::System::GetInstance().PrepareReschedule();
-    }
+    holding_thread->held_mutexes.erase(this);
+    holding_thread->UpdatePriority();
+    SetHoldingThread(nullptr);
+    WakeupAllWaitingThreads();
+    Core::System::GetInstance().PrepareReschedule();
 
     return RESULT_SUCCESS;
 }
@@ -108,19 +82,20 @@ ResultCode Mutex::Release(Thread* thread) {
 void Mutex::AddWaitingThread(SharedPtr<Thread> thread) {
     WaitObject::AddWaitingThread(thread);
     thread->pending_mutexes.insert(this);
+    SetHasWaiters(true);
     UpdatePriority();
-    UpdateGuestState();
 }
 
 void Mutex::RemoveWaitingThread(Thread* thread) {
     WaitObject::RemoveWaitingThread(thread);
     thread->pending_mutexes.erase(this);
+    if (!GetHasWaiters())
+        SetHasWaiters(!GetWaitingThreads().empty());
     UpdatePriority();
-    UpdateGuestState();
 }
 
 void Mutex::UpdatePriority() {
-    if (!holding_thread)
+    if (!GetHoldingThread())
         return;
 
     u32 best_priority = THREADPRIO_LOWEST;
@@ -131,21 +106,35 @@ void Mutex::UpdatePriority() {
 
     if (best_priority != priority) {
         priority = best_priority;
-        holding_thread->UpdatePriority();
+        GetHoldingThread()->UpdatePriority();
     }
 }
 
-void Mutex::UpdateGuestState() {
+Handle Mutex::GetOwnerHandle() const {
     GuestState guest_state{Memory::Read32(guest_addr)};
-    guest_state.has_waiters.Assign(!GetWaitingThreads().empty());
-    guest_state.holding_thread_handle.Assign(holding_thread ? holding_thread->guest_handle : 0);
+    return guest_state.holding_thread_handle;
+}
+
+SharedPtr<Thread> Mutex::GetHoldingThread() const {
+    GuestState guest_state{Memory::Read32(guest_addr)};
+    return g_handle_table.Get<Thread>(guest_state.holding_thread_handle);
+}
+
+void Mutex::SetHoldingThread(SharedPtr<Thread> thread) {
+    GuestState guest_state{Memory::Read32(guest_addr)};
+    guest_state.holding_thread_handle.Assign(thread ? thread->guest_handle : 0);
     Memory::Write32(guest_addr, guest_state.raw);
 }
 
-void Mutex::VerifyGuestState() {
+bool Mutex::GetHasWaiters() const {
     GuestState guest_state{Memory::Read32(guest_addr)};
-    ASSERT(guest_state.has_waiters == !GetWaitingThreads().empty());
-    ASSERT(guest_state.holding_thread_handle == holding_thread->guest_handle);
+    return guest_state.has_waiters != 0;
+}
+
+void Mutex::SetHasWaiters(bool has_waiters) {
+    GuestState guest_state{Memory::Read32(guest_addr)};
+    guest_state.has_waiters.Assign(has_waiters ? 1 : 0);
+    Memory::Write32(guest_addr, guest_state.raw);
 }
 
 } // namespace Kernel
