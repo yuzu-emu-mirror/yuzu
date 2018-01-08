@@ -68,6 +68,8 @@ SharedPtr<Thread> WaitObject::GetHighestPriorityReadyThread() {
 }
 
 void WaitObject::WakeupWaitingThread(SharedPtr<Thread> thread) {
+    ASSERT(!ShouldWait(thread.get()));
+
     if (!thread)
         return;
 
@@ -75,19 +77,26 @@ void WaitObject::WakeupWaitingThread(SharedPtr<Thread> thread) {
         Acquire(thread.get());
     } else {
         for (auto& object : thread->wait_objects) {
+            ASSERT(!object->ShouldWait(thread.get()));
             object->Acquire(thread.get());
         }
     }
 
-    // Invoke the wakeup callback before clearing the wait objects
-    if (thread->wakeup_callback)
-        thread->wakeup_callback(ThreadWakeupReason::Signal, thread, this);
+    size_t index = thread->GetWaitObjectIndex(this);
 
     for (auto& object : thread->wait_objects)
         object->RemoveWaitingThread(thread.get());
     thread->wait_objects.clear();
 
-    thread->ResumeFromWait();
+    thread->CancelWakeupTimer();
+
+    bool resume = true;
+
+    if (thread->wakeup_callback)
+        resume = thread->wakeup_callback(ThreadWakeupReason::Signal, thread, this, index);
+
+    if (resume)
+        thread->ResumeFromWait();
 }
 
 void WaitObject::WakeupAllWaitingThreads() {

@@ -244,20 +244,23 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
         return;
     }
 
+    bool resume = true;
+
     if (thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
         thread->status == THREADSTATUS_WAIT_SYNCH_ALL || thread->status == THREADSTATUS_WAIT_ARB) {
-
-        // Invoke the wakeup callback before clearing the wait objects
-        if (thread->wakeup_callback)
-            thread->wakeup_callback(ThreadWakeupReason::Timeout, thread, nullptr);
 
         // Remove the thread from each of its waiting objects' waitlists
         for (auto& object : thread->wait_objects)
             object->RemoveWaitingThread(thread.get());
         thread->wait_objects.clear();
+
+        // Invoke the wakeup callback before clearing the wait objects
+        if (thread->wakeup_callback)
+            resume = thread->wakeup_callback(ThreadWakeupReason::Timeout, thread, nullptr, 0);
     }
 
-    thread->ResumeFromWait();
+    if (resume)
+        thread->ResumeFromWait();
 }
 
 void Thread::WakeAfterDelay(s64 nanoseconds) {
@@ -266,6 +269,10 @@ void Thread::WakeAfterDelay(s64 nanoseconds) {
         return;
 
     CoreTiming::ScheduleEvent(nsToCycles(nanoseconds), ThreadWakeupEventType, callback_handle);
+}
+
+void Thread::CancelWakeupTimer() {
+    CoreTiming::UnscheduleEvent(ThreadWakeupEventType, callback_handle);
 }
 
 void Thread::ResumeFromWait() {
@@ -444,7 +451,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
         // Map the page to the current process' address space.
         // TODO(Subv): Find the correct MemoryState for this region.
         vm_manager.MapMemoryBlock(Memory::TLS_AREA_VADDR + available_page * Memory::PAGE_SIZE,
-                                  linheap_memory, offset, Memory::PAGE_SIZE, MemoryState::ThreadLocalStorage);
+                                  linheap_memory, offset, Memory::PAGE_SIZE,
+                                  MemoryState::ThreadLocalStorage);
     }
 
     // Mark the slot as used
@@ -501,7 +509,8 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
     SharedPtr<Thread> thread = std::move(thread_res).Unwrap();
 
     // Register 1 must be a handle to the main thread
-    thread->guest_handle = Kernel::g_handle_table.Create(thread).Unwrap();;
+    thread->guest_handle = Kernel::g_handle_table.Create(thread).Unwrap();
+
     thread->context.cpu_registers[1] = thread->guest_handle;
 
     // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
@@ -572,4 +581,4 @@ const std::vector<SharedPtr<Thread>>& GetThreadList() {
     return thread_list;
 }
 
-} // namespace
+} // namespace Kernel

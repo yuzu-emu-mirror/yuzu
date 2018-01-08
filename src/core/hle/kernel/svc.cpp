@@ -120,17 +120,19 @@ static ResultCode GetProcessId(u32* process_id, Handle process_handle) {
 }
 
 /// Default thread wakeup callback for WaitSynchronization
-static void DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thread> thread,
-                                        SharedPtr<WaitObject> object) {
+static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                        SharedPtr<WaitObject> object, size_t index) {
     ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
 
     if (reason == ThreadWakeupReason::Timeout) {
         thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
-        return;
+        return true;
     }
 
     ASSERT(reason == ThreadWakeupReason::Signal);
     thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
+
+    return true;
 };
 
 /// Wait for a kernel object to synchronize, timeout after the specified nanoseconds
@@ -499,20 +501,44 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
     ASSERT(semaphore->available_count == 0);
     ASSERT(semaphore->mutex_addr == mutex_addr);
 
-    CASCADE_CODE(WaitSynchronization1(
-        semaphore, thread.get(), nano_seconds,
-        [mutex](ThreadWakeupReason reason, SharedPtr<Thread> thread, SharedPtr<WaitObject> object) {
-            ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+    auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,
+                                                 SharedPtr<Thread> thread,
+                                                 SharedPtr<WaitObject> object, size_t index) {
+        ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
 
-            if (reason == ThreadWakeupReason::Timeout) {
-                thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
-                return;
-            }
+        if (reason == ThreadWakeupReason::Timeout) {
+            thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
+            return true;
+        }
 
-            ASSERT(reason == ThreadWakeupReason::Signal);
-            thread->SetWaitSynchronizationResult(WaitSynchronization1(mutex, thread.get()));
-            thread->SetWaitSynchronizationOutput(thread->GetWaitObjectIndex(object.get()));
-        }));
+        ASSERT(reason == ThreadWakeupReason::Signal);
+
+        // Now try to acquire the mutex and don't resume if it's not available.
+        if (!mutex->ShouldWait(thread.get())) {
+            mutex->Acquire(thread.get());
+            thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
+            return true;
+        }
+
+        if (nano_seconds == 0) {
+            thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
+            return true;
+        }
+
+        thread->wait_objects = {mutex};
+        mutex->AddWaitingThread(thread);
+        thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
+
+        // Create an event to wake the thread up after the
+        // specified nanosecond delay has passed
+        thread->WakeAfterDelay(nano_seconds);
+        thread->wakeup_callback = DefaultThreadWakeupCallback;
+
+        Core::System::GetInstance().PrepareReschedule();
+
+        return false;
+    };
+    CASCADE_CODE(WaitSynchronization1(semaphore, thread.get(), nano_seconds, wakeup_callback));
 
     mutex->Release(thread.get());
 

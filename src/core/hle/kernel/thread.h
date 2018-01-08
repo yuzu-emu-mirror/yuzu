@@ -128,6 +128,9 @@ public:
      */
     void WakeAfterDelay(s64 nanoseconds);
 
+    /// Cancel any outstanding wakeup events for this thread
+    void CancelWakeupTimer();
+
     /**
      * Sets the result after the thread awakens (from either WaitSynchronization SVC)
      * @param result Value to set to the returned result
@@ -218,8 +221,8 @@ public:
     /// Handle used as userdata to reference this object when inserting into the CoreTiming queue.
     Handle callback_handle;
 
-    using WakeupCallback = void(ThreadWakeupReason reason, SharedPtr<Thread> thread,
-                                SharedPtr<WaitObject> object);
+    using WakeupCallback = bool(ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                SharedPtr<WaitObject> object, size_t index);
     // Callback that will be invoked when the thread is resumed from a waiting state. If the thread
     // was waiting via WaitSynchronizationN then the object will be the last object that became
     // available. In case of a timeout, the object will be nullptr.
@@ -237,7 +240,8 @@ private:
  * @param owner_process The parent process for the main thread
  * @return A shared pointer to the main thread
  */
-SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority, SharedPtr<Process> owner_process);
+SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
+                                  SharedPtr<Process> owner_process);
 
 /**
  * Returns whether there are any threads that are ready to run.
