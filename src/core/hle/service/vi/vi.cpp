@@ -10,24 +10,6 @@
 namespace Service {
 namespace VI {
 
-struct IGBPBuffer {
-    u32_le magic;
-    u32_le width;
-    u32_le height;
-    u32_le stride;
-    u32_le format;
-    u32_le usage;
-    INSERT_PADDING_WORDS(1);
-    u32_le index;
-    INSERT_PADDING_WORDS(3);
-    u32_le gpu_buffer_id;
-    INSERT_PADDING_WORDS(17);
-    u32_le nvmap_handle;
-    INSERT_PADDING_WORDS(61);
-};
-
-static_assert(sizeof(IGBPBuffer) == 0x16C, "IGBPBuffer has wrong size");
-
 class Parcel {
 public:
     // This default size was chosen arbitrarily.
@@ -363,7 +345,8 @@ private:
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
-    IHOSBinderDriver() : ServiceFramework("IHOSBinderDriver") {
+    IHOSBinderDriver(std::shared_ptr<NVFlinger> nv_flinger)
+        : ServiceFramework("IHOSBinderDriver"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
@@ -404,6 +387,8 @@ private:
 
         auto& output_buffer = ctx.BufferDescriptorB()[0];
 
+        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{input_data};
             IGBPConnectResponseParcel response{1280, 720};
@@ -413,8 +398,7 @@ private:
         } else if (transaction == TransactionId::SetPreallocatedBuffer) {
             IGBPSetPreallocatedBufferRequestParcel request{input_data};
 
-            LOG_WARNING(Service, "Adding graphics buffer %u", request.data.slot);
-            graphic_buffers.push_back(request.buffer);
+            buffer_queue->SetPreallocatedBuffer(request.data.slot, request.buffer);
 
             IGBPSetPreallocatedBufferResponseParcel response{};
             auto response_buffer = response.Serialize();
@@ -423,14 +407,18 @@ private:
         } else if (transaction == TransactionId::DequeueBuffer) {
             IGBPDequeueBufferRequestParcel request{input_data};
 
-            IGBPDequeueBufferResponseParcel response{0};
+            u32 slot = buffer_queue->DequeueBuffer(request.data.pixel_format, request.data.width,
+                                                   request.data.height);
+
+            IGBPDequeueBufferResponseParcel response{slot};
             auto response_buffer = response.Serialize();
             Memory::WriteBlock(output_buffer.Address(), response_buffer.data(),
                                output_buffer.Size());
         } else if (transaction == TransactionId::RequestBuffer) {
             IGBPRequestBufferRequestParcel request{input_data};
 
-            auto& buffer = graphic_buffers[request.slot];
+            auto& buffer = buffer_queue->RequestBuffer(request.slot);
+
             IGBPRequestBufferResponseParcel response{buffer};
             auto response_buffer = response.Serialize();
             Memory::WriteBlock(output_buffer.Address(), response_buffer.data(),
@@ -438,12 +426,12 @@ private:
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{input_data};
 
+            buffer_queue->QueueBuffer(request.data.slot);
+
             IGBPQueueBufferResponseParcel response{1280, 720};
             auto response_buffer = response.Serialize();
             Memory::WriteBlock(output_buffer.Address(), response_buffer.data(),
                                output_buffer.Size());
-
-            // TODO(Subv): Start drawing here?
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
@@ -464,7 +452,7 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
-    std::vector<IGBPBuffer> graphic_buffers;
+    std::shared_ptr<NVFlinger> nv_flinger;
 };
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
@@ -492,7 +480,8 @@ private:
 
 class IManagerDisplayService final : public ServiceFramework<IManagerDisplayService> {
 public:
-    IManagerDisplayService() : ServiceFramework("IManagerDisplayService") {
+    IManagerDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
+        : ServiceFramework("IManagerDisplayService"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {1102, nullptr, "GetDisplayResolution"},
             {2010, &IManagerDisplayService::CreateManagedLayer, "CreateManagedLayer"},
@@ -511,9 +500,11 @@ private:
         u64 display = rp.Pop<u64>();
         u64 aruid = rp.Pop<u64>();
 
+        u64 layer_id = nv_flinger->CreateLayer(display);
+
         IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u64>(1); // LayerId
+        rb.Push(layer_id);
     }
 
     void AddToLayerStack(Kernel::HLERequestContext& ctx) {
@@ -525,6 +516,8 @@ private:
         IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
         rb.Push(RESULT_SUCCESS);
     }
+
+    std::shared_ptr<NVFlinger> nv_flinger;
 };
 
 void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
@@ -532,7 +525,7 @@ void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx)
 
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IHOSBinderDriver>();
+    rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
 }
 
 void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
@@ -548,38 +541,47 @@ void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestCont
 
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IManagerDisplayService>();
+    rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
 }
 
 void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
-    auto data = rp.PopRaw<std::array<u8, 0x40>>();
-    std::string display_name(data.begin(), data.end());
+    auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
+    auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
+
+    std::string name(name_buf.begin(), end);
+
+    ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
 
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(9); // DisplayId
+    rb.Push<u64>(nv_flinger->OpenDisplay(name));
 }
 
 void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
+    auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
+
+    std::string display_name(name_buf.begin(), end);
+
     u64 layer_id = rp.Pop<u64>();
     u64 aruid = rp.Pop<u64>();
 
-    std::string display_name(name_buf.begin(), name_buf.end());
-
     auto& buffer = ctx.BufferDescriptorB()[0];
 
-    NativeWindow native_window{1};
+    u64 display_id = nv_flinger->OpenDisplay(display_name);
+    u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+
+    NativeWindow native_window{buffer_queue_id};
     auto data = native_window.Serialize();
     Memory::WriteBlock(buffer.Address(), data.data(), data.size());
 
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(1280 * 720); // NativeWindowSize
+    rb.Push<u64>(data.size());
 }
 
 void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
@@ -602,8 +604,8 @@ void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext&
     rb.PushCopyObjects(vsync_event);
 }
 
-IApplicationDisplayService::IApplicationDisplayService()
-    : ServiceFramework("IApplicationDisplayService") {
+IApplicationDisplayService::IApplicationDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
+    : ServiceFramework("IApplicationDisplayService"), nv_flinger(std::move(nv_flinger)) {
     static const FunctionInfo functions[] = {
         {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
         {101, &IApplicationDisplayService::GetSystemDisplayService, "GetSystemDisplayService"},
@@ -623,6 +625,125 @@ IApplicationDisplayService::IApplicationDisplayService()
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<VI_M>()->InstallAsService(service_manager);
 }
+
+NVFlinger::NVFlinger() {
+    // Add the different displays to the list of displays.
+    Display default_{"Default", 0};
+    Display external{"External", 1};
+    Display edid{"Edid", 2};
+    Display internal{"Internal", 3};
+
+    displays.emplace_back(default_);
+    displays.emplace_back(external);
+    displays.emplace_back(edid);
+    displays.emplace_back(internal);
+}
+
+u64 NVFlinger::OpenDisplay(const std::string& name) {
+    LOG_WARNING(Service, "Opening display %s", name.c_str());
+
+    // TODO(Subv): Currently we only support the Default display.
+    ASSERT(name == "Default");
+
+    auto itr = std::find_if(displays.begin(), displays.end(),
+                            [&](const Display& display) { return display.name == name; });
+
+    ASSERT(itr != displays.end());
+
+    return itr->id;
+}
+
+u64 NVFlinger::CreateLayer(u64 display_id) {
+    auto& display = GetDisplay(display_id);
+
+    ASSERT_MSG(display.layers.empty(), "Only one layer is supported per display at the moment");
+
+    u64 layer_id = next_layer_id++;
+    u32 buffer_queue_id = next_buffer_queue_id++;
+    auto buffer_queue = std::make_shared<BufferQueue>(buffer_queue_id, layer_id);
+    display.layers.emplace_back(layer_id, buffer_queue);
+    buffer_queues.emplace_back(std::move(buffer_queue));
+    return layer_id;
+}
+
+u32 NVFlinger::GetBufferQueueId(u64 display_id, u64 layer_id) {
+    auto& layer = GetLayer(display_id, layer_id);
+    return layer.buffer_queue->GetId();
+}
+
+std::shared_ptr<BufferQueue> NVFlinger::GetBufferQueue(u32 id) {
+    auto itr = std::find_if(buffer_queues.begin(), buffer_queues.end(),
+                            [&](const auto& queue) { return queue->GetId() == id; });
+
+    ASSERT(itr != buffer_queues.end());
+    return *itr;
+}
+
+Display& NVFlinger::GetDisplay(u64 display_id) {
+    auto itr = std::find_if(displays.begin(), displays.end(),
+                            [&](const Display& display) { return display.id == display_id; });
+
+    ASSERT(itr != displays.end());
+    return *itr;
+}
+
+Layer& NVFlinger::GetLayer(u64 display_id, u64 layer_id) {
+    auto& display = GetDisplay(display_id);
+
+    auto itr = std::find_if(display.layers.begin(), display.layers.end(),
+                            [&](const Layer& layer) { return layer.id == layer_id; });
+
+    ASSERT(itr != display.layers.end());
+    return *itr;
+}
+
+BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {}
+
+void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
+    Buffer buffer{};
+    buffer.slot = slot;
+    buffer.igbp_buffer = igbp_buffer;
+    buffer.status = Buffer::Status::Queued;
+
+    LOG_WARNING(Service, "Adding graphics buffer %u", slot);
+
+    queue.emplace_back(buffer);
+}
+
+u32 BufferQueue::DequeueBuffer(u32 pixel_format, u32 width, u32 height) {
+    auto itr = std::find_if(queue.begin(), queue.end(), [&](const Buffer& buffer) {
+        // Only consider enqueued buffers
+        if (buffer.status != Buffer::Status::Queued)
+            return false;
+
+        // Make sure that the parameters match.
+        auto& igbp_buffer = buffer.igbp_buffer;
+        return igbp_buffer.format == pixel_format && igbp_buffer.width == width &&
+               igbp_buffer.height == height;
+    });
+    ASSERT(itr != queue.end());
+
+    itr->status = Buffer::Status::Dequeued;
+    return itr->slot;
+}
+
+const IGBPBuffer& BufferQueue::RequestBuffer(u32 slot) const {
+    auto itr = std::find_if(queue.begin(), queue.end(),
+                            [&](const Buffer& buffer) { return buffer.slot == slot; });
+    ASSERT(itr != queue.end());
+    ASSERT(itr->status == Buffer::Status::Dequeued);
+    return itr->igbp_buffer;
+}
+
+void BufferQueue::QueueBuffer(u32 slot) {
+    auto itr = std::find_if(queue.begin(), queue.end(),
+                            [&](const Buffer& buffer) { return buffer.slot == slot; });
+    ASSERT(itr != queue.end());
+    ASSERT(itr->status == Buffer::Status::Dequeued);
+    itr->status = Buffer::Status::Queued;
+}
+
+Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}
 
 } // namespace VI
 } // namespace Service

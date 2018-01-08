@@ -4,15 +4,110 @@
 
 #pragma once
 
+#include <memory>
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/service.h"
 
 namespace Service {
 namespace VI {
 
+struct IGBPBuffer {
+    u32_le magic;
+    u32_le width;
+    u32_le height;
+    u32_le stride;
+    u32_le format;
+    u32_le usage;
+    INSERT_PADDING_WORDS(1);
+    u32_le index;
+    INSERT_PADDING_WORDS(3);
+    u32_le gpu_buffer_id;
+    INSERT_PADDING_WORDS(17);
+    u32_le nvmap_handle;
+    INSERT_PADDING_WORDS(61);
+};
+
+static_assert(sizeof(IGBPBuffer) == 0x16C, "IGBPBuffer has wrong size");
+
+class BufferQueue {
+public:
+    BufferQueue(u32 id, u64 layer_id);
+    ~BufferQueue() = default;
+
+    void SetPreallocatedBuffer(u32 slot, IGBPBuffer& buffer);
+    u32 DequeueBuffer(u32 pixel_format, u32 width, u32 height);
+    const IGBPBuffer& RequestBuffer(u32 slot) const;
+    void QueueBuffer(u32 slot);
+
+    u32 GetId() const { return id; }
+
+private:
+    u32 id;
+    u64 layer_id;
+
+    struct Buffer {
+        enum class Status { None = 0, Queued = 1, Dequeued = 2 };
+
+        u32 slot;
+        Status status = Status::None;
+        IGBPBuffer igbp_buffer;
+    };
+
+    std::vector<Buffer> queue;
+};
+
+struct Layer {
+    Layer(u64 id, std::shared_ptr<BufferQueue> queue);
+    ~Layer() = default;
+
+    u64 id;
+    std::shared_ptr<BufferQueue> buffer_queue;
+};
+
+struct Display {
+    std::string name;
+    u64 id;
+
+    std::vector<Layer> layers;
+};
+
+class NVFlinger {
+public:
+    NVFlinger();
+    ~NVFlinger() = default;
+
+    /// Opens the specified display and returns the id.
+    u64 OpenDisplay(const std::string& name);
+
+    /// Creates a layer on the specified display and returns the layer id.
+    u64 CreateLayer(u64 display_id);
+
+    /// Gets the buffer queue id of the specified layer in the specified display.
+    u32 GetBufferQueueId(u64 display_id, u64 layer_id);
+
+    /// Obtains a buffer queue identified by the id.
+    std::shared_ptr<BufferQueue> GetBufferQueue(u32 id);
+
+private:
+    /// Returns the display identified by the specified id.
+    Display& GetDisplay(u64 display_id);
+
+    /// Returns the layer identified by the specified id in the desired display.
+    Layer& GetLayer(u64 display_id, u64 layer_id);
+
+    std::vector<Display> displays;
+    std::vector<std::shared_ptr<BufferQueue>> buffer_queues;
+
+    /// Id to use for the next layer that is created, this counter is shared among all displays.
+    u64 next_layer_id = 1;
+    /// Id to use for the next buffer queue that is created, this counter is shared among all
+    /// layers.
+    u32 next_buffer_queue_id = 1;
+};
+
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
 public:
-    IApplicationDisplayService();
+    IApplicationDisplayService(std::shared_ptr<NVFlinger> nv_flinger);
     ~IApplicationDisplayService() = default;
 
 private:
@@ -25,6 +120,7 @@ private:
     void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx);
 
     Kernel::SharedPtr<Kernel::Event> vsync_event;
+    std::shared_ptr<NVFlinger> nv_flinger;
 };
 
 /// Registers all VI services with the specified service manager.

@@ -17,6 +17,8 @@ public:
 
 private:
     void GetDisplayService(Kernel::HLERequestContext& ctx);
+
+    std::shared_ptr<NVFlinger> nv_flinger;
 };
 
 } // namespace VI

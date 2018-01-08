@@ -14,7 +14,7 @@ void VI_M::GetDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
-    rb.PushIpcInterface<IApplicationDisplayService>();
+    rb.PushIpcInterface<IApplicationDisplayService>(nv_flinger);
 }
 
 VI_M::VI_M() : ServiceFramework("vi:m") {
@@ -23,6 +23,7 @@ VI_M::VI_M() : ServiceFramework("vi:m") {
         {3, nullptr, "GetDisplayServiceWithProxyNameExchange"},
     };
     RegisterHandlers(functions);
+    nv_flinger = std::make_shared<NVFlinger>();
 }
 
 } // namespace VI
