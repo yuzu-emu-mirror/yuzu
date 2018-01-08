@@ -13,6 +13,7 @@
 
 namespace Kernel {
 
+// TODO(Subv): This is actually a Condition Variable.
 class Semaphore final : public WaitObject {
 public:
     /**
@@ -39,8 +40,9 @@ public:
         return HANDLE_TYPE;
     }
 
-    s32 max_count;       ///< Maximum number of simultaneous holders the semaphore can have
-    s32 available_count; ///< Number of free slots left in the semaphore
+    s32 GetAvailableCount() const;
+    void SetAvailableCount(s32 value) const;
+
     std::string name;    ///< Name of semaphore (optional)
     VAddr guest_addr;    ///< Address of the guest semaphore value
     VAddr mutex_addr; ///< (optional) Address of guest mutex value associated with this semaphore,
@@ -59,9 +61,6 @@ public:
 private:
     Semaphore();
     ~Semaphore() override;
-
-    /// Updates the state of the object tracking this semaphore in guest memory
-    void UpdateGuestState();
 };
 
 } // namespace Kernel

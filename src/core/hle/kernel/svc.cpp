@@ -501,7 +501,7 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
         semaphore->name = Common::StringFromFormat("semaphore-%llx", semaphore_addr);
     }
 
-    ASSERT(semaphore->available_count == 0);
+    ASSERT(semaphore->GetAvailableCount() == 0);
     ASSERT(semaphore->mutex_addr == mutex_addr);
 
     auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,

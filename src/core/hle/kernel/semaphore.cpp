@@ -18,9 +18,6 @@ ResultVal<SharedPtr<Semaphore>> Semaphore::Create(VAddr guest_addr, VAddr mutex_
                                                   std::string name) {
     SharedPtr<Semaphore> semaphore(new Semaphore);
 
-    // When the semaphore is created, some slots are reserved for other threads,
-    // and the rest is reserved for the caller thread;
-    semaphore->available_count = Memory::Read32(guest_addr);
     semaphore->name = std::move(name);
     semaphore->guest_addr = guest_addr;
     semaphore->mutex_addr = mutex_addr;
@@ -32,34 +29,36 @@ ResultVal<SharedPtr<Semaphore>> Semaphore::Create(VAddr guest_addr, VAddr mutex_
 }
 
 bool Semaphore::ShouldWait(Thread* thread) const {
-    return available_count <= 0;
+    return GetAvailableCount() <= 0;
 }
 
 void Semaphore::Acquire(Thread* thread) {
-    if (available_count <= 0)
+    if (GetAvailableCount() <= 0)
         return;
 
-    --available_count;
-    UpdateGuestState();
+    SetAvailableCount(GetAvailableCount() - 1);
 }
 
 ResultCode Semaphore::Release(s32 target) {
-    ++available_count;
-    UpdateGuestState();
-
     if (target == -1) {
         // When -1, wake up all waiting threads
+        SetAvailableCount(GetWaitingThreads().size());
         WakeupAllWaitingThreads();
     } else {
         // Otherwise, wake up just a single thread
+        SetAvailableCount(target);
         WakeupWaitingThread(GetHighestPriorityReadyThread());
     }
 
     return RESULT_SUCCESS;
 }
 
-void Semaphore::UpdateGuestState() {
-    Memory::Write32(guest_addr, available_count);
+s32 Semaphore::GetAvailableCount() const {
+    return Memory::Read32(guest_addr);
+}
+
+void Semaphore::SetAvailableCount(s32 value) const {
+    Memory::Write32(guest_addr, value);
 }
 
 } // namespace Kernel

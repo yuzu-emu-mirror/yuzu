@@ -273,9 +273,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeSemaphore::GetChildren() cons
     std::vector<std::unique_ptr<WaitTreeItem>> list(WaitTreeWaitObject::GetChildren());
 
     const auto& semaphore = static_cast<const Kernel::Semaphore&>(object);
-    list.push_back(
-        std::make_unique<WaitTreeText>(tr("available count = %1").arg(semaphore.available_count)));
-    list.push_back(std::make_unique<WaitTreeText>(tr("max count = %1").arg(semaphore.max_count)));
+    list.push_back(std::make_unique<WaitTreeText>(
+        tr("available count = %1").arg(semaphore.GetAvailableCount())));
     return list;
 }
 
