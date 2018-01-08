@@ -21,10 +21,12 @@
 #include "core/hle/service/gsp_gpu.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/lm/lm.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
+#include "core/hle/service/vi/vi.h"
 
 using Kernel::ClientPort;
 using Kernel::ServerPort;
@@ -165,7 +167,9 @@ void Init() {
     AOC::InstallInterfaces(*SM::g_service_manager);
     APM::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
+    NVDRV::InstallInterfaces(*SM::g_service_manager);
     PCTL::InstallInterfaces(*SM::g_service_manager);
+    VI::InstallInterfaces(*SM::g_service_manager);
 
     HID::Init();
 
