@@ -9,6 +9,7 @@
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/condition_variable.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/mutex.h"
 #include "core/hle/kernel/object_address_table.h"
@@ -647,6 +648,22 @@ static ResultCode CloseHandle(Handle handle) {
     return g_handle_table.Close(handle);
 }
 
+/// Reset an event
+static ResultCode ResetSignal(Handle handle) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called handle 0x%08X", handle);
+    auto event = g_handle_table.Get<Event>(handle);
+    ASSERT(event != nullptr);
+    event->Clear();
+    return RESULT_SUCCESS;
+}
+
+/// Creates a TransferMemory object
+static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%llx, size=0x%llx, perms=%08X", addr, size, permissions);
+    *handle = 0;
+    return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -661,7 +678,7 @@ static const FunctionDef SVC_Table[] = {
     {0x00, nullptr, "Unknown"},
     {0x01, SvcWrap<SetHeapSize>, "SetHeapSize"},
     {0x02, nullptr, "SetMemoryPermission"},
-    {0x03, nullptr, "SetMemoryAttribute"},
+    {0x03, SvcWrap<SetMemoryAttribute>, "SetMemoryAttribute"},
     {0x04, SvcWrap<MapMemory>, "MapMemory"},
     {0x05, SvcWrap<UnmapMemory>, "UnmapMemory"},
     {0x06, SvcWrap<QueryMemory>, "QueryMemory"},
@@ -679,9 +696,9 @@ static const FunctionDef SVC_Table[] = {
     {0x12, nullptr, "ClearEvent"},
     {0x13, nullptr, "MapSharedMemory"},
     {0x14, nullptr, "UnmapSharedMemory"},
-    {0x15, nullptr, "CreateTransferMemory"},
+    {0x15, SvcWrap<CreateTransferMemory>, "CreateTransferMemory"},
     {0x16, SvcWrap<CloseHandle>, "CloseHandle"},
-    {0x17, nullptr, "ResetSignal"},
+    {0x17, SvcWrap<ResetSignal>, "ResetSignal"},
     {0x18, SvcWrap<WaitSynchronization>, "WaitSynchronization"},
     {0x19, SvcWrap<CancelSynchronization>, "CancelSynchronization"},
     {0x1A, SvcWrap<LockMutex>, "LockMutex"},
