@@ -39,7 +39,9 @@ public:
     const IGBPBuffer& RequestBuffer(u32 slot) const;
     void QueueBuffer(u32 slot);
 
-    u32 GetId() const { return id; }
+    u32 GetId() const {
+        return id;
+    }
 
 private:
     u32 id;
@@ -65,10 +67,14 @@ struct Layer {
 };
 
 struct Display {
-    std::string name;
+    Display(u64 id, std::string name);
+    ~Display() = default;
+
     u64 id;
+    std::string name;
 
     std::vector<Layer> layers;
+    Kernel::SharedPtr<Kernel::Event> vsync_event;
 };
 
 class NVFlinger {
@@ -85,8 +91,11 @@ public:
     /// Gets the buffer queue id of the specified layer in the specified display.
     u32 GetBufferQueueId(u64 display_id, u64 layer_id);
 
+    /// Gets the vsync event for the specified display.
+    Kernel::SharedPtr<Kernel::Event> GetVsyncEvent(u64 display_id);
+
     /// Obtains a buffer queue identified by the id.
-    std::shared_ptr<BufferQueue> GetBufferQueue(u32 id);
+    std::shared_ptr<BufferQueue> GetBufferQueue(u32 id) const;
 
 private:
     /// Returns the display identified by the specified id.
@@ -119,7 +128,6 @@ private:
     void OpenLayer(Kernel::HLERequestContext& ctx);
     void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx);
 
-    Kernel::SharedPtr<Kernel::Event> vsync_event;
     std::shared_ptr<NVFlinger> nv_flinger;
 };
 

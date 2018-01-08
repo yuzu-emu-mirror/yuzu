@@ -599,6 +599,8 @@ void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext&
     IPC::RequestParser rp{ctx};
     u64 display_id = rp.Pop<u64>();
 
+    auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
+
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 1, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(vsync_event);
@@ -618,8 +620,6 @@ IApplicationDisplayService::IApplicationDisplayService(std::shared_ptr<NVFlinger
         {5202, &IApplicationDisplayService::GetDisplayVsyncEvent, "GetDisplayVsyncEvent"},
     };
     RegisterHandlers(functions);
-
-    vsync_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "Display VSync Event");
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
@@ -628,10 +628,10 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
 
 NVFlinger::NVFlinger() {
     // Add the different displays to the list of displays.
-    Display default_{"Default", 0};
-    Display external{"External", 1};
-    Display edid{"Edid", 2};
-    Display internal{"Internal", 3};
+    Display default_{0, "Default"};
+    Display external{1, "External"};
+    Display edid{2, "Edid"};
+    Display internal{3, "Internal"};
 
     displays.emplace_back(default_);
     displays.emplace_back(external);
@@ -667,11 +667,16 @@ u64 NVFlinger::CreateLayer(u64 display_id) {
 }
 
 u32 NVFlinger::GetBufferQueueId(u64 display_id, u64 layer_id) {
-    auto& layer = GetLayer(display_id, layer_id);
+    const auto& layer = GetLayer(display_id, layer_id);
     return layer.buffer_queue->GetId();
 }
 
-std::shared_ptr<BufferQueue> NVFlinger::GetBufferQueue(u32 id) {
+Kernel::SharedPtr<Kernel::Event> NVFlinger::GetVsyncEvent(u64 display_id) {
+    const auto& display = GetDisplay(display_id);
+    return display.vsync_event;
+}
+
+std::shared_ptr<BufferQueue> NVFlinger::GetBufferQueue(u32 id) const {
     auto itr = std::find_if(buffer_queues.begin(), buffer_queues.end(),
                             [&](const auto& queue) { return queue->GetId() == id; });
 
@@ -744,6 +749,10 @@ void BufferQueue::QueueBuffer(u32 slot) {
 }
 
 Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}
+
+Display::Display(u64 id, std::string name) : id(id), name(std::move(name)) {
+    vsync_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "Display VSync Event");
+}
 
 } // namespace VI
 } // namespace Service
