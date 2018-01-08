@@ -33,6 +33,11 @@ static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
     return RESULT_SUCCESS;
 }
 
+static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state1) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x%llx", addr);
+    return RESULT_SUCCESS;
+}
+
 /// Maps a memory range into a different range.
 static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
