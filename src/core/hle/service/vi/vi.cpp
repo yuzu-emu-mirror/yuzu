@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "common/alignment.h"
+#include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/vi/vi.h"
@@ -721,8 +722,30 @@ Layer& NVFlinger::GetLayer(u64 display_id, u64 layer_id) {
 
 void NVFlinger::Compose() {
     for (auto& display : displays) {
-        // TODO(Subv): Gather the surfaces and forward them to the GPU for drawing.
-        display.vsync_event->Signal();
+        // Trigger vsync for this display at the end of drawing
+        SCOPE_EXIT({ display.vsync_event->Signal(); });
+
+        // Don't do anything for displays without layers.
+        if (display.layers.empty())
+            continue;
+
+        // TODO(Subv): Support more than 1 layer.
+        ASSERT_MSG(display.layers.size() == 1, "Max 1 layer per display is supported");
+
+        Layer& layer = display.layers[0];
+        auto& buffer_queue = layer.buffer_queue;
+
+        // Search for a queued buffer and acquire it
+        auto buffer = buffer_queue->AcquireBuffer();
+
+        if (buffer == boost::none) {
+            // There was no queued buffer to draw.
+            continue;
+        }
+
+        // TODO(Subv): Send the buffer to the GPU for drawing.
+
+        buffer_queue->ReleaseBuffer(buffer->slot);
     }
 }
 
@@ -732,7 +755,7 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
     Buffer buffer{};
     buffer.slot = slot;
     buffer.igbp_buffer = igbp_buffer;
-    buffer.status = Buffer::Status::Queued;
+    buffer.status = Buffer::Status::Free;
 
     LOG_WARNING(Service, "Adding graphics buffer %u", slot);
 
@@ -741,8 +764,9 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
 
 u32 BufferQueue::DequeueBuffer(u32 pixel_format, u32 width, u32 height) {
     auto itr = std::find_if(queue.begin(), queue.end(), [&](const Buffer& buffer) {
-        // Only consider enqueued buffers
-        if (buffer.status != Buffer::Status::Queued)
+        // Only consider free buffers. Buffers become free once again after they've been Acquired
+        // and Released by the compositor, see the NVFlinger::Compose method.
+        if (buffer.status != Buffer::Status::Free)
             return false;
 
         // Make sure that the parameters match.
@@ -770,6 +794,24 @@ void BufferQueue::QueueBuffer(u32 slot) {
     ASSERT(itr != queue.end());
     ASSERT(itr->status == Buffer::Status::Dequeued);
     itr->status = Buffer::Status::Queued;
+}
+
+boost::optional<const BufferQueue::Buffer&> BufferQueue::AcquireBuffer() {
+    auto itr = std::find_if(queue.begin(), queue.end(), [](const Buffer& buffer) {
+        return buffer.status == Buffer::Status::Queued;
+    });
+    if (itr == queue.end())
+        return boost::none;
+    itr->status = Buffer::Status::Acquired;
+    return *itr;
+}
+
+void BufferQueue::ReleaseBuffer(u32 slot) {
+    auto itr = std::find_if(queue.begin(), queue.end(),
+                            [&](const Buffer& buffer) { return buffer.slot == slot; });
+    ASSERT(itr != queue.end());
+    ASSERT(itr->status == Buffer::Status::Acquired);
+    itr->status = Buffer::Status::Free;
 }
 
 Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}

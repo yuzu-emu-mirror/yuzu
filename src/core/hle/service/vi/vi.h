@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <boost/optional.hpp>
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/service.h"
 
@@ -34,10 +35,20 @@ public:
     BufferQueue(u32 id, u64 layer_id);
     ~BufferQueue() = default;
 
+    struct Buffer {
+        enum class Status { Free = 0, Queued = 1, Dequeued = 2, Acquired = 3 };
+
+        u32 slot;
+        Status status = Status::Free;
+        IGBPBuffer igbp_buffer;
+    };
+
     void SetPreallocatedBuffer(u32 slot, IGBPBuffer& buffer);
     u32 DequeueBuffer(u32 pixel_format, u32 width, u32 height);
     const IGBPBuffer& RequestBuffer(u32 slot) const;
     void QueueBuffer(u32 slot);
+    boost::optional<const Buffer&> AcquireBuffer();
+    void ReleaseBuffer(u32 slot);
 
     u32 GetId() const {
         return id;
@@ -46,14 +57,6 @@ public:
 private:
     u32 id;
     u64 layer_id;
-
-    struct Buffer {
-        enum class Status { None = 0, Queued = 1, Dequeued = 2 };
-
-        u32 slot;
-        Status status = Status::None;
-        IGBPBuffer igbp_buffer;
-    };
 
     std::vector<Buffer> queue;
 };
