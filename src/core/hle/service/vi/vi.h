@@ -9,6 +9,10 @@
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/service.h"
 
+namespace CoreTiming {
+struct EventType;
+}
+
 namespace Service {
 namespace VI {
 
@@ -122,7 +126,7 @@ private:
     u32 next_buffer_queue_id = 1;
 
     /// CoreTiming event that handles screen composition.
-    int composition_event;
+    CoreTiming::EventType* composition_event;
 };
 
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
