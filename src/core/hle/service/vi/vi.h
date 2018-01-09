@@ -25,7 +25,8 @@ struct IGBPBuffer {
     u32_le gpu_buffer_id;
     INSERT_PADDING_WORDS(17);
     u32_le nvmap_handle;
-    INSERT_PADDING_WORDS(61);
+    u32_le offset;
+    INSERT_PADDING_WORDS(60);
 };
 
 static_assert(sizeof(IGBPBuffer) == 0x16C, "IGBPBuffer has wrong size");

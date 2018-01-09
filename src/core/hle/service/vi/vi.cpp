@@ -6,6 +6,7 @@
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nvdrv/nvdrv_a.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
 
@@ -743,7 +744,19 @@ void NVFlinger::Compose() {
             continue;
         }
 
-        // TODO(Subv): Send the buffer to the GPU for drawing.
+        auto& igbp_buffer = buffer->igbp_buffer;
+
+        // Now send the buffer to the GPU for drawing.
+        auto nvdrv = NVDRV::nvdrv_a.lock();
+        ASSERT(nvdrv);
+
+        // TODO(Subv): Support more than just disp0. The display device selection is probably based
+        // on which display we're drawing (Default, Internal, External, etc)
+        auto nvdisp = nvdrv->GetDevice<NVDRV::nvdisp_disp0>("/dev/nvdisp_disp0");
+        ASSERT(nvdisp);
+
+        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride);
 
         buffer_queue->ReleaseBuffer(buffer->slot);
     }

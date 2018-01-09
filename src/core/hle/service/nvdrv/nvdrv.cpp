@@ -8,9 +8,13 @@
 namespace Service {
 namespace NVDRV {
 
+std::weak_ptr<NVDRV_A> nvdrv_a;
+
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<NVDRV_A>()->InstallAsService(service_manager);
+    auto nvdrv = std::make_shared<NVDRV_A>();
+    nvdrv->InstallAsService(service_manager);
+    nvdrv_a = nvdrv;
 }
 
-} // namespace nvdrv
+} // namespace NVDRV
 } // namespace Service
