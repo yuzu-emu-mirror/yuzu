@@ -42,9 +42,6 @@ SharedPtr<Mutex> Mutex::Create(SharedPtr<Kernel::Thread> holding_thread, VAddr g
     // Mutexes are referenced by guest address, so track this in the kernel
     g_object_address_table.Insert(guest_addr, mutex);
 
-    // Verify that the created mutex matches the guest state for the mutex
-    mutex->VerifyGuestState();
-
     return mutex;
 }
 
