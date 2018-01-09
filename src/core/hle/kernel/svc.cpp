@@ -131,7 +131,7 @@ static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thr
 
     ASSERT(reason == ThreadWakeupReason::Signal);
     thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
-
+    thread->SetWaitSynchronizationOutput(static_cast<u32>(index));
     return true;
 };
 
@@ -174,9 +174,10 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
     if (!Memory::IsValidVirtualAddress(handles_address))
         return ERR_INVALID_POINTER;
 
-    // Check if 'handle_count' is invalid
-    if (handle_count < 0)
-        return ERR_OUT_OF_RANGE;
+    static constexpr u64 MaxHandles = 0x40;
+
+    if (handle_count > MaxHandles)
+        return ResultCode(ErrorModule::Kernel, ErrCodes::TooLarge);
 
     auto thread = GetCurrentThread();
 
@@ -211,9 +212,19 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
     if (nano_seconds == 0)
         return RESULT_TIMEOUT;
 
-    // Just implement for a single handle for now
-    ASSERT(handle_count == 1);
-    return WaitSynchronization1(objects[0], GetCurrentThread(), nano_seconds);
+    for (auto& object : objects)
+        object->AddWaitingThread(thread);
+
+    thread->wait_objects = std::move(objects);
+    thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
+
+    // Create an event to wake the thread up after the specified nanosecond delay has passed
+    thread->WakeAfterDelay(nano_seconds);
+    thread->wakeup_callback = DefaultThreadWakeupCallback;
+
+    Core::System::GetInstance().PrepareReschedule();
+
+    return RESULT_TIMEOUT;
 }
 
 /// Resumes a thread waiting on WaitSynchronization
