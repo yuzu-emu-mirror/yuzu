@@ -830,7 +830,7 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
 Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}
 
 Display::Display(u64 id, std::string name) : id(id), name(std::move(name)) {
-    vsync_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "Display VSync Event");
+    vsync_event = Kernel::Event::Create(Kernel::ResetType::Pulse, "Display VSync Event");
 }
 
 } // namespace VI
