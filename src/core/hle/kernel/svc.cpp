@@ -166,7 +166,8 @@ static ResultCode WaitSynchronization1(
 }
 
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
-static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s64 nano_seconds) {
+static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 handle_count,
+                                      s64 nano_seconds) {
     LOG_TRACE(Kernel_SVC, "called handles_address=0x%llx, handle_count=%d, nano_seconds=%d",
               handles_address, handle_count, nano_seconds);
 
@@ -176,6 +177,8 @@ static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s
     // Check if 'handle_count' is invalid
     if (handle_count < 0)
         return ERR_OUT_OF_RANGE;
+
+    auto thread = GetCurrentThread();
 
     using ObjectPtr = SharedPtr<WaitObject>;
     std::vector<ObjectPtr> objects(handle_count);
@@ -187,6 +190,26 @@ static ResultCode WaitSynchronization(VAddr handles_address, u64 handle_count, s
             return ERR_INVALID_HANDLE;
         objects[i] = object;
     }
+
+    // Find the first object that is acquirable in the provided list of objects
+    auto itr = std::find_if(objects.begin(), objects.end(), [thread](const ObjectPtr& object) {
+        return !object->ShouldWait(thread);
+    });
+
+    if (itr != objects.end()) {
+        // We found a ready object, acquire it and set the result value
+        WaitObject* object = itr->get();
+        object->Acquire(thread);
+        *index = static_cast<s32>(std::distance(objects.begin(), itr));
+        return RESULT_SUCCESS;
+    }
+
+    // No objects were ready to be acquired, prepare to suspend the thread.
+
+    // If a timeout value of 0 was provided, just return the Timeout error code instead of
+    // suspending the thread.
+    if (nano_seconds == 0)
+        return RESULT_TIMEOUT;
 
     // Just implement for a single handle for now
     ASSERT(handle_count == 1);

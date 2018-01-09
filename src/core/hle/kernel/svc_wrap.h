@@ -80,9 +80,12 @@ void SvcWrap() {
     FuncReturn(func(PARAM(0), PARAM(1), PARAM(2)).raw);
 }
 
-template <ResultCode func(u64, u64, s64)>
+template <ResultCode func(u32*, u64, u64, s64)>
 void SvcWrap() {
-    FuncReturn(func(PARAM(1), PARAM(2), (s64)PARAM(3)).raw);
+    u32 param_1 = 0;
+    ResultCode retval = func(&param_1, PARAM(1), (u32)(PARAM(2) & 0xFFFFFFFF), (s64)PARAM(3));
+    Core::CPU().SetReg(1, param_1);
+    FuncReturn(retval.raw);
 }
 
 template <ResultCode func(u64, u64, u32, s64)>
