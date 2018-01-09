@@ -216,6 +216,22 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
     return WaitSynchronization1(objects[0], GetCurrentThread(), nano_seconds);
 }
 
+/// Resumes a thread waiting on WaitSynchronization
+static ResultCode CancelSynchronization(Handle thread_handle) {
+    LOG_TRACE(Kernel_SVC, "called thread=0x%08X", thread_handle);
+
+    const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
+    if (!thread) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+    thread->SetWaitSynchronizationResult(
+        ResultCode(ErrorModule::Kernel, ErrCodes::SynchronizationCanceled));
+    thread->ResumeFromWait();
+    return RESULT_SUCCESS;
+}
+
 /// Attempts to locks a mutex, creating it if it does not already exist
 static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
                             Handle requesting_thread_handle) {
@@ -646,7 +662,7 @@ static const FunctionDef SVC_Table[] = {
     {0x16, SvcWrap<CloseHandle>, "CloseHandle"},
     {0x17, nullptr, "ResetSignal"},
     {0x18, SvcWrap<WaitSynchronization>, "WaitSynchronization"},
-    {0x19, nullptr, "CancelSynchronization"},
+    {0x19, SvcWrap<CancelSynchronization>, "CancelSynchronization"},
     {0x1A, SvcWrap<LockMutex>, "LockMutex"},
     {0x1B, SvcWrap<UnlockMutex>, "UnlockMutex"},
     {0x1C, SvcWrap<WaitProcessWideKeyAtomic>, "WaitProcessWideKeyAtomic"},

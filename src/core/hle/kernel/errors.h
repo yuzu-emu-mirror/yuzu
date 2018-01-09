@@ -22,6 +22,8 @@ enum {
     // Confirmed Switch OS error codes
     InvalidHandle = 114,
     Timeout = 117,
+    SynchronizationCanceled = 118,
+    TooLarge = 119,
 };
 }
 
