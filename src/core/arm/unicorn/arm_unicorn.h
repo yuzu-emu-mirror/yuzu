@@ -9,7 +9,6 @@
 #include "core/arm/arm_interface.h"
 
 class ARM_Unicorn final : public ARM_Interface {
-
 public:
     ARM_Unicorn();
     ~ARM_Unicorn();
@@ -19,8 +18,8 @@ public:
     u64 GetPC() const override;
     u64 GetReg(int index) const override;
     void SetReg(int index, u64 value) override;
-    const u128& GetExtReg(int index) const override;
-    void SetExtReg(int index, u128& value) override;
+    u128 GetExtReg(int index) const override;
+    void SetExtReg(int index, u128 value) override;
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
     u32 GetCPSR() const override;

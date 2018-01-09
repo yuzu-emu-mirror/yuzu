@@ -108,13 +108,13 @@ void ARM_Unicorn::SetReg(int regn, u64 val) {
     CHECKED(uc_reg_write(uc, treg, &val));
 }
 
-const u128& ARM_Unicorn::GetExtReg(int /*index*/) const {
+u128 ARM_Unicorn::GetExtReg(int /*index*/) const {
     UNIMPLEMENTED();
     static constexpr u128 res{};
     return res;
 }
 
-void ARM_Unicorn::SetExtReg(int /*index*/, u128& /*value*/) {
+void ARM_Unicorn::SetExtReg(int /*index*/, u128 /*value*/) {
     UNIMPLEMENTED();
 }
 
@@ -168,10 +168,12 @@ void ARM_Unicorn::SaveContext(ARM_Interface::ThreadContext& ctx) {
         uregs[i] = UC_ARM64_REG_X0 + i;
         tregs[i] = &ctx.cpu_registers[i];
     }
+    uregs[29] = UC_ARM64_REG_X29;
+    tregs[29] = (void*)&ctx.cpu_registers[29];
+    uregs[30] = UC_ARM64_REG_X30;
+    tregs[30] = (void*)&ctx.cpu_registers[30];
 
-    CHECKED(uc_reg_read_batch(uc, uregs, tregs, 29));
-    CHECKED(uc_reg_read(uc, UC_ARM64_REG_X29, &ctx.cpu_registers[29]));
-    CHECKED(uc_reg_read(uc, UC_ARM64_REG_X30, &ctx.lr));
+    CHECKED(uc_reg_read_batch(uc, uregs, tregs, 31));
 
     ctx.tls_address = GetTlsAddress();
 
@@ -195,10 +197,12 @@ void ARM_Unicorn::LoadContext(const ARM_Interface::ThreadContext& ctx) {
         uregs[i] = UC_ARM64_REG_X0 + i;
         tregs[i] = (void*)&ctx.cpu_registers[i];
     }
+    uregs[29] = UC_ARM64_REG_X29;
+    tregs[29] = (void*)&ctx.cpu_registers[29];
+    uregs[30] = UC_ARM64_REG_X30;
+    tregs[30] = (void*)&ctx.cpu_registers[30];
 
-    CHECKED(uc_reg_write_batch(uc, uregs, tregs, 29));
-    CHECKED(uc_reg_write(uc, UC_ARM64_REG_X29, &ctx.cpu_registers[29]));
-    CHECKED(uc_reg_write(uc, UC_ARM64_REG_X30, &ctx.lr));
+    CHECKED(uc_reg_write_batch(uc, uregs, tregs, 31));
 
     SetTlsAddress(ctx.tls_address);
 

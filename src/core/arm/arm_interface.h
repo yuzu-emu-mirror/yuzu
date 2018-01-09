@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include "common/common_types.h"
 #include "core/hle/kernel/vm_manager.h"
 
@@ -13,15 +14,12 @@ public:
     virtual ~ARM_Interface() {}
 
     struct ThreadContext {
-        u64 cpu_registers[30];
-        u64 lr;
+        std::array<u64, 31> cpu_registers;
         u64 sp;
         u64 pc;
         u64 cpsr;
-        u128 fpu_registers[32];
+        std::array<u128, 32> fpu_registers;
         u64 fpscr;
-        u64 fpexc;
-
 
         // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
         VAddr tls_address;
@@ -75,9 +73,9 @@ public:
      */
     virtual void SetReg(int index, u64 value) = 0;
 
-    virtual const u128& GetExtReg(int index) const = 0;
+    virtual u128 GetExtReg(int index) const = 0;
 
-    virtual void SetExtReg(int index, u128& value) = 0;
+    virtual void SetExtReg(int index, u128 value) = 0;
 
     /**
      * Gets the value of a VFP register

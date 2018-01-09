@@ -168,7 +168,7 @@ QString WaitTreeThread::GetText() const {
     }
     QString pc_info = tr(" PC = 0x%1 LR = 0x%2")
                           .arg(thread.context.pc, 8, 16, QLatin1Char('0'))
-                          .arg(thread.context.lr, 8, 16, QLatin1Char('0'));
+                          .arg(thread.context.cpu_registers[31], 8, 16, QLatin1Char('0'));
     return WaitTreeWaitObject::GetText() + pc_info + " (" + status + ") ";
 }
 

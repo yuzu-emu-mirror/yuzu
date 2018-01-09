@@ -4,12 +4,18 @@
 
 #pragma once
 
+#include <memory>
+#include <dynarmic/A64/a64.h>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
+#include "core/arm/unicorn/arm_unicorn.h"
+
+class ARM_Dynarmic_Callbacks;
 
 class ARM_Dynarmic final : public ARM_Interface {
 public:
     ARM_Dynarmic();
+    ~ARM_Dynarmic();
 
     void MapBackingMemory(VAddr address, size_t size, u8* memory,
                           Kernel::VMAPermission perms) override;
@@ -18,8 +24,8 @@ public:
     u64 GetPC() const override;
     u64 GetReg(int index) const override;
     void SetReg(int index, u64 value) override;
-    const u128& GetExtReg(int index) const override;
-    void SetExtReg(int index, u128& value) override;
+    u128 GetExtReg(int index) const override;
+    void SetExtReg(int index, u128 value) override;
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
     u32 GetCPSR() const override;
@@ -35,4 +41,10 @@ public:
 
     void ClearInstructionCache() override;
     void PageTableChanged() override;
+
+private:
+    friend class ARM_Dynarmic_Callbacks;
+    std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
+    Dynarmic::A64::Jit jit;
+    ARM_Unicorn inner_unicorn;
 };
