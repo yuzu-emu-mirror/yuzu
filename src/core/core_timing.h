@@ -23,11 +23,9 @@
 #include "common/common_types.h"
 #include "common/logging/log.h"
 
-// The timing we get from the assembly is 268,111,855.956 Hz
-// It is possible that this number isn't just an integer because the compiler could have
-// optimized the multiplication by a multiply-by-constant division.
-// Rounding to the nearest integer should be fine
-constexpr u64 BASE_CLOCK_RATE = 383778816; // Switch clock speed is 384MHz docked
+// The below clock rate is based on Switch's clockspeed being widely known as 1.020GHz
+// The exact value used is of course unverified.
+constexpr u64 BASE_CLOCK_RATE = 1019215872; // Switch clock speed is 1020MHz un/docked
 constexpr u64 MAX_VALUE_TO_MULTIPLY = std::numeric_limits<s64>::max() / BASE_CLOCK_RATE;
 
 inline s64 msToCycles(int ms) {
