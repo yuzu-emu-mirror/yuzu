@@ -45,6 +45,9 @@ set(SRCS
             hle/service/gsp_gpu.cpp
             hle/service/hid/hid.cpp
             hle/service/lm/lm.cpp
+            hle/service/nvdrv/devices/nvdisp_disp0.cpp
+            hle/service/nvdrv/devices/nvhost_as_gpu.cpp
+            hle/service/nvdrv/devices/nvmap.cpp
             hle/service/nvdrv/nvdrv.cpp
             hle/service/nvdrv/nvdrv_a.cpp
             hle/service/pctl/pctl.cpp
@@ -132,6 +135,10 @@ set(HEADERS
             hle/service/gsp_gpu.h
             hle/service/hid/hid.h
             hle/service/lm/lm.h
+            hle/service/nvdrv/devices/nvdevice.h
+            hle/service/nvdrv/devices/nvdisp_disp0.h
+            hle/service/nvdrv/devices/nvhost_as_gpu.h
+            hle/service/nvdrv/devices/nvmap.h
             hle/service/nvdrv/nvdrv.h
             hle/service/nvdrv/nvdrv_a.h
             hle/service/pctl/pctl.h

@@ -6,6 +6,7 @@
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv_a.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
@@ -752,7 +753,7 @@ void NVFlinger::Compose() {
 
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
         // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<NVDRV::nvdisp_disp0>("/dev/nvdisp_disp0");
+        auto nvdisp = nvdrv->GetDevice<NVDRV::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
         ASSERT(nvdisp);
 
         nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,

@@ -5,11 +5,16 @@
 #pragma once
 
 #include <memory>
-#include "core/hle/service/service.h"
+#include <string>
 #include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/service.h"
 
 namespace Service {
 namespace NVDRV {
+
+namespace Devices {
+class nvdevice;
+}
 
 class NVDRV_A final : public ServiceFramework<NVDRV_A> {
 public:
@@ -30,10 +35,14 @@ private:
     void Ioctl(Kernel::HLERequestContext& ctx);
     void Initialize(Kernel::HLERequestContext& ctx);
 
+    /// Id to use for the next open file descriptor.
     u32 next_fd = 1;
 
-    std::unordered_map<u32, std::shared_ptr<nvdevice>> open_files;
-    std::unordered_map<std::string, std::shared_ptr<nvdevice>> devices;
+    /// Mapping of file descriptors to the devices they reference.
+    std::unordered_map<u32, std::shared_ptr<Devices::nvdevice>> open_files;
+
+    /// Mapping of device node names to their implementation.
+    std::unordered_map<std::string, std::shared_ptr<Devices::nvdevice>> devices;
 };
 
 extern std::weak_ptr<NVDRV_A> nvdrv_a;
