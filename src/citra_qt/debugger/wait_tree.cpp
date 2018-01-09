@@ -5,9 +5,9 @@
 #include "citra_qt/debugger/wait_tree.h"
 #include "citra_qt/util/util.h"
 
+#include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/mutex.h"
-#include "core/hle/kernel/semaphore.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/timer.h"
 #include "core/hle/kernel/wait_object.h"
@@ -85,8 +85,9 @@ std::unique_ptr<WaitTreeWaitObject> WaitTreeWaitObject::make(const Kernel::WaitO
         return std::make_unique<WaitTreeEvent>(static_cast<const Kernel::Event&>(object));
     case Kernel::HandleType::Mutex:
         return std::make_unique<WaitTreeMutex>(static_cast<const Kernel::Mutex&>(object));
-    case Kernel::HandleType::Semaphore:
-        return std::make_unique<WaitTreeSemaphore>(static_cast<const Kernel::Semaphore&>(object));
+    case Kernel::HandleType::ConditionVariable:
+        return std::make_unique<WaitTreeConditionVariable>(
+            static_cast<const Kernel::ConditionVariable&>(object));
     case Kernel::HandleType::Timer:
         return std::make_unique<WaitTreeTimer>(static_cast<const Kernel::Timer&>(object));
     case Kernel::HandleType::Thread:
@@ -266,15 +267,15 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutex::GetChildren() const {
     return list;
 }
 
-WaitTreeSemaphore::WaitTreeSemaphore(const Kernel::Semaphore& object)
+WaitTreeConditionVariable::WaitTreeConditionVariable(const Kernel::ConditionVariable& object)
     : WaitTreeWaitObject(object) {}
 
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeSemaphore::GetChildren() const {
+std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeConditionVariable::GetChildren() const {
     std::vector<std::unique_ptr<WaitTreeItem>> list(WaitTreeWaitObject::GetChildren());
 
-    const auto& semaphore = static_cast<const Kernel::Semaphore&>(object);
+    const auto& condition_variable = static_cast<const Kernel::ConditionVariable&>(object);
     list.push_back(std::make_unique<WaitTreeText>(
-        tr("available count = %1").arg(semaphore.GetAvailableCount())));
+        tr("available count = %1").arg(condition_variable.GetAvailableCount())));
     return list;
 }
 

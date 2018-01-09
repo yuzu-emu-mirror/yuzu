@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 Yuzu Emulator Team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -8,12 +8,12 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/mutex.h"
 #include "core/hle/kernel/object_address_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
-#include "core/hle/kernel/semaphore.h"
 #include "core/hle/kernel/svc.h"
 #include "core/hle/kernel/svc_wrap.h"
 #include "core/hle/kernel/sync_object.h"
@@ -476,11 +476,12 @@ static void SleepThread(s64 nanoseconds) {
 }
 
 /// Signal process wide key atomic
-static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_addr,
+static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_variable_addr,
                                            Handle thread_handle, s64 nano_seconds) {
-    LOG_TRACE(Kernel_SVC,
-              "called mutex_addr=%llx, semaphore_addr=%llx, thread_handle=0x%08X, timeout=%d",
-              mutex_addr, semaphore_addr, thread_handle, nano_seconds);
+    LOG_TRACE(
+        Kernel_SVC,
+        "called mutex_addr=%llx, condition_variable_addr=%llx, thread_handle=0x%08X, timeout=%d",
+        mutex_addr, condition_variable_addr, thread_handle, nano_seconds);
 
     SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     ASSERT(thread);
@@ -494,15 +495,18 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
 
     ASSERT(mutex->GetOwnerHandle() == thread_handle);
 
-    SharedPtr<Semaphore> semaphore = g_object_address_table.Get<Semaphore>(semaphore_addr);
-    if (!semaphore) {
-        // Create a new semaphore for the specified address if one does not already exist
-        semaphore = Semaphore::Create(semaphore_addr, mutex_addr).Unwrap();
-        semaphore->name = Common::StringFromFormat("semaphore-%llx", semaphore_addr);
+    SharedPtr<ConditionVariable> condition_variable =
+        g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
+    if (!condition_variable) {
+        // Create a new condition_variable for the specified address if one does not already exist
+        condition_variable =
+            ConditionVariable::Create(condition_variable_addr, mutex_addr).Unwrap();
+        condition_variable->name =
+            Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
     }
 
-    ASSERT(semaphore->GetAvailableCount() == 0);
-    ASSERT(semaphore->mutex_addr == mutex_addr);
+    ASSERT(condition_variable->GetAvailableCount() == 0);
+    ASSERT(condition_variable->mutex_addr == mutex_addr);
 
     auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,
                                                  SharedPtr<Thread> thread,
@@ -541,7 +545,8 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
 
         return false;
     };
-    CASCADE_CODE(WaitSynchronization1(semaphore, thread.get(), nano_seconds, wakeup_callback));
+    CASCADE_CODE(
+        WaitSynchronization1(condition_variable, thread.get(), nano_seconds, wakeup_callback));
 
     mutex->Release(thread.get());
 
@@ -549,24 +554,27 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr semaphore_add
 }
 
 /// Signal process wide key
-static ResultCode SignalProcessWideKey(VAddr semaphore_addr, s32 target) {
-    LOG_TRACE(Kernel_SVC, "called, semaphore_addr=0x%llx, target=0x%08x", semaphore_addr, target);
+static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target) {
+    LOG_TRACE(Kernel_SVC, "called, condition_variable_addr=0x%llx, target=0x%08x",
+              condition_variable_addr, target);
 
     // Wakeup all or one thread - Any other value is unimplemented
     ASSERT(target == -1 || target == 1);
 
-    SharedPtr<Semaphore> semaphore = g_object_address_table.Get<Semaphore>(semaphore_addr);
-    if (!semaphore) {
-        // Create a new semaphore for the specified address if one does not already exist
-        semaphore = Semaphore::Create(semaphore_addr).Unwrap();
-        semaphore->name = Common::StringFromFormat("semaphore-%llx", semaphore_addr);
+    SharedPtr<ConditionVariable> condition_variable =
+        g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
+    if (!condition_variable) {
+        // Create a new condition_variable for the specified address if one does not already exist
+        condition_variable = ConditionVariable::Create(condition_variable_addr).Unwrap();
+        condition_variable->name =
+            Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
     }
 
-    CASCADE_CODE(semaphore->Release(target));
+    CASCADE_CODE(condition_variable->Release(target));
 
-    if (semaphore->mutex_addr) {
-        // If a mutex was created for this semaphore, wait the current thread on it
-        SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(semaphore->mutex_addr);
+    if (condition_variable->mutex_addr) {
+        // If a mutex was created for this condition_variable, wait the current thread on it
+        SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(condition_variable->mutex_addr);
         return WaitSynchronization1(mutex, GetCurrentThread());
     }
 

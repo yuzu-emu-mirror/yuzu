@@ -23,7 +23,7 @@ enum class HandleType : u32 {
     Thread,
     Process,
     AddressArbiter,
-    Semaphore,
+    ConditionVariable,
     Timer,
     ResourceLimit,
     CodeSet,
@@ -70,7 +70,7 @@ public:
         case HandleType::Event:
         case HandleType::Mutex:
         case HandleType::Thread:
-        case HandleType::Semaphore:
+        case HandleType::ConditionVariable:
         case HandleType::Timer:
         case HandleType::ServerPort:
         case HandleType::ServerSession:

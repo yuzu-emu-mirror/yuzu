@@ -16,6 +16,7 @@ set(SRCS
             hle/kernel/address_arbiter.cpp
             hle/kernel/client_port.cpp
             hle/kernel/client_session.cpp
+            hle/kernel/condition_variable.cpp
             hle/kernel/domain.cpp
             hle/kernel/event.cpp
             hle/kernel/handle_table.cpp
@@ -26,7 +27,6 @@ set(SRCS
             hle/kernel/object_address_table.cpp
             hle/kernel/process.cpp
             hle/kernel/resource_limit.cpp
-            hle/kernel/semaphore.cpp
             hle/kernel/server_port.cpp
             hle/kernel/server_session.cpp
             hle/kernel/shared_memory.cpp
@@ -94,6 +94,7 @@ set(HEADERS
             hle/kernel/address_arbiter.h
             hle/kernel/client_port.h
             hle/kernel/client_session.h
+            hle/kernel/condition_variable.h
             hle/kernel/domain.h
             hle/kernel/errors.h
             hle/kernel/event.h
@@ -105,7 +106,6 @@ set(HEADERS
             hle/kernel/object_address_table.h
             hle/kernel/process.h
             hle/kernel/resource_limit.h
-            hle/kernel/semaphore.h
             hle/kernel/server_port.h
             hle/kernel/server_session.h
             hle/kernel/session.h

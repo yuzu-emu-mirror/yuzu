@@ -17,7 +17,7 @@ namespace Kernel {
 class WaitObject;
 class Event;
 class Mutex;
-class Semaphore;
+class ConditionVariable;
 class Thread;
 class Timer;
 }
@@ -111,10 +111,10 @@ public:
     std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
 };
 
-class WaitTreeSemaphore : public WaitTreeWaitObject {
+class WaitTreeConditionVariable : public WaitTreeWaitObject {
     Q_OBJECT
 public:
-    explicit WaitTreeSemaphore(const Kernel::Semaphore& object);
+    explicit WaitTreeConditionVariable(const Kernel::ConditionVariable& object);
     std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
 };
 
