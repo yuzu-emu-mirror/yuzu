@@ -75,7 +75,8 @@ private:
         addr += sizeof(MessageHeader);
 
         if (!header.IsSingleMessage()) {
-            UNIMPLEMENTED_MSG("Multi message logs are unimplemeneted");
+            LOG_WARNING(Service, "Multi message logs are unimplemeneted");
+            return;
         }
 
         // Parse out log metadata
@@ -102,13 +103,8 @@ private:
         }
 
         // Empty log - nothing to do here
-        if (message.size() <= 1) {
+        if (message.empty()) {
             return;
-        }
-
-        // Remove trailing new line
-        if (message[message.length() - 1] == '\n') {
-            message.erase(message.length() - 1);
         }
 
         // Format a nicely printable string out of the log metadata
