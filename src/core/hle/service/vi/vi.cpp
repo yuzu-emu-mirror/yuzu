@@ -3,12 +3,16 @@
 // Refer to the license.txt file included.
 
 #include "common/alignment.h"
+#include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
 
 namespace Service {
 namespace VI {
+
+constexpr size_t SCREEN_REFRESH_RATE = 60;
+constexpr u64 frame_ticks = static_cast<u64>(BASE_CLOCK_RATE / SCREEN_REFRESH_RATE);
 
 class Parcel {
 public:
@@ -637,6 +641,19 @@ NVFlinger::NVFlinger() {
     displays.emplace_back(external);
     displays.emplace_back(edid);
     displays.emplace_back(internal);
+
+    // Schedule the screen composition events
+    composition_event =
+        CoreTiming::RegisterEvent("ScreenCompositioin", [this](u64 userdata, int cycles_late) {
+            Compose();
+            CoreTiming::ScheduleEvent(frame_ticks - cycles_late, composition_event);
+        });
+
+    CoreTiming::ScheduleEvent(frame_ticks, composition_event);
+}
+
+NVFlinger::~NVFlinger() {
+    CoreTiming::UnscheduleEvent(composition_event, 0);
 }
 
 u64 NVFlinger::OpenDisplay(const std::string& name) {
@@ -700,6 +717,13 @@ Layer& NVFlinger::GetLayer(u64 display_id, u64 layer_id) {
 
     ASSERT(itr != display.layers.end());
     return *itr;
+}
+
+void NVFlinger::Compose() {
+    for (auto& display : displays) {
+        // TODO(Subv): Gather the surfaces and forward them to the GPU for drawing.
+        display.vsync_event->Signal();
+    }
 }
 
 BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {}

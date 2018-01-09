@@ -80,7 +80,7 @@ struct Display {
 class NVFlinger {
 public:
     NVFlinger();
-    ~NVFlinger() = default;
+    ~NVFlinger();
 
     /// Opens the specified display and returns the id.
     u64 OpenDisplay(const std::string& name);
@@ -97,6 +97,10 @@ public:
     /// Obtains a buffer queue identified by the id.
     std::shared_ptr<BufferQueue> GetBufferQueue(u32 id) const;
 
+    /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
+    /// finished.
+    void Compose();
+
 private:
     /// Returns the display identified by the specified id.
     Display& GetDisplay(u64 display_id);
@@ -112,6 +116,9 @@ private:
     /// Id to use for the next buffer queue that is created, this counter is shared among all
     /// layers.
     u32 next_buffer_queue_id = 1;
+
+    /// CoreTiming event that handles screen composition.
+    int composition_event;
 };
 
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
