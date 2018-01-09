@@ -10,6 +10,7 @@ namespace Kernel {
 
 namespace ErrCodes {
 enum {
+    // TODO(Subv): Remove these 3DS OS error codes.
     OutOfHandles = 19,
     SessionClosedByRemote = 26,
     PortNameTooLong = 30,
@@ -17,6 +18,10 @@ enum {
     WrongPermission = 46,
     InvalidBufferDescriptor = 48,
     MaxConnectionsReached = 52,
+
+    // Confirmed Switch OS error codes
+    InvalidHandle = 114,
+    Timeout = 117,
 };
 }
 
@@ -36,7 +41,7 @@ constexpr ResultCode ERR_INVALID_COMBINATION_KERNEL(-1);
 constexpr ResultCode ERR_OUT_OF_MEMORY(-1);
 constexpr ResultCode ERR_INVALID_ADDRESS(-1);
 constexpr ResultCode ERR_INVALID_ADDRESS_STATE(-1);
-constexpr ResultCode ERR_INVALID_HANDLE(-1);
+constexpr ResultCode ERR_INVALID_HANDLE(ErrorModule::Kernel, ErrCodes::InvalidHandle);
 constexpr ResultCode ERR_INVALID_POINTER(-1);
 constexpr ResultCode ERR_INVALID_OBJECT_ADDR(-1);
 constexpr ResultCode ERR_NOT_AUTHORIZED(-1);
@@ -45,7 +50,7 @@ constexpr ResultCode ERR_INVALID_HANDLE_OS(-1);
 constexpr ResultCode ERR_NOT_FOUND(-1);
 constexpr ResultCode ERR_OUT_OF_RANGE(-1);
 constexpr ResultCode ERR_OUT_OF_RANGE_KERNEL(-1);
-constexpr ResultCode RESULT_TIMEOUT(-1);
+constexpr ResultCode RESULT_TIMEOUT(ErrorModule::Kernel, ErrCodes::Timeout);
 /// Returned when Accept() is called on a port with no sessions to be accepted.
 constexpr ResultCode ERR_NO_PENDING_SESSIONS(-1);
 
