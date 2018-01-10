@@ -23,6 +23,7 @@ struct PageInfo {
 /// Values accepted by svcGetInfo
 enum class GetInfoType : u64 {
     // 1.0.0+
+    AllowedCpuIdBitmask = 0,
     TotalMemoryUsage = 6,
     TotalHeapUsage = 7,
     RandomEntropy = 11,

@@ -24,10 +24,15 @@ enum ThreadPriority : u32 {
 
 enum ThreadProcessorId : s32 {
     THREADPROCESSORID_DEFAULT = -2, ///< Run thread on default core specified by exheader
-    THREADPROCESSORID_ALL = -1,     ///< Run thread on either core
-    THREADPROCESSORID_0 = 0,        ///< Run thread on core 0 (AppCore)
-    THREADPROCESSORID_1 = 1,        ///< Run thread on core 1 (SysCore)
-    THREADPROCESSORID_MAX = 2,      ///< Processor ID must be less than this
+    THREADPROCESSORID_0 = 0,        ///< Run thread on core 0
+    THREADPROCESSORID_1 = 1,        ///< Run thread on core 1
+    THREADPROCESSORID_2 = 2,        ///< Run thread on core 2
+    THREADPROCESSORID_3 = 3,        ///< Run thread on core 3
+    THREADPROCESSORID_MAX = 4,      ///< Processor ID must be less than this
+
+    /// Allowed CPU mask
+    THREADPROCESSORID_DEFAULT_MASK = (1 << THREADPROCESSORID_0) | (1 << THREADPROCESSORID_1) |
+                                     (1 << THREADPROCESSORID_2) | (1 << THREADPROCESSORID_3)
 };
 
 enum ThreadStatus {

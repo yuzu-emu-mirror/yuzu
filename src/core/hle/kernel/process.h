@@ -13,6 +13,7 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/vm_manager.h"
 
 namespace Kernel {
@@ -127,6 +128,9 @@ public:
     u16 kernel_version = 0;
     /// The default CPU for this process, threads are scheduled on this cpu by default.
     u8 ideal_processor = 0;
+    /// Bitmask of allowed CPUs that this process' threads can run on. TODO(Subv): Actually parse
+    /// this value from the process header.
+    u32 allowed_processor_mask = THREADPROCESSORID_DEFAULT_MASK;
     /// Current status of the process
     ProcessStatus status;
 

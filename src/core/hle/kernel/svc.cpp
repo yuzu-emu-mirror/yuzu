@@ -296,8 +296,14 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     LOG_TRACE(Kernel_SVC, "called info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id,
               info_sub_id, handle);
 
+    ASSERT(handle == 0 || handle == CurrentProcess);
+
     auto& vm_manager = g_current_process->vm_manager;
+
     switch (static_cast<GetInfoType>(info_id)) {
+    case GetInfoType::AllowedCpuIdBitmask:
+        *result = g_current_process->allowed_processor_mask;
+        break;
     case GetInfoType::TotalMemoryUsage:
         *result = vm_manager.GetTotalMemoryUsage();
         break;
@@ -455,16 +461,15 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     switch (processor_id) {
     case THREADPROCESSORID_0:
         break;
-    case THREADPROCESSORID_ALL:
-        LOG_INFO(Kernel_SVC,
-                 "Newly created thread is allowed to be run in any Core, unimplemented.");
-        break;
     case THREADPROCESSORID_1:
+    case THREADPROCESSORID_2:
+    case THREADPROCESSORID_3:
+        // TODO(bunnei): Implement support for other processor IDs
         LOG_ERROR(Kernel_SVC,
-                  "Newly created thread must run in the SysCore (Core1), unimplemented.");
+                  "Newly created thread must run in another thread (%u), unimplemented.",
+                  processor_id);
         break;
     default:
-        // TODO(bunnei): Implement support for other processor IDs
         ASSERT_MSG(false, "Unsupported thread processor ID: %d", processor_id);
         break;
     }

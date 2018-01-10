@@ -205,14 +205,11 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     case ThreadProcessorId::THREADPROCESSORID_DEFAULT:
         processor = tr("default");
         break;
-    case ThreadProcessorId::THREADPROCESSORID_ALL:
-        processor = tr("all");
-        break;
     case ThreadProcessorId::THREADPROCESSORID_0:
-        processor = tr("AppCore");
-        break;
     case ThreadProcessorId::THREADPROCESSORID_1:
-        processor = tr("SysCore");
+    case ThreadProcessorId::THREADPROCESSORID_2:
+    case ThreadProcessorId::THREADPROCESSORID_3:
+        processor = tr("core %1").arg(thread.processor_id);
         break;
     default:
         processor = tr("Unknown processor %1").arg(thread.processor_id);
