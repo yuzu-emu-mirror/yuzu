@@ -57,7 +57,7 @@ private:
     void ConfigureFramebufferTexture(TextureInfo& texture,
                                      const GPU::Regs::FramebufferConfig& framebuffer);
     void DrawScreens();
-    void DrawSingleScreenRotated(const ScreenInfo& screen_info, float x, float y, float w, float h);
+    void DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w, float h);
     void UpdateFramerate();
 
     // Loads framebuffer from emulated memory into the display information structure

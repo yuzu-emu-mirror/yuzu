@@ -349,19 +349,15 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     state.Apply();
 }
 
-/**
- * Draws a single texture to the emulator window, rotating the texture to correct for the 3DS's LCD
- * rotation.
- */
-void RendererOpenGL::DrawSingleScreenRotated(const ScreenInfo& screen_info, float x, float y,
-                                             float w, float h) {
+void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w,
+                                      float h) {
     auto& texcoords = screen_info.display_texcoords;
 
     std::array<ScreenRectVertex, 4> vertices = {{
-        ScreenRectVertex(x, y, texcoords.bottom, texcoords.left),
-        ScreenRectVertex(x + w, y, texcoords.bottom, texcoords.right),
-        ScreenRectVertex(x, y + h, texcoords.top, texcoords.left),
-        ScreenRectVertex(x + w, y + h, texcoords.top, texcoords.right),
+        ScreenRectVertex(x, y, texcoords.top, texcoords.left),
+        ScreenRectVertex(x + w, y, texcoords.bottom, texcoords.left),
+        ScreenRectVertex(x, y + h, texcoords.top, texcoords.right),
+        ScreenRectVertex(x + w, y + h, texcoords.bottom, texcoords.right),
     }};
 
     state.texture_units[0].texture_2d = screen_info.display_texture;
@@ -378,9 +374,8 @@ void RendererOpenGL::DrawSingleScreenRotated(const ScreenInfo& screen_info, floa
  * Draws the emulated screens to the emulator window.
  */
 void RendererOpenGL::DrawScreens() {
-    auto layout = render_window->GetFramebufferLayout();
-    const auto& top_screen = layout.top_screen;
-    const auto& bottom_screen = layout.bottom_screen;
+    const auto& layout = render_window->GetFramebufferLayout();
+    const auto& screen = layout.screen;
 
     glViewport(0, 0, layout.width, layout.height);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -394,15 +389,8 @@ void RendererOpenGL::DrawScreens() {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniform_color_texture, 0);
 
-    if (layout.top_screen_enabled) {
-        DrawSingleScreenRotated(screen_infos[0], (float)top_screen.left, (float)top_screen.top,
-                                (float)top_screen.GetWidth(), (float)top_screen.GetHeight());
-    }
-    if (layout.bottom_screen_enabled) {
-        DrawSingleScreenRotated(screen_infos[1], (float)bottom_screen.left,
-                                (float)bottom_screen.top, (float)bottom_screen.GetWidth(),
-                                (float)bottom_screen.GetHeight());
-    }
+    DrawSingleScreen(screen_infos[0], (float)screen.left, (float)screen.top,
+                     (float)screen.GetWidth(), (float)screen.GetHeight());
 
     m_current_frame++;
 }
