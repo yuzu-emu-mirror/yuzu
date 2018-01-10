@@ -12,8 +12,8 @@
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
 #include "common/string_util.h"
-#include "core/3ds.h"
 #include "core/core.h"
+#include "core/frontend/framebuffer_layout.h"
 #include "core/settings.h"
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
@@ -271,7 +271,7 @@ void GRenderWindow::InitRenderTarget() {
     child = new GGLWidgetInternal(fmt, this);
     QBoxLayout* layout = new QHBoxLayout(this);
 
-    resize(Core::kScreenTopWidth, Core::kScreenTopHeight + Core::kScreenBottomHeight);
+    resize(Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height);
     layout->addWidget(child);
     layout->setMargin(0);
     setLayout(layout);

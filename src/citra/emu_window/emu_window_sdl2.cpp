@@ -12,7 +12,6 @@
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
 #include "common/string_util.h"
-#include "core/3ds.h"
 #include "core/settings.h"
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
@@ -79,13 +78,13 @@ EmuWindow_SDL2::EmuWindow_SDL2() {
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
 
-    std::string window_title = Common::StringFromFormat("Citra %s| %s-%s ", Common::g_build_name,
+    std::string window_title = Common::StringFromFormat("yuzu %s| %s-%s ", Common::g_build_name,
                                                         Common::g_scm_branch, Common::g_scm_desc);
     render_window =
         SDL_CreateWindow(window_title.c_str(),
                          SDL_WINDOWPOS_UNDEFINED, // x position
                          SDL_WINDOWPOS_UNDEFINED, // y position
-                         Core::kScreenTopWidth, Core::kScreenTopHeight + Core::kScreenBottomHeight,
+                         Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
     if (render_window == nullptr) {

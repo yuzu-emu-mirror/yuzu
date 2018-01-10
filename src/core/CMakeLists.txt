@@ -10,7 +10,6 @@ set(SRCS
             file_sys/savedata_archive.cpp
             file_sys/title_metadata.cpp
             frontend/emu_window.cpp
-            frontend/framebuffer_layout.cpp
             gdbstub/gdbstub.cpp
             hle/config_mem.cpp
             hle/kernel/address_arbiter.cpp
@@ -77,7 +76,6 @@ set(SRCS
             )
 
 set(HEADERS
-            3ds.h
             arm/arm_interface.h
             arm/dynarmic/arm_dynarmic.h
             arm/unicorn/arm_unicorn.h
