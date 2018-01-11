@@ -15,6 +15,32 @@ public:
     /// Used to reference a framebuffer
     enum kFramebuffer { kFramebuffer_VirtualXFB = 0, kFramebuffer_EFB, kFramebuffer_Texture };
 
+    /// Struct describing framebuffer metadata
+    struct FramebufferInfo {
+        enum class PixelFormat : u32 {
+            ABGR8 = 1,
+        };
+
+        /**
+         * Returns the number of bytes per pixel.
+         */
+        static u32 BytesPerPixel(PixelFormat format) {
+            switch (format) {
+            case PixelFormat::ABGR8:
+                return 4;
+            }
+
+            UNREACHABLE();
+        }
+
+        VAddr address;
+        u32 offset;
+        u32 width;
+        u32 height;
+        u32 stride;
+        PixelFormat pixel_format;
+    };
+
     virtual ~RendererBase() {}
 
     /// Swap buffers (render frame)
