@@ -15,7 +15,10 @@ public:
     /// Used to reference a framebuffer
     enum kFramebuffer { kFramebuffer_VirtualXFB = 0, kFramebuffer_EFB, kFramebuffer_Texture };
 
-    /// Struct describing framebuffer metadata
+    /**
+     * Struct describing framebuffer metadata
+     * TODO(bunnei): This struct belongs in the GPU code, but we don't have a good place for it yet.
+     */
     struct FramebufferInfo {
         enum class PixelFormat : u32 {
             ABGR8 = 1,
@@ -44,7 +47,7 @@ public:
     virtual ~RendererBase() {}
 
     /// Swap buffers (render frame)
-    virtual void SwapBuffers() = 0;
+    virtual void SwapBuffers(const FramebufferInfo& framebuffer_info) = 0;
 
     /**
      * Set the emulator window to use for renderer

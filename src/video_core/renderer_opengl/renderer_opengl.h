@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <array>
+#include <vector>
 #include <glad/glad.h>
 #include "common/common_types.h"
 #include "common/math_util.h"
@@ -20,9 +20,9 @@ struct TextureInfo {
     OGLTexture resource;
     GLsizei width;
     GLsizei height;
-    GPU::Regs::PixelFormat format;
     GLenum gl_format;
     GLenum gl_type;
+    RendererBase::FramebufferInfo::PixelFormat pixel_format;
 };
 
 /// Structure used for storing information about the display target for each 3DS screen
@@ -38,7 +38,7 @@ public:
     ~RendererOpenGL() override;
 
     /// Swap buffers (render frame)
-    void SwapBuffers() override;
+    void SwapBuffers(const FramebufferInfo& framebuffer_info) override;
 
     /**
      * Set the emulator window to use for renderer
@@ -55,13 +55,13 @@ public:
 private:
     void InitOpenGLObjects();
     void ConfigureFramebufferTexture(TextureInfo& texture,
-                                     const GPU::Regs::FramebufferConfig& framebuffer);
+                                     const FramebufferInfo& framebuffer_info);
     void DrawScreens();
     void DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w, float h);
     void UpdateFramerate();
 
     // Loads framebuffer from emulated memory into the display information structure
-    void LoadFBToScreenInfo(const GPU::Regs::FramebufferConfig& framebuffer,
+    void LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
                             ScreenInfo& screen_info);
     // Fills active OpenGL texture with the given RGB color.
     void LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color_b, const TextureInfo& texture);
@@ -75,8 +75,11 @@ private:
     OGLBuffer vertex_buffer;
     OGLShader shader;
 
-    /// Display information for top and bottom screens respectively
-    std::array<ScreenInfo, 2> screen_infos;
+    /// Display information for Switch screen
+    ScreenInfo screen_info;
+
+    /// OpenGL framebuffer data
+    std::vector<u8> gl_framebuffer_data;
 
     // Shader uniform location indices
     GLuint uniform_modelview_matrix;
