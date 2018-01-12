@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cmath>
+
 #include "common/assert.h"
 #include "core/frontend/framebuffer_layout.h"
 
