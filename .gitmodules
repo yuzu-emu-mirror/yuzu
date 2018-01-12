@@ -4,12 +4,6 @@
 [submodule "boost"]
     path = externals/boost
     url = https://github.com/yuzu-emu/ext-boost.git
-[submodule "nihstro"]
-    path = externals/nihstro
-    url = https://github.com/neobrain/nihstro.git
-[submodule "soundtouch"]
-    path = externals/soundtouch
-    url = https://github.com/citra-emu/ext-soundtouch.git
 [submodule "catch"]
     path = externals/catch
     url = https://github.com/philsquared/Catch.git
@@ -22,12 +16,6 @@
 [submodule "fmt"]
     path = externals/fmt
     url = https://github.com/fmtlib/fmt.git
-[submodule "enet"]
-    path = externals/enet
-    url = https://github.com/lsalzman/enet
-[submodule "cpr"]
-    path = externals/cpr
-    url = https://github.com/whoshuu/cpr.git
 [submodule "lz4"]
     path = externals/lz4
     url = http://github.com/lz4/lz4.git

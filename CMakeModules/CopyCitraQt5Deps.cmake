@@ -13,5 +13,5 @@ function(copy_citra_Qt5_deps target_dir)
         Qt5OpenGL$<$<CONFIG:Debug>:d>.*
         Qt5Widgets$<$<CONFIG:Debug>:d>.*
     )
-    windows_copy_files(citra-qt ${Qt5_PLATFORMS_DIR} ${PLATFORMS} qwindows$<$<CONFIG:Debug>:d>.*)
+    windows_copy_files(yuzu ${Qt5_PLATFORMS_DIR} ${PLATFORMS} qwindows$<$<CONFIG:Debug>:d>.*)
 endfunction(copy_citra_Qt5_deps)

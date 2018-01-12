@@ -4,7 +4,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
 include(DownloadExternals)
 
-project(citra)
+project(yuzu)
 
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
@@ -13,17 +13,6 @@ option(ENABLE_QT "Enable the Qt frontend" ON)
 option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
 option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" OFF)
-
-option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
-option(CITRA_USE_BUNDLED_CURL "FOR MINGW ONLY: Download curl configured against winssl instead of openssl" OFF)
-if (ENABLE_WEB_SERVICE AND CITRA_USE_BUNDLED_CURL AND WINDOWS AND MSVC)
-    message("Turning off use bundled curl as msvc can compile curl on cpr")
-    SET(CITRA_USE_BUNDLED_CURL OFF CACHE BOOL "" FORCE)
-endif()
-if (ENABLE_WEB_SERVICE AND NOT CITRA_USE_BUNDLED_CURL AND MINGW)
-    message(AUTHOR_WARNING "Turning on CITRA_USE_BUNDLED_CURL. Override it only if you know what you are doing.")
-    SET(CITRA_USE_BUNDLED_CURL ON CACHE BOOL "" FORCE)
-endif()
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
@@ -154,7 +143,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_definitions(-D_FILE_OFFSET_BITS=64)
 endif()
 
-add_definitions(-DSINGLETHREADED)
 # CMake seems to only define _DEBUG on Windows
 set_property(DIRECTORY APPEND PROPERTY
     COMPILE_DEFINITIONS $<$<CONFIG:Debug>:_DEBUG> $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
@@ -162,11 +150,6 @@ set_property(DIRECTORY APPEND PROPERTY
 
 # System imported libraries
 # ======================
-
-find_package(PNG QUIET)
-if (NOT PNG_FOUND)
-    message(STATUS "libpng not found. Some debugging features have been disabled.")
-endif()
 
 find_package(Boost 1.63.0 QUIET)
 if (NOT Boost_FOUND)
@@ -262,10 +245,6 @@ if (ENABLE_QT)
     endif()
 
     find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
-endif()
-
-if (ENABLE_WEB_SERVICE)
-    add_definitions(-DENABLE_WEB_SERVICE)
 endif()
 
 # Platform-specific library requirements
