@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/string_util.h"
