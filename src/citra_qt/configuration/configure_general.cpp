@@ -19,7 +19,7 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
 
     this->setConfiguration();
 
-    ui->toggle_cpu_jit->setEnabled(!Core::System::GetInstance().IsPoweredOn());
+    ui->cpu_core_combobox->setEnabled(!Core::System::GetInstance().IsPoweredOn());
 }
 
 ConfigureGeneral::~ConfigureGeneral() {}
@@ -27,12 +27,12 @@ ConfigureGeneral::~ConfigureGeneral() {}
 void ConfigureGeneral::setConfiguration() {
     ui->toggle_deepscan->setChecked(UISettings::values.gamedir_deepscan);
     ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
-    ui->toggle_cpu_jit->setChecked(Settings::values.use_cpu_jit);
 
     // The first item is "auto-select" with actual value -1, so plus one here will do the trick
     ui->region_combobox->setCurrentIndex(Settings::values.region_value + 1);
 
     ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
+    ui->cpu_core_combobox->setCurrentIndex(static_cast<int>(Settings::values.cpu_core));
 }
 
 void ConfigureGeneral::applyConfiguration() {
@@ -41,6 +41,7 @@ void ConfigureGeneral::applyConfiguration() {
     UISettings::values.theme =
         ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
     Settings::values.region_value = ui->region_combobox->currentIndex() - 1;
-    Settings::values.use_cpu_jit = ui->toggle_cpu_jit->isChecked();
+    Settings::values.cpu_core =
+        static_cast<Settings::CpuCore>(ui->cpu_core_combobox->currentIndex());
     Settings::Apply();
 }

@@ -72,6 +72,11 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 }};
 } // namespace NativeAnalog
 
+enum class CpuCore {
+    Unicorn,
+    Dynarmic,
+};
+
 struct Values {
     // CheckNew3DS
     bool is_new_3ds;
@@ -83,7 +88,7 @@ struct Values {
     std::string touch_device;
 
     // Core
-    bool use_cpu_jit;
+    CpuCore cpu_core;
 
     // Data Storage
     bool use_virtual_sd;

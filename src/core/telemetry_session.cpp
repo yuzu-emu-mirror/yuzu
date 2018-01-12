@@ -156,7 +156,8 @@ TelemetrySession::TelemetrySession() {
     // Log user configuration information
     AddField(Telemetry::FieldType::UserConfig, "Audio_EnableAudioStretching",
              Settings::values.enable_audio_stretching);
-    AddField(Telemetry::FieldType::UserConfig, "Core_UseCpuJit", Settings::values.use_cpu_jit);
+    AddField(Telemetry::FieldType::UserConfig, "Core_CpuCore",
+             static_cast<int>(Settings::values.cpu_core));
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ResolutionFactor",
              Settings::values.resolution_factor);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ToggleFramelimit",

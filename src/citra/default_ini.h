@@ -67,9 +67,9 @@ motion_device=
 touch_device=
 
 [Core]
-# Whether to use the Just-In-Time (JIT) compiler for CPU emulation
-# 0: Interpreter (slow), 1 (default): JIT (fast)
-use_cpu_jit =
+# Which CPU core to use for CPU emulation
+# 0: Unicorn (slow), 1 (default): Dynarmic (faster)
+cpu_core =
 
 [Renderer]
 # Whether to use software or hardware rendering.

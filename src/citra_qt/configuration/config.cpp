@@ -67,7 +67,8 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Core");
-    Settings::values.use_cpu_jit = qt_config->value("use_cpu_jit", true).toBool();
+    Settings::values.cpu_core =
+        static_cast<Settings::CpuCore>(qt_config->value("cpu_core", 1).toInt());
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
@@ -207,7 +208,7 @@ void Config::SaveValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Core");
-    qt_config->setValue("use_cpu_jit", Settings::values.use_cpu_jit);
+    qt_config->setValue("cpu_core", static_cast<int>(Settings::values.cpu_core));
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");

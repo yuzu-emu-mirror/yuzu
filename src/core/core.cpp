@@ -140,8 +140,16 @@ void System::Reschedule() {
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
-    // TODO: Configuration option
-    cpu_core = std::make_unique<ARM_Dynarmic>();
+    switch (Settings::values.cpu_core) {
+    case Settings::CpuCore::Unicorn:
+        cpu_core = std::make_unique<ARM_Unicorn>();
+        break;
+    case Settings::CpuCore::Dynarmic:
+    default:
+        cpu_core = std::make_unique<ARM_Dynarmic>();
+        break;
+    }
+
     telemetry_session = std::make_unique<Core::TelemetrySession>();
 
     CoreTiming::Init();

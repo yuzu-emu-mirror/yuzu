@@ -82,7 +82,8 @@ void Config::ReadValues() {
         sdl2_config->Get("Controls", "touch_device", "engine:emu_window");
 
     // Core
-    Settings::values.use_cpu_jit = sdl2_config->GetBoolean("Core", "use_cpu_jit", true);
+    Settings::values.cpu_core =
+        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 1));
 
     // Renderer
     Settings::values.use_hw_renderer = sdl2_config->GetBoolean("Renderer", "use_hw_renderer", true);
