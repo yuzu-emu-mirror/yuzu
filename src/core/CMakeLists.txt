@@ -41,8 +41,6 @@ set(SRCS
             hle/service/am/applet_oe.cpp
             hle/service/aoc/aoc_u.cpp
             hle/service/apm/apm.cpp
-            hle/service/dsp_dsp.cpp
-            hle/service/gsp_gpu.cpp
             hle/service/hid/hid.cpp
             hle/service/lm/lm.cpp
             hle/service/nvdrv/devices/nvdisp_disp0.cpp
@@ -58,10 +56,6 @@ set(SRCS
             hle/service/vi/vi.cpp
             hle/service/vi/vi_m.cpp
             hle/shared_page.cpp
-            hw/aes/arithmetic128.cpp
-            hw/aes/ccm.cpp
-            hw/aes/key.cpp
-            hw/gpu.cpp
             hw/hw.cpp
             hw/lcd.cpp
             loader/elf.cpp
@@ -130,8 +124,6 @@ set(HEADERS
             hle/service/am/applet_oe.h
             hle/service/aoc/aoc_u.h
             hle/service/apm/apm.h
-            hle/service/dsp_dsp.h
-            hle/service/gsp_gpu.h
             hle/service/hid/hid.h
             hle/service/lm/lm.h
             hle/service/nvdrv/devices/nvdevice.h
@@ -148,10 +140,6 @@ set(HEADERS
             hle/service/vi/vi.h
             hle/service/vi/vi_m.h
             hle/shared_page.h
-            hw/aes/arithmetic128.h
-            hw/aes/ccm.h
-            hw/aes/key.h
-            hw/gpu.h
             hw/hw.h
             hw/lcd.h
             loader/elf.h
@@ -171,8 +159,5 @@ set(HEADERS
 
 create_directory_groups(${SRCS} ${HEADERS})
 add_library(core STATIC ${SRCS} ${HEADERS})
-target_link_libraries(core PUBLIC common PRIVATE audio_core dynarmic network video_core)
+target_link_libraries(core PUBLIC common PRIVATE dynarmic video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt lz4_static unicorn)
-if (ENABLE_WEB_SERVICE)
-    target_link_libraries(core PUBLIC json-headers web_service)
-endif()

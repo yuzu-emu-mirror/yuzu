@@ -13,14 +13,11 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
-#include "core/hw/gpu.h"
 #include "core/hw/hw.h"
 #include "core/hw/lcd.h"
 #include "core/memory.h"
 #include "core/settings.h"
 #include "core/tracer/recorder.h"
-#include "video_core/debug_utils/debug_utils.h"
-#include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/video_core.h"
 
@@ -128,10 +125,6 @@ void RendererOpenGL::SwapBuffers(const FramebufferInfo& framebuffer_info) {
 
     prev_state.Apply();
     RefreshRasterizerSetting();
-
-    if (Pica::g_debug_context && Pica::g_debug_context->recorder) {
-        Pica::g_debug_context->recorder->FrameFinished();
-    }
 }
 
 static inline u32 MortonInterleave128(u32 x, u32 y) {

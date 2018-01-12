@@ -4,7 +4,6 @@
 
 #include <memory>
 #include "common/logging/log.h"
-#include "video_core/pica.h"
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/video_core.h"
@@ -24,8 +23,6 @@ std::atomic<bool> g_toggle_framelimit_enabled;
 
 /// Initialize the video core
 bool Init(EmuWindow* emu_window) {
-    Pica::Init();
-
     g_emu_window = emu_window;
     g_renderer = std::make_unique<RendererOpenGL>();
     g_renderer->SetWindow(g_emu_window);
@@ -40,8 +37,6 @@ bool Init(EmuWindow* emu_window) {
 
 /// Shutdown the video core
 void Shutdown() {
-    Pica::Shutdown();
-
     g_renderer.reset();
 
     LOG_DEBUG(Render, "shutdown OK");
