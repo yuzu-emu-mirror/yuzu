@@ -24,8 +24,6 @@
 #include <shellapi.h>
 #endif
 
-#include "citra/config.h"
-#include "citra/emu_window/emu_window_sdl2.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -36,6 +34,9 @@
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
+#include "yuzu_cmd/config.h"
+#include "yuzu_cmd/emu_window/emu_window_sdl2.h"
+
 
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0

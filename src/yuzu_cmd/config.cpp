@@ -5,13 +5,14 @@
 #include <memory>
 #include <SDL.h>
 #include <inih/cpp/INIReader.h>
-#include "citra/config.h"
-#include "citra/default_ini.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/param_package.h"
 #include "core/settings.h"
 #include "input_common/main.h"
+#include "yuzu_cmd/config.h"
+#include "yuzu_cmd/default_ini.h"
+
 
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.

@@ -8,7 +8,6 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <glad/glad.h>
-#include "citra/emu_window/emu_window_sdl2.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
 #include "common/string_util.h"
@@ -16,7 +15,8 @@
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "input_common/motion_emu.h"
-#include "network/network.h"
+#include "yuzu_cmd/emu_window/emu_window_sdl2.h"
+
 
 void EmuWindow_SDL2::OnMouseMotion(s32 x, s32 y) {
     TouchMoved((unsigned)std::max(x, 0), (unsigned)std::max(y, 0));
@@ -59,7 +59,6 @@ void EmuWindow_SDL2::OnResize() {
 
 EmuWindow_SDL2::EmuWindow_SDL2() {
     InputCommon::Init();
-    Network::Init();
 
     SDL_SetMainReady();
 
@@ -116,7 +115,6 @@ EmuWindow_SDL2::~EmuWindow_SDL2() {
     SDL_GL_DeleteContext(gl_context);
     SDL_Quit();
 
-    Network::Shutdown();
     InputCommon::Shutdown();
 }
 

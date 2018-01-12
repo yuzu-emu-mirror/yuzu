@@ -2,9 +2,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 set(SRCS
             emu_window/emu_window_sdl2.cpp
-            citra.cpp
             config.cpp
-            citra.rc
+            yuzu.cpp
+            yuzu.rc
             )
 set(HEADERS
             emu_window/emu_window_sdl2.h
