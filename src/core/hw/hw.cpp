@@ -4,8 +4,6 @@
 
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "core/hw/aes/key.h"
-#include "core/hw/gpu.h"
 #include "core/hw/hw.h"
 #include "core/hw/lcd.h"
 
@@ -30,7 +28,6 @@ inline void Read(T& var, const u32 addr) {
     case VADDR_GPU + 0xD000:
     case VADDR_GPU + 0xE000:
     case VADDR_GPU + 0xF000:
-        GPU::Read(var, addr);
         break;
     case VADDR_LCD:
         LCD::Read(var, addr);
@@ -59,7 +56,6 @@ inline void Write(u32 addr, const T data) {
     case VADDR_GPU + 0xD000:
     case VADDR_GPU + 0xE000:
     case VADDR_GPU + 0xF000:
-        GPU::Write(addr, data);
         break;
     case VADDR_LCD:
         LCD::Write(addr, data);
@@ -86,15 +82,12 @@ void Update() {}
 
 /// Initialize hardware
 void Init() {
-    AES::InitKeys();
-    GPU::Init();
     LCD::Init();
     LOG_DEBUG(HW, "initialized OK");
 }
 
 /// Shutdown hardware
 void Shutdown() {
-    GPU::Shutdown();
     LCD::Shutdown();
     LOG_DEBUG(HW, "shutdown OK");
 }

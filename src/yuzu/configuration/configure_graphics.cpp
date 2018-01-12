@@ -2,10 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "citra_qt/configuration/configure_graphics.h"
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_graphics.h"
+#include "yuzu/configuration/configure_graphics.h"
+
 
 ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGraphics) {

@@ -2,8 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "citra_qt/debugger/wait_tree.h"
-#include "citra_qt/util/util.h"
+#include "yuzu/debugger/wait_tree.h"
+#include "yuzu/util/util.h"
 
 #include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/event.h"

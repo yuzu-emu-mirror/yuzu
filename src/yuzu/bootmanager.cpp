@@ -8,7 +8,6 @@
 #include <QWindow>
 #endif
 
-#include "citra_qt/bootmanager.h"
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
 #include "common/string_util.h"
@@ -18,7 +17,8 @@
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "input_common/motion_emu.h"
-#include "network/network.h"
+#include "yuzu/bootmanager.h"
+
 
 EmuThread::EmuThread(GRenderWindow* render_window)
     : exec_step(false), running(false), stop_run(false), render_window(render_window) {}
@@ -112,12 +112,10 @@ GRenderWindow::GRenderWindow(QWidget* parent, EmuThread* emu_thread)
     setWindowTitle(QString::fromStdString(window_title));
 
     InputCommon::Init();
-    Network::Init();
 }
 
 GRenderWindow::~GRenderWindow() {
     InputCommon::Shutdown();
-    Network::Shutdown();
 }
 
 void GRenderWindow::moveContext() {

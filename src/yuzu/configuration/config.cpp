@@ -3,10 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <QSettings>
-#include "citra_qt/configuration/config.h"
-#include "citra_qt/ui_settings.h"
 #include "common/file_util.h"
 #include "input_common/main.h"
+#include "yuzu/configuration/config.h"
+#include "yuzu/ui_settings.h"
+
 
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.

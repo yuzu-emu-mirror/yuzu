@@ -5,21 +5,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
 set(SRCS
             configuration/config.cpp
-            configuration/configure_audio.cpp
             configuration/configure_debug.cpp
             configuration/configure_dialog.cpp
             configuration/configure_general.cpp
             configuration/configure_graphics.cpp
             configuration/configure_input.cpp
             configuration/configure_system.cpp
-            configuration/configure_web.cpp
-            debugger/graphics/graphics.cpp
-            debugger/graphics/graphics_breakpoint_observer.cpp
-            debugger/graphics/graphics_breakpoints.cpp
-            debugger/graphics/graphics_cmdlists.cpp
-            debugger/graphics/graphics_surface.cpp
-            debugger/graphics/graphics_tracing.cpp
-            debugger/graphics/graphics_vertex_shader.cpp
             debugger/profiler.cpp
             debugger/registers.cpp
             debugger/wait_tree.cpp
@@ -36,22 +27,12 @@ set(SRCS
 
 set(HEADERS
             configuration/config.h
-            configuration/configure_audio.h
             configuration/configure_debug.h
             configuration/configure_dialog.h
             configuration/configure_general.h
             configuration/configure_graphics.h
             configuration/configure_input.h
             configuration/configure_system.h
-            configuration/configure_web.h
-            debugger/graphics/graphics.h
-            debugger/graphics/graphics_breakpoint_observer.h
-            debugger/graphics/graphics_breakpoints.h
-            debugger/graphics/graphics_breakpoints_p.h
-            debugger/graphics/graphics_cmdlists.h
-            debugger/graphics/graphics_surface.h
-            debugger/graphics/graphics_tracing.h
-            debugger/graphics/graphics_vertex_shader.h
             debugger/profiler.h
             debugger/registers.h
             debugger/wait_tree.h
@@ -67,13 +48,11 @@ set(HEADERS
 
 set(UIS
             configuration/configure.ui
-            configuration/configure_audio.ui
             configuration/configure_debug.ui
             configuration/configure_general.ui
             configuration/configure_graphics.ui
             configuration/configure_input.ui
             configuration/configure_system.ui
-            configuration/configure_web.ui
             debugger/registers.ui
             hotkeys.ui
             main.ui

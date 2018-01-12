@@ -9,7 +9,7 @@
 #include <QRunnable>
 #include <QStandardItem>
 #include <QString>
-#include "citra_qt/util/util.h"
+#include "yuzu/util/util.h"
 #include "common/string_util.h"
 
 /**

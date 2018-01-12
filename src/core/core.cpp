@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <utility>
-#include "audio_core/audio_core.h"
 #include "common/logging/log.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/arm/unicorn/arm_unicorn.h"
@@ -19,7 +18,6 @@
 #include "core/loader/loader.h"
 #include "core/memory_setup.h"
 #include "core/settings.h"
-#include "network/network.h"
 #include "video_core/video_core.h"
 
 namespace Core {
@@ -156,7 +154,6 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     HW::Init();
     Kernel::Init(system_mode);
     Service::Init();
-    AudioCore::Init();
     GDBStub::Init();
 
     if (!VideoCore::Init(emu_window)) {
@@ -184,7 +181,6 @@ void System::Shutdown() {
 
     // Shutdown emulation session
     GDBStub::Shutdown();
-    AudioCore::Shutdown();
     VideoCore::Shutdown();
     Service::Shutdown();
     Kernel::Shutdown();
@@ -193,10 +189,6 @@ void System::Shutdown() {
     cpu_core = nullptr;
     app_loader = nullptr;
     telemetry_session = nullptr;
-    if (auto room_member = Network::GetRoomMember().lock()) {
-        Network::GameInfo game_info{};
-        room_member->SendGameInfo(game_info);
-    }
 
     LOG_DEBUG(Core, "Shutdown OK");
 }

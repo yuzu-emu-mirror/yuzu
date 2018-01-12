@@ -4,7 +4,7 @@
 
 #include <array>
 #include <cmath>
-#include "citra_qt/util/util.h"
+#include "yuzu/util/util.h"
 
 QFont GetMonospaceFont() {
     QFont font("monospace");

@@ -31,7 +31,7 @@
 #include <cstdlib>
 #include <QLineEdit>
 #include <QRegExpValidator>
-#include "citra_qt/util/spinbox.h"
+#include "yuzu/util/spinbox.h"
 #include "common/assert.h"
 
 CSpinBox::CSpinBox(QWidget* parent)

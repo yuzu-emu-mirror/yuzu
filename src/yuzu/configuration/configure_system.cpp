@@ -3,10 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <QMessageBox>
-#include "citra_qt/configuration/configure_system.h"
-#include "citra_qt/ui_settings.h"
 #include "core/core.h"
 #include "ui_configure_system.h"
+#include "yuzu/configuration/configure_system.h"
+#include "yuzu/ui_settings.h"
+
 
 static const std::array<int, 12> days_in_month = {{
     31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
@@ -29,8 +30,7 @@ void ConfigureSystem::setConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
 }
 
-void ConfigureSystem::ReadSystemSettings() {
-}
+void ConfigureSystem::ReadSystemSettings() {}
 
 void ConfigureSystem::applyConfiguration() {
     if (!enabled)

@@ -12,11 +12,6 @@
 #include "core/settings.h"
 #include "core/telemetry_session.h"
 
-#ifdef ENABLE_WEB_SERVICE
-#include "web_service/telemetry_json.h"
-#include "web_service/verify_login.h"
-#endif
-
 namespace Core {
 
 static const char* CpuVendorToStr(Common::CPUVendor vendor) {

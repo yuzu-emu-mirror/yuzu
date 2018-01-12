@@ -3,10 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <QTreeWidgetItem>
-#include "citra_qt/debugger/registers.h"
-#include "citra_qt/util/util.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
+#include "yuzu/debugger/registers.h"
+#include "yuzu/util/util.h"
+
 
 RegistersWidget::RegistersWidget(QWidget* parent) : QDockWidget(parent) {
     cpu_regs_ui.setupUi(this);

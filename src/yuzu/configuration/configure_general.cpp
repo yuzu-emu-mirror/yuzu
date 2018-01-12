@@ -2,11 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "citra_qt/configuration/configure_general.h"
-#include "citra_qt/ui_settings.h"
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_general.h"
+#include "yuzu/configuration/configure_general.h"
+#include "yuzu/ui_settings.h"
 
 ConfigureGeneral::ConfigureGeneral(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGeneral) {

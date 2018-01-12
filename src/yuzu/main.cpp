@@ -13,22 +13,6 @@
 #include <QMessageBox>
 #include <QtGui>
 #include <QtWidgets>
-#include "citra_qt/bootmanager.h"
-#include "citra_qt/configuration/config.h"
-#include "citra_qt/configuration/configure_dialog.h"
-#include "citra_qt/debugger/graphics/graphics.h"
-#include "citra_qt/debugger/graphics/graphics_breakpoints.h"
-#include "citra_qt/debugger/graphics/graphics_cmdlists.h"
-#include "citra_qt/debugger/graphics/graphics_surface.h"
-#include "citra_qt/debugger/graphics/graphics_tracing.h"
-#include "citra_qt/debugger/graphics/graphics_vertex_shader.h"
-#include "citra_qt/debugger/profiler.h"
-#include "citra_qt/debugger/registers.h"
-#include "citra_qt/debugger/wait_tree.h"
-#include "citra_qt/game_list.h"
-#include "citra_qt/hotkeys.h"
-#include "citra_qt/main.h"
-#include "citra_qt/ui_settings.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -42,6 +26,16 @@
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
+#include "yuzu/bootmanager.h"
+#include "yuzu/configuration/config.h"
+#include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/debugger/profiler.h"
+#include "yuzu/debugger/registers.h"
+#include "yuzu/debugger/wait_tree.h"
+#include "yuzu/game_list.h"
+#include "yuzu/hotkeys.h"
+#include "yuzu/main.h"
+#include "yuzu/ui_settings.h"
 
 #ifdef QT_STATICPLUGIN
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
@@ -89,7 +83,6 @@ void GMainWindow::ShowCallouts() {
 }
 
 GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
-    Pica::g_debug_context = Pica::DebugContext::Construct();
     setAcceptDrops(true);
     ui.setupUi(this);
     statusBar()->hide();
@@ -126,8 +119,6 @@ GMainWindow::~GMainWindow() {
     // will get automatically deleted otherwise
     if (render_window->parent() == nullptr)
         delete render_window;
-
-    Pica::g_debug_context.reset();
 }
 
 void GMainWindow::InitializeWidgets() {
@@ -187,35 +178,6 @@ void GMainWindow::InitializeDebugWidgets() {
             &RegistersWidget::OnEmulationStarting);
     connect(this, &GMainWindow::EmulationStopping, registersWidget,
             &RegistersWidget::OnEmulationStopping);
-
-    graphicsWidget = new GPUCommandStreamWidget(this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsWidget);
-    graphicsWidget->hide();
-    debug_menu->addAction(graphicsWidget->toggleViewAction());
-
-    graphicsCommandsWidget = new GPUCommandListWidget(this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsCommandsWidget);
-    graphicsCommandsWidget->hide();
-    debug_menu->addAction(graphicsCommandsWidget->toggleViewAction());
-
-    graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(Pica::g_debug_context, this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
-    graphicsBreakpointsWidget->hide();
-    debug_menu->addAction(graphicsBreakpointsWidget->toggleViewAction());
-
-    graphicsVertexShaderWidget = new GraphicsVertexShaderWidget(Pica::g_debug_context, this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsVertexShaderWidget);
-    graphicsVertexShaderWidget->hide();
-    debug_menu->addAction(graphicsVertexShaderWidget->toggleViewAction());
-
-    graphicsTracingWidget = new GraphicsTracingWidget(Pica::g_debug_context, this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsTracingWidget);
-    graphicsTracingWidget->hide();
-    debug_menu->addAction(graphicsTracingWidget->toggleViewAction());
-    connect(this, &GMainWindow::EmulationStarting, graphicsTracingWidget,
-            &GraphicsTracingWidget::OnEmulationStarting);
-    connect(this, &GMainWindow::EmulationStopping, graphicsTracingWidget,
-            &GraphicsTracingWidget::OnEmulationStopping);
 
     waitTreeWidget = new WaitTreeWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, waitTreeWidget);
@@ -465,13 +427,6 @@ void GMainWindow::BootGame(const QString& filename) {
 void GMainWindow::ShutdownGame() {
     emu_thread->RequestStop();
 
-    // Release emu threads from any breakpoints
-    // This belongs after RequestStop() and before wait() because if emulation stops on a GPU
-    // breakpoint after (or before) RequestStop() is called, the emulation would never be able
-    // to continue out to the main loop and terminate. Thus wait() would hang forever.
-    // TODO(bunnei): This function is not thread safe, but it's being used as if it were
-    Pica::g_debug_context->ClearBreakpoints();
-
     emit EmulationStopping();
 
     // Wait for emulation thread to complete and delete it
@@ -661,12 +616,7 @@ void GMainWindow::OnSwapScreens() {
     Settings::Apply();
 }
 
-void GMainWindow::OnCreateGraphicsSurfaceViewer() {
-    auto graphicsSurfaceViewerWidget = new GraphicsSurfaceWidget(Pica::g_debug_context, this);
-    addDockWidget(Qt::RightDockWidgetArea, graphicsSurfaceViewerWidget);
-    // TODO: Maybe graphicsSurfaceViewerWidget->setFloating(true);
-    graphicsSurfaceViewerWidget->show();
-}
+void GMainWindow::OnCreateGraphicsSurfaceViewer() {}
 
 void GMainWindow::UpdateStatusBar() {
     if (emu_thread == nullptr) {

@@ -2,9 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "citra_qt/configuration/configure_debug.h"
 #include "core/settings.h"
 #include "ui_configure_debug.h"
+#include "yuzu/configuration/configure_debug.h"
+
 
 ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureDebug) {
     ui->setupUi(this);

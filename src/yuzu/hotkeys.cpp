@@ -6,8 +6,8 @@
 #include <QKeySequence>
 #include <QShortcut>
 #include <QtGlobal>
-#include "citra_qt/hotkeys.h"
-#include "citra_qt/ui_settings.h"
+#include "yuzu/hotkeys.h"
+#include "yuzu/ui_settings.h"
 
 struct Hotkey {
     Hotkey() : shortcut(nullptr), context(Qt::WindowShortcut) {}
