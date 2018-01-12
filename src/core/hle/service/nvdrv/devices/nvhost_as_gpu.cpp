@@ -11,7 +11,7 @@ namespace NVDRV {
 namespace Devices {
 
 u32 nvhost_as_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
-    ASSERT(false, "Unimplemented");
+    UNIMPLEMENTED();
     return 0;
 }
 

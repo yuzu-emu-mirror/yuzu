@@ -33,7 +33,7 @@ u32 nvmap::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& out
         return IocParam(input, output);
     }
 
-    ASSERT(false, "Unimplemented");
+    UNIMPLEMENTED();
 }
 
 u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
@@ -141,7 +141,7 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
         params.value = object->kind;
         break;
     default:
-        ASSERT(false, "Unimplemented");
+        UNIMPLEMENTED();
     }
 
     std::memcpy(output.data(), &params, sizeof(params));
