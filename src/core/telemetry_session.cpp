@@ -146,21 +146,12 @@ TelemetrySession::TelemetrySession() {
 #endif
 
     // Log user configuration information
-    AddField(Telemetry::FieldType::UserConfig, "Audio_EnableAudioStretching",
-             Settings::values.enable_audio_stretching);
     AddField(Telemetry::FieldType::UserConfig, "Core_CpuCore",
              static_cast<int>(Settings::values.cpu_core));
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ResolutionFactor",
              Settings::values.resolution_factor);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ToggleFramelimit",
              Settings::values.toggle_framelimit);
-    AddField(Telemetry::FieldType::UserConfig, "Renderer_UseHwRenderer",
-             Settings::values.use_hw_renderer);
-    AddField(Telemetry::FieldType::UserConfig, "Renderer_UseShaderJit",
-             Settings::values.use_shader_jit);
-    AddField(Telemetry::FieldType::UserConfig, "Renderer_UseVsync", Settings::values.use_vsync);
-    AddField(Telemetry::FieldType::UserConfig, "System_IsNew3ds", Settings::values.is_new_3ds);
-    AddField(Telemetry::FieldType::UserConfig, "System_RegionValue", Settings::values.region_value);
 }
 
 TelemetrySession::~TelemetrySession() {

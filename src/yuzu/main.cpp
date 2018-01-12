@@ -65,22 +65,7 @@ static void ShowCalloutMessage(const QString& message, CalloutFlag flag) {
     msg.exec();
 }
 
-void GMainWindow::ShowCallouts() {
-    static const QString telemetry_message =
-        tr("To help improve Citra, the Citra Team collects anonymous usage data. No private or "
-           "personally identifying information is collected. This data helps us to understand how "
-           "people use Citra and prioritize our efforts. Furthermore, it helps us to more easily "
-           "identify emulation bugs and performance issues. This data includes:<ul><li>Information"
-           " about the version of Citra you are using</li><li>Performance data about the games you "
-           "play</li><li>Your configuration settings</li><li>Information about your computer "
-           "hardware</li><li>Emulation errors and crash information</li></ul>By default, this "
-           "feature is enabled. To disable this feature, click 'Emulation' from the menu and then "
-           "select 'Configure...'. Then, on the 'Web' tab, uncheck 'Share anonymous usage data with"
-           " the Citra team'. <br/><br/>By using this software, you agree to the above terms.<br/>"
-           "<br/><a href='https://citra-emu.org/entry/telemetry-and-why-thats-a-good-thing/'>Learn "
-           "more</a>");
-    ShowCalloutMessage(telemetry_message, CalloutFlag::Telemetry);
-}
+void GMainWindow::ShowCallouts() {}
 
 GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     setAcceptDrops(true);
@@ -98,13 +83,11 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     ConnectMenuEvents();
     ConnectWidgetEvents();
 
-    setWindowTitle(QString("Citra %1| %2-%3")
+    setWindowTitle(QString("yuzu %1| %2-%3")
                        .arg(Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
     show();
 
     game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
-
-    UpdateUITheme();
 
     // Show one-time "callout" messages to the user
     ShowCallouts();
@@ -203,7 +186,6 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 
 void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
-    RegisterHotkey("Main Window", "Swap Screens", QKeySequence::NextChild);
     RegisterHotkey("Main Window", "Start Emulation");
     LoadHotkeys();
 
@@ -211,8 +193,6 @@ void GMainWindow::InitializeHotkeys() {
             SLOT(OnMenuLoadFile()));
     connect(GetHotkey("Main Window", "Start Emulation", this), SIGNAL(activated()), this,
             SLOT(OnStartGame()));
-    connect(GetHotkey("Main Window", "Swap Screens", render_window), SIGNAL(activated()), this,
-            SLOT(OnSwapScreens()));
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -386,7 +366,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
 }
 
 void GMainWindow::BootGame(const QString& filename) {
-    LOG_INFO(Frontend, "Citra starting...");
+    LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
     if (!LoadROM(filename))
@@ -503,7 +483,7 @@ void GMainWindow::OnMenuLoadFile() {
     for (const auto& piece : game_list->supported_file_extensions)
         extensions += "*." + piece + " ";
 
-    QString file_filter = tr("3DS Executable") + " (" + extensions + ")";
+    QString file_filter = tr("Switch Executable") + " (" + extensions + ")";
     file_filter += ";;" + tr("All Files (*.*)");
 
     QString filename = QFileDialog::getOpenFileName(this, tr("Load File"),
@@ -597,7 +577,6 @@ void GMainWindow::OnConfigure() {
     auto result = configureDialog.exec();
     if (result == QDialog::Accepted) {
         configureDialog.applyConfiguration();
-        UpdateUITheme();
         config->Save();
     }
 }
@@ -609,11 +588,6 @@ void GMainWindow::OnToggleFilterBar() {
     } else {
         game_list->clearFilter();
     }
-}
-
-void GMainWindow::OnSwapScreens() {
-    Settings::values.swap_screen = !Settings::values.swap_screen;
-    Settings::Apply();
 }
 
 void GMainWindow::OnCreateGraphicsSurfaceViewer() {}
@@ -776,24 +750,6 @@ bool GMainWindow::ConfirmChangeGame() {
 void GMainWindow::filterBarSetChecked(bool state) {
     ui.action_Show_Filter_Bar->setChecked(state);
     emit(OnToggleFilterBar());
-}
-
-void GMainWindow::UpdateUITheme() {
-    if (UISettings::values.theme != UISettings::themes[0].second) {
-        QString theme_uri(":" + UISettings::values.theme + "/style.qss");
-        QFile f(theme_uri);
-        if (!f.exists()) {
-            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
-        } else {
-            f.open(QFile::ReadOnly | QFile::Text);
-            QTextStream ts(&f);
-            qApp->setStyleSheet(ts.readAll());
-            GMainWindow::setStyleSheet(ts.readAll());
-        }
-    } else {
-        qApp->setStyleSheet("");
-        GMainWindow::setStyleSheet("");
-    }
 }
 
 #ifdef main

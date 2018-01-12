@@ -10,13 +10,6 @@
 
 namespace Settings {
 
-enum class LayoutOption {
-    Default,
-    SingleScreen,
-    LargeScreen,
-    SideScreen,
-};
-
 namespace NativeButton {
 enum Values {
     A,
@@ -78,9 +71,6 @@ enum class CpuCore {
 };
 
 struct Values {
-    // CheckNew3DS
-    bool is_new_3ds;
-
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;
@@ -93,27 +83,9 @@ struct Values {
     // Data Storage
     bool use_virtual_sd;
 
-    // System Region
-    int region_value;
-
     // Renderer
-    bool use_hw_renderer;
-    bool use_shader_jit;
     float resolution_factor;
-    bool use_vsync;
     bool toggle_framelimit;
-
-    LayoutOption layout_option;
-    bool swap_screen;
-    bool custom_layout;
-    u16 custom_top_left;
-    u16 custom_top_top;
-    u16 custom_top_right;
-    u16 custom_top_bottom;
-    u16 custom_bottom_left;
-    u16 custom_bottom_top;
-    u16 custom_bottom_right;
-    u16 custom_bottom_bottom;
 
     float bg_red;
     float bg_green;
@@ -121,26 +93,10 @@ struct Values {
 
     std::string log_filter;
 
-    // Audio
-    std::string sink_id;
-    bool enable_audio_stretching;
-    std::string audio_device_id;
-
     // Debugging
     bool use_gdbstub;
     u16 gdbstub_port;
-
-    // WebService
-    bool enable_telemetry;
-    std::string telemetry_endpoint_url;
-    std::string verify_endpoint_url;
-    std::string citra_username;
-    std::string citra_token;
 } extern values;
-
-// a special value for Values::region_value indicating that citra will automatically select a region
-// value to fit the region lockout info of the game
-static constexpr int REGION_VALUE_AUTO_SELECT = -1;
 
 void Apply();
 } // namespace Settings

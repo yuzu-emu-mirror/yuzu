@@ -21,7 +21,7 @@ set(SRCS
             hotkeys.cpp
             main.cpp
             ui_settings.cpp
-            citra-qt.rc
+            yuzu.rc
             Info.plist
             )
 

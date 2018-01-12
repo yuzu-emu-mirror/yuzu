@@ -18,11 +18,7 @@
 #ifdef USER_DIR
 #define EMU_DATA_DIR USER_DIR
 #else
-#ifdef _WIN32
-#define EMU_DATA_DIR "Citra"
-#else
-#define EMU_DATA_DIR "citra-emu"
-#endif
+#define EMU_DATA_DIR "yuzu"
 #endif
 
 // Dirs in both User and Sys

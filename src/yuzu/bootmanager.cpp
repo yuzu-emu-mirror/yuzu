@@ -19,7 +19,6 @@
 #include "input_common/motion_emu.h"
 #include "yuzu/bootmanager.h"
 
-
 EmuThread::EmuThread(GRenderWindow* render_window)
     : exec_step(false), running(false), stop_run(false), render_window(render_window) {}
 
@@ -107,7 +106,7 @@ private:
 GRenderWindow::GRenderWindow(QWidget* parent, EmuThread* emu_thread)
     : QWidget(parent), child(nullptr), emu_thread(emu_thread) {
 
-    std::string window_title = Common::StringFromFormat("Citra %s| %s-%s", Common::g_build_name,
+    std::string window_title = Common::StringFromFormat("yuzu %s| %s-%s", Common::g_build_name,
                                                         Common::g_scm_branch, Common::g_scm_desc);
     setWindowTitle(QString::fromStdString(window_title));
 
@@ -261,7 +260,6 @@ void GRenderWindow::InitRenderTarget() {
     QGLFormat fmt;
     fmt.setVersion(3, 3);
     fmt.setProfile(QGLFormat::CoreProfile);
-    fmt.setSwapInterval(Settings::values.use_vsync);
 
     // Requests a forward-compatible context, which is required to get a 3.2+ context on OS X
     fmt.setOption(QGL::NoDeprecatedFunctions);

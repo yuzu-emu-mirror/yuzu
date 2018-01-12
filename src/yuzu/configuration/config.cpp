@@ -73,10 +73,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
-    Settings::values.use_hw_renderer = qt_config->value("use_hw_renderer", true).toBool();
-    Settings::values.use_shader_jit = qt_config->value("use_shader_jit", true).toBool();
     Settings::values.resolution_factor = qt_config->value("resolution_factor", 1.0).toFloat();
-    Settings::values.use_vsync = qt_config->value("use_vsync", false).toBool();
     Settings::values.toggle_framelimit = qt_config->value("toggle_framelimit", true).toBool();
 
     Settings::values.bg_red = qt_config->value("bg_red", 0.0).toFloat();
@@ -84,37 +81,8 @@ void Config::ReadValues() {
     Settings::values.bg_blue = qt_config->value("bg_blue", 0.0).toFloat();
     qt_config->endGroup();
 
-    qt_config->beginGroup("Layout");
-    Settings::values.layout_option =
-        static_cast<Settings::LayoutOption>(qt_config->value("layout_option").toInt());
-    Settings::values.swap_screen = qt_config->value("swap_screen", false).toBool();
-    Settings::values.custom_layout = qt_config->value("custom_layout", false).toBool();
-    Settings::values.custom_top_left = qt_config->value("custom_top_left", 0).toInt();
-    Settings::values.custom_top_top = qt_config->value("custom_top_top", 0).toInt();
-    Settings::values.custom_top_right = qt_config->value("custom_top_right", 400).toInt();
-    Settings::values.custom_top_bottom = qt_config->value("custom_top_bottom", 240).toInt();
-    Settings::values.custom_bottom_left = qt_config->value("custom_bottom_left", 40).toInt();
-    Settings::values.custom_bottom_top = qt_config->value("custom_bottom_top", 240).toInt();
-    Settings::values.custom_bottom_right = qt_config->value("custom_bottom_right", 360).toInt();
-    Settings::values.custom_bottom_bottom = qt_config->value("custom_bottom_bottom", 480).toInt();
-    qt_config->endGroup();
-
-    qt_config->beginGroup("Audio");
-    Settings::values.sink_id = qt_config->value("output_engine", "auto").toString().toStdString();
-    Settings::values.enable_audio_stretching =
-        qt_config->value("enable_audio_stretching", true).toBool();
-    Settings::values.audio_device_id =
-        qt_config->value("output_device", "auto").toString().toStdString();
-    qt_config->endGroup();
-
     qt_config->beginGroup("Data Storage");
     Settings::values.use_virtual_sd = qt_config->value("use_virtual_sd", true).toBool();
-    qt_config->endGroup();
-
-    qt_config->beginGroup("System");
-    Settings::values.is_new_3ds = qt_config->value("is_new_3ds", false).toBool();
-    Settings::values.region_value =
-        qt_config->value("region_value", Settings::REGION_VALUE_AUTO_SELECT).toInt();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -126,23 +94,7 @@ void Config::ReadValues() {
     Settings::values.gdbstub_port = qt_config->value("gdbstub_port", 24689).toInt();
     qt_config->endGroup();
 
-    qt_config->beginGroup("WebService");
-    Settings::values.enable_telemetry = qt_config->value("enable_telemetry", true).toBool();
-    Settings::values.telemetry_endpoint_url =
-        qt_config->value("telemetry_endpoint_url", "https://services.citra-emu.org/api/telemetry")
-            .toString()
-            .toStdString();
-    Settings::values.verify_endpoint_url =
-        qt_config->value("verify_endpoint_url", "https://services.citra-emu.org/api/profile")
-            .toString()
-            .toStdString();
-    Settings::values.citra_username = qt_config->value("citra_username").toString().toStdString();
-    Settings::values.citra_token = qt_config->value("citra_token").toString().toStdString();
-    qt_config->endGroup();
-
     qt_config->beginGroup("UI");
-    UISettings::values.theme = qt_config->value("theme", UISettings::themes[0].second).toString();
-
     qt_config->beginGroup("UILayout");
     UISettings::values.geometry = qt_config->value("geometry").toByteArray();
     UISettings::values.state = qt_config->value("state").toByteArray();
@@ -213,10 +165,7 @@ void Config::SaveValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
-    qt_config->setValue("use_hw_renderer", Settings::values.use_hw_renderer);
-    qt_config->setValue("use_shader_jit", Settings::values.use_shader_jit);
     qt_config->setValue("resolution_factor", (double)Settings::values.resolution_factor);
-    qt_config->setValue("use_vsync", Settings::values.use_vsync);
     qt_config->setValue("toggle_framelimit", Settings::values.toggle_framelimit);
 
     // Cast to double because Qt's written float values are not human-readable
@@ -225,33 +174,8 @@ void Config::SaveValues() {
     qt_config->setValue("bg_blue", (double)Settings::values.bg_blue);
     qt_config->endGroup();
 
-    qt_config->beginGroup("Layout");
-    qt_config->setValue("layout_option", static_cast<int>(Settings::values.layout_option));
-    qt_config->setValue("swap_screen", Settings::values.swap_screen);
-    qt_config->setValue("custom_layout", Settings::values.custom_layout);
-    qt_config->setValue("custom_top_left", Settings::values.custom_top_left);
-    qt_config->setValue("custom_top_top", Settings::values.custom_top_top);
-    qt_config->setValue("custom_top_right", Settings::values.custom_top_right);
-    qt_config->setValue("custom_top_bottom", Settings::values.custom_top_bottom);
-    qt_config->setValue("custom_bottom_left", Settings::values.custom_bottom_left);
-    qt_config->setValue("custom_bottom_top", Settings::values.custom_bottom_top);
-    qt_config->setValue("custom_bottom_right", Settings::values.custom_bottom_right);
-    qt_config->setValue("custom_bottom_bottom", Settings::values.custom_bottom_bottom);
-    qt_config->endGroup();
-
-    qt_config->beginGroup("Audio");
-    qt_config->setValue("output_engine", QString::fromStdString(Settings::values.sink_id));
-    qt_config->setValue("enable_audio_stretching", Settings::values.enable_audio_stretching);
-    qt_config->setValue("output_device", QString::fromStdString(Settings::values.audio_device_id));
-    qt_config->endGroup();
-
     qt_config->beginGroup("Data Storage");
     qt_config->setValue("use_virtual_sd", Settings::values.use_virtual_sd);
-    qt_config->endGroup();
-
-    qt_config->beginGroup("System");
-    qt_config->setValue("is_new_3ds", Settings::values.is_new_3ds);
-    qt_config->setValue("region_value", Settings::values.region_value);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -261,16 +185,6 @@ void Config::SaveValues() {
     qt_config->beginGroup("Debugging");
     qt_config->setValue("use_gdbstub", Settings::values.use_gdbstub);
     qt_config->setValue("gdbstub_port", Settings::values.gdbstub_port);
-    qt_config->endGroup();
-
-    qt_config->beginGroup("WebService");
-    qt_config->setValue("enable_telemetry", Settings::values.enable_telemetry);
-    qt_config->setValue("telemetry_endpoint_url",
-                        QString::fromStdString(Settings::values.telemetry_endpoint_url));
-    qt_config->setValue("verify_endpoint_url",
-                        QString::fromStdString(Settings::values.verify_endpoint_url));
-    qt_config->setValue("citra_username", QString::fromStdString(Settings::values.citra_username));
-    qt_config->setValue("citra_token", QString::fromStdString(Settings::values.citra_token));
     qt_config->endGroup();
 
     qt_config->beginGroup("UI");

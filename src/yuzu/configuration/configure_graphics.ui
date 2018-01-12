@@ -23,27 +23,6 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <widget class="QCheckBox" name="toggle_hw_renderer">
-          <property name="text">
-           <string>Enable hardware renderer</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="toggle_shader_jit">
-          <property name="text">
-           <string>Enable shader JIT</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="toggle_vsync">
-          <property name="text">
-           <string>Enable V-Sync</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="toggle_framelimit">
           <property name="text">
            <string>Limit framerate</string>
@@ -51,134 +30,79 @@
          </widget>
         </item>
         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-            <item>
-              <widget class="QLabel" name="label">
-                <property name="text">
-                  <string>Internal Resolution:</string>
-                </property>
-              </widget>
-            </item>
-            <item>
-              <widget class="QComboBox" name="resolution_factor_combobox">
-                <item>
-                  <property name="text">
-                    <string>Auto (Window Size)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Native (400x240)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>2x Native (800x480)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>3x Native (1200x720)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>4x Native (1600x960)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>5x Native (2000x1200)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>6x Native (2400x1440)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>7x Native (2800x1680)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>8x Native (3200x1920)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>9x Native (3600x2160)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>10x Native (4000x2400)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-          </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="layoutBox">
-     <property name="title">
-      <string>Layout</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QLabel" name="label1">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>Screen Layout:</string>
+             <string>Internal Resolution:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="layout_combobox">
+           <widget class="QComboBox" name="resolution_factor_combobox">
             <item>
              <property name="text">
-              <string>Default</string>
+              <string>Auto (Window Size)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Single Screen</string>
+              <string>Native (400x240)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Large Screen</string>
+              <string>2x Native (800x480)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Side by Side</string>
+              <string>3x Native (1200x720)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>4x Native (1600x960)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>5x Native (2000x1200)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>6x Native (2400x1440)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>7x Native (2800x1680)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>8x Native (3200x1920)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>9x Native (3600x2160)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>10x Native (4000x2400)</string>
              </property>
             </item>
            </widget>
           </item>
          </layout>
         </item>
-        <item>
-         <widget class="QCheckBox" name="swap_screen">
-          <property name="text">
-           <string>Swap Screens</string>
-          </property>
-         </widget>
-        </item>
        </layout>
-      </item>
-     </layout>
-    </widget>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -196,12 +120,5 @@
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>toggle_hw_renderer</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>resolution_factor_combobox</receiver>
-   <slot>setEnabled(bool)</slot>
-  </connection>
- </connections>
+ <connections/>
 </ui>

@@ -13,10 +13,6 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
 
     ui->setupUi(this);
     this->setConfiguration();
-
-    ui->toggle_vsync->setEnabled(!Core::System::GetInstance().IsPoweredOn());
-
-    ui->layoutBox->setEnabled(!Settings::values.custom_layout);
 }
 
 ConfigureGraphics::~ConfigureGraphics() {}
@@ -91,26 +87,14 @@ Resolution FromResolutionFactor(float factor) {
 }
 
 void ConfigureGraphics::setConfiguration() {
-    ui->toggle_hw_renderer->setChecked(Settings::values.use_hw_renderer);
-    ui->resolution_factor_combobox->setEnabled(Settings::values.use_hw_renderer);
-    ui->toggle_shader_jit->setChecked(Settings::values.use_shader_jit);
     ui->resolution_factor_combobox->setCurrentIndex(
         static_cast<int>(FromResolutionFactor(Settings::values.resolution_factor)));
-    ui->toggle_vsync->setChecked(Settings::values.use_vsync);
     ui->toggle_framelimit->setChecked(Settings::values.toggle_framelimit);
-    ui->layout_combobox->setCurrentIndex(static_cast<int>(Settings::values.layout_option));
-    ui->swap_screen->setChecked(Settings::values.swap_screen);
 }
 
 void ConfigureGraphics::applyConfiguration() {
-    Settings::values.use_hw_renderer = ui->toggle_hw_renderer->isChecked();
-    Settings::values.use_shader_jit = ui->toggle_shader_jit->isChecked();
     Settings::values.resolution_factor =
         ToResolutionFactor(static_cast<Resolution>(ui->resolution_factor_combobox->currentIndex()));
-    Settings::values.use_vsync = ui->toggle_vsync->isChecked();
     Settings::values.toggle_framelimit = ui->toggle_framelimit->isChecked();
-    Settings::values.layout_option =
-        static_cast<Settings::LayoutOption>(ui->layout_combobox->currentIndex());
-    Settings::values.swap_screen = ui->swap_screen->isChecked();
     Settings::Apply();
 }
