@@ -642,6 +642,16 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
     return RESULT_SUCCESS;
 }
 
+/// This returns the total CPU ticks elapsed since the CPU was powered-on
+static u64 GetSystemTick() {
+    const u64 result{CoreTiming::GetTicks()};
+
+    // Advance time to defeat dumb games that busy-wait for the frame to end.
+    CoreTiming::AddTicks(400);
+
+    return result;
+}
+
 /// Close a handle
 static ResultCode CloseHandle(Handle handle) {
     LOG_TRACE(Kernel_SVC, "Closing handle 0x%08X", handle);
@@ -659,7 +669,8 @@ static ResultCode ResetSignal(Handle handle) {
 
 /// Creates a TransferMemory object
 static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%llx, size=0x%llx, perms=%08X", addr, size, permissions);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%llx, size=0x%llx, perms=%08X", addr, size,
+                permissions);
     *handle = 0;
     return RESULT_SUCCESS;
 }
@@ -705,7 +716,7 @@ static const FunctionDef SVC_Table[] = {
     {0x1B, SvcWrap<UnlockMutex>, "UnlockMutex"},
     {0x1C, SvcWrap<WaitProcessWideKeyAtomic>, "WaitProcessWideKeyAtomic"},
     {0x1D, SvcWrap<SignalProcessWideKey>, "SignalProcessWideKey"},
-    {0x1E, nullptr, "GetSystemTick"},
+    {0x1E, SvcWrap<GetSystemTick>, "GetSystemTick"},
     {0x1F, SvcWrap<ConnectToPort>, "ConnectToPort"},
     {0x20, nullptr, "SendSyncRequestLight"},
     {0x21, SvcWrap<SendSyncRequest>, "SendSyncRequest"},
