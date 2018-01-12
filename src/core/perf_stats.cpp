@@ -6,7 +6,6 @@
 #include <mutex>
 #include <thread>
 #include "common/math_util.h"
-#include "core/hw/gpu.h"
 #include "core/perf_stats.h"
 #include "core/settings.h"
 
@@ -70,7 +69,7 @@ PerfStats::Results PerfStats::GetAndResetStats(u64 current_system_time_us) {
 double PerfStats::GetLastFrameTimeScale() {
     std::lock_guard<std::mutex> lock(object_mutex);
 
-    constexpr double FRAME_LENGTH = 1.0 / GPU::SCREEN_REFRESH_RATE;
+    constexpr double FRAME_LENGTH = 1.0 / 60; // GPU::SCREEN_REFRESH_RATE;
     return duration_cast<DoubleSecs>(previous_frame_length).count() / FRAME_LENGTH;
 }
 

@@ -17,7 +17,6 @@
 #include "input_common/motion_emu.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
-
 void EmuWindow_SDL2::OnMouseMotion(s32 x, s32 y) {
     TouchMoved((unsigned)std::max(x, 0), (unsigned)std::max(y, 0));
     InputCommon::GetMotionEmu()->Tilt(x, y);
@@ -106,7 +105,6 @@ EmuWindow_SDL2::EmuWindow_SDL2() {
     OnResize();
     OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
     SDL_PumpEvents();
-    SDL_GL_SetSwapInterval(Settings::values.use_vsync);
 
     DoneCurrent();
 }

@@ -13,7 +13,6 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/default_ini.h"
 
-
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
     sdl2_config_loc = FileUtil::GetUserPath(D_CONFIG_IDX) + "sdl2-config.ini";
@@ -87,11 +86,8 @@ void Config::ReadValues() {
         static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 0));
 
     // Renderer
-    Settings::values.use_hw_renderer = sdl2_config->GetBoolean("Renderer", "use_hw_renderer", true);
-    Settings::values.use_shader_jit = sdl2_config->GetBoolean("Renderer", "use_shader_jit", true);
     Settings::values.resolution_factor =
         (float)sdl2_config->GetReal("Renderer", "resolution_factor", 1.0);
-    Settings::values.use_vsync = sdl2_config->GetBoolean("Renderer", "use_vsync", false);
     Settings::values.toggle_framelimit =
         sdl2_config->GetBoolean("Renderer", "toggle_framelimit", true);
 
@@ -99,42 +95,9 @@ void Config::ReadValues() {
     Settings::values.bg_green = (float)sdl2_config->GetReal("Renderer", "bg_green", 0.0);
     Settings::values.bg_blue = (float)sdl2_config->GetReal("Renderer", "bg_blue", 0.0);
 
-    // Layout
-    Settings::values.layout_option =
-        static_cast<Settings::LayoutOption>(sdl2_config->GetInteger("Layout", "layout_option", 0));
-    Settings::values.swap_screen = sdl2_config->GetBoolean("Layout", "swap_screen", false);
-    Settings::values.custom_layout = sdl2_config->GetBoolean("Layout", "custom_layout", false);
-    Settings::values.custom_top_left =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_top_left", 0));
-    Settings::values.custom_top_top =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_top_top", 0));
-    Settings::values.custom_top_right =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_top_right", 400));
-    Settings::values.custom_top_bottom =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_top_bottom", 240));
-    Settings::values.custom_bottom_left =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_bottom_left", 40));
-    Settings::values.custom_bottom_top =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_bottom_top", 240));
-    Settings::values.custom_bottom_right =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_bottom_right", 360));
-    Settings::values.custom_bottom_bottom =
-        static_cast<u16>(sdl2_config->GetInteger("Layout", "custom_bottom_bottom", 480));
-
-    // Audio
-    Settings::values.sink_id = sdl2_config->Get("Audio", "output_engine", "auto");
-    Settings::values.enable_audio_stretching =
-        sdl2_config->GetBoolean("Audio", "enable_audio_stretching", true);
-    Settings::values.audio_device_id = sdl2_config->Get("Audio", "output_device", "auto");
-
     // Data Storage
     Settings::values.use_virtual_sd =
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
-
-    // System
-    Settings::values.is_new_3ds = sdl2_config->GetBoolean("System", "is_new_3ds", false);
-    Settings::values.region_value =
-        sdl2_config->GetInteger("System", "region_value", Settings::REGION_VALUE_AUTO_SELECT);
 
     // Miscellaneous
     Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Info");
@@ -143,16 +106,6 @@ void Config::ReadValues() {
     Settings::values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
     Settings::values.gdbstub_port =
         static_cast<u16>(sdl2_config->GetInteger("Debugging", "gdbstub_port", 24689));
-
-    // Web Service
-    Settings::values.enable_telemetry =
-        sdl2_config->GetBoolean("WebService", "enable_telemetry", true);
-    Settings::values.telemetry_endpoint_url = sdl2_config->Get(
-        "WebService", "telemetry_endpoint_url", "https://services.citra-emu.org/api/telemetry");
-    Settings::values.verify_endpoint_url = sdl2_config->Get(
-        "WebService", "verify_endpoint_url", "https://services.citra-emu.org/api/profile");
-    Settings::values.citra_username = sdl2_config->Get("WebService", "citra_username", "");
-    Settings::values.citra_token = sdl2_config->Get("WebService", "citra_token", "");
 }
 
 void Config::Reload() {

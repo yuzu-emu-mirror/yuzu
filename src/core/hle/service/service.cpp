@@ -17,8 +17,6 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/hle/service/apm/apm.h"
-#include "core/hle/service/dsp_dsp.h"
-#include "core/hle/service/gsp_gpu.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
