@@ -259,7 +259,7 @@ void RendererOpenGL::LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
 
     LOG_TRACE(Render_OpenGL, "0x%08x bytes from 0x%llx(%dx%d), fmt %x", size_in_bytes,
               framebuffer_info.address, framebuffer_info.width, framebuffer_info.height,
-              (int)framebuffer_info.format);
+              (int)framebuffer_info.pixel_format);
 
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT, which by default
     // only allows rows to have a memory alignement of 4.
