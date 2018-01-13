@@ -324,22 +324,10 @@ add_subdirectory(src)
 # http://standards.freedesktop.org/icon-theme-spec/icon-theme-spec-latest.html
 # http://standards.freedesktop.org/shared-mime-info-spec/shared-mime-info-spec-latest.html
 if(ENABLE_QT AND UNIX AND NOT APPLE)
-    install(FILES "${CMAKE_SOURCE_DIR}/dist/citra.desktop"
+    install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.desktop"
             DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
-    install(FILES "${CMAKE_SOURCE_DIR}/dist/citra.svg"
+    install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.svg"
             DESTINATION "${CMAKE_INSTALL_PREFIX}/share/pixmaps")
-    install(FILES "${CMAKE_SOURCE_DIR}/dist/citra.xml"
+    install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.xml"
             DESTINATION "${CMAKE_INSTALL_PREFIX}/share/mime/packages")
-endif()
-
-if(UNIX)
-    if(ENABLE_SDL2)
-        install(FILES "${CMAKE_SOURCE_DIR}/dist/citra.6"
-                DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man6")
-    endif()
-
-    if (ENABLE_QT)
-        install(FILES "${CMAKE_SOURCE_DIR}/dist/citra-qt.6"
-                DESTINATION "${CMAKE_INSTALL_PREFIX}/share/man/man6")
-    endif()
 endif()
