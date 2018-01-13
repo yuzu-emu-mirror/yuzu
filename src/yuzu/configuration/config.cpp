@@ -86,7 +86,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
-    Settings::values.log_filter = qt_config->value("log_filter", "*:Info").toString().toStdString();
+    Settings::values.log_filter = qt_config->value("log_filter", "*:Trace").toString().toStdString();
     qt_config->endGroup();
 
     qt_config->beginGroup("Debugging");

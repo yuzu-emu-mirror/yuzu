@@ -156,7 +156,7 @@ region_value =
 [Miscellaneous]
 # A filter which removes logs below a certain logging level.
 # Examples: *:Debug Kernel.SVC:Trace Service.*:Critical
-log_filter = *:Info
+log_filter = *:Trace
 
 [Debugging]
 # Port for listening to GDB connections.

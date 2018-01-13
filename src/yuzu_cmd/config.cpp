@@ -100,7 +100,7 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
 
     // Miscellaneous
-    Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Info");
+    Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
 
     // Debugging
     Settings::values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
