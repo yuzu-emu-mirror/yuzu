@@ -83,7 +83,7 @@ void Config::ReadValues() {
 
     // Core
     Settings::values.cpu_core =
-        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 1));
+        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 0));
 
     // Renderer
     Settings::values.use_hw_renderer = sdl2_config->GetBoolean("Renderer", "use_hw_renderer", true);
