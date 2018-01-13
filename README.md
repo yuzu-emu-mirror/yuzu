@@ -1,37 +1,36 @@
-**BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
+yuzu emulator
+=============
+yuzu is an experimental open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
 
-Citra Emulator
-==============
-[![Travis CI Build Status](https://travis-ci.org/citra-emu/citra.svg?branch=master)](https://travis-ci.org/citra-emu/citra)
-[![AppVeyor CI Build Status](https://ci.appveyor.com/api/projects/status/sdf1o4kh3g1e68m9?svg=true)](https://ci.appveyor.com/project/bunnei/citra)
+It is written in C++ with portability in mind, with builds actively maintained for Windows, Linux and macOS. The emulator is currently only useful for homebrew development and research purposes.
 
-Citra is an experimental open-source Nintendo 3DS emulator/debugger written in C++. It is written with portability in mind, with builds actively maintained for Windows, Linux and macOS. Citra only emulates a subset of 3DS hardware and therefore is generally only useful for running/debugging homebrew applications. At this time, Citra is even able to boot several commercial games! Most of these do not run to a playable state, but we are working every day to advance the project forward.
+yuzu only emulates a subset of Switch hardware and therefore is generally only useful for running/debugging homebrew applications. At this time, yuzu does not run any commercial Switch games. yuzu can boot some games, to varying degrees of success, but does not implement any of the necessary GPU features to render 3D graphics.
 
-Citra is licensed under the GPLv2 (or any later version). Refer to the license.txt file included. Please read the [FAQ](https://citra-emu.org/wiki/faq/) before getting started with the project.
+yuzu is licensed under the GPLv2 (or any later version). Refer to the license.txt file included.
 
-Check out our [website](https://citra-emu.org/)!
+Check out our [website](https://yuzu-emu.org/)!
 
-For development discussion, please join us @ #citra on freenode.
+For development discussion, please join us on [Discord](https://discord.gg/VXqngT3).
 
 ### Development
 
-Most of the development happens on GitHub. It's also where [our central repository](https://github.com/citra-emu/citra) is hosted.
+Most of the development happens on GitHub. It's also where [our central repository](https://github.com/yuzu-emu/yuzu) is hosted.
 
-If you want to contribute please take a look at the [Contributor's Guide](CONTRIBUTING.md) and [Developer Information](https://github.com/citra-emu/citra/wiki/Developer-Information). You should as well contact any of the developers in the forum in order to know about the current state of the emulator because the [TODO list](https://docs.google.com/document/d/1SWIop0uBI9IW8VGg97TAtoT_CHNoP42FzYmvG1F4QDA) isn't maintained anymore.
+If you want to contribute please take a look at the [Contributor's Guide](CONTRIBUTING.md) and [Developer Information](https://github.com/yuzu-emu/yuzu/wiki/Developer-Information). You should as well contact any of the developers on Discord in order to know about the current state of the emulator.
 
 ### Building
 
-* __Windows__: [Windows Build](https://github.com/citra-emu/citra/wiki/Building-For-Windows)
-* __Linux__: [Linux Build](https://github.com/citra-emu/citra/wiki/Building-For-Linux)
-* __macOS__: [macOS Build](https://github.com/citra-emu/citra/wiki/Building-for-macOS)
+* __Windows__: [Windows Build](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Windows)
+* __Linux__: [Linux Build](https://github.com/yuzu-emu/yuzu/wiki/Building-For-Linux)
+* __macOS__: [macOS Build](https://github.com/yuzu-emu/yuzu/wiki/Building-for-macOS)
 
 
 ### Support
-We happily accept monetary donations or donated games and hardware. Please see our [donations page](https://citra-emu.org/donate/) for more information on how you can contribute to Citra. Any donations received will go towards things like:
-* 3DS consoles for developers to explore the hardware
-* 3DS games for testing
-* Any equipment required for homebrew
-* Infrastructure setup
-* Eventually 3D displays to get proper 3D output working
+We happily accept monetary donations or donated games and hardware. Please see our [donations page](https://yuzu-emu.org/donate/) for more information on how you can contribute to yuzu. Any donations received will go towards things like:
+* Switch consoles to explore and reverse-engineer the hardware
+* Switch games for testing, reverse-engineering, and implementing new features
+* Web hosting and infrastructure setup
+* Software licenses (e.g. Visual Studio, IDA Pro, etc.)
+* Additional hardware (e.g. GPUs as-needed to improve rendering support, other peripherals to add support for, etc.)
 
-We also more than gladly accept used 3DS consoles, preferably ones with firmware 4.5 or lower! If you would like to give yours away, don't hesitate to join our IRC channel #citra on [Freenode](http://webchat.freenode.net/?channels=citra) and talk to neobrain or bunnei. Mind you, IRC is slow-paced, so it might be a while until people reply. If you're in a hurry you can just leave contact details in the channel or via private message and we'll get back to you.
+We also more than gladly accept used Switch consoles, preferably ones with firmware 3.0.0 or lower! If you would like to give yours away, don't hesitate to join our [Discord](https://discord.gg/VXqngT3) and talk to bunnei. You may also contact: donations@yuzu-emu.org.
