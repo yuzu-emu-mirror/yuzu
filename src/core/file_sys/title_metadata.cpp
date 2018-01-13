@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
-#include <cryptopp/sha.h>
 #include "common/alignment.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
@@ -69,55 +68,7 @@ Loader::ResultStatus TitleMetadata::Load() {
 }
 
 Loader::ResultStatus TitleMetadata::Save() {
-    FileUtil::IOFile file(filepath, "wb");
-    if (!file.IsOpen())
-        return Loader::ResultStatus::Error;
-
-    if (!file.WriteBytes(&signature_type, sizeof(u32_be)))
-        return Loader::ResultStatus::Error;
-
-    // Signature lengths are variable, and the body follows the signature
-    u32 signature_size = GetSignatureSize(signature_type);
-
-    if (!file.WriteBytes(tmd_signature.data(), signature_size))
-        return Loader::ResultStatus::Error;
-
-    // The TMD body start position is rounded to the nearest 0x40 after the signature
-    size_t body_start = Common::AlignUp(signature_size + sizeof(u32), 0x40);
-    file.Seek(body_start, SEEK_SET);
-
-    // Update our TMD body values and hashes
-    tmd_body.content_count = static_cast<u16>(tmd_chunks.size());
-
-    // TODO(shinyquagsire23): Do TMDs with more than one contentinfo exist?
-    // For now we'll just adjust the first index to hold all content chunks
-    // and ensure that no further content info data exists.
-    tmd_body.contentinfo = {};
-    tmd_body.contentinfo[0].index = 0;
-    tmd_body.contentinfo[0].command_count = static_cast<u16>(tmd_chunks.size());
-
-    CryptoPP::SHA256 chunk_hash;
-    for (u16 i = 0; i < tmd_body.content_count; i++) {
-        chunk_hash.Update(reinterpret_cast<u8*>(&tmd_chunks[i]), sizeof(ContentChunk));
-    }
-    chunk_hash.Final(tmd_body.contentinfo[0].hash.data());
-
-    CryptoPP::SHA256 contentinfo_hash;
-    for (size_t i = 0; i < tmd_body.contentinfo.size(); i++) {
-        chunk_hash.Update(reinterpret_cast<u8*>(&tmd_body.contentinfo[i]), sizeof(ContentInfo));
-    }
-    chunk_hash.Final(tmd_body.contentinfo_hash.data());
-
-    // Write our TMD body, then write each of our ContentChunks
-    if (file.WriteBytes(&tmd_body, sizeof(TitleMetadata::Body)) != sizeof(TitleMetadata::Body))
-        return Loader::ResultStatus::Error;
-
-    for (u16 i = 0; i < tmd_body.content_count; i++) {
-        ContentChunk chunk = tmd_chunks[i];
-        if (file.WriteBytes(&chunk, sizeof(ContentChunk)) != sizeof(ContentChunk))
-            return Loader::ResultStatus::Error;
-    }
-
+    UNIMPLEMENTED();
     return Loader::ResultStatus::Success;
 }
 

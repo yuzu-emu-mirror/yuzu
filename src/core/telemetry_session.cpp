@@ -3,7 +3,6 @@
 // Refer to the license.txt file included.
 
 #include <cstring>
-#include <cryptopp/osrng.h>
 
 #include "common/assert.h"
 #include "common/file_util.h"
@@ -34,8 +33,6 @@ static const char* CpuVendorToStr(Common::CPUVendor vendor) {
 
 static u64 GenerateTelemetryId() {
     u64 telemetry_id{};
-    CryptoPP::AutoSeededRandomPool rng;
-    rng.GenerateBlock(reinterpret_cast<CryptoPP::byte*>(&telemetry_id), sizeof(u64));
     return telemetry_id;
 }
 
