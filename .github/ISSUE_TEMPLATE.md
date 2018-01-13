@@ -1,25 +1,20 @@
-<!---
+<!--
+Please keep in mind yuzu is EXPERIMENTAL SOFTWARE.
 
-Please read the FAQ:
-https://citra-emu.org/wiki/faq/
+Please read the FAQ: https://yuzu-emu.org/wiki/faq/
 
-THIS IS NOT A SUPPORT FORUM, FOR SUPPORT GO TO:
-https://community.citra-emu.org/
+When submitting an issue, please do the following:
 
-If the FAQ does not answer your question, please go to:
-https://community.citra-emu.org/
-
-====================================================
-
-When submitting an issue, please check the following:
-
-- You have read the above.
-- You have provided the version (commit hash) of Citra you are using.
-- You have provided sufficient detail for the issue to be reproduced.
-- You have provided system specs (if relevant).
-- Please also provide:
+- Provide the version (commit hash) of yuzu you are using.
+- Provide sufficient detail for the issue to be reproduced.
+- Provide:
   - For crashes, a backtrace.
   - For graphical issues, comparison screenshots with real hardware.
   - For emulation inaccuracies, a test-case (if able).
+-->
 
---->
+
+
+
+
+

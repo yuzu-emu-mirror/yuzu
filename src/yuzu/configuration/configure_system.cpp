@@ -64,8 +64,8 @@ void ConfigureSystem::updateBirthdayComboBox(int birthmonth_index) {
 
 void ConfigureSystem::refreshConsoleID() {
     QMessageBox::StandardButton reply;
-    QString warning_text = tr("This will replace your current virtual 3DS with a new one. "
-                              "Your current virtual 3DS will not be recoverable. "
+    QString warning_text = tr("This will replace your current virtual Switch with a new one. "
+                              "Your current virtual Switch will not be recoverable. "
                               "This might have unexpected effects in games. This might fail, "
                               "if you use an outdated config savegame. Continue?");
     reply = QMessageBox::critical(this, tr("Warning"), warning_text,

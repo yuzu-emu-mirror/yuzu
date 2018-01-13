@@ -122,13 +122,13 @@ void GMainWindow::InitializeWidgets() {
 
     emu_speed_label = new QLabel();
     emu_speed_label->setToolTip(tr("Current emulation speed. Values higher or lower than 100% "
-                                   "indicate emulation is running faster or slower than a 3DS."));
+                                   "indicate emulation is running faster or slower than a Switch."));
     game_fps_label = new QLabel();
     game_fps_label->setToolTip(tr("How many frames per second the game is currently displaying. "
                                   "This will vary from game to game and scene to scene."));
     emu_frametime_label = new QLabel();
     emu_frametime_label->setToolTip(
-        tr("Time taken to emulate a 3DS frame, not counting framelimiting or v-sync. For "
+        tr("Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For "
            "full-speed emulation this should be at most 16.67 ms."));
 
     for (auto& label : {emu_speed_label, game_fps_label, emu_frametime_label}) {
@@ -326,7 +326,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
             QMessageBox::critical(
                 this, tr("Error while loading ROM!"),
                 tr("The game that you are trying to load must be decrypted before being used with "
-                   "Citra. A real 3DS is required.<br/><br/>"
+                   "yuzu. A real Switch is required.<br/><br/>"
                    "For more information on dumping and decrypting games, please see the following "
                    "wiki pages: <ul>"
                    "<li><a href='https://citra-emu.org/wiki/dumping-game-cartridges/'>Dumping Game "
@@ -344,7 +344,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
         case Core::System::ResultStatus::ErrorVideoCore:
             QMessageBox::critical(
                 this, tr("An error occured in the video core."),
-                tr("Citra has encountered an error while running the video core, please see the "
+                tr("yuzu has encountered an error while running the video core, please see the "
                    "log for more details."
                    "For more information on accessing the log, please see the following page: "
                    "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
@@ -649,7 +649,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
     default:
         answer = QMessageBox::question(
             this, tr("Fatal Error"),
-            tr("Citra has encountered a fatal error, please see the log for more details. "
+            tr("yuzu has encountered a fatal error, please see the log for more details. "
                "For more information on accessing the log, please see the following page: "
                "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How to "
                "Upload the Log File</a>.<br/><br/>Would you like to quit back to the game list? "
@@ -677,7 +677,7 @@ bool GMainWindow::ConfirmClose() {
         return true;
 
     QMessageBox::StandardButton answer =
-        QMessageBox::question(this, tr("Citra"), tr("Are you sure you want to close Citra?"),
+        QMessageBox::question(this, tr("yuzu"), tr("Are you sure you want to close yuzu?"),
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     return answer != QMessageBox::No;
 }
@@ -741,7 +741,7 @@ bool GMainWindow::ConfirmChangeGame() {
         return true;
 
     auto answer = QMessageBox::question(
-        this, tr("Citra"),
+        this, tr("yuzu"),
         tr("Are you sure you want to stop the emulation? Any unsaved progress will be lost."),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     return answer != QMessageBox::No;
@@ -764,8 +764,8 @@ int main(int argc, char* argv[]) {
     SCOPE_EXIT({ MicroProfileShutdown(); });
 
     // Init settings params
-    QCoreApplication::setOrganizationName("Citra team");
-    QCoreApplication::setApplicationName("Citra");
+    QCoreApplication::setOrganizationName("yuzu team");
+    QCoreApplication::setApplicationName("yuzu");
 
     QApplication::setAttribute(Qt::AA_X11InitThreads);
     QApplication app(argc, argv);
