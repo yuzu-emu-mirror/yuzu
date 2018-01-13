@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
@@ -15,33 +16,33 @@ public:
     explicit ARM_Dynarmic_Callbacks(ARM_Dynarmic& parent) : parent(parent) {}
     ~ARM_Dynarmic_Callbacks() = default;
 
-    virtual u8 MemoryRead8(u64 vaddr) override {
+    u8 MemoryRead8(u64 vaddr) override {
         return Memory::Read8(vaddr);
     }
-    virtual u16 MemoryRead16(u64 vaddr) override {
+    u16 MemoryRead16(u64 vaddr) override {
         return Memory::Read16(vaddr);
     }
-    virtual u32 MemoryRead32(u64 vaddr) override {
+    u32 MemoryRead32(u64 vaddr) override {
         return Memory::Read32(vaddr);
     }
-    virtual u64 MemoryRead64(u64 vaddr) override {
+    u64 MemoryRead64(u64 vaddr) override {
         return Memory::Read64(vaddr);
     }
 
-    virtual void MemoryWrite8(u64 vaddr, u8 value) override {
+    void MemoryWrite8(u64 vaddr, u8 value) override {
         Memory::Write8(vaddr, value);
     }
-    virtual void MemoryWrite16(u64 vaddr, u16 value) override {
+    void MemoryWrite16(u64 vaddr, u16 value) override {
         Memory::Write16(vaddr, value);
     }
-    virtual void MemoryWrite32(u64 vaddr, u32 value) override {
+    void MemoryWrite32(u64 vaddr, u32 value) override {
         Memory::Write32(vaddr, value);
     }
-    virtual void MemoryWrite64(u64 vaddr, u64 value) override {
+    void MemoryWrite64(u64 vaddr, u64 value) override {
         Memory::Write64(vaddr, value);
     }
 
-    virtual void InterpreterFallback(u64 pc, size_t num_instructions) override {
+    void InterpreterFallback(u64 pc, size_t num_instructions) override {
         ARM_Interface::ThreadContext ctx;
         parent.SaveContext(ctx);
         parent.inner_unicorn.LoadContext(ctx);
@@ -51,19 +52,23 @@ public:
         num_interpreted_instructions += num_instructions;
     }
 
-    virtual void CallSVC(u32 swi) override {
+    void ExceptionRaised(u64 pc, Dynarmic::A64::Exception /*exception*/) override {
+        ASSERT_MSG(false, "ExceptionRaised(%" PRIx64 ")", pc);
+    }
+
+    void CallSVC(u32 swi) override {
         printf("svc %x\n", swi);
         Kernel::CallSVC(swi);
     }
 
-    virtual void AddTicks(u64 ticks) override {
+    void AddTicks(u64 ticks) override {
         if (ticks > ticks_remaining) {
             ticks_remaining = 0;
             return;
         }
         ticks -= ticks_remaining;
     }
-    virtual u64 GetTicksRemaining() override {
+    u64 GetTicksRemaining() override {
         return ticks_remaining;
     }
 
