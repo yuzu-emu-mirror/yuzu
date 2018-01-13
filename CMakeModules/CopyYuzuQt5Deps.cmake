@@ -1,4 +1,4 @@
-function(copy_citra_Qt5_deps target_dir)
+function(copy_yuzu_Qt5_deps target_dir)
     include(WindowsCopyFiles)
     set(DLL_DEST "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
     set(Qt5_DLL_DIR "${Qt5_DIR}/../../../bin")
@@ -14,4 +14,4 @@ function(copy_citra_Qt5_deps target_dir)
         Qt5Widgets$<$<CONFIG:Debug>:d>.*
     )
     windows_copy_files(yuzu ${Qt5_PLATFORMS_DIR} ${PLATFORMS} qwindows$<$<CONFIG:Debug>:d>.*)
-endfunction(copy_citra_Qt5_deps)
+endfunction(copy_yuzu_Qt5_deps)

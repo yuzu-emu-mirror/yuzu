@@ -7,7 +7,7 @@
 #include "core/hle/kernel/process.h"
 #include "core/memory.h"
 
-TEST_CASE("Memory::IsValidVirtualAddress", "[core][memory]") {
+TEST_CASE("Memory::IsValidVirtualAddress", "[core][memory][!hide]") {
     SECTION("these regions should not be mapped on an empty process") {
         auto process = Kernel::Process::Create("");
         CHECK(Memory::IsValidVirtualAddress(*process, Memory::PROCESS_IMAGE_VADDR) == false);

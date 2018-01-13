@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstring>
 #include <cstdlib>
 #include <memory>
 #include <glad/glad.h>
