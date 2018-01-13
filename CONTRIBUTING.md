@@ -2,13 +2,13 @@
 
 **The issue tracker is not a support forum.** Unless you can provide precise *technical information* regarding an issue, you *should not post in it*. If you need support, first read the [FAQ](https://github.com/citra-emu/citra/wiki/FAQ) and then either visit our IRC channel, [our forum](https://community.citra-emu.org) or ask in a general emulation forum such as [/r/emulation](https://www.reddit.com/r/emulation/). If you post support questions, generic messages to the developers or vague reports without technical details, they will be closed and locked.
 
-If you believe you have a valid issue report, please post text or a screenshot from the log (the console window that opens alongside Citra) and build version (hex string visible in the titlebar and zip filename), as well as your hardware and software information if applicable.
+If you believe you have a valid issue report, please post text or a screenshot from the log (the console window that opens alongside yuzu) and build version (hex string visible in the titlebar and zip filename), as well as your hardware and software information if applicable.
 
 # Contributing
-Citra is a brand new project, so we have a great opportunity to keep things clean and well organized early on. As such, coding style is very important when making commits. We run clang-format on our CI to check the code. Please use it to format your code when contributing. However, it doesn't cover all the rules below. Some of them aren't very strict rules since we want to be flexible and we understand that under certain circumstances some of them can be counterproductive. Just try to follow as many of them as possible:
+yuzu is a brand new project, so we have a great opportunity to keep things clean and well organized early on. As such, coding style is very important when making commits. We run clang-format on our CI to check the code. Please use it to format your code when contributing. However, it doesn't cover all the rules below. Some of them aren't very strict rules since we want to be flexible and we understand that under certain circumstances some of them can be counterproductive. Just try to follow as many of them as possible:
 
 ### General Rules
-* A lot of code was taken from other projects (e.g. Dolphin, PPSSPP, Gekko, SkyEye). In general, when editing other people's code, follow the style of the module you're in (or better yet, fix the style if it drastically differs from our guide).
+* A lot of code was taken from other projects (e.g. Citra, Dolphin, PPSSPP, Gekko). In general, when editing other people's code, follow the style of the module you're in (or better yet, fix the style if it drastically differs from our guide).
 * Line width is typically 100 characters. Please do not use 80-characters.
 * Don't ever introduce new external dependencies into Core
 * Don't use any platform specific code in Core
@@ -39,7 +39,7 @@ Follow the indentation/whitespace style shown below. Do not use tabs, use 4-spac
 // then, library includes
 #include <nihstro/shared_binary.h>
 
-// finally, citra includes
+// finally, yuzu includes
 #include "common/math_util.h"
 #include "common/vector_math.h"
 
