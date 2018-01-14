@@ -53,6 +53,10 @@ FileType GuessFromExtension(const std::string& extension_) {
 
     if (extension == ".elf" || extension == ".axf")
         return FileType::ELF;
+    else if (extension == ".nro")
+        return FileType::NRO;
+    else if (extension == ".nso")
+        return FileType::NSO;
 
     return FileType::Unknown;
 }
@@ -61,6 +65,10 @@ const char* GetFileTypeString(FileType type) {
     switch (type) {
     case FileType::ELF:
         return "ELF";
+    case FileType::NRO:
+        return "NRO";
+    case FileType::NSO:
+        return "NSO";
     case FileType::Error:
     case FileType::Unknown:
         break;
