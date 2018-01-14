@@ -124,6 +124,7 @@ private slots:
     void OnMenuSelectGameListRoot();
     void OnMenuRecentFile();
     void OnConfigure();
+    void OnAbout();
     void OnToggleFilterBar();
     void OnDisplayTitleBars(bool);
     void ToggleWindowMode();

@@ -26,6 +26,7 @@
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
+#include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
@@ -264,6 +265,9 @@ void GMainWindow::ConnectMenuEvents() {
     ui.action_Show_Filter_Bar->setShortcut(tr("CTRL+F"));
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
+
+    // Help
+    connect(ui.action_About, &QAction::triggered, this, &GMainWindow::OnAbout);
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -579,6 +583,11 @@ void GMainWindow::OnConfigure() {
         configureDialog.applyConfiguration();
         config->Save();
     }
+}
+
+void GMainWindow::OnAbout() {
+    AboutDialog aboutDialog(this);
+    aboutDialog.exec();
 }
 
 void GMainWindow::OnToggleFilterBar() {
