@@ -143,9 +143,6 @@ void GMainWindow::InitializeWidgets() {
 }
 
 void GMainWindow::InitializeDebugWidgets() {
-    connect(ui.action_Create_Pica_Surface_Viewer, &QAction::triggered, this,
-            &GMainWindow::OnCreateGraphicsSurfaceViewer);
-
     QMenu* debug_menu = ui.menu_View_Debugging;
 
 #if MICROPROFILE_ENABLED
@@ -598,8 +595,6 @@ void GMainWindow::OnToggleFilterBar() {
         game_list->clearFilter();
     }
 }
-
-void GMainWindow::OnCreateGraphicsSurfaceViewer() {}
 
 void GMainWindow::UpdateStatusBar() {
     if (emu_thread == nullptr) {
