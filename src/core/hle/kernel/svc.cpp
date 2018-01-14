@@ -17,6 +17,7 @@
 #include "core/hle/kernel/object_address_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
+#include "core/hle/kernel/shared_memory.h"
 #include "core/hle/kernel/svc.h"
 #include "core/hle/kernel/svc_wrap.h"
 #include "core/hle/kernel/sync_object.h"
@@ -384,6 +385,37 @@ static u32 GetCurrentProcessorNumber() {
     return 0;
 }
 
+static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size,
+                                  u32 permissions) {
+    LOG_TRACE(Kernel_SVC,
+              "called, shared_memory_handle=0x%08X, addr=0x%llx, size=0x%llx, permissions=0x%08X",
+              shared_memory_handle, addr, size, permissions);
+
+    SharedPtr<SharedMemory> shared_memory =
+        Kernel::g_handle_table.Get<SharedMemory>(shared_memory_handle);
+    if (!shared_memory) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    MemoryPermission permissions_type = static_cast<MemoryPermission>(permissions);
+    switch (permissions_type) {
+    case MemoryPermission::Read:
+    case MemoryPermission::Write:
+    case MemoryPermission::ReadWrite:
+    case MemoryPermission::Execute:
+    case MemoryPermission::ReadExecute:
+    case MemoryPermission::WriteExecute:
+    case MemoryPermission::ReadWriteExecute:
+    case MemoryPermission::DontCare:
+        return shared_memory->Map(Kernel::g_current_process.get(), addr, permissions_type,
+                                  MemoryPermission::DontCare);
+    default:
+        LOG_ERROR(Kernel_SVC, "unknown permissions=0x%08X", permissions);
+    }
+
+    return RESULT_SUCCESS;
+}
+
 /// Query process memory
 static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_info*/,
                                      Handle process_handle, u64 addr) {
@@ -707,7 +739,7 @@ static const FunctionDef SVC_Table[] = {
     {0x10, SvcWrap<GetCurrentProcessorNumber>, "GetCurrentProcessorNumber"},
     {0x11, nullptr, "SignalEvent"},
     {0x12, nullptr, "ClearEvent"},
-    {0x13, nullptr, "MapSharedMemory"},
+    {0x13, SvcWrap<MapSharedMemory>, "MapSharedMemory"},
     {0x14, nullptr, "UnmapSharedMemory"},
     {0x15, SvcWrap<CreateTransferMemory>, "CreateTransferMemory"},
     {0x16, SvcWrap<CloseHandle>, "CloseHandle"},
