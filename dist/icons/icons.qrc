@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>yuzu.png</file>
+  </qresource>
+</RCC>
