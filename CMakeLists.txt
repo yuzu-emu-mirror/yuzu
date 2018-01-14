@@ -216,7 +216,7 @@ if (YUZU_USE_BUNDLED_UNICORN)
     set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/lib/x64/unicorn_dynload.lib" CACHE PATH "Path to Unicorn library")
     set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/lib/x64/" CACHE PATH "Path to unicorn.dll")
 else()
-    find_package(unicorn REQUIRED)
+    find_package(Unicorn REQUIRED)
 endif()
 
 if (UNICORN_FOUND)
