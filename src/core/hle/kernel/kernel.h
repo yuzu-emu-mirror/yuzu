@@ -35,7 +35,7 @@ enum class HandleType : u32 {
 };
 
 enum {
-    DEFAULT_STACK_SIZE = 0x4000,
+    DEFAULT_STACK_SIZE = 0x10000,
 };
 
 enum class ResetType {
