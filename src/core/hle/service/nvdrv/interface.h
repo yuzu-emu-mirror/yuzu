@@ -12,10 +12,10 @@
 namespace Service {
 namespace Nvidia {
 
-class NVDRV_A final : public ServiceFramework<NVDRV_A> {
+class NVDRV final : public ServiceFramework<NVDRV> {
 public:
-    NVDRV_A(std::shared_ptr<Module> nvdrv);
-    ~NVDRV_A() = default;
+    NVDRV(std::shared_ptr<Module> nvdrv, const char* name);
+    ~NVDRV() = default;
 
 private:
     void Open(Kernel::HLERequestContext& ctx);

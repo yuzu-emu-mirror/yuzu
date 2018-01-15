@@ -4,13 +4,13 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nvdrv/interface.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvdrv/nvdrv_a.h"
 
 namespace Service {
 namespace Nvidia {
 
-void NVDRV_A::Open(Kernel::HLERequestContext& ctx) {
+void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     auto buffer = ctx.BufferDescriptorA()[0];
@@ -24,7 +24,7 @@ void NVDRV_A::Open(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0);
 }
 
-void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
+void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::RequestParser rp{ctx};
@@ -48,19 +48,19 @@ void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
     rb.Push(nv_result);
 }
 
-void NVDRV_A::Initialize(Kernel::HLERequestContext& ctx) {
+void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 }
 
-NVDRV_A::NVDRV_A(std::shared_ptr<Module> nvdrv)
-    : ServiceFramework("nvdrv:a"), nvdrv(std::move(nvdrv)) {
+NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
+    : ServiceFramework(name), nvdrv(std::move(nvdrv)) {
     static const FunctionInfo functions[] = {
-        {0, &NVDRV_A::Open, "Open"},
-        {1, &NVDRV_A::Ioctl, "Ioctl"},
-        {3, &NVDRV_A::Initialize, "Initialize"},
+        {0, &NVDRV::Open, "Open"},
+        {1, &NVDRV::Ioctl, "Ioctl"},
+        {3, &NVDRV::Initialize, "Initialize"},
     };
     RegisterHandlers(functions);
 }

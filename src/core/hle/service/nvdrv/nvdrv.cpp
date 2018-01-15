@@ -2,12 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvdrv/nvdrv_a.h"
+#include "core/hle/service/nvdrv/interface.h"
 
 namespace Service {
 namespace Nvidia {
@@ -16,7 +17,8 @@ std::weak_ptr<Module> nvdrv;
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module_ = std::make_shared<Module>();
-    std::make_shared<NVDRV_A>(module_)->InstallAsService(service_manager);
+    std::make_shared<NVDRV>(module_, "nvdrv")->InstallAsService(service_manager);
+    std::make_shared<NVDRV>(module_, "nvdrv:a")->InstallAsService(service_manager);
     nvdrv = module_;
 }
 
