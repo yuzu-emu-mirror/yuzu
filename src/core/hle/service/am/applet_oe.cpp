@@ -6,6 +6,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/am/applet_oe.h"
+#include "core/hle/service/apm/apm.h"
 
 namespace Service {
 namespace AM {
@@ -184,7 +185,7 @@ private:
     void GetOperationMode(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(static_cast<u8>(OperationMode::Handheld));
+        rb.Push(static_cast<u32>(APM::PerformanceMode::Handheld));
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
