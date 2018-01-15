@@ -7,10 +7,10 @@ include(DownloadExternals)
 project(yuzu)
 
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
-option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
+option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
-option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
+option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" ON)
 
 option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" ON)
 
