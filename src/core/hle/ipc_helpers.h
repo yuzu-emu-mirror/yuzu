@@ -9,10 +9,13 @@
 #include <type_traits>
 #include <utility>
 #include "core/hle/ipc.h"
+#include "core/hle/kernel/client_port.h"
+#include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/server_port.h"
 
 namespace IPC {
 
@@ -63,13 +66,20 @@ public:
         : RequestHelperBase(context) {
         memset(cmdbuf, 0, sizeof(u32) * IPC::COMMAND_BUFFER_LENGTH);
 
+        context.ClearIncomingObjects();
+
         IPC::CommandHeader header{};
 
         // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory
         // padding.
         u32 raw_data_size = sizeof(IPC::DataPayloadHeader) / 4 + 4 + normal_params_size;
-        if (context.IsDomain())
+        if (context.IsDomain()) {
             raw_data_size += sizeof(DomainMessageHeader) / 4 + num_domain_objects;
+        } else {
+            // If we're not in a domain, turn the domain object parameters into move handles.
+            num_handles_to_move += num_domain_objects;
+            num_domain_objects = 0;
+        }
 
         header.data_size.Assign(raw_data_size);
         if (num_handles_to_copy || num_handles_to_move) {
@@ -100,7 +110,15 @@ public:
 
     template <class T, class... Args>
     void PushIpcInterface(Args&&... args) {
-        context->AddDomainObject(std::make_shared<T>(std::forward<Args>(args)...));
+        auto iface = std::make_shared<T>(std::forward<Args>(args)...);
+        if (context->IsDomain()) {
+            context->AddDomainObject(std::move(iface));
+        } else {
+            auto port = iface->CreatePort();
+            auto session = port->Connect();
+            ASSERT(session.Succeeded());
+            context->AddMoveObject(std::move(session).Unwrap());
+        }
     }
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
