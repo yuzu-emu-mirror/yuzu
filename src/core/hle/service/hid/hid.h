@@ -5,6 +5,7 @@
 #pragma once
 
 #include "core/hle/service/service.h"
+#include "core/settings.h"
 
 namespace Service {
 namespace HID {
@@ -156,8 +157,7 @@ struct KeyboardHeader {
     u64 latestEntry;
     u64 maxEntryIndex;
 };
-static_assert(sizeof(KeyboardHeader) == 0x20,
-              "HID keyboard header structure has incorrect size");
+static_assert(sizeof(KeyboardHeader) == 0x20, "HID keyboard header structure has incorrect size");
 
 struct KeyboardModifierKeyState {
     union {
