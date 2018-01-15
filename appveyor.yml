@@ -36,10 +36,10 @@ install:
           C:\msys64\usr\bin\bash -lc "pacman --noconfirm -S $dependencies" 2> $null
         }
 
-        else(($env:BUILD_TYPE -eq 'msvc') {
-        $dependecies = "SDL2-2.0.5"
-                       "unicorn-yuzu"
-                       "qt-5.7-msvc2015_64"
+        else (($env:BUILD_TYPE -eq 'msvc') {
+          $dependecies = "SDL2-2.0.5"
+                         "unicorn-yuzu"
+                         "qt-5.7-msvc2015_64"
         }
 before_build:
   - mkdir %BUILD_TYPE%_build
