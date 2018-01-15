@@ -494,6 +494,7 @@ public:
     IManagerDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
         : ServiceFramework("IManagerDisplayService"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
+            {1020, &IManagerDisplayService::CloseDisplay, "CloseDisplay"},
             {1102, nullptr, "GetDisplayResolution"},
             {2010, &IManagerDisplayService::CreateManagedLayer, "CreateManagedLayer"},
             {6000, &IManagerDisplayService::AddToLayerStack, "AddToLayerStack"},
@@ -503,6 +504,15 @@ public:
     ~IManagerDisplayService() = default;
 
 private:
+    void CloseDisplay(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u64 display = rp.Pop<u64>();
+
+        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+    }
+
     void CreateManagedLayer(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
