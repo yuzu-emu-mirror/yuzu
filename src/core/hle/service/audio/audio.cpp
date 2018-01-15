@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/audio/audio.h"
 #include "core/hle/service/audio/audout_u.h"
 

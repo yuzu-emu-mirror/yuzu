@@ -41,6 +41,8 @@ set(SRCS
             hle/service/am/applet_oe.cpp
             hle/service/aoc/aoc_u.cpp
             hle/service/apm/apm.cpp
+            hle/service/audio/audio.cpp
+            hle/service/audio/audout_u.cpp
             hle/service/hid/hid.cpp
             hle/service/lm/lm.cpp
             hle/service/nvdrv/devices/nvdisp_disp0.cpp
@@ -124,6 +126,8 @@ set(HEADERS
             hle/service/am/applet_oe.h
             hle/service/aoc/aoc_u.h
             hle/service/apm/apm.h
+            hle/service/audio/audio.h
+            hle/service/audio/audout_u.h
             hle/service/hid/hid.h
             hle/service/lm/lm.h
             hle/service/nvdrv/devices/nvdevice.h
