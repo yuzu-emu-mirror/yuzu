@@ -8,7 +8,6 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/ui_settings.h"
 
-
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
     qt_config_loc = FileUtil::GetUserPath(D_CONFIG_IDX) + "qt-config.ini";
@@ -25,10 +24,18 @@ const std::array<int, Settings::NativeButton::NumButtons> Config::default_button
 
 const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> Config::default_analogs{{
     {
-        Qt::Key_Up, Qt::Key_Down, Qt::Key_Left, Qt::Key_Right, Qt::Key_D,
+        Qt::Key_Up,
+        Qt::Key_Down,
+        Qt::Key_Left,
+        Qt::Key_Right,
+        Qt::Key_D,
     },
     {
-        Qt::Key_I, Qt::Key_K, Qt::Key_J, Qt::Key_L, Qt::Key_D,
+        Qt::Key_I,
+        Qt::Key_K,
+        Qt::Key_J,
+        Qt::Key_L,
+        Qt::Key_D,
     },
 }};
 
