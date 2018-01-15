@@ -44,6 +44,7 @@ enum Values {
     SR,
 
     Home,
+    Screenshot,
 
     NumButtons,
 };
@@ -81,6 +82,7 @@ static const std::array<const char*, NumButtons> mapping = {{
     "button_sl",
     "button_sr",
     "button_home",
+    "button_screenshot",
 }};
 } // namespace NativeButton
 
