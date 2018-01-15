@@ -144,7 +144,7 @@ void LM::Initialize(Kernel::HLERequestContext& ctx) {
     if (session.Succeeded()) {
         LOG_DEBUG(Service_SM, "called, initialized logger -> session=%u",
                   (*session)->GetObjectId());
-        IPC::RequestBuilder rb{ctx, 1, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushMoveObjects(std::move(session).Unwrap());
         registered_loggers.emplace_back(std::move(client_port));
