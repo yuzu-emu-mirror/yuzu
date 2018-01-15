@@ -48,7 +48,8 @@ button_lstick_right=
 button_lstick_down=
 button_sl=
 button_sr=
-button_home"
+button_home=
+button_screenshot=
 
 # for analog input, the following devices are available:
 #  - "analog_from_button" (default) for emulating analog input from direction buttons. Required parameters:
