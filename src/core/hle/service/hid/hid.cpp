@@ -58,13 +58,10 @@ private:
             IPC::RequestBuilder rb{ctx, 2, 0, 1};
             rb.Push(RESULT_SUCCESS);
             rb.PushMoveObjects(std::move(session).Unwrap());
-            registered_loggers.emplace_back(std::move(client_port));
         } else {
             UNIMPLEMENTED();
         }
     }
-
-    std::vector<Kernel::SharedPtr<Kernel::ClientPort>> registered_loggers;
 };
 
 void ReloadInputDevices() {}
