@@ -166,6 +166,9 @@ if (NOT Boost_FOUND)
     find_package(Boost QUIET REQUIRED)
 endif()
 
+# Output binaries to bin/
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # Prefer the -pthread flag on Linux.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
