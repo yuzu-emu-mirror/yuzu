@@ -17,6 +17,7 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/hle/service/apm/apm.h"
+#include "core/hle/service/audio/audio.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
@@ -164,6 +165,7 @@ void Init() {
     AM::InstallInterfaces(*SM::g_service_manager);
     AOC::InstallInterfaces(*SM::g_service_manager);
     APM::InstallInterfaces(*SM::g_service_manager);
+    Audio::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
     NVDRV::InstallInterfaces(*SM::g_service_manager);
