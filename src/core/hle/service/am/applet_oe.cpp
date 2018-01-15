@@ -81,7 +81,7 @@ private:
     void ReceiveMessage(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(1);
+        rb.Push<u32>(15);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
