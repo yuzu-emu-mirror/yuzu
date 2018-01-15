@@ -11,7 +11,7 @@ namespace HID {
 
 // Begin enums and output structs
 
-enum HIDControllerType : u32 {
+enum ControllerType : u32 {
     ControllerType_ProController = 1 << 0,
     ControllerType_Handheld = 1 << 1,
     ControllerType_JoyconPair = 1 << 2,
@@ -19,7 +19,7 @@ enum HIDControllerType : u32 {
     ControllerType_JoyconRight = 1 << 4,
 };
 
-enum HIDControllerLayoutType : u32 {
+enum ControllerLayoutType : u32 {
     Layout_ProController = 0, // Pro Controller or HID gamepad
     Layout_Handheld = 1,      // Two Joy-Con docked to rails
     Layout_Single = 2, // Horizontal single Joy-Con or pair of Joy-Con, adjusted for orientation
@@ -29,16 +29,16 @@ enum HIDControllerLayoutType : u32 {
     Layout_Default = 6, // Safe default, single Joy-Con have buttons/sticks rotated for orientation
 };
 
-enum HIDControllerColorDescription {
+enum ControllerColorDescription {
     ColorDesc_ColorsNonexistent = 1 << 1,
 };
 
-enum HIDControllerConnectionState {
+enum ControllerConnectionState {
     ConnectionState_Connected = 1 << 0,
     ConnectionState_Wired = 1 << 1,
 };
 
-enum HIDControllerID {
+enum ControllerID {
     Controller_Player1 = 0,
     Controller_Player2 = 1,
     Controller_Player3 = 2,
@@ -53,26 +53,26 @@ enum HIDControllerID {
 
 // End enums and output structs
 
-// Begin HIDTouchScreen
+// Begin TouchScreen
 
-struct HIDTouchScreenHeader {
+struct TouchScreenHeader {
     u64 timestampTicks;
     u64 numEntries;
     u64 latestEntry;
     u64 maxEntryIndex;
     u64 timestamp;
 };
-static_assert(sizeof(HIDTouchScreenHeader) == 0x28,
+static_assert(sizeof(TouchScreenHeader) == 0x28,
               "HID touch screen header structure has incorrect size");
 
-struct HIDTouchScreenEntryHeader {
+struct TouchScreenEntryHeader {
     u64 timestamp;
     u64 numTouches;
 };
-static_assert(sizeof(HIDTouchScreenEntryHeader) == 0x10,
+static_assert(sizeof(TouchScreenEntryHeader) == 0x10,
               "HID touch screen entry header structure has incorrect size");
 
-struct HIDTouchScreenEntryTouch {
+struct TouchScreenEntryTouch {
     u64 timestamp;
     u32 padding;
     u32 touchIndex;
@@ -83,37 +83,37 @@ struct HIDTouchScreenEntryTouch {
     u32 angle;
     u32 padding_2;
 };
-static_assert(sizeof(HIDTouchScreenEntryTouch) == 0x28,
+static_assert(sizeof(TouchScreenEntryTouch) == 0x28,
               "HID touch screen touch structure has incorrect size");
 
-struct HIDTouchScreenEntry {
-    HIDTouchScreenEntryHeader header;
-    std::array<HIDTouchScreenEntryTouch, 16> touches;
+struct TouchScreenEntry {
+    TouchScreenEntryHeader header;
+    std::array<TouchScreenEntryTouch, 16> touches;
     u64 unk;
 };
-static_assert(sizeof(HIDTouchScreenEntry) == 0x298,
+static_assert(sizeof(TouchScreenEntry) == 0x298,
               "HID touch screen entry structure has incorrect size");
 
-struct HIDTouchScreen {
-    HIDTouchScreenHeader header;
-    std::array<HIDTouchScreenEntry, 17> entries;
+struct TouchScreen {
+    TouchScreenHeader header;
+    std::array<TouchScreenEntry, 17> entries;
     std::array<u8, 0x3c0> padding;
 };
-static_assert(sizeof(HIDTouchScreen) == 0x3000, "HID touch screen structure has incorrect size");
+static_assert(sizeof(TouchScreen) == 0x3000, "HID touch screen structure has incorrect size");
 
-// End HIDTouchScreen
+// End TouchScreen
 
-// Begin HIDMouse
+// Begin Mouse
 
-struct HIDMouseHeader {
+struct MouseHeader {
     u64 timestampTicks;
     u64 numEntries;
     u64 latestEntry;
     u64 maxEntryIndex;
 };
-static_assert(sizeof(HIDMouseHeader) == 0x20, "HID mouse header structure has incorrect size");
+static_assert(sizeof(MouseHeader) == 0x20, "HID mouse header structure has incorrect size");
 
-struct HIDMouseButtonState {
+struct MouseButtonState {
     union {
         u64 hex{};
 
@@ -126,7 +126,7 @@ struct HIDMouseButtonState {
     };
 };
 
-struct HIDMouseEntry {
+struct MouseEntry {
     u64 timestamp;
     u64 timestamp_2;
     u32 x;
@@ -135,31 +135,31 @@ struct HIDMouseEntry {
     u32 velocityY;
     u32 scrollVelocityX;
     u32 scrollVelocityY;
-    HIDMouseButtonState buttons;
+    MouseButtonState buttons;
 };
-static_assert(sizeof(HIDMouseEntry) == 0x30, "HID mouse entry structure has incorrect size");
+static_assert(sizeof(MouseEntry) == 0x30, "HID mouse entry structure has incorrect size");
 
-struct HIDMouse {
-    HIDMouseHeader header;
-    std::array<HIDMouseEntry, 17> entries;
+struct Mouse {
+    MouseHeader header;
+    std::array<MouseEntry, 17> entries;
     std::array<u8, 0xB0> padding;
 };
-static_assert(sizeof(HIDMouse) == 0x400, "HID mouse structure has incorrect size");
+static_assert(sizeof(Mouse) == 0x400, "HID mouse structure has incorrect size");
 
-// End HIDMouse
+// End Mouse
 
-// Begin HIDKeyboard
+// Begin Keyboard
 
-struct HIDKeyboardHeader {
+struct KeyboardHeader {
     u64 timestampTicks;
     u64 numEntries;
     u64 latestEntry;
     u64 maxEntryIndex;
 };
-static_assert(sizeof(HIDKeyboardHeader) == 0x20,
+static_assert(sizeof(KeyboardHeader) == 0x20,
               "HID keyboard header structure has incorrect size");
 
-struct HIDKeyboardModifierKeyState {
+struct KeyboardModifierKeyState {
     union {
         u64 hex{};
 
@@ -178,34 +178,34 @@ struct HIDKeyboardModifierKeyState {
     };
 };
 
-struct HIDKeyboardEntry {
+struct KeyboardEntry {
     u64 timestamp;
     u64 timestamp_2;
-    HIDKeyboardModifierKeyState modifier;
+    KeyboardModifierKeyState modifier;
     u32 keys[8];
 };
-static_assert(sizeof(HIDKeyboardEntry) == 0x38, "HID keyboard entry structure has incorrect size");
+static_assert(sizeof(KeyboardEntry) == 0x38, "HID keyboard entry structure has incorrect size");
 
-struct HIDKeyboard {
-    HIDKeyboardHeader header;
-    std::array<HIDKeyboardEntry, 17> entries;
+struct Keyboard {
+    KeyboardHeader header;
+    std::array<KeyboardEntry, 17> entries;
     std::array<u8, 0x28> padding;
 };
-static_assert(sizeof(HIDKeyboard) == 0x400, "HID keyboard structure has incorrect size");
+static_assert(sizeof(Keyboard) == 0x400, "HID keyboard structure has incorrect size");
 
-// End HIDKeyboard
+// End Keyboard
 
-// Begin HIDController
+// Begin Controller
 
-struct HIDControllerMAC {
+struct ControllerMAC {
     u64 timestamp;
     std::array<u8, 0x8> mac;
     u64 unk;
     u64 timestamp_2;
 };
-static_assert(sizeof(HIDControllerMAC) == 0x20, "HID controller MAC structure has incorrect size");
+static_assert(sizeof(ControllerMAC) == 0x20, "HID controller MAC structure has incorrect size");
 
-struct HIDControllerHeader {
+struct ControllerHeader {
     u32 type;
     u32 isHalf;
     u32 singleColorsDescriptor;
@@ -217,19 +217,19 @@ struct HIDControllerHeader {
     u32 rightColorBody;
     u32 rightColorbuttons;
 };
-static_assert(sizeof(HIDControllerHeader) == 0x28,
+static_assert(sizeof(ControllerHeader) == 0x28,
               "HID controller header structure has incorrect size");
 
-struct HIDControllerLayoutHeader {
+struct ControllerLayoutHeader {
     u64 timestampTicks;
     u64 numEntries;
     u64 latestEntry;
     u64 maxEntryIndex;
 };
-static_assert(sizeof(HIDControllerLayoutHeader) == 0x20,
+static_assert(sizeof(ControllerLayoutHeader) == 0x20,
               "HID controller layout header structure has incorrect size");
 
-struct HIDControllerPadState {
+struct ControllerPadState {
     union {
         u64 hex{};
 
@@ -270,43 +270,43 @@ struct HIDControllerPadState {
     };
 };
 
-struct HIDControllerInputEntry {
+struct ControllerInputEntry {
     u64 timestamp;
     u64 timestamp_2;
-    HIDControllerPadState buttons;
+    ControllerPadState buttons;
     u32 joystickLeftX;
     u32 joystickLeftY;
     u32 joystickRightX;
     u32 joystickRightY;
     u64 connectionState;
 };
-static_assert(sizeof(HIDControllerInputEntry) == 0x30,
+static_assert(sizeof(ControllerInputEntry) == 0x30,
               "HID controller input entry structure has incorrect size");
 
-struct HIDControllerLayout {
-    HIDControllerLayoutHeader header;
-    std::array<HIDControllerInputEntry, 17> entries;
+struct ControllerLayout {
+    ControllerLayoutHeader header;
+    std::array<ControllerInputEntry, 17> entries;
 };
-static_assert(sizeof(HIDControllerLayout) == 0x350,
+static_assert(sizeof(ControllerLayout) == 0x350,
               "HID controller layout structure has incorrect size");
 
-struct HIDController {
-    HIDControllerHeader header;
-    std::array<HIDControllerLayout, 7> layouts;
+struct Controller {
+    ControllerHeader header;
+    std::array<ControllerLayout, 7> layouts;
     std::array<u8, 0x2a70> unk_1;
-    HIDControllerMAC macLeft;
-    HIDControllerMAC macRight;
+    ControllerMAC macLeft;
+    ControllerMAC macRight;
     std::array<u8, 0xdf8> unk_2;
 };
-static_assert(sizeof(HIDController) == 0x5000, "HID controller structure has incorrect size");
+static_assert(sizeof(Controller) == 0x5000, "HID controller structure has incorrect size");
 
-// End HIDController
+// End Controller
 
-struct HIDSharedMemory {
+struct SharedMemory {
     std::array<u8, 0x400> header;
-    HIDTouchScreen touchscreen;
-    HIDMouse mouse;
-    HIDKeyboard keyboard;
+    TouchScreen touchscreen;
+    Mouse mouse;
+    Keyboard keyboard;
     std::array<u8, 0x400> unkSection1;
     std::array<u8, 0x400> unkSection2;
     std::array<u8, 0x400> unkSection3;
@@ -316,10 +316,10 @@ struct HIDSharedMemory {
     std::array<u8, 0x200> unkSection7;
     std::array<u8, 0x800> unkSection8;
     std::array<u8, 0x4000> controllerSerials;
-    std::array<HIDController, 10> controllers;
+    std::array<Controller, 10> controllers;
     std::array<u8, 0x4600> unkSection9;
 };
-static_assert(sizeof(HIDSharedMemory) == 0x40000, "HID Shared Memory structure has incorrect size");
+static_assert(sizeof(SharedMemory) == 0x40000, "HID Shared Memory structure has incorrect size");
 
 /// Reload input devices. Used when input configuration changed
 void ReloadInputDevices();
