@@ -44,6 +44,7 @@ enum class GetInfoType : u64 {
     // 3.0.0+
     IsVirtualAddressMemoryEnabled = 16,
     TitleId = 18,
+    // 4.0.0+
     PrivilegedProcessId = 19,
 };
 
