@@ -361,7 +361,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
-            {2, nullptr, "GetNativeHandle"},
+            {2, &IHOSBinderDriver::GetNativeHandle, "GetNativeHandle"},
             {3, nullptr, "TransactParcelAuto"},
         };
         RegisterHandlers(functions);
@@ -461,6 +461,21 @@ private:
         LOG_WARNING(Service, "(STUBBED) called id=%u, addval=%08X, type=%08X", id, addval, type);
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+    }
+
+    void GetNativeHandle(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        u32 id = rp.Pop<u32>();
+        u32 unknown = rp.Pop<u32>();
+
+        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+
+        // TODO(Subv): Find out what this actually is.
+
+        LOG_WARNING(Service, "(STUBBED) called id=%u, unknown=%08X", id, unknown);
+        IPC::RequestBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(buffer_queue->GetNativeHandle());
     }
 
     std::shared_ptr<NVFlinger> nv_flinger;
@@ -565,6 +580,15 @@ void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestCont
     rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
 }
 
+void IApplicationDisplayService::GetIndirectDisplayTransactionService(
+    Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
+}
+
 void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
@@ -578,6 +602,15 @@ void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(nv_flinger->OpenDisplay(name));
+}
+
+void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
+    u64 display_id = rp.Pop<u64>();
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
+    rb.Push(RESULT_SUCCESS);
 }
 
 void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
@@ -603,6 +636,40 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(data.size());
+}
+
+void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestParser rp{ctx};
+    u32 flags = rp.Pop<u32>();
+    u64 display_id = rp.Pop<u64>();
+
+    auto& buffer = ctx.BufferDescriptorB()[0];
+
+    // TODO(Subv): What's the difference between a Stray and a Managed layer?
+
+    u64 layer_id = nv_flinger->CreateLayer(display_id);
+    u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+
+    NativeWindow native_window{buffer_queue_id};
+    auto data = native_window.Serialize();
+    Memory::WriteBlock(buffer.Address(), data.data(), data.size());
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(6, 0, 0, 0);
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(layer_id);
+    rb.Push<u64>(data.size());
+}
+
+void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestParser rp{ctx};
+    u64 layer_id = rp.Pop<u64>();
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+    rb.Push(RESULT_SUCCESS);
 }
 
 void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
@@ -633,11 +700,15 @@ IApplicationDisplayService::IApplicationDisplayService(std::shared_ptr<NVFlinger
         {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
         {101, &IApplicationDisplayService::GetSystemDisplayService, "GetSystemDisplayService"},
         {102, &IApplicationDisplayService::GetManagerDisplayService, "GetManagerDisplayService"},
-        {103, nullptr, "GetIndirectDisplayTransactionService"},
+        {103, &IApplicationDisplayService::GetIndirectDisplayTransactionService,
+         "GetIndirectDisplayTransactionService"},
         {1000, nullptr, "ListDisplays"},
         {1010, &IApplicationDisplayService::OpenDisplay, "OpenDisplay"},
+        {1020, &IApplicationDisplayService::CloseDisplay, "CloseDisplay"},
         {2101, &IApplicationDisplayService::SetLayerScalingMode, "SetLayerScalingMode"},
         {2020, &IApplicationDisplayService::OpenLayer, "OpenLayer"},
+        {2030, &IApplicationDisplayService::CreateStrayLayer, "CreateStrayLayer"},
+        {2031, &IApplicationDisplayService::DestroyStrayLayer, "DestroyStrayLayer"},
         {5202, &IApplicationDisplayService::GetDisplayVsyncEvent, "GetDisplayVsyncEvent"},
     };
     RegisterHandlers(functions);
@@ -778,7 +849,9 @@ void NVFlinger::Compose() {
     }
 }
 
-BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {}
+BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {
+    native_handle = Kernel::Event::Create(Kernel::ResetType::OneShot, "BufferQueue NativeHandle");
+}
 
 void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
     Buffer buffer{};

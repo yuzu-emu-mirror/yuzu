@@ -59,11 +59,16 @@ public:
         return id;
     }
 
+    Kernel::SharedPtr<Kernel::Event> GetNativeHandle() const {
+        return native_handle;
+    }
+
 private:
     u32 id;
     u64 layer_id;
 
     std::vector<Buffer> queue;
+    Kernel::SharedPtr<Kernel::Event> native_handle;
 };
 
 struct Layer {
@@ -138,9 +143,13 @@ private:
     void GetRelayService(Kernel::HLERequestContext& ctx);
     void GetSystemDisplayService(Kernel::HLERequestContext& ctx);
     void GetManagerDisplayService(Kernel::HLERequestContext& ctx);
+    void GetIndirectDisplayTransactionService(Kernel::HLERequestContext& ctx);
     void OpenDisplay(Kernel::HLERequestContext& ctx);
+    void CloseDisplay(Kernel::HLERequestContext& ctx);
     void SetLayerScalingMode(Kernel::HLERequestContext& ctx);
     void OpenLayer(Kernel::HLERequestContext& ctx);
+    void CreateStrayLayer(Kernel::HLERequestContext& ctx);
+    void DestroyStrayLayer(Kernel::HLERequestContext& ctx);
     void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger> nv_flinger;
