@@ -7,10 +7,10 @@ include(DownloadExternals)
 project(yuzu)
 
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
-option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
+option(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
-option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
+option(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
 option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" OFF)
 
@@ -174,12 +174,12 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 if (ENABLE_SDL2)
-    if (CITRA_USE_BUNDLED_SDL2)
+    if (YUZU_USE_BUNDLED_SDL2)
         # Detect toolchain and platform
         if (MSVC14 AND ARCHITECTURE_x86_64)
             set(SDL2_VER "SDL2-2.0.5")
         else()
-            message(FATAL_ERROR "No bundled SDL2 binaries for your toolchain. Disable CITRA_USE_BUNDLED_SDL2 and provide your own.")
+            message(FATAL_ERROR "No bundled SDL2 binaries for your toolchain. Disable YUZU_USE_BUNDLED_SDL2 and provide your own.")
         endif()
 
         if (DEFINED SDL2_VER)
@@ -235,11 +235,11 @@ if (UNICORN_FOUND)
 endif()
 
 if (ENABLE_QT)
-    if (CITRA_USE_BUNDLED_QT)
+    if (YUZU_USE_BUNDLED_QT)
         if (MSVC14 AND ARCHITECTURE_x86_64)
             set(QT_VER qt-5.7-msvc2015_64)
         else()
-            message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable CITRA_USE_BUNDLED_QT and provide your own.")
+            message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable YUZU_USE_BUNDLED_QT and provide your own.")
         endif()
 
         if (DEFINED QT_VER)
