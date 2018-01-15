@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
 
@@ -47,7 +48,7 @@ public:
     virtual ~RendererBase() {}
 
     /// Swap buffers (render frame)
-    virtual void SwapBuffers(const FramebufferInfo& framebuffer_info) = 0;
+    virtual void SwapBuffers(boost::optional<const FramebufferInfo&> framebuffer_info) = 0;
 
     /**
      * Set the emulator window to use for renderer

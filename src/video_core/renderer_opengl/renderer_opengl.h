@@ -37,7 +37,7 @@ public:
     ~RendererOpenGL() override;
 
     /// Swap buffers (render frame)
-    void SwapBuffers(const FramebufferInfo& framebuffer_info) override;
+    void SwapBuffers(boost::optional<const FramebufferInfo&> framebuffer_info) override;
 
     /**
      * Set the emulator window to use for renderer
@@ -53,15 +53,13 @@ public:
 
 private:
     void InitOpenGLObjects();
-    void ConfigureFramebufferTexture(TextureInfo& texture,
-                                     const FramebufferInfo& framebuffer_info);
+    void ConfigureFramebufferTexture(TextureInfo& texture, const FramebufferInfo& framebuffer_info);
     void DrawScreens();
     void DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w, float h);
     void UpdateFramerate();
 
     // Loads framebuffer from emulated memory into the display information structure
-    void LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
-                            ScreenInfo& screen_info);
+    void LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info, ScreenInfo& screen_info);
     // Fills active OpenGL texture with the given RGB color.
     void LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color_b, const TextureInfo& texture);
 

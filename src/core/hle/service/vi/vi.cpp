@@ -12,6 +12,8 @@
 #include "core/hle/service/nvdrv/nvdrv_a.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
+#include "video_core/renderer_base.h"
+#include "video_core/video_core.h"
 
 namespace Service {
 namespace VI {
@@ -743,7 +745,8 @@ void NVFlinger::Compose() {
         auto buffer = buffer_queue->AcquireBuffer();
 
         if (buffer == boost::none) {
-            // There was no queued buffer to draw.
+            // There was no queued buffer to draw, render previous frame
+            VideoCore::g_renderer->SwapBuffers({});
             continue;
         }
 

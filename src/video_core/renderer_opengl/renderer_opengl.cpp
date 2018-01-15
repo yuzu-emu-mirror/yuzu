@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <glad/glad.h>
 #include "common/assert.h"
@@ -98,20 +98,23 @@ RendererOpenGL::RendererOpenGL() = default;
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
-void RendererOpenGL::SwapBuffers(const FramebufferInfo& framebuffer_info) {
+void RendererOpenGL::SwapBuffers(boost::optional<const FramebufferInfo&> framebuffer_info) {
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
 
-    if (screen_info.texture.width != (GLsizei)framebuffer_info.width ||
-        screen_info.texture.height != (GLsizei)framebuffer_info.height ||
-        screen_info.texture.pixel_format != framebuffer_info.pixel_format) {
-        // Reallocate texture if the framebuffer size has changed.
-        // This is expected to not happen very often and hence should not be a
-        // performance problem.
-        ConfigureFramebufferTexture(screen_info.texture, framebuffer_info);
+    if (framebuffer_info != boost::none) {
+        // If framebuffer_info is provided, reload it from memory to a texture
+        if (screen_info.texture.width != (GLsizei)framebuffer_info->width ||
+            screen_info.texture.height != (GLsizei)framebuffer_info->height ||
+            screen_info.texture.pixel_format != framebuffer_info->pixel_format) {
+            // Reallocate texture if the framebuffer size has changed.
+            // This is expected to not happen very often and hence should not be a
+            // performance problem.
+            ConfigureFramebufferTexture(screen_info.texture, *framebuffer_info);
+        }
+        LoadFBToScreenInfo(*framebuffer_info, screen_info);
     }
-    LoadFBToScreenInfo(framebuffer_info, screen_info);
 
     DrawScreens();
 
