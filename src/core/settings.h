@@ -79,11 +79,16 @@ static const std::array<const char*, NumButtons> mapping = {{
     "button_lstick_up",
     "button_lstick_right",
     "button_lstick_down",
+    "button_rstick_left",
+    "button_rstick_up",
+    "button_rstick_right",
+    "button_rstick_down",
     "button_sl",
     "button_sr",
     "button_home",
     "button_screenshot",
 }};
+
 } // namespace NativeButton
 
 namespace NativeAnalog {
@@ -95,8 +100,7 @@ enum Values {
 };
 
 static const std::array<const char*, NumAnalogs> mapping = {{
-    "lstick",
-    "rstick",
+    "lstick", "rstick",
 }};
 } // namespace NativeAnalog
 
