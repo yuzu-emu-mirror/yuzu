@@ -16,52 +16,87 @@ enum Values {
     B,
     X,
     Y,
-    Up,
-    Down,
-    Left,
-    Right,
+    LStick,
+    RStick,
     L,
     R,
-    Start,
-    Select,
-
     ZL,
     ZR,
+    Plus,
+    Minus,
+
+    DLeft,
+    DUp,
+    DRight,
+    DDown,
+
+    LStick_Left,
+    LStick_Up,
+    LStick_Right,
+    LStick_Down,
+
+    RStick_Left,
+    RStick_Up,
+    RStick_Right,
+    RStick_Down,
+
+    SL,
+    SR,
 
     Home,
+    Screenshot,
 
     NumButtons,
 };
 
 constexpr int BUTTON_HID_BEGIN = A;
-constexpr int BUTTON_IR_BEGIN = ZL;
 constexpr int BUTTON_NS_BEGIN = Home;
 
-constexpr int BUTTON_HID_END = BUTTON_IR_BEGIN;
-constexpr int BUTTON_IR_END = BUTTON_NS_BEGIN;
+constexpr int BUTTON_HID_END = BUTTON_NS_BEGIN;
 constexpr int BUTTON_NS_END = NumButtons;
 
 constexpr int NUM_BUTTONS_HID = BUTTON_HID_END - BUTTON_HID_BEGIN;
-constexpr int NUM_BUTTONS_IR = BUTTON_IR_END - BUTTON_IR_BEGIN;
 constexpr int NUM_BUTTONS_NS = BUTTON_NS_END - BUTTON_NS_BEGIN;
 
 static const std::array<const char*, NumButtons> mapping = {{
-    "button_a", "button_b", "button_x", "button_y", "button_up", "button_down", "button_left",
-    "button_right", "button_l", "button_r", "button_start", "button_select", "button_zl",
-    "button_zr", "button_home",
+    "button_a",
+    "button_b",
+    "button_x",
+    "button_y",
+    "button_lstick",
+    "button_rstick",
+    "button_l",
+    "button_r",
+    "button_zl",
+    "button_zr",
+    "button_plus",
+    "button_minus",
+    "button_dleft",
+    "button_dup",
+    "button_dright",
+    "button_ddown",
+    "button_lstick_left",
+    "button_lstick_up",
+    "button_lstick_right",
+    "button_lstick_down",
+    "button_sl",
+    "button_sr",
+    "button_home",
+    "button_screenshot",
 }};
 } // namespace NativeButton
 
 namespace NativeAnalog {
 enum Values {
-    CirclePad,
-    CStick,
+    LStick,
+    RStick,
 
     NumAnalogs,
 };
 
 static const std::array<const char*, NumAnalogs> mapping = {{
-    "circle_pad", "c_stick",
+    "lstick",
+    "rstick",
 }};
 } // namespace NativeAnalog
 
