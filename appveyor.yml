@@ -24,6 +24,7 @@ configuration:
 
 install:
   - git submodule update --init --recursive
+  - download_bundled_external("qt/" qt-5.7-msvc2015_64 QT_PREFIX)
   - ps: |
         if ($env:BUILD_TYPE -eq 'mingw') {
           $dependencies = "mingw64/mingw-w64-x86_64-cmake",
