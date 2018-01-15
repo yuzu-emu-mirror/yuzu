@@ -52,7 +52,23 @@ public:
 
 class ISelfController final : public ServiceFramework<ISelfController> {
 public:
-    ISelfController() : ServiceFramework("ISelfController") {}
+    ISelfController() : ServiceFramework("ISelfController") {
+        static const FunctionInfo functions[] = {
+            {13, &ISelfController::SetFocusHandlingMode, "SetFocusHandlingMode"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
+        // Takes 3 input u8s with each field located immediately after the previous u8, these are
+        // bool flags. No output.
+
+        IPC::RequestBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
@@ -61,6 +77,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ICommonStateGetter::GetEventHandle, "GetEventHandle"},
             {1, &ICommonStateGetter::ReceiveMessage, "ReceiveMessage"},
+            {9, &ICommonStateGetter::GetCurrentFocusState, "GetCurrentFocusState"},
         };
         RegisterHandlers(functions);
 
@@ -86,12 +103,39 @@ private:
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
+    void GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(1); // 1: In focus, 2/3: Out of focus(running in "background")
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
     Kernel::SharedPtr<Kernel::Event> event;
 };
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {
 public:
-    IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {}
+    IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
+        static const FunctionInfo functions[] = {
+            {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void SetTerminateResult(Kernel::HLERequestContext& ctx) {
+        // Takes an input u32 Result, no output.
+        // For example, in some cases official apps use this with error 0x2A2 then uses svcBreak.
+
+        IPC::RequestParser rp{ctx};
+        u32 result = rp.Pop<u32>();
+
+        IPC::RequestBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called, result=0x%08X", result);
+    }
 };
 
 class ILibraryAppletCreator final : public ServiceFramework<ILibraryAppletCreator> {
@@ -120,48 +164,56 @@ private:
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAudioController>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetDisplayController(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDisplayController>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetDebugFunctions(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDebugFunctions>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetWindowController(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IWindowController>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetSelfController(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ISelfController>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetCommonStateGetter(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ICommonStateGetter>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetLibraryAppletCreator(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ILibraryAppletCreator>();
+        LOG_DEBUG(Service, "called");
     }
 
     void GetApplicationFunctions(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IApplicationFunctions>();
+        LOG_DEBUG(Service, "called");
     }
 };
 
@@ -169,6 +221,7 @@ void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IApplicationProxy>();
+    LOG_DEBUG(Service, "called");
 }
 
 AppletOE::AppletOE() : ServiceFramework("appletOE") {
