@@ -7,7 +7,6 @@
 #include "ui_configure_graphics.h"
 #include "yuzu/configuration/configure_graphics.h"
 
-
 ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGraphics) {
 
@@ -23,12 +22,6 @@ enum class Resolution : int {
     Scale2x,
     Scale3x,
     Scale4x,
-    Scale5x,
-    Scale6x,
-    Scale7x,
-    Scale8x,
-    Scale9x,
-    Scale10x,
 };
 
 float ToResolutionFactor(Resolution option) {
@@ -43,18 +36,6 @@ float ToResolutionFactor(Resolution option) {
         return 3.f;
     case Resolution::Scale4x:
         return 4.f;
-    case Resolution::Scale5x:
-        return 5.f;
-    case Resolution::Scale6x:
-        return 6.f;
-    case Resolution::Scale7x:
-        return 7.f;
-    case Resolution::Scale8x:
-        return 8.f;
-    case Resolution::Scale9x:
-        return 9.f;
-    case Resolution::Scale10x:
-        return 10.f;
     }
     return 0.f;
 }
@@ -70,18 +51,6 @@ Resolution FromResolutionFactor(float factor) {
         return Resolution::Scale3x;
     } else if (factor == 4.f) {
         return Resolution::Scale4x;
-    } else if (factor == 5.f) {
-        return Resolution::Scale5x;
-    } else if (factor == 6.f) {
-        return Resolution::Scale6x;
-    } else if (factor == 7.f) {
-        return Resolution::Scale7x;
-    } else if (factor == 8.f) {
-        return Resolution::Scale8x;
-    } else if (factor == 9.f) {
-        return Resolution::Scale9x;
-    } else if (factor == 10.f) {
-        return Resolution::Scale10x;
     }
     return Resolution::Auto;
 }

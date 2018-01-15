@@ -90,8 +90,8 @@ use_hw_renderer =
 use_shader_jit =
 
 # Resolution scale factor
-# 0: Auto (scales resolution to window size), 1: Native 3DS screen resolution, Otherwise a scale
-# factor for the 3DS resolution
+# 0: Auto (scales resolution to window size), 1: Native Switch screen resolution, Otherwise a scale
+# factor for the Switch resolution
 resolution_factor =
 
 # Whether to enable V-Sync (caps the framerate at 60FPS) or not.

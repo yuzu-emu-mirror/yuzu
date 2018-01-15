@@ -8,7 +8,6 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/ui_settings.h"
 
-
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
     qt_config_loc = FileUtil::GetUserPath(D_CONFIG_IDX) + "qt-config.ini";
@@ -88,7 +87,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
-    Settings::values.log_filter = qt_config->value("log_filter", "*:Trace").toString().toStdString();
+    Settings::values.log_filter = qt_config->value("log_filter", "*:Info").toString().toStdString();
     qt_config->endGroup();
 
     qt_config->beginGroup("Debugging");
