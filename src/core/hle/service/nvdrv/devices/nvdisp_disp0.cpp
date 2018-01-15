@@ -10,7 +10,7 @@
 #include "video_core/video_core.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 namespace Devices {
 
 u32 nvdisp_disp0::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
@@ -32,5 +32,5 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
 }
 
 } // namespace Devices
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service

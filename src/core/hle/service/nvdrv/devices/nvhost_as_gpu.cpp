@@ -7,7 +7,7 @@
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 namespace Devices {
 
 u32 nvhost_as_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
@@ -16,5 +16,5 @@ u32 nvhost_as_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<
 }
 
 } // namespace Devices
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service

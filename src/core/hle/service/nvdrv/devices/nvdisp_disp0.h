@@ -10,7 +10,7 @@
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 namespace Devices {
 
 class nvmap;
@@ -30,5 +30,5 @@ private:
 };
 
 } // namespace Devices
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service

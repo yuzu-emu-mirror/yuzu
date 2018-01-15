@@ -170,7 +170,7 @@ void Init() {
     Audio::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
-    NVDRV::InstallInterfaces(*SM::g_service_manager);
+    Nvidia::InstallInterfaces(*SM::g_service_manager);
     PCTL::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
     VI::InstallInterfaces(*SM::g_service_manager);

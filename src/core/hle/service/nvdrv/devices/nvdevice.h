@@ -8,7 +8,7 @@
 #include "common/common_types.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 namespace Devices {
 
 /// Represents an abstract nvidia device node. It is to be subclassed by concrete device nodes to
@@ -29,5 +29,5 @@ public:
 };
 
 } // namespace Devices
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service
