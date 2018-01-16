@@ -313,6 +313,15 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     case GetInfoType::AllowedCpuIdBitmask:
         *result = g_current_process->allowed_processor_mask;
         break;
+    case GetInfoType::AllowedThreadPrioBitmask:
+        *result = g_current_process->allowed_thread_priority_mask;
+        break;
+    case GetInfoType::MapRegionBaseAddr:
+        *result = vm_manager.GetAddressSpaceBaseAddr();
+        break;
+    case GetInfoType::MapRegionSize:
+        *result = vm_manager.GetAddressSpaceSize();
+        break;
     case GetInfoType::TotalMemoryUsage:
         *result = vm_manager.GetTotalMemoryUsage();
         break;
@@ -333,6 +342,9 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         break;
     case GetInfoType::NewMapRegionSize:
         *result = vm_manager.GetNewMapRegionSize();
+        break;
+    case GetInfoType::IsVirtualAddressMemoryEnabled:
+        *result = g_current_process->is_virtual_address_memory_enabled;
         break;
     default:
         UNIMPLEMENTED();
