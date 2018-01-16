@@ -20,7 +20,7 @@ namespace Service {
 		VI_M::VI_M() : ServiceFramework("vi:m") {
 			static const FunctionInfo functions[] = {
 				{ 2, &VI_M::GetDisplayService, "GetDisplayService" },
-			{ 3, nullptr, "GetDisplayServiceWithProxyNameExchange" },
+				{ 3, nullptr, "GetDisplayServiceWithProxyNameExchange" },
 			};
 			RegisterHandlers(functions);
 			nv_flinger = std::make_shared<NVFlinger>();

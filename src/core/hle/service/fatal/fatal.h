@@ -19,5 +19,5 @@ private:
 	void TransitionToFatalError(Kernel::HLERequestContext& ctx);
 };
 
-	}
+}
 }
