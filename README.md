@@ -12,7 +12,7 @@ yuzu is licensed under the GPLv2 (or any later version). Refer to the license.tx
 
 Check out our [website](https://yuzu-emu.org/)!
 
-For development discussion, please join us on [Discord](https://discord.gg/VXqngT3).
+For development discussion, please join us on [Discord](https://discord.gg/XQV6dn9).
 
 ### Development
 

@@ -59,6 +59,7 @@ public:
             {13, &ISelfController::SetFocusHandlingMode, "SetFocusHandlingMode"},
 			{14, &ISelfController::SetRestartMessageEnabled, "SetRestartMessageEnabled"},
 			{16, &ISelfController::SetOutOfFocusSuspendingEnabled, "SetOutOfFocusSuspendingEnabled"},
+
         };
         RegisterHandlers(functions);
     }
@@ -104,6 +105,7 @@ private:
 
 		LOG_WARNING(Service, "(STUBBED) called");
 	}
+
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
