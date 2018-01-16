@@ -122,8 +122,9 @@ void GMainWindow::InitializeWidgets() {
     statusBar()->addPermanentWidget(message_label, 1);
 
     emu_speed_label = new QLabel();
-    emu_speed_label->setToolTip(tr("Current emulation speed. Values higher or lower than 100% "
-                                   "indicate emulation is running faster or slower than a Switch."));
+    emu_speed_label->setToolTip(
+        tr("Current emulation speed. Values higher or lower than 100% "
+           "indicate emulation is running faster or slower than a Switch."));
     game_fps_label = new QLabel();
     game_fps_label->setToolTip(tr("How many frames per second the game is currently displaying. "
                                   "This will vary from game to game and scene to scene."));
@@ -185,8 +186,8 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
     RegisterHotkey("Main Window", "Start Emulation");
-    RegisterHotkey( "Main Window", "Fullscreen", QKeySequence::FullScreen );
-    RegisterHotkey( "Main Window", "Exit Fullscreen", QKeySequence::Cancel, Qt::ApplicationShortcut );
+    RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
+    RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence::Cancel, Qt::ApplicationShortcut);
     LoadHotkeys();
 
     connect(GetHotkey("Main Window", "Load File", this), SIGNAL(activated()), this,
@@ -194,9 +195,9 @@ void GMainWindow::InitializeHotkeys() {
     connect(GetHotkey("Main Window", "Start Emulation", this), SIGNAL(activated()), this,
             SLOT(OnStartGame()));
     connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activated,
-             ui.action_Fullscreen, &QAction::trigger);
+            ui.action_Fullscreen, &QAction::trigger);
     connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activatedAmbiguously,
-             ui.action_Fullscreen, &QAction::trigger);
+            ui.action_Fullscreen, &QAction::trigger);
     connect(GetHotkey("Main Window", "Exit Fullscreen", this), &QShortcut::activated, this, [&] {
         if (emulation_running) {
             ui.action_Fullscreen->setChecked(false);

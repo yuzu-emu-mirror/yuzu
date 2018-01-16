@@ -37,7 +37,6 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
-
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"

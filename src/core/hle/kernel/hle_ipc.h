@@ -151,13 +151,13 @@ public:
         return domain != nullptr;
     }
 
-    template<typename T>
+    template <typename T>
     SharedPtr<T> GetCopyObject(size_t index) {
         ASSERT(index < copy_objects.size());
         return DynamicObjectCast<T>(copy_objects[index]);
     }
 
-    template<typename T>
+    template <typename T>
     SharedPtr<T> GetMoveObject(size_t index) {
         ASSERT(index < move_objects.size());
         return DynamicObjectCast<T>(move_objects[index]);

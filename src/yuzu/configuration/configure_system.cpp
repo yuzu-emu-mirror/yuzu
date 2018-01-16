@@ -8,7 +8,6 @@
 #include "yuzu/configuration/configure_system.h"
 #include "yuzu/ui_settings.h"
 
-
 static const std::array<int, 12> days_in_month = {{
     31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
 }};

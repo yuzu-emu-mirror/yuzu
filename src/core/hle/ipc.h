@@ -19,7 +19,6 @@ constexpr size_t COMMAND_BUFFER_LENGTH = 0x100 / sizeof(u32);
 // TODO(yuriks): These will probably go away once translation is implemented inside the kernel.
 constexpr auto ERR_INVALID_HANDLE = Kernel::ERR_INVALID_HANDLE_OS;
 
-
 enum class ControlCommand : u32 {
     ConvertSessionToDomain = 0,
     ConvertDomainToSession = 1,
@@ -81,13 +80,13 @@ struct BufferDescriptorX {
     u32_le address_bits_0_31;
 
     u32_le Counter() const {
-        u32_le counter{ counter_bits_0_5 };
+        u32_le counter{counter_bits_0_5};
         counter |= counter_bits_9_11 << 9;
         return counter;
     }
 
     VAddr Address() const {
-        VAddr address{ address_bits_0_31 };
+        VAddr address{address_bits_0_31};
         address |= static_cast<VAddr>(address_bits_32_35) << 32;
         address |= static_cast<VAddr>(address_bits_36_38) << 36;
         return address;
@@ -107,14 +106,14 @@ struct BufferDescriptorABW {
     };
 
     VAddr Address() const {
-        VAddr address{ address_bits_0_31 };
+        VAddr address{address_bits_0_31};
         address |= static_cast<VAddr>(address_bits_32_35) << 32;
         address |= static_cast<VAddr>(address_bits_36_38) << 36;
         return address;
     }
 
     u64 Size() const {
-        u64 size{ size_bits_0_31 };
+        u64 size{size_bits_0_31};
         size |= static_cast<u64>(size_bits_32_35) << 32;
         return size;
     }
@@ -130,7 +129,7 @@ struct BufferDescriptorC {
     };
 
     VAddr Address() const {
-        VAddr address{ address_bits_0_31 };
+        VAddr address{address_bits_0_31};
         address |= static_cast<VAddr>(address_bits_32_47) << 32;
         return address;
     }

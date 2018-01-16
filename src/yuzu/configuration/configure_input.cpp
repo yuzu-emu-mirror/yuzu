@@ -50,13 +50,13 @@ ConfigureInput::ConfigureInput(QWidget* parent)
     setFocusPolicy(Qt::ClickFocus);
 
     button_map = {
-        ui->buttonA,          ui->buttonB,         ui->buttonX,           ui->buttonY,
-        ui->buttonLStick,     ui->buttonRStick,    ui->buttonL,           ui->buttonR,
-        ui->buttonZL,         ui->buttonZR,        ui->buttonPlus,        ui->buttonMinus,
-        ui->buttonDpadLeft,   ui->buttonDpadUp,    ui->buttonDpadRight,   ui->buttonDpadDown,
-        ui->buttonLStickLeft, ui->buttonLStickUp,  ui->buttonLStickRight, ui->buttonLStickDown,
-        ui->buttonRStickLeft, ui->buttonRStickUp,  ui->buttonRStickRight, ui->buttonRStickDown,
-        ui->buttonSL,         ui->buttonSR,        ui->buttonHome,        ui->buttonScreenshot,
+        ui->buttonA,          ui->buttonB,        ui->buttonX,           ui->buttonY,
+        ui->buttonLStick,     ui->buttonRStick,   ui->buttonL,           ui->buttonR,
+        ui->buttonZL,         ui->buttonZR,       ui->buttonPlus,        ui->buttonMinus,
+        ui->buttonDpadLeft,   ui->buttonDpadUp,   ui->buttonDpadRight,   ui->buttonDpadDown,
+        ui->buttonLStickLeft, ui->buttonLStickUp, ui->buttonLStickRight, ui->buttonLStickDown,
+        ui->buttonRStickLeft, ui->buttonRStickUp, ui->buttonRStickRight, ui->buttonRStickDown,
+        ui->buttonSL,         ui->buttonSR,       ui->buttonHome,        ui->buttonScreenshot,
     };
 
     analog_map_buttons = {{

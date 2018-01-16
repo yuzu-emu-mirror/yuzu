@@ -105,7 +105,6 @@ public:
         UNREACHABLE();
     }
 
-
 public:
     static unsigned int next_object_id;
 

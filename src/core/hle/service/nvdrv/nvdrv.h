@@ -26,6 +26,7 @@ public:
     VAddr GetObjectAddress(u32 handle) const;
 
     u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
+
 private:
     // Represents an nvmap object.
     struct Object {

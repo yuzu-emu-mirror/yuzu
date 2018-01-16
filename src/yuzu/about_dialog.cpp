@@ -9,7 +9,7 @@
 AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDialog) {
     ui->setupUi(this);
     ui->labelBuildInfo->setText(ui->labelBuildInfo->text().arg(
-Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
+        Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
 }
 
 AboutDialog::~AboutDialog() {}

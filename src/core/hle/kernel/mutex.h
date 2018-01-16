@@ -41,9 +41,9 @@ public:
         return HANDLE_TYPE;
     }
 
-    u32 priority;                     ///< The priority of the mutex, used for priority inheritance.
-    std::string name;                 ///< Name of mutex (optional)
-    VAddr guest_addr;                 ///< Address of the guest mutex value
+    u32 priority;     ///< The priority of the mutex, used for priority inheritance.
+    std::string name; ///< Name of mutex (optional)
+    VAddr guest_addr; ///< Address of the guest mutex value
 
     /**
      * Elevate the mutex priority to the best priority

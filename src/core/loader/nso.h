@@ -18,8 +18,7 @@ namespace Loader {
 class AppLoader_NSO final : public AppLoader, Linker {
 public:
     AppLoader_NSO(FileUtil::IOFile&& file, std::string filepath)
-        : AppLoader(std::move(file)), filepath(std::move(filepath)) {
-    }
+        : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
     /**
      * Returns the type of the file
