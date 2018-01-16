@@ -240,8 +240,10 @@ if (NOT UNICORN_FOUND)
         set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers" FORCE)
         set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/" CACHE PATH "Path to unicorn dynamic library" FORCE)
 
+        find_package(PythonInterp 2.7 REQUIRED)
+
         add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
-            COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" /bin/sh make.sh
+            COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" PYTHON="${PYTHON_EXECUTABLE}" /bin/sh make.sh
             WORKING_DIRECTORY ${UNICORN_PREFIX}
         )
         # ALL makes this custom target build every time
