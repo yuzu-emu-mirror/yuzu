@@ -12,6 +12,11 @@ namespace HID {
 
 // Begin enums and output structs
 
+constexpr u32 HID_NUM_ENTRIES = 17;
+constexpr u32 HID_NUM_LAYOUTS = 7;
+constexpr s32 HID_JOYSTICK_MAX = 0x8000;
+constexpr s32 HID_JOYSTICK_MIN = -0x8000;
+
 enum ControllerType : u32 {
     ControllerType_ProController = 1 << 0,
     ControllerType_Handheld = 1 << 1,
@@ -215,7 +220,7 @@ struct ControllerHeader {
     u32 leftColorBody;
     u32 leftColorButtons;
     u32 rightColorBody;
-    u32 rightColorbuttons;
+    u32 rightColorButtons;
 };
 static_assert(sizeof(ControllerHeader) == 0x28,
               "HID controller header structure has incorrect size");

@@ -65,44 +65,71 @@ private:
         if (is_device_reload_pending.exchange(false))
             LoadInputDevices();
 
-        // TODO(shinyquagsire23): This is a hack!
-        ControllerPadState& state =
-            mem->controllers[Controller_Handheld].layouts[Layout_Default].entries[0].buttons;
-        using namespace Settings::NativeButton;
-        state.a.Assign(buttons[A - BUTTON_HID_BEGIN]->GetStatus());
-        state.b.Assign(buttons[B - BUTTON_HID_BEGIN]->GetStatus());
-        state.x.Assign(buttons[X - BUTTON_HID_BEGIN]->GetStatus());
-        state.y.Assign(buttons[Y - BUTTON_HID_BEGIN]->GetStatus());
-        state.lstick.Assign(buttons[LStick - BUTTON_HID_BEGIN]->GetStatus());
-        state.rstick.Assign(buttons[RStick - BUTTON_HID_BEGIN]->GetStatus());
-        state.l.Assign(buttons[L - BUTTON_HID_BEGIN]->GetStatus());
-        state.r.Assign(buttons[R - BUTTON_HID_BEGIN]->GetStatus());
-        state.zl.Assign(buttons[ZL - BUTTON_HID_BEGIN]->GetStatus());
-        state.zr.Assign(buttons[ZR - BUTTON_HID_BEGIN]->GetStatus());
-        state.plus.Assign(buttons[Plus - BUTTON_HID_BEGIN]->GetStatus());
-        state.minus.Assign(buttons[Minus - BUTTON_HID_BEGIN]->GetStatus());
+        // Set up controllers as neon red+blue Joy-Con attached to console
+        ControllerHeader& controllerHeader = mem->controllers[Controller_Handheld].header;
+        controllerHeader.type = ControllerType_Handheld | ControllerType_JoyconPair;
+        controllerHeader.singleColorsDescriptor = ColorDesc_ColorsNonexistent;
+        controllerHeader.rightColorBody = 0xFF3C28;
+        controllerHeader.rightColorButtons = 0x1E0A0A;
+        controllerHeader.leftColorBody = 0x0AB9E6;
+        controllerHeader.leftColorButtons = 0x001E1E;
 
-        state.dleft.Assign(buttons[DLeft - BUTTON_HID_BEGIN]->GetStatus());
-        state.dup.Assign(buttons[DUp - BUTTON_HID_BEGIN]->GetStatus());
-        state.dright.Assign(buttons[DRight - BUTTON_HID_BEGIN]->GetStatus());
-        state.ddown.Assign(buttons[DDown - BUTTON_HID_BEGIN]->GetStatus());
+        for (int layoutIdx = 0; layoutIdx < HID_NUM_LAYOUTS; layoutIdx++)
+        {
+            ControllerLayout& layout = mem->controllers[Controller_Handheld].layouts[layoutIdx];
+            layout.header.numEntries = HID_NUM_ENTRIES;
+            layout.header.maxEntryIndex = HID_NUM_ENTRIES - 1;
 
-        state.lstick_left.Assign(buttons[LStick_Left - BUTTON_HID_BEGIN]->GetStatus());
-        state.lstick_up.Assign(buttons[LStick_Up - BUTTON_HID_BEGIN]->GetStatus());
-        state.lstick_right.Assign(buttons[LStick_Right - BUTTON_HID_BEGIN]->GetStatus());
-        state.lstick_down.Assign(buttons[LStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+            // HID shared memory stores the state of the past 17 samples in a circlular buffer,
+            // each with a timestamp in number of samples since boot.
+            layout.header.timestampTicks = CoreTiming::GetTicks();
+            layout.header.latestEntry = (layout.header.latestEntry + 1) % HID_NUM_ENTRIES;
 
-        state.rstick_left.Assign(buttons[RStick_Left - BUTTON_HID_BEGIN]->GetStatus());
-        state.rstick_up.Assign(buttons[RStick_Up - BUTTON_HID_BEGIN]->GetStatus());
-        state.rstick_right.Assign(buttons[RStick_Right - BUTTON_HID_BEGIN]->GetStatus());
-        state.rstick_down.Assign(buttons[RStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+            ControllerInputEntry& entry = layout.entries[layout.header.latestEntry];
+            entry.connectionState = ConnectionState_Connected | ConnectionState_Wired;
+            entry.timestamp++;
+            entry.timestamp_2++; // TODO(shinyquagsire23): Is this always identical to timestamp?
 
-        state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
-        state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
+            // TODO(shinyquagsire23): Set up some LUTs for each layout mapping in the future?
+            // For now everything is just the default handheld layout, but split Joy-Con will
+            // rotate the face buttons and directions for certain layouts.
+            ControllerPadState& state = entry.buttons;
+            using namespace Settings::NativeButton;
+            state.a.Assign(buttons[A - BUTTON_HID_BEGIN]->GetStatus());
+            state.b.Assign(buttons[B - BUTTON_HID_BEGIN]->GetStatus());
+            state.x.Assign(buttons[X - BUTTON_HID_BEGIN]->GetStatus());
+            state.y.Assign(buttons[Y - BUTTON_HID_BEGIN]->GetStatus());
+            state.lstick.Assign(buttons[LStick - BUTTON_HID_BEGIN]->GetStatus());
+            state.rstick.Assign(buttons[RStick - BUTTON_HID_BEGIN]->GetStatus());
+            state.l.Assign(buttons[L - BUTTON_HID_BEGIN]->GetStatus());
+            state.r.Assign(buttons[R - BUTTON_HID_BEGIN]->GetStatus());
+            state.zl.Assign(buttons[ZL - BUTTON_HID_BEGIN]->GetStatus());
+            state.zr.Assign(buttons[ZR - BUTTON_HID_BEGIN]->GetStatus());
+            state.plus.Assign(buttons[Plus - BUTTON_HID_BEGIN]->GetStatus());
+            state.minus.Assign(buttons[Minus - BUTTON_HID_BEGIN]->GetStatus());
 
-        // TODO(shinyquagsire23): Analog stick vals
+            state.dleft.Assign(buttons[DLeft - BUTTON_HID_BEGIN]->GetStatus());
+            state.dup.Assign(buttons[DUp - BUTTON_HID_BEGIN]->GetStatus());
+            state.dright.Assign(buttons[DRight - BUTTON_HID_BEGIN]->GetStatus());
+            state.ddown.Assign(buttons[DDown - BUTTON_HID_BEGIN]->GetStatus());
 
-        // TODO(shinyquagsire23): Update pad info proper, (circular buffers, timestamps, layouts)
+            state.lstick_left.Assign(buttons[LStick_Left - BUTTON_HID_BEGIN]->GetStatus());
+            state.lstick_up.Assign(buttons[LStick_Up - BUTTON_HID_BEGIN]->GetStatus());
+            state.lstick_right.Assign(buttons[LStick_Right - BUTTON_HID_BEGIN]->GetStatus());
+            state.lstick_down.Assign(buttons[LStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+
+            state.rstick_left.Assign(buttons[RStick_Left - BUTTON_HID_BEGIN]->GetStatus());
+            state.rstick_up.Assign(buttons[RStick_Up - BUTTON_HID_BEGIN]->GetStatus());
+            state.rstick_right.Assign(buttons[RStick_Right - BUTTON_HID_BEGIN]->GetStatus());
+            state.rstick_down.Assign(buttons[RStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+
+            state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
+            state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
+
+            // TODO(shinyquagsire23): Analog stick vals
+
+            // TODO(shinyquagsire23): Update pad info proper, (circular buffers, timestamps, layouts)
+        }
 
         // TODO(shinyquagsire23): Update touch info
 
