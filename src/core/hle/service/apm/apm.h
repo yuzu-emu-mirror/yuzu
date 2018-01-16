@@ -13,6 +13,8 @@ class APM final : public ServiceFramework<APM> {
 public:
     APM();
     ~APM() = default;
+private:
+	void OpenSession(Kernel::HLERequestContext& ctx);
 };
 
 /// Registers all AM services with the specified service manager.

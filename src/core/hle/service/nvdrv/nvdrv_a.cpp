@@ -30,6 +30,7 @@ void NVDRV_A::Open(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(fd);
     rb.Push<u32>(0);
+	LOG_WARNING(Service, "Opened!!!");
 }
 
 void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
@@ -66,7 +67,7 @@ void NVDRV_A::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0);
 }
 
-NVDRV_A::NVDRV_A() : ServiceFramework("nvdrv:a") {
+NVDRV_A::NVDRV_A() : ServiceFramework("nvdrv") {
     static const FunctionInfo functions[] = {
         {0, &NVDRV_A::Open, "Open"},
         {1, &NVDRV_A::Ioctl, "Ioctl"},

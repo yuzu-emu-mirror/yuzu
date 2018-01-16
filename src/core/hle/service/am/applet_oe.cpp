@@ -54,7 +54,12 @@ class ISelfController final : public ServiceFramework<ISelfController> {
 public:
     ISelfController() : ServiceFramework("ISelfController") {
         static const FunctionInfo functions[] = {
+			{11, &ISelfController::SetOperationModeChangedNotification, "SetOperationModeChangedNotification"},
+			{12, &ISelfController::SetPerformanceModeChangedNotification, "SetPerformanceModeChangedNotification" },
             {13, &ISelfController::SetFocusHandlingMode, "SetFocusHandlingMode"},
+			{14, &ISelfController::SetRestartMessageEnabled, "SetRestartMessageEnabled"},
+			{16, &ISelfController::SetOutOfFocusSuspendingEnabled, "SetOutOfFocusSuspendingEnabled"},
+
         };
         RegisterHandlers(functions);
     }
@@ -69,6 +74,38 @@ private:
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
+
+	void SetRestartMessageEnabled(Kernel::HLERequestContext& ctx) {
+		IPC::RequestBuilder rb{ ctx, 2 };
+		rb.Push(RESULT_SUCCESS);
+
+		LOG_WARNING(Service, "(STUBBED) called");
+	}
+
+	void SetPerformanceModeChangedNotification(Kernel::HLERequestContext& ctx) {
+		IPC::RequestBuilder rb{ ctx, 2 };
+		rb.Push(RESULT_SUCCESS);
+
+		LOG_WARNING(Service, "(STUBBED) called");
+	}
+
+	void SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {
+		IPC::RequestBuilder rb{ ctx, 2 };
+		rb.Push(RESULT_SUCCESS);
+
+		LOG_WARNING(Service, "(STUBBED) called");
+	}
+
+	void SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx) {
+		// Takes 3 input u8s with each field located immediately after the previous u8, these are
+		// bool flags. No output.
+
+		IPC::RequestBuilder rb{ ctx, 2 };
+		rb.Push(RESULT_SUCCESS);
+
+		LOG_WARNING(Service, "(STUBBED) called");
+	}
+
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
