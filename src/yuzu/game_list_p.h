@@ -9,8 +9,8 @@
 #include <QRunnable>
 #include <QStandardItem>
 #include <QString>
-#include "yuzu/util/util.h"
 #include "common/string_util.h"
+#include "yuzu/util/util.h"
 
 /**
  * Gets the default icon (for games without valid SMDH)

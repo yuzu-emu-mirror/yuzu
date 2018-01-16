@@ -39,7 +39,8 @@ public:
         Run(1);
     }
 
-    virtual void MapBackingMemory(VAddr address, size_t size, u8* memory, Kernel::VMAPermission perms) {}
+    virtual void MapBackingMemory(VAddr address, size_t size, u8* memory,
+                                  Kernel::VMAPermission perms) {}
 
     /// Clear all instruction cache
     virtual void ClearInstructionCache() = 0;

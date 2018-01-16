@@ -95,10 +95,8 @@ MemoryRegionInfo* GetMemoryRegion(MemoryRegion region) {
     }
 }
 
-void HandleSpecialMapping(VMManager& address_space, const AddressMapping& mapping) {
-}
+void HandleSpecialMapping(VMManager& address_space, const AddressMapping& mapping) {}
 
-void MapSharedPages(VMManager& address_space) {
-}
+void MapSharedPages(VMManager& address_space) {}
 
 } // namespace Kernel

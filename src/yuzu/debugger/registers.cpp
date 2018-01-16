@@ -8,7 +8,6 @@
 #include "yuzu/debugger/registers.h"
 #include "yuzu/util/util.h"
 
-
 RegistersWidget::RegistersWidget(QWidget* parent) : QDockWidget(parent) {
     cpu_regs_ui.setupUi(this);
 

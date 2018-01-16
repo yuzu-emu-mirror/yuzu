@@ -15,8 +15,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
 
 APM::APM() : ServiceFramework("apm") {
     static const FunctionInfo functions[] = {
-        {0x00000000, nullptr, "OpenSession"},
-        {0x00000001, nullptr, "GetPerformanceMode"},
+        {0x00000000, nullptr, "OpenSession"}, {0x00000001, nullptr, "GetPerformanceMode"},
     };
     RegisterHandlers(functions);
 }

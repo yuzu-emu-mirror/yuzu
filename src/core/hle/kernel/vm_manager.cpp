@@ -6,9 +6,9 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/arm/arm_interface.h"
+#include "core/core.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/vm_manager.h"
-#include "core/core.h"
 #include "core/memory.h"
 #include "core/memory_setup.h"
 #include "core/mmio.h"
@@ -86,7 +86,8 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     VirtualMemoryArea& final_vma = vma_handle->second;
     ASSERT(final_vma.size == size);
 
-    Core::CPU().MapBackingMemory(target, size, block->data() + offset, VMAPermission::ReadWriteExecute);
+    Core::CPU().MapBackingMemory(target, size, block->data() + offset,
+                                 VMAPermission::ReadWriteExecute);
 
     final_vma.type = VMAType::AllocatedMemoryBlock;
     final_vma.permissions = VMAPermission::ReadWrite;

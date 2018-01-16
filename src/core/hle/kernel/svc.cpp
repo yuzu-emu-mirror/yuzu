@@ -255,9 +255,8 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
 /// Attempts to locks a mutex, creating it if it does not already exist
 static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
                             Handle requesting_thread_handle) {
-    LOG_TRACE(Kernel_SVC,
-              "called holding_thread_handle=0x%08X, mutex_addr=0x%llx, "
-              "requesting_current_thread_handle=0x%08X",
+    LOG_TRACE(Kernel_SVC, "called holding_thread_handle=0x%08X, mutex_addr=0x%llx, "
+                          "requesting_current_thread_handle=0x%08X",
               holding_thread_handle, mutex_addr, requesting_thread_handle);
 
     SharedPtr<Thread> holding_thread = g_handle_table.Get<Thread>(holding_thread_handle);
@@ -522,9 +521,8 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 
     Core::System::GetInstance().PrepareReschedule();
 
-    LOG_TRACE(Kernel_SVC,
-              "called entrypoint=0x%08X (%s), arg=0x%08X, stacktop=0x%08X, "
-              "threadpriority=0x%08X, processorid=0x%08X : created handle=0x%08X",
+    LOG_TRACE(Kernel_SVC, "called entrypoint=0x%08X (%s), arg=0x%08X, stacktop=0x%08X, "
+                          "threadpriority=0x%08X, processorid=0x%08X : created handle=0x%08X",
               entry_point, name.c_str(), arg, stack_top, priority, processor_id, *out_handle);
 
     return RESULT_SUCCESS;

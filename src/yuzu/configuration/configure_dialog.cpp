@@ -7,7 +7,6 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
 
-
 ConfigureDialog::ConfigureDialog(QWidget* parent) : QDialog(parent), ui(new Ui::ConfigureDialog) {
     ui->setupUi(this);
     this->setConfiguration();
