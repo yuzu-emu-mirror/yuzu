@@ -66,11 +66,7 @@ file(GLOB_RECURSE THEMES ${CMAKE_SOURCE_DIR}/dist/qt_themes/*)
 
 create_directory_groups(${SRCS} ${HEADERS} ${UIS})
 
-if (Qt5_FOUND)
-    qt5_wrap_ui(UI_HDRS ${UIS})
-else()
-    qt4_wrap_ui(UI_HDRS ${UIS})
-endif()
+qt5_wrap_ui(UI_HDRS ${UIS})
 
 if (APPLE)
     set(MACOSX_ICON "../../dist/yuzu.icns")
