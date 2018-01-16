@@ -1,6 +1,8 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+/** 
+* Copyright 2018 yuzu Emulator Team
+* Licensed under GPLv2 or any later version
+* Refer to the license.txt file included for more details.
+**/
 
 #include <memory>
 #include "common/param_package.h"
