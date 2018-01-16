@@ -12,7 +12,7 @@ option(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
-option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" OFF)
+option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" ON)
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
