@@ -136,7 +136,7 @@ enum : VAddr {
 
     /// Application heap (includes stack).
     HEAP_VADDR = 0x108000000,
-    HEAP_SIZE = 0xF0000000, // 0x18000000,
+    HEAP_SIZE = 0xF0000000,
     HEAP_VADDR_END = HEAP_VADDR + HEAP_SIZE,
 
     /// Area where shared memory buffers are mapped onto.
@@ -177,7 +177,7 @@ enum : VAddr {
     SHARED_PAGE_VADDR_END = SHARED_PAGE_VADDR + SHARED_PAGE_SIZE,
 
     /// Area where TLS (Thread-Local Storage) buffers are allocated.
-    TLS_AREA_VADDR = 0x228000000, // 0x1FF82000,
+    TLS_AREA_VADDR = 0x228000000,
     TLS_ENTRY_SIZE = 0x200,
 
     /// Equivalent to LINEAR_HEAP_VADDR, but expanded to cover the extra memory in the New 3DS.
