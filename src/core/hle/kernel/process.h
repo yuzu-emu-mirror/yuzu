@@ -131,6 +131,8 @@ public:
     /// Bitmask of allowed CPUs that this process' threads can run on. TODO(Subv): Actually parse
     /// this value from the process header.
     u32 allowed_processor_mask = THREADPROCESSORID_DEFAULT_MASK;
+    u32 allowed_thread_priority_mask = 0xFFFFFFFF;
+    u32 is_virtual_address_memory_enabled = 0;
     /// Current status of the process
     ProcessStatus status;
 
