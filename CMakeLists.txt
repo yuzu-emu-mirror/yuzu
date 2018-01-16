@@ -12,8 +12,6 @@ option(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
-option(YUZU_USE_BUNDLED_UNICORN "Download bundled Unicorn binaries" OFF)
-
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
     file(COPY hooks/pre-commit
@@ -29,7 +27,7 @@ function(check_submodules_present)
     foreach(module ${gitmodules})
         string(REGEX REPLACE "path *= *" "" module ${module})
         if (NOT EXISTS "${CMAKE_SOURCE_DIR}/${module}/.git")
-            message(SEND_ERROR "Git submodule ${module} not found."
+            message(FATAL_ERROR "Git submodule ${module} not found. "
                     "Please run: git submodule update --init --recursive")
         endif()
     endforeach()
@@ -204,59 +202,63 @@ else()
     set(SDL2_FOUND NO)
 endif()
 
-if (YUZU_USE_BUNDLED_UNICORN)
-    # Detect toolchain and platform
-    if (MSVC14 AND ARCHITECTURE_x86_64)
-        set(UNICORN_VER "unicorn-yuzu")
-    else()
-        message(FATAL_ERROR "No bundled Unicorn binaries for your toolchain. Disable YUZU_USE_BUNDLED_UNICORN and provide your own.")
-    endif()
-
-    if (DEFINED UNICORN_VER)
-        download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
-    endif()
-
-    if (DEFINED UNICORN_VER)
-        download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
-    endif()
-
-    set(UNICORN_FOUND YES)
-    set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers")
-    set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/lib/x64/unicorn_dynload.lib" CACHE PATH "Path to Unicorn library")
-    set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/lib/x64/" CACHE PATH "Path to unicorn.dll")
-elseif (YUZU_BUILD_UNICORN)
+# If unicorn isn't found, msvc -> download bundled unicorn; everyone else -> build external
+find_package(Unicorn QUIET)
+if (NOT UNICORN_FOUND)
     if (MSVC)
-        message(FATAL_ERROR "Cannot build unicorn on msvc. Use YUZU_USE_BUNDLED_UNICORN instead")
-    elseif (MINGW)
-        set(UNICORN_LIB_NAME "unicorn.a")
+        message(STATUS "unicorn not found, falling back to bundled")
+        # Detect toolchain and platform
+        if (MSVC14 AND ARCHITECTURE_x86_64)
+            set(UNICORN_VER "unicorn-yuzu")
+        else()
+            message(FATAL_ERROR "No bundled Unicorn binaries for your toolchain. Disable YUZU_USE_BUNDLED_UNICORN and provide your own.")
+        endif()
+
+        if (DEFINED UNICORN_VER)
+            download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
+        endif()
+
+        if (DEFINED UNICORN_VER)
+            download_bundled_external("unicorn/" ${UNICORN_VER} UNICORN_PREFIX)
+        endif()
+
+        set(UNICORN_FOUND YES)
+        set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers" FORCE)
+        set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/lib/x64/unicorn_dynload.lib" CACHE PATH "Path to Unicorn library" FORCE)
+        set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/lib/x64/" CACHE PATH "Path to unicorn.dll" FORCE)
     else()
-        set(UNICORN_LIB_NAME "libunicorn.a")
+        message(STATUS "unicorn not found, falling back to externals")
+        if (MINGW)
+            set(UNICORN_LIB_NAME "unicorn.a")
+        else()
+            set(UNICORN_LIB_NAME "libunicorn.a")
+        endif()
+
+        set(UNICORN_FOUND YES)
+        set(UNICORN_PREFIX ${CMAKE_SOURCE_DIR}/externals/unicorn)
+        set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/${UNICORN_LIB_NAME}" CACHE PATH "Path to Unicorn library" FORCE)
+        set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers" FORCE)
+        set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/" CACHE PATH "Path to unicorn dynamic library" FORCE)
+
+        add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
+            COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" /bin/sh make.sh
+            WORKING_DIRECTORY ${UNICORN_PREFIX}
+        )
+        # ALL makes this custom target build every time
+        # but it won't actually build if LIBUNICORN_LIBRARY is up to date
+        add_custom_target(unicorn-build ALL
+            DEPENDS ${LIBUNICORN_LIBRARY}
+        )
+        unset(UNICORN_LIB_NAME)
     endif()
-
-    set(UNICORN_FOUND YES)
-    set(UNICORN_PREFIX ${CMAKE_SOURCE_DIR}/externals/unicorn)
-    set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/${UNICORN_LIB_NAME}" CACHE PATH "Path to Unicorn library")
-    set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers")
-    set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/" CACHE PATH "Path to unicorn dynamic library")
-
-    add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
-        COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" /bin/sh make.sh
-        WORKING_DIRECTORY ${UNICORN_PREFIX}
-    )
-    # ALL makes this custom target build every time
-    # but it won't actually build if LIBUNICORN_LIBRARY exists
-    add_custom_target(unicorn-build ALL
-        DEPENDS ${LIBUNICORN_LIBRARY}
-    )
-    unset(UNICORN_LIB_NAME)
-else()
-    find_package(Unicorn REQUIRED)
 endif()
 
 if (UNICORN_FOUND)
     add_library(unicorn INTERFACE)
     target_link_libraries(unicorn INTERFACE "${LIBUNICORN_LIBRARY}")
     target_include_directories(unicorn INTERFACE "${LIBUNICORN_INCLUDE_DIR}")
+else()
+    message(FATAL_ERROR "Could not find or build unicorn which is required.")
 endif()
 
 if (ENABLE_QT)
