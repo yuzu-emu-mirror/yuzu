@@ -721,6 +721,11 @@ static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32
     return RESULT_SUCCESS;
 }
 
+static ResultCode SetThreadCoreMask(u64, u64, u64) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called");
+    return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -747,7 +752,7 @@ static const FunctionDef SVC_Table[] = {
     {0x0C, SvcWrap<GetThreadPriority>, "GetThreadPriority"},
     {0x0D, SvcWrap<SetThreadPriority>, "SetThreadPriority"},
     {0x0E, nullptr, "GetThreadCoreMask"},
-    {0x0F, nullptr, "SetThreadCoreMask"},
+    {0x0F, SvcWrap<SetThreadCoreMask>, "SetThreadCoreMask"},
     {0x10, SvcWrap<GetCurrentProcessorNumber>, "GetCurrentProcessorNumber"},
     {0x11, nullptr, "SignalEvent"},
     {0x12, nullptr, "ClearEvent"},
