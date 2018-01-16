@@ -137,6 +137,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     UISettings::values.single_window_mode = qt_config->value("singleWindowMode", true).toBool();
+    UISettings::values.fullscreen = qt_config->value("fullscreen", false).toBool();
     UISettings::values.display_titlebar = qt_config->value("displayTitleBars", true).toBool();
     UISettings::values.show_filter_bar = qt_config->value("showFilterBar", true).toBool();
     UISettings::values.show_status_bar = qt_config->value("showStatusBar", true).toBool();
@@ -216,6 +217,7 @@ void Config::SaveValues() {
     qt_config->endGroup();
 
     qt_config->setValue("singleWindowMode", UISettings::values.single_window_mode);
+    qt_config->setValue("fullscreen", UISettings::values.fullscreen);
     qt_config->setValue("displayTitleBars", UISettings::values.display_titlebar);
     qt_config->setValue("showFilterBar", UISettings::values.show_filter_bar);
     qt_config->setValue("showStatusBar", UISettings::values.show_status_bar);
