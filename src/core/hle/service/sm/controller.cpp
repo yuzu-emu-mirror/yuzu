@@ -46,7 +46,7 @@ Controller::Controller() : ServiceFramework("IpcController") {
         {0x00000001, nullptr, "ConvertDomainToSession"},
         {0x00000002, &Controller::DuplicateSession, "DuplicateSession"},
         {0x00000003, &Controller::QueryPointerBufferSize, "QueryPointerBufferSize"},
-        {0x00000004, nullptr, "DuplicateSessionEx"},
+        {0x00000004, &Controller::DuplicateSession, "DuplicateSessionEx"},
     };
     RegisterHandlers(functions);
 }

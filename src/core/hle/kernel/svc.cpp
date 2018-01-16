@@ -724,6 +724,11 @@ static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
 	return RESULT_SUCCESS;
 }
 
+static ResultCode SetThreadCoreMask(u32 in0, u64 in1) {
+	LOG_WARNING(Kernel_SVC, "(STUBBED) called in0 0x%llx in1 0x%llx", in0, in1);
+	return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -750,7 +755,7 @@ static const FunctionDef SVC_Table[] = {
     {0x0C, SvcWrap<GetThreadPriority>, "GetThreadPriority"},
     {0x0D, SvcWrap<SetThreadPriority>, "SetThreadPriority"},
     {0x0E, nullptr, "GetThreadCoreMask"},
-    {0x0F, nullptr, "SetThreadCoreMask"},
+    {0x0F, SvcWrap<SetThreadCoreMask>, "SetThreadCoreMask"},
     {0x10, SvcWrap<GetCurrentProcessorNumber>, "GetCurrentProcessorNumber"},
     {0x11, nullptr, "SignalEvent"},
     {0x12, nullptr, "ClearEvent"},
