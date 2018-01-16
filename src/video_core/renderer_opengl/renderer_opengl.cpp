@@ -293,16 +293,16 @@ void RendererOpenGL::LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
  * Fills active OpenGL texture with the given RGB color. Since the color is solid, the texture can
  * be 1x1 but will stretch across whatever it's rendered on.
  */
-void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color_b,
+void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color_b, u8 color_a,
                                                 const TextureInfo& texture) {
     state.texture_units[0].texture_2d = texture.resource.handle;
     state.Apply();
 
     glActiveTexture(GL_TEXTURE0);
-    u8 framebuffer_data[3] = {color_r, color_g, color_b};
+    u8 framebuffer_data[4] = {color_a, color_b, color_g, color_r};
 
     // Update existing texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, framebuffer_data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, framebuffer_data);
 
     state.texture_units[0].texture_2d = 0;
     state.Apply();
@@ -364,6 +364,9 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     state.texture_units[0].texture_2d = 0;
     state.Apply();
+
+    // Clear screen to black
+    LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
 }
 
 void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,

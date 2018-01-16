@@ -30,17 +30,26 @@ button_a=
 button_b=
 button_x=
 button_y=
-button_up=
-button_down=
-button_left=
-button_right=
+button_lstick=
+button_rstick=
 button_l=
 button_r=
-button_start=
-button_select=
 button_zl=
 button_zr=
+button_plus=
+button_minus=
+button_dleft=
+button_dup=
+button_dright=
+button_ddown=
+button_lstick_left=
+button_lstick_up=
+button_lstick_right=
+button_lstick_down=
+button_sl=
+button_sr=
 button_home=
+button_screenshot=
 
 # for analog input, the following devices are available:
 #  - "analog_from_button" (default) for emulating analog input from direction buttons. Required parameters:
@@ -53,8 +62,8 @@ button_home=
 #      - "joystick": the index of the joystick to bind
 #      - "axis_x": the index of the axis to bind as x-axis (default to 0)
 #      - "axis_y": the index of the axis to bind as y-axis (default to 1)
-circle_pad=
-c_stick=
+lstick=
+rstick=
 
 # for motion input, the following devices are available:
 #  - "motion_emu" (default) for emulating motion input from mouse input. Required parameters:
@@ -81,8 +90,8 @@ use_hw_renderer =
 use_shader_jit =
 
 # Resolution scale factor
-# 0: Auto (scales resolution to window size), 1: Native 3DS screen resolution, Otherwise a scale
-# factor for the 3DS resolution
+# 0: Auto (scales resolution to window size), 1: Native Switch screen resolution, Otherwise a scale
+# factor for the Switch resolution
 resolution_factor =
 
 # Whether to enable V-Sync (caps the framerate at 60FPS) or not.

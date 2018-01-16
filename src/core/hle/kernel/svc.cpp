@@ -314,10 +314,10 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = g_current_process->allowed_processor_mask;
         break;
     case GetInfoType::TotalMemoryUsage:
-        *result = vm_manager.GetTotalMemoryUsage();
+		*result = 0xBE000000;//vm_manager.GetTotalMemoryUsage();
         break;
     case GetInfoType::TotalHeapUsage:
-        *result = vm_manager.GetTotalHeapUsage();
+		*result = 0;//vm_manager.GetTotalHeapUsage();
         break;
     case GetInfoType::RandomEntropy:
         *result = 0;
@@ -328,12 +328,22 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     case GetInfoType::AddressSpaceSize:
         *result = vm_manager.GetAddressSpaceSize();
         break;
+	case GetInfoType::MapRegionBaseAddr:
+		*result = vm_manager.GetAddressSpaceBaseAddr();
+		break;
+	case GetInfoType::MapRegionSize:
+		*result = vm_manager.GetAddressSpaceSize();
+		break;
     case GetInfoType::NewMapRegionBaseAddr:
         *result = vm_manager.GetNewMapRegionBaseAddr();
         break;
     case GetInfoType::NewMapRegionSize:
         *result = vm_manager.GetNewMapRegionSize();
         break;
+
+	case GetInfoType::IsVirtualAddressMemoryEnabled:
+		*result = 1;
+		break;
     default:
         UNIMPLEMENTED();
     }
@@ -709,6 +719,11 @@ static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32
     return RESULT_SUCCESS;
 }
 
+static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
+	LOG_WARNING(Kernel_SVC, "(STUBBED) called addr 0x%llx size 0x%llx", addr, size);
+	return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -764,7 +779,7 @@ static const FunctionDef SVC_Table[] = {
     {0x29, SvcWrap<GetInfo>, "GetInfo"},
     {0x2A, nullptr, "FlushEntireDataCache"},
     {0x2B, nullptr, "FlushDataCache"},
-    {0x2C, nullptr, "MapPhysicalMemory"},
+    {0x2C, SvcWrap<MapPhysicalMemory>, "MapPhysicalMemory"},
     {0x2D, nullptr, "UnmapPhysicalMemory"},
     {0x2E, nullptr, "Unknown"},
     {0x2F, nullptr, "GetLastThreadInfo"},

@@ -169,6 +169,11 @@ void SvcWrap() {
     func();
 }
 
+template <ResultCode func(VAddr, u64)>
+void SvcWrap() {
+	func(PARAM(0), PARAM(1));
+}
+
 template <void func(s64)>
 void SvcWrap() {
     func((s64)PARAM(0));

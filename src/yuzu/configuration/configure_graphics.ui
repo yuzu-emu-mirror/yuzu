@@ -34,7 +34,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Internal Resolution:</string>
+             <string>Internal Resolution:(Currently does nothing.)</string>
             </property>
            </widget>
           </item>
@@ -47,52 +47,22 @@
             </item>
             <item>
              <property name="text">
-              <string>Native (400x240)</string>
+              <string>Native (1280x720)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>2x Native (800x480)</string>
+              <string>2x Native (2560x1440)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>3x Native (1200x720)</string>
+              <string>3x Native (3840x2160)</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>4x Native (1600x960)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>5x Native (2000x1200)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>6x Native (2400x1440)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>7x Native (2800x1680)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>8x Native (3200x1920)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>9x Native (3600x2160)</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>10x Native (4000x2400)</string>
+              <string>4x Native (5120x2880)</string>
              </property>
             </item>
            </widget>
