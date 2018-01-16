@@ -11,7 +11,7 @@
 #include "core/hle/kernel/svc.h"
 
 // Load Unicorn DLL once on Windows using RAII
-#ifdef _WIN32
+#ifdef MSVC
 #include <unicorn_dynload.h>
 struct LoadDll {
 private:

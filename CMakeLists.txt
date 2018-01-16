@@ -224,6 +224,31 @@ if (YUZU_USE_BUNDLED_UNICORN)
     set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers")
     set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/lib/x64/unicorn_dynload.lib" CACHE PATH "Path to Unicorn library")
     set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/lib/x64/" CACHE PATH "Path to unicorn.dll")
+elseif (YUZU_BUILD_UNICORN)
+    if (MSVC)
+        message(FATAL_ERROR "Cannot build unicorn on msvc. Use YUZU_USE_BUNDLED_UNICORN instead")
+    elseif (MINGW)
+        set(UNICORN_LIB_NAME "unicorn.a")
+    else()
+        set(UNICORN_LIB_NAME "libunicorn.a")
+    endif()
+
+    set(UNICORN_FOUND YES)
+    set(UNICORN_PREFIX ${CMAKE_SOURCE_DIR}/externals/unicorn)
+    set(LIBUNICORN_LIBRARY "${UNICORN_PREFIX}/${UNICORN_LIB_NAME}" CACHE PATH "Path to Unicorn library")
+    set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers")
+    set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/" CACHE PATH "Path to unicorn dynamic library")
+
+    add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
+        COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" /bin/sh make.sh
+        WORKING_DIRECTORY ${UNICORN_PREFIX}
+    )
+    # ALL makes this custom target build every time
+    # but it won't actually build if LIBUNICORN_LIBRARY exists
+    add_custom_target(unicorn-build ALL
+        DEPENDS ${LIBUNICORN_LIBRARY}
+    )
+    unset(UNICORN_LIB_NAME)
 else()
     find_package(Unicorn REQUIRED)
 endif()
