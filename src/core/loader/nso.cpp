@@ -19,7 +19,10 @@ struct NsoSegmentHeader {
     u32_le offset;
     u32_le location;
     u32_le size;
-    u32_le alignment;
+    union {
+        u32_le alignment;
+        u32_le bss_size;
+    };
 };
 static_assert(sizeof(NsoSegmentHeader) == 0x10, "NsoSegmentHeader has incorrect size.");
 
@@ -120,14 +123,15 @@ VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base, bool relo
 
     // Read MOD header
     ModHeader mod_header{};
-    u32 bss_size{Memory::PAGE_SIZE}; // Default .bss to page size if MOD0 section doesn't exist
+    // Default .bss to size in segment header if MOD0 section doesn't exist
+    u32 bss_size{PageAlignSize(nso_header.segments[2].bss_size)};
     std::memcpy(&mod_header, program_image.data() + module_offset, sizeof(ModHeader));
     const bool has_mod_header{mod_header.magic == Common::MakeMagic('M', 'O', 'D', '0')};
     if (has_mod_header) {
         // Resize program image to include .bss section and page align each section
         bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);
-        codeset->data.size += bss_size;
     }
+    codeset->data.size += bss_size;
     const u32 image_size{PageAlignSize(static_cast<u32>(program_image.size()) + bss_size)};
     program_image.resize(image_size);
 
