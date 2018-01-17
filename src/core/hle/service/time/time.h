@@ -9,6 +9,42 @@
 namespace Service {
 namespace Time {
 
+// TODO(Rozelette) RE this structure
+struct LocationName {
+    INSERT_PADDING_BYTES(0x24);
+};
+static_assert(sizeof(LocationName) == 0x24, "LocationName structure has incorrect size");
+
+struct CalendarTime {
+    u16_le year;
+    u8 month; // Starts at 1
+    u8 day;   // Starts at 1
+    u8 hour;
+    u8 minute;
+    u8 second;
+    INSERT_PADDING_BYTES(1);
+};
+static_assert(sizeof(CalendarTime) == 0x8, "CalendarTime structure has incorrect size");
+
+// TODO(Rozelette) RE this structure
+struct CalendarAdditionalInfo {
+    INSERT_PADDING_BYTES(0x18);
+};
+static_assert(sizeof(CalendarAdditionalInfo) == 0x18,
+              "CalendarAdditionalInfo structure has incorrect size");
+
+class TIME final : public ServiceFramework<TIME> {
+public:
+    explicit TIME(const char* name);
+    ~TIME() = default;
+
+private:
+    void GetStandardUserSystemClock(Kernel::HLERequestContext& ctx);
+    void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);
+    void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
+    void GetTimeZoneService(Kernel::HLERequestContext& ctx);
+};
+
 /// Registers all Time services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
