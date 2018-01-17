@@ -200,8 +200,10 @@ private:
     std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_w_desciptors;
+    std::vector<IPC::BufferDescriptorC> buffer_c_desciptors;
 
     unsigned data_payload_offset{};
+    unsigned buffer_c_offset{};
     u32_le command{};
 };
 
