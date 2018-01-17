@@ -7,7 +7,7 @@ include(DownloadExternals)
 project(yuzu)
 
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
-option(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
+option(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
