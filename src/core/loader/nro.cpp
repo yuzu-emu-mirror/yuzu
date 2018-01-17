@@ -118,13 +118,6 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     }
     program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
 
-    // Relocate symbols if there was a proper MOD header - This must happen after the image has been
-    // loaded into memory
-    if (has_mod_header) {
-        Relocate(program_image, nro_header.module_header_offset + mod_header.dynamic_offset,
-                 load_base);
-    }
-
     // Load codeset for current process
     codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
@@ -153,8 +146,6 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
     process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
-
-    ResolveImports();
 
     is_loaded = true;
     return ResultStatus::Success;

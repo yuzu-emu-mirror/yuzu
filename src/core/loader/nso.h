@@ -34,7 +34,7 @@ public:
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
 private:
-    VAddr LoadNso(const std::string& path, VAddr load_base, bool relocate = false);
+    VAddr LoadNso(const std::string& path, VAddr load_base);
 
     std::string filepath;
 };
