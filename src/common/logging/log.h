@@ -60,6 +60,7 @@ enum class Class : ClassType {
     HW_LCD,            ///< LCD register emulation
     HW_GPU,            ///< GPU control emulation
     HW_AES,            ///< AES engine emulation
+    IPC,               ///< IPC interface
     Frontend,          ///< Emulator UI
     Render,            ///< Emulator video output and hardware acceleration
     Render_Software,   ///< Software renderer backend

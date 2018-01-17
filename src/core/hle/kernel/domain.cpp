@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "common/logging/log.h"
+#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
@@ -36,7 +38,24 @@ ResultCode Domain::SendSyncRequest(SharedPtr<Thread> thread) {
     if (domain_message_header) {
         // If there is a DomainMessageHeader, then this is CommandType "Request"
         const u32 object_id{context.GetDomainMessageHeader()->object_id};
-        return request_handlers[object_id - 1]->HandleSyncRequest(context);
+        switch (domain_message_header->command) {
+        case IPC::DomainMessageHeader::CommandType::SendMessage:
+            return request_handlers[object_id - 1]->HandleSyncRequest(context);
+
+        case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
+            LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x%08X", object_id);
+
+            request_handlers[object_id - 1] = nullptr;
+
+            IPC::RequestBuilder rb{context, 2};
+            rb.Push(RESULT_SUCCESS);
+
+            return RESULT_SUCCESS;
+        }
+        }
+
+        LOG_CRITICAL(IPC, "Unknown domain command=%d", domain_message_header->command.Value());
+        UNIMPLEMENTED();
     }
     return request_handlers.front()->HandleSyncRequest(context);
 }
