@@ -74,8 +74,7 @@ private:
         controller_header.left_color_body = JOYCON_BODY_NEON_BLUE;
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
-        for (int layoutIdx = 0; layoutIdx < HID_NUM_LAYOUTS; layoutIdx++)
-        {
+        for (int layoutIdx = 0; layoutIdx < HID_NUM_LAYOUTS; layoutIdx++) {
             ControllerLayout& layout = mem->controllers[Controller_Handheld].layouts[layoutIdx];
             layout.header.num_entries = HID_NUM_ENTRIES;
             layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
@@ -128,7 +127,8 @@ private:
 
             // TODO(shinyquagsire23): Analog stick vals
 
-            // TODO(shinyquagsire23): Update pad info proper, (circular buffers, timestamps, layouts)
+            // TODO(shinyquagsire23): Update pad info proper, (circular buffers, timestamps,
+            // layouts)
         }
 
         // TODO(shinyquagsire23): Update touch info
