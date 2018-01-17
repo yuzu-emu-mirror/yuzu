@@ -7,10 +7,10 @@
 #include "core/hle/service/service.h"
 
 namespace Service {
-namespace BSD {
+namespace Sockets {
 
-/// Registers all BSD services with the specified service manager.
+/// Registers all Sockets services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace BSD
+} // namespace Sockets
 } // namespace Service

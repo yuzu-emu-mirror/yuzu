@@ -3,10 +3,10 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/service/bsd/bsd_u.h"
+#include "core/hle/service/sockets/bsd_u.h"
 
 namespace Service {
-namespace BSD {
+namespace Sockets {
 
 void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
@@ -65,5 +65,5 @@ BSD_U::BSD_U() : ServiceFramework("bsd:u") {
     RegisterHandlers(functions);
 }
 
-} // namespace BSD
+} // namespace Sockets
 } // namespace Service
