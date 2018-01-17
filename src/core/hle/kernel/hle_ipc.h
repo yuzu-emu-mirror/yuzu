@@ -143,6 +143,10 @@ public:
         return buffer_b_desciptors;
     }
 
+    const std::vector<IPC::BufferDescriptorC>& BufferDescriptorC() const {
+        return buffer_c_desciptors;
+    }
+
     const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
         return domain_message_header;
     }
