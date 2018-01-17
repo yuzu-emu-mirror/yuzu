@@ -72,5 +72,6 @@ void ConfigureSystem::refreshConsoleID() {
     if (reply == QMessageBox::No)
         return;
     u64 console_id{};
-    ui->label_console_id->setText("Console ID: 0x" + QString::number(console_id, 16).toUpper());
+    ui->label_console_id->setText(
+        tr("Console ID: 0x%1").arg(QString::number(console_id, 16).toUpper()));
 }
