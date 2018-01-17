@@ -123,7 +123,6 @@ void GRenderWindow::moveContext() {
                       ? emu_thread
                       : qApp->thread();
     child->context()->moveToThread(thread);
-
 }
 
 void GRenderWindow::SwapBuffers() {
