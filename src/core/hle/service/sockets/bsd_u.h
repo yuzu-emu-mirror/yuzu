@@ -8,7 +8,7 @@
 #include "core/hle/service/service.h"
 
 namespace Service {
-namespace BSD {
+namespace Sockets {
 
 class BSD_U final : public ServiceFramework<BSD_U> {
 public:
@@ -25,5 +25,5 @@ private:
     u32 next_fd = 1;
 };
 
-} // namespace BSD
+} // namespace Sockets
 } // namespace Service

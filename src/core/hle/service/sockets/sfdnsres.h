@@ -8,17 +8,15 @@
 #include "core/hle/service/service.h"
 
 namespace Service {
-namespace Sfdnsres {
+namespace Sockets {
 
-class Sfdnsres final : public ServiceFramework<Sfdnsres> {
+class SFDNSRES final : public ServiceFramework<SFDNSRES> {
 public:
-    Sfdnsres();
-    ~Sfdnsres() = default;
+    SFDNSRES() : ServiceFramework("sfdnsres") {}
+    ~SFDNSRES() = default;
 
 private:
 };
 
-void InstallInterfaces(SM::ServiceManager& service_manager);
-
-} // namespace Sfdnsres
+} // namespace Sockets
 } // namespace Service
