@@ -97,6 +97,10 @@ add_library(core STATIC
     hle/service/audio/audio.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
+    hle/service/filesystem/filesystem.cpp
+    hle/service/filesystem/filesystem.h
+    hle/service/filesystem/fsp_srv.cpp
+    hle/service/filesystem/fsp_srv.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp
