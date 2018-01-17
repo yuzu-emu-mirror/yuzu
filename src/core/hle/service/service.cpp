@@ -175,9 +175,9 @@ void Init() {
     LM::InstallInterfaces(*SM::g_service_manager);
     Nvidia::InstallInterfaces(*SM::g_service_manager);
     PCTL::InstallInterfaces(*SM::g_service_manager);
+    Sockets::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
     VI::InstallInterfaces(*SM::g_service_manager);
-    Sockets::InstallInterfaces(*SM::g_service_manager);
 
     LOG_DEBUG(Service, "initialized OK");
 }
