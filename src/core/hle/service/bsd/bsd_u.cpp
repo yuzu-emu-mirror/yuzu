@@ -24,7 +24,7 @@ void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
     u32 type = rp.Pop<u32>();
     u32 protocol = rp.Pop<u32>();
 
-    LOG_WARNING(Service, "(STUBBED) called domain=%d type=%d protocol=%d", domain, type, protocol);
+    LOG_WARNING(Service, "(STUBBED) called domain=%u type=%u protocol=%u", domain, type, protocol);
 
     u32 fd = next_fd++;
 
