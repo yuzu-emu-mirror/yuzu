@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "video_core/renderer_base.h"
@@ -28,6 +29,8 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
     using PixelFormat = RendererBase::FramebufferInfo::PixelFormat;
     const RendererBase::FramebufferInfo framebuffer_info{
         addr, offset, width, height, stride, static_cast<PixelFormat>(format)};
+
+    Core::System::GetInstance().perf_stats.EndGameFrame();
     VideoCore::g_renderer->SwapBuffers(framebuffer_info);
 }
 
