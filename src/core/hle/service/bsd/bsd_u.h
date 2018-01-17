@@ -18,6 +18,7 @@ public:
 private:
     void RegisterClient(Kernel::HLERequestContext& ctx);
     void Socket(Kernel::HLERequestContext& ctx);
+    void Connect(Kernel::HLERequestContext& ctx);
 
     /// Id to use for the next open file descriptor.
     u32 next_fd = 1;
