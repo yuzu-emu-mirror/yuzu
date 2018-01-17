@@ -84,7 +84,7 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     ConnectMenuEvents();
     ConnectWidgetEvents();
 
-    setWindowTitle(QString("yuzu %1| %2-%3| Build date: " + "%4")
+    setWindowTitle(QString("yuzu %1| %2-%3| Build date: %4")
                        .arg(Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc, Common::g_build_date));
     show();
 
