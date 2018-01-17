@@ -13,10 +13,8 @@ void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
 
     IPC::RequestBuilder rb{ctx, 3};
 
-    // TODO(flerovium): first return value is BSD error number. Figure out what
-    // the second return value means.
-    rb.Push<u32>(0);
-    rb.Push<u32>(0);
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(0); // bsd errno
 }
 
 void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
@@ -30,10 +28,11 @@ void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
 
     u32 fd = next_fd++;
 
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::RequestBuilder rb{ctx, 4};
 
+    rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(fd);
-    rb.Push<u32>(0); // bsd errno (no error)
+    rb.Push<u32>(0); // bsd errno
 }
 
 BSD_U::BSD_U() : ServiceFramework("bsd:u") {
