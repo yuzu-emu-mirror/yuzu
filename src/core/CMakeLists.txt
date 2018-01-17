@@ -61,6 +61,9 @@ set(SRCS
             hle/service/time/time_s.cpp
             hle/service/vi/vi.cpp
             hle/service/vi/vi_m.cpp
+            hle/service/bsd/bsd.cpp
+            hle/service/bsd/bsd_u.cpp
+            hle/service/sfdnsres/sfdnsres.cpp
             hle/shared_page.cpp
             hw/hw.cpp
             hw/lcd.cpp
