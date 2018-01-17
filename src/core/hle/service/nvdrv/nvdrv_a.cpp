@@ -59,6 +59,21 @@ void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
     rb.Push(nv_result);
 }
 
+void NVDRV_A::Close(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestParser rp{ctx};
+    u32 fd = rp.Pop<u32>();
+
+    auto itr = open_files.find(fd);
+    ASSERT_MSG(itr != open_files.end(), "Tried to talk to an invalid device");
+
+    open_files.erase(itr);
+
+    IPC::RequestBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 void NVDRV_A::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 3};
@@ -70,6 +85,7 @@ NVDRV_A::NVDRV_A() : ServiceFramework("nvdrv:a") {
     static const FunctionInfo functions[] = {
         {0, &NVDRV_A::Open, "Open"},
         {1, &NVDRV_A::Ioctl, "Ioctl"},
+        {2, &NVDRV_A::Close, "Close"},
         {3, &NVDRV_A::Initialize, "Initialize"},
     };
     RegisterHandlers(functions);

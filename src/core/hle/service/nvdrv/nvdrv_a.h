@@ -33,6 +33,7 @@ public:
 private:
     void Open(Kernel::HLERequestContext& ctx);
     void Ioctl(Kernel::HLERequestContext& ctx);
+    void Close(Kernel::HLERequestContext& ctx);
     void Initialize(Kernel::HLERequestContext& ctx);
 
     /// Id to use for the next open file descriptor.
