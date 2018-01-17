@@ -4,35 +4,27 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/service/nvdrv/devices/nvdevice.h"
-#include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
-#include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
-#include "core/hle/service/nvdrv/devices/nvmap.h"
+#include "core/hle/service/nvdrv/interface.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/nvdrv/nvdrv_a.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 
-void NVDRV_A::Open(Kernel::HLERequestContext& ctx) {
+void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     auto buffer = ctx.BufferDescriptorA()[0];
 
     std::string device_name = Memory::ReadCString(buffer.Address(), buffer.Size());
 
-    auto device = devices[device_name];
-    u32 fd = next_fd++;
-
-    open_files[fd] = device;
-
+    u32 fd = nvdrv->Open(device_name);
     IPC::RequestBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(fd);
     rb.Push<u32>(0);
 }
 
-void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
+void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::RequestParser rp{ctx};
@@ -46,11 +38,8 @@ void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
     std::vector<u8> output(output_buffer.Size());
 
     Memory::ReadBlock(input_buffer.Address(), input.data(), input_buffer.Size());
-    auto itr = open_files.find(fd);
-    ASSERT_MSG(itr != open_files.end(), "Tried to talk to an invalid device");
 
-    auto device = itr->second;
-    u32 nv_result = device->ioctl(command, input, output);
+    u32 nv_result = nvdrv->Ioctl(fd, command, input, output);
 
     Memory::WriteBlock(output_buffer.Address(), output.data(), output_buffer.Size());
 
@@ -59,26 +48,22 @@ void NVDRV_A::Ioctl(Kernel::HLERequestContext& ctx) {
     rb.Push(nv_result);
 }
 
-void NVDRV_A::Initialize(Kernel::HLERequestContext& ctx) {
+void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 }
 
-NVDRV_A::NVDRV_A() : ServiceFramework("nvdrv:a") {
+NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
+    : ServiceFramework(name), nvdrv(std::move(nvdrv)) {
     static const FunctionInfo functions[] = {
-        {0, &NVDRV_A::Open, "Open"},
-        {1, &NVDRV_A::Ioctl, "Ioctl"},
-        {3, &NVDRV_A::Initialize, "Initialize"},
+        {0, &NVDRV::Open, "Open"},
+        {1, &NVDRV::Ioctl, "Ioctl"},
+        {3, &NVDRV::Initialize, "Initialize"},
     };
     RegisterHandlers(functions);
-
-    auto nvmap_dev = std::make_shared<Devices::nvmap>();
-    devices["/dev/nvhost-as-gpu"] = std::make_shared<Devices::nvhost_as_gpu>();
-    devices["/dev/nvmap"] = nvmap_dev;
-    devices["/dev/nvdisp_disp0"] = std::make_shared<Devices::nvdisp_disp0>(nvmap_dev);
 }
 
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service

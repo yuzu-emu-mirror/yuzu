@@ -6,6 +6,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/am/applet_oe.h"
+#include "core/hle/service/apm/apm.h"
 
 namespace Service {
 namespace AM {
@@ -71,6 +72,15 @@ private:
         // Takes 3 input u8s with each field located immediately after the previous u8, these are
         // bool flags. No output.
 
+        IPC::RequestParser rp{ctx};
+
+        struct FocusHandlingModeParams {
+            u8 unknown0;
+            u8 unknown1;
+            u8 unknown2;
+        };
+        auto flags = rp.PopRaw<FocusHandlingModeParams>();
+
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
@@ -85,27 +95,38 @@ private:
     }
 
     void SetPerformanceModeChangedNotification(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        bool flag = rp.Pop<bool>();
+
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service, "(STUBBED) called flag=%u", static_cast<u32>(flag));
     }
 
     void SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        bool flag = rp.Pop<bool>();
+
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service, "(STUBBED) called flag=%u", static_cast<u32>(flag));
     }
 
     void SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx) {
         // Takes 3 input u8s with each field located immediately after the previous u8, these are
         // bool flags. No output.
+        IPC::RequestParser rp{ctx};
+
+        bool enabled = rp.Pop<bool>();
 
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service, "(STUBBED) called enabled=%u", static_cast<u32>(enabled));
     }
 };
 
@@ -115,6 +136,8 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ICommonStateGetter::GetEventHandle, "GetEventHandle"},
             {1, &ICommonStateGetter::ReceiveMessage, "ReceiveMessage"},
+            {5, &ICommonStateGetter::GetOperationMode, "GetOperationMode"},
+            {6, &ICommonStateGetter::GetPerformanceMode, "GetPerformanceMode"},
             {9, &ICommonStateGetter::GetCurrentFocusState, "GetCurrentFocusState"},
         };
         RegisterHandlers(functions);
@@ -123,6 +146,16 @@ public:
     }
 
 private:
+    enum class FocusState : u8 {
+        InFocus = 1,
+        NotInFocus = 2,
+    };
+
+    enum class OperationMode : u8 {
+        Handheld = 0,
+        Docked = 1,
+    };
+
     void GetEventHandle(Kernel::HLERequestContext& ctx) {
         event->Signal();
 
@@ -144,7 +177,23 @@ private:
     void GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(1); // 1: In focus, 2/3: Out of focus(running in "background")
+        rb.Push(static_cast<u8>(FocusState::InFocus));
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
+    void GetOperationMode(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(static_cast<u8>(OperationMode::Handheld));
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
+    void GetPerformanceMode(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(static_cast<u32>(APM::PerformanceMode::Handheld));
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
@@ -160,6 +209,7 @@ public:
             {66, &IApplicationFunctions::InitializeGamePlayRecording,
              "InitializeGamePlayRecording"},
             {67, &IApplicationFunctions::SetGamePlayRecordingState, "SetGamePlayRecordingState"},
+            {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
         };
         RegisterHandlers(functions);
     }
@@ -187,6 +237,15 @@ private:
     void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
+    void NotifyRunning(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u8>(0); // Unknown, seems to be ignored by official processes
+
         LOG_WARNING(Service, "(STUBBED) called");
     }
 };

@@ -9,7 +9,7 @@
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 
 namespace Service {
-namespace NVDRV {
+namespace Nvidia {
 namespace Devices {
 
 VAddr nvmap::GetObjectAddress(u32 handle) const {
@@ -151,5 +151,5 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
 }
 
 } // namespace Devices
-} // namespace NVDRV
+} // namespace Nvidia
 } // namespace Service

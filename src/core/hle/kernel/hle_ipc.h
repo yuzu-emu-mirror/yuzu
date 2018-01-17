@@ -175,6 +175,14 @@ public:
         domain_objects.emplace_back(std::move(object));
     }
 
+    /// Clears the list of objects so that no lingering objects are written accidentally to the
+    /// response buffer.
+    void ClearIncomingObjects() {
+        move_objects.clear();
+        copy_objects.clear();
+        domain_objects.clear();
+    }
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<Kernel::Domain> domain;
