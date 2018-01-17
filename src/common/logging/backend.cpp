@@ -43,6 +43,7 @@ namespace Log {
     SUB(HW, LCD)                                                                                   \
     SUB(HW, GPU)                                                                                   \
     SUB(HW, AES)                                                                                   \
+    CLS(IPC)                                                                                       \
     CLS(Frontend)                                                                                  \
     CLS(Render)                                                                                    \
     SUB(Render, Software)                                                                          \
@@ -91,8 +92,8 @@ const char* GetLevelName(Level log_level) {
 
 Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
                   const char* function, const char* format, va_list args) {
-    using std::chrono::steady_clock;
     using std::chrono::duration_cast;
+    using std::chrono::steady_clock;
 
     static steady_clock::time_point time_origin = steady_clock::now();
 
