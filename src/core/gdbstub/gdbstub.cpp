@@ -905,7 +905,7 @@ void ToggleServer(bool status) {
         server_enabled = status;
 
         // Start server
-        if (!IsConnected() && Core::System().GetInstance().IsPoweredOn()) {
+        if (!IsConnected() && Core::System::GetInstance().IsPoweredOn()) {
             Init();
         }
     } else {
