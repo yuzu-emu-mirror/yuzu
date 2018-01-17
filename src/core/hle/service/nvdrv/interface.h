@@ -20,6 +20,7 @@ public:
 private:
     void Open(Kernel::HLERequestContext& ctx);
     void Ioctl(Kernel::HLERequestContext& ctx);
+    void Close(Kernel::HLERequestContext& ctx);
     void Initialize(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<Module> nvdrv;

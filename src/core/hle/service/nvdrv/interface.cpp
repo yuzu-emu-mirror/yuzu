@@ -48,6 +48,18 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
     rb.Push(nv_result);
 }
 
+void NVDRV::Close(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestParser rp{ctx};
+    u32 fd = rp.Pop<u32>();
+
+    auto result = nvdrv->Close(fd);
+
+    IPC::RequestBuilder rb{ctx, 2};
+    rb.Push(result);
+}
+
 void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 3};
@@ -60,6 +72,7 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
     static const FunctionInfo functions[] = {
         {0, &NVDRV::Open, "Open"},
         {1, &NVDRV::Ioctl, "Ioctl"},
+        {2, &NVDRV::Close, "Close"},
         {3, &NVDRV::Initialize, "Initialize"},
     };
     RegisterHandlers(functions);

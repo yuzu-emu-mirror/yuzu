@@ -49,5 +49,15 @@ u32 Module::Ioctl(u32 fd, u32 command, const std::vector<u8>& input, std::vector
     return device->ioctl(command, input, output);
 }
 
+ResultCode Module::Close(u32 fd) {
+    auto itr = open_files.find(fd);
+    ASSERT_MSG(itr != open_files.end(), "Tried to talk to an invalid device");
+
+    open_files.erase(itr);
+
+    // TODO(flerovium): return correct result code if operation failed.
+    return RESULT_SUCCESS;
+}
+
 } // namespace Nvidia
 } // namespace Service
