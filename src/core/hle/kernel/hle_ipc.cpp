@@ -102,13 +102,20 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     data_payload_header =
         std::make_unique<IPC::DataPayloadHeader>(rp.PopRaw<IPC::DataPayloadHeader>());
 
+    data_payload_offset = rp.GetCurrentOffset();
+
+    if (domain_message_header && domain_message_header->command ==
+                                     IPC::DomainMessageHeader::CommandType::CloseVirtualHandle) {
+        // CloseVirtualHandle command does not have SFC* or any data
+        return;
+    }
+
     if (incoming) {
         ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'I'));
     } else {
         ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'O'));
     }
 
-    data_payload_offset = rp.GetCurrentOffset();
     command = rp.Pop<u32_le>();
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
 }
