@@ -17,6 +17,7 @@ public:
 private:
     void ConvertSessionToDomain(Kernel::HLERequestContext& ctx);
     void DuplicateSession(Kernel::HLERequestContext& ctx);
+    void DuplicateSessionEx(Kernel::HLERequestContext& ctx);
     void QueryPointerBufferSize(Kernel::HLERequestContext& ctx);
 };
 

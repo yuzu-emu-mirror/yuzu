@@ -32,6 +32,12 @@ void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service, "called");
 }
 
+void Controller::DuplicateSessionEx(Kernel::HLERequestContext& ctx) {
+    DuplicateSession(ctx);
+
+    LOG_WARNING(Service, "(STUBBED) called, using DuplicateSession");
+}
+
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -46,7 +52,7 @@ Controller::Controller() : ServiceFramework("IpcController") {
         {0x00000001, nullptr, "ConvertDomainToSession"},
         {0x00000002, &Controller::DuplicateSession, "DuplicateSession"},
         {0x00000003, &Controller::QueryPointerBufferSize, "QueryPointerBufferSize"},
-        {0x00000004, nullptr, "DuplicateSessionEx"},
+        {0x00000004, &Controller::DuplicateSessionEx, "DuplicateSessionEx"},
     };
     RegisterHandlers(functions);
 }
