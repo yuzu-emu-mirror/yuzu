@@ -89,6 +89,7 @@ set(HEADERS
             file_sys/ivfc_archive.h
             file_sys/path_parser.h
             file_sys/savedata_archive.h
+            file_sys/title_metadata.h
             frontend/emu_window.h
             frontend/framebuffer_layout.h
             frontend/input.h
