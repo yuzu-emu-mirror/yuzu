@@ -66,27 +66,27 @@ private:
             LoadInputDevices();
 
         // Set up controllers as neon red+blue Joy-Con attached to console
-        ControllerHeader& controllerHeader = mem->controllers[Controller_Handheld].header;
-        controllerHeader.type = ControllerType_Handheld | ControllerType_JoyconPair;
-        controllerHeader.singleColorsDescriptor = ColorDesc_ColorsNonexistent;
-        controllerHeader.rightColorBody = 0xFF3C28;
-        controllerHeader.rightColorButtons = 0x1E0A0A;
-        controllerHeader.leftColorBody = 0x0AB9E6;
-        controllerHeader.leftColorButtons = 0x001E1E;
+        ControllerHeader& controller_header = mem->controllers[Controller_Handheld].header;
+        controller_header.type = ControllerType_Handheld | ControllerType_JoyconPair;
+        controller_header.single_colors_descriptor = ColorDesc_ColorsNonexistent;
+        controller_header.right_color_body = JOYCON_BODY_NEON_RED;
+        controller_header.right_color_buttons = JOYCON_BUTTONS_NEON_RED;
+        controller_header.left_color_body = JOYCON_BODY_NEON_BLUE;
+        controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
         for (int layoutIdx = 0; layoutIdx < HID_NUM_LAYOUTS; layoutIdx++)
         {
             ControllerLayout& layout = mem->controllers[Controller_Handheld].layouts[layoutIdx];
-            layout.header.numEntries = HID_NUM_ENTRIES;
-            layout.header.maxEntryIndex = HID_NUM_ENTRIES - 1;
+            layout.header.num_entries = HID_NUM_ENTRIES;
+            layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
 
             // HID shared memory stores the state of the past 17 samples in a circlular buffer,
             // each with a timestamp in number of samples since boot.
-            layout.header.timestampTicks = CoreTiming::GetTicks();
-            layout.header.latestEntry = (layout.header.latestEntry + 1) % HID_NUM_ENTRIES;
+            layout.header.timestamp_ticks = CoreTiming::GetTicks();
+            layout.header.latest_entry = (layout.header.latest_entry + 1) % HID_NUM_ENTRIES;
 
-            ControllerInputEntry& entry = layout.entries[layout.header.latestEntry];
-            entry.connectionState = ConnectionState_Connected | ConnectionState_Wired;
+            ControllerInputEntry& entry = layout.entries[layout.header.latest_entry];
+            entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
             entry.timestamp++;
             entry.timestamp_2++; // TODO(shinyquagsire23): Is this always identical to timestamp?
 
