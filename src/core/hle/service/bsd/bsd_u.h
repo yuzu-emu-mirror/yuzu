@@ -16,6 +16,7 @@ public:
     ~BSD_U() = default;
 
 private:
+    void RegisterClient(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace BSD
