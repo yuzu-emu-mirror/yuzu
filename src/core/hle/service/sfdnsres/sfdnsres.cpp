@@ -14,7 +14,7 @@ Sfdnsres::Sfdnsres() : ServiceFramework("sfdnsres") {
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-	std::make_shared<Sfdnsres>()->InstallAsService(service_manager);
+    std::make_shared<Sfdnsres>()->InstallAsService(service_manager);
 }
 
 } // namespace Sfdnsres
