@@ -47,8 +47,9 @@ public:
     }
 
     std::vector<u8> ReadBlock(size_t length) {
-        std::vector<u8> data(length);
-        std::memcpy(data.data(), buffer.data() + read_index, length);
+        const u8* const begin = buffer.data() + read_index;
+        const u8* const end = begin + length;
+        std::vector<u8> data(begin, end);
         read_index += length;
         read_index = Common::AlignUp(read_index, 4);
         return data;
