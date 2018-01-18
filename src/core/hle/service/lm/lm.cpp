@@ -47,6 +47,7 @@ private:
 
     /// Log field type
     enum class Field : u8 {
+        Skip = 1,
         Message = 2,
         Line = 3,
         Filename = 4,
@@ -85,6 +86,11 @@ private:
         while (addr < end_addr) {
             const Field field{static_cast<Field>(Memory::Read8(addr++))};
             size_t length{Memory::Read8(addr++)};
+
+            if (static_cast<Field>(Memory::Read8(addr)) == Field::Skip) {
+                ++addr;
+            }
+
             switch (field) {
             case Field::Message:
                 message = Memory::ReadCString(addr, length);
@@ -99,6 +105,7 @@ private:
                 function = Memory::ReadCString(addr, length);
                 break;
             }
+
             addr += length;
         }
 
