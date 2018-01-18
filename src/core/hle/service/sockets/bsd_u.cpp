@@ -56,12 +56,10 @@ void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
 }
 
 BSD_U::BSD_U() : ServiceFramework("bsd:u") {
-    static const FunctionInfo functions[] = {
-        {0, &BSD_U::RegisterClient, "RegisterClient"},
-        {2, &BSD_U::Socket, "Socket"},
-        {11, &BSD_U::SendTo, "SendTo"},
-        {14, &BSD_U::Connect, "Connect"}
-    };
+    static const FunctionInfo functions[] = {{0, &BSD_U::RegisterClient, "RegisterClient"},
+                                             {2, &BSD_U::Socket, "Socket"},
+                                             {11, &BSD_U::SendTo, "SendTo"},
+                                             {14, &BSD_U::Connect, "Connect"}};
     RegisterHandlers(functions);
 }
 
