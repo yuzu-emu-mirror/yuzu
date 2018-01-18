@@ -88,7 +88,7 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base, bool relocate) {
+VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
     FileUtil::IOFile file(path, "rb");
     if (!file.IsOpen()) {
         return {};
@@ -135,12 +135,6 @@ VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base, bool relo
     const u32 image_size{PageAlignSize(static_cast<u32>(program_image.size()) + bss_size)};
     program_image.resize(image_size);
 
-    // Relocate symbols if there was a proper MOD header - This must happen after the image has been
-    // loaded into memory
-    if (has_mod_header && relocate) {
-        Relocate(program_image, module_offset + mod_header.dynamic_offset, load_base);
-    }
-
     // Load codeset for current process
     codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
@@ -180,8 +174,6 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
     process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
-
-    ResolveImports();
 
     is_loaded = true;
     return ResultStatus::Success;

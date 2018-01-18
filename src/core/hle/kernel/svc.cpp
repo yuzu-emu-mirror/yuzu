@@ -57,7 +57,7 @@ static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
 }
 
 /// Connect to an OS service given the port name, returns the handle to the port to out
-static ResultCode ConnectToPort(Handle* out_handle, VAddr port_name_address) {
+static ResultCode ConnectToNamedPort(Handle* out_handle, VAddr port_name_address) {
     if (!Memory::IsValidVirtualAddress(port_name_address))
         return ERR_NOT_FOUND;
 
@@ -253,8 +253,8 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
 }
 
 /// Attempts to locks a mutex, creating it if it does not already exist
-static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
-                            Handle requesting_thread_handle) {
+static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
+                                Handle requesting_thread_handle) {
     LOG_TRACE(Kernel_SVC, "called holding_thread_handle=0x%08X, mutex_addr=0x%llx, "
                           "requesting_current_thread_handle=0x%08X",
               holding_thread_handle, mutex_addr, requesting_thread_handle);
@@ -277,7 +277,7 @@ static ResultCode LockMutex(Handle holding_thread_handle, VAddr mutex_addr,
 }
 
 /// Unlock a mutex
-static ResultCode UnlockMutex(VAddr mutex_addr) {
+static ResultCode ArbitrateUnlock(VAddr mutex_addr) {
     LOG_TRACE(Kernel_SVC, "called mutex_addr=0x%llx", mutex_addr);
 
     SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
@@ -774,12 +774,12 @@ static const FunctionDef SVC_Table[] = {
     {0x17, SvcWrap<ResetSignal>, "ResetSignal"},
     {0x18, SvcWrap<WaitSynchronization>, "WaitSynchronization"},
     {0x19, SvcWrap<CancelSynchronization>, "CancelSynchronization"},
-    {0x1A, SvcWrap<LockMutex>, "LockMutex"},
-    {0x1B, SvcWrap<UnlockMutex>, "UnlockMutex"},
+    {0x1A, SvcWrap<ArbitrateLock>, "ArbitrateLock"},
+    {0x1B, SvcWrap<ArbitrateUnlock>, "ArbitrateUnlock"},
     {0x1C, SvcWrap<WaitProcessWideKeyAtomic>, "WaitProcessWideKeyAtomic"},
     {0x1D, SvcWrap<SignalProcessWideKey>, "SignalProcessWideKey"},
     {0x1E, SvcWrap<GetSystemTick>, "GetSystemTick"},
-    {0x1F, SvcWrap<ConnectToPort>, "ConnectToPort"},
+    {0x1F, SvcWrap<ConnectToNamedPort>, "ConnectToNamedPort"},
     {0x20, nullptr, "SendSyncRequestLight"},
     {0x21, SvcWrap<SendSyncRequest>, "SendSyncRequest"},
     {0x22, nullptr, "SendSyncRequestWithUserBuffer"},
@@ -823,8 +823,8 @@ static const FunctionDef SVC_Table[] = {
     {0x48, nullptr, "Unknown"},
     {0x49, nullptr, "Unknown"},
     {0x4A, nullptr, "Unknown"},
-    {0x4B, nullptr, "Unknown"},
-    {0x4C, nullptr, "Unknown"},
+    {0x4B, nullptr, "CreateJitMemory"},
+    {0x4C, nullptr, "MapJitMemory"},
     {0x4D, nullptr, "SleepSystem"},
     {0x4E, nullptr, "ReadWriteRegister"},
     {0x4F, nullptr, "SetProcessActivity"},
