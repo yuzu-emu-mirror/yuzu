@@ -203,8 +203,8 @@ private:
 
 class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
 public:
-    explicit IStorageAccessor(std::vector<u8> buffer) : ServiceFramework("IStorageAccessor"),
-    buffer(std::move(buffer)) {
+    explicit IStorageAccessor(std::vector<u8> buffer)
+        : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
             {0, &IStorageAccessor::GetSize, "GetSize"},
             {11, &IStorageAccessor::Read, "Read"},
@@ -245,7 +245,8 @@ private:
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    explicit IStorage(std::vector<u8> buffer) : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
+    explicit IStorage(std::vector<u8> buffer)
+        : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Open, "Open"},
         };
@@ -281,18 +282,18 @@ public:
 
 private:
     void PopLaunchParameter(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
-
         constexpr u8 data[0x88] = {
             0xca, 0x97, 0x94, 0xc7, // Magic
-            1, 0, 0, 0, // IsAccountSelected (bool)
-            1, 0, 0, 0, // User Id (word 0)
-            0, 0, 0, 0, // User Id (word 1)
-            0, 0, 0, 0, // User Id (word 2)
-            0, 0, 0, 0  // User Id (word 3)
+            1,    0,    0,    0,    // IsAccountSelected (bool)
+            1,    0,    0,    0,    // User Id (word 0)
+            0,    0,    0,    0,    // User Id (word 1)
+            0,    0,    0,    0,    // User Id (word 2)
+            0,    0,    0,    0     // User Id (word 3)
         };
 
         std::vector<u8> buffer(data, data + sizeof(data));
+
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorage>(buffer);
