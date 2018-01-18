@@ -95,7 +95,7 @@ public:
 
         Header header{};
         header.data_offset = sizeof(Header);
-        header.data_size = write_index - sizeof(Header);
+        header.data_size = static_cast<u32_le>(write_index - sizeof(Header));
         std::memcpy(buffer.data(), &header, sizeof(Header));
 
         return buffer;
