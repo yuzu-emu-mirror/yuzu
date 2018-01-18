@@ -128,6 +128,11 @@ add_library(core STATIC
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp
     hle/service/sm/sm.h
+    hle/service/sockets/bsd_u.cpp
+    hle/service/sockets/bsd_u.h
+    hle/service/sockets/sfdnsres.h
+    hle/service/sockets/sockets.cpp
+    hle/service/sockets/sockets.h
     hle/service/time/time.cpp
     hle/service/time/time.h
     hle/service/vi/vi.cpp
