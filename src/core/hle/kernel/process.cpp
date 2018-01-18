@@ -162,7 +162,6 @@ void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
 
 VAddr Process::GetLinearHeapAreaAddress() const {
     // Starting from system version 8.0.0 a new linear heap layout is supported to allow usage of
-    // the extra RAM in the n3DS.
     return kernel_version < 0x22C ? Memory::LINEAR_HEAP_VADDR : Memory::NEW_LINEAR_HEAP_VADDR;
 }
 

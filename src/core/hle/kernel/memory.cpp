@@ -27,23 +27,14 @@ MemoryRegionInfo memory_regions[3];
 
 /// Size of the APPLICATION, SYSTEM and BASE memory regions (respectively) for each system
 /// memory configuration type.
-static const u32 memory_region_sizes[8][3] = {
-    // Old 3DS layouts
-    {0x04000000, 0x02C00000, 0x01400000}, // 0
+static const u32 memory_region_sizes[3][3] = {
     {/* This appears to be unused. */},   // 1
-    {0x06000000, 0x00C00000, 0x01400000}, // 2
-    {0x05000000, 0x01C00000, 0x01400000}, // 3
-    {0x04800000, 0x02400000, 0x01400000}, // 4
-    {0x02000000, 0x04C00000, 0x01400000}, // 5
-
-    // New 3DS layouts
-    {0x07C00000, 0x06400000, 0x02000000}, // 6
-    {0x0B200000, 0x02E00000, 0x02000000}, // 7
+    {0x04800000, 0x02400000, 0x01400000}, // 3
+    {0x02000000, 0x04C00000, 0x01400000}, // 4
 };
 
 void MemoryInit(u32 mem_type) {
-    // TODO(yuriks): On the n3DS, all o3DS configurations (<=5) are forced to 6 instead.
-    ASSERT_MSG(mem_type <= 5, "New 3DS memory configuration aren't supported yet!");
+    ASSERT_MSG(mem_type <= 5, "New memory configuration aren't supported yet!");
     ASSERT(mem_type != 1);
 
     // The kernel allocation regions (APPLICATION, SYSTEM and BASE) are laid out in sequence, with
@@ -67,7 +58,6 @@ void MemoryInit(u32 mem_type) {
     using ConfigMem::config_mem;
     config_mem.app_mem_type = mem_type;
     // app_mem_malloc does not always match the configured size for memory_region[0]: in case the
-    // n3DS type override is in effect it reports the size the game expects, not the real one.
     config_mem.app_mem_alloc = memory_region_sizes[mem_type][0];
     config_mem.sys_mem_alloc = static_cast<u32_le>(memory_regions[1].size);
     config_mem.base_mem_alloc = static_cast<u32_le>(memory_regions[2].size);
