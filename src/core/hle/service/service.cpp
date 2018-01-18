@@ -26,9 +26,9 @@
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
+#include "core/hle/service/sockets/sockets.h"
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/vi/vi.h"
-#include "core/hle/service/sockets/sockets.h"
 
 using Kernel::ClientPort;
 using Kernel::ServerPort;
