@@ -9,7 +9,25 @@
 namespace Service {
 namespace Account {
 
+void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::RequestBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void ACC_U0::GetProfile(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::RequestBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 void ACC_U0::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::RequestBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void ACC_U0::GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -17,7 +35,10 @@ void ACC_U0::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
 
 ACC_U0::ACC_U0() : ServiceFramework("acc:u0") {
     static const FunctionInfo functions[] = {
+        {1, &ACC_U0::GetUserExistence, "GetUserExistence"},
+        {5, &ACC_U0::GetProfile, "GetProfile"},
         {100, &ACC_U0::InitializeApplicationInfo, "InitializeApplicationInfo"},
+        {101, &ACC_U0::GetBaasAccountManagerForApplication, "GetBaasAccountManagerForApplication"},
     };
     RegisterHandlers(functions);
 }
