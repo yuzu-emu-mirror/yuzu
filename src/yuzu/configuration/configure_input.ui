@@ -15,9 +15,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
-    <layout class="QGridLayout" name="gridLayout_7">
+    <layout class="QGridLayout" name="buttons">
      <item row="3" column="1">
-      <widget class="QGroupBox" name="faceButtons_6">
+      <widget class="QGroupBox" name="misc">
        <property name="title">
         <string>Misc.</string>
        </property>
@@ -29,9 +29,9 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_25">
+         <layout class="QVBoxLayout" name="buttonMiscPlusVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_29">
+           <widget class="QLabel" name="labelPlus">
             <property name="text">
              <string>Plus:</string>
             </property>
@@ -47,9 +47,9 @@
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_26">
+         <layout class="QVBoxLayout" name="buttonMiscMinusVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_30">
+           <widget class="QLabel" name="labelMinus">
             <property name="text">
              <string>Minus:</string>
             </property>
@@ -65,9 +65,9 @@
          </layout>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_27">
+         <layout class="QVBoxLayout" name="buttonMiscHomeVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_31">
+           <widget class="QLabel" name="labelHome">
             <property name="text">
              <string>Home:</string>
             </property>
@@ -83,9 +83,9 @@
          </layout>
         </item>
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_28">
+         <layout class="QVBoxLayout" name="buttonMiscScrCapVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_11">
+           <widget class="QLabel" name="labelScrCap">
             <property name="text">
              <string>Screen
 Capture:</string>
@@ -130,9 +130,9 @@ Capture:</string>
        </property>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsAVerticalLayout">
           <item>
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="labelA">
             <property name="text">
              <string>A:</string>
             </property>
@@ -148,9 +148,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsBVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="labelB">
             <property name="text">
              <string>B:</string>
             </property>
@@ -166,9 +166,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsXVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="labelX">
             <property name="text">
              <string>X:</string>
             </property>
@@ -184,9 +184,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsYVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_4">
+           <widget class="QLabel" name="labelY">
             <property name="text">
              <string>Y:</string>
             </property>
@@ -205,7 +205,7 @@ Capture:</string>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QGroupBox" name="faceButtons_2">
+      <widget class="QGroupBox" name="Dpad">
        <property name="title">
         <string>Directional Pad</string>
        </property>
@@ -217,9 +217,9 @@ Capture:</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_12">
+         <layout class="QVBoxLayout" name="buttonDpadUpVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_34">
+           <widget class="QLabel" name="labelDpadUp">
             <property name="text">
              <string>Up:</string>
             </property>
@@ -235,9 +235,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_9">
+         <layout class="QVBoxLayout" name="buttonDpadDownVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_35">
+           <widget class="QLabel" name="labelDpadDown">
             <property name="text">
              <string>Down:</string>
             </property>
@@ -253,9 +253,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_10">
+         <layout class="QVBoxLayout" name="buttonDpadLeftVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_32">
+           <widget class="QLabel" name="labelDpadLeft">
             <property name="text">
              <string>Left:</string>
             </property>
@@ -271,9 +271,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_11">
+         <layout class="QVBoxLayout" name="buttonDpadRightVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_33">
+           <widget class="QLabel" name="labelDpadRight">
             <property name="text">
              <string>Right:</string>
             </property>
@@ -292,7 +292,7 @@ Capture:</string>
       </widget>
      </item>
      <item row="3" column="0">
-      <widget class="QGroupBox" name="faceButtons_3">
+      <widget class="QGroupBox" name="shoulderButtons">
        <property name="title">
         <string>Shoulder Buttons</string>
        </property>
@@ -304,9 +304,9 @@ Capture:</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_13">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsLVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_17">
+           <widget class="QLabel" name="labelL">
             <property name="text">
              <string>L:</string>
             </property>
@@ -322,9 +322,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_14">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsRVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_19">
+           <widget class="QLabel" name="labelR">
             <property name="text">
              <string>R:</string>
             </property>
@@ -340,9 +340,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_15">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsZLVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_20">
+           <widget class="QLabel" name="labelZL">
             <property name="text">
              <string>ZL:</string>
             </property>
@@ -358,9 +358,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_16">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsZRVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_18">
+           <widget class="QLabel" name="labelZR">
             <property name="text">
              <string>ZR:</string>
             </property>
@@ -376,9 +376,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="2" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_8">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsSLVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="labelSL">
             <property name="text">
              <string>SL:</string>
             </property>
@@ -394,9 +394,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="2" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_29">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsSRVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="labelSR">
             <property name="text">
              <string>SR:</string>
             </property>
@@ -415,7 +415,7 @@ Capture:</string>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QGroupBox" name="faceButtons_5">
+      <widget class="QGroupBox" name="RStick">
        <property name="title">
         <string>Right Stick</string>
        </property>
@@ -430,9 +430,9 @@ Capture:</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_24">
+         <layout class="QVBoxLayout" name="buttonRStickDownVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_26">
+           <widget class="QLabel" name="labelRStickDown">
             <property name="text">
              <string>Down:</string>
             </property>
@@ -448,9 +448,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_22">
+         <layout class="QVBoxLayout" name="buttonRStickRightVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_27">
+           <widget class="QLabel" name="labelRStickRight">
             <property name="text">
              <string>Right:</string>
             </property>
@@ -473,9 +473,9 @@ Capture:</string>
          </widget>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_21">
+         <layout class="QVBoxLayout" name="buttonRStickLeftVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_25">
+           <widget class="QLabel" name="labelRStickLeft">
             <property name="text">
              <string>Left:</string>
             </property>
@@ -491,9 +491,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_25">
+         <layout class="QVBoxLayout" name="buttonRStickUpVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_28">
+           <widget class="QLabel" name="labelRStickUp">
             <property name="text">
              <string>Up:</string>
             </property>
@@ -509,9 +509,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="2" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_6">
+         <layout class="QVBoxLayout" name="buttonRStickPressedVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="labelRStickPressed">
             <property name="text">
              <string>Pressed:</string>
             </property>
@@ -527,9 +527,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="2" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_32">
+         <layout class="QVBoxLayout" name="buttonRStickModVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_10">
+           <widget class="QLabel" name="labelRStickMod">
             <property name="text">
              <string>Modifier:</string>
             </property>
@@ -548,7 +548,7 @@ Capture:</string>
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QGroupBox" name="faceButtons_4">
+      <widget class="QGroupBox" name="LStick">
        <property name="title">
         <string>Left Stick</string>
        </property>
@@ -560,9 +560,9 @@ Capture:</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_20">
+         <layout class="QVBoxLayout" name="buttonLStickDownVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_22">
+           <widget class="QLabel" name="labelLStickDown">
             <property name="text">
              <string>Down:</string>
             </property>
@@ -585,9 +585,9 @@ Capture:</string>
          </widget>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_18">
+         <layout class="QVBoxLayout" name="buttonLStickRightVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_23">
+           <widget class="QLabel" name="labelLStickRight">
             <property name="text">
              <string>Right:</string>
             </property>
@@ -603,9 +603,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_17">
+         <layout class="QVBoxLayout" name="buttonLStickLeftVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_21">
+           <widget class="QLabel" name="labelLStickLeft">
             <property name="text">
              <string>Left:</string>
             </property>
@@ -621,9 +621,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_19">
+         <layout class="QVBoxLayout" name="buttonLStickUpVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_24">
+           <widget class="QLabel" name="labelLStickUp">
             <property name="text">
              <string>Up:</string>
             </property>
@@ -639,9 +639,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="3" column="0">
-         <layout class="QVBoxLayout" name="verticalLayout_31">
+         <layout class="QVBoxLayout" name="buttonLStickModVerticalLayout">
           <item>
-           <widget class="QLabel" name="label_9">
+           <widget class="QLabel" name="labelLStickMod">
             <property name="text">
              <string>Modifier:</string>
             </property>
@@ -657,9 +657,9 @@ Capture:</string>
          </layout>
         </item>
         <item row="3" column="1">
-         <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0">
+         <layout class="QVBoxLayout" name="buttonLStickPressedVerticalLayout" stretch="0,0">
           <item>
-           <widget class="QLabel" name="label_6">
+           <widget class="QLabel" name="labelLStickPressed">
             <property name="text">
              <string>Pressed:</string>
             </property>
