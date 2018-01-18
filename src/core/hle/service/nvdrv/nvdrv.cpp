@@ -7,8 +7,8 @@
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
-#include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvdrv/interface.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 
 namespace Service {
 namespace Nvidia {
