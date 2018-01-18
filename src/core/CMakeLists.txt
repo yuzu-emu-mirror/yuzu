@@ -130,6 +130,10 @@ add_library(core STATIC
     hle/service/sm/sm.h
     hle/service/time/time.cpp
     hle/service/time/time.h
+    hle/service/time/time_s.cpp
+    hle/service/time/time_s.h
+    hle/service/time/time_u.cpp
+    hle/service/time/time_u.h
     hle/service/vi/vi.cpp
     hle/service/vi/vi.h
     hle/service/vi/vi_m.cpp

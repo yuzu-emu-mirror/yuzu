@@ -8,6 +8,8 @@
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/service/time/time.h"
+#include "core/hle/service/time/time_s.h"
+#include "core/hle/service/time/time_u.h"
 
 namespace Service {
 namespace Time {
@@ -72,7 +74,7 @@ private:
     }
 };
 
-void TIME::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
     auto client_port = std::make_shared<ISystemClock>()->CreatePort();
     auto session = client_port->Connect();
     if (session.Succeeded()) {
@@ -86,7 +88,7 @@ void TIME::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
     }
 }
 
-void TIME::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
     auto client_port = std::make_shared<ISystemClock>()->CreatePort();
     auto session = client_port->Connect();
     if (session.Succeeded()) {
@@ -100,7 +102,7 @@ void TIME::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
     }
 }
 
-void TIME::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
     auto client_port = std::make_shared<ISteadyClock>()->CreatePort();
     auto session = client_port->Connect();
     if (session.Succeeded()) {
@@ -114,28 +116,20 @@ void TIME::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
     }
 }
 
-void TIME::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
+void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ITimeZoneService>();
     LOG_DEBUG(Service, "called");
 }
 
-TIME::TIME(const char* name) : ServiceFramework(name) {
-    static const FunctionInfo functions[] = {
-        {0x00000000, &TIME::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
-        {0x00000001, &TIME::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
-        {0x00000002, &TIME::GetStandardSteadyClock, "GetStandardSteadyClock"},
-        {0x00000003, &TIME::GetTimeZoneService, "GetTimeZoneService"},
-    };
-    RegisterHandlers(functions);
-}
+Module::Interface::Interface(std::shared_ptr<Module> time, const char* name)
+    : ServiceFramework(name), time(std::move(time)) {}
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<TIME>("time:a")->InstallAsService(service_manager);
-    std::make_shared<TIME>("time:r")->InstallAsService(service_manager);
-    std::make_shared<TIME>("time:s")->InstallAsService(service_manager);
-    std::make_shared<TIME>("time:u")->InstallAsService(service_manager);
+    auto time = std::make_shared<Module>();
+    std::make_shared<TIME_S>(time)->InstallAsService(service_manager);
+    std::make_shared<TIME_U>(time)->InstallAsService(service_manager);
 }
 
 } // namespace Time
