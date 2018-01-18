@@ -29,6 +29,7 @@
 #include "core/hle/service/sockets/sockets.h"
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/vi/vi.h"
+#include "core/hle/service/set/set.h"
 
 using Kernel::ClientPort;
 using Kernel::ServerPort;
@@ -178,6 +179,7 @@ void Init() {
     Sockets::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
     VI::InstallInterfaces(*SM::g_service_manager);
+    Set::InstallInterfaces(*SM::g_service_manager);
 
     LOG_DEBUG(Service, "initialized OK");
 }
