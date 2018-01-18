@@ -61,16 +61,16 @@ private:
 
     void ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        u64 posixTime = rp.Pop<u64>();
+        u64 posix_time = rp.Pop<u64>();
 
-        LOG_WARNING(Service, "(STUBBED) called, posixTime=0x%016llX", posixTime);
+        LOG_WARNING(Service, "(STUBBED) called, posix_time=0x%016llX", posix_time);
 
-        CalendarTime calendarTime{2018, 1, 1, 0, 0, 0};
-        CalendarAdditionalInfo additionalInfo{};
+        CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
+        CalendarAdditionalInfo additional_info{};
         IPC::RequestBuilder rb{ctx, 10};
         rb.Push(RESULT_SUCCESS);
-        rb.PushRaw(calendarTime);
-        rb.PushRaw(additionalInfo);
+        rb.PushRaw(calendar_time);
+        rb.PushRaw(additional_info);
     }
 };
 
