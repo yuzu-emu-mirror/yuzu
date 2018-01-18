@@ -5,6 +5,7 @@
 #include <map>
 #include <QKeySequence>
 #include <QShortcut>
+#include <QTreeWidgetItem>
 #include <QtGlobal>
 #include "yuzu/hotkeys.h"
 #include "yuzu/ui_settings.h"
