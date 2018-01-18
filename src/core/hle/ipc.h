@@ -133,6 +133,10 @@ struct BufferDescriptorC {
         address |= static_cast<VAddr>(address_bits_32_47) << 32;
         return address;
     }
+
+    u64 Size() const {
+        return static_cast<u64>(size);
+    }
 };
 static_assert(sizeof(BufferDescriptorC) == 8, "BufferDescriptorC size is incorrect");
 

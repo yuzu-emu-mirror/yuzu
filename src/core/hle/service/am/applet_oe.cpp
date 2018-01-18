@@ -201,10 +201,76 @@ private:
     Kernel::SharedPtr<Kernel::Event> event;
 };
 
+class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
+public:
+    explicit IStorageAccessor(std::vector<u8> buffer)
+        : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
+        static const FunctionInfo functions[] = {
+            {0, &IStorageAccessor::GetSize, "GetSize"},
+            {11, &IStorageAccessor::Read, "Read"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    std::vector<u8> buffer;
+
+    void GetSize(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 4};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(static_cast<u64>(buffer.size()));
+
+        LOG_DEBUG(Service, "called");
+    }
+
+    void Read(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        u64 offset = rp.Pop<u64>();
+
+        const auto& output_buffer = ctx.BufferDescriptorC()[0];
+
+        ASSERT(offset + output_buffer.Size() <= buffer.size());
+
+        Memory::WriteBlock(output_buffer.Address(), buffer.data() + offset, output_buffer.Size());
+
+        IPC::RequestBuilder rb{ctx, 2};
+
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_DEBUG(Service, "called");
+    }
+};
+
+class IStorage final : public ServiceFramework<IStorage> {
+public:
+    explicit IStorage(std::vector<u8> buffer)
+        : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
+        static const FunctionInfo functions[] = {
+            {0, &IStorage::Open, "Open"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    std::vector<u8> buffer;
+
+    void Open(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
+
+        LOG_DEBUG(Service, "called");
+    }
+};
+
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {
 public:
     IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
         static const FunctionInfo functions[] = {
+            {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
             {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
             {66, &IApplicationFunctions::InitializeGamePlayRecording,
              "InitializeGamePlayRecording"},
@@ -215,6 +281,26 @@ public:
     }
 
 private:
+    void PopLaunchParameter(Kernel::HLERequestContext& ctx) {
+        constexpr u8 data[0x88] = {
+            0xca, 0x97, 0x94, 0xc7, // Magic
+            1,    0,    0,    0,    // IsAccountSelected (bool)
+            1,    0,    0,    0,    // User Id (word 0)
+            0,    0,    0,    0,    // User Id (word 1)
+            0,    0,    0,    0,    // User Id (word 2)
+            0,    0,    0,    0     // User Id (word 3)
+        };
+
+        std::vector<u8> buffer(data, data + sizeof(data));
+
+        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<AM::IStorage>(buffer);
+
+        LOG_DEBUG(Service, "called");
+    }
+
     void SetTerminateResult(Kernel::HLERequestContext& ctx) {
         // Takes an input u32 Result, no output.
         // For example, in some cases official apps use this with error 0x2A2 then uses svcBreak.
