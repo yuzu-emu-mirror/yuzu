@@ -13,8 +13,8 @@ environment:
   # Tell msys2 to inherit the current directory when starting the shell
   CHERE_INVOKING: 1
   matrix:
-    - BUILD_TYPE: mingw
     - BUILD_TYPE: msvc
+    - BUILD_TYPE: mingw
 
 platform:
   - x64
@@ -80,12 +80,19 @@ after_build:
           $env:BUILD_SYMBOLS = $MSVC_BUILD_PDB
           $env:BUILD_UPDATE = $MSVC_SEVENZIP
 
+          $BUILD_DIR = ".\msvc_build\bin\Release"
+
+          # Make a debug symbol upload
           mkdir pdb
-          Get-ChildItem ".\msvc_build\bin\" -Recurse -Filter "*.pdb" | Copy-Item -destination .\pdb
+          Get-ChildItem "$BUILD_DIR\" -Recurse -Filter "*.pdb" | Copy-Item -destination .\pdb
           7z a -tzip $MSVC_BUILD_PDB .\pdb\*.pdb
+          rm "$BUILD_DIR\*.pdb"
 
           mkdir $RELEASE_DIST
-          Get-ChildItem ".\msvc_build\bin\" -Recurse -Filter "yuzu*.exe" | Copy-Item -destination $RELEASE_DIST
+          # get rid of extra exes by copying everything over, then deleting all the exes, then copying just the exes we want
+          Copy-Item "$BUILD_DIR\*" -Destination $RELEASE_DIST -Recurse
+          rm "$RELEASE_DIST\*.exe"
+          Get-ChildItem "$BUILD_DIR" -Recurse -Filter "yuzu*.exe" | Copy-Item -destination $RELEASE_DIST
           Copy-Item .\license.txt -Destination $RELEASE_DIST
           Copy-Item .\README.md -Destination $RELEASE_DIST
           7z a -tzip $MSVC_BUILD_ZIP $RELEASE_DIST\*
