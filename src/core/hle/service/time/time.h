@@ -13,7 +13,7 @@ namespace Time {
 struct LocationName {
     INSERT_PADDING_BYTES(0x24);
 };
-static_assert(sizeof(LocationName) == 0x24, "LocationName structure has incorrect size");
+static_assert(sizeof(LocationName) == 0x24, "LocationName is incorrect size");
 
 struct CalendarTime {
     u16_le year;
