@@ -2,9 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "core/hle/service/sockets/sockets.h"
 #include "core/hle/service/sockets/bsd_u.h"
 #include "core/hle/service/sockets/sfdnsres.h"
+#include "core/hle/service/sockets/sockets.h"
 
 namespace Service {
 namespace Sockets {
