@@ -54,6 +54,10 @@ public:
     unsigned GetCurrentOffset() const {
         return static_cast<unsigned>(index);
     }
+
+    void SetCurrentOffset(unsigned offset) {
+        index = static_cast<ptrdiff_t>(offset);
+    }
 };
 
 class RequestBuilder : public RequestHelperBase {

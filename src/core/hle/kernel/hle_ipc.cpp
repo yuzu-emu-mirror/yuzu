@@ -81,13 +81,8 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     for (unsigned i = 0; i < command_header->num_buf_w_descriptors; ++i) {
         buffer_w_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorABW>());
     }
-    if (command_header->buf_c_descriptor_flags !=
-        IPC::CommandHeader::BufferDescriptorCFlag::Disabled) {
-        if (command_header->buf_c_descriptor_flags !=
-            IPC::CommandHeader::BufferDescriptorCFlag::OneDescriptor) {
-            UNIMPLEMENTED();
-        }
-    }
+
+    buffer_c_offset = rp.GetCurrentOffset() + command_header->data_size;
 
     // Padding to align to 16 bytes
     rp.AlignWithPadding();
@@ -116,6 +111,31 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     } else {
         ASSERT(data_payload_header->magic == Common::MakeMagic('S', 'F', 'C', 'O'));
     }
+
+    rp.SetCurrentOffset(buffer_c_offset);
+
+    // For Inline buffers, the response data is written directly to buffer_c_offset
+    // and in this case we don't have any BufferDescriptorC on the request.
+    if (command_header->buf_c_descriptor_flags >
+        IPC::CommandHeader::BufferDescriptorCFlag::InlineDescriptor) {
+        if (command_header->buf_c_descriptor_flags ==
+            IPC::CommandHeader::BufferDescriptorCFlag::OneDescriptor) {
+            buffer_c_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorC>());
+        } else {
+            unsigned num_buf_c_descriptors =
+                static_cast<unsigned>(command_header->buf_c_descriptor_flags.Value()) - 2;
+
+            // This is used to detect possible underflows, in case something is broken
+            // with the two ifs above and the flags value is == 0 || == 1.
+            ASSERT(num_buf_c_descriptors < 14);
+
+            for (unsigned i = 0; i < num_buf_c_descriptors; ++i) {
+                buffer_c_desciptors.push_back(rp.PopRaw<IPC::BufferDescriptorC>());
+            }
+        }
+    }
+
+    rp.SetCurrentOffset(data_payload_offset);
 
     command = rp.Pop<u32_le>();
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
