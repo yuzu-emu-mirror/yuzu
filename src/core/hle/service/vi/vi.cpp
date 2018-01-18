@@ -26,7 +26,7 @@ public:
     // This default size was chosen arbitrarily.
     static constexpr size_t DefaultBufferSize = 0x40;
     Parcel() : buffer(DefaultBufferSize) {}
-    Parcel(std::vector<u8> data) : buffer(std::move(data)) {}
+    explicit Parcel(std::vector<u8> data) : buffer(std::move(data)) {}
     virtual ~Parcel() = default;
 
     template <typename T>
@@ -102,9 +102,9 @@ public:
     }
 
 protected:
-    virtual void SerializeData(){};
+    virtual void SerializeData() {}
 
-    virtual void DeserializeData(){};
+    virtual void DeserializeData() {}
 
 private:
     struct Header {
@@ -122,7 +122,7 @@ private:
 
 class NativeWindow : public Parcel {
 public:
-    NativeWindow(u32 id) : Parcel() {
+    explicit NativeWindow(u32 id) : Parcel() {
         data.id = id;
     }
     ~NativeWindow() override = default;
@@ -148,12 +148,12 @@ private:
 
 class IGBPConnectRequestParcel : public Parcel {
 public:
-    IGBPConnectRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPConnectRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
         Deserialize();
     }
     ~IGBPConnectRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
@@ -169,7 +169,7 @@ public:
 
 class IGBPConnectResponseParcel : public Parcel {
 public:
-    IGBPConnectResponseParcel(u32 width, u32 height) : Parcel() {
+    explicit IGBPConnectResponseParcel(u32 width, u32 height) : Parcel() {
         data.width = width;
         data.height = height;
     }
@@ -195,12 +195,13 @@ private:
 
 class IGBPSetPreallocatedBufferRequestParcel : public Parcel {
 public:
-    IGBPSetPreallocatedBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPSetPreallocatedBufferRequestParcel(const std::vector<u8>& buffer)
+        : Parcel(buffer) {
         Deserialize();
     }
     ~IGBPSetPreallocatedBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
         ASSERT(data.graphic_buffer_length == sizeof(IGBPBuffer));
@@ -232,12 +233,12 @@ protected:
 
 class IGBPDequeueBufferRequestParcel : public Parcel {
 public:
-    IGBPDequeueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPDequeueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
         Deserialize();
     }
     ~IGBPDequeueBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
@@ -255,7 +256,7 @@ public:
 
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
-    IGBPDequeueBufferResponseParcel(u32 slot) : Parcel(), slot(slot) {}
+    explicit IGBPDequeueBufferResponseParcel(u32 slot) : Parcel(), slot(slot) {}
     ~IGBPDequeueBufferResponseParcel() override = default;
 
 protected:
@@ -272,12 +273,12 @@ protected:
 
 class IGBPRequestBufferRequestParcel : public Parcel {
 public:
-    IGBPRequestBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPRequestBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
         Deserialize();
     }
     ~IGBPRequestBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         slot = Read<u32_le>();
     }
@@ -287,7 +288,7 @@ public:
 
 class IGBPRequestBufferResponseParcel : public Parcel {
 public:
-    IGBPRequestBufferResponseParcel(IGBPBuffer buffer) : Parcel(), buffer(buffer) {}
+    explicit IGBPRequestBufferResponseParcel(IGBPBuffer buffer) : Parcel(), buffer(buffer) {}
     ~IGBPRequestBufferResponseParcel() override = default;
 
 protected:
@@ -308,12 +309,12 @@ protected:
 
 class IGBPQueueBufferRequestParcel : public Parcel {
 public:
-    IGBPQueueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPQueueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
         Deserialize();
     }
     ~IGBPQueueBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
@@ -331,7 +332,7 @@ public:
 
 class IGBPQueueBufferResponseParcel : public Parcel {
 public:
-    IGBPQueueBufferResponseParcel(u32 width, u32 height) : Parcel() {
+    explicit IGBPQueueBufferResponseParcel(u32 width, u32 height) : Parcel() {
         data.width = width;
         data.height = height;
     }
@@ -357,7 +358,7 @@ private:
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
-    IHOSBinderDriver(std::shared_ptr<NVFlinger> nv_flinger)
+    explicit IHOSBinderDriver(std::shared_ptr<NVFlinger> nv_flinger)
         : ServiceFramework("IHOSBinderDriver"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
@@ -507,7 +508,7 @@ private:
 
 class IManagerDisplayService final : public ServiceFramework<IManagerDisplayService> {
 public:
-    IManagerDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
+    explicit IManagerDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
         : ServiceFramework("IManagerDisplayService"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {1020, &IManagerDisplayService::CloseDisplay, "CloseDisplay"},
