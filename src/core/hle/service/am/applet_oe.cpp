@@ -219,7 +219,7 @@ private:
         IPC::RequestBuilder rb{ctx, 4};
 
         rb.Push(RESULT_SUCCESS);
-        rb.Push(buffer.size());
+        rb.Push(static_cast<u64>(buffer.size()));
 
         LOG_DEBUG(Service, "called");
     }
