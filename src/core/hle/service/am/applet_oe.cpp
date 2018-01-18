@@ -292,9 +292,7 @@ private:
             0, 0, 0, 0  // User Id (word 3)
         };
 
-        std::vector<u8> buffer;
-
-        buffer.assign(data, data + sizeof(data));
+        std::vector<u8> buffer(data, data + sizeof(data));
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorage>(buffer);
