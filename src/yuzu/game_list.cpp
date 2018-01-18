@@ -137,8 +137,8 @@ GameList::SearchField::SearchField(GameList* parent) : QWidget{parent} {
  * Checks if all words separated by spaces are contained in another string
  * This offers a word order insensitive search function
  *
- * @param String that gets checked if it contains all words of the userinput string
- * @param String containing all words getting checked
+ * @param haystack String that gets checked if it contains all words of the userinput string
+ * @param userinput String containing all words getting checked
  * @return true if the haystack contains all words of userinput
  */
 bool GameList::containsAllWords(QString haystack, QString userinput) {
