@@ -101,9 +101,9 @@ public:
     }
 
 protected:
-    virtual void SerializeData(){};
+    virtual void SerializeData() {}
 
-    virtual void DeserializeData(){};
+    virtual void DeserializeData() {}
 
 private:
     struct Header {
@@ -152,7 +152,7 @@ public:
     }
     ~IGBPConnectRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
@@ -199,7 +199,7 @@ public:
     }
     ~IGBPSetPreallocatedBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
         ASSERT(data.graphic_buffer_length == sizeof(IGBPBuffer));
@@ -236,7 +236,7 @@ public:
     }
     ~IGBPDequeueBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
@@ -276,7 +276,7 @@ public:
     }
     ~IGBPRequestBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         slot = Read<u32_le>();
     }
@@ -312,7 +312,7 @@ public:
     }
     ~IGBPQueueBufferRequestParcel() override = default;
 
-    void DeserializeData() {
+    void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
     }
