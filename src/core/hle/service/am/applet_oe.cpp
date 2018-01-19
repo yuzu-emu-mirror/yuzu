@@ -55,6 +55,8 @@ class ISelfController final : public ServiceFramework<ISelfController> {
 public:
     ISelfController() : ServiceFramework("ISelfController") {
         static const FunctionInfo functions[] = {
+            {1, &ISelfController::LockExit, "LockExit"},
+            {2, &ISelfController::UnlockExit, "UnlockExit"},
             {11, &ISelfController::SetOperationModeChangedNotification,
              "SetOperationModeChangedNotification"},
             {12, &ISelfController::SetPerformanceModeChangedNotification,
@@ -127,6 +129,20 @@ private:
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called enabled=%u", static_cast<u32>(enabled));
+    }
+
+    void LockExit(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
+    void UnlockExit(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called");
     }
 };
 
