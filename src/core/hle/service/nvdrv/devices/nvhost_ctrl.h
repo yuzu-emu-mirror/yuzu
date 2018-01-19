@@ -33,9 +33,9 @@ private:
 
 private:
     struct IocGetConfigParams {
-        std::array<u8, 0x41> domain_str;
-        std::array<u8, 0x41> param_str;
-        std::array<u8, 0x101> config_str;
+        std::array<char, 0x41> domain_str;
+        std::array<char, 0x41> param_str;
+        std::array<char, 0x101> config_str;
     };
 
     u32 NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);

@@ -25,11 +25,12 @@ u32 nvhost_ctrl::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8
 u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output) {
     IocGetConfigParams params;
     std::memcpy(&params, input.data(), sizeof(params));
-    LOG_DEBUG(Service_NVDRV, "called, setting=%s!%s", params.domain_str, params.param_str);
+    LOG_DEBUG(Service_NVDRV, "called, setting=%s!%s", params.domain_str.data(),
+              params.param_str.data());
 
-    if (!strcmp(params.domain_str, "nv")) {
-        if (!strcmp(params.param_str, "NV_MEMORY_PROFILER")) {
-            std::memcpy(&params.config_str, "1\x00", 2);
+    if (!strcmp(params.domain_str.data(), "nv")) {
+        if (!strcmp(params.param_str.data(), "NV_MEMORY_PROFILER")) {
+            std::memcpy(params.config_str.data(), "1", 1);
         } else {
             UNIMPLEMENTED();
         }
