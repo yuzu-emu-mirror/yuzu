@@ -14,7 +14,11 @@ struct MemoryInfo {
     u32 type;
     u32 attributes;
     u32 permission;
+    u32 device_refcount;
+    u32 ipc_refcount;
+    INSERT_PADDING_WORDS(1);
 };
+static_assert(sizeof(MemoryInfo) == 0x28, "MemoryInfo has incorrect size.");
 
 struct PageInfo {
     u64 flags;

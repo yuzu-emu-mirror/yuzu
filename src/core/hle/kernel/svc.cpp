@@ -314,7 +314,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = g_current_process->allowed_thread_priority_mask;
         break;
     case GetInfoType::MapRegionBaseAddr:
-        *result = vm_manager.GetAddressSpaceBaseAddr();
+        *result = vm_manager.GetMapRegionBaseAddr();
         break;
     case GetInfoType::MapRegionSize:
         *result = vm_manager.GetAddressSpaceSize();

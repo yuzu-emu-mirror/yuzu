@@ -375,6 +375,11 @@ u64 VMManager::GetAddressSpaceSize() {
     return MAX_ADDRESS;
 }
 
+VAddr VMManager::GetMapRegionBaseAddr() {
+    LOG_WARNING(Kernel, "(STUBBED) called");
+    return Memory::HEAP_VADDR;
+}
+
 VAddr VMManager::GetNewMapRegionBaseAddr() {
     LOG_WARNING(Kernel, "(STUBBED) called");
     return 0x8000000;
