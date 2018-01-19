@@ -192,6 +192,9 @@ public:
     /// Gets the total address space address size, used by svcGetInfo
     u64 GetAddressSpaceSize();
 
+    /// Gets the map region base address, used by svcGetInfo
+    VAddr GetMapRegionBaseAddr();
+
     /// Gets the base address for a new memory region, used by svcGetInfo
     VAddr GetNewMapRegionBaseAddr();
 
