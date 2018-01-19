@@ -103,6 +103,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
         rb.Push(client_port.Code());
         LOG_ERROR(Service_SM, "called service=%s -> error 0x%08X", name.c_str(),
                   client_port.Code().raw);
+        UNIMPLEMENTED();
         return;
     }
 
