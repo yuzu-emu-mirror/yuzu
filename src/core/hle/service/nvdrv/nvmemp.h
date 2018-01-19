@@ -15,13 +15,8 @@ public:
     ~NVMEMP() = default;
 
 private:
-    void Unknown0(Kernel::HLERequestContext& ctx) {
-        UNIMPLEMENTED();
-    }
-
-    void Unknown1(Kernel::HLERequestContext& ctx) {
-        UNIMPLEMENTED();
-    }
+    void Unknown0(Kernel::HLERequestContext& ctx);
+    void Unknown1(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Nvidia
