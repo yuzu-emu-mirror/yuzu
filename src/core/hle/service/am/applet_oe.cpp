@@ -206,8 +206,7 @@ public:
     explicit IStorageAccessor(std::vector<u8> buffer)
         : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
-            {0, &IStorageAccessor::GetSize, "GetSize"},
-            {11, &IStorageAccessor::Read, "Read"},
+            {0, &IStorageAccessor::GetSize, "GetSize"}, {11, &IStorageAccessor::Read, "Read"},
         };
         RegisterHandlers(functions);
     }
