@@ -117,8 +117,8 @@ TelemetrySession::TelemetrySession() {
     AddField(Telemetry::FieldType::App, "BuildDate", Common::g_build_date);
     AddField(Telemetry::FieldType::App, "BuildName", Common::g_build_name);
 
-    // Log user system information
-    #ifdef ARCHITECTURE_x86_64
+// Log user system information
+#ifdef ARCHITECTURE_x86_64
     AddField(Telemetry::FieldType::UserSystem, "CPU_Model", Common::GetCPUCaps().cpu_string);
     AddField(Telemetry::FieldType::UserSystem, "CPU_BrandString",
              Common::GetCPUCaps().brand_string);
@@ -140,9 +140,9 @@ TelemetrySession::TelemetrySession() {
              Common::GetCPUCaps().sse4_1);
     AddField(Telemetry::FieldType::UserSystem, "CPU_Extension_x64_SSE42",
              Common::GetCPUCaps().sse4_2);
-    #else
-        AddField(Telemetry::FieldType::UserSystem, "CPU_Model", "Other");
-    #endif
+#else
+    AddField(Telemetry::FieldType::UserSystem, "CPU_Model", "Other");
+#endif
 #ifdef __APPLE__
     AddField(Telemetry::FieldType::UserSystem, "OsPlatform", "Apple");
 #elif defined(_WIN32)
