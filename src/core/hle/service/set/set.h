@@ -18,7 +18,7 @@ private:
     void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
 };
 
-/// Registers all Time services with the specified service manager.
+/// Registers all Set services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
 } // namespace Set

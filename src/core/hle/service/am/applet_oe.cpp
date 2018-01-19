@@ -316,7 +316,7 @@ private:
     }
 
     void GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::RequestBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(1); // English?
         LOG_WARNING(Service, "(STUBBED) called");

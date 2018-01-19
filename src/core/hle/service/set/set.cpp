@@ -13,20 +13,20 @@ namespace Service {
 namespace Set {
 
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
-    constexpr u8 data[13] = {
+    constexpr std::array<u8, 13> lang_codes{{
         0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    };
+    }};
 
     const auto& output_buffer = ctx.BufferDescriptorC()[0];
 
-    Memory::WriteBlock( output_buffer.Address(), data, sizeof( data ) );
+    Memory::WriteBlock(output_buffer.Address(), lang_codes.data(), lang_codes.size());
 
-    IPC::RequestBuilder rb{ ctx, 4 };
+    IPC::RequestBuilder rb{ctx, 4};
 
-    rb.Push( RESULT_SUCCESS );
-    rb.Push( static_cast<u64>( sizeof( data ) ) );
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(static_cast<u64>(lang_codes.size()));
 
-    LOG_WARNING( Service, "(STUBBED) called" );
+    LOG_WARNING(Service, "(STUBBED) called");
 }
 
 SET::SET(const char* name) : ServiceFramework(name) {
