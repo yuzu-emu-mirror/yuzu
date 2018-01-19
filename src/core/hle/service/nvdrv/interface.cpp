@@ -69,7 +69,7 @@ void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
 
 void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    PID = rp.Pop<u64>();
+    pid = rp.Pop<u64>();
 
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 3};

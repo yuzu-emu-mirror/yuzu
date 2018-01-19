@@ -26,7 +26,7 @@ private:
 
     std::shared_ptr<Module> nvdrv;
 
-    u64 PID;
+    u64 pid{};
 };
 
 } // namespace Nvidia
