@@ -10,6 +10,12 @@
 namespace Service {
 namespace AM {
 
+// TODO: Add more languages
+enum SystemLanguage {
+    Japanese = 0,
+    English = 1,
+};
+
 class AppletOE final : public ServiceFramework<AppletOE> {
 public:
     AppletOE();

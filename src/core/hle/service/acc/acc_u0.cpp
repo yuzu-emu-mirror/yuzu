@@ -9,16 +9,64 @@
 namespace Service {
 namespace Account {
 
+class IProfile final : public ServiceFramework<IProfile> {
+public:
+    IProfile() : ServiceFramework("IProfile") {
+        static const FunctionInfo functions[] = {
+            {0, &IProfile::Get, "Get"},
+            {1, &IProfile::GetBase, "GetBase"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void Get(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        UserData user_data{};
+        IPC::RequestBuilder rb{ctx, 11};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(user_data);
+    }
+
+    void GetBase(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        ProfileBase profile_base{};
+        IPC::RequestBuilder rb{ctx, 11};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(profile_base);
+    }
+};
+
+class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
+public:
+    IManagerForApplication() : ServiceFramework("IProfile") {
+        static const FunctionInfo functions[] = {
+            {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void CheckAvailability(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        IPC::RequestBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(true); // TODO: Check when this is supposed to return true and when not
+    }
+};
+
 void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
     IPC::RequestBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
+    rb.Push(true); // TODO: Check when this is supposed to return true and when not
 }
 
 void ACC_U0::GetProfile(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
-    IPC::RequestBuilder rb{ctx, 2};
+    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IProfile>();
+    LOG_DEBUG(Service, "called");
 }
 
 void ACC_U0::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
@@ -28,9 +76,10 @@ void ACC_U0::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
 }
 
 void ACC_U0::GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
-    IPC::RequestBuilder rb{ctx, 2};
+    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IManagerForApplication>();
+    LOG_DEBUG(Service, "called");
 }
 
 ACC_U0::ACC_U0() : ServiceFramework("acc:u0") {

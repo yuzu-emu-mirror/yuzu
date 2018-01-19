@@ -13,9 +13,7 @@ namespace Service {
 namespace Set {
 
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
-    constexpr std::array<u8, 13> lang_codes{{
-        0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-    }};
+    constexpr std::array<u8, 13> lang_codes{};
 
     const auto& output_buffer = ctx.BufferDescriptorC()[0];
 
