@@ -138,7 +138,7 @@ private:
         u32_le process_id;
         u32_le id;
         INSERT_PADDING_BYTES(0xC);
-        std::array<u8, 8> dspdrv = {'d', 's', 'p', 'd', 'r', 'v'};
+        std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
         INSERT_PADDING_BYTES(8);
     };
     static_assert(sizeof(Data) == 0x28, "ParcelData has wrong size");
