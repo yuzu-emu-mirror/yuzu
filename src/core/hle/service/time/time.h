@@ -33,16 +33,20 @@ struct CalendarAdditionalInfo {
 static_assert(sizeof(CalendarAdditionalInfo) == 0x18,
               "CalendarAdditionalInfo structure has incorrect size");
 
-class TIME final : public ServiceFramework<TIME> {
+class Module final {
 public:
-    explicit TIME(const char* name);
-    ~TIME() = default;
+    class Interface : public ServiceFramework<Interface> {
+    public:
+        Interface(std::shared_ptr<Module> time, const char* name);
 
-private:
-    void GetStandardUserSystemClock(Kernel::HLERequestContext& ctx);
-    void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);
-    void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
-    void GetTimeZoneService(Kernel::HLERequestContext& ctx);
+        void GetStandardUserSystemClock(Kernel::HLERequestContext& ctx);
+        void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);
+        void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
+        void GetTimeZoneService(Kernel::HLERequestContext& ctx);
+
+    protected:
+        std::shared_ptr<Module> time;
+    };
 };
 
 /// Registers all Time services with the specified service manager.
