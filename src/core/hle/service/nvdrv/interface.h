@@ -22,6 +22,7 @@ private:
     void Ioctl(Kernel::HLERequestContext& ctx);
     void Close(Kernel::HLERequestContext& ctx);
     void Initialize(Kernel::HLERequestContext& ctx);
+    void SetClientPID(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<Module> nvdrv;
 };
