@@ -183,11 +183,11 @@ static u8 NibbleToHex(u8 n) {
 }
 
 /**
-* Converts input hex string characters into an array of equivalent of u8 bytes.
-*
-* @param src Pointer to array of output hex string characters.
-* @param len Length of src array.
-*/
+ * Converts input hex string characters into an array of equivalent of u8 bytes.
+ *
+ * @param src Pointer to array of output hex string characters.
+ * @param len Length of src array.
+ */
 static u32 HexToInt(const u8* src, size_t len) {
     u32 output = 0;
     while (len-- > 0) {
@@ -299,17 +299,17 @@ static std::map<u32, Breakpoint>& GetBreakpointList(BreakpointType type) {
 static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(addr);
+    auto bp = p.find(static_cast<u32>(addr));
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: %08x bytes at %08x of type %d\n",
                   bp->second.len, bp->second.addr, type);
-        p.erase(addr);
+        p.erase(static_cast<u32>(addr));
     }
 }
 
 BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, BreakpointType type) {
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
-    auto next_breakpoint = p.lower_bound(addr);
+    auto next_breakpoint = p.lower_bound(static_cast<u32>(addr));
     BreakpointAddress breakpoint;
 
     if (next_breakpoint != p.end()) {
@@ -330,7 +330,7 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
 
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(addr);
+    auto bp = p.find(static_cast<u32>(addr));
     if (bp != p.end()) {
         u32 len = bp->second.len;
 
@@ -452,7 +452,8 @@ static void SendSignal(u32 signal) {
 
     std::string buffer =
         Common::StringFromFormat("T%02x%02x:%08x;%02x:%08x;", latest_signal, 15,
-                                 htonl(Core::CPU().GetPC()), 13, htonl(Core::CPU().GetReg(13)));
+                                 htonl(static_cast<u_long>(Core::CPU().GetPC())), 13,
+                                 htonl(static_cast<u_long>(Core::CPU().GetReg(13))));
     LOG_DEBUG(Debug_GDBStub, "Response: %s", buffer.c_str());
     SendReply(buffer.c_str());
 }
@@ -539,7 +540,7 @@ static void ReadRegister() {
     }
 
     if (id <= R15_REGISTER) {
-        IntToGdbHex(reply, Core::CPU().GetReg(id));
+        IntToGdbHex(reply, static_cast<u32>(Core::CPU().GetReg(static_cast<u64>(id))));
     } else if (id == CPSR_REGISTER) {
         IntToGdbHex(reply, Core::CPU().GetCPSR());
     } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
@@ -563,7 +564,7 @@ static void ReadRegisters() {
     u8* bufptr = buffer;
 
     for (int reg = 0; reg <= R15_REGISTER; reg++) {
-        IntToGdbHex(bufptr + reg * CHAR_BIT, Core::CPU().GetReg(reg));
+        IntToGdbHex(bufptr + reg * CHAR_BIT, static_cast<u32>(Core::CPU().GetReg(reg)));
     }
 
     bufptr += (16 * CHAR_BIT);
@@ -1034,4 +1035,4 @@ bool GetCpuStepFlag() {
 void SetCpuStepFlag(bool is_step) {
     step_loop = is_step;
 }
-};
+}; // namespace GDBStub

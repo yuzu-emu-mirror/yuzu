@@ -122,7 +122,7 @@ u64 GetTicks() {
 }
 
 void AddTicks(u64 ticks) {
-    downcount -= ticks;
+    downcount -= static_cast<int>(ticks);
 }
 
 u64 GetIdleTicks() {
@@ -208,7 +208,7 @@ void Advance() {
         Event evt = std::move(event_queue.front());
         std::pop_heap(event_queue.begin(), event_queue.end(), std::greater<Event>());
         event_queue.pop_back();
-        evt.type->callback(evt.userdata, global_timer - evt.time);
+        evt.type->callback(evt.userdata, static_cast<int>(global_timer - evt.time));
     }
 
     is_global_timer_sane = false;

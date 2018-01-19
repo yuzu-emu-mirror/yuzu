@@ -43,7 +43,7 @@ void ConditionVariable::Acquire(Thread* thread) {
 ResultCode ConditionVariable::Release(s32 target) {
     if (target == -1) {
         // When -1, wake up all waiting threads
-        SetAvailableCount(GetWaitingThreads().size());
+        SetAvailableCount(static_cast<s32>(GetWaitingThreads().size()));
         WakeupAllWaitingThreads();
     } else {
         // Otherwise, wake up just a single thread
