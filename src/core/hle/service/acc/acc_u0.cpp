@@ -13,25 +13,16 @@ class IProfile final : public ServiceFramework<IProfile> {
 public:
     IProfile() : ServiceFramework("IProfile") {
         static const FunctionInfo functions[] = {
-            {0, &IProfile::Get, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
         };
         RegisterHandlers(functions);
     }
 
 private:
-    void Get(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
-        UserData user_data{};
-        IPC::RequestBuilder rb{ctx, 11};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushRaw(user_data);
-    }
-
     void GetBase(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
         ProfileBase profile_base{};
-        IPC::RequestBuilder rb{ctx, 11};
+        IPC::RequestBuilder rb{ctx, 16};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(profile_base);
     }
@@ -49,7 +40,7 @@ public:
 private:
     void CheckAvailability(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(true); // TODO: Check when this is supposed to return true and when not
     }
@@ -57,7 +48,7 @@ private:
 
 void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
-    IPC::RequestBuilder rb{ctx, 2};
+    IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(true); // TODO: Check when this is supposed to return true and when not
 }
