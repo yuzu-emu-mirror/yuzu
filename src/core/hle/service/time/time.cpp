@@ -45,6 +45,7 @@ public:
     ITimeZoneService() : ServiceFramework("ITimeZoneService") {
         static const FunctionInfo functions[] = {
             {0, &ITimeZoneService::GetDeviceLocationName, "GetDeviceLocationName"},
+            {2, &ITimeZoneService::GetTotalLocationNameCount, "GetTotalLocationNameCount"},
             {101, &ITimeZoneService::ToCalendarTimeWithMyRule, "ToCalendarTimeWithMyRule"},
         };
         RegisterHandlers(functions);
@@ -53,10 +54,17 @@ public:
 private:
     void GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        LocationName name{};
-        IPC::RequestBuilder rb{ctx, 11};
+        LocationName location_name{};
+        IPC::RequestBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
-        rb.PushRaw(name);
+        rb.PushRaw(location_name);
+    }
+
+    void GetTotalLocationNameCount(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        IPC::RequestBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
     }
 
     void ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) {
