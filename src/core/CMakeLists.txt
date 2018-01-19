@@ -124,6 +124,8 @@ add_library(core STATIC
     hle/service/pctl/pctl_a.h
     hle/service/service.cpp
     hle/service/service.h
+    hle/service/set/set.cpp
+    hle/service/set/set.h
     hle/service/sm/controller.cpp
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp

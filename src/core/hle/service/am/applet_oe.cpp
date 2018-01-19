@@ -270,6 +270,7 @@ public:
     IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
         static const FunctionInfo functions[] = {
             {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
+            {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
             {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
             {66, &IApplicationFunctions::InitializeGamePlayRecording,
              "InitializeGamePlayRecording"},
@@ -311,6 +312,13 @@ private:
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called, result=0x%08X", result);
+    }
+
+    void GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
+        IPC::RequestBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(SystemLanguage::English);
+        LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx) {

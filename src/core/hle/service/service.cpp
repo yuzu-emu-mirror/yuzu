@@ -24,6 +24,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/service.h"
+#include "core/hle/service/set/set.h"
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sockets/sockets.h"
@@ -178,6 +179,7 @@ void Init() {
     Sockets::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
     VI::InstallInterfaces(*SM::g_service_manager);
+    Set::InstallInterfaces(*SM::g_service_manager);
 
     LOG_DEBUG(Service, "initialized OK");
 }
