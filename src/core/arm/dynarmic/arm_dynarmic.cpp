@@ -163,9 +163,9 @@ void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     jit.SetRegisters(ctx.cpu_registers);
     jit.SetSP(ctx.sp);
     jit.SetPC(ctx.pc);
-    jit.SetPstate(static_cast<uint32_t>(ctx.cpsr));
+    jit.SetPstate(static_cast<u32>(ctx.cpsr));
     jit.SetVectors(ctx.fpu_registers);
-    jit.SetFpcr(static_cast<uint32_t>(ctx.fpscr));
+    jit.SetFpcr(static_cast<u32>(ctx.fpscr));
     cb->tpidrr0_el0 = ctx.tls_address;
 }
 

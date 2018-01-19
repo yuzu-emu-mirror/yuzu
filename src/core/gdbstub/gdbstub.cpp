@@ -299,17 +299,17 @@ static std::map<u32, Breakpoint>& GetBreakpointList(BreakpointType type) {
 static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(static_cast<uint32_t>(addr));
+    auto bp = p.find(static_cast<u32>(addr));
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: %08x bytes at %08x of type %d\n",
                   bp->second.len, bp->second.addr, type);
-        p.erase(static_cast<uint32_t>(addr));
+        p.erase(static_cast<u32>(addr));
     }
 }
 
 BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, BreakpointType type) {
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
-    auto next_breakpoint = p.lower_bound(static_cast<uint32_t>(addr));
+    auto next_breakpoint = p.lower_bound(static_cast<u32>(addr));
     BreakpointAddress breakpoint;
 
     if (next_breakpoint != p.end()) {
@@ -330,7 +330,7 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
 
     std::map<u32, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(static_cast<uint32_t>(addr));
+    auto bp = p.find(static_cast<u32>(addr));
     if (bp != p.end()) {
         u32 len = bp->second.len;
 
