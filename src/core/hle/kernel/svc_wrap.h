@@ -145,12 +145,13 @@ void SvcWrap() {
     FuncReturn(retval);
 }
 
-template <ResultCode func(Handle*, u64, u64, u64)>
+template <ResultCode func(Handle*, u64, u32, u32)>
 void SvcWrap() {
-	u32 param_1 = 0;
-	u32 retval = func(&param_1, PARAM(1), PARAM(2), PARAM(3)).raw;
-	Core::CPU().SetReg(1, param_1);
-	FuncReturn(retval);
+    u32 param_1 = 0;
+    u32 retval =
+        func(&param_1, PARAM(1), (u32)(PARAM(2) & 0xFFFFFFFF), (u32)(PARAM(3) & 0xFFFFFFFF)).raw;
+    Core::CPU().SetReg(1, param_1);
+    FuncReturn(retval);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

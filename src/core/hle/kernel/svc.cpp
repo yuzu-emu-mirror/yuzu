@@ -737,7 +737,7 @@ static ResultCode SetThreadCoreMask(u64, u64, u64) {
     return RESULT_SUCCESS;
 }
 
-static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u64 localPerm, u64 remotePerm) {
+static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 localPerm, u32 remotePerm) {
     LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz, localPerm,
               remotePerm);
     auto sharedMemHandle = SharedMemory::Create(
