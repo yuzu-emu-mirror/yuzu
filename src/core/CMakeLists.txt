@@ -149,6 +149,8 @@ add_library(core STATIC
     hw/hw.h
     hw/lcd.cpp
     hw/lcd.h
+    loader/deconstructed_rom_directory.cpp
+    loader/deconstructed_rom_directory.h
     loader/elf.cpp
     loader/elf.h
     loader/linker.cpp

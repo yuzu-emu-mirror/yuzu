@@ -7,15 +7,19 @@
 #include <string>
 #include "common/common_types.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/loader/linker.h"
 #include "core/loader/loader.h"
 
 namespace Loader {
 
-/// Loads an NSO file
-class AppLoader_NSO final : public AppLoader, Linker {
+/**
+ * This class loads a "deconstructed ROM directory", which are the typical format we see for Switch
+ * game dumps. The path should be a "main" NSO, which must be in a directory that contains the other
+ * standard ExeFS NSOs (e.g. rtld, sdk, etc.). It will automatically find and load these.
+ * Furthermore, it will look for the first .istorage file (optionally) and use this for the RomFS.
+ */
+class AppLoader_DeconstructedRomDirectory final : public AppLoader {
 public:
-    AppLoader_NSO(FileUtil::IOFile&& file, std::string filepath);
+    AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file, std::string filepath);
 
     /**
      * Returns the type of the file
@@ -28,8 +32,6 @@ public:
     FileType GetFileType() override {
         return IdentifyType(file, filepath);
     }
-
-    static VAddr LoadModule(const std::string& path, VAddr load_base);
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
