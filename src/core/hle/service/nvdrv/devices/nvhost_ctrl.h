@@ -7,6 +7,8 @@
 #include <vector>
 #include "common/common_types.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
+#include <cstring>
+#include <cstdlib>
 
 namespace Service {
 namespace Nvidia {
