@@ -81,13 +81,12 @@ public:
     virtual std::string GetName() const = 0;
 
     /**
-     * Open a file specified by its path, using the specified mode
-     * @param path Path relative to the archive
-     * @param mode Mode to open the file with
-     * @return Opened file, or error code
+     * Create a file specified by its path
+     * @param path Path relative to the Archive
+     * @param size The size of the new file, filled with zeroes
+     * @return Result of the operation
      */
-    virtual ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path,
-                                                             const Mode& mode) const = 0;
+    virtual ResultCode CreateFile(const Path& path, u64 size) const = 0;
 
     /**
      * Delete a file specified by its path
@@ -97,12 +96,11 @@ public:
     virtual ResultCode DeleteFile(const Path& path) const = 0;
 
     /**
-     * Rename a File specified by its path
-     * @param src_path Source path relative to the archive
-     * @param dest_path Destination path relative to the archive
+     * Create a directory specified by its path
+     * @param path Path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode RenameFile(const Path& src_path, const Path& dest_path) const = 0;
+    virtual ResultCode CreateDirectory(const Path& path) const = 0;
 
     /**
      * Delete a directory specified by its path
@@ -119,19 +117,12 @@ public:
     virtual ResultCode DeleteDirectoryRecursively(const Path& path) const = 0;
 
     /**
-     * Create a file specified by its path
-     * @param path Path relative to the Archive
-     * @param size The size of the new file, filled with zeroes
+     * Rename a File specified by its path
+     * @param src_path Source path relative to the archive
+     * @param dest_path Destination path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode CreateFile(const Path& path, u64 size) const = 0;
-
-    /**
-     * Create a directory specified by its path
-     * @param path Path relative to the archive
-     * @return Result of the operation
-     */
-    virtual ResultCode CreateDirectory(const Path& path) const = 0;
+    virtual ResultCode RenameFile(const Path& src_path, const Path& dest_path) const = 0;
 
     /**
      * Rename a Directory specified by its path
@@ -140,6 +131,15 @@ public:
      * @return Result of the operation
      */
     virtual ResultCode RenameDirectory(const Path& src_path, const Path& dest_path) const = 0;
+
+    /**
+     * Open a file specified by its path, using the specified mode
+     * @param path Path relative to the archive
+     * @param mode Mode to open the file with
+     * @return Opened file, or error code
+     */
+    virtual ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path,
+                                                             const Mode& mode) const = 0;
 
     /**
      * Open a directory specified by its path
@@ -152,7 +152,7 @@ public:
      * Get the free space
      * @return The number of free bytes in the archive
      */
-    virtual u64 GetFreeBytes() const = 0;
+    virtual u64 GetFreeSpaceSize() const = 0;
 };
 
 class ArchiveFactory : NonCopyable {

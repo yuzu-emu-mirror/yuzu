@@ -34,7 +34,7 @@ public:
     ResultCode CreateDirectory(const Path& path) const override;
     ResultCode RenameDirectory(const Path& src_path, const Path& dest_path) const override;
     ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(const Path& path) const override;
-    u64 GetFreeBytes() const override;
+    u64 GetFreeSpaceSize() const override;
 
 protected:
     std::string mount_point;

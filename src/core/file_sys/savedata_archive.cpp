@@ -322,7 +322,7 @@ ResultVal<std::unique_ptr<DirectoryBackend>> SaveDataArchive::OpenDirectory(
     return MakeResult<std::unique_ptr<DirectoryBackend>>(std::move(directory));
 }
 
-u64 SaveDataArchive::GetFreeBytes() const {
+u64 SaveDataArchive::GetFreeSpaceSize() const {
     // TODO: Stubbed to return 1GiB
     return 1024 * 1024 * 1024;
 }

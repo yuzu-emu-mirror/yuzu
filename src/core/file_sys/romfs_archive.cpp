@@ -73,7 +73,7 @@ ResultVal<std::unique_ptr<DirectoryBackend>> ROMFSArchive::OpenDirectory(const P
     return MakeResult<std::unique_ptr<DirectoryBackend>>(std::make_unique<ROMFSDirectory>());
 }
 
-u64 ROMFSArchive::GetFreeBytes() const {
+u64 ROMFSArchive::GetFreeSpaceSize() const {
     LOG_WARNING(Service_FS, "Attempted to get the free space in an ROMFS archive");
     return 0;
 }
