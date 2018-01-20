@@ -9,18 +9,12 @@ add_library(core STATIC
     file_sys/archive_backend.cpp
     file_sys/archive_backend.h
     file_sys/directory_backend.h
-    file_sys/disk_archive.cpp
-    file_sys/disk_archive.h
     file_sys/errors.h
     file_sys/file_backend.h
     file_sys/path_parser.cpp
     file_sys/path_parser.h
     file_sys/romfs_archive.cpp
     file_sys/romfs_archive.h
-    file_sys/savedata_archive.cpp
-    file_sys/savedata_archive.h
-    file_sys/title_metadata.cpp
-    file_sys/title_metadata.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
