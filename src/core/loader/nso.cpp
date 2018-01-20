@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <lz4.h>
-
 #include "common/common_funcs.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
@@ -47,7 +46,7 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-FileType AppLoader_NSO::IdentifyType(FileUtil::IOFile& file) {
+FileType AppLoader_NSO::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     u32 magic = 0;
     file.Seek(0, SEEK_SET);
     if (1 != file.ReadArray<u32>(&magic, 1)) {

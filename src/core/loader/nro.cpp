@@ -45,7 +45,7 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file) {
+FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     // Read NSO header
     NroHeader nro_header{};
     file.Seek(0, SEEK_SET);

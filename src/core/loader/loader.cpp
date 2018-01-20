@@ -21,11 +21,11 @@ const std::initializer_list<Kernel::AddressMapping> default_address_mappings = {
     {0x1F000000, 0x600000, false}, // entire VRAM
 };
 
-FileType IdentifyFile(FileUtil::IOFile& file) {
+FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath) {
     FileType type;
 
 #define CHECK_TYPE(loader)                                                                         \
-    type = AppLoader_##loader::IdentifyType(file);                                                 \
+    type = AppLoader_##loader::IdentifyType(file, filepath);                                       \
     if (FileType::Error != type)                                                                   \
         return type;
 
@@ -45,13 +45,13 @@ FileType IdentifyFile(const std::string& file_name) {
         return FileType::Unknown;
     }
 
-    return IdentifyFile(file);
+    return IdentifyFile(file, file_name);
 }
 
 FileType GuessFromExtension(const std::string& extension_) {
     std::string extension = Common::ToLower(extension_);
 
-    if (extension == ".elf" || extension == ".axf")
+    if (extension == ".elf")
         return FileType::ELF;
     else if (extension == ".nro")
         return FileType::NRO;
@@ -117,7 +117,7 @@ std::unique_ptr<AppLoader> GetLoader(const std::string& filename) {
     std::string filename_filename, filename_extension;
     Common::SplitPath(filename, nullptr, &filename_filename, &filename_extension);
 
-    FileType type = IdentifyFile(file);
+    FileType type = IdentifyFile(file, filename);
     FileType filename_type = GuessFromExtension(filename_extension);
 
     if (type != filename_type) {

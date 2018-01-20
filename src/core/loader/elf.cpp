@@ -364,7 +364,7 @@ SectionID ElfReader::GetSectionByName(const char* name, int firstSection) const 
 
 namespace Loader {
 
-FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file) {
+FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     static constexpr u16 ELF_MACHINE_ARM{0x28};
 
     u32 magic = 0;

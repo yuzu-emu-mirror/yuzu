@@ -22,12 +22,13 @@ public:
     /**
      * Returns the type of the file
      * @param file FileUtil::IOFile open file
+     * @param filepath Path of the file that we are opening.
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(FileUtil::IOFile& file);
+    static FileType IdentifyType(FileUtil::IOFile& file, const std::string& filepath);
 
     FileType GetFileType() override {
-        return IdentifyType(file);
+        return IdentifyType(file, filename);
     }
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;

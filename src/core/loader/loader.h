@@ -37,9 +37,10 @@ enum class FileType {
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
  * @param file open file
+ * @param filepath Path of the file that we are opening.
  * @return FileType of file
  */
-FileType IdentifyFile(FileUtil::IOFile& file);
+FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath);
 
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
