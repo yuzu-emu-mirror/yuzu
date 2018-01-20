@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "common/common_funcs.h"
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/hle/kernel/process.h"
@@ -44,6 +45,9 @@ struct ModHeader {
     u32_le module_offset; // Offset to runtime-generated module object. typically equal to .bss base
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
+
+AppLoader_NRO::AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath)
+    : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
 FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     // Read NSO header

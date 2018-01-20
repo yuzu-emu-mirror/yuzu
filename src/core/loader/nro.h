@@ -6,7 +6,6 @@
 
 #include <string>
 #include "common/common_types.h"
-#include "common/file_util.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/loader/linker.h"
 #include "core/loader/loader.h"
@@ -16,8 +15,7 @@ namespace Loader {
 /// Loads an NRO file
 class AppLoader_NRO final : public AppLoader, Linker {
 public:
-    AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath)
-        : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
+    AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath);
 
     /**
      * Returns the type of the file

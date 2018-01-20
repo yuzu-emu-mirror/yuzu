@@ -6,7 +6,6 @@
 
 #include <string>
 #include "common/common_types.h"
-#include "common/file_util.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/loader/loader.h"
 
@@ -20,8 +19,7 @@ namespace Loader {
  */
 class AppLoader_DeconstructedRomDirectory final : public AppLoader {
 public:
-    AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file, std::string filepath)
-        : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
+    AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file, std::string filepath);
 
     /**
      * Returns the type of the file

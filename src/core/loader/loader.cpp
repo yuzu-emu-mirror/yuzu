@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -11,8 +11,6 @@
 #include "core/loader/elf.h"
 #include "core/loader/nro.h"
 #include "core/loader/nso.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace Loader {
 

@@ -4,6 +4,7 @@
 
 #include "common/common_funcs.h"
 #include "common/common_paths.h"
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/hle/kernel/process.h"
@@ -13,6 +14,10 @@
 #include "core/memory.h"
 
 namespace Loader {
+
+AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file,
+                                                                         std::string filepath)
+    : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
 FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& file,
                                                            const std::string& filepath) {
