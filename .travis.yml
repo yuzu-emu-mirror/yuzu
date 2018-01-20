@@ -7,7 +7,7 @@ matrix:
       addons:
         apt:
           packages:
-            - clang-format-3.9
+            - clang-format-6.0
       script: "./.travis/clang-format/script.sh"
     - os: linux
       env: NAME="linux build"
