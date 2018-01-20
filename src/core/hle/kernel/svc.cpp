@@ -737,12 +737,13 @@ static ResultCode SetThreadCoreMask(u64, u64, u64) {
     return RESULT_SUCCESS;
 }
 
-static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 localPerm, u32 remotePerm) {
-    LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz, localPerm,
-              remotePerm);
+static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 local_permissions,
+                                     u32 remote_permissions) {
+    LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz,
+              local_permissions, remote_permissions);
     auto sharedMemHandle = SharedMemory::Create(
         g_handle_table.Get<Process>(KernelHandle::CurrentProcess), sz,
-        (Kernel::MemoryPermission)localPerm, (Kernel::MemoryPermission)remotePerm);
+        (Kernel::MemoryPermission)local_permissions, (Kernel::MemoryPermission)remote_permissions);
 
     CASCADE_RESULT(*handle, g_handle_table.Create(sharedMemHandle));
     return RESULT_SUCCESS;
