@@ -7,13 +7,43 @@
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
+#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nso.h"
 #include "core/memory.h"
 
 namespace Loader {
+
+static std::string FindRomFS(const std::string& directory) {
+    std::string filepath_romfs;
+    const auto callback = [&filepath_romfs](unsigned*, const std::string& directory,
+                                            const std::string& virtual_name) -> bool {
+        const std::string physical_name = directory + virtual_name;
+        if (FileUtil::IsDirectory(physical_name)) {
+            // Skip directories
+            return true;
+        }
+
+        // Verify extension
+        const std::string extension = physical_name.substr(physical_name.find_last_of(".") + 1);
+        if (Common::ToLower(extension) != "istorage") {
+            return true;
+        }
+
+        // Found it - we are done
+        filepath_romfs = std::move(physical_name);
+        return false;
+    };
+
+    // Search the specified directory recursively, looking for the first .istorage file, which will
+    // be used for the RomFS
+    FileUtil::ForeachDirectoryEntry(nullptr, directory, callback);
+
+    return filepath_romfs;
+}
 
 AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file,
                                                                          std::string filepath)
@@ -79,10 +109,10 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
+    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
-        const std::string path =
-            filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP + module;
+        const std::string path = directory + DIR_SEP + module;
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
@@ -98,7 +128,42 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
     process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
 
+    // Find the RomFS by searching for a ".istorage" file in this directory
+    filepath_romfs = FindRomFS(directory);
+
+    // Register the RomFS if a ".istorage" file was found
+    if (!filepath_romfs.empty()) {
+        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
+                                                Service::FileSystem::Type::RomFS);
+    }
+
     is_loaded = true;
+    return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
+    std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset, u64& size) {
+
+    if (filepath_romfs.empty()) {
+        LOG_DEBUG(Loader, "No RomFS available");
+        return ResultStatus::ErrorNotUsed;
+    }
+
+    // We reopen the file, to allow its position to be independent
+    romfs_file = std::make_shared<FileUtil::IOFile>(filepath_romfs, "rb");
+    if (!romfs_file->IsOpen()) {
+        return ResultStatus::Error;
+    }
+
+    offset = 0;
+    size = romfs_file->GetSize();
+
+    LOG_DEBUG(Loader, "RomFS offset:           0x%08X", offset);
+    LOG_DEBUG(Loader, "RomFS size:             0x%08X", size);
+
+    // Reset read pointer
+    file.Seek(0, SEEK_SET);
+
     return ResultStatus::Success;
 }
 
