@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -15,19 +15,16 @@
 #include "core/file_sys/file_backend.h"
 #include "core/hle/result.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// FileSys namespace
-
 namespace FileSys {
 
 /**
- * Helper which implements an interface to deal with IVFC images used in some archives
- * This should be subclassed by concrete archive types, which will provide the
- * input data (load the raw IVFC archive) and override any required methods
+ * Helper which implements an interface to deal with Switch .istorage ROMFS images used in some
+ * archives This should be subclassed by concrete archive types, which will provide the input data
+ * (load the raw ROMFS archive) and override any required methods
  */
-class IVFCArchive : public ArchiveBackend {
+class ROMFSArchive : public ArchiveBackend {
 public:
-    IVFCArchive(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    ROMFSArchive(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     std::string GetName() const override;
@@ -50,9 +47,9 @@ protected:
     u64 data_size;
 };
 
-class IVFCFile : public FileBackend {
+class ROMFSFile : public FileBackend {
 public:
-    IVFCFile(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    ROMFSFile(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     ResultVal<size_t> Read(u64 offset, size_t length, u8* buffer) const override;
@@ -70,7 +67,7 @@ private:
     u64 data_size;
 };
 
-class IVFCDirectory : public DirectoryBackend {
+class ROMFSDirectory : public DirectoryBackend {
 public:
     u32 Read(const u32 count, Entry* entries) override {
         return 0;
