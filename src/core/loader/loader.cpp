@@ -7,6 +7,7 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/hle/kernel/process.h"
+#include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/elf.h"
 #include "core/loader/nro.h"
 #include "core/loader/nso.h"
@@ -29,6 +30,7 @@ FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath) {
     if (FileType::Error != type)                                                                   \
         return type;
 
+    CHECK_TYPE(DeconstructedRomDirectory)
     CHECK_TYPE(ELF)
     CHECK_TYPE(NSO)
     CHECK_TYPE(NRO)
@@ -69,6 +71,8 @@ const char* GetFileTypeString(FileType type) {
         return "NRO";
     case FileType::NSO:
         return "NSO";
+    case FileType::DeconstructedRomDirectory:
+        return "Directory";
     case FileType::Error:
     case FileType::Unknown:
         break;
@@ -101,6 +105,10 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileTyp
     // NX NRO file format.
     case FileType::NRO:
         return std::make_unique<AppLoader_NRO>(std::move(file), filepath);
+
+    // NX deconstructed ROM directory.
+    case FileType::DeconstructedRomDirectory:
+        return std::make_unique<AppLoader_DeconstructedRomDirectory>(std::move(file), filepath);
 
     default:
         return nullptr;
