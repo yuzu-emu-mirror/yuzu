@@ -88,7 +88,7 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-VAddr AppLoader_NSO::LoadNso(const std::string& path, VAddr load_base) {
+VAddr AppLoader_NSO::LoadModule(const std::string& path, VAddr load_base) {
     FileUtil::IOFile file(path, "rb");
     if (!file.IsOpen()) {
         return {};
@@ -153,21 +153,9 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     process = Kernel::Process::Create("main");
 
-    // Load NSO modules
-    VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
-    for (const auto& module :
-         {"rtld", "sdk", "subsdk0", "subsdk1", "subsdk2", "subsdk3", "subsdk4"}) {
-        const std::string path = filepath.substr(0, filepath.find_last_of("/\\")) + "/" + module;
-        const VAddr load_addr = next_load_addr;
-        next_load_addr = LoadNso(path, load_addr);
-        if (next_load_addr) {
-            LOG_DEBUG(Loader, "loaded module %s @ 0x%llx", module, load_addr);
-        } else {
-            next_load_addr = load_addr;
-        }
-    }
-    // Load "main" module
-    LoadNso(filepath, next_load_addr);
+    // Load module
+    LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);
+    LOG_DEBUG(Loader, "loaded module %s @ 0x%llx", filepath.c_str(), Memory::PROCESS_IMAGE_VADDR);
 
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;

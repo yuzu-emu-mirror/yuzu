@@ -31,10 +31,11 @@ public:
         return IdentifyType(file);
     }
 
+    static VAddr LoadModule(const std::string& path, VAddr load_base);
+
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
 private:
-    VAddr LoadNso(const std::string& path, VAddr load_base);
 
     std::string filepath;
 };
