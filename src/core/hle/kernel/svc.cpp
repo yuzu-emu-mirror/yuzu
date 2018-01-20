@@ -737,6 +737,18 @@ static ResultCode SetThreadCoreMask(u64, u64, u64) {
     return RESULT_SUCCESS;
 }
 
+static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 local_permissions,
+                                     u32 remote_permissions) {
+    LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz,
+              local_permissions, remote_permissions);
+    auto sharedMemHandle = SharedMemory::Create(
+        g_handle_table.Get<Process>(KernelHandle::CurrentProcess), sz,
+        (Kernel::MemoryPermission)local_permissions, (Kernel::MemoryPermission)remote_permissions);
+
+    CASCADE_RESULT(*handle, g_handle_table.Create(sharedMemHandle));
+    return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -828,7 +840,7 @@ static const FunctionDef SVC_Table[] = {
     {0x4D, nullptr, "SleepSystem"},
     {0x4E, nullptr, "ReadWriteRegister"},
     {0x4F, nullptr, "SetProcessActivity"},
-    {0x50, nullptr, "CreateSharedMemory"},
+    {0x50, SvcWrap<CreateSharedMemory>, "CreateSharedMemory"},
     {0x51, nullptr, "MapTransferMemory"},
     {0x52, nullptr, "UnmapTransferMemory"},
     {0x53, nullptr, "CreateInterruptEvent"},
