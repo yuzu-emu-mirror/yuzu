@@ -13,13 +13,12 @@ class HLERequestContext;
 namespace Service {
 namespace Audio {
 
-class AudOutU final : public ServiceFramework<AudOutU> {
+class AudInU final : public ServiceFramework<AudInU> {
 public:
-    AudOutU();
-    ~AudOutU() = default;
+    AudInU();
+    ~AudInU() = default;
 
 private:
-    void ListAudioOuts(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Audio
