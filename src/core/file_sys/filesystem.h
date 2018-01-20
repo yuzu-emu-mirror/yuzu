@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -15,7 +15,7 @@
 
 namespace FileSys {
 
-class FileBackend;
+class StorageBackend;
 class DirectoryBackend;
 
 // Path string type
@@ -71,9 +71,9 @@ struct ArchiveFormatInfo {
 };
 static_assert(std::is_pod<ArchiveFormatInfo>::value, "ArchiveFormatInfo is not POD");
 
-class ArchiveBackend : NonCopyable {
+class FileSystemBackend : NonCopyable {
 public:
-    virtual ~ArchiveBackend() {}
+    virtual ~FileSystemBackend() {}
 
     /**
      * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)
@@ -138,8 +138,8 @@ public:
      * @param mode Mode to open the file with
      * @return Opened file, or error code
      */
-    virtual ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path,
-                                                             const Mode& mode) const = 0;
+    virtual ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const Path& path,
+                                                          const Mode& mode) const = 0;
 
     /**
      * Open a directory specified by its path
@@ -155,9 +155,9 @@ public:
     virtual u64 GetFreeSpaceSize() const = 0;
 };
 
-class ArchiveFactory : NonCopyable {
+class FileSystemFactory : NonCopyable {
 public:
-    virtual ~ArchiveFactory() {}
+    virtual ~FileSystemFactory() {}
 
     /**
      * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)
@@ -169,7 +169,7 @@ public:
      * @param path Path to the archive
      * @return An ArchiveBackend corresponding operating specified archive path.
      */
-    virtual ResultVal<std::unique_ptr<ArchiveBackend>> Open(const Path& path) = 0;
+    virtual ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) = 0;
 
     /**
      * Deletes the archive contents and then re-creates the base folder

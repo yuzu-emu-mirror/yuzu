@@ -10,9 +10,9 @@
 #include <vector>
 #include "common/common_types.h"
 #include "common/file_util.h"
-#include "core/file_sys/archive_backend.h"
-#include "core/file_sys/directory_backend.h"
-#include "core/file_sys/file_backend.h"
+#include "core/file_sys/directory.h"
+#include "core/file_sys/filesystem.h"
+#include "core/file_sys/storage.h"
 #include "core/hle/result.h"
 
 namespace FileSys {
@@ -22,15 +22,15 @@ namespace FileSys {
  * archives This should be subclassed by concrete archive types, which will provide the input data
  * (load the raw ROMFS archive) and override any required methods
  */
-class ROMFSArchive : public ArchiveBackend {
+class RomFS_FileSystem : public FileSystemBackend {
 public:
-    ROMFSArchive(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    RomFS_FileSystem(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     std::string GetName() const override;
 
-    ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path,
-                                                     const Mode& mode) const override;
+    ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const Path& path,
+                                                        const Mode& mode) const override;
     ResultCode DeleteFile(const Path& path) const override;
     ResultCode RenameFile(const Path& src_path, const Path& dest_path) const override;
     ResultCode DeleteDirectory(const Path& path) const override;
@@ -47,9 +47,9 @@ protected:
     u64 data_size;
 };
 
-class ROMFSFile : public FileBackend {
+class RomFS_Storage : public StorageBackend {
 public:
-    ROMFSFile(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    RomFS_Storage(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     ResultVal<size_t> Read(u64 offset, size_t length, u8* buffer) const override;
