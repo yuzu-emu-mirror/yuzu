@@ -113,4 +113,4 @@ private:
  * in the command buffer.
  */
 ResultCode TranslateHLERequest(ServerSession* server_session);
-}
+} // namespace Kernel

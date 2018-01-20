@@ -20,7 +20,7 @@ class Mutex;
 class ConditionVariable;
 class Thread;
 class Timer;
-}
+} // namespace Kernel
 
 class WaitTreeThread;
 

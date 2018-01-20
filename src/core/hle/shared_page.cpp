@@ -82,4 +82,4 @@ void Init() {
     CoreTiming::ScheduleEvent(0, update_time_event);
 }
 
-} // namespace
+} // namespace SharedPage

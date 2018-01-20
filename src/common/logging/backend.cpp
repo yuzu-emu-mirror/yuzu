@@ -132,4 +132,4 @@ void LogMessage(Class log_class, Level log_level, const char* filename, unsigned
 
     PrintColoredMessage(entry);
 }
-}
+} // namespace Log

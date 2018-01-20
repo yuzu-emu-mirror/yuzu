@@ -130,4 +130,4 @@ private:
 
 extern HandleTable g_handle_table;
 
-} // namespace
+} // namespace Kernel

@@ -104,4 +104,4 @@ void HandleTable::Clear() {
     next_free_slot = 0;
 }
 
-} // namespace
+} // namespace Kernel

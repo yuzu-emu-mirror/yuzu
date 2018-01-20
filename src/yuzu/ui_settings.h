@@ -50,4 +50,4 @@ struct Values {
 };
 
 extern Values values;
-}
+} // namespace UISettings
