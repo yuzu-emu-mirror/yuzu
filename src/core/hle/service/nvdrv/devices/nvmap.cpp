@@ -36,6 +36,7 @@ u32 nvmap::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& out
     }
 
     UNIMPLEMENTED();
+    return 0;
 }
 
 u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
