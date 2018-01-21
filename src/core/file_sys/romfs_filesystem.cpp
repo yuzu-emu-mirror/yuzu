@@ -69,7 +69,8 @@ ResultCode RomFS_FileSystem::RenameDirectory(const Path& src_path, const Path& d
     return ResultCode(-1);
 }
 
-ResultVal<std::unique_ptr<DirectoryBackend>> RomFS_FileSystem::OpenDirectory(const Path& path) const {
+ResultVal<std::unique_ptr<DirectoryBackend>> RomFS_FileSystem::OpenDirectory(
+    const Path& path) const {
     return MakeResult<std::unique_ptr<DirectoryBackend>>(std::make_unique<ROMFSDirectory>());
 }
 

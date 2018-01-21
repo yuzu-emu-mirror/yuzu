@@ -139,7 +139,7 @@ public:
      * @return Opened file, or error code
      */
     virtual ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const Path& path,
-                                                          const Mode& mode) const = 0;
+                                                                const Mode& mode) const = 0;
 
     /**
      * Open a directory specified by its path
