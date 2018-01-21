@@ -107,7 +107,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
         bss_size = PageAlignSize(mod_header.bss_end_offset - mod_header.bss_start_offset);
     }
     codeset->data.size += bss_size;
-    program_image.resize(PageAlignSize(static_cast<u32>(program_image.size()) + bss_size));
+    program_image.resize(static_cast<u32>(program_image.size()) + bss_size);
 
     // Load codeset for current process
     codeset->name = path;
@@ -138,7 +138,7 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->address_mappings = default_address_mappings;
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    process->Run(base_addr + sizeof(NroHeader), 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(base_addr, 48, Kernel::DEFAULT_STACK_SIZE);
 
     is_loaded = true;
     return ResultStatus::Success;
