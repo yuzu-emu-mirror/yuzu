@@ -356,6 +356,35 @@ private:
     Data data{};
 };
 
+class IGBPQueryRequestParcel : public Parcel {
+public:
+    explicit IGBPQueryRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+        Deserialize();
+    }
+    ~IGBPQueryRequestParcel() override = default;
+
+    void DeserializeData() override {
+        std::u16string token = ReadInterfaceToken();
+        type = Read<u32_le>();
+    }
+
+    u32 type;
+};
+
+class IGBPQueryResponseParcel : public Parcel {
+public:
+    explicit IGBPQueryResponseParcel(u32 value) : Parcel(), value(value) {}
+    ~IGBPQueryResponseParcel() override = default;
+
+protected:
+    void SerializeData() override {
+        Write(value);
+    }
+
+private:
+    u32_le value;
+};
+
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
     explicit IHOSBinderDriver(std::shared_ptr<NVFlinger> nv_flinger)
@@ -442,6 +471,15 @@ private:
             buffer_queue->QueueBuffer(request.data.slot);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
+            auto response_buffer = response.Serialize();
+            Memory::WriteBlock(output_buffer.Address(), response_buffer.data(),
+                               output_buffer.Size());
+        } else if (transaction == TransactionId::Query) {
+            IGBPQueryRequestParcel request{input_data};
+
+            u32 value = buffer_queue->Query(static_cast<BufferQueue::QueryType>(request.type));
+
+            IGBPQueryResponseParcel response{value};
             auto response_buffer = response.Serialize();
             Memory::WriteBlock(output_buffer.Address(), response_buffer.data(),
                                output_buffer.Size());
@@ -916,6 +954,19 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
     ASSERT(itr != queue.end());
     ASSERT(itr->status == Buffer::Status::Acquired);
     itr->status = Buffer::Status::Free;
+}
+
+u32 BufferQueue::Query(QueryType type) {
+    LOG_WARNING(Service, "(STUBBED) called type=%u", static_cast<u32>(type));
+    switch (type) {
+    case QueryType::NativeWindowFormat:
+        // TODO(Subv): Use an enum for this
+        static constexpr u32 FormatABGR8 = 1;
+        return FormatABGR8;
+    }
+
+    UNIMPLEMENTED();
+    return 0;
 }
 
 Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}
