@@ -30,7 +30,7 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
 
     if (!strcmp(params.domain_str.data(), "nv")) {
         if (!strcmp(params.param_str.data(), "NV_MEMORY_PROFILER")) {
-            std::memcpy(params.config_str.data(), "1", 1);
+            params.config_str[0] = '1';
         } else {
             UNIMPLEMENTED();
         }

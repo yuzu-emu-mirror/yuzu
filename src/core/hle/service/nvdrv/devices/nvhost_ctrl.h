@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <array>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 #include "common/common_types.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
-#include <cstring>
-#include <cstdlib>
 
 namespace Service {
 namespace Nvidia {
@@ -33,7 +34,6 @@ private:
         IocGetConfigCommand = 0xC183001B,
     };
 
-private:
     struct IocGetConfigParams {
         std::array<char, 0x41> domain_str;
         std::array<char, 0x41> param_str;
