@@ -27,7 +27,6 @@ FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& fil
 
     const auto callback = [&](unsigned* num_entries_out, const std::string& directory,
                               const std::string& virtual_name) -> bool {
-
         // Skip directories
         std::string physical_name = directory + virtual_name;
         if (FileUtil::IsDirectory(physical_name)) {
