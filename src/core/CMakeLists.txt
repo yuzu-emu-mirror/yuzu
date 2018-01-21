@@ -6,21 +6,17 @@ add_library(core STATIC
     core.h
     core_timing.cpp
     core_timing.h
-    file_sys/archive_backend.cpp
-    file_sys/archive_backend.h
-    file_sys/directory_backend.h
-    file_sys/disk_archive.cpp
-    file_sys/disk_archive.h
+    file_sys/directory.h
     file_sys/errors.h
-    file_sys/file_backend.h
-    file_sys/ivfc_archive.cpp
-    file_sys/ivfc_archive.h
+    file_sys/filesystem.cpp
+    file_sys/filesystem.h
     file_sys/path_parser.cpp
     file_sys/path_parser.h
-    file_sys/savedata_archive.cpp
-    file_sys/savedata_archive.h
-    file_sys/title_metadata.cpp
-    file_sys/title_metadata.h
+    file_sys/romfs_factory.cpp
+    file_sys/romfs_factory.h
+    file_sys/romfs_filesystem.cpp
+    file_sys/romfs_filesystem.h
+    file_sys/storage.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
@@ -101,6 +97,10 @@ add_library(core STATIC
     hle/service/audio/audio.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
+    hle/service/filesystem/filesystem.cpp
+    hle/service/filesystem/filesystem.h
+    hle/service/filesystem/fsp_srv.cpp
+    hle/service/filesystem/fsp_srv.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp

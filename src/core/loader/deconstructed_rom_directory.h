@@ -35,7 +35,11 @@ public:
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
+    ResultStatus ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                           u64& size) override;
+
 private:
+    std::string filepath_romfs;
     std::string filepath;
 };
 

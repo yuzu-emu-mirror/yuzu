@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -8,15 +8,12 @@
 #include "common/common_types.h"
 #include "core/hle/result.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// FileSys namespace
-
 namespace FileSys {
 
-class FileBackend : NonCopyable {
+class StorageBackend : NonCopyable {
 public:
-    FileBackend() {}
-    virtual ~FileBackend() {}
+    StorageBackend() {}
+    virtual ~StorageBackend() {}
 
     /**
      * Read data from the file
@@ -39,10 +36,9 @@ public:
                                     const u8* buffer) const = 0;
 
     /**
-     * Get the size of the file in bytes
-     * @return Size of the file in bytes
+     * Flushes the file
      */
-    virtual u64 GetSize() const = 0;
+    virtual void Flush() const = 0;
 
     /**
      * Set the size of the file in bytes
@@ -52,15 +48,16 @@ public:
     virtual bool SetSize(u64 size) const = 0;
 
     /**
+     * Get the size of the file in bytes
+     * @return Size of the file in bytes
+     */
+    virtual u64 GetSize() const = 0;
+
+    /**
      * Close the file
      * @return true if the file closed correctly
      */
     virtual bool Close() const = 0;
-
-    /**
-     * Flushes the file
-     */
-    virtual void Flush() const = 0;
 };
 
 } // namespace FileSys

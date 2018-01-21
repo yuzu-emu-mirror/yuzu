@@ -1,4 +1,4 @@
-// Copyright 2014 Citra Emulator Project
+// Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -10,30 +10,27 @@
 #include <vector>
 #include "common/common_types.h"
 #include "common/file_util.h"
-#include "core/file_sys/archive_backend.h"
-#include "core/file_sys/directory_backend.h"
-#include "core/file_sys/file_backend.h"
+#include "core/file_sys/directory.h"
+#include "core/file_sys/filesystem.h"
+#include "core/file_sys/storage.h"
 #include "core/hle/result.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// FileSys namespace
 
 namespace FileSys {
 
 /**
- * Helper which implements an interface to deal with IVFC images used in some archives
- * This should be subclassed by concrete archive types, which will provide the
- * input data (load the raw IVFC archive) and override any required methods
+ * Helper which implements an interface to deal with Switch .istorage ROMFS images used in some
+ * archives This should be subclassed by concrete archive types, which will provide the input data
+ * (load the raw ROMFS archive) and override any required methods
  */
-class IVFCArchive : public ArchiveBackend {
+class RomFS_FileSystem : public FileSystemBackend {
 public:
-    IVFCArchive(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    RomFS_FileSystem(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     std::string GetName() const override;
 
-    ResultVal<std::unique_ptr<FileBackend>> OpenFile(const Path& path,
-                                                     const Mode& mode) const override;
+    ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const Path& path,
+                                                        const Mode& mode) const override;
     ResultCode DeleteFile(const Path& path) const override;
     ResultCode RenameFile(const Path& src_path, const Path& dest_path) const override;
     ResultCode DeleteDirectory(const Path& path) const override;
@@ -42,7 +39,7 @@ public:
     ResultCode CreateDirectory(const Path& path) const override;
     ResultCode RenameDirectory(const Path& src_path, const Path& dest_path) const override;
     ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(const Path& path) const override;
-    u64 GetFreeBytes() const override;
+    u64 GetFreeSpaceSize() const override;
 
 protected:
     std::shared_ptr<FileUtil::IOFile> romfs_file;
@@ -50,9 +47,9 @@ protected:
     u64 data_size;
 };
 
-class IVFCFile : public FileBackend {
+class RomFS_Storage : public StorageBackend {
 public:
-    IVFCFile(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
+    RomFS_Storage(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
         : romfs_file(file), data_offset(offset), data_size(size) {}
 
     ResultVal<size_t> Read(u64 offset, size_t length, u8* buffer) const override;
@@ -70,7 +67,7 @@ private:
     u64 data_size;
 };
 
-class IVFCDirectory : public DirectoryBackend {
+class ROMFSDirectory : public DirectoryBackend {
 public:
     u32 Read(const u32 count, Entry* entries) override {
         return 0;
