@@ -37,6 +37,12 @@ static_assert(sizeof(IGBPBuffer) == 0x16C, "IGBPBuffer has wrong size");
 
 class BufferQueue {
 public:
+    enum class QueryType {
+        NativeWindowWidth = 0,
+        NativeWindowHeight = 1,
+        NativeWindowFormat = 2,
+    };
+
     BufferQueue(u32 id, u64 layer_id);
     ~BufferQueue() = default;
 
@@ -54,6 +60,7 @@ public:
     void QueueBuffer(u32 slot);
     boost::optional<const Buffer&> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
+    u32 Query(QueryType type);
 
     u32 GetId() const {
         return id;
