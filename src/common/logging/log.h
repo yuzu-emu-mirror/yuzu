@@ -55,6 +55,7 @@ enum class Class : ClassType {
     Service_CFG,       ///< The CFG (Configuration) service
     Service_DSP,       ///< The DSP (DSP control) service
     Service_HID,       ///< The HID (Human interface device) service
+    Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
     HW,                ///< Low-level hardware emulation
     HW_Memory,         ///< Memory-map and address translation
     HW_LCD,            ///< LCD register emulation

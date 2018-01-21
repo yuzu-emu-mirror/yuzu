@@ -6,9 +6,11 @@
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
+#include "core/hle/service/nvdrv/devices/nvhost_ctrl.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/hle/service/nvdrv/interface.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvdrv/nvmemp.h"
 
 namespace Service {
 namespace Nvidia {
@@ -19,6 +21,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module_ = std::make_shared<Module>();
     std::make_shared<NVDRV>(module_, "nvdrv")->InstallAsService(service_manager);
     std::make_shared<NVDRV>(module_, "nvdrv:a")->InstallAsService(service_manager);
+    std::make_shared<NVMEMP>()->InstallAsService(service_manager);
     nvdrv = module_;
 }
 
@@ -27,6 +30,7 @@ Module::Module() {
     devices["/dev/nvhost-as-gpu"] = std::make_shared<Devices::nvhost_as_gpu>();
     devices["/dev/nvmap"] = nvmap_dev;
     devices["/dev/nvdisp_disp0"] = std::make_shared<Devices::nvdisp_disp0>(nvmap_dev);
+    devices["/dev/nvhost-ctrl"] = std::make_shared<Devices::nvhost_ctrl>();
 }
 
 u32 Module::Open(std::string device_name) {

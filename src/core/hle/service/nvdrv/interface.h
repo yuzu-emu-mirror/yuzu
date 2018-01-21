@@ -25,6 +25,8 @@ private:
     void SetClientPID(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<Module> nvdrv;
+
+    u64 pid{};
 };
 
 } // namespace Nvidia

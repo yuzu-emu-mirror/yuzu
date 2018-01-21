@@ -69,13 +69,12 @@ void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
 
 void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    u64 pid = rp.Pop<u64>();
-    u64 unk = rp.Pop<u64>();
+    pid = rp.Pop<u64>();
 
-    LOG_WARNING(Service, "(STUBBED) called, pid=0x%llx, unk=0x%llx", pid, unk);
-
-    IPC::RequestBuilder rb{ctx, 2};
+    LOG_INFO(Service, "called, pid=0x%lx", pid);
+    IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(0);
 }
 
 NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
