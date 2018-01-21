@@ -250,7 +250,7 @@ if (YUZU_USE_BUNDLED_UNICORN)
         find_package(PythonInterp 2.7 REQUIRED)
 
         add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
-            COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" PYTHON="${PYTHON_EXECUTABLE}" /bin/sh make.sh
+            COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" PYTHON="${PYTHON_EXECUTABLE}" /bin/sh make.sh macos-universal-no
             WORKING_DIRECTORY ${UNICORN_PREFIX}
         )
         # ALL makes this custom target build every time
