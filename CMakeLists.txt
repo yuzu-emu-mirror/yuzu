@@ -15,6 +15,8 @@ CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON
 option(ENABLE_QT "Enable the Qt frontend" ON)
 CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" ON "ENABLE_SDL2;MSVC" OFF)
 
+option(YUZU_USE_BUNDLED_UNICORN "Build/Download bundled Unicorn" ON)
+
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
     file(COPY hooks/pre-commit
@@ -209,8 +211,7 @@ else()
 endif()
 
 # If unicorn isn't found, msvc -> download bundled unicorn; everyone else -> build external
-find_package(Unicorn QUIET)
-if (NOT UNICORN_FOUND)
+if (YUZU_USE_BUNDLED_UNICORN)
     if (MSVC)
         message(STATUS "unicorn not found, falling back to bundled")
         # Detect toolchain and platform
@@ -259,6 +260,8 @@ if (NOT UNICORN_FOUND)
         )
         unset(UNICORN_LIB_NAME)
     endif()
+else()
+    find_package(Unicorn REQUIRED)
 endif()
 
 if (UNICORN_FOUND)
