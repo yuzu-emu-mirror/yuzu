@@ -14,7 +14,11 @@
 
 const std::array<std::string, ConfigureInput::ANALOG_SUB_BUTTONS_NUM>
     ConfigureInput::analog_sub_buttons{{
-        "up", "down", "left", "right", "modifier",
+        "up",
+        "down",
+        "left",
+        "right",
+        "modifier",
     }};
 
 static QString getKeyName(int key_code) {
@@ -36,7 +40,8 @@ static void SetAnalogButton(const Common::ParamPackage& input_param,
                             Common::ParamPackage& analog_param, const std::string& button_name) {
     if (analog_param.Get("engine", "") != "analog_from_button") {
         analog_param = {
-            {"engine", "analog_from_button"}, {"modifier_scale", "0.5"},
+            {"engine", "analog_from_button"},
+            {"modifier_scale", "0.5"},
         };
     }
     analog_param.Set(button_name, input_param.Serialize());
@@ -107,11 +112,17 @@ ConfigureInput::ConfigureInput(QWidget* parent)
 
     analog_map_buttons = {{
         {
-            ui->buttonLStickUp, ui->buttonLStickDown, ui->buttonLStickLeft, ui->buttonLStickRight,
+            ui->buttonLStickUp,
+            ui->buttonLStickDown,
+            ui->buttonLStickLeft,
+            ui->buttonLStickRight,
             ui->buttonLStickMod,
         },
         {
-            ui->buttonRStickUp, ui->buttonRStickDown, ui->buttonRStickLeft, ui->buttonRStickRight,
+            ui->buttonRStickUp,
+            ui->buttonRStickDown,
+            ui->buttonRStickLeft,
+            ui->buttonRStickRight,
             ui->buttonRStickMod,
         },
     }};

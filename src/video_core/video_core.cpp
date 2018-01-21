@@ -39,4 +39,4 @@ void Shutdown() {
     LOG_DEBUG(Render, "shutdown OK");
 }
 
-} // namespace
+} // namespace VideoCore

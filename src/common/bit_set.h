@@ -236,7 +236,7 @@ public:
     IntTy m_val;
 };
 
-} // Common
+} // namespace Common
 
 typedef Common::BitSet<u8> BitSet8;
 typedef Common::BitSet<u16> BitSet16;

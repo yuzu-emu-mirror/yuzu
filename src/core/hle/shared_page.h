@@ -66,4 +66,4 @@ extern SharedPageDef shared_page;
 
 void Init();
 
-} // namespace
+} // namespace SharedPage

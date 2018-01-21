@@ -99,9 +99,8 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
 
     data_payload_offset = rp.GetCurrentOffset();
 
-    if (domain_message_header &&
-        domain_message_header->command ==
-            IPC::DomainMessageHeader::CommandType::CloseVirtualHandle) {
+    if (domain_message_header && domain_message_header->command ==
+                                     IPC::DomainMessageHeader::CommandType::CloseVirtualHandle) {
         // CloseVirtualHandle command does not have SFC* or any data
         return;
     }
