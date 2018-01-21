@@ -305,6 +305,11 @@ inline u64 RequestParser::Pop() {
 }
 
 template <>
+inline s64 RequestParser::Pop() {
+    return static_cast<s64>(Pop<u64>());
+}
+
+template <>
 inline bool RequestParser::Pop() {
     return Pop<u8>() != 0;
 }

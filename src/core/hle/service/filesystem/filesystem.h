@@ -6,11 +6,20 @@
 
 #include <memory>
 #include "common/common_types.h"
-#include "core/file_sys/filesystem.h"
 #include "core/hle/result.h"
-#include "core/hle/service/service.h"
+
+namespace FileSys {
+class FileSystemBackend;
+class FileSystemFactory;
+class Path;
+} // namespace FileSys
 
 namespace Service {
+
+namespace SM {
+class ServiceManager;
+} // namespace SM
+
 namespace FileSystem {
 
 /// Supported FileSystem types
@@ -37,5 +46,5 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
 /// Registers all Filesystem services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Filesystem
+} // namespace FileSystem
 } // namespace Service
