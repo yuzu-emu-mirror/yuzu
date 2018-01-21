@@ -57,9 +57,10 @@ const u32 SIGTERM = 15;
 const u32 MSG_WAITALL = 8;
 #endif
 
-const u32 R15_REGISTER = 15;
-const u32 CPSR_REGISTER = 25;
-const u32 FPSCR_REGISTER = 58;
+const u32 X30_REGISTER = 30;
+const u32 SP_REGISTER = 31;
+const u32 PC_REGISTER = 32;
+const u32 CPSR_REGISTER = 33;
 
 // For sample XML files see the GDB source /gdb/features
 // GDB also wants the l character at the start
@@ -68,48 +69,62 @@ static const char* target_xml =
     R"(l<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
-  <feature name="org.gnu.gdb.arm.core">
-    <reg name="r0" bitsize="32"/>
-    <reg name="r1" bitsize="32"/>
-    <reg name="r2" bitsize="32"/>
-    <reg name="r3" bitsize="32"/>
-    <reg name="r4" bitsize="32"/>
-    <reg name="r5" bitsize="32"/>
-    <reg name="r6" bitsize="32"/>
-    <reg name="r7" bitsize="32"/>
-    <reg name="r8" bitsize="32"/>
-    <reg name="r9" bitsize="32"/>
-    <reg name="r10" bitsize="32"/>
-    <reg name="r11" bitsize="32"/>
-    <reg name="r12" bitsize="32"/>
-    <reg name="sp" bitsize="32" type="data_ptr"/>
-    <reg name="lr" bitsize="32"/>
-    <reg name="pc" bitsize="32" type="code_ptr"/>
+  <feature name="org.gnu.gdb.aarch64.core">
+    <reg name="x0" bitsize="64"/>
+    <reg name="x1" bitsize="64"/>
+    <reg name="x2" bitsize="64"/>
+    <reg name="x3" bitsize="64"/>
+    <reg name="x4" bitsize="64"/>
+    <reg name="x5" bitsize="64"/>
+    <reg name="x6" bitsize="64"/>
+    <reg name="x7" bitsize="64"/>
+    <reg name="x8" bitsize="64"/>
+    <reg name="x9" bitsize="64"/>
+    <reg name="x10" bitsize="64"/>
+    <reg name="x11" bitsize="64"/>
+    <reg name="x12" bitsize="64"/>
+    <reg name="x13" bitsize="64"/>
+    <reg name="x14" bitsize="64"/>
+    <reg name="x15" bitsize="64"/>
+    <reg name="x16" bitsize="64"/>
+    <reg name="x17" bitsize="64"/>
+    <reg name="x18" bitsize="64"/>
+    <reg name="x19" bitsize="64"/>
+    <reg name="x20" bitsize="64"/>
+    <reg name="x21" bitsize="64"/>
+    <reg name="x22" bitsize="64"/>
+    <reg name="x23" bitsize="64"/>
+    <reg name="x24" bitsize="64"/>
+    <reg name="x25" bitsize="64"/>
+    <reg name="x26" bitsize="64"/>
+    <reg name="x27" bitsize="64"/>
+    <reg name="x28" bitsize="64"/>
+    <reg name="x29" bitsize="64"/>
+    <reg name="x30" bitsize="64"/>
+    <reg name="sp" bitsize="64" type="data_ptr"/>
 
-    <!-- The CPSR is register 25, rather than register 16, because
-         the FPA registers historically were placed between the PC
-         and the CPSR in the "g" packet.  -->
+    <reg name="pc" bitsize="64" type="code_ptr"/>
 
-    <reg name="cpsr" bitsize="32" regnum="25"/>
-  </feature>
-  <feature name="org.gnu.gdb.arm.vfp">
-    <reg name="d0" bitsize="64" type="float"/>
-    <reg name="d1" bitsize="64" type="float"/>
-    <reg name="d2" bitsize="64" type="float"/>
-    <reg name="d3" bitsize="64" type="float"/>
-    <reg name="d4" bitsize="64" type="float"/>
-    <reg name="d5" bitsize="64" type="float"/>
-    <reg name="d6" bitsize="64" type="float"/>
-    <reg name="d7" bitsize="64" type="float"/>
-    <reg name="d8" bitsize="64" type="float"/>
-    <reg name="d9" bitsize="64" type="float"/>
-    <reg name="d10" bitsize="64" type="float"/>
-    <reg name="d11" bitsize="64" type="float"/>
-    <reg name="d12" bitsize="64" type="float"/>
-    <reg name="d13" bitsize="64" type="float"/>
-    <reg name="d14" bitsize="64" type="float"/>
-    <reg name="d15" bitsize="64" type="float"/>
-    <reg name="fpscr" bitsize="32" type="int" group="float"/>
+    <flags id="cpsr_flags" size="4">
+      <field name="SP" start="0" end="0"/>
+      <field name="" start="1" end="1"/>
+      <field name="EL" start="2" end="3"/>
+      <field name="nRW" start="4" end="4"/>
+      <field name="" start="5" end="5"/>
+      <field name="F" start="6" end="6"/>
+      <field name="I" start="7" end="7"/>
+      <field name="A" start="8" end="8"/>
+      <field name="D" start="9" end="9"/>
+
+      <field name="IL" start="20" end="20"/>
+      <field name="SS" start="21" end="21"/>
+
+      <field name="V" start="28" end="28"/>
+      <field name="C" start="29" end="29"/>
+      <field name="Z" start="30" end="30"/>
+      <field name="N" start="31" end="31"/>
+    </flags>
+    <reg name="cpsr" bitsize="32" type="cpsr_flags"/>
   </feature>
 </target>
 )";
@@ -143,12 +158,12 @@ WSADATA InitData;
 struct Breakpoint {
     bool active;
     PAddr addr;
-    u32 len;
+    u64 len;
 };
 
-static std::map<u32, Breakpoint> breakpoints_execute;
-static std::map<u32, Breakpoint> breakpoints_read;
-static std::map<u32, Breakpoint> breakpoints_write;
+static std::map<u64, Breakpoint> breakpoints_execute;
+static std::map<u64, Breakpoint> breakpoints_read;
+static std::map<u64, Breakpoint> breakpoints_write;
 
 /**
  * Turns hex string character into the equivalent byte.
@@ -198,6 +213,21 @@ static u32 HexToInt(const u8* src, size_t len) {
 }
 
 /**
+ * Converts input hex string characters into an array of equivalent of u8 bytes.
+ *
+ * @param src Pointer to array of output hex string characters.
+ * @param len Length of src array.
+ */
+static u64 HexToLong(const u8* src, size_t len) {
+    u64 output = 0;
+    while (len-- > 0) {
+        output = (output << 4) | HexCharToValue(src[0]);
+        src++;
+    }
+    return output;
+}
+
+/**
  * Converts input array of u8 bytes into their equivalent hex string characters.
  *
  * @param dest Pointer to buffer to store output hex string characters.
@@ -234,8 +264,21 @@ static void GdbHexToMem(u8* dest, const u8* src, size_t len) {
  */
 static void IntToGdbHex(u8* dest, u32 v) {
     for (int i = 0; i < 8; i += 2) {
-        dest[i + 1] = NibbleToHex(v >> (4 * i));
-        dest[i] = NibbleToHex(v >> (4 * (i + 1)));
+        dest[i + 1] = NibbleToHex(static_cast<u8>(v >> (4 * i)));
+        dest[i] = NibbleToHex(static_cast<u8>(v >> (4 * (i + 1))));
+    }
+}
+
+/**
+ * Convert a u64 into a gdb-formatted hex string.
+ *
+ * @param dest Pointer to buffer to store output hex string characters.
+ * @param v    Value to convert.
+ */
+static void LongToGdbHex(u8* dest, u64 v) {
+    for (int i = 0; i < 16; i += 2) {
+        dest[i + 1] = NibbleToHex(static_cast<u8>(v >> (4 * i)));
+        dest[i] = NibbleToHex(static_cast<u8>(v >> (4 * (i + 1))));
     }
 }
 
@@ -250,6 +293,22 @@ static u32 GdbHexToInt(const u8* src) {
     for (int i = 0; i < 8; i += 2) {
         output = (output << 4) | HexCharToValue(src[7 - i - 1]);
         output = (output << 4) | HexCharToValue(src[7 - i]);
+    }
+
+    return output;
+}
+
+/**
+ * Convert a gdb-formatted hex string into a u64.
+ *
+ * @param src Pointer to hex string.
+ */
+static u64 GdbHexToLong(const u8* src) {
+    u64 output = 0;
+
+    for (int i = 0; i < 16; i += 2) {
+        output = (output << 4) | HexCharToValue(src[15 - i - 1]);
+        output = (output << 4) | HexCharToValue(src[15 - i]);
     }
 
     return output;
@@ -277,7 +336,7 @@ static u8 CalculateChecksum(const u8* buffer, size_t length) {
  *
  * @param type Type of breakpoint list.
  */
-static std::map<u32, Breakpoint>& GetBreakpointList(BreakpointType type) {
+static std::map<u64, Breakpoint>& GetBreakpointList(BreakpointType type) {
     switch (type) {
     case BreakpointType::Execute:
         return breakpoints_execute;
@@ -297,19 +356,19 @@ static std::map<u32, Breakpoint>& GetBreakpointList(BreakpointType type) {
  * @param addr Address of breakpoint.
  */
 static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
-    std::map<u32, Breakpoint>& p = GetBreakpointList(type);
+    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(static_cast<u32>(addr));
+    auto bp = p.find(static_cast<u64>(addr));
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: %08x bytes at %08x of type %d\n",
                   bp->second.len, bp->second.addr, type);
-        p.erase(static_cast<u32>(addr));
+        p.erase(static_cast<u64>(addr));
     }
 }
 
 BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, BreakpointType type) {
-    std::map<u32, Breakpoint>& p = GetBreakpointList(type);
-    auto next_breakpoint = p.lower_bound(static_cast<u32>(addr));
+    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
+    auto next_breakpoint = p.lower_bound(static_cast<u64>(addr));
     BreakpointAddress breakpoint;
 
     if (next_breakpoint != p.end()) {
@@ -328,11 +387,11 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
         return false;
     }
 
-    std::map<u32, Breakpoint>& p = GetBreakpointList(type);
+    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
 
-    auto bp = p.find(static_cast<u32>(addr));
+    auto bp = p.find(static_cast<u64>(addr));
     if (bp != p.end()) {
-        u32 len = bp->second.len;
+        u64 len = bp->second.len;
 
         // IDA Pro defaults to 4-byte breakpoints for all non-hardware breakpoints
         // no matter if it's a 4-byte or 2-byte instruction. When you execute a
@@ -419,7 +478,7 @@ static void HandleQuery() {
         SendReply("T0");
     } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
         // PacketSize needs to be large enough for target xml
-        SendReply("PacketSize=800;qXfer:features:read+");
+        SendReply("PacketSize=2000;qXfer:features:read+");
     } else if (strncmp(query, "Xfer:features:read:target.xml:",
                        strlen("Xfer:features:read:target.xml:")) == 0) {
         SendReply(target_xml);
@@ -450,10 +509,7 @@ static void SendSignal(u32 signal) {
 
     latest_signal = signal;
 
-    std::string buffer =
-        Common::StringFromFormat("T%02x%02x:%08x;%02x:%08x;", latest_signal, 15,
-                                 htonl(static_cast<u_long>(Core::CPU().GetPC())), 13,
-                                 htonl(static_cast<u_long>(Core::CPU().GetReg(13))));
+    std::string buffer = Common::StringFromFormat("T%02x", latest_signal);
     LOG_DEBUG(Debug_GDBStub, "Response: %s", buffer.c_str());
     SendReply(buffer.c_str());
 }
@@ -539,16 +595,12 @@ static void ReadRegister() {
         id |= HexCharToValue(command_buffer[2]);
     }
 
-    if (id <= R15_REGISTER) {
-        IntToGdbHex(reply, static_cast<u32>(Core::CPU().GetReg(static_cast<u64>(id))));
+    if (id <= SP_REGISTER) {
+        LongToGdbHex(reply, Core::CPU().GetReg(static_cast<int>(id)));
+    } else if (id == PC_REGISTER) {
+        LongToGdbHex(reply, Core::CPU().GetPC());
     } else if (id == CPSR_REGISTER) {
         IntToGdbHex(reply, Core::CPU().GetCPSR());
-    } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
-        IntToGdbHex(reply, Core::CPU().GetVFPReg(
-                               id - CPSR_REGISTER -
-                               1)); // VFP registers should start at 26, so one after CSPR_REGISTER
-    } else if (id == FPSCR_REGISTER) {
-        UNIMPLEMENTED();
     } else {
         return SendReply("E01");
     }
@@ -563,21 +615,19 @@ static void ReadRegisters() {
 
     u8* bufptr = buffer;
 
-    for (int reg = 0; reg <= R15_REGISTER; reg++) {
-        IntToGdbHex(bufptr + reg * CHAR_BIT, static_cast<u32>(Core::CPU().GetReg(reg)));
+    for (int reg = 0; reg <= SP_REGISTER; reg++) {
+        LongToGdbHex(bufptr + reg * 16, Core::CPU().GetReg(reg));
     }
 
-    bufptr += (16 * CHAR_BIT);
+    bufptr += (32 * 16);
+
+    LongToGdbHex(bufptr, Core::CPU().GetPC());
+
+    bufptr += 16;
 
     IntToGdbHex(bufptr, Core::CPU().GetCPSR());
 
-    bufptr += CHAR_BIT;
-
-    for (int reg = 0; reg <= 31; reg++) {
-        IntToGdbHex(bufptr + reg * CHAR_BIT, Core::CPU().GetVFPReg(reg));
-    }
-
-    bufptr += (32 * CHAR_BIT);
+    bufptr += 8;
 
     SendReply(reinterpret_cast<char*>(buffer));
 }
@@ -593,14 +643,12 @@ static void WriteRegister() {
         id |= HexCharToValue(command_buffer[2]);
     }
 
-    if (id <= R15_REGISTER) {
-        Core::CPU().SetReg(id, GdbHexToInt(buffer_ptr));
+    if (id <= SP_REGISTER) {
+        Core::CPU().SetReg(id, GdbHexToLong(buffer_ptr));
+    } else if (id == PC_REGISTER) {
+        Core::CPU().SetPC(GdbHexToLong(buffer_ptr));
     } else if (id == CPSR_REGISTER) {
         Core::CPU().SetCPSR(GdbHexToInt(buffer_ptr));
-    } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
-        Core::CPU().SetVFPReg(id - CPSR_REGISTER - 1, GdbHexToInt(buffer_ptr));
-    } else if (id == FPSCR_REGISTER) {
-        UNIMPLEMENTED();
     } else {
         return SendReply("E01");
     }
@@ -615,20 +663,14 @@ static void WriteRegisters() {
     if (command_buffer[0] != 'G')
         return SendReply("E01");
 
-    for (int i = 0, reg = 0; reg <= FPSCR_REGISTER; i++, reg++) {
-        if (reg <= R15_REGISTER) {
-            Core::CPU().SetReg(reg, GdbHexToInt(buffer_ptr + i * CHAR_BIT));
+    for (int i = 0, reg = 0; reg <= CPSR_REGISTER; i++, reg++) {
+        if (reg <= SP_REGISTER) {
+            Core::CPU().SetReg(reg, GdbHexToLong(buffer_ptr + i * 16));
+        } else if (reg == PC_REGISTER) {
+            Core::CPU().SetPC(GdbHexToLong(buffer_ptr + i * 16));
         } else if (reg == CPSR_REGISTER) {
-            Core::CPU().SetCPSR(GdbHexToInt(buffer_ptr + i * CHAR_BIT));
-        } else if (reg == CPSR_REGISTER - 1) {
-            // Dummy FPA register, ignore
-        } else if (reg < CPSR_REGISTER) {
-            // Dummy FPA registers, ignore
-            i += 2;
-        } else if (reg > CPSR_REGISTER && reg < FPSCR_REGISTER) {
-            Core::CPU().SetVFPReg(reg - CPSR_REGISTER - 1, GdbHexToInt(buffer_ptr + i * CHAR_BIT));
-            i++; // Skip padding
-        } else if (reg == FPSCR_REGISTER) {
+            Core::CPU().SetCPSR(GdbHexToInt(buffer_ptr + i * 16));
+        } else {
             UNIMPLEMENTED();
         }
     }
@@ -642,13 +684,13 @@ static void ReadMemory() {
 
     auto start_offset = command_buffer + 1;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    VAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    VAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
-    u32 len =
-        HexToInt(start_offset, static_cast<u32>((command_buffer + command_length) - start_offset));
+    u64 len =
+        HexToLong(start_offset, static_cast<u64>((command_buffer + command_length) - start_offset));
 
-    LOG_DEBUG(Debug_GDBStub, "gdb: addr: %08x len: %08x\n", addr, len);
+    LOG_DEBUG(Debug_GDBStub, "gdb: addr: %016llx len: %016llx\n", addr, len);
 
     if (len * 2 > sizeof(reply)) {
         SendReply("E01");
@@ -670,11 +712,11 @@ static void ReadMemory() {
 static void WriteMemory() {
     auto start_offset = command_buffer + 1;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    VAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    VAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
     auto len_pos = std::find(start_offset, command_buffer + command_length, ':');
-    u32 len = HexToInt(start_offset, static_cast<u32>(len_pos - start_offset));
+    u64 len = HexToLong(start_offset, static_cast<u64>(len_pos - start_offset));
 
     if (!Memory::IsValidVirtualAddress(addr)) {
         return SendReply("E00");
@@ -727,8 +769,8 @@ static void Continue() {
  * @param addr Address of breakpoint.
  * @param len Length of breakpoint.
  */
-static bool CommitBreakpoint(BreakpointType type, PAddr addr, u32 len) {
-    std::map<u32, Breakpoint>& p = GetBreakpointList(type);
+static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
+    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
 
     Breakpoint breakpoint;
     breakpoint.active = true;
@@ -767,11 +809,11 @@ static void AddBreakpoint() {
 
     auto start_offset = command_buffer + 3;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    PAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
-    u32 len =
-        HexToInt(start_offset, static_cast<u32>((command_buffer + command_length) - start_offset));
+    u64 len =
+        HexToLong(start_offset, static_cast<u64>((command_buffer + command_length) - start_offset));
 
     if (type == BreakpointType::Access) {
         // Access is made up of Read and Write types, so add both breakpoints
@@ -816,7 +858,7 @@ static void RemoveBreakpoint() {
 
     auto start_offset = command_buffer + 3;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToInt(start_offset, static_cast<u32>(addr_pos - start_offset));
+    PAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     if (type == BreakpointType::Access) {
         // Access is made up of Read and Write types, so add both breakpoints
