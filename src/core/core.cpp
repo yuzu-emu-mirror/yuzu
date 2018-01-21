@@ -5,7 +5,9 @@
 #include <memory>
 #include <utility>
 #include "common/logging/log.h"
+#ifdef ARCHITECTURE_x86_64
 #include "core/arm/dynarmic/arm_dynarmic.h"
+#endif
 #include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -144,7 +146,12 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
         break;
     case Settings::CpuCore::Dynarmic:
     default:
+#ifdef ARCHITECTURE_x86_64
         cpu_core = std::make_unique<ARM_Dynarmic>();
+#else
+        cpu_core = std::make_unique<ARM_Unicorn>();
+        LOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
+#endif
         break;
     }
 

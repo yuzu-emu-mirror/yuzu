@@ -31,4 +31,4 @@ bool Init(EmuWindow* emu_window);
 /// Shutdown the video core
 void Shutdown();
 
-} // namespace
+} // namespace VideoCore

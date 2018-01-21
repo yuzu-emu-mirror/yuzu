@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "common/common_funcs.h"
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/hle/kernel/process.h"
@@ -45,7 +46,10 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file) {
+AppLoader_NRO::AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath)
+    : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
+
+FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     // Read NSO header
     NroHeader nro_header{};
     file.Seek(0, SEEK_SET);

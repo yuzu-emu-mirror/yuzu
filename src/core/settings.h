@@ -100,7 +100,8 @@ enum Values {
 };
 
 static const std::array<const char*, NumAnalogs> mapping = {{
-    "lstick", "rstick",
+    "lstick",
+    "rstick",
 }};
 } // namespace NativeAnalog
 

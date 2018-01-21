@@ -323,8 +323,9 @@ SharedPtr<CodeSet> ElfReader::LoadInto(u32 vaddr) {
             }
 
             if (codeset_segment->size != 0) {
-                LOG_ERROR(Loader, "ELF has more than one segment of the same type. Skipping extra "
-                                  "segment (id %i)",
+                LOG_ERROR(Loader,
+                          "ELF has more than one segment of the same type. Skipping extra "
+                          "segment (id %i)",
                           i);
                 continue;
             }
@@ -364,7 +365,10 @@ SectionID ElfReader::GetSectionByName(const char* name, int firstSection) const 
 
 namespace Loader {
 
-FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file) {
+AppLoader_ELF::AppLoader_ELF(FileUtil::IOFile&& file, std::string filename)
+    : AppLoader(std::move(file)), filename(std::move(filename)) {}
+
+FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     static constexpr u16 ELF_MACHINE_ARM{0x28};
 
     u32 magic = 0;

@@ -99,9 +99,8 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
 
     data_payload_offset = rp.GetCurrentOffset();
 
-    if (domain_message_header &&
-        domain_message_header->command ==
-            IPC::DomainMessageHeader::CommandType::CloseVirtualHandle) {
+    if (domain_message_header && domain_message_header->command ==
+                                     IPC::DomainMessageHeader::CommandType::CloseVirtualHandle) {
         // CloseVirtualHandle command does not have SFC* or any data
         return;
     }
@@ -210,7 +209,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
 
         for (auto& object : domain_objects) {
             request_handlers.emplace_back(object);
-            dst_cmdbuf[domain_offset++] = request_handlers.size();
+            dst_cmdbuf[domain_offset++] = static_cast<u32_le>(request_handlers.size());
         }
     }
     return RESULT_SUCCESS;

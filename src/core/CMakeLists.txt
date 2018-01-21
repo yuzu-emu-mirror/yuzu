@@ -1,7 +1,5 @@
 add_library(core STATIC
     arm/arm_interface.h
-    arm/dynarmic/arm_dynarmic.cpp
-    arm/dynarmic/arm_dynarmic.h
     arm/unicorn/arm_unicorn.cpp
     arm/unicorn/arm_unicorn.h
     core.cpp
@@ -155,6 +153,8 @@ add_library(core STATIC
     hw/hw.h
     hw/lcd.cpp
     hw/lcd.h
+    loader/deconstructed_rom_directory.cpp
+    loader/deconstructed_rom_directory.h
     loader/elf.cpp
     loader/elf.h
     loader/linker.cpp
@@ -182,5 +182,13 @@ add_library(core STATIC
 
 create_target_directory_groups(core)
 
-target_link_libraries(core PUBLIC common PRIVATE dynarmic video_core)
+target_link_libraries(core PUBLIC common PRIVATE video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt lz4_static unicorn)
+
+if (ARCHITECTURE_x86_64)
+    target_sources(core PRIVATE
+        arm/dynarmic/arm_dynarmic.cpp
+        arm/dynarmic/arm_dynarmic.h
+    )
+    target_link_libraries(core PRIVATE dynarmic)
+endif()

@@ -46,7 +46,7 @@ public:
         ARM_Interface::ThreadContext ctx;
         parent.SaveContext(ctx);
         parent.inner_unicorn.LoadContext(ctx);
-        parent.inner_unicorn.ExecuteInstructions(num_instructions);
+        parent.inner_unicorn.ExecuteInstructions(static_cast<int>(num_instructions));
         parent.inner_unicorn.SaveContext(ctx);
         parent.LoadContext(ctx);
         num_interpreted_instructions += num_instructions;
@@ -163,9 +163,9 @@ void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     jit.SetRegisters(ctx.cpu_registers);
     jit.SetSP(ctx.sp);
     jit.SetPC(ctx.pc);
-    jit.SetPstate(ctx.cpsr);
+    jit.SetPstate(static_cast<u32>(ctx.cpsr));
     jit.SetVectors(ctx.fpu_registers);
-    jit.SetFpcr(ctx.fpscr);
+    jit.SetFpcr(static_cast<u32>(ctx.fpscr));
     cb->tpidrr0_el0 = ctx.tls_address;
 }
 

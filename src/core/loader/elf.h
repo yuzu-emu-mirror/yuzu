@@ -16,18 +16,18 @@ namespace Loader {
 /// Loads an ELF/AXF file
 class AppLoader_ELF final : public AppLoader {
 public:
-    AppLoader_ELF(FileUtil::IOFile&& file, std::string filename)
-        : AppLoader(std::move(file)), filename(std::move(filename)) {}
+    AppLoader_ELF(FileUtil::IOFile&& file, std::string filename);
 
     /**
      * Returns the type of the file
      * @param file FileUtil::IOFile open file
+     * @param filepath Path of the file that we are opening.
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(FileUtil::IOFile& file);
+    static FileType IdentifyType(FileUtil::IOFile& file, const std::string& filepath);
 
     FileType GetFileType() override {
-        return IdentifyType(file);
+        return IdentifyType(file, filename);
     }
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
