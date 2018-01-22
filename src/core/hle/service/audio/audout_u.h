@@ -20,6 +20,7 @@ public:
 
 private:
     void ListAudioOuts(Kernel::HLERequestContext& ctx);
+    void OpenAudioOut(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Audio

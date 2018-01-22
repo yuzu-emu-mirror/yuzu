@@ -49,9 +49,22 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(1);
 }
 
+void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::RequestBuilder rb{ctx, 6};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(48000); // Sample Rate
+    rb.Push<u32>(2);     // Channels
+    rb.Push<u32>(2);     // PCM Format (INT16)
+    rb.Push<u32>(0);     // Unknown
+    rb.PushIpcInterface<Audio::IAudioOut>();
+}
+
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
     static const FunctionInfo functions[] = {{0x00000000, &AudOutU::ListAudioOuts, "ListAudioOuts"},
-                                             {0x00000001, nullptr, "OpenAudioOut"},
+                                             {0x00000001, &AudOutU::OpenAudioOut, "OpenAudioOut"},
                                              {0x00000002, nullptr, "Unknown2"},
                                              {0x00000003, nullptr, "Unknown3"}};
     RegisterHandlers(functions);
