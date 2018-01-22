@@ -16,7 +16,7 @@ namespace VI {
 
 class VI_M final : public ServiceFramework<VI_M> {
 public:
-    VI_M();
+    VI_M(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
     ~VI_M() = default;
 
 private:

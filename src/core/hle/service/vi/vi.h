@@ -39,7 +39,8 @@ private:
 };
 
 /// Registers all VI services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager);
+void InstallInterfaces(SM::ServiceManager& service_manager,
+                       std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
 
 } // namespace VI
 } // namespace Service
