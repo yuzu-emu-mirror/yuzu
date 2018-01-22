@@ -130,6 +130,10 @@ add_library(core STATIC
     hle/service/nvdrv/nvdrv.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
+    hle/service/nvflinger/buffer_queue.cpp
+    hle/service/nvflinger/buffer_queue.h
+    hle/service/nvflinger/nvflinger.cpp
+    hle/service/nvflinger/nvflinger.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
     hle/service/pctl/pctl_a.cpp

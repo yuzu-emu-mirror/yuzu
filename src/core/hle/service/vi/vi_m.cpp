@@ -23,7 +23,7 @@ VI_M::VI_M() : ServiceFramework("vi:m") {
         {3, nullptr, "GetDisplayServiceWithProxyNameExchange"},
     };
     RegisterHandlers(functions);
-    nv_flinger = std::make_shared<NVFlinger>();
+    nv_flinger = std::make_shared<NVFlinger::NVFlinger>();
 }
 
 } // namespace VI

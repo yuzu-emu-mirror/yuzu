@@ -8,8 +8,7 @@
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
-#include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
 #include "video_core/renderer_base.h"
@@ -17,9 +16,6 @@
 
 namespace Service {
 namespace VI {
-
-constexpr size_t SCREEN_REFRESH_RATE = 60;
-constexpr u64 frame_ticks = static_cast<u64>(BASE_CLOCK_RATE / SCREEN_REFRESH_RATE);
 
 class Parcel {
 public:
@@ -204,8 +200,8 @@ public:
     void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
-        ASSERT(data.graphic_buffer_length == sizeof(IGBPBuffer));
-        buffer = Read<IGBPBuffer>();
+        ASSERT(data.graphic_buffer_length == sizeof(NVFlinger::IGBPBuffer));
+        buffer = Read<NVFlinger::IGBPBuffer>();
     }
 
     struct Data {
@@ -216,7 +212,7 @@ public:
     };
 
     Data data;
-    IGBPBuffer buffer;
+    NVFlinger::IGBPBuffer buffer;
 };
 
 class IGBPSetPreallocatedBufferResponseParcel : public Parcel {
@@ -288,7 +284,8 @@ public:
 
 class IGBPRequestBufferResponseParcel : public Parcel {
 public:
-    explicit IGBPRequestBufferResponseParcel(IGBPBuffer buffer) : Parcel(), buffer(buffer) {}
+    explicit IGBPRequestBufferResponseParcel(NVFlinger::IGBPBuffer buffer)
+        : Parcel(), buffer(buffer) {}
     ~IGBPRequestBufferResponseParcel() override = default;
 
 protected:
@@ -296,7 +293,7 @@ protected:
         // TODO(Subv): Find out what this all means
         Write<u32_le>(1);
 
-        Write<u32_le>(sizeof(IGBPBuffer));
+        Write<u32_le>(sizeof(NVFlinger::IGBPBuffer));
         Write<u32_le>(0); // Unknown
 
         Write(buffer);
@@ -304,7 +301,7 @@ protected:
         Write<u32_le>(0);
     }
 
-    IGBPBuffer buffer;
+    NVFlinger::IGBPBuffer buffer;
 };
 
 class IGBPQueueBufferRequestParcel : public Parcel {
@@ -387,7 +384,7 @@ private:
 
 class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
-    explicit IHOSBinderDriver(std::shared_ptr<NVFlinger> nv_flinger)
+    explicit IHOSBinderDriver(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
         : ServiceFramework("IHOSBinderDriver"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
@@ -477,7 +474,8 @@ private:
         } else if (transaction == TransactionId::Query) {
             IGBPQueryRequestParcel request{input_data};
 
-            u32 value = buffer_queue->Query(static_cast<BufferQueue::QueryType>(request.type));
+            u32 value =
+                buffer_queue->Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
 
             IGBPQueryResponseParcel response{value};
             auto response_buffer = response.Serialize();
@@ -518,7 +516,7 @@ private:
         rb.PushCopyObjects(buffer_queue->GetNativeHandle());
     }
 
-    std::shared_ptr<NVFlinger> nv_flinger;
+    std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
 };
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
@@ -546,7 +544,7 @@ private:
 
 class IManagerDisplayService final : public ServiceFramework<IManagerDisplayService> {
 public:
-    explicit IManagerDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
+    explicit IManagerDisplayService(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
         : ServiceFramework("IManagerDisplayService"), nv_flinger(std::move(nv_flinger)) {
         static const FunctionInfo functions[] = {
             {1020, &IManagerDisplayService::CloseDisplay, "CloseDisplay"},
@@ -593,7 +591,7 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
-    std::shared_ptr<NVFlinger> nv_flinger;
+    std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
 };
 
 void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
@@ -734,7 +732,8 @@ void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext&
     rb.PushCopyObjects(vsync_event);
 }
 
-IApplicationDisplayService::IApplicationDisplayService(std::shared_ptr<NVFlinger> nv_flinger)
+IApplicationDisplayService::IApplicationDisplayService(
+    std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
     : ServiceFramework("IApplicationDisplayService"), nv_flinger(std::move(nv_flinger)) {
     static const FunctionInfo functions[] = {
         {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
@@ -756,223 +755,6 @@ IApplicationDisplayService::IApplicationDisplayService(std::shared_ptr<NVFlinger
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<VI_M>()->InstallAsService(service_manager);
-}
-
-NVFlinger::NVFlinger() {
-    // Add the different displays to the list of displays.
-    Display default_{0, "Default"};
-    Display external{1, "External"};
-    Display edid{2, "Edid"};
-    Display internal{3, "Internal"};
-
-    displays.emplace_back(default_);
-    displays.emplace_back(external);
-    displays.emplace_back(edid);
-    displays.emplace_back(internal);
-
-    // Schedule the screen composition events
-    composition_event =
-        CoreTiming::RegisterEvent("ScreenCompositioin", [this](u64 userdata, int cycles_late) {
-            Compose();
-            CoreTiming::ScheduleEvent(frame_ticks - cycles_late, composition_event);
-        });
-
-    CoreTiming::ScheduleEvent(frame_ticks, composition_event);
-}
-
-NVFlinger::~NVFlinger() {
-    CoreTiming::UnscheduleEvent(composition_event, 0);
-}
-
-u64 NVFlinger::OpenDisplay(const std::string& name) {
-    LOG_WARNING(Service, "Opening display %s", name.c_str());
-
-    // TODO(Subv): Currently we only support the Default display.
-    ASSERT(name == "Default");
-
-    auto itr = std::find_if(displays.begin(), displays.end(),
-                            [&](const Display& display) { return display.name == name; });
-
-    ASSERT(itr != displays.end());
-
-    return itr->id;
-}
-
-u64 NVFlinger::CreateLayer(u64 display_id) {
-    auto& display = GetDisplay(display_id);
-
-    ASSERT_MSG(display.layers.empty(), "Only one layer is supported per display at the moment");
-
-    u64 layer_id = next_layer_id++;
-    u32 buffer_queue_id = next_buffer_queue_id++;
-    auto buffer_queue = std::make_shared<BufferQueue>(buffer_queue_id, layer_id);
-    display.layers.emplace_back(layer_id, buffer_queue);
-    buffer_queues.emplace_back(std::move(buffer_queue));
-    return layer_id;
-}
-
-u32 NVFlinger::GetBufferQueueId(u64 display_id, u64 layer_id) {
-    const auto& layer = GetLayer(display_id, layer_id);
-    return layer.buffer_queue->GetId();
-}
-
-Kernel::SharedPtr<Kernel::Event> NVFlinger::GetVsyncEvent(u64 display_id) {
-    const auto& display = GetDisplay(display_id);
-    return display.vsync_event;
-}
-
-std::shared_ptr<BufferQueue> NVFlinger::GetBufferQueue(u32 id) const {
-    auto itr = std::find_if(buffer_queues.begin(), buffer_queues.end(),
-                            [&](const auto& queue) { return queue->GetId() == id; });
-
-    ASSERT(itr != buffer_queues.end());
-    return *itr;
-}
-
-Display& NVFlinger::GetDisplay(u64 display_id) {
-    auto itr = std::find_if(displays.begin(), displays.end(),
-                            [&](const Display& display) { return display.id == display_id; });
-
-    ASSERT(itr != displays.end());
-    return *itr;
-}
-
-Layer& NVFlinger::GetLayer(u64 display_id, u64 layer_id) {
-    auto& display = GetDisplay(display_id);
-
-    auto itr = std::find_if(display.layers.begin(), display.layers.end(),
-                            [&](const Layer& layer) { return layer.id == layer_id; });
-
-    ASSERT(itr != display.layers.end());
-    return *itr;
-}
-
-void NVFlinger::Compose() {
-    for (auto& display : displays) {
-        // Trigger vsync for this display at the end of drawing
-        SCOPE_EXIT({ display.vsync_event->Signal(); });
-
-        // Don't do anything for displays without layers.
-        if (display.layers.empty())
-            continue;
-
-        // TODO(Subv): Support more than 1 layer.
-        ASSERT_MSG(display.layers.size() == 1, "Max 1 layer per display is supported");
-
-        Layer& layer = display.layers[0];
-        auto& buffer_queue = layer.buffer_queue;
-
-        // Search for a queued buffer and acquire it
-        auto buffer = buffer_queue->AcquireBuffer();
-
-        if (buffer == boost::none) {
-            // There was no queued buffer to draw, render previous frame
-            VideoCore::g_renderer->SwapBuffers({});
-            continue;
-        }
-
-        auto& igbp_buffer = buffer->igbp_buffer;
-
-        // Now send the buffer to the GPU for drawing.
-        auto nvdrv = Nvidia::nvdrv.lock();
-        ASSERT(nvdrv);
-
-        // TODO(Subv): Support more than just disp0. The display device selection is probably based
-        // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
-        ASSERT(nvdisp);
-
-        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride);
-
-        buffer_queue->ReleaseBuffer(buffer->slot);
-    }
-}
-
-BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {
-    native_handle = Kernel::Event::Create(Kernel::ResetType::OneShot, "BufferQueue NativeHandle");
-}
-
-void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
-    Buffer buffer{};
-    buffer.slot = slot;
-    buffer.igbp_buffer = igbp_buffer;
-    buffer.status = Buffer::Status::Free;
-
-    LOG_WARNING(Service, "Adding graphics buffer %u", slot);
-
-    queue.emplace_back(buffer);
-}
-
-u32 BufferQueue::DequeueBuffer(u32 pixel_format, u32 width, u32 height) {
-    auto itr = std::find_if(queue.begin(), queue.end(), [&](const Buffer& buffer) {
-        // Only consider free buffers. Buffers become free once again after they've been Acquired
-        // and Released by the compositor, see the NVFlinger::Compose method.
-        if (buffer.status != Buffer::Status::Free)
-            return false;
-
-        // Make sure that the parameters match.
-        auto& igbp_buffer = buffer.igbp_buffer;
-        return igbp_buffer.format == pixel_format && igbp_buffer.width == width &&
-               igbp_buffer.height == height;
-    });
-    ASSERT(itr != queue.end());
-
-    itr->status = Buffer::Status::Dequeued;
-    return itr->slot;
-}
-
-const IGBPBuffer& BufferQueue::RequestBuffer(u32 slot) const {
-    auto itr = std::find_if(queue.begin(), queue.end(),
-                            [&](const Buffer& buffer) { return buffer.slot == slot; });
-    ASSERT(itr != queue.end());
-    ASSERT(itr->status == Buffer::Status::Dequeued);
-    return itr->igbp_buffer;
-}
-
-void BufferQueue::QueueBuffer(u32 slot) {
-    auto itr = std::find_if(queue.begin(), queue.end(),
-                            [&](const Buffer& buffer) { return buffer.slot == slot; });
-    ASSERT(itr != queue.end());
-    ASSERT(itr->status == Buffer::Status::Dequeued);
-    itr->status = Buffer::Status::Queued;
-}
-
-boost::optional<const BufferQueue::Buffer&> BufferQueue::AcquireBuffer() {
-    auto itr = std::find_if(queue.begin(), queue.end(), [](const Buffer& buffer) {
-        return buffer.status == Buffer::Status::Queued;
-    });
-    if (itr == queue.end())
-        return boost::none;
-    itr->status = Buffer::Status::Acquired;
-    return *itr;
-}
-
-void BufferQueue::ReleaseBuffer(u32 slot) {
-    auto itr = std::find_if(queue.begin(), queue.end(),
-                            [&](const Buffer& buffer) { return buffer.slot == slot; });
-    ASSERT(itr != queue.end());
-    ASSERT(itr->status == Buffer::Status::Acquired);
-    itr->status = Buffer::Status::Free;
-}
-
-u32 BufferQueue::Query(QueryType type) {
-    LOG_WARNING(Service, "(STUBBED) called type=%u", static_cast<u32>(type));
-    switch (type) {
-    case QueryType::NativeWindowFormat:
-        // TODO(Subv): Use an enum for this
-        static constexpr u32 FormatABGR8 = 1;
-        return FormatABGR8;
-    }
-
-    UNIMPLEMENTED();
-    return 0;
-}
-
-Layer::Layer(u64 id, std::shared_ptr<BufferQueue> queue) : id(id), buffer_queue(std::move(queue)) {}
-
-Display::Display(u64 id, std::string name) : id(id), name(std::move(name)) {
-    vsync_event = Kernel::Event::Create(Kernel::ResetType::Pulse, "Display VSync Event");
 }
 
 } // namespace VI
