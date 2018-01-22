@@ -48,12 +48,12 @@ private:
     /// Mapping of currently allocated handles to the objects they represent.
     std::unordered_map<u32, std::shared_ptr<Object>> handles;
 
-    enum IoctlCommands {
-        IocCreateCommand = 0xC0080101,
-        IocFromIdCommand = 0xC0080103,
-        IocAllocCommand = 0xC0200104,
-        IocParamCommand = 0xC00C0109,
-        IocGetIdCommand = 0xC008010E
+    enum class IoctlCommand : u32 {
+        Create = 0xC0080101,
+        FromId = 0xC0080103,
+        Alloc = 0xC0200104,
+        Param = 0xC00C0109,
+        GetId = 0xC008010E
     };
 
     struct IocCreateParams {
