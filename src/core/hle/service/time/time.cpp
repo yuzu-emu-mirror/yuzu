@@ -83,45 +83,39 @@ private:
 };
 
 void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
-    auto client_port = std::make_shared<ISystemClock>()->CreatePort();
-    auto session = client_port->Connect();
-    if (session.Succeeded()) {
-        LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u",
-                  (*session)->GetObjectId());
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushMoveObjects(std::move(session).Unwrap());
-    } else {
-        UNIMPLEMENTED();
-    }
+    auto system_clock = std::make_shared<ISystemClock>();
+    auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
+    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+    system_clock->ClientConnected(server);
+    LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u", client->GetObjectId());
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushMoveObjects(std::move(client));
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
-    auto client_port = std::make_shared<ISystemClock>()->CreatePort();
-    auto session = client_port->Connect();
-    if (session.Succeeded()) {
-        LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u",
-                  (*session)->GetObjectId());
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushMoveObjects(std::move(session).Unwrap());
-    } else {
-        UNIMPLEMENTED();
-    }
+    auto system_clock = std::make_shared<ISystemClock>();
+    auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
+    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+    system_clock->ClientConnected(server);
+    LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u", client->GetObjectId());
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushMoveObjects(std::move(client));
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
-    auto client_port = std::make_shared<ISteadyClock>()->CreatePort();
-    auto session = client_port->Connect();
-    if (session.Succeeded()) {
-        LOG_DEBUG(Service, "called, initialized ISteadyClock -> session=%u",
-                  (*session)->GetObjectId());
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushMoveObjects(std::move(session).Unwrap());
-    } else {
-        UNIMPLEMENTED();
-    }
+    auto steady_clock = std::make_shared<ISteadyClock>();
+    auto sessions = Kernel::ServerSession::CreateSessionPair(steady_clock->GetServiceName());
+    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+    steady_clock->ClientConnected(server);
+    LOG_DEBUG(Service, "called, initialized ISteadyClock -> session=%u", client->GetObjectId());
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushMoveObjects(std::move(client));
 }
 
 void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
