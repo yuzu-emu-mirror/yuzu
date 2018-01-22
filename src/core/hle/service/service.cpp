@@ -173,7 +173,7 @@ void Init() {
     SM::ServiceManager::InstallInterfaces(SM::g_service_manager);
 
     Account::InstallInterfaces(*SM::g_service_manager);
-    AM::InstallInterfaces(*SM::g_service_manager);
+    AM::InstallInterfaces(*SM::g_service_manager, nv_flinger);
     AOC::InstallInterfaces(*SM::g_service_manager);
     APM::InstallInterfaces(*SM::g_service_manager);
     Audio::InstallInterfaces(*SM::g_service_manager);

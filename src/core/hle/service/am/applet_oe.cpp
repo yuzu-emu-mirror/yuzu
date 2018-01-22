@@ -7,6 +7,7 @@
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/apm/apm.h"
+#include "core/hle/service/nvflinger/nvflinger.h"
 
 namespace Service {
 namespace AM {
@@ -53,7 +54,8 @@ public:
 
 class ISelfController final : public ServiceFramework<ISelfController> {
 public:
-    ISelfController() : ServiceFramework("ISelfController") {
+    ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+        : ServiceFramework("ISelfController"), nvflinger(std::move(nvflinger)) {
         static const FunctionInfo functions[] = {
             {1, &ISelfController::LockExit, "LockExit"},
             {2, &ISelfController::UnlockExit, "UnlockExit"},
@@ -144,6 +146,8 @@ private:
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
+
+    std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
@@ -367,7 +371,8 @@ public:
 
 class IApplicationProxy final : public ServiceFramework<IApplicationProxy> {
 public:
-    IApplicationProxy() : ServiceFramework("IApplicationProxy") {
+    IApplicationProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+        : ServiceFramework("IApplicationProxy"), nvflinger(std::move(nvflinger)) {
         static const FunctionInfo functions[] = {
             {0, &IApplicationProxy::GetCommonStateGetter, "GetCommonStateGetter"},
             {1, &IApplicationProxy::GetSelfController, "GetSelfController"},
@@ -413,7 +418,7 @@ private:
     void GetSelfController(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushIpcInterface<ISelfController>();
+        rb.PushIpcInterface<ISelfController>(nvflinger);
         LOG_DEBUG(Service, "called");
     }
 
@@ -437,16 +442,19 @@ private:
         rb.PushIpcInterface<IApplicationFunctions>();
         LOG_DEBUG(Service, "called");
     }
+
+    std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
 };
 
 void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IApplicationProxy>();
+    rb.PushIpcInterface<IApplicationProxy>(nvflinger);
     LOG_DEBUG(Service, "called");
 }
 
-AppletOE::AppletOE() : ServiceFramework("appletOE") {
+AppletOE::AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+    : ServiceFramework("appletOE"), nvflinger(std::move(nvflinger)) {
     static const FunctionInfo functions[] = {
         {0x00000000, &AppletOE::OpenApplicationProxy, "OpenApplicationProxy"},
     };

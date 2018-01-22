@@ -8,8 +8,9 @@
 namespace Service {
 namespace AM {
 
-void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<AppletOE>()->InstallAsService(service_manager);
+void InstallInterfaces(SM::ServiceManager& service_manager,
+                       std::shared_ptr<NVFlinger::NVFlinger> nvflinger) {
+    std::make_shared<AppletOE>(nvflinger)->InstallAsService(service_manager);
 }
 
 } // namespace AM
