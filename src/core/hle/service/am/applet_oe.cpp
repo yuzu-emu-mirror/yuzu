@@ -67,6 +67,7 @@ public:
             {14, &ISelfController::SetRestartMessageEnabled, "SetRestartMessageEnabled"},
             {16, &ISelfController::SetOutOfFocusSuspendingEnabled,
              "SetOutOfFocusSuspendingEnabled"},
+            {40, &ISelfController::CreateManagedDisplayLayer, "CreateManagedDisplayLayer"},
         };
         RegisterHandlers(functions);
     }
@@ -143,6 +144,19 @@ private:
     void UnlockExit(Kernel::HLERequestContext& ctx) {
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service, "(STUBBED) called");
+    }
+
+    void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) {
+        // TODO(Subv): Find out how AM determines the display to use, for now just create the layer
+        // in the Default display.
+        u64 display_id = nvflinger->OpenDisplay("Default");
+        u64 layer_id = nvflinger->CreateLayer(display_id);
+
+        IPC::RequestBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(layer_id);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
