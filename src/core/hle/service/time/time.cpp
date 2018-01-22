@@ -83,6 +83,8 @@ private:
 };
 
 void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
+    // TODO(Subv): Verify if this should return the interface as a domain object when called from
+    // within a domain.
     auto system_clock = std::make_shared<ISystemClock>();
     auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
     auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
@@ -95,6 +97,8 @@ void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ct
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
+    // TODO(Subv): Verify if this should return the interface as a domain object when called from
+    // within a domain.
     auto system_clock = std::make_shared<ISystemClock>();
     auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
     auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
@@ -107,6 +111,8 @@ void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext&
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
+    // TODO(Subv): Verify if this should return the interface as a domain object when called from
+    // within a domain.
     auto steady_clock = std::make_shared<ISteadyClock>();
     auto sessions = Kernel::ServerSession::CreateSessionPair(steady_clock->GetServiceName());
     auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);

@@ -146,6 +146,9 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
  *      0: ResultCode
  */
 void LM::Initialize(Kernel::HLERequestContext& ctx) {
+    // TODO(Subv): Verify if this should return the interface as a domain object when called from
+    // within a domain.
+
     auto logger = std::make_shared<Logger>();
     auto sessions = Kernel::ServerSession::CreateSessionPair(logger->GetServiceName());
     auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);

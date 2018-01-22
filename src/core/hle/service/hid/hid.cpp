@@ -169,6 +169,9 @@ private:
             applet_resource = std::make_shared<IAppletResource>();
         }
 
+        // TODO(Subv): Verify if this should return the interface as a domain object when called
+        // from within a domain.
+
         auto sessions = Kernel::ServerSession::CreateSessionPair(applet_resource->GetServiceName());
         auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
         auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
