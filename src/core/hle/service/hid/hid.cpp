@@ -162,8 +162,13 @@ public:
     ~Hid() = default;
 
 private:
+    Kernel::SharedPtr<Kernel::ClientPort> client_port;
+
     void CreateAppletResource(Kernel::HLERequestContext& ctx) {
-        auto client_port = std::make_shared<IAppletResource>()->CreatePort();
+        if (client_port == nullptr) {
+            client_port = std::make_shared<IAppletResource>()->CreatePort();
+        }
+
         auto session = client_port->Connect();
         if (session.Succeeded()) {
             LOG_DEBUG(Service, "called, initialized IAppletResource -> session=%u",
