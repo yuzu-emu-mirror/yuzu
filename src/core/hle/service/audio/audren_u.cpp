@@ -28,8 +28,6 @@ public:
         RegisterHandlers(functions);
     }
     ~IAudioRenderer() = default;
-
-private:
 };
 
 AudRenU::AudRenU() : ServiceFramework("audren:u") {

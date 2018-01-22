@@ -15,10 +15,8 @@ namespace Audio {
 
 class CodecCtl final : public ServiceFramework<CodecCtl> {
 public:
-    CodecCtl();
+    explicit CodecCtl();
     ~CodecCtl() = default;
-
-private:
 };
 
 } // namespace Audio

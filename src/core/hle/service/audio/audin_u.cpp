@@ -27,8 +27,6 @@ public:
         RegisterHandlers(functions);
     }
     ~IAudioIn() = default;
-
-private:
 };
 
 AudInU::AudInU() : ServiceFramework("audin:u") {

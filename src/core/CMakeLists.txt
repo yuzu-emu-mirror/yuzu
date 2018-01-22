@@ -95,14 +95,10 @@ add_library(core STATIC
     hle/service/apm/apm.h
     hle/service/audio/audio.cpp
     hle/service/audio/audio.h
-    hle/service/audio/audout_u.cpp
-    hle/service/audio/audout_u.h
-    hle/service/filesystem/filesystem.cpp
-    hle/service/filesystem/filesystem.h
-    hle/service/filesystem/fsp_srv.cpp
-    hle/service/filesystem/fsp_srv.h
     hle/service/audio/audin_u.cpp
     hle/service/audio/audin_u.h
+    hle/service/audio/audout_u.cpp
+    hle/service/audio/audout_u.h
     hle/service/audio/audrec_u.cpp
     hle/service/audio/audrec_u.h
     hle/service/audio/audren_u.cpp
@@ -111,6 +107,10 @@ add_library(core STATIC
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
+    hle/service/filesystem/filesystem.cpp
+    hle/service/filesystem/filesystem.h
+    hle/service/filesystem/fsp_srv.cpp
+    hle/service/filesystem/fsp_srv.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp

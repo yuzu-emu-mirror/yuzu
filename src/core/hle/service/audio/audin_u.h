@@ -15,10 +15,8 @@ namespace Audio {
 
 class AudInU final : public ServiceFramework<AudInU> {
 public:
-    AudInU();
+    explicit AudInU();
     ~AudInU() = default;
-
-private:
 };
 
 } // namespace Audio

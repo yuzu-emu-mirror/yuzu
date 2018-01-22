@@ -27,8 +27,6 @@ public:
         RegisterHandlers(functions);
     }
     ~IAudioOut() = default;
-
-private:
 };
 
 void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {

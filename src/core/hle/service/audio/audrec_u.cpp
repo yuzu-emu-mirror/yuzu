@@ -25,8 +25,6 @@ public:
         RegisterHandlers(functions);
     }
     ~IFinalOutputRecorder() = default;
-
-private:
 };
 
 AudRecU::AudRecU() : ServiceFramework("audrec:u") {
