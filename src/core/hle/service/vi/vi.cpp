@@ -753,8 +753,9 @@ IApplicationDisplayService::IApplicationDisplayService(
     RegisterHandlers(functions);
 }
 
-void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<VI_M>()->InstallAsService(service_manager);
+void InstallInterfaces(SM::ServiceManager& service_manager,
+                       std::shared_ptr<NVFlinger::NVFlinger> nv_flinger) {
+    std::make_shared<VI_M>(nv_flinger)->InstallAsService(service_manager);
 }
 
 } // namespace VI

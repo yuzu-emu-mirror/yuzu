@@ -165,11 +165,15 @@ void AddNamedPort(std::string name, SharedPtr<ClientPort> port) {
 
 /// Initialize ServiceManager
 void Init() {
+    // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
+    // here and pass it into the respective InstallInterfaces functions.
+    auto nv_flinger = std::make_shared<NVFlinger::NVFlinger>();
+
     SM::g_service_manager = std::make_shared<SM::ServiceManager>();
     SM::ServiceManager::InstallInterfaces(SM::g_service_manager);
 
     Account::InstallInterfaces(*SM::g_service_manager);
-    AM::InstallInterfaces(*SM::g_service_manager);
+    AM::InstallInterfaces(*SM::g_service_manager, nv_flinger);
     AOC::InstallInterfaces(*SM::g_service_manager);
     APM::InstallInterfaces(*SM::g_service_manager);
     Audio::InstallInterfaces(*SM::g_service_manager);
@@ -180,7 +184,7 @@ void Init() {
     PCTL::InstallInterfaces(*SM::g_service_manager);
     Sockets::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
-    VI::InstallInterfaces(*SM::g_service_manager);
+    VI::InstallInterfaces(*SM::g_service_manager, nv_flinger);
     Set::InstallInterfaces(*SM::g_service_manager);
 
     LOG_DEBUG(Service, "initialized OK");
