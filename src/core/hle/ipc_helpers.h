@@ -118,10 +118,11 @@ public:
         if (context->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
-            auto port = iface->CreatePort();
-            auto session = port->Connect();
-            ASSERT(session.Succeeded());
-            context->AddMoveObject(std::move(session).Unwrap());
+            auto sessions = Kernel::ServerSession::CreateSessionPair(iface->GetServiceName());
+            auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+            auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+            iface->ClientConnected(server);
+            context->AddMoveObject(std::move(client));
         }
     }
 
