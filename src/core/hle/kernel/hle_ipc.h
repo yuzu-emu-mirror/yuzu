@@ -175,6 +175,18 @@ public:
         domain_objects.clear();
     }
 
+    size_t NumMoveObjects() const {
+        return move_objects.size();
+    }
+
+    size_t NumCopyObjects() const {
+        return copy_objects.size();
+    }
+
+    size_t NumDomainObjects() const {
+        return domain_objects.size();
+    }
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<Kernel::ServerSession> server_session;
@@ -196,7 +208,6 @@ private:
     unsigned data_payload_offset{};
     unsigned buffer_c_offset{};
     u32_le command{};
-    bool is_domain{};
 };
 
 } // namespace Kernel

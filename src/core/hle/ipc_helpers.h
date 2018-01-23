@@ -30,11 +30,6 @@ public:
     RequestHelperBase(Kernel::HLERequestContext& context)
         : context(&context), cmdbuf(context.CommandBuffer()) {}
 
-    void ValidateHeader() {
-        // DEBUG_ASSERT_MSG(index == TotalSize(), "Operations do not match the header (cmd 0x%x)",
-        //                 header.raw);
-    }
-
     void Skip(unsigned size_in_words, bool set_to_null) {
         if (set_to_null)
             memset(cmdbuf + index, 0, size_in_words * sizeof(u32));
@@ -63,10 +58,18 @@ class RequestBuilder : public RequestHelperBase {
 public:
     RequestBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    RequestBuilder(Kernel::HLERequestContext& context, unsigned normal_params_size,
-                   u32 num_handles_to_copy = 0, u32 num_handles_to_move = 0,
-                   u32 num_domain_objects = 0)
-        : RequestHelperBase(context) {
+    u32 normal_params_size;
+    u32 num_handles_to_copy;
+    u32 num_objects_to_move; ///< Domain objects or move handles, context dependent
+    std::ptrdiff_t datapayload_index;
+
+    RequestBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
+                   u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
+                   bool always_move_handle = false)
+
+        : RequestHelperBase(context), normal_params_size(normal_params_size),
+          num_handles_to_copy(num_handles_to_copy), num_objects_to_move(num_objects_to_move) {
+
         memset(cmdbuf, 0, sizeof(u32) * IPC::COMMAND_BUFFER_LENGTH);
 
         context.ClearIncomingObjects();
@@ -76,12 +79,18 @@ public:
         // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory
         // padding.
         u32 raw_data_size = sizeof(IPC::DataPayloadHeader) / 4 + 4 + normal_params_size;
+
+        u32 num_handles_to_move{};
+        u32 num_domain_objects{};
+
+        if (!context.Session()->IsDomain() || always_move_handle) {
+            num_handles_to_move = num_objects_to_move;
+        } else {
+            num_domain_objects = num_objects_to_move;
+        }
+
         if (context.Session()->IsDomain()) {
             raw_data_size += sizeof(DomainMessageHeader) / 4 + num_domain_objects;
-        } else {
-            // If we're not in a domain, turn the domain object parameters into move handles.
-            num_handles_to_move += num_domain_objects;
-            num_domain_objects = 0;
         }
 
         header.data_size.Assign(raw_data_size);
@@ -109,11 +118,12 @@ public:
         IPC::DataPayloadHeader data_payload_header{};
         data_payload_header.magic = Common::MakeMagic('S', 'F', 'C', 'O');
         PushRaw(data_payload_header);
+
+        datapayload_index = index;
     }
 
-    template <class T, class... Args>
-    void PushIpcInterface(Args&&... args) {
-        auto iface = std::make_shared<T>(std::forward<Args>(args)...);
+    template <class T>
+    void PushIpcInterface(std::shared_ptr<T> iface) {
         if (context->Session()->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
@@ -123,6 +133,24 @@ public:
             iface->ClientConnected(server);
             context->AddMoveObject(std::move(client));
         }
+    }
+
+    template <class T, class... Args>
+    void PushIpcInterface(Args&&... args) {
+        PushIpcInterface<T>(std::make_shared<T>(std::forward<Args>(args)...));
+    }
+
+    void ValidateHeader() {
+        const size_t num_domain_objects = context->NumDomainObjects();
+        const size_t num_move_objects = context->NumMoveObjects();
+        ASSERT_MSG(!num_domain_objects || !num_move_objects,
+                   "cannot move normal handles and domain objects");
+        ASSERT_MSG((index - datapayload_index) == normal_params_size,
+                   "normal_params_size value is incorrect");
+        ASSERT_MSG((num_domain_objects + num_move_objects) == num_objects_to_move,
+                   "num_objects_to_move value is incorrect");
+        ASSERT_MSG(context->NumCopyObjects() == num_handles_to_copy,
+                   "num_handles_to_copy value is incorrect");
     }
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
@@ -227,14 +255,8 @@ public:
     }
 
     RequestBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
-                               u32 num_handles_to_move, u32 num_domain_objects,
-                               bool validate_header = true) {
-        if (validate_header) {
-            ValidateHeader();
-        }
-
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move,
-                num_domain_objects};
+                               u32 num_handles_to_move, bool validate_header = true) {
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move};
     }
 
     template <typename T>
