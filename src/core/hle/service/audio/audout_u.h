@@ -13,14 +13,28 @@ class HLERequestContext;
 namespace Service {
 namespace Audio {
 
+class IAudioOut;
+
 class AudOutU final : public ServiceFramework<AudOutU> {
 public:
     AudOutU();
     ~AudOutU() = default;
 
 private:
+    std::shared_ptr<IAudioOut> audio_out_interface;
+
     void ListAudioOuts(Kernel::HLERequestContext& ctx);
     void OpenAudioOut(Kernel::HLERequestContext& ctx);
+
+    enum PCM_FORMAT {
+        INVALID,
+        INT8,
+        INT16,
+        INT24,
+        INT32,
+        PCM_FLOAT,
+        ADPCM
+    };
 };
 
 } // namespace Audio
