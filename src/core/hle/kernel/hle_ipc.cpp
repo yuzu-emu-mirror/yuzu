@@ -7,7 +7,6 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"

@@ -20,7 +20,6 @@
 #include "core/hle/kernel/shared_memory.h"
 #include "core/hle/kernel/svc.h"
 #include "core/hle/kernel/svc_wrap.h"
-#include "core/hle/kernel/sync_object.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/lock.h"
 #include "core/hle/result.h"
@@ -87,7 +86,7 @@ static ResultCode ConnectToNamedPort(Handle* out_handle, VAddr port_name_address
 
 /// Makes a blocking IPC call to an OS service.
 static ResultCode SendSyncRequest(Handle handle) {
-    SharedPtr<SyncObject> session = g_handle_table.Get<SyncObject>(handle);
+    SharedPtr<ClientSession> session = g_handle_table.Get<ClientSession>(handle);
     if (!session) {
         LOG_ERROR(Kernel_SVC, "called with invalid handle=0x%08X", handle);
         return ERR_INVALID_HANDLE;

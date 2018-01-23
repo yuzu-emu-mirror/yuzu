@@ -31,7 +31,6 @@ enum class HandleType : u32 {
     ServerPort,
     ClientSession,
     ServerSession,
-    Domain,
 };
 
 enum {
@@ -84,22 +83,7 @@ public:
         case HandleType::CodeSet:
         case HandleType::ClientPort:
         case HandleType::ClientSession:
-        case HandleType::Domain:
             return false;
-        }
-
-        UNREACHABLE();
-    }
-
-    /**
-     * Check if svcSendSyncRequest can be called on the object
-     * @return True svcSendSyncRequest can be called on the object, otherwise false
-     */
-    bool IsSyncable() const {
-        switch (GetHandleType()) {
-        case HandleType::ClientSession:
-        case HandleType::Domain:
-            return true;
         }
 
         UNREACHABLE();

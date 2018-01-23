@@ -36,8 +36,6 @@ add_library(core STATIC
     hle/kernel/client_session.h
     hle/kernel/condition_variable.cpp
     hle/kernel/condition_variable.h
-    hle/kernel/domain.cpp
-    hle/kernel/domain.h
     hle/kernel/errors.h
     hle/kernel/event.cpp
     hle/kernel/event.h
@@ -67,7 +65,6 @@ add_library(core STATIC
     hle/kernel/svc.cpp
     hle/kernel/svc.h
     hle/kernel/svc_wrap.h
-    hle/kernel/sync_object.h
     hle/kernel/thread.cpp
     hle/kernel/thread.h
     hle/kernel/timer.cpp

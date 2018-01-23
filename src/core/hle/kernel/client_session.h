@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 #include "common/common_types.h"
-#include "core/hle/kernel/sync_object.h"
 #include "core/hle/result.h"
 
 namespace Kernel {
@@ -16,7 +15,7 @@ class ServerSession;
 class Session;
 class Thread;
 
-class ClientSession final : public SyncObject {
+class ClientSession final : public Object {
 public:
     friend class ServerSession;
 

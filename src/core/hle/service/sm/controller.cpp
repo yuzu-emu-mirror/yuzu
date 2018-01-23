@@ -4,7 +4,6 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/domain.h"
 #include "core/hle/service/sm/controller.h"
 
 namespace Service {
