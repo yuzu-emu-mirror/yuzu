@@ -76,7 +76,7 @@ public:
         // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory
         // padding.
         u32 raw_data_size = sizeof(IPC::DataPayloadHeader) / 4 + 4 + normal_params_size;
-        if (context.IsDomain()) {
+        if (context.Session()->IsDomain()) {
             raw_data_size += sizeof(DomainMessageHeader) / 4 + num_domain_objects;
         } else {
             // If we're not in a domain, turn the domain object parameters into move handles.
@@ -100,7 +100,7 @@ public:
 
         AlignWithPadding();
 
-        if (context.IsDomain()) {
+        if (context.Session()->IsDomain()) {
             IPC::DomainMessageHeader domain_header{};
             domain_header.num_objects = num_domain_objects;
             PushRaw(domain_header);
@@ -114,7 +114,7 @@ public:
     template <class T, class... Args>
     void PushIpcInterface(Args&&... args) {
         auto iface = std::make_shared<T>(std::forward<Args>(args)...);
-        if (context->IsDomain()) {
+        if (context->Session()->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
             auto sessions = Kernel::ServerSession::CreateSessionPair(iface->GetServiceName());

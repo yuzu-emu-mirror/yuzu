@@ -86,7 +86,6 @@ protected:
  */
 class HLERequestContext {
 public:
-    HLERequestContext(SharedPtr<Kernel::Domain> domain);
     HLERequestContext(SharedPtr<Kernel::ServerSession> session);
     ~HLERequestContext();
 
@@ -96,17 +95,10 @@ public:
     }
 
     /**
-     * Returns the domain through which this request was made.
-     */
-    const SharedPtr<Kernel::Domain>& Domain() const {
-        return domain;
-    }
-
-    /**
      * Returns the session through which this request was made. This can be used as a map key to
      * access per-client data on services.
      */
-    const SharedPtr<Kernel::ServerSession>& ServerSession() const {
+    const SharedPtr<Kernel::ServerSession>& Session() const {
         return server_session;
     }
 
@@ -151,10 +143,6 @@ public:
         return domain_message_header;
     }
 
-    bool IsDomain() const {
-        return domain != nullptr;
-    }
-
     template <typename T>
     SharedPtr<T> GetCopyObject(size_t index) {
         ASSERT(index < copy_objects.size());
@@ -189,7 +177,6 @@ public:
 
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
-    SharedPtr<Kernel::Domain> domain;
     SharedPtr<Kernel::ServerSession> server_session;
     // TODO(yuriks): Check common usage of this and optimize size accordingly
     boost::container::small_vector<SharedPtr<Object>, 8> move_objects;
@@ -209,6 +196,7 @@ private:
     unsigned data_payload_offset{};
     unsigned buffer_c_offset{};
     u32_le command{};
+    bool is_domain{};
 };
 
 } // namespace Kernel

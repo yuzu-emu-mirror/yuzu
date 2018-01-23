@@ -4,6 +4,7 @@
 
 #include <tuple>
 
+#include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/handle_table.h"
@@ -61,6 +62,38 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
     // from its ClientSession, so wake up any threads that may be waiting on a svcReplyAndReceive or
     // similar.
 
+    Kernel::HLERequestContext context(this);
+    u32* cmd_buf = (u32*)Memory::GetPointer(thread->GetTLSAddress());
+    context.PopulateFromIncomingCommandBuffer(cmd_buf, *Kernel::g_current_process,
+                                              Kernel::g_handle_table);
+
+    // If the session has been converted to a domain, handle the doomain request
+    if (IsDomain()) {
+        auto& domain_message_header = context.GetDomainMessageHeader();
+        if (domain_message_header) {
+            // If there is a DomainMessageHeader, then this is CommandType "Request"
+            const u32 object_id{context.GetDomainMessageHeader()->object_id};
+            switch (domain_message_header->command) {
+            case IPC::DomainMessageHeader::CommandType::SendMessage:
+                return domain_request_handlers[object_id - 1]->HandleSyncRequest(context);
+
+            case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
+                LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x%08X", object_id);
+
+                domain_request_handlers[object_id - 1] = nullptr;
+
+                IPC::RequestBuilder rb{context, 2};
+                rb.Push(RESULT_SUCCESS);
+                return RESULT_SUCCESS;
+            }
+            }
+
+            LOG_CRITICAL(IPC, "Unknown domain command=%d", domain_message_header->command.Value());
+            UNIMPLEMENTED();
+        }
+        return domain_request_handlers.front()->HandleSyncRequest(context);
+    }
+
     // If this ServerSession has an associated HLE handler, forward the request to it.
     ResultCode result{RESULT_SUCCESS};
     if (hle_handler != nullptr) {
@@ -68,11 +101,6 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
         ResultCode translate_result = TranslateHLERequest(this);
         if (translate_result.IsError())
             return translate_result;
-
-        Kernel::HLERequestContext context(this);
-        u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
-        context.PopulateFromIncomingCommandBuffer(cmd_buf, *Kernel::g_current_process,
-                                                  Kernel::g_handle_table);
 
         result = hle_handler->HandleSyncRequest(context);
     } else {
@@ -84,6 +112,15 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
     // If this ServerSession does not have an HLE implementation, just wake up the threads waiting
     // on it.
     WakeupAllWaitingThreads();
+
+    // Handle scenario when ConvertToDomain command was issued, as we must do the conversion at the
+    // end of the command such that only commands following this one are handled as domains
+    if (convert_to_domain) {
+        ASSERT_MSG(domain_request_handlers.empty(), "already a domain");
+        domain_request_handlers.push_back(std::move(hle_handler));
+        convert_to_domain = false;
+    }
+
     return result;
 }
 

@@ -10,23 +10,21 @@ namespace Service {
 namespace SM {
 
 void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
-    auto domain = Kernel::Domain::CreateFromSession(*ctx.ServerSession()->parent).Unwrap();
+    ASSERT_MSG(!ctx.Session()->IsDomain(), "session is alread a domain");
+    ctx.Session()->ConvertToDomain();
 
     IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u32>(domain->request_handlers.size()));
+    rb.Push<u32>(1); // Converted sessions start with 1 request handler
 
-    LOG_DEBUG(Service, "called, domain=%d", domain->GetObjectId());
+    LOG_DEBUG(Service, "called, server_session=%d", ctx.Session()->GetObjectId());
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
     IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     // TODO(Subv): Check if this is correct
-    if (ctx.IsDomain())
-        rb.PushMoveObjects(ctx.Domain());
-    else
-        rb.PushMoveObjects(ctx.ServerSession());
+    rb.PushMoveObjects(ctx.Session());
 
     LOG_DEBUG(Service, "called");
 }

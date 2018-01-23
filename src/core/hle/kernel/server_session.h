@@ -79,7 +79,10 @@ public:
     std::string name;                ///< The name of this session (optional)
     std::shared_ptr<Session> parent; ///< The parent session, which links to the client endpoint.
     std::shared_ptr<SessionRequestHandler>
-        hle_handler; ///< This session's HLE request handler (optional)
+        hle_handler; ///< This session's HLE request handler (applicable when not a domain)
+
+    /// This is the list of domain request handlers (after conversion to a domain)
+    std::vector<std::shared_ptr<SessionRequestHandler>> domain_request_handlers;
 
     /// List of threads that are pending a response after a sync request. This list is processed in
     /// a LIFO manner, thus, the last request will be dispatched first.
@@ -90,6 +93,16 @@ public:
     /// response is sent via svcReplyAndReceive.
     /// TODO(Subv): Find a better name for this.
     SharedPtr<Thread> currently_handling;
+
+    /// Returns true if the session has been converted to a domain, otherwise False
+    bool IsDomain() const {
+        return !domain_request_handlers.empty();
+    }
+
+    /// Converts the session to a domain at the end of the current command
+    void ConvertToDomain() {
+        convert_to_domain = true;
+    }
 
 private:
     ServerSession();
@@ -102,6 +115,9 @@ private:
      * @return The created server session
      */
     static ResultVal<SharedPtr<ServerSession>> Create(std::string name = "Unknown");
+
+    /// When set to True, converts the session to a domain at the end of the command
+    bool convert_to_domain{};
 };
 
 /**
