@@ -5,7 +5,6 @@
 #pragma once
 
 #include <vector>
-#include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/service.h"
 
@@ -19,8 +18,6 @@ public:
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx);
-
-    std::vector<Kernel::SharedPtr<Kernel::ClientPort>> registered_loggers;
 };
 
 /// Registers all LM services with the specified service manager.

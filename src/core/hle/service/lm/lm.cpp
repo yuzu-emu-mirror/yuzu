@@ -146,18 +146,19 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
  *      0: ResultCode
  */
 void LM::Initialize(Kernel::HLERequestContext& ctx) {
-    auto client_port = std::make_shared<Logger>()->CreatePort();
-    auto session = client_port->Connect();
-    if (session.Succeeded()) {
-        LOG_DEBUG(Service_SM, "called, initialized logger -> session=%u",
-                  (*session)->GetObjectId());
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushMoveObjects(std::move(session).Unwrap());
-        registered_loggers.emplace_back(std::move(client_port));
-    } else {
-        UNIMPLEMENTED();
-    }
+    // TODO(Subv): Verify if this should return the interface as a domain object when called from
+    // within a domain.
+
+    auto logger = std::make_shared<Logger>();
+    auto sessions = Kernel::ServerSession::CreateSessionPair(logger->GetServiceName());
+    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+    logger->ClientConnected(server);
+
+    LOG_DEBUG(Service_SM, "called, initialized logger -> session=%u", client->GetObjectId());
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushMoveObjects(std::move(client));
 
     LOG_INFO(Service_SM, "called");
 }

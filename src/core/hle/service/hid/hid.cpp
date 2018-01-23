@@ -162,23 +162,26 @@ public:
     ~Hid() = default;
 
 private:
-    Kernel::SharedPtr<Kernel::ClientPort> client_port;
+    std::shared_ptr<IAppletResource> applet_resource;
 
     void CreateAppletResource(Kernel::HLERequestContext& ctx) {
-        if (client_port == nullptr) {
-            client_port = std::make_shared<IAppletResource>()->CreatePort();
+        if (applet_resource == nullptr) {
+            applet_resource = std::make_shared<IAppletResource>();
         }
 
-        auto session = client_port->Connect();
-        if (session.Succeeded()) {
-            LOG_DEBUG(Service, "called, initialized IAppletResource -> session=%u",
-                      (*session)->GetObjectId());
-            IPC::RequestBuilder rb{ctx, 2, 0, 1};
-            rb.Push(RESULT_SUCCESS);
-            rb.PushMoveObjects(std::move(session).Unwrap());
-        } else {
-            UNIMPLEMENTED();
-        }
+        // TODO(Subv): Verify if this should return the interface as a domain object when called
+        // from within a domain.
+
+        auto sessions = Kernel::ServerSession::CreateSessionPair(applet_resource->GetServiceName());
+        auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
+        auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
+        applet_resource->ClientConnected(server);
+
+        LOG_DEBUG(Service, "called, initialized IAppletResource -> session=%u",
+                  client->GetObjectId());
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushMoveObjects(std::move(client));
     }
 };
 
