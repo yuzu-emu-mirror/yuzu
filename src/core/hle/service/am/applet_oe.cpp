@@ -25,14 +25,14 @@ public:
 private:
     void GetAppletResourceUserId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(0);
     }
 
     void AcquireForegroundRights(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 };
@@ -86,14 +86,14 @@ private:
         };
         auto flags = rp.PopRaw<FocusHandlingModeParams>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void SetRestartMessageEnabled(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called");
@@ -104,7 +104,7 @@ private:
 
         bool flag = rp.Pop<bool>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called flag=%u", static_cast<u32>(flag));
@@ -115,7 +115,7 @@ private:
 
         bool flag = rp.Pop<bool>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called flag=%u", static_cast<u32>(flag));
@@ -128,21 +128,21 @@ private:
 
         bool enabled = rp.Pop<bool>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called enabled=%u", static_cast<u32>(enabled));
     }
 
     void LockExit(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void UnlockExit(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called");
@@ -154,7 +154,7 @@ private:
         u64 display_id = nvflinger->OpenDisplay("Default");
         u64 layer_id = nvflinger->CreateLayer(display_id);
 
-        IPC::RequestBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push(layer_id);
 
@@ -193,7 +193,7 @@ private:
     void GetEventHandle(Kernel::HLERequestContext& ctx) {
         event->Signal();
 
-        IPC::RequestBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event);
 
@@ -201,7 +201,7 @@ private:
     }
 
     void ReceiveMessage(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(15);
 
@@ -209,7 +209,7 @@ private:
     }
 
     void GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u8>(FocusState::InFocus));
 
@@ -217,7 +217,7 @@ private:
     }
 
     void GetOperationMode(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u8>(OperationMode::Handheld));
 
@@ -225,7 +225,7 @@ private:
     }
 
     void GetPerformanceMode(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u32>(APM::PerformanceMode::Handheld));
 
@@ -250,7 +250,7 @@ private:
     std::vector<u8> buffer;
 
     void GetSize(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx, 4};
 
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u64>(buffer.size()));
@@ -269,7 +269,7 @@ private:
 
         Memory::WriteBlock(output_buffer.Address(), buffer.data() + offset, output_buffer.Size());
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
 
         rb.Push(RESULT_SUCCESS);
 
@@ -291,7 +291,7 @@ private:
     std::vector<u8> buffer;
 
     void Open(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
@@ -328,7 +328,7 @@ private:
 
         std::vector<u8> buffer(data, data + sizeof(data));
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorage>(buffer);
@@ -343,34 +343,34 @@ private:
         IPC::RequestParser rp{ctx};
         u32 result = rp.Pop<u32>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called, result=0x%08X", result);
     }
 
     void GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(SystemLanguage::English);
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called");
     }
 
     void NotifyRunning(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u8>(0); // Unknown, seems to be ignored by official processes
 
@@ -402,56 +402,56 @@ public:
 
 private:
     void GetAudioController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAudioController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetDisplayController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDisplayController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetDebugFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDebugFunctions>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetWindowController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IWindowController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetSelfController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ISelfController>(nvflinger);
         LOG_DEBUG(Service, "called");
     }
 
     void GetCommonStateGetter(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ICommonStateGetter>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetLibraryAppletCreator(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ILibraryAppletCreator>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetApplicationFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IApplicationFunctions>();
         LOG_DEBUG(Service, "called");
@@ -461,7 +461,7 @@ private:
 };
 
 void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IApplicationProxy>(nvflinger);
     LOG_DEBUG(Service, "called");

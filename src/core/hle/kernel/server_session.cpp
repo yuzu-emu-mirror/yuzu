@@ -82,7 +82,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
 
                 domain_request_handlers[object_id - 1] = nullptr;
 
-                IPC::RequestBuilder rb{context, 2};
+                IPC::ResponseBuilder rb{context, 2};
                 rb.Push(RESULT_SUCCESS);
                 return RESULT_SUCCESS;
             }

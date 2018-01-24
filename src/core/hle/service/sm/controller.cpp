@@ -13,7 +13,7 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
     ASSERT_MSG(!ctx.Session()->IsDomain(), "session is alread a domain");
     ctx.Session()->ConvertToDomain();
 
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(1); // Converted sessions start with 1 request handler
 
@@ -21,7 +21,7 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1, true};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1, true};
     rb.Push(RESULT_SUCCESS);
     rb.PushMoveObjects(ctx.Session());
 
@@ -35,7 +35,7 @@ void Controller::DuplicateSessionEx(Kernel::HLERequestContext& ctx) {
 }
 
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0x500);
 

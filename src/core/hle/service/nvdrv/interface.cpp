@@ -18,7 +18,7 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     std::string device_name = Memory::ReadCString(buffer.Address(), buffer.Size());
 
     u32 fd = nvdrv->Open(device_name);
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(fd);
     rb.Push<u32>(0);
@@ -43,7 +43,7 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
 
     Memory::WriteBlock(output_buffer.Address(), output.data(), output_buffer.Size());
 
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(nv_result);
 }
@@ -56,13 +56,13 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 
     auto result = nvdrv->Close(fd);
 
-    IPC::RequestBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(result);
 }
 
 void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 }
@@ -72,7 +72,7 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     pid = rp.Pop<u64>();
 
     LOG_INFO(Service, "called, pid=0x%lx", pid);
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 }

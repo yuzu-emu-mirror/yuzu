@@ -40,12 +40,12 @@ private:
         // Error checking
         ASSERT_MSG(length == descriptor.Size(), "unexpected size difference");
         if (length < 0) {
-            IPC::RequestBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultCode(ErrorModule::FS, ErrorDescription::InvalidLength));
             return;
         }
         if (offset < 0) {
-            IPC::RequestBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultCode(ErrorModule::FS, ErrorDescription::InvalidOffset));
             return;
         }
@@ -54,7 +54,7 @@ private:
         std::vector<u8> output(length);
         ResultVal<size_t> res = backend->Read(offset, length, output.data());
         if (res.Failed()) {
-            IPC::RequestBuilder rb{ctx, 2};
+            IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(res.Code());
             return;
         }
@@ -62,7 +62,7 @@ private:
         // Write the data to memory
         Memory::WriteBlock(descriptor.Address(), output.data(), descriptor.Size());
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 };
@@ -91,14 +91,14 @@ void FSP_SRV::TryLoadRomFS() {
 void FSP_SRV::Initalize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(5);
 }
@@ -110,7 +110,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     if (!romfs) {
         // TODO (bunnei): Find the right error code to use here
         LOG_CRITICAL(Service_FS, "no file system interface available!");
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultCode(-1));
         return;
     }
@@ -119,12 +119,12 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     auto storage = romfs->OpenFile({}, {});
     if (storage.Failed()) {
         LOG_CRITICAL(Service_FS, "no storage interface available!");
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(storage.Code());
         return;
     }
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IStorage>(std::move(storage.Unwrap()));
 }

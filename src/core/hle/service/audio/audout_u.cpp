@@ -61,7 +61,7 @@ private:
         // start audio
         audio_out_state = Started;
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -73,14 +73,14 @@ private:
 
         queue_keys.clear();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        IPC::RequestBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(buffer_event);
     }
@@ -93,7 +93,7 @@ private:
 
         queue_keys.insert(queue_keys.begin(), key);
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -116,7 +116,7 @@ private:
 
         Memory::WriteBlock(buffer.Address(), &key, sizeof(u64));
 
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         // TODO(st4rk): This might be the total of released buffers, needs to be verified on
         // hardware
@@ -166,7 +166,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
 
     Memory::WriteBlock(buffer.Address(), &audio_interface[0], audio_interface.size());
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(3, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
 
     rb.Push(RESULT_SUCCESS);
     // TODO(st4rk): we're currently returning only one audio interface
@@ -189,7 +189,7 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
     auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
     audio_out_interface->ClientConnected(server);
     LOG_DEBUG(Service, "called, initialized IAudioOut -> session=%u", client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 6, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 6, 0, 1};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(sample_rate);

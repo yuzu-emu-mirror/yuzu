@@ -19,7 +19,7 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
 
     Memory::WriteBlock(output_buffer.Address(), lang_codes.data(), lang_codes.size());
 
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u64>(lang_codes.size()));

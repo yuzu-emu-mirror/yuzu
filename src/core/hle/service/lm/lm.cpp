@@ -65,7 +65,7 @@ private:
      */
     void Log(Kernel::HLERequestContext& ctx) {
         // This function only succeeds - Get that out of the way
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         // Read MessageHeader, despite not doing anything with it right now
@@ -146,7 +146,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
  *      0: ResultCode
  */
 void LM::Initialize(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<Logger>();
 

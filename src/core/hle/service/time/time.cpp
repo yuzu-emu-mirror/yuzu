@@ -28,7 +28,7 @@ private:
         const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::seconds>(
                                        std::chrono::system_clock::now().time_since_epoch())
                                        .count()};
-        IPC::RequestBuilder rb{ctx, 4};
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(time_since_epoch);
         LOG_DEBUG(Service, "called");
@@ -55,14 +55,14 @@ private:
     void GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
         LocationName location_name{};
-        IPC::RequestBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
+        IPC::ResponseBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(location_name);
     }
 
     void GetTotalLocationNameCount(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }
@@ -75,7 +75,7 @@ private:
 
         CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
         CalendarAdditionalInfo additional_info{};
-        IPC::RequestBuilder rb{ctx, 10};
+        IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(calendar_time);
         rb.PushRaw(additional_info);
@@ -83,28 +83,28 @@ private:
 };
 
 void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
     LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
     LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISteadyClock>();
     LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ITimeZoneService>();
     LOG_DEBUG(Service, "called");

@@ -46,7 +46,7 @@ public:
 
 private:
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(shared_mem);
         LOG_DEBUG(Service, "called");
@@ -169,7 +169,7 @@ private:
             applet_resource = std::make_shared<IAppletResource>();
         }
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
         LOG_DEBUG(Service, "called");

@@ -54,18 +54,18 @@ public:
     }
 };
 
-class RequestBuilder : public RequestHelperBase {
+class ResponseBuilder : public RequestHelperBase {
 public:
-    RequestBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+    ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
     u32 normal_params_size;
     u32 num_handles_to_copy;
     u32 num_objects_to_move; ///< Domain objects or move handles, context dependent
     std::ptrdiff_t datapayload_index;
 
-    RequestBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
-                   u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
-                   bool always_move_handle = false)
+    ResponseBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
+                    u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
+                    bool always_move_handles = false)
 
         : RequestHelperBase(context), normal_params_size(normal_params_size),
           num_handles_to_copy(num_handles_to_copy), num_objects_to_move(num_objects_to_move) {
@@ -83,7 +83,7 @@ public:
         u32 num_handles_to_move{};
         u32 num_domain_objects{};
 
-        if (!context.Session()->IsDomain() || always_move_handle) {
+        if (!context.Session()->IsDomain() || always_move_handles) {
             num_handles_to_move = num_objects_to_move;
         } else {
             num_domain_objects = num_objects_to_move;
@@ -154,7 +154,7 @@ public:
     }
 
     // Validate on destruction, as there shouldn't be any case where we don't want it
-    ~RequestBuilder() {
+    ~ResponseBuilder() {
         ValidateHeader();
     }
 
@@ -182,52 +182,52 @@ public:
 /// Push ///
 
 template <>
-inline void RequestBuilder::Push(u32 value) {
+inline void ResponseBuilder::Push(u32 value) {
     cmdbuf[index++] = value;
 }
 
 template <typename T>
-void RequestBuilder::PushRaw(const T& value) {
+void ResponseBuilder::PushRaw(const T& value) {
     std::memcpy(cmdbuf + index, &value, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
 
 template <>
-inline void RequestBuilder::Push(ResultCode value) {
+inline void ResponseBuilder::Push(ResultCode value) {
     // Result codes are actually 64-bit in the IPC buffer, but only the high part is discarded.
     Push(value.raw);
     Push<u32>(0);
 }
 
 template <>
-inline void RequestBuilder::Push(u8 value) {
+inline void ResponseBuilder::Push(u8 value) {
     PushRaw(value);
 }
 
 template <>
-inline void RequestBuilder::Push(u16 value) {
+inline void ResponseBuilder::Push(u16 value) {
     PushRaw(value);
 }
 
 template <>
-inline void RequestBuilder::Push(u64 value) {
+inline void ResponseBuilder::Push(u64 value) {
     Push(static_cast<u32>(value));
     Push(static_cast<u32>(value >> 32));
 }
 
 template <>
-inline void RequestBuilder::Push(bool value) {
+inline void ResponseBuilder::Push(bool value) {
     Push(static_cast<u8>(value));
 }
 
 template <typename First, typename... Other>
-void RequestBuilder::Push(const First& first_value, const Other&... other_values) {
+void ResponseBuilder::Push(const First& first_value, const Other&... other_values) {
     Push(first_value);
     Push(other_values...);
 }
 
 template <typename... O>
-inline void RequestBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
+inline void ResponseBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddCopyObject(std::move(object));
@@ -235,7 +235,7 @@ inline void RequestBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
 }
 
 template <typename... O>
-inline void RequestBuilder::PushMoveObjects(Kernel::SharedPtr<O>... pointers) {
+inline void ResponseBuilder::PushMoveObjects(Kernel::SharedPtr<O>... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddMoveObject(std::move(object));
@@ -254,9 +254,10 @@ public:
         Skip(CommandIdSize, false);
     }
 
-    RequestBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
-                               u32 num_handles_to_move, bool validate_header = true) {
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move};
+    ResponseBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
+                                u32 num_handles_to_move, bool always_move_handles = false) {
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move,
+                always_move_handles};
     }
 
     template <typename T>
