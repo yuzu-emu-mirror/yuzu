@@ -51,13 +51,13 @@ public:
      * requested is not guaranteed to run, as this will be interrupted preemptively if a hardware
      * update is requested (e.g. on a thread switch).
      * @param tight_loop Number of instructions to execute.
-     * @return Result status, indicating whethor or not the operation succeeded.
+     * @return Result status, indicating whether or not the operation succeeded.
      */
     ResultStatus RunLoop(int tight_loop = 100000);
 
     /**
      * Step the CPU one instruction
-     * @return Result status, indicating whethor or not the operation succeeded.
+     * @return Result status, indicating whether or not the operation succeeded.
      */
     ResultStatus SingleStep();
 
