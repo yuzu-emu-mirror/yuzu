@@ -22,7 +22,7 @@ constexpr u64 audio_ticks = static_cast<u64>(BASE_CLOCK_RATE / 500);
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
-    IAudioOut() : ServiceFramework("IAudioOut") {
+    IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(STOPPED) {
         static const FunctionInfo functions[] = {
             {0x0, nullptr, "GetAudioOutState"},
             {0x1, &IAudioOut::StartAudioOut, "StartAudioOut"},
@@ -49,9 +49,6 @@ public:
 
         // Start the audio event
         CoreTiming::ScheduleEvent(audio_ticks, audio_event);
-
-        // start with the audio stopped
-        audio_out_state = 1;
     }
 
     ~IAudioOut() = default;
@@ -61,7 +58,7 @@ private:
         LOG_WARNING(Service, "(STUBBED) called");
 
         // start audio
-        audio_out_state = 0x0;
+        audio_out_state = STARTED;
 
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
         rb.Push(RESULT_SUCCESS);
@@ -71,7 +68,7 @@ private:
         LOG_WARNING(Service, "(STUBBED) called");
 
         // stop audio
-        audio_out_state = 0x1;
+        audio_out_state = STOPPED;
 
         queue_keys.clear();
 
@@ -134,6 +131,11 @@ private:
         }
     }
 
+    enum AUDIO_STATE {
+        STARTED,
+        STOPPED,
+    };
+
     // This is used to trigger the audio event callback that is going
     // to read the samples from the audio_buffer list and enqueue the samples
     // using the sink (audio_core).
@@ -149,7 +151,7 @@ private:
     std::vector<u64> queue_keys;
 
     // current audio state: 0 is started and 1 is stopped
-    u32 audio_out_state;
+    AUDIO_STATE audio_out_state;
 };
 
 void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
