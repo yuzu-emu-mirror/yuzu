@@ -19,11 +19,11 @@ constexpr u32 sample_rate{48000};
 /// to more audio channels (probably when Docked I guess)
 constexpr u32 audio_channels{2};
 /// TODO(st4rk): find a proper value for the audio_ticks
-constexpr u64 audio_ticks = static_cast<u64>(BASE_CLOCK_RATE / 500);
+constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 500)};
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
-    IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(STOPPED) {
+    IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(Stopped) {
         static const FunctionInfo functions[] = {
             {0x0, nullptr, "GetAudioOutState"},
             {0x1, &IAudioOut::StartAudioOut, "StartAudioOut"},
@@ -59,7 +59,7 @@ private:
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // start audio
-        audio_out_state = STARTED;
+        audio_out_state = Started;
 
         IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -69,7 +69,7 @@ private:
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // stop audio
-        audio_out_state = STOPPED;
+        audio_out_state = Stopped;
 
         queue_keys.clear();
 
@@ -103,13 +103,11 @@ private:
         const auto& buffer = ctx.BufferDescriptorB()[0];
 
         // TODO(st4rk): this is how libtransistor currently implements the
-        // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to
-        // the APP and this address is used to know which buffer should
-        // be filled with data and send again to the service through
-        // AppendAudioOutBuffer. Check if this is the proper way to
-        // do it.
+        // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to the APP and this address
+        // is used to know which buffer should be filled with data and send again to the service
+        // through AppendAudioOutBuffer. Check if this is the proper way to do it.
 
-        u64 key = 0;
+        u64 key{0};
 
         if (queue_keys.size()) {
             key = queue_keys.back();
@@ -120,40 +118,43 @@ private:
 
         IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        // TODO(st4rk): This might be the total of released buffers,
-        // needs to be verified on hardware
-        rb.Push<u32>(queue_keys.size());
+        // TODO(st4rk): This might be the total of released buffers, needs to be verified on
+        // hardware
+        rb.Push<u32>(static_cast<u32>(queue_keys.size()));
     }
 
     void UpdateAudioBuffersCallback() {
-        if (!audio_out_state) {
-            if (queue_keys.size()) {
-                buffer_event->Signal();
-            }
+
+        if (audio_out_state != Started) {
+            return;
         }
+
+        if (queue_keys.empty()) {
+            return;
+        }
+
+        buffer_event->Signal();
     }
 
-    enum AUDIO_STATE {
-        STARTED,
-        STOPPED,
+    enum AudioState : u32 {
+        Started,
+        Stopped,
     };
 
-    /// This is used to trigger the audio event callback that is going
-    /// to read the samples from the audio_buffer list and enqueue the samples
-    /// using the sink (audio_core).
+    /// This is used to trigger the audio event callback that is going to read the samples from the
+    /// audio_buffer list and enqueue the samples using the sink (audio_core).
     CoreTiming::EventType* audio_event;
 
     /// This is the evend handle used to check if the audio buffer was released
     Kernel::SharedPtr<Kernel::Event> buffer_event;
 
-    /// (st4rk): this is just a temporary workaround for the future implementation.
-    /// Libtransistor uses the key as an address in the App, so we need to return
-    /// when the GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in
-    /// problems, because libtransistor uses the key returned as an pointer;
+    /// (st4rk): this is just a temporary workaround for the future implementation. Libtransistor
+    /// uses the key as an address in the App, so we need to return when the
+    /// GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in problems, because
+    /// libtransistor uses the key returned as an pointer;
     std::vector<u64> queue_keys;
 
-    /// current audio state: 0 is started and 1 is stopped
-    AUDIO_STATE audio_out_state;
+    AudioState audio_out_state;
 };
 
 void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
@@ -179,7 +180,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
 void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-    if (audio_out_interface == nullptr) {
+    if (!audio_out_interface) {
         audio_out_interface = std::make_shared<IAudioOut>();
     }
 
