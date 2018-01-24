@@ -98,7 +98,7 @@ void FSP_SRV::Initalize(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::RequestBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(5);
 }
@@ -124,7 +124,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IStorage>(std::move(storage.Unwrap()));
 }

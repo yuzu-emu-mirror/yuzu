@@ -15,7 +15,7 @@ public:
 };
 
 void PCTL_A::GetService(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IParentalControlService>();
     LOG_DEBUG(Service, "called");

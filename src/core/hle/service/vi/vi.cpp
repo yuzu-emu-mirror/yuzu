@@ -597,7 +597,7 @@ private:
 void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
 }
@@ -605,7 +605,7 @@ void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx)
 void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemDisplayService>();
 }
@@ -613,7 +613,7 @@ void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestConte
 void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
 }
@@ -622,7 +622,7 @@ void IApplicationDisplayService::GetIndirectDisplayTransactionService(
     Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
 }

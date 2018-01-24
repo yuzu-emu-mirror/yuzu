@@ -54,7 +54,7 @@ void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
 }
 
 void ACC_U0::GetProfile(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IProfile>();
     LOG_DEBUG(Service, "called");
@@ -67,7 +67,7 @@ void ACC_U0::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
 }
 
 void ACC_U0::GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IManagerForApplication>();
     LOG_DEBUG(Service, "called");

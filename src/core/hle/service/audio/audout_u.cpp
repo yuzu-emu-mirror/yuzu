@@ -166,7 +166,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
 
     Memory::WriteBlock(buffer.Address(), &audio_interface[0], audio_interface.size());
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(3, 0, 0, 0);
+    IPC::RequestBuilder rb = rp.MakeBuilder(3, 0, 0);
 
     rb.Push(RESULT_SUCCESS);
     // TODO(st4rk): we're currently returning only one audio interface

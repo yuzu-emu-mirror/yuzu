@@ -169,19 +169,10 @@ private:
             applet_resource = std::make_shared<IAppletResource>();
         }
 
-        // TODO(Subv): Verify if this should return the interface as a domain object when called
-        // from within a domain.
-
-        auto sessions = Kernel::ServerSession::CreateSessionPair(applet_resource->GetServiceName());
-        auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-        auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-        applet_resource->ClientConnected(server);
-
-        LOG_DEBUG(Service, "called, initialized IAppletResource -> session=%u",
-                  client->GetObjectId());
         IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushMoveObjects(std::move(client));
+        rb.PushIpcInterface<IAppletResource>(applet_resource);
+        LOG_DEBUG(Service, "called");
     }
 };
 

@@ -291,7 +291,7 @@ private:
     std::vector<u8> buffer;
 
     void Open(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
@@ -328,7 +328,7 @@ private:
 
         std::vector<u8> buffer(data, data + sizeof(data));
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorage>(buffer);
@@ -402,56 +402,56 @@ public:
 
 private:
     void GetAudioController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAudioController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetDisplayController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDisplayController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetDebugFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IDebugFunctions>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetWindowController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IWindowController>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetSelfController(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ISelfController>(nvflinger);
         LOG_DEBUG(Service, "called");
     }
 
     void GetCommonStateGetter(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ICommonStateGetter>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetLibraryAppletCreator(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<ILibraryAppletCreator>();
         LOG_DEBUG(Service, "called");
     }
 
     void GetApplicationFunctions(Kernel::HLERequestContext& ctx) {
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+        IPC::RequestBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IApplicationFunctions>();
         LOG_DEBUG(Service, "called");
@@ -461,7 +461,7 @@ private:
 };
 
 void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IApplicationProxy>(nvflinger);
     LOG_DEBUG(Service, "called");

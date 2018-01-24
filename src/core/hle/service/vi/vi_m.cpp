@@ -13,7 +13,8 @@ namespace VI {
 void VI_M::GetDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IApplicationDisplayService>(nv_flinger);
 }
 
