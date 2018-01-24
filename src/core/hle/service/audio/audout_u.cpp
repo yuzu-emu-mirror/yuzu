@@ -61,7 +61,7 @@ private:
         // start audio
         audio_out_state = STARTED;
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
+        IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
