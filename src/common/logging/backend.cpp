@@ -40,6 +40,7 @@ namespace Log {
     SUB(Service, HID)                                                                              \
     SUB(Service, NVDRV)                                                                            \
     SUB(Service, Audio)                                                                            \
+    SUB(Service, NVDRV)                                                                            \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \
     SUB(HW, LCD)                                                                                   \
