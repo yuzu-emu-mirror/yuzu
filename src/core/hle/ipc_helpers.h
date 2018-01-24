@@ -58,14 +58,22 @@ class ResponseBuilder : public RequestHelperBase {
 public:
     ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    u32 normal_params_size;
-    u32 num_handles_to_copy;
-    u32 num_objects_to_move; ///< Domain objects or move handles, context dependent
-    std::ptrdiff_t datapayload_index;
+    u32 normal_params_size{};
+    u32 num_handles_to_copy{};
+    u32 num_objects_to_move{}; ///< Domain objects or move handles, context dependent
+    std::ptrdiff_t datapayload_index{};
+
+    /// Flags used for customizing the behavior of ResponseBuilder
+    enum class Flags : u32 {
+        None = 0,
+        /// Uses move handles to move objects in the response, even when in a domain. This is
+        /// required when PushMoveObjects is used.
+        AlwaysMoveHandles = 1,
+    };
 
     ResponseBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
                     u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
-                    bool always_move_handles = false)
+                    Flags flags = Flags::None)
 
         : RequestHelperBase(context), normal_params_size(normal_params_size),
           num_handles_to_copy(num_handles_to_copy), num_objects_to_move(num_objects_to_move) {
@@ -82,7 +90,8 @@ public:
 
         u32 num_handles_to_move{};
         u32 num_domain_objects{};
-
+        const bool always_move_handles{
+            (static_cast<u32>(flags) & static_cast<u32>(Flags::AlwaysMoveHandles)) != 0};
         if (!context.Session()->IsDomain() || always_move_handles) {
             num_handles_to_move = num_objects_to_move;
         } else {
@@ -255,9 +264,9 @@ public:
     }
 
     ResponseBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
-                                u32 num_handles_to_move, bool always_move_handles = false) {
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move,
-                always_move_handles};
+                                u32 num_handles_to_move,
+                                ResponseBuilder::Flags flags = ResponseBuilder::Flags::None) {
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move, flags};
     }
 
     template <typename T>

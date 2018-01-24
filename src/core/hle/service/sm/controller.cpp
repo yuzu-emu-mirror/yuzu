@@ -21,7 +21,7 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1, true};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(RESULT_SUCCESS);
     rb.PushMoveObjects(ctx.Session());
 

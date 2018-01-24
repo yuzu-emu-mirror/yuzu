@@ -112,7 +112,8 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     if (session.Succeeded()) {
         LOG_DEBUG(Service_SM, "called service=%s -> session=%u", name.c_str(),
                   (*session)->GetObjectId());
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 1, true);
+        IPC::ResponseBuilder rb =
+            rp.MakeBuilder(2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles);
         rb.Push(session.Code());
         rb.PushMoveObjects(std::move(session).Unwrap());
     }
