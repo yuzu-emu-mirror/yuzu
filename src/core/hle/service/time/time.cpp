@@ -19,7 +19,7 @@ public:
     ISystemClock() : ServiceFramework("ISystemClock") {
         static const FunctionInfo functions[] = {
             {0, &ISystemClock::GetCurrentTime, "GetCurrentTime"},
-        };
+            {2, &ISystemClock::GetSystemClockContext, "GetSystemClockContext"}};
         RegisterHandlers(functions);
     }
 
@@ -28,10 +28,18 @@ private:
         const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::seconds>(
                                        std::chrono::system_clock::now().time_since_epoch())
                                        .count()};
+        LOG_DEBUG(Service, "called");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(time_since_epoch);
-        LOG_DEBUG(Service, "called");
+    }
+
+    void GetSystemClockContext(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        SystemClockContext system_clock_ontext{};
+        IPC::ResponseBuilder rb{ctx, (sizeof(SystemClockContext) / 4) + 2};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(system_clock_ontext);
     }
 };
 

@@ -33,6 +33,13 @@ struct CalendarAdditionalInfo {
 static_assert(sizeof(CalendarAdditionalInfo) == 0x18,
               "CalendarAdditionalInfo structure has incorrect size");
 
+// TODO(bunnei) RE this structure
+struct SystemClockContext {
+    INSERT_PADDING_BYTES(0x20);
+};
+static_assert(sizeof(SystemClockContext) == 0x20,
+              "SystemClockContext structure has incorrect size");
+
 class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
