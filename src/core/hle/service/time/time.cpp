@@ -25,7 +25,7 @@ public:
 
 private:
     void GetCurrentTime(Kernel::HLERequestContext& ctx) {
-        const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::milliseconds>(
+        const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::seconds>(
                                        std::chrono::system_clock::now().time_since_epoch())
                                        .count()};
         IPC::RequestBuilder rb{ctx, 4};
