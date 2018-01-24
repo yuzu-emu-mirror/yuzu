@@ -13,7 +13,7 @@
 namespace Service {
 namespace Audio {
 
-/// switch sample rate frequency
+/// Switch sample rate frequency
 constexpr u32 sample_rate{48000};
 /// TODO(st4rk): dynamic number of channels, as I think Switch has support
 /// to more audio channels (probably when Docked I guess)
