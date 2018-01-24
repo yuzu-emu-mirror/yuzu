@@ -56,6 +56,7 @@ enum class Class : ClassType {
     Service_DSP,       ///< The DSP (DSP control) service
     Service_HID,       ///< The HID (Human interface device) service
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_Audio,     ///< The Audio (Audio control) service
     HW,                ///< Low-level hardware emulation
     HW_Memory,         ///< Memory-map and address translation
     HW_LCD,            ///< LCD register emulation

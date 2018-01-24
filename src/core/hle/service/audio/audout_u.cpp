@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <vector>
 #include "common/logging/log.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
@@ -12,12 +13,12 @@
 namespace Service {
 namespace Audio {
 
-// switch sample rate frequency
-constexpr u32 sample_rate = 48000;
-// TODO(st4rk): dynamic number of channels, as I think Switch has support
-// to more audio channels (probably when Docked I guess)
-constexpr u32 audio_channels = 2;
-// TODO(st4rk): find a proper value for the audio_ticks
+/// switch sample rate frequency
+constexpr u32 sample_rate{48000};
+/// TODO(st4rk): dynamic number of channels, as I think Switch has support
+/// to more audio channels (probably when Docked I guess)
+constexpr u32 audio_channels{2};
+/// TODO(st4rk): find a proper value for the audio_ticks
 constexpr u64 audio_ticks = static_cast<u64>(BASE_CLOCK_RATE / 500);
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
@@ -37,8 +38,8 @@ public:
         RegisterHandlers(functions);
 
         // This is the event handle used to check if the audio buffer was released
-        buffer_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
-                                             "IAudioOut buffer released event handle");
+        buffer_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "IAudioOutBufferReleasedEvent");
 
         // Register event callback to update the Audio Buffer
         audio_event = CoreTiming::RegisterEvent(
@@ -55,7 +56,7 @@ public:
 
 private:
     void StartAudioOut(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // start audio
         audio_out_state = STARTED;
@@ -65,19 +66,19 @@ private:
     }
 
     void StopAudioOut(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // stop audio
         audio_out_state = STOPPED;
 
         queue_keys.clear();
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
+        IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         IPC::RequestBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -85,24 +86,24 @@ private:
     }
 
     void AppendAudioOutBuffer_1(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
         u64 key = rp.Pop<u64>();
 
         queue_keys.insert(queue_keys.begin(), key);
 
-        IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
+        IPC::RequestBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void GetReleasedAudioOutBuffer_1(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         const auto& buffer = ctx.BufferDescriptorB()[0];
 
         // TODO(st4rk): this is how libtransistor currently implements the
-        // GetReleasedAudioOutBuffer, it should return the key (a VA) to
+        // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to
         // the APP and this address is used to know which buffer should
         // be filled with data and send again to the service through
         // AppendAudioOutBuffer. Check if this is the proper way to
@@ -117,9 +118,10 @@ private:
 
         Memory::WriteBlock(buffer.Address(), &key, sizeof(u64));
 
-        IPC::RequestBuilder rb{ctx, 3, 0, 0, 0};
+        IPC::RequestBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        // This might be the total of released buffers
+        // TODO(st4rk): This might be the total of released buffers,
+        // needs to be verified on hardware
         rb.Push<u32>(queue_keys.size());
     }
 
@@ -136,26 +138,26 @@ private:
         STOPPED,
     };
 
-    // This is used to trigger the audio event callback that is going
-    // to read the samples from the audio_buffer list and enqueue the samples
-    // using the sink (audio_core).
+    /// This is used to trigger the audio event callback that is going
+    /// to read the samples from the audio_buffer list and enqueue the samples
+    /// using the sink (audio_core).
     CoreTiming::EventType* audio_event;
 
-    // This is the evend handle used to check if the audio buffer was released
+    /// This is the evend handle used to check if the audio buffer was released
     Kernel::SharedPtr<Kernel::Event> buffer_event;
 
-    // (st4rk): this is just a temporary workaround for the future implementation.
-    // Libtransistor uses the key as an address in the App, so we need to return
-    // when the GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in
-    // problems, because libtransistor uses the key returned as an pointer;
+    /// (st4rk): this is just a temporary workaround for the future implementation.
+    /// Libtransistor uses the key as an address in the App, so we need to return
+    /// when the GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in
+    /// problems, because libtransistor uses the key returned as an pointer;
     std::vector<u64> queue_keys;
 
-    // current audio state: 0 is started and 1 is stopped
+    /// current audio state: 0 is started and 1 is stopped
     AUDIO_STATE audio_out_state;
 };
 
 void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
 
     auto& buffer = ctx.BufferDescriptorB()[0];
@@ -175,7 +177,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
 }
 
 void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
 
     if (audio_out_interface == nullptr) {
         audio_out_interface = std::make_shared<IAudioOut>();
@@ -191,7 +193,7 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(sample_rate);
     rb.Push<u32>(audio_channels);
-    rb.Push<u32>(PCM_FORMAT::INT16);
+    rb.Push<u32>(static_cast<u32>(PcmFormat::Int16));
     // this field is unknown
     rb.Push<u32>(0);
     rb.PushMoveObjects(std::move(client));
