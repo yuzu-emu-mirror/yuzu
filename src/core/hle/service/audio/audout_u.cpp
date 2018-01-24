@@ -5,8 +5,8 @@
 #include "common/logging/log.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/audout_u.h"
 
 namespace Service {
@@ -18,7 +18,7 @@ constexpr u32 sample_rate = 48000;
 // to more audio channels (probably when Docked I guess)
 constexpr u32 audio_channels = 2;
 // TODO(st4rk): find a proper value for the audio_ticks
-constexpr u64 audio_ticks = static_cast<u64>(BASE_CLOCK_RATE / 1000);
+constexpr u64 audio_ticks = static_cast<u64>(BASE_CLOCK_RATE / 500);
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
@@ -37,12 +37,12 @@ public:
         RegisterHandlers(functions);
 
         // This is the event handle used to check if the audio buffer was released
-        buffer_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "IAudioOut buffer released event handle");
+        buffer_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
+                                             "IAudioOut buffer released event handle");
 
         // Register event callback to update the Audio Buffer
         audio_event = CoreTiming::RegisterEvent(
-            "IAudioOut::UpdateAudioBuffersCallback",
-            [this](u64 userdata, int cycles_late) {
+            "IAudioOut::UpdateAudioBuffersCallback", [this](u64 userdata, int cycles_late) {
                 UpdateAudioBuffersCallback();
                 CoreTiming::ScheduleEvent(audio_ticks - cycles_late, audio_event);
             });
@@ -55,8 +55,8 @@ public:
     }
 
     ~IAudioOut() = default;
-private:
 
+private:
     void StartAudioOut(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
 
@@ -72,6 +72,8 @@ private:
 
         // stop audio
         audio_out_state = 0x1;
+
+        queue_keys.clear();
 
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
         rb.Push(RESULT_SUCCESS);
@@ -89,7 +91,9 @@ private:
         LOG_WARNING(Service, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
-        released_buffer = rp.Pop<u64>();
+        u64 key = rp.Pop<u64>();
+
+        queue_keys.insert(queue_keys.begin(), key);
 
         IPC::RequestBuilder rb{ctx, 2, 0, 0, 0};
         rb.Push(RESULT_SUCCESS);
@@ -107,17 +111,26 @@ private:
         // AppendAudioOutBuffer. Check if this is the proper way to
         // do it.
 
-        Memory::WriteBlock(buffer.Address(), &released_buffer, sizeof(u64));
+        u64 key = 0;
+
+        if (queue_keys.size()) {
+            key = queue_keys.back();
+            queue_keys.pop_back();
+        }
+
+        Memory::WriteBlock(buffer.Address(), &key, sizeof(u64));
 
         IPC::RequestBuilder rb{ctx, 3, 0, 0, 0};
         rb.Push(RESULT_SUCCESS);
         // This might be the total of released buffers
-        rb.Push<u32>(0);
+        rb.Push<u32>(queue_keys.size());
     }
 
     void UpdateAudioBuffersCallback() {
         if (!audio_out_state) {
-            buffer_event->Signal();
+            if (queue_keys.size()) {
+                buffer_event->Signal();
+            }
         }
     }
 
@@ -133,7 +146,7 @@ private:
     // Libtransistor uses the key as an address in the App, so we need to return
     // when the GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in
     // problems, because libtransistor uses the key returned as an pointer;
-    u64 released_buffer;
+    std::vector<u64> queue_keys;
 
     // current audio state: 0 is started and 1 is stopped
     u32 audio_out_state;
@@ -170,9 +183,8 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
     auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
     auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
     audio_out_interface->ClientConnected(server);
-    LOG_DEBUG(Service, "called, initialized IAudioOut -> session=%u",
-              client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 6,0,1};
+    LOG_DEBUG(Service, "called, initialized IAudioOut -> session=%u", client->GetObjectId());
+    IPC::RequestBuilder rb{ctx, 6, 0, 1};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(sample_rate);

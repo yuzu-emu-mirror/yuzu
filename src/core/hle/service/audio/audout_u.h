@@ -26,15 +26,7 @@ private:
     void ListAudioOuts(Kernel::HLERequestContext& ctx);
     void OpenAudioOut(Kernel::HLERequestContext& ctx);
 
-    enum PCM_FORMAT {
-        INVALID,
-        INT8,
-        INT16,
-        INT24,
-        INT32,
-        PCM_FLOAT,
-        ADPCM
-    };
+    enum PCM_FORMAT { INVALID, INT8, INT16, INT24, INT32, PCM_FLOAT, ADPCM };
 };
 
 } // namespace Audio
