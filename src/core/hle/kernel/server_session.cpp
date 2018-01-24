@@ -89,9 +89,9 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
             }
 
             LOG_CRITICAL(IPC, "Unknown domain command=%d", domain_message_header->command.Value());
-            UNIMPLEMENTED();
+            ASSERT(false);
         }
-        return domain_request_handlers.front()->HandleSyncRequest(context);
+        // If there is no domain header, the regular session handler is used
     }
 
     // If this ServerSession has an associated HLE handler, forward the request to it.
@@ -117,7 +117,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
     // end of the command such that only commands following this one are handled as domains
     if (convert_to_domain) {
         ASSERT_MSG(domain_request_handlers.empty(), "already a domain");
-        domain_request_handlers.push_back(std::move(hle_handler));
+        domain_request_handlers = {hle_handler};
         convert_to_domain = false;
     }
 
