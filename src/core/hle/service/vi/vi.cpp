@@ -486,7 +486,7 @@ private:
         }
 
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -497,7 +497,7 @@ private:
         u32 type = rp.Pop<u32>();
 
         LOG_WARNING(Service, "(STUBBED) called id=%u, addval=%08X, type=%08X", id, addval, type);
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -511,7 +511,7 @@ private:
         // TODO(Subv): Find out what this actually is.
 
         LOG_WARNING(Service, "(STUBBED) called id=%u, unknown=%08X", id, unknown);
-        IPC::RequestBuilder rb{ctx, 2, 1};
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(buffer_queue->GetNativeHandle());
     }
@@ -537,7 +537,7 @@ private:
         u64 layer_id = rp.Pop<u64>();
         u64 z_value = rp.Pop<u64>();
 
-        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
     }
 };
@@ -562,7 +562,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display = rp.Pop<u64>();
 
-        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -576,7 +576,7 @@ private:
 
         u64 layer_id = nv_flinger->CreateLayer(display);
 
-        IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
         rb.Push(RESULT_SUCCESS);
         rb.Push(layer_id);
     }
@@ -587,7 +587,7 @@ private:
         u32 stack = rp.Pop<u32>();
         u64 layer_id = rp.Pop<u64>();
 
-        IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -597,7 +597,7 @@ private:
 void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
 }
@@ -605,7 +605,7 @@ void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx)
 void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemDisplayService>();
 }
@@ -613,7 +613,7 @@ void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestConte
 void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
 }
@@ -622,7 +622,7 @@ void IApplicationDisplayService::GetIndirectDisplayTransactionService(
     Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
 }
@@ -637,7 +637,7 @@ void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
 
     ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(nv_flinger->OpenDisplay(name));
 }
@@ -647,7 +647,7 @@ void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u64 display_id = rp.Pop<u64>();
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
 }
 
@@ -671,7 +671,7 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
     auto data = native_window.Serialize();
     Memory::WriteBlock(buffer.Address(), data.data(), data.size());
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(4, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(data.size());
 }
@@ -694,7 +694,7 @@ void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx
     auto data = native_window.Serialize();
     Memory::WriteBlock(buffer.Address(), data.data(), data.size());
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(6, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push(layer_id);
     rb.Push<u64>(data.size());
@@ -706,7 +706,7 @@ void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ct
     IPC::RequestParser rp{ctx};
     u64 layer_id = rp.Pop<u64>();
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
     rb.Push(RESULT_SUCCESS);
 }
 
@@ -716,7 +716,7 @@ void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& 
     u32 scaling_mode = rp.Pop<u32>();
     u64 unknown = rp.Pop<u64>();
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(2, 0, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
     rb.Push(RESULT_SUCCESS);
 }
 
@@ -727,7 +727,7 @@ void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext&
 
     auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
 
-    IPC::RequestBuilder rb = rp.MakeBuilder(2, 1, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 1, 0);
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(vsync_event);
 }

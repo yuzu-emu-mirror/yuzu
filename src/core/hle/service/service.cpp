@@ -132,7 +132,7 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
 ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& context) {
     switch (context.GetCommandType()) {
     case IPC::CommandType::Close: {
-        IPC::RequestBuilder rb{context, 1};
+        IPC::ResponseBuilder rb{context, 2};
         rb.Push(RESULT_SUCCESS);
         return ResultCode(ErrorModule::HIPC, ErrorDescription::RemoteProcessDead);
     }

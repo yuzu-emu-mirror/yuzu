@@ -19,7 +19,7 @@ public:
     ISystemClock() : ServiceFramework("ISystemClock") {
         static const FunctionInfo functions[] = {
             {0, &ISystemClock::GetCurrentTime, "GetCurrentTime"},
-        };
+            {2, &ISystemClock::GetSystemClockContext, "GetSystemClockContext"}};
         RegisterHandlers(functions);
     }
 
@@ -28,10 +28,18 @@ private:
         const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::seconds>(
                                        std::chrono::system_clock::now().time_since_epoch())
                                        .count()};
-        IPC::RequestBuilder rb{ctx, 4};
+        LOG_DEBUG(Service, "called");
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(time_since_epoch);
-        LOG_DEBUG(Service, "called");
+    }
+
+    void GetSystemClockContext(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        SystemClockContext system_clock_ontext{};
+        IPC::ResponseBuilder rb{ctx, (sizeof(SystemClockContext) / 4) + 2};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(system_clock_ontext);
     }
 };
 
@@ -55,14 +63,14 @@ private:
     void GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
         LocationName location_name{};
-        IPC::RequestBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
+        IPC::ResponseBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(location_name);
     }
 
     void GetTotalLocationNameCount(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service, "(STUBBED) called");
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }
@@ -75,7 +83,7 @@ private:
 
         CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
         CalendarAdditionalInfo additional_info{};
-        IPC::RequestBuilder rb{ctx, 10};
+        IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(calendar_time);
         rb.PushRaw(additional_info);
@@ -83,49 +91,28 @@ private:
 };
 
 void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ctx) {
-    // TODO(Subv): Verify if this should return the interface as a domain object when called from
-    // within a domain.
-    auto system_clock = std::make_shared<ISystemClock>();
-    auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
-    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-    system_clock->ClientConnected(server);
-    LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u", client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushMoveObjects(std::move(client));
+    rb.PushIpcInterface<ISystemClock>();
+    LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
-    // TODO(Subv): Verify if this should return the interface as a domain object when called from
-    // within a domain.
-    auto system_clock = std::make_shared<ISystemClock>();
-    auto sessions = Kernel::ServerSession::CreateSessionPair(system_clock->GetServiceName());
-    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-    system_clock->ClientConnected(server);
-    LOG_DEBUG(Service, "called, initialized ISystemClock -> session=%u", client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushMoveObjects(std::move(client));
+    rb.PushIpcInterface<ISystemClock>();
+    LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
-    // TODO(Subv): Verify if this should return the interface as a domain object when called from
-    // within a domain.
-    auto steady_clock = std::make_shared<ISteadyClock>();
-    auto sessions = Kernel::ServerSession::CreateSessionPair(steady_clock->GetServiceName());
-    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-    steady_clock->ClientConnected(server);
-    LOG_DEBUG(Service, "called, initialized ISteadyClock -> session=%u", client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushMoveObjects(std::move(client));
+    rb.PushIpcInterface<ISteadyClock>();
+    LOG_DEBUG(Service, "called");
 }
 
 void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ITimeZoneService>();
     LOG_DEBUG(Service, "called");

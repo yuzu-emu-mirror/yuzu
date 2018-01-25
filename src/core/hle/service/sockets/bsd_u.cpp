@@ -11,7 +11,7 @@ namespace Sockets {
 void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 3};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0); // bsd errno
@@ -28,7 +28,7 @@ void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
 
     u32 fd = next_fd++;
 
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(fd);
@@ -38,7 +38,7 @@ void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
 void BSD_U::Connect(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0); // ret
@@ -48,7 +48,7 @@ void BSD_U::Connect(Kernel::HLERequestContext& ctx) {
 void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::RequestBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0); // ret

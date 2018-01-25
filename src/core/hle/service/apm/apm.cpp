@@ -30,7 +30,7 @@ private:
         auto mode = static_cast<PerformanceMode>(rp.Pop<u32>());
         u32 config = rp.Pop<u32>();
 
-        IPC::RequestBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service, "(STUBBED) called mode=%u config=%u", static_cast<u32>(mode), config);
@@ -41,7 +41,7 @@ private:
 
         auto mode = static_cast<PerformanceMode>(rp.Pop<u32>());
 
-        IPC::RequestBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0); // Performance configuration
 
@@ -58,7 +58,7 @@ APM::APM() : ServiceFramework("apm") {
 }
 
 void APM::OpenSession(Kernel::HLERequestContext& ctx) {
-    IPC::RequestBuilder rb{ctx, 2, 0, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISession>();
 }

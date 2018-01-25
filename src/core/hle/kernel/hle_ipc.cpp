@@ -7,7 +7,6 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -24,10 +23,6 @@ void SessionRequestHandler::ClientConnected(SharedPtr<ServerSession> server_sess
 void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_session) {
     server_session->SetHleHandler(nullptr);
     boost::range::remove_erase(connected_sessions, server_session);
-}
-
-HLERequestContext::HLERequestContext(SharedPtr<Kernel::Domain> domain) : domain(std::move(domain)) {
-    cmd_buf[0] = 0;
 }
 
 HLERequestContext::HLERequestContext(SharedPtr<Kernel::ServerSession> server_session)
@@ -87,7 +82,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     // Padding to align to 16 bytes
     rp.AlignWithPadding();
 
-    if (IsDomain() && (command_header->type == IPC::CommandType::Request || !incoming)) {
+    if (Session()->IsDomain() && (command_header->type == IPC::CommandType::Request || !incoming)) {
         // If this is an incoming message, only CommandType "Request" has a domain header
         // All outgoing domain messages have the domain header
         domain_message_header =
@@ -200,12 +195,12 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
 
     // TODO(Subv): Translate the X/A/B/W buffers.
 
-    if (IsDomain()) {
+    if (Session()->IsDomain()) {
         ASSERT(domain_message_header->num_objects == domain_objects.size());
         // Write the domain objects to the command buffer, these go after the raw untranslated data.
         // TODO(Subv): This completely ignores C buffers.
         size_t domain_offset = size - domain_message_header->num_objects;
-        auto& request_handlers = domain->request_handlers;
+        auto& request_handlers = server_session->domain_request_handlers;
 
         for (auto& object : domain_objects) {
             request_handlers.emplace_back(object);

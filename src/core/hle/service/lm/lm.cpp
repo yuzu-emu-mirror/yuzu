@@ -65,7 +65,7 @@ private:
      */
     void Log(Kernel::HLERequestContext& ctx) {
         // This function only succeeds - Get that out of the way
-        IPC::RequestBuilder rb{ctx, 1};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         // Read MessageHeader, despite not doing anything with it right now
@@ -130,7 +130,7 @@ private:
         }
         output += message;
 
-        LOG_DEBUG(Debug_Emulated, "%s", output.c_str());
+        LOG_INFO(Debug_Emulated, "%s", output.c_str());
     }
 };
 
@@ -146,21 +146,11 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
  *      0: ResultCode
  */
 void LM::Initialize(Kernel::HLERequestContext& ctx) {
-    // TODO(Subv): Verify if this should return the interface as a domain object when called from
-    // within a domain.
-
-    auto logger = std::make_shared<Logger>();
-    auto sessions = Kernel::ServerSession::CreateSessionPair(logger->GetServiceName());
-    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-    logger->ClientConnected(server);
-
-    LOG_DEBUG(Service_SM, "called, initialized logger -> session=%u", client->GetObjectId());
-    IPC::RequestBuilder rb{ctx, 2, 0, 1};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushMoveObjects(std::move(client));
+    rb.PushIpcInterface<Logger>();
 
-    LOG_INFO(Service_SM, "called");
+    LOG_DEBUG(Service, "called");
 }
 
 LM::LM() : ServiceFramework("lm") {

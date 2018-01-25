@@ -11,7 +11,6 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
-#include "core/hle/kernel/domain.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -30,11 +29,6 @@ public:
 
     RequestHelperBase(Kernel::HLERequestContext& context)
         : context(&context), cmdbuf(context.CommandBuffer()) {}
-
-    void ValidateHeader() {
-        // DEBUG_ASSERT_MSG(index == TotalSize(), "Operations do not match the header (cmd 0x%x)",
-        //                 header.raw);
-    }
 
     void Skip(unsigned size_in_words, bool set_to_null) {
         if (set_to_null)
@@ -60,14 +54,30 @@ public:
     }
 };
 
-class RequestBuilder : public RequestHelperBase {
+class ResponseBuilder : public RequestHelperBase {
 public:
-    RequestBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+    ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    RequestBuilder(Kernel::HLERequestContext& context, unsigned normal_params_size,
-                   u32 num_handles_to_copy = 0, u32 num_handles_to_move = 0,
-                   u32 num_domain_objects = 0)
-        : RequestHelperBase(context) {
+    u32 normal_params_size{};
+    u32 num_handles_to_copy{};
+    u32 num_objects_to_move{}; ///< Domain objects or move handles, context dependent
+    std::ptrdiff_t datapayload_index{};
+
+    /// Flags used for customizing the behavior of ResponseBuilder
+    enum class Flags : u32 {
+        None = 0,
+        /// Uses move handles to move objects in the response, even when in a domain. This is
+        /// required when PushMoveObjects is used.
+        AlwaysMoveHandles = 1,
+    };
+
+    ResponseBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
+                    u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
+                    Flags flags = Flags::None)
+
+        : RequestHelperBase(context), normal_params_size(normal_params_size),
+          num_handles_to_copy(num_handles_to_copy), num_objects_to_move(num_objects_to_move) {
+
         memset(cmdbuf, 0, sizeof(u32) * IPC::COMMAND_BUFFER_LENGTH);
 
         context.ClearIncomingObjects();
@@ -77,12 +87,19 @@ public:
         // The entire size of the raw data section in u32 units, including the 16 bytes of mandatory
         // padding.
         u32 raw_data_size = sizeof(IPC::DataPayloadHeader) / 4 + 4 + normal_params_size;
-        if (context.IsDomain()) {
-            raw_data_size += sizeof(DomainMessageHeader) / 4 + num_domain_objects;
+
+        u32 num_handles_to_move{};
+        u32 num_domain_objects{};
+        const bool always_move_handles{
+            (static_cast<u32>(flags) & static_cast<u32>(Flags::AlwaysMoveHandles)) != 0};
+        if (!context.Session()->IsDomain() || always_move_handles) {
+            num_handles_to_move = num_objects_to_move;
         } else {
-            // If we're not in a domain, turn the domain object parameters into move handles.
-            num_handles_to_move += num_domain_objects;
-            num_domain_objects = 0;
+            num_domain_objects = num_objects_to_move;
+        }
+
+        if (context.Session()->IsDomain()) {
+            raw_data_size += sizeof(DomainMessageHeader) / 4 + num_domain_objects;
         }
 
         header.data_size.Assign(raw_data_size);
@@ -101,7 +118,7 @@ public:
 
         AlignWithPadding();
 
-        if (context.IsDomain()) {
+        if (context.Session()->IsDomain()) {
             IPC::DomainMessageHeader domain_header{};
             domain_header.num_objects = num_domain_objects;
             PushRaw(domain_header);
@@ -110,12 +127,13 @@ public:
         IPC::DataPayloadHeader data_payload_header{};
         data_payload_header.magic = Common::MakeMagic('S', 'F', 'C', 'O');
         PushRaw(data_payload_header);
+
+        datapayload_index = index;
     }
 
-    template <class T, class... Args>
-    void PushIpcInterface(Args&&... args) {
-        auto iface = std::make_shared<T>(std::forward<Args>(args)...);
-        if (context->IsDomain()) {
+    template <class T>
+    void PushIpcInterface(std::shared_ptr<T> iface) {
+        if (context->Session()->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
             auto sessions = Kernel::ServerSession::CreateSessionPair(iface->GetServiceName());
@@ -126,8 +144,26 @@ public:
         }
     }
 
+    template <class T, class... Args>
+    void PushIpcInterface(Args&&... args) {
+        PushIpcInterface<T>(std::make_shared<T>(std::forward<Args>(args)...));
+    }
+
+    void ValidateHeader() {
+        const size_t num_domain_objects = context->NumDomainObjects();
+        const size_t num_move_objects = context->NumMoveObjects();
+        ASSERT_MSG(!num_domain_objects || !num_move_objects,
+                   "cannot move normal handles and domain objects");
+        ASSERT_MSG((index - datapayload_index) == normal_params_size,
+                   "normal_params_size value is incorrect");
+        ASSERT_MSG((num_domain_objects + num_move_objects) == num_objects_to_move,
+                   "num_objects_to_move value is incorrect");
+        ASSERT_MSG(context->NumCopyObjects() == num_handles_to_copy,
+                   "num_handles_to_copy value is incorrect");
+    }
+
     // Validate on destruction, as there shouldn't be any case where we don't want it
-    ~RequestBuilder() {
+    ~ResponseBuilder() {
         ValidateHeader();
     }
 
@@ -155,52 +191,52 @@ public:
 /// Push ///
 
 template <>
-inline void RequestBuilder::Push(u32 value) {
+inline void ResponseBuilder::Push(u32 value) {
     cmdbuf[index++] = value;
 }
 
 template <typename T>
-void RequestBuilder::PushRaw(const T& value) {
+void ResponseBuilder::PushRaw(const T& value) {
     std::memcpy(cmdbuf + index, &value, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
 
 template <>
-inline void RequestBuilder::Push(ResultCode value) {
+inline void ResponseBuilder::Push(ResultCode value) {
     // Result codes are actually 64-bit in the IPC buffer, but only the high part is discarded.
     Push(value.raw);
     Push<u32>(0);
 }
 
 template <>
-inline void RequestBuilder::Push(u8 value) {
+inline void ResponseBuilder::Push(u8 value) {
     PushRaw(value);
 }
 
 template <>
-inline void RequestBuilder::Push(u16 value) {
+inline void ResponseBuilder::Push(u16 value) {
     PushRaw(value);
 }
 
 template <>
-inline void RequestBuilder::Push(u64 value) {
+inline void ResponseBuilder::Push(u64 value) {
     Push(static_cast<u32>(value));
     Push(static_cast<u32>(value >> 32));
 }
 
 template <>
-inline void RequestBuilder::Push(bool value) {
+inline void ResponseBuilder::Push(bool value) {
     Push(static_cast<u8>(value));
 }
 
 template <typename First, typename... Other>
-void RequestBuilder::Push(const First& first_value, const Other&... other_values) {
+void ResponseBuilder::Push(const First& first_value, const Other&... other_values) {
     Push(first_value);
     Push(other_values...);
 }
 
 template <typename... O>
-inline void RequestBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
+inline void ResponseBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddCopyObject(std::move(object));
@@ -208,7 +244,7 @@ inline void RequestBuilder::PushCopyObjects(Kernel::SharedPtr<O>... pointers) {
 }
 
 template <typename... O>
-inline void RequestBuilder::PushMoveObjects(Kernel::SharedPtr<O>... pointers) {
+inline void ResponseBuilder::PushMoveObjects(Kernel::SharedPtr<O>... pointers) {
     auto objects = {pointers...};
     for (auto& object : objects) {
         context->AddMoveObject(std::move(object));
@@ -227,15 +263,10 @@ public:
         Skip(CommandIdSize, false);
     }
 
-    RequestBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
-                               u32 num_handles_to_move, u32 num_domain_objects,
-                               bool validate_header = true) {
-        if (validate_header) {
-            ValidateHeader();
-        }
-
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move,
-                num_domain_objects};
+    ResponseBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
+                                u32 num_handles_to_move,
+                                ResponseBuilder::Flags flags = ResponseBuilder::Flags::None) {
+        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move, flags};
     }
 
     template <typename T>

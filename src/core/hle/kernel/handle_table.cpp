@@ -5,12 +5,10 @@
 #include <utility>
 #include "common/assert.h"
 #include "common/logging/log.h"
-#include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
-#include "core/hle/kernel/session.h"
 #include "core/hle/kernel/thread.h"
 
 namespace Kernel {
@@ -53,14 +51,6 @@ ResultVal<Handle> HandleTable::Duplicate(Handle handle) {
         return ERR_INVALID_HANDLE;
     }
     return Create(std::move(object));
-}
-
-void HandleTable::ConvertSessionToDomain(const Session& session, SharedPtr<Object> domain) {
-    for (auto& object : objects) {
-        if (DynamicObjectCast<ClientSession>(object) == session.client) {
-            object = domain;
-        }
-    }
 }
 
 ResultCode HandleTable::Close(Handle handle) {
