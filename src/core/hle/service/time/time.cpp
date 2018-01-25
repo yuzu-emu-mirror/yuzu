@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include "common/logging/log.h"
+#include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
@@ -45,7 +46,21 @@ private:
 
 class ISteadyClock final : public ServiceFramework<ISteadyClock> {
 public:
-    ISteadyClock() : ServiceFramework("ISteadyClock") {}
+    ISteadyClock() : ServiceFramework("ISteadyClock") {
+        static const FunctionInfo functions[] = {
+            {0, &ISteadyClock::GetCurrentTimePoint, "GetCurrentTimePoint"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void GetCurrentTimePoint(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service, "called");
+        SteadyClockTimePoint steady_clock_time_point{cyclesToMs(CoreTiming::GetTicks()) / 1000};
+        IPC::ResponseBuilder rb{ctx, (sizeof(SteadyClockTimePoint) / 4) + 2};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(steady_clock_time_point);
+    }
 };
 
 class ITimeZoneService final : public ServiceFramework<ITimeZoneService> {
