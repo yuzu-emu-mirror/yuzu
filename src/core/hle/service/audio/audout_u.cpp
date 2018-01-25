@@ -23,7 +23,7 @@ constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 500)};
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
-    IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(Stopped) {
+    IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(AudioState::Stopped) {
         static const FunctionInfo functions[] = {
             {0x0, nullptr, "GetAudioOutState"},
             {0x1, &IAudioOut::StartAudioOut, "StartAudioOut"},
@@ -58,8 +58,8 @@ private:
     void StartAudioOut(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        // start audio
-        audio_out_state = Started;
+        // Start audio
+        audio_out_state = AudioState::Started;
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -68,8 +68,8 @@ private:
     void StopAudioOut(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        // stop audio
-        audio_out_state = Stopped;
+        // Stop audio
+        audio_out_state = AudioState::Stopped;
 
         queue_keys.clear();
 
@@ -89,8 +89,7 @@ private:
         LOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
-        u64 key = rp.Pop<u64>();
-
+        const u64 key{rp.Pop<u64>()};
         queue_keys.insert(queue_keys.begin(), key);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -102,11 +101,10 @@ private:
 
         const auto& buffer = ctx.BufferDescriptorB()[0];
 
-        // TODO(st4rk): this is how libtransistor currently implements the
-        // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to the APP and this address
+        // TODO(st4rk): This is how libtransistor currently implements the
+        // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to the app and this address
         // is used to know which buffer should be filled with data and send again to the service
         // through AppendAudioOutBuffer. Check if this is the proper way to do it.
-
         u64 key{0};
 
         if (queue_keys.size()) {
@@ -124,8 +122,7 @@ private:
     }
 
     void UpdateAudioBuffersCallback() {
-
-        if (audio_out_state != Started) {
+        if (audio_out_state != AudioState::Started) {
             return;
         }
 
@@ -136,7 +133,7 @@ private:
         buffer_event->Signal();
     }
 
-    enum AudioState : u32 {
+    enum class AudioState : u32 {
         Started,
         Stopped,
     };
@@ -148,10 +145,10 @@ private:
     /// This is the evend handle used to check if the audio buffer was released
     Kernel::SharedPtr<Kernel::Event> buffer_event;
 
-    /// (st4rk): this is just a temporary workaround for the future implementation. Libtransistor
+    /// (st4rk): This is just a temporary workaround for the future implementation. Libtransistor
     /// uses the key as an address in the App, so we need to return when the
     /// GetReleasedAudioOutBuffer_1 is called, otherwise we'll run in problems, because
-    /// libtransistor uses the key returned as an pointer;
+    /// libtransistor uses the key returned as an pointer.
     std::vector<u64> queue_keys;
 
     AudioState audio_out_state;
@@ -169,11 +166,9 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
 
     rb.Push(RESULT_SUCCESS);
-    // TODO(st4rk): we're currently returning only one audio interface
-    // (stringlist size)
-    // however, it's highly possible to have more than one interface (despite that
-    // libtransistor
-    // requires only one).
+    // TODO(st4rk): We're currently returning only one audio interface (stringlist size). However,
+    // it's highly possible to have more than one interface (despite that libtransistor requires
+    // only one).
     rb.Push<u32>(1);
 }
 
@@ -184,20 +179,13 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
         audio_out_interface = std::make_shared<IAudioOut>();
     }
 
-    auto sessions = Kernel::ServerSession::CreateSessionPair(audio_out_interface->GetServiceName());
-    auto server = std::get<Kernel::SharedPtr<Kernel::ServerSession>>(sessions);
-    auto client = std::get<Kernel::SharedPtr<Kernel::ClientSession>>(sessions);
-    audio_out_interface->ClientConnected(server);
-    LOG_DEBUG(Service, "called, initialized IAudioOut -> session=%u", client->GetObjectId());
     IPC::ResponseBuilder rb{ctx, 6, 0, 1};
-
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(sample_rate);
     rb.Push<u32>(audio_channels);
     rb.Push<u32>(static_cast<u32>(PcmFormat::Int16));
-    // this field is unknown
-    rb.Push<u32>(0);
-    rb.PushMoveObjects(std::move(client));
+    rb.Push<u32>(0); // This field is unknown
+    rb.PushIpcInterface<Audio::IAudioOut>(audio_out_interface);
 }
 
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
