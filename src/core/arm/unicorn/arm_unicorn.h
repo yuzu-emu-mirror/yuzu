@@ -29,7 +29,9 @@ public:
     void SaveContext(ThreadContext& ctx) override;
     void LoadContext(const ThreadContext& ctx) override;
     void PrepareReschedule() override;
-    void ExecuteInstructions(int num_instructions) override;
+    void ExecuteInstructions(int num_instructions);
+    void Run() override;
+    void Step() override;
     void ClearInstructionCache() override;
     void PageTableChanged() override{};
 
