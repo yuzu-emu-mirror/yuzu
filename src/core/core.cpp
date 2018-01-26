@@ -40,7 +40,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         if (GDBStub::GetCpuHaltFlag()) {
             if (GDBStub::GetCpuStepFlag()) {
                 GDBStub::SetCpuStepFlag(false);
-                tight_loop = 1;
+                tight_loop = false;
             } else {
                 return ResultStatus::Success;
             }
