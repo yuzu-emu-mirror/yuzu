@@ -48,6 +48,6 @@ private:
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
     Dynarmic::A64::Jit jit;
     ARM_Unicorn inner_unicorn;
-    
+
     Memory::PageTable* current_page_table = nullptr;
 };

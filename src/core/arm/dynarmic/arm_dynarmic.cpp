@@ -4,9 +4,9 @@
 
 #include <cinttypes>
 #include <memory>
-#include "common/microprofile.h"
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include "common/microprofile.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
@@ -88,7 +88,6 @@ void ARM_Dynarmic::Run() {
 void ARM_Dynarmic::Step() {
     cb->InterpreterFallback(jit.GetPC(), 1);
 }
-
 
 ARM_Dynarmic::ARM_Dynarmic()
     : cb(std::make_unique<ARM_Dynarmic_Callbacks>(*this)),
