@@ -423,7 +423,7 @@ if(ENABLE_QT AND UNIX AND NOT APPLE)
     install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.desktop"
             DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications")
     install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.svg"
-            DESTINATION "${CMAKE_INSTALL_PREFIX}/share/pixmaps")
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps")
     install(FILES "${CMAKE_SOURCE_DIR}/dist/yuzu.xml"
             DESTINATION "${CMAKE_INSTALL_PREFIX}/share/mime/packages")
 endif()
