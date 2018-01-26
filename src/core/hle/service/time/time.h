@@ -40,6 +40,12 @@ struct SystemClockContext {
 static_assert(sizeof(SystemClockContext) == 0x20,
               "SystemClockContext structure has incorrect size");
 
+struct SteadyClockTimePoint {
+    u64 value;
+    INSERT_PADDING_WORDS(4);
+};
+static_assert(sizeof(SteadyClockTimePoint) == 0x18, "SteadyClockTimePoint is incorrect size");
+
 class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
