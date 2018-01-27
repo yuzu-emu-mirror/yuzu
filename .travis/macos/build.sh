@@ -8,7 +8,7 @@ export UNICORNDIR=$(pwd)/externals/unicorn
 
 mkdir build && cd build
 cmake --version
-cmake .. -DYUZU_BUILD_UNICORN=ON -DCMAKE_OSX_ARCHITECTURES="x86_64;x86_64h" -DCMAKE_BUILD_TYPE=Release
+cmake .. -DYUZU_BUILD_UNICORN=ON -DCMAKE_BUILD_TYPE=Release
 make -j4
 
 ctest -VV -C Release
