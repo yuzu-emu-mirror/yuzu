@@ -163,8 +163,8 @@ add_library(core STATIC
     loader/nso.h
     memory.cpp
     memory.h
+    memory_hook.h
     memory_setup.h
-    mmio.h
     perf_stats.cpp
     perf_stats.h
     settings.cpp

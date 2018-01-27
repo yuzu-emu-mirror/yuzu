@@ -8,10 +8,12 @@
 #include <cstddef>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
+#include <boost/icl/interval_map.hpp>
 #include <boost/optional.hpp>
 #include "common/common_types.h"
-#include "core/mmio.h"
+#include "core/memory_hook.h"
 
 namespace Kernel {
 class Process;
@@ -28,32 +30,35 @@ const u64 PAGE_SIZE = 1 << PAGE_BITS;
 const u64 PAGE_MASK = PAGE_SIZE - 1;
 const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (36 - PAGE_BITS);
 
-enum class PageType {
+enum class PageType : u8 {
     /// Page is unmapped and should cause an access error.
     Unmapped,
     /// Page is mapped to regular memory. This is the only type you can get pointers to.
     Memory,
-    /// Page is mapped to regular memory, but also needs to check for rasterizer cache flushing and
-    /// invalidation
-    RasterizerCachedMemory,
-    /// Page is mapped to a I/O region. Writing and reading to this page is handled by functions.
+    /// Page is mapped to a memory hook, which intercepts read and write requests.
     Special,
-    /// Page is mapped to a I/O region, but also needs to check for rasterizer cache flushing and
-    /// invalidation
-    RasterizerCachedSpecial,
 };
 
 struct SpecialRegion {
-    VAddr base;
-    u64 size;
-    MMIORegionPointer handler;
+    enum class Type {
+        DebugHook,
+        IODevice,
+    } type;
+
+    MemoryHookPointer handler;
+
+    bool operator<(const SpecialRegion& other) const {
+        return std::tie(type, handler) < std::tie(other.type, other.handler);
+    }
+
+    bool operator==(const SpecialRegion& other) const {
+        return std::tie(type, handler) == std::tie(other.type, other.handler);
+    }
 };
 
 /**
  * A (reasonably) fast way of allowing switchable and remappable process address spaces. It loosely
- * mimics the way a real CPU page table works, but instead is optimized for minimal decoding and
- * fetching requirements when accessing. In the usual case of an access to regular memory, it only
- * requires an indexed fetch and a check for NULL.
+ * mimics the way a real CPU page table works.
  */
 struct PageTable {
     /**
@@ -66,19 +71,13 @@ struct PageTable {
      * Contains MMIO handlers that back memory regions whose entries in the `attribute` array is of
      * type `Special`.
      */
-    std::vector<SpecialRegion> special_regions;
+    boost::icl::interval_map<VAddr, std::set<SpecialRegion>> special_regions;
 
     /**
      * Array of fine grained page attributes. If it is set to any value other than `Memory`, then
      * the corresponding entry in `pointers` MUST be set to null.
      */
     std::array<PageType, PAGE_TABLE_NUM_ENTRIES> attributes;
-
-    /**
-     * Indicates the number of externally cached resources touching a page that should be
-     * flushed before the memory is accessed
-     */
-    std::array<u8, PAGE_TABLE_NUM_ENTRIES> cached_res_count;
 };
 
 /// Physical memory regions as seen from the ARM11
@@ -242,34 +241,5 @@ boost::optional<VAddr> PhysicalToVirtualAddress(PAddr addr);
  * Gets a pointer to the memory region beginning at the specified physical address.
  */
 u8* GetPhysicalPointer(PAddr address);
-
-/**
- * Adds the supplied value to the rasterizer resource cache counter of each
- * page touching the region.
- */
-void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta);
-
-/**
- * Flushes any externally cached rasterizer resources touching the given region.
- */
-void RasterizerFlushRegion(PAddr start, u64 size);
-
-/**
- * Flushes and invalidates any externally cached rasterizer resources touching the given region.
- */
-void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size);
-
-enum class FlushMode {
-    /// Write back modified surfaces to RAM
-    Flush,
-    /// Write back modified surfaces to RAM, and also remove them from the cache
-    FlushAndInvalidate,
-};
-
-/**
- * Flushes and invalidates any externally cached rasterizer resources touching the given virtual
- * address region.
- */
-void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode);
 
 } // namespace Memory

@@ -266,7 +266,7 @@ void RendererOpenGL::LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
     screen_info.display_texture = screen_info.texture.resource.handle;
     screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-    Memory::RasterizerFlushRegion(framebuffer_info.address, size_in_bytes);
+    // Memory::RasterizerFlushRegion(framebuffer_info.address, size_in_bytes);
 
     state.texture_units[0].texture_2d = screen_info.texture.resource.handle;
     state.Apply();
