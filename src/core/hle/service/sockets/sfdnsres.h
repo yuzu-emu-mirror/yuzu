@@ -12,10 +12,11 @@ namespace Sockets {
 
 class SFDNSRES final : public ServiceFramework<SFDNSRES> {
 public:
-    SFDNSRES() : ServiceFramework("sfdnsres") {}
+    SFDNSRES();
     ~SFDNSRES() = default;
 
 private:
+    void GetAddrInfo(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Sockets
