@@ -10,8 +10,8 @@
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/vm_manager.h"
 #include "core/memory.h"
+#include "core/memory_hook.h"
 #include "core/memory_setup.h"
-#include "core/mmio.h"
 
 namespace Kernel {
 
@@ -60,8 +60,8 @@ void VMManager::Reset() {
     vma_map.emplace(initial_vma.base, initial_vma);
 
     page_table.pointers.fill(nullptr);
+    page_table.special_regions.clear();
     page_table.attributes.fill(Memory::PageType::Unmapped);
-    page_table.cached_res_count.fill(0);
 
     UpdatePageTableForVMA(initial_vma);
 }
@@ -121,7 +121,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* me
 
 ResultVal<VMManager::VMAHandle> VMManager::MapMMIO(VAddr target, PAddr paddr, u64 size,
                                                    MemoryState state,
-                                                   Memory::MMIORegionPointer mmio_handler) {
+                                                   Memory::MemoryHookPointer mmio_handler) {
     // This is the appropriately sized VMA that will turn into our allocation.
     CASCADE_RESULT(VMAIter vma_handle, CarveVMA(target, size));
     VirtualMemoryArea& final_vma = vma_handle->second;

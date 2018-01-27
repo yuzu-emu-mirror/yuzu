@@ -2,8 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <array>
 #include <cstring>
+#include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -12,7 +14,6 @@
 #include "core/core.h"
 #include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/process.h"
-#include "core/hle/lock.h"
 #include "core/memory.h"
 #include "core/memory_setup.h"
 #include "video_core/renderer_base.h"
@@ -40,16 +41,12 @@ static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, Pa
     LOG_DEBUG(HW_Memory, "Mapping %p onto %08X-%08X", memory, base * PAGE_SIZE,
               (base + size) * PAGE_SIZE);
 
-    RasterizerFlushVirtualRegion(base << PAGE_BITS, size * PAGE_SIZE,
-                                 FlushMode::FlushAndInvalidate);
-
     VAddr end = base + size;
     while (base != end) {
         ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at %08X", base);
 
         page_table.attributes[base] = type;
         page_table.pointers[base] = memory;
-        page_table.cached_res_count[base] = 0;
 
         base += 1;
         if (memory != nullptr)
@@ -63,157 +60,110 @@ void MapMemoryRegion(PageTable& page_table, VAddr base, u64 size, u8* target) {
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, PageType::Memory);
 }
 
-void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MMIORegionPointer mmio_handler) {
+void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer mmio_handler) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
 
-    page_table.special_regions.emplace_back(SpecialRegion{base, size, mmio_handler});
+    auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
+    SpecialRegion region{SpecialRegion::Type::IODevice, mmio_handler};
+    page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
 void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
     ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
     ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Unmapped);
+
+    auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
+    page_table.special_regions.erase(interval);
 }
 
-/**
- * Gets a pointer to the exact memory at the virtual address (i.e. not page aligned)
- * using a VMA from the current process
- */
-static u8* GetPointerFromVMA(const Kernel::Process& process, VAddr vaddr) {
-    u8* direct_pointer = nullptr;
-
-    auto& vm_manager = process.vm_manager;
-
-    auto it = vm_manager.FindVMA(vaddr);
-    ASSERT(it != vm_manager.vma_map.end());
-
-    auto& vma = it->second;
-    switch (vma.type) {
-    case Kernel::VMAType::AllocatedMemoryBlock:
-        direct_pointer = vma.backing_block->data() + vma.offset;
-        break;
-    case Kernel::VMAType::BackingMemory:
-        direct_pointer = vma.backing_memory;
-        break;
-    case Kernel::VMAType::Free:
-        return nullptr;
-    default:
-        UNREACHABLE();
-    }
-
-    return direct_pointer + (vaddr - vma.base);
+void AddDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
+    auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
+    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
-/**
- * Gets a pointer to the exact memory at the virtual address (i.e. not page aligned)
- * using a VMA from the current process.
- */
-static u8* GetPointerFromVMA(VAddr vaddr) {
-    return GetPointerFromVMA(*Kernel::g_current_process, vaddr);
+void RemoveDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
+    auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
+    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    page_table.special_regions.subtract(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
 /**
  * This function should only be called for virtual addreses with attribute `PageType::Special`.
  */
-static MMIORegionPointer GetMMIOHandler(const PageTable& page_table, VAddr vaddr) {
-    for (const auto& region : page_table.special_regions) {
-        if (vaddr >= region.base && vaddr < (region.base + region.size)) {
-            return region.handler;
+static std::set<MemoryHookPointer> GetSpecialHandlers(const PageTable& page_table, VAddr vaddr,
+                                                      u64 size) {
+    std::set<MemoryHookPointer> result;
+    auto interval = boost::icl::discrete_interval<VAddr>::closed(vaddr, vaddr + size - 1);
+    auto interval_list = page_table.special_regions.equal_range(interval);
+    for (auto it = interval_list.first; it != interval_list.second; ++it) {
+        for (const auto& region : it->second) {
+            result.insert(region.handler);
         }
     }
-    ASSERT_MSG(false, "Mapped IO page without a handler @ %08X", vaddr);
-    return nullptr; // Should never happen
+    return result;
 }
 
-static MMIORegionPointer GetMMIOHandler(VAddr vaddr) {
+static std::set<MemoryHookPointer> GetSpecialHandlers(VAddr vaddr, u64 size) {
     const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
-    return GetMMIOHandler(page_table, vaddr);
+    return GetSpecialHandlers(page_table, vaddr, size);
 }
 
 template <typename T>
-T ReadMMIO(MMIORegionPointer mmio_handler, VAddr addr);
+boost::optional<T> ReadSpecial(VAddr addr);
 
 template <typename T>
 T Read(const VAddr vaddr) {
-    const u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-    if (page_pointer) {
-        // NOTE: Avoid adding any extra logic to this fast-path block
+    const PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
+    switch (type) {
+    case PageType::Unmapped:
+        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%016llX", sizeof(T) * 8, vaddr);
+        return 0;
+    case PageType::Special: {
+        if (auto result = ReadSpecial<T>(vaddr))
+            return *result;
+        [[fallthrough]];
+    }
+    case PageType::Memory: {
+        const u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
+        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %08X", vaddr);
+
         T value;
         std::memcpy(&value, &page_pointer[vaddr & PAGE_MASK], sizeof(T));
         return value;
     }
-
-    // The memory access might do an MMIO or cached access, so we have to lock the HLE kernel state
-    std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
-
-    PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
-    switch (type) {
-    case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%llx", sizeof(T) * 8, vaddr);
-        return 0;
-    case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
-        break;
-    case PageType::RasterizerCachedMemory: {
-        RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Flush);
-
-        T value;
-        std::memcpy(&value, GetPointerFromVMA(vaddr), sizeof(T));
-        return value;
     }
-    case PageType::Special:
-        return ReadMMIO<T>(GetMMIOHandler(vaddr), vaddr);
-    case PageType::RasterizerCachedSpecial: {
-        RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Flush);
-        return ReadMMIO<T>(GetMMIOHandler(vaddr), vaddr);
-    }
-    default:
-        UNREACHABLE();
-    }
+    UNREACHABLE();
+    return 0;
 }
 
 template <typename T>
-void WriteMMIO(MMIORegionPointer mmio_handler, VAddr addr, const T data);
+bool WriteSpecial(VAddr addr, const T data);
 
 template <typename T>
 void Write(const VAddr vaddr, const T data) {
-    u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-    if (page_pointer) {
-        // NOTE: Avoid adding any extra logic to this fast-path block
-        std::memcpy(&page_pointer[vaddr & PAGE_MASK], &data, sizeof(T));
-        return;
-    }
-
-    // The memory access might do an MMIO or cached access, so we have to lock the HLE kernel state
-    std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
-
-    PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
+    const PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
         LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u32)data,
                   vaddr);
         return;
-    case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
-        break;
-    case PageType::RasterizerCachedMemory: {
-        RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::FlushAndInvalidate);
-        std::memcpy(GetPointerFromVMA(vaddr), &data, sizeof(T));
-        break;
+    case PageType::Special: {
+        if (WriteSpecial<T>(vaddr, data))
+            return;
+        [[fallthrough]];
     }
-    case PageType::Special:
-        WriteMMIO<T>(GetMMIOHandler(vaddr), vaddr, data);
-        break;
-    case PageType::RasterizerCachedSpecial: {
-        RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::FlushAndInvalidate);
-        WriteMMIO<T>(GetMMIOHandler(vaddr), vaddr, data);
-        break;
+    case PageType::Memory: {
+        u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
+        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %08X", vaddr);
+        std::memcpy(&page_pointer[vaddr & PAGE_MASK], &data, sizeof(T));
+        return;
     }
-    default:
-        UNREACHABLE();
     }
+    UNREACHABLE();
 }
 
 bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr) {
@@ -222,21 +172,20 @@ bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr) {
     if ((vaddr >> PAGE_BITS) >= PAGE_TABLE_NUM_ENTRIES)
         return false;
 
-    const u8* page_pointer = page_table.pointers[vaddr >> PAGE_BITS];
-    if (page_pointer)
-        return true;
-
-    if (page_table.attributes[vaddr >> PAGE_BITS] == PageType::RasterizerCachedMemory)
-        return true;
-
-    if (page_table.attributes[vaddr >> PAGE_BITS] != PageType::Special)
+    const PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
+    switch (type) {
+    case PageType::Unmapped:
         return false;
-
-    MMIORegionPointer mmio_region = GetMMIOHandler(page_table, vaddr);
-    if (mmio_region) {
-        return mmio_region->IsValidAddress(vaddr);
+    case PageType::Memory:
+        return true;
+    case PageType::Special: {
+        for (auto handler : GetSpecialHandlers(page_table, vaddr, 1))
+            if (auto result = handler->IsValidAddress(vaddr))
+                return *result;
+        return current_page_table->pointers[vaddr >> PAGE_BITS] != nullptr;
     }
-
+    }
+    UNREACHABLE();
     return false;
 }
 
@@ -252,10 +201,6 @@ u8* GetPointer(const VAddr vaddr) {
     u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
     if (page_pointer) {
         return page_pointer + (vaddr & PAGE_MASK);
-    }
-
-    if (current_page_table->attributes[vaddr >> PAGE_BITS] == PageType::RasterizerCachedMemory) {
-        return GetPointerFromVMA(vaddr);
     }
 
     LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%08x", vaddr);
@@ -335,97 +280,6 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerMarkRegionCached(PAddr start, u64 size, int count_delta) {
-    if (start == 0) {
-        return;
-    }
-
-    u64 num_pages = ((start + size - 1) >> PAGE_BITS) - (start >> PAGE_BITS) + 1;
-    PAddr paddr = start;
-
-    for (unsigned i = 0; i < num_pages; ++i, paddr += PAGE_SIZE) {
-        boost::optional<VAddr> maybe_vaddr = PhysicalToVirtualAddress(paddr);
-        // While the physical <-> virtual mapping is 1:1 for the regions supported by the cache,
-        // some games (like Pokemon Super Mystery Dungeon) will try to use textures that go beyond
-        // the end address of VRAM, causing the Virtual->Physical translation to fail when flushing
-        // parts of the texture.
-        if (!maybe_vaddr) {
-            LOG_ERROR(HW_Memory,
-                      "Trying to flush a cached region to an invalid physical address %08X", paddr);
-            continue;
-        }
-        VAddr vaddr = *maybe_vaddr;
-
-        u8& res_count = current_page_table->cached_res_count[vaddr >> PAGE_BITS];
-        ASSERT_MSG(count_delta <= UINT8_MAX - res_count,
-                   "Rasterizer resource cache counter overflow!");
-        ASSERT_MSG(count_delta >= -res_count, "Rasterizer resource cache counter underflow!");
-
-        // Switch page type to cached if now cached
-        if (res_count == 0) {
-            PageType& page_type = current_page_table->attributes[vaddr >> PAGE_BITS];
-            switch (page_type) {
-            case PageType::Unmapped:
-                // It is not necessary for a process to have this region mapped into its address
-                // space, for example, a system module need not have a VRAM mapping.
-                break;
-            case PageType::Memory:
-                page_type = PageType::RasterizerCachedMemory;
-                current_page_table->pointers[vaddr >> PAGE_BITS] = nullptr;
-                break;
-            case PageType::Special:
-                page_type = PageType::RasterizerCachedSpecial;
-                break;
-            default:
-                UNREACHABLE();
-            }
-        }
-
-        res_count += count_delta;
-
-        // Switch page type to uncached if now uncached
-        if (res_count == 0) {
-            PageType& page_type = current_page_table->attributes[vaddr >> PAGE_BITS];
-            switch (page_type) {
-            case PageType::Unmapped:
-                // It is not necessary for a process to have this region mapped into its address
-                // space, for example, a system module need not have a VRAM mapping.
-                break;
-            case PageType::RasterizerCachedMemory: {
-                u8* pointer = GetPointerFromVMA(vaddr & ~PAGE_MASK);
-                if (pointer == nullptr) {
-                    // It's possible that this function has called been while updating the pagetable
-                    // after unmapping a VMA. In that case the underlying VMA will no longer exist,
-                    // and we should just leave the pagetable entry blank.
-                    page_type = PageType::Unmapped;
-                } else {
-                    page_type = PageType::Memory;
-                    current_page_table->pointers[vaddr >> PAGE_BITS] = pointer;
-                }
-                break;
-            }
-            case PageType::RasterizerCachedSpecial:
-                page_type = PageType::Special;
-                break;
-            default:
-                UNREACHABLE();
-            }
-        }
-    }
-}
-
-void RasterizerFlushRegion(PAddr start, u64 size) {}
-
-void RasterizerFlushAndInvalidateRegion(PAddr start, u64 size) {
-    // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
-    // null here
-}
-
-void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
-    // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
-    // null here
-}
-
 u8 Read8(const VAddr addr) {
     return Read<u8>(addr);
 }
@@ -442,6 +296,17 @@ u64 Read64(const VAddr addr) {
     return Read<u64_le>(addr);
 }
 
+static bool ReadSpecialBlock(const Kernel::Process& process, const VAddr src_addr,
+                             void* dest_buffer, const size_t size) {
+    auto& page_table = process.vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, src_addr, size)) {
+        if (handler->ReadBlock(src_addr, dest_buffer, size)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
                const size_t size) {
     auto& page_table = process.vm_manager.page_table;
@@ -455,37 +320,21 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (page_table.attributes[page_index]) {
-        case PageType::Unmapped: {
+        case PageType::Unmapped:
             LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0xllx, size = %zu)",
                       current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
+        case PageType::Special: {
+            if (ReadSpecialBlock(process, current_vaddr, dest_buffer, copy_amount))
+                break;
+            [[fallthrough]];
         }
         case PageType::Memory: {
             DEBUG_ASSERT(page_table.pointers[page_index]);
 
             const u8* src_ptr = page_table.pointers[page_index] + page_offset;
             std::memcpy(dest_buffer, src_ptr, copy_amount);
-            break;
-        }
-        case PageType::Special: {
-            MMIORegionPointer handler = GetMMIOHandler(page_table, current_vaddr);
-            DEBUG_ASSERT(handler);
-            handler->ReadBlock(current_vaddr, dest_buffer, copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedMemory: {
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::Flush);
-            std::memcpy(dest_buffer, GetPointerFromVMA(process, current_vaddr), copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedSpecial: {
-            MMIORegionPointer handler = GetMMIOHandler(page_table, current_vaddr);
-            DEBUG_ASSERT(handler);
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::Flush);
-            handler->ReadBlock(current_vaddr, dest_buffer, copy_amount);
             break;
         }
         default:
@@ -519,6 +368,17 @@ void Write64(const VAddr addr, const u64 data) {
     Write<u64_le>(addr, data);
 }
 
+static bool WriteSpecialBlock(const Kernel::Process& process, const VAddr dest_addr,
+                              const void* src_buffer, const size_t size) {
+    auto& page_table = process.vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, dest_addr, size)) {
+        if (handler->WriteBlock(dest_addr, src_buffer, size)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const void* src_buffer,
                 const size_t size) {
     auto& page_table = process.vm_manager.page_table;
@@ -531,37 +391,20 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (page_table.attributes[page_index]) {
-        case PageType::Unmapped: {
+        case PageType::Unmapped:
             LOG_ERROR(HW_Memory,
                       "unmapped WriteBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
-        }
+        case PageType::Special:
+            if (WriteSpecialBlock(process, current_vaddr, src_buffer, copy_amount))
+                break;
+            [[fallthrough]];
         case PageType::Memory: {
             DEBUG_ASSERT(page_table.pointers[page_index]);
 
             u8* dest_ptr = page_table.pointers[page_index] + page_offset;
             std::memcpy(dest_ptr, src_buffer, copy_amount);
-            break;
-        }
-        case PageType::Special: {
-            MMIORegionPointer handler = GetMMIOHandler(page_table, current_vaddr);
-            DEBUG_ASSERT(handler);
-            handler->WriteBlock(current_vaddr, src_buffer, copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedMemory: {
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::FlushAndInvalidate);
-            std::memcpy(GetPointerFromVMA(process, current_vaddr), src_buffer, copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedSpecial: {
-            MMIORegionPointer handler = GetMMIOHandler(page_table, current_vaddr);
-            DEBUG_ASSERT(handler);
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::FlushAndInvalidate);
-            handler->WriteBlock(current_vaddr, src_buffer, copy_amount);
             break;
         }
         default:
@@ -580,6 +423,8 @@ void WriteBlock(const VAddr dest_addr, const void* src_buffer, const size_t size
 }
 
 void ZeroBlock(const VAddr dest_addr, const size_t size) {
+    const auto& process = *Kernel::g_current_process;
+
     size_t remaining_size = size;
     size_t page_index = dest_addr >> PAGE_BITS;
     size_t page_offset = dest_addr & PAGE_MASK;
@@ -591,35 +436,19 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (current_page_table->attributes[page_index]) {
-        case PageType::Unmapped: {
+        case PageType::Unmapped:
             LOG_ERROR(HW_Memory, "unmapped ZeroBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
-        }
+        case PageType::Special:
+            if (WriteSpecialBlock(process, current_vaddr, zeros.data(), copy_amount))
+                break;
+            [[fallthrough]];
         case PageType::Memory: {
             DEBUG_ASSERT(current_page_table->pointers[page_index]);
 
             u8* dest_ptr = current_page_table->pointers[page_index] + page_offset;
             std::memset(dest_ptr, 0, copy_amount);
-            break;
-        }
-        case PageType::Special: {
-            DEBUG_ASSERT(GetMMIOHandler(current_vaddr));
-
-            GetMMIOHandler(current_vaddr)->WriteBlock(current_vaddr, zeros.data(), copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedMemory: {
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::FlushAndInvalidate);
-            std::memset(GetPointerFromVMA(current_vaddr), 0, copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedSpecial: {
-            DEBUG_ASSERT(GetMMIOHandler(current_vaddr));
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::FlushAndInvalidate);
-            GetMMIOHandler(current_vaddr)->WriteBlock(current_vaddr, zeros.data(), copy_amount);
             break;
         }
         default:
@@ -633,6 +462,8 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
 }
 
 void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
+    const auto& process = *Kernel::g_current_process;
+
     size_t remaining_size = size;
     size_t page_index = src_addr >> PAGE_BITS;
     size_t page_offset = src_addr & PAGE_MASK;
@@ -642,40 +473,23 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
         const VAddr current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
 
         switch (current_page_table->attributes[page_index]) {
-        case PageType::Unmapped: {
+        case PageType::Unmapped:
             LOG_ERROR(HW_Memory, "unmapped CopyBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
                       current_vaddr, src_addr, size);
             ZeroBlock(dest_addr, copy_amount);
             break;
+        case PageType::Special: {
+            std::vector<u8> buffer(copy_amount);
+            if (ReadSpecialBlock(process, current_vaddr, buffer.data(), buffer.size())) {
+                WriteBlock(dest_addr, buffer.data(), buffer.size());
+                break;
+            }
+            [[fallthrough]];
         }
         case PageType::Memory: {
             DEBUG_ASSERT(current_page_table->pointers[page_index]);
             const u8* src_ptr = current_page_table->pointers[page_index] + page_offset;
             WriteBlock(dest_addr, src_ptr, copy_amount);
-            break;
-        }
-        case PageType::Special: {
-            DEBUG_ASSERT(GetMMIOHandler(current_vaddr));
-
-            std::vector<u8> buffer(copy_amount);
-            GetMMIOHandler(current_vaddr)->ReadBlock(current_vaddr, buffer.data(), buffer.size());
-            WriteBlock(dest_addr, buffer.data(), buffer.size());
-            break;
-        }
-        case PageType::RasterizerCachedMemory: {
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::Flush);
-            WriteBlock(dest_addr, GetPointerFromVMA(current_vaddr), copy_amount);
-            break;
-        }
-        case PageType::RasterizerCachedSpecial: {
-            DEBUG_ASSERT(GetMMIOHandler(current_vaddr));
-            RasterizerFlushVirtualRegion(current_vaddr, static_cast<u32>(copy_amount),
-                                         FlushMode::Flush);
-
-            std::vector<u8> buffer(copy_amount);
-            GetMMIOHandler(current_vaddr)->ReadBlock(current_vaddr, buffer.data(), buffer.size());
-            WriteBlock(dest_addr, buffer.data(), buffer.size());
             break;
         }
         default:
@@ -691,43 +505,75 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
 }
 
 template <>
-u8 ReadMMIO<u8>(MMIORegionPointer mmio_handler, VAddr addr) {
-    return mmio_handler->Read8(addr);
+boost::optional<u8> ReadSpecial<u8>(VAddr addr) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u8)))
+        if (auto result = handler->Read8(addr))
+            return *result;
+    return {};
 }
 
 template <>
-u16 ReadMMIO<u16>(MMIORegionPointer mmio_handler, VAddr addr) {
-    return mmio_handler->Read16(addr);
+boost::optional<u16> ReadSpecial<u16>(VAddr addr) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u16)))
+        if (auto result = handler->Read16(addr))
+            return *result;
+    return {};
 }
 
 template <>
-u32 ReadMMIO<u32>(MMIORegionPointer mmio_handler, VAddr addr) {
-    return mmio_handler->Read32(addr);
+boost::optional<u32> ReadSpecial<u32>(VAddr addr) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u32)))
+        if (auto result = handler->Read32(addr))
+            return *result;
+    return {};
 }
 
 template <>
-u64 ReadMMIO<u64>(MMIORegionPointer mmio_handler, VAddr addr) {
-    return mmio_handler->Read64(addr);
+boost::optional<u64> ReadSpecial<u64>(VAddr addr) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u64)))
+        if (auto result = handler->Read64(addr))
+            return *result;
+    return {};
 }
 
 template <>
-void WriteMMIO<u8>(MMIORegionPointer mmio_handler, VAddr addr, const u8 data) {
-    mmio_handler->Write8(addr, data);
+bool WriteSpecial<u8>(VAddr addr, const u8 data) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u8)))
+        if (handler->Write8(addr, data))
+            return true;
+    return false;
 }
 
 template <>
-void WriteMMIO<u16>(MMIORegionPointer mmio_handler, VAddr addr, const u16 data) {
-    mmio_handler->Write16(addr, data);
+bool WriteSpecial<u16>(VAddr addr, const u16 data) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u16)))
+        if (handler->Write16(addr, data))
+            return true;
+    return false;
 }
 
 template <>
-void WriteMMIO<u32>(MMIORegionPointer mmio_handler, VAddr addr, const u32 data) {
-    mmio_handler->Write32(addr, data);
+bool WriteSpecial<u32>(VAddr addr, const u32 data) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u32)))
+        if (handler->Write32(addr, data))
+            return true;
+    return false;
 }
 
 template <>
-void WriteMMIO<u64>(MMIORegionPointer mmio_handler, VAddr addr, const u64 data) {
-    mmio_handler->Write64(addr, data);
+bool WriteSpecial<u64>(VAddr addr, const u64 data) {
+    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u64)))
+        if (handler->Write64(addr, data))
+            return true;
+    return false;
 }
 
 boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {

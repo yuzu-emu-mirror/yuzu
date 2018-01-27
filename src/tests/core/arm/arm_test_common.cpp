@@ -19,8 +19,8 @@ TestEnvironment::TestEnvironment(bool mutable_memory_)
     page_table = &Kernel::g_current_process->vm_manager.page_table;
 
     page_table->pointers.fill(nullptr);
+    page_table->special_regions.clear();
     page_table->attributes.fill(Memory::PageType::Unmapped);
-    page_table->cached_res_count.fill(0);
 
     Memory::MapIoRegion(*page_table, 0x00000000, 0x80000000, test_memory);
     Memory::MapIoRegion(*page_table, 0x80000000, 0x80000000, test_memory);
@@ -62,11 +62,11 @@ void TestEnvironment::ClearWriteRecords() {
 
 TestEnvironment::TestMemory::~TestMemory() {}
 
-bool TestEnvironment::TestMemory::IsValidAddress(VAddr addr) {
+boost::optional<bool> TestEnvironment::TestMemory::IsValidAddress(VAddr addr) {
     return true;
 }
 
-u8 TestEnvironment::TestMemory::Read8(VAddr addr) {
+boost::optional<u8> TestEnvironment::TestMemory::Read8(VAddr addr) {
     auto iter = data.find(addr);
     if (iter == data.end()) {
         return addr; // Some arbitrary data
@@ -74,16 +74,16 @@ u8 TestEnvironment::TestMemory::Read8(VAddr addr) {
     return iter->second;
 }
 
-u16 TestEnvironment::TestMemory::Read16(VAddr addr) {
-    return Read8(addr) | static_cast<u16>(Read8(addr + 1)) << 8;
+boost::optional<u16> TestEnvironment::TestMemory::Read16(VAddr addr) {
+    return *Read8(addr) | static_cast<u16>(*Read8(addr + 1)) << 8;
 }
 
-u32 TestEnvironment::TestMemory::Read32(VAddr addr) {
-    return Read16(addr) | static_cast<u32>(Read16(addr + 2)) << 16;
+boost::optional<u32> TestEnvironment::TestMemory::Read32(VAddr addr) {
+    return *Read16(addr) | static_cast<u32>(*Read16(addr + 2)) << 16;
 }
 
-u64 TestEnvironment::TestMemory::Read64(VAddr addr) {
-    return Read32(addr) | static_cast<u64>(Read32(addr + 4)) << 32;
+boost::optional<u64> TestEnvironment::TestMemory::Read64(VAddr addr) {
+    return *Read32(addr) | static_cast<u64>(*Read32(addr + 4)) << 32;
 }
 
 bool TestEnvironment::TestMemory::ReadBlock(VAddr src_addr, void* dest_buffer, size_t size) {
@@ -91,34 +91,38 @@ bool TestEnvironment::TestMemory::ReadBlock(VAddr src_addr, void* dest_buffer, s
     u8* data = static_cast<u8*>(dest_buffer);
 
     for (size_t i = 0; i < size; i++, addr++, data++) {
-        *data = Read8(addr);
+        *data = *Read8(addr);
     }
 
     return true;
 }
 
-void TestEnvironment::TestMemory::Write8(VAddr addr, u8 data) {
+bool TestEnvironment::TestMemory::Write8(VAddr addr, u8 data) {
     env->write_records.emplace_back(8, addr, data);
     if (env->mutable_memory)
         env->SetMemory8(addr, data);
+    return true;
 }
 
-void TestEnvironment::TestMemory::Write16(VAddr addr, u16 data) {
+bool TestEnvironment::TestMemory::Write16(VAddr addr, u16 data) {
     env->write_records.emplace_back(16, addr, data);
     if (env->mutable_memory)
         env->SetMemory16(addr, data);
+    return true;
 }
 
-void TestEnvironment::TestMemory::Write32(VAddr addr, u32 data) {
+bool TestEnvironment::TestMemory::Write32(VAddr addr, u32 data) {
     env->write_records.emplace_back(32, addr, data);
     if (env->mutable_memory)
         env->SetMemory32(addr, data);
+    return true;
 }
 
-void TestEnvironment::TestMemory::Write64(VAddr addr, u64 data) {
+bool TestEnvironment::TestMemory::Write64(VAddr addr, u64 data) {
     env->write_records.emplace_back(64, addr, data);
     if (env->mutable_memory)
         env->SetMemory64(addr, data);
+    return true;
 }
 
 bool TestEnvironment::TestMemory::WriteBlock(VAddr dest_addr, const void* src_buffer, size_t size) {

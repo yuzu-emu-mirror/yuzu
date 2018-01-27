@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "common/common_types.h"
-#include "core/mmio.h"
+#include "core/memory_hook.h"
 
 namespace ArmTests {
 
@@ -51,25 +51,25 @@ public:
 
 private:
     friend struct TestMemory;
-    struct TestMemory final : Memory::MMIORegion {
+    struct TestMemory final : Memory::MemoryHook {
         explicit TestMemory(TestEnvironment* env_) : env(env_) {}
         TestEnvironment* env;
 
         ~TestMemory() override;
 
-        bool IsValidAddress(VAddr addr) override;
+        boost::optional<bool> IsValidAddress(VAddr addr) override;
 
-        u8 Read8(VAddr addr) override;
-        u16 Read16(VAddr addr) override;
-        u32 Read32(VAddr addr) override;
-        u64 Read64(VAddr addr) override;
+        boost::optional<u8> Read8(VAddr addr) override;
+        boost::optional<u16> Read16(VAddr addr) override;
+        boost::optional<u32> Read32(VAddr addr) override;
+        boost::optional<u64> Read64(VAddr addr) override;
 
         bool ReadBlock(VAddr src_addr, void* dest_buffer, size_t size) override;
 
-        void Write8(VAddr addr, u8 data) override;
-        void Write16(VAddr addr, u16 data) override;
-        void Write32(VAddr addr, u32 data) override;
-        void Write64(VAddr addr, u64 data) override;
+        bool Write8(VAddr addr, u8 data) override;
+        bool Write16(VAddr addr, u16 data) override;
+        bool Write32(VAddr addr, u32 data) override;
+        bool Write64(VAddr addr, u64 data) override;
 
         bool WriteBlock(VAddr dest_addr, const void* src_buffer, size_t size) override;
 
