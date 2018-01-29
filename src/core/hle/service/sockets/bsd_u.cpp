@@ -58,7 +58,7 @@ void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
 void BSD_U::Close(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ ctx, 4 };
+    IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0); // ret

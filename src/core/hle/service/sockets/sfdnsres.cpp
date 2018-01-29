@@ -9,15 +9,13 @@ namespace Service {
 namespace Sockets {
 
 void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ ctx };
+    IPC::RequestParser rp{ctx};
 
     LOG_WARNING(Service, "(STUBBED) called");
 
-
-    IPC::ResponseBuilder rb{ ctx, 2 };
+    IPC::ResponseBuilder rb{ctx, 2};
 
     rb.Push(RESULT_SUCCESS);
-
 }
 
 SFDNSRES::SFDNSRES() : ServiceFramework("sfdnsres") {
