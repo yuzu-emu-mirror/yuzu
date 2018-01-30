@@ -55,11 +55,22 @@ void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
+void BSD_U::Close(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 4};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(0); // ret
+    rb.Push<u32>(0); // bsd errno
+}
+
 BSD_U::BSD_U() : ServiceFramework("bsd:u") {
     static const FunctionInfo functions[] = {{0, &BSD_U::RegisterClient, "RegisterClient"},
                                              {2, &BSD_U::Socket, "Socket"},
                                              {11, &BSD_U::SendTo, "SendTo"},
-                                             {14, &BSD_U::Connect, "Connect"}};
+                                             {14, &BSD_U::Connect, "Connect"},
+                                             {26, &BSD_U::Close, "Close"}};
     RegisterHandlers(functions);
 }
 
