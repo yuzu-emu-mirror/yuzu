@@ -136,7 +136,8 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     // can not map it in its own address space unless it was created with addr=0, result 0xD900182C.
 
     if (address != 0) {
-        if (address < Memory::HEAP_VADDR) {
+        // TODO(shinyquagsire23): Check for virtual/mappable memory here too?
+        if (address >= Memory::HEAP_VADDR && address < Memory::HEAP_VADDR_END) {
             LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, invalid address",
                       GetObjectId(), address, name.c_str());
             return ERR_INVALID_ADDRESS;
