@@ -22,6 +22,7 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/lm/lm.h"
+#include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/service.h"
@@ -180,6 +181,7 @@ void Init() {
     FileSystem::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
+    NIFM::InstallInterfaces(*SM::g_service_manager);
     Nvidia::InstallInterfaces(*SM::g_service_manager);
     PCTL::InstallInterfaces(*SM::g_service_manager);
     Sockets::InstallInterfaces(*SM::g_service_manager);
