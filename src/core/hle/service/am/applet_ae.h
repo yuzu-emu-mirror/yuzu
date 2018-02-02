@@ -15,13 +15,13 @@ class NVFlinger;
 
 namespace AM {
 
-class AppletOE final : public ServiceFramework<AppletOE> {
+class AppletAE final : public ServiceFramework<AppletAE> {
 public:
-    AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
-    ~AppletOE() = default;
+    AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
+    ~AppletAE() = default;
 
 private:
-    void OpenApplicationProxy(Kernel::HLERequestContext& ctx);
+    void OpenLibraryAppletProxyOld(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
 };
