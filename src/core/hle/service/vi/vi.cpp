@@ -683,6 +683,7 @@ void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx
 
     IPC::RequestParser rp{ctx};
     u32 flags = rp.Pop<u32>();
+    rp.Pop<u32>(); // padding
     u64 display_id = rp.Pop<u64>();
 
     auto& buffer = ctx.BufferDescriptorB()[0];
