@@ -11,6 +11,8 @@
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
+#include "core/hle/service/vi/vi_s.h"
+#include "core/hle/service/vi/vi_u.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -756,6 +758,8 @@ IApplicationDisplayService::IApplicationDisplayService(
 void InstallInterfaces(SM::ServiceManager& service_manager,
                        std::shared_ptr<NVFlinger::NVFlinger> nv_flinger) {
     std::make_shared<VI_M>(nv_flinger)->InstallAsService(service_manager);
+    std::make_shared<VI_S>(nv_flinger)->InstallAsService(service_manager);
+    std::make_shared<VI_U>(nv_flinger)->InstallAsService(service_manager);
 }
 
 } // namespace VI
