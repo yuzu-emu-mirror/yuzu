@@ -4,7 +4,6 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/kernel/event.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/nvflinger/nvflinger.h"

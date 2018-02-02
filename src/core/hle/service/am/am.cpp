@@ -5,6 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/am/am.h"
+#include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
@@ -341,6 +342,7 @@ void IApplicationFunctions::NotifyRunning(Kernel::HLERequestContext& ctx) {
 
 void InstallInterfaces(SM::ServiceManager& service_manager,
                        std::shared_ptr<NVFlinger::NVFlinger> nvflinger) {
+    std::make_shared<AppletAE>(nvflinger)->InstallAsService(service_manager);
     std::make_shared<AppletOE>(nvflinger)->InstallAsService(service_manager);
 }
 

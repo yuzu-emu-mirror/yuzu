@@ -5,7 +5,6 @@
 #pragma once
 
 #include <memory>
-#include "core/hle/ipc_helpers.h"
 #include "core/hle/service/service.h"
 
 namespace Kernel {

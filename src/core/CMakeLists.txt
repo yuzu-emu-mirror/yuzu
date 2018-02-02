@@ -84,6 +84,8 @@ add_library(core STATIC
     hle/service/acc/acc_u0.h
     hle/service/am/am.cpp
     hle/service/am/am.h
+    hle/service/am/applet_ae.cpp
+    hle/service/am/applet_ae.h
     hle/service/am/applet_oe.cpp
     hle/service/am/applet_oe.h
     hle/service/aoc/aoc_u.cpp
