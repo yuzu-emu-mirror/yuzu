@@ -114,6 +114,14 @@ add_library(core STATIC
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp
     hle/service/lm/lm.h
+    hle/service/nifm/nifm.cpp
+    hle/service/nifm/nifm.h
+    hle/service/nifm/nifm_a.cpp
+    hle/service/nifm/nifm_a.h
+    hle/service/nifm/nifm_s.cpp
+    hle/service/nifm/nifm_s.h
+    hle/service/nifm/nifm_u.cpp
+    hle/service/nifm/nifm_u.h
     hle/service/nvdrv/devices/nvdevice.h
     hle/service/nvdrv/devices/nvdisp_disp0.cpp
     hle/service/nvdrv/devices/nvdisp_disp0.h
