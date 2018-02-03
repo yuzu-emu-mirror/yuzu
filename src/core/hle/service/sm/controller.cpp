@@ -4,6 +4,7 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/session.h"
 #include "core/hle/service/sm/controller.h"
 
 namespace Service {
@@ -21,17 +22,21 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
+    // TODO(bunnei): This is just creating a new handle to the same Session. I assume this is wrong
+    // and that we probably want to actually make an entirely new Session, but we still need to
+    // verify this on hardware.
     IPC::ResponseBuilder rb{ctx, 2, 0, 1, IPC::ResponseBuilder::Flags::AlwaysMoveHandles};
     rb.Push(RESULT_SUCCESS);
-    rb.PushMoveObjects(ctx.Session());
+    Kernel::SharedPtr<Kernel::ClientSession> session{ctx.Session()->parent->client};
+    rb.PushMoveObjects(session);
 
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service, "called, session=%u", session->GetObjectId());
 }
 
 void Controller::DuplicateSessionEx(Kernel::HLERequestContext& ctx) {
-    DuplicateSession(ctx);
-
     LOG_WARNING(Service, "(STUBBED) called, using DuplicateSession");
+
+    DuplicateSession(ctx);
 }
 
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
