@@ -39,7 +39,7 @@ public:
      * linear heap.
      * @param name Optional object name, used for debugging purposes.
      */
-    static SharedPtr<SharedMemory> Create(SharedPtr<Process> owner_process, u32 size,
+    static SharedPtr<SharedMemory> Create(SharedPtr<Process> owner_process, u64 size,
                                           MemoryPermission permissions,
                                           MemoryPermission other_permissions, VAddr address = 0,
                                           MemoryRegion region = MemoryRegion::BASE,
@@ -116,7 +116,7 @@ public:
     /// Offset into the backing block for this shared memory.
     size_t backing_block_offset;
     /// Size of the memory block. Page-aligned.
-    u32 size;
+    u64 size;
     /// Permission restrictions applied to the process which created the block.
     MemoryPermission permissions;
     /// Permission restrictions applied to other processes mapping the block.

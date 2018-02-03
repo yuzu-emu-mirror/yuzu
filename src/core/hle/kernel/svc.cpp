@@ -416,8 +416,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
               "called, shared_memory_handle=0x%08X, addr=0x%llx, size=0x%llx, permissions=0x%08X",
               shared_memory_handle, addr, size, permissions);
 
-    SharedPtr<SharedMemory> shared_memory =
-        Kernel::g_handle_table.Get<SharedMemory>(shared_memory_handle);
+    SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
     if (!shared_memory) {
         return ERR_INVALID_HANDLE;
     }
@@ -432,7 +431,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
     case MemoryPermission::WriteExecute:
     case MemoryPermission::ReadWriteExecute:
     case MemoryPermission::DontCare:
-        return shared_memory->Map(Kernel::g_current_process.get(), addr, permissions_type,
+        return shared_memory->Map(g_current_process.get(), addr, permissions_type,
                                   MemoryPermission::DontCare);
     default:
         LOG_ERROR(Kernel_SVC, "unknown permissions=0x%08X", permissions);
@@ -739,13 +738,14 @@ static ResultCode SetThreadCoreMask(u64, u64, u64) {
     return RESULT_SUCCESS;
 }
 
-static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 local_permissions,
+static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permissions,
                                      u32 remote_permissions) {
-    LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz,
+    LOG_TRACE(Kernel_SVC, "called, size=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", size,
               local_permissions, remote_permissions);
-    auto sharedMemHandle = SharedMemory::Create(
-        g_handle_table.Get<Process>(KernelHandle::CurrentProcess), sz,
-        (Kernel::MemoryPermission)local_permissions, (Kernel::MemoryPermission)remote_permissions);
+    auto sharedMemHandle =
+        SharedMemory::Create(g_handle_table.Get<Process>(KernelHandle::CurrentProcess), size,
+                             static_cast<MemoryPermission>(local_permissions),
+                             static_cast<MemoryPermission>(remote_permissions));
 
     CASCADE_RESULT(*handle, g_handle_table.Create(sharedMemHandle));
     return RESULT_SUCCESS;
