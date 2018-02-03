@@ -263,6 +263,7 @@ static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
     SharedPtr<Thread> requesting_thread = g_handle_table.Get<Thread>(requesting_thread_handle);
 
     ASSERT(requesting_thread);
+    ASSERT(requesting_thread == GetCurrentThread());
 
     SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
     if (!mutex) {
