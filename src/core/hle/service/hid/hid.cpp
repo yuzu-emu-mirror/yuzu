@@ -151,11 +151,29 @@ private:
         buttons;
 };
 
+class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
+public:
+    IActiveVibrationDeviceList() : ServiceFramework("IActiveVibrationDeviceList") {
+        static const FunctionInfo functions[] = {
+            {0, &IActiveVibrationDeviceList::ActivateVibrationDevice, "ActivateVibrationDevice"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void ActivateVibrationDevice(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+};
+
 class Hid final : public ServiceFramework<Hid> {
 public:
     Hid() : ServiceFramework("hid") {
         static const FunctionInfo functions[] = {
             {0x00000000, &Hid::CreateAppletResource, "CreateAppletResource"},
+            {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
         RegisterHandlers(functions);
     }
@@ -172,6 +190,13 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
+        LOG_DEBUG(Service_HID, "called");
+    }
+
+    void CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IActiveVibrationDeviceList>();
         LOG_DEBUG(Service_HID, "called");
     }
 };
