@@ -49,7 +49,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(shared_mem);
-        LOG_DEBUG(Service, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 
     void LoadInputDevices() {
@@ -172,7 +172,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
-        LOG_DEBUG(Service, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 };
 
