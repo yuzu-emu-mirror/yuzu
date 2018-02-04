@@ -30,9 +30,10 @@ private:
 
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
 public:
-    IManagerForApplication() : ServiceFramework("IProfile") {
+    IManagerForApplication() : ServiceFramework("IManagerForApplication") {
         static const FunctionInfo functions[] = {
             {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
+            {1, &IManagerForApplication::GetAccountId, "GetAccountId"},
         };
         RegisterHandlers(functions);
     }
@@ -43,6 +44,13 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(true); // TODO: Check when this is supposed to return true and when not
+    }
+
+    void GetAccountId(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(0x12345678ABCDEF);
     }
 };
 
