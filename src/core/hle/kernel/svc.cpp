@@ -332,6 +332,9 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     case GetInfoType::TotalHeapUsage:
         *result = vm_manager.GetTotalHeapUsage();
         break;
+    case GetInfoType::IsCurrentProcessBeingDebugged:
+        *result = 0;
+        break;
     case GetInfoType::RandomEntropy:
         *result = 0;
         break;
