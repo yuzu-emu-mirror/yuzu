@@ -81,9 +81,18 @@ void ACC_U0::GetBaasAccountManagerForApplication(Kernel::HLERequestContext& ctx)
     LOG_DEBUG(Service, "called");
 }
 
+void ACC_U0::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(0x0);
+    rb.Push<u64>(0x0);
+}
+
 ACC_U0::ACC_U0() : ServiceFramework("acc:u0") {
     static const FunctionInfo functions[] = {
         {1, &ACC_U0::GetUserExistence, "GetUserExistence"},
+        {4, &ACC_U0::GetLastOpenedUser, "GetLastOpenedUser"},
         {5, &ACC_U0::GetProfile, "GetProfile"},
         {100, &ACC_U0::InitializeApplicationInfo, "InitializeApplicationInfo"},
         {101, &ACC_U0::GetBaasAccountManagerForApplication, "GetBaasAccountManagerForApplication"},
