@@ -15,13 +15,12 @@ ConditionVariable::ConditionVariable() {}
 ConditionVariable::~ConditionVariable() {}
 
 ResultVal<SharedPtr<ConditionVariable>> ConditionVariable::Create(VAddr guest_addr,
-                                                                  VAddr mutex_addr,
                                                                   std::string name) {
     SharedPtr<ConditionVariable> condition_variable(new ConditionVariable);
 
     condition_variable->name = std::move(name);
     condition_variable->guest_addr = guest_addr;
-    condition_variable->mutex_addr = mutex_addr;
+    condition_variable->mutex_addr = 0;
 
     // Condition variables are referenced by guest address, so track this in the kernel
     g_object_address_table.Insert(guest_addr, condition_variable);

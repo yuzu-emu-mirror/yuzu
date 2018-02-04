@@ -19,12 +19,10 @@ public:
      * Creates a condition variable.
      * @param guest_addr Address of the object tracking the condition variable in guest memory. If
      * specified, this condition variable will update the guest object when its state changes.
-     * @param mutex_addr Optional address of a guest mutex associated with this condition variable,
-     * used by the OS for implementing events.
      * @param name Optional name of condition variable.
      * @return The created condition variable.
      */
-    static ResultVal<SharedPtr<ConditionVariable>> Create(VAddr guest_addr, VAddr mutex_addr = 0,
+    static ResultVal<SharedPtr<ConditionVariable>> Create(VAddr guest_addr,
                                                           std::string name = "Unknown");
 
     std::string GetTypeName() const override {

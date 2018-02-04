@@ -263,6 +263,7 @@ static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
     SharedPtr<Thread> requesting_thread = g_handle_table.Get<Thread>(requesting_thread_handle);
 
     ASSERT(requesting_thread);
+    ASSERT(requesting_thread == GetCurrentThread());
 
     SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
     if (!mutex) {
@@ -330,6 +331,9 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         break;
     case GetInfoType::TotalHeapUsage:
         *result = vm_manager.GetTotalHeapUsage();
+        break;
+    case GetInfoType::IsCurrentProcessBeingDebugged:
+        *result = 0;
         break;
     case GetInfoType::RandomEntropy:
         *result = 0;
@@ -415,8 +419,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
               "called, shared_memory_handle=0x%08X, addr=0x%llx, size=0x%llx, permissions=0x%08X",
               shared_memory_handle, addr, size, permissions);
 
-    SharedPtr<SharedMemory> shared_memory =
-        Kernel::g_handle_table.Get<SharedMemory>(shared_memory_handle);
+    SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
     if (!shared_memory) {
         return ERR_INVALID_HANDLE;
     }
@@ -431,7 +434,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
     case MemoryPermission::WriteExecute:
     case MemoryPermission::ReadWriteExecute:
     case MemoryPermission::DontCare:
-        return shared_memory->Map(Kernel::g_current_process.get(), addr, permissions_type,
+        return shared_memory->Map(g_current_process.get(), addr, permissions_type,
                                   MemoryPermission::DontCare);
     default:
         LOG_ERROR(Kernel_SVC, "unknown permissions=0x%08X", permissions);
@@ -612,20 +615,29 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
         mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
     }
 
-    ASSERT(mutex->GetOwnerHandle() == thread_handle);
-
     SharedPtr<ConditionVariable> condition_variable =
         g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
     if (!condition_variable) {
         // Create a new condition_variable for the specified address if one does not already exist
-        condition_variable =
-            ConditionVariable::Create(condition_variable_addr, mutex_addr).Unwrap();
+        condition_variable = ConditionVariable::Create(condition_variable_addr).Unwrap();
         condition_variable->name =
             Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
     }
 
-    ASSERT(condition_variable->GetAvailableCount() == 0);
-    ASSERT(condition_variable->mutex_addr == mutex_addr);
+    if (condition_variable->mutex_addr) {
+        // Previously created the ConditionVariable using WaitProcessWideKeyAtomic, verify
+        // everything is correct
+        ASSERT(condition_variable->mutex_addr == mutex_addr);
+    } else {
+        // Previously created the ConditionVariable using SignalProcessWideKey, set the mutex
+        // associated with it
+        condition_variable->mutex_addr = mutex_addr;
+    }
+
+    if (mutex->GetOwnerHandle()) {
+        // Release the mutex if the current thread is holding it
+        mutex->Release(thread.get());
+    }
 
     auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,
                                                  SharedPtr<Thread> thread,
@@ -666,8 +678,6 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
     };
     CASCADE_CODE(
         WaitSynchronization1(condition_variable, thread.get(), nano_seconds, wakeup_callback));
-
-    mutex->Release(thread.get());
 
     return RESULT_SUCCESS;
 }
@@ -738,13 +748,14 @@ static ResultCode SetThreadCoreMask(u64, u64, u64) {
     return RESULT_SUCCESS;
 }
 
-static ResultCode CreateSharedMemory(Handle* handle, u64 sz, u32 local_permissions,
+static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permissions,
                                      u32 remote_permissions) {
-    LOG_TRACE(Kernel_SVC, "called, sz=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", sz,
+    LOG_TRACE(Kernel_SVC, "called, size=0x%llx, localPerms=0x%08x, remotePerms=0x%08x", size,
               local_permissions, remote_permissions);
-    auto sharedMemHandle = SharedMemory::Create(
-        g_handle_table.Get<Process>(KernelHandle::CurrentProcess), sz,
-        (Kernel::MemoryPermission)local_permissions, (Kernel::MemoryPermission)remote_permissions);
+    auto sharedMemHandle =
+        SharedMemory::Create(g_handle_table.Get<Process>(KernelHandle::CurrentProcess), size,
+                             static_cast<MemoryPermission>(local_permissions),
+                             static_cast<MemoryPermission>(remote_permissions));
 
     CASCADE_RESULT(*handle, g_handle_table.Create(sharedMemHandle));
     return RESULT_SUCCESS;
