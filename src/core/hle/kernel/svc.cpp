@@ -612,20 +612,29 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
         mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
     }
 
-    ASSERT(mutex->GetOwnerHandle() == thread_handle);
-
     SharedPtr<ConditionVariable> condition_variable =
         g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
     if (!condition_variable) {
         // Create a new condition_variable for the specified address if one does not already exist
-        condition_variable =
-            ConditionVariable::Create(condition_variable_addr, mutex_addr).Unwrap();
+        condition_variable = ConditionVariable::Create(condition_variable_addr).Unwrap();
         condition_variable->name =
             Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
     }
 
-    ASSERT(condition_variable->GetAvailableCount() == 0);
-    ASSERT(condition_variable->mutex_addr == mutex_addr);
+    if (condition_variable->mutex_addr) {
+        // Previously created the ConditionVariable using WaitProcessWideKeyAtomic, verify
+        // everything is correct
+        ASSERT(condition_variable->mutex_addr == mutex_addr);
+    } else {
+        // Previously created the ConditionVariable using SignalProcessWideKey, set the mutex
+        // associated with it
+        condition_variable->mutex_addr = mutex_addr;
+    }
+
+    if (mutex->GetOwnerHandle()) {
+        // Release the mutex if the current thread is holding it
+        mutex->Release(thread.get());
+    }
 
     auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,
                                                  SharedPtr<Thread> thread,
@@ -666,8 +675,6 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
     };
     CASCADE_CODE(
         WaitSynchronization1(condition_variable, thread.get(), nano_seconds, wakeup_callback));
-
-    mutex->Release(thread.get());
 
     return RESULT_SUCCESS;
 }
