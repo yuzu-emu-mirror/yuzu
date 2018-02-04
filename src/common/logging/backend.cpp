@@ -32,6 +32,7 @@ namespace Log {
     CLS(Kernel)                                                                                    \
     SUB(Kernel, SVC)                                                                               \
     CLS(Service)                                                                                   \
+    SUB(Service, ACC)                                                                              \
     SUB(Service, SM)                                                                               \
     SUB(Service, FS)                                                                               \
     SUB(Service, GSP)                                                                              \
