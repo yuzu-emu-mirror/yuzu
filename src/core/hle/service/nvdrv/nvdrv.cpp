@@ -7,6 +7,7 @@
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvhost_ctrl.h"
+#include "core/hle/service/nvdrv/devices/nvhost_ctrl_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/hle/service/nvdrv/interface.h"
@@ -31,6 +32,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
 Module::Module() {
     auto nvmap_dev = std::make_shared<Devices::nvmap>();
     devices["/dev/nvhost-as-gpu"] = std::make_shared<Devices::nvhost_as_gpu>();
+    devices["/dev/nvhost-ctrl-gpu"] = std::make_shared<Devices::nvhost_ctrl_gpu>();
     devices["/dev/nvmap"] = nvmap_dev;
     devices["/dev/nvdisp_disp0"] = std::make_shared<Devices::nvdisp_disp0>(nvmap_dev);
     devices["/dev/nvhost-ctrl"] = std::make_shared<Devices::nvhost_ctrl>();

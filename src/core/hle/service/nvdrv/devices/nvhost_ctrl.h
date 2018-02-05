@@ -23,7 +23,7 @@ public:
     u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum IoctlCommands {
+    enum class IoctlCommand : u32 {
         IocSyncptReadCommand = 0xC0080014,
         IocSyncptIncrCommand = 0x40040015,
         IocSyncptWaitCommand = 0xC00C0016,

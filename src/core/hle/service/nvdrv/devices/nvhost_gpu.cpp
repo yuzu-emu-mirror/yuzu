@@ -49,7 +49,7 @@ u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>
 };
 
 u32 nvhost_gpu::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output) {
-    set_nvmap_fd params;
+    set_nvmap_fd params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, fd=%x", params.nvmap_fd);
     nvmap_fd = params.nvmap_fd;
@@ -59,7 +59,7 @@ u32 nvhost_gpu::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output
 
 u32 nvhost_gpu::SetClientData(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
-    client_data params;
+    client_data params{};
     std::memcpy(&params, input.data(), input.size());
     user_data = params.data;
     std::memcpy(output.data(), &params, output.size());
@@ -68,7 +68,7 @@ u32 nvhost_gpu::SetClientData(const std::vector<u8>& input, std::vector<u8>& out
 
 u32 nvhost_gpu::GetClientData(const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called");
-    client_data params;
+    client_data params{};
     std::memcpy(&params, input.data(), input.size());
     params.data = user_data;
     std::memcpy(output.data(), &params, output.size());
@@ -83,7 +83,7 @@ u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output)
 }
 
 u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
-    set_error_notifier params;
+    set_error_notifier params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset=%lx, size=%lx, mem=%x", params.offset,
                 params.size, params.mem);
@@ -99,7 +99,7 @@ u32 nvhost_gpu::SetChannelPriority(const std::vector<u8>& input, std::vector<u8>
 }
 
 u32 nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output) {
-    alloc_gpfifo_ex2 params;
+    alloc_gpfifo_ex2 params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV,
                 "(STUBBED) called, num_entries=%x, flags=%x, unk0=%x, unk1=%x, unk2=%x, unk3=%x",
@@ -112,7 +112,7 @@ u32 nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& ou
 }
 
 u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output) {
-    alloc_obj_ctx params;
+    alloc_obj_ctx params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, class_num=%x, flags=%x", params.class_num,
                 params.flags);
@@ -124,7 +124,7 @@ u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<
 u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output) {
     if (input.size() < 24)
         UNIMPLEMENTED();
-    submit_gpfifo params;
+    submit_gpfifo params{};
     std::memcpy(&params, input.data(), 24);
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo=%lx, num_entries=%x, flags=%x",
                 params.gpfifo, params.num_entries, params.flags);
