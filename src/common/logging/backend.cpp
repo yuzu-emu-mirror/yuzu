@@ -40,6 +40,7 @@ namespace Log {
     SUB(Service, CFG)                                                                              \
     SUB(Service, DSP)                                                                              \
     SUB(Service, HID)                                                                              \
+    SUB(Service, NIFM)                                                                             \
     SUB(Service, NVDRV)                                                                            \
     SUB(Service, Audio)                                                                            \
     SUB(Service, VI)                                                                               \

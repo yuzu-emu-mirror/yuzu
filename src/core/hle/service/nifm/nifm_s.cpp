@@ -14,14 +14,14 @@ void NIFM_S::CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IGeneralService>();
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 void NIFM_S::CreateGeneralService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IGeneralService>();
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 NIFM_S::NIFM_S() : ServiceFramework("nifm:s") {
