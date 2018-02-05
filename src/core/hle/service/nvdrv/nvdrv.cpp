@@ -21,6 +21,8 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module_ = std::make_shared<Module>();
     std::make_shared<NVDRV>(module_, "nvdrv")->InstallAsService(service_manager);
     std::make_shared<NVDRV>(module_, "nvdrv:a")->InstallAsService(service_manager);
+    std::make_shared<NVDRV>(module_, "nvdrv:s")->InstallAsService(service_manager);
+    std::make_shared<NVDRV>(module_, "nvdrv:t")->InstallAsService(service_manager);
     std::make_shared<NVMEMP>()->InstallAsService(service_manager);
     nvdrv = module_;
 }
