@@ -112,7 +112,7 @@ IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
 }
 
 void IGeneralService::GetClientId(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0);
@@ -124,7 +124,7 @@ void IGeneralService::CreateScanRequest(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IScanRequest>();
 
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
@@ -133,11 +133,11 @@ void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IRequest>();
 
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 void IGeneralService::RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NIFM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -148,7 +148,7 @@ void IGeneralService::CreateTemporaryNetworkProfile(Kernel::HLERequestContext& c
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<INetworkProfile>();
 
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

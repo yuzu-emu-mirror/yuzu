@@ -32,14 +32,20 @@ namespace Log {
     CLS(Kernel)                                                                                    \
     SUB(Kernel, SVC)                                                                               \
     CLS(Service)                                                                                   \
-    SUB(Service, SM)                                                                               \
-    SUB(Service, FS)                                                                               \
-    SUB(Service, GSP)                                                                              \
-    SUB(Service, CFG)                                                                              \
-    SUB(Service, DSP)                                                                              \
-    SUB(Service, HID)                                                                              \
-    SUB(Service, NVDRV)                                                                            \
+    SUB(Service, ACC)                                                                              \
     SUB(Service, Audio)                                                                            \
+    SUB(Service, AM)                                                                               \
+    SUB(Service, APM)                                                                              \
+    SUB(Service, FS)                                                                               \
+    SUB(Service, HID)                                                                              \
+    SUB(Service, LM)                                                                               \
+    SUB(Service, NIFM)                                                                             \
+    SUB(Service, NVDRV)                                                                            \
+    SUB(Service, PCTL)                                                                             \
+    SUB(Service, SET)                                                                              \
+    SUB(Service, SM)                                                                               \
+    SUB(Service, Time)                                                                             \
+    SUB(Service, VI)                                                                               \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \
     SUB(HW, LCD)                                                                                   \

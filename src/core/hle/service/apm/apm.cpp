@@ -33,7 +33,8 @@ private:
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service, "(STUBBED) called mode=%u config=%u", static_cast<u32>(mode), config);
+        LOG_WARNING(Service_APM, "(STUBBED) called mode=%u config=%u", static_cast<u32>(mode),
+                    config);
     }
 
     void GetPerformanceConfiguration(Kernel::HLERequestContext& ctx) {
@@ -45,7 +46,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0); // Performance configuration
 
-        LOG_WARNING(Service, "(STUBBED) called mode=%u", static_cast<u32>(mode));
+        LOG_WARNING(Service_APM, "(STUBBED) called mode=%u", static_cast<u32>(mode));
     }
 };
 

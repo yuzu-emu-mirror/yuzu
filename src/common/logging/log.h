@@ -49,14 +49,20 @@ enum class Class : ClassType {
     Kernel_SVC,        ///< Kernel system calls
     Service,           ///< HLE implementation of system services. Each major service
                        ///  should have its own subclass.
-    Service_SM,        ///< The SRV (Service Directory) implementation
-    Service_FS,        ///< The FS (Filesystem) service implementation
-    Service_GSP,       ///< The GSP (GPU control) service
-    Service_CFG,       ///< The CFG (Configuration) service
-    Service_DSP,       ///< The DSP (DSP control) service
-    Service_HID,       ///< The HID (Human interface device) service
-    Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_ACC,       ///< The ACC (Accounts) service
+    Service_AM,        ///< The AM (Applet manager) service
+    Service_APM,       ///< The APM (Performance) service
     Service_Audio,     ///< The Audio (Audio control) service
+    Service_FS,        ///< The FS (Filesystem) service
+    Service_HID,       ///< The HID (Human interface device) service
+    Service_LM,        ///< The LM (Logger) service
+    Service_NIFM,      ///< The NIFM (Network interface) service
+    Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_PCTL,      ///< The PCTL (Parental control) service
+    Service_SET,       ///< The SET (Settings) service
+    Service_SM,        ///< The SM (Service manager) service
+    Service_Time,      ///< The time service
+    Service_VI,        ///< The VI (Video interface) service
     HW,                ///< Low-level hardware emulation
     HW_Memory,         ///< Memory-map and address translation
     HW_LCD,            ///< LCD register emulation
