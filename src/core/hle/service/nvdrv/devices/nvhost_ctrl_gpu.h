@@ -71,7 +71,7 @@ private:
         u64_le gpu_characteristics_buf_size; // must not be NULL, but gets overwritten with
                                              // 0xA0=max_size
         u64_le gpu_characteristics_buf_addr; // ignored, but must not be NULL
-        struct gpu_characteristics gc;
+        gpu_characteristics gc;
     };
 
     struct nvgpu_gpu_get_tpc_masks_args {
