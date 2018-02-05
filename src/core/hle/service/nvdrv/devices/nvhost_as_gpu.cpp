@@ -11,8 +11,8 @@ namespace Nvidia {
 namespace Devices {
 
 u32 nvhost_as_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "Got Ioctl 0x%x, inputsz: 0x%x, outputsz: 0x%x", command, input.size(),
-              output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%llx, output_size=0x%llx",
+              command, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command)) {
     case IoctlCommand::IocInitalizeExCommand:
@@ -30,7 +30,7 @@ u32 nvhost_as_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<
 }
 
 u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& output) {
-    initalize_ex params{};
+    IoctlInitalizeEx params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size=0x%x", params.big_page_size);
     std::memcpy(output.data(), &params, output.size());
@@ -38,7 +38,7 @@ u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& ou
 }
 
 u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& output) {
-    alloc_space params{};
+    IoctlAllocSpace params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, pages=%x, page_size=%x, flags=%x", params.pages,
                 params.page_size, params.flags);
@@ -48,7 +48,7 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
 }
 
 u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output) {
-    map_buffer_ex params{};
+    IoctlMapBufferEx params{};
     std::memcpy(&params, input.data(), input.size());
 
     LOG_WARNING(Service_NVDRV,
@@ -62,7 +62,7 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
 }
 
 u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& output) {
-    bind_channel params{};
+    IoctlBindChannel params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, fd=%x", params.fd);
     channel = params.fd;
@@ -71,7 +71,7 @@ u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& ou
 }
 
 u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& output) {
-    get_va_regions params{};
+    IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service, "(STUBBED) called, buf_addr=%lx, buf_size=%x", params.buf_addr,
                 params.buf_size);

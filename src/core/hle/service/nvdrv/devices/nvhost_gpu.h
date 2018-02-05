@@ -32,7 +32,7 @@ private:
         IocAllocObjCtxCommand = 0xC0104809,
     };
 
-    enum class CtxObjects {
+    enum class CtxObjects : u32 {
         Ctx2D = 0x902D,
         Ctx3D = 0xB197,
         CtxCompute = 0xB1C0,
@@ -41,64 +41,74 @@ private:
         CtxChannelGPFIFO = 0xB06F,
     };
 
-    struct set_nvmap_fd {
+    struct IoctlSetNvmapFD {
         u32_le nvmap_fd;
     };
+    static_assert(sizeof(IoctlSetNvmapFD) == 4, "IoctlSetNvmapFD is incorrect size");
 
-    struct client_data {
+    struct IoctlClientData {
         u64_le data;
     };
+    static_assert(sizeof(IoctlClientData) == 8, "IoctlClientData is incorrect size");
 
-    struct zcull_bind {
+    struct IoctlZCullBind {
         u64_le gpu_va;
         u32_le mode; // 0=global, 1=no_ctxsw, 2=separate_buffer, 3=part_of_regular_buf
-        u32_le padding;
+        INSERT_PADDING_WORDS(1);
     };
+    static_assert(sizeof(IoctlZCullBind) == 16, "IoctlZCullBind is incorrect size");
 
-    struct set_error_notifier {
+    struct IoctlSetErrorNotifier {
         u64_le offset;
         u64_le size;
         u32_le mem; // nvmap object handle
-        u32_le padding;
+        INSERT_PADDING_WORDS(1);
     };
+    static_assert(sizeof(IoctlSetErrorNotifier) == 24, "IoctlSetErrorNotifier is incorrect size");
 
-    struct fence {
+    struct IoctlFence {
         u32_le id;
         u32_le value;
     };
+    static_assert(sizeof(IoctlFence) == 8, "IoctlFence is incorrect size");
 
-    struct alloc_gpfifo_ex2 {
-        u32_le num_entries; // in
-        u32_le flags;       // in
-        u32_le unk0;        // in (1 works)
-        fence fence_out;    // out
-        u32_le unk1;        // in
-        u32_le unk2;        // in
-        u32_le unk3;        // in
+    struct IoctlAllocGpfifoEx2 {
+        u32_le num_entries;   // in
+        u32_le flags;         // in
+        u32_le unk0;          // in (1 works)
+        IoctlFence fence_out; // out
+        u32_le unk1;          // in
+        u32_le unk2;          // in
+        u32_le unk3;          // in
     };
+    static_assert(sizeof(IoctlAllocGpfifoEx2) == 32, "IoctlAllocGpfifoEx2 is incorrect size");
 
-    struct alloc_obj_ctx {
+    struct IoctlAllocObjCtx {
         u32_le class_num; // 0x902D=2d, 0xB197=3d, 0xB1C0=compute, 0xA140=kepler, 0xB0B5=DMA,
                           // 0xB06F=channel_gpfifo
         u32_le flags;
         u64_le obj_id; // (ignored) used for FREE_OBJ_CTX ioctl, which is not supported
     };
+    static_assert(sizeof(IoctlAllocObjCtx) == 16, "IoctlAllocObjCtx is incorrect size");
 
-    struct gpfifo_entry {
+    struct IoctlGpfifoEntry {
         u32_le entry0; // gpu_va_lo
         u32_le entry1; // gpu_va_hi | (unk_0x02 << 0x08) | (size << 0x0A) | (unk_0x01 << 0x1F)
     };
+    static_assert(sizeof(IoctlGpfifoEntry) == 8, "IoctlGpfifoEntry is incorrect size");
 
-    struct submit_gpfifo {
+    struct IoctlSubmitGpfifo {
         u64_le gpfifo;      // (ignored) pointer to gpfifo fence structs
         u32_le num_entries; // number of fence objects being submitted
         u32_le flags;
-        fence fence_out; // returned new fence object for others to wait on
+        IoctlFence fence_out; // returned new fence object for others to wait on
     };
+    static_assert(sizeof(IoctlSubmitGpfifo) == 16 + sizeof(IoctlFence),
+                  "submit_gpfifo is incorrect size");
 
     u32_le nvmap_fd{};
     u64_le user_data{};
-    zcull_bind zcull_params{};
+    IoctlZCullBind zcull_params{};
     u32_le channel_priority{};
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);

@@ -29,7 +29,7 @@ private:
         IocGetVaRegionsCommand = 0xC0404108,
     };
 
-    struct initalize_ex {
+    struct IoctlInitalizeEx {
         u32_le big_page_size; // depends on GPU's available_big_page_sizes; 0=default
         s32_le as_fd;         // ignored; passes 0
         u32_le flags;         // passes 0
@@ -38,19 +38,21 @@ private:
         u64_le unk1;
         u64_le unk2;
     };
+    static_assert(sizeof(IoctlInitalizeEx) == 40, "IoctlInitalizeEx is incorrect size");
 
-    struct alloc_space {
+    struct IoctlAllocSpace {
         u32_le pages;
         u32_le page_size;
         u32_le flags;
-        u32_le pad;
+        INSERT_PADDING_WORDS(1);
         union {
             u64_le offset;
             u64_le align;
         };
     };
+    static_assert(sizeof(IoctlAllocSpace) == 24, "IoctlInitalizeEx is incorrect size");
 
-    struct map_buffer_ex {
+    struct IoctlMapBufferEx {
         u32_le flags; // bit0: fixed_offset, bit2: cacheable
         u32_le kind;  // -1 is default
         u32_le nvmap_handle;
@@ -59,24 +61,29 @@ private:
         u64_le mapping_size;
         u64_le offset;
     };
+    static_assert(sizeof(IoctlMapBufferEx) == 40, "IoctlMapBufferEx is incorrect size");
 
-    struct bind_channel {
+    struct IoctlBindChannel {
         u32_le fd;
     };
+    static_assert(sizeof(IoctlBindChannel) == 4, "IoctlBindChannel is incorrect size");
 
-    struct va_region {
+    struct IoctlVaRegion {
         u64_le offset;
         u32_le page_size;
-        u32_le pad;
+        INSERT_PADDING_WORDS(1);
         u64_le pages;
     };
+    static_assert(sizeof(IoctlVaRegion) == 24, "IoctlVaRegion is incorrect size");
 
-    struct get_va_regions {
+    struct IoctlGetVaRegions {
         u64_le buf_addr; // (contained output user ptr on linux, ignored)
         u32_le buf_size; // forced to 2*sizeof(struct va_region)
         u32_le reserved;
-        va_region regions[2];
+        IoctlVaRegion regions[2];
     };
+    static_assert(sizeof(IoctlGetVaRegions) == 16 + sizeof(IoctlVaRegion) * 2,
+                  "IoctlGetVaRegions is incorrect size");
 
     u32 channel{};
 

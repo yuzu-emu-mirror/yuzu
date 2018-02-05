@@ -76,7 +76,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
     u32 event_id = rp.Pop<u32>();
-    LOG_WARNING(Service, "(STUBBED) called, fd=%x, event_id=%x", fd, event_id);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, fd=%x, event_id=%x", fd, event_id);
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
@@ -96,7 +96,7 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::FinishInitialize(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }

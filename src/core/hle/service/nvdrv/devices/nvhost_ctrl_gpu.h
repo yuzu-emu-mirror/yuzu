@@ -29,7 +29,7 @@ private:
         IocZcullGetInfo = 0x80284702,
     };
 
-    struct gpu_characteristics {
+    struct IoctlGpuCharacteristics {
         u32_le arch;                       // 0x120 (NVGPU_GPU_ARCH_GM200)
         u32_le impl;                       // 0xB (NVGPU_GPU_IMPL_GM20B)
         u32_le rev;                        // 0xA1 (Revision A1)
@@ -66,41 +66,45 @@ private:
         u64_le chipname;                   // 0x6230326D67 ("gm20b")
         u64_le gr_compbit_store_base_hw;   // 0x0 (not supported)
     };
+    static_assert(sizeof(IoctlGpuCharacteristics) == 160,
+                  "IoctlGpuCharacteristics is incorrect size");
 
-    struct characteristics {
+    struct IoctlCharacteristics {
         u64_le gpu_characteristics_buf_size; // must not be NULL, but gets overwritten with
                                              // 0xA0=max_size
         u64_le gpu_characteristics_buf_addr; // ignored, but must not be NULL
-        gpu_characteristics gc;
+        IoctlGpuCharacteristics gc;
     };
+    static_assert(sizeof(IoctlCharacteristics) == 16 + sizeof(IoctlGpuCharacteristics),
+                  "IoctlCharacteristics is incorrect size");
 
-    struct nvgpu_gpu_get_tpc_masks_args {
-        /* [in]  TPC mask buffer size reserved by userspace. Should be
-        at least sizeof(__u32) * fls(gpc_mask) to receive TPC
-        mask for each GPC.
-        [out] full kernel buffer size
-        */
+    struct IoctlGpuGetTpcMasksArgs {
+        /// [in]  TPC mask buffer size reserved by userspace. Should be at least
+        /// sizeof(__u32) * fls(gpc_mask) to receive TPC mask for each GPC.
+        /// [out] full kernel buffer size
         u32_le mask_buf_size;
         u32_le reserved;
 
-        /* [in]  pointer to TPC mask buffer. It will receive one
-        32-bit TPC mask per GPC or 0 if GPC is not enabled or
-        not present. This parameter is ignored if
-        mask_buf_size is 0. */
+        /// [in]  pointer to TPC mask buffer. It will receive one 32-bit TPC mask per GPC or 0 if
+        /// GPC is not enabled or not present. This parameter is ignored if mask_buf_size is 0.
         u64_le mask_buf_addr;
         u64_le unk; // Nintendo add this?
     };
+    static_assert(sizeof(IoctlGpuGetTpcMasksArgs) == 24,
+                  "IoctlGpuGetTpcMasksArgs is incorrect size");
 
-    struct active_slot_mask {
+    struct IoctlActiveSlotMask {
         u32_le slot; // always 0x07
         u32_le mask;
     };
+    static_assert(sizeof(IoctlActiveSlotMask) == 8, "IoctlActiveSlotMask is incorrect size");
 
-    struct zcull_get_ctx_size {
+    struct IoctlZcullGetCtxSize {
         u32_le size;
     };
+    static_assert(sizeof(IoctlZcullGetCtxSize) == 4, "IoctlZcullGetCtxSize is incorrect size");
 
-    struct nvgpu_gpu_zcull_get_info_args {
+    struct IoctlNvgpuGpuZcullGetInfoArgs {
         u32_le width_align_pixels;
         u32_le height_align_pixels;
         u32_le pixel_squares_by_aliquots;
@@ -112,6 +116,8 @@ private:
         u32_le subregion_height_align_pixels;
         u32_le subregion_count;
     };
+    static_assert(sizeof(IoctlNvgpuGpuZcullGetInfoArgs) == 40,
+                  "IoctlNvgpuGpuZcullGetInfoArgs is incorrect size");
 
     u32 GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output);
