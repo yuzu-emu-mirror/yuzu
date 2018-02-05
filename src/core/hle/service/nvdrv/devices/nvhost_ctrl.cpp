@@ -30,9 +30,13 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
 
     if (!strcmp(params.domain_str.data(), "nv")) {
         if (!strcmp(params.param_str.data(), "NV_MEMORY_PROFILER")) {
-            params.config_str[0] = '1';
+            params.config_str[0] = '0';
+        } else if (!strcmp(params.param_str.data(), "NVN_THROUGH_OPENGL")) {
+            params.config_str[0] = '0';
+        } else if (!strcmp(params.param_str.data(), "NVRM_GPU_PREVENT_USE")) {
+            params.config_str[0] = '0';
         } else {
-            UNIMPLEMENTED();
+            params.config_str[0] = '0';
         }
     } else {
         UNIMPLEMENTED();
