@@ -15,22 +15,22 @@ u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>
     LOG_DEBUG(Service_NVDRV, "Got Ioctl 0x%x, inputsz: 0x%x, outputsz: 0x%x", command, input.size(),
               output.size());
 
-    switch (command) {
-    case IocSetNVMAPfdCommand:
+    switch (static_cast<IoctlCommand>(command)) {
+    case IoctlCommand::IocSetNVMAPfdCommand:
         return SetNVMAPfd(input, output);
-    case IocSetClientDataCommand:
+    case IoctlCommand::IocSetClientDataCommand:
         return SetClientData(input, output);
-    case IocGetClientDataCommand:
+    case IoctlCommand::IocGetClientDataCommand:
         return GetClientData(input, output);
-    case IocZCullBind:
+    case IoctlCommand::IocZCullBind:
         return ZCullBind(input, output);
-    case IocSetErrorNotifierCommand:
+    case IoctlCommand::IocSetErrorNotifierCommand:
         return SetErrorNotifier(input, output);
-    case IocChannelSetPriorityCommand:
+    case IoctlCommand::IocChannelSetPriorityCommand:
         return SetChannelPriority(input, output);
-    case IocAllocGPFIFOEx2Command:
+    case IoctlCommand::IocAllocGPFIFOEx2Command:
         return AllocGPFIFOEx2(input, output);
-    case IocAllocObjCtxCommand:
+    case IoctlCommand::IocAllocObjCtxCommand:
         return AllocateObjectContext(input, output);
     }
 
@@ -103,10 +103,10 @@ u32 nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& ou
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV,
                 "(STUBBED) called, num_entries=%x, flags=%x, unk0=%x, unk1=%x, unk2=%x, unk3=%x",
-                params.__num_entries, params.__flags, params.__unk0, params.__unk1, params.__unk2,
-                params.__unk3);
-    params.__fence_out.id = 0;
-    params.__fence_out.value = 0;
+                params.num_entries, params.flags, params.unk0, params.unk1, params.unk2,
+                params.unk3);
+    params.fence_out.id = 0;
+    params.fence_out.value = 0;
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
@@ -129,9 +129,10 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo=%lx, num_entries=%x, flags=%x",
                 params.gpfifo, params.num_entries, params.flags);
 
-    gpfifo_entry* entries = new gpfifo_entry[params.num_entries];
-    std::memcpy(entries, &input.data()[24], params.num_entries * 8);
-    for (int i = 0; i < params.num_entries; i++) {
+    auto entries = std::vector<gpfifo_entry>();
+    entries.resize(params.num_entries);
+    std::memcpy(&entries[0], &input.data()[24], params.num_entries * 8);
+    for (u32 i = 0; i < params.num_entries; i++) {
         u32 unk1 = (entries[i].entry1 >> 8) & 0x3;
         u32 sz = (entries[i].entry1 >> 10) & 0x1fffff;
         u32 unk2 = entries[i].entry1 >> 31;
@@ -141,7 +142,6 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     params.fence_out.id = 0;
     params.fence_out.value = 0;
     std::memcpy(output.data(), &params, output.size());
-    delete[] entries;
     return 0;
 }
 

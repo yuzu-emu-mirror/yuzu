@@ -21,7 +21,7 @@ public:
     u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum IoctlCommands {
+    enum class IoctlCommand : u32 {
         IocSetNVMAPfdCommand = 0x40044801,
         IocSetClientDataCommand = 0x40084714,
         IocGetClientDataCommand = 0x80084715,
@@ -33,12 +33,12 @@ private:
     };
 
     enum CtxObjects {
-        _2D = 0x902D,
-        _3D = 0xB197,
-        _Compute = 0xB1C0,
-        _Kepler = 0xA140,
-        _DMA = 0xB0B5,
-        _Channel_GPFIFO = 0xB06F,
+        Ctx2D = 0x902D,
+        Ctx3D = 0xB197,
+        CtxCompute = 0xB1C0,
+        CtxKepler = 0xA140,
+        CtxDMA = 0xB0B5,
+        CtxChannelGPFIFO = 0xB06F,
     };
 
     struct set_nvmap_fd {
@@ -68,13 +68,13 @@ private:
     };
 
     struct alloc_gpfifo_ex2 {
-        u32_le __num_entries;     // in
-        u32_le __flags;           // in
-        u32_le __unk0;            // in (1 works)
-        struct fence __fence_out; // out
-        u32_le __unk1;            // in
-        u32_le __unk2;            // in
-        u32_le __unk3;            // in
+        u32_le num_entries; // in
+        u32_le flags;       // in
+        u32_le unk0;        // in (1 works)
+        fence fence_out;    // out
+        u32_le unk1;        // in
+        u32_le unk2;        // in
+        u32_le unk3;        // in
     };
 
     struct alloc_obj_ctx {
@@ -93,8 +93,7 @@ private:
         u64_le gpfifo;      // (ignored) pointer to gpfifo fence structs
         u32_le num_entries; // number of fence objects being submitted
         u32_le flags;
-        struct fence fence_out;        // returned new fence object for others to wait on
-        struct gpfifo_entry entries[]; // depends on num_entries
+        fence fence_out; // returned new fence object for others to wait on
     };
 
     u32_le nvmap_fd{};
