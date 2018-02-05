@@ -172,7 +172,15 @@ class Hid final : public ServiceFramework<Hid> {
 public:
     Hid() : ServiceFramework("hid") {
         static const FunctionInfo functions[] = {
-            {0x00000000, &Hid::CreateAppletResource, "CreateAppletResource"},
+            {0, &Hid::CreateAppletResource, "CreateAppletResource"},
+            {1, &Hid::ActivateDebugPad, "ActivateDebugPad"},
+            {11, nullptr, "ActivateTouchScreen"},
+            {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
+            {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
+            {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
+            {103, &Hid::ActivateNpad, "ActivateNpad"},
+            {120, nullptr, "SetNpadJoyHoldType"},
+            {124, nullptr, "SetNpadJoyAssignmentModeDual"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
         RegisterHandlers(functions);
@@ -191,6 +199,36 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
         LOG_DEBUG(Service_HID, "called");
+    }
+
+    void ActivateDebugPad(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void ActivateNpad(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
