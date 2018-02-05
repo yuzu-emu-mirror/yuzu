@@ -50,9 +50,9 @@ private:
     };
 
     struct zcull_bind {
-        u64 gpu_va;
-        u32 mode; // 0=global, 1=no_ctxsw, 2=separate_buffer, 3=part_of_regular_buf
-        u32 padding;
+        u64_le gpu_va;
+        u32_le mode; // 0=global, 1=no_ctxsw, 2=separate_buffer, 3=part_of_regular_buf
+        u32_le padding;
     };
 
     struct set_error_notifier {
