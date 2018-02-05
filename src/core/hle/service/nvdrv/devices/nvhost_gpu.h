@@ -21,13 +21,11 @@ public:
     u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    u32_le nvmap_fd{};
-    u64_le user_data{};
-
     enum IoctlCommands {
         IocSetNVMAPfdCommand = 0x40044801,
         IocSetClientDataCommand = 0x40084714,
         IocGetClientDataCommand = 0x80084715,
+        IocZCullBind = 0xc010480b,
     };
 
     struct set_nvmap_fd {
@@ -38,9 +36,20 @@ private:
         u64_le data;
     };
 
+    struct zcull_bind {
+        u64 gpu_va;
+        u32 mode; // 0=global, 1=no_ctxsw, 2=separate_buffer, 3=part_of_regular_buf
+        u32 padding;
+    };
+
+    u32_le nvmap_fd{};
+    u64_le user_data{};
+    zcull_bind zcull_params{};
+
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SetClientData(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetClientData(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ZCullBind(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Devices
