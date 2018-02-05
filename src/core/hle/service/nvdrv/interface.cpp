@@ -4,6 +4,7 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/nvdrv/interface.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 
@@ -74,6 +75,19 @@ void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0);
 }
 
+void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u32 fd = rp.Pop<u32>();
+    u32 event_id = rp.Pop<u32>();
+    LOG_WARNING(Service, "(STUBBED) called, fd=%x, event_id=%x", fd, event_id);
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    auto event = Kernel::Event::Create(Kernel::ResetType::Pulse, "NVEvent");
+    event->Signal();
+    rb.PushCopyObjects(event);
+}
+
 void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
@@ -97,6 +111,7 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
         {1, &NVDRV::Ioctl, "Ioctl"},
         {2, &NVDRV::Close, "Close"},
         {3, &NVDRV::Initialize, "Initialize"},
+        {4, &NVDRV::QueryEvent, "QueryEvent"},
         {8, &NVDRV::SetClientPID, "SetClientPID"},
         {13, &NVDRV::FinishInitialize, "FinishInitialize"},
     };
