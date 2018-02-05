@@ -33,19 +33,17 @@ namespace Log {
     SUB(Kernel, SVC)                                                                               \
     CLS(Service)                                                                                   \
     SUB(Service, ACC)                                                                              \
+    SUB(Service, Audio)                                                                            \
     SUB(Service, AM)                                                                               \
     SUB(Service, APM)                                                                              \
-    SUB(Service, SM)                                                                               \
     SUB(Service, FS)                                                                               \
-    SUB(Service, GSP)                                                                              \
-    SUB(Service, CFG)                                                                              \
-    SUB(Service, DSP)                                                                              \
     SUB(Service, HID)                                                                              \
     SUB(Service, LM)                                                                               \
     SUB(Service, NIFM)                                                                             \
     SUB(Service, NVDRV)                                                                            \
     SUB(Service, PCTL)                                                                             \
-    SUB(Service, Audio)                                                                            \
+    SUB(Service, SET)                                                                              \
+    SUB(Service, SM)                                                                               \
     SUB(Service, VI)                                                                               \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \

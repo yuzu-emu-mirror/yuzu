@@ -24,7 +24,7 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u64>(lang_codes.size()));
 
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_SET, "(STUBBED) called");
 }
 
 SET::SET(const char* name) : ServiceFramework(name) {
