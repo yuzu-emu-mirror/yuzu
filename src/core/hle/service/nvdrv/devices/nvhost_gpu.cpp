@@ -24,6 +24,8 @@ u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>
         return GetClientData(input, output);
     case IocZCullBind:
         return ZCullBind(input, output);
+    case IocSetErrorNotifierCommand:
+        return SetErrorNotifier(input, output);
     }
 };
 
@@ -58,6 +60,15 @@ u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output)
     std::memcpy(&zcull_params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, gpu_va=%lx, mode=%x", zcull_params.gpu_va, zcull_params.mode);
     std::memcpy(output.data(), &zcull_params, output.size());
+    return 0;
+}
+
+u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
+    set_error_notifier params;
+    std::memcpy(&params, input.data(), input.size());
+    LOG_WARNING(Service, "(STUBBED) called, offset=%lx, size=%lx, mem=%x", params.offset,
+                params.size, params.mem);
+    std::memcpy(output.data(), &params, output.size());
     return 0;
 }
 
