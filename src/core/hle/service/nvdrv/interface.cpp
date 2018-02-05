@@ -77,6 +77,12 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0);
 }
 
+void NVDRV::FinishInitialize(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
     : ServiceFramework(name), nvdrv(std::move(nvdrv)) {
     static const FunctionInfo functions[] = {
@@ -85,6 +91,7 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
         {2, &NVDRV::Close, "Close"},
         {3, &NVDRV::Initialize, "Initialize"},
         {8, &NVDRV::SetClientPID, "SetClientPID"},
+        {13, &NVDRV::FinishInitialize, "FinishInitialize"},
     };
     RegisterHandlers(functions);
 }
