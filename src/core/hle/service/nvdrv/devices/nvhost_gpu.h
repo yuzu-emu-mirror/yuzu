@@ -32,7 +32,7 @@ private:
         IocAllocObjCtxCommand = 0xC0104809,
     };
 
-    enum CtxObjects {
+    enum class CtxObjects {
         Ctx2D = 0x902D,
         Ctx3D = 0xB197,
         CtxCompute = 0xB1C0,
