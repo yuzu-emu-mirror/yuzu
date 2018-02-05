@@ -13,16 +13,17 @@ namespace Service {
 namespace Set {
 
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u32 id = rp.Pop<u32>();
     constexpr std::array<u8, 13> lang_codes{};
 
     const auto& output_buffer = ctx.BufferDescriptorC()[0];
 
     Memory::WriteBlock(output_buffer.Address(), lang_codes.data(), lang_codes.size());
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 2};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u64>(lang_codes.size()));
 
     LOG_WARNING(Service_SET, "(STUBBED) called");
 }
