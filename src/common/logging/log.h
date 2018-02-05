@@ -58,6 +58,7 @@ enum class Class : ClassType {
     Service_CFG,       ///< The CFG (Configuration) service
     Service_DSP,       ///< The DSP (DSP control) service
     Service_HID,       ///< The HID (Human interface device) service
+    Service_LM,        ///< The LM (Logger) service implementation
     Service_NIFM,      ///< The NIFM (Network interface) service
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
     Service_Audio,     ///< The Audio (Audio control) service

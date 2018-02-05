@@ -76,7 +76,7 @@ private:
         addr += sizeof(MessageHeader);
 
         if (!header.IsSingleMessage()) {
-            LOG_WARNING(Service, "Multi message logs are unimplemeneted");
+            LOG_WARNING(Service_LM, "Multi message logs are unimplemeneted");
             return;
         }
 
@@ -150,7 +150,7 @@ void LM::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<Logger>();
 
-    LOG_DEBUG(Service, "called");
+    LOG_DEBUG(Service_LM, "called");
 }
 
 LM::LM() : ServiceFramework("lm") {
