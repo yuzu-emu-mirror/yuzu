@@ -39,7 +39,7 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
             params.config_str[0] = '0';
         }
     } else {
-        UNIMPLEMENTED();
+        UNIMPLEMENTED(); // unknown domain? Only nv has been seen so far on hardware
     }
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
