@@ -125,7 +125,7 @@ private:
         if (line) {
             output += std::to_string(line) + ':';
         }
-        if (output.back() == ':') {
+        if (output.length() > 0 && output.back() == ':') {
             output += ' ';
         }
         output += message;
