@@ -29,7 +29,7 @@ static std::string FindRomFS(const std::string& directory) {
 
         // Verify extension
         const std::string extension = physical_name.substr(physical_name.find_last_of(".") + 1);
-        if (Common::ToLower(extension) != "istorage") {
+        if (Common::ToLower(extension) != "romfs") {
             return true;
         }
 
@@ -38,7 +38,7 @@ static std::string FindRomFS(const std::string& directory) {
         return false;
     };
 
-    // Search the specified directory recursively, looking for the first .istorage file, which will
+    // Search the specified directory recursively, looking for the first .romfs file, which will
     // be used for the RomFS
     FileUtil::ForeachDirectoryEntry(nullptr, directory, callback);
 
@@ -128,10 +128,10 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
     process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
 
-    // Find the RomFS by searching for a ".istorage" file in this directory
+    // Find the RomFS by searching for a ".romfs" file in this directory
     filepath_romfs = FindRomFS(directory);
 
-    // Register the RomFS if a ".istorage" file was found
+    // Register the RomFS if a ".romfs" file was found
     if (!filepath_romfs.empty()) {
         Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
                                                 Service::FileSystem::Type::RomFS);
