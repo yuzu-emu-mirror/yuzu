@@ -44,6 +44,7 @@ namespace Log {
     SUB(Service, LM)                                                                               \
     SUB(Service, NIFM)                                                                             \
     SUB(Service, NVDRV)                                                                            \
+    SUB(Service, PCTL)                                                                             \
     SUB(Service, Audio)                                                                            \
     SUB(Service, VI)                                                                               \
     CLS(HW)                                                                                        \

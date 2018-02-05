@@ -61,6 +61,7 @@ enum class Class : ClassType {
     Service_LM,        ///< The LM (Logger) service implementation
     Service_NIFM,      ///< The NIFM (Network interface) service
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
+    Service_PCTL,      ///< The PCTL (Parental control) service
     Service_Audio,     ///< The Audio (Audio control) service
     Service_VI,        ///< The VI (Video interface) service
     HW,                ///< Low-level hardware emulation
