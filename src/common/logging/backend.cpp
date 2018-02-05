@@ -44,6 +44,7 @@ namespace Log {
     SUB(Service, PCTL)                                                                             \
     SUB(Service, SET)                                                                              \
     SUB(Service, SM)                                                                               \
+    SUB(Service, Time)                                                                             \
     SUB(Service, VI)                                                                               \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \
