@@ -88,6 +88,7 @@ private:
         not present. This parameter is ignored if
         mask_buf_size is 0. */
         u64_le mask_buf_addr;
+        u64_le unk; // Nintendo add this?
     };
 
     struct active_slot_mask {
