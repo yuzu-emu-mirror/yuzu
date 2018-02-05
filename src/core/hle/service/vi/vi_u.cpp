@@ -11,7 +11,7 @@ namespace Service {
 namespace VI {
 
 void VI_U::GetDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);

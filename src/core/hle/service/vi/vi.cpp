@@ -429,7 +429,7 @@ private:
         auto& output_buffer = ctx.BufferDescriptorB()[0];
 
         auto buffer_queue = nv_flinger->GetBufferQueue(id);
-
+        LOG_WARNING(Service_VI, "(STUBBED) called, transaction=%x", transaction);
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{input_data};
             IGBPConnectResponseParcel response{1280, 720};
@@ -487,7 +487,6 @@ private:
             ASSERT_MSG(false, "Unimplemented");
         }
 
-        LOG_WARNING(Service, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -498,7 +497,7 @@ private:
         s32 addval = rp.PopRaw<s32>();
         u32 type = rp.Pop<u32>();
 
-        LOG_WARNING(Service, "(STUBBED) called id=%u, addval=%08X, type=%08X", id, addval, type);
+        LOG_WARNING(Service_VI, "(STUBBED) called id=%u, addval=%08X, type=%08X", id, addval, type);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -512,7 +511,7 @@ private:
 
         // TODO(Subv): Find out what this actually is.
 
-        LOG_WARNING(Service, "(STUBBED) called id=%u, unknown=%08X", id, unknown);
+        LOG_WARNING(Service_VI, "(STUBBED) called id=%u, unknown=%08X", id, unknown);
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(buffer_queue->GetNativeHandle());
@@ -534,7 +533,7 @@ public:
 
 private:
     void SetLayerZ(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
         u64 z_value = rp.Pop<u64>();
@@ -560,7 +559,7 @@ public:
 
 private:
     void CloseDisplay(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 display = rp.Pop<u64>();
 
@@ -569,7 +568,7 @@ private:
     }
 
     void CreateManagedLayer(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u32 unknown = rp.Pop<u32>();
         rp.Skip(1, false);
@@ -584,7 +583,7 @@ private:
     }
 
     void AddToLayerStack(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) called");
+        LOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u32 stack = rp.Pop<u32>();
         u64 layer_id = rp.Pop<u64>();
@@ -597,7 +596,7 @@ private:
 };
 
 void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -605,7 +604,7 @@ void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx)
 }
 
 void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -613,7 +612,7 @@ void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestConte
 }
 
 void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -622,7 +621,7 @@ void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestCont
 
 void IApplicationDisplayService::GetIndirectDisplayTransactionService(
     Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -630,7 +629,7 @@ void IApplicationDisplayService::GetIndirectDisplayTransactionService(
 }
 
 void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
     auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -645,7 +644,7 @@ void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u64 display_id = rp.Pop<u64>();
 
@@ -654,7 +653,7 @@ void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
     auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -704,7 +703,7 @@ void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx
 }
 
 void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::RequestParser rp{ctx};
     u64 layer_id = rp.Pop<u64>();
@@ -714,7 +713,7 @@ void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ct
 }
 
 void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u32 scaling_mode = rp.Pop<u32>();
     u64 unknown = rp.Pop<u64>();
@@ -724,7 +723,7 @@ void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& 
 }
 
 void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u64 display_id = rp.Pop<u64>();
 
