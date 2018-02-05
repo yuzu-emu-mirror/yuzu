@@ -26,6 +26,8 @@ u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>
         return ZCullBind(input, output);
     case IocSetErrorNotifierCommand:
         return SetErrorNotifier(input, output);
+    case IocChannelSetPriorityCommand:
+        return SetChannelPriority(input, output);
     }
 };
 
@@ -66,9 +68,16 @@ u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output)
 u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
     set_error_notifier params;
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service, "(STUBBED) called, offset=%lx, size=%lx, mem=%x", params.offset,
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset=%lx, size=%lx, mem=%x", params.offset,
                 params.size, params.mem);
     std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_gpu::SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output) {
+    std::memcpy(&channel_priority, input.data(), input.size());
+    LOG_DEBUG(Service_NVDRV, "(STUBBED) called, priority=%x", channel_priority);
+    std::memcpy(output.data(), &channel_priority, output.size());
     return 0;
 }
 

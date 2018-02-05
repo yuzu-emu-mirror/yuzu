@@ -27,6 +27,7 @@ private:
         IocGetClientDataCommand = 0x80084715,
         IocZCullBind = 0xc010480b,
         IocSetErrorNotifierCommand = 0xC018480C,
+        IocChannelSetPriorityCommand = 0x4004480D,
     };
 
     struct set_nvmap_fd {
@@ -53,12 +54,14 @@ private:
     u32_le nvmap_fd{};
     u64_le user_data{};
     zcull_bind zcull_params{};
+    u32_le channel_priority{};
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SetClientData(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetClientData(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZCullBind(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Devices
