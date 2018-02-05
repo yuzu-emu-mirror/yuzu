@@ -49,7 +49,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(shared_mem);
-        LOG_DEBUG(Service, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 
     void LoadInputDevices() {
@@ -151,11 +151,37 @@ private:
         buttons;
 };
 
+class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
+public:
+    IActiveVibrationDeviceList() : ServiceFramework("IActiveVibrationDeviceList") {
+        static const FunctionInfo functions[] = {
+            {0, &IActiveVibrationDeviceList::ActivateVibrationDevice, "ActivateVibrationDevice"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void ActivateVibrationDevice(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+};
+
 class Hid final : public ServiceFramework<Hid> {
 public:
     Hid() : ServiceFramework("hid") {
         static const FunctionInfo functions[] = {
-            {0x00000000, &Hid::CreateAppletResource, "CreateAppletResource"},
+            {0, &Hid::CreateAppletResource, "CreateAppletResource"},
+            {1, &Hid::ActivateDebugPad, "ActivateDebugPad"},
+            {11, nullptr, "ActivateTouchScreen"},
+            {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
+            {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
+            {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
+            {103, &Hid::ActivateNpad, "ActivateNpad"},
+            {120, nullptr, "SetNpadJoyHoldType"},
+            {124, nullptr, "SetNpadJoyAssignmentModeDual"},
+            {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
         RegisterHandlers(functions);
     }
@@ -172,7 +198,44 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
-        LOG_DEBUG(Service, "called");
+        LOG_DEBUG(Service_HID, "called");
+    }
+
+    void ActivateDebugPad(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void ActivateNpad(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IActiveVibrationDeviceList>();
+        LOG_DEBUG(Service_HID, "called");
     }
 };
 

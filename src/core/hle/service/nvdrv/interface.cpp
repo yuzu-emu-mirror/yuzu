@@ -11,7 +11,7 @@ namespace Service {
 namespace Nvidia {
 
 void NVDRV::Open(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     auto buffer = ctx.BufferDescriptorA()[0];
 
@@ -25,7 +25,7 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
@@ -49,7 +49,7 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Close(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
@@ -61,7 +61,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
@@ -71,7 +71,7 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
 
-    LOG_INFO(Service, "called, pid=0x%lx", pid);
+    LOG_INFO(Service_NVDRV, "called, pid=0x%lx", pid);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
