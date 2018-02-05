@@ -51,6 +51,7 @@ enum class Class : ClassType {
                        ///  should have its own subclass.
     Service_ACC,       ///< The ACC (Account service) implementation
     Service_AM,        ///< The AM (Applet manager service) implementation
+    Service_APM,       ///< The APM service implementation
     Service_SM,        ///< The SRV (Service Directory) implementation
     Service_FS,        ///< The FS (Filesystem) service implementation
     Service_GSP,       ///< The GSP (GPU control) service

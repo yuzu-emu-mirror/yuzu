@@ -34,6 +34,7 @@ namespace Log {
     CLS(Service)                                                                                   \
     SUB(Service, ACC)                                                                              \
     SUB(Service, AM)                                                                               \
+    SUB(Service, APM)                                                                              \
     SUB(Service, SM)                                                                               \
     SUB(Service, FS)                                                                               \
     SUB(Service, GSP)                                                                              \
