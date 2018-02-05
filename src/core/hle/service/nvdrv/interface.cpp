@@ -32,14 +32,15 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
     u32 fd = rp.Pop<u32>();
     u32 command = rp.Pop<u32>();
 
-    u32 nv_result = 0x0;
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
     if (ctx.BufferDescriptorA()[0].Size() != 0) {
         auto input_buffer = ctx.BufferDescriptorA()[0];
         auto output_buffer = ctx.BufferDescriptorB()[0];
         std::vector<u8> input(input_buffer.Size());
         std::vector<u8> output(output_buffer.Size());
         Memory::ReadBlock(input_buffer.Address(), input.data(), input_buffer.Size());
-        nv_result = nvdrv->Ioctl(fd, command, input, output);
+        rb.Push(nvdrv->Ioctl(fd, command, input, output));
         Memory::WriteBlock(output_buffer.Address(), output.data(), output_buffer.Size());
     } else {
         auto input_buffer = ctx.BufferDescriptorX()[0];
@@ -47,13 +48,9 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
         std::vector<u8> input(input_buffer.size);
         std::vector<u8> output(output_buffer.size);
         Memory::ReadBlock(input_buffer.Address(), input.data(), input_buffer.size);
-        nv_result = nvdrv->Ioctl(fd, command, input, output);
+        rb.Push(nvdrv->Ioctl(fd, command, input, output));
         Memory::WriteBlock(output_buffer.Address(), output.data(), output_buffer.size);
     }
-
-    IPC::ResponseBuilder rb{ctx, 3};
-    rb.Push(RESULT_SUCCESS);
-    rb.Push(nv_result);
 }
 
 void NVDRV::Close(Kernel::HLERequestContext& ctx) {
