@@ -100,6 +100,7 @@ public:
 
 private:
     void PopLaunchParameter(Kernel::HLERequestContext& ctx);
+    void EnsureSaveData(Kernel::HLERequestContext& ctx);
     void SetTerminateResult(Kernel::HLERequestContext& ctx);
     void GetDesiredLanguage(Kernel::HLERequestContext& ctx);
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx);

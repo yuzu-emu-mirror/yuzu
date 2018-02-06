@@ -270,6 +270,7 @@ private:
 IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
     static const FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
+        {20, &IApplicationFunctions::EnsureSaveData, "EnsureSaveData"},
         {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
         {66, &IApplicationFunctions::InitializeGamePlayRecording, "InitializeGamePlayRecording"},
@@ -297,6 +298,12 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<AM::IStorage>(buffer);
 
     LOG_DEBUG(Service_AM, "called");
+}
+
+void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
