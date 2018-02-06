@@ -21,8 +21,8 @@ VAddr nvmap::GetObjectAddress(u32 handle) const {
     return object->addr;
 }
 
-u32 nvmap::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
-    switch (static_cast<IoctlCommand>(command)) {
+u32 nvmap::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
+    switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::Create:
         return IocCreate(input, output);
     case IoctlCommand::Alloc:

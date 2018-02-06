@@ -14,7 +14,7 @@ namespace Service {
 namespace Nvidia {
 namespace Devices {
 
-u32 nvdisp_disp0::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
+u32 nvdisp_disp0::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     UNIMPLEMENTED();
     return 0;
 }

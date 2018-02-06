@@ -20,10 +20,10 @@ public:
     nvhost_ctrl() = default;
     ~nvhost_ctrl() override = default;
 
-    u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
+    u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum IoctlCommands {
+    enum class IoctlCommand : u32_le {
         IocSyncptReadCommand = 0xC0080014,
         IocSyncptIncrCommand = 0x40040015,
         IocSyncptWaitCommand = 0xC00C0016,
@@ -39,6 +39,7 @@ private:
         std::array<char, 0x41> param_str;
         std::array<char, 0x101> config_str;
     };
+    static_assert(sizeof(IocGetConfigParams) == 387, "IocGetConfigParams is incorrect size");
 
     u32 NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);
 };

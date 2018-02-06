@@ -129,6 +129,10 @@ add_library(core STATIC
     hle/service/nvdrv/devices/nvhost_as_gpu.h
     hle/service/nvdrv/devices/nvhost_ctrl.cpp
     hle/service/nvdrv/devices/nvhost_ctrl.h
+    hle/service/nvdrv/devices/nvhost_ctrl_gpu.cpp
+    hle/service/nvdrv/devices/nvhost_ctrl_gpu.h
+    hle/service/nvdrv/devices/nvhost_gpu.cpp
+    hle/service/nvdrv/devices/nvhost_gpu.h
     hle/service/nvdrv/devices/nvmap.cpp
     hle/service/nvdrv/devices/nvmap.h
     hle/service/nvdrv/interface.cpp
