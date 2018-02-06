@@ -73,7 +73,7 @@ u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service, "(STUBBED) called, buf_addr=%lx, buf_size=%x", params.buf_addr,
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr=%lx, buf_size=%x", params.buf_addr,
                 params.buf_size);
 
     params.buf_size = 0x30;

@@ -121,15 +121,16 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     if (input.size() < sizeof(IoctlSubmitGpfifo))
         UNIMPLEMENTED();
     IoctlSubmitGpfifo params{};
-    std::memcpy(&params, input.data(), 24);
+    std::memcpy(&params, input.data(), sizeof(IoctlSubmitGpfifo));
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo=%lx, num_entries=%x, flags=%x",
                 params.gpfifo, params.num_entries, params.flags);
 
     auto entries = std::vector<IoctlGpfifoEntry>();
     entries.resize(params.num_entries);
-    std::memcpy(&entries[0], &input.data()[24], params.num_entries * 8);
+    std::memcpy(&entries[0], &input.data()[sizeof(IoctlSubmitGpfifo)],
+                params.num_entries * sizeof(IoctlGpfifoEntry));
     for (auto entry : entries) {
-        u64 va_addr = (entry.gpu_va_hi << 32) | entry.entry0;
+        VAddr va_addr = entry.Address();
         // TODO(ogniK): Process these
     }
     params.fence_out.id = 0;
