@@ -181,6 +181,7 @@ public:
             {103, &Hid::ActivateNpad, "ActivateNpad"},
             {120, &Hid::SetNpadJoyHoldType, "SetNpadJoyHoldType"},
             {124, nullptr, "SetNpadJoyAssignmentModeDual"},
+            {128, &Hid::SetNpadHandheldActivationMode, "SetNpadHandheldActivationMode"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
         RegisterHandlers(functions);
@@ -238,6 +239,12 @@ private:
     }
 
     void SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_HID, "(STUBBED) called");
