@@ -18,10 +18,10 @@ public:
     nvhost_ctrl_gpu() = default;
     ~nvhost_ctrl_gpu() override = default;
 
-    u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
+    u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum class IoctlCommand : u32 {
+    enum class IoctlCommand : u32_le {
         IocGetCharacteristicsCommand = 0xC0B04705,
         IocGetTPCMasksCommand = 0xC0184706,
         IocGetActiveSlotMaskCommand = 0x80084714,

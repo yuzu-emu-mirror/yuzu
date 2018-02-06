@@ -18,10 +18,10 @@ public:
     nvhost_as_gpu() = default;
     ~nvhost_as_gpu() override = default;
 
-    u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
+    u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum class IoctlCommand : u32 {
+    enum class IoctlCommand : u32_le {
         IocInitalizeExCommand = 0x40284109,
         IocAllocateSpaceCommand = 0xC0184102,
         IocMapBufferExCommand = 0xC0284106,

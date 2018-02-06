@@ -11,11 +11,11 @@ namespace Service {
 namespace Nvidia {
 namespace Devices {
 
-u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) {
+u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%llx, output_size=0x%llx",
               command, input.size(), output.size());
 
-    switch (static_cast<IoctlCommand>(command)) {
+    switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocSetNVMAPfdCommand:
         return SetNVMAPfd(input, output);
     case IoctlCommand::IocSetClientDataCommand:
@@ -34,12 +34,8 @@ u32 nvhost_gpu::ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>
         return AllocateObjectContext(input, output);
     }
 
-    // Variable size ioctls
-    u8 group = (command >> 8) & 0xff;
-    u8 index = command & 0xff;
-
-    if (group == 'H') {
-        if (index == 0x8) {
+    if (command.group == NVGPU_IOCTL_MAGIC) {
+        if (command.cmd == NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO) {
             return SubmitGPFIFO(input, output);
         }
     }
@@ -122,7 +118,7 @@ u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<
 }
 
 u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output) {
-    if (input.size() < 24)
+    if (input.size() < sizeof(IoctlSubmitGpfifo))
         UNIMPLEMENTED();
     IoctlSubmitGpfifo params{};
     std::memcpy(&params, input.data(), 24);
@@ -132,11 +128,11 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     auto entries = std::vector<IoctlGpfifoEntry>();
     entries.resize(params.num_entries);
     std::memcpy(&entries[0], &input.data()[24], params.num_entries * 8);
-    for (u32 i = 0; i < params.num_entries; i++) {
-        u32 unk1 = (entries[i].entry1 >> 8) & 0x3;
-        u32 sz = (entries[i].entry1 >> 10) & 0x1fffff;
-        u32 unk2 = entries[i].entry1 >> 31;
-        u64 va_addr = entries[i].entry0 | ((entries[i].entry1 & 0xff) << 32);
+    for (auto entry : entries) {
+        u32 unk1 = (entry.entry1 >> 8) & 0x3;
+        u32 sz = (entry.entry1 >> 10) & 0x1fffff;
+        u32 unk2 = entry.entry1 >> 31;
+        u64 va_addr = entry.entry0 | ((entry.entry1 & 0xff) << 32);
         // TODO(ogniK): Process these
     }
     params.fence_out.id = 0;

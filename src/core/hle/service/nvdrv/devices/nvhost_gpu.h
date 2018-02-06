@@ -12,16 +12,18 @@
 namespace Service {
 namespace Nvidia {
 namespace Devices {
+constexpr u32 NVGPU_IOCTL_MAGIC('H');
+constexpr u32 NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO(0x8);
 
 class nvhost_gpu final : public nvdevice {
 public:
     nvhost_gpu() = default;
     ~nvhost_gpu() override = default;
 
-    u32 ioctl(u32 command, const std::vector<u8>& input, std::vector<u8>& output) override;
+    u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
 private:
-    enum class IoctlCommand : u32 {
+    enum class IoctlCommand : u32_le {
         IocSetNVMAPfdCommand = 0x40044801,
         IocSetClientDataCommand = 0x40084714,
         IocGetClientDataCommand = 0x80084715,
@@ -32,7 +34,7 @@ private:
         IocAllocObjCtxCommand = 0xC0104809,
     };
 
-    enum class CtxObjects : u32 {
+    enum class CtxObjects : u32_le {
         Ctx2D = 0x902D,
         Ctx3D = 0xB197,
         CtxCompute = 0xB1C0,
