@@ -70,6 +70,7 @@ ResultCode Mutex::Release(Thread* thread) {
     holding_thread->held_mutexes.erase(this);
     holding_thread->UpdatePriority();
     SetHoldingThread(nullptr);
+    SetHasWaiters(!GetWaitingThreads().empty());
     WakeupAllWaitingThreads();
     Core::System::GetInstance().PrepareReschedule();
 
