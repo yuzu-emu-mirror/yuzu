@@ -129,10 +129,7 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     entries.resize(params.num_entries);
     std::memcpy(&entries[0], &input.data()[24], params.num_entries * 8);
     for (auto entry : entries) {
-        u32 unk1 = (entry.entry1 >> 8) & 0x3;
-        u32 sz = (entry.entry1 >> 10) & 0x1fffff;
-        u32 unk2 = entry.entry1 >> 31;
-        u64 va_addr = entry.entry0 | ((entry.entry1 & 0xff) << 32);
+        u64 va_addr = (entry.gpu_va_hi << 32) | entry.entry0;
         // TODO(ogniK): Process these
     }
     params.fence_out.id = 0;

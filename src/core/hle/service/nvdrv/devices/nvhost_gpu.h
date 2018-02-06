@@ -95,7 +95,13 @@ private:
 
     struct IoctlGpfifoEntry {
         u32_le entry0; // gpu_va_lo
-        u32_le entry1; // gpu_va_hi | (unk_0x02 << 0x08) | (size << 0x0A) | (unk_0x01 << 0x1F)
+        union {
+            u32_le entry1; // gpu_va_hi | (unk_0x02 << 0x08) | (size << 0x0A) | (unk_0x01 << 0x1F)
+            BitField<0, 8, u32> gpu_va_hi;
+            BitField<8, 2, u32> unk1;
+            BitField<10, 21, u32> sz;
+            BitField<31, 1, u32> unk2;
+        };
     };
     static_assert(sizeof(IoctlGpfifoEntry) == 8, "IoctlGpfifoEntry is incorrect size");
 
