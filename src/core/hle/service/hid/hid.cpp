@@ -174,12 +174,12 @@ public:
         static const FunctionInfo functions[] = {
             {0, &Hid::CreateAppletResource, "CreateAppletResource"},
             {1, &Hid::ActivateDebugPad, "ActivateDebugPad"},
-            {11, nullptr, "ActivateTouchScreen"},
+            {11, &Hid::ActivateTouchScreen, "ActivateTouchScreen"},
             {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
             {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
             {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
             {103, &Hid::ActivateNpad, "ActivateNpad"},
-            {120, nullptr, "SetNpadJoyHoldType"},
+            {120, &Hid::SetNpadJoyHoldType, "SetNpadJoyHoldType"},
             {124, nullptr, "SetNpadJoyAssignmentModeDual"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
@@ -207,6 +207,12 @@ private:
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
+    void ActivateTouchScreen(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -226,6 +232,12 @@ private:
     }
 
     void ActivateNpad(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_HID, "(STUBBED) called");
