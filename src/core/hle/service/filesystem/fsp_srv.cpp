@@ -71,6 +71,7 @@ FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
     static const FunctionInfo functions[] = {
         {1, &FSP_SRV::Initalize, "Initalize"},
         {200, &FSP_SRV::OpenDataStorageByCurrentProcess, "OpenDataStorageByCurrentProcess"},
+        {202, nullptr, "OpenDataStorageByDataId"},
         {203, &FSP_SRV::OpenRomStorage, "OpenRomStorage"},
         {1005, &FSP_SRV::GetGlobalAccessLogMode, "GetGlobalAccessLogMode"},
     };

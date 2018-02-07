@@ -17,6 +17,10 @@ class AudRenU final : public ServiceFramework<AudRenU> {
 public:
     explicit AudRenU();
     ~AudRenU() = default;
+
+private:
+    void OpenAudioRenderer(Kernel::HLERequestContext& ctx);
+    void GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Audio

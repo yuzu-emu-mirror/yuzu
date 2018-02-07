@@ -60,9 +60,11 @@ private:
     void SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx);
     void LockExit(Kernel::HLERequestContext& ctx);
     void UnlockExit(Kernel::HLERequestContext& ctx);
+    void GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx);
     void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
+    Kernel::SharedPtr<Kernel::Event> launchable_event;
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
@@ -92,6 +94,9 @@ private:
 class ILibraryAppletCreator final : public ServiceFramework<ILibraryAppletCreator> {
 public:
     ILibraryAppletCreator();
+
+private:
+    void CreateLibraryApplet(Kernel::HLERequestContext& ctx);
 };
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {

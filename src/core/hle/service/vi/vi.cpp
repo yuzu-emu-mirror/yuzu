@@ -19,6 +19,15 @@
 namespace Service {
 namespace VI {
 
+struct DisplayInfo {
+    char display_name[0x40]{"Default"};
+    u64 unknown_1{1};
+    u64 unknown_2{1};
+    u64 width{1920};
+    u64 height{1080};
+};
+static_assert(sizeof(DisplayInfo) == 0x60, "DisplayInfo has wrong size");
+
 class Parcel {
 public:
     // This default size was chosen arbitrarily.
@@ -722,6 +731,17 @@ void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& 
     rb.Push(RESULT_SUCCESS);
 }
 
+void IApplicationDisplayService::ListDisplays(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    DisplayInfo display_info;
+    auto& buffer = ctx.BufferDescriptorB()[0];
+    Memory::WriteBlock(buffer.Address(), &display_info, sizeof(DisplayInfo));
+    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(1);
+    LOG_WARNING(Service_VI, "(STUBBED) called");
+}
+
 void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_VI, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
@@ -743,7 +763,7 @@ IApplicationDisplayService::IApplicationDisplayService(
         {102, &IApplicationDisplayService::GetManagerDisplayService, "GetManagerDisplayService"},
         {103, &IApplicationDisplayService::GetIndirectDisplayTransactionService,
          "GetIndirectDisplayTransactionService"},
-        {1000, nullptr, "ListDisplays"},
+        {1000, &IApplicationDisplayService::ListDisplays, "ListDisplays"},
         {1010, &IApplicationDisplayService::OpenDisplay, "OpenDisplay"},
         {1020, &IApplicationDisplayService::CloseDisplay, "CloseDisplay"},
         {2101, &IApplicationDisplayService::SetLayerScalingMode, "SetLayerScalingMode"},

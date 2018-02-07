@@ -30,6 +30,7 @@ private:
     void OpenDisplay(Kernel::HLERequestContext& ctx);
     void CloseDisplay(Kernel::HLERequestContext& ctx);
     void SetLayerScalingMode(Kernel::HLERequestContext& ctx);
+    void ListDisplays(Kernel::HLERequestContext& ctx);
     void OpenLayer(Kernel::HLERequestContext& ctx);
     void CreateStrayLayer(Kernel::HLERequestContext& ctx);
     void DestroyStrayLayer(Kernel::HLERequestContext& ctx);

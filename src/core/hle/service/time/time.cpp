@@ -68,8 +68,15 @@ public:
     ITimeZoneService() : ServiceFramework("ITimeZoneService") {
         static const FunctionInfo functions[] = {
             {0, &ITimeZoneService::GetDeviceLocationName, "GetDeviceLocationName"},
+            {1, nullptr, "SetDeviceLocationName"},
             {2, &ITimeZoneService::GetTotalLocationNameCount, "GetTotalLocationNameCount"},
+            {3, nullptr, "LoadLocationNameList"},
+            {4, &ITimeZoneService::LoadTimeZoneRule, "LoadTimeZoneRule"},
+            {5, nullptr, "GetTimeZoneRuleVersion"},
+            {100, nullptr, "ToCalendarTime"},
             {101, &ITimeZoneService::ToCalendarTimeWithMyRule, "ToCalendarTimeWithMyRule"},
+            {200, nullptr, "ToPosixTime"},
+            {201, nullptr, "ToPosixTimeWithMyRule"},
         };
         RegisterHandlers(functions);
     }
@@ -88,6 +95,12 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
+    }
+
+    void LoadTimeZoneRule(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Time, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
     }
 
     void ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) {
