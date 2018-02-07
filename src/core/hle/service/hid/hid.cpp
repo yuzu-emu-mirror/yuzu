@@ -9,6 +9,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/kernel/shared_memory.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/service.h"
@@ -179,17 +180,24 @@ public:
             {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
             {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
             {103, &Hid::ActivateNpad, "ActivateNpad"},
+            {106, &Hid::AcquireNpadStyleSetUpdateEventHandle,
+             "AcquireNpadStyleSetUpdateEventHandle"},
             {120, &Hid::SetNpadJoyHoldType, "SetNpadJoyHoldType"},
+            {121, &Hid::GetNpadJoyHoldType, "GetNpadJoyHoldType"},
             {124, nullptr, "SetNpadJoyAssignmentModeDual"},
             {128, &Hid::SetNpadHandheldActivationMode, "SetNpadHandheldActivationMode"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
         };
         RegisterHandlers(functions);
+
+        event = Kernel::Event::Create(Kernel::ResetType::OneShot, "hid:EventHandle");
     }
     ~Hid() = default;
 
 private:
     std::shared_ptr<IAppletResource> applet_resource;
+    u32 joy_hold_type{0};
+    Kernel::SharedPtr<Kernel::Event> event;
 
     void CreateAppletResource(Kernel::HLERequestContext& ctx) {
         if (applet_resource == nullptr) {
@@ -238,9 +246,23 @@ private:
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
+    void AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(event);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
     void SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void GetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(joy_hold_type);
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 

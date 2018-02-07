@@ -45,6 +45,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
     static const FunctionInfo functions[] = {
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
+        {9, &ISelfController::GetLibraryAppletLaunchableEvent, "GetLibraryAppletLaunchableEvent"},
         {11, &ISelfController::SetOperationModeChangedNotification,
          "SetOperationModeChangedNotification"},
         {12, &ISelfController::SetPerformanceModeChangedNotification,
@@ -55,6 +56,9 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {40, &ISelfController::CreateManagedDisplayLayer, "CreateManagedDisplayLayer"},
     };
     RegisterHandlers(functions);
+
+    launchable_event =
+        Kernel::Event::Create(Kernel::ResetType::OneShot, "ISelfController:LaunchableEvent");
 }
 
 void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
@@ -132,6 +136,16 @@ void ISelfController::UnlockExit(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
+void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx) {
+    launchable_event->Signal();
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushCopyObjects(launchable_event);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
 void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) {
     // TODO(Subv): Find out how AM determines the display to use, for now just create the layer
     // in the Default display.
@@ -200,7 +214,69 @@ void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
-ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {}
+class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
+public:
+    explicit ILibraryAppletAccessor() : ServiceFramework("ILibraryAppletAccessor") {
+        static const FunctionInfo functions[] = {
+            {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
+            {1, nullptr, "IsCompleted"},
+            {10, nullptr, "Start"},
+            {20, nullptr, "RequestExit"},
+            {25, nullptr, "Terminate"},
+            {30, nullptr, "GetResult"},
+            {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
+            {100, nullptr, "PushInData"},
+            {101, nullptr, "PopOutData"},
+            {102, nullptr, "PushExtraStorage"},
+            {103, nullptr, "PushInteractiveInData"},
+            {104, nullptr, "PopInteractiveOutData"},
+            {105, nullptr, "GetPopOutDataEvent"},
+            {106, nullptr, "GetPopInteractiveOutDataEvent"},
+            {120, nullptr, "NeedsToExitProcess"},
+            {120, nullptr, "GetLibraryAppletInfo"},
+            {150, nullptr, "RequestForAppletToGetForeground"},
+            {160, nullptr, "GetIndirectLayerConsumerHandle"},
+        };
+        RegisterHandlers(functions);
+
+        state_changed_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
+                                                    "ILibraryAppletAccessor:StateChangedEvent");
+    }
+
+private:
+    void GetAppletStateChangedEvent(Kernel::HLERequestContext& ctx) {
+        state_changed_event->Signal();
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(state_changed_event);
+
+        LOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
+    Kernel::SharedPtr<Kernel::Event> state_changed_event;
+};
+
+ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {
+    static const FunctionInfo functions[] = {
+        {0, &ILibraryAppletCreator::CreateLibraryApplet, "CreateLibraryApplet"},
+        {1, nullptr, "TerminateAllLibraryApplets"},
+        {2, nullptr, "AreAnyLibraryAppletsLeft"},
+        {10, nullptr, "CreateStorage"},
+        {11, nullptr, "CreateTransferMemoryStorage"},
+        {12, nullptr, "CreateHandleStorage"},
+    };
+    RegisterHandlers(functions);
+}
+
+void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<AM::ILibraryAppletAccessor>();
+
+    LOG_DEBUG(Service_AM, "called");
+}
 
 class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
 public:
