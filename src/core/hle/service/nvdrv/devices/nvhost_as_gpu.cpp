@@ -41,9 +41,16 @@ u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlAllocSpace params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, pages=%x, page_size=%x, flags=%x", params.pages,
-                params.page_size, params.flags);
-    params.offset = 0xdeadbeef; // TODO(ogniK): Actually allocate space and give a real offset
+    LOG_DEBUG(Service_NVDRV, "called, pages=%x, page_size=%x, flags=%x", params.pages,
+              params.page_size, params.flags);
+
+    const u64 size{static_cast<u64>(params.pages) * static_cast<u64>(params.page_size)};
+    if (params.flags & 1) {
+        params.offset = memory_manager->AllocateSpace(params.offset, size, 1);
+    } else {
+        params.offset = memory_manager->AllocateSpace(size, params.align);
+    }
+
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
@@ -52,12 +59,24 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     IoctlMapBufferEx params{};
     std::memcpy(&params, input.data(), input.size());
 
-    LOG_WARNING(Service_NVDRV,
-                "(STUBBED) called, flags=%x, nvmap_handle=%x, buffer_offset=%lx, mapping_size=%lx, "
-                "offset=%lx",
-                params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
-                params.offset);
-    params.offset = 0x0; // TODO(ogniK): Actually map and give a real offset
+    LOG_DEBUG(Service_NVDRV,
+              "called, flags=%x, nvmap_handle=%x, buffer_offset=%lx, mapping_size=%lx, offset=%lx",
+              params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
+              params.offset);
+
+    if (!params.nvmap_handle) {
+        return 0;
+    }
+
+    auto object = nvmap_dev->GetObject(params.nvmap_handle);
+    ASSERT(object);
+
+    if (params.flags & 1) {
+        params.offset = memory_manager->MapBufferEx(object->addr, params.offset, object->size);
+    } else {
+        params.offset = memory_manager->MapBufferEx(object->addr, object->size);
+    }
+
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }

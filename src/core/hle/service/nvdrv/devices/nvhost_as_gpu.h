@@ -10,6 +10,7 @@
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
+#include "core/hle/service/nvdrv/memory_manager.h"
 
 namespace Service {
 namespace Nvidia {
@@ -19,7 +20,9 @@ class nvmap;
 
 class nvhost_as_gpu final : public nvdevice {
 public:
-    nvhost_as_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvdevice(), nvmap_dev(std::move(nvmap_dev)) {}
+    nvhost_as_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvdevice(), nvmap_dev(std::move(nvmap_dev)) {
+        memory_manager = std::make_shared<MemoryManager>();
+    }
     ~nvhost_as_gpu() override = default;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
@@ -98,6 +101,7 @@ private:
     u32 GetVARegions(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::shared_ptr<nvmap> nvmap_dev;
+    std::shared_ptr<MemoryManager> memory_manager;
 };
 
 } // namespace Devices
