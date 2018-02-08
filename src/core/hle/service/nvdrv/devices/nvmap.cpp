@@ -13,10 +13,8 @@ namespace Nvidia {
 namespace Devices {
 
 VAddr nvmap::GetObjectAddress(u32 handle) const {
-    auto itr = handles.find(handle);
-    ASSERT(itr != handles.end());
-
-    auto object = itr->second;
+    auto object = GetObject(handle);
+    ASSERT(object);
     ASSERT(object->status == Object::Status::Allocated);
     return object->addr;
 }
@@ -52,7 +50,7 @@ u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     u32 handle = next_handle++;
     handles[handle] = std::move(object);
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) size 0x%08X", params.size);
+    LOG_DEBUG(Service_NVDRV, "size=0x%08X", params.size);
 
     params.handle = handle;
 
@@ -64,17 +62,16 @@ u32 nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
     IocAllocParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    auto itr = handles.find(params.handle);
-    ASSERT(itr != handles.end());
+    auto object = GetObject(params.handle);
+    ASSERT(object);
 
-    auto object = itr->second;
     object->flags = params.flags;
     object->align = params.align;
     object->kind = params.kind;
     object->addr = params.addr;
     object->status = Object::Status::Allocated;
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) Allocated address 0x%llx", params.addr);
+    LOG_DEBUG(Service_NVDRV, "called, addr=0x%llx", params.addr);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
@@ -86,10 +83,10 @@ u32 nvmap::IocGetId(const std::vector<u8>& input, std::vector<u8>& output) {
 
     LOG_WARNING(Service_NVDRV, "called");
 
-    auto itr = handles.find(params.handle);
-    ASSERT(itr != handles.end());
+    auto object = GetObject(params.handle);
+    ASSERT(object);
 
-    params.id = itr->second->id;
+    params.id = object->id;
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
@@ -123,10 +120,8 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
 
     LOG_WARNING(Service_NVDRV, "(STUBBED) called type=%u", params.type);
 
-    auto itr = handles.find(params.handle);
-    ASSERT(itr != handles.end());
-
-    auto object = itr->second;
+    auto object = GetObject(params.handle);
+    ASSERT(object);
     ASSERT(object->status == Object::Status::Allocated);
 
     switch (static_cast<ParamTypes>(params.type)) {
