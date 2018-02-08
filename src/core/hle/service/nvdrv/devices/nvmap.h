@@ -26,8 +26,7 @@ public:
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
-private:
-    // Represents an nvmap object.
+    /// Represents an nvmap object.
     struct Object {
         enum class Status { Created, Allocated };
         u32 id;
@@ -39,10 +38,19 @@ private:
         Status status;
     };
 
+    std::shared_ptr<Object> GetObject(u32 handle) const {
+        auto itr = handles.find(handle);
+        if (itr != handles.end()) {
+            return itr->second;
+        }
+        return {};
+    }
+
+private:
     /// Id to use for the next handle that is created.
     u32 next_handle = 1;
 
-    // Id to use for the next object that is created.
+    /// Id to use for the next object that is created.
     u32 next_id = 1;
 
     /// Mapping of currently allocated handles to the objects they represent.
