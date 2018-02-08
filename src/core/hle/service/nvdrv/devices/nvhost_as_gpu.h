@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+#include <utility>
 #include <vector>
 #include "common/common_types.h"
 #include "common/swap.h"
@@ -13,9 +15,11 @@ namespace Service {
 namespace Nvidia {
 namespace Devices {
 
+class nvmap;
+
 class nvhost_as_gpu final : public nvdevice {
 public:
-    nvhost_as_gpu() = default;
+    nvhost_as_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvdevice(), nvmap_dev(std::move(nvmap_dev)) {}
     ~nvhost_as_gpu() override = default;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
@@ -92,6 +96,8 @@ private:
     u32 MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
     u32 BindChannel(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetVARegions(const std::vector<u8>& input, std::vector<u8>& output);
+
+    std::shared_ptr<nvmap> nvmap_dev;
 };
 
 } // namespace Devices
