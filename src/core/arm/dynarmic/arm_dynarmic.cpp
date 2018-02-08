@@ -6,6 +6,7 @@
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include "common/microprofile.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
@@ -78,12 +79,23 @@ public:
     u64 tpidrr0_el0 = 0;
 };
 
+void ARM_Dynarmic::Run() {
+    ASSERT(Memory::GetCurrentPageTable() == current_page_table);
+
+    jit.Run();
+}
+
+void ARM_Dynarmic::Step() {
+    cb->InterpreterFallback(jit.GetPC(), 1);
+}
+
 ARM_Dynarmic::ARM_Dynarmic()
     : cb(std::make_unique<ARM_Dynarmic_Callbacks>(*this)),
       jit(Dynarmic::A64::UserConfig{cb.get()}) {
     ARM_Interface::ThreadContext ctx;
     inner_unicorn.SaveContext(ctx);
     LoadContext(ctx);
+    PageTableChanged();
 }
 
 ARM_Dynarmic::~ARM_Dynarmic() = default;
@@ -142,13 +154,6 @@ void ARM_Dynarmic::SetTlsAddress(u64 address) {
     cb->tpidrr0_el0 = address;
 }
 
-void ARM_Dynarmic::ExecuteInstructions(int num_instructions) {
-    cb->ticks_remaining = num_instructions;
-    jit.Run();
-    CoreTiming::AddTicks(num_instructions - cb->num_interpreted_instructions);
-    cb->num_interpreted_instructions = 0;
-}
-
 void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     ctx.cpu_registers = jit.GetRegisters();
     ctx.sp = jit.GetSP();
@@ -180,5 +185,6 @@ void ARM_Dynarmic::ClearInstructionCache() {
 }
 
 void ARM_Dynarmic::PageTableChanged() {
+    current_page_table = Memory::GetCurrentPageTable();
     UNIMPLEMENTED();
 }
