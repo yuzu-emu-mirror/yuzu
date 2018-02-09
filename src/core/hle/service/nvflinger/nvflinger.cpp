@@ -7,6 +7,7 @@
 #include "common/alignment.h"
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
@@ -129,8 +130,8 @@ void NVFlinger::Compose() {
 
         if (buffer == boost::none) {
             // There was no queued buffer to draw, render previous frame
-            VideoCore::g_renderer->SwapBuffers({});
             Core::System::GetInstance().perf_stats.EndGameFrame();
+            VideoCore::g_renderer->SwapBuffers({});
             continue;
         }
 
