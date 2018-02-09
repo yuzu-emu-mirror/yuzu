@@ -130,6 +130,7 @@ void NVFlinger::Compose() {
         if (buffer == boost::none) {
             // There was no queued buffer to draw, render previous frame
             VideoCore::g_renderer->SwapBuffers({});
+            Core::System::GetInstance().perf_stats.EndGameFrame();
             continue;
         }
 
