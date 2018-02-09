@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/service.h"
 
@@ -29,6 +30,8 @@ private:
     std::shared_ptr<Module> nvdrv;
 
     u64 pid{};
+
+    Kernel::SharedPtr<Kernel::Event> query_event;
 };
 
 } // namespace Nvidia

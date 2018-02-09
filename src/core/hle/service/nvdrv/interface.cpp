@@ -78,11 +78,10 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     u32 event_id = rp.Pop<u32>();
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, fd=%x, event_id=%x", fd, event_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 1};
+    IPC::ResponseBuilder rb{ctx, 3, 1};
     rb.Push(RESULT_SUCCESS);
-    auto event = Kernel::Event::Create(Kernel::ResetType::Pulse, "NVEvent");
-    event->Signal();
-    rb.PushCopyObjects(event);
+    rb.PushCopyObjects(query_event);
+    rb.Push<u32>(0);
 }
 
 void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
@@ -113,6 +112,8 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
         {13, &NVDRV::FinishInitialize, "FinishInitialize"},
     };
     RegisterHandlers(functions);
+
+    query_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "NVDRV::query_event");
 }
 
 } // namespace Nvidia
