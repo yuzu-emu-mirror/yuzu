@@ -45,6 +45,6 @@ public:
 private:
     friend class ARM_Dynarmic_Callbacks;
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
-    Dynarmic::A64::Jit jit;
+    std::unique_ptr<Dynarmic::A64::Jit> jit;
     ARM_Unicorn inner_unicorn;
 };
