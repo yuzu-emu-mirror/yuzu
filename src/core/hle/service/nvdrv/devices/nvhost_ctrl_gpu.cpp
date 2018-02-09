@@ -104,8 +104,20 @@ u32 nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u
 }
 
 u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
-    std::memset(output.data(), 0, output.size());
+    LOG_DEBUG(Service_NVDRV, "called");
+    IoctlNvgpuGpuZcullGetInfoArgs params{};
+    std::memcpy(&params, input.data(), input.size());
+    params.width_align_pixels = 0x20;
+    params.height_align_pixels = 0x20;
+    params.pixel_squares_by_aliquots = 0x400;
+    params.aliquot_total = 0x800;
+    params.region_byte_multiplier = 0x20;
+    params.region_header_size = 0x20;
+    params.subregion_header_size = 0xc0;
+    params.subregion_width_align_pixels = 0x20;
+    params.subregion_height_align_pixels = 0x40;
+    params.subregion_count = 0x10;
+    std::memcpy(output.data(), &params, output.size());
     return 0;
 }
 

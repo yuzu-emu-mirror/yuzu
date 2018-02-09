@@ -657,7 +657,7 @@ void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u64 display_id = rp.Pop<u64>();
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
     rb.Push(RESULT_SUCCESS);
 }
 

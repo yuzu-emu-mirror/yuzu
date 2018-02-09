@@ -9,6 +9,9 @@
 namespace Service {
 namespace Account {
 
+using Uid = std::array<u64, 2>;
+static constexpr Uid DEFAULT_USER_ID{0x10ull, 0x20ull};
+
 class IProfile final : public ServiceFramework<IProfile> {
 public:
     IProfile() : ServiceFramework("IProfile") {
@@ -61,6 +64,15 @@ void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
     rb.Push(true); // TODO: Check when this is supposed to return true and when not
 }
 
+void ACC_U0::ListAllUsers(Kernel::HLERequestContext& ctx) {
+    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
+    const auto& output_buffer = ctx.BufferDescriptorC()[0];
+    Memory::WriteBlock(output_buffer.Address(), user_ids.data(), user_ids.size());
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    LOG_DEBUG(Service_ACC, "called");
+}
+
 void ACC_U0::GetProfile(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -85,13 +97,13 @@ void ACC_U0::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 6};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0x0);
-    rb.Push<u64>(0x0);
+    rb.PushRaw(DEFAULT_USER_ID);
 }
 
 ACC_U0::ACC_U0() : ServiceFramework("acc:u0") {
     static const FunctionInfo functions[] = {
         {1, &ACC_U0::GetUserExistence, "GetUserExistence"},
+        {2, &ACC_U0::ListAllUsers, "ListAllUsers"},
         {4, &ACC_U0::GetLastOpenedUser, "GetLastOpenedUser"},
         {5, &ACC_U0::GetProfile, "GetProfile"},
         {100, &ACC_U0::InitializeApplicationInfo, "InitializeApplicationInfo"},
