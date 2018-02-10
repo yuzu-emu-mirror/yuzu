@@ -301,14 +301,11 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(Subv): Find out what this all means
-        Write<u32_le>(1);
-
-        Write<u32_le>(sizeof(NVFlinger::IGBPBuffer));
-        Write<u32_le>(0); // Unknown
-
+        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
+        Write<u32_le>(0);
+        Write<u32_le>(0);
+        Write<u32_le>(0);
         Write(buffer);
-
         Write<u32_le>(0);
     }
 
