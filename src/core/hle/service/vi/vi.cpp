@@ -211,7 +211,6 @@ public:
     void DeserializeData() override {
         std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
-        ASSERT(data.graphic_buffer_length == sizeof(NVFlinger::IGBPBuffer));
         buffer = Read<NVFlinger::IGBPBuffer>();
     }
 
