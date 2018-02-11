@@ -101,8 +101,10 @@ public:
         SerializeData();
 
         Header header{};
-        header.data_offset = sizeof(Header);
         header.data_size = static_cast<u32_le>(write_index - sizeof(Header));
+        header.data_offset = sizeof(Header);
+        header.objects_size = 4;
+        header.objects_offset = sizeof(Header) + header.data_size;
         std::memcpy(buffer.data(), &header, sizeof(Header));
 
         return buffer;
@@ -142,11 +144,11 @@ protected:
 private:
     struct Data {
         u32_le magic = 2;
-        u32_le process_id;
+        u32_le process_id = 1;
         u32_le id;
-        INSERT_PADDING_BYTES(0xC);
+        INSERT_PADDING_WORDS(3);
         std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
-        INSERT_PADDING_BYTES(8);
+        INSERT_PADDING_WORDS(2);
     };
     static_assert(sizeof(Data) == 0x28, "ParcelData has wrong size");
 
@@ -672,7 +674,7 @@ void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+    LOG_DEBUG(Service_VI, "called");
     IPC::RequestParser rp{ctx};
     auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
     auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -697,7 +699,7 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_DEBUG(Service_VI, "called");
 
     IPC::RequestParser rp{ctx};
     u32 flags = rp.Pop<u32>();
