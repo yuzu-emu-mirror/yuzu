@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-
+#include <array>
 #include "common/alignment.h"
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
@@ -101,8 +101,10 @@ public:
         SerializeData();
 
         Header header{};
-        header.data_offset = sizeof(Header);
         header.data_size = static_cast<u32_le>(write_index - sizeof(Header));
+        header.data_offset = sizeof(Header);
+        header.objects_size = 4;
+        header.objects_offset = sizeof(Header) + header.data_size;
         std::memcpy(buffer.data(), &header, sizeof(Header));
 
         return buffer;
@@ -142,11 +144,11 @@ protected:
 private:
     struct Data {
         u32_le magic = 2;
-        u32_le process_id;
+        u32_le process_id = 1;
         u32_le id;
-        INSERT_PADDING_BYTES(0xC);
+        INSERT_PADDING_WORDS(3);
         std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
-        INSERT_PADDING_BYTES(8);
+        INSERT_PADDING_WORDS(2);
     };
     static_assert(sizeof(Data) == 0x28, "ParcelData has wrong size");
 
@@ -323,13 +325,29 @@ public:
         data = Read<Data>();
     }
 
+    struct Fence {
+        u32_le id;
+        u32_le value;
+    };
+    static_assert(sizeof(Fence) == 8, "Fence has wrong size");
+
     struct Data {
         u32_le slot;
-        INSERT_PADDING_WORDS(2);
+        INSERT_PADDING_WORDS(3);
         u32_le timestamp;
-        INSERT_PADDING_WORDS(20);
+        s32_le is_auto_timestamp;
+        s32_le crop_left;
+        s32_le crop_top;
+        s32_le crop_right;
+        s32_le crop_bottom;
+        s32_le scaling_mode;
+        NVFlinger::BufferQueue::BufferTransformFlags transform;
+        u32_le sticky_transform;
+        INSERT_PADDING_WORDS(2);
+        u32_le fence_is_valid;
+        std::array<Fence, 2> fences;
     };
-    static_assert(sizeof(Data) == 96, "ParcelData has wrong size");
+    static_assert(sizeof(Data) == 80, "ParcelData has wrong size");
 
     Data data;
 };
@@ -454,7 +472,7 @@ private:
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{input_data};
 
-            buffer_queue->QueueBuffer(request.data.slot);
+            buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             response_buffer = response.Serialize();
@@ -672,7 +690,7 @@ void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+    LOG_DEBUG(Service_VI, "called");
     IPC::RequestParser rp{ctx};
     auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
     auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -697,7 +715,7 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_DEBUG(Service_VI, "called");
 
     IPC::RequestParser rp{ctx};
     u32 flags = rp.Pop<u32>();

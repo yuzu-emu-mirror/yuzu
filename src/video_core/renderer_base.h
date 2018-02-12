@@ -43,6 +43,7 @@ public:
         u32 height;
         u32 stride;
         PixelFormat pixel_format;
+        bool flip_vertical;
     };
 
     virtual ~RendererBase() {}

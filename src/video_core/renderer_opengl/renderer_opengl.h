@@ -86,4 +86,7 @@ private:
     // Shader attribute input indices
     GLuint attrib_position;
     GLuint attrib_tex_coord;
+
+    /// Flips the framebuffer vertically when true
+    bool framebuffer_flip_vertical;
 };
