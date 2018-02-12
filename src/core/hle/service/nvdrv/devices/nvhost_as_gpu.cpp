@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_as_gpu.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 
@@ -44,11 +45,12 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
     LOG_DEBUG(Service_NVDRV, "called, pages=%x, page_size=%x, flags=%x", params.pages,
               params.page_size, params.flags);
 
+    auto& gpu = Core::System::GetInstance().GPU();
     const u64 size{static_cast<u64>(params.pages) * static_cast<u64>(params.page_size)};
     if (params.flags & 1) {
-        params.offset = memory_manager->AllocateSpace(params.offset, size, 1);
+        params.offset = gpu.memory_manager->AllocateSpace(params.offset, size, 1);
     } else {
-        params.offset = memory_manager->AllocateSpace(size, params.align);
+        params.offset = gpu.memory_manager->AllocateSpace(size, params.align);
     }
 
     std::memcpy(output.data(), &params, output.size());
@@ -71,10 +73,12 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     auto object = nvmap_dev->GetObject(params.nvmap_handle);
     ASSERT(object);
 
+    auto& gpu = Core::System::GetInstance().GPU();
+
     if (params.flags & 1) {
-        params.offset = memory_manager->MapBufferEx(object->addr, params.offset, object->size);
+        params.offset = gpu.memory_manager->MapBufferEx(object->addr, params.offset, object->size);
     } else {
-        params.offset = memory_manager->MapBufferEx(object->addr, object->size);
+        params.offset = gpu.memory_manager->MapBufferEx(object->addr, object->size);
     }
 
     std::memcpy(output.data(), &params, output.size());

@@ -11,6 +11,7 @@
 #include "core/memory.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
+#include "video_core/gpu.h"
 
 class EmuWindow;
 class ARM_Interface;
@@ -102,6 +103,10 @@ public:
         return *cpu_core;
     }
 
+    Tegra::GPU& GPU() {
+        return *gpu_core;
+    }
+
     PerfStats perf_stats;
     FrameLimiter frame_limiter;
 
@@ -137,6 +142,8 @@ private:
 
     ///< ARM11 CPU core
     std::unique_ptr<ARM_Interface> cpu_core;
+
+    std::unique_ptr<Tegra::GPU> gpu_core;
 
     /// When true, signals that a reschedule should happen
     bool reschedule_pending{};

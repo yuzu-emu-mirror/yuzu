@@ -9,8 +9,10 @@
 #include "common/common_types.h"
 #include "core/memory.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Tegra {
+
+/// Virtual addresses in the GPU's memory map are 64 bit.
+using GPUVAddr = u64;
 
 class MemoryManager final {
 public:
@@ -44,5 +46,4 @@ private:
     std::array<std::unique_ptr<PageBlock>, PAGE_TABLE_SIZE> page_table{};
 };
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Tegra

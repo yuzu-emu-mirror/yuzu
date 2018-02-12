@@ -5,6 +5,7 @@
 #include <map>
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
 
 namespace Service {
@@ -131,7 +132,7 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
                 params.num_entries * sizeof(IoctlGpfifoEntry));
     for (auto entry : entries) {
         VAddr va_addr = entry.Address();
-        // TODO(ogniK): Process these
+        Core::System::GetInstance().GPU().ProcessCommandList(va_addr, entry.sz);
     }
     params.fence_out.id = 0;
     params.fence_out.value = 0;

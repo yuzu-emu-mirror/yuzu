@@ -1,4 +1,15 @@
 add_library(video_core STATIC
+    command_processor.cpp
+    command_processor.h
+    engines/fermi_2d.cpp
+    engines/fermi_2d.h
+    engines/maxwell_3d.cpp
+    engines/maxwell_3d.h
+    engines/maxwell_compute.cpp
+    engines/maxwell_compute.h
+    gpu.h
+    memory_manager.cpp
+    memory_manager.h
     renderer_base.cpp
     renderer_base.h
     renderer_opengl/gl_resource_manager.h
