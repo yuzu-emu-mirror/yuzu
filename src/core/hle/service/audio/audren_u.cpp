@@ -20,8 +20,8 @@ public:
             {0x2, nullptr, "GetAudioRendererMixBufferCount"},
             {0x3, nullptr, "GetAudioRendererState"},
             {0x4, &IAudioRenderer::RequestUpdateAudioRenderer, "RequestUpdateAudioRenderer"},
-            {0x5, nullptr, "StartAudioRenderer"},
-            {0x6, nullptr, "StopAudioRenderer"},
+            {0x5, &IAudioRenderer::StartAudioRenderer, "StartAudioRenderer"},
+            {0x6, &IAudioRenderer::StopAudioRenderer, "StopAudioRenderer"},
             {0x7, &IAudioRenderer::QuerySystemEvent, "QuerySystemEvent"},
             {0x8, nullptr, "SetAudioRendererRenderingTimeLimit"},
             {0x9, nullptr, "GetAudioRendererRenderingTimeLimit"},
@@ -35,6 +35,42 @@ public:
 
 private:
     void RequestUpdateAudioRenderer(Kernel::HLERequestContext& ctx) {
+        AudioRendererResponseData response_data = {0};
+
+        response_data.section_0_size =
+            response_data.state_entries.size() * sizeof(AudioRendererStateEntry);
+        response_data.section_1_size = response_data.section_1.size();
+        response_data.section_2_size = response_data.section_2.size();
+        response_data.section_3_size = response_data.section_3.size();
+        response_data.section_4_size = response_data.section_4.size();
+        response_data.section_5_size = response_data.section_5.size();
+        response_data.total_size = sizeof(AudioRendererResponseData);
+
+        for (unsigned i = 0; i < response_data.state_entries.size(); i++) {
+            // 4 = Busy and 5 = Ready?
+            response_data.state_entries[i].state = 5;
+        }
+
+        auto& buffer = ctx.BufferDescriptorB()[0];
+
+        Memory::WriteBlock(buffer.Address(), &response_data, response_data.total_size);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+    }
+
+    void StartAudioRenderer(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+
+        rb.Push(RESULT_SUCCESS);
+
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+    }
+
+    void StopAudioRenderer(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
 
         rb.Push(RESULT_SUCCESS);
@@ -51,6 +87,44 @@ private:
 
         LOG_WARNING(Service_Audio, "(STUBBED) called");
     }
+
+    struct AudioRendererStateEntry {
+        u32_le state;
+        u32_le unknown_4;
+        u32_le unknown_8;
+        u32_le unknown_c;
+    };
+    static_assert(sizeof(AudioRendererStateEntry) == 0x10,
+                  "AudioRendererStateEntry has wrong size");
+
+    struct AudioRendererResponseData {
+        u32_le unknown_0;
+        u32_le section_5_size;
+        u32_le section_0_size;
+        u32_le section_1_size;
+        u32_le unknown_10;
+        u32_le section_2_size;
+        u32_le unknown_18;
+        u32_le section_3_size;
+        u32_le section_4_size;
+        u32_le unknown_24;
+        u32_le unknown_28;
+        u32_le unknown_2c;
+        u32_le unknown_30;
+        u32_le unknown_34;
+        u32_le unknown_38;
+        u32_le total_size;
+
+        std::array<AudioRendererStateEntry, 0x18e> state_entries;
+
+        std::array<u8, 0x600> section_1;
+        std::array<u8, 0xe0> section_2;
+        std::array<u8, 0x20> section_3;
+        std::array<u8, 0x10> section_4;
+        std::array<u8, 0xb0> section_5;
+    };
+    static_assert(sizeof(AudioRendererResponseData) == 0x20e0,
+                  "AudioRendererResponseData has wrong size");
 
     Kernel::SharedPtr<Kernel::Event> system_event;
 };
