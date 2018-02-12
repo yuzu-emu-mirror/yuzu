@@ -262,6 +262,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
     // only allows rows to have a memory alignement of 4.
     ASSERT(framebuffer_info.stride % 4 == 0);
 
+    framebuffer_flip_vertical = framebuffer_info.flip_vertical;
+
     // Reset the screen info's display texture to its own permanent texture
     screen_info.display_texture = screen_info.texture.resource.handle;
     screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
@@ -401,13 +403,15 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 
 void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w,
                                       float h) {
-    auto& texcoords = screen_info.display_texcoords;
+    const auto& texcoords = screen_info.display_texcoords;
+    const auto& left = framebuffer_flip_vertical ? texcoords.right : texcoords.left;
+    const auto& right = framebuffer_flip_vertical ? texcoords.left : texcoords.right;
 
     std::array<ScreenRectVertex, 4> vertices = {{
-        ScreenRectVertex(x, y, texcoords.top, texcoords.right),
-        ScreenRectVertex(x + w, y, texcoords.bottom, texcoords.right),
-        ScreenRectVertex(x, y + h, texcoords.top, texcoords.left),
-        ScreenRectVertex(x + w, y + h, texcoords.bottom, texcoords.left),
+        ScreenRectVertex(x, y, texcoords.top, right),
+        ScreenRectVertex(x + w, y, texcoords.bottom, right),
+        ScreenRectVertex(x, y + h, texcoords.top, left),
+        ScreenRectVertex(x + w, y + h, texcoords.bottom, left),
     }};
 
     state.texture_units[0].texture_2d = screen_info.display_texture;
