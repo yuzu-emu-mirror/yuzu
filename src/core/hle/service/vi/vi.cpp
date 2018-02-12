@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-
+#include <array>
 #include "common/alignment.h"
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
@@ -325,13 +325,29 @@ public:
         data = Read<Data>();
     }
 
+    struct Fence {
+        u32_le id;
+        u32_le value;
+    };
+    static_assert(sizeof(Fence) == 8, "Fence has wrong size");
+
     struct Data {
         u32_le slot;
-        INSERT_PADDING_WORDS(2);
+        INSERT_PADDING_WORDS(3);
         u32_le timestamp;
-        INSERT_PADDING_WORDS(20);
+        s32_le is_auto_timestamp;
+        s32_le crop_left;
+        s32_le crop_top;
+        s32_le crop_right;
+        s32_le crop_bottom;
+        s32_le scaling_mode;
+        NVFlinger::BufferQueue::BufferTransformFlags transform;
+        u32_le sticky_transform;
+        INSERT_PADDING_WORDS(2);
+        u32_le fence_is_valid;
+        std::array<Fence, 2> fences;
     };
-    static_assert(sizeof(Data) == 96, "ParcelData has wrong size");
+    static_assert(sizeof(Data) == 80, "ParcelData has wrong size");
 
     Data data;
 };
@@ -456,7 +472,7 @@ private:
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{input_data};
 
-            buffer_queue->QueueBuffer(request.data.slot);
+            buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             response_buffer = response.Serialize();

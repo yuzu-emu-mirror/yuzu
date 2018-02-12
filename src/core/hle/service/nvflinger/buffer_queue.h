@@ -46,18 +46,32 @@ public:
     BufferQueue(u32 id, u64 layer_id);
     ~BufferQueue() = default;
 
+    enum class BufferTransformFlags : u32 {
+        /// Flip source image horizontally (around the vertical axis)
+        FlipH = 0x01,
+        /// Flip source image vertically (around the horizontal axis)
+        FlipV = 0x02,
+        /// Rotate source image 90 degrees clockwise
+        Rotate90 = 0x04,
+        /// Rotate source image 180 degrees
+        Roate180 = 0x03,
+        /// Rotate source image 270 degrees clockwise
+        Roate270 = 0x07,
+    };
+
     struct Buffer {
         enum class Status { Free = 0, Queued = 1, Dequeued = 2, Acquired = 3 };
 
         u32 slot;
         Status status = Status::Free;
         IGBPBuffer igbp_buffer;
+        BufferTransformFlags transform;
     };
 
     void SetPreallocatedBuffer(u32 slot, IGBPBuffer& buffer);
     u32 DequeueBuffer(u32 pixel_format, u32 width, u32 height);
     const IGBPBuffer& RequestBuffer(u32 slot) const;
-    void QueueBuffer(u32 slot);
+    void QueueBuffer(u32 slot, BufferTransformFlags transform);
     boost::optional<const Buffer&> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
     u32 Query(QueryType type);
