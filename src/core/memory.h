@@ -25,10 +25,11 @@ namespace Memory {
  * Page size used by the ARM architecture. This is the smallest granularity with which memory can
  * be mapped.
  */
-const int PAGE_BITS = 12;
-const u64 PAGE_SIZE = 1 << PAGE_BITS;
-const u64 PAGE_MASK = PAGE_SIZE - 1;
-const size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (36 - PAGE_BITS);
+constexpr size_t PAGE_BITS = 12;
+constexpr u64 PAGE_SIZE = 1 << PAGE_BITS;
+constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
+constexpr size_t ADDRESS_SPACE_BITS = 36;
+constexpr size_t PAGE_TABLE_NUM_ENTRIES = 1ULL << (ADDRESS_SPACE_BITS - PAGE_BITS);
 
 enum class PageType : u8 {
     /// Page is unmapped and should cause an access error.
