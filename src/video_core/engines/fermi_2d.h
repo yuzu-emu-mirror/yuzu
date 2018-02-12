@@ -8,11 +8,15 @@
 
 namespace Tegra {
 namespace Engines {
-namespace Fermi2D {
 
-void WriteReg(u32 method, u32 value);
+class Fermi2D final {
+public:
+    Fermi2D() = default;
+    ~Fermi2D() = default;
 
-} // namespace Fermi2D
+    /// Write the value to the register identified by method.
+    void WriteReg(u32 method, u32 value);
+};
 
 } // namespace Engines
 } // namespace Tegra

@@ -8,11 +8,15 @@
 
 namespace Tegra {
 namespace Engines {
-namespace Maxwell3D {
 
-void WriteReg(u32 method, u32 value);
+class Maxwell3D final {
+public:
+    Maxwell3D() = default;
+    ~Maxwell3D() = default;
 
-} // namespace Maxwell3D
+    /// Write the value to the register identified by method.
+    void WriteReg(u32 method, u32 value);
+};
 
 } // namespace Engines
 } // namespace Tegra

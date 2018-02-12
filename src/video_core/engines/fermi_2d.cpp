@@ -6,10 +6,8 @@
 
 namespace Tegra {
 namespace Engines {
-namespace Fermi2D {
 
-void WriteReg(u32 method, u32 value) {}
+void Fermi2D::WriteReg(u32 method, u32 value) {}
 
-} // namespace Fermi2D
 } // namespace Engines
 } // namespace Tegra

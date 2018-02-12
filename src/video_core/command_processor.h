@@ -10,8 +10,6 @@
 
 namespace Tegra {
 
-namespace CommandProcessor {
-
 enum class SubmissionMode : u32 {
     IncreasingOld = 0,
     Increasing = 1,
@@ -37,7 +35,5 @@ static_assert(std::is_standard_layout<CommandHeader>::value == true,
 static_assert(sizeof(CommandHeader) == sizeof(u32), "CommandHeader has incorrect size!");
 
 void ProcessCommandList(VAddr address, u32 size);
-
-} // namespace CommandProcessor
 
 } // namespace Tegra

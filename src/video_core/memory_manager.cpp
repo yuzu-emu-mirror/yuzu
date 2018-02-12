@@ -3,10 +3,9 @@
 // Refer to the license.txt file included.
 
 #include "common/assert.h"
-#include "core/hle/service/nvdrv/memory_manager.h"
+#include "video_core/memory_manager.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Tegra {
 
 PAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
     boost::optional<PAddr> paddr = FindFreeBlock(size, align);
@@ -108,5 +107,4 @@ VAddr& MemoryManager::PageSlot(PAddr paddr) {
     return (*block)[(paddr >> Memory::PAGE_BITS) & PAGE_BLOCK_MASK];
 }
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Tegra

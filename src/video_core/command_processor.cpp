@@ -16,30 +16,18 @@
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_compute.h"
+#include "video_core/gpu.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
 namespace Tegra {
-
-namespace CommandProcessor {
 
 enum class BufferMethods {
     BindObject = 0,
     CountBufferMethods = 0x100,
 };
 
-enum class EngineID {
-    FERMI_TWOD_A = 0x902D, // 2D Engine
-    MAXWELL_B = 0xB197,    // 3D Engine
-    MAXWELL_COMPUTE_B = 0xB1C0,
-    KEPLER_INLINE_TO_MEMORY_B = 0xA140,
-    MAXWELL_DMA_COPY_A = 0xB0B5,
-};
-
-// Mapping of subchannels to their bound engine ids.
-static std::unordered_map<u32, EngineID> bound_engines;
-
-static void WriteReg(u32 method, u32 subchannel, u32 value) {
+void GPU::WriteReg(u32 method, u32 subchannel, u32 value) {
     LOG_WARNING(HW_GPU, "Processing method %08X on subchannel %u value %08X", method, subchannel,
                 value);
 
@@ -63,22 +51,25 @@ static void WriteReg(u32 method, u32 subchannel, u32 value) {
 
     switch (engine) {
     case EngineID::FERMI_TWOD_A:
-        Engines::Fermi2D::WriteReg(method, value);
+        fermi_2d->WriteReg(method, value);
         break;
     case EngineID::MAXWELL_B:
-        Engines::Maxwell3D::WriteReg(method, value);
+        maxwell_3d->WriteReg(method, value);
         break;
     case EngineID::MAXWELL_COMPUTE_B:
-        Engines::MaxwellCompute::WriteReg(method, value);
+        maxwell_compute->WriteReg(method, value);
         break;
     default:
         UNIMPLEMENTED();
     }
 }
 
-void ProcessCommandList(VAddr address, u32 size) {
-    VAddr current_addr = address;
-    while (current_addr < address + size * sizeof(CommandHeader)) {
+void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
+    // TODO(Subv): PhysicalToVirtualAddress is a misnomer, it converts a GPU VAddr into an
+    // application VAddr.
+    const VAddr head_address = memory_manager->PhysicalToVirtualAddress(address);
+    VAddr current_addr = head_address;
+    while (current_addr < head_address + size * sizeof(CommandHeader)) {
         const CommandHeader header = {Memory::Read32(current_addr)};
         current_addr += sizeof(u32);
 
@@ -124,7 +115,5 @@ void ProcessCommandList(VAddr address, u32 size) {
         }
     }
 }
-
-} // namespace CommandProcessor
 
 } // namespace Tegra

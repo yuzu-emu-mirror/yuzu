@@ -9,7 +9,6 @@
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
-#include "core/hle/service/nvdrv/memory_manager.h"
 
 namespace Service {
 namespace Nvidia {
@@ -21,8 +20,7 @@ constexpr u32 NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO(0x8);
 
 class nvhost_gpu final : public nvdevice {
 public:
-    nvhost_gpu(std::shared_ptr<nvmap> nvmap_dev, std::shared_ptr<MemoryManager> memory_manager)
-        : nvmap_dev(std::move(nvmap_dev)), memory_manager(std::move(memory_manager)) {}
+    nvhost_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvmap_dev(std::move(nvmap_dev)) {}
     ~nvhost_gpu() override = default;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
@@ -139,7 +137,6 @@ private:
     u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::shared_ptr<nvmap> nvmap_dev;
-    std::shared_ptr<MemoryManager> memory_manager;
 };
 
 } // namespace Devices

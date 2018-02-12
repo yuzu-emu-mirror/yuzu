@@ -6,10 +6,8 @@
 
 namespace Tegra {
 namespace Engines {
-namespace MaxwellCompute {
 
-void WriteReg(u32 method, u32 value) {}
+void MaxwellCompute::WriteReg(u32 method, u32 value) {}
 
-} // namespace MaxwellCompute
 } // namespace Engines
 } // namespace Tegra

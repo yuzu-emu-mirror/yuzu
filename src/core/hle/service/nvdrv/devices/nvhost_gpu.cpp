@@ -5,8 +5,8 @@
 #include <map>
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
-#include "video_core/command_processor.h"
 
 namespace Service {
 namespace Nvidia {
@@ -131,9 +131,8 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     std::memcpy(&entries[0], &input.data()[sizeof(IoctlSubmitGpfifo)],
                 params.num_entries * sizeof(IoctlGpfifoEntry));
     for (auto entry : entries) {
-        VAddr va_addr = memory_manager->PhysicalToVirtualAddress(entry.Address());
-        Tegra::CommandProcessor::ProcessCommandList(va_addr, entry.sz);
-        // TODO(ogniK): Process these
+        VAddr va_addr = entry.Address();
+        Core::System::GetInstance().GPU().ProcessCommandList(va_addr, entry.sz);
     }
     params.fence_out.id = 0;
     params.fence_out.value = 0;
