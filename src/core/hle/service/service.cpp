@@ -150,9 +150,15 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
     }
 
     u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
-    context.WriteToOutgoingCommandBuffer(cmd_buf, *Kernel::g_current_process,
-                                         Kernel::g_handle_table);
-
+    auto thread = Kernel::GetCurrentThread();
+    ASSERT(thread->status == THREADSTATUS_RUNNING || thread->status == THREADSTATUS_WAIT_HLE_EVENT);
+    // Only write the response immediately if the thread is still running. If the HLE handler put
+    // the thread to sleep then the writing of the command buffer will be deferred to the wakeup
+    // callback.
+    if (thread->status == THREADSTATUS_RUNNING) {
+        context.WriteToOutgoingCommandBuffer(cmd_buf, *Kernel::g_current_process,
+                                             Kernel::g_handle_table);
+    }
     return RESULT_SUCCESS;
 }
 
