@@ -490,6 +490,8 @@ private:
             IGBPQueryResponseParcel response{value};
             std::vector<u8> response_buffer = response.Serialize();
             Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
+        } else if (transaction == TransactionId::CancelBuffer) {
+            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
