@@ -262,6 +262,11 @@ public:
     Data data;
 };
 
+// TODO(bunnei): Remove this. When set to 1, games will think a fence is valid and boot further.
+// This will break libnx and potentially other apps that more stringently check this. This is here
+// purely as a convenience, and should go away once we implement fences.
+static constexpr u32 FENCE_HACK = 0;
+
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
     explicit IGBPDequeueBufferResponseParcel(u32 slot) : Parcel(), slot(slot) {}
@@ -269,11 +274,20 @@ public:
 
 protected:
     void SerializeData() override {
-        Write(slot);
-        // TODO(Subv): Find out how this Fence is used.
-        std::array<u32_le, 11> fence = {};
-        Write(fence);
-        Write<u32_le>(0);
+        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
+        Write<u32>(0);
+        Write<u32>(FENCE_HACK);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
     }
 
     u32_le slot;
@@ -304,7 +318,7 @@ protected:
     void SerializeData() override {
         // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
         Write<u32_le>(0);
-        Write<u32_le>(0);
+        Write<u32_le>(FENCE_HACK);
         Write<u32_le>(0);
         Write(buffer);
         Write<u32_le>(0);
@@ -560,7 +574,7 @@ private:
     }
 
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
-};
+}; // namespace VI
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
 public:
