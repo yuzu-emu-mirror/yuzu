@@ -442,18 +442,20 @@ private:
     void TransactParcel(u32 id, TransactionId transaction, const std::vector<u8>& input_data,
                         VAddr output_addr, u64 output_size) {
         auto buffer_queue = nv_flinger->GetBufferQueue(id);
-        std::vector<u8> response_buffer;
+
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{input_data};
             IGBPConnectResponseParcel response{1280, 720};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::SetPreallocatedBuffer) {
             IGBPSetPreallocatedBufferRequestParcel request{input_data};
 
             buffer_queue->SetPreallocatedBuffer(request.data.slot, request.buffer);
 
             IGBPSetPreallocatedBufferResponseParcel response{};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::DequeueBuffer) {
             IGBPDequeueBufferRequestParcel request{input_data};
 
@@ -461,21 +463,24 @@ private:
                                                    request.data.height);
 
             IGBPDequeueBufferResponseParcel response{slot};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::RequestBuffer) {
             IGBPRequestBufferRequestParcel request{input_data};
 
             auto& buffer = buffer_queue->RequestBuffer(request.slot);
 
             IGBPRequestBufferResponseParcel response{buffer};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{input_data};
 
             buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::Query) {
             IGBPQueryRequestParcel request{input_data};
 
@@ -483,13 +488,11 @@ private:
                 buffer_queue->Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
 
             IGBPQueryResponseParcel response{value};
-            response_buffer = response.Serialize();
-
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
-
-        Memory::WriteBlock(output_addr, response_buffer.data(), output_size);
     }
 
     void TransactParcel(Kernel::HLERequestContext& ctx) {
