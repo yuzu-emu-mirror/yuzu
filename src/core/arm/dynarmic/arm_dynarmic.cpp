@@ -85,11 +85,19 @@ public:
     ARM_Dynarmic& parent;
     size_t ticks_remaining = 0;
     size_t num_interpreted_instructions = 0;
-    u64 tpidrr0_el0 = 0;
+    u64 tpidrro_el0 = 0;
 };
 
 std::unique_ptr<Dynarmic::A64::Jit> MakeJit(const std::unique_ptr<ARM_Dynarmic_Callbacks>& cb) {
-    Dynarmic::A64::UserConfig config{cb.get()};
+    const auto page_table = Kernel::g_current_process->vm_manager.page_table.pointers.data();
+
+    Dynarmic::A64::UserConfig config;
+    config.callbacks = cb.get();
+    config.tpidrro_el0 = &cb->tpidrro_el0;
+    config.dczid_el0 = 4;
+    config.page_table = reinterpret_cast<void**>(page_table);
+    config.page_table_address_space_bits = Memory::ADDRESS_SPACE_BITS;
+    config.silently_mirror_page_table = false;
     return std::make_unique<Dynarmic::A64::Jit>(config);
 }
 
@@ -149,11 +157,11 @@ void ARM_Dynarmic::SetCPSR(u32 cpsr) {
 }
 
 u64 ARM_Dynarmic::GetTlsAddress() const {
-    return cb->tpidrr0_el0;
+    return cb->tpidrro_el0;
 }
 
 void ARM_Dynarmic::SetTlsAddress(u64 address) {
-    cb->tpidrr0_el0 = address;
+    cb->tpidrro_el0 = address;
 }
 
 void ARM_Dynarmic::ExecuteInstructions(int num_instructions) {
@@ -170,7 +178,7 @@ void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     ctx.cpsr = jit->GetPstate();
     ctx.fpu_registers = jit->GetVectors();
     ctx.fpscr = jit->GetFpcr();
-    ctx.tls_address = cb->tpidrr0_el0;
+    ctx.tls_address = cb->tpidrro_el0;
 }
 
 void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
@@ -180,7 +188,7 @@ void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     jit->SetPstate(static_cast<u32>(ctx.cpsr));
     jit->SetVectors(ctx.fpu_registers);
     jit->SetFpcr(static_cast<u32>(ctx.fpscr));
-    cb->tpidrr0_el0 = ctx.tls_address;
+    cb->tpidrro_el0 = ctx.tls_address;
 }
 
 void ARM_Dynarmic::PrepareReschedule() {
