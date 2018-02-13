@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <sstream>
 #include <string>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -28,19 +29,28 @@ private:
             IsHead = 1,
             IsTail = 2,
         };
+        enum Severity : u32_le {
+            Trace,
+            Info,
+            Warning,
+            Error,
+            Critical,
+        };
 
         u64_le pid;
         u64_le threadContext;
         union {
             BitField<0, 16, Flags> flags;
-            BitField<16, 8, u32_le> severity;
+            BitField<16, 8, Severity> severity;
             BitField<24, 8, u32_le> verbosity;
         };
         u32_le payload_size;
 
-        /// Returns true if this is part of a single log message
-        bool IsSingleMessage() const {
-            return (flags & Flags::IsHead) && (flags & Flags::IsTail);
+        bool IsHeadLog() const {
+            return flags & Flags::IsHead;
+        }
+        bool IsTailLog() const {
+            return flags & Flags::IsTail;
         }
     };
     static_assert(sizeof(MessageHeader) == 0x18, "MessageHeader is incorrect size");
@@ -57,7 +67,7 @@ private:
     };
 
     /**
-     * LM::Initialize service function
+     * LM::Log service function
      *  Inputs:
      *      0: 0x00000000
      *  Outputs:
@@ -75,9 +85,9 @@ private:
         Memory::ReadBlock(addr, &header, sizeof(MessageHeader));
         addr += sizeof(MessageHeader);
 
-        if (!header.IsSingleMessage()) {
-            LOG_WARNING(Service_LM, "Multi message logs are unimplemeneted");
-            return;
+        if (header.IsHeadLog()) {
+            log_stream.str("");
+            log_stream.clear();
         }
 
         // Parse out log metadata
@@ -85,7 +95,7 @@ private:
         std::string message, filename, function;
         while (addr < end_addr) {
             const Field field{static_cast<Field>(Memory::Read8(addr++))};
-            size_t length{Memory::Read8(addr++)};
+            const size_t length{Memory::Read8(addr++)};
 
             if (static_cast<Field>(Memory::Read8(addr)) == Field::Skip) {
                 ++addr;
@@ -110,28 +120,47 @@ private:
         }
 
         // Empty log - nothing to do here
-        if (message.empty()) {
+        if (log_stream.str().empty() && message.empty()) {
             return;
         }
 
         // Format a nicely printable string out of the log metadata
-        std::string output;
-        if (filename.size()) {
-            output += filename + ':';
+        if (!filename.empty()) {
+            log_stream << filename << ':';
         }
-        if (function.size()) {
-            output += function + ':';
+        if (!function.empty()) {
+            log_stream << function << ':';
         }
         if (line) {
-            output += std::to_string(line) + ':';
+            log_stream << std::to_string(line) << ':';
         }
-        if (output.length() > 0 && output.back() == ':') {
-            output += ' ';
+        if (log_stream.str().length() > 0 && log_stream.str().back() == ':') {
+            log_stream << ' ';
         }
-        output += message;
+        log_stream << message;
 
-        LOG_INFO(Debug_Emulated, "%s", output.c_str());
+        if (header.IsTailLog()) {
+            switch (header.severity) {
+            case MessageHeader::Severity::Trace:
+                LOG_TRACE(Debug_Emulated, "%s", log_stream.str().c_str());
+                break;
+            case MessageHeader::Severity::Info:
+                LOG_INFO(Debug_Emulated, "%s", log_stream.str().c_str());
+                break;
+            case MessageHeader::Severity::Warning:
+                LOG_WARNING(Debug_Emulated, "%s", log_stream.str().c_str());
+                break;
+            case MessageHeader::Severity::Error:
+                LOG_ERROR(Debug_Emulated, "%s", log_stream.str().c_str());
+                break;
+            case MessageHeader::Severity::Critical:
+                LOG_CRITICAL(Debug_Emulated, "%s", log_stream.str().c_str());
+                break;
+            }
+        }
     }
+
+    std::ostringstream log_stream;
 };
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
