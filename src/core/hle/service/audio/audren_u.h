@@ -21,6 +21,7 @@ public:
 private:
     void OpenAudioRenderer(Kernel::HLERequestContext& ctx);
     void GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx);
+    void GetAudioRenderersProcessMasterVolume(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Audio

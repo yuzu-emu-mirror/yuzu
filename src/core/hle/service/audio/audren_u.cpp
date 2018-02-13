@@ -13,7 +13,7 @@ namespace Service {
 namespace Audio {
 
 /// TODO(bunnei): Find a proper value for the audio_ticks
-constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 500)};
+constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 60)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
@@ -152,10 +152,10 @@ private:
 
 AudRenU::AudRenU() : ServiceFramework("audren:u") {
     static const FunctionInfo functions[] = {
-        {0x00000000, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
-        {0x00000001, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
-        {0x00000002, nullptr, "GetAudioRenderersProcessMasterVolume"},
-        {0x00000003, nullptr, "SetAudioRenderersProcessMasterVolume"},
+        {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
+        {1, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
+        {2, &AudRenU::GetAudioRenderersProcessMasterVolume, "GetAudioRenderersProcessMasterVolume"},
+        {3, nullptr, "SetAudioRenderersProcessMasterVolume"},
     };
     RegisterHandlers(functions);
 }
@@ -173,9 +173,17 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0x1000);
+    rb.Push<u64>(0x400);
 
-    LOG_WARNING(Service_Audio, "called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
+}
+
+void AudRenU::GetAudioRenderersProcessMasterVolume(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
 }
 
 } // namespace Audio
