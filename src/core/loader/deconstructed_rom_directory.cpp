@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/common_funcs.h"
 #include "common/common_paths.h"
 #include "common/file_util.h"
@@ -116,7 +117,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
-            LOG_DEBUG(Loader, "loaded module %s @ 0x%llx", module, load_addr);
+            LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, module, load_addr);
         } else {
             next_load_addr = load_addr;
         }
@@ -158,8 +159,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     offset = 0;
     size = romfs_file->GetSize();
 
-    LOG_DEBUG(Loader, "RomFS offset:           0x%08X", offset);
-    LOG_DEBUG(Loader, "RomFS size:             0x%08X", size);
+    LOG_DEBUG(Loader, "RomFS offset:           0x%016" PRIX64, offset);
+    LOG_DEBUG(Loader, "RomFS size:             0x%016" PRIX64, size);
 
     // Reset read pointer
     file.Seek(0, SEEK_SET);
