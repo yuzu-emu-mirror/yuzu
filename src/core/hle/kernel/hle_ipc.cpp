@@ -230,14 +230,12 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, const size_t size) con
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
 
     if (is_buffer_b) {
-        const size_t size{std::min(BufferDescriptorB()[0].Size(), size)};
         Memory::WriteBlock(BufferDescriptorB()[0].Address(), buffer, size);
-        return size;
     } else {
-        const size_t size{std::min(BufferDescriptorC()[0].Size(), size)};
         Memory::WriteBlock(BufferDescriptorC()[0].Address(), buffer, size);
-        return size;
     }
+
+    return size;
 }
 
 size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer) const {
