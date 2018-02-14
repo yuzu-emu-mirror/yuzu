@@ -91,6 +91,10 @@ struct BufferDescriptorX {
         address |= static_cast<VAddr>(address_bits_36_38) << 36;
         return address;
     }
+
+    u64 Size() const {
+        return static_cast<u64>(size);
+    }
 };
 static_assert(sizeof(BufferDescriptorX) == 8, "BufferDescriptorX size is incorrect");
 

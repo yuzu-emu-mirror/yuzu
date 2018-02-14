@@ -143,6 +143,18 @@ public:
         return domain_message_header;
     }
 
+    /// Helper function to read a buffer using the appropriate buffer descriptor
+    std::vector<u8> ReadBuffer() const;
+
+    /// Helper function to write a buffer using the appropriate buffer descriptor
+    size_t WriteBuffer(const void* buffer, const size_t size) const;
+
+    /// Helper function to write a buffer using the appropriate buffer descriptor
+    size_t WriteBuffer(const std::vector<u8>& buffer) const;
+
+    /// Helper function to get the size of the output buffer
+    size_t GetWriteBufferSize() const;
+
     template <typename T>
     SharedPtr<T> GetCopyObject(size_t index) {
         ASSERT(index < copy_objects.size());
