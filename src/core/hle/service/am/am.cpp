@@ -306,11 +306,11 @@ private:
 
         u64 offset = rp.Pop<u64>();
 
-        const auto& output_buffer = ctx.BufferDescriptorC()[0];
+        const size_t size{ctx.GetWriteBufferSize()};
 
-        ASSERT(offset + output_buffer.Size() <= buffer.size());
+        ASSERT(offset + size <= buffer.size());
 
-        Memory::WriteBlock(output_buffer.Address(), buffer.data() + offset, output_buffer.Size());
+        ctx.WriteBuffer(buffer.data() + offset, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
 

@@ -429,7 +429,7 @@ public:
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
             {2, &IHOSBinderDriver::GetNativeHandle, "GetNativeHandle"},
-            {3, &IHOSBinderDriver::TransactParcelAuto, "TransactParcelAuto"},
+            {3, &IHOSBinderDriver::TransactParcel, "TransactParcelAuto"},
         };
         RegisterHandlers(functions);
     }
@@ -453,95 +453,61 @@ private:
         SetPreallocatedBuffer = 14
     };
 
-    void TransactParcel(u32 id, TransactionId transaction, const std::vector<u8>& input_data,
-                        VAddr output_addr, u64 output_size) {
-        auto buffer_queue = nv_flinger->GetBufferQueue(id);
-
-        if (transaction == TransactionId::Connect) {
-            IGBPConnectRequestParcel request{input_data};
-            IGBPConnectResponseParcel response{1280, 720};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::SetPreallocatedBuffer) {
-            IGBPSetPreallocatedBufferRequestParcel request{input_data};
-
-            buffer_queue->SetPreallocatedBuffer(request.data.slot, request.buffer);
-
-            IGBPSetPreallocatedBufferResponseParcel response{};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::DequeueBuffer) {
-            IGBPDequeueBufferRequestParcel request{input_data};
-
-            u32 slot = buffer_queue->DequeueBuffer(request.data.pixel_format, request.data.width,
-                                                   request.data.height);
-
-            IGBPDequeueBufferResponseParcel response{slot};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::RequestBuffer) {
-            IGBPRequestBufferRequestParcel request{input_data};
-
-            auto& buffer = buffer_queue->RequestBuffer(request.slot);
-
-            IGBPRequestBufferResponseParcel response{buffer};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::QueueBuffer) {
-            IGBPQueueBufferRequestParcel request{input_data};
-
-            buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
-
-            IGBPQueueBufferResponseParcel response{1280, 720};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::Query) {
-            IGBPQueryRequestParcel request{input_data};
-
-            u32 value =
-                buffer_queue->Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
-
-            IGBPQueryResponseParcel response{value};
-            std::vector<u8> response_buffer = response.Serialize();
-            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
-        } else if (transaction == TransactionId::CancelBuffer) {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
-        } else {
-            ASSERT_MSG(false, "Unimplemented");
-        }
-    }
-
     void TransactParcel(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         u32 id = rp.Pop<u32>();
         auto transaction = static_cast<TransactionId>(rp.Pop<u32>());
         u32 flags = rp.Pop<u32>();
+        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+
         LOG_DEBUG(Service_VI, "called, transaction=%x", transaction);
 
-        auto& input_buffer = ctx.BufferDescriptorA()[0];
-        auto& output_buffer = ctx.BufferDescriptorB()[0];
-        std::vector<u8> input_data(input_buffer.Size());
-        Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.Size());
+        if (transaction == TransactionId::Connect) {
+            IGBPConnectRequestParcel request{ctx.ReadBuffer()};
+            IGBPConnectResponseParcel response{1280, 720};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::SetPreallocatedBuffer) {
+            IGBPSetPreallocatedBufferRequestParcel request{ctx.ReadBuffer()};
 
-        TransactParcel(id, transaction, input_data, output_buffer.Address(), output_buffer.Size());
+            buffer_queue->SetPreallocatedBuffer(request.data.slot, request.buffer);
 
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(RESULT_SUCCESS);
-    }
+            IGBPSetPreallocatedBufferResponseParcel response{};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::DequeueBuffer) {
+            IGBPDequeueBufferRequestParcel request{ctx.ReadBuffer()};
 
-    void TransactParcelAuto(Kernel::HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-        u32 id = rp.Pop<u32>();
-        auto transaction = static_cast<TransactionId>(rp.Pop<u32>());
-        u32 flags = rp.Pop<u32>();
-        LOG_DEBUG(Service_VI, "called, transaction=%x", transaction);
+            u32 slot = buffer_queue->DequeueBuffer(request.data.pixel_format, request.data.width,
+                                                   request.data.height);
 
-        auto& input_buffer = ctx.BufferDescriptorX()[0];
-        auto& output_buffer = ctx.BufferDescriptorC()[0];
-        std::vector<u8> input_data(input_buffer.size);
-        Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.size);
+            IGBPDequeueBufferResponseParcel response{slot};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::RequestBuffer) {
+            IGBPRequestBufferRequestParcel request{ctx.ReadBuffer()};
 
-        TransactParcel(id, transaction, input_data, output_buffer.Address(), output_buffer.Size());
+            auto& buffer = buffer_queue->RequestBuffer(request.slot);
+
+            IGBPRequestBufferResponseParcel response{buffer};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::QueueBuffer) {
+            IGBPQueueBufferRequestParcel request{ctx.ReadBuffer()};
+
+            buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
+
+            IGBPQueueBufferResponseParcel response{1280, 720};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::Query) {
+            IGBPQueryRequestParcel request{ctx.ReadBuffer()};
+
+            u32 value =
+                buffer_queue->Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
+
+            IGBPQueryResponseParcel response{value};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::CancelBuffer) {
+            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
+        } else {
+            ASSERT_MSG(false, "Unimplemented");
+        }
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -719,18 +685,13 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
     u64 layer_id = rp.Pop<u64>();
     u64 aruid = rp.Pop<u64>();
 
-    auto& buffer = ctx.BufferDescriptorB()[0];
-
     u64 display_id = nv_flinger->OpenDisplay(display_name);
     u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
     NativeWindow native_window{buffer_queue_id};
-    auto data = native_window.Serialize();
-    Memory::WriteBlock(buffer.Address(), data.data(), data.size());
-
     IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(data.size());
+    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
 }
 
 void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
@@ -741,21 +702,16 @@ void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx
     rp.Pop<u32>(); // padding
     u64 display_id = rp.Pop<u64>();
 
-    auto& buffer = ctx.BufferDescriptorB()[0];
-
     // TODO(Subv): What's the difference between a Stray and a Managed layer?
 
     u64 layer_id = nv_flinger->CreateLayer(display_id);
     u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
     NativeWindow native_window{buffer_queue_id};
-    auto data = native_window.Serialize();
-    Memory::WriteBlock(buffer.Address(), data.data(), data.size());
-
     IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push(layer_id);
-    rb.Push<u64>(data.size());
+    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
 }
 
 void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
@@ -781,8 +737,7 @@ void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& 
 void IApplicationDisplayService::ListDisplays(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     DisplayInfo display_info;
-    auto& buffer = ctx.BufferDescriptorB()[0];
-    Memory::WriteBlock(buffer.Address(), &display_info, sizeof(DisplayInfo));
+    ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
     IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(1);

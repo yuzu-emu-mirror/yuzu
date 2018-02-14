@@ -99,8 +99,6 @@ private:
     void GetReleasedAudioOutBuffer_1(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
-        const auto& buffer = ctx.BufferDescriptorB()[0];
-
         // TODO(st4rk): This is how libtransistor currently implements the
         // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to the app and this address
         // is used to know which buffer should be filled with data and send again to the service
@@ -112,7 +110,7 @@ private:
             queue_keys.pop_back();
         }
 
-        Memory::WriteBlock(buffer.Address(), &key, sizeof(u64));
+        ctx.WriteBuffer(&key, sizeof(u64));
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -158,10 +156,8 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
 
-    auto& buffer = ctx.BufferDescriptorB()[0];
     const std::string audio_interface = "AudioInterface";
-
-    Memory::WriteBlock(buffer.Address(), &audio_interface[0], audio_interface.size());
+    ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
 
     IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
 

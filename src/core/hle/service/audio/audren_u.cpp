@@ -69,9 +69,7 @@ private:
             response_data.state_entries[i].state = 5;
         }
 
-        auto& buffer = ctx.BufferDescriptorB()[0];
-
-        Memory::WriteBlock(buffer.Address(), &response_data, response_data.total_size);
+        ctx.WriteBuffer(&response_data, response_data.total_size);
 
         IPC::ResponseBuilder rb{ctx, 2};
 

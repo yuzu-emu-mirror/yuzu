@@ -33,12 +33,10 @@ private:
         IPC::RequestParser rp{ctx};
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
-        const auto& descriptor = ctx.BufferDescriptorB()[0];
 
         LOG_DEBUG(Service_FS, "called, offset=0x%llx, length=0x%llx", offset, length);
 
         // Error checking
-        ASSERT_MSG(length == descriptor.Size(), "unexpected size difference");
         if (length < 0) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ResultCode(ErrorModule::FS, ErrorDescription::InvalidLength));
@@ -60,7 +58,7 @@ private:
         }
 
         // Write the data to memory
-        Memory::WriteBlock(descriptor.Address(), output.data(), descriptor.Size());
+        ctx.WriteBuffer(output);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);

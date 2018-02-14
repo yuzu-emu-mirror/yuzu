@@ -12,6 +12,7 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/server_session.h"
+#include "core/memory.h"
 
 namespace Kernel {
 
@@ -208,6 +209,49 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
         }
     }
     return RESULT_SUCCESS;
+}
+
+std::vector<u8> HLERequestContext::ReadBuffer() const {
+    std::vector<u8> buffer;
+    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[0].Size()};
+
+    if (is_buffer_a) {
+        buffer.resize(BufferDescriptorA()[0].Size());
+        Memory::ReadBlock(BufferDescriptorA()[0].Address(), buffer.data(), buffer.size());
+    } else {
+        buffer.resize(BufferDescriptorX()[0].Size());
+        Memory::ReadBlock(BufferDescriptorX()[0].Address(), buffer.data(), buffer.size());
+    }
+
+    return buffer;
+}
+
+size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size) const {
+    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
+
+    ASSERT_MSG(size <= GetWriteBufferSize(), "Size %d is too big", size);
+
+    if (is_buffer_b) {
+        Memory::WriteBlock(BufferDescriptorB()[0].Address(), buffer, size);
+    } else {
+        Memory::WriteBlock(BufferDescriptorC()[0].Address(), buffer, size);
+    }
+
+    return size;
+}
+
+size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer) const {
+    return WriteBuffer(buffer.data(), buffer.size());
+}
+
+size_t HLERequestContext::GetReadBufferSize() const {
+    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[0].Size()};
+    return is_buffer_a ? BufferDescriptorA()[0].Size() : BufferDescriptorX()[0].Size();
+}
+
+size_t HLERequestContext::GetWriteBufferSize() const {
+    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
+    return is_buffer_b ? BufferDescriptorB()[0].Size() : BufferDescriptorC()[0].Size();
 }
 
 } // namespace Kernel
