@@ -31,6 +31,7 @@ private:
         IocModuleRegRDWRCommand = 0xC008010E,
         IocSyncptWaitexCommand = 0xC0100019,
         IocSyncptReadMaxCommand = 0xC008001A,
+        IocCtrlEventWaitCommand = 0xC010001D,
         IocGetConfigCommand = 0xC183001B,
     };
 
@@ -41,7 +42,17 @@ private:
     };
     static_assert(sizeof(IocGetConfigParams) == 387, "IocGetConfigParams is incorrect size");
 
+    struct IocCtrlEventWaitParams {
+        u32_le syncpt_id;
+        u32_le threshold;
+        s32_le timeout;
+        u32_le value;
+    };
+    static_assert(sizeof(IocCtrlEventWaitParams) == 16, "IocCtrlEventWaitParams is incorrect size");
+
     u32 NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);
+
+    u32 IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Devices
