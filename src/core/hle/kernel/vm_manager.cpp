@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include <iterator>
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -206,7 +207,8 @@ void VMManager::RefreshMemoryBlockMappings(const std::vector<u8>* block) {
 void VMManager::LogLayout(Log::Level log_level) const {
     for (const auto& p : vma_map) {
         const VirtualMemoryArea& vma = p.second;
-        LOG_GENERIC(Log::Class::Kernel, log_level, "%08X - %08X  size: %8X %c%c%c %s", vma.base,
+        LOG_GENERIC(Log::Class::Kernel, log_level,
+                    "%016" PRIx64 " - %016" PRIx64 "  size: %16" PRIx64 " %c%c%c %s", vma.base,
                     vma.base + vma.size, vma.size,
                     (u8)vma.permissions & (u8)VMAPermission::Read ? 'R' : '-',
                     (u8)vma.permissions & (u8)VMAPermission::Write ? 'W' : '-',
@@ -222,8 +224,8 @@ VMManager::VMAIter VMManager::StripIterConstness(const VMAHandle& iter) {
 }
 
 ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u64 size) {
-    ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%8X", size);
-    ASSERT_MSG((base & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%08X", base);
+    ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%16" PRIx64, size);
+    ASSERT_MSG((base & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%016" PRIx64, base);
 
     VMAIter vma_handle = StripIterConstness(FindVMA(base));
     if (vma_handle == vma_map.end()) {
@@ -258,8 +260,8 @@ ResultVal<VMManager::VMAIter> VMManager::CarveVMA(VAddr base, u64 size) {
 }
 
 ResultVal<VMManager::VMAIter> VMManager::CarveVMARange(VAddr target, u64 size) {
-    ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%8X", size);
-    ASSERT_MSG((target & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%08X", target);
+    ASSERT_MSG((size & Memory::PAGE_MASK) == 0, "non-page aligned size: 0x%16" PRIx64, size);
+    ASSERT_MSG((target & Memory::PAGE_MASK) == 0, "non-page aligned base: 0x%016" PRIx64, target);
 
     VAddr target_end = target + size;
     ASSERT(target_end >= target);
