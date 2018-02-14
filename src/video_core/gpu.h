@@ -26,7 +26,7 @@ class GPU final {
 public:
     GPU() {
         memory_manager = std::make_unique<MemoryManager>();
-        maxwell_3d = std::make_unique<Engines::Maxwell3D>();
+        maxwell_3d = std::make_unique<Engines::Maxwell3D>(*memory_manager);
         fermi_2d = std::make_unique<Engines::Fermi2D>();
         maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
     }
