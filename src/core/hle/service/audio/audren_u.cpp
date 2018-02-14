@@ -13,7 +13,7 @@ namespace Service {
 namespace Audio {
 
 /// TODO(bunnei): Find a proper value for the audio_ticks
-constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 60)};
+constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
