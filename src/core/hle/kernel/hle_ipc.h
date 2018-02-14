@@ -152,6 +152,9 @@ public:
     /// Helper function to write a buffer using the appropriate buffer descriptor
     size_t WriteBuffer(const std::vector<u8>& buffer) const;
 
+    /// Helper function to get the size of the input buffer
+    size_t GetReadBufferSize() const;
+
     /// Helper function to get the size of the output buffer
     size_t GetWriteBufferSize() const;
 

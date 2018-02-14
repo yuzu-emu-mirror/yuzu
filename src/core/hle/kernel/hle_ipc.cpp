@@ -229,6 +229,8 @@ std::vector<u8> HLERequestContext::ReadBuffer() const {
 size_t HLERequestContext::WriteBuffer(const void* buffer, const size_t size) const {
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
 
+    ASSERT_MSG(size <= GetWriteBufferSize(), "Size %d is too big", size);
+
     if (is_buffer_b) {
         Memory::WriteBlock(BufferDescriptorB()[0].Address(), buffer, size);
     } else {
@@ -240,6 +242,11 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, const size_t size) con
 
 size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer) const {
     return WriteBuffer(buffer.data(), buffer.size());
+}
+
+size_t HLERequestContext::GetReadBufferSize() const {
+    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[0].Size()};
+    return is_buffer_a ? BufferDescriptorA()[0].Size() : BufferDescriptorX()[0].Size();
 }
 
 size_t HLERequestContext::GetWriteBufferSize() const {
