@@ -25,6 +25,16 @@ matrix:
       install: "./.travis/linux/deps.sh"
       script: "./.travis/linux/build.sh"
       after_success: "./.travis/linux/upload.sh"
+    - os: linux
+      env: NAME="linux build (frozen versions of dependencies)"
+      sudo: required
+      dist: trusty
+      services: docker
+      before_install:
+        - chmod +x ./.travis/linux-frozen/build.sh
+        - chmod +x ./.travis/linux-frozen/docker.sh
+        - chmod +x ./.travis/linux-frozen/install_package.py
+      script: "./.travis/linux-frozen/build.sh"
     - os: osx
       env: NAME="macos build"
       sudo: false
