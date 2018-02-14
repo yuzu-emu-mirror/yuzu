@@ -78,7 +78,7 @@ void Config::ReadValues() {
 
     qt_config->beginGroup("Core");
     Settings::values.cpu_core =
-        static_cast<Settings::CpuCore>(qt_config->value("cpu_core", 0).toInt());
+        static_cast<Settings::CpuCore>(qt_config->value("cpu_core", 1).toInt());
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
