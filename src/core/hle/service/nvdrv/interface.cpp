@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
@@ -88,7 +89,7 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x%lx", pid);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x%" PRIx64, pid);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);

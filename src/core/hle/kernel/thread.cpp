@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <cinttypes>
 #include <list>
 #include <vector>
 #include "common/assert.h"
@@ -379,7 +380,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
                                             SharedPtr<Process> owner_process) {
     // Check if priority is in ranged. Lowest priority -> highest priority id.
     if (priority > THREADPRIO_LOWEST) {
-        LOG_ERROR(Kernel_SVC, "Invalid thread priority: %d", priority);
+        LOG_ERROR(Kernel_SVC, "Invalid thread priority: %u", priority);
         return ERR_OUT_OF_RANGE;
     }
 
@@ -391,7 +392,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     // TODO(yuriks): Other checks, returning 0xD9001BEA
 
     if (!Memory::IsValidVirtualAddress(*owner_process, entry_point)) {
-        LOG_ERROR(Kernel_SVC, "(name=%s): invalid entry %08x", name.c_str(), entry_point);
+        LOG_ERROR(Kernel_SVC, "(name=%s): invalid entry %016" PRIx64, name.c_str(), entry_point);
         // TODO (bunnei): Find the correct error code to use here
         return ResultCode(-1);
     }

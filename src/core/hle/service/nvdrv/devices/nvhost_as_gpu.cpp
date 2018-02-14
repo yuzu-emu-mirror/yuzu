@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -13,8 +14,8 @@ namespace Nvidia {
 namespace Devices {
 
 u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%llx, output_size=0x%llx",
-              command, input.size(), output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%zx, output_size=0x%zx",
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocInitalizeExCommand:
@@ -62,7 +63,8 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     std::memcpy(&params, input.data(), input.size());
 
     LOG_DEBUG(Service_NVDRV,
-              "called, flags=%x, nvmap_handle=%x, buffer_offset=%lx, mapping_size=%lx, offset=%lx",
+              "called, flags=%x, nvmap_handle=%x, buffer_offset=%" PRIu64 ", mapping_size=%" PRIu64
+              ", offset=%" PRIu64,
               params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
               params.offset);
 
@@ -97,8 +99,8 @@ u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr=%lx, buf_size=%x", params.buf_addr,
-                params.buf_size);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr=%" PRIu64 ", buf_size=%x",
+                params.buf_addr, params.buf_size);
 
     params.buf_size = 0x30;
     params.regions[0].offset = 0x04000000;

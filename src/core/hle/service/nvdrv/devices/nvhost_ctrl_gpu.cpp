@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/hle/service/nvdrv/devices/nvhost_ctrl_gpu.h"
@@ -11,8 +12,8 @@ namespace Nvidia {
 namespace Devices {
 
 u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%llx, output_size=0x%llx",
-              command, input.size(), output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%zx, output_size=0x%zx",
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetCharacteristicsCommand:
@@ -78,7 +79,7 @@ u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vecto
 u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, mask=0x%x, mask_buf_addr=0x%lx",
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, mask=0x%x, mask_buf_addr=0x%" PRIx64,
                 params.mask_buf_size, params.mask_buf_addr);
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;

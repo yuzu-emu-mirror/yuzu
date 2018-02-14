@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cinttypes>
 #include <cstring>
 #include <boost/optional.hpp>
 #include "common/assert.h"
@@ -38,12 +39,12 @@ PageTable* GetCurrentPageTable() {
 }
 
 static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, PageType type) {
-    LOG_DEBUG(HW_Memory, "Mapping %p onto %08X-%08X", memory, base * PAGE_SIZE,
+    LOG_DEBUG(HW_Memory, "Mapping %p onto %016" PRIX64 "-%016" PRIX64, memory, base * PAGE_SIZE,
               (base + size) * PAGE_SIZE);
 
     VAddr end = base + size;
     while (base != end) {
-        ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at %08X", base);
+        ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at %016" PRIX64, base);
 
         page_table.attributes[base] = type;
         page_table.pointers[base] = memory;
@@ -55,14 +56,14 @@ static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, Pa
 }
 
 void MapMemoryRegion(PageTable& page_table, VAddr base, u64 size, u8* target) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, PageType::Memory);
 }
 
 void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer mmio_handler) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
@@ -71,8 +72,8 @@ void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer 
 }
 
 void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %08X", size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %08X", base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Unmapped);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
@@ -120,7 +121,7 @@ T Read(const VAddr vaddr) {
     const PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%016llX", sizeof(T) * 8, vaddr);
+        LOG_ERROR(HW_Memory, "unmapped Read%zu @ 0x%016" PRIX64, sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Special: {
         if (auto result = ReadSpecial<T>(vaddr))
@@ -129,7 +130,7 @@ T Read(const VAddr vaddr) {
     }
     case PageType::Memory: {
         const u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
 
         T value;
         std::memcpy(&value, &page_pointer[vaddr & PAGE_MASK], sizeof(T));
@@ -148,8 +149,8 @@ void Write(const VAddr vaddr, const T data) {
     const PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u32)data,
-                  vaddr);
+        LOG_ERROR(HW_Memory, "unmapped Write%zu 0x%08X @ 0x%016" PRIX64, sizeof(data) * 8,
+                  static_cast<u32>(data), vaddr);
         return;
     case PageType::Special: {
         if (WriteSpecial<T>(vaddr, data))
@@ -158,7 +159,7 @@ void Write(const VAddr vaddr, const T data) {
     }
     case PageType::Memory: {
         u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(page_pointer, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
         std::memcpy(&page_pointer[vaddr & PAGE_MASK], &data, sizeof(T));
         return;
     }
@@ -203,7 +204,7 @@ u8* GetPointer(const VAddr vaddr) {
         return page_pointer + (vaddr & PAGE_MASK);
     }
 
-    LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%08x", vaddr);
+    LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%016" PRIx64, vaddr);
     return nullptr;
 }
 
@@ -241,12 +242,13 @@ u8* GetPhysicalPointer(PAddr address) {
         });
 
     if (area == std::end(memory_areas)) {
-        LOG_ERROR(HW_Memory, "unknown GetPhysicalPointer @ 0x%08X", address);
+        LOG_ERROR(HW_Memory, "unknown GetPhysicalPointer @ 0x%016" PRIX64, address);
         return nullptr;
     }
 
     if (area->paddr_base == IO_AREA_PADDR) {
-        LOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr=0x%08X", address);
+        LOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr=0x%016" PRIX64,
+                  address);
         return nullptr;
     }
 
@@ -321,7 +323,9 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped:
-            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0xllx, size = %zu)",
+            LOG_ERROR(HW_Memory,
+                      "unmapped ReadBlock @ 0x%016" PRIX64 " (start address = 0x%" PRIx64
+                      ", size = %zu)",
                       current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
@@ -393,7 +397,8 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped:
             LOG_ERROR(HW_Memory,
-                      "unmapped WriteBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+                      "unmapped WriteBlock @ 0x%016" PRIX64 " (start address = 0x%016" PRIX64
+                      ", size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
         case PageType::Special:
@@ -437,7 +442,9 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
 
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped:
-            LOG_ERROR(HW_Memory, "unmapped ZeroBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory,
+                      "unmapped ZeroBlock @ 0x%016" PRIX64 " (start address = 0x%016" PRIX64
+                      ", size = %zu)",
                       current_vaddr, dest_addr, size);
             break;
         case PageType::Special:
@@ -474,7 +481,9 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
 
         switch (current_page_table->attributes[page_index]) {
         case PageType::Unmapped:
-            LOG_ERROR(HW_Memory, "unmapped CopyBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
+            LOG_ERROR(HW_Memory,
+                      "unmapped CopyBlock @ 0x%016" PRIX64 " (start address = 0x%016" PRIX64
+                      ", size = %zu)",
                       current_vaddr, src_addr, size);
             ZeroBlock(dest_addr, copy_amount);
             break;
@@ -599,7 +608,7 @@ boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
 PAddr VirtualToPhysicalAddress(const VAddr addr) {
     auto paddr = TryVirtualToPhysicalAddress(addr);
     if (!paddr) {
-        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x%08X", addr);
+        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x%016" PRIX64, addr);
         // To help with debugging, set bit on address so that it's obviously invalid.
         return addr | 0x80000000;
     }
