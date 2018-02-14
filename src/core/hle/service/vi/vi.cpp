@@ -685,18 +685,13 @@ void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
     u64 layer_id = rp.Pop<u64>();
     u64 aruid = rp.Pop<u64>();
 
-    auto& buffer = ctx.BufferDescriptorB()[0];
-
     u64 display_id = nv_flinger->OpenDisplay(display_name);
     u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
     NativeWindow native_window{buffer_queue_id};
-    auto data = native_window.Serialize();
-    Memory::WriteBlock(buffer.Address(), data.data(), data.size());
-
     IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(data.size());
+    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
 }
 
 void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
@@ -707,21 +702,16 @@ void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx
     rp.Pop<u32>(); // padding
     u64 display_id = rp.Pop<u64>();
 
-    auto& buffer = ctx.BufferDescriptorB()[0];
-
     // TODO(Subv): What's the difference between a Stray and a Managed layer?
 
     u64 layer_id = nv_flinger->CreateLayer(display_id);
     u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
     NativeWindow native_window{buffer_queue_id};
-    auto data = native_window.Serialize();
-    Memory::WriteBlock(buffer.Address(), data.data(), data.size());
-
     IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push(layer_id);
-    rb.Push<u64>(data.size());
+    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
 }
 
 void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
@@ -747,8 +737,7 @@ void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& 
 void IApplicationDisplayService::ListDisplays(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     DisplayInfo display_info;
-    auto& buffer = ctx.BufferDescriptorB()[0];
-    Memory::WriteBlock(buffer.Address(), &display_info, sizeof(DisplayInfo));
+    ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
     IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(1);
