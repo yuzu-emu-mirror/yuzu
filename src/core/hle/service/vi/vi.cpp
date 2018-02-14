@@ -8,6 +8,7 @@
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
@@ -84,6 +85,15 @@ public:
         std::memcpy(buffer.data() + write_index, &val, sizeof(T));
         write_index += sizeof(T);
         write_index = Common::AlignUp(write_index, 4);
+    }
+
+    template <typename T>
+    void WriteObject(const T& val) {
+        u32_le size = static_cast<u32>(sizeof(val));
+        Write(size);
+        // TODO(Subv): Support file descriptors.
+        Write<u32_le>(0); // Fd count.
+        Write(val);
     }
 
     void Deserialize() {
@@ -262,10 +272,11 @@ public:
     Data data;
 };
 
-// TODO(bunnei): Remove this. When set to 1, games will think a fence is valid and boot further.
-// This will break libnx and potentially other apps that more stringently check this. This is here
-// purely as a convenience, and should go away once we implement fences.
-static constexpr u32 FENCE_HACK = 0;
+struct BufferProducerFence {
+    u32 is_valid;
+    std::array<Nvidia::IoctlFence, 4> fences;
+};
+static_assert(sizeof(BufferProducerFence) == 36, "BufferProducerFence has wrong size");
 
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
@@ -274,20 +285,12 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
-        Write<u32>(0);
-        Write<u32>(FENCE_HACK);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
+        // TODO(Subv): Find out how this Fence is used.
+        BufferProducerFence fence = {};
+
+        Write(slot);
+        WriteObject(fence);
+        Write<u32_le>(0);
     }
 
     u32_le slot;
