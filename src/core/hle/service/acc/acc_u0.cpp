@@ -66,8 +66,7 @@ void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
 
 void ACC_U0::ListAllUsers(Kernel::HLERequestContext& ctx) {
     constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
-    const auto& output_buffer = ctx.BufferDescriptorC()[0];
-    Memory::WriteBlock(output_buffer.Address(), user_ids.data(), user_ids.size());
+    ctx.WriteBuffer(user_ids.data(), user_ids.size());
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
     LOG_DEBUG(Service_ACC, "called");

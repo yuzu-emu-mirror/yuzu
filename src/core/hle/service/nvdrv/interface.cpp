@@ -14,9 +14,8 @@ namespace Nvidia {
 void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
 
-    auto buffer = ctx.BufferDescriptorA()[0];
-
-    std::string device_name = Memory::ReadCString(buffer.Address(), buffer.Size());
+    const auto& buffer = ctx.ReadBuffer();
+    std::string device_name(buffer.begin(), buffer.end());
 
     u32 fd = nvdrv->Open(device_name);
     IPC::ResponseBuilder rb{ctx, 4};
