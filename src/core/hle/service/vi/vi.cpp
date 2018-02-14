@@ -429,7 +429,7 @@ public:
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
             {2, &IHOSBinderDriver::GetNativeHandle, "GetNativeHandle"},
-            {3, &IHOSBinderDriver::TransactParcelAuto, "TransactParcelAuto"},
+            {3, &IHOSBinderDriver::TransactParcel, "TransactParcelAuto"},
         };
         RegisterHandlers(functions);
     }
@@ -518,30 +518,21 @@ private:
         u32 flags = rp.Pop<u32>();
         LOG_DEBUG(Service_VI, "called, transaction=%x", transaction);
 
-        auto& input_buffer = ctx.BufferDescriptorA()[0];
-        auto& output_buffer = ctx.BufferDescriptorB()[0];
-        std::vector<u8> input_data(input_buffer.Size());
-        Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.Size());
-
-        TransactParcel(id, transaction, input_data, output_buffer.Address(), output_buffer.Size());
-
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(RESULT_SUCCESS);
-    }
-
-    void TransactParcelAuto(Kernel::HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-        u32 id = rp.Pop<u32>();
-        auto transaction = static_cast<TransactionId>(rp.Pop<u32>());
-        u32 flags = rp.Pop<u32>();
-        LOG_DEBUG(Service_VI, "called, transaction=%x", transaction);
-
-        auto& input_buffer = ctx.BufferDescriptorX()[0];
-        auto& output_buffer = ctx.BufferDescriptorC()[0];
-        std::vector<u8> input_data(input_buffer.size);
-        Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.size);
-
-        TransactParcel(id, transaction, input_data, output_buffer.Address(), output_buffer.Size());
+        if (ctx.BufferDescriptorA()[0].Size() != 0) {
+            auto& input_buffer = ctx.BufferDescriptorA()[0];
+            auto& output_buffer = ctx.BufferDescriptorB()[0];
+            std::vector<u8> input_data(input_buffer.Size());
+            Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.Size());
+            TransactParcel(id, transaction, input_data, output_buffer.Address(),
+                           output_buffer.Size());
+        } else {
+            auto& input_buffer = ctx.BufferDescriptorX()[0];
+            auto& output_buffer = ctx.BufferDescriptorC()[0];
+            std::vector<u8> input_data(input_buffer.size);
+            Memory::ReadBlock(input_buffer.Address(), input_data.data(), input_buffer.size);
+            TransactParcel(id, transaction, input_data, output_buffer.Address(),
+                           output_buffer.Size());
+        }
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
