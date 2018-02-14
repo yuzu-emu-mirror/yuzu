@@ -287,6 +287,9 @@ protected:
     void SerializeData() override {
         // TODO(Subv): Find out how this Fence is used.
         BufferProducerFence fence = {};
+        fence.is_valid = 1;
+        fence.fences[0].id = 0;
+        fence.fences[0].value = 0;
 
         Write(slot);
         Write<u32_le>(1);
