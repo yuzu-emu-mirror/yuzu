@@ -29,6 +29,8 @@ public:
     u32 GetVFPReg(int index) const override;
     void SetVFPReg(int index, u32 value) override;
     u32 GetCPSR() const override;
+    void Run() override;
+    void Step() override;
     void SetCPSR(u32 cpsr) override;
     VAddr GetTlsAddress() const override;
     void SetTlsAddress(VAddr address) override;
@@ -37,7 +39,6 @@ public:
     void LoadContext(const ThreadContext& ctx) override;
 
     void PrepareReschedule() override;
-    void ExecuteInstructions(int num_instructions) override;
 
     void ClearInstructionCache() override;
     void PageTableChanged() override;
@@ -47,4 +48,6 @@ private:
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
     std::unique_ptr<Dynarmic::A64::Jit> jit;
     ARM_Unicorn inner_unicorn;
+
+    Memory::PageTable* current_page_table = nullptr;
 };
