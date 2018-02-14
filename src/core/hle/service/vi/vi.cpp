@@ -319,11 +319,9 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
+        // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx try
+        // to read an IGBPBuffer object from the parcel.
         Write<u32_le>(0);
-        Write<u32_le>(FENCE_HACK);
-        Write<u32_le>(0);
-        Write(buffer);
         Write<u32_le>(0);
     }
 
