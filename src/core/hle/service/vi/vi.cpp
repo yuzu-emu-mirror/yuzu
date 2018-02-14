@@ -289,6 +289,7 @@ protected:
         BufferProducerFence fence = {};
 
         Write(slot);
+        Write<u32_le>(1);
         WriteObject(fence);
         Write<u32_le>(0);
     }
