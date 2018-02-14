@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "common/logging/log.h"
+#include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/hle_ipc.h"
@@ -10,6 +11,9 @@
 
 namespace Service {
 namespace Audio {
+
+/// TODO(bunnei): Find a proper value for the audio_ticks
+constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
@@ -30,10 +34,24 @@ public:
 
         system_event =
             Kernel::Event::Create(Kernel::ResetType::OneShot, "IAudioRenderer:SystemEvent");
+
+        // Register event callback to update the Audio Buffer
+        audio_event = CoreTiming::RegisterEvent(
+            "IAudioRenderer::UpdateAudioCallback", [this](u64 userdata, int cycles_late) {
+                UpdateAudioCallback();
+                CoreTiming::ScheduleEvent(audio_ticks - cycles_late, audio_event);
+            });
+
+        // Start the audio event
+        CoreTiming::ScheduleEvent(audio_ticks, audio_event);
     }
     ~IAudioRenderer() = default;
 
 private:
+    void UpdateAudioCallback() {
+        system_event->Signal();
+    }
+
     void RequestUpdateAudioRenderer(Kernel::HLERequestContext& ctx) {
         AudioRendererResponseData response_data = {0};
 
@@ -126,15 +144,18 @@ private:
     static_assert(sizeof(AudioRendererResponseData) == 0x20e0,
                   "AudioRendererResponseData has wrong size");
 
+    /// This is used to trigger the audio event callback.
+    CoreTiming::EventType* audio_event;
+
     Kernel::SharedPtr<Kernel::Event> system_event;
 };
 
 AudRenU::AudRenU() : ServiceFramework("audren:u") {
     static const FunctionInfo functions[] = {
-        {0x00000000, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
-        {0x00000001, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
-        {0x00000002, nullptr, "GetAudioRenderersProcessMasterVolume"},
-        {0x00000003, nullptr, "SetAudioRenderersProcessMasterVolume"},
+        {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
+        {1, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
+        {2, &AudRenU::GetAudioRenderersProcessMasterVolume, "GetAudioRenderersProcessMasterVolume"},
+        {3, nullptr, "SetAudioRenderersProcessMasterVolume"},
     };
     RegisterHandlers(functions);
 }
@@ -152,9 +173,17 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0x1000);
+    rb.Push<u64>(0x400);
 
-    LOG_WARNING(Service_Audio, "called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
+}
+
+void AudRenU::GetAudioRenderersProcessMasterVolume(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
 }
 
 } // namespace Audio
