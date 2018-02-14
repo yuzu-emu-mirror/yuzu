@@ -226,7 +226,7 @@ std::vector<u8> HLERequestContext::ReadBuffer() const {
     return buffer;
 }
 
-size_t HLERequestContext::WriteBuffer(const void* buffer, const size_t size) const {
+size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size) const {
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
 
     ASSERT_MSG(size <= GetWriteBufferSize(), "Size %d is too big", size);

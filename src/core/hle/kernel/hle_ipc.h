@@ -147,7 +147,7 @@ public:
     std::vector<u8> ReadBuffer() const;
 
     /// Helper function to write a buffer using the appropriate buffer descriptor
-    size_t WriteBuffer(const void* buffer, const size_t size) const;
+    size_t WriteBuffer(const void* buffer, size_t size) const;
 
     /// Helper function to write a buffer using the appropriate buffer descriptor
     size_t WriteBuffer(const std::vector<u8>& buffer) const;
