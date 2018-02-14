@@ -14,7 +14,7 @@ namespace Engines {
 
 class Maxwell3D final {
 public:
-    Maxwell3D(MemoryManager& memory_manager);
+    explicit Maxwell3D(MemoryManager& memory_manager);
     ~Maxwell3D() = default;
 
     /// Write the value to the register identified by method.
