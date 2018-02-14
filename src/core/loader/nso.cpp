@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include <vector>
 #include <lz4.h>
 #include "common/common_funcs.h"
@@ -82,7 +83,7 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeade
         reinterpret_cast<char*>(uncompressed_data.data()), compressed_size, header.size);
 
     ASSERT_MSG(bytes_uncompressed == header.size && bytes_uncompressed == uncompressed_data.size(),
-               "%d != %d != %d", bytes_uncompressed, header.size, uncompressed_data.size());
+               "%d != %u != %zu", bytes_uncompressed, header.size, uncompressed_data.size());
 
     return uncompressed_data;
 }
@@ -158,7 +159,8 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     // Load module
     LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);
-    LOG_DEBUG(Loader, "loaded module %s @ 0x%llx", filepath.c_str(), Memory::PROCESS_IMAGE_VADDR);
+    LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, filepath.c_str(),
+              Memory::PROCESS_IMAGE_VADDR);
 
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;
