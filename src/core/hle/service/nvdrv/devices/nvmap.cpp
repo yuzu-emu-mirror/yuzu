@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <cinttypes>
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -71,7 +72,7 @@ u32 nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
     object->addr = params.addr;
     object->status = Object::Status::Allocated;
 
-    LOG_DEBUG(Service_NVDRV, "called, addr=0x%llx", params.addr);
+    LOG_DEBUG(Service_NVDRV, "called, addr=0x%" PRIx64, params.addr);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
