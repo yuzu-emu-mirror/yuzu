@@ -262,6 +262,11 @@ public:
     Data data;
 };
 
+// TODO(bunnei): Remove this. When set to 1, games will think a fence is valid and boot further.
+// This will break libnx and potentially other apps that more stringently check this. This is here
+// purely as a convenience, and should go away once we implement fences.
+static constexpr u32 FENCE_HACK = 0;
+
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
     explicit IGBPDequeueBufferResponseParcel(u32 slot) : Parcel(), slot(slot) {}
@@ -269,11 +274,20 @@ public:
 
 protected:
     void SerializeData() override {
-        Write(slot);
-        // TODO(Subv): Find out how this Fence is used.
-        std::array<u32_le, 11> fence = {};
-        Write(fence);
-        Write<u32_le>(0);
+        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
+        Write<u32>(0);
+        Write<u32>(FENCE_HACK);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
+        Write<u32>(0);
     }
 
     u32_le slot;
@@ -304,7 +318,7 @@ protected:
     void SerializeData() override {
         // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
         Write<u32_le>(0);
-        Write<u32_le>(0);
+        Write<u32_le>(FENCE_HACK);
         Write<u32_le>(0);
         Write(buffer);
         Write<u32_le>(0);
@@ -442,18 +456,20 @@ private:
     void TransactParcel(u32 id, TransactionId transaction, const std::vector<u8>& input_data,
                         VAddr output_addr, u64 output_size) {
         auto buffer_queue = nv_flinger->GetBufferQueue(id);
-        std::vector<u8> response_buffer;
+
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{input_data};
             IGBPConnectResponseParcel response{1280, 720};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::SetPreallocatedBuffer) {
             IGBPSetPreallocatedBufferRequestParcel request{input_data};
 
             buffer_queue->SetPreallocatedBuffer(request.data.slot, request.buffer);
 
             IGBPSetPreallocatedBufferResponseParcel response{};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::DequeueBuffer) {
             IGBPDequeueBufferRequestParcel request{input_data};
 
@@ -461,21 +477,24 @@ private:
                                                    request.data.height);
 
             IGBPDequeueBufferResponseParcel response{slot};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::RequestBuffer) {
             IGBPRequestBufferRequestParcel request{input_data};
 
             auto& buffer = buffer_queue->RequestBuffer(request.slot);
 
             IGBPRequestBufferResponseParcel response{buffer};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{input_data};
 
             buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
 
             IGBPQueueBufferResponseParcel response{1280, 720};
-            response_buffer = response.Serialize();
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
         } else if (transaction == TransactionId::Query) {
             IGBPQueryRequestParcel request{input_data};
 
@@ -483,13 +502,13 @@ private:
                 buffer_queue->Query(static_cast<NVFlinger::BufferQueue::QueryType>(request.type));
 
             IGBPQueryResponseParcel response{value};
-            response_buffer = response.Serialize();
-
+            std::vector<u8> response_buffer = response.Serialize();
+            Memory::WriteBlock(output_addr, response_buffer.data(), response_buffer.size());
+        } else if (transaction == TransactionId::CancelBuffer) {
+            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
-
-        Memory::WriteBlock(output_addr, response_buffer.data(), output_size);
     }
 
     void TransactParcel(Kernel::HLERequestContext& ctx) {
@@ -555,7 +574,7 @@ private:
     }
 
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
-};
+}; // namespace VI
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
 public:
