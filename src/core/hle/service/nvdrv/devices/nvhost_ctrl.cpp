@@ -11,8 +11,8 @@ namespace Nvidia {
 namespace Devices {
 
 u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%lx, output_size=0x%lx", command,
-              input.size(), output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%zx, output_size=0x%zx",
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetConfigCommand:
