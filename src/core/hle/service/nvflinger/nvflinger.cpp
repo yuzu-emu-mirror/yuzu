@@ -21,6 +21,10 @@ namespace NVFlinger {
 constexpr size_t SCREEN_REFRESH_RATE = 60;
 constexpr u64 frame_ticks = static_cast<u64>(BASE_CLOCK_RATE / SCREEN_REFRESH_RATE);
 
+// libnx "GfxMode_TiledSingle" hack. libnx does not use queue/dequeue buffer
+// in GfxMode_TiledSingle mode, we maintain a pointer to the last queued buffer
+static BufferQueue::Buffer nxBuffer{};
+
 NVFlinger::NVFlinger() {
     // Add the different displays to the list of displays.
     Display default_{0, "Default"};
@@ -128,28 +132,50 @@ void NVFlinger::Compose() {
         // Search for a queued buffer and acquire it
         auto buffer = buffer_queue->AcquireBuffer();
 
-        if (buffer == boost::none) {
+        if (buffer == boost::none && nxBuffer.status == BufferQueue::Buffer::Status::Free) {
             // There was no queued buffer to draw, render previous frame
             Core::System::GetInstance().perf_stats.EndGameFrame();
             VideoCore::g_renderer->SwapBuffers({});
             continue;
+        } else if(nxBuffer.status == BufferQueue::Buffer::Status::Free) {
+            nxBuffer.slot = buffer->slot;
+            nxBuffer.status = BufferQueue::Buffer::Status::Queued;
+            memcpy(&nxBuffer.igbp_buffer, &buffer->igbp_buffer, sizeof(IGBPBuffer));
+            memcpy(&nxBuffer.transform, &buffer->transform, sizeof(BufferQueue::BufferTransformFlags));
         }
 
-        auto& igbp_buffer = buffer->igbp_buffer;
+        if(buffer == boost::none && nxBuffer.status != BufferQueue::Buffer::Status::Free) {
+            auto &igbp_buffer = nxBuffer.igbp_buffer;
 
-        // Now send the buffer to the GPU for drawing.
-        auto nvdrv = Nvidia::nvdrv.lock();
-        ASSERT(nvdrv);
+            // Now send the buffer to the GPU for drawing.
+            auto nvdrv = Nvidia::nvdrv.lock();
+            ASSERT(nvdrv);
 
-        // TODO(Subv): Support more than just disp0. The display device selection is probably based
-        // on which display we're drawing (Default, Internal, External, etc)
-        auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
-        ASSERT(nvdisp);
+            // TODO(Subv): Support more than just disp0. The display device selection is probably based
+            // on which display we're drawing (Default, Internal, External, etc)
+            auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+            ASSERT(nvdisp);
 
-        nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer->transform);
+            nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+                         igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, nxBuffer.transform);
 
-        buffer_queue->ReleaseBuffer(buffer->slot);
+        } else {
+            auto &igbp_buffer = buffer->igbp_buffer;
+
+            // Now send the buffer to the GPU for drawing.
+            auto nvdrv = Nvidia::nvdrv.lock();
+            ASSERT(nvdrv);
+
+            // TODO(Subv): Support more than just disp0. The display device selection is probably based
+            // on which display we're drawing (Default, Internal, External, etc)
+            auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+            ASSERT(nvdisp);
+
+            nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+                         igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer->transform);
+
+            buffer_queue->ReleaseBuffer(buffer->slot);
+        }
     }
 }
 
