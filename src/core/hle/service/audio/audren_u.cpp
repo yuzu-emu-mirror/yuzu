@@ -53,7 +53,8 @@ private:
     }
 
     void RequestUpdateAudioRenderer(Kernel::HLERequestContext& ctx) {
-        AudioRendererResponseData response_data = {0};
+        LOG_DEBUG(Service_Audio, "%s", ctx.Description().c_str());
+        AudioRendererResponseData response_data{};
 
         response_data.section_0_size =
             response_data.state_entries.size() * sizeof(AudioRendererStateEntry);
