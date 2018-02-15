@@ -186,7 +186,9 @@ public:
             {121, &Hid::GetNpadJoyHoldType, "GetNpadJoyHoldType"},
             {124, nullptr, "SetNpadJoyAssignmentModeDual"},
             {128, &Hid::SetNpadHandheldActivationMode, "SetNpadHandheldActivationMode"},
+            {200, &Hid::GetVibrationDeviceInfo, "GetVibrationDeviceInfo"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
+            {206, &Hid::SendVibrationValues, "SendVibrationValues"},
         };
         RegisterHandlers(functions);
 
@@ -272,11 +274,24 @@ private:
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
+    void GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(0);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
     void CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IActiveVibrationDeviceList>();
         LOG_DEBUG(Service_HID, "called");
+    }
+
+    void SendVibrationValues(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 };
 
