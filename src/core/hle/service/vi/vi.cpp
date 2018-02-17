@@ -288,8 +288,8 @@ protected:
         // TODO(Subv): Find out how this Fence is used.
         BufferProducerFence fence = {};
         fence.is_valid = 1;
-        fence.fences[0].id = 0;
-        fence.fences[0].value = 0;
+        for (auto& fence_ : fence.fences)
+            fence_.id = -1;
 
         Write(slot);
         Write<u32_le>(1);
