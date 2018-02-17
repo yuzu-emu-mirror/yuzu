@@ -39,6 +39,7 @@ public:
 
     template <typename T>
     T Read() {
+        ASSERT(read_index + sizeof(T) <= buffer.size());
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -48,6 +49,7 @@ public:
 
     template <typename T>
     T ReadUnaligned() {
+        ASSERT(read_index + sizeof(T) <= buffer.size());
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -55,6 +57,7 @@ public:
     }
 
     std::vector<u8> ReadBlock(size_t length) {
+        ASSERT(read_index + length <= buffer.size());
         const u8* const begin = buffer.data() + read_index;
         const u8* const end = begin + length;
         std::vector<u8> data(begin, end);
@@ -97,6 +100,8 @@ public:
     }
 
     void Deserialize() {
+        ASSERT(buffer.size() > sizeof(Header));
+
         Header header{};
         std::memcpy(&header, buffer.data(), sizeof(Header));
 
