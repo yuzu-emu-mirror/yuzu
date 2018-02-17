@@ -176,7 +176,10 @@ public:
             {0, &Hid::CreateAppletResource, "CreateAppletResource"},
             {1, &Hid::ActivateDebugPad, "ActivateDebugPad"},
             {11, &Hid::ActivateTouchScreen, "ActivateTouchScreen"},
+            {21, &Hid::ActivateMouse, "ActivateMouse"},
+            {31, &Hid::ActivateKeyboard, "ActivateKeyboard"},
             {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
+            {79, &Hid::SetGyroscopeZeroDriftMode, "SetGyroscopeZeroDriftMode"},
             {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
             {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
             {103, &Hid::ActivateNpad, "ActivateNpad"},
@@ -184,9 +187,13 @@ public:
              "AcquireNpadStyleSetUpdateEventHandle"},
             {120, &Hid::SetNpadJoyHoldType, "SetNpadJoyHoldType"},
             {121, &Hid::GetNpadJoyHoldType, "GetNpadJoyHoldType"},
+            {122, &Hid::SetNpadJoyAssignmentModeSingleByDefault,
+             "SetNpadJoyAssignmentModeSingleByDefault"},
             {124, nullptr, "SetNpadJoyAssignmentModeDual"},
             {128, &Hid::SetNpadHandheldActivationMode, "SetNpadHandheldActivationMode"},
             {200, &Hid::GetVibrationDeviceInfo, "GetVibrationDeviceInfo"},
+            {201, &Hid::SendVibrationValue, "SendVibrationValue"},
+            {202, &Hid::GetActualVibrationValue, "GetActualVibrationValue"},
             {203, &Hid::CreateActiveVibrationDeviceList, "CreateActiveVibrationDeviceList"},
             {206, &Hid::SendVibrationValues, "SendVibrationValues"},
         };
@@ -224,7 +231,25 @@ private:
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
+    void ActivateMouse(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void ActivateKeyboard(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_HID, "(STUBBED) called");
@@ -265,6 +290,24 @@ private:
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(joy_hold_type);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SendVibrationValue(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 

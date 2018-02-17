@@ -202,6 +202,8 @@ public:
         return domain_objects.size();
     }
 
+    std::string Description() const;
+
 private:
     std::array<u32, IPC::COMMAND_BUFFER_LENGTH> cmd_buf;
     SharedPtr<Kernel::ServerSession> server_session;
