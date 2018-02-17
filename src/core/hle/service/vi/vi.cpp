@@ -325,7 +325,8 @@ protected:
     void SerializeData() override {
         // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx try
         // to read an IGBPBuffer object from the parcel.
-        Write<u32_le>(0);
+        Write<u32_le>(1);
+        WriteObject(buffer);
         Write<u32_le>(0);
     }
 
