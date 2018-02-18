@@ -53,6 +53,8 @@ add_library(core STATIC
     hle/kernel/process.h
     hle/kernel/resource_limit.cpp
     hle/kernel/resource_limit.h
+    hle/kernel/scheduler.cpp
+    hle/kernel/scheduler.h
     hle/kernel/server_port.cpp
     hle/kernel/server_port.h
     hle/kernel/server_session.cpp
