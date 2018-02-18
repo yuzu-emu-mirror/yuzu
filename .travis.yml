@@ -3,16 +3,11 @@ matrix:
   include:
     - os: linux
       env: NAME="clang-format"
+      sudo: required
       dist: trusty
-      addons:
-        apt:
-          sources:
-            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-            - sourceline: 'deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main'
-          packages:
-            - clang-format-6.0
-      script: "./.travis/clang-format/script.sh"
+      services: docker
+      install: "./.travis/clang-format/deps.sh"
+      script: "./.travis/clang-format/build.sh"
     - os: linux
       env: NAME="linux build"
       sudo: required
