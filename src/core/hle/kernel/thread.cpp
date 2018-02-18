@@ -284,6 +284,7 @@ void Thread::ResumeFromWait() {
     case THREADSTATUS_WAIT_SYNCH_ANY:
     case THREADSTATUS_WAIT_ARB:
     case THREADSTATUS_WAIT_SLEEP:
+    case THREADSTATUS_WAIT_IPC:
         break;
 
     case THREADSTATUS_READY:
