@@ -21,6 +21,7 @@ class ServerSession;
 class Session;
 class SessionRequestHandler;
 class Thread;
+class HLERequestContext;
 
 /**
  * Kernel object representing the server endpoint of an IPC session. Sessions are the basic CTR-OS
@@ -116,17 +117,12 @@ private:
      */
     static ResultVal<SharedPtr<ServerSession>> Create(std::string name = "Unknown");
 
+    /// Handles a SyncRequest to a domain, forwarding the request to the proper object or closing an
+    /// object handle.
+    ResultCode HandleDomainSyncRequest(Kernel::HLERequestContext& context);
+
     /// When set to True, converts the session to a domain at the end of the command
     bool convert_to_domain{};
 };
 
-/**
- * Performs command buffer translation for an HLE IPC request.
- * The command buffer from the ServerSession thread's TLS is copied into a
- * buffer and all descriptors in the buffer are processed.
- * TODO(Subv): Implement this function, currently we do not support multiple processes running at
- * once, but once that is implemented we'll need to properly translate all descriptors
- * in the command buffer.
- */
-ResultCode TranslateHLERequest(ServerSession* server_session);
 } // namespace Kernel
