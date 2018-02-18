@@ -260,18 +260,6 @@ bool HaveReadyThreads();
 void Reschedule();
 
 /**
- * Arbitrate the highest priority thread that is waiting
- * @param address The address for which waiting threads should be arbitrated
- */
-Thread* ArbitrateHighestPriorityThread(VAddr address);
-
-/**
- * Arbitrate all threads currently waiting.
- * @param address The address for which waiting threads should be arbitrated
- */
-void ArbitrateAllThreads(VAddr address);
-
-/**
  * Gets the current thread
  */
 Thread* GetCurrentThread();

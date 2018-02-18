@@ -109,40 +109,6 @@ void Thread::Stop() {
     Kernel::g_current_process->tls_slots[tls_page].reset(tls_slot);
 }
 
-Thread* ArbitrateHighestPriorityThread(u32 address) {
-    Thread* highest_priority_thread = nullptr;
-    u32 priority = THREADPRIO_LOWEST;
-
-    // Iterate through threads, find highest priority thread that is waiting to be arbitrated...
-    for (auto& thread : thread_list) {
-        if (!CheckWait_AddressArbiter(thread.get(), address))
-            continue;
-
-        if (thread == nullptr)
-            continue;
-
-        if (thread->current_priority <= priority) {
-            highest_priority_thread = thread.get();
-            priority = thread->current_priority;
-        }
-    }
-
-    // If a thread was arbitrated, resume it
-    if (nullptr != highest_priority_thread) {
-        highest_priority_thread->ResumeFromWait();
-    }
-
-    return highest_priority_thread;
-}
-
-void ArbitrateAllThreads(u32 address) {
-    // Resume all threads found to be waiting on the address
-    for (auto& thread : thread_list) {
-        if (CheckWait_AddressArbiter(thread.get(), address))
-            thread->ResumeFromWait();
-    }
-}
-
 /**
  * Switches the CPU's active thread context to that of the specified thread
  * @param new_thread The thread to switch to

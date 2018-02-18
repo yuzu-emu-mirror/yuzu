@@ -28,8 +28,6 @@ add_library(core STATIC
     hle/config_mem.h
     hle/ipc.h
     hle/ipc_helpers.h
-    hle/kernel/address_arbiter.cpp
-    hle/kernel/address_arbiter.h
     hle/kernel/client_port.cpp
     hle/kernel/client_port.h
     hle/kernel/client_session.cpp
