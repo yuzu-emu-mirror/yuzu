@@ -8,6 +8,7 @@
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
@@ -38,6 +39,7 @@ public:
 
     template <typename T>
     T Read() {
+        ASSERT(read_index + sizeof(T) <= buffer.size());
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -47,6 +49,7 @@ public:
 
     template <typename T>
     T ReadUnaligned() {
+        ASSERT(read_index + sizeof(T) <= buffer.size());
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -54,6 +57,7 @@ public:
     }
 
     std::vector<u8> ReadBlock(size_t length) {
+        ASSERT(read_index + length <= buffer.size());
         const u8* const begin = buffer.data() + read_index;
         const u8* const end = begin + length;
         std::vector<u8> data(begin, end);
@@ -86,7 +90,18 @@ public:
         write_index = Common::AlignUp(write_index, 4);
     }
 
+    template <typename T>
+    void WriteObject(const T& val) {
+        u32_le size = static_cast<u32>(sizeof(val));
+        Write(size);
+        // TODO(Subv): Support file descriptors.
+        Write<u32_le>(0); // Fd count.
+        Write(val);
+    }
+
     void Deserialize() {
+        ASSERT(buffer.size() > sizeof(Header));
+
         Header header{};
         std::memcpy(&header, buffer.data(), sizeof(Header));
 
@@ -262,10 +277,11 @@ public:
     Data data;
 };
 
-// TODO(bunnei): Remove this. When set to 1, games will think a fence is valid and boot further.
-// This will break libnx and potentially other apps that more stringently check this. This is here
-// purely as a convenience, and should go away once we implement fences.
-static constexpr u32 FENCE_HACK = 0;
+struct BufferProducerFence {
+    u32 is_valid;
+    std::array<Nvidia::IoctlFence, 4> fences;
+};
+static_assert(sizeof(BufferProducerFence) == 36, "BufferProducerFence has wrong size");
 
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
@@ -274,20 +290,16 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
-        Write<u32>(0);
-        Write<u32>(FENCE_HACK);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
-        Write<u32>(0);
+        // TODO(Subv): Find out how this Fence is used.
+        BufferProducerFence fence = {};
+        fence.is_valid = 1;
+        for (auto& fence_ : fence.fences)
+            fence_.id = -1;
+
+        Write(slot);
+        Write<u32_le>(1);
+        WriteObject(fence);
+        Write<u32_le>(0);
     }
 
     u32_le slot;
@@ -316,11 +328,10 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(bunnei): Find out what this all means. Writing anything non-zero here breaks libnx.
-        Write<u32_le>(0);
-        Write<u32_le>(FENCE_HACK);
-        Write<u32_le>(0);
-        Write(buffer);
+        // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx try
+        // to read an IGBPBuffer object from the parcel.
+        Write<u32_le>(1);
+        WriteObject(buffer);
         Write<u32_le>(0);
     }
 
