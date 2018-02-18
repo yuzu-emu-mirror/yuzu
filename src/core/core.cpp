@@ -133,7 +133,7 @@ void System::Reschedule() {
     }
 
     reschedule_pending = false;
-    Kernel::Reschedule();
+    Core::System::GetInstance().Scheduler().Reschedule();
 }
 
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
@@ -154,6 +154,7 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
         break;
     }
 
+    scheduler = std::make_unique<Kernel::Scheduler>(cpu_core);
     gpu_core = std::make_unique<Tegra::GPU>();
 
     telemetry_session = std::make_unique<Core::TelemetrySession>();

@@ -5,6 +5,7 @@
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/util/util.h"
 
+#include "core/core.h"
 #include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/mutex.h"
@@ -50,7 +51,7 @@ std::size_t WaitTreeItem::Row() const {
 }
 
 std::vector<std::unique_ptr<WaitTreeThread>> WaitTreeItem::MakeThreadItemList() {
-    const auto& threads = Kernel::GetThreadList();
+    const auto& threads = Core::System::GetInstance().Scheduler().GetThreadList();
     std::vector<std::unique_ptr<WaitTreeThread>> item_list;
     item_list.reserve(threads.size());
     for (std::size_t i = 0; i < threads.size(); ++i) {

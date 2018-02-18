@@ -41,14 +41,6 @@ void Thread::Acquire(Thread* thread) {
 //               us to simply use a pool index or similar.
 static Kernel::HandleTable wakeup_callback_handle_table;
 
-// Lists all thread ids that aren't deleted/etc.
-static std::vector<SharedPtr<Thread>> thread_list;
-
-// Lists only ready thread ids.
-static Common::ThreadQueueList<Thread*, THREADPRIO_LOWEST + 1> ready_queue;
-
-static SharedPtr<Thread> current_thread;
-
 // The first available thread id at startup
 static u32 next_thread_id;
 
@@ -62,10 +54,6 @@ inline static u32 const NewThreadId() {
 
 Thread::Thread() {}
 Thread::~Thread() {}
-
-Thread* GetCurrentThread() {
-    return current_thread.get();
-}
 
 /**
  * Check if the specified thread is waiting on the specified address to be arbitrated
@@ -86,7 +74,7 @@ void Thread::Stop() {
     // Clean up thread from ready queue
     // This is only needed when the thread is termintated forcefully (SVC TerminateProcess)
     if (status == THREADSTATUS_READY) {
-        ready_queue.remove(current_priority, this);
+        Core::System::GetInstance().Scheduler().UnscheduleThread(this, current_priority);
     }
 
     status = THREADSTATUS_DEAD;
@@ -109,78 +97,6 @@ void Thread::Stop() {
     Kernel::g_current_process->tls_slots[tls_page].reset(tls_slot);
 }
 
-/**
- * Switches the CPU's active thread context to that of the specified thread
- * @param new_thread The thread to switch to
- */
-static void SwitchContext(Thread* new_thread) {
-    Thread* previous_thread = GetCurrentThread();
-
-    // Save context for previous thread
-    if (previous_thread) {
-        previous_thread->last_running_ticks = CoreTiming::GetTicks();
-        Core::CPU().SaveContext(previous_thread->context);
-
-        if (previous_thread->status == THREADSTATUS_RUNNING) {
-            // This is only the case when a reschedule is triggered without the current thread
-            // yielding execution (i.e. an event triggered, system core time-sliced, etc)
-            ready_queue.push_front(previous_thread->current_priority, previous_thread);
-            previous_thread->status = THREADSTATUS_READY;
-        }
-    }
-
-    // Load context of new thread
-    if (new_thread) {
-        ASSERT_MSG(new_thread->status == THREADSTATUS_READY,
-                   "Thread must be ready to become running.");
-
-        // Cancel any outstanding wakeup events for this thread
-        CoreTiming::UnscheduleEvent(ThreadWakeupEventType, new_thread->callback_handle);
-
-        auto previous_process = Kernel::g_current_process;
-
-        current_thread = new_thread;
-
-        ready_queue.remove(new_thread->current_priority, new_thread);
-        new_thread->status = THREADSTATUS_RUNNING;
-
-        if (previous_process != current_thread->owner_process) {
-            Kernel::g_current_process = current_thread->owner_process;
-            SetCurrentPageTable(&Kernel::g_current_process->vm_manager.page_table);
-        }
-
-        Core::CPU().LoadContext(new_thread->context);
-        Core::CPU().SetTlsAddress(new_thread->GetTLSAddress());
-    } else {
-        current_thread = nullptr;
-        // Note: We do not reset the current process and current page table when idling because
-        // technically we haven't changed processes, our threads are just paused.
-    }
-}
-
-/**
- * Pops and returns the next thread from the thread queue
- * @return A pointer to the next ready thread
- */
-static Thread* PopNextReadyThread() {
-    Thread* next;
-    Thread* thread = GetCurrentThread();
-
-    if (thread && thread->status == THREADSTATUS_RUNNING) {
-        // We have to do better than the current thread.
-        // This call returns null when that's not possible.
-        next = ready_queue.pop_first_better(thread->current_priority);
-        if (!next) {
-            // Otherwise just keep going with the current thread
-            next = thread;
-        }
-    } else {
-        next = ready_queue.pop_first();
-    }
-
-    return next;
-}
-
 void WaitCurrentThread_Sleep() {
     Thread* thread = GetCurrentThread();
     thread->status = THREADSTATUS_WAIT_SLEEP;
@@ -195,8 +111,7 @@ void WaitCurrentThread_ArbitrateAddress(VAddr wait_address) {
 void ExitCurrentThread() {
     Thread* thread = GetCurrentThread();
     thread->Stop();
-    thread_list.erase(std::remove(thread_list.begin(), thread_list.end(), thread),
-                      thread_list.end());
+    Core::System::GetInstance().Scheduler().RemoveThread(thread);
 }
 
 /**
@@ -274,29 +189,9 @@ void Thread::ResumeFromWait() {
 
     wakeup_callback = nullptr;
 
-    ready_queue.push_back(current_priority, this);
     status = THREADSTATUS_READY;
+    Core::System::GetInstance().Scheduler().ScheduleThread(this, current_priority);
     Core::System::GetInstance().PrepareReschedule();
-}
-
-/**
- * Prints the thread queue for debugging purposes
- */
-static void DebugThreadQueue() {
-    Thread* thread = GetCurrentThread();
-    if (!thread) {
-        LOG_DEBUG(Kernel, "Current: NO CURRENT THREAD");
-    } else {
-        LOG_DEBUG(Kernel, "0x%02X %u (current)", thread->current_priority,
-                  GetCurrentThread()->GetObjectId());
-    }
-
-    for (auto& t : thread_list) {
-        u32 priority = ready_queue.contains(t.get());
-        if (priority != -1) {
-            LOG_DEBUG(Kernel, "0x%02X %u", priority, t->GetObjectId());
-        }
-    }
 }
 
 /**
@@ -366,8 +261,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 
     SharedPtr<Thread> thread(new Thread);
 
-    thread_list.push_back(thread);
-    ready_queue.prepare(priority);
+    Core::System::GetInstance().Scheduler().AddThread(thread, priority);
 
     thread->thread_id = NewThreadId();
     thread->status = THREADSTATUS_DORMANT;
@@ -438,12 +332,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 void Thread::SetPriority(u32 priority) {
     ASSERT_MSG(priority <= THREADPRIO_LOWEST && priority >= THREADPRIO_HIGHEST,
                "Invalid priority value.");
-    // If thread was ready, adjust queues
-    if (status == THREADSTATUS_READY)
-        ready_queue.move(this, current_priority, priority);
-    else
-        ready_queue.prepare(priority);
-
+    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
     nominal_priority = current_priority = priority;
 }
 
@@ -457,11 +346,7 @@ void Thread::UpdatePriority() {
 }
 
 void Thread::BoostPriority(u32 priority) {
-    // If thread was ready, adjust queues
-    if (status == THREADSTATUS_READY)
-        ready_queue.move(this, current_priority, priority);
-    else
-        ready_queue.prepare(priority);
+    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
     current_priority = priority;
 }
 
@@ -487,25 +372,6 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
     return thread;
 }
 
-bool HaveReadyThreads() {
-    return ready_queue.get_first() != nullptr;
-}
-
-void Reschedule() {
-    Thread* cur = GetCurrentThread();
-    Thread* next = PopNextReadyThread();
-
-    if (cur && next) {
-        LOG_TRACE(Kernel, "context switch %u -> %u", cur->GetObjectId(), next->GetObjectId());
-    } else if (cur) {
-        LOG_TRACE(Kernel, "context switch %u -> idle", cur->GetObjectId());
-    } else if (next) {
-        LOG_TRACE(Kernel, "context switch idle -> %u", next->GetObjectId());
-    }
-
-    SwitchContext(next);
-}
-
 void Thread::SetWaitSynchronizationResult(ResultCode result) {
     context.cpu_registers[0] = result.raw;
 }
@@ -528,25 +394,18 @@ VAddr Thread::GetCommandBufferAddress() const {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Gets the current thread
+ */
+Thread* GetCurrentThread() {
+    return Core::System::GetInstance().Scheduler().GetCurrentThread();
+}
+
 void ThreadingInit() {
     ThreadWakeupEventType = CoreTiming::RegisterEvent("ThreadWakeupCallback", ThreadWakeupCallback);
-
-    current_thread = nullptr;
     next_thread_id = 1;
 }
 
-void ThreadingShutdown() {
-    current_thread = nullptr;
-
-    for (auto& t : thread_list) {
-        t->Stop();
-    }
-    thread_list.clear();
-    ready_queue.clear();
-}
-
-const std::vector<SharedPtr<Thread>>& GetThreadList() {
-    return thread_list;
-}
+void ThreadingShutdown() {}
 
 } // namespace Kernel

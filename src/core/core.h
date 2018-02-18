@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include "common/common_types.h"
+#include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
 #include "core/perf_stats.h"
@@ -107,6 +108,10 @@ public:
         return *gpu_core;
     }
 
+    Kernel::Scheduler& Scheduler() {
+        return *scheduler;
+    }
+
     PerfStats perf_stats;
     FrameLimiter frame_limiter;
 
@@ -141,6 +146,7 @@ private:
     std::unique_ptr<Loader::AppLoader> app_loader;
 
     std::shared_ptr<ARM_Interface> cpu_core;
+    std::unique_ptr<Kernel::Scheduler> scheduler;
     std::unique_ptr<Tegra::GPU> gpu_core;
 
     /// When true, signals that a reschedule should happen
