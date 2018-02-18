@@ -140,9 +140,7 @@ private:
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
 
-    ///< ARM11 CPU core
-    std::unique_ptr<ARM_Interface> cpu_core;
-
+    std::shared_ptr<ARM_Interface> cpu_core;
     std::unique_ptr<Tegra::GPU> gpu_core;
 
     /// When true, signals that a reschedule should happen

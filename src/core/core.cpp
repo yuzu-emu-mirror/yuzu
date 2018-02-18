@@ -141,14 +141,14 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
 
     switch (Settings::values.cpu_core) {
     case Settings::CpuCore::Unicorn:
-        cpu_core = std::make_unique<ARM_Unicorn>();
+        cpu_core = std::make_shared<ARM_Unicorn>();
         break;
     case Settings::CpuCore::Dynarmic:
     default:
 #ifdef ARCHITECTURE_x86_64
-        cpu_core = std::make_unique<ARM_Dynarmic>();
+        cpu_core = std::make_shared<ARM_Dynarmic>();
 #else
-        cpu_core = std::make_unique<ARM_Unicorn>();
+        cpu_core = std::make_shared<ARM_Unicorn>();
         LOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
 #endif
         break;
