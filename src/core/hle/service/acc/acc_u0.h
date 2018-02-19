@@ -29,6 +29,7 @@ public:
 private:
     void GetUserExistence(Kernel::HLERequestContext& ctx);
     void ListAllUsers(Kernel::HLERequestContext& ctx);
+    void ListOpenUsers(Kernel::HLERequestContext& ctx);
     void GetLastOpenedUser(Kernel::HLERequestContext& ctx);
     void GetProfile(Kernel::HLERequestContext& ctx);
     void InitializeApplicationInfo(Kernel::HLERequestContext& ctx);
