@@ -7,6 +7,8 @@ add_library(core STATIC
     core_timing.cpp
     core_timing.h
     file_sys/directory.h
+    file_sys/disk_filesystem.cpp
+    file_sys/disk_filesystem.h
     file_sys/errors.h
     file_sys/filesystem.cpp
     file_sys/filesystem.h
@@ -18,6 +20,8 @@ add_library(core STATIC
     file_sys/romfs_factory.h
     file_sys/romfs_filesystem.cpp
     file_sys/romfs_filesystem.h
+    file_sys/savedata_factory.cpp
+    file_sys/savedata_factory.h
     file_sys/storage.h
     frontend/emu_window.cpp
     frontend/emu_window.h

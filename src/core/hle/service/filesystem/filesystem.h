@@ -25,6 +25,7 @@ namespace FileSystem {
 /// Supported FileSystem types
 enum class Type {
     RomFS = 1,
+    SaveData = 2,
 };
 
 /**

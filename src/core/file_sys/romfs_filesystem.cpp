@@ -14,8 +14,8 @@ std::string RomFS_FileSystem::GetName() const {
     return "RomFS";
 }
 
-ResultVal<std::unique_ptr<StorageBackend>> RomFS_FileSystem::OpenFile(const Path& path,
-                                                                      const Mode& mode) const {
+ResultVal<std::unique_ptr<StorageBackend>> RomFS_FileSystem::OpenFile(const std::string& path,
+                                                                      Mode mode) const {
     return MakeResult<std::unique_ptr<StorageBackend>>(
         std::make_unique<RomFS_Storage>(romfs_file, data_offset, data_size));
 }
@@ -48,7 +48,7 @@ ResultCode RomFS_FileSystem::DeleteDirectoryRecursively(const Path& path) const 
     return ResultCode(-1);
 }
 
-ResultCode RomFS_FileSystem::CreateFile(const Path& path, u64 size) const {
+ResultCode RomFS_FileSystem::CreateFile(const std::string& path, u64 size) const {
     LOG_CRITICAL(Service_FS, "Attempted to create a file in an ROMFS archive (%s).",
                  GetName().c_str());
     // TODO(bunnei): Use correct error code
@@ -77,6 +77,12 @@ ResultVal<std::unique_ptr<DirectoryBackend>> RomFS_FileSystem::OpenDirectory(
 u64 RomFS_FileSystem::GetFreeSpaceSize() const {
     LOG_WARNING(Service_FS, "Attempted to get the free space in an ROMFS archive");
     return 0;
+}
+
+ResultVal<FileSys::EntryType> RomFS_FileSystem::GetEntryType(const std::string& path) const {
+    LOG_CRITICAL(Service_FS, "Called within an ROMFS archive (path %s).", path.c_str());
+    // TODO(wwylele): Use correct error code
+    return ResultCode(-1);
 }
 
 ResultVal<size_t> RomFS_Storage::Read(const u64 offset, const size_t length, u8* buffer) const {
