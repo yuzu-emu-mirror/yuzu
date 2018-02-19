@@ -8,7 +8,7 @@
 
 namespace Kernel {
 
-Scheduler::Scheduler(std::shared_ptr<ARM_Interface> cpu_core) : cpu_core(cpu_core) {}
+Scheduler::Scheduler(ARM_Interface* cpu_core) : cpu_core(cpu_core) {}
 
 Scheduler::~Scheduler() {
     for (auto& thread : thread_list) {

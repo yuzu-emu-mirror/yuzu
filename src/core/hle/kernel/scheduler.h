@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <memory>
 #include <vector>
 #include "common/common_types.h"
 #include "common/thread_queue_list.h"
@@ -15,7 +14,7 @@ namespace Kernel {
 
 class Scheduler final {
 public:
-    Scheduler(std::shared_ptr<ARM_Interface> cpu_core);
+    explicit Scheduler(ARM_Interface* cpu_core);
     ~Scheduler();
 
     /// Returns whether there are any threads that are ready to run.
@@ -68,7 +67,7 @@ private:
 
     SharedPtr<Thread> current_thread = nullptr;
 
-    std::shared_ptr<ARM_Interface> cpu_core;
+    ARM_Interface* cpu_core;
 };
 
 } // namespace Kernel
