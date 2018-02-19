@@ -250,28 +250,6 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
                                   SharedPtr<Process> owner_process);
 
 /**
- * Returns whether there are any threads that are ready to run.
- */
-bool HaveReadyThreads();
-
-/**
- * Reschedules to the next available thread (call after current thread is suspended)
- */
-void Reschedule();
-
-/**
- * Arbitrate the highest priority thread that is waiting
- * @param address The address for which waiting threads should be arbitrated
- */
-Thread* ArbitrateHighestPriorityThread(VAddr address);
-
-/**
- * Arbitrate all threads currently waiting.
- * @param address The address for which waiting threads should be arbitrated
- */
-void ArbitrateAllThreads(VAddr address);
-
-/**
  * Gets the current thread
  */
 Thread* GetCurrentThread();
@@ -301,10 +279,5 @@ void ThreadingInit();
  * Shutdown threading
  */
 void ThreadingShutdown();
-
-/**
- * Get a const reference to the thread list for debug use
- */
-const std::vector<SharedPtr<Thread>>& GetThreadList();
 
 } // namespace Kernel

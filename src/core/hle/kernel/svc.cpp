@@ -483,7 +483,7 @@ static void ExitProcess() {
     g_current_process->status = ProcessStatus::Exited;
 
     // Stop all the process threads that are currently waiting for objects.
-    auto& thread_list = GetThreadList();
+    auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
     for (auto& thread : thread_list) {
         if (thread->owner_process != g_current_process)
             continue;
@@ -585,7 +585,7 @@ static void SleepThread(s64 nanoseconds) {
 
     // Don't attempt to yield execution if there are no available threads to run,
     // this way we avoid a useless reschedule to the idle thread.
-    if (nanoseconds == 0 && !HaveReadyThreads())
+    if (nanoseconds == 0 && !Core::System::GetInstance().Scheduler().HaveReadyThreads())
         return;
 
     // Sleep current thread and check for next thread to schedule
