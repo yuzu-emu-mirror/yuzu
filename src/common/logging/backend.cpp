@@ -35,6 +35,7 @@ namespace Log {
     SUB(Service, ACC)                                                                              \
     SUB(Service, Audio)                                                                            \
     SUB(Service, AM)                                                                               \
+    SUB(Service, AOC)                                                                              \
     SUB(Service, APM)                                                                              \
     SUB(Service, FS)                                                                               \
     SUB(Service, HID)                                                                              \
