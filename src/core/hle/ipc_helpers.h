@@ -118,7 +118,7 @@ public:
 
         AlignWithPadding();
 
-        if (context.Session()->IsDomain()) {
+        if (context.Session()->IsDomain() && context.GetDomainMessageHeader()) {
             IPC::DomainMessageHeader domain_header{};
             domain_header.num_objects = num_domain_objects;
             PushRaw(domain_header);

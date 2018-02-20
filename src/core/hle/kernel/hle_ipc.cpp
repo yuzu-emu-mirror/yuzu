@@ -85,9 +85,11 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
 
     if (Session()->IsDomain() && (command_header->type == IPC::CommandType::Request || !incoming)) {
         // If this is an incoming message, only CommandType "Request" has a domain header
-        // All outgoing domain messages have the domain header
-        domain_message_header =
-            std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+        // All outgoing domain messages have the domain header, if only incoming has it
+        if (incoming || domain_message_header) {
+            domain_message_header =
+                std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+        }
     }
 
     data_payload_header =
@@ -196,7 +198,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
 
     // TODO(Subv): Translate the X/A/B/W buffers.
 
-    if (Session()->IsDomain()) {
+    if (domain_message_header && Session()->IsDomain()) {
         ASSERT(domain_message_header->num_objects == domain_objects.size());
         // Write the domain objects to the command buffer, these go after the raw untranslated data.
         // TODO(Subv): This completely ignores C buffers.
