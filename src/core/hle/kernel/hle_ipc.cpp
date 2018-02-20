@@ -198,7 +198,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
 
     // TODO(Subv): Translate the X/A/B/W buffers.
 
-    if (domain_message_header && Session()->IsDomain()) {
+    if (Session()->IsDomain() && domain_message_header) {
         ASSERT(domain_message_header->num_objects == domain_objects.size());
         // Write the domain objects to the command buffer, these go after the raw untranslated data.
         // TODO(Subv): This completely ignores C buffers.
