@@ -13,6 +13,9 @@ class AOC_U final : public ServiceFramework<AOC_U> {
 public:
     AOC_U();
     ~AOC_U() = default;
+
+private:
+    void ListAddOnContent(Kernel::HLERequestContext& ctx);
 };
 
 /// Registers all AOC services with the specified service manager.
