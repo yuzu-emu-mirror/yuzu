@@ -112,6 +112,10 @@ add_library(core STATIC
     hle/service/filesystem/filesystem.h
     hle/service/filesystem/fsp_srv.cpp
     hle/service/filesystem/fsp_srv.h
+    hle/service/friend/friend.cpp
+    hle/service/friend/friend.h
+    hle/service/friend/friend_a.cpp
+    hle/service/friend/friend_a.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp

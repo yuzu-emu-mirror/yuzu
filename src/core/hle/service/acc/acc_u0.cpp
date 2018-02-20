@@ -65,11 +65,19 @@ void ACC_U0::GetUserExistence(Kernel::HLERequestContext& ctx) {
 }
 
 void ACC_U0::ListAllUsers(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
     ctx.WriteBuffer(user_ids.data(), user_ids.size());
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    LOG_DEBUG(Service_ACC, "called");
+}
+
+void ACC_U0::ListOpenUsers(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
+    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
+    ctx.WriteBuffer(user_ids.data(), user_ids.size());
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void ACC_U0::GetProfile(Kernel::HLERequestContext& ctx) {
@@ -103,6 +111,7 @@ ACC_U0::ACC_U0() : ServiceFramework("acc:u0") {
     static const FunctionInfo functions[] = {
         {1, &ACC_U0::GetUserExistence, "GetUserExistence"},
         {2, &ACC_U0::ListAllUsers, "ListAllUsers"},
+        {3, &ACC_U0::ListOpenUsers, "ListOpenUsers"},
         {4, &ACC_U0::GetLastOpenedUser, "GetLastOpenedUser"},
         {5, &ACC_U0::GetProfile, "GetProfile"},
         {100, &ACC_U0::InitializeApplicationInfo, "InitializeApplicationInfo"},
