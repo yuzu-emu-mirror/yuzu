@@ -89,6 +89,9 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         if (incoming || domain_message_header) {
             domain_message_header =
                 std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+        } else {
+            if (Session()->IsDomain())
+                LOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
         }
     }
 
