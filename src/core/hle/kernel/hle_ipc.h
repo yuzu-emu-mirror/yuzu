@@ -6,8 +6,8 @@
 
 #include <array>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 #include <boost/container/small_vector.hpp>
 #include "common/common_types.h"
 #include "common/swap.h"
