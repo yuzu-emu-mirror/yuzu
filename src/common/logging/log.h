@@ -51,12 +51,15 @@ enum class Class : ClassType {
                        ///  should have its own subclass.
     Service_ACC,       ///< The ACC (Accounts) service
     Service_AM,        ///< The AM (Applet manager) service
+    Service_AOC,       ///< The AOC (AddOn Content) service
     Service_APM,       ///< The APM (Performance) service
     Service_Audio,     ///< The Audio (Audio control) service
+    Service_Friend,    ///< The friend service
     Service_FS,        ///< The FS (Filesystem) service
     Service_HID,       ///< The HID (Human interface device) service
     Service_LM,        ///< The LM (Logger) service
     Service_NIFM,      ///< The NIFM (Network interface) service
+    Service_NS,        ///< The NS services
     Service_NVDRV,     ///< The NVDRV (Nvidia driver) service
     Service_PCTL,      ///< The PCTL (Parental control) service
     Service_SET,       ///< The SET (Settings) service

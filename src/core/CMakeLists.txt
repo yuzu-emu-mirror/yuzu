@@ -28,8 +28,6 @@ add_library(core STATIC
     hle/config_mem.h
     hle/ipc.h
     hle/ipc_helpers.h
-    hle/kernel/address_arbiter.cpp
-    hle/kernel/address_arbiter.h
     hle/kernel/client_port.cpp
     hle/kernel/client_port.h
     hle/kernel/client_session.cpp
@@ -55,6 +53,8 @@ add_library(core STATIC
     hle/kernel/process.h
     hle/kernel/resource_limit.cpp
     hle/kernel/resource_limit.h
+    hle/kernel/scheduler.cpp
+    hle/kernel/scheduler.h
     hle/kernel/server_port.cpp
     hle/kernel/server_port.h
     hle/kernel/server_session.cpp
@@ -112,6 +112,10 @@ add_library(core STATIC
     hle/service/filesystem/filesystem.h
     hle/service/filesystem/fsp_srv.cpp
     hle/service/filesystem/fsp_srv.h
+    hle/service/friend/friend.cpp
+    hle/service/friend/friend.h
+    hle/service/friend/friend_a.cpp
+    hle/service/friend/friend_a.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp
@@ -124,6 +128,10 @@ add_library(core STATIC
     hle/service/nifm/nifm_s.h
     hle/service/nifm/nifm_u.cpp
     hle/service/nifm/nifm_u.h
+    hle/service/ns/ns.cpp
+    hle/service/ns/ns.h
+    hle/service/ns/pl_u.cpp
+    hle/service/ns/pl_u.h
     hle/service/nvdrv/devices/nvdevice.h
     hle/service/nvdrv/devices/nvdisp_disp0.cpp
     hle/service/nvdrv/devices/nvdisp_disp0.h

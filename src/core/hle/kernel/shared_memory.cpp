@@ -111,13 +111,6 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
         return ERR_INVALID_COMBINATION;
     }
 
-    // Heap-backed memory blocks can not be mapped with other_permissions = DontCare
-    if (base_address != 0 && other_permissions == MemoryPermission::DontCare) {
-        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, permissions don't match",
-                  GetObjectId(), address, name.c_str());
-        return ERR_INVALID_COMBINATION;
-    }
-
     // Error out if the provided permissions are not compatible with what the creator process needs.
     if (other_permissions != MemoryPermission::DontCare &&
         static_cast<u32>(this->permissions) & ~static_cast<u32>(other_permissions)) {
@@ -125,12 +118,6 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
                   GetObjectId(), address, name.c_str());
         return ERR_WRONG_PERMISSION;
     }
-
-    // TODO(Subv): Check for the Shared Device Mem flag in the creator process.
-    /*if (was_created_with_shared_device_mem && address != 0) {
-        return ResultCode(ErrorDescription::InvalidCombination, ErrorModule::OS,
-    ErrorSummary::InvalidArgument, ErrorLevel::Usage);
-    }*/
 
     // TODO(Subv): The same process that created a SharedMemory object
     // can not map it in its own address space unless it was created with addr=0, result 0xD900182C.

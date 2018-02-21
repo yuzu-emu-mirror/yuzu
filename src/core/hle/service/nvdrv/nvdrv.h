@@ -17,6 +17,13 @@ namespace Devices {
 class nvdevice;
 }
 
+struct IoctlFence {
+    u32 id;
+    u32 value;
+};
+
+static_assert(sizeof(IoctlFence) == 8, "IoctlFence has wrong size");
+
 class Module final {
 public:
     Module();

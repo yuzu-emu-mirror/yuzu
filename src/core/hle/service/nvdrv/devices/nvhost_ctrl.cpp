@@ -17,6 +17,8 @@ u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetConfigCommand:
         return NvOsGetConfigU32(input, output);
+    case IoctlCommand::IocCtrlEventWaitCommand:
+        return IocCtrlEventWait(input, output);
     }
     UNIMPLEMENTED();
     return 0;
@@ -41,6 +43,18 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
     } else {
         UNIMPLEMENTED(); // unknown domain? Only nv has been seen so far on hardware
     }
+    std::memcpy(output.data(), &params, sizeof(params));
+    return 0;
+}
+
+u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output) {
+    IocCtrlEventWaitParams params{};
+    std::memcpy(&params, input.data(), sizeof(params));
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, syncpt_id=%u threshold=%u timeout=%d",
+                params.syncpt_id, params.threshold, params.timeout);
+
+    // TODO(Subv): Implement actual syncpt waiting.
+    params.value = 0;
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
 }

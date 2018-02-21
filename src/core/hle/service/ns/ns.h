@@ -7,19 +7,10 @@
 #include "core/hle/service/service.h"
 
 namespace Service {
-namespace AOC {
+namespace NS {
 
-class AOC_U final : public ServiceFramework<AOC_U> {
-public:
-    AOC_U();
-    ~AOC_U() = default;
-
-private:
-    void ListAddOnContent(Kernel::HLERequestContext& ctx);
-};
-
-/// Registers all AOC services with the specified service manager.
+/// Registers all NS services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace AOC
+} // namespace NS
 } // namespace Service

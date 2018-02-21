@@ -103,11 +103,8 @@ u32 nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
                             [&](const auto& entry) { return entry.second->id == params.id; });
     ASSERT(itr != handles.end());
 
-    // Make a new handle for the object
-    u32 handle = next_handle++;
-    handles[handle] = itr->second;
-
-    params.handle = handle;
+    // Return the existing handle instead of creating a new one.
+    params.handle = itr->first;
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;

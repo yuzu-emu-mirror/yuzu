@@ -254,4 +254,55 @@ size_t HLERequestContext::GetWriteBufferSize() const {
     return is_buffer_b ? BufferDescriptorB()[0].Size() : BufferDescriptorC()[0].Size();
 }
 
+std::string HLERequestContext::Description() const {
+    if (!command_header) {
+        return "No command header available";
+    }
+    std::ostringstream s;
+    s << "IPC::CommandHeader: Type:" << static_cast<u32>(command_header->type.Value());
+    s << ", X(Pointer):" << command_header->num_buf_x_descriptors;
+    if (command_header->num_buf_x_descriptors) {
+        s << '[';
+        for (u64 i = 0; i < command_header->num_buf_x_descriptors; ++i) {
+            s << "0x" << std::hex << BufferDescriptorX()[i].Size();
+            if (i < command_header->num_buf_x_descriptors - 1)
+                s << ", ";
+        }
+        s << ']';
+    }
+    s << ", A(Send):" << command_header->num_buf_a_descriptors;
+    if (command_header->num_buf_a_descriptors) {
+        s << '[';
+        for (u64 i = 0; i < command_header->num_buf_a_descriptors; ++i) {
+            s << "0x" << std::hex << BufferDescriptorA()[i].Size();
+            if (i < command_header->num_buf_a_descriptors - 1)
+                s << ", ";
+        }
+        s << ']';
+    }
+    s << ", B(Receive):" << command_header->num_buf_b_descriptors;
+    if (command_header->num_buf_b_descriptors) {
+        s << '[';
+        for (u64 i = 0; i < command_header->num_buf_b_descriptors; ++i) {
+            s << "0x" << std::hex << BufferDescriptorB()[i].Size();
+            if (i < command_header->num_buf_b_descriptors - 1)
+                s << ", ";
+        }
+        s << ']';
+    }
+    s << ", C(ReceiveList):" << BufferDescriptorC().size();
+    if (!BufferDescriptorC().empty()) {
+        s << '[';
+        for (u64 i = 0; i < BufferDescriptorC().size(); ++i) {
+            s << "0x" << std::hex << BufferDescriptorC()[i].Size();
+            if (i < BufferDescriptorC().size() - 1)
+                s << ", ";
+        }
+        s << ']';
+    }
+    s << ", data_size:" << command_header->data_size.Value();
+
+    return s.str();
+}
+
 } // namespace Kernel
