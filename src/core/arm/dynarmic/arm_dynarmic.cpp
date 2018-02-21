@@ -6,6 +6,7 @@
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include "common/logging/log.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/memory.h"
@@ -53,6 +54,9 @@ public:
     }
 
     void InterpreterFallback(u64 pc, size_t num_instructions) override {
+        LOG_INFO(Core_ARM, "Unicorn fallback @ 0x%" PRIx64 " for %zu instructions (instr = %08x)",
+                 pc, num_instructions, MemoryReadCode(pc));
+
         ARM_Interface::ThreadContext ctx;
         parent.SaveContext(ctx);
         parent.inner_unicorn.LoadContext(ctx);
