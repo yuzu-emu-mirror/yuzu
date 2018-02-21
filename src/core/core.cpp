@@ -139,6 +139,8 @@ void System::Reschedule() {
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
+    CoreTiming::Init();
+
     switch (Settings::values.cpu_core) {
     case Settings::CpuCore::Unicorn:
         cpu_core = std::make_shared<ARM_Unicorn>();
@@ -154,14 +156,13 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
         break;
     }
 
-    scheduler = std::make_unique<Kernel::Scheduler>(cpu_core.get());
     gpu_core = std::make_unique<Tegra::GPU>();
 
     telemetry_session = std::make_unique<Core::TelemetrySession>();
 
-    CoreTiming::Init();
     HW::Init();
     Kernel::Init(system_mode);
+    scheduler = std::make_unique<Kernel::Scheduler>(cpu_core.get());
     Service::Init();
     GDBStub::Init();
 
@@ -189,15 +190,18 @@ void System::Shutdown() {
                          perf_results.frametime * 1000.0);
 
     // Shutdown emulation session
-    GDBStub::Shutdown();
     VideoCore::Shutdown();
+    GDBStub::Shutdown();
     Service::Shutdown();
+    scheduler = nullptr;
     Kernel::Shutdown();
     HW::Shutdown();
-    CoreTiming::Shutdown();
-    cpu_core = nullptr;
-    app_loader = nullptr;
     telemetry_session = nullptr;
+    gpu_core = nullptr;
+    cpu_core = nullptr;
+    CoreTiming::Shutdown();
+
+    app_loader = nullptr;
 
     LOG_DEBUG(Core, "Shutdown OK");
 }
