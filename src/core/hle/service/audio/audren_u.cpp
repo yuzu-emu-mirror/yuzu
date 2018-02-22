@@ -178,10 +178,10 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
 }
 
 void AudRenU::GetAudioRenderersProcessMasterVolume(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx, 3};
 
     rb.Push(RESULT_SUCCESS);
-
+    rb.Push<u32>(100);
     LOG_WARNING(Service_Audio, "(STUBBED) called");
 }
 

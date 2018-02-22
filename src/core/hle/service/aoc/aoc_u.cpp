@@ -13,7 +13,7 @@ AOC_U::AOC_U() : ServiceFramework("aoc:u") {
     static const FunctionInfo functions[] = {
         {0, nullptr, "CountAddOnContentByApplicationId"},
         {1, nullptr, "ListAddOnContentByApplicationId"},
-        {2, nullptr, "CountAddOnContent"},
+        {2, &AOC_U::CountAddOnContent, "CountAddOnContent"},
         {3, &AOC_U::ListAddOnContent, "ListAddOnContent"},
         {4, nullptr, "GetAddOnContentBaseIdByApplicationId"},
         {5, nullptr, "GetAddOnContentBaseId"},
@@ -21,6 +21,13 @@ AOC_U::AOC_U() : ServiceFramework("aoc:u") {
         {7, nullptr, "PrepareAddOnContent"},
     };
     RegisterHandlers(functions);
+}
+
+void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(0);
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
 }
 
 void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {

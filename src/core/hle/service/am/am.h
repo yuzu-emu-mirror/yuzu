@@ -36,6 +36,13 @@ private:
 class IAudioController final : public ServiceFramework<IAudioController> {
 public:
     IAudioController();
+
+private:
+    void SetExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+    void GetMainAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+    void GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+
+    u32 volume{100};
 };
 
 class IDisplayController final : public ServiceFramework<IDisplayController> {
