@@ -46,6 +46,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
         {9, &ISelfController::GetLibraryAppletLaunchableEvent, "GetLibraryAppletLaunchableEvent"},
+        {10, &ISelfController::SetScreenShotPermission, "SetScreenShotPermission"},
         {11, &ISelfController::SetOperationModeChangedNotification,
          "SetOperationModeChangedNotification"},
         {12, &ISelfController::SetPerformanceModeChangedNotification,
@@ -96,6 +97,13 @@ void ISelfController::SetPerformanceModeChangedNotification(Kernel::HLERequestCo
     rb.Push(RESULT_SUCCESS);
 
     LOG_WARNING(Service_AM, "(STUBBED) called flag=%u", static_cast<u32>(flag));
+}
+
+void ISelfController::SetScreenShotPermission(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {

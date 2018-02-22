@@ -17,6 +17,15 @@ void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
+void BSD_U::StartMonitoring(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(0); // bsd errno
+}
+
 void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
@@ -67,6 +76,7 @@ void BSD_U::Close(Kernel::HLERequestContext& ctx) {
 
 BSD_U::BSD_U() : ServiceFramework("bsd:u") {
     static const FunctionInfo functions[] = {{0, &BSD_U::RegisterClient, "RegisterClient"},
+                                             {1, &BSD_U::StartMonitoring, "StartMonitoring"},
                                              {2, &BSD_U::Socket, "Socket"},
                                              {11, &BSD_U::SendTo, "SendTo"},
                                              {14, &BSD_U::Connect, "Connect"},
