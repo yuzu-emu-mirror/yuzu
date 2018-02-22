@@ -13,6 +13,7 @@ TIME_U::TIME_U(std::shared_ptr<Module> time) : Module::Interface(std::move(time)
         {1, &TIME_U::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
         {2, &TIME_U::GetStandardSteadyClock, "GetStandardSteadyClock"},
         {3, &TIME_U::GetTimeZoneService, "GetTimeZoneService"},
+        {4, &TIME_U::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
     };
     RegisterHandlers(functions);
 }

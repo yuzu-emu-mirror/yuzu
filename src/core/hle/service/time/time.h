@@ -56,6 +56,7 @@ public:
         void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);
         void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
         void GetTimeZoneService(Kernel::HLERequestContext& ctx);
+        void GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> time;
