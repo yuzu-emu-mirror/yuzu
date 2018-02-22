@@ -116,6 +116,10 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     w << '}';
 
     LOG_ERROR(Service, "unknown / unimplemented %s", w.c_str());
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
     UNIMPLEMENTED();
 }
 
