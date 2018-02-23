@@ -6,6 +6,7 @@
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include "common/logging/log.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/memory.h"
@@ -53,6 +54,9 @@ public:
     }
 
     void InterpreterFallback(u64 pc, size_t num_instructions) override {
+        LOG_INFO(Core_ARM, "Unicorn fallback @ 0x%" PRIx64 " for %zu instructions (instr = %08x)",
+                 pc, num_instructions, MemoryReadCode(pc));
+
         ARM_Interface::ThreadContext ctx;
         parent.SaveContext(ctx);
         parent.inner_unicorn.LoadContext(ctx);
@@ -63,8 +67,17 @@ public:
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception exception) override {
-        ASSERT_MSG(false, "ExceptionRaised(exception = %zu, pc = %" PRIx64 ")",
-                   static_cast<size_t>(exception), pc);
+        switch (exception) {
+        case Dynarmic::A64::Exception::WaitForInterrupt:
+        case Dynarmic::A64::Exception::WaitForEvent:
+        case Dynarmic::A64::Exception::SendEvent:
+        case Dynarmic::A64::Exception::SendEventLocal:
+        case Dynarmic::A64::Exception::Yield:
+            return;
+        default:
+            ASSERT_MSG(false, "ExceptionRaised(exception = %zu, pc = %" PRIx64 ")",
+                       static_cast<size_t>(exception), pc);
+        }
     }
 
     void CallSVC(u32 swi) override {
@@ -81,11 +94,15 @@ public:
     u64 GetTicksRemaining() override {
         return ticks_remaining;
     }
+    u64 GetCNTPCT() override {
+        return CoreTiming::GetTicks();
+    }
 
     ARM_Dynarmic& parent;
     size_t ticks_remaining = 0;
     size_t num_interpreted_instructions = 0;
     u64 tpidrro_el0 = 0;
+    u64 tpidr_el0 = 0;
 };
 
 std::unique_ptr<Dynarmic::A64::Jit> MakeJit(const std::unique_ptr<ARM_Dynarmic_Callbacks>& cb) {
@@ -94,10 +111,13 @@ std::unique_ptr<Dynarmic::A64::Jit> MakeJit(const std::unique_ptr<ARM_Dynarmic_C
     Dynarmic::A64::UserConfig config;
     config.callbacks = cb.get();
     config.tpidrro_el0 = &cb->tpidrro_el0;
+    config.tpidr_el0 = &cb->tpidr_el0;
     config.dczid_el0 = 4;
+    config.ctr_el0 = 0x8444c004;
     config.page_table = reinterpret_cast<void**>(page_table);
     config.page_table_address_space_bits = Memory::ADDRESS_SPACE_BITS;
     config.silently_mirror_page_table = false;
+
     return std::make_unique<Dynarmic::A64::Jit>(config);
 }
 
