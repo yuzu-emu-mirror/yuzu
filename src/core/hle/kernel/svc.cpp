@@ -761,6 +761,16 @@ static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permiss
     return RESULT_SUCCESS;
 }
 
+static ResultCode ClearEvent(Handle handle) {
+    LOG_TRACE(Kernel_SVC, "called, event=0xX", handle);
+
+    SharedPtr<Event> evt = g_handle_table.Get<Event>(handle);
+    if (evt == nullptr)
+        return ERR_INVALID_HANDLE;
+    evt->Clear();
+    return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void();
@@ -790,7 +800,7 @@ static const FunctionDef SVC_Table[] = {
     {0x0F, SvcWrap<SetThreadCoreMask>, "SetThreadCoreMask"},
     {0x10, SvcWrap<GetCurrentProcessorNumber>, "GetCurrentProcessorNumber"},
     {0x11, nullptr, "SignalEvent"},
-    {0x12, nullptr, "ClearEvent"},
+    {0x12, SvcWrap<ClearEvent>, "ClearEvent"},
     {0x13, SvcWrap<MapSharedMemory>, "MapSharedMemory"},
     {0x14, nullptr, "UnmapSharedMemory"},
     {0x15, SvcWrap<CreateTransferMemory>, "CreateTransferMemory"},

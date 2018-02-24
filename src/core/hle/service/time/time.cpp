@@ -146,6 +146,13 @@ void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 }
 
+void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<ISystemClock>();
+    LOG_DEBUG(Service_Time, "called");
+}
+
 Module::Interface::Interface(std::shared_ptr<Module> time, const char* name)
     : ServiceFramework(name), time(std::move(time)) {}
 

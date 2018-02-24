@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/nifm/nifm_a.h"
 #include "core/hle/service/nifm/nifm_s.h"
@@ -28,9 +29,9 @@ class IRequest final : public ServiceFramework<IRequest> {
 public:
     explicit IRequest() : ServiceFramework("IRequest") {
         static const FunctionInfo functions[] = {
-            {0, nullptr, "GetRequestState"},
-            {1, nullptr, "GetResult"},
-            {2, nullptr, "GetSystemEventReadableHandles"},
+            {0, &IRequest::GetRequestState, "GetRequestState"},
+            {1, &IRequest::GetResult, "GetResult"},
+            {2, &IRequest::GetSystemEventReadableHandles, "GetSystemEventReadableHandles"},
             {3, nullptr, "Cancel"},
             {4, nullptr, "Submit"},
             {5, nullptr, "SetRequirement"},
@@ -55,7 +56,32 @@ public:
             {25, nullptr, "UnregisterSocketDescriptor"},
         };
         RegisterHandlers(functions);
+
+        event1 = Kernel::Event::Create(Kernel::ResetType::OneShot, "IRequest:Event1");
+        event2 = Kernel::Event::Create(Kernel::ResetType::OneShot, "IRequest:Event2");
     }
+
+private:
+    void GetRequestState(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
+    }
+    void GetResult(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
+    }
+    void GetSystemEventReadableHandles(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 2};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(event1, event2);
+    }
+
+    Kernel::SharedPtr<Kernel::Event> event1, event2;
 };
 
 class INetworkProfile final : public ServiceFramework<INetworkProfile> {
