@@ -36,6 +36,13 @@ private:
 class IAudioController final : public ServiceFramework<IAudioController> {
 public:
     IAudioController();
+
+private:
+    void SetExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+    void GetMainAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+    void GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx);
+
+    u32 volume{100};
 };
 
 class IDisplayController final : public ServiceFramework<IDisplayController> {
@@ -62,6 +69,7 @@ private:
     void UnlockExit(Kernel::HLERequestContext& ctx);
     void GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx);
     void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx);
+    void SetScreenShotPermission(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
     Kernel::SharedPtr<Kernel::Event> launchable_event;

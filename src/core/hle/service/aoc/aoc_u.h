@@ -15,6 +15,7 @@ public:
     ~AOC_U() = default;
 
 private:
+    void CountAddOnContent(Kernel::HLERequestContext& ctx);
     void ListAddOnContent(Kernel::HLERequestContext& ctx);
 };
 

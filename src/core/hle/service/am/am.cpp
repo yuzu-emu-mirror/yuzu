@@ -34,7 +34,38 @@ void IWindowController::AcquireForegroundRights(Kernel::HLERequestContext& ctx) 
     rb.Push(RESULT_SUCCESS);
 }
 
-IAudioController::IAudioController() : ServiceFramework("IAudioController") {}
+IAudioController::IAudioController() : ServiceFramework("IAudioController") {
+    static const FunctionInfo functions[] = {
+        {0, &IAudioController::SetExpectedMasterVolume, "SetExpectedMasterVolume"},
+        {1, &IAudioController::GetMainAppletExpectedMasterVolume,
+         "GetMainAppletExpectedMasterVolume"},
+        {2, &IAudioController::GetLibraryAppletExpectedMasterVolume,
+         "GetLibraryAppletExpectedMasterVolume"},
+        {3, nullptr, "ChangeMainAppletMasterVolume"},
+        {4, nullptr, "SetTransparentVolumeRate"},
+    };
+    RegisterHandlers(functions);
+}
+
+void IAudioController::SetExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void IAudioController::GetMainAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(volume);
+}
+
+void IAudioController::GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(volume);
+}
 
 IDisplayController::IDisplayController() : ServiceFramework("IDisplayController") {}
 
@@ -46,6 +77,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
         {9, &ISelfController::GetLibraryAppletLaunchableEvent, "GetLibraryAppletLaunchableEvent"},
+        {10, &ISelfController::SetScreenShotPermission, "SetScreenShotPermission"},
         {11, &ISelfController::SetOperationModeChangedNotification,
          "SetOperationModeChangedNotification"},
         {12, &ISelfController::SetPerformanceModeChangedNotification,
@@ -96,6 +128,13 @@ void ISelfController::SetPerformanceModeChangedNotification(Kernel::HLERequestCo
     rb.Push(RESULT_SUCCESS);
 
     LOG_WARNING(Service_AM, "(STUBBED) called flag=%u", static_cast<u32>(flag));
+}
+
+void ISelfController::SetScreenShotPermission(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {

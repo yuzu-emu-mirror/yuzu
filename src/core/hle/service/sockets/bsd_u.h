@@ -17,6 +17,7 @@ public:
 
 private:
     void RegisterClient(Kernel::HLERequestContext& ctx);
+    void StartMonitoring(Kernel::HLERequestContext& ctx);
     void Socket(Kernel::HLERequestContext& ctx);
     void Connect(Kernel::HLERequestContext& ctx);
     void SendTo(Kernel::HLERequestContext& ctx);
