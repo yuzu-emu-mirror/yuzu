@@ -12,6 +12,8 @@ add_library(core STATIC
     file_sys/filesystem.h
     file_sys/path_parser.cpp
     file_sys/path_parser.h
+    file_sys/program_metadata.cpp
+    file_sys/program_metadata.h
     file_sys/romfs_factory.cpp
     file_sys/romfs_factory.h
     file_sys/romfs_filesystem.cpp
