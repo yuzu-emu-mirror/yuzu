@@ -15,9 +15,6 @@ namespace Loader {
 enum class ResultStatus;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// FileSys namespace
-
 namespace FileSys {
 
 enum class ProgramAddressSpaceType : u8 {
@@ -100,7 +97,7 @@ private:
         u32_le sac_size;
         u32_le kac_offset;
         u32_le kac_size;
-        std::array<u8, 0x8> padding;
+        INSERT_PADDING_BYTES(0x8);
     };
 
     static_assert(sizeof(AcidHeader) == 0x240, "ACID header structure size is wrong");
@@ -109,14 +106,14 @@ private:
         std::array<char, 4> magic;
         std::array<u8, 0xC> reserved;
         u64_le title_id;
-        std::array<u8, 0x8> padding;
+        INSERT_PADDING_BYTES(0x8);
         u32_le fah_offset;
         u32_le fah_size;
         u32_le sac_offset;
         u32_le sac_size;
         u32_le kac_offset;
         u32_le kac_size;
-        std::array<u8, 0x8> padding_2;
+        INSERT_PADDING_BYTES(0x8);
     };
 
     static_assert(sizeof(AciHeader) == 0x40, "ACI0 header structure size is wrong");
@@ -125,7 +122,7 @@ private:
 
     struct FileAccessControl {
         u8 version;
-        std::array<u8, 3> padding;
+        INSERT_PADDING_BYTES(3);
         u64_le permissions;
         std::array<u8, 0x20> unknown;
     };
@@ -134,7 +131,7 @@ private:
 
     struct FileAccessHeader {
         u8 version;
-        std::array<u8, 3> padding;
+        INSERT_PADDING_BYTES(3);
         u64_le permissions;
         u32_le unk_offset;
         u32_le unk_size;

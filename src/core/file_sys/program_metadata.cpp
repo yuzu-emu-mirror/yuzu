@@ -8,9 +8,6 @@
 #include "core/file_sys/program_metadata.h"
 #include "core/loader/loader.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// FileSys namespace
-
 namespace FileSys {
 
 Loader::ResultStatus ProgramMetadata::Load(const std::string& file_path) {
