@@ -114,7 +114,11 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
     const std::string npdm_path = directory + DIR_SEP + "main.npdm";
-    metadata.Load(npdm_path);
+
+    ResultStatus result = metadata.Load(npdm_path);
+    if (result != ResultStatus::Success) {
+        return result;
+    }
     metadata.Print();
 
     // Load NSO modules
@@ -123,7 +127,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const std::string path = directory + DIR_SEP + module;
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
+        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr, metadata.GetTitleID());
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, module, load_addr);
         } else {
