@@ -6,6 +6,7 @@
 
 #include <string>
 #include "common/common_types.h"
+#include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/loader/loader.h"
 
@@ -41,6 +42,7 @@ public:
 private:
     std::string filepath_romfs;
     std::string filepath;
+    FileSys::ProgramMetadata metadata;
 };
 
 } // namespace Loader
