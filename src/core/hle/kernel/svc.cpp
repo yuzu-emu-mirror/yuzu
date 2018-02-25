@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "common/logging/log.h"
 #include "common/microprofile.h"
