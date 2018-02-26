@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <cinttypes>
 
 #include "common/logging/log.h"
 #include "common/microprofile.h"
@@ -443,6 +444,16 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
     return RESULT_SUCCESS;
 }
 
+static ResultCode UnmapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size) {
+    LOG_WARNING(Kernel_SVC,
+                "called, shared_memory_handle=0x%08X, addr=0x%" PRIx64 ", size=0x%" PRIx64 "",
+                shared_memory_handle, addr, size);
+
+    SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
+
+    return shared_memory->Unmap(g_current_process.get(), addr);
+}
+
 /// Query process memory
 static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_info*/,
                                      Handle process_handle, u64 addr) {
@@ -802,7 +813,7 @@ static const FunctionDef SVC_Table[] = {
     {0x11, nullptr, "SignalEvent"},
     {0x12, SvcWrap<ClearEvent>, "ClearEvent"},
     {0x13, SvcWrap<MapSharedMemory>, "MapSharedMemory"},
-    {0x14, nullptr, "UnmapSharedMemory"},
+    {0x14, SvcWrap<UnmapSharedMemory>, "UnmapSharedMemory"},
     {0x15, SvcWrap<CreateTransferMemory>, "CreateTransferMemory"},
     {0x16, SvcWrap<CloseHandle>, "CloseHandle"},
     {0x17, SvcWrap<ResetSignal>, "ResetSignal"},
