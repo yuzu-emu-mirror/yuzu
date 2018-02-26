@@ -53,6 +53,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileUti
 FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& file,
                                                            const std::string& filepath) {
     bool is_main_found{};
+    bool is_npdm_found{};
     bool is_rtld_found{};
     bool is_sdk_found{};
 
@@ -67,6 +68,9 @@ FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& fil
         // Verify filename
         if (Common::ToLower(virtual_name) == "main") {
             is_main_found = true;
+        } else if (Common::ToLower(virtual_name) == "main.npdm") {
+            is_npdm_found = true;
+            return true;
         } else if (Common::ToLower(virtual_name) == "rtld") {
             is_rtld_found = true;
         } else if (Common::ToLower(virtual_name) == "sdk") {
@@ -83,14 +87,14 @@ FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& fil
         }
 
         // We are done if we've found and verified all required NSOs
-        return !(is_main_found && is_rtld_found && is_sdk_found);
+        return !(is_main_found && is_npdm_found && is_rtld_found && is_sdk_found);
     };
 
     // Search the directory recursively, looking for the required modules
     const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
     FileUtil::ForeachDirectoryEntry(nullptr, directory, callback);
 
-    if (is_main_found && is_rtld_found && is_sdk_found) {
+    if (is_main_found && is_npdm_found && is_rtld_found && is_sdk_found) {
         return FileType::DeconstructedRomDirectory;
     }
 
@@ -108,14 +112,22 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     process = Kernel::Process::Create("main");
 
+    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
+    const std::string npdm_path = directory + DIR_SEP + "main.npdm";
+
+    ResultStatus result = metadata.Load(npdm_path);
+    if (result != ResultStatus::Success) {
+        return result;
+    }
+    metadata.Print();
+
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
-    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const std::string path = directory + DIR_SEP + module;
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
+        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr, metadata.GetTitleID());
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, module, load_addr);
         } else {
@@ -127,7 +139,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     process->address_mappings = default_address_mappings;
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(Memory::PROCESS_IMAGE_VADDR, metadata.GetMainThreadPriority(),
+                 metadata.GetMainThreadStackSize());
 
     // Find the RomFS by searching for a ".romfs" file in this directory
     filepath_romfs = FindRomFS(directory);
