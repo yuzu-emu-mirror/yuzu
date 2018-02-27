@@ -96,7 +96,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
 
     ResultCode result = RESULT_SUCCESS;
     // If the session has been converted to a domain, handle the domain request
-    if (IsDomain()) {
+    if (IsDomain() && context.GetDomainMessageHeader()) {
         result = HandleDomainSyncRequest(context);
         // If there is no domain header, the regular session handler is used
     } else if (hle_handler != nullptr) {
