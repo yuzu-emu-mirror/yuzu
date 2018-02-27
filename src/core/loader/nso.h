@@ -29,7 +29,7 @@ public:
         return IdentifyType(file, filepath);
     }
 
-    static VAddr LoadModule(const std::string& path, VAddr load_base, u64 tid);
+    static VAddr LoadModule(const std::string& path, VAddr load_base);
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 

@@ -92,7 +92,7 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-VAddr AppLoader_NSO::LoadModule(const std::string& path, VAddr load_base, u64 tid) {
+VAddr AppLoader_NSO::LoadModule(const std::string& path, VAddr load_base) {
     FileUtil::IOFile file(path, "rb");
     if (!file.IsOpen()) {
         return {};
@@ -109,7 +109,7 @@ VAddr AppLoader_NSO::LoadModule(const std::string& path, VAddr load_base, u64 ti
     }
 
     // Build program image
-    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("", tid);
+    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
     std::vector<u8> program_image;
     for (int i = 0; i < nso_header.segments.size(); ++i) {
         std::vector<u8> data =
@@ -155,10 +155,10 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    process = Kernel::Process::Create("main");
+    process = Kernel::Process::Create("main", 0);
 
     // Load module
-    LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR, 0);
+    LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);
     LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, filepath.c_str(),
               Memory::PROCESS_IMAGE_VADDR);
 

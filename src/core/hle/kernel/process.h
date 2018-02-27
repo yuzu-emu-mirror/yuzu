@@ -56,7 +56,7 @@ class ResourceLimit;
 struct MemoryRegionInfo;
 
 struct CodeSet final : public Object {
-    static SharedPtr<CodeSet> Create(std::string name, u64 program_id);
+    static SharedPtr<CodeSet> Create(std::string name);
 
     std::string GetTypeName() const override {
         return "CodeSet";
@@ -72,8 +72,6 @@ struct CodeSet final : public Object {
 
     /// Name of the process
     std::string name;
-    /// Title ID corresponding to the process
-    u64 program_id;
 
     std::shared_ptr<std::vector<u8>> memory;
 
@@ -97,7 +95,7 @@ private:
 
 class Process final : public Object {
 public:
-    static SharedPtr<Process> Create(std::string&& name);
+    static SharedPtr<Process> Create(std::string&& name, u64 program_id);
 
     std::string GetTypeName() const override {
         return "Process";
@@ -112,6 +110,9 @@ public:
     }
 
     static u32 next_process_id;
+
+    /// Title ID corresponding to the process
+    u64 program_id;
 
     /// Resource limit descriptor for this process
     SharedPtr<ResourceLimit> resource_limit;
