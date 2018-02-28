@@ -406,6 +406,8 @@ void ThreadingInit() {
     next_thread_id = 1;
 }
 
-void ThreadingShutdown() {}
+void ThreadingShutdown() {
+    Kernel::ClearProcessList();
+}
 
 } // namespace Kernel
