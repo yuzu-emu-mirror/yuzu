@@ -26,15 +26,18 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 }
 
-SET::SET(const char* name) : ServiceFramework(name) {
+SET::SET() : ServiceFramework("set") {
     static const FunctionInfo functions[] = {
+        {0, nullptr, "GetLanguageCode"},
         {1, &SET::GetAvailableLanguageCodes, "GetAvailableLanguageCodes"},
+        {2, nullptr, "MakeLanguageCode"},
+        {3, nullptr, "GetAvailableLanguageCodeCount"},
+        {4, nullptr, "GetRegionCode"},
+        {5, nullptr, "GetAvailableLanguageCodes2"},
+        {6, nullptr, "GetAvailableLanguageCodeCount2"},
+        {7, nullptr, "GetKeyCodeMap"},
     };
     RegisterHandlers(functions);
-}
-
-void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<SET>("set")->InstallAsService(service_manager);
 }
 
 } // namespace Set

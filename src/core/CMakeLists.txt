@@ -169,6 +169,14 @@ add_library(core STATIC
     hle/service/service.h
     hle/service/set/set.cpp
     hle/service/set/set.h
+    hle/service/set/set_cal.cpp
+    hle/service/set/set_cal.h
+    hle/service/set/set_fd.cpp
+    hle/service/set/set_fd.h
+    hle/service/set/set_sys.cpp
+    hle/service/set/set_sys.h
+    hle/service/set/settings.cpp
+    hle/service/set/settings.h
     hle/service/sm/controller.cpp
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp

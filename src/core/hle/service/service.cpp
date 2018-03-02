@@ -28,7 +28,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/set/set.h"
+#include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sockets/sockets.h"

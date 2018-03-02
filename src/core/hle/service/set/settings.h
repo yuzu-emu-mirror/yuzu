@@ -9,14 +9,8 @@
 namespace Service {
 namespace Set {
 
-class SET final : public ServiceFramework<SET> {
-public:
-    explicit SET();
-    ~SET() = default;
-
-private:
-    void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
-};
+/// Registers all Settings services with the specified service manager.
+void InstallInterfaces(SM::ServiceManager& service_manager);
 
 } // namespace Set
 } // namespace Service
