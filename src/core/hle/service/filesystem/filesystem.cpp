@@ -3,7 +3,9 @@
 // Refer to the license.txt file included.
 
 #include <boost/container/flat_map.hpp>
+#include "common/file_util.h"
 #include "core/file_sys/filesystem.h"
+#include "core/file_sys/savedata_factory.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
@@ -41,12 +43,17 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
     return itr->second->Open(path);
 }
 
-void UnregisterFileSystems() {
+void RegisterFileSystems() {
     filesystem_map.clear();
+
+    std::string nand_directory = FileUtil::GetUserPath(D_NAND_IDX);
+
+    auto savedata = std::make_unique<FileSys::SaveData_Factory>(std::move(nand_directory));
+    RegisterFileSystem(std::move(savedata), Type::SaveData);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    UnregisterFileSystems();
+    RegisterFileSystems();
     std::make_shared<FSP_SRV>()->InstallAsService(service_manager);
 }
 

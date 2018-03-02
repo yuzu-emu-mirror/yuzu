@@ -108,11 +108,11 @@ union ResultCode {
     }
 
     constexpr bool IsSuccess() const {
-        return is_error.ExtractValue(raw) == 0;
+        return raw == 0;
     }
 
     constexpr bool IsError() const {
-        return is_error.ExtractValue(raw) == 1;
+        return raw != 0;
     }
 };
 

@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <memory>
 #include <string>
-#include <vector>
 #include "common/common_types.h"
 #include "common/file_util.h"
 #include "core/file_sys/directory.h"
@@ -17,15 +16,10 @@
 
 namespace FileSys {
 
-/**
- * Helper which implements an interface to deal with Switch .istorage ROMFS images used in some
- * archives This should be subclassed by concrete archive types, which will provide the input data
- * (load the raw ROMFS archive) and override any required methods
- */
-class RomFS_FileSystem : public FileSystemBackend {
+class Disk_FileSystem : public FileSystemBackend {
 public:
-    RomFS_FileSystem(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
-        : romfs_file(file), data_offset(offset), data_size(size) {}
+    explicit Disk_FileSystem(std::string base_directory)
+        : base_directory(std::move(base_directory)) {}
 
     std::string GetName() const override;
 
@@ -43,15 +37,12 @@ public:
     ResultVal<EntryType> GetEntryType(const std::string& path) const override;
 
 protected:
-    std::shared_ptr<FileUtil::IOFile> romfs_file;
-    u64 data_offset;
-    u64 data_size;
+    std::string base_directory;
 };
 
-class RomFS_Storage : public StorageBackend {
+class Disk_Storage : public StorageBackend {
 public:
-    RomFS_Storage(std::shared_ptr<FileUtil::IOFile> file, u64 offset, u64 size)
-        : romfs_file(file), data_offset(offset), data_size(size) {}
+    Disk_Storage(std::shared_ptr<FileUtil::IOFile> file) : file(std::move(file)) {}
 
     ResultVal<size_t> Read(u64 offset, size_t length, u8* buffer) const override;
     ResultVal<size_t> Write(u64 offset, size_t length, bool flush, const u8* buffer) const override;
@@ -63,19 +54,13 @@ public:
     void Flush() const override {}
 
 private:
-    std::shared_ptr<FileUtil::IOFile> romfs_file;
-    u64 data_offset;
-    u64 data_size;
+    std::shared_ptr<FileUtil::IOFile> file;
 };
 
-class ROMFSDirectory : public DirectoryBackend {
+class Disk_Directory : public DirectoryBackend {
 public:
-    u32 Read(const u32 count, Entry* entries) override {
-        return 0;
-    }
-    bool Close() const override {
-        return false;
-    }
+    u32 Read(const u32 count, Entry* entries) override;
+    bool Close() const override;
 };
 
 } // namespace FileSys

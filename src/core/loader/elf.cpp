@@ -300,7 +300,7 @@ SharedPtr<CodeSet> ElfReader::LoadInto(u32 vaddr) {
     std::vector<u8> program_image(total_image_size);
     size_t current_image_position = 0;
 
-    SharedPtr<CodeSet> codeset = CodeSet::Create("", 0);
+    SharedPtr<CodeSet> codeset = CodeSet::Create("");
 
     for (unsigned int i = 0; i < header->e_phnum; ++i) {
         Elf32_Phdr* p = &segments[i];
@@ -406,7 +406,7 @@ ResultStatus AppLoader_ELF::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     SharedPtr<CodeSet> codeset = elf_reader.LoadInto(Memory::PROCESS_IMAGE_VADDR);
     codeset->name = filename;
 
-    process = Kernel::Process::Create("main");
+    process = Kernel::Process::Create("main", 0);
     process->LoadModule(codeset, codeset->entrypoint);
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;

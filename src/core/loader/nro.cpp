@@ -83,7 +83,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     }
 
     // Build program image
-    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("", 0);
+    Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
     std::vector<u8> program_image;
     program_image.resize(PageAlignSize(nro_header.file_size));
     file.Seek(0, SEEK_SET);
@@ -125,7 +125,7 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    process = Kernel::Process::Create("main");
+    process = Kernel::Process::Create("main", 0);
 
     // Load NRO
     static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};

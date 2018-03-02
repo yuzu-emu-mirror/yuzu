@@ -27,11 +27,14 @@ enum LowPathType : u32 {
     Wchar = 4,
 };
 
-union Mode {
-    u32 hex;
-    BitField<0, 1, u32> read_flag;
-    BitField<1, 1, u32> write_flag;
-    BitField<2, 1, u32> create_flag;
+enum EntryType : u32 {
+    Directory = 0,
+    File = 1,
+};
+
+enum class Mode : u32 {
+    Read = 1,
+    Write = 2,
 };
 
 class Path {
@@ -86,7 +89,7 @@ public:
      * @param size The size of the new file, filled with zeroes
      * @return Result of the operation
      */
-    virtual ResultCode CreateFile(const Path& path, u64 size) const = 0;
+    virtual ResultCode CreateFile(const std::string& path, u64 size) const = 0;
 
     /**
      * Delete a file specified by its path
@@ -138,8 +141,8 @@ public:
      * @param mode Mode to open the file with
      * @return Opened file, or error code
      */
-    virtual ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const Path& path,
-                                                                const Mode& mode) const = 0;
+    virtual ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const std::string& path,
+                                                                Mode mode) const = 0;
 
     /**
      * Open a directory specified by its path
@@ -153,6 +156,12 @@ public:
      * @return The number of free bytes in the archive
      */
     virtual u64 GetFreeSpaceSize() const = 0;
+
+    /**
+     * Get the type of the specified path
+     * @return The type of the specified path or error code
+     */
+    virtual ResultVal<EntryType> GetEntryType(const std::string& path) const = 0;
 };
 
 class FileSystemFactory : NonCopyable {

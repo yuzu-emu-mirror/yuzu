@@ -110,8 +110,6 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         return ResultStatus::Error;
     }
 
-    process = Kernel::Process::Create("main");
-
     const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
     const std::string npdm_path = directory + DIR_SEP + "main.npdm";
 
@@ -121,13 +119,15 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     }
     metadata.Print();
 
+    process = Kernel::Process::Create("main", metadata.GetTitleID());
+
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const std::string path = directory + DIR_SEP + module;
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr, metadata.GetTitleID());
+        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, module, load_addr);
         } else {
