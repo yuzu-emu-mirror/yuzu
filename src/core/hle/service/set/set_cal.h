@@ -9,13 +9,10 @@
 namespace Service {
 namespace Set {
 
-class SET final : public ServiceFramework<SET> {
+class SET_CAL final : public ServiceFramework<SET_CAL> {
 public:
-    explicit SET();
-    ~SET() = default;
-
-private:
-    void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
+    explicit SET_CAL();
+    ~SET_CAL() = default;
 };
 
 } // namespace Set
