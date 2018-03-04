@@ -44,6 +44,13 @@ ResultCode RegisterFileSystem(std::unique_ptr<FileSys::FileSystemFactory>&& fact
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
                                                                       FileSys::Path& path);
 
+/**
+ * Formats a file system
+ * @param type Type of the file system to format
+ * @return ResultCode of the operation
+ */
+ResultCode FormatFileSystem(Type type);
+
 /// Registers all Filesystem services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 

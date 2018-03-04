@@ -23,7 +23,7 @@ public:
         return "ArchiveFactory_RomFS";
     }
     ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) override;
-    ResultCode Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info) override;
+    ResultCode Format(const Path& path) override;
     ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const override;
 
 private:

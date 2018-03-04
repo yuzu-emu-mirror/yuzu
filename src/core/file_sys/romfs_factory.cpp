@@ -23,7 +23,7 @@ ResultVal<std::unique_ptr<FileSystemBackend>> RomFS_Factory::Open(const Path& pa
     return MakeResult<std::unique_ptr<FileSystemBackend>>(std::move(archive));
 }
 
-ResultCode RomFS_Factory::Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info) {
+ResultCode RomFS_Factory::Format(const Path& path) {
     LOG_ERROR(Service_FS, "Unimplemented Format archive %s", GetName().c_str());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
