@@ -7,6 +7,7 @@
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "core/file_sys/disk_filesystem.h"
+#include "core/file_sys/errors.h"
 
 namespace FileSys {
 
@@ -22,8 +23,7 @@ ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::
     auto file = std::make_shared<FileUtil::IOFile>(full_path, mode == Mode::Read ? "rb" : "wb");
 
     if (!file->IsOpen()) {
-        // TODO(Subv): Find out the correct error code.
-        return ResultCode(-1);
+        return ERROR_PATH_NOT_FOUND;
     }
 
     return MakeResult<std::unique_ptr<StorageBackend>>(
@@ -100,8 +100,7 @@ u64 Disk_FileSystem::GetFreeSpaceSize() const {
 ResultVal<FileSys::EntryType> Disk_FileSystem::GetEntryType(const std::string& path) const {
     std::string full_path = base_directory + path;
     if (!FileUtil::Exists(full_path)) {
-        // TODO(Subv): Find out what this actually means
-        return ResultCode(ErrorModule::FS, 1);
+        return ERROR_PATH_NOT_FOUND;
     }
 
     // TODO(Subv): Find out the EntryType values
