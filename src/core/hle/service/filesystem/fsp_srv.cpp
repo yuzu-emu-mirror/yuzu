@@ -245,6 +245,7 @@ FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
     static const FunctionInfo functions[] = {
         {1, &FSP_SRV::Initalize, "Initalize"},
         {18, &FSP_SRV::MountSdCard, "MountSdCard"},
+        {22, &FSP_SRV::CreateSaveData, "CreateSaveData"},
         {51, &FSP_SRV::MountSaveData, "MountSaveData"},
         {200, &FSP_SRV::OpenDataStorageByCurrentProcess, "OpenDataStorageByCurrentProcess"},
         {202, nullptr, "OpenDataStorageByDataId"},
@@ -274,6 +275,19 @@ void FSP_SRV::Initalize(Kernel::HLERequestContext& ctx) {
 
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    auto save_struct = rp.PopRaw<std::array<u8, 0x40>>();
+    auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
+    u128 uid = rp.PopRaw<u128>();
+
+    LOG_WARNING(Service_FS, "(STUBBED) called uid = %016" PRIX64 "%016" PRIX64, uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
