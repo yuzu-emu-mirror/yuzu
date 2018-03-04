@@ -52,7 +52,9 @@ public:
         CoreTiming::ScheduleEvent(audio_ticks, audio_event);
     }
 
-    ~IAudioOut() = default;
+    ~IAudioOut() {
+        CoreTiming::UnscheduleEvent(audio_event, 0);
+    }
 
 private:
     void StartAudioOut(Kernel::HLERequestContext& ctx) {

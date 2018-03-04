@@ -45,7 +45,9 @@ public:
         // Start the audio event
         CoreTiming::ScheduleEvent(audio_ticks, audio_event);
     }
-    ~IAudioRenderer() = default;
+    ~IAudioRenderer() {
+        CoreTiming::UnscheduleEvent(audio_event, 0);
+    }
 
 private:
     void UpdateAudioCallback() {

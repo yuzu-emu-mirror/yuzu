@@ -45,6 +45,10 @@ public:
         CoreTiming::ScheduleEvent(pad_update_ticks, pad_update_event);
     }
 
+    ~IAppletResource() {
+        CoreTiming::UnscheduleEvent(pad_update_event, 0);
+    }
+
 private:
     void GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 1};
