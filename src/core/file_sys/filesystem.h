@@ -183,10 +183,9 @@ public:
     /**
      * Deletes the archive contents and then re-creates the base folder
      * @param path Path to the archive
-     * @param format_info Format information for the new archive
      * @return ResultCode of the operation, 0 on success
      */
-    virtual ResultCode Format(const Path& path, const FileSys::ArchiveFormatInfo& format_info) = 0;
+    virtual ResultCode Format(const Path& path) = 0;
 
     /**
      * Retrieves the format info about the archive with the specified path

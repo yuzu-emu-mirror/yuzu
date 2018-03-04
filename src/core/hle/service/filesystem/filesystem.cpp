@@ -43,6 +43,19 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
     return itr->second->Open(path);
 }
 
+ResultCode FormatFileSystem(Type type) {
+    LOG_TRACE(Service_FS, "Formatting FileSystem with type=%d", type);
+
+    auto itr = filesystem_map.find(type);
+    if (itr == filesystem_map.end()) {
+        // TODO(bunnei): Find a better error code for this
+        return ResultCode(-1);
+    }
+
+    FileSys::Path unused;
+    return itr->second->Format(unused);
+}
+
 void RegisterFileSystems() {
     filesystem_map.clear();
 

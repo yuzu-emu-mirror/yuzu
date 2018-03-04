@@ -2,12 +2,15 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
+#include "core/file_sys/filesystem.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/apm/apm.h"
+#include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 
 namespace Service {
@@ -416,9 +419,24 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
+    u128 uid = rp.PopRaw<u128>();
+
+    LOG_WARNING(Service, "(STUBBED) called uid = %016" PRIX64 "%016" PRIX64, uid[1], uid[0]);
+
     IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(RESULT_SUCCESS);
+
+    FileSys::Path unused;
+    auto savedata = FileSystem::OpenFileSystem(FileSystem::Type::SaveData, unused);
+    if (savedata.Failed()) {
+        // Create the save data and return an error indicating that the operation was performed.
+        FileSystem::FormatFileSystem(FileSystem::Type::SaveData);
+        // TODO(Subv): Find out the correct error code for this.
+        rb.Push(ResultCode(ErrorModule::FS, 40));
+    } else {
+        rb.Push(RESULT_SUCCESS);
+    }
+
     rb.Push<u64>(0);
 }
 
