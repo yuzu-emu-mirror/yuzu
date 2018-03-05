@@ -32,7 +32,12 @@ public:
 
         union {
             struct {
-                INSERT_PADDING_WORDS(0x6C0);
+                INSERT_PADDING_WORDS(0x585);
+                struct {
+                    u32 vertex_end_gl;
+                    u32 vertex_begin_gl;
+                } draw;
+                INSERT_PADDING_WORDS(0x139);
                 struct {
                     u32 query_address_high;
                     u32 query_address_low;
@@ -60,6 +65,9 @@ public:
 private:
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
+
+    /// Handles a write to the VERTEX_END_GL register, triggering a draw.
+    void DrawArrays();
 
     MemoryManager& memory_manager;
 };

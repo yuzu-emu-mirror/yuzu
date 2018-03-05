@@ -19,6 +19,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value) {
 #define MAXWELL3D_REG_INDEX(field_name) (offsetof(Regs, field_name) / sizeof(u32))
 
     switch (method) {
+    case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
+        DrawArrays();
+        break;
+    }
     case MAXWELL3D_REG_INDEX(query.query_get): {
         ProcessQueryGet();
         break;
@@ -47,5 +51,10 @@ void Maxwell3D::ProcessQueryGet() {
         UNIMPLEMENTED_MSG("Query mode %u not implemented", regs.query.query_get.mode.Value());
     }
 }
+
+void Maxwell3D::DrawArrays() {
+    LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+}
+
 } // namespace Engines
 } // namespace Tegra
