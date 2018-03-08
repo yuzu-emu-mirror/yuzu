@@ -7,6 +7,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -26,12 +27,46 @@ void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_s
     boost::range::remove_erase(connected_sessions, server_session);
 }
 
-HLERequestContext::HLERequestContext(SharedPtr<Kernel::ServerSession> server_session)
+HLERequestContext::HLERequestContext(SharedPtr<ServerSession> server_session)
     : server_session(std::move(server_session)) {
     cmd_buf[0] = 0;
 }
 
 HLERequestContext::~HLERequestContext() = default;
+
+SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
+                                                      const std::string& reason, u64 timeout,
+                                                      WakeupCallback&& callback) {
+    // Put the client thread to sleep until the wait event is signaled or the timeout expires.
+    thread->wakeup_callback =
+        [context = this, callback](ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                   SharedPtr<WaitObject> object, size_t index) mutable -> bool {
+        ASSERT(thread->status == THREADSTATUS_WAIT_HLE_EVENT);
+        callback(thread, *context, reason);
+
+        auto& process = thread->owner_process;
+        // We must copy the entire command buffer *plus* the entire static buffers area, since
+        // the translation might need to read from it in order to retrieve the StaticBuffer
+        // target addresses.
+        std::array<u32, IPC::COMMAND_BUFFER_LENGTH + 2 * IPC::MAX_STATIC_BUFFERS> cmd_buff;
+        Memory::ReadBlock(*process, thread->GetCommandBufferAddress(), cmd_buff.data(),
+                          cmd_buff.size() * sizeof(u32));
+        context->WriteToOutgoingCommandBuffer(cmd_buff.data(), *process, Kernel::g_handle_table);
+        // Copy the translated command buffer back into the thread's command buffer area.
+        Memory::WriteBlock(*process, thread->GetCommandBufferAddress(), cmd_buff.data(),
+                           cmd_buff.size() * sizeof(u32));
+    };
+
+    auto event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    thread->status = THREADSTATUS_WAIT_HLE_EVENT;
+    thread->wait_objects = {event};
+    event->AddWaitingThread(thread);
+
+    if (timeout > 0)
+        thread->WakeAfterDelay(timeout);
+
+    return event;
+}
 
 void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     IPC::RequestParser rp(src_cmdbuf);

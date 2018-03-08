@@ -129,7 +129,8 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
     bool resume = true;
 
     if (thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
-        thread->status == THREADSTATUS_WAIT_SYNCH_ALL || thread->status == THREADSTATUS_WAIT_ARB) {
+        thread->status == THREADSTATUS_WAIT_SYNCH_ALL || thread->status == THREADSTATUS_WAIT_ARB ||
+        thread->status == THREADSTATUS_WAIT_HLE_EVENT) {
 
         // Remove the thread from each of its waiting objects' waitlists
         for (auto& object : thread->wait_objects)

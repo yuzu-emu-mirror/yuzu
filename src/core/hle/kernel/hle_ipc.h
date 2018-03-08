@@ -6,6 +6,7 @@
 
 #include <array>
 #include <memory>
+#include <string>
 #include <vector>
 #include <boost/container/small_vector.hpp>
 #include "common/common_types.h"
@@ -13,7 +14,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/server_session.h"
-
+#include "core/hle/kernel/thread.h"
 namespace Service {
 class ServiceFrameworkBase;
 }
@@ -24,6 +25,8 @@ class Domain;
 class HandleTable;
 class HLERequestContext;
 class Process;
+class Thread;
+class Event;
 
 /**
  * Interface implemented by HLE Session handlers.
@@ -98,10 +101,26 @@ public:
      * Returns the session through which this request was made. This can be used as a map key to
      * access per-client data on services.
      */
-    const SharedPtr<Kernel::ServerSession>& Session() const {
+    SharedPtr<Kernel::ServerSession> Session() const {
         return server_session;
     }
 
+    using WakeupCallback = std::function<void(SharedPtr<Thread> thread, HLERequestContext& context,
+                                              ThreadWakeupReason reason)>;
+    /*
+     * Puts the specified guest thread to sleep until the returned event is signaled or until the
+     * specified timeout expires.
+     * @param thread Thread to be put to sleep.
+     * @param reason Reason for pausing the thread, to be used for debugging purposes.
+     * @param timeout Timeout in nanoseconds after which the thread will be awoken and the callback
+     * invoked with a Timeout reason.
+     * @param callback Callback to be invoked when the thread is resumed. This callback must write
+     * the entire command response once again, regardless of the state of it before this function
+     * was called.
+     * @returns Event that when signaled will resume the thread and call the callback function.
+     */
+    SharedPtr<Event> SleepClientThread(SharedPtr<Thread> thread, const std::string& reason,
+                                       u64 timeout, WakeupCallback&& callback);
     void ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming);
 
     /// Populates this context with data from the requesting process/thread.
