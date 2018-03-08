@@ -187,7 +187,8 @@ void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
     RegisterHotkey("Main Window", "Start Emulation");
     RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
-    RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence::Cancel, Qt::ApplicationShortcut);
+    RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
+                   Qt::ApplicationShortcut);
     LoadHotkeys();
 
     connect(GetHotkey("Main Window", "Load File", this), &QShortcut::activated, this,

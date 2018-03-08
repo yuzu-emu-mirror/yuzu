@@ -39,6 +39,7 @@ enum ThreadStatus {
     THREADSTATUS_RUNNING,        ///< Currently running
     THREADSTATUS_READY,          ///< Ready to run
     THREADSTATUS_WAIT_ARB,       ///< Waiting on an address arbiter
+    THREADSTATUS_WAIT_HLE_EVENT, ///< Waiting for hle event to finish
     THREADSTATUS_WAIT_SLEEP,     ///< Waiting due to a SleepThread SVC
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
     THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true

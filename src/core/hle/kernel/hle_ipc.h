@@ -14,7 +14,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/server_session.h"
-
+#include "core/hle/kernel/thread.h"
 namespace Service {
 class ServiceFrameworkBase;
 }
@@ -101,13 +101,12 @@ public:
      * Returns the session through which this request was made. This can be used as a map key to
      * access per-client data on services.
      */
-    const SharedPtr<Kernel::ServerSession>& Session() const {
+    SharedPtr<Kernel::ServerSession> Session() const {
         return server_session;
     }
 
     using WakeupCallback = std::function<void(SharedPtr<Thread> thread, HLERequestContext& context,
                                               ThreadWakeupReason reason)>;
-
     /*
      * Puts the specified guest thread to sleep until the returned event is signaled or until the
      * specified timeout expires.
