@@ -153,9 +153,9 @@ void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
     };
 
     // Map CodeSet segments
-    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::Code);
-    MapSegment(module_->rodata, VMAPermission::Read, MemoryState::Static);
-    MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::Static);
+    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::CodeStatic);
+    MapSegment(module_->rodata, VMAPermission::Read, MemoryState::CodeMutable);
+    MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::CodeMutable);
 }
 
 VAddr Process::GetLinearHeapAreaAddress() const {

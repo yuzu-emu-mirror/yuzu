@@ -18,8 +18,26 @@ namespace Kernel {
 
 static const char* GetMemoryStateName(MemoryState state) {
     static const char* names[] = {
-        "Free",   "Reserved",   "IO",      "Static", "Code",      "Private",
-        "Shared", "Continuous", "Aliased", "Alias",  "AliasCode", "Locked",
+        "Unmapped",
+        "Io",
+        "Normal",
+        "CodeStatic",
+        "CodeMutable",
+        "Heap",
+        "Shared",
+        "Unknown1"
+        "ModuleCodeStatic",
+        "ModuleCodeMutable",
+        "IpcBuffer0",
+        "Mapped",
+        "ThreadLocal",
+        "TransferMemoryIsolated",
+        "TransferMemory",
+        "ProcessMemory",
+        "Unknown2"
+        "IpcBuffer1",
+        "IpcBuffer3",
+        "KernelStack",
     };
 
     return names[(int)state];
@@ -142,7 +160,7 @@ VMManager::VMAIter VMManager::Unmap(VMAIter vma_handle) {
     VirtualMemoryArea& vma = vma_handle->second;
     vma.type = VMAType::Free;
     vma.permissions = VMAPermission::None;
-    vma.meminfo_state = MemoryState::Free;
+    vma.meminfo_state = MemoryState::Unmapped;
 
     vma.backing_block = nullptr;
     vma.offset = 0;

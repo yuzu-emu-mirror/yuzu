@@ -468,7 +468,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
         memory_info->base_address = 0;
         memory_info->permission = static_cast<u32>(VMAPermission::None);
         memory_info->size = 0;
-        memory_info->type = static_cast<u32>(MemoryState::Free);
+        memory_info->type = static_cast<u32>(MemoryState::Unmapped);
     } else {
         memory_info->base_address = vma->second.base;
         memory_info->permission = static_cast<u32>(vma->second.permissions);

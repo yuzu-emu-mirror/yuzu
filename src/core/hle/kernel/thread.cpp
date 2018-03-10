@@ -314,7 +314,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
         // TODO(Subv): Find the correct MemoryState for this region.
         vm_manager.MapMemoryBlock(Memory::TLS_AREA_VADDR + available_page * Memory::PAGE_SIZE,
                                   linheap_memory, offset, Memory::PAGE_SIZE,
-                                  MemoryState::ThreadLocalStorage);
+                                  MemoryState::ThreadLocal);
     }
 
     // Mark the slot as used
