@@ -95,7 +95,7 @@ private:
 
 class Process final : public Object {
 public:
-    static SharedPtr<Process> Create(std::string&& name, u64 program_id);
+    static SharedPtr<Process> Create(std::string&& name);
 
     std::string GetTypeName() const override {
         return "Process";
@@ -203,5 +203,4 @@ void ClearProcessList();
 /// Retrieves a process from the current list of processes.
 SharedPtr<Process> GetProcessById(u32 process_id);
 
-extern SharedPtr<Process> g_current_process;
 } // namespace Kernel

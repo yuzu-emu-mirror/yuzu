@@ -41,7 +41,6 @@ void Shutdown() {
     g_object_address_table.Clear();
 
     Kernel::ThreadingShutdown();
-    g_current_process = nullptr;
 
     Kernel::TimersShutdown();
     Kernel::ResourceLimitsShutdown();

@@ -7,6 +7,7 @@
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/core.h"
 #include "core/file_sys/disk_filesystem.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/hle/kernel/process.h"
@@ -46,7 +47,7 @@ ResultVal<ArchiveFormatInfo> SaveData_Factory::GetFormatInfo(const Path& path) c
 }
 
 std::string SaveData_Factory::GetFullPath() const {
-    u64 title_id = Kernel::g_current_process->program_id;
+    u64 title_id = Core::CurrentProcess()->program_id;
     // TODO(Subv): Somehow obtain this value.
     u32 user = 0;
     return Common::StringFromFormat("%ssave/%016" PRIX64 "/%08X/", nand_directory.c_str(), title_id,

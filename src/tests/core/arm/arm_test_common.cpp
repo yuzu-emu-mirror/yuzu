@@ -15,8 +15,8 @@ static Memory::PageTable* page_table = nullptr;
 TestEnvironment::TestEnvironment(bool mutable_memory_)
     : mutable_memory(mutable_memory_), test_memory(std::make_shared<TestMemory>(this)) {
 
-    Kernel::g_current_process = Kernel::Process::Create("", 0);
-    page_table = &Kernel::g_current_process->vm_manager.page_table;
+    Core::CurrentProcess() = Kernel::Process::Create("");
+    page_table = &Core::CurrentProcess()->vm_manager.page_table;
 
     page_table->pointers.fill(nullptr);
     page_table->special_regions.clear();

@@ -9,6 +9,7 @@
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
+#include "core/core.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/loader/nso.h"
@@ -142,7 +143,7 @@ VAddr AppLoader_NSO::LoadModule(const std::string& path, VAddr load_base) {
     // Load codeset for current process
     codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
-    Kernel::g_current_process->LoadModule(codeset, load_base);
+    Core::CurrentProcess()->LoadModule(codeset, load_base);
 
     return load_base + image_size;
 }
@@ -154,8 +155,6 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     if (!file.IsOpen()) {
         return ResultStatus::Error;
     }
-
-    process = Kernel::Process::Create("main", 0);
 
     // Load module
     LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);

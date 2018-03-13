@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/scheduler.h"
@@ -67,7 +68,7 @@ void Scheduler::SwitchContext(Thread* new_thread) {
         // Cancel any outstanding wakeup events for this thread
         new_thread->CancelWakeupTimer();
 
-        auto previous_process = Kernel::g_current_process;
+        auto previous_process = Core::CurrentProcess();
 
         current_thread = new_thread;
 
@@ -75,8 +76,8 @@ void Scheduler::SwitchContext(Thread* new_thread) {
         new_thread->status = THREADSTATUS_RUNNING;
 
         if (previous_process != current_thread->owner_process) {
-            Kernel::g_current_process = current_thread->owner_process;
-            SetCurrentPageTable(&Kernel::g_current_process->vm_manager.page_table);
+            Core::CurrentProcess() = current_thread->owner_process;
+            SetCurrentPageTable(&Core::CurrentProcess()->vm_manager.page_table);
         }
 
         cpu_core->LoadContext(new_thread->context);

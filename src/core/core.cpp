@@ -100,7 +100,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
         return init_result;
     }
 
-    const Loader::ResultStatus load_result{app_loader->Load(Kernel::g_current_process)};
+    const Loader::ResultStatus load_result{app_loader->Load(current_process)};
     if (Loader::ResultStatus::Success != load_result) {
         LOG_CRITICAL(Core, "Failed to load ROM (Error %i)!", load_result);
         System::Shutdown();
@@ -140,6 +140,8 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
     CoreTiming::Init();
+
+    current_process = Kernel::Process::Create("main");
 
     switch (Settings::values.cpu_core) {
     case Settings::CpuCore::Unicorn:

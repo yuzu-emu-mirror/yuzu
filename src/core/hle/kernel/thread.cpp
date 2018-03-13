@@ -94,7 +94,7 @@ void Thread::Stop() {
     u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
     u64 tls_slot =
         ((tls_address - Memory::TLS_AREA_VADDR) % Memory::PAGE_SIZE) / Memory::TLS_ENTRY_SIZE;
-    Kernel::g_current_process->tls_slots[tls_page].reset(tls_slot);
+    Core::CurrentProcess()->tls_slots[tls_page].reset(tls_slot);
 }
 
 void WaitCurrentThread_Sleep() {
@@ -353,7 +353,7 @@ void Thread::BoostPriority(u32 priority) {
 SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
                                   SharedPtr<Process> owner_process) {
     // Setup page table so we can write to memory
-    SetCurrentPageTable(&Kernel::g_current_process->vm_manager.page_table);
+    SetCurrentPageTable(&Core::CurrentProcess()->vm_manager.page_table);
 
     // Initialize new "main" thread
     auto thread_res = Thread::Create("main", entry_point, priority, 0, THREADPROCESSORID_0,

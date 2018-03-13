@@ -119,8 +119,6 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     }
     metadata.Print();
 
-    process = Kernel::Process::Create("main", metadata.GetTitleID());
-
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
@@ -135,6 +133,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         }
     }
 
+    process->program_id = metadata.GetTitleID();
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;
     process->resource_limit =

@@ -5,6 +5,7 @@
 #include <utility>
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
@@ -77,7 +78,7 @@ SharedPtr<Object> HandleTable::GetGeneric(Handle handle) const {
     if (handle == CurrentThread) {
         return GetCurrentThread();
     } else if (handle == CurrentProcess) {
-        return g_current_process;
+        return Core::CurrentProcess();
     }
 
     if (!IsValid(handle)) {

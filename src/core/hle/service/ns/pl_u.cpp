@@ -4,6 +4,7 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
+#include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ns/pl_u.h"
 
@@ -90,13 +91,13 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
         // dump. In the future, we need to replace this with a more robust solution.
 
         // Map backing memory for the font data
-        Kernel::g_current_process->vm_manager.MapMemoryBlock(SHARED_FONT_MEM_VADDR, shared_font, 0,
-                                                             SHARED_FONT_MEM_SIZE,
-                                                             Kernel::MemoryState::Shared);
+        Core::CurrentProcess()->vm_manager.MapMemoryBlock(SHARED_FONT_MEM_VADDR, shared_font, 0,
+                                                          SHARED_FONT_MEM_SIZE,
+                                                          Kernel::MemoryState::Shared);
 
         // Create shared font memory object
         shared_font_mem = Kernel::SharedMemory::Create(
-            Kernel::g_current_process, SHARED_FONT_MEM_SIZE, Kernel::MemoryPermission::ReadWrite,
+            Core::CurrentProcess(), SHARED_FONT_MEM_SIZE, Kernel::MemoryPermission::ReadWrite,
             Kernel::MemoryPermission::Read, SHARED_FONT_MEM_VADDR, Kernel::MemoryRegion::BASE,
             "PL_U:shared_font_mem");
     }

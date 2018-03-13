@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/shared_memory.h"
@@ -51,8 +52,8 @@ SharedPtr<SharedMemory> SharedMemory::Create(SharedPtr<Process> owner_process, u
         }
 
         // Refresh the address mappings for the current process.
-        if (Kernel::g_current_process != nullptr) {
-            Kernel::g_current_process->vm_manager.RefreshMemoryBlockMappings(linheap_memory.get());
+        if (Core::CurrentProcess() != nullptr) {
+            Core::CurrentProcess()->vm_manager.RefreshMemoryBlockMappings(linheap_memory.get());
         }
     } else {
         auto& vm_manager = shared_memory->owner_process->vm_manager;
