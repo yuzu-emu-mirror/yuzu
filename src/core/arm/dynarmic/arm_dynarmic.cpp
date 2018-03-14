@@ -8,6 +8,7 @@
 #include <dynarmic/A64/config.h>
 #include "common/logging/log.h"
 #include "core/arm/dynarmic/arm_dynarmic.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/svc.h"
@@ -106,7 +107,7 @@ public:
 };
 
 std::unique_ptr<Dynarmic::A64::Jit> MakeJit(const std::unique_ptr<ARM_Dynarmic_Callbacks>& cb) {
-    const auto page_table = Kernel::g_current_process->vm_manager.page_table.pointers.data();
+    const auto page_table = Core::CurrentProcess()->vm_manager.page_table.pointers.data();
 
     Dynarmic::A64::UserConfig config;
     config.callbacks = cb.get();

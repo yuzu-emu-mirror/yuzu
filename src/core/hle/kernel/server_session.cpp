@@ -4,6 +4,7 @@
 
 #include <tuple>
 
+#include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
@@ -91,7 +92,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
 
     Kernel::HLERequestContext context(this);
     u32* cmd_buf = (u32*)Memory::GetPointer(thread->GetTLSAddress());
-    context.PopulateFromIncomingCommandBuffer(cmd_buf, *Kernel::g_current_process,
+    context.PopulateFromIncomingCommandBuffer(cmd_buf, *Core::CurrentProcess(),
                                               Kernel::g_handle_table);
 
     ResultCode result = RESULT_SUCCESS;

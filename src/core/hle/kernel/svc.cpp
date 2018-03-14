@@ -8,6 +8,7 @@
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/string_util.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
@@ -31,7 +32,7 @@ namespace Kernel {
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
 static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
     LOG_TRACE(Kernel_SVC, "called, heap_size=0x%llx", heap_size);
-    auto& process = *g_current_process;
+    auto& process = *Core::CurrentProcess();
     CASCADE_RESULT(*heap_addr,
                    process.HeapAllocate(Memory::HEAP_VADDR, heap_size, VMAPermission::ReadWrite));
     return RESULT_SUCCESS;
@@ -46,14 +47,14 @@ static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state
 static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
               src_addr, size);
-    return g_current_process->MirrorMemory(dst_addr, src_addr, size);
+    return Core::CurrentProcess()->MirrorMemory(dst_addr, src_addr, size);
 }
 
 /// Unmaps a region that was previously mapped with svcMapMemory
 static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x%llx, src_addr=0x%llx, size=0x%llx", dst_addr,
               src_addr, size);
-    return g_current_process->UnmapMemory(dst_addr, src_addr, size);
+    return Core::CurrentProcess()->UnmapMemory(dst_addr, src_addr, size);
 }
 
 /// Connect to an OS service given the port name, returns the handle to the port to out
@@ -306,14 +307,14 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     LOG_TRACE(Kernel_SVC, "called info_id=0x%X, info_sub_id=0x%X, handle=0x%08X", info_id,
               info_sub_id, handle);
 
-    auto& vm_manager = g_current_process->vm_manager;
+    auto& vm_manager = Core::CurrentProcess()->vm_manager;
 
     switch (static_cast<GetInfoType>(info_id)) {
     case GetInfoType::AllowedCpuIdBitmask:
-        *result = g_current_process->allowed_processor_mask;
+        *result = Core::CurrentProcess()->allowed_processor_mask;
         break;
     case GetInfoType::AllowedThreadPrioBitmask:
-        *result = g_current_process->allowed_thread_priority_mask;
+        *result = Core::CurrentProcess()->allowed_thread_priority_mask;
         break;
     case GetInfoType::MapRegionBaseAddr:
         *result = vm_manager.GetMapRegionBaseAddr();
@@ -352,7 +353,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = vm_manager.GetNewMapRegionSize();
         break;
     case GetInfoType::IsVirtualAddressMemoryEnabled:
-        *result = g_current_process->is_virtual_address_memory_enabled;
+        *result = Core::CurrentProcess()->is_virtual_address_memory_enabled;
         break;
     case GetInfoType::TitleId:
         LOG_WARNING(Kernel_SVC, "(STUBBED) Attempted to query titleid, returned 0");
@@ -392,7 +393,7 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
 
     // Note: The kernel uses the current process's resource limit instead of
     // the one from the thread owner's resource limit.
-    SharedPtr<ResourceLimit>& resource_limit = g_current_process->resource_limit;
+    SharedPtr<ResourceLimit>& resource_limit = Core::CurrentProcess()->resource_limit;
     if (resource_limit->GetMaxResourceValue(ResourceTypes::PRIORITY) > priority) {
         return ERR_NOT_AUTHORIZED;
     }
@@ -435,7 +436,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
     case MemoryPermission::WriteExecute:
     case MemoryPermission::ReadWriteExecute:
     case MemoryPermission::DontCare:
-        return shared_memory->Map(g_current_process.get(), addr, permissions_type,
+        return shared_memory->Map(Core::CurrentProcess().get(), addr, permissions_type,
                                   MemoryPermission::DontCare);
     default:
         LOG_ERROR(Kernel_SVC, "unknown permissions=0x%08X", permissions);
@@ -451,7 +452,7 @@ static ResultCode UnmapSharedMemory(Handle shared_memory_handle, VAddr addr, u64
 
     SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
 
-    return shared_memory->Unmap(g_current_process.get(), addr);
+    return shared_memory->Unmap(Core::CurrentProcess().get(), addr);
 }
 
 /// Query process memory
@@ -463,7 +464,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
     }
     auto vma = process->vm_manager.FindVMA(addr);
     memory_info->attributes = 0;
-    if (vma == g_current_process->vm_manager.vma_map.end()) {
+    if (vma == Core::CurrentProcess()->vm_manager.vma_map.end()) {
         memory_info->base_address = 0;
         memory_info->permission = static_cast<u32>(VMAPermission::None);
         memory_info->size = 0;
@@ -487,16 +488,17 @@ static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAdd
 
 /// Exits the current process
 static void ExitProcess() {
-    LOG_INFO(Kernel_SVC, "Process %u exiting", g_current_process->process_id);
+    LOG_INFO(Kernel_SVC, "Process %u exiting", Core::CurrentProcess()->process_id);
 
-    ASSERT_MSG(g_current_process->status == ProcessStatus::Running, "Process has already exited");
+    ASSERT_MSG(Core::CurrentProcess()->status == ProcessStatus::Running,
+               "Process has already exited");
 
-    g_current_process->status = ProcessStatus::Exited;
+    Core::CurrentProcess()->status = ProcessStatus::Exited;
 
     // Stop all the process threads that are currently waiting for objects.
     auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
     for (auto& thread : thread_list) {
-        if (thread->owner_process != g_current_process)
+        if (thread->owner_process != Core::CurrentProcess())
             continue;
 
         if (thread == GetCurrentThread())
@@ -525,14 +527,14 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
         return ERR_OUT_OF_RANGE;
     }
 
-    SharedPtr<ResourceLimit>& resource_limit = g_current_process->resource_limit;
+    SharedPtr<ResourceLimit>& resource_limit = Core::CurrentProcess()->resource_limit;
     if (resource_limit->GetMaxResourceValue(ResourceTypes::PRIORITY) > priority) {
         return ERR_NOT_AUTHORIZED;
     }
 
     if (processor_id == THREADPROCESSORID_DEFAULT) {
         // Set the target CPU to the one specified in the process' exheader.
-        processor_id = g_current_process->ideal_processor;
+        processor_id = Core::CurrentProcess()->ideal_processor;
         ASSERT(processor_id != THREADPROCESSORID_DEFAULT);
     }
 
@@ -554,7 +556,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 
     CASCADE_RESULT(SharedPtr<Thread> thread,
                    Thread::Create(name, entry_point, priority, arg, processor_id, stack_top,
-                                  g_current_process));
+                                  Core::CurrentProcess()));
     CASCADE_RESULT(thread->guest_handle, g_handle_table.Create(thread));
     *out_handle = thread->guest_handle;
 

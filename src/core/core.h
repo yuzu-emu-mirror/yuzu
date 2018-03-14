@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include "common/common_types.h"
+#include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
@@ -112,6 +113,10 @@ public:
         return *scheduler;
     }
 
+    Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
+        return current_process;
+    }
+
     PerfStats perf_stats;
     FrameLimiter frame_limiter;
 
@@ -149,6 +154,8 @@ private:
     std::unique_ptr<Kernel::Scheduler> scheduler;
     std::unique_ptr<Tegra::GPU> gpu_core;
 
+    Kernel::SharedPtr<Kernel::Process> current_process;
+
     /// When true, signals that a reschedule should happen
     bool reschedule_pending{};
 
@@ -167,6 +174,10 @@ inline ARM_Interface& CPU() {
 
 inline TelemetrySession& Telemetry() {
     return System::GetInstance().TelemetrySession();
+}
+
+inline Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
+    return System::GetInstance().CurrentProcess();
 }
 
 } // namespace Core

@@ -7,6 +7,7 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/core.h"
 #include "core/hle/ipc.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
@@ -152,8 +153,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
     }
 
     u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
-    context.WriteToOutgoingCommandBuffer(cmd_buf, *Kernel::g_current_process,
-                                         Kernel::g_handle_table);
+    context.WriteToOutgoingCommandBuffer(cmd_buf, *Core::CurrentProcess(), Kernel::g_handle_table);
 
     return RESULT_SUCCESS;
 }

@@ -109,7 +109,7 @@ static std::set<MemoryHookPointer> GetSpecialHandlers(const PageTable& page_tabl
 }
 
 static std::set<MemoryHookPointer> GetSpecialHandlers(VAddr vaddr, u64 size) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     return GetSpecialHandlers(page_table, vaddr, size);
 }
 
@@ -202,7 +202,7 @@ bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr) {
 }
 
 bool IsValidVirtualAddress(const VAddr vaddr) {
-    return IsValidVirtualAddress(*Kernel::g_current_process, vaddr);
+    return IsValidVirtualAddress(*Core::CurrentProcess(), vaddr);
 }
 
 bool IsValidPhysicalAddress(const PAddr paddr) {
@@ -364,7 +364,7 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
 }
 
 void ReadBlock(const VAddr src_addr, void* dest_buffer, const size_t size) {
-    ReadBlock(*Kernel::g_current_process, src_addr, dest_buffer, size);
+    ReadBlock(*Core::CurrentProcess(), src_addr, dest_buffer, size);
 }
 
 void Write8(const VAddr addr, const u8 data) {
@@ -435,11 +435,11 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
 }
 
 void WriteBlock(const VAddr dest_addr, const void* src_buffer, const size_t size) {
-    WriteBlock(*Kernel::g_current_process, dest_addr, src_buffer, size);
+    WriteBlock(*Core::CurrentProcess(), dest_addr, src_buffer, size);
 }
 
 void ZeroBlock(const VAddr dest_addr, const size_t size) {
-    const auto& process = *Kernel::g_current_process;
+    const auto& process = *Core::CurrentProcess();
 
     size_t remaining_size = size;
     size_t page_index = dest_addr >> PAGE_BITS;
@@ -480,7 +480,7 @@ void ZeroBlock(const VAddr dest_addr, const size_t size) {
 }
 
 void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
-    const auto& process = *Kernel::g_current_process;
+    const auto& process = *Core::CurrentProcess();
 
     size_t remaining_size = size;
     size_t page_index = src_addr >> PAGE_BITS;
@@ -526,7 +526,7 @@ void CopyBlock(VAddr dest_addr, VAddr src_addr, const size_t size) {
 
 template <>
 boost::optional<u8> ReadSpecial<u8>(VAddr addr) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u8)))
         if (auto result = handler->Read8(addr))
             return *result;
@@ -535,7 +535,7 @@ boost::optional<u8> ReadSpecial<u8>(VAddr addr) {
 
 template <>
 boost::optional<u16> ReadSpecial<u16>(VAddr addr) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u16)))
         if (auto result = handler->Read16(addr))
             return *result;
@@ -544,7 +544,7 @@ boost::optional<u16> ReadSpecial<u16>(VAddr addr) {
 
 template <>
 boost::optional<u32> ReadSpecial<u32>(VAddr addr) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u32)))
         if (auto result = handler->Read32(addr))
             return *result;
@@ -553,7 +553,7 @@ boost::optional<u32> ReadSpecial<u32>(VAddr addr) {
 
 template <>
 boost::optional<u64> ReadSpecial<u64>(VAddr addr) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u64)))
         if (auto result = handler->Read64(addr))
             return *result;
@@ -562,7 +562,7 @@ boost::optional<u64> ReadSpecial<u64>(VAddr addr) {
 
 template <>
 bool WriteSpecial<u8>(VAddr addr, const u8 data) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u8)))
         if (handler->Write8(addr, data))
             return true;
@@ -571,7 +571,7 @@ bool WriteSpecial<u8>(VAddr addr, const u8 data) {
 
 template <>
 bool WriteSpecial<u16>(VAddr addr, const u16 data) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u16)))
         if (handler->Write16(addr, data))
             return true;
@@ -580,7 +580,7 @@ bool WriteSpecial<u16>(VAddr addr, const u16 data) {
 
 template <>
 bool WriteSpecial<u32>(VAddr addr, const u32 data) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u32)))
         if (handler->Write32(addr, data))
             return true;
@@ -589,7 +589,7 @@ bool WriteSpecial<u32>(VAddr addr, const u32 data) {
 
 template <>
 bool WriteSpecial<u64>(VAddr addr, const u64 data) {
-    const PageTable& page_table = Kernel::g_current_process->vm_manager.page_table;
+    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
     for (const auto& handler : GetSpecialHandlers(page_table, addr, sizeof(u64)))
         if (handler->Write64(addr, data))
             return true;
@@ -632,7 +632,7 @@ boost::optional<VAddr> PhysicalToVirtualAddress(const PAddr addr) {
     } else if (addr >= VRAM_PADDR && addr < VRAM_PADDR_END) {
         return addr - VRAM_PADDR + VRAM_VADDR;
     } else if (addr >= FCRAM_PADDR && addr < FCRAM_PADDR_END) {
-        return addr - FCRAM_PADDR + Kernel::g_current_process->GetLinearHeapAreaAddress();
+        return addr - FCRAM_PADDR + Core::CurrentProcess()->GetLinearHeapAreaAddress();
     } else if (addr >= DSP_RAM_PADDR && addr < DSP_RAM_PADDR_END) {
         return addr - DSP_RAM_PADDR + DSP_RAM_VADDR;
     } else if (addr >= IO_AREA_PADDR && addr < IO_AREA_PADDR_END) {

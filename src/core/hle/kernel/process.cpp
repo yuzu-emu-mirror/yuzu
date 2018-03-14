@@ -31,14 +31,14 @@ CodeSet::~CodeSet() {}
 
 u32 Process::next_process_id;
 
-SharedPtr<Process> Process::Create(std::string&& name, u64 program_id) {
+SharedPtr<Process> Process::Create(std::string&& name) {
     SharedPtr<Process> process(new Process);
 
     process->name = std::move(name);
     process->flags.raw = 0;
     process->flags.memory_region.Assign(MemoryRegion::APPLICATION);
     process->status = ProcessStatus::Created;
-    process->program_id = program_id;
+    process->program_id = 0;
 
     process_list.push_back(process);
     return process;
@@ -319,5 +319,4 @@ SharedPtr<Process> GetProcessById(u32 process_id) {
     return *itr;
 }
 
-SharedPtr<Process> g_current_process;
 } // namespace Kernel
