@@ -33,10 +33,6 @@ enum class HandleType : u32 {
     ServerSession,
 };
 
-enum {
-    DEFAULT_STACK_SIZE = 0x10000,
-};
-
 enum class ResetType {
     OneShot,
     Sticky,

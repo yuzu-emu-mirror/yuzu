@@ -165,7 +165,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->address_mappings = default_address_mappings;
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
-    process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Kernel::DEFAULT_STACK_SIZE);
+    process->Run(Memory::PROCESS_IMAGE_VADDR, 48, Memory::STACK_SIZE);
 
     is_loaded = true;
     return ResultStatus::Success;
