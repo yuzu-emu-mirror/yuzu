@@ -136,6 +136,10 @@ void ARM_Dynarmic::MapBackingMemory(u64 address, size_t size, u8* memory,
     inner_unicorn.MapBackingMemory(address, size, memory, perms);
 }
 
+void ARM_Dynarmic::UnmapMemory(u64 address, size_t size) {
+    inner_unicorn.UnmapMemory(address, size);
+}
+
 void ARM_Dynarmic::SetPC(u64 pc) {
     jit->SetPC(pc);
 }

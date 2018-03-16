@@ -184,6 +184,9 @@ ResultCode VMManager::UnmapRange(VAddr target, u64 size) {
     }
 
     ASSERT(FindVMA(target)->second.size >= size);
+
+    Core::CPU().UnmapMemory(target, size);
+
     return RESULT_SUCCESS;
 }
 
