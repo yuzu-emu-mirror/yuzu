@@ -32,7 +32,7 @@ public:
             {0, &IRequest::GetRequestState, "GetRequestState"},
             {1, &IRequest::GetResult, "GetResult"},
             {2, &IRequest::GetSystemEventReadableHandles, "GetSystemEventReadableHandles"},
-            {3, nullptr, "Cancel"},
+            {3, &IRequest::Cancel, "Cancel"},
             {4, nullptr, "Submit"},
             {5, nullptr, "SetRequirement"},
             {6, nullptr, "SetRequirementPreset"},
@@ -79,6 +79,11 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event1, event2);
+    }
+    void Cancel(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
     }
 
     Kernel::SharedPtr<Kernel::Event> event1, event2;
