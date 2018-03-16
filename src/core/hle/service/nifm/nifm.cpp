@@ -32,7 +32,7 @@ public:
             {0, &IRequest::GetRequestState, "GetRequestState"},
             {1, &IRequest::GetResult, "GetResult"},
             {2, &IRequest::GetSystemEventReadableHandles, "GetSystemEventReadableHandles"},
-            {3, nullptr, "Cancel"},
+            {3, &IRequest::Cancel, "Cancel"},
             {4, nullptr, "Submit"},
             {5, nullptr, "SetRequirement"},
             {6, nullptr, "SetRequirementPreset"},
@@ -80,6 +80,11 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event1, event2);
     }
+    void Cancel(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
 
     Kernel::SharedPtr<Kernel::Event> event1, event2;
 };
@@ -96,13 +101,56 @@ public:
     }
 };
 
+class IGeneralService final : public ServiceFramework<IGeneralService> {
+public:
+    IGeneralService();
+
+private:
+    void GetClientId(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(0);
+    }
+    void CreateScanRequest(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IScanRequest>();
+
+        LOG_DEBUG(Service_NIFM, "called");
+    }
+    void CreateRequest(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IRequest>();
+
+        LOG_DEBUG(Service_NIFM, "called");
+    }
+    void RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+    void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<INetworkProfile>();
+
+        LOG_DEBUG(Service_NIFM, "called");
+    }
+};
+
 IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
     static const FunctionInfo functions[] = {
         {1, &IGeneralService::GetClientId, "GetClientId"},
         {2, &IGeneralService::CreateScanRequest, "CreateScanRequest"},
         {4, &IGeneralService::CreateRequest, "CreateRequest"},
-        {6, nullptr, "GetCurrentNetworkProfile"},
-        {7, nullptr, "EnumerateNetworkInterfaces"},
+        {5, nullptr, "GetCurrentNetworkProfile"},
+        {6, nullptr, "EnumerateNetworkInterfaces"},
+        {7, nullptr, "EnumerateNetworkProfiles"},
         {8, nullptr, "GetNetworkProfile"},
         {9, nullptr, "SetNetworkProfile"},
         {10, &IGeneralService::RemoveNetworkProfile, "RemoveNetworkProfile"},
@@ -137,50 +185,28 @@ IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
     RegisterHandlers(functions);
 }
 
-void IGeneralService::GetClientId(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NIFM, "(STUBBED) called");
-    IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0);
-}
-
-void IGeneralService::CreateScanRequest(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IScanRequest>();
-
+    rb.PushIpcInterface<IGeneralService>();
     LOG_DEBUG(Service_NIFM, "called");
 }
 
-void IGeneralService::CreateRequest(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateGeneralService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IRequest>();
-
+    rb.PushIpcInterface<IGeneralService>();
     LOG_DEBUG(Service_NIFM, "called");
 }
 
-void IGeneralService::RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NIFM, "(STUBBED) called");
-    IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(RESULT_SUCCESS);
-}
-
-void IGeneralService::CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<INetworkProfile>();
-
-    LOG_DEBUG(Service_NIFM, "called");
-}
+Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
+    : ServiceFramework(name), module(std::move(module)) {}
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<NIFM_A>()->InstallAsService(service_manager);
-    std::make_shared<NIFM_S>()->InstallAsService(service_manager);
-    std::make_shared<NIFM_U>()->InstallAsService(service_manager);
+    auto module = std::make_shared<Module>();
+    std::make_shared<NIFM_A>(module)->InstallAsService(service_manager);
+    std::make_shared<NIFM_S>(module)->InstallAsService(service_manager);
+    std::make_shared<NIFM_U>(module)->InstallAsService(service_manager);
 }
 
 } // namespace NIFM
