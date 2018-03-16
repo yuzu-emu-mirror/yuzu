@@ -9,16 +9,18 @@
 namespace Service {
 namespace NIFM {
 
-class IGeneralService final : public ServiceFramework<IGeneralService> {
+class Module final {
 public:
-    IGeneralService();
+    class Interface : public ServiceFramework<Interface> {
+    public:
+        Interface(std::shared_ptr<Module> module, const char* name);
 
-private:
-    void GetClientId(Kernel::HLERequestContext& ctx);
-    void CreateScanRequest(Kernel::HLERequestContext& ctx);
-    void CreateRequest(Kernel::HLERequestContext& ctx);
-    void RemoveNetworkProfile(Kernel::HLERequestContext& ctx);
-    void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx);
+        void CreateGeneralServiceOld(Kernel::HLERequestContext& ctx);
+        void CreateGeneralService(Kernel::HLERequestContext& ctx);
+
+    protected:
+        std::shared_ptr<Module> module;
+    };
 };
 
 void InstallInterfaces(SM::ServiceManager& service_manager);

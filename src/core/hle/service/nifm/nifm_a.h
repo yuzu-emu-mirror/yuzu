@@ -4,20 +4,14 @@
 
 #pragma once
 
-#include "core/hle/kernel/hle_ipc.h"
-#include "core/hle/service/service.h"
+#include "core/hle/service/nifm/nifm.h"
 
 namespace Service {
 namespace NIFM {
 
-class NIFM_A final : public ServiceFramework<NIFM_A> {
+class NIFM_A final : public Module::Interface {
 public:
-    NIFM_A();
-    ~NIFM_A() = default;
-
-private:
-    void CreateGeneralServiceOld(Kernel::HLERequestContext& ctx);
-    void CreateGeneralService(Kernel::HLERequestContext& ctx);
+    explicit NIFM_A(std::shared_ptr<Module> module);
 };
 
 } // namespace NIFM
