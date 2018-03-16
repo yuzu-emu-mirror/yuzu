@@ -183,6 +183,8 @@ ResultVal<VAddr> Process::HeapAllocate(VAddr target, u64 size, VMAPermission per
         // Initialize heap
         heap_memory = std::make_shared<std::vector<u8>>();
         heap_start = heap_end = target;
+    } else {
+        vm_manager.UnmapRange(heap_start, heap_end - heap_start);
     }
 
     // If necessary, expand backing vector to cover new heap extents.
@@ -202,7 +204,7 @@ ResultVal<VAddr> Process::HeapAllocate(VAddr target, u64 size, VMAPermission per
                                                        size, MemoryState::Heap));
     vm_manager.Reprotect(vma, perms);
 
-    heap_used += size;
+    heap_used = size;
     memory_region->used += size;
 
     return MakeResult<VAddr>(heap_end - size);
