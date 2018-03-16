@@ -291,7 +291,7 @@ ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
 
     CASCADE_RESULT(auto new_vma,
                    vm_manager.MapMemoryBlock(dst_addr, backing_block, backing_block_offset, size,
-                                             vma->second.meminfo_state));
+                                             MemoryState::Mapped));
     // Protect mirror with permissions from old region
     vm_manager.Reprotect(new_vma, vma->second.permissions);
     // Remove permissions from old region
