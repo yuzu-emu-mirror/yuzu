@@ -30,9 +30,37 @@ public:
             Sync = 1,
         };
 
+        static constexpr size_t MaxShaderProgram = 6;
+        enum class ShaderProgram : u32 {
+            VertexA = 0,
+            VertexB = 1,
+            TesselationControl = 2,
+            TesselationEval = 3,
+            Geometry = 4,
+            Fragment = 5,
+        };
+
+        enum class ShaderType : u32 {
+            Vertex = 0,
+            TesselationControl = 1,
+            TesselationEval = 2,
+            Geometry = 3,
+            Fragment = 4,
+        };
+
         union {
             struct {
-                INSERT_PADDING_WORDS(0x585);
+                INSERT_PADDING_WORDS(0x582);
+                struct {
+                    u32 code_address_high;
+                    u32 code_address_low;
+
+                    GPUVAddr CodeAddress() const {
+                        return static_cast<GPUVAddr>(
+                            (static_cast<GPUVAddr>(code_address_high) << 32) | code_address_low);
+                    }
+                } code_address;
+                INSERT_PADDING_WORDS(1);
                 struct {
                     u32 vertex_end_gl;
                     u32 vertex_begin_gl;
@@ -54,7 +82,28 @@ public:
                             (static_cast<GPUVAddr>(query_address_high) << 32) | query_address_low);
                     }
                 } query;
-                INSERT_PADDING_WORDS(0x772);
+
+                INSERT_PADDING_WORDS(0x13C);
+
+                struct {
+                    union {
+                        BitField<0, 1, u32> enable;
+                        BitField<4, 4, ShaderProgram> program;
+                    };
+                    u32 start_id;
+                    INSERT_PADDING_WORDS(1);
+                    u32 gpr_alloc;
+                    ShaderType type;
+                    INSERT_PADDING_WORDS(9);
+                } shader_config[6];
+
+                INSERT_PADDING_WORDS(0x5D0);
+
+                struct {
+                    u32 shader_code_call;
+                    u32 shader_code_args;
+                } shader_code;
+                INSERT_PADDING_WORDS(0x10);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -76,7 +125,11 @@ private:
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(code_address, 0x582);
+ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(query, 0x6C0);
+ASSERT_REG_POSITION(shader_config[0], 0x800);
+ASSERT_REG_POSITION(shader_code, 0xE24);
 
 #undef ASSERT_REG_POSITION
 
