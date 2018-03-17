@@ -39,6 +39,8 @@ public:
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t MaxShaderProgram = 6;
         static constexpr size_t MaxShaderType = 5;
+        // Maximum number of const buffers per shader stage.
+        static constexpr size_t MaxConstBuffers = 16;
 
         enum class QueryMode : u32 {
             Write = 0,
@@ -146,12 +148,18 @@ public:
                     u32 cb_address_low;
                     u32 cb_pos;
                     u32 cb_data[NumCBData];
+
+                    GPUVAddr BufferAddress() const {
+                        return static_cast<GPUVAddr>(
+                            (static_cast<GPUVAddr>(cb_address_high) << 32) | cb_address_low);
+                    }
                 } const_buffer;
 
                 INSERT_PADDING_WORDS(0x10);
 
                 struct {
                     union {
+                        u32 raw_config;
                         BitField<0, 1, u32> valid;
                         BitField<4, 5, u32> index;
                     };
@@ -167,14 +175,25 @@ public:
     static_assert(sizeof(Regs) == Regs::NUM_REGS * sizeof(u32), "Maxwell3D Regs has wrong size");
 
     struct State {
-        struct ShaderInfo {
+        struct ConstBufferInfo {
+            GPUVAddr address;
+            u32 index;
+            u32 size;
+            bool enabled;
+        };
+
+        struct ShaderProgramInfo {
             Regs::ShaderType type;
             Regs::ShaderProgram program;
             GPUVAddr address;
-            GPUVAddr cb_address;
         };
 
-        std::array<ShaderInfo, Regs::MaxShaderProgram> shaders;
+        struct ShaderStageInfo {
+            std::array<ConstBufferInfo, Regs::MaxConstBuffers> const_buffers;
+        };
+
+        std::array<ShaderStageInfo, Regs::MaxShaderType> shader_stages;
+        std::array<ShaderProgramInfo, Regs::MaxShaderProgram> shader_programs;
     };
 
     State state{};
@@ -184,6 +203,9 @@ private:
 
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
+
+    /// Handles a write to the CB_BIND register.
+    void ProcessCBBind(Regs::ShaderType stage);
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();

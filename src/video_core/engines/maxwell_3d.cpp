@@ -43,6 +43,26 @@ void Maxwell3D::WriteReg(u32 method, u32 value) {
         ASSERT_MSG(regs.code_address.CodeAddress() == 0, "Unexpected CODE_ADDRESS register value.");
         break;
     }
+    case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
+        ProcessCBBind(Regs::ShaderType::Vertex);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[1].raw_config): {
+        ProcessCBBind(Regs::ShaderType::TesselationControl);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[2].raw_config): {
+        ProcessCBBind(Regs::ShaderType::TesselationEval);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[3].raw_config): {
+        ProcessCBBind(Regs::ShaderType::Geometry);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[4].raw_config): {
+        ProcessCBBind(Regs::ShaderType::Fragment);
+        break;
+    }
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
         DrawArrays();
         break;
@@ -95,11 +115,10 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     auto shader_type = static_cast<Regs::ShaderType>(parameters[3]);
     GPUVAddr cb_address = parameters[4] << 8;
 
-    auto& shader = state.shaders[static_cast<size_t>(shader_program)];
+    auto& shader = state.shader_programs[static_cast<size_t>(shader_program)];
     shader.program = shader_program;
     shader.type = shader_type;
     shader.address = address;
-    shader.cb_address = cb_address;
 
     // Perform the same operations as the real macro code.
     // TODO(Subv): Early exit if register 0xD1C + shader_program contains the same as params[1].
@@ -118,6 +137,21 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     // shader. It's likely that these are the constants for the shader.
     regs.cb_bind[static_cast<size_t>(shader_type)].valid.Assign(1);
     regs.cb_bind[static_cast<size_t>(shader_type)].index.Assign(1);
+
+    ProcessCBBind(shader_type);
+}
+
+void Maxwell3D::ProcessCBBind(Regs::ShaderType stage) {
+    // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
+    auto& shader = state.shader_stages[static_cast<size_t>(stage)];
+    auto& bind_data = regs.cb_bind[static_cast<size_t>(stage)];
+
+    auto& buffer = shader.const_buffers[bind_data.index];
+
+    buffer.enabled = bind_data.valid.Value() != 0;
+    buffer.index = bind_data.index;
+    buffer.address = regs.const_buffer.BufferAddress();
+    buffer.size = regs.const_buffer.cb_size;
 }
 
 } // namespace Engines
