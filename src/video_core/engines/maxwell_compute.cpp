@@ -8,6 +8,7 @@ namespace Tegra {
 namespace Engines {
 
 void MaxwellCompute::WriteReg(u32 method, u32 value) {}
+void MaxwellCompute::CallMethod(u32 method, const std::vector<u32>& parameters) {}
 
 } // namespace Engines
 } // namespace Tegra

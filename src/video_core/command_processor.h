@@ -34,6 +34,4 @@ static_assert(std::is_standard_layout<CommandHeader>::value == true,
               "CommandHeader does not use standard layout");
 static_assert(sizeof(CommandHeader) == sizeof(u32), "CommandHeader has incorrect size!");
 
-void ProcessCommandList(VAddr address, u32 size);
-
 } // namespace Tegra

@@ -8,7 +8,22 @@
 namespace Tegra {
 namespace Engines {
 
+const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
+    {0xE24, {"PrepareShader", 5, &Maxwell3D::PrepareShader}},
+};
+
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
+
+void Maxwell3D::CallMethod(u32 method, const std::vector<u32>& parameters) {
+    auto itr = method_handlers.find(method);
+    if (itr == method_handlers.end()) {
+        LOG_ERROR(HW_GPU, "Unhandled method call %08X", method);
+        return;
+    }
+
+    ASSERT(itr->second.arguments == parameters.size());
+    (this->*itr->second.handler)(parameters);
+}
 
 void Maxwell3D::WriteReg(u32 method, u32 value) {
     ASSERT_MSG(method < Regs::NUM_REGS,
@@ -55,6 +70,8 @@ void Maxwell3D::ProcessQueryGet() {
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
 }
+
+void Maxwell3D::PrepareShader(const std::vector<u32>& parameters) {}
 
 } // namespace Engines
 } // namespace Tegra
