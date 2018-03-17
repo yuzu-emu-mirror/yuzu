@@ -44,23 +44,23 @@ void Maxwell3D::WriteReg(u32 method, u32 value) {
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
-        ProcessCBBind(Regs::ShaderType::Vertex);
+        ProcessCBBind(Regs::ShaderStage::Vertex);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[1].raw_config): {
-        ProcessCBBind(Regs::ShaderType::TesselationControl);
+        ProcessCBBind(Regs::ShaderStage::TesselationControl);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[2].raw_config): {
-        ProcessCBBind(Regs::ShaderType::TesselationEval);
+        ProcessCBBind(Regs::ShaderStage::TesselationEval);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[3].raw_config): {
-        ProcessCBBind(Regs::ShaderType::Geometry);
+        ProcessCBBind(Regs::ShaderStage::Geometry);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[4].raw_config): {
-        ProcessCBBind(Regs::ShaderType::Fragment);
+        ProcessCBBind(Regs::ShaderStage::Fragment);
         break;
     }
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
@@ -106,18 +106,18 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
      * [0] = Shader Program.
      * [1] = Unknown, presumably the shader id.
      * [2] = Offset to the start of the shader, after the 0x30 bytes header.
-     * [3] = Shader Type.
+     * [3] = Shader Stage.
      * [4] = Const Buffer Address >> 8.
      */
     auto shader_program = static_cast<Regs::ShaderProgram>(parameters[0]);
     // TODO(Subv): This address is probably an offset from the CODE_ADDRESS register.
     GPUVAddr address = parameters[2];
-    auto shader_type = static_cast<Regs::ShaderType>(parameters[3]);
+    auto shader_stage = static_cast<Regs::ShaderStage>(parameters[3]);
     GPUVAddr cb_address = parameters[4] << 8;
 
     auto& shader = state.shader_programs[static_cast<size_t>(shader_program)];
     shader.program = shader_program;
-    shader.type = shader_type;
+    shader.stage = shader_stage;
     shader.address = address;
 
     // Perform the same operations as the real macro code.
@@ -135,13 +135,13 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
 
     // Write a hardcoded 0x11 to CB_BIND, this binds the current const buffer to buffer c1[] in the
     // shader. It's likely that these are the constants for the shader.
-    regs.cb_bind[static_cast<size_t>(shader_type)].valid.Assign(1);
-    regs.cb_bind[static_cast<size_t>(shader_type)].index.Assign(1);
+    regs.cb_bind[static_cast<size_t>(shader_stage)].valid.Assign(1);
+    regs.cb_bind[static_cast<size_t>(shader_stage)].index.Assign(1);
 
-    ProcessCBBind(shader_type);
+    ProcessCBBind(shader_stage);
 }
 
-void Maxwell3D::ProcessCBBind(Regs::ShaderType stage) {
+void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
     // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
     auto& shader = state.shader_stages[static_cast<size_t>(stage)];
     auto& bind_data = regs.cb_bind[static_cast<size_t>(stage)];

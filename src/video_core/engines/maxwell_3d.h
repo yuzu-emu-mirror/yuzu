@@ -38,7 +38,7 @@ public:
         static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t MaxShaderProgram = 6;
-        static constexpr size_t MaxShaderType = 5;
+        static constexpr size_t MaxShaderStage = 5;
         // Maximum number of const buffers per shader stage.
         static constexpr size_t MaxConstBuffers = 16;
 
@@ -56,7 +56,7 @@ public:
             Fragment = 5,
         };
 
-        enum class ShaderType : u32 {
+        enum class ShaderStage : u32 {
             Vertex = 0,
             TesselationControl = 1,
             TesselationEval = 2,
@@ -136,7 +136,7 @@ public:
                     u32 start_id;
                     INSERT_PADDING_WORDS(1);
                     u32 gpr_alloc;
-                    ShaderType type;
+                    ShaderStage type;
                     INSERT_PADDING_WORDS(9);
                 } shader_config[MaxShaderProgram];
 
@@ -164,7 +164,7 @@ public:
                         BitField<4, 5, u32> index;
                     };
                     INSERT_PADDING_WORDS(7);
-                } cb_bind[MaxShaderType];
+                } cb_bind[MaxShaderStage];
 
                 INSERT_PADDING_WORDS(0x50A);
             };
@@ -183,7 +183,7 @@ public:
         };
 
         struct ShaderProgramInfo {
-            Regs::ShaderType type;
+            Regs::ShaderStage stage;
             Regs::ShaderProgram program;
             GPUVAddr address;
         };
@@ -192,7 +192,7 @@ public:
             std::array<ConstBufferInfo, Regs::MaxConstBuffers> const_buffers;
         };
 
-        std::array<ShaderStageInfo, Regs::MaxShaderType> shader_stages;
+        std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
         std::array<ShaderProgramInfo, Regs::MaxShaderProgram> shader_programs;
     };
 
@@ -205,7 +205,7 @@ private:
     void ProcessQueryGet();
 
     /// Handles a write to the CB_BIND register.
-    void ProcessCBBind(Regs::ShaderType stage);
+    void ProcessCBBind(Regs::ShaderStage stage);
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
