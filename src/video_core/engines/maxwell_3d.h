@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <unordered_map>
 #include <vector>
 #include "common/bit_field.h"
@@ -133,7 +134,7 @@ public:
                     u32 gpr_alloc;
                     ShaderType type;
                     INSERT_PADDING_WORDS(9);
-                } shader_config[6];
+                } shader_config[MaxShaderProgram];
 
                 INSERT_PADDING_WORDS(0x5D0);
 
@@ -149,6 +150,19 @@ public:
 
     static_assert(sizeof(Regs) == Regs::NUM_REGS * sizeof(u32), "Maxwell3D Regs has wrong size");
 
+    struct State {
+        struct ShaderInfo {
+            Regs::ShaderType type;
+            Regs::ShaderProgram program;
+            GPUVAddr begin_address;
+            GPUVAddr end_address;
+        };
+
+        std::array<ShaderInfo, Regs::MaxShaderProgram> shaders;
+    };
+
+    State state;
+
 private:
     MemoryManager& memory_manager;
 
@@ -159,7 +173,7 @@ private:
     void DrawArrays();
 
     /// Method call handlers
-    void PrepareShader(const std::vector<u32>& parameters);
+    void SetShader(const std::vector<u32>& parameters);
 
     struct MethodInfo {
         const char* name;
