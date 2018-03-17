@@ -36,9 +36,7 @@ u32 BufferQueue::DequeueBuffer(u32 pixel_format, u32 width, u32 height) {
             return false;
 
         // Make sure that the parameters match.
-        auto& igbp_buffer = buffer.igbp_buffer;
-        return igbp_buffer.format == pixel_format && igbp_buffer.width == width &&
-               igbp_buffer.height == height;
+        return buffer.igbp_buffer.width == width && buffer.igbp_buffer.height == height;
     });
     if (itr == queue.end()) {
         LOG_CRITICAL(Service_NVDRV, "no free buffers for pixel_format=%d, width=%d, height=%d",
