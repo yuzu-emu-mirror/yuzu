@@ -19,6 +19,14 @@ void Maxwell3D::WriteReg(u32 method, u32 value) {
 #define MAXWELL3D_REG_INDEX(field_name) (offsetof(Regs, field_name) / sizeof(u32))
 
     switch (method) {
+    case MAXWELL3D_REG_INDEX(code_address.code_address_high):
+    case MAXWELL3D_REG_INDEX(code_address.code_address_low): {
+        // Note: For some reason games (like Puyo Puyo Tetris) seem to write 0 to the CODE_ADDRESS
+        // register, we do not currently know if that's intended or a bug, so we assert it lest
+        // stuff breaks in other places (like the shader address calculation).
+        ASSERT_MSG(regs.code_address.CodeAddress() == 0, "Unexpected CODE_ADDRESS register value.");
+        break;
+    }
     case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
         DrawArrays();
         break;
