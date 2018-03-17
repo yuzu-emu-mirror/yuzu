@@ -34,12 +34,14 @@ public:
     struct Regs {
         static constexpr size_t NUM_REGS = 0xE36;
 
+        static constexpr size_t NumVertexArrays = 32;
+        static constexpr size_t MaxShaderProgram = 6;
+
         enum class QueryMode : u32 {
             Write = 0,
             Sync = 1,
         };
 
-        static constexpr size_t MaxShaderProgram = 6;
         enum class ShaderProgram : u32 {
             VertexA = 0,
             VertexB = 1,
@@ -92,7 +94,34 @@ public:
                     }
                 } query;
 
-                INSERT_PADDING_WORDS(0x13C);
+                INSERT_PADDING_WORDS(0x3C);
+
+                struct {
+                    union {
+                        BitField<0, 12, u32> stride;
+                        BitField<12, 1, u32> enable;
+                    };
+                    u32 start_high;
+                    u32 start_low;
+                    u32 divisor;
+
+                    GPUVAddr StartAddress() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(start_high) << 32) |
+                                                     start_low);
+                    }
+                } vertex_array[NumVertexArrays];
+
+                INSERT_PADDING_WORDS(0x40);
+
+                struct {
+                    u32 limit_high;
+                    u32 limit_low;
+
+                    GPUVAddr LimitAddress() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(limit_high) << 32) |
+                                                     limit_low);
+                    }
+                } vertex_array_limit[NumVertexArrays];
 
                 struct {
                     union {
@@ -148,6 +177,8 @@ private:
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(query, 0x6C0);
+ASSERT_REG_POSITION(vertex_array[0], 0x700);
+ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
 ASSERT_REG_POSITION(shader_code, 0xE24);
 
