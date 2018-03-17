@@ -84,7 +84,7 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     /**
      * Parameters description:
      * [0] = Shader Program.
-     * [1] = Unknown.
+     * [1] = Unknown, presumably the shader id.
      * [2] = Offset to the start of the shader, after the 0x30 bytes header.
      * [3] = Shader Type.
      * [4] = Const Buffer Address >> 8.
@@ -100,6 +100,24 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     shader.type = shader_type;
     shader.address = address;
     shader.cb_address = cb_address;
+
+    // Perform the same operations as the real macro code.
+    // TODO(Subv): Early exit if register 0xD1C + shader_program contains the same as params[1].
+    auto& shader_regs = regs.shader_config[static_cast<size_t>(shader_program)];
+    shader_regs.start_id = address;
+    // TODO(Subv): Write params[1] to register 0xD1C + shader_program.
+    // TODO(Subv): Write params[2] to register 0xD22 + shader_program.
+
+    // Note: This value is hardcoded in the macro's code.
+    static constexpr u32 DefaultCBSize = 0x10000;
+    regs.const_buffer.cb_size = DefaultCBSize;
+    regs.const_buffer.cb_address_high = cb_address >> 32;
+    regs.const_buffer.cb_address_low = cb_address & 0xFFFFFFFF;
+
+    // Write a hardcoded 0x11 to CB_BIND, this binds the current const buffer to buffer c1[] in the
+    // shader. It's likely that these are the constants for the shader.
+    regs.cb_bind[static_cast<size_t>(shader_type)].valid.Assign(1);
+    regs.cb_bind[static_cast<size_t>(shader_type)].index.Assign(1);
 }
 
 } // namespace Engines

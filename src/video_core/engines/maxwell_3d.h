@@ -35,8 +35,10 @@ public:
     struct Regs {
         static constexpr size_t NUM_REGS = 0xE36;
 
+        static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t MaxShaderProgram = 6;
+        static constexpr size_t MaxShaderType = 5;
 
         enum class QueryMode : u32 {
             Write = 0,
@@ -136,7 +138,27 @@ public:
                     INSERT_PADDING_WORDS(9);
                 } shader_config[MaxShaderProgram];
 
-                INSERT_PADDING_WORDS(0x5D0);
+                INSERT_PADDING_WORDS(0x8C);
+
+                struct {
+                    u32 cb_size;
+                    u32 cb_address_high;
+                    u32 cb_address_low;
+                    u32 cb_pos;
+                    u32 cb_data[NumCBData];
+                } const_buffer;
+
+                INSERT_PADDING_WORDS(0x74);
+
+                struct {
+                    union {
+                        BitField<0, 1, u32> valid;
+                        BitField<4, 5, u32> index;
+                    };
+                    INSERT_PADDING_WORDS(7);
+                } cb_bind[MaxShaderType];
+
+                INSERT_PADDING_WORDS(0x494);
 
                 struct {
                     u32 set_shader_call;
@@ -161,7 +183,7 @@ public:
         std::array<ShaderInfo, Regs::MaxShaderProgram> shaders;
     };
 
-    State state;
+    State state{};
 
 private:
     MemoryManager& memory_manager;
@@ -194,6 +216,7 @@ ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
+ASSERT_REG_POSITION(const_buffer, 0x8E0);
 ASSERT_REG_POSITION(set_shader, 0xE24);
 
 #undef ASSERT_REG_POSITION
