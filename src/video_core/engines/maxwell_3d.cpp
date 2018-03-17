@@ -15,6 +15,7 @@ const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
 
 void Maxwell3D::CallMethod(u32 method, const std::vector<u32>& parameters) {
+    // TODO(Subv): Write an interpreter for the macros uploaded via registers 0x45 and 0x47
     auto itr = method_handlers.find(method);
     if (itr == method_handlers.end()) {
         LOG_ERROR(HW_GPU, "Unhandled method call %08X", method);
@@ -86,19 +87,19 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
      * [1] = Unknown.
      * [2] = Offset to the start of the shader, after the 0x30 bytes header.
      * [3] = Shader Type.
-     * [4] = Shader End Address >> 8.
+     * [4] = Const Buffer Address >> 8.
      */
     auto shader_program = static_cast<Regs::ShaderProgram>(parameters[0]);
     // TODO(Subv): This address is probably an offset from the CODE_ADDRESS register.
-    GPUVAddr begin_address = parameters[2];
+    GPUVAddr address = parameters[2];
     auto shader_type = static_cast<Regs::ShaderType>(parameters[3]);
-    GPUVAddr end_address = parameters[4] << 8;
+    GPUVAddr cb_address = parameters[4] << 8;
 
     auto& shader = state.shaders[static_cast<size_t>(shader_program)];
     shader.program = shader_program;
     shader.type = shader_type;
-    shader.begin_address = begin_address;
-    shader.end_address = end_address;
+    shader.address = address;
+    shader.cb_address = cb_address;
 }
 
 } // namespace Engines

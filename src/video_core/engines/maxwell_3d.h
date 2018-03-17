@@ -139,9 +139,9 @@ public:
                 INSERT_PADDING_WORDS(0x5D0);
 
                 struct {
-                    u32 shader_code_call;
-                    u32 shader_code_args;
-                } shader_code;
+                    u32 set_shader_call;
+                    u32 set_shader_args;
+                } set_shader;
                 INSERT_PADDING_WORDS(0x10);
             };
             std::array<u32, NUM_REGS> reg_array;
@@ -154,8 +154,8 @@ public:
         struct ShaderInfo {
             Regs::ShaderType type;
             Regs::ShaderProgram program;
-            GPUVAddr begin_address;
-            GPUVAddr end_address;
+            GPUVAddr address;
+            GPUVAddr cb_address;
         };
 
         std::array<ShaderInfo, Regs::MaxShaderProgram> shaders;
@@ -194,7 +194,7 @@ ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
-ASSERT_REG_POSITION(shader_code, 0xE24);
+ASSERT_REG_POSITION(set_shader, 0xE24);
 
 #undef ASSERT_REG_POSITION
 
