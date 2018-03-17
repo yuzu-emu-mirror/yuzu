@@ -117,11 +117,12 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
 }
 
 void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
-    // Allocate and map stack
+    // Allocate and map the main thread stack
+    // TODO(bunnei): This is heap area that should be allocated by the kernel and not mapped as part
+    // of the user address space.
     vm_manager
-        .MapMemoryBlock(Memory::HEAP_VADDR_END - stack_size,
-                        std::make_shared<std::vector<u8>>(stack_size, 0), 0, stack_size,
-                        MemoryState::Heap)
+        .MapMemoryBlock(Memory::STACK_VADDR, std::make_shared<std::vector<u8>>(stack_size, 0), 0,
+                        stack_size, MemoryState::Mapped)
         .Unwrap();
     misc_memory_used += stack_size;
     memory_region->used += stack_size;
@@ -153,9 +154,9 @@ void Process::LoadModule(SharedPtr<CodeSet> module_, VAddr base_addr) {
     };
 
     // Map CodeSet segments
-    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::Code);
-    MapSegment(module_->rodata, VMAPermission::Read, MemoryState::Static);
-    MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::Static);
+    MapSegment(module_->code, VMAPermission::ReadExecute, MemoryState::CodeStatic);
+    MapSegment(module_->rodata, VMAPermission::Read, MemoryState::CodeMutable);
+    MapSegment(module_->data, VMAPermission::ReadWrite, MemoryState::CodeMutable);
 }
 
 VAddr Process::GetLinearHeapAreaAddress() const {
@@ -182,6 +183,8 @@ ResultVal<VAddr> Process::HeapAllocate(VAddr target, u64 size, VMAPermission per
         // Initialize heap
         heap_memory = std::make_shared<std::vector<u8>>();
         heap_start = heap_end = target;
+    } else {
+        vm_manager.UnmapRange(heap_start, heap_end - heap_start);
     }
 
     // If necessary, expand backing vector to cover new heap extents.
@@ -201,7 +204,7 @@ ResultVal<VAddr> Process::HeapAllocate(VAddr target, u64 size, VMAPermission per
                                                        size, MemoryState::Heap));
     vm_manager.Reprotect(vma, perms);
 
-    heap_used += size;
+    heap_used = size;
     memory_region->used += size;
 
     return MakeResult<VAddr>(heap_end - size);
@@ -288,7 +291,7 @@ ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
 
     CASCADE_RESULT(auto new_vma,
                    vm_manager.MapMemoryBlock(dst_addr, backing_block, backing_block_offset, size,
-                                             vma->second.meminfo_state));
+                                             MemoryState::Mapped));
     // Protect mirror with permissions from old region
     vm_manager.Reprotect(new_vma, vma->second.permissions);
     // Remove permissions from old region

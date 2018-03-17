@@ -314,7 +314,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
         // TODO(Subv): Find the correct MemoryState for this region.
         vm_manager.MapMemoryBlock(Memory::TLS_AREA_VADDR + available_page * Memory::PAGE_SIZE,
                                   linheap_memory, offset, Memory::PAGE_SIZE,
-                                  MemoryState::ThreadLocalStorage);
+                                  MemoryState::ThreadLocal);
     }
 
     // Mark the slot as used
@@ -357,7 +357,7 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
 
     // Initialize new "main" thread
     auto thread_res = Thread::Create("main", entry_point, priority, 0, THREADPROCESSORID_0,
-                                     Memory::HEAP_VADDR_END, owner_process);
+                                     Memory::STACK_VADDR_END, owner_process);
 
     SharedPtr<Thread> thread = std::move(thread_res).Unwrap();
 

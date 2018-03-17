@@ -39,8 +39,12 @@ public:
         Run(1);
     }
 
+    /// Maps a backing memory region for the CPU
     virtual void MapBackingMemory(VAddr address, size_t size, u8* memory,
-                                  Kernel::VMAPermission perms) {}
+                                  Kernel::VMAPermission perms) = 0;
+
+    /// Unmaps a region of memory that was previously mapped using MapBackingMemory
+    virtual void UnmapMemory(VAddr address, size_t size) = 0;
 
     /// Clear all instruction cache
     virtual void ClearInstructionCache() = 0;

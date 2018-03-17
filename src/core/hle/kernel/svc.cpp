@@ -317,13 +317,13 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = Core::CurrentProcess()->allowed_thread_priority_mask;
         break;
     case GetInfoType::MapRegionBaseAddr:
-        *result = vm_manager.GetMapRegionBaseAddr();
+        *result = Memory::MAP_REGION_VADDR;
         break;
     case GetInfoType::MapRegionSize:
-        *result = vm_manager.GetAddressSpaceSize();
+        *result = Memory::MAP_REGION_SIZE;
         break;
     case GetInfoType::HeapRegionBaseAddr:
-        *result = vm_manager.GetNewMapRegionBaseAddr() + vm_manager.GetNewMapRegionSize();
+        *result = Memory::HEAP_VADDR;
         break;
     case GetInfoType::HeapRegionSize:
         *result = Memory::HEAP_SIZE;
@@ -347,10 +347,10 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = vm_manager.GetAddressSpaceSize();
         break;
     case GetInfoType::NewMapRegionBaseAddr:
-        *result = vm_manager.GetNewMapRegionBaseAddr();
+        *result = Memory::NEW_MAP_REGION_VADDR;
         break;
     case GetInfoType::NewMapRegionSize:
-        *result = vm_manager.GetNewMapRegionSize();
+        *result = Memory::NEW_MAP_REGION_SIZE;
         break;
     case GetInfoType::IsVirtualAddressMemoryEnabled:
         *result = Core::CurrentProcess()->is_virtual_address_memory_enabled;
@@ -468,7 +468,7 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
         memory_info->base_address = 0;
         memory_info->permission = static_cast<u32>(VMAPermission::None);
         memory_info->size = 0;
-        memory_info->type = static_cast<u32>(MemoryState::Free);
+        memory_info->type = static_cast<u32>(MemoryState::Unmapped);
     } else {
         memory_info->base_address = vma->second.base;
         memory_info->permission = static_cast<u32>(vma->second.permissions);

@@ -129,21 +129,6 @@ enum : VAddr {
     PROCESS_IMAGE_MAX_SIZE = 0x08000000,
     PROCESS_IMAGE_VADDR_END = PROCESS_IMAGE_VADDR + PROCESS_IMAGE_MAX_SIZE,
 
-    /// Area where IPC buffers are mapped onto.
-    IPC_MAPPING_VADDR = 0x04000000,
-    IPC_MAPPING_SIZE = 0x04000000,
-    IPC_MAPPING_VADDR_END = IPC_MAPPING_VADDR + IPC_MAPPING_SIZE,
-
-    /// Application heap (includes stack).
-    HEAP_VADDR = 0x108000000,
-    HEAP_SIZE = 0xF0000000,
-    HEAP_VADDR_END = HEAP_VADDR + HEAP_SIZE,
-
-    /// Area where shared memory buffers are mapped onto.
-    SHARED_MEMORY_VADDR = 0x10000000,
-    SHARED_MEMORY_SIZE = 0x04000000,
-    SHARED_MEMORY_VADDR_END = SHARED_MEMORY_VADDR + SHARED_MEMORY_SIZE,
-
     /// Maps 1:1 to an offset in FCRAM. Used for HW allocations that need to be linear in physical
     /// memory.
     LINEAR_HEAP_VADDR = 0x14000000,
@@ -176,14 +161,39 @@ enum : VAddr {
     SHARED_PAGE_SIZE = 0x00001000,
     SHARED_PAGE_VADDR_END = SHARED_PAGE_VADDR + SHARED_PAGE_SIZE,
 
-    /// Area where TLS (Thread-Local Storage) buffers are allocated.
-    TLS_AREA_VADDR = 0x228000000,
-    TLS_ENTRY_SIZE = 0x200,
-
     /// Equivalent to LINEAR_HEAP_VADDR, but expanded to cover the extra memory in the New 3DS.
     NEW_LINEAR_HEAP_VADDR = 0x30000000,
     NEW_LINEAR_HEAP_SIZE = 0x10000000,
     NEW_LINEAR_HEAP_VADDR_END = NEW_LINEAR_HEAP_VADDR + NEW_LINEAR_HEAP_SIZE,
+
+    /// Area where TLS (Thread-Local Storage) buffers are allocated.
+    TLS_AREA_VADDR = NEW_LINEAR_HEAP_VADDR_END,
+    TLS_ENTRY_SIZE = 0x200,
+    TLS_AREA_SIZE = 0x10000000,
+    TLS_ADREA_VADDR_END = TLS_AREA_VADDR + TLS_AREA_SIZE,
+
+    /// Application stack
+    STACK_VADDR = TLS_ADREA_VADDR_END,
+    STACK_SIZE = 0x10000,
+    STACK_VADDR_END = STACK_VADDR + STACK_SIZE,
+
+    /// Application heap
+    /// Size is confirmed to be a static value on fw 3.0.0
+    HEAP_VADDR = 0x108000000,
+    HEAP_SIZE = 0x180000000,
+    HEAP_VADDR_END = HEAP_VADDR + HEAP_SIZE,
+
+    /// New map region
+    /// Size is confirmed to be a static value on fw 3.0.0
+    NEW_MAP_REGION_VADDR = HEAP_VADDR_END,
+    NEW_MAP_REGION_SIZE = 0x80000000,
+    NEW_MAP_REGION_VADDR_END = NEW_MAP_REGION_VADDR + NEW_MAP_REGION_SIZE,
+
+    /// Map region
+    /// Size is confirmed to be a static value on fw 3.0.0
+    MAP_REGION_VADDR = NEW_MAP_REGION_VADDR_END,
+    MAP_REGION_SIZE = 0x1000000000,
+    MAP_REGION_VADDR_END = MAP_REGION_VADDR + MAP_REGION_SIZE,
 };
 
 /// Currently active page table

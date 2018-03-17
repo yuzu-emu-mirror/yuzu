@@ -77,6 +77,10 @@ void ARM_Unicorn::MapBackingMemory(VAddr address, size_t size, u8* memory,
     CHECKED(uc_mem_map_ptr(uc, address, size, static_cast<u32>(perms), memory));
 }
 
+void ARM_Unicorn::UnmapMemory(VAddr address, size_t size) {
+    CHECKED(uc_mem_unmap(uc, address, size));
+}
+
 void ARM_Unicorn::SetPC(u64 pc) {
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_PC, &pc));
 }

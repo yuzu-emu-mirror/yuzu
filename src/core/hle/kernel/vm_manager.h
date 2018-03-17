@@ -41,15 +41,24 @@ enum class VMAPermission : u8 {
 
 /// Set of values returned in MemoryInfo.state by svcQueryMemory.
 enum class MemoryState : u32 {
-    Free = 0,
-    IO = 1,
-    Normal = 2,
-    Code = 3,
-    Static = 4,
-    Heap = 5,
-    Shared = 6,
-    Mapped = 6,
-    ThreadLocalStorage = 12,
+    Unmapped = 0x0,
+    Io = 0x1,
+    Normal = 0x2,
+    CodeStatic = 0x3,
+    CodeMutable = 0x4,
+    Heap = 0x5,
+    Shared = 0x6,
+    ModuleCodeStatic = 0x8,
+    ModuleCodeMutable = 0x9,
+    IpcBuffer0 = 0xA,
+    Mapped = 0xB,
+    ThreadLocal = 0xC,
+    TransferMemoryIsolated = 0xD,
+    TransferMemory = 0xE,
+    ProcessMemory = 0xF,
+    IpcBuffer1 = 0x11,
+    IpcBuffer3 = 0x12,
+    KernelStack = 0x13,
 };
 
 /**
@@ -66,7 +75,7 @@ struct VirtualMemoryArea {
     VMAType type = VMAType::Free;
     VMAPermission permissions = VMAPermission::None;
     /// Tag returned by svcQueryMemory. Not otherwise used.
-    MemoryState meminfo_state = MemoryState::Free;
+    MemoryState meminfo_state = MemoryState::Unmapped;
 
     // Settings for type = AllocatedMemoryBlock
     /// Memory block backing this VMA.
@@ -191,15 +200,6 @@ public:
 
     /// Gets the total address space address size, used by svcGetInfo
     u64 GetAddressSpaceSize();
-
-    /// Gets the map region base address, used by svcGetInfo
-    VAddr GetMapRegionBaseAddr();
-
-    /// Gets the base address for a new memory region, used by svcGetInfo
-    VAddr GetNewMapRegionBaseAddr();
-
-    /// Gets the size for a new memory region, used by svcGetInfo
-    u64 GetNewMapRegionSize();
 
     /// Each VMManager has its own page table, which is set as the main one when the owning process
     /// is scheduled.
