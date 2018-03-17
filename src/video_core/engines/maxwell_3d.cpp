@@ -9,7 +9,7 @@ namespace Tegra {
 namespace Engines {
 
 const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
-    {0xE24, {"PrepareShader", 5, &Maxwell3D::PrepareShader}},
+    {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
 };
 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
@@ -79,7 +79,27 @@ void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
 }
 
-void Maxwell3D::PrepareShader(const std::vector<u32>& parameters) {}
+void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
+    /**
+     * Parameters description:
+     * [0] = Shader Program.
+     * [1] = Unknown.
+     * [2] = Offset to the start of the shader, after the 0x30 bytes header.
+     * [3] = Shader Type.
+     * [4] = Shader End Address >> 8.
+     */
+    auto shader_program = static_cast<Regs::ShaderProgram>(parameters[0]);
+    // TODO(Subv): This address is probably an offset from the CODE_ADDRESS register.
+    GPUVAddr begin_address = parameters[2];
+    auto shader_type = static_cast<Regs::ShaderType>(parameters[3]);
+    GPUVAddr end_address = parameters[4] << 8;
+
+    auto& shader = state.shaders[static_cast<size_t>(shader_program)];
+    shader.program = shader_program;
+    shader.type = shader_type;
+    shader.begin_address = begin_address;
+    shader.end_address = end_address;
+}
 
 } // namespace Engines
 } // namespace Tegra
