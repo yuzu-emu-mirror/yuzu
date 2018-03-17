@@ -41,6 +41,9 @@ private:
     /// Writes a single register in the engine bound to the specified subchannel
     void WriteReg(u32 method, u32 subchannel, u32 value);
 
+    /// Calls a method in the engine bound to the specified subchannel with the input parameters.
+    void CallMethod(u32 method, u32 subchannel, const std::vector<u32>& parameters);
+
     /// Mapping of command subchannels to their bound engine ids.
     std::unordered_map<u32, EngineID> bound_engines;
 

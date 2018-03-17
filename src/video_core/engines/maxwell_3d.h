@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <vector>
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -19,6 +21,13 @@ public:
 
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value);
+
+    /**
+     * Handles a method call to this engine.
+     * @param method Method to call
+     * @param parameters Arguments to the method call
+     */
+    void CallMethod(u32 method, const std::vector<u32>& parameters);
 
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
@@ -112,13 +121,24 @@ public:
     static_assert(sizeof(Regs) == Regs::NUM_REGS * sizeof(u32), "Maxwell3D Regs has wrong size");
 
 private:
+    MemoryManager& memory_manager;
+
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
 
-    MemoryManager& memory_manager;
+    /// Method call handlers
+    void PrepareShader(const std::vector<u32>& parameters);
+
+    struct MethodInfo {
+        const char* name;
+        u32 arguments;
+        void (Maxwell3D::*handler)(const std::vector<u32>& parameters);
+    };
+
+    static const std::unordered_map<u32, MethodInfo> method_handlers;
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

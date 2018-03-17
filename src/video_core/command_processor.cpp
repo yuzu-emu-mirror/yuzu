@@ -64,6 +64,35 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value) {
     }
 }
 
+void GPU::CallMethod(u32 method, u32 subchannel, const std::vector<u32>& parameters) {
+    LOG_WARNING(HW_GPU, "Processing method %08X on subchannel %u num params %zu", method,
+                subchannel, parameters.size());
+
+    if (method < static_cast<u32>(BufferMethods::CountBufferMethods)) {
+        // TODO(Subv): Research and implement these methods.
+        LOG_ERROR(HW_GPU, "Special buffer methods other than Bind are not implemented");
+        return;
+    }
+
+    ASSERT(bound_engines.find(subchannel) != bound_engines.end());
+
+    const EngineID engine = bound_engines[subchannel];
+
+    switch (engine) {
+    case EngineID::FERMI_TWOD_A:
+        fermi_2d->CallMethod(method, parameters);
+        break;
+    case EngineID::MAXWELL_B:
+        maxwell_3d->CallMethod(method, parameters);
+        break;
+    case EngineID::MAXWELL_COMPUTE_B:
+        maxwell_compute->CallMethod(method, parameters);
+        break;
+    default:
+        UNIMPLEMENTED();
+    }
+}
+
 void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
     // TODO(Subv): PhysicalToVirtualAddress is a misnomer, it converts a GPU VAddr into an
     // application VAddr.
@@ -96,13 +125,17 @@ void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
             ASSERT(header.arg_count.Value() >= 1);
             // Use the original method for the first argument and then the next method for all other
             // arguments.
-            WriteReg(header.method, header.subchannel, Memory::Read32(current_addr));
-            current_addr += sizeof(u32);
-            // Use the same method value for all arguments.
-            for (unsigned i = 1; i < header.arg_count; ++i) {
-                WriteReg(header.method + 1, header.subchannel, Memory::Read32(current_addr));
+
+            // Process this command as a method call instead of a register write. Gather
+            // all the parameters first and then pass them at once to the CallMethod function.
+            std::vector<u32> parameters(header.arg_count);
+
+            for (unsigned i = 0; i < header.arg_count; ++i) {
+                parameters[i] = Memory::Read32(current_addr);
                 current_addr += sizeof(u32);
             }
+
+            CallMethod(header.method, header.subchannel, parameters);
             break;
         }
         case SubmissionMode::Inline: {
