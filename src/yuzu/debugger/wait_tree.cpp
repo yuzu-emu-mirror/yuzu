@@ -150,8 +150,8 @@ QString WaitTreeThread::GetText() const {
     case THREADSTATUS_READY:
         status = tr("ready");
         break;
-    case THREADSTATUS_WAIT_ARB:
-        status = tr("waiting for address 0x%1").arg(thread.wait_address, 8, 16, QLatin1Char('0'));
+    case THREADSTATUS_WAIT_HLE_EVENT:
+        status = tr("waiting for HLE return");
         break;
     case THREADSTATUS_WAIT_SLEEP:
         status = tr("sleeping");
@@ -180,7 +180,7 @@ QColor WaitTreeThread::GetColor() const {
         return QColor(Qt::GlobalColor::darkGreen);
     case THREADSTATUS_READY:
         return QColor(Qt::GlobalColor::darkBlue);
-    case THREADSTATUS_WAIT_ARB:
+    case THREADSTATUS_WAIT_HLE_EVENT:
         return QColor(Qt::GlobalColor::darkRed);
     case THREADSTATUS_WAIT_SLEEP:
         return QColor(Qt::GlobalColor::darkYellow);

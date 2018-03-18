@@ -38,7 +38,7 @@ enum ThreadProcessorId : s32 {
 enum ThreadStatus {
     THREADSTATUS_RUNNING,        ///< Currently running
     THREADSTATUS_READY,          ///< Ready to run
-    THREADSTATUS_WAIT_ARB,       ///< Waiting on an address arbiter
+    THREADSTATUS_WAIT_HLE_EVENT, ///< Waiting for hle event to finish
     THREADSTATUS_WAIT_SLEEP,     ///< Waiting due to a SleepThread SVC
     THREADSTATUS_WAIT_IPC,       ///< Waiting for the reply from an IPC request
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
