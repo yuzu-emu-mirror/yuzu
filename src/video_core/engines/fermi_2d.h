@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vector>
 #include "common/common_types.h"
 
 namespace Tegra {
@@ -17,13 +16,6 @@ public:
 
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value);
-
-    /**
-     * Handles a method call to this engine.
-     * @param method Method to call
-     * @param parameters Arguments to the method call
-     */
-    void CallMethod(u32 method, const std::vector<u32>& parameters);
 };
 
 } // namespace Engines

@@ -8,27 +8,58 @@
 namespace Tegra {
 namespace Engines {
 
+/// First register id that is actually a Macro call.
+constexpr u32 MacroRegistersStart = 0xE00;
+
 const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
     {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
 };
 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
 
-void Maxwell3D::CallMethod(u32 method, const std::vector<u32>& parameters) {
+void Maxwell3D::AttemptMethodCall(u32 method, const std::vector<u32>& parameters) {
     // TODO(Subv): Write an interpreter for the macros uploaded via registers 0x45 and 0x47
     auto itr = method_handlers.find(method);
-    if (itr == method_handlers.end()) {
-        LOG_ERROR(HW_GPU, "Unhandled method call %08X", method);
-        return;
-    }
+    ASSERT_MSG(itr != method_handlers.end(), "Unhandled method call %08X", method);
 
-    ASSERT(itr->second.arguments == parameters.size());
+    // Only execute the macro handler once we've been fed the expected number of parameters.
+    if (itr->second.arguments != parameters.size())
+        return;
+
     (this->*itr->second.handler)(parameters);
+
+    // Reset the current macro and its parameters.
+    executing_macro = 0;
+    macro_params.clear();
 }
 
 void Maxwell3D::WriteReg(u32 method, u32 value) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid Maxwell3D register, increase the size of the Regs structure");
+
+    // It is an error to write to a register other than the current macro's ARG register before it
+    // has finished execution.
+    if (executing_macro != 0) {
+        ASSERT(method == executing_macro + 1);
+    }
+
+    // Methods after 0xE00 are special, they're actually triggers for some microcode that was
+    // uploaded to the GPU during initialization.
+    if (method >= MacroRegistersStart) {
+        // We're trying to execute a macro
+        if (executing_macro == 0) {
+            // A macro call must begin by writing the macro method's register, not its argument.
+            ASSERT_MSG((method % 2) == 0,
+                       "Can't start macro execution by writing to the ARGS register");
+            executing_macro = method;
+        }
+
+        macro_params.push_back(value);
+
+        // Try to call the macro with the current number of parameters.
+        AttemptMethodCall(executing_macro, macro_params);
+        return;
+    }
 
     regs.reg_array[method] = value;
 

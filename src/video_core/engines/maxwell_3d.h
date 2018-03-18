@@ -23,13 +23,6 @@ public:
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value);
 
-    /**
-     * Handles a method call to this engine.
-     * @param method Method to call
-     * @param parameters Arguments to the method call
-     */
-    void CallMethod(u32 method, const std::vector<u32>& parameters);
-
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
     struct Regs {
@@ -166,7 +159,11 @@ public:
                     INSERT_PADDING_WORDS(7);
                 } cb_bind[MaxShaderStage];
 
-                INSERT_PADDING_WORDS(0x50A);
+                INSERT_PADDING_WORDS(0x56);
+
+                u32 tex_cb_index;
+
+                INSERT_PADDING_WORDS(0x4B3);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -201,6 +198,19 @@ public:
 private:
     MemoryManager& memory_manager;
 
+    /// Macro method that is currently being executed / being fed parameters.
+    u32 executing_macro = 0;
+    /// Parameters that have been submitted to the macro call so far.
+    std::vector<u32> macro_params;
+
+    /**
+     * Attempts a method call to this engine. Will return without doing anything if the number of
+     * parameters doesn't match what is expected for the method.
+     * @param method Method to call
+     * @param parameters Arguments to the method call
+     */
+    void AttemptMethodCall(u32 method, const std::vector<u32>& parameters);
+
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
@@ -234,6 +244,7 @@ ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
 ASSERT_REG_POSITION(const_buffer, 0x8E0);
 ASSERT_REG_POSITION(cb_bind[0], 0x904);
+ASSERT_REG_POSITION(tex_cb_index, 0x982);
 
 #undef ASSERT_REG_POSITION
 
