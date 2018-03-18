@@ -21,7 +21,10 @@ public:
     ~Maxwell3D() = default;
 
     /// Write the value to the register identified by method.
-    void WriteReg(u32 method, u32 value);
+    void WriteReg(u32 method, u32 value, u32 remaining_params);
+
+    /// Uploads the code for a GPU macro program associated with the specified entry.
+    void SubmitMacroCode(u32 entry, std::vector<u32> code);
 
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
@@ -198,18 +201,19 @@ public:
 private:
     MemoryManager& memory_manager;
 
+    std::unordered_map<u32, std::vector<u32>> uploaded_macros;
+
     /// Macro method that is currently being executed / being fed parameters.
     u32 executing_macro = 0;
     /// Parameters that have been submitted to the macro call so far.
     std::vector<u32> macro_params;
 
     /**
-     * Attempts a method call to this engine. Will return without doing anything if the number of
-     * parameters doesn't match what is expected for the method.
+     * Call a macro on this engine.
      * @param method Method to call
      * @param parameters Arguments to the method call
      */
-    void AttemptMethodCall(u32 method, const std::vector<u32>& parameters);
+    void CallMacroMethod(u32 method, const std::vector<u32>& parameters);
 
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();

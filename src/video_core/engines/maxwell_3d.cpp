@@ -17,14 +17,21 @@ const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers 
 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
 
-void Maxwell3D::AttemptMethodCall(u32 method, const std::vector<u32>& parameters) {
+void Maxwell3D::SubmitMacroCode(u32 entry, std::vector<u32> code) {
+    uploaded_macros[entry * 2 + MacroRegistersStart] = std::move(code);
+}
+
+void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) {
     // TODO(Subv): Write an interpreter for the macros uploaded via registers 0x45 and 0x47
+
+    // The requested macro must have been uploaded already.
+    ASSERT_MSG(uploaded_macros.find(method) != uploaded_macros.end(), "Macro %08X was not uploaded",
+               method);
+
     auto itr = method_handlers.find(method);
     ASSERT_MSG(itr != method_handlers.end(), "Unhandled method call %08X", method);
 
-    // Only execute the macro handler once we've been fed the expected number of parameters.
-    if (itr->second.arguments != parameters.size())
-        return;
+    ASSERT(itr->second.arguments == parameters.size());
 
     (this->*itr->second.handler)(parameters);
 
@@ -33,7 +40,7 @@ void Maxwell3D::AttemptMethodCall(u32 method, const std::vector<u32>& parameters
     macro_params.clear();
 }
 
-void Maxwell3D::WriteReg(u32 method, u32 value) {
+void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid Maxwell3D register, increase the size of the Regs structure");
 
@@ -56,8 +63,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value) {
 
         macro_params.push_back(value);
 
-        // Try to call the macro with the current number of parameters.
-        AttemptMethodCall(executing_macro, macro_params);
+        // Call the macro when there are no more parameters in the command buffer
+        if (remaining_params == 0) {
+            CallMacroMethod(executing_macro, macro_params);
+        }
         return;
     }
 

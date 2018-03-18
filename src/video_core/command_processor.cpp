@@ -24,12 +24,37 @@ namespace Tegra {
 
 enum class BufferMethods {
     BindObject = 0,
+    SetGraphMacroCode = 0x45,
+    SetGraphMacroCodeArg = 0x46,
+    SetGraphMacroEntry = 0x47,
     CountBufferMethods = 0x100,
 };
 
-void GPU::WriteReg(u32 method, u32 subchannel, u32 value) {
-    LOG_WARNING(HW_GPU, "Processing method %08X on subchannel %u value %08X", method, subchannel,
-                value);
+void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) {
+    LOG_WARNING(HW_GPU, "Processing method %08X on subchannel %u value %08X remaining params %u",
+                method, subchannel, value, remaining_params);
+
+    if (method == static_cast<u32>(BufferMethods::SetGraphMacroEntry)) {
+        // Prepare to upload a new macro, reset the upload counter.
+        LOG_DEBUG(HW_GPU, "Uploading GPU macro %08X", value);
+        current_macro_entry = value;
+        current_macro_code.clear();
+        return;
+    }
+
+    if (method == static_cast<u32>(BufferMethods::SetGraphMacroCodeArg)) {
+        // Append a new code word to the current macro.
+        current_macro_code.push_back(value);
+
+        // There are no more params remaining, submit the code to the 3D engine.
+        if (remaining_params == 0) {
+            maxwell_3d->SubmitMacroCode(current_macro_entry, std::move(current_macro_code));
+            current_macro_entry = InvalidGraphMacroEntry;
+            current_macro_code.clear();
+        }
+
+        return;
+    }
 
     if (method == static_cast<u32>(BufferMethods::BindObject)) {
         // Bind the current subchannel to the desired engine id.
@@ -54,7 +79,7 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value) {
         fermi_2d->WriteReg(method, value);
         break;
     case EngineID::MAXWELL_B:
-        maxwell_3d->WriteReg(method, value);
+        maxwell_3d->WriteReg(method, value, remaining_params);
         break;
     case EngineID::MAXWELL_COMPUTE_B:
         maxwell_compute->WriteReg(method, value);
@@ -78,7 +103,8 @@ void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
         case SubmissionMode::Increasing: {
             // Increase the method value with each argument.
             for (unsigned i = 0; i < header.arg_count; ++i) {
-                WriteReg(header.method + i, header.subchannel, Memory::Read32(current_addr));
+                WriteReg(header.method + i, header.subchannel, Memory::Read32(current_addr),
+                         header.arg_count - i - 1);
                 current_addr += sizeof(u32);
             }
             break;
@@ -87,31 +113,31 @@ void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
         case SubmissionMode::NonIncreasing: {
             // Use the same method value for all arguments.
             for (unsigned i = 0; i < header.arg_count; ++i) {
-                WriteReg(header.method, header.subchannel, Memory::Read32(current_addr));
+                WriteReg(header.method, header.subchannel, Memory::Read32(current_addr),
+                         header.arg_count - i - 1);
                 current_addr += sizeof(u32);
             }
             break;
         }
         case SubmissionMode::IncreaseOnce: {
             ASSERT(header.arg_count.Value() >= 1);
+
             // Use the original method for the first argument and then the next method for all other
             // arguments.
+            WriteReg(header.method, header.subchannel, Memory::Read32(current_addr),
+                     header.arg_count - 1);
+            current_addr += sizeof(u32);
 
-            // Process this command as a method call instead of a register write. Gather
-            // all the parameters first and then pass them at once to the CallMethod function.
-            std::vector<u32> parameters(header.arg_count);
-
-            for (unsigned i = 0; i < header.arg_count; ++i) {
-                parameters[i] = Memory::Read32(current_addr);
+            for (unsigned i = 1; i < header.arg_count; ++i) {
+                WriteReg(header.method + 1, header.subchannel, Memory::Read32(current_addr),
+                         header.arg_count - i - 1);
                 current_addr += sizeof(u32);
             }
-
-            CallMethod(header.method, header.subchannel, parameters);
             break;
         }
         case SubmissionMode::Inline: {
             // The register value is stored in the bits 16-28 as an immediate
-            WriteReg(header.method, header.subchannel, header.inline_data);
+            WriteReg(header.method, header.subchannel, header.inline_data, 0);
             break;
         }
         default:
