@@ -7,6 +7,7 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_compute.cpp
     engines/maxwell_compute.h
+    gpu.cpp
     gpu.h
     memory_manager.cpp
     memory_manager.h
