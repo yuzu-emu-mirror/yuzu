@@ -166,7 +166,19 @@ public:
 
                 u32 tex_cb_index;
 
-                INSERT_PADDING_WORDS(0x4B3);
+                INSERT_PADDING_WORDS(0x395);
+
+                struct {
+                    /// Compressed address of a buffer that holds information about bound SSBOs.
+                    /// This address is usually bound to c0 in the shaders.
+                    u32 buffer_address;
+
+                    GPUVAddr BufferAddress() const {
+                        return static_cast<GPUVAddr>(buffer_address) << 8;
+                    }
+                } ssbo_info;
+
+                INSERT_PADDING_WORDS(0x11D);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -229,6 +241,7 @@ private:
 
     /// Method call handlers
     void SetShader(const std::vector<u32>& parameters);
+    void BindStorageBuffer(const std::vector<u32>& parameters);
 
     struct MethodInfo {
         const char* name;
@@ -252,6 +265,7 @@ ASSERT_REG_POSITION(shader_config[0], 0x800);
 ASSERT_REG_POSITION(const_buffer, 0x8E0);
 ASSERT_REG_POSITION(cb_bind[0], 0x904);
 ASSERT_REG_POSITION(tex_cb_index, 0x982);
+ASSERT_REG_POSITION(ssbo_info, 0xD18);
 
 #undef ASSERT_REG_POSITION
 

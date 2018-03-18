@@ -13,6 +13,7 @@ constexpr u32 MacroRegistersStart = 0xE00;
 
 const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
     {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
+    {0xE2A, {"BindStorageBuffer", 1, &Maxwell3D::BindStorageBuffer}},
 };
 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
@@ -198,6 +199,26 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     regs.cb_bind[static_cast<size_t>(shader_stage)].index.Assign(1);
 
     ProcessCBBind(shader_stage);
+}
+
+void Maxwell3D::BindStorageBuffer(const std::vector<u32>& parameters) {
+    /**
+     * Parameters description:
+     * [0] = Buffer offset >> 2
+     */
+
+    u32 buffer_offset = parameters[0] << 2;
+
+    // Perform the same operations as the real macro code.
+    // Note: This value is hardcoded in the macro's code.
+    static constexpr u32 DefaultCBSize = 0x5F00;
+    regs.const_buffer.cb_size = DefaultCBSize;
+
+    GPUVAddr address = regs.ssbo_info.BufferAddress();
+    regs.const_buffer.cb_address_high = address >> 32;
+    regs.const_buffer.cb_address_low = address & 0xFFFFFFFF;
+
+    regs.const_buffer.cb_pos = buffer_offset;
 }
 
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
