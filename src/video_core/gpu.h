@@ -8,12 +8,15 @@
 #include <unordered_map>
 #include <vector>
 #include "common/common_types.h"
-#include "video_core/engines/fermi_2d.h"
-#include "video_core/engines/maxwell_3d.h"
-#include "video_core/engines/maxwell_compute.h"
 #include "video_core/memory_manager.h"
 
 namespace Tegra {
+
+namespace Engines {
+class Fermi2D;
+class Maxwell3D;
+class MaxwellCompute;
+} // namespace Engines
 
 enum class EngineID {
     FERMI_TWOD_A = 0x902D, // 2D Engine
@@ -25,13 +28,8 @@ enum class EngineID {
 
 class GPU final {
 public:
-    GPU() {
-        memory_manager = std::make_unique<MemoryManager>();
-        maxwell_3d = std::make_unique<Engines::Maxwell3D>(*memory_manager);
-        fermi_2d = std::make_unique<Engines::Fermi2D>();
-        maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
-    }
-    ~GPU() = default;
+    GPU();
+    ~GPU();
 
     /// Processes a command list stored at the specified address in GPU memory.
     void ProcessCommandList(GPUVAddr address, u32 size);

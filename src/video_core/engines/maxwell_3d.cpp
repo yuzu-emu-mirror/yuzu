@@ -13,6 +13,7 @@ constexpr u32 MacroRegistersStart = 0xE00;
 
 const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
     {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
+    {0xE2A, {"BindStorageBuffer", 1, &Maxwell3D::BindStorageBuffer}},
 };
 
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
@@ -81,6 +82,25 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         // register, we do not currently know if that's intended or a bug, so we assert it lest
         // stuff breaks in other places (like the shader address calculation).
         ASSERT_MSG(regs.code_address.CodeAddress() == 0, "Unexpected CODE_ADDRESS register value.");
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[0]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[1]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[2]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[3]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[4]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[5]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[6]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[7]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[8]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[9]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[10]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[11]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[12]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[13]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[14]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[15]): {
+        ProcessCBData(value);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
@@ -181,6 +201,26 @@ void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
     ProcessCBBind(shader_stage);
 }
 
+void Maxwell3D::BindStorageBuffer(const std::vector<u32>& parameters) {
+    /**
+     * Parameters description:
+     * [0] = Buffer offset >> 2
+     */
+
+    u32 buffer_offset = parameters[0] << 2;
+
+    // Perform the same operations as the real macro code.
+    // Note: This value is hardcoded in the macro's code.
+    static constexpr u32 DefaultCBSize = 0x5F00;
+    regs.const_buffer.cb_size = DefaultCBSize;
+
+    GPUVAddr address = regs.ssbo_info.BufferAddress();
+    regs.const_buffer.cb_address_high = address >> 32;
+    regs.const_buffer.cb_address_low = address & 0xFFFFFFFF;
+
+    regs.const_buffer.cb_pos = buffer_offset;
+}
+
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
     // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
     auto& shader = state.shader_stages[static_cast<size_t>(stage)];
@@ -192,6 +232,23 @@ void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
     buffer.index = bind_data.index;
     buffer.address = regs.const_buffer.BufferAddress();
     buffer.size = regs.const_buffer.cb_size;
+}
+
+void Maxwell3D::ProcessCBData(u32 value) {
+    // Write the input value to the current const buffer at the current position.
+    GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
+    ASSERT(buffer_address != 0);
+
+    // Don't allow writing past the end of the buffer.
+    ASSERT(regs.const_buffer.cb_pos + sizeof(u32) <= regs.const_buffer.cb_size);
+
+    VAddr address =
+        memory_manager.PhysicalToVirtualAddress(buffer_address + regs.const_buffer.cb_pos);
+
+    Memory::Write32(address, value);
+
+    // Increment the current buffer position.
+    regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
 }
 
 } // namespace Engines
