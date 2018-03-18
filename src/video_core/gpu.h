@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -38,11 +39,10 @@ public:
     std::unique_ptr<MemoryManager> memory_manager;
 
 private:
-    /// Writes a single register in the engine bound to the specified subchannel
-    void WriteReg(u32 method, u32 subchannel, u32 value);
+    static constexpr u32 InvalidGraphMacroEntry = 0xFFFFFFFF;
 
-    /// Calls a method in the engine bound to the specified subchannel with the input parameters.
-    void CallMethod(u32 method, u32 subchannel, const std::vector<u32>& parameters);
+    /// Writes a single register in the engine bound to the specified subchannel
+    void WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params);
 
     /// Mapping of command subchannels to their bound engine ids.
     std::unordered_map<u32, EngineID> bound_engines;
@@ -53,6 +53,11 @@ private:
     std::unique_ptr<Engines::Fermi2D> fermi_2d;
     /// Compute engine
     std::unique_ptr<Engines::MaxwellCompute> maxwell_compute;
+
+    /// Entry of the macro that is currently being uploaded
+    u32 current_macro_entry = InvalidGraphMacroEntry;
+    /// Code being uploaded for the current macro
+    std::vector<u32> current_macro_code;
 };
 
 } // namespace Tegra
