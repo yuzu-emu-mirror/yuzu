@@ -35,8 +35,12 @@ public:
     struct Regs {
         static constexpr size_t NUM_REGS = 0xE36;
 
+        static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t MaxShaderProgram = 6;
+        static constexpr size_t MaxShaderStage = 5;
+        // Maximum number of const buffers per shader stage.
+        static constexpr size_t MaxConstBuffers = 16;
 
         enum class QueryMode : u32 {
             Write = 0,
@@ -52,7 +56,7 @@ public:
             Fragment = 5,
         };
 
-        enum class ShaderType : u32 {
+        enum class ShaderStage : u32 {
             Vertex = 0,
             TesselationControl = 1,
             TesselationEval = 2,
@@ -132,17 +136,37 @@ public:
                     u32 start_id;
                     INSERT_PADDING_WORDS(1);
                     u32 gpr_alloc;
-                    ShaderType type;
+                    ShaderStage type;
                     INSERT_PADDING_WORDS(9);
                 } shader_config[MaxShaderProgram];
 
-                INSERT_PADDING_WORDS(0x5D0);
+                INSERT_PADDING_WORDS(0x8C);
 
                 struct {
-                    u32 shader_code_call;
-                    u32 shader_code_args;
-                } shader_code;
+                    u32 cb_size;
+                    u32 cb_address_high;
+                    u32 cb_address_low;
+                    u32 cb_pos;
+                    u32 cb_data[NumCBData];
+
+                    GPUVAddr BufferAddress() const {
+                        return static_cast<GPUVAddr>(
+                            (static_cast<GPUVAddr>(cb_address_high) << 32) | cb_address_low);
+                    }
+                } const_buffer;
+
                 INSERT_PADDING_WORDS(0x10);
+
+                struct {
+                    union {
+                        u32 raw_config;
+                        BitField<0, 1, u32> valid;
+                        BitField<4, 5, u32> index;
+                    };
+                    INSERT_PADDING_WORDS(7);
+                } cb_bind[MaxShaderStage];
+
+                INSERT_PADDING_WORDS(0x50A);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -151,23 +175,37 @@ public:
     static_assert(sizeof(Regs) == Regs::NUM_REGS * sizeof(u32), "Maxwell3D Regs has wrong size");
 
     struct State {
-        struct ShaderInfo {
-            Regs::ShaderType type;
-            Regs::ShaderProgram program;
-            GPUVAddr begin_address;
-            GPUVAddr end_address;
+        struct ConstBufferInfo {
+            GPUVAddr address;
+            u32 index;
+            u32 size;
+            bool enabled;
         };
 
-        std::array<ShaderInfo, Regs::MaxShaderProgram> shaders;
+        struct ShaderProgramInfo {
+            Regs::ShaderStage stage;
+            Regs::ShaderProgram program;
+            GPUVAddr address;
+        };
+
+        struct ShaderStageInfo {
+            std::array<ConstBufferInfo, Regs::MaxConstBuffers> const_buffers;
+        };
+
+        std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
+        std::array<ShaderProgramInfo, Regs::MaxShaderProgram> shader_programs;
     };
 
-    State state;
+    State state{};
 
 private:
     MemoryManager& memory_manager;
 
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
+
+    /// Handles a write to the CB_BIND register.
+    void ProcessCBBind(Regs::ShaderStage stage);
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
@@ -194,7 +232,8 @@ ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
-ASSERT_REG_POSITION(shader_code, 0xE24);
+ASSERT_REG_POSITION(const_buffer, 0x8E0);
+ASSERT_REG_POSITION(cb_bind[0], 0x904);
 
 #undef ASSERT_REG_POSITION
 
