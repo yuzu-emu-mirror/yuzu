@@ -218,6 +218,9 @@ private:
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
+    /// Handles a write to the CB_DATA[i] register.
+    void ProcessCBData(u32 value);
+
     /// Handles a write to the CB_BIND register.
     void ProcessCBBind(Regs::ShaderStage stage);
 
