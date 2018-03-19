@@ -750,7 +750,7 @@ static ResultCode ResetSignal(Handle handle) {
 
 /// Creates a TransferMemory object
 static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%llx, size=0x%llx, perms=%08X", addr, size,
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%lx, size=0x%lx, perms=%08X", addr, size,
                 permissions);
     *handle = 0;
     return RESULT_SUCCESS;

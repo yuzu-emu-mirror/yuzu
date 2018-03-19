@@ -107,7 +107,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
 
     // Error out if the requested permissions don't match what the creator process allows.
     if (static_cast<u32>(permissions) & ~static_cast<u32>(own_other_permissions)) {
-        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, permissions don't match",
+        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, permissions don't match",
                   GetObjectId(), address, name.c_str());
         return ERR_INVALID_COMBINATION;
     }
@@ -115,7 +115,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     // Error out if the provided permissions are not compatible with what the creator process needs.
     if (other_permissions != MemoryPermission::DontCare &&
         static_cast<u32>(this->permissions) & ~static_cast<u32>(other_permissions)) {
-        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, permissions don't match",
+        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, permissions don't match",
                   GetObjectId(), address, name.c_str());
         return ERR_WRONG_PERMISSION;
     }
@@ -145,7 +145,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     if (result.Failed()) {
         LOG_ERROR(
             Kernel,
-            "cannot map id=%u, target_address=0x%llx name=%s, error mapping to virtual memory",
+            "cannot map id=%u, target_address=0x%lx name=%s, error mapping to virtual memory",
             GetObjectId(), target_address, name.c_str());
         return result.Code();
     }
