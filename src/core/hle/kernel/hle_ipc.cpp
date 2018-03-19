@@ -7,6 +7,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/kernel.h"
@@ -26,6 +27,32 @@ void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_s
     boost::range::remove_erase(connected_sessions, server_session);
 }
 
+SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
+                                                      const std::string& reason, u64 timeout,
+                                                      WakeupCallback&& callback) {
+
+    // Put the client thread to sleep until the wait event is signaled or the timeout expires.
+    thread->wakeup_callback =
+        [context = *this, callback](ThreadWakeupReason reason, SharedPtr<Thread> thread,
+                                    SharedPtr<WaitObject> object, size_t index) mutable -> bool {
+        ASSERT(thread->status == THREADSTATUS_WAIT_HLE_EVENT);
+        callback(thread, context, reason);
+        context.WriteToOutgoingCommandBuffer(*thread);
+        return true;
+    };
+
+    auto event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    thread->status = THREADSTATUS_WAIT_HLE_EVENT;
+    thread->wait_objects = {event};
+    event->AddWaitingThread(thread);
+
+    if (timeout > 0) {
+        thread->WakeAfterDelay(timeout);
+    }
+
+    return event;
+}
+
 HLERequestContext::HLERequestContext(SharedPtr<Kernel::ServerSession> server_session)
     : server_session(std::move(server_session)) {
     cmd_buf[0] = 0;
@@ -35,7 +62,7 @@ HLERequestContext::~HLERequestContext() = default;
 
 void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     IPC::RequestParser rp(src_cmdbuf);
-    command_header = std::make_unique<IPC::CommandHeader>(rp.PopRaw<IPC::CommandHeader>());
+    command_header = std::make_shared<IPC::CommandHeader>(rp.PopRaw<IPC::CommandHeader>());
 
     if (command_header->type == IPC::CommandType::Close) {
         // Close does not populate the rest of the IPC header
@@ -45,7 +72,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     // If handle descriptor is present, add size of it
     if (command_header->enable_handle_descriptor) {
         handle_descriptor_header =
-            std::make_unique<IPC::HandleDescriptorHeader>(rp.PopRaw<IPC::HandleDescriptorHeader>());
+            std::make_shared<IPC::HandleDescriptorHeader>(rp.PopRaw<IPC::HandleDescriptorHeader>());
         if (handle_descriptor_header->send_current_pid) {
             rp.Skip(2, false);
         }
@@ -88,7 +115,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         // All outgoing domain messages have the domain header, if only incoming has it
         if (incoming || domain_message_header) {
             domain_message_header =
-                std::make_unique<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
+                std::make_shared<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
         } else {
             if (Session()->IsDomain())
                 LOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
@@ -96,7 +123,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     }
 
     data_payload_header =
-        std::make_unique<IPC::DataPayloadHeader>(rp.PopRaw<IPC::DataPayloadHeader>());
+        std::make_shared<IPC::DataPayloadHeader>(rp.PopRaw<IPC::DataPayloadHeader>());
 
     data_payload_offset = rp.GetCurrentOffset();
 
@@ -159,8 +186,11 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdb
     return RESULT_SUCCESS;
 }
 
-ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                                           HandleTable& dst_table) {
+ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
+    std::array<u32, IPC::COMMAND_BUFFER_LENGTH> dst_cmdbuf;
+    Memory::ReadBlock(*thread.owner_process, thread.GetTLSAddress(), dst_cmdbuf.data(),
+                      dst_cmdbuf.size() * sizeof(u32));
+
     // The header was already built in the internal command buffer. Attempt to parse it to verify
     // the integrity and then copy it over to the target command buffer.
     ParseCommandBuffer(cmd_buf.data(), false);
@@ -171,7 +201,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
     if (domain_message_header)
         size -= sizeof(IPC::DomainMessageHeader) / sizeof(u32);
 
-    std::copy_n(cmd_buf.begin(), size, dst_cmdbuf);
+    std::copy_n(cmd_buf.begin(), size, dst_cmdbuf.data());
 
     if (command_header->enable_handle_descriptor) {
         ASSERT_MSG(!move_objects.empty() || !copy_objects.empty(),
@@ -213,6 +243,11 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
             dst_cmdbuf[domain_offset++] = static_cast<u32_le>(request_handlers.size());
         }
     }
+
+    // Copy the translated command buffer back into the thread's command buffer area.
+    Memory::WriteBlock(*thread.owner_process, thread.GetTLSAddress(), dst_cmdbuf.data(),
+                       dst_cmdbuf.size() * sizeof(u32));
+
     return RESULT_SUCCESS;
 }
 

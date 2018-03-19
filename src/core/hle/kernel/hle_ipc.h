@@ -6,6 +6,7 @@
 
 #include <array>
 #include <memory>
+#include <string>
 #include <vector>
 #include <boost/container/small_vector.hpp>
 #include "common/common_types.h"
@@ -13,6 +14,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/server_session.h"
+#include "core/hle/kernel/thread.h"
 
 namespace Service {
 class ServiceFrameworkBase;
@@ -24,6 +26,7 @@ class Domain;
 class HandleTable;
 class HLERequestContext;
 class Process;
+class Event;
 
 /**
  * Interface implemented by HLE Session handlers.
@@ -102,14 +105,31 @@ public:
         return server_session;
     }
 
+    using WakeupCallback = std::function<void(SharedPtr<Thread> thread, HLERequestContext& context,
+                                              ThreadWakeupReason reason)>;
+
+    /**
+     * Puts the specified guest thread to sleep until the returned event is signaled or until the
+     * specified timeout expires.
+     * @param thread Thread to be put to sleep.
+     * @param reason Reason for pausing the thread, to be used for debugging purposes.
+     * @param timeout Timeout in nanoseconds after which the thread will be awoken and the callback
+     * invoked with a Timeout reason.
+     * @param callback Callback to be invoked when the thread is resumed. This callback must write
+     * the entire command response once again, regardless of the state of it before this function
+     * was called.
+     * @returns Event that when signaled will resume the thread and call the callback function.
+     */
+    SharedPtr<Event> SleepClientThread(SharedPtr<Thread> thread, const std::string& reason,
+                                       u64 timeout, WakeupCallback&& callback);
+
     void ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming);
 
     /// Populates this context with data from the requesting process/thread.
     ResultCode PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf, Process& src_process,
                                                  HandleTable& src_table);
     /// Writes data from this context back to the requesting process/thread.
-    ResultCode WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                            HandleTable& dst_table);
+    ResultCode WriteToOutgoingCommandBuffer(Thread& thread);
 
     u32_le GetCommand() const {
         return command;
@@ -139,7 +159,7 @@ public:
         return buffer_c_desciptors;
     }
 
-    const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
+    const std::shared_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
         return domain_message_header;
     }
 
@@ -212,10 +232,10 @@ private:
     boost::container::small_vector<SharedPtr<Object>, 8> copy_objects;
     boost::container::small_vector<std::shared_ptr<SessionRequestHandler>, 8> domain_objects;
 
-    std::unique_ptr<IPC::CommandHeader> command_header;
-    std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
-    std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
-    std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
+    std::shared_ptr<IPC::CommandHeader> command_header;
+    std::shared_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
+    std::shared_ptr<IPC::DataPayloadHeader> data_payload_header;
+    std::shared_ptr<IPC::DomainMessageHeader> domain_message_header;
     std::vector<IPC::BufferDescriptorX> buffer_x_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;

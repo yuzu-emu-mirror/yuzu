@@ -55,16 +55,6 @@ inline static u32 const NewThreadId() {
 Thread::Thread() {}
 Thread::~Thread() {}
 
-/**
- * Check if the specified thread is waiting on the specified address to be arbitrated
- * @param thread The thread to test
- * @param wait_address The address to test against
- * @return True if the thread is waiting, false otherwise
- */
-static bool CheckWait_AddressArbiter(const Thread* thread, VAddr wait_address) {
-    return thread->status == THREADSTATUS_WAIT_ARB && wait_address == thread->wait_address;
-}
-
 void Thread::Stop() {
     // Cancel any outstanding wakeup events for this thread
     CoreTiming::UnscheduleEvent(ThreadWakeupEventType, callback_handle);
@@ -102,12 +92,6 @@ void WaitCurrentThread_Sleep() {
     thread->status = THREADSTATUS_WAIT_SLEEP;
 }
 
-void WaitCurrentThread_ArbitrateAddress(VAddr wait_address) {
-    Thread* thread = GetCurrentThread();
-    thread->wait_address = wait_address;
-    thread->status = THREADSTATUS_WAIT_ARB;
-}
-
 void ExitCurrentThread() {
     Thread* thread = GetCurrentThread();
     thread->Stop();
@@ -129,7 +113,8 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
     bool resume = true;
 
     if (thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
-        thread->status == THREADSTATUS_WAIT_SYNCH_ALL || thread->status == THREADSTATUS_WAIT_ARB) {
+        thread->status == THREADSTATUS_WAIT_SYNCH_ALL ||
+        thread->status == THREADSTATUS_WAIT_HLE_EVENT) {
 
         // Remove the thread from each of its waiting objects' waitlists
         for (auto& object : thread->wait_objects)
@@ -163,7 +148,7 @@ void Thread::ResumeFromWait() {
     switch (status) {
     case THREADSTATUS_WAIT_SYNCH_ALL:
     case THREADSTATUS_WAIT_SYNCH_ANY:
-    case THREADSTATUS_WAIT_ARB:
+    case THREADSTATUS_WAIT_HLE_EVENT:
     case THREADSTATUS_WAIT_SLEEP:
     case THREADSTATUS_WAIT_IPC:
         break;
