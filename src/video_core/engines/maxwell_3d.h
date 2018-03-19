@@ -83,7 +83,22 @@ public:
                     }
                 } rt[NumRenderTargets];
 
-                INSERT_PADDING_WORDS(0x207);
+                INSERT_PADDING_WORDS(0x178);
+
+                struct {
+                    u32 address_high;
+                    u32 address_low;
+                    u32 format;
+                    u32 block_dimensions;
+                    u32 layer_stride;
+
+                    GPUVAddr Address() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
+                                                     address_low);
+                    }
+                } zeta;
+
+                INSERT_PADDING_WORDS(0x8A);
 
                 struct {
                     union {
@@ -321,6 +336,7 @@ private:
                   "Field " #field_name " has invalid position")
 
 ASSERT_REG_POSITION(rt, 0x200);
+ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(rt_control, 0x487);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
