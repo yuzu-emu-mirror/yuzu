@@ -39,7 +39,7 @@ static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
 }
 
 static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state1) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x%llx", addr);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x%lx", addr);
     return RESULT_SUCCESS;
 }
 

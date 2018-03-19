@@ -126,7 +126,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     if (address != 0) {
         // TODO(shinyquagsire23): Check for virtual/mappable memory here too?
         if (address >= Memory::HEAP_VADDR && address < Memory::HEAP_VADDR_END) {
-            LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, invalid address",
+            LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, invalid address",
                       GetObjectId(), address, name.c_str());
             return ERR_INVALID_ADDRESS;
         }

@@ -99,7 +99,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
 
     ResultStatus init_result{Init(emu_window, system_mode.first.get())};
     if (init_result != ResultStatus::Success) {
-        LOG_CRITICAL(Core, "Failed to initialize system (Error %i)!", init_result);
+        LOG_CRITICAL(Core, "Failed to initialize system (Error %i)!", static_cast<int>(init_result));
         System::Shutdown();
         return init_result;
     }
