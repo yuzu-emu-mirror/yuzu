@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <unicorn/arm64.h>
 #include "common/assert.h"
 #include "common/microprofile.h"
@@ -151,6 +152,14 @@ VAddr ARM_Unicorn::GetTlsAddress() const {
 
 void ARM_Unicorn::SetTlsAddress(VAddr base) {
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_TPIDRRO_EL0, &base));
+}
+
+void ARM_Unicorn::Run() {
+    ExecuteInstructions(std::max(CoreTiming::GetDowncount(), 0));
+}
+
+void ARM_Unicorn::Step() {
+    ExecuteInstructions(1);
 }
 
 MICROPROFILE_DEFINE(ARM_Jit, "ARM JIT", "ARM JIT", MP_RGB(255, 64, 64));

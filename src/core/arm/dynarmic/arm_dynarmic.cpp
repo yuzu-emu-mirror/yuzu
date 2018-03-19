@@ -122,11 +122,22 @@ std::unique_ptr<Dynarmic::A64::Jit> MakeJit(const std::unique_ptr<ARM_Dynarmic_C
     return std::make_unique<Dynarmic::A64::Jit>(config);
 }
 
+void ARM_Dynarmic::Run() {
+    ASSERT(Memory::GetCurrentPageTable() == current_page_table);
+
+    jit->Run();
+}
+
+void ARM_Dynarmic::Step() {
+    cb->InterpreterFallback(jit->GetPC(), 1);
+}
+
 ARM_Dynarmic::ARM_Dynarmic()
     : cb(std::make_unique<ARM_Dynarmic_Callbacks>(*this)), jit(MakeJit(cb)) {
     ARM_Interface::ThreadContext ctx;
     inner_unicorn.SaveContext(ctx);
     LoadContext(ctx);
+    PageTableChanged();
 }
 
 ARM_Dynarmic::~ARM_Dynarmic() = default;
@@ -189,13 +200,6 @@ void ARM_Dynarmic::SetTlsAddress(u64 address) {
     cb->tpidrro_el0 = address;
 }
 
-void ARM_Dynarmic::ExecuteInstructions(int num_instructions) {
-    cb->ticks_remaining = num_instructions;
-    jit->Run();
-    CoreTiming::AddTicks(num_instructions - cb->num_interpreted_instructions);
-    cb->num_interpreted_instructions = 0;
-}
-
 void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     ctx.cpu_registers = jit->GetRegisters();
     ctx.sp = jit->GetSP();
@@ -228,4 +232,5 @@ void ARM_Dynarmic::ClearInstructionCache() {
 
 void ARM_Dynarmic::PageTableChanged() {
     jit = MakeJit(cb);
+    current_page_table = Memory::GetCurrentPageTable();
 }
