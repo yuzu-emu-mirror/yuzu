@@ -26,23 +26,29 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
     LOG_WARNING(Service, "Adding graphics buffer %u", slot);
 
     queue.emplace_back(buffer);
+
+    if (buffer_wait_event) {
+        buffer_wait_event->Signal();
+    }
 }
 
-u32 BufferQueue::DequeueBuffer(u32 pixel_format, u32 width, u32 height) {
+boost::optional<u32> BufferQueue::DequeueBuffer(u32 width, u32 height) {
     auto itr = std::find_if(queue.begin(), queue.end(), [&](const Buffer& buffer) {
         // Only consider free buffers. Buffers become free once again after they've been Acquired
         // and Released by the compositor, see the NVFlinger::Compose method.
-        if (buffer.status != Buffer::Status::Free)
+        if (buffer.status != Buffer::Status::Free) {
             return false;
+        }
 
         // Make sure that the parameters match.
         return buffer.igbp_buffer.width == width && buffer.igbp_buffer.height == height;
     });
+
     if (itr == queue.end()) {
-        LOG_CRITICAL(Service_NVDRV, "no free buffers for pixel_format=%d, width=%d, height=%d",
-                     pixel_format, width, height);
-        itr = queue.begin();
+        return boost::none;
     }
+
+    buffer_wait_event = nullptr;
 
     itr->status = Buffer::Status::Dequeued;
     return itr->slot;
@@ -81,6 +87,10 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
     ASSERT(itr != queue.end());
     ASSERT(itr->status == Buffer::Status::Acquired);
     itr->status = Buffer::Status::Free;
+
+    if (buffer_wait_event) {
+        buffer_wait_event->Signal();
+    }
 }
 
 u32 BufferQueue::Query(QueryType type) {
@@ -94,6 +104,11 @@ u32 BufferQueue::Query(QueryType type) {
 
     UNIMPLEMENTED();
     return 0;
+}
+
+void BufferQueue::SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_event) {
+    ASSERT_MSG(!buffer_wait_event, "buffer_wait_event only supports a single waiting thread!");
+    buffer_wait_event = std::move(wait_event);
 }
 
 } // namespace NVFlinger

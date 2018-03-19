@@ -486,12 +486,30 @@ private:
             ctx.WriteBuffer(response.Serialize());
         } else if (transaction == TransactionId::DequeueBuffer) {
             IGBPDequeueBufferRequestParcel request{ctx.ReadBuffer()};
+            const u32 width{request.data.width};
+            const u32 height{request.data.height};
+            boost::optional<u32> slot = buffer_queue->DequeueBuffer(width, height);
 
-            u32 slot = buffer_queue->DequeueBuffer(request.data.pixel_format, request.data.width,
-                                                   request.data.height);
-
-            IGBPDequeueBufferResponseParcel response{slot};
-            ctx.WriteBuffer(response.Serialize());
+            if (slot != boost::none) {
+                // Buffer is available
+                IGBPDequeueBufferResponseParcel response{*slot};
+                ctx.WriteBuffer(response.Serialize());
+            } else {
+                // Wait the current thread until a buffer becomes available
+                auto wait_event = ctx.SleepClientThread(
+                    Kernel::GetCurrentThread(), "IHOSBinderDriver::DequeueBuffer", -1,
+                    [=](Kernel::SharedPtr<Kernel::Thread> thread, Kernel::HLERequestContext& ctx,
+                        ThreadWakeupReason reason) {
+                        // Repeat TransactParcel DequeueBuffer when a buffer is available
+                        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+                        boost::optional<u32> slot = buffer_queue->DequeueBuffer(width, height);
+                        IGBPDequeueBufferResponseParcel response{*slot};
+                        ctx.WriteBuffer(response.Serialize());
+                        IPC::ResponseBuilder rb{ctx, 2};
+                        rb.Push(RESULT_SUCCESS);
+                    });
+                buffer_queue->SetBufferWaitEvent(std::move(wait_event));
+            }
         } else if (transaction == TransactionId::RequestBuffer) {
             IGBPRequestBufferRequestParcel request{ctx.ReadBuffer()};
 

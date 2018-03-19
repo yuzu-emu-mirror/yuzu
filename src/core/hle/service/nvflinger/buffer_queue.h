@@ -69,12 +69,13 @@ public:
     };
 
     void SetPreallocatedBuffer(u32 slot, IGBPBuffer& buffer);
-    u32 DequeueBuffer(u32 pixel_format, u32 width, u32 height);
+    boost::optional<u32> DequeueBuffer(u32 width, u32 height);
     const IGBPBuffer& RequestBuffer(u32 slot) const;
     void QueueBuffer(u32 slot, BufferTransformFlags transform);
     boost::optional<const Buffer&> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
     u32 Query(QueryType type);
+    void SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_event);
 
     u32 GetId() const {
         return id;
@@ -90,6 +91,9 @@ private:
 
     std::vector<Buffer> queue;
     Kernel::SharedPtr<Kernel::Event> native_handle;
+
+    /// Used to signal waiting thread when no buffers are available
+    Kernel::SharedPtr<Kernel::Event> buffer_wait_event;
 };
 
 } // namespace NVFlinger
