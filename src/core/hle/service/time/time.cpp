@@ -107,7 +107,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 posix_time = rp.Pop<u64>();
 
-        LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x%016llX", posix_time);
+        LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x%016lX", posix_time);
 
         CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
         CalendarAdditionalInfo additional_info{};

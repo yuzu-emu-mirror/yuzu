@@ -78,7 +78,8 @@ ResultCode ServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& con
         }
         }
 
-        LOG_CRITICAL(IPC, "Unknown domain command=%d", domain_message_header->command.Value());
+        LOG_CRITICAL(IPC, "Unknown domain command=%d",
+                     static_cast<int>(domain_message_header->command.Value()));
         ASSERT(false);
     }
 

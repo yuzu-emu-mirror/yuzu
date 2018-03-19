@@ -84,7 +84,7 @@ void Linker::WriteRelocations(std::vector<u8>& program_image, const std::vector<
             }
             break;
         default:
-            LOG_CRITICAL(Loader, "Unknown relocation type: %d", rela.type);
+            LOG_CRITICAL(Loader, "Unknown relocation type: %d", static_cast<int>(rela.type));
             break;
         }
     }

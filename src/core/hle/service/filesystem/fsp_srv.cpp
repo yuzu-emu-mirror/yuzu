@@ -35,7 +35,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        LOG_DEBUG(Service_FS, "called, offset=0x%llx, length=0x%llx", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x%ld, length=0x%ld", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -86,7 +86,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        LOG_DEBUG(Service_FS, "called, offset=0x%llx, length=0x%llx", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x%ld, length=0x%ld", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -123,7 +123,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        LOG_DEBUG(Service_FS, "called, offset=0x%llx, length=0x%llx", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x%ld, length=0x%ld", offset, length);
 
         // Error checking
         if (length < 0) {

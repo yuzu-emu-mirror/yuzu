@@ -153,7 +153,8 @@ void Maxwell3D::ProcessQueryGet() {
         break;
     }
     default:
-        UNIMPLEMENTED_MSG("Query mode %u not implemented", regs.query.query_get.mode.Value());
+        UNIMPLEMENTED_MSG("Query mode %u not implemented",
+                          static_cast<u32>(regs.query.query_get.mode.Value()));
     }
 }
 

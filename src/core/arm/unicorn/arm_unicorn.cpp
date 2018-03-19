@@ -53,7 +53,7 @@ static bool UnmappedMemoryHook(uc_engine* uc, uc_mem_type type, u64 addr, int si
                                void* user_data) {
     ARM_Interface::ThreadContext ctx{};
     Core::CPU().SaveContext(ctx);
-    ASSERT_MSG(false, "Attempted to read from unmapped memory: 0x%llx, pc=0x%llx, lr=0x%llx", addr,
+    ASSERT_MSG(false, "Attempted to read from unmapped memory: 0x%lx, pc=0x%lx, lr=0x%lx", addr,
                ctx.pc, ctx.cpu_registers[30]);
     return {};
 }

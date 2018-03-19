@@ -107,7 +107,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
 
     // Error out if the requested permissions don't match what the creator process allows.
     if (static_cast<u32>(permissions) & ~static_cast<u32>(own_other_permissions)) {
-        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, permissions don't match",
+        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, permissions don't match",
                   GetObjectId(), address, name.c_str());
         return ERR_INVALID_COMBINATION;
     }
@@ -115,7 +115,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     // Error out if the provided permissions are not compatible with what the creator process needs.
     if (other_permissions != MemoryPermission::DontCare &&
         static_cast<u32>(this->permissions) & ~static_cast<u32>(other_permissions)) {
-        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, permissions don't match",
+        LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, permissions don't match",
                   GetObjectId(), address, name.c_str());
         return ERR_WRONG_PERMISSION;
     }
@@ -126,7 +126,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     if (address != 0) {
         // TODO(shinyquagsire23): Check for virtual/mappable memory here too?
         if (address >= Memory::HEAP_VADDR && address < Memory::HEAP_VADDR_END) {
-            LOG_ERROR(Kernel, "cannot map id=%u, address=0x%llx name=%s, invalid address",
+            LOG_ERROR(Kernel, "cannot map id=%u, address=0x%lx name=%s, invalid address",
                       GetObjectId(), address, name.c_str());
             return ERR_INVALID_ADDRESS;
         }
@@ -143,10 +143,9 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     auto result = target_process->vm_manager.MapMemoryBlock(
         target_address, backing_block, backing_block_offset, size, MemoryState::Shared);
     if (result.Failed()) {
-        LOG_ERROR(
-            Kernel,
-            "cannot map id=%u, target_address=0x%llx name=%s, error mapping to virtual memory",
-            GetObjectId(), target_address, name.c_str());
+        LOG_ERROR(Kernel,
+                  "cannot map id=%u, target_address=0x%lx name=%s, error mapping to virtual memory",
+                  GetObjectId(), target_address, name.c_str());
         return result.Code();
     }
 

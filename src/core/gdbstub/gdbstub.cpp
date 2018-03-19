@@ -693,7 +693,7 @@ static void ReadMemory() {
     u64 len =
         HexToLong(start_offset, static_cast<u64>((command_buffer + command_length) - start_offset));
 
-    LOG_DEBUG(Debug_GDBStub, "gdb: addr: %016llx len: %016llx\n", addr, len);
+    LOG_DEBUG(Debug_GDBStub, "gdb: addr: %016lx len: %016lx\n", addr, len);
 
     if (len * 2 > sizeof(reply)) {
         SendReply("E01");

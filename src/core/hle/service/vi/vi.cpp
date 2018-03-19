@@ -471,7 +471,7 @@ private:
         u32 flags = rp.Pop<u32>();
         auto buffer_queue = nv_flinger->GetBufferQueue(id);
 
-        LOG_DEBUG(Service_VI, "called, transaction=%x", transaction);
+        LOG_DEBUG(Service_VI, "called, transaction=%x", static_cast<u32>(transaction));
 
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{ctx.ReadBuffer()};
