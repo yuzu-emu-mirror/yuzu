@@ -13,6 +13,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/server_session.h"
+#include "core/hle/kernel/thread.h"
 
 namespace Service {
 class ServiceFrameworkBase;
@@ -108,8 +109,7 @@ public:
     ResultCode PopulateFromIncomingCommandBuffer(u32_le* src_cmdbuf, Process& src_process,
                                                  HandleTable& src_table);
     /// Writes data from this context back to the requesting process/thread.
-    ResultCode WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                            HandleTable& dst_table);
+    ResultCode WriteToOutgoingCommandBuffer(Thread& thread);
 
     u32_le GetCommand() const {
         return command;

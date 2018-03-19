@@ -159,8 +159,11 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(u32_le* src_cmdb
     return RESULT_SUCCESS;
 }
 
-ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, Process& dst_process,
-                                                           HandleTable& dst_table) {
+ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
+    std::array<u32, IPC::COMMAND_BUFFER_LENGTH> dst_cmdbuf;
+    Memory::ReadBlock(*thread.owner_process, thread.GetTLSAddress(), dst_cmdbuf.data(),
+                      dst_cmdbuf.size() * sizeof(u32));
+
     // The header was already built in the internal command buffer. Attempt to parse it to verify
     // the integrity and then copy it over to the target command buffer.
     ParseCommandBuffer(cmd_buf.data(), false);
@@ -171,7 +174,7 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
     if (domain_message_header)
         size -= sizeof(IPC::DomainMessageHeader) / sizeof(u32);
 
-    std::copy_n(cmd_buf.begin(), size, dst_cmdbuf);
+    std::copy_n(cmd_buf.begin(), size, dst_cmdbuf.data());
 
     if (command_header->enable_handle_descriptor) {
         ASSERT_MSG(!move_objects.empty() || !copy_objects.empty(),
@@ -213,6 +216,11 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(u32_le* dst_cmdbuf, P
             dst_cmdbuf[domain_offset++] = static_cast<u32_le>(request_handlers.size());
         }
     }
+
+    // Copy the translated command buffer back into the thread's command buffer area.
+    Memory::WriteBlock(*thread.owner_process, thread.GetTLSAddress(), dst_cmdbuf.data(),
+                       dst_cmdbuf.size() * sizeof(u32));
+
     return RESULT_SUCCESS;
 }
 

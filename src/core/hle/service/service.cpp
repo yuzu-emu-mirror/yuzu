@@ -152,8 +152,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
         UNIMPLEMENTED_MSG("command_type=%d", context.GetCommandType());
     }
 
-    u32* cmd_buf = (u32*)Memory::GetPointer(Kernel::GetCurrentThread()->GetTLSAddress());
-    context.WriteToOutgoingCommandBuffer(cmd_buf, *Core::CurrentProcess(), Kernel::g_handle_table);
+    context.WriteToOutgoingCommandBuffer(*Kernel::GetCurrentThread());
 
     return RESULT_SUCCESS;
 }
