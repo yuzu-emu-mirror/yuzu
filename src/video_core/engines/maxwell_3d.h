@@ -62,7 +62,21 @@ public:
 
         union {
             struct {
-                INSERT_PADDING_WORDS(0x582);
+                INSERT_PADDING_WORDS(0x55D);
+
+                struct {
+                    u32 tic_address_high;
+                    u32 tic_address_low;
+                    u32 tic_limit;
+
+                    GPUVAddr TICAddress() const {
+                        return static_cast<GPUVAddr>(
+                            (static_cast<GPUVAddr>(tic_address_high) << 32) | tic_address_low);
+                    }
+                } tic;
+
+                INSERT_PADDING_WORDS(0x22);
+
                 struct {
                     u32 code_address_high;
                     u32 code_address_low;
@@ -264,6 +278,7 @@ private:
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(query, 0x6C0);
