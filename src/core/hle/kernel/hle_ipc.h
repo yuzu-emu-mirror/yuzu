@@ -139,7 +139,7 @@ public:
         return buffer_c_desciptors;
     }
 
-    const std::unique_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
+    const std::shared_ptr<IPC::DomainMessageHeader>& GetDomainMessageHeader() const {
         return domain_message_header;
     }
 
@@ -212,10 +212,10 @@ private:
     boost::container::small_vector<SharedPtr<Object>, 8> copy_objects;
     boost::container::small_vector<std::shared_ptr<SessionRequestHandler>, 8> domain_objects;
 
-    std::unique_ptr<IPC::CommandHeader> command_header;
-    std::unique_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
-    std::unique_ptr<IPC::DataPayloadHeader> data_payload_header;
-    std::unique_ptr<IPC::DomainMessageHeader> domain_message_header;
+    std::shared_ptr<IPC::CommandHeader> command_header;
+    std::shared_ptr<IPC::HandleDescriptorHeader> handle_descriptor_header;
+    std::shared_ptr<IPC::DataPayloadHeader> data_payload_header;
+    std::shared_ptr<IPC::DomainMessageHeader> domain_message_header;
     std::vector<IPC::BufferDescriptorX> buffer_x_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_a_desciptors;
     std::vector<IPC::BufferDescriptorABW> buffer_b_desciptors;
