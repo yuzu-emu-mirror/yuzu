@@ -31,6 +31,9 @@ add_library(video_core STATIC
     renderer_opengl/gl_stream_buffer.h
     renderer_opengl/renderer_opengl.cpp
     renderer_opengl/renderer_opengl.h
+    textures/decoders.cpp
+    textures/decoders.h
+    textures/texture.h
     utils.h
     video_core.cpp
     video_core.h

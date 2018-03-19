@@ -2,8 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/textures/decoders.h"
+#include "video_core/textures/texture.h"
 
 namespace Tegra {
 namespace Engines {
@@ -160,6 +163,48 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+
+    auto& fragment_shader = state.shader_stages[static_cast<size_t>(Regs::ShaderStage::Fragment)];
+    auto& tex_info_buffer = fragment_shader.const_buffers[regs.tex_cb_index];
+    ASSERT(tex_info_buffer.enabled && tex_info_buffer.address != 0);
+
+    GPUVAddr tic_base_address = regs.tic.TICAddress();
+
+    GPUVAddr tex_info_buffer_end = tex_info_buffer.address + tex_info_buffer.size;
+
+    for (GPUVAddr current_texture = tex_info_buffer.address + 0x20;
+         current_texture < tex_info_buffer_end; current_texture += 4) {
+
+        Texture::TextureHandle tex_info{
+            Memory::Read32(memory_manager.PhysicalToVirtualAddress(current_texture))};
+
+        if (tex_info.tic_id != 0 || tex_info.tsc_id != 0) {
+            GPUVAddr tic_address_gpu =
+                tic_base_address + tex_info.tic_id * sizeof(Texture::TICEntry);
+            VAddr tic_address_cpu = memory_manager.PhysicalToVirtualAddress(tic_address_gpu);
+
+            Texture::TICEntry tic_entry;
+            Memory::ReadBlock(tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
+
+            auto r_type = tic_entry.r_type.Value();
+            auto g_type = tic_entry.g_type.Value();
+            auto b_type = tic_entry.b_type.Value();
+            auto a_type = tic_entry.a_type.Value();
+
+            // TODO(Subv): Different data types for separate components are not supported
+            ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
+
+            auto format = tic_entry.format.Value();
+
+            auto texture = Texture::DecodeTexture(
+                memory_manager.PhysicalToVirtualAddress(tic_entry.Address()),
+                tic_entry.format.Value(), tic_entry.Width(), tic_entry.Height());
+
+            LOG_CRITICAL(HW_GPU,
+                         "Fragment shader using texture TIC %08X TSC %08X at address %016" PRIX64,
+                         tex_info.tic_id.Value(), tex_info.tsc_id.Value(), tic_entry.Address());
+        }
+    }
 }
 
 void Maxwell3D::BindTextureInfoBuffer(const std::vector<u32>& parameters) {
