@@ -12,6 +12,7 @@ namespace Engines {
 constexpr u32 MacroRegistersStart = 0xE00;
 
 const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
+    {0xE1A, {"BindTextureInfoBuffer", 1, &Maxwell3D::BindTextureInfoBuffer}},
     {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
     {0xE2A, {"BindStorageBuffer", 1, &Maxwell3D::BindStorageBuffer}},
 };
@@ -158,6 +159,23 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+}
+
+void Maxwell3D::BindTextureInfoBuffer(const std::vector<u32>& parameters) {
+    /**
+     * Parameters description:
+     * [0] = Shader stage, usually 4 for FragmentShader
+     */
+
+    u32 stage = parameters[0];
+
+    // Perform the same operations as the real macro code.
+    GPUVAddr address = static_cast<GPUVAddr>(regs.tex_info_buffers.address[stage]) << 8;
+    u32 size = regs.tex_info_buffers.size[stage];
+
+    regs.const_buffer.cb_size = size;
+    regs.const_buffer.cb_address_high = address >> 32;
+    regs.const_buffer.cb_address_low = address & 0xFFFFFFFF;
 }
 
 void Maxwell3D::SetShader(const std::vector<u32>& parameters) {

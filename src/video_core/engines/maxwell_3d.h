@@ -178,7 +178,14 @@ public:
                     }
                 } ssbo_info;
 
-                INSERT_PADDING_WORDS(0x11D);
+                INSERT_PADDING_WORDS(0x11);
+
+                struct {
+                    u32 address[MaxShaderStage];
+                    u32 size[MaxShaderStage];
+                } tex_info_buffers;
+
+                INSERT_PADDING_WORDS(0x102);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -240,6 +247,7 @@ private:
     void DrawArrays();
 
     /// Method call handlers
+    void BindTextureInfoBuffer(const std::vector<u32>& parameters);
     void SetShader(const std::vector<u32>& parameters);
     void BindStorageBuffer(const std::vector<u32>& parameters);
 
@@ -266,6 +274,8 @@ ASSERT_REG_POSITION(const_buffer, 0x8E0);
 ASSERT_REG_POSITION(cb_bind[0], 0x904);
 ASSERT_REG_POSITION(tex_cb_index, 0x982);
 ASSERT_REG_POSITION(ssbo_info, 0xD18);
+ASSERT_REG_POSITION(tex_info_buffers.address[0], 0xD2A);
+ASSERT_REG_POSITION(tex_info_buffers.size[0], 0xD2F);
 
 #undef ASSERT_REG_POSITION
 
