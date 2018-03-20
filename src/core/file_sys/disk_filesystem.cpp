@@ -108,8 +108,17 @@ ResultCode Disk_FileSystem::RenameDirectory(const Path& src_path, const Path& de
 }
 
 ResultVal<std::unique_ptr<DirectoryBackend>> Disk_FileSystem::OpenDirectory(
-    const Path& path) const {
-    return MakeResult<std::unique_ptr<DirectoryBackend>>(std::make_unique<Disk_Directory>());
+    const std::string& path) const {
+
+    std::string full_path = base_directory + path;
+
+    if (!FileUtil::IsDirectory(full_path)) {
+        // TODO(Subv): Find the correct error code for this.
+        return ResultCode(-1);
+    }
+
+    auto directory = std::make_unique<Disk_Directory>(full_path);
+    return MakeResult<std::unique_ptr<DirectoryBackend>>(std::move(directory));
 }
 
 u64 Disk_FileSystem::GetFreeSpaceSize() const {

@@ -150,7 +150,8 @@ public:
      * @param path Path relative to the archive
      * @return Opened directory, or error code
      */
-    virtual ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(const Path& path) const = 0;
+    virtual ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(
+        const std::string& path) const = 0;
 
     /**
      * Get the free space

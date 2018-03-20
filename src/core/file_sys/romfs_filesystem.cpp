@@ -70,7 +70,8 @@ ResultCode RomFS_FileSystem::RenameDirectory(const Path& src_path, const Path& d
 }
 
 ResultVal<std::unique_ptr<DirectoryBackend>> RomFS_FileSystem::OpenDirectory(
-    const Path& path) const {
+    const std::string& path) const {
+    LOG_WARNING(Service_FS, "Opening Directory in a ROMFS archive");
     return MakeResult<std::unique_ptr<DirectoryBackend>>(std::make_unique<ROMFSDirectory>());
 }
 
