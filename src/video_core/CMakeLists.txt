@@ -11,8 +11,11 @@ add_library(video_core STATIC
     gpu.h
     memory_manager.cpp
     memory_manager.h
+    rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
+    renderer_opengl/gl_rasterizer.cpp
+    renderer_opengl/gl_rasterizer.h
     renderer_opengl/gl_rasterizer_cache.cpp
     renderer_opengl/gl_rasterizer_cache.h
     renderer_opengl/gl_resource_manager.h
