@@ -59,8 +59,26 @@ private:
 
 class Disk_Directory : public DirectoryBackend {
 public:
-    u32 Read(const u32 count, Entry* entries) override;
-    bool Close() const override;
+    Disk_Directory(const std::string& path);
+
+    ~Disk_Directory() override {
+        Close();
+    }
+
+    u64 Read(const u64 count, Entry* entries) override;
+    u64 GetEntryCount() const override;
+
+    bool Close() const override {
+        return true;
+    }
+
+protected:
+    u32 total_entries_in_directory;
+    FileUtil::FSTEntry directory;
+
+    // We need to remember the last entry we returned, so a subsequent call to Read will continue
+    // from the next one. This iterator will always point to the next unread entry.
+    std::vector<FileUtil::FSTEntry>::iterator children_iterator;
 };
 
 } // namespace FileSys

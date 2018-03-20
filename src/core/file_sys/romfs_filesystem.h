@@ -70,7 +70,10 @@ private:
 
 class ROMFSDirectory : public DirectoryBackend {
 public:
-    u32 Read(const u32 count, Entry* entries) override {
+    u64 Read(const u64 count, Entry* entries) override {
+        return 0;
+    }
+    u64 GetEntryCount() const override {
         return 0;
     }
     bool Close() const override {

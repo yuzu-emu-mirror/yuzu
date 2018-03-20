@@ -153,14 +153,50 @@ bool Disk_Storage::SetSize(const u64 size) const {
     return false;
 }
 
-u32 Disk_Directory::Read(const u32 count, Entry* entries) {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    return 0;
+Disk_Directory::Disk_Directory(const std::string& path) : directory() {
+    unsigned size = FileUtil::ScanDirectoryTree(path, directory);
+    directory.size = size;
+    directory.isDirectory = true;
+    children_iterator = directory.children.begin();
 }
 
-bool Disk_Directory::Close() const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    return true;
+u64 Disk_Directory::Read(const u64 count, Entry* entries) {
+    u64 entries_read = 0;
+
+    while (entries_read < count && children_iterator != directory.children.cend()) {
+        const FileUtil::FSTEntry& file = *children_iterator;
+        const std::string& filename = file.virtualName;
+        Entry& entry = entries[entries_read];
+
+        LOG_TRACE(Service_FS, "File %s: size=%llu dir=%d", filename.c_str(), file.size,
+                  file.isDirectory);
+
+        // TODO(Link Mauve): use a proper conversion to UTF-16.
+        for (size_t j = 0; j < FILENAME_LENGTH; ++j) {
+            entry.filename[j] = filename[j];
+            if (!filename[j])
+                break;
+        }
+
+        if (file.isDirectory) {
+            entry.file_size = 0;
+            entry.type = EntryType::Directory;
+        } else {
+            entry.file_size = file.size;
+            entry.type = EntryType::File;
+        }
+
+        ++entries_read;
+        ++children_iterator;
+    }
+    return entries_read;
+}
+
+u64 Disk_Directory::GetEntryCount() const {
+    // We convert the children iterator into a const_iterator to allow template argument deduction
+    // in std::distance.
+    std::vector<FileUtil::FSTEntry>::const_iterator current = children_iterator;
+    return std::distance(current, directory.children.end());
 }
 
 } // namespace FileSys

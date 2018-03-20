@@ -27,7 +27,7 @@ enum LowPathType : u32 {
     Wchar = 4,
 };
 
-enum EntryType : u32 {
+enum EntryType : u8 {
     Directory = 0,
     File = 1,
 };
