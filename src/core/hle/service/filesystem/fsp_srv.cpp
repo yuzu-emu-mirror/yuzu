@@ -210,6 +210,7 @@ public:
             {0, &IFileSystem::CreateFile, "CreateFile"},
             {7, &IFileSystem::GetEntryType, "GetEntryType"},
             {8, &IFileSystem::OpenFile, "OpenFile"},
+            {9, &IFileSystem::OpenDirectory, "OpenDirectory"},
             {10, &IFileSystem::Commit, "Commit"},
         };
         RegisterHandlers(functions);
@@ -257,6 +258,33 @@ public:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IFile>(std::move(file));
+    }
+
+    void OpenDirectory(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        auto file_buffer = ctx.ReadBuffer();
+        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
+
+        std::string name(file_buffer.begin(), end);
+
+        // TODO(Subv): Implement this filter.
+        u32 filter_flags = rp.Pop<u32>();
+
+        LOG_DEBUG(Service_FS, "called directory %s filter %u", name.c_str(), filter_flags);
+
+        auto result = backend->OpenDirectory(name);
+        if (result.Failed()) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(result.Code());
+            return;
+        }
+
+        auto directory = std::move(result.Unwrap());
+
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IDirectory>(std::move(directory));
     }
 
     void GetEntryType(Kernel::HLERequestContext& ctx) {
