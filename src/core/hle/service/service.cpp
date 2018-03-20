@@ -20,6 +20,7 @@
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/audio/audio.h"
+#include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/hid/hid.h"
@@ -179,6 +180,7 @@ void Init() {
     AOC::InstallInterfaces(*SM::g_service_manager);
     APM::InstallInterfaces(*SM::g_service_manager);
     Audio::InstallInterfaces(*SM::g_service_manager);
+    Fatal::InstallInterfaces(*SM::g_service_manager);
     FileSystem::InstallInterfaces(*SM::g_service_manager);
     Friend::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);

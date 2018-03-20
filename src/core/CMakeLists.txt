@@ -114,6 +114,12 @@ add_library(core STATIC
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
+    hle/service/fatal/fatal.cpp
+    hle/service/fatal/fatal.h
+    hle/service/fatal/fatal_p.cpp
+    hle/service/fatal/fatal_p.h
+    hle/service/fatal/fatal_u.cpp
+    hle/service/fatal/fatal_u.h
     hle/service/filesystem/filesystem.cpp
     hle/service/filesystem/filesystem.h
     hle/service/filesystem/fsp_srv.cpp
