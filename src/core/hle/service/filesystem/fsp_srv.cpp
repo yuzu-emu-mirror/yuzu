@@ -274,10 +274,14 @@ void FSP_SRV::Initalize(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_DEBUG(Service_FS, "called");
 
-    IPC::ResponseBuilder rb{ctx, 2};
+    FileSys::Path unused;
+    auto filesystem = OpenFileSystem(Type::SDMC, unused).Unwrap();
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
 
 void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
