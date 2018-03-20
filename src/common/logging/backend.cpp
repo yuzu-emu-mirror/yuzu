@@ -37,6 +37,7 @@ namespace Log {
     SUB(Service, AM)                                                                               \
     SUB(Service, AOC)                                                                              \
     SUB(Service, APM)                                                                              \
+    SUB(Service, Fatal)                                                                            \
     SUB(Service, Friend)                                                                           \
     SUB(Service, FS)                                                                               \
     SUB(Service, HID)                                                                              \
