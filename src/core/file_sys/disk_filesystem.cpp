@@ -123,8 +123,10 @@ ResultVal<FileSys::EntryType> Disk_FileSystem::GetEntryType(const std::string& p
         return ERROR_PATH_NOT_FOUND;
     }
 
-    // TODO(Subv): Find out the EntryType values
-    UNIMPLEMENTED_MSG("Unimplemented GetEntryType");
+    if (FileUtil::IsDirectory(full_path))
+        return MakeResult(EntryType::Directory);
+
+    return MakeResult(EntryType::File);
 }
 
 ResultVal<size_t> Disk_Storage::Read(const u64 offset, const size_t length, u8* buffer) const {
