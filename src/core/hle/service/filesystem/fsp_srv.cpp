@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include "common/logging/log.h"
 #include "core/core.h"
+#include "core/file_sys/directory.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/storage.h"
 #include "core/hle/ipc_helpers.h"
@@ -148,6 +149,56 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+    }
+};
+
+class IDirectory final : public ServiceFramework<IDirectory> {
+public:
+    explicit IDirectory(std::unique_ptr<FileSys::DirectoryBackend>&& backend)
+        : ServiceFramework("IDirectory"), backend(std::move(backend)) {
+        static const FunctionInfo functions[] = {
+            {0, &IDirectory::Read, "Read"},
+            {1, &IDirectory::GetEntryCount, "GetEntryCount"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    std::unique_ptr<FileSys::DirectoryBackend> backend;
+
+    void Read(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const u64 unk = rp.Pop<u64>();
+
+        LOG_DEBUG(Service_FS, "called, unk=0x%llx", unk);
+
+        // Calculate how many entries we can fit in the output buffer
+        u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
+
+        // Read the data from the Directory backend
+        std::vector<FileSys::Entry> entries(count_entries);
+        u64 read_entries = backend->Read(count_entries, entries.data());
+
+        // Convert the data into a byte array
+        std::vector<u8> output(entries.size() * sizeof(FileSys::Entry));
+        std::memcpy(output.data(), entries.data(), output.size());
+
+        // Write the data to memory
+        ctx.WriteBuffer(output);
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(read_entries);
+    }
+
+    void GetEntryCount(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_FS, "called");
+
+        u64 count = backend->GetEntryCount();
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(count);
     }
 };
 
