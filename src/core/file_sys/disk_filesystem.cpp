@@ -17,10 +17,30 @@ std::string Disk_FileSystem::GetName() const {
 
 ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::string& path,
                                                                      Mode mode) const {
-    ASSERT_MSG(mode == Mode::Read || mode == Mode::Write, "Other file modes are not supported");
+
+    std::string mode_str = "";
+    u32 mode_flags = static_cast<u32>(mode);
+
+    // Calculate the correct open mode for the file.
+    if ((mode_flags & static_cast<u32>(Mode::Read)) &&
+        (mode_flags & static_cast<u32>(Mode::Write))) {
+        if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a+";
+        else
+            mode_str = "r+";
+    } else {
+        if (mode_flags & static_cast<u32>(Mode::Read))
+            mode_str = "r";
+        else if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a";
+        else if (mode_flags & static_cast<u32>(Mode::Write))
+            mode_str = "w";
+    }
+
+    mode_str += "b";
 
     std::string full_path = base_directory + path;
-    auto file = std::make_shared<FileUtil::IOFile>(full_path, mode == Mode::Read ? "rb" : "wb");
+    auto file = std::make_shared<FileUtil::IOFile>(full_path, mode_str.c_str());
 
     if (!file->IsOpen()) {
         return ERROR_PATH_NOT_FOUND;

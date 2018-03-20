@@ -35,6 +35,7 @@ enum EntryType : u32 {
 enum class Mode : u32 {
     Read = 1,
     Write = 2,
+    Append = 4,
 };
 
 class Path {
