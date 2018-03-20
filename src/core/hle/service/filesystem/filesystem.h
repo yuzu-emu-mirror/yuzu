@@ -26,6 +26,7 @@ namespace FileSystem {
 enum class Type {
     RomFS = 1,
     SaveData = 2,
+    SDMC = 3,
 };
 
 /**

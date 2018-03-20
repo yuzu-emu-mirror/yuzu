@@ -6,6 +6,7 @@
 #include "common/file_util.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/sdmc_factory.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
@@ -60,9 +61,13 @@ void RegisterFileSystems() {
     filesystem_map.clear();
 
     std::string nand_directory = FileUtil::GetUserPath(D_NAND_IDX);
+    std::string sd_directory = FileUtil::GetUserPath(D_SDMC_IDX);
 
     auto savedata = std::make_unique<FileSys::SaveData_Factory>(std::move(nand_directory));
     RegisterFileSystem(std::move(savedata), Type::SaveData);
+
+    auto sdcard = std::make_unique<FileSys::SDMC_Factory>(std::move(sd_directory));
+    RegisterFileSystem(std::move(sdcard), Type::SDMC);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
