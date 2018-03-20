@@ -31,6 +31,7 @@ public:
     struct Regs {
         static constexpr size_t NUM_REGS = 0xE36;
 
+        static constexpr size_t NumRenderTargets = 8;
         static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t MaxShaderProgram = 6;
@@ -62,7 +63,50 @@ public:
 
         union {
             struct {
-                INSERT_PADDING_WORDS(0x557);
+                INSERT_PADDING_WORDS(0x200);
+
+                struct {
+                    u32 address_high;
+                    u32 address_low;
+                    u32 horiz;
+                    u32 vert;
+                    u32 format;
+                    u32 block_dimensions;
+                    u32 array_mode;
+                    u32 layer_stride;
+                    u32 base_layer;
+                    INSERT_PADDING_WORDS(7);
+
+                    GPUVAddr Address() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
+                                                     address_low);
+                    }
+                } rt[NumRenderTargets];
+
+                INSERT_PADDING_WORDS(0x178);
+
+                struct {
+                    u32 address_high;
+                    u32 address_low;
+                    u32 format;
+                    u32 block_dimensions;
+                    u32 layer_stride;
+
+                    GPUVAddr Address() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
+                                                     address_low);
+                    }
+                } zeta;
+
+                INSERT_PADDING_WORDS(0x8A);
+
+                struct {
+                    union {
+                        BitField<0, 4, u32> count;
+                    };
+                } rt_control;
+
+                INSERT_PADDING_WORDS(0xCF);
 
                 struct {
                     u32 tsc_address_high;
@@ -291,6 +335,9 @@ private:
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(rt, 0x200);
+ASSERT_REG_POSITION(zeta, 0x3F8);
+ASSERT_REG_POSITION(rt_control, 0x487);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(code_address, 0x582);
