@@ -55,7 +55,7 @@ ResultCode RomFS_FileSystem::CreateFile(const std::string& path, u64 size) const
     return ResultCode(-1);
 }
 
-ResultCode RomFS_FileSystem::CreateDirectory(const Path& path) const {
+ResultCode RomFS_FileSystem::CreateDirectory(const std::string& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to create a directory in an ROMFS archive (%s).",
                  GetName().c_str());
     // TODO(wwylele): Use correct error code

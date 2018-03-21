@@ -104,7 +104,7 @@ public:
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode CreateDirectory(const Path& path) const = 0;
+    virtual ResultCode CreateDirectory(const std::string& path) const = 0;
 
     /**
      * Delete a directory specified by its path

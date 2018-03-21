@@ -36,7 +36,7 @@ public:
     ResultCode DeleteDirectory(const Path& path) const override;
     ResultCode DeleteDirectoryRecursively(const Path& path) const override;
     ResultCode CreateFile(const std::string& path, u64 size) const override;
-    ResultCode CreateDirectory(const Path& path) const override;
+    ResultCode CreateDirectory(const std::string& path) const override;
     ResultCode RenameDirectory(const Path& src_path, const Path& dest_path) const override;
     ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(
         const std::string& path) const override;

@@ -208,6 +208,7 @@ public:
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
+            {2, &IFileSystem::CreateDirectory, "CreateDirectory"},
             {7, &IFileSystem::GetEntryType, "GetEntryType"},
             {8, &IFileSystem::OpenFile, "OpenFile"},
             {9, &IFileSystem::OpenDirectory, "OpenDirectory"},
@@ -232,6 +233,20 @@ public:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateFile(name, size));
+    }
+
+    void CreateDirectory(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        auto file_buffer = ctx.ReadBuffer();
+        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
+
+        std::string name(file_buffer.begin(), end);
+
+        LOG_DEBUG(Service_FS, "called directory %s", name.c_str());
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(backend->CreateDirectory(name));
     }
 
     void OpenFile(Kernel::HLERequestContext& ctx) {

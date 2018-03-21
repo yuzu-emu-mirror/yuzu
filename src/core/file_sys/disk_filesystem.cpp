@@ -18,7 +18,7 @@ std::string Disk_FileSystem::GetName() const {
 ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::string& path,
                                                                      Mode mode) const {
 
-    std::string mode_str = "";
+    std::string mode_str;
     u32 mode_flags = static_cast<u32>(mode);
 
     // Calculate the correct open mode for the file.
@@ -95,8 +95,15 @@ ResultCode Disk_FileSystem::CreateFile(const std::string& path, u64 size) const 
     return ResultCode(-1);
 }
 
-ResultCode Disk_FileSystem::CreateDirectory(const Path& path) const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
+ResultCode Disk_FileSystem::CreateDirectory(const std::string& path) const {
+    // TODO(Subv): Perform path validation to prevent escaping the emulator sandbox.
+    std::string full_path = base_directory + path;
+
+    if (FileUtil::CreateDir(full_path)) {
+        return RESULT_SUCCESS;
+    }
+
+    LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating %s", full_path.c_str());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
