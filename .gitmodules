@@ -18,7 +18,7 @@
     url = https://github.com/fmtlib/fmt.git
 [submodule "lz4"]
     path = externals/lz4
-    url = http://github.com/lz4/lz4.git
+    url = https://github.com/lz4/lz4.git
 [submodule "unicorn"]
     path = externals/unicorn
     url = https://github.com/yuzu-emu/unicorn
