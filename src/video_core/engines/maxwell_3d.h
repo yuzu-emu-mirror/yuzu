@@ -34,6 +34,7 @@ public:
         static constexpr size_t NumRenderTargets = 8;
         static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
+        static constexpr size_t NumVertexAttributes = 32;
         static constexpr size_t MaxShaderProgram = 6;
         static constexpr size_t MaxShaderStage = 5;
         // Maximum number of const buffers per shader stage.
@@ -83,7 +84,14 @@ public:
                     }
                 } rt[NumRenderTargets];
 
-                INSERT_PADDING_WORDS(0x178);
+                INSERT_PADDING_WORDS(0xDD);
+
+                struct {
+                    u32 first;
+                    u32 count;
+                } vertex_buffer;
+
+                INSERT_PADDING_WORDS(0x99);
 
                 struct {
                     u32 address_high;
@@ -98,7 +106,18 @@ public:
                     }
                 } zeta;
 
-                INSERT_PADDING_WORDS(0x8A);
+                INSERT_PADDING_WORDS(0x5B);
+
+                union {
+                    BitField<0, 5, u32> buffer;
+                    BitField<6, 1, u32> constant;
+                    BitField<7, 14, u32> offset;
+                    BitField<21, 6, u32> size;
+                    BitField<27, 3, u32> type;
+                    BitField<31, 1, u32> bgra;
+                } vertex_attrib_format[NumVertexAttributes];
+
+                INSERT_PADDING_WORDS(0xF);
 
                 struct {
                     union {
@@ -146,7 +165,10 @@ public:
                 INSERT_PADDING_WORDS(1);
                 struct {
                     u32 vertex_end_gl;
-                    u32 vertex_begin_gl;
+                    union {
+                        u32 vertex_begin_gl;
+                        BitField<0, 16, u32> topology;
+                    };
                 } draw;
                 INSERT_PADDING_WORDS(0x139);
                 struct {
@@ -336,7 +358,9 @@ private:
                   "Field " #field_name " has invalid position")
 
 ASSERT_REG_POSITION(rt, 0x200);
+ASSERT_REG_POSITION(vertex_buffer, 0x35D);
 ASSERT_REG_POSITION(zeta, 0x3F8);
+ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
 ASSERT_REG_POSITION(rt_control, 0x487);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
