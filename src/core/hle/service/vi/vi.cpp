@@ -4,10 +4,13 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
+#include <boost/optional.hpp>
 #include "common/alignment.h"
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "core/hle/service/vi/vi.h"
@@ -646,144 +649,152 @@ private:
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
 };
 
-void IApplicationDisplayService::GetRelayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
+public:
+    IApplicationDisplayService(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
+    ~IApplicationDisplayService() = default;
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
-}
+private:
+    void GetRelayService(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
 
-void IApplicationDisplayService::GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
+    }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISystemDisplayService>();
-}
+    void GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
 
-void IApplicationDisplayService::GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<ISystemDisplayService>();
+    }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
-}
+    void GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
 
-void IApplicationDisplayService::GetIndirectDisplayTransactionService(
-    Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IManagerDisplayService>(nv_flinger);
+    }
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
-}
+    void GetIndirectDisplayTransactionService(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
 
-void IApplicationDisplayService::OpenDisplay(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
-    IPC::RequestParser rp{ctx};
-    auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
-    auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IHOSBinderDriver>(nv_flinger);
+    }
 
-    std::string name(name_buf.begin(), end);
+    void OpenDisplay(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
+        auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
 
-    ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
+        std::string name(name_buf.begin(), end);
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(nv_flinger->OpenDisplay(name));
-}
+        ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
 
-void IApplicationDisplayService::CloseDisplay(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
-    IPC::RequestParser rp{ctx};
-    u64 display_id = rp.Pop<u64>();
+        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(nv_flinger->OpenDisplay(name));
+    }
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-}
+    void CloseDisplay(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u64 display_id = rp.Pop<u64>();
 
-void IApplicationDisplayService::OpenLayer(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_VI, "called");
-    IPC::RequestParser rp{ctx};
-    auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
-    auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+    }
 
-    std::string display_name(name_buf.begin(), end);
+    void SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u32 scaling_mode = rp.Pop<u32>();
+        u64 unknown = rp.Pop<u64>();
 
-    u64 layer_id = rp.Pop<u64>();
-    u64 aruid = rp.Pop<u64>();
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+    }
 
-    u64 display_id = nv_flinger->OpenDisplay(display_name);
-    u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+    void ListDisplays(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        DisplayInfo display_info;
+        ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
+        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(1);
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+    }
 
-    NativeWindow native_window{buffer_queue_id};
-    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
-}
+    void OpenLayer(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_VI, "called");
+        IPC::RequestParser rp{ctx};
+        auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
+        auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
 
-void IApplicationDisplayService::CreateStrayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_VI, "called");
+        std::string display_name(name_buf.begin(), end);
 
-    IPC::RequestParser rp{ctx};
-    u32 flags = rp.Pop<u32>();
-    rp.Pop<u32>(); // padding
-    u64 display_id = rp.Pop<u64>();
+        u64 layer_id = rp.Pop<u64>();
+        u64 aruid = rp.Pop<u64>();
 
-    // TODO(Subv): What's the difference between a Stray and a Managed layer?
+        u64 display_id = nv_flinger->OpenDisplay(display_name);
+        u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
-    u64 layer_id = nv_flinger->CreateLayer(display_id);
-    u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+        NativeWindow native_window{buffer_queue_id};
+        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
+    }
 
-    NativeWindow native_window{buffer_queue_id};
-    IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-    rb.Push(layer_id);
-    rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
-}
+    void CreateStrayLayer(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_VI, "called");
 
-void IApplicationDisplayService::DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u32 flags = rp.Pop<u32>();
+        rp.Pop<u32>(); // padding
+        u64 display_id = rp.Pop<u64>();
 
-    IPC::RequestParser rp{ctx};
-    u64 layer_id = rp.Pop<u64>();
+        // TODO(Subv): What's the difference between a Stray and a Managed layer?
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-}
+        u64 layer_id = nv_flinger->CreateLayer(display_id);
+        u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
-void IApplicationDisplayService::SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
-    IPC::RequestParser rp{ctx};
-    u32 scaling_mode = rp.Pop<u32>();
-    u64 unknown = rp.Pop<u64>();
+        NativeWindow native_window{buffer_queue_id};
+        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(layer_id);
+        rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
+    }
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-}
+    void DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
 
-void IApplicationDisplayService::ListDisplays(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ctx};
-    DisplayInfo display_info;
-    ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
-    IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
-    rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(1);
-    LOG_WARNING(Service_VI, "(STUBBED) called");
-}
+        IPC::RequestParser rp{ctx};
+        u64 layer_id = rp.Pop<u64>();
 
-void IApplicationDisplayService::GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
-    IPC::RequestParser rp{ctx};
-    u64 display_id = rp.Pop<u64>();
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+    }
 
-    auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
+    void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u64 display_id = rp.Pop<u64>();
 
-    IPC::ResponseBuilder rb = rp.MakeBuilder(2, 1, 0);
-    rb.Push(RESULT_SUCCESS);
-    rb.PushCopyObjects(vsync_event);
-}
+        auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
+
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 1, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(vsync_event);
+    }
+
+    std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
+};
 
 IApplicationDisplayService::IApplicationDisplayService(
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
@@ -806,11 +817,24 @@ IApplicationDisplayService::IApplicationDisplayService(
     RegisterHandlers(functions);
 }
 
+Module::Interface::Interface(std::shared_ptr<Module> module, const char* name,
+                             std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
+    : ServiceFramework(name), module(std::move(module)), nv_flinger(std::move(nv_flinger)) {}
+
+void Module::Interface::GetDisplayService(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_VI, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IApplicationDisplayService>(nv_flinger);
+}
+
 void InstallInterfaces(SM::ServiceManager& service_manager,
                        std::shared_ptr<NVFlinger::NVFlinger> nv_flinger) {
-    std::make_shared<VI_M>(nv_flinger)->InstallAsService(service_manager);
-    std::make_shared<VI_S>(nv_flinger)->InstallAsService(service_manager);
-    std::make_shared<VI_U>(nv_flinger)->InstallAsService(service_manager);
+    auto module = std::make_shared<Module>();
+    std::make_shared<VI_M>(module, nv_flinger)->InstallAsService(service_manager);
+    std::make_shared<VI_S>(module, nv_flinger)->InstallAsService(service_manager);
+    std::make_shared<VI_U>(module, nv_flinger)->InstallAsService(service_manager);
 }
 
 } // namespace VI
