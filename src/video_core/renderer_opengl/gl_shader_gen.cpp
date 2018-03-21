@@ -1,0 +1,20 @@
+// Copyright 2018 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#include "common/assert.h"
+#include "video_core/renderer_opengl/gl_shader_gen.h"
+
+namespace GLShader {
+
+std::string GenerateVertexShader(const MaxwellVSConfig& config) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+std::string GenerateFragmentShader(const MaxwellFSConfig& config) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+} // namespace GLShader

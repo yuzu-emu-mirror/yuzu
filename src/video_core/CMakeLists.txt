@@ -11,13 +11,24 @@ add_library(video_core STATIC
     gpu.h
     memory_manager.cpp
     memory_manager.h
+    rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
+    renderer_opengl/gl_rasterizer.cpp
+    renderer_opengl/gl_rasterizer.h
+    renderer_opengl/gl_rasterizer_cache.cpp
+    renderer_opengl/gl_rasterizer_cache.h
     renderer_opengl/gl_resource_manager.h
+    renderer_opengl/gl_shader_decompiler.cpp
+    renderer_opengl/gl_shader_decompiler.h
+    renderer_opengl/gl_shader_gen.cpp
+    renderer_opengl/gl_shader_gen.h
     renderer_opengl/gl_shader_util.cpp
     renderer_opengl/gl_shader_util.h
     renderer_opengl/gl_state.cpp
     renderer_opengl/gl_state.h
+    renderer_opengl/gl_stream_buffer.cpp
+    renderer_opengl/gl_stream_buffer.h
     renderer_opengl/renderer_opengl.cpp
     renderer_opengl/renderer_opengl.h
     utils.h
