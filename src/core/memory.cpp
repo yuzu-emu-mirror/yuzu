@@ -23,7 +23,6 @@
 namespace Memory {
 
 static std::array<u8, Memory::VRAM_SIZE> vram;
-static std::array<u8, Memory::N3DS_EXTRA_RAM_SIZE> n3ds_extra_ram;
 
 static PageTable* current_page_table = nullptr;
 
@@ -244,7 +243,6 @@ u8* GetPhysicalPointer(PAddr address) {
         {IO_AREA_PADDR, IO_AREA_SIZE},
         {DSP_RAM_PADDR, DSP_RAM_SIZE},
         {FCRAM_PADDR, FCRAM_N3DS_SIZE},
-        {N3DS_EXTRA_RAM_PADDR, N3DS_EXTRA_RAM_SIZE},
     };
 
     const auto area =
@@ -282,9 +280,6 @@ u8* GetPhysicalPointer(PAddr address) {
             }
         }
         ASSERT_MSG(target_pointer != nullptr, "Invalid FCRAM address");
-        break;
-    case N3DS_EXTRA_RAM_PADDR:
-        target_pointer = n3ds_extra_ram.data() + offset_into_region;
         break;
     default:
         UNREACHABLE();
@@ -609,8 +604,6 @@ boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
         return addr - DSP_RAM_VADDR + DSP_RAM_PADDR;
     } else if (addr >= IO_AREA_VADDR && addr < IO_AREA_VADDR_END) {
         return addr - IO_AREA_VADDR + IO_AREA_PADDR;
-    } else if (addr >= N3DS_EXTRA_RAM_VADDR && addr < N3DS_EXTRA_RAM_VADDR_END) {
-        return addr - N3DS_EXTRA_RAM_VADDR + N3DS_EXTRA_RAM_PADDR;
     }
 
     return boost::none;
@@ -637,8 +630,6 @@ boost::optional<VAddr> PhysicalToVirtualAddress(const PAddr addr) {
         return addr - DSP_RAM_PADDR + DSP_RAM_VADDR;
     } else if (addr >= IO_AREA_PADDR && addr < IO_AREA_PADDR_END) {
         return addr - IO_AREA_PADDR + IO_AREA_VADDR;
-    } else if (addr >= N3DS_EXTRA_RAM_PADDR && addr < N3DS_EXTRA_RAM_PADDR_END) {
-        return addr - N3DS_EXTRA_RAM_PADDR + N3DS_EXTRA_RAM_VADDR;
     }
 
     return boost::none;

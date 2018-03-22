@@ -98,12 +98,6 @@ enum : PAddr {
     VRAM_SIZE = 0x00600000, ///< VRAM size (6MB)
     VRAM_PADDR_END = VRAM_PADDR + VRAM_SIZE,
 
-    /// New 3DS additional memory. Supposedly faster than regular FCRAM. Part of it can be used by
-    /// applications and system modules if mapped via the ExHeader.
-    N3DS_EXTRA_RAM_PADDR = 0x1F000000,
-    N3DS_EXTRA_RAM_SIZE = 0x00400000, ///< New 3DS additional memory size (4MB)
-    N3DS_EXTRA_RAM_PADDR_END = N3DS_EXTRA_RAM_PADDR + N3DS_EXTRA_RAM_SIZE,
-
     /// DSP memory
     DSP_RAM_PADDR = 0x1FF00000,
     DSP_RAM_SIZE = 0x00080000, ///< DSP memory size (512KB)
@@ -119,7 +113,6 @@ enum : PAddr {
     FCRAM_SIZE = 0x08000000,      ///< FCRAM size on the Old 3DS (128MB)
     FCRAM_N3DS_SIZE = 0x10000000, ///< FCRAM size on the New 3DS (256MB)
     FCRAM_PADDR_END = FCRAM_PADDR + FCRAM_SIZE,
-    FCRAM_N3DS_PADDR_END = FCRAM_PADDR + FCRAM_N3DS_SIZE,
 };
 
 /// Virtual user-space memory regions
@@ -134,10 +127,6 @@ enum : VAddr {
     LINEAR_HEAP_VADDR = 0x14000000,
     LINEAR_HEAP_SIZE = 0x08000000,
     LINEAR_HEAP_VADDR_END = LINEAR_HEAP_VADDR + LINEAR_HEAP_SIZE,
-
-    /// Maps 1:1 to New 3DS additional memory
-    N3DS_EXTRA_RAM_VADDR = 0x1E800000,
-    N3DS_EXTRA_RAM_VADDR_END = N3DS_EXTRA_RAM_VADDR + N3DS_EXTRA_RAM_SIZE,
 
     /// Maps 1:1 to the IO register area.
     IO_AREA_VADDR = 0x1EC00000,
