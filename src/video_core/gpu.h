@@ -36,6 +36,10 @@ public:
 
     std::unique_ptr<MemoryManager> memory_manager;
 
+    Engines::Maxwell3D& Maxwell3D() {
+        return *maxwell_3d;
+    }
+
 private:
     static constexpr u32 InvalidGraphMacroEntry = 0xFFFFFFFF;
 
