@@ -173,6 +173,9 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+    if (Tegra::g_debug_context) {
+        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::IncomingPrimitiveBatch, nullptr);
+    }
 
     auto& fragment_shader = state.shader_stages[static_cast<size_t>(Regs::ShaderStage::Fragment)];
     auto& tex_info_buffer = fragment_shader.const_buffers[regs.tex_cb_index];
@@ -214,6 +217,10 @@ void Maxwell3D::DrawArrays() {
                          "Fragment shader using texture TIC %08X TSC %08X at address %016" PRIX64,
                          tex_info.tic_id.Value(), tex_info.tsc_id.Value(), tic_entry.Address());
         }
+    }
+
+    if (Tegra::g_debug_context) {
+        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
     }
 }
 
