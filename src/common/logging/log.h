@@ -65,6 +65,7 @@ enum class Class : ClassType {
     Service_PCTL,      ///< The PCTL (Parental control) service
     Service_SET,       ///< The SET (Settings) service
     Service_SM,        ///< The SM (Service manager) service
+    Service_SPL,       ///< The SPL service
     Service_Time,      ///< The time service
     Service_VI,        ///< The VI (Video interface) service
     HW,                ///< Low-level hardware emulation
