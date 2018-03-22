@@ -34,6 +34,7 @@
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/sockets/sockets.h"
+#include "core/hle/service/spl/module.h"
 #include "core/hle/service/time/time.h"
 #include "core/hle/service/vi/vi.h"
 
@@ -190,6 +191,7 @@ void Init() {
     Nvidia::InstallInterfaces(*SM::g_service_manager);
     PCTL::InstallInterfaces(*SM::g_service_manager);
     Sockets::InstallInterfaces(*SM::g_service_manager);
+    SPL::InstallInterfaces(*SM::g_service_manager);
     Time::InstallInterfaces(*SM::g_service_manager);
     VI::InstallInterfaces(*SM::g_service_manager, nv_flinger);
     Set::InstallInterfaces(*SM::g_service_manager);
