@@ -13,6 +13,8 @@
 
 namespace Tegra {
 
+class DebugContext;
+
 /**
  * Struct describing framebuffer configuration
  */
@@ -65,6 +67,9 @@ public:
 
     /// Processes a command list stored at the specified address in GPU memory.
     void ProcessCommandList(GPUVAddr address, u32 size);
+
+    /// Returns a reference to the Maxwell3D GPU engine.
+    const Engines::Maxwell3D& Get3DEngine() const;
 
     std::unique_ptr<MemoryManager> memory_manager;
 

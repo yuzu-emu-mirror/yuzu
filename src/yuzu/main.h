@@ -15,11 +15,7 @@ class Config;
 class EmuThread;
 class GameList;
 class GImageInfo;
-class GPUCommandStreamWidget;
-class GPUCommandListWidget;
 class GraphicsBreakPointsWidget;
-class GraphicsTracingWidget;
-class GraphicsVertexShaderWidget;
 class GRenderWindow;
 class MicroProfileDialog;
 class ProfilerWidget;
@@ -158,6 +154,7 @@ private:
     ProfilerWidget* profilerWidget;
     MicroProfileDialog* microProfileDialog;
     RegistersWidget* registersWidget;
+    GraphicsBreakPointsWidget* graphicsBreakpointsWidget;
     WaitTreeWidget* waitTreeWidget;
 
     QAction* actions_recent_files[max_recent_files_item];

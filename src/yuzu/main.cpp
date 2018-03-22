@@ -29,6 +29,7 @@
 #include "yuzu/bootmanager.h"
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/debugger/graphics/graphics_breakpoints.h"
 #include "yuzu/debugger/profiler.h"
 #include "yuzu/debugger/registers.h"
 #include "yuzu/debugger/wait_tree.h"
@@ -68,6 +69,9 @@ static void ShowCalloutMessage(const QString& message, CalloutFlag flag) {
 void GMainWindow::ShowCallouts() {}
 
 GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
+
+    Tegra::g_debug_context = Tegra::DebugContext::Construct();
+
     setAcceptDrops(true);
     ui.setupUi(this);
     statusBar()->hide();
@@ -159,6 +163,11 @@ void GMainWindow::InitializeDebugWidgets() {
             &RegistersWidget::OnEmulationStarting);
     connect(this, &GMainWindow::EmulationStopping, registersWidget,
             &RegistersWidget::OnEmulationStopping);
+
+    graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(Tegra::g_debug_context, this);
+    addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
+    graphicsBreakpointsWidget->hide();
+    debug_menu->addAction(graphicsBreakpointsWidget->toggleViewAction());
 
     waitTreeWidget = new WaitTreeWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, waitTreeWidget);

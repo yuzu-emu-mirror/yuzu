@@ -1,6 +1,8 @@
 add_library(video_core STATIC
     command_processor.cpp
     command_processor.h
+    debug_utils/debug_utils.cpp
+    debug_utils/debug_utils.h
     engines/fermi_2d.cpp
     engines/fermi_2d.h
     engines/maxwell_3d.cpp
