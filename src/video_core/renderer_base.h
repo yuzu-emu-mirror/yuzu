@@ -8,6 +8,7 @@
 #include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
+#include "video_core/rasterizer_interface.h"
 
 class EmuWindow;
 
@@ -74,12 +75,16 @@ public:
         return m_current_frame;
     }
 
+    VideoCore::RasterizerInterface* Rasterizer() const {
+        return rasterizer.get();
+    }
+
     void RefreshRasterizerSetting();
 
 protected:
+    std::unique_ptr<VideoCore::RasterizerInterface> rasterizer;
     f32 m_current_fps = 0.0f; ///< Current framerate, should be set by the renderer
     int m_current_frame = 0;  ///< Current frame, should be set by the renderer
 
 private:
-    bool opengl_rasterizer_active = false;
 };

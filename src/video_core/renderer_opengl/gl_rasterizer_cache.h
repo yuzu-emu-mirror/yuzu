@@ -211,8 +211,8 @@ struct SurfaceParams {
     MathUtil::Rectangle<u32> GetSubRect(const SurfaceParams& sub_surface) const;
     MathUtil::Rectangle<u32> GetScaledSubRect(const SurfaceParams& sub_surface) const;
 
-    PAddr addr = 0;
-    PAddr end = 0;
+    VAddr addr = 0;
+    VAddr end = 0;
     u64 size = 0;
 
     u32 width = 0;
