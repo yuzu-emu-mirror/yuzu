@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include "common/assert.h"
+#include "video_core/debug_utils/debug_utils.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
@@ -75,6 +76,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         return;
     }
 
+    if (Tegra::g_debug_context) {
+        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
+    }
+
     regs.reg_array[method] = value;
 
 #define MAXWELL3D_REG_INDEX(field_name) (offsetof(Regs, field_name) / sizeof(u32))
@@ -140,6 +145,11 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     }
 
 #undef MAXWELL3D_REG_INDEX
+
+    if (Tegra::g_debug_context) {
+        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed,
+                                        nullptr);
+    }
 }
 
 void Maxwell3D::ProcessQueryGet() {
