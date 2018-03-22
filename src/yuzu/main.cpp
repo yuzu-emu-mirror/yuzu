@@ -30,6 +30,7 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
 #include "yuzu/debugger/graphics/graphics_breakpoints.h"
+#include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/debugger/profiler.h"
 #include "yuzu/debugger/registers.h"
 #include "yuzu/debugger/wait_tree.h"
@@ -168,6 +169,11 @@ void GMainWindow::InitializeDebugWidgets() {
     addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
     graphicsBreakpointsWidget->hide();
     debug_menu->addAction(graphicsBreakpointsWidget->toggleViewAction());
+
+    graphicsSurfaceWidget = new GraphicsSurfaceWidget(Tegra::g_debug_context, this);
+    addDockWidget(Qt::RightDockWidgetArea, graphicsSurfaceWidget);
+    graphicsSurfaceWidget->hide();
+    debug_menu->addAction(graphicsSurfaceWidget->toggleViewAction());
 
     waitTreeWidget = new WaitTreeWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, waitTreeWidget);
