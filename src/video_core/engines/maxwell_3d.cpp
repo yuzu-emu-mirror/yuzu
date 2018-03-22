@@ -196,7 +196,7 @@ void Maxwell3D::DrawArrays() {
 
             auto format = tic_entry.format.Value();
 
-            auto texture = Texture::DecodeTexture(
+            auto texture = Texture::UnswizzleTexture(
                 memory_manager.PhysicalToVirtualAddress(tic_entry.Address()),
                 tic_entry.format.Value(), tic_entry.Width(), tic_entry.Height());
 

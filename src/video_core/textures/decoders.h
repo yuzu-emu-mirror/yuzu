@@ -12,9 +12,15 @@ namespace Tegra {
 namespace Texture {
 
 /**
- * Decodes a swizzled texture into a RGBA8888 texture.
+ * Unswizzles a swizzled texture without changing its format.
  */
-std::vector<u8> DecodeTexture(VAddr address, TextureFormat format, u32 width, u32 height);
+std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width, u32 height);
+
+/**
+ * Decodes an unswizzled texture into a A8R8G8B8 texture.
+ */
+std::vector<u8> DecodeTexture(const std::vector<u8>& texture_data, TextureFormat format, u32 width,
+                              u32 height);
 
 } // namespace Texture
 } // namespace Tegra

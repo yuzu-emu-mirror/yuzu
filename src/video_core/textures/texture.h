@@ -13,6 +13,7 @@ namespace Tegra {
 namespace Texture {
 
 enum class TextureFormat : u32 {
+    A8R8G8B8 = 8,
     DXT1 = 0x24,
 };
 
@@ -52,6 +53,9 @@ struct TICEntry {
     }
 };
 static_assert(sizeof(TICEntry) == 0x20, "TICEntry has wrong size");
+
+/// Returns the number of bytes per pixel of the input texture format.
+u32 BytesPerPixel(TextureFormat format);
 
 } // namespace Texture
 } // namespace Tegra
