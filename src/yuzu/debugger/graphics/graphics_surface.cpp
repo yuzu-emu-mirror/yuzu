@@ -13,11 +13,22 @@
 #include <QSpinBox>
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/gpu.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 #include "video_core/utils.h"
 #include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/util/spinbox.h"
+
+static Tegra::Texture::TextureFormat ConvertToTextureFormat(
+    Tegra::RenderTargetFormat render_target_format) {
+    switch (render_target_format) {
+    case Tegra::RenderTargetFormat::RGBA8_UNORM:
+        return Tegra::Texture::TextureFormat::A8R8G8B8;
+    default:
+        UNIMPLEMENTED_MSG("Unimplemented RT format");
+    }
+}
 
 SurfacePicture::SurfacePicture(QWidget* parent, GraphicsSurfaceWidget* surface_widget_)
     : QLabel(parent), surface_widget(surface_widget_) {}
@@ -62,7 +73,7 @@ GraphicsSurfaceWidget::GraphicsSurfaceWidget(std::shared_ptr<Tegra::DebugContext
 
     surface_address_control = new CSpinBox;
     surface_address_control->SetBase(16);
-    surface_address_control->SetRange(0, 0xFFFFFFFF);
+    surface_address_control->SetRange(0, 0x7FFFFFFFFFFFFFFF);
     surface_address_control->SetPrefix("0x");
 
     unsigned max_dimension = 16384; // TODO: Find actual maximum
@@ -243,7 +254,7 @@ void GraphicsSurfaceWidget::OnSurfaceSourceChanged(int new_value) {
 
 void GraphicsSurfaceWidget::OnSurfaceAddressChanged(qint64 new_value) {
     if (surface_address != new_value) {
-        surface_address = static_cast<unsigned>(new_value);
+        surface_address = static_cast<Tegra::GPUVAddr>(new_value);
 
         surface_source_list->setCurrentIndex(static_cast<int>(Source::Custom));
         emit Update();
@@ -302,13 +313,6 @@ void GraphicsSurfaceWidget::Pick(int x, int y) {
         return;
     }
 
-    u8* buffer = Memory::GetPhysicalPointer(surface_address);
-    if (buffer == nullptr) {
-        surface_info_label->setText(tr("(unable to access pixel data)"));
-        surface_info_label->setAlignment(Qt::AlignCenter);
-        return;
-    }
-
     surface_info_label->setText(QString("Raw: <Unimplemented>\n(%1)").arg("<Unimplemented>"));
     surface_info_label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 }
@@ -317,8 +321,6 @@ void GraphicsSurfaceWidget::OnUpdate() {
     auto& gpu = Core::System::GetInstance().GPU();
 
     QPixmap pixmap;
-
-    Tegra::GPUVAddr surface_address = 0;
 
     switch (surface_source) {
     case Source::RenderTarget0:
@@ -333,11 +335,13 @@ void GraphicsSurfaceWidget::OnUpdate() {
         // directly...
 
         auto& registers = gpu.Get3DEngine().regs;
+        auto& rt = registers.rt[static_cast<size_t>(surface_source) -
+                                static_cast<size_t>(Source::RenderTarget0)];
 
-        surface_address = 0;
-        surface_width = 0;
-        surface_height = 0;
-        surface_format = Tegra::Texture::TextureFormat::DXT1;
+        surface_address = rt.Address();
+        surface_width = rt.horiz;
+        surface_height = rt.vert;
+        surface_format = ConvertToTextureFormat(static_cast<Tegra::RenderTargetFormat>(rt.format));
 
         break;
     }
@@ -378,9 +382,6 @@ void GraphicsSurfaceWidget::OnUpdate() {
     auto texture_data = Tegra::Texture::DecodeTexture(unswizzled_data, surface_format,
                                                       surface_width, surface_height);
 
-    ASSERT(texture_data.size() ==
-           surface_width * surface_height *
-               Tegra::Texture::BytesPerPixel(Tegra::Texture::TextureFormat::A8R8G8B8));
     surface_picture_label->show();
 
     for (unsigned int y = 0; y < surface_height; ++y) {
@@ -431,7 +432,10 @@ void GraphicsSurfaceWidget::SaveSurface() {
         if (pixmap)
             pixmap->save(&file, "PNG");
     } else if (selectedFilter == bin_filter) {
-        const u8* buffer = Memory::GetPhysicalPointer(surface_address);
+        auto& gpu = Core::System::GetInstance().GPU();
+        VAddr address = gpu.memory_manager->PhysicalToVirtualAddress(surface_address);
+
+        const u8* buffer = Memory::GetPointer(address);
         ASSERT_MSG(buffer != nullptr, "Memory not accessible");
 
         QFile file(filename);

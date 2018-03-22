@@ -13,6 +13,10 @@
 
 namespace Tegra {
 
+enum class RenderTargetFormat {
+    RGBA8_UNORM = 0xD5,
+};
+
 class DebugContext;
 
 /**
