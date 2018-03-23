@@ -54,6 +54,8 @@ static void SetShaderUniformBlockBindings(GLuint shader) {
 }
 
 RasterizerOpenGL::RasterizerOpenGL() {
+    shader_dirty = true;
+
     has_ARB_buffer_storage = false;
     has_ARB_direct_state_access = false;
     has_ARB_separate_shader_objects = false;
@@ -106,8 +108,6 @@ RasterizerOpenGL::RasterizerOpenGL() {
         state.draw.vertex_buffer = stream_buffer->GetHandle();
 
         pipeline.Create();
-        vs_input_index_min = 0;
-        vs_input_index_max = 0;
         state.draw.program_pipeline = pipeline.handle;
         state.draw.shader_program = 0;
         state.draw.vertex_array = hw_vao.handle;
@@ -233,7 +233,60 @@ bool RasterizerOpenGL::AccelerateDisplay(const void* config, PAddr framebuffer_a
 }
 
 void RasterizerOpenGL::SetShader() {
-    UNIMPLEMENTED();
+    // TODO(bunnei): The below sets up a static test shader for passing untransformed vertices to
+    // OpenGL for rendering. This should be removed/replaced when we start emulating Maxwell
+    // shaders.
+
+    static constexpr char vertex_shader[] = R"(
+#version 150 core
+
+in vec2 vert_position;
+in vec2 vert_tex_coord;
+out vec2 frag_tex_coord;
+
+void main() {
+    // Multiply input position by the rotscale part of the matrix and then manually translate by
+    // the last column. This is equivalent to using a full 3x3 matrix and expanding the vector
+    // to `vec3(vert_position.xy, 1.0)`
+    gl_Position = vec4(mat2(mat3x2(0.0015625f, 0.0, 0.0, -0.0027778, -1.0, 1.0)) * vert_position + mat3x2(0.0015625f, 0.0, 0.0, -0.0027778, -1.0, 1.0)[2], 0.0, 1.0);
+    frag_tex_coord = vert_tex_coord;
+}
+)";
+
+    static constexpr char fragment_shader[] = R"(
+#version 150 core
+
+in vec2 frag_tex_coord;
+out vec4 color;
+
+uniform sampler2D color_texture;
+
+void main() {
+    color = vec4(1.0, 0.0, 0.0, 1.0);
+}
+)";
+
+    if (current_shader) {
+        return;
+    }
+
+    LOG_ERROR(HW_GPU, "Emulated shaders are not supported! Using a passthrough shader.");
+
+    current_shader = &test_shader;
+    if (has_ARB_separate_shader_objects) {
+        test_shader.shader.Create(vertex_shader, nullptr, fragment_shader, {}, true);
+        glActiveShaderProgram(pipeline.handle, test_shader.shader.handle);
+    } else {
+        ASSERT_MSG(false, "Unimplemented");
+    }
+
+    state.draw.shader_program = test_shader.shader.handle;
+    state.Apply();
+
+    if (has_ARB_separate_shader_objects) {
+        state.draw.shader_program = 0;
+        state.Apply();
+    }
 }
 
 void RasterizerOpenGL::SyncClipEnabled() {
