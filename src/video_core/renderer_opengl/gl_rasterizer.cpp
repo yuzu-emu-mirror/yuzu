@@ -226,8 +226,9 @@ bool RasterizerOpenGL::AccelerateFill(const void* config) {
     return true;
 }
 
-bool RasterizerOpenGL::AccelerateDisplay(const void* config, PAddr framebuffer_addr,
-                                         u32 pixel_stride, ScreenInfo& screen_info) {
+bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
+                                         PAddr framebuffer_addr, u32 pixel_stride,
+                                         ScreenInfo& screen_info) {
     ASSERT_MSG(false, "Unimplemented");
     return true;
 }

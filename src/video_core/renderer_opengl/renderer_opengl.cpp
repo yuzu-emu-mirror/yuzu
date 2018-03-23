@@ -98,22 +98,22 @@ RendererOpenGL::RendererOpenGL() = default;
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
-void RendererOpenGL::SwapBuffers(boost::optional<const FramebufferInfo&> framebuffer_info) {
+void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) {
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
 
-    if (framebuffer_info != boost::none) {
-        // If framebuffer_info is provided, reload it from memory to a texture
-        if (screen_info.texture.width != (GLsizei)framebuffer_info->width ||
-            screen_info.texture.height != (GLsizei)framebuffer_info->height ||
-            screen_info.texture.pixel_format != framebuffer_info->pixel_format) {
+    if (framebuffer != boost::none) {
+        // If framebuffer is provided, reload it from memory to a texture
+        if (screen_info.texture.width != (GLsizei)framebuffer->width ||
+            screen_info.texture.height != (GLsizei)framebuffer->height ||
+            screen_info.texture.pixel_format != framebuffer->pixel_format) {
             // Reallocate texture if the framebuffer size has changed.
             // This is expected to not happen very often and hence should not be a
             // performance problem.
-            ConfigureFramebufferTexture(screen_info.texture, *framebuffer_info);
+            ConfigureFramebufferTexture(screen_info.texture, *framebuffer);
         }
-        LoadFBToScreenInfo(*framebuffer_info, screen_info);
+        LoadFBToScreenInfo(*framebuffer, screen_info);
     }
 
     DrawScreens();
@@ -245,43 +245,47 @@ static void MortonCopyPixels128(u32 width, u32 height, u32 bytes_per_pixel, u32 
 /**
  * Loads framebuffer from emulated memory into the active OpenGL texture.
  */
-void RendererOpenGL::LoadFBToScreenInfo(const FramebufferInfo& framebuffer_info,
+void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuffer,
                                         ScreenInfo& screen_info) {
-    const u32 bpp{FramebufferInfo::BytesPerPixel(framebuffer_info.pixel_format)};
-    const u32 size_in_bytes{framebuffer_info.stride * framebuffer_info.height * bpp};
+    const u32 bpp{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
+    const u32 size_in_bytes{framebuffer.stride * framebuffer.height * bpp};
+    const VAddr framebuffer_addr{framebuffer.address};
+    const size_t pixel_stride{framebuffer.stride / bpp};
 
-    MortonCopyPixels128(framebuffer_info.width, framebuffer_info.height, bpp, 4,
-                        Memory::GetPointer(framebuffer_info.address), gl_framebuffer_data.data(),
-                        true);
+    // OpenGL only supports specifying a stride in units of pixels, not bytes, unfortunately
+    ASSERT(pixel_stride * bpp == framebuffer.stride);
+
+    MortonCopyPixels128(framebuffer.width, framebuffer.height, bpp, 4,
+                        Memory::GetPointer(framebuffer.address), gl_framebuffer_data.data(), true);
 
     LOG_TRACE(Render_OpenGL, "0x%08x bytes from 0x%llx(%dx%d), fmt %x", size_in_bytes,
-              framebuffer_info.address, framebuffer_info.width, framebuffer_info.height,
-              (int)framebuffer_info.pixel_format);
+              framebuffer.address, framebuffer.width, framebuffer.height,
+              (int)framebuffer.pixel_format);
 
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT, which by default
     // only allows rows to have a memory alignement of 4.
-    ASSERT(framebuffer_info.stride % 4 == 0);
+    ASSERT(framebuffer.stride % 4 == 0);
 
-    framebuffer_flip_vertical = framebuffer_info.flip_vertical;
+    framebuffer_flip_vertical = framebuffer.flip_vertical;
 
     // Reset the screen info's display texture to its own permanent texture
     screen_info.display_texture = screen_info.texture.resource.handle;
     screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-    // Memory::RasterizerFlushRegion(framebuffer_info.address, size_in_bytes);
+    Rasterizer()->FlushRegion(framebuffer.address, size_in_bytes);
 
     state.texture_units[0].texture_2d = screen_info.texture.resource.handle;
     state.Apply();
 
     glActiveTexture(GL_TEXTURE0);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, (GLint)framebuffer_info.stride);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, (GLint)framebuffer.stride);
 
     // Update existing texture
     // TODO: Test what happens on hardware when you change the framebuffer dimensions so that
     //       they differ from the LCD resolution.
     // TODO: Applications could theoretically crash Citra here by specifying too large
     //       framebuffer sizes. We should make sure that this cannot happen.
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, framebuffer_info.width, framebuffer_info.height,
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, framebuffer.width, framebuffer.height,
                     screen_info.texture.gl_format, screen_info.texture.gl_type,
                     gl_framebuffer_data.data());
 
@@ -372,14 +376,14 @@ void RendererOpenGL::InitOpenGLObjects() {
 }
 
 void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
-                                                 const FramebufferInfo& framebuffer_info) {
+                                                 const Tegra::FramebufferConfig& framebuffer) {
 
-    texture.width = framebuffer_info.width;
-    texture.height = framebuffer_info.height;
+    texture.width = framebuffer.width;
+    texture.height = framebuffer.height;
 
     GLint internal_format;
-    switch (framebuffer_info.pixel_format) {
-    case FramebufferInfo::PixelFormat::ABGR8:
+    switch (framebuffer.pixel_format) {
+    case Tegra::FramebufferConfig::PixelFormat::ABGR8:
         // Use RGBA8 and swap in the fragment shader
         internal_format = GL_RGBA;
         texture.gl_format = GL_RGBA;

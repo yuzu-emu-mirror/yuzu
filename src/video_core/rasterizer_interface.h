@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/common_types.h"
+#include "video_core/gpu.h"
 
 struct ScreenInfo;
 
@@ -49,7 +50,8 @@ public:
     }
 
     /// Attempt to use a faster method to display the framebuffer to screen
-    virtual bool AccelerateDisplay(const void* config, PAddr framebuffer_addr, u32 pixel_stride,
+    virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
+                                   PAddr framebuffer_addr, u32 pixel_stride,
                                    ScreenInfo& screen_info) {
         return false;
     }

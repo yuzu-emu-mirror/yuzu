@@ -8,6 +8,7 @@
 #include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
+#include "video_core/gpu.h"
 #include "video_core/rasterizer_interface.h"
 
 class EmuWindow;
@@ -17,40 +18,10 @@ public:
     /// Used to reference a framebuffer
     enum kFramebuffer { kFramebuffer_VirtualXFB = 0, kFramebuffer_EFB, kFramebuffer_Texture };
 
-    /**
-     * Struct describing framebuffer metadata
-     * TODO(bunnei): This struct belongs in the GPU code, but we don't have a good place for it yet.
-     */
-    struct FramebufferInfo {
-        enum class PixelFormat : u32 {
-            ABGR8 = 1,
-        };
-
-        /**
-         * Returns the number of bytes per pixel.
-         */
-        static u32 BytesPerPixel(PixelFormat format) {
-            switch (format) {
-            case PixelFormat::ABGR8:
-                return 4;
-            }
-
-            UNREACHABLE();
-        }
-
-        VAddr address;
-        u32 offset;
-        u32 width;
-        u32 height;
-        u32 stride;
-        PixelFormat pixel_format;
-        bool flip_vertical;
-    };
-
     virtual ~RendererBase() {}
 
     /// Swap buffers (render frame)
-    virtual void SwapBuffers(boost::optional<const FramebufferInfo&> framebuffer_info) = 0;
+    virtual void SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) = 0;
 
     /**
      * Set the emulator window to use for renderer
