@@ -22,6 +22,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
+#include "video_core/gpu.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 
 struct CachedSurface;
@@ -113,6 +114,15 @@ struct SurfaceParams {
     }
     unsigned int GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
+    }
+
+    static PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
+        switch (format) {
+        case Tegra::FramebufferConfig::PixelFormat::ABGR8:
+            return PixelFormat::RGBA8;
+        default:
+            UNREACHABLE();
+        }
     }
 
     static bool CheckFormatsBlittable(PixelFormat pixel_format_a, PixelFormat pixel_format_b) {
@@ -257,7 +267,7 @@ struct CachedSurface : SurfaceParams {
     std::unique_ptr<u8[]> gl_buffer;
     size_t gl_buffer_size = 0;
 
-    // Read/Write data in 3DS memory to/from gl_buffer
+    // Read/Write data in Switch memory to/from gl_buffer
     void LoadGLBuffer(VAddr load_start, VAddr load_end);
     void FlushGLBuffer(VAddr flush_start, VAddr flush_end);
 

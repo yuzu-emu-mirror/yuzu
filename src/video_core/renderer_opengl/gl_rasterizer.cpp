@@ -229,7 +229,39 @@ bool RasterizerOpenGL::AccelerateFill(const void* config) {
 bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
                                          VAddr framebuffer_addr, u32 pixel_stride,
                                          ScreenInfo& screen_info) {
-    ASSERT_MSG(false, "Unimplemented");
+    if (framebuffer_addr == 0) {
+        return false;
+    }
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+
+    SurfaceParams src_params;
+    src_params.addr = framebuffer_addr;
+    src_params.width = std::min(framebuffer.width, pixel_stride);
+    src_params.height = framebuffer.height;
+    src_params.stride = pixel_stride;
+    src_params.is_tiled = false;
+    src_params.pixel_format =
+        SurfaceParams::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format);
+    src_params.UpdateParams();
+
+    MathUtil::Rectangle<u32> src_rect;
+    Surface src_surface;
+    std::tie(src_surface, src_rect) =
+        res_cache.GetSurfaceSubRect(src_params, ScaleMatch::Ignore, true);
+
+    if (src_surface == nullptr) {
+        return false;
+    }
+
+    u32 scaled_width = src_surface->GetScaledWidth();
+    u32 scaled_height = src_surface->GetScaledHeight();
+
+    screen_info.display_texcoords = MathUtil::Rectangle<float>(
+        (float)src_rect.bottom / (float)scaled_height, (float)src_rect.left / (float)scaled_width,
+        (float)src_rect.top / (float)scaled_height, (float)src_rect.right / (float)scaled_width);
+
+    screen_info.display_texture = src_surface->texture.handle;
+
     return true;
 }
 
