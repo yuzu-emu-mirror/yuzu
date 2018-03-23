@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 #include "common/common_types.h"
+#include "core/hle/service/nvflinger/buffer_queue.h"
 #include "video_core/memory_manager.h"
 
 namespace Tegra {
@@ -38,7 +39,9 @@ struct FramebufferConfig {
     u32 height;
     u32 stride;
     PixelFormat pixel_format;
-    bool flip_vertical;
+
+    using TransformFlags = Service::NVFlinger::BufferQueue::BufferTransformFlags;
+    TransformFlags transform_flags;
 };
 
 namespace Engines {

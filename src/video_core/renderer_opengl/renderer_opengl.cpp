@@ -141,6 +141,9 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     const u32 size_in_bytes{framebuffer.stride * framebuffer.height * bpp};
     const VAddr framebuffer_addr{framebuffer.address};
 
+    // Framebuffer orientation handling
+    framebuffer_transform_flags = framebuffer.transform_flags;
+
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT, which by default
     // only allows rows to have a memory alignement of 4.
     ASSERT(framebuffer.stride % 4 == 0);
@@ -292,8 +295,19 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w,
                                       float h) {
     const auto& texcoords = screen_info.display_texcoords;
-    const auto& left = framebuffer_flip_vertical ? texcoords.right : texcoords.left;
-    const auto& right = framebuffer_flip_vertical ? texcoords.left : texcoords.right;
+    auto left = texcoords.left;
+    auto right = texcoords.right;
+    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset)
+        if (framebuffer_transform_flags == Tegra::FramebufferConfig::TransformFlags::FlipV) {
+            // Flip the framebuffer vertically
+            left = texcoords.right;
+            right = texcoords.left;
+        } else {
+            // Other transformations are unsupported
+            LOG_CRITICAL(HW_GPU, "unsupported framebuffer_transform_flags=%d",
+                         framebuffer_transform_flags);
+            UNIMPLEMENTED();
+        }
 
     std::array<ScreenRectVertex, 4> vertices = {{
         ScreenRectVertex(x, y, texcoords.top, right),
