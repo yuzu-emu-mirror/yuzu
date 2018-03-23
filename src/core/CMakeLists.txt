@@ -199,6 +199,8 @@ add_library(core STATIC
     hle/service/spl/module.h
     hle/service/spl/spl.cpp
     hle/service/spl/spl.h
+    hle/service/ssl/ssl.cpp
+    hle/service/ssl/ssl.h
     hle/service/time/time.cpp
     hle/service/time/time.h
     hle/service/time/time_s.cpp
