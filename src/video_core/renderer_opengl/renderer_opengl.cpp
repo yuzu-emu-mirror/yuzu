@@ -140,49 +140,43 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     const u32 bpp{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
     const u32 size_in_bytes{framebuffer.stride * framebuffer.height * bpp};
     const VAddr framebuffer_addr{framebuffer.address};
-    const size_t pixel_stride{framebuffer.stride / bpp};
-
-    // OpenGL only supports specifying a stride in units of pixels, not bytes, unfortunately
-    ASSERT(pixel_stride * bpp == framebuffer.stride);
-
-    MortonCopyPixels128(framebuffer.width, framebuffer.height, bpp, 4,
-                        Memory::GetPointer(framebuffer.address), gl_framebuffer_data.data(), true);
-
-    LOG_TRACE(Render_OpenGL, "0x%08x bytes from 0x%llx(%dx%d), fmt %x", size_in_bytes,
-              framebuffer.address, framebuffer.width, framebuffer.height,
-              (int)framebuffer.pixel_format);
 
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT, which by default
     // only allows rows to have a memory alignement of 4.
     ASSERT(framebuffer.stride % 4 == 0);
 
-    framebuffer_flip_vertical = framebuffer.flip_vertical;
+    if (!Rasterizer()->AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride,
+                                         screen_info)) {
+        // Reset the screen info's display texture to its own permanent texture
+        screen_info.display_texture = screen_info.texture.resource.handle;
+        screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-    // Reset the screen info's display texture to its own permanent texture
-    screen_info.display_texture = screen_info.texture.resource.handle;
-    screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
+        Rasterizer()->FlushRegion(framebuffer_addr, framebuffer.stride * framebuffer.height);
 
-    Rasterizer()->FlushRegion(framebuffer.address, size_in_bytes);
+        VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bpp, 4,
+                                       Memory::GetPointer(framebuffer.address),
+                                       gl_framebuffer_data.data(), true);
 
-    state.texture_units[0].texture_2d = screen_info.texture.resource.handle;
-    state.Apply();
+        state.texture_units[0].texture_2d = screen_info.texture.resource.handle;
+        state.Apply();
 
-    glActiveTexture(GL_TEXTURE0);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, (GLint)framebuffer.stride);
+        glActiveTexture(GL_TEXTURE0);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(framebuffer.stride));
 
-    // Update existing texture
-    // TODO: Test what happens on hardware when you change the framebuffer dimensions so that
-    //       they differ from the LCD resolution.
-    // TODO: Applications could theoretically crash Citra here by specifying too large
-    //       framebuffer sizes. We should make sure that this cannot happen.
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, framebuffer.width, framebuffer.height,
-                    screen_info.texture.gl_format, screen_info.texture.gl_type,
-                    gl_framebuffer_data.data());
+        // Update existing texture
+        // TODO: Test what happens on hardware when you change the framebuffer dimensions so that
+        //       they differ from the LCD resolution.
+        // TODO: Applications could theoretically crash yuzu here by specifying too large
+        //       framebuffer sizes. We should make sure that this cannot happen.
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, framebuffer.width, framebuffer.height,
+                        screen_info.texture.gl_format, screen_info.texture.gl_type,
+                        gl_framebuffer_data.data());
 
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
-    state.texture_units[0].texture_2d = 0;
-    state.Apply();
+        state.texture_units[0].texture_2d = 0;
+        state.Apply();
+    }
 }
 
 /**
