@@ -1250,7 +1250,7 @@ void RasterizerCacheOpenGL::FlushRegion(VAddr addr, u64 size, Surface flush_surf
 }
 
 void RasterizerCacheOpenGL::FlushAll() {
-    FlushRegion(0, 0xFFFFFFFF);
+    FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
 }
 
 void RasterizerCacheOpenGL::InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner) {
