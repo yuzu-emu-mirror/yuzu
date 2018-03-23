@@ -91,7 +91,7 @@ void Config::ReadValues() {
 
     // Core
     Settings::values.cpu_core =
-        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 0));
+        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 1));
 
     // Renderer
     Settings::values.resolution_factor =

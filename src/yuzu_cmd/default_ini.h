@@ -77,7 +77,7 @@ touch_device=
 
 [Core]
 # Which CPU core to use for CPU emulation
-# 0 (default): Unicorn (slow), 1: Dynarmic (faster)
+# 0: Unicorn (slow), 1 (default): Dynarmic (faster)
 cpu_core =
 
 [Renderer]
