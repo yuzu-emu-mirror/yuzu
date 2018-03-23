@@ -546,7 +546,8 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
 
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
-        VideoCore::MortonCopyPixels128(width, height, GetFormatBpp(), 4,
+        const u32 bytes_per_pixel{GetFormatBpp() >> 3};
+        VideoCore::MortonCopyPixels128(width, height, bytes_per_pixel, 4,
                                        texture_src_data + start_offset, &gl_buffer[start_offset],
                                        true);
     } else {
