@@ -11,13 +11,7 @@
 
 namespace FileSys {
 
-std::string Disk_FileSystem::GetName() const {
-    return "Disk";
-}
-
-ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::string& path,
-                                                                     Mode mode) const {
-
+static std::string ModeFlagsToString(Mode mode) {
     std::string mode_str;
     u32 mode_flags = static_cast<u32>(mode);
 
@@ -38,6 +32,19 @@ ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::
     }
 
     mode_str += "b";
+
+    return mode_str;
+}
+
+std::string Disk_FileSystem::GetName() const {
+    return "Disk";
+}
+
+ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::string& path,
+                                                                     Mode mode) const {
+
+    // Calculate the correct open mode for the file.
+    std::string mode_str = ModeFlagsToString(mode);
 
     std::string full_path = base_directory + path;
     auto file = std::make_shared<FileUtil::IOFile>(full_path, mode_str.c_str());
