@@ -290,7 +290,7 @@ static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rec
 
 static bool FillSurface(const Surface& surface, const u8* fill_data,
                         const MathUtil::Rectangle<u32>& fill_rect, GLuint draw_fb_handle) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return true;
 }
 
@@ -557,7 +557,7 @@ void CachedSurface::LoadGLBuffer(PAddr load_start, PAddr load_end) {
                     load_end - load_start);
     } else {
         if (type == SurfaceType::Texture) {
-            UNIMPLEMENTED();
+            ASSERT_MSG(false, "Unimplemented");
         } else {
             morton_to_gl_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
                                                                 load_start, load_end);
@@ -1102,7 +1102,7 @@ SurfaceRect_Tuple RasterizerCacheOpenGL::GetSurfaceSubRect(const SurfaceParams& 
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const void* config) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return {};
 }
 
@@ -1113,7 +1113,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
 }
 
 Surface RasterizerCacheOpenGL::GetFillSurface(const void* config) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return {};
 }
 
@@ -1357,5 +1357,5 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
 }
 
 void RasterizerCacheOpenGL::UpdatePagesCachedCount(PAddr addr, u64 size, int delta) {
-    UNIMPLEMENTED();
+    // ASSERT_MSG(false, "Unimplemented");
 }

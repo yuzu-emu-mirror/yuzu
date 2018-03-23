@@ -120,7 +120,7 @@ RasterizerOpenGL::RasterizerOpenGL() {
         glBufferData(GL_UNIFORM_BUFFER, sizeof(VSUniformData), nullptr, GL_STREAM_COPY);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, vs_uniform_buffer.handle);
     } else {
-        UNIMPLEMENTED();
+        ASSERT_MSG(false, "Unimplemented");
     }
 
     accelerate_draw = AccelDraw::Disabled;
@@ -167,12 +167,12 @@ void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_
 
 void RasterizerOpenGL::SetupFragmentShader(FSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_FS);
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     if (!has_ARB_separate_shader_objects) {
-        UNIMPLEMENTED();
+        ASSERT_MSG(false, "Unimplemented");
         return false;
     }
 
@@ -212,23 +212,23 @@ void RasterizerOpenGL::FlushAndInvalidateRegion(PAddr addr, u32 size) {
 
 bool RasterizerOpenGL::AccelerateDisplayTransfer(const void* config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateTextureCopy(const void* config) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateFill(const void* config) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateDisplay(const void* config, PAddr framebuffer_addr,
                                          u32 pixel_stride, ScreenInfo& screen_info) {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
     return true;
 }
 
@@ -290,33 +290,33 @@ void main() {
 }
 
 void RasterizerOpenGL::SyncClipEnabled() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncClipCoef() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncDepthOffset() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncBlendEnabled() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncBlendFuncs() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
 
 void RasterizerOpenGL::SyncBlendColor() {
-    UNIMPLEMENTED();
+    ASSERT_MSG(false, "Unimplemented");
 }
