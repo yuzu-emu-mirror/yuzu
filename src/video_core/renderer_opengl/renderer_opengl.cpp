@@ -137,9 +137,15 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
  */
 void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuffer,
                                         ScreenInfo& screen_info) {
-    const u32 bpp{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
-    const u32 size_in_bytes{framebuffer.stride * framebuffer.height * bpp};
-    const VAddr framebuffer_addr{framebuffer.address};
+    const u32 bytes_per_pixel{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
+    const u64 size_in_bytes{framebuffer.stride * framebuffer.height * bytes_per_pixel};
+    const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
+
+    // TODO(bunnei): The framebuffer region should only be flushed and invalidated if it is
+    // written to, not every frame. When we find the right place for this, the below line can be
+    // removed.
+    Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
+                                         Memory::FlushMode::FlushAndInvalidate);
 
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
@@ -154,10 +160,10 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
         screen_info.display_texture = screen_info.texture.resource.handle;
         screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-        Rasterizer()->FlushRegion(framebuffer_addr, framebuffer.stride * framebuffer.height);
+        Rasterizer()->FlushRegion(framebuffer_addr, size_in_bytes);
 
-        VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bpp, 4,
-                                       Memory::GetPointer(framebuffer.address),
+        VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bytes_per_pixel, 4,
+                                       Memory::GetPointer(framebuffer_addr),
                                        gl_framebuffer_data.data(), true);
 
         state.texture_units[0].texture_2d = screen_info.texture.resource.handle;

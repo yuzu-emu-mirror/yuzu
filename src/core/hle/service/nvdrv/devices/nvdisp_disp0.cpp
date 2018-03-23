@@ -32,12 +32,6 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
 
     Core::System::GetInstance().perf_stats.EndGameFrame();
 
-    // TODO(bunnei): The framebuffer region should only be flushed and invalidated if it is written
-    // to, not every frame. When we find the right place for this, the below line can be removed.
-    Memory::RasterizerFlushVirtualRegion(framebuffer.address,
-                                         framebuffer.width * framebuffer.height * 4,
-                                         Memory::FlushMode::FlushAndInvalidate);
-
     VideoCore::g_renderer->SwapBuffers(framebuffer);
 }
 
