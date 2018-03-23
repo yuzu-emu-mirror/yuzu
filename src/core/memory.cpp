@@ -296,7 +296,7 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode) {
+void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
     if (VideoCore::g_renderer == nullptr) {
@@ -313,7 +313,7 @@ void RasterizerFlushVirtualRegion(VAddr start, u32 size, FlushMode mode) {
 
         VAddr overlap_start = std::max(start, region_start);
         VAddr overlap_end = std::min(end, region_end);
-        u32 overlap_size = overlap_end - overlap_start;
+        u64 overlap_size = overlap_end - overlap_start;
 
         auto* rasterizer = VideoCore::g_renderer->Rasterizer();
         switch (mode) {

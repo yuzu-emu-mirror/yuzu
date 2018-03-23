@@ -25,14 +25,14 @@ public:
     virtual void FlushAll() = 0;
 
     /// Notify rasterizer that any caches of the specified region should be flushed to 3DS memory
-    virtual void FlushRegion(VAddr addr, u32 size) = 0;
+    virtual void FlushRegion(VAddr addr, u64 size) = 0;
 
     /// Notify rasterizer that any caches of the specified region should be invalidated
-    virtual void InvalidateRegion(VAddr addr, u32 size) = 0;
+    virtual void InvalidateRegion(VAddr addr, u64 size) = 0;
 
     /// Notify rasterizer that any caches of the specified region should be flushed to 3DS memory
     /// and invalidated
-    virtual void FlushAndInvalidateRegion(VAddr addr, u32 size) = 0;
+    virtual void FlushAndInvalidateRegion(VAddr addr, u64 size) = 0;
 
     /// Attempt to use a faster method to perform a display transfer with is_texture_copy = 0
     virtual bool AccelerateDisplayTransfer(const void* config) {
