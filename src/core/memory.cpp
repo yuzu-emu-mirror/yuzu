@@ -329,6 +329,7 @@ void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
         }
     };
 
+    CheckRegion(PROCESS_IMAGE_VADDR, PROCESS_IMAGE_VADDR_END);
     CheckRegion(HEAP_VADDR, HEAP_VADDR_END);
 }
 
