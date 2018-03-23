@@ -318,13 +318,13 @@ void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
         auto* rasterizer = VideoCore::g_renderer->Rasterizer();
         switch (mode) {
         case FlushMode::Flush:
-            rasterizer->FlushRegion(region_start, overlap_size);
+            rasterizer->FlushRegion(overlap_start, overlap_size);
             break;
         case FlushMode::Invalidate:
-            rasterizer->InvalidateRegion(region_start, overlap_size);
+            rasterizer->InvalidateRegion(overlap_start, overlap_size);
             break;
         case FlushMode::FlushAndInvalidate:
-            rasterizer->FlushAndInvalidateRegion(region_start, overlap_size);
+            rasterizer->FlushAndInvalidateRegion(overlap_start, overlap_size);
             break;
         }
     };
