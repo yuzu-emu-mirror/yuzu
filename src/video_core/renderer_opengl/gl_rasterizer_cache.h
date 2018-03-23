@@ -28,9 +28,9 @@ struct CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
 using SurfaceSet = std::set<Surface>;
 
-using SurfaceRegions = boost::icl::interval_set<PAddr>;
-using SurfaceMap = boost::icl::interval_map<PAddr, Surface>;
-using SurfaceCache = boost::icl::interval_map<PAddr, SurfaceSet>;
+using SurfaceRegions = boost::icl::interval_set<VAddr>;
+using SurfaceMap = boost::icl::interval_map<VAddr, Surface>;
+using SurfaceCache = boost::icl::interval_map<VAddr, SurfaceSet>;
 
 using SurfaceInterval = SurfaceCache::interval_type;
 static_assert(std::is_same<SurfaceRegions::interval_type, SurfaceCache::interval_type>() &&
@@ -258,8 +258,8 @@ struct CachedSurface : SurfaceParams {
     size_t gl_buffer_size = 0;
 
     // Read/Write data in 3DS memory to/from gl_buffer
-    void LoadGLBuffer(PAddr load_start, PAddr load_end);
-    void FlushGLBuffer(PAddr flush_start, PAddr flush_end);
+    void LoadGLBuffer(VAddr load_start, VAddr load_end);
+    void FlushGLBuffer(VAddr flush_start, VAddr flush_end);
 
     // Upload/Download data in gl_buffer in/to this surface's texture
     void UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint read_fb_handle,
@@ -307,10 +307,10 @@ public:
     SurfaceRect_Tuple GetTexCopySurface(const SurfaceParams& params);
 
     /// Write any cached resources overlapping the region back to memory (if dirty)
-    void FlushRegion(PAddr addr, u64 size, Surface flush_surface = nullptr);
+    void FlushRegion(VAddr addr, u64 size, Surface flush_surface = nullptr);
 
     /// Mark region as being invalidated by region_owner (nullptr if 3DS memory)
-    void InvalidateRegion(PAddr addr, u64 size, const Surface& region_owner);
+    void InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner);
 
     /// Flush all cached resources tracked by this cache manager
     void FlushAll();
@@ -319,7 +319,7 @@ private:
     void DuplicateSurface(const Surface& src_surface, const Surface& dest_surface);
 
     /// Update surface's texture for given region when necessary
-    void ValidateSurface(const Surface& surface, PAddr addr, u64 size);
+    void ValidateSurface(const Surface& surface, VAddr addr, u64 size);
 
     /// Create a new surface
     Surface CreateSurface(const SurfaceParams& params);
@@ -331,7 +331,7 @@ private:
     void UnregisterSurface(const Surface& surface);
 
     /// Increase/decrease the number of surface in pages touching the specified region
-    void UpdatePagesCachedCount(PAddr addr, u64 size, int delta);
+    void UpdatePagesCachedCount(VAddr addr, u64 size, int delta);
 
     SurfaceCache surface_cache;
     PageMap cached_pages;

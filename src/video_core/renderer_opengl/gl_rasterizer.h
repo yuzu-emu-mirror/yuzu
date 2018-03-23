@@ -32,13 +32,13 @@ public:
     void DrawTriangles() override;
     void NotifyMaxwellRegisterChanged(u32 id) override;
     void FlushAll() override;
-    void FlushRegion(PAddr addr, u32 size) override;
-    void InvalidateRegion(PAddr addr, u32 size) override;
-    void FlushAndInvalidateRegion(PAddr addr, u32 size) override;
+    void FlushRegion(VAddr addr, u32 size) override;
+    void InvalidateRegion(VAddr addr, u32 size) override;
+    void FlushAndInvalidateRegion(VAddr addr, u32 size) override;
     bool AccelerateDisplayTransfer(const void* config) override;
     bool AccelerateTextureCopy(const void* config) override;
     bool AccelerateFill(const void* config) override;
-    bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer, PAddr framebuffer_addr,
+    bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer, VAddr framebuffer_addr,
                            u32 pixel_stride, ScreenInfo& screen_info) override;
     bool AccelerateDrawBatch(bool is_indexed) override;
 

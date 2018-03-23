@@ -107,7 +107,7 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
 }
 
 template <bool morton_to_gl, PixelFormat format>
-static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, PAddr base, PAddr start, PAddr end) {
+static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
     constexpr u32 tile_size = bytes_per_pixel * 64;
 
@@ -115,9 +115,9 @@ static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, PAddr base, PAddr 
     static_assert(gl_bytes_per_pixel >= bytes_per_pixel, "");
     gl_buffer += gl_bytes_per_pixel - bytes_per_pixel;
 
-    const PAddr aligned_down_start = base + Common::AlignDown(start - base, tile_size);
-    const PAddr aligned_start = base + Common::AlignUp(start - base, tile_size);
-    const PAddr aligned_end = base + Common::AlignDown(end - base, tile_size);
+    const VAddr aligned_down_start = base + Common::AlignDown(start - base, tile_size);
+    const VAddr aligned_start = base + Common::AlignUp(start - base, tile_size);
+    const VAddr aligned_end = base + Common::AlignDown(end - base, tile_size);
 
     ASSERT(!morton_to_gl || (aligned_start == start && aligned_end == end));
 
@@ -136,7 +136,7 @@ static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, PAddr base, PAddr 
         }
     };
 
-    u8* tile_buffer = Memory::GetPhysicalPointer(start);
+    u8* tile_buffer = Memory::GetPointer(start);
 
     if (start < aligned_start && !morton_to_gl) {
         std::array<u8, tile_size> tmp_buf;
@@ -162,7 +162,7 @@ static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, PAddr base, PAddr 
     }
 }
 
-static constexpr std::array<void (*)(u32, u32, u8*, PAddr, PAddr, PAddr), 18> morton_to_gl_fns = {
+static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> morton_to_gl_fns = {
     MortonCopy<true, PixelFormat::RGBA8>,  // 0
     MortonCopy<true, PixelFormat::RGB8>,   // 1
     MortonCopy<true, PixelFormat::RGB5A1>, // 2
@@ -183,7 +183,7 @@ static constexpr std::array<void (*)(u32, u32, u8*, PAddr, PAddr, PAddr), 18> mo
     MortonCopy<true, PixelFormat::D24S8> // 17
 };
 
-static constexpr std::array<void (*)(u32, u32, u8*, PAddr, PAddr, PAddr), 18> gl_to_morton_fns = {
+static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl_to_morton_fns = {
     MortonCopy<false, PixelFormat::RGBA8>,  // 0
     MortonCopy<false, PixelFormat::RGB8>,   // 1
     MortonCopy<false, PixelFormat::RGB5A1>, // 2
@@ -298,9 +298,9 @@ SurfaceParams SurfaceParams::FromInterval(SurfaceInterval interval) const {
     SurfaceParams params = *this;
     const u32 tiled_size = is_tiled ? 8 : 1;
     const u64 stride_tiled_bytes = BytesInPixels(stride * tiled_size);
-    PAddr aligned_start =
+    VAddr aligned_start =
         addr + Common::AlignDown(boost::icl::first(interval) - addr, stride_tiled_bytes);
-    PAddr aligned_end =
+    VAddr aligned_end =
         addr + Common::AlignUp(boost::icl::last_next(interval) - addr, stride_tiled_bytes);
 
     if (aligned_end - aligned_start > stride_tiled_bytes) {
@@ -527,10 +527,10 @@ void RasterizerCacheOpenGL::CopySurface(const Surface& src_surface, const Surfac
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64, 192));
-void CachedSurface::LoadGLBuffer(PAddr load_start, PAddr load_end) {
+void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
-    const u8* const texture_src_data = Memory::GetPhysicalPointer(addr);
+    const u8* const texture_src_data = Memory::GetPointer(addr);
     if (texture_src_data == nullptr)
         return;
 
@@ -549,7 +549,7 @@ void CachedSurface::LoadGLBuffer(PAddr load_start, PAddr load_end) {
     MICROPROFILE_SCOPE(OpenGL_SurfaceLoad);
 
     ASSERT(load_start >= addr && load_end <= end);
-    const u32 start_offset = load_start - addr;
+    const u64 start_offset = load_start - addr;
 
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
@@ -566,8 +566,8 @@ void CachedSurface::LoadGLBuffer(PAddr load_start, PAddr load_end) {
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
-void CachedSurface::FlushGLBuffer(PAddr flush_start, PAddr flush_end) {
-    u8* const dst_buffer = Memory::GetPhysicalPointer(addr);
+void CachedSurface::FlushGLBuffer(VAddr flush_start, VAddr flush_end) {
+    u8* const dst_buffer = Memory::GetPointer(addr);
     if (dst_buffer == nullptr)
         return;
 
@@ -1167,7 +1167,7 @@ void RasterizerCacheOpenGL::DuplicateSurface(const Surface& src_surface,
     }
 }
 
-void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, PAddr addr, u64 size) {
+void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, VAddr addr, u64 size) {
     if (size == 0)
         return;
 
@@ -1227,7 +1227,7 @@ void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, PAddr addr, 
     }
 }
 
-void RasterizerCacheOpenGL::FlushRegion(PAddr addr, u64 size, Surface flush_surface) {
+void RasterizerCacheOpenGL::FlushRegion(VAddr addr, u64 size, Surface flush_surface) {
     if (size == 0)
         return;
 
@@ -1263,7 +1263,7 @@ void RasterizerCacheOpenGL::FlushAll() {
     FlushRegion(0, 0xFFFFFFFF);
 }
 
-void RasterizerCacheOpenGL::InvalidateRegion(PAddr addr, u64 size, const Surface& region_owner) {
+void RasterizerCacheOpenGL::InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner) {
     if (size == 0)
         return;
 
@@ -1356,6 +1356,6 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
     surface_cache.subtract({surface->GetInterval(), SurfaceSet{surface}});
 }
 
-void RasterizerCacheOpenGL::UpdatePagesCachedCount(PAddr addr, u64 size, int delta) {
+void RasterizerCacheOpenGL::UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {
     // ASSERT_MSG(false, "Unimplemented");
 }

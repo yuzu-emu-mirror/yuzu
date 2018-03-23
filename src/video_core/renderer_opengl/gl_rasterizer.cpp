@@ -194,17 +194,17 @@ void RasterizerOpenGL::FlushAll() {
     res_cache.FlushAll();
 }
 
-void RasterizerOpenGL::FlushRegion(PAddr addr, u32 size) {
+void RasterizerOpenGL::FlushRegion(VAddr addr, u32 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size);
 }
 
-void RasterizerOpenGL::InvalidateRegion(PAddr addr, u32 size) {
+void RasterizerOpenGL::InvalidateRegion(VAddr addr, u32 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.InvalidateRegion(addr, size, nullptr);
 }
 
-void RasterizerOpenGL::FlushAndInvalidateRegion(PAddr addr, u32 size) {
+void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u32 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size);
     res_cache.InvalidateRegion(addr, size, nullptr);
@@ -227,7 +227,7 @@ bool RasterizerOpenGL::AccelerateFill(const void* config) {
 }
 
 bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
-                                         PAddr framebuffer_addr, u32 pixel_stride,
+                                         VAddr framebuffer_addr, u32 pixel_stride,
                                          ScreenInfo& screen_info) {
     ASSERT_MSG(false, "Unimplemented");
     return true;
