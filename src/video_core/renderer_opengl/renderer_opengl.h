@@ -88,6 +88,6 @@ private:
     GLuint attrib_position;
     GLuint attrib_tex_coord;
 
-    /// Flips the framebuffer vertically when true
-    bool framebuffer_flip_vertical;
+    /// Used for transforming the framebuffer orientation
+    Tegra::FramebufferConfig::TransformFlags framebuffer_transform_flags;
 };
