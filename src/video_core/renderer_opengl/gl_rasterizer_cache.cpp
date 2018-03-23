@@ -530,7 +530,7 @@ MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64
 void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
-    const u8* const texture_src_data = Memory::GetPointer(addr);
+    u8* texture_src_data = Memory::GetPointer(addr);
     if (texture_src_data == nullptr)
         return;
 
@@ -539,13 +539,6 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
         gl_buffer.reset(new u8[gl_buffer_size]);
     }
 
-    // TODO: Should probably be done in ::Memory:: and check for other regions too
-    if (load_start < Memory::VRAM_VADDR_END && load_end > Memory::VRAM_VADDR_END)
-        load_end = Memory::VRAM_VADDR_END;
-
-    if (load_start < Memory::VRAM_VADDR && load_end > Memory::VRAM_VADDR)
-        load_start = Memory::VRAM_VADDR;
-
     MICROPROFILE_SCOPE(OpenGL_SurfaceLoad);
 
     ASSERT(load_start >= addr && load_end <= end);
@@ -553,15 +546,11 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
 
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
-        std::memcpy(&gl_buffer[start_offset], texture_src_data + start_offset,
-                    load_end - load_start);
+        VideoCore::MortonCopyPixels128(width, height, GetFormatBpp(), 4,
+                                       texture_src_data + start_offset, &gl_buffer[start_offset],
+                                       true);
     } else {
-        if (type == SurfaceType::Texture) {
-            ASSERT_MSG(false, "Unimplemented");
-        } else {
-            morton_to_gl_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
-                                                                load_start, load_end);
-        }
+        ASSERT_MSG(false, "Unimplemented");
     }
 }
 
