@@ -49,6 +49,7 @@ namespace Log {
     SUB(Service, SET)                                                                              \
     SUB(Service, SM)                                                                               \
     SUB(Service, SPL)                                                                              \
+    SUB(Service, SSL)                                                                              \
     SUB(Service, Time)                                                                             \
     SUB(Service, VI)                                                                               \
     CLS(HW)                                                                                        \
