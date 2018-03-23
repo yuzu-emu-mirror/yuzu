@@ -673,18 +673,18 @@ void GMainWindow::UpdateStatusBar() {
 void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string details) {
     QMessageBox::StandardButton answer;
     QString status_message;
-    const QString common_message =
-        tr("The game you are trying to load requires additional files from your 3DS to be dumped "
-           "before playing.<br/><br/>For more information on dumping these files, please see the "
-           "following wiki page: <a "
-           "href='https://citra-emu.org/wiki/"
-           "dumping-system-archives-and-the-shared-fonts-from-a-3ds-console/'>Dumping System "
-           "Archives and the Shared Fonts from a 3DS Console</a>.<br/><br/>Would you like to quit "
-           "back to the game list? Continuing emulation may result in crashes, corrupted save "
-           "data, or other bugs.");
+    const QString common_message = tr(
+        "The game you are trying to load requires additional files from your Switch to be dumped "
+        "before playing.<br/><br/>For more information on dumping these files, please see the "
+        "following wiki page: <a "
+        "href='https://citra-emu.org/wiki/"
+        "dumping-system-archives-and-the-shared-fonts-from-a-3ds-console/'>Dumping System "
+        "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to quit "
+        "back to the game list? Continuing emulation may result in crashes, corrupted save "
+        "data, or other bugs.");
     switch (result) {
     case Core::System::ResultStatus::ErrorSystemFiles: {
-        QString message = "Citra was unable to locate a 3DS system archive";
+        QString message = "yuzu was unable to locate a Switch system archive";
         if (!details.empty()) {
             message.append(tr(": %1. ").arg(details.c_str()));
         } else {
@@ -699,7 +699,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
     }
 
     case Core::System::ResultStatus::ErrorSharedFont: {
-        QString message = tr("Citra was unable to locate the 3DS shared fonts. ");
+        QString message = tr("yuzu was unable to locate the Switch shared fonts. ");
         message.append(common_message);
         answer = QMessageBox::question(this, tr("Shared Fonts Not Found"), message,
                                        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
