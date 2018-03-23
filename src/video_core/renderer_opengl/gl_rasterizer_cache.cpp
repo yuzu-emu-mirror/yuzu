@@ -22,6 +22,7 @@
 #include "common/scope_exit.h"
 #include "common/vector_math.h"
 #include "core/frontend/emu_window.h"
+#include "core/hle/kernel/vm_manager.h"
 #include "core/memory.h"
 #include "core/settings.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
