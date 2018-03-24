@@ -197,8 +197,201 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
 }
 
 void RasterizerOpenGL::DrawTriangles() {
+    if (accelerate_draw == AccelDraw::Disabled)
+        return;
+
     MICROPROFILE_SCOPE(OpenGL_Drawing);
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    // TODO(bunnei): Implement these
+    const bool has_stencil = false;
+    const bool using_color_fb = true;
+    const bool using_depth_fb = false;
+
+    MathUtil::Rectangle<s32> viewport_rect_unscaled{
+        static_cast<s32>(regs.viewport[0].x),                           // left
+        static_cast<s32>(regs.viewport[0].y + regs.viewport[0].height), // top
+        static_cast<s32>(regs.viewport[0].x + regs.viewport[0].width),  // right
+        static_cast<s32>(regs.viewport[0].y)                            // bottom
+    };
+
+    const bool write_color_fb =
+        state.color_mask.red_enabled == GL_TRUE || state.color_mask.green_enabled == GL_TRUE ||
+        state.color_mask.blue_enabled == GL_TRUE || state.color_mask.alpha_enabled == GL_TRUE;
+
+    const bool write_depth_fb =
+        (state.depth.test_enabled && state.depth.write_mask == GL_TRUE) ||
+        (has_stencil && state.stencil.test_enabled && state.stencil.write_mask != 0);
+
+    Surface color_surface;
+    Surface depth_surface;
+    MathUtil::Rectangle<u32> surfaces_rect;
+    std::tie(color_surface, depth_surface, surfaces_rect) =
+        res_cache.GetFramebufferSurfaces(using_color_fb, using_depth_fb, viewport_rect_unscaled);
+
+    const u16 res_scale = color_surface != nullptr
+                              ? color_surface->res_scale
+                              : (depth_surface == nullptr ? 1u : depth_surface->res_scale);
+
+    MathUtil::Rectangle<u32> draw_rect{
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
+                                                  viewport_rect_unscaled.left * res_scale,
+                                              surfaces_rect.left, surfaces_rect.right)), // Left
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
+                                                  viewport_rect_unscaled.top * res_scale,
+                                              surfaces_rect.bottom, surfaces_rect.top)), // Top
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
+                                                  viewport_rect_unscaled.right * res_scale,
+                                              surfaces_rect.left, surfaces_rect.right)), // Right
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
+                                                  viewport_rect_unscaled.bottom * res_scale,
+                                              surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
+
+    // Bind the framebuffer surfaces
+    state.draw.draw_framebuffer = framebuffer.handle;
+    state.Apply();
+
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           color_surface != nullptr ? color_surface->texture.handle : 0, 0);
+    if (depth_surface != nullptr) {
+        if (has_stencil) {
+            // attach both depth and stencil
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+        } else {
+            // attach depth
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+            // clear stencil attachment
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        }
+    } else {
+        // clear both depth and stencil attachment
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
+    }
+
+    // Sync the viewport
+    state.viewport.x =
+        static_cast<GLint>(surfaces_rect.left) + viewport_rect_unscaled.left * res_scale;
+    state.viewport.y =
+        static_cast<GLint>(surfaces_rect.bottom) + viewport_rect_unscaled.bottom * res_scale;
+    state.viewport.width = static_cast<GLsizei>(viewport_rect_unscaled.GetWidth() * res_scale);
+    state.viewport.height = static_cast<GLsizei>(viewport_rect_unscaled.GetHeight() * res_scale);
+
+    // TODO(bunnei): Sync framebuffer_scale uniform here
+    // TODO(bunnei): Sync scissorbox uniform(s) here
+    // TODO(bunnei): Sync and bind the texture surfaces
+
+    // Sync and bind the shader
+    if (shader_dirty) {
+        SetShader();
+        shader_dirty = false;
+    }
+
+    // Sync the uniform data
+    if (uniform_block_data.dirty) {
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformData), &uniform_block_data.data);
+        uniform_block_data.dirty = false;
+    }
+
+    // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
+    // scissor test to prevent drawing outside of the framebuffer region
+    state.scissor.enabled = true;
+    state.scissor.x = draw_rect.left;
+    state.scissor.y = draw_rect.bottom;
+    state.scissor.width = draw_rect.GetWidth();
+    state.scissor.height = draw_rect.GetHeight();
+    state.Apply();
+
+    // Draw the vertex batch
+    GLenum primitive_mode;
+    switch (regs.draw.topology) {
+    case Maxwell::PrimitiveTopology::TriangleStrip:
+        primitive_mode = GL_TRIANGLE_STRIP;
+        break;
+    default:
+        UNREACHABLE();
+    }
+
+    const bool is_indexed = accelerate_draw == AccelDraw::Indexed;
+
+    AnalyzeVertexArray(is_indexed);
+    state.draw.vertex_buffer = stream_buffer->GetHandle();
+    state.Apply();
+
+    size_t buffer_size = static_cast<size_t>(vs_input_size);
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+    buffer_size += sizeof(VSUniformData);
+
+    size_t ptr_pos = 0;
+    u8* buffer_ptr;
+    GLintptr buffer_offset;
+    std::tie(buffer_ptr, buffer_offset) =
+        stream_buffer->Map(static_cast<GLsizeiptr>(buffer_size), 4);
+
+    SetupVertexArray(buffer_ptr, buffer_offset);
+    ptr_pos += vs_input_size;
+
+    GLintptr index_buffer_offset = 0;
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+
+    SetupVertexShader(reinterpret_cast<VSUniformData*>(&buffer_ptr[ptr_pos]),
+                      buffer_offset + static_cast<GLintptr>(ptr_pos));
+    const GLintptr vs_ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
+    ptr_pos += sizeof(VSUniformData);
+
+    stream_buffer->Unmap();
+
+    const auto copy_buffer = [&](GLuint handle, GLintptr offset, GLsizeiptr size) {
+        if (has_ARB_direct_state_access) {
+            glCopyNamedBufferSubData(stream_buffer->GetHandle(), handle, offset, 0, size);
+        } else {
+            glBindBuffer(GL_COPY_WRITE_BUFFER, handle);
+            glCopyBufferSubData(GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, offset, 0, size);
+        }
+    };
+
+    copy_buffer(vs_uniform_buffer.handle, vs_ubo_offset, sizeof(VSUniformData));
+
+    glUseProgramStages(pipeline.handle, GL_FRAGMENT_SHADER_BIT, current_shader->shader.handle);
+
+    if (is_indexed) {
+        UNREACHABLE();
+    } else {
+        glDrawArrays(primitive_mode, 0, regs.vertex_buffer.count);
+    }
+
+    // Disable scissor test
+    state.scissor.enabled = false;
+
+    accelerate_draw = AccelDraw::Disabled;
+
+    // Unbind textures for potential future use as framebuffer attachments
+    for (auto& texture_unit : state.texture_units) {
+        texture_unit.texture_2d = 0;
+    }
+    state.Apply();
+
+    // Mark framebuffer surfaces as dirty
+    MathUtil::Rectangle<u32> draw_rect_unscaled{
+        draw_rect.left / res_scale, draw_rect.top / res_scale, draw_rect.right / res_scale,
+        draw_rect.bottom / res_scale};
+
+    if (color_surface != nullptr && write_color_fb) {
+        auto interval = color_surface->GetSubRectInterval(draw_rect_unscaled);
+        res_cache.InvalidateRegion(boost::icl::first(interval), boost::icl::length(interval),
+                                   color_surface);
+    }
+    if (depth_surface != nullptr && write_depth_fb) {
+        auto interval = depth_surface->GetSubRectInterval(draw_rect_unscaled);
+        res_cache.InvalidateRegion(boost::icl::first(interval), boost::icl::length(interval),
+                                   depth_surface);
+    }
 }
 
 void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 id) {}
