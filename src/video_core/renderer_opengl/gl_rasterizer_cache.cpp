@@ -113,65 +113,17 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
 template <bool morton_to_gl, PixelFormat format>
 static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
-    constexpr u32 tile_size = bytes_per_pixel * 64;
-
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
-    static_assert(gl_bytes_per_pixel >= bytes_per_pixel, "");
-    gl_buffer += gl_bytes_per_pixel - bytes_per_pixel;
 
-    const VAddr aligned_down_start = base + Common::AlignDown(start - base, tile_size);
-    const VAddr aligned_start = base + Common::AlignUp(start - base, tile_size);
-    const VAddr aligned_end = base + Common::AlignDown(end - base, tile_size);
-
-    ASSERT(!morton_to_gl || (aligned_start == start && aligned_end == end));
-
-    const u64 begin_pixel_index = (aligned_down_start - base) / bytes_per_pixel;
-    u32 x = static_cast<u32>((begin_pixel_index % (stride * 8)) / 8);
-    u32 y = static_cast<u32>((begin_pixel_index / (stride * 8)) * 8);
-
-    gl_buffer += ((height - 8 - y) * stride + x) * gl_bytes_per_pixel;
-
-    auto glbuf_next_tile = [&] {
-        x = (x + 8) % stride;
-        gl_buffer += 8 * gl_bytes_per_pixel;
-        if (!x) {
-            y += 8;
-            gl_buffer -= stride * 9 * gl_bytes_per_pixel;
-        }
-    };
-
-    u8* tile_buffer = Memory::GetPointer(start);
-
-    if (start < aligned_start && !morton_to_gl) {
-        std::array<u8, tile_size> tmp_buf;
-        MortonCopyTile<morton_to_gl, format>(stride, &tmp_buf[0], gl_buffer);
-        std::memcpy(tile_buffer, &tmp_buf[start - aligned_down_start],
-                    std::min(aligned_start, end) - start);
-
-        tile_buffer += aligned_start - start;
-        glbuf_next_tile();
-    }
-
-    const u8* const buffer_end = tile_buffer + aligned_end - aligned_start;
-    while (tile_buffer < buffer_end) {
-        MortonCopyTile<morton_to_gl, format>(stride, tile_buffer, gl_buffer);
-        tile_buffer += tile_size;
-        glbuf_next_tile();
-    }
-
-    if (end > std::max(aligned_start, aligned_end) && !morton_to_gl) {
-        std::array<u8, tile_size> tmp_buf;
-        MortonCopyTile<morton_to_gl, format>(stride, &tmp_buf[0], gl_buffer);
-        std::memcpy(tile_buffer, &tmp_buf[0], end - aligned_end);
-    }
+    // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check the
+    // configuration for this and perform more generic un/swizzle
+    LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+    VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
+                                   Memory::GetPointer(base), gl_buffer, morton_to_gl);
 }
 
 static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> morton_to_gl_fns = {
-    MortonCopy<true, PixelFormat::RGBA8>,  // 0
-    MortonCopy<true, PixelFormat::RGB8>,   // 1
-    MortonCopy<true, PixelFormat::RGB5A1>, // 2
-    MortonCopy<true, PixelFormat::RGB565>, // 3
-    MortonCopy<true, PixelFormat::RGBA4>,  // 4
+    MortonCopy<true, PixelFormat::RGBA8>,
     nullptr,
     nullptr,
     nullptr,
@@ -180,19 +132,19 @@ static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> mo
     nullptr,
     nullptr,
     nullptr,
-    nullptr,                             // 5 - 13
-    MortonCopy<true, PixelFormat::D16>,  // 14
-    nullptr,                             // 15
-    MortonCopy<true, PixelFormat::D24>,  // 16
-    MortonCopy<true, PixelFormat::D24S8> // 17
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 };
 
 static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl_to_morton_fns = {
-    MortonCopy<false, PixelFormat::RGBA8>,  // 0
-    MortonCopy<false, PixelFormat::RGB8>,   // 1
-    MortonCopy<false, PixelFormat::RGB5A1>, // 2
-    MortonCopy<false, PixelFormat::RGB565>, // 3
-    MortonCopy<false, PixelFormat::RGBA4>,  // 4
+    MortonCopy<false, PixelFormat::RGBA8>,
     nullptr,
     nullptr,
     nullptr,
@@ -201,11 +153,15 @@ static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl
     nullptr,
     nullptr,
     nullptr,
-    nullptr,                              // 5 - 13
-    MortonCopy<false, PixelFormat::D16>,  // 14
-    nullptr,                              // 15
-    MortonCopy<false, PixelFormat::D24>,  // 16
-    MortonCopy<false, PixelFormat::D24S8> // 17
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -535,8 +491,7 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
     u8* texture_src_data = Memory::GetPointer(addr);
-    if (texture_src_data == nullptr)
-        return;
+    ASSERT(texture_src_data);
 
     if (gl_buffer == nullptr) {
         gl_buffer_size = width * height * GetGLBytesPerPixel(pixel_format);
@@ -551,11 +506,16 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
         const u32 bytes_per_pixel{GetFormatBpp() >> 3};
+
+        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
+        // the configuration for this and perform more generic un/swizzle
+        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
         VideoCore::MortonCopyPixels128(width, height, bytes_per_pixel, 4,
                                        texture_src_data + start_offset, &gl_buffer[start_offset],
                                        true);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        morton_to_gl_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
+                                                            load_start, load_end);
     }
 }
 
