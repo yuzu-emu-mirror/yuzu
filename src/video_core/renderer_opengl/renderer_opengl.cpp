@@ -306,7 +306,7 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
         } else {
             // Other transformations are unsupported
             LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags=%d",
-                         framebuffer_transform_flags);
+                         static_cast<int>(framebuffer_transform_flags));
             UNIMPLEMENTED();
         }
 
