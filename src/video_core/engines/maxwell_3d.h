@@ -229,6 +229,41 @@ public:
                     BitField<21, 6, VertexSize> size;
                     BitField<27, 3, VertexType> type;
                     BitField<31, 1, u32> bgra;
+
+                    u32 SizeInBytes() const {
+                        switch (size) {
+                        case VertexSize::Size_32_32_32_32:
+                            return 16;
+                        case VertexSize::Size_32_32_32:
+                            return 12;
+                        case VertexSize::Size_16_16_16_16:
+                            return 8;
+                        case VertexSize::Size_32_32:
+                            return 8;
+                        case VertexSize::Size_16_16_16:
+                            return 6;
+                        case VertexSize::Size_8_8_8_8:
+                            return 4;
+                        case VertexSize::Size_16_16:
+                            return 4;
+                        case VertexSize::Size_32:
+                            return 4;
+                        case VertexSize::Size_8_8_8:
+                            return 3;
+                        case VertexSize::Size_8_8:
+                            return 2;
+                        case VertexSize::Size_16:
+                            return 2;
+                        case VertexSize::Size_8:
+                            return 1;
+                        case VertexSize::Size_10_10_10_2:
+                            return 4;
+                        case VertexSize::Size_11_11_10:
+                            return 4;
+                        default:
+                            UNREACHABLE();
+                        }
+                    }
                 } vertex_attrib_format[NumVertexAttributes];
 
                 INSERT_PADDING_WORDS(0xF);

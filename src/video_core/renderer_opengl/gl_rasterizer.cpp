@@ -14,7 +14,10 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/vector_math.h"
+#include "core/core.h"
+#include "core/hle/kernel/process.h"
 #include "core/settings.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
@@ -146,7 +149,24 @@ static constexpr std::array<GLenum, 4> vs_attrib_types{
 };
 
 void RasterizerOpenGL::AnalyzeVertexArray(bool is_indexed) {
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& vertex_attributes = regs.vertex_attrib_format;
+
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+    const u32 vertex_num = regs.vertex_buffer.count;
+
+    vs_input_size = 0;
+    u32 max_offset{};
+    for (const auto& attrib : vertex_attributes) {
+        if (max_offset >= attrib.offset) {
+            continue;
+        }
+        max_offset = attrib.offset;
+        vs_input_size = max_offset + attrib.SizeInBytes();
+    }
+    vs_input_size *= vertex_num;
 }
 
 void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
