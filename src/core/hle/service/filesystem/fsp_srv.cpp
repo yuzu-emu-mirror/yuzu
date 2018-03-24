@@ -189,7 +189,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 unk = rp.Pop<u64>();
 
-        LOG_DEBUG(Service_FS, "called, unk=0x%llx", unk);
+        LOG_DEBUG(Service_FS, "called, unk=0x%" PRIx64, unk);
 
         // Calculate how many entries we can fit in the output buffer
         u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
