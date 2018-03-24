@@ -60,88 +60,169 @@ public:
             Fragment = 4,
         };
 
-        enum class VertexSize : u32 {
-            Size_32_32_32_32 = 0x01,
-            Size_32_32_32 = 0x02,
-            Size_16_16_16_16 = 0x03,
-            Size_32_32 = 0x04,
-            Size_16_16_16 = 0x05,
-            Size_8_8_8_8 = 0x0a,
-            Size_16_16 = 0x0f,
-            Size_32 = 0x12,
-            Size_8_8_8 = 0x13,
-            Size_8_8 = 0x18,
-            Size_16 = 0x1b,
-            Size_8 = 0x1d,
-            Size_10_10_10_2 = 0x30,
-            Size_11_11_10 = 0x31,
-        };
+        struct VertexAttribute {
+            enum class Size : u32 {
+                Size_32_32_32_32 = 0x01,
+                Size_32_32_32 = 0x02,
+                Size_16_16_16_16 = 0x03,
+                Size_32_32 = 0x04,
+                Size_16_16_16 = 0x05,
+                Size_8_8_8_8 = 0x0a,
+                Size_16_16 = 0x0f,
+                Size_32 = 0x12,
+                Size_8_8_8 = 0x13,
+                Size_8_8 = 0x18,
+                Size_16 = 0x1b,
+                Size_8 = 0x1d,
+                Size_10_10_10_2 = 0x30,
+                Size_11_11_10 = 0x31,
+            };
 
-        static std::string VertexSizeToString(VertexSize vertex_size) {
-            switch (vertex_size) {
-            case VertexSize::Size_32_32_32_32:
-                return "32_32_32_32";
-            case VertexSize::Size_32_32_32:
-                return "32_32_32";
-            case VertexSize::Size_16_16_16_16:
-                return "16_16_16_16";
-            case VertexSize::Size_32_32:
-                return "32_32";
-            case VertexSize::Size_16_16_16:
-                return "16_16_16";
-            case VertexSize::Size_8_8_8_8:
-                return "8_8_8_8";
-            case VertexSize::Size_16_16:
-                return "16_16";
-            case VertexSize::Size_32:
-                return "32";
-            case VertexSize::Size_8_8_8:
-                return "8_8_8";
-            case VertexSize::Size_8_8:
-                return "8_8";
-            case VertexSize::Size_16:
-                return "16";
-            case VertexSize::Size_8:
-                return "8";
-            case VertexSize::Size_10_10_10_2:
-                return "10_10_10_2";
-            case VertexSize::Size_11_11_10:
-                return "11_11_10";
+            enum class Type : u32 {
+                SignedNorm = 1,
+                UnsignedNorm = 2,
+                SignedInt = 3,
+                UnsignedInt = 4,
+                UnsignedScaled = 5,
+                SignedScaled = 6,
+                Float = 7,
+            };
+
+            union {
+                BitField<0, 5, u32> buffer;
+                BitField<6, 1, u32> constant;
+                BitField<7, 14, u32> offset;
+                BitField<21, 6, Size> size;
+                BitField<27, 3, Type> type;
+                BitField<31, 1, u32> bgra;
+            };
+
+            u32 ComponentCount() const {
+                switch (size) {
+                case Size::Size_32_32_32_32:
+                    return 4;
+                case Size::Size_32_32_32:
+                    return 3;
+                case Size::Size_16_16_16_16:
+                    return 4;
+                case Size::Size_32_32:
+                    return 2;
+                case Size::Size_16_16_16:
+                    return 3;
+                case Size::Size_8_8_8_8:
+                    return 4;
+                case Size::Size_16_16:
+                    return 2;
+                case Size::Size_32:
+                    return 1;
+                case Size::Size_8_8_8:
+                    return 3;
+                case Size::Size_8_8:
+                    return 2;
+                case Size::Size_16:
+                    return 1;
+                case Size::Size_8:
+                    return 1;
+                case Size::Size_10_10_10_2:
+                    return 4;
+                case Size::Size_11_11_10:
+                    return 3;
+                default:
+                    UNREACHABLE();
+                }
             }
-            UNIMPLEMENTED();
-            return {};
-        }
 
-        enum class VertexType : u32 {
-            SignedNorm = 1,
-            UnsignedNorm = 2,
-            SignedInt = 3,
-            UnsignedInt = 4,
-            UnsignedScaled = 5,
-            SignedScaled = 6,
-            Float = 7,
-        };
-
-        static std::string VertexTypeToString(VertexType vertex_type) {
-            switch (vertex_type) {
-            case VertexType::SignedNorm:
-                return "SignedNorm";
-            case VertexType::UnsignedNorm:
-                return "UnsignedNorm";
-            case VertexType::SignedInt:
-                return "SignedInt";
-            case VertexType::UnsignedInt:
-                return "UnsignedInt";
-            case VertexType::UnsignedScaled:
-                return "UnsignedScaled";
-            case VertexType::SignedScaled:
-                return "SignedScaled";
-            case VertexType::Float:
-                return "Float";
+            u32 SizeInBytes() const {
+                switch (size) {
+                case Size::Size_32_32_32_32:
+                    return 16;
+                case Size::Size_32_32_32:
+                    return 12;
+                case Size::Size_16_16_16_16:
+                    return 8;
+                case Size::Size_32_32:
+                    return 8;
+                case Size::Size_16_16_16:
+                    return 6;
+                case Size::Size_8_8_8_8:
+                    return 4;
+                case Size::Size_16_16:
+                    return 4;
+                case Size::Size_32:
+                    return 4;
+                case Size::Size_8_8_8:
+                    return 3;
+                case Size::Size_8_8:
+                    return 2;
+                case Size::Size_16:
+                    return 2;
+                case Size::Size_8:
+                    return 1;
+                case Size::Size_10_10_10_2:
+                    return 4;
+                case Size::Size_11_11_10:
+                    return 4;
+                default:
+                    UNREACHABLE();
+                }
             }
-            UNIMPLEMENTED();
-            return {};
-        }
+
+            std::string SizeString() const {
+                switch (size) {
+                case Size::Size_32_32_32_32:
+                    return "32_32_32_32";
+                case Size::Size_32_32_32:
+                    return "32_32_32";
+                case Size::Size_16_16_16_16:
+                    return "16_16_16_16";
+                case Size::Size_32_32:
+                    return "32_32";
+                case Size::Size_16_16_16:
+                    return "16_16_16";
+                case Size::Size_8_8_8_8:
+                    return "8_8_8_8";
+                case Size::Size_16_16:
+                    return "16_16";
+                case Size::Size_32:
+                    return "32";
+                case Size::Size_8_8_8:
+                    return "8_8_8";
+                case Size::Size_8_8:
+                    return "8_8";
+                case Size::Size_16:
+                    return "16";
+                case Size::Size_8:
+                    return "8";
+                case Size::Size_10_10_10_2:
+                    return "10_10_10_2";
+                case Size::Size_11_11_10:
+                    return "11_11_10";
+                }
+                UNREACHABLE();
+                return {};
+            }
+
+            std::string TypeToString() const {
+                switch (type) {
+                case Type::SignedNorm:
+                    return "SignedNorm";
+                case Type::UnsignedNorm:
+                    return "UnsignedNorm";
+                case Type::SignedInt:
+                    return "SignedInt";
+                case Type::UnsignedInt:
+                    return "UnsignedInt";
+                case Type::UnsignedScaled:
+                    return "UnsignedScaled";
+                case Type::SignedScaled:
+                    return "SignedScaled";
+                case Type::Float:
+                    return "Float";
+                }
+                UNREACHABLE();
+                return {};
+            }
+        };
 
         enum class PrimitiveTopology : u32 {
             Points = 0x0,
@@ -222,49 +303,7 @@ public:
 
                 INSERT_PADDING_WORDS(0x5B);
 
-                union {
-                    BitField<0, 5, u32> buffer;
-                    BitField<6, 1, u32> constant;
-                    BitField<7, 14, u32> offset;
-                    BitField<21, 6, VertexSize> size;
-                    BitField<27, 3, VertexType> type;
-                    BitField<31, 1, u32> bgra;
-
-                    u32 SizeInBytes() const {
-                        switch (size) {
-                        case VertexSize::Size_32_32_32_32:
-                            return 16;
-                        case VertexSize::Size_32_32_32:
-                            return 12;
-                        case VertexSize::Size_16_16_16_16:
-                            return 8;
-                        case VertexSize::Size_32_32:
-                            return 8;
-                        case VertexSize::Size_16_16_16:
-                            return 6;
-                        case VertexSize::Size_8_8_8_8:
-                            return 4;
-                        case VertexSize::Size_16_16:
-                            return 4;
-                        case VertexSize::Size_32:
-                            return 4;
-                        case VertexSize::Size_8_8_8:
-                            return 3;
-                        case VertexSize::Size_8_8:
-                            return 2;
-                        case VertexSize::Size_16:
-                            return 2;
-                        case VertexSize::Size_8:
-                            return 1;
-                        case VertexSize::Size_10_10_10_2:
-                            return 4;
-                        case VertexSize::Size_11_11_10:
-                            return 4;
-                        default:
-                            UNREACHABLE();
-                        }
-                    }
-                } vertex_attrib_format[NumVertexAttributes];
+                VertexAttribute vertex_attrib_format[NumVertexAttributes];
 
                 INSERT_PADDING_WORDS(0xF);
 
