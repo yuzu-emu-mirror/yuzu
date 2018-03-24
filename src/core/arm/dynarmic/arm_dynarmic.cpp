@@ -86,21 +86,17 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        if (ticks > ticks_remaining) {
-            ticks_remaining = 0;
-            return;
-        }
-        ticks -= ticks_remaining;
+        CoreTiming::AddTicks(ticks - num_interpreted_instructions);
+        num_interpreted_instructions = 0;
     }
     u64 GetTicksRemaining() override {
-        return ticks_remaining;
+        return std::max(CoreTiming::GetDowncount(), 0);
     }
     u64 GetCNTPCT() override {
         return CoreTiming::GetTicks();
     }
 
     ARM_Dynarmic& parent;
-    size_t ticks_remaining = 0;
     size_t num_interpreted_instructions = 0;
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
