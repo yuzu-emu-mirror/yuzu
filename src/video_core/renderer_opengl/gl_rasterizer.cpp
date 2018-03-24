@@ -22,6 +22,7 @@
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 
+using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 using PixelFormat = SurfaceParams::PixelFormat;
 using SurfaceType = SurfaceParams::SurfaceType;
 
