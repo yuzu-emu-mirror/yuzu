@@ -33,6 +33,7 @@ public:
         static constexpr size_t NUM_REGS = 0xE36;
 
         static constexpr size_t NumRenderTargets = 8;
+        static constexpr size_t NumViewports = 16;
         static constexpr size_t NumCBData = 16;
         static constexpr size_t NumVertexArrays = 32;
         static constexpr size_t NumVertexAttributes = 32;
@@ -186,7 +187,22 @@ public:
                     }
                 } rt[NumRenderTargets];
 
-                INSERT_PADDING_WORDS(0xDD);
+                INSERT_PADDING_WORDS(0x80);
+
+                struct {
+                    union {
+                        BitField<0, 16, u32> x;
+                        BitField<16, 16, u32> width;
+                    };
+                    union {
+                        BitField<0, 16, u32> y;
+                        BitField<16, 16, u32> height;
+                    };
+                    float depth_range_near;
+                    float depth_range_far;
+                } viewport[NumViewports];
+
+                INSERT_PADDING_WORDS(0x1D);
 
                 struct {
                     u32 first;
@@ -462,6 +478,7 @@ private:
                   "Field " #field_name " has invalid position")
 
 ASSERT_REG_POSITION(rt, 0x200);
+ASSERT_REG_POSITION(viewport, 0x300);
 ASSERT_REG_POSITION(vertex_buffer, 0x35D);
 ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
