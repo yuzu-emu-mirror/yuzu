@@ -127,13 +127,7 @@ RasterizerOpenGL::RasterizerOpenGL() {
 
     glEnable(GL_BLEND);
 
-    // Sync fixed function OpenGL state
-    SyncClipEnabled();
-    SyncClipCoef();
-    SyncCullMode();
-    SyncBlendEnabled();
-    SyncBlendFuncs();
-    SyncBlendColor();
+    LOG_WARNING(HW_GPU, "Sync fixed function OpenGL state here when ready");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
