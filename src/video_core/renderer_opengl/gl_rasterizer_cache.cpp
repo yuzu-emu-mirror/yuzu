@@ -21,10 +21,13 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/vector_math.h"
+#include "core/core.h"
 #include "core/frontend/emu_window.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/kernel/vm_manager.h"
 #include "core/memory.h"
 #include "core/settings.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_state.h"
 #include "video_core/utils.h"
@@ -1098,9 +1101,97 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const void* config) {
 }
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
-    bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport_rect) {
-    UNIMPLEMENTED();
-    return {};
+    bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
+    const auto& config = regs.rt[0];
+
+    // TODO(bunnei): This is hard corded to use just the first render buffer
+    LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
+
+    // update resolution_scale_factor and reset cache if changed
+    // TODO (bunnei): This code was ported as-is from Citra, and is technically not thread-safe. We
+    // need to fix this before making the renderer multi-threaded.
+    static u16 resolution_scale_factor = GetResolutionScaleFactor();
+    if (resolution_scale_factor != GetResolutionScaleFactor()) {
+        resolution_scale_factor = GetResolutionScaleFactor();
+        FlushAll();
+        while (!surface_cache.empty())
+            UnregisterSurface(*surface_cache.begin()->second.begin());
+    }
+
+    MathUtil::Rectangle<u32> viewport_clamped{
+        static_cast<u32>(MathUtil::Clamp(viewport.left, 0, static_cast<s32>(config.width))),
+        static_cast<u32>(MathUtil::Clamp(viewport.top, 0, static_cast<s32>(config.height))),
+        static_cast<u32>(MathUtil::Clamp(viewport.right, 0, static_cast<s32>(config.width))),
+        static_cast<u32>(MathUtil::Clamp(viewport.bottom, 0, static_cast<s32>(config.height)))};
+
+    // get color and depth surfaces
+    SurfaceParams color_params;
+    color_params.is_tiled = true;
+    color_params.res_scale = resolution_scale_factor;
+    color_params.width = config.width;
+    color_params.height = config.height;
+    SurfaceParams depth_params = color_params;
+
+    color_params.addr = memory_manager->PhysicalToVirtualAddress(config.Address());
+    color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
+    color_params.UpdateParams();
+
+    ASSERT(!using_depth_fb, "depth buffer is unimplemented");
+    // depth_params.addr = config.GetDepthBufferPhysicalAddress();
+    // depth_params.pixel_format = SurfaceParams::PixelFormatFromDepthFormat(config.depth_format);
+    // depth_params.UpdateParams();
+
+    auto color_vp_interval = color_params.GetSubRectInterval(viewport_clamped);
+    auto depth_vp_interval = depth_params.GetSubRectInterval(viewport_clamped);
+
+    // Make sure that framebuffers don't overlap if both color and depth are being used
+    if (using_color_fb && using_depth_fb &&
+        boost::icl::length(color_vp_interval & depth_vp_interval)) {
+        LOG_CRITICAL(Render_OpenGL, "Color and depth framebuffer memory regions overlap; "
+                                    "overlapping framebuffers not supported!");
+        using_depth_fb = false;
+    }
+
+    MathUtil::Rectangle<u32> color_rect{};
+    Surface color_surface = nullptr;
+    if (using_color_fb)
+        std::tie(color_surface, color_rect) =
+            GetSurfaceSubRect(color_params, ScaleMatch::Exact, false);
+
+    MathUtil::Rectangle<u32> depth_rect{};
+    Surface depth_surface = nullptr;
+    if (using_depth_fb)
+        std::tie(depth_surface, depth_rect) =
+            GetSurfaceSubRect(depth_params, ScaleMatch::Exact, false);
+
+    MathUtil::Rectangle<u32> fb_rect{};
+    if (color_surface != nullptr && depth_surface != nullptr) {
+        fb_rect = color_rect;
+        // Color and Depth surfaces must have the same dimensions and offsets
+        if (color_rect.bottom != depth_rect.bottom || color_rect.top != depth_rect.top ||
+            color_rect.left != depth_rect.left || color_rect.right != depth_rect.right) {
+            color_surface = GetSurface(color_params, ScaleMatch::Exact, false);
+            depth_surface = GetSurface(depth_params, ScaleMatch::Exact, false);
+            fb_rect = color_surface->GetScaledRect();
+        }
+    } else if (color_surface != nullptr) {
+        fb_rect = color_rect;
+    } else if (depth_surface != nullptr) {
+        fb_rect = depth_rect;
+    }
+
+    if (color_surface != nullptr) {
+        ValidateSurface(color_surface, boost::icl::first(color_vp_interval),
+                        boost::icl::length(color_vp_interval));
+    }
+    if (depth_surface != nullptr) {
+        ValidateSurface(depth_surface, boost::icl::first(depth_vp_interval),
+                        boost::icl::length(depth_vp_interval));
+    }
+
+    return std::make_tuple(color_surface, depth_surface, fb_rect);
 }
 
 Surface RasterizerCacheOpenGL::GetFillSurface(const void* config) {
