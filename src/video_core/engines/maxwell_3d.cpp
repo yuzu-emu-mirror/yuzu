@@ -7,8 +7,11 @@
 #include "core/core.h"
 #include "video_core/debug_utils/debug_utils.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/rasterizer_interface.h"
+#include "video_core/renderer_base.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
+#include "video_core/video_core.h"
 
 namespace Tegra {
 namespace Engines {
@@ -174,7 +177,9 @@ void Maxwell3D::ProcessQueryGet() {
 }
 
 void Maxwell3D::DrawArrays() {
-    LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+    LOG_DEBUG(HW_GPU, "called, topology=%d, count=%d", regs.draw.topology.Value(),
+              regs.vertex_buffer.count);
+
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
 
     if (debug_context) {
@@ -184,6 +189,8 @@ void Maxwell3D::DrawArrays() {
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
     }
+
+    VideoCore::g_renderer->Rasterizer()->AccelerateDrawBatch(false /*is_indexed*/);
 }
 
 void Maxwell3D::BindTextureInfoBuffer(const std::vector<u32>& parameters) {
