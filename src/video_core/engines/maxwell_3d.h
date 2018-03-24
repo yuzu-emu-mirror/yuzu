@@ -11,6 +11,7 @@
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/textures/texture.h"
 
@@ -167,9 +168,9 @@ public:
                 struct {
                     u32 address_high;
                     u32 address_low;
-                    u32 horiz;
-                    u32 vert;
-                    u32 format;
+                    u32 width;
+                    u32 height;
+                    Tegra::RenderTargetFormat format;
                     u32 block_dimensions;
                     u32 array_mode;
                     u32 layer_stride;
