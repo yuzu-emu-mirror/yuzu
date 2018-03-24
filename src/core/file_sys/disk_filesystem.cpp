@@ -11,16 +11,43 @@
 
 namespace FileSys {
 
+static std::string ModeFlagsToString(Mode mode) {
+    std::string mode_str;
+    u32 mode_flags = static_cast<u32>(mode);
+
+    // Calculate the correct open mode for the file.
+    if ((mode_flags & static_cast<u32>(Mode::Read)) &&
+        (mode_flags & static_cast<u32>(Mode::Write))) {
+        if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a+";
+        else
+            mode_str = "r+";
+    } else {
+        if (mode_flags & static_cast<u32>(Mode::Read))
+            mode_str = "r";
+        else if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a";
+        else if (mode_flags & static_cast<u32>(Mode::Write))
+            mode_str = "w";
+    }
+
+    mode_str += "b";
+
+    return mode_str;
+}
+
 std::string Disk_FileSystem::GetName() const {
     return "Disk";
 }
 
 ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::string& path,
                                                                      Mode mode) const {
-    ASSERT_MSG(mode == Mode::Read || mode == Mode::Write, "Other file modes are not supported");
+
+    // Calculate the correct open mode for the file.
+    std::string mode_str = ModeFlagsToString(mode);
 
     std::string full_path = base_directory + path;
-    auto file = std::make_shared<FileUtil::IOFile>(full_path, mode == Mode::Read ? "rb" : "wb");
+    auto file = std::make_shared<FileUtil::IOFile>(full_path, mode_str.c_str());
 
     if (!file->IsOpen()) {
         return ERROR_PATH_NOT_FOUND;
@@ -75,8 +102,15 @@ ResultCode Disk_FileSystem::CreateFile(const std::string& path, u64 size) const 
     return ResultCode(-1);
 }
 
-ResultCode Disk_FileSystem::CreateDirectory(const Path& path) const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
+ResultCode Disk_FileSystem::CreateDirectory(const std::string& path) const {
+    // TODO(Subv): Perform path validation to prevent escaping the emulator sandbox.
+    std::string full_path = base_directory + path;
+
+    if (FileUtil::CreateDir(full_path)) {
+        return RESULT_SUCCESS;
+    }
+
+    LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating %s", full_path.c_str());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
@@ -88,8 +122,17 @@ ResultCode Disk_FileSystem::RenameDirectory(const Path& src_path, const Path& de
 }
 
 ResultVal<std::unique_ptr<DirectoryBackend>> Disk_FileSystem::OpenDirectory(
-    const Path& path) const {
-    return MakeResult<std::unique_ptr<DirectoryBackend>>(std::make_unique<Disk_Directory>());
+    const std::string& path) const {
+
+    std::string full_path = base_directory + path;
+
+    if (!FileUtil::IsDirectory(full_path)) {
+        // TODO(Subv): Find the correct error code for this.
+        return ResultCode(-1);
+    }
+
+    auto directory = std::make_unique<Disk_Directory>(full_path);
+    return MakeResult<std::unique_ptr<DirectoryBackend>>(std::move(directory));
 }
 
 u64 Disk_FileSystem::GetFreeSpaceSize() const {
@@ -103,8 +146,10 @@ ResultVal<FileSys::EntryType> Disk_FileSystem::GetEntryType(const std::string& p
         return ERROR_PATH_NOT_FOUND;
     }
 
-    // TODO(Subv): Find out the EntryType values
-    UNIMPLEMENTED_MSG("Unimplemented GetEntryType");
+    if (FileUtil::IsDirectory(full_path))
+        return MakeResult(EntryType::Directory);
+
+    return MakeResult(EntryType::File);
 }
 
 ResultVal<size_t> Disk_Storage::Read(const u64 offset, const size_t length, u8* buffer) const {
@@ -133,14 +178,50 @@ bool Disk_Storage::SetSize(const u64 size) const {
     return false;
 }
 
-u32 Disk_Directory::Read(const u32 count, Entry* entries) {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    return 0;
+Disk_Directory::Disk_Directory(const std::string& path) : directory() {
+    unsigned size = FileUtil::ScanDirectoryTree(path, directory);
+    directory.size = size;
+    directory.isDirectory = true;
+    children_iterator = directory.children.begin();
 }
 
-bool Disk_Directory::Close() const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    return true;
+u64 Disk_Directory::Read(const u64 count, Entry* entries) {
+    u64 entries_read = 0;
+
+    while (entries_read < count && children_iterator != directory.children.cend()) {
+        const FileUtil::FSTEntry& file = *children_iterator;
+        const std::string& filename = file.virtualName;
+        Entry& entry = entries[entries_read];
+
+        LOG_TRACE(Service_FS, "File %s: size=%llu dir=%d", filename.c_str(), file.size,
+                  file.isDirectory);
+
+        // TODO(Link Mauve): use a proper conversion to UTF-16.
+        for (size_t j = 0; j < FILENAME_LENGTH; ++j) {
+            entry.filename[j] = filename[j];
+            if (!filename[j])
+                break;
+        }
+
+        if (file.isDirectory) {
+            entry.file_size = 0;
+            entry.type = EntryType::Directory;
+        } else {
+            entry.file_size = file.size;
+            entry.type = EntryType::File;
+        }
+
+        ++entries_read;
+        ++children_iterator;
+    }
+    return entries_read;
+}
+
+u64 Disk_Directory::GetEntryCount() const {
+    // We convert the children iterator into a const_iterator to allow template argument deduction
+    // in std::distance.
+    std::vector<FileUtil::FSTEntry>::const_iterator current = children_iterator;
+    return std::distance(current, directory.children.end());
 }
 
 } // namespace FileSys

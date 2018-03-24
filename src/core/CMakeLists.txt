@@ -22,6 +22,8 @@ add_library(core STATIC
     file_sys/romfs_filesystem.h
     file_sys/savedata_factory.cpp
     file_sys/savedata_factory.h
+    file_sys/sdmc_factory.cpp
+    file_sys/sdmc_factory.h
     file_sys/storage.h
     frontend/emu_window.cpp
     frontend/emu_window.h

@@ -27,7 +27,7 @@ enum LowPathType : u32 {
     Wchar = 4,
 };
 
-enum EntryType : u32 {
+enum EntryType : u8 {
     Directory = 0,
     File = 1,
 };
@@ -35,6 +35,7 @@ enum EntryType : u32 {
 enum class Mode : u32 {
     Read = 1,
     Write = 2,
+    Append = 4,
 };
 
 class Path {
@@ -103,7 +104,7 @@ public:
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode CreateDirectory(const Path& path) const = 0;
+    virtual ResultCode CreateDirectory(const std::string& path) const = 0;
 
     /**
      * Delete a directory specified by its path
@@ -149,7 +150,8 @@ public:
      * @param path Path relative to the archive
      * @return Opened directory, or error code
      */
-    virtual ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(const Path& path) const = 0;
+    virtual ResultVal<std::unique_ptr<DirectoryBackend>> OpenDirectory(
+        const std::string& path) const = 0;
 
     /**
      * Get the free space
