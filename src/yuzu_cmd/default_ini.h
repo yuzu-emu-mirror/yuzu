@@ -176,9 +176,9 @@ enable_telemetry =
 telemetry_endpoint_url = https://services.citra-emu.org/api/telemetry
 # Endpoint URL to verify the username and token
 verify_endpoint_url = https://services.citra-emu.org/api/profile
-# Username and token for Citra Web Service
+# Username and token for yuzu Web Service
 # See https://services.citra-emu.org/ for more info
-citra_username =
-citra_token =
+yuzu_username =
+yuzu_token =
 )";
 }
