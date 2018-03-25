@@ -39,7 +39,7 @@ static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
 }
 
 static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state1) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x%lx", addr);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x%" PRIx64, addr);
     return RESULT_SUCCESS;
 }
 
@@ -762,7 +762,7 @@ static ResultCode ResetSignal(Handle handle) {
 
 /// Creates a TransferMemory object
 static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%lx, size=0x%lx, perms=%08X", addr, size,
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x%" PRIx64 ", size=0x%" PRIx64 ", perms=%08X", addr, size,
                 permissions);
     *handle = 0;
     return RESULT_SUCCESS;
