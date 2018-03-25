@@ -142,11 +142,6 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     const u64 size_in_bytes{framebuffer.stride * framebuffer.height * bytes_per_pixel};
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
 
-    // TODO(bunnei): The framebuffer region should only be invalidated if it is written to, not
-    // every frame. When we find the right place for this, the below line can be removed.
-    Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
-                                         Memory::FlushMode::Invalidate);
-
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
 
