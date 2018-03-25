@@ -250,8 +250,8 @@ static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rec
 
 static bool FillSurface(const Surface& surface, const u8* fill_data,
                         const MathUtil::Rectangle<u32>& fill_rect, GLuint draw_fb_handle) {
-    ASSERT_MSG(false, "Unimplemented");
-    return true;
+    UNREACHABLE();
+    return {};
 }
 
 SurfaceParams SurfaceParams::FromInterval(SurfaceInterval interval) const {
@@ -490,8 +490,9 @@ MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64
 void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
-    u8* texture_src_data = Memory::GetPointer(addr);
-    ASSERT(texture_src_data);
+    u8* const texture_src_data = Memory::GetPointer(addr);
+    if (texture_src_data == nullptr)
+        return;
 
     if (gl_buffer == nullptr) {
         gl_buffer_size = width * height * GetGLBytesPerPixel(pixel_format);
@@ -1056,7 +1057,7 @@ SurfaceRect_Tuple RasterizerCacheOpenGL::GetSurfaceSubRect(const SurfaceParams& 
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return {};
 }
 
@@ -1155,7 +1156,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
 }
 
 Surface RasterizerCacheOpenGL::GetFillSurface(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return {};
 }
 
@@ -1399,5 +1400,33 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
 }
 
 void RasterizerCacheOpenGL::UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {
-    // ASSERT_MSG(false, "Unimplemented");
+    const u64 num_pages =
+        ((addr + size - 1) >> Memory::PAGE_BITS) - (addr >> Memory::PAGE_BITS) + 1;
+    const u64 page_start = addr >> Memory::PAGE_BITS;
+    const u64 page_end = page_start + num_pages;
+
+    // Interval maps will erase segments if count reaches 0, so if delta is negative we have to
+    // subtract after iterating
+    const auto pages_interval = PageMap::interval_type::right_open(page_start, page_end);
+    if (delta > 0)
+        cached_pages.add({pages_interval, delta});
+
+    for (const auto& pair : RangeFromInterval(cached_pages, pages_interval)) {
+        const auto interval = pair.first & pages_interval;
+        const int count = pair.second;
+
+        const VAddr interval_start_addr = boost::icl::first(interval) << Memory::PAGE_BITS;
+        const VAddr interval_end_addr = boost::icl::last_next(interval) << Memory::PAGE_BITS;
+        const u64 interval_size = interval_end_addr - interval_start_addr;
+
+        if (delta > 0 && count == delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, true);
+        else if (delta < 0 && count == -delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, false);
+        else
+            ASSERT(count >= 0);
+    }
+
+    if (delta < 0)
+        cached_pages.add({pages_interval, delta});
 }

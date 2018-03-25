@@ -41,7 +41,7 @@ static_assert(std::is_same<SurfaceRegions::interval_type, SurfaceCache::interval
 using SurfaceRect_Tuple = std::tuple<Surface, MathUtil::Rectangle<u32>>;
 using SurfaceSurfaceRect_Tuple = std::tuple<Surface, Surface, MathUtil::Rectangle<u32>>;
 
-using PageMap = boost::icl::interval_map<u32, int>;
+using PageMap = boost::icl::interval_map<u64, int>;
 
 enum class ScaleMatch {
     Exact,   // only accept same res scale
