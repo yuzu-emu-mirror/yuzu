@@ -202,22 +202,22 @@ public:
                 return {};
             }
 
-            std::string TypeToString() const {
+            std::string TypeString() const {
                 switch (type) {
                 case Type::SignedNorm:
-                    return "SignedNorm";
+                    return "SNORM";
                 case Type::UnsignedNorm:
-                    return "UnsignedNorm";
+                    return "UNORM";
                 case Type::SignedInt:
-                    return "SignedInt";
+                    return "SINT";
                 case Type::UnsignedInt:
-                    return "UnsignedInt";
+                    return "UINT";
                 case Type::UnsignedScaled:
-                    return "UnsignedScaled";
+                    return "USCALED";
                 case Type::SignedScaled:
-                    return "SignedScaled";
+                    return "SSCALED";
                 case Type::Float:
-                    return "Float";
+                    return "FLOAT";
                 }
                 UNREACHABLE();
                 return {};
