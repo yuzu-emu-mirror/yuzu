@@ -142,37 +142,55 @@ RasterizerOpenGL::~RasterizerOpenGL() {
     }
 }
 
-static constexpr std::array<GLenum, 4> vs_attrib_types{
-    GL_BYTE,          // VertexAttributeFormat::BYTE
-    GL_UNSIGNED_BYTE, // VertexAttributeFormat::UBYTE
-    GL_SHORT,         // VertexAttributeFormat::SHORT
-    GL_FLOAT          // VertexAttributeFormat::FLOAT
-};
-
 void RasterizerOpenGL::AnalyzeVertexArray(bool is_indexed) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
-    const auto& vertex_attributes = regs.vertex_attrib_format;
 
     if (is_indexed) {
         UNREACHABLE();
     }
-    const u32 vertex_num = regs.vertex_buffer.count;
 
-    vs_input_size = 0;
-    u32 max_offset{};
-    for (const auto& attrib : vertex_attributes) {
-        if (max_offset >= attrib.offset) {
-            continue;
-        }
-        max_offset = attrib.offset;
-        vs_input_size = max_offset + attrib.SizeInBytes();
-    }
-    vs_input_size *= vertex_num;
+    // TODO(bunnei): Add support for 1+ vertex arrays
+    vs_input_size = regs.vertex_buffer.count * regs.vertex_array[0].stride;
 }
 
 void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VAO);
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
+
+    state.draw.vertex_array = hw_vao.handle;
+    state.draw.vertex_buffer = stream_buffer->GetHandle();
+    state.Apply();
+
+    // TODO(bunnei): Add support for 1+ vertex arrays
+    const auto& vertex_array{regs.vertex_array[0]};
+    ASSERT_MSG(vertex_array.enable, "vertex array 0 is disabled?");
+    ASSERT_MSG(!vertex_array.divisor, "vertex array 0 divisor is unimplemented!");
+    for (unsigned index = 1; index < Maxwell::NumVertexArrays; ++index) {
+        ASSERT_MSG(!regs.vertex_array[index].enable, "vertex array %d is unimplemented!", index);
+    }
+
+    // Use the vertex array as-is, assumes that the data is formatted correctly for OpenGL.
+    // Enables the first 16 vertex attributes always, as we don't know which ones are actually used
+    // until shader time. Note, Tegra technically supports 32, but we're cappinig this to 16 for now
+    // to avoid OpenGL errors.
+    for (unsigned index = 0; index < 16; ++index) {
+        auto& attrib = regs.vertex_attrib_format[index];
+        glVertexAttribPointer(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
+                              GL_FALSE, vertex_array.stride,
+                              reinterpret_cast<GLvoid*>(buffer_offset + attrib.offset));
+        glEnableVertexAttribArray(index);
+        hw_vao_enabled_attributes[index] = true;
+    }
+
+    // Copy vertex array data
+    const u32 data_size{vertex_array.stride * regs.vertex_buffer.count};
+    const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(vertex_array.StartAddress())};
+    res_cache.FlushRegion(data_addr, data_size, nullptr);
+    std::memcpy(array_ptr, Memory::GetPointer(data_addr), data_size);
+
+    array_ptr += data_size;
+    buffer_offset += data_size;
 }
 
 void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_offset) {
