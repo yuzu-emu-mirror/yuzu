@@ -1098,7 +1098,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
     color_params.UpdateParams();
 
-    ASSERT(!using_depth_fb, "depth buffer is unimplemented");
+    ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
     // depth_params.addr = config.GetDepthBufferPhysicalAddress();
     // depth_params.pixel_format = SurfaceParams::PixelFormatFromDepthFormat(config.depth_format);
     // depth_params.UpdateParams();
