@@ -3,12 +3,12 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/service/sockets/bsd_u.h"
+#include "core/hle/service/sockets/bsd.h"
 
 namespace Service {
 namespace Sockets {
 
-void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
+void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -17,7 +17,7 @@ void BSD_U::RegisterClient(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD_U::StartMonitoring(Kernel::HLERequestContext& ctx) {
+void BSD::StartMonitoring(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -26,7 +26,7 @@ void BSD_U::StartMonitoring(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
+void BSD::Socket(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     u32 domain = rp.Pop<u32>();
@@ -44,7 +44,7 @@ void BSD_U::Socket(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD_U::Connect(Kernel::HLERequestContext& ctx) {
+void BSD::Connect(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -54,7 +54,7 @@ void BSD_U::Connect(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
+void BSD::SendTo(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -64,7 +64,7 @@ void BSD_U::SendTo(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-void BSD_U::Close(Kernel::HLERequestContext& ctx) {
+void BSD::Close(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
@@ -74,13 +74,15 @@ void BSD_U::Close(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(0); // bsd errno
 }
 
-BSD_U::BSD_U() : ServiceFramework("bsd:u") {
-    static const FunctionInfo functions[] = {{0, &BSD_U::RegisterClient, "RegisterClient"},
-                                             {1, &BSD_U::StartMonitoring, "StartMonitoring"},
-                                             {2, &BSD_U::Socket, "Socket"},
-                                             {11, &BSD_U::SendTo, "SendTo"},
-                                             {14, &BSD_U::Connect, "Connect"},
-                                             {26, &BSD_U::Close, "Close"}};
+BSD::BSD(const char* name) : ServiceFramework(name) {
+    static const FunctionInfo functions[] = {
+        {0, &BSD::RegisterClient, "RegisterClient"},
+        {1, &BSD::StartMonitoring, "StartMonitoring"},
+        {2, &BSD::Socket, "Socket"},
+        {11, &BSD::SendTo, "SendTo"},
+        {14, &BSD::Connect, "Connect"},
+        {26, &BSD::Close, "Close"},
+    };
     RegisterHandlers(functions);
 }
 

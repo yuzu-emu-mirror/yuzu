@@ -10,13 +10,10 @@
 namespace Service {
 namespace Sockets {
 
-class SFDNSRES final : public ServiceFramework<SFDNSRES> {
+class NSD final : public ServiceFramework<NSD> {
 public:
-    explicit SFDNSRES();
-    ~SFDNSRES() = default;
-
-private:
-    void GetAddrInfo(Kernel::HLERequestContext& ctx);
+    explicit NSD(const char* name);
+    ~NSD() = default;
 };
 
 } // namespace Sockets
