@@ -188,7 +188,7 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     const u32 data_size{vertex_array.stride * regs.vertex_buffer.count};
     const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(vertex_array.StartAddress())};
     res_cache.FlushRegion(data_addr, data_size, nullptr);
-    std::memcpy(array_ptr, Memory::GetPointer(data_addr), data_size);
+    Memory::ReadBlock(data_addr, array_ptr, data_size);
 
     array_ptr += data_size;
     buffer_offset += data_size;
