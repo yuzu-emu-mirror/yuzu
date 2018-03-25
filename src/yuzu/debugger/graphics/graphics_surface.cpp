@@ -339,9 +339,9 @@ void GraphicsSurfaceWidget::OnUpdate() {
                                 static_cast<size_t>(Source::RenderTarget0)];
 
         surface_address = rt.Address();
-        surface_width = rt.horiz;
-        surface_height = rt.vert;
-        if (rt.format != 0) {
+        surface_width = rt.width;
+        surface_height = rt.height;
+        if (rt.format != Tegra::RenderTargetFormat::NONE) {
             surface_format =
                 ConvertToTextureFormat(static_cast<Tegra::RenderTargetFormat>(rt.format));
         }
