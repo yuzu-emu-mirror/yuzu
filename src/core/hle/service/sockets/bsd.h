@@ -10,10 +10,10 @@
 namespace Service {
 namespace Sockets {
 
-class BSD_U final : public ServiceFramework<BSD_U> {
+class BSD final : public ServiceFramework<BSD> {
 public:
-    BSD_U();
-    ~BSD_U() = default;
+    explicit BSD(const char* name);
+    ~BSD() = default;
 
 private:
     void RegisterClient(Kernel::HLERequestContext& ctx);

@@ -19,16 +19,18 @@ void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
 }
 
 SFDNSRES::SFDNSRES() : ServiceFramework("sfdnsres") {
-    static const FunctionInfo functions[] = {{0, nullptr, "SetDnsAddressesPrivate"},
-                                             {1, nullptr, "GetDnsAddressPrivate"},
-                                             {2, nullptr, "GetHostByName"},
-                                             {3, nullptr, "GetHostByAddr"},
-                                             {4, nullptr, "GetHostStringError"},
-                                             {5, nullptr, "GetGaiStringError"},
-                                             {6, &SFDNSRES::GetAddrInfo, "GetAddrInfo"},
-                                             {7, nullptr, "GetNameInfo"},
-                                             {8, nullptr, "RequestCancelHandle"},
-                                             {9, nullptr, "CancelSocketCall"}};
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "SetDnsAddressesPrivate"},
+        {1, nullptr, "GetDnsAddressPrivate"},
+        {2, nullptr, "GetHostByName"},
+        {3, nullptr, "GetHostByAddr"},
+        {4, nullptr, "GetHostStringError"},
+        {5, nullptr, "GetGaiStringError"},
+        {6, &SFDNSRES::GetAddrInfo, "GetAddrInfo"},
+        {7, nullptr, "GetNameInfo"},
+        {8, nullptr, "RequestCancelHandle"},
+        {9, nullptr, "CancelSocketCall"},
+    };
     RegisterHandlers(functions);
 }
 

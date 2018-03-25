@@ -189,8 +189,10 @@ add_library(core STATIC
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp
     hle/service/sm/sm.h
-    hle/service/sockets/bsd_u.cpp
-    hle/service/sockets/bsd_u.h
+    hle/service/sockets/bsd.cpp
+    hle/service/sockets/bsd.h
+    hle/service/sockets/nsd.cpp
+    hle/service/sockets/nsd.h
     hle/service/sockets/sfdnsres.cpp
     hle/service/sockets/sfdnsres.h
     hle/service/sockets/sockets.cpp
