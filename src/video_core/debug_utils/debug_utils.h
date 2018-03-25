@@ -160,6 +160,4 @@ private:
     std::list<BreakPointObserver*> breakpoint_observers;
 };
 
-extern std::shared_ptr<DebugContext> g_debug_context;
-
 } // namespace Tegra

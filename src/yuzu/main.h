@@ -23,6 +23,10 @@ class ProfilerWidget;
 class RegistersWidget;
 class WaitTreeWidget;
 
+namespace Tegra {
+class DebugContext;
+}
+
 class GMainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -134,6 +138,8 @@ private:
     void UpdateStatusBar();
 
     Ui::MainWindow ui;
+
+    std::shared_ptr<Tegra::DebugContext> debug_context;
 
     GRenderWindow* render_window;
     GameList* game_list;

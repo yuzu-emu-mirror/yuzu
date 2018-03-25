@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include "common/assert.h"
+#include "core/core.h"
 #include "video_core/debug_utils/debug_utils.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/textures/decoders.h"
@@ -50,6 +51,8 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid Maxwell3D register, increase the size of the Regs structure");
 
+    auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
+
     // It is an error to write to a register other than the current macro's ARG register before it
     // has finished execution.
     if (executing_macro != 0) {
@@ -76,8 +79,8 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         return;
     }
 
-    if (Tegra::g_debug_context) {
-        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
     }
 
     regs.reg_array[method] = value;
@@ -146,9 +149,8 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
 
 #undef MAXWELL3D_REG_INDEX
 
-    if (Tegra::g_debug_context) {
-        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed,
-                                        nullptr);
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed, nullptr);
     }
 }
 
@@ -173,14 +175,14 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
-    if (Tegra::g_debug_context) {
-        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::IncomingPrimitiveBatch,
-                                        nullptr);
+    auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::IncomingPrimitiveBatch, nullptr);
     }
 
-    if (Tegra::g_debug_context) {
-        Tegra::g_debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch,
-                                        nullptr);
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
     }
 }
 

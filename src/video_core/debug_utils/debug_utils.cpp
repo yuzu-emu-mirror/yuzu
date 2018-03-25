@@ -23,8 +23,6 @@
 
 namespace Tegra {
 
-std::shared_ptr<DebugContext> g_debug_context;
-
 void DebugContext::DoOnEvent(Event event, void* data) {
     {
         std::unique_lock<std::mutex> lock(breakpoint_mutex);
