@@ -350,9 +350,9 @@ bool GMainWindow::LoadROM(const QString& filename) {
                    "yuzu. A real Switch is required.<br/><br/>"
                    "For more information on dumping and decrypting games, please see the following "
                    "wiki pages: <ul>"
-                   "<li><a href='https://citra-emu.org/wiki/dumping-game-cartridges/'>Dumping Game "
+                   "<li><a href='https://yuzu-emu.org/wiki/dumping-game-cartridges/'>Dumping Game "
                    "Cartridges</a></li>"
-                   "<li><a href='https://citra-emu.org/wiki/dumping-installed-titles/'>Dumping "
+                   "<li><a href='https://yuzu-emu.org/wiki/dumping-installed-titles/'>Dumping "
                    "Installed Titles</a></li>"
                    "</ul>"));
             break;
@@ -677,8 +677,8 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
         "The game you are trying to load requires additional files from your Switch to be dumped "
         "before playing.<br/><br/>For more information on dumping these files, please see the "
         "following wiki page: <a "
-        "href='https://citra-emu.org/wiki/"
-        "dumping-system-archives-and-the-shared-fonts-from-a-3ds-console/'>Dumping System "
+        "href='https://yuzu-emu.org/wiki/"
+        "dumping-system-archives-and-the-shared-fonts-from-a-switch-console/'>Dumping System "
         "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to quit "
         "back to the game list? Continuing emulation may result in crashes, corrupted save "
         "data, or other bugs.");
