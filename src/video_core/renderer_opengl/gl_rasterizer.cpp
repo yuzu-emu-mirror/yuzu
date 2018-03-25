@@ -196,7 +196,8 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
 
 void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VS);
-    UNIMPLEMENTED();
+    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
+    glUseProgramStages(pipeline.handle, GL_VERTEX_SHADER_BIT, current_shader->shader.handle);
 }
 
 void RasterizerOpenGL::SetupFragmentShader(FSUniformData* ub_ptr, GLintptr buffer_offset) {
