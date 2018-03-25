@@ -222,6 +222,10 @@ public:
                 UNREACHABLE();
                 return {};
             }
+
+            bool IsNormalized() const {
+                return (type == Type::SignedNorm) || (type == Type::UnsignedNorm);
+            }
         };
 
         enum class PrimitiveTopology : u32 {

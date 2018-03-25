@@ -178,7 +178,7 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     for (unsigned index = 0; index < 16; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
         glVertexAttribPointer(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
-                              GL_FALSE, vertex_array.stride,
+                              attrib.IsNormalized() ? GL_TRUE : GL_FALSE, vertex_array.stride,
                               reinterpret_cast<GLvoid*>(buffer_offset + attrib.offset));
         glEnableVertexAttribArray(index);
         hw_vao_enabled_attributes[index] = true;
