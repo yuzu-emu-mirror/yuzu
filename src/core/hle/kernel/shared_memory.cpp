@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <cstring>
+#include <cinttypes>
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/kernel/errors.h"

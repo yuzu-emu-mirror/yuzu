@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
 #include "core/hle/kernel/object_address_table.h"
 
