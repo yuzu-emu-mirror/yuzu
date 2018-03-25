@@ -13,6 +13,7 @@
 #include "core/memory.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
+#include "video_core/debug_utils/debug_utils.h"
 #include "video_core/gpu.h"
 
 class EmuWindow;
@@ -135,6 +136,14 @@ public:
         return *app_loader;
     }
 
+    void SetGPUDebugContext(std::shared_ptr<Tegra::DebugContext> context) {
+        debug_context = std::move(context);
+    }
+
+    std::shared_ptr<Tegra::DebugContext> GetGPUDebugContext() const {
+        return debug_context;
+    }
+
 private:
     /**
      * Initialize the emulated system.
@@ -153,6 +162,8 @@ private:
     std::shared_ptr<ARM_Interface> cpu_core;
     std::unique_ptr<Kernel::Scheduler> scheduler;
     std::unique_ptr<Tegra::GPU> gpu_core;
+
+    std::shared_ptr<Tegra::DebugContext> debug_context;
 
     Kernel::SharedPtr<Kernel::Process> current_process;
 

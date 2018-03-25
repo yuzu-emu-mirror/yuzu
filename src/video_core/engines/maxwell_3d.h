@@ -12,6 +12,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "video_core/memory_manager.h"
+#include "video_core/textures/texture.h"
 
 namespace Tegra {
 namespace Engines {
@@ -20,12 +21,6 @@ class Maxwell3D final {
 public:
     explicit Maxwell3D(MemoryManager& memory_manager);
     ~Maxwell3D() = default;
-
-    /// Write the value to the register identified by method.
-    void WriteReg(u32 method, u32 value, u32 remaining_params);
-
-    /// Uploads the code for a GPU macro program associated with the specified entry.
-    void SubmitMacroCode(u32 entry, std::vector<u32> code);
 
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
@@ -429,6 +424,15 @@ public:
     };
 
     State state{};
+
+    /// Write the value to the register identified by method.
+    void WriteReg(u32 method, u32 value, u32 remaining_params);
+
+    /// Uploads the code for a GPU macro program associated with the specified entry.
+    void SubmitMacroCode(u32 entry, std::vector<u32> code);
+
+    /// Returns a list of enabled textures for the specified shader stage.
+    std::vector<Texture::TICEntry> GetStageTextures(Regs::ShaderStage stage);
 
 private:
     MemoryManager& memory_manager;

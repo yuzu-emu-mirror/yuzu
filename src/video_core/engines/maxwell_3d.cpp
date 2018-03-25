@@ -2,8 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
+#include "core/core.h"
+#include "video_core/debug_utils/debug_utils.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/textures/decoders.h"
+#include "video_core/textures/texture.h"
 
 namespace Tegra {
 namespace Engines {
@@ -46,6 +51,8 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     ASSERT_MSG(method < Regs::NUM_REGS,
                "Invalid Maxwell3D register, increase the size of the Regs structure");
 
+    auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
+
     // It is an error to write to a register other than the current macro's ARG register before it
     // has finished execution.
     if (executing_macro != 0) {
@@ -70,6 +77,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
             CallMacroMethod(executing_macro, macro_params);
         }
         return;
+    }
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
     }
 
     regs.reg_array[method] = value;
@@ -137,6 +148,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     }
 
 #undef MAXWELL3D_REG_INDEX
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed, nullptr);
+    }
 }
 
 void Maxwell3D::ProcessQueryGet() {
@@ -160,6 +175,15 @@ void Maxwell3D::ProcessQueryGet() {
 
 void Maxwell3D::DrawArrays() {
     LOG_WARNING(HW_GPU, "Game requested a DrawArrays, ignoring");
+    auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::IncomingPrimitiveBatch, nullptr);
+    }
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
+    }
 }
 
 void Maxwell3D::BindTextureInfoBuffer(const std::vector<u32>& parameters) {
@@ -268,6 +292,51 @@ void Maxwell3D::ProcessCBData(u32 value) {
 
     // Increment the current buffer position.
     regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
+}
+
+std::vector<Texture::TICEntry> Maxwell3D::GetStageTextures(Regs::ShaderStage stage) {
+    std::vector<Texture::TICEntry> textures;
+
+    auto& fragment_shader = state.shader_stages[static_cast<size_t>(stage)];
+    auto& tex_info_buffer = fragment_shader.const_buffers[regs.tex_cb_index];
+    ASSERT(tex_info_buffer.enabled && tex_info_buffer.address != 0);
+
+    GPUVAddr tic_base_address = regs.tic.TICAddress();
+
+    GPUVAddr tex_info_buffer_end = tex_info_buffer.address + tex_info_buffer.size;
+
+    // Offset into the texture constbuffer where the texture info begins.
+    static constexpr size_t TextureInfoOffset = 0x20;
+
+    for (GPUVAddr current_texture = tex_info_buffer.address + TextureInfoOffset;
+         current_texture < tex_info_buffer_end; current_texture += 4) {
+
+        Texture::TextureHandle tex_info{
+            Memory::Read32(memory_manager.PhysicalToVirtualAddress(current_texture))};
+
+        if (tex_info.tic_id != 0 || tex_info.tsc_id != 0) {
+            GPUVAddr tic_address_gpu =
+                tic_base_address + tex_info.tic_id * sizeof(Texture::TICEntry);
+            VAddr tic_address_cpu = memory_manager.PhysicalToVirtualAddress(tic_address_gpu);
+
+            Texture::TICEntry tic_entry;
+            Memory::ReadBlock(tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
+
+            auto r_type = tic_entry.r_type.Value();
+            auto g_type = tic_entry.g_type.Value();
+            auto b_type = tic_entry.b_type.Value();
+            auto a_type = tic_entry.a_type.Value();
+
+            // TODO(Subv): Different data types for separate components are not supported
+            ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
+
+            auto format = tic_entry.format.Value();
+
+            textures.push_back(tic_entry);
+        }
+    }
+
+    return textures;
 }
 
 } // namespace Engines

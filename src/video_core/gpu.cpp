@@ -18,4 +18,8 @@ GPU::GPU() {
 
 GPU::~GPU() = default;
 
+const Tegra::Engines::Maxwell3D& GPU::Get3DEngine() const {
+    return *maxwell_3d;
+}
+
 } // namespace Tegra

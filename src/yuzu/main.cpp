@@ -25,10 +25,13 @@
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
+#include "video_core/debug_utils/debug_utils.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/debugger/graphics/graphics_breakpoints.h"
+#include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/debugger/profiler.h"
 #include "yuzu/debugger/registers.h"
 #include "yuzu/debugger/wait_tree.h"
@@ -68,6 +71,9 @@ static void ShowCalloutMessage(const QString& message, CalloutFlag flag) {
 void GMainWindow::ShowCallouts() {}
 
 GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
+
+    debug_context = Tegra::DebugContext::Construct();
+
     setAcceptDrops(true);
     ui.setupUi(this);
     statusBar()->hide();
@@ -159,6 +165,16 @@ void GMainWindow::InitializeDebugWidgets() {
             &RegistersWidget::OnEmulationStarting);
     connect(this, &GMainWindow::EmulationStopping, registersWidget,
             &RegistersWidget::OnEmulationStopping);
+
+    graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(debug_context, this);
+    addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
+    graphicsBreakpointsWidget->hide();
+    debug_menu->addAction(graphicsBreakpointsWidget->toggleViewAction());
+
+    graphicsSurfaceWidget = new GraphicsSurfaceWidget(debug_context, this);
+    addDockWidget(Qt::RightDockWidgetArea, graphicsSurfaceWidget);
+    graphicsSurfaceWidget->hide();
+    debug_menu->addAction(graphicsSurfaceWidget->toggleViewAction());
 
     waitTreeWidget = new WaitTreeWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, waitTreeWidget);
@@ -323,6 +339,8 @@ bool GMainWindow::LoadROM(const QString& filename) {
     }
 
     Core::System& system{Core::System::GetInstance()};
+
+    system.SetGPUDebugContext(debug_context);
 
     const Core::System::ResultStatus result{system.Load(render_window, filename.toStdString())};
 

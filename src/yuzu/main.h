@@ -15,16 +15,17 @@ class Config;
 class EmuThread;
 class GameList;
 class GImageInfo;
-class GPUCommandStreamWidget;
-class GPUCommandListWidget;
 class GraphicsBreakPointsWidget;
-class GraphicsTracingWidget;
-class GraphicsVertexShaderWidget;
+class GraphicsSurfaceWidget;
 class GRenderWindow;
 class MicroProfileDialog;
 class ProfilerWidget;
 class RegistersWidget;
 class WaitTreeWidget;
+
+namespace Tegra {
+class DebugContext;
+}
 
 class GMainWindow : public QMainWindow {
     Q_OBJECT
@@ -138,6 +139,8 @@ private:
 
     Ui::MainWindow ui;
 
+    std::shared_ptr<Tegra::DebugContext> debug_context;
+
     GRenderWindow* render_window;
     GameList* game_list;
 
@@ -158,6 +161,8 @@ private:
     ProfilerWidget* profilerWidget;
     MicroProfileDialog* microProfileDialog;
     RegistersWidget* registersWidget;
+    GraphicsBreakPointsWidget* graphicsBreakpointsWidget;
+    GraphicsSurfaceWidget* graphicsSurfaceWidget;
     WaitTreeWidget* waitTreeWidget;
 
     QAction* actions_recent_files[max_recent_files_item];

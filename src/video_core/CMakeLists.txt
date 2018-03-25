@@ -1,6 +1,8 @@
 add_library(video_core STATIC
     command_processor.cpp
     command_processor.h
+    debug_utils/debug_utils.cpp
+    debug_utils/debug_utils.h
     engines/fermi_2d.cpp
     engines/fermi_2d.h
     engines/maxwell_3d.cpp
@@ -31,6 +33,9 @@ add_library(video_core STATIC
     renderer_opengl/gl_stream_buffer.h
     renderer_opengl/renderer_opengl.cpp
     renderer_opengl/renderer_opengl.h
+    textures/decoders.cpp
+    textures/decoders.h
+    textures/texture.h
     utils.h
     video_core.cpp
     video_core.h

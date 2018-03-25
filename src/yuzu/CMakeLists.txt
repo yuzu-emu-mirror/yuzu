@@ -23,6 +23,13 @@ add_executable(yuzu
     configuration/configure_input.h
     configuration/configure_system.cpp
     configuration/configure_system.h
+    debugger/graphics/graphics_breakpoint_observer.cpp
+    debugger/graphics/graphics_breakpoint_observer.h
+    debugger/graphics/graphics_breakpoints.cpp
+    debugger/graphics/graphics_breakpoints.h
+    debugger/graphics/graphics_breakpoints_p.h
+    debugger/graphics/graphics_surface.cpp
+    debugger/graphics/graphics_surface.h
     debugger/profiler.cpp
     debugger/profiler.h
     debugger/registers.cpp
