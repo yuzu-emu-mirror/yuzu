@@ -23,7 +23,7 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
             return GL_UNSIGNED_BYTE;
         }
 
-        LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size=%s", attrib.SizeString());
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size=%s", attrib.SizeString().c_str());
         UNREACHABLE();
         return {};
     }
@@ -32,7 +32,7 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         return GL_FLOAT;
     }
 
-    LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex type=%s", attrib.TypeString());
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex type=%s", attrib.TypeString().c_str());
     UNREACHABLE();
     return {};
 }
