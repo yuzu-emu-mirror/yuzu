@@ -255,6 +255,11 @@ enum class FlushMode {
 };
 
 /**
+ * Mark each page touching the region as cached.
+ */
+void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached);
+
+/**
  * Flushes and invalidates any externally cached rasterizer resources touching the given virtual
  * address region.
  */
