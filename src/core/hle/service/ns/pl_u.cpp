@@ -33,6 +33,7 @@ enum class LoadState : u32 {
 
 PL_U::PL_U() : ServiceFramework("pl:u") {
     static const FunctionInfo functions[] = {
+        {0, &PL_U::RequestLoad, "RequestLoad"},
         {1, &PL_U::GetLoadState, "GetLoadState"},
         {2, &PL_U::GetSize, "GetSize"},
         {3, &PL_U::GetSharedMemoryAddressOffset, "GetSharedMemoryAddressOffset"},
@@ -52,6 +53,15 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
     } else {
         LOG_WARNING(Service_NS, "Unable to load shared font: %s", filepath.c_str());
     }
+}
+
+void PL_U::RequestLoad(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const u32 shared_font_type{rp.Pop<u32>()};
+
+    LOG_DEBUG(Service_NS, "called, shared_font_type=%d", shared_font_type);
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void PL_U::GetLoadState(Kernel::HLERequestContext& ctx) {
