@@ -151,12 +151,52 @@ private:
     Kernel::SharedPtr<Kernel::Event> system_event;
 };
 
+class IAudioDevice final : public ServiceFramework<IAudioDevice> {
+public:
+    IAudioDevice() : ServiceFramework("IAudioDevice") {
+        static const FunctionInfo functions[] = {
+            {0x0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
+            {0x1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"}};
+        RegisterHandlers(functions);
+
+        buffer_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "IAudioOutBufferReleasedEvent");
+    }
+
+private:
+    void ListAudioDeviceName(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+
+        const std::string audio_interface = "AudioInterface";
+        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+
+        IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(1);
+    }
+
+    void SetAudioDeviceOutputVolume(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+
+        IPC::RequestParser rp{ctx};
+        f32 volume = static_cast<f32>(rp.Pop<u32>());
+
+        auto file_buffer = ctx.ReadBuffer();
+        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
+
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    Kernel::SharedPtr<Kernel::Event> buffer_event;
+};
+
 AudRenU::AudRenU() : ServiceFramework("audren:u") {
     static const FunctionInfo functions[] = {
         {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
         {1, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
-        {2, &AudRenU::GetAudioRenderersProcessMasterVolume, "GetAudioRenderersProcessMasterVolume"},
-        {3, nullptr, "SetAudioRenderersProcessMasterVolume"},
+        {2, &AudRenU::GetAudioDevice, "GetAudioDevice"},
     };
     RegisterHandlers(functions);
 }
@@ -179,12 +219,13 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
 }
 
-void AudRenU::GetAudioRenderersProcessMasterVolume(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 3};
+void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(100);
-    LOG_WARNING(Service_Audio, "(STUBBED) called");
+    rb.PushIpcInterface<Audio::IAudioDevice>();
+
+    LOG_DEBUG(Service_Audio, "called");
 }
 
 } // namespace Audio

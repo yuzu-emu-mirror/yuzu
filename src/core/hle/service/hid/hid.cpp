@@ -193,7 +193,7 @@ public:
             {121, &Hid::GetNpadJoyHoldType, "GetNpadJoyHoldType"},
             {122, &Hid::SetNpadJoyAssignmentModeSingleByDefault,
              "SetNpadJoyAssignmentModeSingleByDefault"},
-            {124, nullptr, "SetNpadJoyAssignmentModeDual"},
+            {124, &Hid::SetNpadJoyAssignmentModeDual, "SetNpadJoyAssignmentModeDual"},
             {128, &Hid::SetNpadHandheldActivationMode, "SetNpadHandheldActivationMode"},
             {200, &Hid::GetVibrationDeviceInfo, "GetVibrationDeviceInfo"},
             {201, &Hid::SendVibrationValue, "SendVibrationValue"},
@@ -310,6 +310,12 @@ private:
     }
 
     void GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_HID, "(STUBBED) called");

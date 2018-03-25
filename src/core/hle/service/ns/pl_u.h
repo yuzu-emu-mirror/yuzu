@@ -17,6 +17,7 @@ public:
     ~PL_U() = default;
 
 private:
+    void RequestLoad(Kernel::HLERequestContext& ctx);
     void GetLoadState(Kernel::HLERequestContext& ctx);
     void GetSize(Kernel::HLERequestContext& ctx);
     void GetSharedMemoryAddressOffset(Kernel::HLERequestContext& ctx);
