@@ -29,7 +29,7 @@ public:
     RasterizerOpenGL();
     ~RasterizerOpenGL() override;
 
-    void DrawTriangles() override;
+    void DrawArrays() override;
     void NotifyMaxwellRegisterChanged(u32 id) override;
     void FlushAll() override;
     void FlushRegion(VAddr addr, u64 size) override;

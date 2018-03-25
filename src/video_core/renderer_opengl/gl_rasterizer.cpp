@@ -212,12 +212,12 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     }
 
     accelerate_draw = is_indexed ? AccelDraw::Indexed : AccelDraw::Arrays;
-    DrawTriangles();
+    DrawArrays();
 
     return true;
 }
 
-void RasterizerOpenGL::DrawTriangles() {
+void RasterizerOpenGL::DrawArrays() {
     if (accelerate_draw == AccelDraw::Disabled)
         return;
 
