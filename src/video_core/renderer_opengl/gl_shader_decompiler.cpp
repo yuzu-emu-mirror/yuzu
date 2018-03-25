@@ -26,7 +26,7 @@ public:
           sanitize_mul(sanitize_mul), emit_cb(emit_cb), setemit_cb(setemit_cb) {}
 
     std::string Decompile() {
-        UNIMPLEMENTED();
+        UNREACHABLE();
         return {};
     }
 

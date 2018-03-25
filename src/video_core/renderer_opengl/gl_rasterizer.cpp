@@ -20,6 +20,7 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
+#include "video_core/renderer_opengl/maxwell_to_gl.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -124,14 +125,14 @@ RasterizerOpenGL::RasterizerOpenGL() {
         glBufferData(GL_UNIFORM_BUFFER, sizeof(VSUniformData), nullptr, GL_STREAM_COPY);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, vs_uniform_buffer.handle);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
     }
 
     accelerate_draw = AccelDraw::Disabled;
 
     glEnable(GL_BLEND);
 
-    LOG_WARNING(HW_GPU, "Sync fixed function OpenGL state here when ready");
+    LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
@@ -200,12 +201,12 @@ void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_
 
 void RasterizerOpenGL::SetupFragmentShader(FSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_FS);
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     if (!has_ARB_separate_shader_objects) {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
         return false;
     }
 
@@ -438,17 +439,17 @@ void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
 
 bool RasterizerOpenGL::AccelerateDisplayTransfer(const void* config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateTextureCopy(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateFill(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
@@ -529,14 +530,14 @@ void main() {
         return;
     }
 
-    LOG_ERROR(HW_GPU, "Emulated shaders are not supported! Using a passthrough shader.");
+    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
 
     current_shader = &test_shader;
     if (has_ARB_separate_shader_objects) {
         test_shader.shader.Create(vertex_shader, nullptr, fragment_shader, {}, true);
         glActiveShaderProgram(pipeline.handle, test_shader.shader.handle);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
     }
 
     state.draw.shader_program = test_shader.shader.handle;
@@ -549,33 +550,33 @@ void main() {
 }
 
 void RasterizerOpenGL::SyncClipEnabled() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncClipCoef() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncDepthOffset() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendEnabled() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendFuncs() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendColor() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }

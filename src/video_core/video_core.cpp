@@ -26,7 +26,7 @@ bool Init(EmuWindow* emu_window) {
     if (g_renderer->Init()) {
         LOG_DEBUG(Render, "initialized OK");
     } else {
-        LOG_ERROR(Render, "initialization failed !");
+        LOG_CRITICAL(Render, "initialization failed !");
         return false;
     }
     return true;

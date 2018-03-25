@@ -279,7 +279,7 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:
-        UNIMPLEMENTED();
+        UNREACHABLE();
     }
 
     state.texture_units[0].texture_2d = texture.resource.handle;
@@ -305,7 +305,7 @@ void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, fl
             right = texcoords.left;
         } else {
             // Other transformations are unsupported
-            LOG_CRITICAL(HW_GPU, "unsupported framebuffer_transform_flags=%d",
+            LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags=%d",
                          framebuffer_transform_flags);
             UNIMPLEMENTED();
         }
