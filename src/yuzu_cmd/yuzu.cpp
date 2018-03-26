@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         LOG_CRITICAL(Frontend, "The game that you are trying to load must be decrypted before "
                                "being used with yuzu. \n\n For more information on dumping and "
                                "decrypting games, please refer to: "
-                               "https://citra-emu.org/wiki/dumping-game-cartridges/");
+                               "https://yuzu-emu.org/wiki/dumping-game-cartridges/");
         return -1;
     case Core::System::ResultStatus::ErrorLoader_ErrorInvalidFormat:
         LOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
