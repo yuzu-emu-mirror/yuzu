@@ -294,8 +294,45 @@ void Maxwell3D::ProcessCBData(u32 value) {
     regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
 }
 
-std::vector<Texture::TICEntry> Maxwell3D::GetStageTextures(Regs::ShaderStage stage) {
-    std::vector<Texture::TICEntry> textures;
+Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
+    GPUVAddr tic_base_address = regs.tic.TICAddress();
+
+    GPUVAddr tic_address_gpu = tic_base_address + tic_index * sizeof(Texture::TICEntry);
+    VAddr tic_address_cpu = memory_manager.PhysicalToVirtualAddress(tic_address_gpu);
+
+    Texture::TICEntry tic_entry;
+    Memory::ReadBlock(tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
+
+    ASSERT_MSG(tic_entry.header_version == Texture::TICHeaderVersion::BlockLinear,
+               "TIC versions other than BlockLinear are unimplemented");
+
+    ASSERT_MSG(tic_entry.texture_type == Texture::TextureType::Texture2D,
+               "Texture types other than Texture2D are unimplemented");
+
+    auto r_type = tic_entry.r_type.Value();
+    auto g_type = tic_entry.g_type.Value();
+    auto b_type = tic_entry.b_type.Value();
+    auto a_type = tic_entry.a_type.Value();
+
+    // TODO(Subv): Different data types for separate components are not supported
+    ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
+
+    return tic_entry;
+}
+
+Texture::TSCEntry Maxwell3D::GetTSCEntry(u32 tsc_index) const {
+    GPUVAddr tsc_base_address = regs.tsc.TSCAddress();
+
+    GPUVAddr tsc_address_gpu = tsc_base_address + tsc_index * sizeof(Texture::TSCEntry);
+    VAddr tsc_address_cpu = memory_manager.PhysicalToVirtualAddress(tsc_address_gpu);
+
+    Texture::TSCEntry tsc_entry;
+    Memory::ReadBlock(tsc_address_cpu, &tsc_entry, sizeof(Texture::TSCEntry));
+    return tsc_entry;
+}
+
+std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderStage stage) const {
+    std::vector<Texture::FullTextureInfo> textures;
 
     auto& fragment_shader = state.shader_stages[static_cast<size_t>(stage)];
     auto& tex_info_buffer = fragment_shader.const_buffers[regs.tex_cb_index];
@@ -309,31 +346,34 @@ std::vector<Texture::TICEntry> Maxwell3D::GetStageTextures(Regs::ShaderStage sta
     static constexpr size_t TextureInfoOffset = 0x20;
 
     for (GPUVAddr current_texture = tex_info_buffer.address + TextureInfoOffset;
-         current_texture < tex_info_buffer_end; current_texture += 4) {
+         current_texture < tex_info_buffer_end; current_texture += sizeof(Texture::TextureHandle)) {
 
-        Texture::TextureHandle tex_info{
+        Texture::TextureHandle tex_handle{
             Memory::Read32(memory_manager.PhysicalToVirtualAddress(current_texture))};
 
-        if (tex_info.tic_id != 0 || tex_info.tsc_id != 0) {
-            GPUVAddr tic_address_gpu =
-                tic_base_address + tex_info.tic_id * sizeof(Texture::TICEntry);
-            VAddr tic_address_cpu = memory_manager.PhysicalToVirtualAddress(tic_address_gpu);
+        Texture::FullTextureInfo tex_info{};
+        // TODO(Subv): Use the shader to determine which textures are actually accessed.
+        tex_info.index = (current_texture - tex_info_buffer.address - TextureInfoOffset) /
+                         sizeof(Texture::TextureHandle);
 
-            Texture::TICEntry tic_entry;
-            Memory::ReadBlock(tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
+        // Load the TIC data.
+        if (tex_handle.tic_id != 0) {
+            tex_info.enabled = true;
 
-            auto r_type = tic_entry.r_type.Value();
-            auto g_type = tic_entry.g_type.Value();
-            auto b_type = tic_entry.b_type.Value();
-            auto a_type = tic_entry.a_type.Value();
-
-            // TODO(Subv): Different data types for separate components are not supported
-            ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
-
-            auto format = tic_entry.format.Value();
-
-            textures.push_back(tic_entry);
+            auto tic_entry = GetTICEntry(tex_handle.tic_id);
+            // TODO(Subv): Workaround for BitField's move constructor being deleted.
+            std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
         }
+
+        // Load the TSC data
+        if (tex_handle.tsc_id != 0) {
+            auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
+            // TODO(Subv): Workaround for BitField's move constructor being deleted.
+            std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
+        }
+
+        if (tex_info.enabled)
+            textures.push_back(tex_info);
     }
 
     return textures;
