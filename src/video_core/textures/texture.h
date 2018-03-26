@@ -17,11 +17,32 @@ enum class TextureFormat : u32 {
     DXT1 = 0x24,
 };
 
+enum class TextureType : u32 {
+    Texture1D = 0,
+    Texture2D = 1,
+    Texture3D = 2,
+    TextureCubemap = 3,
+    Texture1DArray = 4,
+    Texture2DArray = 5,
+    Texture1DBuffer = 6,
+    Texture2DNoMipmap = 7,
+    TextureCubeArray = 8,
+};
+
+enum class TICHeaderVersion : u32 {
+    OneDBuffer = 0,
+    PitchColorKey = 1,
+    Pitch = 2,
+    BlockLinear = 3,
+    BlockLinearColorKey = 4,
+};
+
 union TextureHandle {
     u32 raw;
     BitField<0, 20, u32> tic_id;
     BitField<20, 12, u32> tsc_id;
 };
+static_assert(sizeof(TextureHandle) == 4, "TextureHandle has wrong size");
 
 struct TICEntry {
     union {
@@ -33,10 +54,15 @@ struct TICEntry {
         BitField<16, 3, u32> a_type;
     };
     u32 address_low;
-    u16 address_high;
-    INSERT_PADDING_BYTES(6);
-    u16 width_minus_1;
-    INSERT_PADDING_BYTES(2);
+    union {
+        BitField<0, 16, u32> address_high;
+        BitField<21, 3, TICHeaderVersion> header_version;
+    };
+    INSERT_PADDING_BYTES(4);
+    union {
+        BitField<0, 16, u32> width_minus_1;
+        BitField<23, 4, TextureType> texture_type;
+    };
     u16 height_minus_1;
     INSERT_PADDING_BYTES(10);
 
