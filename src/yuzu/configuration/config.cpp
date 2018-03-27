@@ -94,6 +94,10 @@ void Config::ReadValues() {
     Settings::values.use_virtual_sd = qt_config->value("use_virtual_sd", true).toBool();
     qt_config->endGroup();
 
+    qt_config->beginGroup("System");
+    Settings::values.is_docked = qt_config->value("is_docked", true).toBool();
+    qt_config->endGroup();
+
     qt_config->beginGroup("Miscellaneous");
     Settings::values.log_filter = qt_config->value("log_filter", "*:Info").toString().toStdString();
     qt_config->endGroup();
@@ -186,6 +190,10 @@ void Config::SaveValues() {
 
     qt_config->beginGroup("Data Storage");
     qt_config->setValue("use_virtual_sd", Settings::values.use_virtual_sd);
+    qt_config->endGroup();
+
+    qt_config->beginGroup("System");
+    qt_config->setValue("is_docked", Settings::values.is_docked);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");

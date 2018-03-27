@@ -111,6 +111,9 @@ enum class CpuCore {
 };
 
 struct Values {
+    // System
+    bool is_docked;
+
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;

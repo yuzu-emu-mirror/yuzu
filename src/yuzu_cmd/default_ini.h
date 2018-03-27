@@ -154,6 +154,10 @@ output_device =
 use_virtual_sd =
 
 [System]
+# Whether the system is docked
+# 1 (default): Yes, 0: No
+is_docked =
+
 # The system region that Citra will use during emulation
 # -1: Auto-select (default), 0: Japan, 1: USA, 2: Europe, 3: Australia, 4: China, 5: Korea, 6: Taiwan
 region_value =
