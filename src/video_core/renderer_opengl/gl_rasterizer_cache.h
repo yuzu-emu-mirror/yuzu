@@ -24,6 +24,7 @@
 #include "common/math_util.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/textures/texture.h"
 
 struct CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
@@ -51,30 +52,8 @@ enum class ScaleMatch {
 
 struct SurfaceParams {
     enum class PixelFormat {
-        // First 5 formats are shared between textures and color buffers
         RGBA8 = 0,
-        RGB8 = 1,
-        RGB5A1 = 2,
-        RGB565 = 3,
-        RGBA4 = 4,
-
-        // Texture-only formats
-        IA8 = 5,
-        RG8 = 6,
-        I8 = 7,
-        A8 = 8,
-        IA4 = 9,
-        I4 = 10,
-        A4 = 11,
-        ETC1 = 12,
-        ETC1A4 = 13,
-
-        // Depth buffer-only formats
-        D16 = 14,
-        // gap
-        D24 = 16,
-        D24S8 = 17,
-
+        DXT1 = 1,
         Invalid = 255,
     };
 
@@ -88,28 +67,15 @@ struct SurfaceParams {
     };
 
     static constexpr unsigned int GetFormatBpp(PixelFormat format) {
-        constexpr std::array<unsigned int, 18> bpp_table = {
+        if (format == PixelFormat::Invalid)
+            return 0;
+
+        constexpr std::array<unsigned int, 2> bpp_table = {
             32, // RGBA8
-            24, // RGB8
-            16, // RGB5A1
-            16, // RGB565
-            16, // RGBA4
-            16, // IA8
-            16, // RG8
-            8,  // I8
-            8,  // A8
-            8,  // IA4
-            4,  // I4
-            4,  // A4
-            4,  // ETC1
-            8,  // ETC1A4
-            16, // D16
-            0,
-            24, // D24
-            32, // D24S8
+            64, // DXT1
         };
 
-        assert(static_cast<size_t>(format) < bpp_table.size());
+        ASSERT(static_cast<size_t>(format) < bpp_table.size());
         return bpp_table[static_cast<size_t>(format)];
     }
     unsigned int GetFormatBpp() const {
@@ -129,6 +95,18 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::FramebufferConfig::PixelFormat::ABGR8:
             return PixelFormat::RGBA8;
+        default:
+            UNREACHABLE();
+        }
+    }
+
+    static PixelFormat PixelFormatFromTextureFormat(Tegra::Texture::TextureFormat format) {
+        // TODO(Subv): Properly implement this
+        switch (format) {
+        case Tegra::Texture::TextureFormat::A8R8G8B8:
+            return PixelFormat::RGBA8;
+        case Tegra::Texture::TextureFormat::DXT1:
+            return PixelFormat::DXT1;
         default:
             UNREACHABLE();
         }
@@ -154,22 +132,17 @@ struct SurfaceParams {
         return false;
     }
 
-    static constexpr SurfaceType GetFormatType(PixelFormat pixel_format) {
-        if ((unsigned int)pixel_format < 5) {
+    static SurfaceType GetFormatType(PixelFormat pixel_format) {
+        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::RGBA8)) {
             return SurfaceType::Color;
         }
 
-        if ((unsigned int)pixel_format < 14) {
+        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::DXT1)) {
             return SurfaceType::Texture;
         }
 
-        if (pixel_format == PixelFormat::D16 || pixel_format == PixelFormat::D24) {
-            return SurfaceType::Depth;
-        }
-
-        if (pixel_format == PixelFormat::D24S8) {
-            return SurfaceType::DepthStencil;
-        }
+        // TODO(Subv): Implement the other formats
+        ASSERT(false);
 
         return SurfaceType::Invalid;
     }
@@ -265,12 +238,10 @@ struct CachedSurface : SurfaceParams {
     OGLTexture texture;
 
     static constexpr unsigned int GetGLBytesPerPixel(PixelFormat format) {
-        // OpenGL needs 4 bpp alignment for D24 since using GL_UNSIGNED_INT as type
-        return format == PixelFormat::Invalid
-                   ? 0
-                   : (format == PixelFormat::D24 || GetFormatType(format) == SurfaceType::Texture)
-                         ? 4
-                         : SurfaceParams::GetFormatBpp(format) / 8;
+        if (format == PixelFormat::Invalid)
+            return 0;
+
+        return SurfaceParams::GetFormatBpp(format) / 8;
     }
 
     std::unique_ptr<u8[]> gl_buffer;
@@ -313,7 +284,7 @@ public:
                                         bool load_if_create);
 
     /// Get a surface based on the texture configuration
-    Surface GetTextureSurface(const void* config);
+    Surface GetTextureSurface(const Tegra::Texture::FullTextureInfo& config);
 
     /// Get the color and depth surfaces based on the framebuffer configuration
     SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,

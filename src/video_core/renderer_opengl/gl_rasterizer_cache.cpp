@@ -92,19 +92,9 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
             u8* tile_ptr = tile_buffer + VideoCore::MortonInterleave(x, y) * bytes_per_pixel;
             u8* gl_ptr = gl_buffer + ((7 - y) * stride + x) * gl_bytes_per_pixel;
             if (morton_to_gl) {
-                if (format == PixelFormat::D24S8) {
-                    gl_ptr[0] = tile_ptr[3];
-                    std::memcpy(gl_ptr + 1, tile_ptr, 3);
-                } else {
-                    std::memcpy(gl_ptr, tile_ptr, bytes_per_pixel);
-                }
+                std::memcpy(gl_ptr, tile_ptr, bytes_per_pixel);
             } else {
-                if (format == PixelFormat::D24S8) {
-                    std::memcpy(tile_ptr, gl_ptr + 1, 3);
-                    tile_ptr[3] = gl_ptr[0];
-                } else {
-                    std::memcpy(tile_ptr, gl_ptr, bytes_per_pixel);
-                }
+                std::memcpy(tile_ptr, gl_ptr, bytes_per_pixel);
             }
         }
     }
