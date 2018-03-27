@@ -47,4 +47,27 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     return {};
 }
 
+inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode) {
+    switch (filter_mode) {
+    case Tegra::Texture::TextureFilter::Linear:
+        return GL_LINEAR;
+    case Tegra::Texture::TextureFilter::Nearest:
+        return GL_NEAREST;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture filter mode=%u",
+                 static_cast<u32>(filter_mode));
+    UNREACHABLE();
+    return {};
+}
+
+inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
+    switch (wrap_mode) {
+    case Tegra::Texture::WrapMode::ClampToEdge:
+        return GL_CLAMP_TO_EDGE;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode=%u", static_cast<u32>(wrap_mode));
+    UNREACHABLE();
+    return {};
+}
+
 } // namespace MaxwellToGL
