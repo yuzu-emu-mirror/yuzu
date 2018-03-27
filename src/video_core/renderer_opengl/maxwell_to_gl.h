@@ -37,4 +37,14 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
     return {};
 }
 
+inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
+    switch (topology) {
+    case Maxwell::PrimitiveTopology::TriangleStrip:
+        return GL_TRIANGLE_STRIP;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented primitive topology=%d", topology);
+    UNREACHABLE();
+    return {};
+}
+
 } // namespace MaxwellToGL

@@ -326,17 +326,7 @@ void RasterizerOpenGL::DrawArrays() {
     state.Apply();
 
     // Draw the vertex batch
-    GLenum primitive_mode;
-    switch (regs.draw.topology) {
-    case Maxwell::PrimitiveTopology::TriangleStrip:
-        primitive_mode = GL_TRIANGLE_STRIP;
-        break;
-    default:
-        UNREACHABLE();
-    }
-
     const bool is_indexed = accelerate_draw == AccelDraw::Indexed;
-
     AnalyzeVertexArray(is_indexed);
     state.draw.vertex_buffer = stream_buffer->GetHandle();
     state.Apply();
@@ -384,7 +374,8 @@ void RasterizerOpenGL::DrawArrays() {
     if (is_indexed) {
         UNREACHABLE();
     } else {
-        glDrawArrays(primitive_mode, 0, regs.vertex_buffer.count);
+        glDrawArrays(MaxwellToGL::PrimitiveTopology(regs.draw.topology), 0,
+                     regs.vertex_buffer.count);
     }
 
     // Disable scissor test
