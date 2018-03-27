@@ -66,6 +66,12 @@ RasterizerOpenGL::RasterizerOpenGL() {
     has_ARB_separate_shader_objects = false;
     has_ARB_vertex_attrib_binding = false;
 
+    // Create sampler objects
+    for (size_t i = 0; i < texture_samplers.size(); ++i) {
+        texture_samplers[i].Create();
+        state.texture_units[i].sampler = texture_samplers[i].sampler.handle;
+    }
+
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
