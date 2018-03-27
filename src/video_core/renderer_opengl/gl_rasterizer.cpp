@@ -524,10 +524,10 @@ void main() {
 in vec2 frag_tex_coord;
 out vec4 color;
 
-uniform sampler2D color_texture;
+uniform sampler2D tex[32];
 
 void main() {
-    color = vec4(1.0, 0.0, 1.0, 0.0);
+    color = texture(tex[0], frag_tex_coord);
 }
 )";
 
@@ -547,6 +547,15 @@ void main() {
 
     state.draw.shader_program = test_shader.shader.handle;
     state.Apply();
+
+    for (u32 texture = 0; texture < texture_samplers.size(); ++texture) {
+        // Set the texture samplers to correspond to different texture units
+        std::string uniform_name = "tex[" + std::to_string(texture) + "]";
+        GLint uniform_tex = glGetUniformLocation(test_shader.shader.handle, uniform_name.c_str());
+        if (uniform_tex != -1) {
+            glUniform1i(uniform_tex, TextureUnits::MaxwellTexture(texture).id);
+        }
+    }
 
     if (has_ARB_separate_shader_objects) {
         state.draw.shader_program = 0;
