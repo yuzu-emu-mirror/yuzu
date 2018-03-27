@@ -17,11 +17,32 @@ enum class TextureFormat : u32 {
     DXT1 = 0x24,
 };
 
+enum class TextureType : u32 {
+    Texture1D = 0,
+    Texture2D = 1,
+    Texture3D = 2,
+    TextureCubemap = 3,
+    Texture1DArray = 4,
+    Texture2DArray = 5,
+    Texture1DBuffer = 6,
+    Texture2DNoMipmap = 7,
+    TextureCubeArray = 8,
+};
+
+enum class TICHeaderVersion : u32 {
+    OneDBuffer = 0,
+    PitchColorKey = 1,
+    Pitch = 2,
+    BlockLinear = 3,
+    BlockLinearColorKey = 4,
+};
+
 union TextureHandle {
     u32 raw;
     BitField<0, 20, u32> tic_id;
     BitField<20, 12, u32> tsc_id;
 };
+static_assert(sizeof(TextureHandle) == 4, "TextureHandle has wrong size");
 
 struct TICEntry {
     union {
@@ -33,10 +54,15 @@ struct TICEntry {
         BitField<16, 3, u32> a_type;
     };
     u32 address_low;
-    u16 address_high;
-    INSERT_PADDING_BYTES(6);
-    u16 width_minus_1;
-    INSERT_PADDING_BYTES(2);
+    union {
+        BitField<0, 16, u32> address_high;
+        BitField<21, 3, TICHeaderVersion> header_version;
+    };
+    INSERT_PADDING_BYTES(4);
+    union {
+        BitField<0, 16, u32> width_minus_1;
+        BitField<23, 4, TextureType> texture_type;
+    };
     u16 height_minus_1;
     INSERT_PADDING_BYTES(10);
 
@@ -53,6 +79,56 @@ struct TICEntry {
     }
 };
 static_assert(sizeof(TICEntry) == 0x20, "TICEntry has wrong size");
+
+enum class WrapMode : u32 {
+    Wrap = 0,
+    Mirror = 1,
+    ClampToEdge = 2,
+    Border = 3,
+    ClampOGL = 4,
+    MirrorOnceClampToEdge = 5,
+    MirrorOnceBorder = 6,
+    MirrorOnceClampOGL = 7,
+};
+
+enum class TextureFilter : u32 {
+    Nearest = 1,
+    Linear = 2,
+};
+
+enum class TextureMipmapFilter : u32 {
+    None = 1,
+    Nearest = 2,
+    Linear = 3,
+};
+
+struct TSCEntry {
+    union {
+        BitField<0, 3, WrapMode> wrap_u;
+        BitField<3, 3, WrapMode> wrap_v;
+        BitField<6, 3, WrapMode> wrap_p;
+        BitField<9, 1, u32> depth_compare_enabled;
+        BitField<10, 3, u32> depth_compare_func;
+    };
+    union {
+        BitField<0, 2, TextureFilter> mag_filter;
+        BitField<4, 2, TextureFilter> min_filter;
+        BitField<6, 2, TextureMipmapFilter> mip_filter;
+    };
+    INSERT_PADDING_BYTES(8);
+    u32 border_color_r;
+    u32 border_color_g;
+    u32 border_color_b;
+    u32 border_color_a;
+};
+static_assert(sizeof(TSCEntry) == 0x20, "TSCEntry has wrong size");
+
+struct FullTextureInfo {
+    u32 index;
+    TICEntry tic;
+    TSCEntry tsc;
+    bool enabled;
+};
 
 /// Returns the number of bytes per pixel of the input texture format.
 u32 BytesPerPixel(TextureFormat format);

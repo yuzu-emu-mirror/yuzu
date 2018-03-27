@@ -432,7 +432,7 @@ public:
     void SubmitMacroCode(u32 entry, std::vector<u32> code);
 
     /// Returns a list of enabled textures for the specified shader stage.
-    std::vector<Texture::TICEntry> GetStageTextures(Regs::ShaderStage stage);
+    std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
 private:
     MemoryManager& memory_manager;
@@ -443,6 +443,12 @@ private:
     u32 executing_macro = 0;
     /// Parameters that have been submitted to the macro call so far.
     std::vector<u32> macro_params;
+
+    /// Retrieves information about a specific TIC entry from the TIC buffer.
+    Texture::TICEntry GetTICEntry(u32 tic_index) const;
+
+    /// Retrieves information about a specific TSC entry from the TSC buffer.
+    Texture::TSCEntry GetTSCEntry(u32 tsc_index) const;
 
     /**
      * Call a macro on this engine.
