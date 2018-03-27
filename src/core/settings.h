@@ -121,7 +121,7 @@ struct Values {
     std::string touch_device;
 
     // Core
-    CpuCore cpu_core;
+    bool use_cpu_jit;
 
     // Data Storage
     bool use_virtual_sd;

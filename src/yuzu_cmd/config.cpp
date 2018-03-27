@@ -90,8 +90,7 @@ void Config::ReadValues() {
         sdl2_config->Get("Controls", "touch_device", "engine:emu_window");
 
     // Core
-    Settings::values.cpu_core =
-        static_cast<Settings::CpuCore>(sdl2_config->GetInteger("Core", "cpu_core", 1));
+    Settings::values.use_cpu_jit = sdl2_config->GetBoolean("Core", "use_cpu_jit", true);
 
     // Renderer
     Settings::values.resolution_factor =
