@@ -102,7 +102,7 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
 }
 
 template <bool morton_to_gl, PixelFormat format>
-static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
+void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
 
@@ -111,6 +111,20 @@ static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr 
     LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
     VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
                                    Memory::GetPointer(base), gl_buffer, morton_to_gl);
+}
+
+template <>
+void MortonCopy<true, PixelFormat::DXT1>(u32 stride, u32 height, u8* gl_buffer, VAddr base,
+                                                VAddr start, VAddr end) {
+    constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(PixelFormat::DXT1) / 8;
+    constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(PixelFormat::DXT1);
+
+    // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check the
+    // configuration for this and perform more generic un/swizzle
+    LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+    auto data =
+        Tegra::Texture::UnswizzleTexture(base, Tegra::Texture::TextureFormat::DXT1, stride, height);
+    std::memcpy(gl_buffer, data.data(), data.size());
 }
 
 static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 2> morton_to_gl_fns = {
