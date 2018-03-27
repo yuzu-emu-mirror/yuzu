@@ -119,7 +119,7 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
 
         // Load the framebuffer from memory, draw it to the screen, and swap buffers
         LoadFBToScreenInfo(*framebuffer, screen_info);
-        DrawScreens();
+        DrawScreen();
         render_window->SwapBuffers();
     }
 
@@ -293,8 +293,8 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     state.Apply();
 }
 
-void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w,
-                                      float h) {
+void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x, float y, float w,
+                                         float h) {
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
@@ -330,7 +330,7 @@ void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, fl
 /**
  * Draws the emulated screens to the emulator window.
  */
-void RendererOpenGL::DrawScreens() {
+void RendererOpenGL::DrawScreen() {
     const auto& layout = render_window->GetFramebufferLayout();
     const auto& screen = layout.screen;
 
@@ -346,8 +346,8 @@ void RendererOpenGL::DrawScreens() {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniform_color_texture, 0);
 
-    DrawSingleScreen(screen_info, (float)screen.left, (float)screen.top, (float)screen.GetWidth(),
-                     (float)screen.GetHeight());
+    DrawScreenTriangles(screen_info, (float)screen.left, (float)screen.top,
+                        (float)screen.GetWidth(), (float)screen.GetHeight());
 
     m_current_frame++;
 }

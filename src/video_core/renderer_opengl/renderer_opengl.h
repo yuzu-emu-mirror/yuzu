@@ -55,8 +55,8 @@ private:
     void InitOpenGLObjects();
     void ConfigureFramebufferTexture(TextureInfo& texture,
                                      const Tegra::FramebufferConfig& framebuffer);
-    void DrawScreens();
-    void DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w, float h);
+    void DrawScreen();
+    void DrawScreenTriangles(const ScreenInfo& screen_info, float x, float y, float w, float h);
     void UpdateFramerate();
 
     // Loads framebuffer from emulated memory into the display information structure
