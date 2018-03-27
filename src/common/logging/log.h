@@ -85,7 +85,7 @@ enum class Class : ClassType {
     Loader,            ///< ROM loader
     Input,             ///< Input emulation
     Network,           ///< Network emulation
-    WebService,        ///< Interface to Citra Web Services
+    WebService,        ///< Interface to yuzu Web Services
     Count              ///< Total number of logging classes
 };
 

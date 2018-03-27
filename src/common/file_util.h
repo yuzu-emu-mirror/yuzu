@@ -121,7 +121,7 @@ void CopyDir(const std::string& source_path, const std::string& dest_path);
 // Set the current directory to given directory
 bool SetCurrentDir(const std::string& directory);
 
-// Returns a pointer to a string with a Citra data dir in the user's home
+// Returns a pointer to a string with a yuzu data dir in the user's home
 // directory. To be used in "multi-user" mode (that is, installed).
 const std::string& GetUserPath(const unsigned int DirIDX, const std::string& newPath = "");
 
