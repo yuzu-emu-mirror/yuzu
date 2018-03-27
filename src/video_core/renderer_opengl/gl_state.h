@@ -85,7 +85,7 @@ public:
     struct {
         GLuint texture_2d; // GL_TEXTURE_BINDING_2D
         GLuint sampler;    // GL_SAMPLER_BINDING
-    } texture_units[3];
+    } texture_units[32];
 
     struct {
         GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER

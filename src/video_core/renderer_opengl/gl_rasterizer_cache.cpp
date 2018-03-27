@@ -21,10 +21,13 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/vector_math.h"
+#include "core/core.h"
 #include "core/frontend/emu_window.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/kernel/vm_manager.h"
 #include "core/memory.h"
 #include "core/settings.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_state.h"
 #include "video_core/utils.h"
@@ -110,65 +113,17 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
 template <bool morton_to_gl, PixelFormat format>
 static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
-    constexpr u32 tile_size = bytes_per_pixel * 64;
-
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
-    static_assert(gl_bytes_per_pixel >= bytes_per_pixel, "");
-    gl_buffer += gl_bytes_per_pixel - bytes_per_pixel;
 
-    const VAddr aligned_down_start = base + Common::AlignDown(start - base, tile_size);
-    const VAddr aligned_start = base + Common::AlignUp(start - base, tile_size);
-    const VAddr aligned_end = base + Common::AlignDown(end - base, tile_size);
-
-    ASSERT(!morton_to_gl || (aligned_start == start && aligned_end == end));
-
-    const u64 begin_pixel_index = (aligned_down_start - base) / bytes_per_pixel;
-    u32 x = static_cast<u32>((begin_pixel_index % (stride * 8)) / 8);
-    u32 y = static_cast<u32>((begin_pixel_index / (stride * 8)) * 8);
-
-    gl_buffer += ((height - 8 - y) * stride + x) * gl_bytes_per_pixel;
-
-    auto glbuf_next_tile = [&] {
-        x = (x + 8) % stride;
-        gl_buffer += 8 * gl_bytes_per_pixel;
-        if (!x) {
-            y += 8;
-            gl_buffer -= stride * 9 * gl_bytes_per_pixel;
-        }
-    };
-
-    u8* tile_buffer = Memory::GetPointer(start);
-
-    if (start < aligned_start && !morton_to_gl) {
-        std::array<u8, tile_size> tmp_buf;
-        MortonCopyTile<morton_to_gl, format>(stride, &tmp_buf[0], gl_buffer);
-        std::memcpy(tile_buffer, &tmp_buf[start - aligned_down_start],
-                    std::min(aligned_start, end) - start);
-
-        tile_buffer += aligned_start - start;
-        glbuf_next_tile();
-    }
-
-    const u8* const buffer_end = tile_buffer + aligned_end - aligned_start;
-    while (tile_buffer < buffer_end) {
-        MortonCopyTile<morton_to_gl, format>(stride, tile_buffer, gl_buffer);
-        tile_buffer += tile_size;
-        glbuf_next_tile();
-    }
-
-    if (end > std::max(aligned_start, aligned_end) && !morton_to_gl) {
-        std::array<u8, tile_size> tmp_buf;
-        MortonCopyTile<morton_to_gl, format>(stride, &tmp_buf[0], gl_buffer);
-        std::memcpy(tile_buffer, &tmp_buf[0], end - aligned_end);
-    }
+    // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check the
+    // configuration for this and perform more generic un/swizzle
+    LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+    VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
+                                   Memory::GetPointer(base), gl_buffer, morton_to_gl);
 }
 
 static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> morton_to_gl_fns = {
-    MortonCopy<true, PixelFormat::RGBA8>,  // 0
-    MortonCopy<true, PixelFormat::RGB8>,   // 1
-    MortonCopy<true, PixelFormat::RGB5A1>, // 2
-    MortonCopy<true, PixelFormat::RGB565>, // 3
-    MortonCopy<true, PixelFormat::RGBA4>,  // 4
+    MortonCopy<true, PixelFormat::RGBA8>,
     nullptr,
     nullptr,
     nullptr,
@@ -177,19 +132,19 @@ static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> mo
     nullptr,
     nullptr,
     nullptr,
-    nullptr,                             // 5 - 13
-    MortonCopy<true, PixelFormat::D16>,  // 14
-    nullptr,                             // 15
-    MortonCopy<true, PixelFormat::D24>,  // 16
-    MortonCopy<true, PixelFormat::D24S8> // 17
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 };
 
 static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl_to_morton_fns = {
-    MortonCopy<false, PixelFormat::RGBA8>,  // 0
-    MortonCopy<false, PixelFormat::RGB8>,   // 1
-    MortonCopy<false, PixelFormat::RGB5A1>, // 2
-    MortonCopy<false, PixelFormat::RGB565>, // 3
-    MortonCopy<false, PixelFormat::RGBA4>,  // 4
+    MortonCopy<false, PixelFormat::RGBA8>,
     nullptr,
     nullptr,
     nullptr,
@@ -198,11 +153,15 @@ static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl
     nullptr,
     nullptr,
     nullptr,
-    nullptr,                              // 5 - 13
-    MortonCopy<false, PixelFormat::D16>,  // 14
-    nullptr,                              // 15
-    MortonCopy<false, PixelFormat::D24>,  // 16
-    MortonCopy<false, PixelFormat::D24S8> // 17
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -291,8 +250,8 @@ static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rec
 
 static bool FillSurface(const Surface& surface, const u8* fill_data,
                         const MathUtil::Rectangle<u32>& fill_rect, GLuint draw_fb_handle) {
-    ASSERT_MSG(false, "Unimplemented");
-    return true;
+    UNREACHABLE();
+    return {};
 }
 
 SurfaceParams SurfaceParams::FromInterval(SurfaceInterval interval) const {
@@ -531,7 +490,7 @@ MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64
 void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
-    u8* texture_src_data = Memory::GetPointer(addr);
+    u8* const texture_src_data = Memory::GetPointer(addr);
     if (texture_src_data == nullptr)
         return;
 
@@ -548,11 +507,16 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
         const u32 bytes_per_pixel{GetFormatBpp() >> 3};
+
+        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
+        // the configuration for this and perform more generic un/swizzle
+        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
         VideoCore::MortonCopyPixels128(width, height, bytes_per_pixel, 4,
                                        texture_src_data + start_offset, &gl_buffer[start_offset],
                                        true);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        morton_to_gl_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
+                                                            load_start, load_end);
     }
 }
 
@@ -1093,18 +1057,106 @@ SurfaceRect_Tuple RasterizerCacheOpenGL::GetSurfaceSubRect(const SurfaceParams& 
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return {};
 }
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
-    bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport_rect) {
-    UNIMPLEMENTED();
-    return {};
+    bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
+    const auto& config = regs.rt[0];
+
+    // TODO(bunnei): This is hard corded to use just the first render buffer
+    LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
+
+    // update resolution_scale_factor and reset cache if changed
+    // TODO (bunnei): This code was ported as-is from Citra, and is technically not thread-safe. We
+    // need to fix this before making the renderer multi-threaded.
+    static u16 resolution_scale_factor = GetResolutionScaleFactor();
+    if (resolution_scale_factor != GetResolutionScaleFactor()) {
+        resolution_scale_factor = GetResolutionScaleFactor();
+        FlushAll();
+        while (!surface_cache.empty())
+            UnregisterSurface(*surface_cache.begin()->second.begin());
+    }
+
+    MathUtil::Rectangle<u32> viewport_clamped{
+        static_cast<u32>(MathUtil::Clamp(viewport.left, 0, static_cast<s32>(config.width))),
+        static_cast<u32>(MathUtil::Clamp(viewport.top, 0, static_cast<s32>(config.height))),
+        static_cast<u32>(MathUtil::Clamp(viewport.right, 0, static_cast<s32>(config.width))),
+        static_cast<u32>(MathUtil::Clamp(viewport.bottom, 0, static_cast<s32>(config.height)))};
+
+    // get color and depth surfaces
+    SurfaceParams color_params;
+    color_params.is_tiled = true;
+    color_params.res_scale = resolution_scale_factor;
+    color_params.width = config.width;
+    color_params.height = config.height;
+    SurfaceParams depth_params = color_params;
+
+    color_params.addr = memory_manager->PhysicalToVirtualAddress(config.Address());
+    color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
+    color_params.UpdateParams();
+
+    ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
+    // depth_params.addr = config.GetDepthBufferPhysicalAddress();
+    // depth_params.pixel_format = SurfaceParams::PixelFormatFromDepthFormat(config.depth_format);
+    // depth_params.UpdateParams();
+
+    auto color_vp_interval = color_params.GetSubRectInterval(viewport_clamped);
+    auto depth_vp_interval = depth_params.GetSubRectInterval(viewport_clamped);
+
+    // Make sure that framebuffers don't overlap if both color and depth are being used
+    if (using_color_fb && using_depth_fb &&
+        boost::icl::length(color_vp_interval & depth_vp_interval)) {
+        LOG_CRITICAL(Render_OpenGL, "Color and depth framebuffer memory regions overlap; "
+                                    "overlapping framebuffers not supported!");
+        using_depth_fb = false;
+    }
+
+    MathUtil::Rectangle<u32> color_rect{};
+    Surface color_surface = nullptr;
+    if (using_color_fb)
+        std::tie(color_surface, color_rect) =
+            GetSurfaceSubRect(color_params, ScaleMatch::Exact, false);
+
+    MathUtil::Rectangle<u32> depth_rect{};
+    Surface depth_surface = nullptr;
+    if (using_depth_fb)
+        std::tie(depth_surface, depth_rect) =
+            GetSurfaceSubRect(depth_params, ScaleMatch::Exact, false);
+
+    MathUtil::Rectangle<u32> fb_rect{};
+    if (color_surface != nullptr && depth_surface != nullptr) {
+        fb_rect = color_rect;
+        // Color and Depth surfaces must have the same dimensions and offsets
+        if (color_rect.bottom != depth_rect.bottom || color_rect.top != depth_rect.top ||
+            color_rect.left != depth_rect.left || color_rect.right != depth_rect.right) {
+            color_surface = GetSurface(color_params, ScaleMatch::Exact, false);
+            depth_surface = GetSurface(depth_params, ScaleMatch::Exact, false);
+            fb_rect = color_surface->GetScaledRect();
+        }
+    } else if (color_surface != nullptr) {
+        fb_rect = color_rect;
+    } else if (depth_surface != nullptr) {
+        fb_rect = depth_rect;
+    }
+
+    if (color_surface != nullptr) {
+        ValidateSurface(color_surface, boost::icl::first(color_vp_interval),
+                        boost::icl::length(color_vp_interval));
+    }
+    if (depth_surface != nullptr) {
+        ValidateSurface(depth_surface, boost::icl::first(depth_vp_interval),
+                        boost::icl::length(depth_vp_interval));
+    }
+
+    return std::make_tuple(color_surface, depth_surface, fb_rect);
 }
 
 Surface RasterizerCacheOpenGL::GetFillSurface(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return {};
 }
 
@@ -1348,5 +1400,33 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
 }
 
 void RasterizerCacheOpenGL::UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {
-    // ASSERT_MSG(false, "Unimplemented");
+    const u64 num_pages =
+        ((addr + size - 1) >> Memory::PAGE_BITS) - (addr >> Memory::PAGE_BITS) + 1;
+    const u64 page_start = addr >> Memory::PAGE_BITS;
+    const u64 page_end = page_start + num_pages;
+
+    // Interval maps will erase segments if count reaches 0, so if delta is negative we have to
+    // subtract after iterating
+    const auto pages_interval = PageMap::interval_type::right_open(page_start, page_end);
+    if (delta > 0)
+        cached_pages.add({pages_interval, delta});
+
+    for (const auto& pair : RangeFromInterval(cached_pages, pages_interval)) {
+        const auto interval = pair.first & pages_interval;
+        const int count = pair.second;
+
+        const VAddr interval_start_addr = boost::icl::first(interval) << Memory::PAGE_BITS;
+        const VAddr interval_end_addr = boost::icl::last_next(interval) << Memory::PAGE_BITS;
+        const u64 interval_size = interval_end_addr - interval_start_addr;
+
+        if (delta > 0 && count == delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, true);
+        else if (delta < 0 && count == -delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, false);
+        else
+            ASSERT(count >= 0);
+    }
+
+    if (delta < 0)
+        cached_pages.add({pages_interval, delta});
 }

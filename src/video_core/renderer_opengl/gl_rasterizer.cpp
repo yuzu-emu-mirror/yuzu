@@ -14,11 +14,16 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/vector_math.h"
+#include "core/core.h"
+#include "core/hle/kernel/process.h"
 #include "core/settings.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
+#include "video_core/renderer_opengl/maxwell_to_gl.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 
+using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 using PixelFormat = SurfaceParams::PixelFormat;
 using SurfaceType = SurfaceParams::SurfaceType;
 
@@ -120,14 +125,14 @@ RasterizerOpenGL::RasterizerOpenGL() {
         glBufferData(GL_UNIFORM_BUFFER, sizeof(VSUniformData), nullptr, GL_STREAM_COPY);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, vs_uniform_buffer.handle);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
     }
 
     accelerate_draw = AccelDraw::Disabled;
 
     glEnable(GL_BLEND);
 
-    LOG_WARNING(HW_GPU, "Sync fixed function OpenGL state here when ready");
+    LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
@@ -138,47 +143,235 @@ RasterizerOpenGL::~RasterizerOpenGL() {
     }
 }
 
-static constexpr std::array<GLenum, 4> vs_attrib_types{
-    GL_BYTE,          // VertexAttributeFormat::BYTE
-    GL_UNSIGNED_BYTE, // VertexAttributeFormat::UBYTE
-    GL_SHORT,         // VertexAttributeFormat::SHORT
-    GL_FLOAT          // VertexAttributeFormat::FLOAT
-};
-
 void RasterizerOpenGL::AnalyzeVertexArray(bool is_indexed) {
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+
+    // TODO(bunnei): Add support for 1+ vertex arrays
+    vs_input_size = regs.vertex_buffer.count * regs.vertex_array[0].stride;
 }
 
 void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VAO);
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
+
+    state.draw.vertex_array = hw_vao.handle;
+    state.draw.vertex_buffer = stream_buffer->GetHandle();
+    state.Apply();
+
+    // TODO(bunnei): Add support for 1+ vertex arrays
+    const auto& vertex_array{regs.vertex_array[0]};
+    ASSERT_MSG(vertex_array.enable, "vertex array 0 is disabled?");
+    ASSERT_MSG(!vertex_array.divisor, "vertex array 0 divisor is unimplemented!");
+    for (unsigned index = 1; index < Maxwell::NumVertexArrays; ++index) {
+        ASSERT_MSG(!regs.vertex_array[index].enable, "vertex array %d is unimplemented!", index);
+    }
+
+    // Use the vertex array as-is, assumes that the data is formatted correctly for OpenGL.
+    // Enables the first 16 vertex attributes always, as we don't know which ones are actually used
+    // until shader time. Note, Tegra technically supports 32, but we're cappinig this to 16 for now
+    // to avoid OpenGL errors.
+    for (unsigned index = 0; index < 16; ++index) {
+        auto& attrib = regs.vertex_attrib_format[index];
+        glVertexAttribPointer(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
+                              attrib.IsNormalized() ? GL_TRUE : GL_FALSE, vertex_array.stride,
+                              reinterpret_cast<GLvoid*>(buffer_offset + attrib.offset));
+        glEnableVertexAttribArray(index);
+        hw_vao_enabled_attributes[index] = true;
+    }
+
+    // Copy vertex array data
+    const u32 data_size{vertex_array.stride * regs.vertex_buffer.count};
+    const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(vertex_array.StartAddress())};
+    res_cache.FlushRegion(data_addr, data_size, nullptr);
+    Memory::ReadBlock(data_addr, array_ptr, data_size);
+
+    array_ptr += data_size;
+    buffer_offset += data_size;
 }
 
 void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VS);
-    UNIMPLEMENTED();
+    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
+    glUseProgramStages(pipeline.handle, GL_VERTEX_SHADER_BIT, current_shader->shader.handle);
 }
 
 void RasterizerOpenGL::SetupFragmentShader(FSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_FS);
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     if (!has_ARB_separate_shader_objects) {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
         return false;
     }
 
     accelerate_draw = is_indexed ? AccelDraw::Indexed : AccelDraw::Arrays;
-    DrawTriangles();
+    DrawArrays();
 
     return true;
 }
 
-void RasterizerOpenGL::DrawTriangles() {
+void RasterizerOpenGL::DrawArrays() {
+    if (accelerate_draw == AccelDraw::Disabled)
+        return;
+
     MICROPROFILE_SCOPE(OpenGL_Drawing);
-    UNIMPLEMENTED();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    // TODO(bunnei): Implement these
+    const bool has_stencil = false;
+    const bool using_color_fb = true;
+    const bool using_depth_fb = false;
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
+
+    const bool write_color_fb =
+        state.color_mask.red_enabled == GL_TRUE || state.color_mask.green_enabled == GL_TRUE ||
+        state.color_mask.blue_enabled == GL_TRUE || state.color_mask.alpha_enabled == GL_TRUE;
+
+    const bool write_depth_fb =
+        (state.depth.test_enabled && state.depth.write_mask == GL_TRUE) ||
+        (has_stencil && state.stencil.test_enabled && state.stencil.write_mask != 0);
+
+    Surface color_surface;
+    Surface depth_surface;
+    MathUtil::Rectangle<u32> surfaces_rect;
+    std::tie(color_surface, depth_surface, surfaces_rect) =
+        res_cache.GetFramebufferSurfaces(using_color_fb, using_depth_fb, viewport_rect);
+
+    const u16 res_scale = color_surface != nullptr
+                              ? color_surface->res_scale
+                              : (depth_surface == nullptr ? 1u : depth_surface->res_scale);
+
+    MathUtil::Rectangle<u32> draw_rect{
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
+                                                  viewport_rect.left * res_scale,
+                                              surfaces_rect.left, surfaces_rect.right)), // Left
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
+                                                  viewport_rect.top * res_scale,
+                                              surfaces_rect.bottom, surfaces_rect.top)), // Top
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
+                                                  viewport_rect.right * res_scale,
+                                              surfaces_rect.left, surfaces_rect.right)), // Right
+        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
+                                                  viewport_rect.bottom * res_scale,
+                                              surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
+
+    // Bind the framebuffer surfaces
+    BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
+
+    // Sync the viewport
+    SyncViewport(surfaces_rect, res_scale);
+
+    // TODO(bunnei): Sync framebuffer_scale uniform here
+    // TODO(bunnei): Sync scissorbox uniform(s) here
+    // TODO(bunnei): Sync and bind the texture surfaces
+
+    // Sync and bind the shader
+    if (shader_dirty) {
+        SetShader();
+        shader_dirty = false;
+    }
+
+    // Sync the uniform data
+    if (uniform_block_data.dirty) {
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformData), &uniform_block_data.data);
+        uniform_block_data.dirty = false;
+    }
+
+    // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
+    // scissor test to prevent drawing outside of the framebuffer region
+    state.scissor.enabled = true;
+    state.scissor.x = draw_rect.left;
+    state.scissor.y = draw_rect.bottom;
+    state.scissor.width = draw_rect.GetWidth();
+    state.scissor.height = draw_rect.GetHeight();
+    state.Apply();
+
+    // Draw the vertex batch
+    const bool is_indexed = accelerate_draw == AccelDraw::Indexed;
+    AnalyzeVertexArray(is_indexed);
+    state.draw.vertex_buffer = stream_buffer->GetHandle();
+    state.Apply();
+
+    size_t buffer_size = static_cast<size_t>(vs_input_size);
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+    buffer_size += sizeof(VSUniformData);
+
+    size_t ptr_pos = 0;
+    u8* buffer_ptr;
+    GLintptr buffer_offset;
+    std::tie(buffer_ptr, buffer_offset) =
+        stream_buffer->Map(static_cast<GLsizeiptr>(buffer_size), 4);
+
+    SetupVertexArray(buffer_ptr, buffer_offset);
+    ptr_pos += vs_input_size;
+
+    GLintptr index_buffer_offset = 0;
+    if (is_indexed) {
+        UNREACHABLE();
+    }
+
+    SetupVertexShader(reinterpret_cast<VSUniformData*>(&buffer_ptr[ptr_pos]),
+                      buffer_offset + static_cast<GLintptr>(ptr_pos));
+    const GLintptr vs_ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
+    ptr_pos += sizeof(VSUniformData);
+
+    stream_buffer->Unmap();
+
+    const auto copy_buffer = [&](GLuint handle, GLintptr offset, GLsizeiptr size) {
+        if (has_ARB_direct_state_access) {
+            glCopyNamedBufferSubData(stream_buffer->GetHandle(), handle, offset, 0, size);
+        } else {
+            glBindBuffer(GL_COPY_WRITE_BUFFER, handle);
+            glCopyBufferSubData(GL_ARRAY_BUFFER, GL_COPY_WRITE_BUFFER, offset, 0, size);
+        }
+    };
+
+    copy_buffer(vs_uniform_buffer.handle, vs_ubo_offset, sizeof(VSUniformData));
+
+    glUseProgramStages(pipeline.handle, GL_FRAGMENT_SHADER_BIT, current_shader->shader.handle);
+
+    if (is_indexed) {
+        UNREACHABLE();
+    } else {
+        glDrawArrays(MaxwellToGL::PrimitiveTopology(regs.draw.topology), 0,
+                     regs.vertex_buffer.count);
+    }
+
+    // Disable scissor test
+    state.scissor.enabled = false;
+
+    accelerate_draw = AccelDraw::Disabled;
+
+    // Unbind textures for potential future use as framebuffer attachments
+    for (auto& texture_unit : state.texture_units) {
+        texture_unit.texture_2d = 0;
+    }
+    state.Apply();
+
+    // Mark framebuffer surfaces as dirty
+    MathUtil::Rectangle<u32> draw_rect_unscaled{
+        draw_rect.left / res_scale, draw_rect.top / res_scale, draw_rect.right / res_scale,
+        draw_rect.bottom / res_scale};
+
+    if (color_surface != nullptr && write_color_fb) {
+        auto interval = color_surface->GetSubRectInterval(draw_rect_unscaled);
+        res_cache.InvalidateRegion(boost::icl::first(interval), boost::icl::length(interval),
+                                   color_surface);
+    }
+    if (depth_surface != nullptr && write_depth_fb) {
+        auto interval = depth_surface->GetSubRectInterval(draw_rect_unscaled);
+        res_cache.InvalidateRegion(boost::icl::first(interval), boost::icl::length(interval),
+                                   depth_surface);
+    }
 }
 
 void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 id) {}
@@ -206,17 +399,17 @@ void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
 
 bool RasterizerOpenGL::AccelerateDisplayTransfer(const void* config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateTextureCopy(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
 bool RasterizerOpenGL::AccelerateFill(const void* config) {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
     return true;
 }
 
@@ -297,14 +490,14 @@ void main() {
         return;
     }
 
-    LOG_ERROR(HW_GPU, "Emulated shaders are not supported! Using a passthrough shader.");
+    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
 
     current_shader = &test_shader;
     if (has_ARB_separate_shader_objects) {
         test_shader.shader.Create(vertex_shader, nullptr, fragment_shader, {}, true);
         glActiveShaderProgram(pipeline.handle, test_shader.shader.handle);
     } else {
-        ASSERT_MSG(false, "Unimplemented");
+        UNREACHABLE();
     }
 
     state.draw.shader_program = test_shader.shader.handle;
@@ -316,34 +509,70 @@ void main() {
     }
 }
 
+void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,
+                                               const Surface& depth_surface, bool has_stencil) {
+    state.draw.draw_framebuffer = framebuffer.handle;
+    state.Apply();
+
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           color_surface != nullptr ? color_surface->texture.handle : 0, 0);
+    if (depth_surface != nullptr) {
+        if (has_stencil) {
+            // attach both depth and stencil
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+        } else {
+            // attach depth
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+            // clear stencil attachment
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        }
+    } else {
+        // clear both depth and stencil attachment
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
+    }
+}
+
+void RasterizerOpenGL::SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
+
+    state.viewport.x = static_cast<GLint>(surfaces_rect.left) + viewport_rect.left * res_scale;
+    state.viewport.y = static_cast<GLint>(surfaces_rect.bottom) + viewport_rect.bottom * res_scale;
+    state.viewport.width = static_cast<GLsizei>(viewport_rect.GetWidth() * res_scale);
+    state.viewport.height = static_cast<GLsizei>(viewport_rect.GetHeight() * res_scale);
+}
+
 void RasterizerOpenGL::SyncClipEnabled() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncClipCoef() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncDepthOffset() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendEnabled() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendFuncs() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }
 
 void RasterizerOpenGL::SyncBlendColor() {
-    ASSERT_MSG(false, "Unimplemented");
+    UNREACHABLE();
 }

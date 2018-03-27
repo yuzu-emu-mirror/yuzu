@@ -29,7 +29,7 @@ public:
     RasterizerOpenGL();
     ~RasterizerOpenGL() override;
 
-    void DrawTriangles() override;
+    void DrawArrays() override;
     void NotifyMaxwellRegisterChanged(u32 id) override;
     void FlushAll() override;
     void FlushRegion(VAddr addr, u64 size) override;
@@ -87,6 +87,13 @@ public:
 private:
     struct SamplerInfo {};
 
+    /// Binds the framebuffer color and depth surface
+    void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
+                                 bool has_stencil);
+
+    /// Syncs the viewport to match the guest state
+    void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
+
     /// Syncs the clip enabled status to match the guest state
     void SyncClipEnabled();
 
@@ -139,7 +146,7 @@ private:
     OGLVertexArray hw_vao;
     std::array<bool, 16> hw_vao_enabled_attributes;
 
-    std::array<SamplerInfo, 3> texture_samplers;
+    std::array<SamplerInfo, 32> texture_samplers;
     static constexpr size_t VERTEX_BUFFER_SIZE = 128 * 1024 * 1024;
     std::unique_ptr<OGLStreamBuffer> vertex_buffer;
     OGLBuffer uniform_buffer;

@@ -15,8 +15,8 @@ class RasterizerInterface {
 public:
     virtual ~RasterizerInterface() {}
 
-    /// Draw the current batch of triangles
-    virtual void DrawTriangles() = 0;
+    /// Draw the current batch of vertex arrays
+    virtual void DrawArrays() = 0;
 
     /// Notify rasterizer that the specified Maxwell register has been changed
     virtual void NotifyMaxwellRegisterChanged(u32 id) = 0;

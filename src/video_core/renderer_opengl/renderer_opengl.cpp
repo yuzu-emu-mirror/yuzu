@@ -100,6 +100,8 @@ RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
 void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) {
+    Core::System::GetInstance().perf_stats.EndSystemFrame();
+
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
@@ -114,20 +116,19 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
             // performance problem.
             ConfigureFramebufferTexture(screen_info.texture, *framebuffer);
         }
+
+        // Load the framebuffer from memory, draw it to the screen, and swap buffers
         LoadFBToScreenInfo(*framebuffer, screen_info);
+        DrawScreen();
+        render_window->SwapBuffers();
     }
 
-    DrawScreens();
-
-    Core::System::GetInstance().perf_stats.EndSystemFrame();
-
-    // Swap buffers
     render_window->PollEvents();
-    render_window->SwapBuffers();
 
     Core::System::GetInstance().frame_limiter.DoFrameLimiting(CoreTiming::GetGlobalTimeUs());
     Core::System::GetInstance().perf_stats.BeginSystemFrame();
 
+    // Restore the rasterizer state
     prev_state.Apply();
     RefreshRasterizerSetting();
 }
@@ -140,11 +141,6 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     const u32 bytes_per_pixel{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
     const u64 size_in_bytes{framebuffer.stride * framebuffer.height * bytes_per_pixel};
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
-
-    // TODO(bunnei): The framebuffer region should only be invalidated if it is written to, not
-    // every frame. When we find the right place for this, the below line can be removed.
-    Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
-                                         Memory::FlushMode::Invalidate);
 
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
@@ -283,7 +279,7 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:
-        UNIMPLEMENTED();
+        UNREACHABLE();
     }
 
     state.texture_units[0].texture_2d = texture.resource.handle;
@@ -297,8 +293,8 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     state.Apply();
 }
 
-void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, float y, float w,
-                                      float h) {
+void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x, float y, float w,
+                                         float h) {
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
@@ -309,7 +305,7 @@ void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, fl
             right = texcoords.left;
         } else {
             // Other transformations are unsupported
-            LOG_CRITICAL(HW_GPU, "unsupported framebuffer_transform_flags=%d",
+            LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags=%d",
                          framebuffer_transform_flags);
             UNIMPLEMENTED();
         }
@@ -334,7 +330,7 @@ void RendererOpenGL::DrawSingleScreen(const ScreenInfo& screen_info, float x, fl
 /**
  * Draws the emulated screens to the emulator window.
  */
-void RendererOpenGL::DrawScreens() {
+void RendererOpenGL::DrawScreen() {
     const auto& layout = render_window->GetFramebufferLayout();
     const auto& screen = layout.screen;
 
@@ -350,8 +346,8 @@ void RendererOpenGL::DrawScreens() {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniform_color_texture, 0);
 
-    DrawSingleScreen(screen_info, (float)screen.left, (float)screen.top, (float)screen.GetWidth(),
-                     (float)screen.GetHeight());
+    DrawScreenTriangles(screen_info, (float)screen.left, (float)screen.top,
+                        (float)screen.GetWidth(), (float)screen.GetHeight());
 
     m_current_frame++;
 }

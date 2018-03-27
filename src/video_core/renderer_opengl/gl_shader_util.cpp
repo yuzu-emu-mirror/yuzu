@@ -38,8 +38,8 @@ GLuint LoadProgram(const char* vertex_shader, const char* geometry_shader,
             if (result == GL_TRUE) {
                 LOG_DEBUG(Render_OpenGL, "%s", &vertex_shader_error[0]);
             } else {
-                LOG_ERROR(Render_OpenGL, "Error compiling vertex shader:\n%s",
-                          &vertex_shader_error[0]);
+                LOG_CRITICAL(Render_OpenGL, "Error compiling vertex shader:\n%s",
+                             &vertex_shader_error[0]);
             }
         }
     }
@@ -62,8 +62,8 @@ GLuint LoadProgram(const char* vertex_shader, const char* geometry_shader,
             if (result == GL_TRUE) {
                 LOG_DEBUG(Render_OpenGL, "%s", &geometry_shader_error[0]);
             } else {
-                LOG_ERROR(Render_OpenGL, "Error compiling geometry shader:\n%s",
-                          &geometry_shader_error[0]);
+                LOG_CRITICAL(Render_OpenGL, "Error compiling geometry shader:\n%s",
+                             &geometry_shader_error[0]);
             }
         }
     }
@@ -86,8 +86,8 @@ GLuint LoadProgram(const char* vertex_shader, const char* geometry_shader,
             if (result == GL_TRUE) {
                 LOG_DEBUG(Render_OpenGL, "%s", &fragment_shader_error[0]);
             } else {
-                LOG_ERROR(Render_OpenGL, "Error compiling fragment shader:\n%s",
-                          &fragment_shader_error[0]);
+                LOG_CRITICAL(Render_OpenGL, "Error compiling fragment shader:\n%s",
+                             &fragment_shader_error[0]);
             }
         }
     }
@@ -128,20 +128,20 @@ GLuint LoadProgram(const char* vertex_shader, const char* geometry_shader,
         if (result == GL_TRUE) {
             LOG_DEBUG(Render_OpenGL, "%s", &program_error[0]);
         } else {
-            LOG_ERROR(Render_OpenGL, "Error linking shader:\n%s", &program_error[0]);
+            LOG_CRITICAL(Render_OpenGL, "Error linking shader:\n%s", &program_error[0]);
         }
     }
 
     // If the program linking failed at least one of the shaders was probably bad
     if (result == GL_FALSE) {
         if (vertex_shader) {
-            LOG_ERROR(Render_OpenGL, "Vertex shader:\n%s", vertex_shader);
+            LOG_CRITICAL(Render_OpenGL, "Vertex shader:\n%s", vertex_shader);
         }
         if (geometry_shader) {
-            LOG_ERROR(Render_OpenGL, "Geometry shader:\n%s", geometry_shader);
+            LOG_CRITICAL(Render_OpenGL, "Geometry shader:\n%s", geometry_shader);
         }
         if (fragment_shader) {
-            LOG_ERROR(Render_OpenGL, "Fragment shader:\n%s", fragment_shader);
+            LOG_CRITICAL(Render_OpenGL, "Fragment shader:\n%s", fragment_shader);
         }
     }
     ASSERT_MSG(result == GL_TRUE, "Shader not linked");

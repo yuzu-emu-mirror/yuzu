@@ -41,7 +41,7 @@ static_assert(std::is_same<SurfaceRegions::interval_type, SurfaceCache::interval
 using SurfaceRect_Tuple = std::tuple<Surface, MathUtil::Rectangle<u32>>;
 using SurfaceSurfaceRect_Tuple = std::tuple<Surface, Surface, MathUtil::Rectangle<u32>>;
 
-using PageMap = boost::icl::interval_map<u32, int>;
+using PageMap = boost::icl::interval_map<u64, int>;
 
 enum class ScaleMatch {
     Exact,   // only accept same res scale
@@ -114,6 +114,15 @@ struct SurfaceParams {
     }
     unsigned int GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
+    }
+
+    static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
+        switch (format) {
+        case Tegra::RenderTargetFormat::RGBA8_UNORM:
+            return PixelFormat::RGBA8;
+        default:
+            UNREACHABLE();
+        }
     }
 
     static PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
@@ -308,7 +317,7 @@ public:
 
     /// Get the color and depth surfaces based on the framebuffer configuration
     SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,
-                                                    const MathUtil::Rectangle<s32>& viewport_rect);
+                                                    const MathUtil::Rectangle<s32>& viewport);
 
     /// Get a surface that matches the fill config
     Surface GetFillSurface(const void* config);
