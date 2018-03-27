@@ -452,6 +452,45 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
     return true;
 }
 
+void RasterizerOpenGL::SamplerInfo::Create() {
+    sampler.Create();
+    mag_filter = min_filter = Tegra::Texture::TextureFilter::Linear;
+    wrap_u = wrap_v = Tegra::Texture::WrapMode::Wrap;
+    border_color_r = border_color_g = border_color_b = border_color_a = 0;
+
+    // default is GL_LINEAR_MIPMAP_LINEAR
+    glSamplerParameteri(sampler.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // Other attributes have correct defaults
+}
+
+void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntry& config) {
+
+    GLuint s = sampler.handle;
+
+    if (mag_filter != config.mag_filter) {
+        mag_filter = config.mag_filter;
+        glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, MaxwellToGL::TextureFilterMode(mag_filter));
+    }
+    if (min_filter != config.min_filter) {
+        min_filter = config.min_filter;
+        glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, MaxwellToGL::TextureFilterMode(min_filter));
+    }
+
+    if (wrap_u != config.wrap_u) {
+        wrap_u = config.wrap_u;
+        glSamplerParameteri(s, GL_TEXTURE_WRAP_S, MaxwellToGL::WrapMode(wrap_u));
+    }
+    if (wrap_v != config.wrap_v) {
+        wrap_v = config.wrap_v;
+        glSamplerParameteri(s, GL_TEXTURE_WRAP_T, MaxwellToGL::WrapMode(wrap_v));
+    }
+
+    if (wrap_u == Tegra::Texture::WrapMode::Border || wrap_v == Tegra::Texture::WrapMode::Border) {
+        // TODO(Subv): Implement border color
+        ASSERT(false);
+    }
+}
+
 void RasterizerOpenGL::SetShader() {
     // TODO(bunnei): The below sets up a static test shader for passing untransformed vertices to
     // OpenGL for rendering. This should be removed/replaced when we start emulating Maxwell

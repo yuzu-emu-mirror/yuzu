@@ -85,7 +85,26 @@ public:
                   "FSUniformData structure must be less than 16kb as per the OpenGL spec");
 
 private:
-    struct SamplerInfo {};
+    class SamplerInfo {
+    public:
+        OGLSampler sampler;
+
+        /// Creates the sampler object, initializing its state so that it's in sync with the
+        /// SamplerInfo struct.
+        void Create();
+        /// Syncs the sampler object with the config, updating any necessary state.
+        void SyncWithConfig(const Tegra::Texture::TSCEntry& config);
+
+    private:
+        Tegra::Texture::TextureFilter mag_filter;
+        Tegra::Texture::TextureFilter min_filter;
+        Tegra::Texture::WrapMode wrap_u;
+        Tegra::Texture::WrapMode wrap_v;
+        u32 border_color_r;
+        u32 border_color_g;
+        u32 border_color_b;
+        u32 border_color_a;
+    };
 
     /// Binds the framebuffer color and depth surface
     void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
