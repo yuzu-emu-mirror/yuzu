@@ -105,11 +105,6 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 }};
 } // namespace NativeAnalog
 
-enum class CpuCore {
-    Unicorn,
-    Dynarmic,
-};
-
 struct Values {
     // System
     bool use_docked_mode;
