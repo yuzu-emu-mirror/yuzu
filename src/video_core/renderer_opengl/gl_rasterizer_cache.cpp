@@ -134,8 +134,11 @@ static void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tup
     cur_state.Apply();
     glActiveTexture(GL_TEXTURE0);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format_tuple.internal_format, width, height, 0,
-                 format_tuple.format, format_tuple.type, nullptr);
+    if (!format_tuple.compressed) {
+        // Only pre-create the texture for non-compressed textures.
+        glTexImage2D(GL_TEXTURE_2D, 0, format_tuple.internal_format, width, height, 0,
+                     format_tuple.format, format_tuple.type, nullptr);
+    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -565,9 +568,18 @@ void CachedSurface::UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint
     glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(stride));
 
     glActiveTexture(GL_TEXTURE0);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x0, y0, static_cast<GLsizei>(rect.GetWidth()),
-                    static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
-                    &gl_buffer[buffer_offset]);
+    if (tuple.compressed) {
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, tuple.internal_format,
+                               static_cast<GLsizei>(rect.GetWidth()),
+                               static_cast<GLsizei>(rect.GetHeight()), 0,
+                               rect.GetWidth() * rect.GetHeight() *
+                                   GetGLBytesPerPixel(pixel_format) / tuple.compression_factor,
+                               &gl_buffer[buffer_offset]);
+    } else {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x0, y0, static_cast<GLsizei>(rect.GetWidth()),
+                        static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
+                        &gl_buffer[buffer_offset]);
+    }
 
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
