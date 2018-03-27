@@ -342,8 +342,7 @@ void GraphicsSurfaceWidget::OnUpdate() {
         surface_width = rt.width;
         surface_height = rt.height;
         if (rt.format != Tegra::RenderTargetFormat::NONE) {
-            surface_format =
-                ConvertToTextureFormat(static_cast<Tegra::RenderTargetFormat>(rt.format));
+            surface_format = ConvertToTextureFormat(rt.format);
         }
 
         break;
