@@ -13,17 +13,17 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="HorizontalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="VerticalLayout">
      <item>
-      <widget class="QGroupBox" name="groupBox">
+      <widget class="QGroupBox" name="GeneralGroupBox">
        <property name="title">
         <string>General</string>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <layout class="QHBoxLayout" name="GeneralHorizontalLayout">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <layout class="QVBoxLayout" name="GeneralVerticalLayout">
           <item>
            <widget class="QCheckBox" name="toggle_deepscan">
             <property name="text">
@@ -44,13 +44,13 @@
       </widget>
      </item>
      <item>
-       <widget class="QGroupBox" name="groupBox_2">
+       <widget class="QGroupBox" name="CpuCoreGroupBox">
          <property name="title">
            <string>CPU Core</string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <layout class="QHBoxLayout" name="CpuCoreHorizontalLayout">
            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_5">
+             <layout class="QVBoxLayout" name="CpuCoreVerticalLayout">
                <item>
                  <widget class="QComboBox" name="cpu_core_combobox">
                   <item>
@@ -71,13 +71,13 @@
        </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_4">
+      <widget class="QGroupBox" name="EmulationGroupBox">
        <property name="title">
         <string>Emulation</string>
        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <layout class="QHBoxLayout" name="EmulationHorizontalLayout">
           <item>
-            <layout class="QVBoxLayout" name="verticalLayout_6">
+            <layout class="QVBoxLayout" name="EmulationVerticalLayout">
               <item>
                 <widget class="QCheckBox" name="is_docked">
                   <property name="text">
@@ -91,13 +91,13 @@
       </widget>
      </item>
      <item>
-      <widget class="QGroupBox" name="groupBox_3">
+      <widget class="QGroupBox" name="HotKeysGroupBox">
        <property name="title">
         <string>Hotkeys</string>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <layout class="QHBoxLayout" name="HotKeysHorizontalLayout">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="HotKeysVerticalLayout">
           <item>
            <widget class="GHotkeysDialog" name="widget" native="true"/>
           </item>
