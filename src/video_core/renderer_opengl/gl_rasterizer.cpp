@@ -263,28 +263,7 @@ void RasterizerOpenGL::DrawArrays() {
                                               surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
 
     // Bind the framebuffer surfaces
-    state.draw.draw_framebuffer = framebuffer.handle;
-    state.Apply();
-
-    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           color_surface != nullptr ? color_surface->texture.handle : 0, 0);
-    if (depth_surface != nullptr) {
-        if (has_stencil) {
-            // attach both depth and stencil
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-                                   depth_surface->texture.handle, 0);
-        } else {
-            // attach depth
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                                   depth_surface->texture.handle, 0);
-            // clear stencil attachment
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-        }
-    } else {
-        // clear both depth and stencil attachment
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
-                               0);
-    }
+    BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
 
     // Sync the viewport
     SyncViewport(surfaces_rect, res_scale);
@@ -527,6 +506,32 @@ void main() {
     if (has_ARB_separate_shader_objects) {
         state.draw.shader_program = 0;
         state.Apply();
+    }
+}
+
+void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,
+                                               const Surface& depth_surface, bool has_stencil) {
+    state.draw.draw_framebuffer = framebuffer.handle;
+    state.Apply();
+
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           color_surface != nullptr ? color_surface->texture.handle : 0, 0);
+    if (depth_surface != nullptr) {
+        if (has_stencil) {
+            // attach both depth and stencil
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+        } else {
+            // attach depth
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                   depth_surface->texture.handle, 0);
+            // clear stencil attachment
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        }
+    } else {
+        // clear both depth and stencil attachment
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
     }
 }
 

@@ -87,6 +87,10 @@ public:
 private:
     struct SamplerInfo {};
 
+    /// Binds the framebuffer color and depth surface
+    void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
+                                 bool has_stencil);
+
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
 
