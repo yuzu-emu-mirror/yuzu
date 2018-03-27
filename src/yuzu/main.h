@@ -2,8 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#ifndef _CITRA_QT_MAIN_HXX_
-#define _CITRA_QT_MAIN_HXX_
+#pragma once
 
 #include <memory>
 #include <QMainWindow>
@@ -153,7 +152,7 @@ private:
 
     std::unique_ptr<Config> config;
 
-    // Whether emulation is currently running in Citra.
+    // Whether emulation is currently running in yuzu.
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
 
@@ -172,5 +171,3 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragMoveEvent(QDragMoveEvent* event) override;
 };
-
-#endif // _CITRA_QT_MAIN_HXX_
