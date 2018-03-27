@@ -110,6 +110,9 @@ private:
     void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
                                  bool has_stencil);
 
+    /// Binds the required textures to OpenGL before drawing a batch.
+    void BindTextures();
+
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
 

@@ -276,7 +276,9 @@ void RasterizerOpenGL::DrawArrays() {
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
-    // TODO(bunnei): Sync and bind the texture surfaces
+
+    // Sync and bind the texture surfaces
+    BindTextures();
 
     // Sync and bind the shader
     if (shader_dirty) {
@@ -380,6 +382,39 @@ void RasterizerOpenGL::DrawArrays() {
     }
 }
 
+void RasterizerOpenGL::BindTextures() {
+    using Regs = Tegra::Engines::Maxwell3D::Regs;
+    auto maxwell3d = Core::System::GetInstance().GPU().Get3DEngine();
+
+    // Each Maxwell shader stage can have an arbitrary number of textures, but we're limited to a
+    // certain number in OpenGL. We try to only use the minimum amount of host textures by not
+    // keeping a 1:1 relation between guest texture ids and host texture ids, ie, guest texture id 8
+    // can be host texture id 0 if it's the only texture used in the guest shader program.
+    u32 host_texture_index = 0;
+    for (u32 stage = 0; stage < Regs::MaxShaderStage; ++stage) {
+        ASSERT(host_texture_index < texture_samplers.size());
+        const auto textures = maxwell3d.GetStageTextures(static_cast<Regs::ShaderStage>(stage));
+        for (unsigned texture_index = 0; texture_index < textures.size(); ++texture_index) {
+            const auto& texture = textures[texture_index];
+
+            if (texture.enabled) {
+                texture_samplers[host_texture_index].SyncWithConfig(texture.tsc);
+                Surface surface = res_cache.GetTextureSurface(texture);
+                if (surface != nullptr) {
+                    state.texture_units[host_texture_index].texture_2d = surface->texture.handle;
+                } else {
+                    // Can occur when texture addr is null or its memory is unmapped/invalid
+                    state.texture_units[texture_index].texture_2d = 0;
+                }
+
+                ++host_texture_index;
+            } else {
+                state.texture_units[texture_index].texture_2d = 0;
+            }
+        }
+    }
+}
+
 void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 id) {}
 
 void RasterizerOpenGL::FlushAll() {
@@ -470,7 +505,6 @@ void RasterizerOpenGL::SamplerInfo::Create() {
 }
 
 void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntry& config) {
-
     GLuint s = sampler.handle;
 
     if (mag_filter != config.mag_filter) {
