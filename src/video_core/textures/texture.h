@@ -77,6 +77,11 @@ struct TICEntry {
     u32 Height() const {
         return height_minus_1 + 1;
     }
+
+    bool IsTiled() const {
+        return header_version == TICHeaderVersion::BlockLinear ||
+               header_version == TICHeaderVersion::BlockLinearColorKey;
+    }
 };
 static_assert(sizeof(TICEntry) == 0x20, "TICEntry has wrong size");
 
