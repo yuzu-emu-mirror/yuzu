@@ -100,6 +100,8 @@ RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
 void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) {
+    Core::System::GetInstance().perf_stats.EndSystemFrame();
+
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
@@ -114,20 +116,19 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
             // performance problem.
             ConfigureFramebufferTexture(screen_info.texture, *framebuffer);
         }
+
+        // Load the framebuffer from memory, draw it to the screen, and swap buffers
         LoadFBToScreenInfo(*framebuffer, screen_info);
+        DrawScreens();
+        render_window->SwapBuffers();
     }
 
-    DrawScreens();
-
-    Core::System::GetInstance().perf_stats.EndSystemFrame();
-
-    // Swap buffers
     render_window->PollEvents();
-    render_window->SwapBuffers();
 
     Core::System::GetInstance().frame_limiter.DoFrameLimiting(CoreTiming::GetGlobalTimeUs());
     Core::System::GetInstance().perf_stats.BeginSystemFrame();
 
+    // Restore the rasterizer state
     prev_state.Apply();
     RefreshRasterizerSetting();
 }
