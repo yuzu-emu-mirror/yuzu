@@ -95,7 +95,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
-    Settings::values.is_docked = qt_config->value("is_docked", true).toBool();
+    Settings::values.use_docked_mode = qt_config->value("use_docked_mode", true).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -193,7 +193,7 @@ void Config::SaveValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
-    qt_config->setValue("is_docked", Settings::values.is_docked);
+    qt_config->setValue("use_docked_mode", Settings::values.use_docked_mode);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");

@@ -16,7 +16,7 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
     this->setConfiguration();
 
     ui->cpu_core_combobox->setEnabled(!Core::System::GetInstance().IsPoweredOn());
-    ui->is_docked->setEnabled(!Core::System::GetInstance().IsPoweredOn());
+    ui->use_docked_mode->setEnabled(!Core::System::GetInstance().IsPoweredOn());
 }
 
 ConfigureGeneral::~ConfigureGeneral() {}
@@ -25,7 +25,7 @@ void ConfigureGeneral::setConfiguration() {
     ui->toggle_deepscan->setChecked(UISettings::values.gamedir_deepscan);
     ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
     ui->cpu_core_combobox->setCurrentIndex(static_cast<int>(Settings::values.cpu_core));
-    ui->is_docked->setChecked(Settings::values.is_docked);
+    ui->use_docked_mode->setChecked(Settings::values.use_docked_mode);
 }
 
 void ConfigureGeneral::applyConfiguration() {
@@ -33,6 +33,6 @@ void ConfigureGeneral::applyConfiguration() {
     UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
     Settings::values.cpu_core =
         static_cast<Settings::CpuCore>(ui->cpu_core_combobox->currentIndex());
-    Settings::values.is_docked = ui->is_docked->isChecked();
+    Settings::values.use_docked_mode = ui->use_docked_mode->isChecked();
     Settings::Apply();
 }

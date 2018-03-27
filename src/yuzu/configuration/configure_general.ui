@@ -79,7 +79,7 @@
           <item>
             <layout class="QVBoxLayout" name="EmulationVerticalLayout">
               <item>
-                <widget class="QCheckBox" name="is_docked">
+                <widget class="QCheckBox" name="use_docked_mode">
                   <property name="text">
                     <string>Enable docked mode</string>
                   </property>

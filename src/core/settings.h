@@ -112,7 +112,7 @@ enum class CpuCore {
 
 struct Values {
     // System
-    bool is_docked;
+    bool use_docked_mode;
 
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
