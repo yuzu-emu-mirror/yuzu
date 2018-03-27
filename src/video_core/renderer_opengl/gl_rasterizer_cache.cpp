@@ -1018,9 +1018,34 @@ SurfaceRect_Tuple RasterizerCacheOpenGL::GetSurfaceSubRect(const SurfaceParams& 
     return std::make_tuple(surface, surface->GetScaledSubRect(params));
 }
 
-Surface RasterizerCacheOpenGL::GetTextureSurface(const void* config) {
-    UNREACHABLE();
-    return {};
+Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextureInfo& config) {
+    auto& gpu = Core::System::GetInstance().GPU();
+
+    SurfaceParams params;
+    params.addr = gpu.memory_manager->PhysicalToVirtualAddress(config.tic.Address());
+    params.width = config.tic.Width();
+    params.height = config.tic.Height();
+    params.is_tiled = config.tic.IsTiled();
+    params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
+    params.UpdateParams();
+
+    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0) {
+        Surface src_surface;
+        MathUtil::Rectangle<u32> rect;
+        std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);
+
+        params.res_scale = src_surface->res_scale;
+        Surface tmp_surface = CreateSurface(params);
+        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle,
+                     tmp_surface->GetScaledRect(),
+                     SurfaceParams::GetFormatType(params.pixel_format), read_framebuffer.handle,
+                     draw_framebuffer.handle);
+
+        remove_surfaces.emplace(tmp_surface);
+        return tmp_surface;
+    }
+
+    return GetSurface(params, ScaleMatch::Ignore, true);
 }
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
