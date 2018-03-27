@@ -30,6 +30,7 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_state.h"
+#include "video_core/textures/decoders.h"
 #include "video_core/utils.h"
 #include "video_core/video_core.h"
 
@@ -40,24 +41,20 @@ struct FormatTuple {
     GLint internal_format;
     GLenum format;
     GLenum type;
+    bool compressed;
+    // How many pixels in the original texture are equivalent to one pixel in the compressed
+    // texture.
+    u32 compression_factor;
 };
 
-static constexpr std::array<FormatTuple, 5> fb_format_tuples = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8},     // RGBA8
-    {GL_RGB8, GL_BGR, GL_UNSIGNED_BYTE},              // RGB8
-    {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1}, // RGB5A1
-    {GL_RGB565, GL_RGB, GL_UNSIGNED_SHORT_5_6_5},     // RGB565
-    {GL_RGBA4, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4},   // RGBA4
+static constexpr std::array<FormatTuple, 1> fb_format_tuples = {{
+    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, false, 1}, // RGBA8
 }};
 
-static constexpr std::array<FormatTuple, 4> depth_format_tuples = {{
-    {GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT}, // D16
-    {},
-    {GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT},   // D24
-    {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8}, // D24S8
+static constexpr std::array<FormatTuple, 2> tex_format_tuples = {{
+    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, false, 1},                       // RGBA8
+    {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
 }};
-
-static constexpr FormatTuple tex_tuple = {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format) {
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
@@ -65,11 +62,15 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format) {
         ASSERT(static_cast<size_t>(pixel_format) < fb_format_tuples.size());
         return fb_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
-        size_t tuple_idx = static_cast<size_t>(pixel_format) - 14;
-        ASSERT(tuple_idx < depth_format_tuples.size());
-        return depth_format_tuples[tuple_idx];
+        // TODO(Subv): Implement depth formats
+        ASSERT_MSG(false, "Unimplemented");
+    } else if (type == SurfaceType::Texture) {
+        ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
+        return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     }
-    return tex_tuple;
+
+    UNREACHABLE();
+    return {};
 }
 
 template <typename Map, typename Interval>
@@ -112,46 +113,14 @@ static void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr 
                                    Memory::GetPointer(base), gl_buffer, morton_to_gl);
 }
 
-static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> morton_to_gl_fns = {
+static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 2> morton_to_gl_fns = {
     MortonCopy<true, PixelFormat::RGBA8>,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
+    MortonCopy<true, PixelFormat::DXT1>,
 };
 
-static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 18> gl_to_morton_fns = {
+static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 2> gl_to_morton_fns = {
     MortonCopy<false, PixelFormat::RGBA8>,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
+    MortonCopy<false, PixelFormat::DXT1>,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -944,15 +913,6 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params, ScaleMatc
             if (expandable != nullptr && expandable->res_scale > target_res_scale) {
                 target_res_scale = expandable->res_scale;
             }
-            // Keep res_scale when reinterpreting d24s8 -> rgba8
-            if (params.pixel_format == PixelFormat::RGBA8) {
-                find_params.pixel_format = PixelFormat::D24S8;
-                expandable = FindMatch<MatchFlags::Expand | MatchFlags::Invalid>(
-                    surface_cache, find_params, match_res_scale);
-                if (expandable != nullptr && expandable->res_scale > target_res_scale) {
-                    target_res_scale = expandable->res_scale;
-                }
-            }
         }
         SurfaceParams new_params = params;
         new_params.res_scale = target_res_scale;
@@ -1228,27 +1188,6 @@ void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, VAddr addr, 
             CopySurface(copy_surface, surface, copy_interval);
             surface->invalid_regions.erase(copy_interval);
             continue;
-        }
-
-        // D24S8 to RGBA8
-        if (surface->pixel_format == PixelFormat::RGBA8) {
-            params.pixel_format = PixelFormat::D24S8;
-            Surface reinterpret_surface =
-                FindMatch<MatchFlags::Copy>(surface_cache, params, ScaleMatch::Ignore, interval);
-            if (reinterpret_surface != nullptr) {
-                ASSERT(reinterpret_surface->pixel_format == PixelFormat::D24S8);
-
-                SurfaceInterval convert_interval = params.GetCopyableInterval(reinterpret_surface);
-                SurfaceParams convert_params = surface->FromInterval(convert_interval);
-                auto src_rect = reinterpret_surface->GetScaledSubRect(convert_params);
-                auto dest_rect = surface->GetScaledSubRect(convert_params);
-
-                ConvertD24S8toABGR(reinterpret_surface->texture.handle, src_rect,
-                                   surface->texture.handle, dest_rect);
-
-                surface->invalid_regions.erase(convert_interval);
-                continue;
-            }
         }
 
         // Load data from Switch memory
