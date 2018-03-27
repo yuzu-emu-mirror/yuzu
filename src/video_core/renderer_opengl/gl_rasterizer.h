@@ -87,6 +87,9 @@ public:
 private:
     struct SamplerInfo {};
 
+    /// Syncs the viewport to match the guest state
+    void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
+
     /// Syncs the clip enabled status to match the guest state
     void SyncClipEnabled();
 

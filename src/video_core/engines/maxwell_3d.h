@@ -11,6 +11,7 @@
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/math_util.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/textures/texture.h"
@@ -281,6 +282,15 @@ public:
                     };
                     float depth_range_near;
                     float depth_range_far;
+
+                    MathUtil::Rectangle<s32> GetRect() const {
+                        return {
+                            static_cast<s32>(x),          // left
+                            static_cast<s32>(y + height), // top
+                            static_cast<s32>(x + width),  // right
+                            static_cast<s32>(y)           // bottom
+                        };
+                    };
                 } viewport[NumViewports];
 
                 INSERT_PADDING_WORDS(0x1D);

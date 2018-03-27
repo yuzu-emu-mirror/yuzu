@@ -228,13 +228,7 @@ void RasterizerOpenGL::DrawArrays() {
     const bool has_stencil = false;
     const bool using_color_fb = true;
     const bool using_depth_fb = false;
-
-    MathUtil::Rectangle<s32> viewport_rect_unscaled{
-        static_cast<s32>(regs.viewport[0].x),                           // left
-        static_cast<s32>(regs.viewport[0].y + regs.viewport[0].height), // top
-        static_cast<s32>(regs.viewport[0].x + regs.viewport[0].width),  // right
-        static_cast<s32>(regs.viewport[0].y)                            // bottom
-    };
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
 
     const bool write_color_fb =
         state.color_mask.red_enabled == GL_TRUE || state.color_mask.green_enabled == GL_TRUE ||
@@ -248,7 +242,7 @@ void RasterizerOpenGL::DrawArrays() {
     Surface depth_surface;
     MathUtil::Rectangle<u32> surfaces_rect;
     std::tie(color_surface, depth_surface, surfaces_rect) =
-        res_cache.GetFramebufferSurfaces(using_color_fb, using_depth_fb, viewport_rect_unscaled);
+        res_cache.GetFramebufferSurfaces(using_color_fb, using_depth_fb, viewport_rect);
 
     const u16 res_scale = color_surface != nullptr
                               ? color_surface->res_scale
@@ -256,16 +250,16 @@ void RasterizerOpenGL::DrawArrays() {
 
     MathUtil::Rectangle<u32> draw_rect{
         static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
-                                                  viewport_rect_unscaled.left * res_scale,
+                                                  viewport_rect.left * res_scale,
                                               surfaces_rect.left, surfaces_rect.right)), // Left
         static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
-                                                  viewport_rect_unscaled.top * res_scale,
+                                                  viewport_rect.top * res_scale,
                                               surfaces_rect.bottom, surfaces_rect.top)), // Top
         static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
-                                                  viewport_rect_unscaled.right * res_scale,
+                                                  viewport_rect.right * res_scale,
                                               surfaces_rect.left, surfaces_rect.right)), // Right
         static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
-                                                  viewport_rect_unscaled.bottom * res_scale,
+                                                  viewport_rect.bottom * res_scale,
                                               surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
 
     // Bind the framebuffer surfaces
@@ -293,12 +287,7 @@ void RasterizerOpenGL::DrawArrays() {
     }
 
     // Sync the viewport
-    state.viewport.x =
-        static_cast<GLint>(surfaces_rect.left) + viewport_rect_unscaled.left * res_scale;
-    state.viewport.y =
-        static_cast<GLint>(surfaces_rect.bottom) + viewport_rect_unscaled.bottom * res_scale;
-    state.viewport.width = static_cast<GLsizei>(viewport_rect_unscaled.GetWidth() * res_scale);
-    state.viewport.height = static_cast<GLsizei>(viewport_rect_unscaled.GetHeight() * res_scale);
+    SyncViewport(surfaces_rect, res_scale);
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
@@ -539,6 +528,16 @@ void main() {
         state.draw.shader_program = 0;
         state.Apply();
     }
+}
+
+void RasterizerOpenGL::SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
+
+    state.viewport.x = static_cast<GLint>(surfaces_rect.left) + viewport_rect.left * res_scale;
+    state.viewport.y = static_cast<GLint>(surfaces_rect.bottom) + viewport_rect.bottom * res_scale;
+    state.viewport.width = static_cast<GLsizei>(viewport_rect.GetWidth() * res_scale);
+    state.viewport.height = static_cast<GLsizei>(viewport_rect.GetHeight() * res_scale);
 }
 
 void RasterizerOpenGL::SyncClipEnabled() {
