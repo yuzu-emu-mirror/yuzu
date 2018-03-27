@@ -16,7 +16,7 @@ struct TextureUnit {
     }
 };
 
-constexpr TextureUnit PicaTexture(int unit) {
+constexpr TextureUnit MaxwellTexture(int unit) {
     return TextureUnit{unit};
 }
 

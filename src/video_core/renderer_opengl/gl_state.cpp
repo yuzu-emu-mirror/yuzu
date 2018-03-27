@@ -194,7 +194,7 @@ void OpenGLState::Apply() const {
     // Textures
     for (unsigned i = 0; i < ARRAY_SIZE(texture_units); ++i) {
         if (texture_units[i].texture_2d != cur_state.texture_units[i].texture_2d) {
-            glActiveTexture(TextureUnits::PicaTexture(i).Enum());
+            glActiveTexture(TextureUnits::MaxwellTexture(i).Enum());
             glBindTexture(GL_TEXTURE_2D, texture_units[i].texture_2d);
         }
         if (texture_units[i].sampler != cur_state.texture_units[i].sampler) {
