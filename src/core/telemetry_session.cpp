@@ -154,12 +154,13 @@ TelemetrySession::TelemetrySession() {
 #endif
 
     // Log user configuration information
-    AddField(Telemetry::FieldType::UserConfig, "Core_CpuCore",
-             static_cast<int>(Settings::values.cpu_core));
+    AddField(Telemetry::FieldType::UserConfig, "Core_UseCpuJit", Settings::values.use_cpu_jit);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ResolutionFactor",
              Settings::values.resolution_factor);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ToggleFramelimit",
              Settings::values.toggle_framelimit);
+    AddField(Telemetry::FieldType::UserConfig, "System_UseDockedMode",
+             Settings::values.use_docked_mode);
 }
 
 TelemetrySession::~TelemetrySession() {

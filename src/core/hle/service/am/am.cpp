@@ -12,6 +12,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/settings.h"
 
 namespace Service {
 namespace AM {
@@ -241,17 +242,20 @@ void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
+    const bool use_docked_mode{Settings::values.use_docked_mode};
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u8>(OperationMode::Handheld));
+    rb.Push(static_cast<u8>(use_docked_mode ? OperationMode::Docked : OperationMode::Handheld));
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
+    const bool use_docked_mode{Settings::values.use_docked_mode};
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u32>(APM::PerformanceMode::Handheld));
+    rb.Push(static_cast<u32>(use_docked_mode ? APM::PerformanceMode::Docked
+                                             : APM::PerformanceMode::Handheld));
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }

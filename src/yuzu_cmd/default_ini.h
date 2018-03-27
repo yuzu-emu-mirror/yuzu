@@ -76,9 +76,9 @@ motion_device=
 touch_device=
 
 [Core]
-# Which CPU core to use for CPU emulation
-# 0: Unicorn (slow), 1 (default): Dynarmic (faster)
-cpu_core =
+# Whether to use the Just-In-Time (JIT) compiler for CPU emulation
+# 0: Interpreter (slow), 1 (default): JIT (fast)
+use_cpu_jit =
 
 [Renderer]
 # Whether to use software or hardware rendering.
@@ -154,6 +154,10 @@ output_device =
 use_virtual_sd =
 
 [System]
+# Whether the system is docked
+# 1 (default): Yes, 0: No
+use_docked_mode =
+
 # The system region that Citra will use during emulation
 # -1: Auto-select (default), 0: Japan, 1: USA, 2: Europe, 3: Australia, 4: China, 5: Korea, 6: Taiwan
 region_value =

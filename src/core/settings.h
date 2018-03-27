@@ -105,12 +105,10 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 }};
 } // namespace NativeAnalog
 
-enum class CpuCore {
-    Unicorn,
-    Dynarmic,
-};
-
 struct Values {
+    // System
+    bool use_docked_mode;
+
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;
@@ -118,7 +116,7 @@ struct Values {
     std::string touch_device;
 
     // Core
-    CpuCore cpu_core;
+    bool use_cpu_jit;
 
     // Data Storage
     bool use_virtual_sd;
