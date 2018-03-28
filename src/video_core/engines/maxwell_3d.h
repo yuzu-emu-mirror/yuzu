@@ -514,6 +514,9 @@ public:
 
     State state{};
 
+    /// Reads a register value located at the input method address
+    u32 GetRegisterValue(u32 method) const;
+
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value, u32 remaining_params);
 

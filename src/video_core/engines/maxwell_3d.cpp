@@ -386,5 +386,10 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
     return textures;
 }
 
+u32 Maxwell3D::GetRegisterValue(u32 method) const {
+    ASSERT_MSG(method < Regs::NUM_REGS, "Invalid Maxwell3D register");
+    return regs.reg_array[method];
+}
+
 } // namespace Engines
 } // namespace Tegra

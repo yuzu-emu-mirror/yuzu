@@ -11,6 +11,8 @@ add_library(video_core STATIC
     engines/maxwell_compute.h
     gpu.cpp
     gpu.h
+    macro_interpreter.cpp
+    macro_interpreter.h
     memory_manager.cpp
     memory_manager.h
     rasterizer_interface.h
