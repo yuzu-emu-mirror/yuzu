@@ -13,6 +13,7 @@
 #include "common/common_types.h"
 #include "common/math_util.h"
 #include "video_core/gpu.h"
+#include "video_core/macro_interpreter.h"
 #include "video_core/memory_manager.h"
 #include "video_core/textures/texture.h"
 
@@ -498,18 +499,11 @@ public:
             bool enabled;
         };
 
-        struct ShaderProgramInfo {
-            Regs::ShaderStage stage;
-            Regs::ShaderProgram program;
-            GPUVAddr address;
-        };
-
         struct ShaderStageInfo {
             std::array<ConstBufferInfo, Regs::MaxConstBuffers> const_buffers;
         };
 
         std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
-        std::array<ShaderProgramInfo, Regs::MaxShaderProgram> shader_programs;
     };
 
     State state{};
@@ -536,6 +530,9 @@ private:
     /// Parameters that have been submitted to the macro call so far.
     std::vector<u32> macro_params;
 
+    /// Interpreter for the macro codes uploaded to the GPU.
+    MacroInterpreter macro_interpreter;
+
     /// Retrieves information about a specific TIC entry from the TIC buffer.
     Texture::TICEntry GetTICEntry(u32 tic_index) const;
 
@@ -547,7 +544,7 @@ private:
      * @param method Method to call
      * @param parameters Arguments to the method call
      */
-    void CallMacroMethod(u32 method, const std::vector<u32>& parameters);
+    void CallMacroMethod(u32 method, std::vector<u32> parameters);
 
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
@@ -560,19 +557,6 @@ private:
 
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
-
-    /// Method call handlers
-    void BindTextureInfoBuffer(const std::vector<u32>& parameters);
-    void SetShader(const std::vector<u32>& parameters);
-    void BindStorageBuffer(const std::vector<u32>& parameters);
-
-    struct MethodInfo {
-        const char* name;
-        u32 arguments;
-        void (Maxwell3D::*handler)(const std::vector<u32>& parameters);
-    };
-
-    static const std::unordered_map<u32, MethodInfo> method_handlers;
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

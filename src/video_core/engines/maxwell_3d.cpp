@@ -19,35 +19,21 @@ namespace Engines {
 /// First register id that is actually a Macro call.
 constexpr u32 MacroRegistersStart = 0xE00;
 
-const std::unordered_map<u32, Maxwell3D::MethodInfo> Maxwell3D::method_handlers = {
-    {0xE1A, {"BindTextureInfoBuffer", 1, &Maxwell3D::BindTextureInfoBuffer}},
-    {0xE24, {"SetShader", 5, &Maxwell3D::SetShader}},
-    {0xE2A, {"BindStorageBuffer", 1, &Maxwell3D::BindStorageBuffer}},
-};
-
-Maxwell3D::Maxwell3D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
+Maxwell3D::Maxwell3D(MemoryManager& memory_manager)
+    : memory_manager(memory_manager), macro_interpreter(*this) {}
 
 void Maxwell3D::SubmitMacroCode(u32 entry, std::vector<u32> code) {
     uploaded_macros[entry * 2 + MacroRegistersStart] = std::move(code);
 }
 
-void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) {
-    // TODO(Subv): Write an interpreter for the macros uploaded via registers 0x45 and 0x47
-
+void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
+    auto macro_code = uploaded_macros.find(method);
     // The requested macro must have been uploaded already.
-    ASSERT_MSG(uploaded_macros.find(method) != uploaded_macros.end(), "Macro %08X was not uploaded",
-               method);
+    ASSERT_MSG(macro_code != uploaded_macros.end(), "Macro %08X was not uploaded", method);
 
-    auto itr = method_handlers.find(method);
-    ASSERT_MSG(itr != method_handlers.end(), "Unhandled method call %08X", method);
-
-    ASSERT(itr->second.arguments == parameters.size());
-
-    (this->*itr->second.handler)(parameters);
-
-    // Reset the current macro and its parameters.
+    // Reset the current macro and execute it.
     executing_macro = 0;
-    macro_params.clear();
+    macro_interpreter.Execute(macro_code->second, std::move(parameters));
 }
 
 void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
@@ -77,7 +63,7 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
 
         // Call the macro when there are no more parameters in the command buffer
         if (remaining_params == 0) {
-            CallMacroMethod(executing_macro, macro_params);
+            CallMacroMethod(executing_macro, std::move(macro_params));
         }
         return;
     }
@@ -191,84 +177,6 @@ void Maxwell3D::DrawArrays() {
     }
 
     VideoCore::g_renderer->Rasterizer()->AccelerateDrawBatch(false /*is_indexed*/);
-}
-
-void Maxwell3D::BindTextureInfoBuffer(const std::vector<u32>& parameters) {
-    /**
-     * Parameters description:
-     * [0] = Shader stage, usually 4 for FragmentShader
-     */
-
-    u32 stage = parameters[0];
-
-    // Perform the same operations as the real macro code.
-    GPUVAddr address = static_cast<GPUVAddr>(regs.tex_info_buffers.address[stage]) << 8;
-    u32 size = regs.tex_info_buffers.size[stage];
-
-    regs.const_buffer.cb_size = size;
-    regs.const_buffer.cb_address_high = address >> 32;
-    regs.const_buffer.cb_address_low = address & 0xFFFFFFFF;
-}
-
-void Maxwell3D::SetShader(const std::vector<u32>& parameters) {
-    /**
-     * Parameters description:
-     * [0] = Shader Program.
-     * [1] = Unknown, presumably the shader id.
-     * [2] = Offset to the start of the shader, after the 0x30 bytes header.
-     * [3] = Shader Stage.
-     * [4] = Const Buffer Address >> 8.
-     */
-    auto shader_program = static_cast<Regs::ShaderProgram>(parameters[0]);
-    // TODO(Subv): This address is probably an offset from the CODE_ADDRESS register.
-    GPUVAddr address = parameters[2];
-    auto shader_stage = static_cast<Regs::ShaderStage>(parameters[3]);
-    GPUVAddr cb_address = parameters[4] << 8;
-
-    auto& shader = state.shader_programs[static_cast<size_t>(shader_program)];
-    shader.program = shader_program;
-    shader.stage = shader_stage;
-    shader.address = address;
-
-    // Perform the same operations as the real macro code.
-    // TODO(Subv): Early exit if register 0xD1C + shader_program contains the same as params[1].
-    auto& shader_regs = regs.shader_config[static_cast<size_t>(shader_program)];
-    shader_regs.start_id = address;
-    // TODO(Subv): Write params[1] to register 0xD1C + shader_program.
-    // TODO(Subv): Write params[2] to register 0xD22 + shader_program.
-
-    // Note: This value is hardcoded in the macro's code.
-    static constexpr u32 DefaultCBSize = 0x10000;
-    regs.const_buffer.cb_size = DefaultCBSize;
-    regs.const_buffer.cb_address_high = cb_address >> 32;
-    regs.const_buffer.cb_address_low = cb_address & 0xFFFFFFFF;
-
-    // Write a hardcoded 0x11 to CB_BIND, this binds the current const buffer to buffer c1[] in the
-    // shader. It's likely that these are the constants for the shader.
-    regs.cb_bind[static_cast<size_t>(shader_stage)].valid.Assign(1);
-    regs.cb_bind[static_cast<size_t>(shader_stage)].index.Assign(1);
-
-    ProcessCBBind(shader_stage);
-}
-
-void Maxwell3D::BindStorageBuffer(const std::vector<u32>& parameters) {
-    /**
-     * Parameters description:
-     * [0] = Buffer offset >> 2
-     */
-
-    u32 buffer_offset = parameters[0] << 2;
-
-    // Perform the same operations as the real macro code.
-    // Note: This value is hardcoded in the macro's code.
-    static constexpr u32 DefaultCBSize = 0x5F00;
-    regs.const_buffer.cb_size = DefaultCBSize;
-
-    GPUVAddr address = regs.ssbo_info.BufferAddress();
-    regs.const_buffer.cb_address_high = address >> 32;
-    regs.const_buffer.cb_address_low = address & 0xFFFFFFFF;
-
-    regs.const_buffer.cb_pos = buffer_offset;
 }
 
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
