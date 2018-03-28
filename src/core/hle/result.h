@@ -200,6 +200,9 @@ public:
     }
 
     ResultVal& operator=(const ResultVal& o) {
+        if (this == &o) {
+            return *this;
+        }
         if (!empty()) {
             if (!o.empty()) {
                 object = o.object;
