@@ -37,6 +37,16 @@ enum class TICHeaderVersion : u32 {
     BlockLinearColorKey = 4,
 };
 
+enum class ComponentType : u32 {
+    SNORM = 1,
+    UNORM = 2,
+    SINT = 3,
+    UINT = 4,
+    SNORM_FORCE_FP16 = 5,
+    UNORM_FORCE_FP16 = 6,
+    FLOAT = 7
+};
+
 union TextureHandle {
     u32 raw;
     BitField<0, 20, u32> tic_id;
@@ -48,10 +58,10 @@ struct TICEntry {
     union {
         u32 raw;
         BitField<0, 7, TextureFormat> format;
-        BitField<7, 3, u32> r_type;
-        BitField<10, 3, u32> g_type;
-        BitField<13, 3, u32> b_type;
-        BitField<16, 3, u32> a_type;
+        BitField<7, 3, ComponentType> r_type;
+        BitField<10, 3, ComponentType> g_type;
+        BitField<13, 3, ComponentType> b_type;
+        BitField<16, 3, ComponentType> a_type;
     };
     u32 address_low;
     union {
