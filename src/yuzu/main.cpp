@@ -95,6 +95,9 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
 
     game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
 
+    default_theme_paths = QIcon::themeSearchPaths();
+    UpdateUITheme();
+
     // Show one-time "callout" messages to the user
     ShowCallouts();
 
@@ -653,6 +656,7 @@ void GMainWindow::OnConfigure() {
     auto result = configureDialog.exec();
     if (result == QDialog::Accepted) {
         configureDialog.applyConfiguration();
+        UpdateUITheme();
         config->Save();
     }
 }
@@ -831,6 +835,31 @@ bool GMainWindow::ConfirmChangeGame() {
 void GMainWindow::filterBarSetChecked(bool state) {
     ui.action_Show_Filter_Bar->setChecked(state);
     emit(OnToggleFilterBar());
+}
+
+void GMainWindow::UpdateUITheme() {
+    QStringList theme_paths(default_theme_paths);
+    if (UISettings::values.theme != UISettings::themes[0].second &&
+        !UISettings::values.theme.isEmpty()) {
+        QString theme_uri(":" + UISettings::values.theme + "/style.qss");
+        QFile f(theme_uri);
+        if (!f.exists()) {
+            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
+        } else {
+            f.open(QFile::ReadOnly | QFile::Text);
+            QTextStream ts(&f);
+            qApp->setStyleSheet(ts.readAll());
+            GMainWindow::setStyleSheet(ts.readAll());
+        }
+        theme_paths.append(QStringList{":/icons/default", ":/icons/" + UISettings::values.theme});
+        QIcon::setThemeName(":/icons/" + UISettings::values.theme);
+    } else {
+        qApp->setStyleSheet("");
+        GMainWindow::setStyleSheet("");
+        theme_paths.append(QStringList{":/icons/default"});
+        QIcon::setThemeName(":/icons/default");
+    }
+    QIcon::setThemeSearchPaths(theme_paths);
 }
 
 #ifdef main
