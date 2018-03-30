@@ -64,6 +64,9 @@ signals:
      */
     void EmulationStopping();
 
+    // Signal that tells widgets to update icons to use the current theme
+    void UpdateThemedIcons();
+
 private:
     void InitializeWidgets();
     void InitializeDebugWidgets();
