@@ -59,12 +59,12 @@ private:
         AudioRendererResponseData response_data{};
 
         response_data.section_0_size =
-            response_data.state_entries.size() * sizeof(AudioRendererStateEntry);
-        response_data.section_1_size = response_data.section_1.size();
-        response_data.section_2_size = response_data.section_2.size();
-        response_data.section_3_size = response_data.section_3.size();
-        response_data.section_4_size = response_data.section_4.size();
-        response_data.section_5_size = response_data.section_5.size();
+            static_cast<u32>(response_data.state_entries.size() * sizeof(AudioRendererStateEntry));
+        response_data.section_1_size = static_cast<u32>(response_data.section_1.size());
+        response_data.section_2_size = static_cast<u32>(response_data.section_2.size());
+        response_data.section_3_size = static_cast<u32>(response_data.section_3.size());
+        response_data.section_4_size = static_cast<u32>(response_data.section_4.size());
+        response_data.section_5_size = static_cast<u32>(response_data.section_5.size());
         response_data.total_size = sizeof(AudioRendererResponseData);
 
         for (unsigned i = 0; i < response_data.state_entries.size(); i++) {
@@ -156,7 +156,17 @@ public:
     IAudioDevice() : ServiceFramework("IAudioDevice") {
         static const FunctionInfo functions[] = {
             {0x0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
-            {0x1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"}};
+            {0x1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"},
+            {0x2, nullptr, "GetAudioDeviceOutputVolume"},
+            {0x3, nullptr, "GetActiveAudioDeviceName"},
+            {0x4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
+            {0x5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
+            {0x6, nullptr, "ListAudioDeviceNameAuto"},
+            {0x7, nullptr, "SetAudioDeviceOutputVolumeAuto"},
+            {0x8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
+            {0x10, nullptr, "GetActiveAudioDeviceNameAuto"},
+            {0x11, nullptr, "QueryAudioDeviceInputEvent"},
+            {0x12, nullptr, "QueryAudioDeviceOutputEvent"}};
         RegisterHandlers(functions);
 
         buffer_event =
@@ -189,8 +199,26 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
+    void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+
+        buffer_event->Signal();
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(buffer_event);
+    }
+
+    void GetActiveChannelCount(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(1);
+    }
+
     Kernel::SharedPtr<Kernel::Event> buffer_event;
-};
+
+}; // namespace Audio
 
 AudRenU::AudRenU() : ServiceFramework("audren:u") {
     static const FunctionInfo functions[] = {

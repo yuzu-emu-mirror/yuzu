@@ -42,6 +42,7 @@ namespace Log {
     SUB(Service, FS)                                                                               \
     SUB(Service, HID)                                                                              \
     SUB(Service, LM)                                                                               \
+    SUB(Service, NFP)                                                                              \
     SUB(Service, NIFM)                                                                             \
     SUB(Service, NS)                                                                               \
     SUB(Service, NVDRV)                                                                            \

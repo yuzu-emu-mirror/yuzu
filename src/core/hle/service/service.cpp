@@ -25,6 +25,7 @@
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/lm/lm.h"
+#include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
@@ -187,6 +188,7 @@ void Init() {
     Friend::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);
     LM::InstallInterfaces(*SM::g_service_manager);
+    NFP::InstallInterfaces(*SM::g_service_manager);
     NIFM::InstallInterfaces(*SM::g_service_manager);
     NS::InstallInterfaces(*SM::g_service_manager);
     Nvidia::InstallInterfaces(*SM::g_service_manager);
