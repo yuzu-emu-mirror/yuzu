@@ -174,8 +174,9 @@ u64 Disk_Storage::GetSize() const {
 }
 
 bool Disk_Storage::SetSize(const u64 size) const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    return false;
+    file->Resize(size);
+    file->Flush();
+    return true;
 }
 
 Disk_Directory::Disk_Directory(const std::string& path) : directory() {
