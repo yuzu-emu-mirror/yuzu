@@ -121,8 +121,9 @@ void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
     // TODO(bunnei): This is heap area that should be allocated by the kernel and not mapped as part
     // of the user address space.
     vm_manager
-        .MapMemoryBlock(Memory::STACK_VADDR, std::make_shared<std::vector<u8>>(stack_size, 0), 0,
-                        stack_size, MemoryState::Mapped)
+        .MapMemoryBlock(Memory::STACK_AREA_VADDR_END - stack_size,
+                        std::make_shared<std::vector<u8>>(stack_size, 0), 0, stack_size,
+                        MemoryState::Mapped)
         .Unwrap();
     misc_memory_used += stack_size;
     memory_region->used += stack_size;
