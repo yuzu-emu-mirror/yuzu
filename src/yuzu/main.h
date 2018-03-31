@@ -64,6 +64,9 @@ signals:
      */
     void EmulationStopping();
 
+    // Signal that tells widgets to update icons to use the current theme
+    void UpdateThemedIcons();
+
 private:
     void InitializeWidgets();
     void InitializeDebugWidgets();
@@ -165,6 +168,9 @@ private:
     WaitTreeWidget* waitTreeWidget;
 
     QAction* actions_recent_files[max_recent_files_item];
+
+    // stores default icon theme search paths for the platform
+    QStringList default_theme_paths;
 
 protected:
     void dropEvent(QDropEvent* event) override;
