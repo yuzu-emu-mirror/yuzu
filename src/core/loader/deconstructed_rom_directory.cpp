@@ -15,7 +15,7 @@
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nso.h"
 #include "core/memory.h"
-
+#include "core/loader/cxi.h"
 namespace Loader {
 
 static std::string FindRomFS(const std::string& directory) {
