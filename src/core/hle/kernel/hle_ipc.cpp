@@ -270,7 +270,7 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size) const {
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
     const size_t buffer_size{GetWriteBufferSize()};
     if (size > buffer_size) {
-        LOG_CRITICAL(Core, "size=%08x is greater than buffer_size=%08x", size, buffer_size);
+        LOG_CRITICAL(Core, "size (%016zx) is greater than buffer_size (%016zx)", size, buffer_size);
         size = buffer_size; // TODO(bunnei): This needs to be HW tested
     }
 

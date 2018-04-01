@@ -155,7 +155,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 size = rp.Pop<u64>();
         backend->SetSize(size);
-        LOG_DEBUG(Service_FS, "called, size=0x%ld, length=0x%ld", size);
+        LOG_DEBUG(Service_FS, "called, size=%" PRIu64, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -163,7 +163,7 @@ private:
 
     void GetSize(Kernel::HLERequestContext& ctx) {
         const u64 size = backend->GetSize();
-        LOG_DEBUG(Service_FS, "called, size=0x%ld", size);
+        LOG_DEBUG(Service_FS, "called, size=%" PRIu64, size);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
