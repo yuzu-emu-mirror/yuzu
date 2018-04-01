@@ -15,7 +15,7 @@ namespace Loader {
 /// Loads an XCI file
 class AppLoader_XCI final : public AppLoader, Linker {
 public:
-    AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath);
+    AppLoader_XCI(FileUtil::IOFile&& file, std::string filepath);
 
     /**
      * Returns the type of the file
