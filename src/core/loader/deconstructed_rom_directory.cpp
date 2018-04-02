@@ -76,7 +76,7 @@ FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& fil
         } else if (Common::ToLower(virtual_name) == "sdk") {
             is_sdk_found = true;
         } else {
-            // Contrinue searching
+            // Continue searching
             return true;
         }
 
