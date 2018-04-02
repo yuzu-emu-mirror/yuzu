@@ -65,13 +65,14 @@ private:
     }
 
     void UpdatePadCallback(u64 userdata, int cycles_late) {
-        SharedMemory* mem = reinterpret_cast<SharedMemory*>(shared_mem->GetPointer());
+        SharedMemory mem{};
+        std::memcpy(&mem, shared_mem->GetPointer(), sizeof(SharedMemory));
 
         if (is_device_reload_pending.exchange(false))
             LoadInputDevices();
 
         // Set up controllers as neon red+blue Joy-Con attached to console
-        ControllerHeader& controller_header = mem->controllers[Controller_Handheld].header;
+        ControllerHeader& controller_header = mem.controllers[Controller_Handheld].header;
         controller_header.type = ControllerType_Handheld | ControllerType_JoyconPair;
         controller_header.single_colors_descriptor = ColorDesc_ColorsNonexistent;
         controller_header.right_color_body = JOYCON_BODY_NEON_RED;
@@ -79,8 +80,8 @@ private:
         controller_header.left_color_body = JOYCON_BODY_NEON_BLUE;
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
-        for (int layoutIdx = 0; layoutIdx < HID_NUM_LAYOUTS; layoutIdx++) {
-            ControllerLayout& layout = mem->controllers[Controller_Handheld].layouts[layoutIdx];
+        for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
+            ControllerLayout& layout = mem.controllers[Controller_Handheld].layouts[index];
             layout.header.num_entries = HID_NUM_ENTRIES;
             layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
 
@@ -136,9 +137,24 @@ private:
             // layouts)
         }
 
-        // TODO(shinyquagsire23): Update touch info
+        // TODO(bunnei): Properly implement the touch screen, the below will just write empty data
+
+        TouchScreen& touchscreen = mem.touchscreen;
+        const u64 last_entry = touchscreen.header.latest_entry;
+        const u64 curr_entry = (last_entry + 1) % touchscreen.entries.size();
+        const u64 timestamp = CoreTiming::GetTicks();
+        const u64 sample_counter = touchscreen.entries[last_entry].header.timestamp + 1;
+        touchscreen.header.timestamp_ticks = timestamp;
+        touchscreen.header.num_entries = touchscreen.entries.size();
+        touchscreen.header.latest_entry = curr_entry;
+        touchscreen.header.max_entry_index = touchscreen.entries.size();
+        touchscreen.header.timestamp = timestamp;
+        touchscreen.entries[curr_entry].header.timestamp = sample_counter;
+        touchscreen.entries[curr_entry].header.num_touches = 0;
 
         // TODO(shinyquagsire23): Signal events
+
+        std::memcpy(shared_mem->GetPointer(), &mem, sizeof(SharedMemory));
 
         // Reschedule recurrent event
         CoreTiming::ScheduleEvent(pad_update_ticks - cycles_late, pad_update_event);
