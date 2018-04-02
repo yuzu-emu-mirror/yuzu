@@ -185,6 +185,7 @@ public:
             {66, &Hid::StartSixAxisSensor, "StartSixAxisSensor"},
             {79, &Hid::SetGyroscopeZeroDriftMode, "SetGyroscopeZeroDriftMode"},
             {100, &Hid::SetSupportedNpadStyleSet, "SetSupportedNpadStyleSet"},
+            {101, &Hid::GetSupportedNpadStyleSet, "GetSupportedNpadStyleSet"},
             {102, &Hid::SetSupportedNpadIdType, "SetSupportedNpadIdType"},
             {103, &Hid::ActivateNpad, "ActivateNpad"},
             {106, &Hid::AcquireNpadStyleSetUpdateEventHandle,
@@ -262,6 +263,13 @@ private:
     void SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_HID, "(STUBBED) called");
+    }
+
+    void GetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 

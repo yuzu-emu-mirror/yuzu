@@ -342,7 +342,7 @@ SharedPtr<Thread> SetupMainThread(VAddr entry_point, u32 priority,
 
     // Initialize new "main" thread
     auto thread_res = Thread::Create("main", entry_point, priority, 0, THREADPROCESSORID_0,
-                                     Memory::STACK_VADDR_END, owner_process);
+                                     Memory::STACK_AREA_VADDR_END, owner_process);
 
     SharedPtr<Thread> thread = std::move(thread_res).Unwrap();
 

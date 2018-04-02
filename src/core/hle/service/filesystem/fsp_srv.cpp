@@ -72,8 +72,8 @@ public:
     explicit IFile(std::unique_ptr<FileSys::StorageBackend>&& backend)
         : ServiceFramework("IFile"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
-            {0, &IFile::Read, "Read"}, {1, &IFile::Write, "Write"}, {2, nullptr, "Flush"},
-            {3, nullptr, "SetSize"},   {4, nullptr, "GetSize"},
+            {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},     {2, nullptr, "Flush"},
+            {3, &IFile::SetSize, "SetSize"}, {4, &IFile::GetSize, "GetSize"},
         };
         RegisterHandlers(functions);
     }
@@ -149,6 +149,25 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+    }
+
+    void SetSize(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const u64 size = rp.Pop<u64>();
+        backend->SetSize(size);
+        LOG_DEBUG(Service_FS, "called, size=%" PRIu64, size);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void GetSize(Kernel::HLERequestContext& ctx) {
+        const u64 size = backend->GetSize();
+        LOG_DEBUG(Service_FS, "called, size=%" PRIu64, size);
+
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(size);
     }
 };
 

@@ -414,7 +414,7 @@ ResultStatus AppLoader_ELF::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->resource_limit =
         Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
 
-    process->Run(codeset->entrypoint, 48, Memory::STACK_SIZE);
+    process->Run(codeset->entrypoint, 48, Memory::DEFAULT_STACK_SIZE);
 
     is_loaded = true;
     return ResultStatus::Success;
