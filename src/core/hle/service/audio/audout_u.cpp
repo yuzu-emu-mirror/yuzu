@@ -25,7 +25,7 @@ class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
     IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(AudioState::Stopped) {
         static const FunctionInfo functions[] = {
-            {0x0, nullptr, "GetAudioOutState"},
+            {0x0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
             {0x1, &IAudioOut::StartAudioOut, "StartAudioOut"},
             {0x2, &IAudioOut::StopAudioOut, "StopAudioOut"},
             {0x3, &IAudioOut::AppendAudioOutBuffer_1, "AppendAudioOutBuffer_1"},
@@ -57,6 +57,13 @@ public:
     }
 
 private:
+    void GetAudioOutState(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_Audio, "called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(static_cast<u32>(audio_out_state));
+    }
+
     void StartAudioOut(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
