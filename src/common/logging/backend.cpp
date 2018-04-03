@@ -146,12 +146,12 @@ void LogMessage(Class log_class, Level log_level, const char* filename, unsigned
     PrintColoredMessage(entry);
 }
 
-void FmtLogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                   const char* function, const char* format, const fmt::ArgList& args) {
+void LogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
+                const char* function, const char* format, const fmt::format_args& args) {
     if (filter && !filter->CheckMessage(log_class, log_level))
         return;
     Entry entry =
-        CreateEntry(log_class, log_level, filename, line_num, function, fmt::format(format, args));
+        CreateEntry(log_class, log_level, filename, line_num, function, fmt::vformat(format, args));
 
     PrintColoredMessage(entry);
 }
