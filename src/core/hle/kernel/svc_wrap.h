@@ -70,6 +70,11 @@ void SvcWrap() {
     FuncReturn(retval);
 }
 
+template <ResultCode func(u32, u64)>
+void SvcWrap() {
+    FuncReturn(func((u32)(PARAM(0) & 0xFFFFFFFF), PARAM(1)).raw);
+}
+
 template <ResultCode func(u32, u32, u64)>
 void SvcWrap() {
     FuncReturn(func((u32)(PARAM(0) & 0xFFFFFFFF), (u32)(PARAM(1) & 0xFFFFFFFF), PARAM(2)).raw);
