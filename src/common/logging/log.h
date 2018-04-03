@@ -104,9 +104,15 @@ void LogMessage(Class log_class, Level log_level, const char* filename, unsigned
 #endif
     ;
 
+/// Logs a message to the global logger, using fmt
+void LogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
+                const char* function, const char* format, const fmt::format_args& args);
+
+template <typename... Args>
 void FmtLogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                   const char* function, const char* format, const fmt::ArgList& args);
-FMT_VARIADIC(void, FmtLogMessage, Class, Level, const char*, unsigned int, const char*, const char*)
+                   const char* function, const char* format, const Args&... args) {
+    LogMessage(log_class, log_level, filename, line_num, function, format, fmt::make_args(args...));
+}
 
 } // namespace Log
 
