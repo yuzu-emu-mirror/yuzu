@@ -303,12 +303,12 @@ public:
     void CopySurface(const Surface& src_surface, const Surface& dst_surface,
                      SurfaceInterval copy_interval);
 
-    /// Load a texture from 3DS memory to OpenGL and cache it (if not already cached)
+    /// Load a texture from Switch memory to OpenGL and cache it (if not already cached)
     Surface GetSurface(const SurfaceParams& params, ScaleMatch match_res_scale,
                        bool load_if_create);
 
     /// Attempt to find a subrect (resolution scaled) of a surface, otherwise loads a texture from
-    /// 3DS memory to OpenGL and caches it (if not already cached)
+    /// Switch memory to OpenGL and caches it (if not already cached)
     SurfaceRect_Tuple GetSurfaceSubRect(const SurfaceParams& params, ScaleMatch match_res_scale,
                                         bool load_if_create);
 
@@ -328,7 +328,7 @@ public:
     /// Write any cached resources overlapping the region back to memory (if dirty)
     void FlushRegion(VAddr addr, u64 size, Surface flush_surface = nullptr);
 
-    /// Mark region as being invalidated by region_owner (nullptr if 3DS memory)
+    /// Mark region as being invalidated by region_owner (nullptr if Switch memory)
     void InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner);
 
     /// Flush all cached resources tracked by this cache manager
