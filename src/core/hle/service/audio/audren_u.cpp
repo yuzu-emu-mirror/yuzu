@@ -158,7 +158,7 @@ public:
             {0x0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
             {0x1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"},
             {0x2, nullptr, "GetAudioDeviceOutputVolume"},
-            {0x3, nullptr, "GetActiveAudioDeviceName"},
+            {0x3, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceName"},
             {0x4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
             {0x5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
             {0x6, nullptr, "ListAudioDeviceNameAuto"},
@@ -197,6 +197,18 @@ private:
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
+    }
+
+    void GetActiveAudioDeviceName(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+
+        const std::string audio_interface = "AudioDevice";
+        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+
+        IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(1);
     }
 
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {

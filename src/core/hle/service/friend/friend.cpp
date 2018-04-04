@@ -6,6 +6,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/friend_a.h"
+#include "core/hle/service/friend/friend_u.h"
 
 namespace Service {
 namespace Friend {
@@ -22,6 +23,7 @@ Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module = std::make_shared<Module>();
     std::make_shared<Friend_A>(module)->InstallAsService(service_manager);
+    std::make_shared<Friend_U>(module)->InstallAsService(service_manager);
 }
 
 } // namespace Friend

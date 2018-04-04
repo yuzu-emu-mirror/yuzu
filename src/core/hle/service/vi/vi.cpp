@@ -17,6 +17,7 @@
 #include "core/hle/service/vi/vi_m.h"
 #include "core/hle/service/vi/vi_s.h"
 #include "core/hle/service/vi/vi_u.h"
+#include "core/settings.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -711,6 +712,23 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
+    void GetDisplayResolution(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_VI, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        u64 display_id = rp.Pop<u64>();
+
+        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+
+        if (Settings::values.use_docked_mode) {
+            rb.Push(static_cast<u32>(DisplayResolution::DockedWidth));
+            rb.Push(static_cast<u32>(DisplayResolution::DockedHeight));
+        } else {
+            rb.Push(static_cast<u32>(DisplayResolution::UndockedWidth));
+            rb.Push(static_cast<u32>(DisplayResolution::UndockedHeight));
+        }
+    }
+
     void SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
@@ -808,6 +826,7 @@ IApplicationDisplayService::IApplicationDisplayService(
         {1000, &IApplicationDisplayService::ListDisplays, "ListDisplays"},
         {1010, &IApplicationDisplayService::OpenDisplay, "OpenDisplay"},
         {1020, &IApplicationDisplayService::CloseDisplay, "CloseDisplay"},
+        {1102, &IApplicationDisplayService::GetDisplayResolution, "GetDisplayResolution"},
         {2101, &IApplicationDisplayService::SetLayerScalingMode, "SetLayerScalingMode"},
         {2020, &IApplicationDisplayService::OpenLayer, "OpenLayer"},
         {2030, &IApplicationDisplayService::CreateStrayLayer, "CreateStrayLayer"},

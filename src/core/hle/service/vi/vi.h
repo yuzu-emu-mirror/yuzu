@@ -14,6 +14,13 @@ struct EventType;
 namespace Service {
 namespace VI {
 
+enum class DisplayResolution : u32 {
+    DockedWidth = 1920,
+    DockedHeight = 1080,
+    UndockedWidth = 1280,
+    UndockedHeight = 720,
+};
+
 class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {

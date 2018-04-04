@@ -371,6 +371,18 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     return RESULT_SUCCESS;
 }
 
+/// Sets the thread activity
+static ResultCode SetThreadActivity(Handle handle, u32 unknown) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x%08X, unknown=0x%08X", handle, unknown);
+    return RESULT_SUCCESS;
+}
+
+/// Gets the thread context
+static ResultCode GetThreadContext(Handle handle, VAddr addr) {
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x%08X, addr=0x%" PRIx64, handle, addr);
+    return RESULT_SUCCESS;
+}
+
 /// Gets the priority for the specified thread
 static ResultCode GetThreadPriority(u32* priority, Handle handle) {
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(handle);
@@ -853,8 +865,8 @@ static const FunctionDef SVC_Table[] = {
     {0x2F, nullptr, "GetLastThreadInfo"},
     {0x30, nullptr, "GetResourceLimitLimitValue"},
     {0x31, nullptr, "GetResourceLimitCurrentValue"},
-    {0x32, nullptr, "SetThreadActivity"},
-    {0x33, nullptr, "GetThreadContext"},
+    {0x32, SvcWrap<SetThreadActivity>, "SetThreadActivity"},
+    {0x33, SvcWrap<GetThreadContext>, "GetThreadContext"},
     {0x34, nullptr, "Unknown"},
     {0x35, nullptr, "Unknown"},
     {0x36, nullptr, "Unknown"},
