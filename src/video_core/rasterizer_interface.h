@@ -21,16 +21,16 @@ public:
     /// Notify rasterizer that the specified Maxwell register has been changed
     virtual void NotifyMaxwellRegisterChanged(u32 id) = 0;
 
-    /// Notify rasterizer that all caches should be flushed to 3DS memory
+    /// Notify rasterizer that all caches should be flushed to Switch memory
     virtual void FlushAll() = 0;
 
-    /// Notify rasterizer that any caches of the specified region should be flushed to 3DS memory
+    /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     virtual void FlushRegion(VAddr addr, u64 size) = 0;
 
     /// Notify rasterizer that any caches of the specified region should be invalidated
     virtual void InvalidateRegion(VAddr addr, u64 size) = 0;
 
-    /// Notify rasterizer that any caches of the specified region should be flushed to 3DS memory
+    /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     /// and invalidated
     virtual void FlushAndInvalidateRegion(VAddr addr, u64 size) = 0;
 
