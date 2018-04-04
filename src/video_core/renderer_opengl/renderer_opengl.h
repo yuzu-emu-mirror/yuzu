@@ -14,7 +14,7 @@
 
 class EmuWindow;
 
-/// Structure used for storing information about the textures for each 3DS screen
+/// Structure used for storing information about the textures for the Switch screen
 struct TextureInfo {
     OGLTexture resource;
     GLsizei width;
@@ -24,7 +24,7 @@ struct TextureInfo {
     Tegra::FramebufferConfig::PixelFormat pixel_format;
 };
 
-/// Structure used for storing information about the display target for each 3DS screen
+/// Structure used for storing information about the display target for the Switch screen
 struct ScreenInfo {
     GLuint display_texture;
     MathUtil::Rectangle<float> display_texcoords;
