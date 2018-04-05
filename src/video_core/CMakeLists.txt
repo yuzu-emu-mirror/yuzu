@@ -9,6 +9,7 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_compute.cpp
     engines/maxwell_compute.h
+    engines/shader_bytecode.h
     gpu.cpp
     gpu.h
     macro_interpreter.cpp
