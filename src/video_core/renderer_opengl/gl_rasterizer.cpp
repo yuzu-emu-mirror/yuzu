@@ -66,6 +66,12 @@ RasterizerOpenGL::RasterizerOpenGL() {
     has_ARB_separate_shader_objects = false;
     has_ARB_vertex_attrib_binding = false;
 
+    // Create sampler objects
+    for (size_t i = 0; i < texture_samplers.size(); ++i) {
+        texture_samplers[i].Create();
+        state.texture_units[i].sampler = texture_samplers[i].sampler.handle;
+    }
+
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
@@ -270,7 +276,9 @@ void RasterizerOpenGL::DrawArrays() {
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
-    // TODO(bunnei): Sync and bind the texture surfaces
+
+    // Sync and bind the texture surfaces
+    BindTextures();
 
     // Sync and bind the shader
     if (shader_dirty) {
@@ -374,6 +382,39 @@ void RasterizerOpenGL::DrawArrays() {
     }
 }
 
+void RasterizerOpenGL::BindTextures() {
+    using Regs = Tegra::Engines::Maxwell3D::Regs;
+    auto maxwell3d = Core::System::GetInstance().GPU().Get3DEngine();
+
+    // Each Maxwell shader stage can have an arbitrary number of textures, but we're limited to a
+    // certain number in OpenGL. We try to only use the minimum amount of host textures by not
+    // keeping a 1:1 relation between guest texture ids and host texture ids, ie, guest texture id 8
+    // can be host texture id 0 if it's the only texture used in the guest shader program.
+    u32 host_texture_index = 0;
+    for (u32 stage = 0; stage < Regs::MaxShaderStage; ++stage) {
+        ASSERT(host_texture_index < texture_samplers.size());
+        const auto textures = maxwell3d.GetStageTextures(static_cast<Regs::ShaderStage>(stage));
+        for (unsigned texture_index = 0; texture_index < textures.size(); ++texture_index) {
+            const auto& texture = textures[texture_index];
+
+            if (texture.enabled) {
+                texture_samplers[host_texture_index].SyncWithConfig(texture.tsc);
+                Surface surface = res_cache.GetTextureSurface(texture);
+                if (surface != nullptr) {
+                    state.texture_units[host_texture_index].texture_2d = surface->texture.handle;
+                } else {
+                    // Can occur when texture addr is null or its memory is unmapped/invalid
+                    state.texture_units[texture_index].texture_2d = 0;
+                }
+
+                ++host_texture_index;
+            } else {
+                state.texture_units[texture_index].texture_2d = 0;
+            }
+        }
+    }
+}
+
 void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 id) {}
 
 void RasterizerOpenGL::FlushAll() {
@@ -452,6 +493,44 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
     return true;
 }
 
+void RasterizerOpenGL::SamplerInfo::Create() {
+    sampler.Create();
+    mag_filter = min_filter = Tegra::Texture::TextureFilter::Linear;
+    wrap_u = wrap_v = Tegra::Texture::WrapMode::Wrap;
+    border_color_r = border_color_g = border_color_b = border_color_a = 0;
+
+    // default is GL_LINEAR_MIPMAP_LINEAR
+    glSamplerParameteri(sampler.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // Other attributes have correct defaults
+}
+
+void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntry& config) {
+    GLuint s = sampler.handle;
+
+    if (mag_filter != config.mag_filter) {
+        mag_filter = config.mag_filter;
+        glSamplerParameteri(s, GL_TEXTURE_MAG_FILTER, MaxwellToGL::TextureFilterMode(mag_filter));
+    }
+    if (min_filter != config.min_filter) {
+        min_filter = config.min_filter;
+        glSamplerParameteri(s, GL_TEXTURE_MIN_FILTER, MaxwellToGL::TextureFilterMode(min_filter));
+    }
+
+    if (wrap_u != config.wrap_u) {
+        wrap_u = config.wrap_u;
+        glSamplerParameteri(s, GL_TEXTURE_WRAP_S, MaxwellToGL::WrapMode(wrap_u));
+    }
+    if (wrap_v != config.wrap_v) {
+        wrap_v = config.wrap_v;
+        glSamplerParameteri(s, GL_TEXTURE_WRAP_T, MaxwellToGL::WrapMode(wrap_v));
+    }
+
+    if (wrap_u == Tegra::Texture::WrapMode::Border || wrap_v == Tegra::Texture::WrapMode::Border) {
+        // TODO(Subv): Implement border color
+        ASSERT(false);
+    }
+}
+
 void RasterizerOpenGL::SetShader() {
     // TODO(bunnei): The below sets up a static test shader for passing untransformed vertices to
     // OpenGL for rendering. This should be removed/replaced when we start emulating Maxwell
@@ -479,10 +558,10 @@ void main() {
 in vec2 frag_tex_coord;
 out vec4 color;
 
-uniform sampler2D color_texture;
+uniform sampler2D tex[32];
 
 void main() {
-    color = vec4(1.0, 0.0, 1.0, 0.0);
+    color = texture(tex[0], frag_tex_coord);
 }
 )";
 
@@ -502,6 +581,15 @@ void main() {
 
     state.draw.shader_program = test_shader.shader.handle;
     state.Apply();
+
+    for (u32 texture = 0; texture < texture_samplers.size(); ++texture) {
+        // Set the texture samplers to correspond to different texture units
+        std::string uniform_name = "tex[" + std::to_string(texture) + "]";
+        GLint uniform_tex = glGetUniformLocation(test_shader.shader.handle, uniform_name.c_str());
+        if (uniform_tex != -1) {
+            glUniform1i(uniform_tex, TextureUnits::MaxwellTexture(texture).id);
+        }
+    }
 
     if (has_ARB_separate_shader_objects) {
         state.draw.shader_program = 0;
