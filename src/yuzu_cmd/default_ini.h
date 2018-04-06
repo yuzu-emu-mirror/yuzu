@@ -8,7 +8,7 @@ namespace DefaultINI {
 
 const char* sdl2_config_file = R"(
 [Controls]
-# The input devices and parameters for each 3DS native input
+# The input devices and parameters for each Switch native input
 # It should be in the format of "engine:[engine_name],[param1]:[value1],[param2]:[value2]..."
 # Escape characters $0 (for ':'), $1 (for ',') and $2 (for '$') can be used in values
 
