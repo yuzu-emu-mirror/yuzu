@@ -115,7 +115,7 @@ private:
     // assignment would copy the full storage value, rather than just the bits
     // relevant to this particular bit field.
     // We don't delete it because we want BitField to be trivially copyable.
-    BitField& operator=(const BitField&) = default;
+    constexpr BitField& operator=(const BitField&) = default;
 
     // StorageType is T for non-enum types and the underlying type of T if
     // T is an enumeration. Note that T is wrapped within an enable_if in the
@@ -166,20 +166,20 @@ public:
     // so that we can use this within unions
     constexpr BitField() = default;
 
-    FORCE_INLINE operator T() const {
+    constexpr FORCE_INLINE operator T() const {
         return Value();
     }
 
-    FORCE_INLINE void Assign(const T& value) {
+    constexpr FORCE_INLINE void Assign(const T& value) {
         storage = (storage & ~mask) | FormatValue(value);
     }
 
-    FORCE_INLINE T Value() const {
+    constexpr T Value() const {
         return ExtractValue(storage);
     }
 
     // TODO: we may want to change this to explicit operator bool() if it's bug-free in VS2015
-    FORCE_INLINE bool ToBool() const {
+    constexpr FORCE_INLINE bool ToBool() const {
         return Value() != 0;
     }
 
