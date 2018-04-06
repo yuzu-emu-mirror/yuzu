@@ -72,6 +72,7 @@ enum class ResultStatus {
     ErrorAlreadyLoaded,
     ErrorMemoryAllocationFailed,
     ErrorEncrypted,
+    ErrorUnsupportedArch,
 };
 
 /// Interface for loading an application

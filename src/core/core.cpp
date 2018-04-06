@@ -92,6 +92,8 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
             return ResultStatus::ErrorLoader_ErrorEncrypted;
         case Loader::ResultStatus::ErrorInvalidFormat:
             return ResultStatus::ErrorLoader_ErrorInvalidFormat;
+        case Loader::ResultStatus::ErrorUnsupportedArch:
+            return ResultStatus::ErrorUnsupportedArch;
         default:
             return ResultStatus::ErrorSystemMode;
         }
@@ -115,6 +117,8 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
             return ResultStatus::ErrorLoader_ErrorEncrypted;
         case Loader::ResultStatus::ErrorInvalidFormat:
             return ResultStatus::ErrorLoader_ErrorInvalidFormat;
+        case Loader::ResultStatus::ErrorUnsupportedArch:
+            return ResultStatus::ErrorUnsupportedArch;
         default:
             return ResultStatus::ErrorLoader;
         }

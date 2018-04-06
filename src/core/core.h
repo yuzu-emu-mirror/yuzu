@@ -44,6 +44,7 @@ public:
         ErrorSystemFiles,               ///< Error in finding system files
         ErrorSharedFont,                ///< Error in finding shared font
         ErrorVideoCore,                 ///< Error in the video core
+        ErrorUnsupportedArch,           ///< Unsupported Architecture (32-Bit ROMs)
         ErrorUnknown                    ///< Any other error
     };
 

@@ -357,7 +357,12 @@ bool GMainWindow::LoadROM(const QString& filename) {
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM format is not supported."));
             break;
-
+        case Core::System::ResultStatus::ErrorUnsupportedArch:
+            LOG_CRITICAL(Frontend, "Unsupported architecture detected!",
+                         filename.toStdString().c_str());
+            QMessageBox::critical(this, tr("Error while loading ROM!"),
+                                  tr("The ROM uses currently unusable 32-bit architecture"));
+            break;
         case Core::System::ResultStatus::ErrorSystemMode:
             LOG_CRITICAL(Frontend, "Failed to load ROM!");
             QMessageBox::critical(this, tr("Error while loading ROM!"),

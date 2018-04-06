@@ -119,6 +119,11 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     }
     metadata.Print();
 
+    const FileSys::ProgramAddressSpaceType arch_bits{metadata.GetAddressSpaceType()};
+    if (arch_bits == FileSys::ProgramAddressSpaceType::Is32Bit) {
+        return ResultStatus::ErrorUnsupportedArch;
+    }
+
     // Load NSO modules
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
