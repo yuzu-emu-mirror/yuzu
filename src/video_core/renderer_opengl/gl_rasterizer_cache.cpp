@@ -115,7 +115,7 @@ void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, 
 
 template <>
 void MortonCopy<true, PixelFormat::DXT1>(u32 stride, u32 height, u8* gl_buffer, VAddr base,
-                                                VAddr start, VAddr end) {
+                                         VAddr start, VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(PixelFormat::DXT1) / 8;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(PixelFormat::DXT1);
 
