@@ -356,7 +356,7 @@ private:
 
 FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
     static const FunctionInfo functions[] = {
-        {1, &FSP_SRV::Initalize, "Initalize"},
+        {1, &FSP_SRV::Initialize, "Initialize"},
         {18, &FSP_SRV::MountSdCard, "MountSdCard"},
         {22, &FSP_SRV::CreateSaveData, "CreateSaveData"},
         {51, &FSP_SRV::MountSaveData, "MountSaveData"},
@@ -379,7 +379,7 @@ void FSP_SRV::TryLoadRomFS() {
     }
 }
 
-void FSP_SRV::Initalize(Kernel::HLERequestContext& ctx) {
+void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
