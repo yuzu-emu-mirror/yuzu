@@ -573,7 +573,7 @@ void main() {
 
     current_shader = &test_shader;
     if (has_ARB_separate_shader_objects) {
-        test_shader.shader.Create(vertex_shader, nullptr, fragment_shader, {}, true);
+        test_shader.shader.CreateFromSource(vertex_shader, nullptr, fragment_shader, true);
         glActiveShaderProgram(pipeline.handle, test_shader.shader.handle);
     } else {
         UNREACHABLE();

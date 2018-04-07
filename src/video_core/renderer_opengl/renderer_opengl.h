@@ -72,7 +72,7 @@ private:
     // OpenGL object IDs
     OGLVertexArray vertex_array;
     OGLBuffer vertex_buffer;
-    OGLShader shader;
+    OGLProgram shader;
 
     /// Display information for Switch screen
     ScreenInfo screen_info;

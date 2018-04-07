@@ -45,7 +45,7 @@ public:
     /// OpenGL shader generated for a given Maxwell register state
     struct MaxwellShader {
         /// OpenGL shader resource
-        OGLShader shader;
+        OGLProgram shader;
     };
 
     struct VertexShader {
