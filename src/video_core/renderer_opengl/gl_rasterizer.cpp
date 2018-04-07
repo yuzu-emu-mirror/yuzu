@@ -34,33 +34,7 @@ MICROPROFILE_DEFINE(OpenGL_Drawing, "OpenGL", "Drawing", MP_RGB(128, 128, 192));
 MICROPROFILE_DEFINE(OpenGL_Blits, "OpenGL", "Blits", MP_RGB(100, 100, 255));
 MICROPROFILE_DEFINE(OpenGL_CacheManagement, "OpenGL", "Cache Mgmt", MP_RGB(100, 255, 100));
 
-enum class UniformBindings : GLuint { Common, VS, FS };
-
-static void SetShaderUniformBlockBinding(GLuint shader, const char* name, UniformBindings binding,
-                                         size_t expected_size) {
-    GLuint ub_index = glGetUniformBlockIndex(shader, name);
-    if (ub_index != GL_INVALID_INDEX) {
-        GLint ub_size = 0;
-        glGetActiveUniformBlockiv(shader, ub_index, GL_UNIFORM_BLOCK_DATA_SIZE, &ub_size);
-        ASSERT_MSG(ub_size == expected_size,
-                   "Uniform block size did not match! Got %d, expected %zu",
-                   static_cast<int>(ub_size), expected_size);
-        glUniformBlockBinding(shader, ub_index, static_cast<GLuint>(binding));
-    }
-}
-
-static void SetShaderUniformBlockBindings(GLuint shader) {
-    SetShaderUniformBlockBinding(shader, "shader_data", UniformBindings::Common,
-                                 sizeof(RasterizerOpenGL::UniformData));
-    SetShaderUniformBlockBinding(shader, "vs_config", UniformBindings::VS,
-                                 sizeof(RasterizerOpenGL::VSUniformData));
-    SetShaderUniformBlockBinding(shader, "fs_config", UniformBindings::FS,
-                                 sizeof(RasterizerOpenGL::FSUniformData));
-}
-
 RasterizerOpenGL::RasterizerOpenGL() {
-    shader_dirty = true;
-
     has_ARB_buffer_storage = false;
     has_ARB_direct_state_access = false;
     has_ARB_separate_shader_objects = false;
@@ -88,6 +62,8 @@ RasterizerOpenGL::RasterizerOpenGL() {
         }
     }
 
+    ASSERT_MSG(has_ARB_separate_shader_objects, "has_ARB_separate_shader_objects is unsupported");
+
     // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
     state.clip_distance[0] = true;
 
@@ -102,37 +78,28 @@ RasterizerOpenGL::RasterizerOpenGL() {
     state.draw.uniform_buffer = uniform_buffer.handle;
     state.Apply();
 
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), nullptr, GL_STATIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniform_buffer.handle);
-
-    uniform_block_data.dirty = true;
-
     // Create render framebuffer
     framebuffer.Create();
 
-    if (has_ARB_separate_shader_objects) {
-        hw_vao.Create();
-        hw_vao_enabled_attributes.fill(false);
+    hw_vao.Create();
+    hw_vao_enabled_attributes.fill(false);
 
-        stream_buffer = OGLStreamBuffer::MakeBuffer(has_ARB_buffer_storage, GL_ARRAY_BUFFER);
-        stream_buffer->Create(STREAM_BUFFER_SIZE, STREAM_BUFFER_SIZE / 2);
-        state.draw.vertex_buffer = stream_buffer->GetHandle();
+    stream_buffer = OGLStreamBuffer::MakeBuffer(has_ARB_buffer_storage, GL_ARRAY_BUFFER);
+    stream_buffer->Create(STREAM_BUFFER_SIZE, STREAM_BUFFER_SIZE / 2);
+    state.draw.vertex_buffer = stream_buffer->GetHandle();
 
-        pipeline.Create();
-        state.draw.program_pipeline = pipeline.handle;
-        state.draw.shader_program = 0;
-        state.draw.vertex_array = hw_vao.handle;
-        state.Apply();
+    shader_program_manager = std::make_unique<GLShader::ProgramManager>();
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stream_buffer->GetHandle());
+    state.draw.shader_program = 0;
+    state.draw.vertex_array = hw_vao.handle;
+    state.Apply();
 
-        vs_uniform_buffer.Create();
-        glBindBuffer(GL_UNIFORM_BUFFER, vs_uniform_buffer.handle);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(VSUniformData), nullptr, GL_STREAM_COPY);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, vs_uniform_buffer.handle);
-    } else {
-        UNREACHABLE();
-    }
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stream_buffer->GetHandle());
+
+    vs_uniform_buffer.Create();
+    glBindBuffer(GL_UNIFORM_BUFFER, vs_uniform_buffer.handle);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(GLShader::VSUniformData), nullptr, GL_STREAM_COPY);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, vs_uniform_buffer.handle);
 
     accelerate_draw = AccelDraw::Disabled;
 
@@ -200,26 +167,20 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     buffer_offset += data_size;
 }
 
-void RasterizerOpenGL::SetupVertexShader(VSUniformData* ub_ptr, GLintptr buffer_offset) {
+void RasterizerOpenGL::SetupVertexShader(GLShader::VSUniformData* ub_ptr, GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VS);
-    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
-    glUseProgramStages(pipeline.handle, GL_VERTEX_SHADER_BIT, current_shader->shader.handle);
+    UNREACHABLE();
 }
 
-void RasterizerOpenGL::SetupFragmentShader(FSUniformData* ub_ptr, GLintptr buffer_offset) {
+void RasterizerOpenGL::SetupFragmentShader(GLShader::FSUniformData* ub_ptr,
+                                           GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_FS);
     UNREACHABLE();
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
-    if (!has_ARB_separate_shader_objects) {
-        UNREACHABLE();
-        return false;
-    }
-
     accelerate_draw = is_indexed ? AccelDraw::Indexed : AccelDraw::Arrays;
     DrawArrays();
-
     return true;
 }
 
@@ -280,18 +241,6 @@ void RasterizerOpenGL::DrawArrays() {
     // Sync and bind the texture surfaces
     BindTextures();
 
-    // Sync and bind the shader
-    if (shader_dirty) {
-        SetShader();
-        shader_dirty = false;
-    }
-
-    // Sync the uniform data
-    if (uniform_block_data.dirty) {
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformData), &uniform_block_data.data);
-        uniform_block_data.dirty = false;
-    }
-
     // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
     // scissor test to prevent drawing outside of the framebuffer region
     state.scissor.enabled = true;
@@ -311,7 +260,7 @@ void RasterizerOpenGL::DrawArrays() {
     if (is_indexed) {
         UNREACHABLE();
     }
-    buffer_size += sizeof(VSUniformData);
+    buffer_size += sizeof(GLShader::VSUniformData);
 
     size_t ptr_pos = 0;
     u8* buffer_ptr;
@@ -327,10 +276,10 @@ void RasterizerOpenGL::DrawArrays() {
         UNREACHABLE();
     }
 
-    SetupVertexShader(reinterpret_cast<VSUniformData*>(&buffer_ptr[ptr_pos]),
+    SetupVertexShader(reinterpret_cast<GLShader::VSUniformData*>(&buffer_ptr[ptr_pos]),
                       buffer_offset + static_cast<GLintptr>(ptr_pos));
     const GLintptr vs_ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
-    ptr_pos += sizeof(VSUniformData);
+    ptr_pos += sizeof(GLShader::VSUniformData);
 
     stream_buffer->Unmap();
 
@@ -343,9 +292,10 @@ void RasterizerOpenGL::DrawArrays() {
         }
     };
 
-    copy_buffer(vs_uniform_buffer.handle, vs_ubo_offset, sizeof(VSUniformData));
+    copy_buffer(vs_uniform_buffer.handle, vs_ubo_offset, sizeof(GLShader::VSUniformData));
 
-    glUseProgramStages(pipeline.handle, GL_FRAGMENT_SHADER_BIT, current_shader->shader.handle);
+    shader_program_manager->ApplyTo(state);
+    state.Apply();
 
     if (is_indexed) {
         UNREACHABLE();
@@ -528,72 +478,6 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
     if (wrap_u == Tegra::Texture::WrapMode::Border || wrap_v == Tegra::Texture::WrapMode::Border) {
         // TODO(Subv): Implement border color
         ASSERT(false);
-    }
-}
-
-void RasterizerOpenGL::SetShader() {
-    // TODO(bunnei): The below sets up a static test shader for passing untransformed vertices to
-    // OpenGL for rendering. This should be removed/replaced when we start emulating Maxwell
-    // shaders.
-
-    static constexpr char vertex_shader[] = R"(
-#version 150 core
-
-in vec2 vert_position;
-in vec2 vert_tex_coord;
-out vec2 frag_tex_coord;
-
-void main() {
-    // Multiply input position by the rotscale part of the matrix and then manually translate by
-    // the last column. This is equivalent to using a full 3x3 matrix and expanding the vector
-    // to `vec3(vert_position.xy, 1.0)`
-    gl_Position = vec4(mat2(mat3x2(0.0015625f, 0.0, 0.0, -0.0027778, -1.0, 1.0)) * vert_position + mat3x2(0.0015625f, 0.0, 0.0, -0.0027778, -1.0, 1.0)[2], 0.0, 1.0);
-    frag_tex_coord = vert_tex_coord;
-}
-)";
-
-    static constexpr char fragment_shader[] = R"(
-#version 150 core
-
-in vec2 frag_tex_coord;
-out vec4 color;
-
-uniform sampler2D tex[32];
-
-void main() {
-    color = texture(tex[0], frag_tex_coord);
-}
-)";
-
-    if (current_shader) {
-        return;
-    }
-
-    LOG_CRITICAL(Render_OpenGL, "Emulated shaders are not supported! Using a passthrough shader.");
-
-    current_shader = &test_shader;
-    if (has_ARB_separate_shader_objects) {
-        test_shader.shader.CreateFromSource(vertex_shader, nullptr, fragment_shader, true);
-        glActiveShaderProgram(pipeline.handle, test_shader.shader.handle);
-    } else {
-        UNREACHABLE();
-    }
-
-    state.draw.shader_program = test_shader.shader.handle;
-    state.Apply();
-
-    for (u32 texture = 0; texture < texture_samplers.size(); ++texture) {
-        // Set the texture samplers to correspond to different texture units
-        std::string uniform_name = "tex[" + std::to_string(texture) + "]";
-        GLint uniform_tex = glGetUniformLocation(test_shader.shader.handle, uniform_name.c_str());
-        if (uniform_tex != -1) {
-            glUniform1i(uniform_tex, TextureUnits::MaxwellTexture(texture).id);
-        }
-    }
-
-    if (has_ARB_separate_shader_objects) {
-        state.draw.shader_program = 0;
-        state.Apply();
     }
 }
 
