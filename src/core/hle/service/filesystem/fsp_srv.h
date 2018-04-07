@@ -22,7 +22,7 @@ public:
 private:
     void TryLoadRomFS();
 
-    void Initalize(Kernel::HLERequestContext& ctx);
+    void Initialize(Kernel::HLERequestContext& ctx);
     void MountSdCard(Kernel::HLERequestContext& ctx);
     void CreateSaveData(Kernel::HLERequestContext& ctx);
     void MountSaveData(Kernel::HLERequestContext& ctx);
