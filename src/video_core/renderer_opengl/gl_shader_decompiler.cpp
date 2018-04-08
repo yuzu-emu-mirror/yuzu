@@ -10,9 +10,14 @@
 #include "video_core/engines/shader_bytecode.h"
 #include "video_core/renderer_opengl/gl_shader_decompiler.h"
 
-namespace Tegra {
-namespace Shader {
+namespace GLShader {
 namespace Decompiler {
+
+using Tegra::Shader::Attribute;
+using Tegra::Shader::Instruction;
+using Tegra::Shader::OpCode;
+using Tegra::Shader::Register;
+using Tegra::Shader::Uniform;
 
 constexpr u32 PROGRAM_END = MAX_PROGRAM_CODE_LENGTH;
 
@@ -90,7 +95,7 @@ private:
 
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
             const Instruction instr = {program_code[offset]};
-            switch (instr.opcode.Value().EffectiveOpCode()) {
+            switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::EXIT: {
                 return exit_method = ExitMethod::AlwaysEnd;
             }
@@ -130,7 +135,294 @@ public:
     }
 
     std::string GetShaderCode() {
-        return shader.GetResult();
+        return declarations.GetResult() + shader.GetResult();
+    }
+
+private:
+    /// Gets the Subroutine object corresponding to the specified address.
+    const Subroutine& GetSubroutine(u32 begin, u32 end) const {
+        auto iter = subroutines.find(Subroutine{begin, end});
+        ASSERT(iter != subroutines.end());
+        return *iter;
+    }
+
+    /// Generates code representing an input attribute register.
+    std::string GetInputAttribute(Attribute::Index attribute) {
+        declr_input_attribute.insert(attribute);
+
+        const u32 index{static_cast<u32>(attribute) -
+                        static_cast<u32>(Attribute::Index::Attribute_0)};
+        if (attribute >= Attribute::Index::Attribute_0) {
+            return "input_attribute_" + std::to_string(index);
+        }
+
+        LOG_ERROR(HW_GPU, "Unhandled input attribute: 0x%02x", index);
+        UNREACHABLE();
+    }
+
+    /// Generates code representing an output attribute register.
+    std::string GetOutputAttribute(Attribute::Index attribute) {
+        switch (attribute) {
+        case Attribute::Index::Position:
+            return "gl_Position";
+        default:
+            const u32 index{static_cast<u32>(attribute) -
+                            static_cast<u32>(Attribute::Index::Attribute_0)};
+            if (attribute >= Attribute::Index::Attribute_0) {
+                declr_output_attribute.insert(attribute);
+                return "output_attribute_" + std::to_string(index);
+            }
+
+            LOG_ERROR(HW_GPU, "Unhandled output attribute: 0x%02x", index);
+            UNREACHABLE();
+        }
+    }
+
+    /// Generates code representing a temporary (GPR) register.
+    std::string GetRegister(const Register& reg) {
+        return *declr_register.insert("register_" + std::to_string(reg)).first;
+    }
+
+    /// Generates code representing a uniform (C buffer) register.
+    std::string GetUniform(const Uniform& reg) const {
+        std::string index = std::to_string(reg.index);
+        return "uniform_" + index + "[" + std::to_string(reg.offset >> 2) + "][" +
+               std::to_string(reg.offset & 3) + "]";
+    }
+
+    /**
+     * Adds code that calls a subroutine.
+     * @param subroutine the subroutine to call.
+     */
+    void CallSubroutine(const Subroutine& subroutine) {
+        if (subroutine.exit_method == ExitMethod::AlwaysEnd) {
+            shader.AddLine(subroutine.GetName() + "();");
+            shader.AddLine("return true;");
+        } else if (subroutine.exit_method == ExitMethod::Conditional) {
+            shader.AddLine("if (" + subroutine.GetName() + "()) { return true; }");
+        } else {
+            shader.AddLine(subroutine.GetName() + "();");
+        }
+    }
+
+    /**
+     * Writes code that does an assignment operation.
+     * @param reg the destination register code.
+     * @param value the code representing the value to assign.
+     */
+    void SetDest(u64 elem, const std::string& reg, const std::string& value,
+                 u64 dest_num_components, u64 value_num_components) {
+        std::string swizzle = ".";
+        swizzle += "xyzw"[elem];
+
+        std::string dest = reg + (dest_num_components != 1 ? swizzle : "");
+        std::string src = "(" + value + ")" + (value_num_components != 1 ? swizzle : "");
+
+        shader.AddLine(dest + " = " + src + ";");
+    }
+
+    /**
+     * Compiles a single instruction from Tegra to GLSL.
+     * @param offset the offset of the Tegra shader instruction.
+     * @return the offset of the next instruction to execute. Usually it is the current offset
+     * + 1. If the current instruction always terminates the program, returns PROGRAM_END.
+     */
+    u32 CompileInstr(u32 offset) {
+        const Instruction instr = {program_code[offset]};
+
+        shader.AddLine("// " + std::to_string(offset) + ": " + OpCode::GetInfo(instr.opcode).name);
+
+        switch (OpCode::GetInfo(instr.opcode).type) {
+        case OpCode::Type::Arithmetic: {
+            ASSERT(!instr.nb);
+            ASSERT(!instr.aa);
+            ASSERT(!instr.na);
+            ASSERT(!instr.ab);
+            ASSERT(!instr.ad);
+
+            std::string gpr1 = GetRegister(instr.gpr1);
+            std::string gpr2 = GetRegister(instr.gpr2);
+            std::string uniform = GetUniform(instr.uniform);
+
+            switch (instr.opcode.EffectiveOpCode()) {
+            case OpCode::Id::FMUL_C: {
+                SetDest(0, gpr1, gpr2 + " * " + uniform, 1, 1);
+                break;
+            }
+            case OpCode::Id::FADD_C: {
+                SetDest(0, gpr1, gpr2 + " + " + uniform, 1, 1);
+                break;
+            }
+            case OpCode::Id::FFMA_CR: {
+                SetDest(0, gpr1, gpr2 + " * " + uniform + " + " + GetRegister(instr.gpr3), 1, 1);
+                break;
+            }
+            default: {
+                LOG_ERROR(HW_GPU, "Unhandled arithmetic instruction: 0x%02x (%s): 0x%08x",
+                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
+                          instr.hex);
+                throw DecompileFail("Unhandled instruction");
+                break;
+            }
+            }
+            break;
+        }
+        case OpCode::Type::Memory: {
+            ASSERT(instr.attribute.size == 0);
+
+            std::string gpr1 = GetRegister(instr.gpr1);
+            const Attribute::Index attribute = instr.attribute.GetIndex();
+
+            switch (instr.opcode.EffectiveOpCode()) {
+            case OpCode::Id::LD_A: {
+                SetDest(instr.attribute.element, gpr1, GetInputAttribute(attribute), 1, 4);
+                break;
+            }
+            case OpCode::Id::ST_A: {
+                SetDest(instr.attribute.element, GetOutputAttribute(attribute), gpr1, 4, 1);
+                break;
+            }
+            default: {
+                LOG_ERROR(HW_GPU, "Unhandled memory instruction: 0x%02x (%s): 0x%08x",
+                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
+                          instr.hex);
+                throw DecompileFail("Unhandled instruction");
+                break;
+            }
+            }
+            break;
+        }
+
+        default: {
+            switch (instr.opcode.EffectiveOpCode()) {
+            case OpCode::Id::EXIT: {
+                shader.AddLine("return true;");
+                offset = PROGRAM_END - 1;
+                break;
+            }
+
+            default: {
+                LOG_ERROR(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
+                          (int)instr.opcode.EffectiveOpCode(),
+                          OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
+                // throw DecompileFail("Unhandled instruction");
+                break;
+            }
+            }
+
+            break;
+        }
+        }
+
+        return offset + 1;
+    }
+
+    /**
+     * Compiles a range of instructions from Tegra to GLSL.
+     * @param begin the offset of the starting instruction.
+     * @param end the offset where the compilation should stop (exclusive).
+     * @return the offset of the next instruction to compile. PROGRAM_END if the program
+     * terminates.
+     */
+    u32 CompileRange(u32 begin, u32 end) {
+        u32 program_counter;
+        for (program_counter = begin; program_counter < (begin > end ? PROGRAM_END : end);) {
+            program_counter = CompileInstr(program_counter);
+        }
+        return program_counter;
+    }
+
+    void Generate() {
+        // Add declarations for all subroutines
+        for (const auto& subroutine : subroutines) {
+            shader.AddLine("bool " + subroutine.GetName() + "();");
+        }
+        shader.AddLine("");
+
+        // Add the main entry point
+        shader.AddLine("bool exec_shader() {");
+        ++shader.scope;
+        CallSubroutine(GetSubroutine(main_offset, PROGRAM_END));
+        --shader.scope;
+        shader.AddLine("}\n");
+
+        // Add definitions for all subroutines
+        for (const auto& subroutine : subroutines) {
+            std::set<u32> labels = subroutine.labels;
+
+            shader.AddLine("bool " + subroutine.GetName() + "() {");
+            ++shader.scope;
+
+            if (labels.empty()) {
+                if (CompileRange(subroutine.begin, subroutine.end) != PROGRAM_END) {
+                    shader.AddLine("return false;");
+                }
+            } else {
+                labels.insert(subroutine.begin);
+                shader.AddLine("uint jmp_to = " + std::to_string(subroutine.begin) + "u;");
+                shader.AddLine("while (true) {");
+                ++shader.scope;
+
+                shader.AddLine("switch (jmp_to) {");
+
+                for (auto label : labels) {
+                    shader.AddLine("case " + std::to_string(label) + "u: {");
+                    ++shader.scope;
+
+                    auto next_it = labels.lower_bound(label + 1);
+                    u32 next_label = next_it == labels.end() ? subroutine.end : *next_it;
+
+                    u32 compile_end = CompileRange(label, next_label);
+                    if (compile_end > next_label && compile_end != PROGRAM_END) {
+                        // This happens only when there is a label inside a IF/LOOP block
+                        shader.AddLine("{ jmp_to = " + std::to_string(compile_end) + "u; break; }");
+                        labels.emplace(compile_end);
+                    }
+
+                    --shader.scope;
+                    shader.AddLine("}");
+                }
+
+                shader.AddLine("default: return false;");
+                shader.AddLine("}");
+
+                --shader.scope;
+                shader.AddLine("}");
+
+                shader.AddLine("return false;");
+            }
+
+            --shader.scope;
+            shader.AddLine("}\n");
+
+            DEBUG_ASSERT(shader.scope == 0);
+        }
+
+        GenerateDeclarations();
+    }
+
+    /// Add declarations for registers
+    void GenerateDeclarations() {
+        for (const auto& reg : declr_register) {
+            declarations.AddLine("float " + reg + " = 0.0;");
+        }
+        declarations.AddLine("");
+
+        for (const auto& index : declr_input_attribute) {
+            // TODO(bunnei): Use proper number of elements for these
+            declarations.AddLine(
+                "layout(location = " + std::to_string(static_cast<u32>(index) - 8) + ") in vec4 " +
+                GetInputAttribute(index) + ";");
+        }
+        declarations.AddLine("");
+
+        for (const auto& index : declr_output_attribute) {
+            // TODO(bunnei): Use proper number of elements for these
+            declarations.AddLine(
+                "layout(location = " + std::to_string(static_cast<u32>(index) - 8) + ") out vec4 " +
+                GetOutputAttribute(index) + ";");
+        }
+        declarations.AddLine("");
     }
 
 private:
@@ -139,9 +431,17 @@ private:
     const u32 main_offset;
 
     ShaderWriter shader;
+    ShaderWriter declarations;
 
-    void Generate() {}
-};
+    // Declarations
+    std::set<std::string> declr_register;
+    std::set<Attribute::Index> declr_input_attribute;
+    std::set<Attribute::Index> declr_output_attribute;
+}; // namespace Decompiler
+
+std::string GetCommonDeclarations() {
+    return "bool exec_shader();";
+}
 
 boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset) {
     try {
@@ -155,5 +455,4 @@ boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u
 }
 
 } // namespace Decompiler
-} // namespace Shader
-} // namespace Tegra
+} // namespace GLShader
