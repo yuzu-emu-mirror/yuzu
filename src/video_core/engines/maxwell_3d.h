@@ -504,6 +504,7 @@ public:
     };
 
     State state{};
+    MemoryManager& memory_manager;
 
     /// Reads a register value located at the input method address
     u32 GetRegisterValue(u32 method) const;
@@ -518,8 +519,6 @@ public:
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
 private:
-    MemoryManager& memory_manager;
-
     std::unordered_map<u32, std::vector<u32>> uploaded_macros;
 
     /// Macro method that is currently being executed / being fed parameters.
