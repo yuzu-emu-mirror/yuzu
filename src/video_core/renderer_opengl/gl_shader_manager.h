@@ -14,39 +14,26 @@
 
 namespace GLShader {
 
+using Tegra::Engines::Maxwell3D;
+
 namespace Impl {
 void SetShaderUniformBlockBindings(GLuint shader);
 void SetShaderSamplerBindings(GLuint shader);
 } // namespace Impl
-
-enum class UniformBindings : GLuint { Common, VS, GS, FS };
 
 /// Uniform structure for the Uniform Buffer Object, all vectors must be 16-byte aligned
 // NOTE: Always keep a vec4 at the end. The GL spec is not clear wether the alignment at
 //       the end of a uniform block is included in UNIFORM_BLOCK_DATA_SIZE or not.
 //       Not following that rule will cause problems on some AMD drivers.
 struct MaxwellUniformData {
-    void SetFromRegs();
+    void SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage);
 
     using ConstBuffer = std::array<GLvec4, 4>;
-    using Regs = Tegra::Engines::Maxwell3D::Regs;
-
-    alignas(16) std::array<ConstBuffer, Regs::MaxConstBuffers> const_buffers;
+    alignas(16) std::array<ConstBuffer, Maxwell3D::Regs::MaxConstBuffers> const_buffers;
 };
+static_assert(sizeof(MaxwellUniformData) == 1024, "MaxwellUniformData structure size is incorrect");
 static_assert(sizeof(MaxwellUniformData) < 16384,
               "MaxwellUniformData structure must be less than 16kb as per the OpenGL spec");
-
-struct VSUniformData {
-    MaxwellUniformData uniforms;
-};
-static_assert(sizeof(VSUniformData) < 16384,
-              "VSUniformData structure must be less than 16kb as per the OpenGL spec");
-
-struct FSUniformData {
-    MaxwellUniformData uniforms;
-};
-static_assert(sizeof(FSUniformData) < 16384,
-              "VSUniformData structure must be less than 16kb as per the OpenGL spec");
 
 class OGLShaderStage {
 public:
@@ -113,12 +100,12 @@ public:
         current.vs = vertex_shaders.Get(config, setup);
     }
 
-    void UseTrivialGeometryShader() {
-        current.gs = 0;
-    }
-
     void UseProgrammableFragmentShader(const MaxwellFSConfig& config, const ShaderSetup setup) {
         current.fs = fragment_shaders.Get(config, setup);
+    }
+
+    void UseTrivialGeometryShader() {
+        current.gs = 0;
     }
 
     void ApplyTo(OpenGLState& state) {

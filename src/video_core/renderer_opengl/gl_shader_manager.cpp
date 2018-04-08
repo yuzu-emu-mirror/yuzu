@@ -10,8 +10,8 @@
 namespace GLShader {
 
 namespace Impl {
-void SetShaderUniformBlockBinding(GLuint shader, const char* name, UniformBindings binding,
-                                  size_t expected_size) {
+void SetShaderUniformBlockBinding(GLuint shader, const char* name,
+                                  Maxwell3D::Regs::ShaderStage binding, size_t expected_size) {
     GLuint ub_index = glGetUniformBlockIndex(shader, name);
     if (ub_index != GL_INVALID_INDEX) {
         GLint ub_size = 0;
@@ -24,7 +24,12 @@ void SetShaderUniformBlockBinding(GLuint shader, const char* name, UniformBindin
 }
 
 void SetShaderUniformBlockBindings(GLuint shader) {
-    SetShaderUniformBlockBinding(shader, "vs_config", UniformBindings::VS, sizeof(VSUniformData));
+    SetShaderUniformBlockBinding(shader, "vs_config", Maxwell3D::Regs::ShaderStage::Vertex,
+                                 sizeof(MaxwellUniformData));
+    SetShaderUniformBlockBinding(shader, "gs_config", Maxwell3D::Regs::ShaderStage::Geometry,
+                                 sizeof(MaxwellUniformData));
+    SetShaderUniformBlockBinding(shader, "fs_config", Maxwell3D::Regs::ShaderStage::Fragment,
+                                 sizeof(MaxwellUniformData));
 }
 
 void SetShaderSamplerBindings(GLuint shader) {
@@ -40,7 +45,13 @@ void SetShaderSamplerBindings(GLuint shader) {
 
 } // namespace Impl
 
-void MaxwellUniformData::SetFromRegs() {
+void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {
+    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
+    for (unsigned index = 0; index < shader_stage.const_buffers.size(); ++index) {
+        const auto& const_buffer = shader_stage.const_buffers[index];
+        const VAddr vaddr = memory_manager->PhysicalToVirtualAddress(const_buffer.address);
+        Memory::ReadBlock(vaddr, const_buffers[index].data(), sizeof(ConstBuffer));
+    }
 }
 
 } // namespace GLShader
