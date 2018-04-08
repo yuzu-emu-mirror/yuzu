@@ -15,6 +15,7 @@
 #include "common/common_types.h"
 #include "common/hash.h"
 #include "common/vector_math.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
@@ -141,11 +142,9 @@ private:
     void AnalyzeVertexArray(bool is_indexed);
     void SetupVertexArray(u8* array_ptr, GLintptr buffer_offset);
 
-    OGLBuffer vs_uniform_buffer;
+    std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::MaxShaderStage> uniform_buffers;
 
-    void SetupVertexShader(GLShader::VSUniformData* ub_ptr, GLintptr buffer_offset);
-
-    void SetupFragmentShader(GLShader::FSUniformData* ub_ptr, GLintptr buffer_offset);
+    void SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size_t ptr_pos);
 
     enum class AccelDraw { Disabled, Arrays, Indexed };
     AccelDraw accelerate_draw;
