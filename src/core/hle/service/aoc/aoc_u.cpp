@@ -19,6 +19,7 @@ AOC_U::AOC_U() : ServiceFramework("aoc:u") {
         {5, nullptr, "GetAddOnContentBaseId"},
         {6, nullptr, "PrepareAddOnContentByApplicationId"},
         {7, nullptr, "PrepareAddOnContent"},
+        {8, nullptr, "GetAddOnContentListChangedEvent"},
     };
     RegisterHandlers(functions);
 }
