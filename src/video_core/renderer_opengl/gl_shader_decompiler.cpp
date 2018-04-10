@@ -17,6 +17,7 @@ using Tegra::Shader::Attribute;
 using Tegra::Shader::Instruction;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
+using Tegra::Shader::Sampler;
 using Tegra::Shader::SubOp;
 using Tegra::Shader::Uniform;
 
@@ -186,19 +187,28 @@ private:
     }
 
     /// Generates code representing a temporary (GPR) register.
-    std::string GetRegister(const Register& reg) {
-        if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg.GetIndex() < 4) {
+    std::string GetRegister(const Register& reg, unsigned elem = 0) {
+        if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
             // GPRs 0-3 are output color for the fragment shader
-            return std::string{"color."} + "rgba"[reg.GetIndex()];
+            return std::string{"color."} + "rgba"[reg + elem];
         }
 
-        return *declr_register.insert("register_" + std::to_string(reg)).first;
+        return *declr_register.insert("register_" + std::to_string(reg + elem)).first;
     }
 
     /// Generates code representing a uniform (C buffer) register.
     std::string GetUniform(const Uniform& reg) {
         declr_const_buffers[reg.index].MarkAsUsed(reg.index, reg.offset, stage);
         return 'c' + std::to_string(reg.index) + '[' + std::to_string(reg.offset) + ']';
+    }
+
+    /// Generates code representing a texture sampler.
+    std::string GetSampler(const Sampler& sampler) const {
+        // TODO(Subv): Support more than just texture sampler 0
+        ASSERT_MSG(sampler.index == Sampler::Index::Sampler_0, "unsupported");
+        const unsigned index{static_cast<unsigned>(sampler.index.Value()) -
+                             static_cast<unsigned>(Sampler::Index::Sampler_0)};
+        return "tex[" + std::to_string(index) + "]";
     }
 
     /**
@@ -245,7 +255,7 @@ private:
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
-            ASSERT(!instr.alu.abs_d);
+            ASSERT_MSG(!instr.alu.abs_d, "unimplemented");
 
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.alu.negate_a ? "-" : "";
@@ -330,13 +340,25 @@ private:
 
             switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::LD_A: {
-                ASSERT(instr.attribute.fmt20.size == 0);
+                ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 SetDest(instr.attribute.fmt20.element, gpr0, GetInputAttribute(attribute), 1, 4);
                 break;
             }
             case OpCode::Id::ST_A: {
-                ASSERT(instr.attribute.fmt20.size == 0);
+                ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 SetDest(instr.attribute.fmt20.element, GetOutputAttribute(attribute), gpr0, 4, 1);
+                break;
+            }
+            case OpCode::Id::TEXS: {
+                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
+                const std::string op_a = GetRegister(instr.gpr8);
+                const std::string op_b = GetRegister(instr.gpr20);
+                const std::string sampler = GetSampler(instr.sampler);
+                const std::string coord = "vec2(" + op_a + ", " + op_b + ")";
+                const std::string texture = "texture(" + sampler + ", " + coord + ")";
+                for (unsigned elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
+                    SetDest(elem, GetRegister(instr.gpr0, elem), texture, 1, 4);
+                }
                 break;
             }
             default: {
