@@ -222,7 +222,10 @@ union OpCode {
         info_table[Id::FMUL_R] = {Type::Arithmetic, "fmul_r"};
         info_table[Id::FMUL_C] = {Type::Arithmetic, "fmul_c"};
         info_table[Id::FMUL_IMM] = {Type::Arithmetic, "fmul_imm"};
+        info_table[Id::FSETP_C] = {Type::Arithmetic, "fsetp_c"};
+        info_table[Id::FSETP_R] = {Type::Arithmetic, "fsetp_r"};
         info_table[Id::EXIT] = {Type::Trivial, "exit"};
+        info_table[Id::KIL] = {Type::Flow, "kil"};
         return info_table;
     }
 
