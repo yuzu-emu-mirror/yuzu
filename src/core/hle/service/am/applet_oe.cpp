@@ -21,6 +21,7 @@ public:
             {2, &IApplicationProxy::GetWindowController, "GetWindowController"},
             {3, &IApplicationProxy::GetAudioController, "GetAudioController"},
             {4, &IApplicationProxy::GetDisplayController, "GetDisplayController"},
+            {10, nullptr, "GetProcessWindingController"},
             {11, &IApplicationProxy::GetLibraryAppletCreator, "GetLibraryAppletCreator"},
             {20, &IApplicationProxy::GetApplicationFunctions, "GetApplicationFunctions"},
             {1000, &IApplicationProxy::GetDebugFunctions, "GetDebugFunctions"},
