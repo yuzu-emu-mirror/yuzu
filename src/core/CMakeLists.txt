@@ -88,8 +88,14 @@ add_library(core STATIC
     hle/romfs.h
     hle/service/acc/acc.cpp
     hle/service/acc/acc.h
+    hle/service/acc/acc_aa.cpp
+    hle/service/acc/acc_aa.h
+    hle/service/acc/acc_su.cpp
+    hle/service/acc/acc_su.h
     hle/service/acc/acc_u0.cpp
     hle/service/acc/acc_u0.h
+    hle/service/acc/acc_u1.cpp
+    hle/service/acc/acc_u1.h
     hle/service/am/am.cpp
     hle/service/am/am.h
     hle/service/am/applet_ae.cpp
