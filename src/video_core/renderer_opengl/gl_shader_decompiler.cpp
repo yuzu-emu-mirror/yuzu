@@ -270,6 +270,17 @@ private:
                 SetDest(0, dest, op_a + " + " + op_b, 1, 1);
                 break;
             }
+            case OpCode::Id::MUFU: {
+                switch (instr.sub_op) {
+                case SubOp::Rcp:
+                    SetDest(0, dest, "1.0 / " + op_a, 1, 1);
+                    break;
+                default:
+                    LOG_ERROR(HW_GPU, "Unhandled sub op: 0x%02x", (int)instr.sub_op.Value());
+                    throw DecompileFail("Unhandled sub op");
+                }
+                break;
+            }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: 0x%02x (%s): 0x%08x",
                              static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
@@ -298,7 +309,6 @@ private:
                 SetDest(0, dest, op_a + " * " + op_b + " + " + op_c, 1, 1);
                 break;
             }
-
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled arithmetic FFMA instruction: 0x%02x (%s): 0x%08x",
                              static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
@@ -347,7 +357,6 @@ private:
                 LOG_CRITICAL(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
                              static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
                              OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                throw DecompileFail("Unhandled instruction");
                 break;
             }
             }
