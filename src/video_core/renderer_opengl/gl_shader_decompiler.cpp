@@ -187,6 +187,11 @@ private:
 
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg) {
+        if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg.GetIndex() < 4) {
+            // GPRs 0-3 are output color for the fragment shader
+            return std::string{"color."} + "rgba"[reg.GetIndex()];
+        }
+
         return *declr_register.insert("register_" + std::to_string(reg)).first;
     }
 
