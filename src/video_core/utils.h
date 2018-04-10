@@ -151,7 +151,7 @@ static inline void MortonCopyPixels128(u32 width, u32 height, u32 bytes_per_pixe
             const u32 coarse_y = y & ~127;
             u32 morton_offset =
                 GetMortonOffset128(x, y, bytes_per_pixel) + coarse_y * width * bytes_per_pixel;
-            u32 gl_pixel_index = (x + (height - 1 - y) * width) * gl_bytes_per_pixel;
+            u32 gl_pixel_index = (x + y * width) * gl_bytes_per_pixel;
 
             data_ptrs[morton_to_gl] = morton_data + morton_offset;
             data_ptrs[!morton_to_gl] = &gl_data[gl_pixel_index];
