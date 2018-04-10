@@ -265,6 +265,15 @@ enum class Pred : u64 {
     NeverExecute = 0xf,
 };
 
+enum class SubOp : u64 {
+    Cos = 0x0,
+    Sin = 0x1,
+    Ex2 = 0x2,
+    Lg2 = 0x3,
+    Rcp = 0x4,
+    Rsq = 0x5,
+};
+
 #pragma pack(1)
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
@@ -276,6 +285,7 @@ union Instruction {
     BitField<0, 8, Register> gpr1;
     BitField<8, 8, Register> gpr2;
     BitField<16, 4, Pred> pred;
+    BitField<20, 7, SubOp> sub_op;
     BitField<39, 8, Register> gpr3;
     BitField<45, 1, u64> nb;
     BitField<46, 1, u64> aa;
