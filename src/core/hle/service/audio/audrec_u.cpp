@@ -14,13 +14,15 @@ class IFinalOutputRecorder final : public ServiceFramework<IFinalOutputRecorder>
 public:
     IFinalOutputRecorder() : ServiceFramework("IFinalOutputRecorder") {
         static const FunctionInfo functions[] = {
-            {0x0, nullptr, "GetFinalOutputRecorderState"},
-            {0x1, nullptr, "StartFinalOutputRecorder"},
-            {0x2, nullptr, "StopFinalOutputRecorder"},
-            {0x3, nullptr, "AppendFinalOutputRecorderBuffer"},
-            {0x4, nullptr, "RegisterBufferEvent"},
-            {0x5, nullptr, "GetReleasedFinalOutputRecorderBuffer"},
-            {0x6, nullptr, "ContainsFinalOutputRecorderBuffer"},
+            {0, nullptr, "GetFinalOutputRecorderState"},
+            {1, nullptr, "StartFinalOutputRecorder"},
+            {2, nullptr, "StopFinalOutputRecorder"},
+            {3, nullptr, "AppendFinalOutputRecorderBuffer"},
+            {4, nullptr, "RegisterBufferEvent"},
+            {5, nullptr, "GetReleasedFinalOutputRecorderBuffer"},
+            {6, nullptr, "ContainsFinalOutputRecorderBuffer"},
+            {8, nullptr, "AppendFinalOutputRecorderBufferAuto"},
+            {9, nullptr, "GetReleasedFinalOutputRecorderBufferAuto"},
         };
         RegisterHandlers(functions);
     }
