@@ -128,8 +128,9 @@ private:
 class GLSLGenerator {
 public:
     GLSLGenerator(const std::set<Subroutine>& subroutines, const ProgramCode& program_code,
-                  u32 main_offset)
-        : subroutines(subroutines), program_code(program_code), main_offset(main_offset) {
+                  u32 main_offset, Maxwell3D::Regs::ShaderStage stage)
+        : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
+          stage(stage) {
 
         Generate();
     }
@@ -429,6 +430,7 @@ private:
     const std::set<Subroutine>& subroutines;
     const ProgramCode& program_code;
     const u32 main_offset;
+    Maxwell3D::Regs::ShaderStage stage;
 
     ShaderWriter shader;
     ShaderWriter declarations;
@@ -443,10 +445,11 @@ std::string GetCommonDeclarations() {
     return "bool exec_shader();";
 }
 
-boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset) {
+boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
+                                              Maxwell3D::Regs::ShaderStage stage) {
     try {
         auto subroutines = ControlFlowAnalyzer(program_code, main_offset).GetSubroutines();
-        GLSLGenerator generator(subroutines, program_code, main_offset);
+        GLSLGenerator generator(subroutines, program_code, main_offset, stage);
         return generator.GetShaderCode();
     } catch (const DecompileFail& exception) {
         LOG_ERROR(HW_GPU, "Shader decompilation failed: %s", exception.what());

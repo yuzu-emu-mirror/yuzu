@@ -7,14 +7,18 @@
 #include <string>
 #include <boost/optional.hpp>
 #include "common/common_types.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 
 namespace GLShader {
 namespace Decompiler {
 
+using Tegra::Engines::Maxwell3D;
+
 std::string GetCommonDeclarations();
 
-boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset);
+boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
+                                              Maxwell3D::Regs::ShaderStage stage);
 
 } // namespace Decompiler
 } // namespace GLShader
