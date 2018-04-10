@@ -56,15 +56,18 @@ union Attribute {
         Attribute_0 = 8,
     };
 
-    constexpr Index GetIndex() const {
-        return index;
-    }
+    union {
+        BitField<22, 2, u64> element;
+        BitField<24, 6, Index> index;
+        BitField<47, 3, u64> size;
+    } fmt20;
 
-public:
-    BitField<24, 6, Index> index;
-    BitField<22, 2, u64> element;
+    union {
+        BitField<30, 2, u64> element;
+        BitField<32, 6, Index> index;
+    } fmt28;
+
     BitField<39, 8, u64> reg;
-    BitField<47, 3, u64> size;
     u64 value;
 };
 
@@ -104,6 +107,7 @@ union OpCode {
     enum class Type {
         Trivial,
         Arithmetic,
+        Ffma,
         Flow,
         Memory,
         Unknown,
@@ -210,12 +214,11 @@ union OpCode {
         info_table[Id::TEXS] = {Type::Memory, "texs"};
         info_table[Id::LD_A] = {Type::Memory, "ld_a"};
         info_table[Id::ST_A] = {Type::Memory, "st_a"};
-        info_table[Id::IPA] = {Type::Arithmetic, "ipa"};
         info_table[Id::MUFU] = {Type::Arithmetic, "mufu"};
-        info_table[Id::FFMA_IMM] = {Type::Arithmetic, "ffma_imm"};
-        info_table[Id::FFMA_CR] = {Type::Arithmetic, "ffma_cr"};
-        info_table[Id::FFMA_RC] = {Type::Arithmetic, "ffma_rc"};
-        info_table[Id::FFMA_RR] = {Type::Arithmetic, "ffma_rr"};
+        info_table[Id::FFMA_IMM] = {Type::Ffma, "ffma_imm"};
+        info_table[Id::FFMA_CR] = {Type::Ffma, "ffma_cr"};
+        info_table[Id::FFMA_RC] = {Type::Ffma, "ffma_rc"};
+        info_table[Id::FFMA_RR] = {Type::Ffma, "ffma_rr"};
         info_table[Id::FADD_R] = {Type::Arithmetic, "fadd_r"};
         info_table[Id::FADD_C] = {Type::Arithmetic, "fadd_c"};
         info_table[Id::FADD_IMM] = {Type::Arithmetic, "fadd_imm"};
@@ -225,6 +228,7 @@ union OpCode {
         info_table[Id::FSETP_C] = {Type::Arithmetic, "fsetp_c"};
         info_table[Id::FSETP_R] = {Type::Arithmetic, "fsetp_r"};
         info_table[Id::EXIT] = {Type::Trivial, "exit"};
+        info_table[Id::IPA] = {Type::Trivial, "ipa"};
         info_table[Id::KIL] = {Type::Flow, "kil"};
         return info_table;
     }
@@ -285,16 +289,31 @@ union Instruction {
     }
 
     OpCode opcode;
-    BitField<0, 8, Register> gpr1;
-    BitField<8, 8, Register> gpr2;
+    BitField<0, 8, Register> gpr0;
+    BitField<8, 8, Register> gpr8;
     BitField<16, 4, Pred> pred;
+    BitField<20, 8, Register> gpr20;
     BitField<20, 7, SubOp> sub_op;
-    BitField<39, 8, Register> gpr3;
-    BitField<45, 1, u64> nb;
-    BitField<46, 1, u64> aa;
-    BitField<48, 1, u64> na;
-    BitField<49, 1, u64> ab;
-    BitField<50, 1, u64> ad;
+    BitField<28, 8, Register> gpr28;
+    BitField<36, 13, u64> imm36;
+    BitField<39, 8, Register> gpr39;
+
+    union {
+        BitField<45, 1, u64> negate_b;
+        BitField<46, 1, u64> abs_a;
+        BitField<48, 1, u64> negate_a;
+        BitField<49, 1, u64> abs_b;
+        BitField<50, 1, u64> abs_d;
+    } alu;
+
+    union {
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_c;
+    } ffma;
+
+    BitField<60, 1, u64> is_b_gpr;
+    BitField<59, 1, u64> is_c_gpr;
+
     Attribute attribute;
     Uniform uniform;
 

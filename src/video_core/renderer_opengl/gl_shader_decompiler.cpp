@@ -17,6 +17,7 @@ using Tegra::Shader::Attribute;
 using Tegra::Shader::Instruction;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
+using Tegra::Shader::SubOp;
 using Tegra::Shader::Uniform;
 
 constexpr u32 PROGRAM_END = MAX_PROGRAM_CODE_LENGTH;
@@ -235,27 +236,34 @@ private:
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
-            ASSERT(!instr.nb);
-            ASSERT(!instr.aa);
-            ASSERT(!instr.na);
-            ASSERT(!instr.ab);
-            ASSERT(!instr.ad);
+            ASSERT(!instr.alu.abs_d, "unimplemented");
 
-            std::string gpr1 = GetRegister(instr.gpr1);
-            std::string gpr2 = GetRegister(instr.gpr2);
-            std::string uniform = GetUniform(instr.uniform);
+            std::string dest = GetRegister(instr.gpr0);
+            std::string op_a = instr.alu.negate_a ? "-" : "";
+            op_a += GetRegister(instr.gpr8);
+            if (instr.alu.abs_a) {
+                op_a = "abs(" + op_a + ")";
+            }
+
+            std::string op_b = instr.alu.negate_b ? "-" : "";
+            if (instr.is_b_gpr) {
+                op_b += GetRegister(instr.gpr20);
+            } else {
+                op_b += GetUniform(instr.uniform);
+            }
+            if (instr.alu.abs_b) {
+                op_b = "abs(" + op_b + ")";
+            }
 
             switch (instr.opcode.EffectiveOpCode()) {
-            case OpCode::Id::FMUL_C: {
-                SetDest(0, gpr1, gpr2 + " * " + uniform, 1, 1);
+            case OpCode::Id::FMUL_C:
+            case OpCode::Id::FMUL_R: {
+                SetDest(0, dest, op_a + " * " + op_b, 1, 1);
                 break;
             }
-            case OpCode::Id::FADD_C: {
-                SetDest(0, gpr1, gpr2 + " + " + uniform, 1, 1);
-                break;
-            }
-            case OpCode::Id::FFMA_CR: {
-                SetDest(0, gpr1, gpr2 + " * " + uniform + " + " + GetRegister(instr.gpr3), 1, 1);
+            case OpCode::Id::FADD_C:
+            case OpCode::Id::FADD_R: {
+                SetDest(0, dest, op_a + " + " + op_b, 1, 1);
                 break;
             }
             default: {
@@ -268,19 +276,48 @@ private:
             }
             break;
         }
-        case OpCode::Type::Memory: {
-            ASSERT(instr.attribute.size == 0);
+        case OpCode::Type::Ffma: {
+            ASSERT_MSG(!instr.ffma.negate_b, "untested");
+            ASSERT_MSG(!instr.ffma.negate_c, "untested");
 
-            std::string gpr1 = GetRegister(instr.gpr1);
-            const Attribute::Index attribute = instr.attribute.GetIndex();
+            std::string dest = GetRegister(instr.gpr0);
+            std::string op_a = GetRegister(instr.gpr8);
+
+            std::string op_b = instr.ffma.negate_b ? "-" : "";
+            op_b += GetUniform(instr.uniform);
+
+            std::string op_c = instr.ffma.negate_c ? "-" : "";
+            op_c += GetRegister(instr.gpr39);
+
+            switch (instr.opcode.EffectiveOpCode()) {
+            case OpCode::Id::FFMA_CR: {
+                SetDest(0, dest, op_a + " * " + op_b + " + " + op_c, 1, 1);
+                break;
+            }
+
+            default: {
+                LOG_ERROR(HW_GPU, "Unhandled arithmetic FFMA instruction: 0x%02x (%s): 0x%08x",
+                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
+                          instr.hex);
+                throw DecompileFail("Unhandled instruction");
+                break;
+            }
+            }
+            break;
+        }
+        case OpCode::Type::Memory: {
+            std::string gpr0 = GetRegister(instr.gpr0);
+            const Attribute::Index attribute = instr.attribute.fmt20.index;
 
             switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::LD_A: {
-                SetDest(instr.attribute.element, gpr1, GetInputAttribute(attribute), 1, 4);
+                ASSERT(instr.attribute.fmt20.size == 0);
+                SetDest(instr.attribute.fmt20.element, gpr0, GetInputAttribute(attribute), 1, 4);
                 break;
             }
             case OpCode::Id::ST_A: {
-                SetDest(instr.attribute.element, GetOutputAttribute(attribute), gpr1, 4, 1);
+                ASSERT(instr.attribute.fmt20.size == 0);
+                SetDest(instr.attribute.fmt20.element, GetOutputAttribute(attribute), gpr0, 4, 1);
                 break;
             }
             default: {
