@@ -11,7 +11,7 @@
 namespace Service {
 namespace Friend {
 
-void Module::Interface::Unknown(Kernel::HLERequestContext& ctx) {
+void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
     LOG_WARNING(Service_Friend, "(STUBBED) called");
