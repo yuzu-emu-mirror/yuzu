@@ -25,15 +25,18 @@ class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
     IAudioOut() : ServiceFramework("IAudioOut"), audio_out_state(AudioState::Stopped) {
         static const FunctionInfo functions[] = {
-            {0x0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
-            {0x1, &IAudioOut::StartAudioOut, "StartAudioOut"},
-            {0x2, &IAudioOut::StopAudioOut, "StopAudioOut"},
-            {0x3, &IAudioOut::AppendAudioOutBuffer_1, "AppendAudioOutBuffer_1"},
-            {0x4, &IAudioOut::RegisterBufferEvent, "RegisterBufferEvent"},
-            {0x5, &IAudioOut::GetReleasedAudioOutBuffer_1, "GetReleasedAudioOutBuffer_1"},
-            {0x6, nullptr, "ContainsAudioOutBuffer"},
-            {0x7, nullptr, "AppendAudioOutBuffer_2"},
-            {0x8, nullptr, "GetReleasedAudioOutBuffer_2"},
+            {0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
+            {1, &IAudioOut::StartAudioOut, "StartAudioOut"},
+            {2, &IAudioOut::StopAudioOut, "StopAudioOut"},
+            {3, &IAudioOut::AppendAudioOutBuffer, "AppendAudioOutBuffer"},
+            {4, &IAudioOut::RegisterBufferEvent, "RegisterBufferEvent"},
+            {5, &IAudioOut::GetReleasedAudioOutBuffer, "GetReleasedAudioOutBuffer"},
+            {6, nullptr, "ContainsAudioOutBuffer"},
+            {7, nullptr, "AppendAudioOutBufferAuto"},
+            {8, nullptr, "GetReleasedAudioOutBufferAuto"},
+            {9, nullptr, "GetAudioOutBufferCount"},
+            {10, nullptr, "GetAudioOutPlayedSampleCount"},
+            {11, nullptr, "FlushAudioOutBuffers"},
         };
         RegisterHandlers(functions);
 
@@ -94,7 +97,7 @@ private:
         rb.PushCopyObjects(buffer_event);
     }
 
-    void AppendAudioOutBuffer_1(Kernel::HLERequestContext& ctx) {
+    void AppendAudioOutBuffer(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
@@ -105,7 +108,7 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
-    void GetReleasedAudioOutBuffer_1(Kernel::HLERequestContext& ctx) {
+    void GetReleasedAudioOutBuffer(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // TODO(st4rk): This is how libtransistor currently implements the
@@ -196,8 +199,8 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
     static const FunctionInfo functions[] = {{0x00000000, &AudOutU::ListAudioOuts, "ListAudioOuts"},
                                              {0x00000001, &AudOutU::OpenAudioOut, "OpenAudioOut"},
-                                             {0x00000002, nullptr, "Unknown2"},
-                                             {0x00000003, nullptr, "Unknown3"}};
+                                             {0x00000002, nullptr, "ListAudioOutsAuto"},
+                                             {0x00000003, nullptr, "OpenAudioOutAuto"}};
     RegisterHandlers(functions);
 }
 
