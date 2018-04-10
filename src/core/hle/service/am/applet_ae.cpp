@@ -21,6 +21,7 @@ public:
             {2, &ILibraryAppletProxy::GetWindowController, "GetWindowController"},
             {3, &ILibraryAppletProxy::GetAudioController, "GetAudioController"},
             {4, &ILibraryAppletProxy::GetDisplayController, "GetDisplayController"},
+            {10, nullptr, "GetProcessWindingController"},
             {11, &ILibraryAppletProxy::GetLibraryAppletCreator, "GetLibraryAppletCreator"},
             {20, &ILibraryAppletProxy::GetApplicationFunctions, "GetApplicationFunctions"},
             {1000, &ILibraryAppletProxy::GetDebugFunctions, "GetDebugFunctions"},
