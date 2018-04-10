@@ -14,15 +14,20 @@ class IAudioIn final : public ServiceFramework<IAudioIn> {
 public:
     IAudioIn() : ServiceFramework("IAudioIn") {
         static const FunctionInfo functions[] = {
-            {0x0, nullptr, "GetAudioInState"},
-            {0x1, nullptr, "StartAudioIn"},
-            {0x2, nullptr, "StopAudioIn"},
-            {0x3, nullptr, "AppendAudioInBuffer_1"},
-            {0x4, nullptr, "RegisterBufferEvent"},
-            {0x5, nullptr, "GetReleasedAudioInBuffer_1"},
-            {0x6, nullptr, "ContainsAudioInBuffer"},
-            {0x7, nullptr, "AppendAudioInBuffer_2"},
-            {0x8, nullptr, "GetReleasedAudioInBuffer_2"},
+            {0, nullptr, "GetAudioInState"},
+            {1, nullptr, "StartAudioIn"},
+            {2, nullptr, "StopAudioIn"},
+            {3, nullptr, "AppendAudioInBuffer"},
+            {4, nullptr, "RegisterBufferEvent"},
+            {5, nullptr, "GetReleasedAudioInBuffer"},
+            {6, nullptr, "ContainsAudioInBuffer"},
+            {7, nullptr, "AppendAudioInBufferWithUserEvent"},
+            {8, nullptr, "AppendAudioInBufferAuto"},
+            {9, nullptr, "GetReleasedAudioInBufferAuto"},
+            {10, nullptr, "AppendAudioInBufferWithUserEventAuto"},
+            {11, nullptr, "GetAudioInBufferCount"},
+            {12, nullptr, "SetAudioInDeviceGain"},
+            {13, nullptr, "GetAudioInDeviceGain"},
         };
         RegisterHandlers(functions);
     }
@@ -33,6 +38,8 @@ AudInU::AudInU() : ServiceFramework("audin:u") {
     static const FunctionInfo functions[] = {
         {0x00000000, nullptr, "ListAudioIns"},
         {0x00000001, nullptr, "OpenAudioIn"},
+        {0x00000003, nullptr, "OpenAudioInAuto"},
+        {0x00000004, nullptr, "ListAudioInsAuto"},
     };
     RegisterHandlers(functions);
 }
