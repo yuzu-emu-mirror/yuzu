@@ -109,7 +109,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {61, nullptr, "SetMediaPlaybackState"},
         {62, nullptr, "SetIdleTimeDetectionExtension"},
         {63, nullptr, "GetIdleTimeDetectionExtension"},
-        {64, nullptr, "SetInputDetectionSourceSet"}
+        {64, nullptr, "SetInputDetectionSourceSet"},
         {65, nullptr, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
         {67, nullptr, "IsIlluminanceAvailable"},

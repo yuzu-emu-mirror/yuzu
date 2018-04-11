@@ -22,12 +22,8 @@ public:
     IStorage(std::unique_ptr<FileSys::StorageBackend>&& backend)
         : ServiceFramework("IStorage"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
-            {0, &IStorage::Read, "Read"}, 
-            {1, nullptr, "Write"},   
-            {2, nullptr, "Flush"},
-            {3, nullptr, "SetSize"},      
-            {4, nullptr, "GetSize"},
-            {5, nullptr, "OperateRange"},
+            {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
+            {3, nullptr, "SetSize"},      {4, nullptr, "GetSize"}, {5, nullptr, "OperateRange"},
         };
         RegisterHandlers(functions);
     }
@@ -76,12 +72,9 @@ public:
     explicit IFile(std::unique_ptr<FileSys::StorageBackend>&& backend)
         : ServiceFramework("IFile"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
-            {0, &IFile::Read, "Read"},       
-            {1, &IFile::Write, "Write"},     
-            {2, nullptr, "Flush"},
-            {3, &IFile::SetSize, "SetSize"}, 
-            {4, &IFile::GetSize, "GetSize"},
-            {5, nullptr, "OperateRange"},
+            {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
+            {2, nullptr, "Flush"},           {3, &IFile::SetSize, "SetSize"},
+            {4, &IFile::GetSize, "GetSize"}, {5, nullptr, "OperateRange"},
         };
         RegisterHandlers(functions);
     }
