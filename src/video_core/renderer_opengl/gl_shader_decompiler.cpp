@@ -379,7 +379,18 @@ private:
                 offset = PROGRAM_END - 1;
                 break;
             }
+            case OpCode::Id::IPA: {
+                const auto& attribute = instr.attribute.fmt28;
 
+                if (attribute.index == Attribute::Index::Position) {
+                    LOG_CRITICAL(HW_GPU, "Unimplemented");
+                    break;
+                }
+
+                std::string dest = GetRegister(instr.gpr0);
+                SetDest(attribute.element, dest, GetInputAttribute(attribute.index), 1, 4);
+                break;
+            }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
                              static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
