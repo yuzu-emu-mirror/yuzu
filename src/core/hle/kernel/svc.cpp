@@ -815,6 +815,7 @@ struct FunctionDef {
 } // namespace
 
 static const FunctionDef SVC_Table[] = {
+    {0x00, nullptr, "Unknown"},
     {0x01, SvcWrap<SetHeapSize>, "SetHeapSize"},
     {0x02, nullptr, "SetMemoryPermission"},
     {0x03, SvcWrap<SetMemoryAttribute>, "SetMemoryAttribute"},
