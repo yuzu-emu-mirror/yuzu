@@ -36,6 +36,7 @@ SET::SET() : ServiceFramework("set") {
         {5, nullptr, "GetAvailableLanguageCodes2"},
         {6, nullptr, "GetAvailableLanguageCodeCount2"},
         {7, nullptr, "GetKeyCodeMap"},
+        {8, nullptr, "GetQuestFlag"},
     };
     RegisterHandlers(functions);
 }
