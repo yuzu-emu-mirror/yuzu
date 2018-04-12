@@ -13,6 +13,9 @@ class SSL final : public ServiceFramework<SSL> {
 public:
     explicit SSL();
     ~SSL() = default;
+
+private:
+    void CreateContext(Kernel::HLERequestContext& ctx);
 };
 
 /// Registers all SSL services with the specified service manager.
