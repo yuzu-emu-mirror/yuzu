@@ -9,9 +9,9 @@
 namespace Service {
 namespace Account {
 
-class ACC_U0 final : public Module::Interface {
+class ACC_U1 final : public Module::Interface {
 public:
-    explicit ACC_U0(std::shared_ptr<Module> module);
+    explicit ACC_U1(std::shared_ptr<Module> module);
 };
 
 } // namespace Account

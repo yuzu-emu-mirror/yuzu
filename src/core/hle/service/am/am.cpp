@@ -19,8 +19,11 @@ namespace AM {
 
 IWindowController::IWindowController() : ServiceFramework("IWindowController") {
     static const FunctionInfo functions[] = {
+        {0, nullptr, "CreateWindow"},
         {1, &IWindowController::GetAppletResourceUserId, "GetAppletResourceUserId"},
         {10, &IWindowController::AcquireForegroundRights, "AcquireForegroundRights"},
+        {11, nullptr, "ReleaseForegroundRights"},
+        {12, nullptr, "RejectToChangeIntoBackground"},
     };
     RegisterHandlers(functions);
 }
@@ -78,8 +81,11 @@ IDebugFunctions::IDebugFunctions() : ServiceFramework("IDebugFunctions") {}
 ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
     : ServiceFramework("ISelfController"), nvflinger(std::move(nvflinger)) {
     static const FunctionInfo functions[] = {
+        {0, nullptr, "Exit"},
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
+        {3, nullptr, "EnterFatalSection"},
+        {4, nullptr, "LeaveFatalSection"},
         {9, &ISelfController::GetLibraryAppletLaunchableEvent, "GetLibraryAppletLaunchableEvent"},
         {10, &ISelfController::SetScreenShotPermission, "SetScreenShotPermission"},
         {11, &ISelfController::SetOperationModeChangedNotification,
@@ -88,8 +94,29 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
          "SetPerformanceModeChangedNotification"},
         {13, &ISelfController::SetFocusHandlingMode, "SetFocusHandlingMode"},
         {14, &ISelfController::SetRestartMessageEnabled, "SetRestartMessageEnabled"},
+        {15, nullptr, "SetScreenShotAppletIdentityInfo"},
         {16, &ISelfController::SetOutOfFocusSuspendingEnabled, "SetOutOfFocusSuspendingEnabled"},
+        {17, nullptr, "SetControllerFirmwareUpdateSection"},
+        {18, nullptr, "SetRequiresCaptureButtonShortPressedMessage"},
+        {19, nullptr, "SetScreenShotImageOrientation"},
+        {20, nullptr, "SetDesirableKeyboardLayout"},
         {40, &ISelfController::CreateManagedDisplayLayer, "CreateManagedDisplayLayer"},
+        {41, nullptr, "IsSystemBufferSharingEnabled"},
+        {42, nullptr, "GetSystemSharedLayerHandle"},
+        {50, nullptr, "SetHandlesRequestToDisplay"},
+        {51, nullptr, "ApproveToDisplay"},
+        {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
+        {61, nullptr, "SetMediaPlaybackState"},
+        {62, nullptr, "SetIdleTimeDetectionExtension"},
+        {63, nullptr, "GetIdleTimeDetectionExtension"},
+        {64, nullptr, "SetInputDetectionSourceSet"},
+        {65, nullptr, "ReportUserIsActive"},
+        {66, nullptr, "GetCurrentIlluminance"},
+        {67, nullptr, "IsIlluminanceAvailable"},
+        {68, nullptr, "SetAutoSleepDisabled"},
+        {69, nullptr, "IsAutoSleepDisabled"},
+        {70, nullptr, "ReportMultimediaError"},
+        {80, nullptr, "SetWirelessPriorityMode"},
     };
     RegisterHandlers(functions);
 
@@ -206,9 +233,30 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
     static const FunctionInfo functions[] = {
         {0, &ICommonStateGetter::GetEventHandle, "GetEventHandle"},
         {1, &ICommonStateGetter::ReceiveMessage, "ReceiveMessage"},
+        {2, nullptr, "GetThisAppletKind"},
+        {3, nullptr, "AllowToEnterSleep"},
+        {4, nullptr, "DisallowToEnterSleep"},
         {5, &ICommonStateGetter::GetOperationMode, "GetOperationMode"},
         {6, &ICommonStateGetter::GetPerformanceMode, "GetPerformanceMode"},
+        {7, nullptr, "GetCradleStatus"},
+        {8, nullptr, "GetBootMode"},
         {9, &ICommonStateGetter::GetCurrentFocusState, "GetCurrentFocusState"},
+        {10, nullptr, "RequestToAcquireSleepLock"},
+        {11, nullptr, "ReleaseSleepLock"},
+        {12, nullptr, "ReleaseSleepLockTransiently"},
+        {13, nullptr, "GetAcquiredSleepLockEvent"},
+        {20, nullptr, "PushToGeneralChannel"},
+        {30, nullptr, "GetHomeButtonReaderLockAccessor"},
+        {31, nullptr, "GetReaderLockAccessorEx"},
+        {40, nullptr, "GetCradleFwVersion"},
+        {50, nullptr, "IsVrModeEnabled"},
+        {51, nullptr, "SetVrModeEnabled"},
+        {52, nullptr, "SwitchLcdBacklight"},
+        {55, nullptr, "IsInControllerFirmwareUpdateSection"},
+        {60, nullptr, "GetDefaultDisplayResolution"},
+        {61, nullptr, "GetDefaultDisplayResolutionChangeEvent"},
+        {62, nullptr, "GetHdcpAuthenticationState"},
+        {63, nullptr, "GetHdcpAuthenticationStateChangeEvent"},
     };
     RegisterHandlers(functions);
 
@@ -278,7 +326,7 @@ public:
             {104, nullptr, "PopInteractiveOutData"},
             {105, nullptr, "GetPopOutDataEvent"},
             {106, nullptr, "GetPopInteractiveOutDataEvent"},
-            {120, nullptr, "NeedsToExitProcess"},
+            {110, nullptr, "NeedsToExitProcess"},
             {120, nullptr, "GetLibraryAppletInfo"},
             {150, nullptr, "RequestForAppletToGetForeground"},
             {160, nullptr, "GetIndirectLayerConsumerHandle"},
@@ -330,6 +378,7 @@ public:
         : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
             {0, &IStorageAccessor::GetSize, "GetSize"},
+            {10, nullptr, "Write"},
             {11, &IStorageAccessor::Read, "Read"},
         };
         RegisterHandlers(functions);
@@ -372,6 +421,7 @@ public:
         : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Open, "Open"},
+            {1, nullptr, "OpenTransferStorage"},
         };
         RegisterHandlers(functions);
     }
@@ -392,12 +442,42 @@ private:
 IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
     static const FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
+        {10, nullptr, "CreateApplicationAndPushAndRequestToStart"},
+        {11, nullptr, "CreateApplicationAndPushAndRequestToStartForQuest"},
+        {12, nullptr, "CreateApplicationAndRequestToStart"},
+        {13, nullptr, "CreateApplicationAndRequestToStartForQuest"},
         {20, &IApplicationFunctions::EnsureSaveData, "EnsureSaveData"},
         {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
+        {23, nullptr, "GetDisplayVersion"},
+        {24, nullptr, "GetLaunchStorageInfoForDebug"},
+        {25, nullptr, "ExtendSaveData"},
+        {26, nullptr, "GetSaveDataSize"},
+        {30, nullptr, "BeginBlockingHomeButtonShortAndLongPressed"},
+        {31, nullptr, "EndBlockingHomeButtonShortAndLongPressed"},
+        {32, nullptr, "BeginBlockingHomeButton"},
+        {33, nullptr, "EndBlockingHomeButton"},
+        {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
+        {50, nullptr, "GetPseudoDeviceId"},
+        {60, nullptr, "SetMediaPlaybackStateForApplication"},
+        {65, nullptr, "IsGamePlayRecordingSupported"},
         {66, &IApplicationFunctions::InitializeGamePlayRecording, "InitializeGamePlayRecording"},
         {67, &IApplicationFunctions::SetGamePlayRecordingState, "SetGamePlayRecordingState"},
-        {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
+        {68, nullptr, "RequestFlushGamePlayingMovieForDebug"},
+        {70, nullptr, "RequestToShutdown"},
+        {71, nullptr, "RequestToReboot"},
+        {80, nullptr, "ExitAndRequestToShowThanksMessage"},
+        {90, nullptr, "EnableApplicationCrashReport"},
+        {100, nullptr, "InitializeApplicationCopyrightFrameBuffer"},
+        {101, nullptr, "SetApplicationCopyrightImage"},
+        {102, nullptr, "SetApplicationCopyrightVisibility"},
+        {110, nullptr, "QueryApplicationPlayStatistics"},
+        {120, nullptr, "ExecuteProgram"},
+        {121, nullptr, "ClearUserChannel"},
+        {122, nullptr, "UnpopToUserChannel"},
+        {500, nullptr, "StartContinuousRecordingFlushForDebug"},
+        {1000, nullptr, "CreateMovieMaker"},
+        {1001, nullptr, "PrepareForJit"},
     };
     RegisterHandlers(functions);
 }
