@@ -13,8 +13,10 @@ namespace Tegra {
 namespace Texture {
 
 enum class TextureFormat : u32 {
-    A8R8G8B8 = 8,
+    A8R8G8B8 = 0x8,
     DXT1 = 0x24,
+    DXT23 = 0x25,
+    DXT45 = 0x26,
 };
 
 enum class TextureType : u32 {
