@@ -248,6 +248,12 @@ public:
             Patches = 0xe,
         };
 
+        enum class IndexFormat : u32 {
+            UnsignedByte = 0x0,
+            UnsignedShort = 0x1,
+            UnsignedInt = 0x2,
+        };
+
         union {
             struct {
                 INSERT_PADDING_WORDS(0x200);
@@ -375,7 +381,42 @@ public:
                     };
                 } draw;
 
-                INSERT_PADDING_WORDS(0x139);
+                INSERT_PADDING_WORDS(0x6B);
+
+                struct {
+                    u32 start_addr_high;
+                    u32 start_addr_low;
+                    u32 end_addr_high;
+                    u32 end_addr_low;
+                    IndexFormat format;
+                    u32 first;
+                    u32 count;
+
+                    unsigned FormatSizeInBytes() const {
+                        switch (format) {
+                        case IndexFormat::UnsignedByte:
+                            return 1;
+                        case IndexFormat::UnsignedShort:
+                            return 2;
+                        case IndexFormat::UnsignedInt:
+                            return 4;
+                        }
+                        UNREACHABLE();
+                    }
+
+                    GPUVAddr StartAddress() const {
+                        return static_cast<GPUVAddr>(
+                            (static_cast<GPUVAddr>(start_addr_high) << 32) | start_addr_low);
+                    }
+
+                    GPUVAddr EndAddress() const {
+                        return static_cast<GPUVAddr>((static_cast<GPUVAddr>(end_addr_high) << 32) |
+                                                     end_addr_low);
+                    }
+                } index_array;
+
+                INSERT_PADDING_WORDS(0xC7);
+
                 struct {
                     u32 query_address_high;
                     u32 query_address_low;
@@ -572,6 +613,7 @@ ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
+ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);

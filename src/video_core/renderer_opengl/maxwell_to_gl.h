@@ -45,6 +45,20 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
     return {};
 }
 
+inline GLenum IndexFormat(Maxwell::IndexFormat index_format) {
+    switch (index_format) {
+    case Maxwell::IndexFormat::UnsignedByte:
+        return GL_UNSIGNED_BYTE;
+    case Maxwell::IndexFormat::UnsignedShort:
+        return GL_UNSIGNED_SHORT;
+    case Maxwell::IndexFormat::UnsignedInt:
+        return GL_UNSIGNED_INT;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented index_format=%d", index_format);
+    UNREACHABLE();
+    return {};
+}
+
 inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     switch (topology) {
     case Maxwell::PrimitiveTopology::Triangles:
@@ -52,7 +66,7 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     case Maxwell::PrimitiveTopology::TriangleStrip:
         return GL_TRIANGLE_STRIP;
     }
-    LOG_CRITICAL(Render_OpenGL, "Unimplemented primitive topology=%d", topology);
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented topology=%d", topology);
     UNREACHABLE();
     return {};
 }

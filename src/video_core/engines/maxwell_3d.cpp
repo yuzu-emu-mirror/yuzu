@@ -165,6 +165,7 @@ void Maxwell3D::ProcessQueryGet() {
 void Maxwell3D::DrawArrays() {
     LOG_DEBUG(HW_GPU, "called, topology=%d, count=%d", regs.draw.topology.Value(),
               regs.vertex_buffer.count);
+    ASSERT_MSG(!(regs.index_array.count && regs.vertex_buffer.count), "Both indexed and direct?");
 
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
 
@@ -176,7 +177,8 @@ void Maxwell3D::DrawArrays() {
         debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
     }
 
-    VideoCore::g_renderer->Rasterizer()->AccelerateDrawBatch(false /*is_indexed*/);
+    const bool is_indexed{regs.index_array.count && !regs.vertex_buffer.count};
+    VideoCore::g_renderer->Rasterizer()->AccelerateDrawBatch(is_indexed);
 }
 
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
