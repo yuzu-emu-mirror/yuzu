@@ -96,7 +96,14 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
         {2, &NVDRV::Close, "Close"},
         {3, &NVDRV::Initialize, "Initialize"},
         {4, &NVDRV::QueryEvent, "QueryEvent"},
+        {5, nullptr, "MapSharedMem"},
+        {6, nullptr, "GetStatus"},
+        {7, nullptr, "ForceSetClientPID"},
         {8, &NVDRV::SetClientPID, "SetClientPID"},
+        {9, nullptr, "DumpGraphicsMemoryInfo"},
+        {10, nullptr, "InitializeDevtools"},
+        {11, nullptr, "Ioctl2"},
+        {12, nullptr, "Ioctl3"},
         {13, &NVDRV::FinishInitialize, "FinishInitialize"},
     };
     RegisterHandlers(functions);

@@ -10,7 +10,8 @@ namespace Friend {
 Friend_U::Friend_U(std::shared_ptr<Module> module)
     : Module::Interface(std::move(module), "friend:u") {
     static const FunctionInfo functions[] = {
-        {0, &Friend_U::Unknown, "Unknown"},
+        {0, &Friend_U::CreateFriendService, "CreateFriendService"},
+        {1, nullptr, "CreateNotificationService"},
     };
     RegisterHandlers(functions);
 }

@@ -19,16 +19,18 @@ class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
     IAudioRenderer() : ServiceFramework("IAudioRenderer") {
         static const FunctionInfo functions[] = {
-            {0x0, nullptr, "GetAudioRendererSampleRate"},
-            {0x1, nullptr, "GetAudioRendererSampleCount"},
-            {0x2, nullptr, "GetAudioRendererMixBufferCount"},
-            {0x3, nullptr, "GetAudioRendererState"},
-            {0x4, &IAudioRenderer::RequestUpdateAudioRenderer, "RequestUpdateAudioRenderer"},
-            {0x5, &IAudioRenderer::StartAudioRenderer, "StartAudioRenderer"},
-            {0x6, &IAudioRenderer::StopAudioRenderer, "StopAudioRenderer"},
-            {0x7, &IAudioRenderer::QuerySystemEvent, "QuerySystemEvent"},
-            {0x8, nullptr, "SetAudioRendererRenderingTimeLimit"},
-            {0x9, nullptr, "GetAudioRendererRenderingTimeLimit"},
+            {0, nullptr, "GetAudioRendererSampleRate"},
+            {1, nullptr, "GetAudioRendererSampleCount"},
+            {2, nullptr, "GetAudioRendererMixBufferCount"},
+            {3, nullptr, "GetAudioRendererState"},
+            {4, &IAudioRenderer::RequestUpdateAudioRenderer, "RequestUpdateAudioRenderer"},
+            {5, &IAudioRenderer::StartAudioRenderer, "StartAudioRenderer"},
+            {6, &IAudioRenderer::StopAudioRenderer, "StopAudioRenderer"},
+            {7, &IAudioRenderer::QuerySystemEvent, "QuerySystemEvent"},
+            {8, nullptr, "SetAudioRendererRenderingTimeLimit"},
+            {9, nullptr, "GetAudioRendererRenderingTimeLimit"},
+            {10, nullptr, "RequestUpdateAudioRendererAuto"},
+            {11, nullptr, "ExecuteAudioRendererRendering"},
         };
         RegisterHandlers(functions);
 
@@ -237,6 +239,8 @@ AudRenU::AudRenU() : ServiceFramework("audren:u") {
         {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
         {1, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
         {2, &AudRenU::GetAudioDevice, "GetAudioDevice"},
+        {3, nullptr, "OpenAudioRendererAuto"},
+        {4, nullptr, "GetAudioDeviceServiceWithRevisionInfo"},
     };
     RegisterHandlers(functions);
 }

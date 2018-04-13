@@ -15,7 +15,7 @@ public:
     ~PCTL_A() = default;
 
 private:
-    void GetService(Kernel::HLERequestContext& ctx);
+    void CreateService(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace PCTL

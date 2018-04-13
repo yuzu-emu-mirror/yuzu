@@ -37,7 +37,9 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
         {1, &PL_U::GetLoadState, "GetLoadState"},
         {2, &PL_U::GetSize, "GetSize"},
         {3, &PL_U::GetSharedMemoryAddressOffset, "GetSharedMemoryAddressOffset"},
-        {4, &PL_U::GetSharedMemoryNativeHandle, "GetSharedMemoryNativeHandle"}};
+        {4, &PL_U::GetSharedMemoryNativeHandle, "GetSharedMemoryNativeHandle"},
+        {5, nullptr, "GetSharedFontInOrderOfPriority"},
+    };
     RegisterHandlers(functions);
 
     // Attempt to load shared font data from disk
