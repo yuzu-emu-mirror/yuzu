@@ -32,6 +32,15 @@ SET_CAL::SET_CAL() : ServiceFramework("set:cal") {
         {21, nullptr, "GetEticketDeviceKey"},
         {22, nullptr, "GetSpeakerParameter"},
         {23, nullptr, "GetLcdVendorId"},
+        {24, nullptr, "GetEciDeviceCertificate2"},
+        {25, nullptr, "GetEciDeviceKey2"},
+        {26, nullptr, "GetAmiiboKey"},
+        {27, nullptr, "GetAmiiboEcqvCertificate"},
+        {28, nullptr, "GetAmiiboEcdsaCertificate"},
+        {29, nullptr, "GetAmiiboEcqvBlsKey"},
+        {30, nullptr, "GetAmiiboEcqvBlsCertificate"},
+        {31, nullptr, "GetAmiiboEcqvBlsRootCertificate"},
+        {32, nullptr, "GetUnknownId"},
     };
     RegisterHandlers(functions);
 }
