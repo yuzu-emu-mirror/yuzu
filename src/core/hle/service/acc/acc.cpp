@@ -38,7 +38,10 @@ class IProfile final : public ServiceFramework<IProfile> {
 public:
     IProfile() : ServiceFramework("IProfile") {
         static const FunctionInfo functions[] = {
+            {0, nullptr, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
+            {10, nullptr, "GetImageSize"},
+            {11, nullptr, "LoadImage"},
         };
         RegisterHandlers(functions);
     }
@@ -59,6 +62,11 @@ public:
         static const FunctionInfo functions[] = {
             {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
             {1, &IManagerForApplication::GetAccountId, "GetAccountId"},
+            {2, nullptr, "EnsureIdTokenCacheAsync"},
+            {3, nullptr, "LoadIdTokenCache"},
+            {130, nullptr, "GetNintendoAccountUserResourceCacheForApplication"},
+            {150, nullptr, "CreateAuthorizationRequest"},
+            {160, nullptr, "StoreOpenContext"},
         };
         RegisterHandlers(functions);
     }
