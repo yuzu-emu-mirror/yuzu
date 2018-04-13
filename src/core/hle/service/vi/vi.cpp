@@ -717,7 +717,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
         rb.Push(RESULT_SUCCESS);
 
         if (Settings::values.use_docked_mode) {
