@@ -236,7 +236,7 @@ private:
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
-            ASSERT(!instr.alu.abs_d, "unimplemented");
+            ASSERT(!instr.alu.abs_d);
 
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.alu.negate_a ? "-" : "";

@@ -12,7 +12,7 @@ namespace Tegra {
 namespace Shader {
 
 struct Register {
-    constexpr Register() = default;
+    Register() = default;
 
     constexpr Register(u64 value) : value(value) {}
 
@@ -47,7 +47,7 @@ private:
 };
 
 union Attribute {
-    constexpr Attribute() = default;
+    Attribute() = default;
 
     constexpr Attribute(u64 value) : value(value) {}
 
@@ -118,7 +118,7 @@ union OpCode {
         std::string name;
     };
 
-    constexpr OpCode() = default;
+    OpCode() = default;
 
     constexpr OpCode(Id value) : value(static_cast<u64>(value)) {}
 

@@ -131,7 +131,7 @@ public:
     }
 
     template <typename... T>
-    void Create(bool separable_program = false, T... shaders) {
+    void Create(bool separable_program, T... shaders) {
         if (handle != 0)
             return;
         handle = GLShader::LoadProgram(separable_program, shaders...);
