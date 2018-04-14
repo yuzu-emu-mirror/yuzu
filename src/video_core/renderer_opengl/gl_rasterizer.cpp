@@ -46,6 +46,14 @@ RasterizerOpenGL::RasterizerOpenGL() {
         state.texture_units[i].sampler = texture_samplers[i].sampler.handle;
     }
 
+    // Create SSBOs
+    for (size_t stage = 0; stage < ssbos.size(); ++stage) {
+        for (size_t buffer = 0; buffer < ssbos[stage].size(); ++buffer) {
+            ssbos[stage][buffer].Create();
+            state.draw.const_buffers[stage][buffer].ssbo = ssbos[stage][buffer].handle;
+        }
+    }
+
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
