@@ -776,9 +776,11 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
         return;
     }
 
-    UISettings::values.geometry = saveGeometry();
+    if (ui.action_Fullscreen->isChecked()) {
+        UISettings::values.geometry = saveGeometry();
+        UISettings::values.renderwindow_geometry = render_window->saveGeometry();
+    }
     UISettings::values.state = saveState();
-    UISettings::values.renderwindow_geometry = render_window->saveGeometry();
 #if MICROPROFILE_ENABLED
     UISettings::values.microprofile_geometry = microProfileDialog->saveGeometry();
     UISettings::values.microprofile_visible = microProfileDialog->isVisible();
