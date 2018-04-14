@@ -191,8 +191,9 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         auto& shader_config = gpu.regs.shader_config[index];
         const Maxwell::ShaderProgram program{static_cast<Maxwell::ShaderProgram>(index)};
 
-        // VertexB program is always enabled, despite bit setting
-        const bool is_enabled{shader_config.enable || program == Maxwell::ShaderProgram::VertexB};
+        const auto& stage = index - 1; // Stage indices are 0 - 5
+
+        const bool is_enabled = gpu.IsShaderStageEnabled(static_cast<Maxwell::ShaderStage>(stage));
 
         // Skip stages that are not enabled
         if (!is_enabled) {
@@ -200,7 +201,6 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         }
 
         // Upload uniform data as one UBO per stage
-        const auto& stage = index - 1; // Stage indices are 0 - 5
         const GLintptr ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
         copy_buffer(uniform_buffers[stage].handle, ubo_offset,
                     sizeof(GLShader::MaxwellUniformData));
