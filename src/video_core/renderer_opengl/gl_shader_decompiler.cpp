@@ -158,7 +158,7 @@ private:
             return "input_attribute_" + std::to_string(index);
         }
 
-        LOG_ERROR(HW_GPU, "Unhandled input attribute: 0x%02x", index);
+        LOG_CRITICAL(HW_GPU, "Unhandled input attribute: 0x%02x", index);
         UNREACHABLE();
     }
 
@@ -175,7 +175,7 @@ private:
                 return "output_attribute_" + std::to_string(index);
             }
 
-            LOG_ERROR(HW_GPU, "Unhandled output attribute: 0x%02x", index);
+            LOG_CRITICAL(HW_GPU, "Unhandled output attribute: 0x%02x", index);
             UNREACHABLE();
         }
     }
@@ -267,9 +267,9 @@ private:
                 break;
             }
             default: {
-                LOG_ERROR(HW_GPU, "Unhandled arithmetic instruction: 0x%02x (%s): 0x%08x",
-                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
-                          instr.hex);
+                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: 0x%02x (%s): 0x%08x",
+                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
                 throw DecompileFail("Unhandled instruction");
                 break;
             }
@@ -296,9 +296,9 @@ private:
             }
 
             default: {
-                LOG_ERROR(HW_GPU, "Unhandled arithmetic FFMA instruction: 0x%02x (%s): 0x%08x",
-                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
-                          instr.hex);
+                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic FFMA instruction: 0x%02x (%s): 0x%08x",
+                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
                 throw DecompileFail("Unhandled instruction");
                 break;
             }
@@ -321,9 +321,9 @@ private:
                 break;
             }
             default: {
-                LOG_ERROR(HW_GPU, "Unhandled memory instruction: 0x%02x (%s): 0x%08x",
-                          (int)instr.opcode.EffectiveOpCode(), OpCode::GetInfo(instr.opcode).name,
-                          instr.hex);
+                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: 0x%02x (%s): 0x%08x",
+                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
                 throw DecompileFail("Unhandled instruction");
                 break;
             }
@@ -340,10 +340,10 @@ private:
             }
 
             default: {
-                LOG_ERROR(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
-                          (int)instr.opcode.EffectiveOpCode(),
-                          OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                // throw DecompileFail("Unhandled instruction");
+                LOG_CRITICAL(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
+                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
+                throw DecompileFail("Unhandled instruction");
                 break;
             }
             }
