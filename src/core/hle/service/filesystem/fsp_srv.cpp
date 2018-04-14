@@ -73,7 +73,7 @@ public:
         : ServiceFramework("IFile"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
-            {2, nullptr, "Flush"},           {3, &IFile::SetSize, "SetSize"},
+            {2, &IFile::Flush, "Flush"},     {3, &IFile::SetSize, "SetSize"},
             {4, &IFile::GetSize, "GetSize"}, {5, nullptr, "OperateRange"},
         };
         RegisterHandlers(functions);
@@ -147,6 +147,14 @@ private:
             rb.Push(res.Code());
             return;
         }
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void Flush(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_FS, "called");
+        backend->Flush();
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
