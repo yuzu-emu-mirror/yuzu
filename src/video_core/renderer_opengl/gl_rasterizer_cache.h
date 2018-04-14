@@ -52,8 +52,17 @@ enum class ScaleMatch {
 
 struct SurfaceParams {
     enum class PixelFormat {
+        // Texture and color buffer formats
         RGBA8 = 0,
-        DXT1 = 1,
+        RGB5A1 = 1,
+        RGB565 = 2,
+        RG11FB10F = 3,
+
+        // Compressed Texture formats
+        BC1 = 4,
+        BC2 = 5,
+        BC3 = 6,
+
         Invalid = 255,
     };
 
@@ -70,9 +79,14 @@ struct SurfaceParams {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        constexpr std::array<unsigned int, 2> bpp_table = {
-            32, // RGBA8
-            64, // DXT1
+        constexpr std::array<unsigned int, 7> bpp_table = {
+            32,  // RGBA8
+            16,  // RGB5A1
+            16,  // RGB565
+            32,  // RG11FB10F
+            64,  // BC1
+            128, // BC2
+            128, // BC3
         };
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -107,8 +121,12 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::Texture::TextureFormat::A8R8G8B8:
             return PixelFormat::RGBA8;
-        case Tegra::Texture::TextureFormat::DXT1:
-            return PixelFormat::DXT1;
+        case Tegra::Texture::TextureFormat::BC1:
+            return PixelFormat::BC1;
+        case Tegra::Texture::TextureFormat::BC2:
+            return PixelFormat::BC2;
+        case Tegra::Texture::TextureFormat::BC3:
+            return PixelFormat::BC3;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -140,7 +158,7 @@ struct SurfaceParams {
             return SurfaceType::Color;
         }
 
-        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::DXT1)) {
+        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::BC3)) {
             return SurfaceType::Texture;
         }
 
@@ -213,6 +231,7 @@ struct SurfaceParams {
     u32 width = 0;
     u32 height = 0;
     u32 stride = 0;
+    u32 block_height = 0;
     u16 res_scale = 1;
 
     bool is_tiled = false;
