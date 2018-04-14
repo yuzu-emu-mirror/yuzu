@@ -234,7 +234,7 @@ struct SurfaceParams {
     u32 block_height = 0;
     u16 res_scale = 1;
 
-    bool is_tiled = false;
+    bool is_tiled = true;
     PixelFormat pixel_format = PixelFormat::Invalid;
     SurfaceType type = SurfaceType::Invalid;
 };

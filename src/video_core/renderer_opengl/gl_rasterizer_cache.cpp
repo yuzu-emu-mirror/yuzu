@@ -512,13 +512,9 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     if (!is_tiled) {
         ASSERT(type == SurfaceType::Color);
         const u32 bytes_per_pixel{GetFormatBpp() >> 3};
+        std::memcpy(&gl_buffer[start_offset], texture_src_data + start_offset,
+                    bytes_per_pixel * width * height);
 
-        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
-        // the configuration for this and perform more generic un/swizzle
-        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-        VideoCore::MortonCopyPixels128(width, height, bytes_per_pixel, 4,
-                                       texture_src_data + start_offset, &gl_buffer[start_offset],
-                                       true);
     } else {
         morton_to_gl_fns[static_cast<size_t>(pixel_format)](
             stride, height, block_height, &gl_buffer[0], addr, load_start, load_end);
