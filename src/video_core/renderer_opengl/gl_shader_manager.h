@@ -30,11 +30,10 @@ void SetShaderSamplerBindings(GLuint shader);
 //       Not following that rule will cause problems on some AMD drivers.
 struct MaxwellUniformData {
     void SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage);
-
-    using ConstBuffer = std::array<GLvec4, 4>;
-    alignas(16) std::array<ConstBuffer, Maxwell3D::Regs::MaxConstBuffers> const_buffers;
+    // TODO(Subv): Use this for something.
 };
-static_assert(sizeof(MaxwellUniformData) == 1024, "MaxwellUniformData structure size is incorrect");
+// static_assert(sizeof(MaxwellUniformData) == 1024, "MaxwellUniformData structure size is
+// incorrect");
 static_assert(sizeof(MaxwellUniformData) < 16384,
               "MaxwellUniformData structure must be less than 16kb as per the OpenGL spec");
 
