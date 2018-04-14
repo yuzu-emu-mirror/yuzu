@@ -74,8 +74,6 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
 
     regs.reg_array[method] = value;
 
-#define MAXWELL3D_REG_INDEX(field_name) (offsetof(Regs, field_name) / sizeof(u32))
-
     switch (method) {
     case MAXWELL3D_REG_INDEX(code_address.code_address_high):
     case MAXWELL3D_REG_INDEX(code_address.code_address_low): {
@@ -136,7 +134,7 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         break;
     }
 
-#undef MAXWELL3D_REG_INDEX
+    VideoCore::g_renderer->Rasterizer()->NotifyMaxwellRegisterChanged(method);
 
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed, nullptr);
