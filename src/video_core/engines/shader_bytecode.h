@@ -247,6 +247,7 @@ static_assert(sizeof(OpCode) == 0x8, "Incorrect structure size");
 
 namespace std {
 
+// TODO(bunne): The below is forbidden by the C++ standard, but works fine. See #330.
 template <>
 struct make_unsigned<Tegra::Shader::Attribute> {
     using type = Tegra::Shader::Attribute;
@@ -281,7 +282,6 @@ enum class SubOp : u64 {
     Rsq = 0x5,
 };
 
-#pragma pack(1)
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
         hex = instr.hex;

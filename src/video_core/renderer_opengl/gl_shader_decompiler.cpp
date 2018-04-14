@@ -448,17 +448,19 @@ private:
 
         for (const auto& index : declr_input_attribute) {
             // TODO(bunnei): Use proper number of elements for these
-            declarations.AddLine(
-                "layout(location = " + std::to_string(static_cast<u32>(index) - 8) + ") in vec4 " +
-                GetInputAttribute(index) + ";");
+            declarations.AddLine("layout(location = " +
+                                 std::to_string(static_cast<u32>(index) -
+                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
+                                 ") in vec4 " + GetInputAttribute(index) + ";");
         }
         declarations.AddLine("");
 
         for (const auto& index : declr_output_attribute) {
             // TODO(bunnei): Use proper number of elements for these
-            declarations.AddLine(
-                "layout(location = " + std::to_string(static_cast<u32>(index) - 8) + ") out vec4 " +
-                GetOutputAttribute(index) + ";");
+            declarations.AddLine("layout(location = " +
+                                 std::to_string(static_cast<u32>(index) -
+                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
+                                 ") out vec4 " + GetOutputAttribute(index) + ";");
         }
         declarations.AddLine("");
     }
