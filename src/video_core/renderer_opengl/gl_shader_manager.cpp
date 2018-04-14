@@ -38,7 +38,7 @@ void SetShaderSamplerBindings(GLuint shader) {
     cur_state.Apply();
 
     // Set the texture samplers to correspond to different texture units
-    for (u32 texture = 0; texture < 32; ++texture) {
+    for (u32 texture = 0; texture < NumTextureSamplers; ++texture) {
         // Set the texture samplers to correspond to different texture units
         std::string uniform_name = "tex[" + std::to_string(texture) + "]";
         GLint uniform_tex = glGetUniformLocation(shader, uniform_name.c_str());

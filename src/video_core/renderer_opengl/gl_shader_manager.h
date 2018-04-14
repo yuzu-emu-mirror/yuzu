@@ -14,6 +14,9 @@
 
 namespace GLShader {
 
+/// Number of OpenGL texture samplers that can be used in the fragment shader
+static constexpr size_t NumTextureSamplers = 32;
+
 using Tegra::Engines::Maxwell3D;
 
 namespace Impl {

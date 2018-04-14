@@ -128,7 +128,7 @@ private:
     OGLVertexArray hw_vao;
     std::array<bool, 16> hw_vao_enabled_attributes;
 
-    std::array<SamplerInfo, 32> texture_samplers;
+    std::array<SamplerInfo, GLShader::NumTextureSamplers> texture_samplers;
     static constexpr size_t VERTEX_BUFFER_SIZE = 128 * 1024 * 1024;
     std::unique_ptr<OGLStreamBuffer> vertex_buffer;
     OGLBuffer uniform_buffer;

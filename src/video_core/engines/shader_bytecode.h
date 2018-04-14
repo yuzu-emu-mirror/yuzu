@@ -323,7 +323,5 @@ static_assert(sizeof(Instruction) == 0x8, "Incorrect structure size");
 static_assert(std::is_standard_layout<Instruction>::value,
               "Structure does not have standard layout");
 
-#pragma pack()
-
 } // namespace Shader
 } // namespace Tegra
