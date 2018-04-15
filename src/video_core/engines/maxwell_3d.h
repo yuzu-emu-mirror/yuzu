@@ -518,6 +518,9 @@ public:
     /// Returns a list of enabled textures for the specified shader stage.
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
+    /// Returns whether the specified shader stage is enabled or not.
+    bool IsShaderStageEnabled(Regs::ShaderStage stage) const;
+
 private:
     std::unordered_map<u32, std::vector<u32>> uploaded_macros;
 

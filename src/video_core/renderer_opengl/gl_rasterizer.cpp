@@ -46,6 +46,14 @@ RasterizerOpenGL::RasterizerOpenGL() {
         state.texture_units[i].sampler = texture_samplers[i].sampler.handle;
     }
 
+    // Create SSBOs
+    for (size_t stage = 0; stage < ssbos.size(); ++stage) {
+        for (size_t buffer = 0; buffer < ssbos[stage].size(); ++buffer) {
+            ssbos[stage][buffer].Create();
+            state.draw.const_buffers[stage][buffer].ssbo = ssbos[stage][buffer].handle;
+        }
+    }
+
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
@@ -191,8 +199,9 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         auto& shader_config = gpu.regs.shader_config[index];
         const Maxwell::ShaderProgram program{static_cast<Maxwell::ShaderProgram>(index)};
 
-        // VertexB program is always enabled, despite bit setting
-        const bool is_enabled{shader_config.enable || program == Maxwell::ShaderProgram::VertexB};
+        const auto& stage = index - 1; // Stage indices are 0 - 5
+
+        const bool is_enabled = gpu.IsShaderStageEnabled(static_cast<Maxwell::ShaderStage>(stage));
 
         // Skip stages that are not enabled
         if (!is_enabled) {
@@ -200,7 +209,6 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         }
 
         // Upload uniform data as one UBO per stage
-        const auto& stage = index - 1; // Stage indices are 0 - 5
         const GLintptr ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
         copy_buffer(uniform_buffers[stage].handle, ubo_offset,
                     sizeof(GLShader::MaxwellUniformData));
@@ -298,6 +306,8 @@ void RasterizerOpenGL::DrawArrays() {
 
     // Sync and bind the texture surfaces
     BindTextures();
+    // Configure the constant buffer objects
+    SetupConstBuffers();
 
     // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
     // scissor test to prevent drawing outside of the framebuffer region
@@ -380,7 +390,7 @@ void RasterizerOpenGL::DrawArrays() {
 
 void RasterizerOpenGL::BindTextures() {
     using Regs = Tegra::Engines::Maxwell3D::Regs;
-    auto maxwell3d = Core::System::GetInstance().GPU().Get3DEngine();
+    auto& maxwell3d = Core::System::GetInstance().GPU().Get3DEngine();
 
     // Each Maxwell shader stage can have an arbitrary number of textures, but we're limited to a
     // certain number in OpenGL. We try to only use the minimum amount of host textures by not
@@ -525,6 +535,41 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
         // TODO(Subv): Implement border color
         ASSERT(false);
     }
+}
+
+void RasterizerOpenGL::SetupConstBuffers() {
+    using Regs = Tegra::Engines::Maxwell3D::Regs;
+    auto& gpu = Core::System::GetInstance().GPU();
+    auto& maxwell3d = gpu.Get3DEngine();
+
+    // Upload only the enabled buffers from the 16 constbuffers of each shader stage
+    u32 current_bindpoint = 0;
+    for (u32 stage = 0; stage < Regs::MaxShaderStage; ++stage) {
+        auto& shader_stage = maxwell3d.state.shader_stages[stage];
+        bool stage_enabled = maxwell3d.IsShaderStageEnabled(static_cast<Regs::ShaderStage>(stage));
+
+        for (u32 buffer_id = 0; buffer_id < Regs::MaxConstBuffers; ++buffer_id) {
+            const auto& buffer = shader_stage.const_buffers[buffer_id];
+
+            state.draw.const_buffers[stage][buffer_id].enabled = buffer.enabled && stage_enabled;
+
+            if (buffer.enabled && stage_enabled) {
+                state.draw.const_buffers[stage][buffer_id].bindpoint = current_bindpoint;
+                current_bindpoint++;
+
+                VAddr addr = gpu.memory_manager->PhysicalToVirtualAddress(buffer.address);
+                const u8* data = Memory::GetPointer(addr);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER,
+                             state.draw.const_buffers[stage][buffer_id].ssbo);
+                glBufferData(GL_SHADER_STORAGE_BUFFER, buffer.size, data, GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            } else {
+                state.draw.const_buffers[stage][buffer_id].bindpoint = -1;
+            }
+        }
+    }
+
+    state.Apply();
 }
 
 void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,

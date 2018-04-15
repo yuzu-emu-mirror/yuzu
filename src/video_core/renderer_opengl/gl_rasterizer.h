@@ -87,6 +87,9 @@ private:
     /// Binds the required textures to OpenGL before drawing a batch.
     void BindTextures();
 
+    /// Configures the current constbuffers to use for the draw command.
+    void SetupConstBuffers();
+
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
 
@@ -129,6 +132,10 @@ private:
     std::array<bool, 16> hw_vao_enabled_attributes;
 
     std::array<SamplerInfo, GLShader::NumTextureSamplers> texture_samplers;
+    std::array<std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::MaxConstBuffers>,
+               Tegra::Engines::Maxwell3D::Regs::MaxShaderStage>
+        ssbos;
+
     static constexpr size_t VERTEX_BUFFER_SIZE = 128 * 1024 * 1024;
     std::unique_ptr<OGLStreamBuffer> vertex_buffer;
     OGLBuffer uniform_buffer;

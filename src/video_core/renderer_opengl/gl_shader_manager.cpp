@@ -53,13 +53,6 @@ void SetShaderSamplerBindings(GLuint shader) {
 
 } // namespace Impl
 
-void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {
-    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
-    for (unsigned index = 0; index < shader_stage.const_buffers.size(); ++index) {
-        const auto& const_buffer = shader_stage.const_buffers[index];
-        const VAddr vaddr = memory_manager->PhysicalToVirtualAddress(const_buffer.address);
-        Memory::ReadBlock(vaddr, const_buffers[index].data(), sizeof(ConstBuffer));
-    }
-}
+void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {}
 
 } // namespace GLShader

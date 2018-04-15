@@ -123,6 +123,12 @@ public:
         GLuint uniform_buffer;   // GL_UNIFORM_BUFFER_BINDING
         GLuint shader_program;   // GL_CURRENT_PROGRAM
         GLuint program_pipeline; // GL_PROGRAM_PIPELINE_BINDING
+        struct ConstBufferConfig {
+            bool enabled;
+            GLuint bindpoint;
+            GLuint ssbo;
+        };
+        std::array<std::array<ConstBufferConfig, 16>, 5> const_buffers{};
     } draw;
 
     struct {
