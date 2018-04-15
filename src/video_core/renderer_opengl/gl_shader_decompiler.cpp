@@ -192,7 +192,7 @@ private:
 
     /// Generates code representing a uniform (C buffer) register.
     std::string GetUniform(const Uniform& reg) {
-        declr_const_buffers[reg.index].MarkAsUsed(reg.index, reg.offset);
+        declr_const_buffers[reg.index].MarkAsUsed(reg.index, reg.offset, stage);
         return 'c' + std::to_string(reg.index) + '[' + std::to_string(reg.offset) + ']';
     }
 
@@ -478,8 +478,7 @@ private:
 
         unsigned const_buffer_layout = 0;
         for (const auto& entry : GetConstBuffersDeclarations()) {
-            declarations.AddLine("layout(std430, binding = " + std::to_string(const_buffer_layout) +
-                                 ") buffer c" + std::to_string(entry.GetIndex()) + "_buffer");
+            declarations.AddLine("layout(std430) buffer " + entry.GetName());
             declarations.AddLine("{");
             declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
             declarations.AddLine("};");

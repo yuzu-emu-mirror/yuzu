@@ -226,10 +226,6 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         Memory::ReadBlock(cpu_address, program_code.data(), program_code.size() * sizeof(u64));
         GLShader::ShaderSetup setup{std::move(program_code)};
 
-        static constexpr std::array<const char*, Maxwell::MaxShaderStage> base_names = {
-            "buffer_vs_c", "buffer_tessc_c", "buffer_tesse_c", "buffer_gs_c", "buffer_fs_c",
-        };
-
         GLShader::ShaderEntries shader_resources;
 
         switch (program) {
@@ -255,9 +251,9 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
             static_cast<Maxwell::ShaderStage>(stage));
 
         // Configure the const buffers for this shader stage.
-        current_constbuffer_bindpoint = SetupConstBuffers(
-            static_cast<Maxwell::ShaderStage>(stage), gl_stage_program, base_names[stage],
-            current_constbuffer_bindpoint, shader_resources.const_buffer_entries);
+        current_constbuffer_bindpoint =
+            SetupConstBuffers(static_cast<Maxwell::ShaderStage>(stage), gl_stage_program,
+                              current_constbuffer_bindpoint, shader_resources.const_buffer_entries);
     }
 
     shader_program_manager->UseTrivialGeometryShader();
@@ -555,7 +551,7 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
 }
 
 u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint program,
-                                        const std::string& base_name, u32 current_bindpoint,
+                                        u32 current_bindpoint,
                                         const std::vector<GLShader::ConstBufferEntry>& entries) {
     auto& gpu = Core::System::GetInstance().GPU();
     auto& maxwell3d = gpu.Get3DEngine();
@@ -591,10 +587,11 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         // Now configure the bindpoint of the buffer inside the shader
-        std::string buffer_name = base_name + std::to_string(used_buffer.GetIndex());
+        std::string buffer_name = used_buffer.GetName();
         GLuint index =
             glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, buffer_name.c_str());
-        glShaderStorageBlockBinding(program, index, buffer_draw_state.bindpoint);
+        if (index != -1)
+            glShaderStorageBlockBinding(program, index, buffer_draw_state.bindpoint);
     }
 
     state.Apply();

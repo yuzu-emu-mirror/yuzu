@@ -91,14 +91,13 @@ private:
      * Configures the current constbuffers to use for the draw command.
      * @param stage The shader stage to configure buffers for.
      * @param program The OpenGL program object that contains the specified stage.
-     * @param base_name The name prefix of the buffer objects in the GLSL shaders.
      * @param current_bindpoint The offset at which to start counting new buffer bindpoints.
      * @param entries Vector describing the buffers that are actually used in the guest shader.
      * @returns The next available bindpoint for use in the next shader stage.
      */
     u32 SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, GLuint program,
-                           const std::string& base_name, u32 current_bindpoint,
-                           const std::vector<GLShader::ConstBufferEntry>& entries);
+                          u32 current_bindpoint,
+                          const std::vector<GLShader::ConstBufferEntry>& entries);
 
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
