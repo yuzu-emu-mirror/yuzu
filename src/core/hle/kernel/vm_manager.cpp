@@ -380,7 +380,7 @@ void VMManager::UpdatePageTableForVMA(const VirtualMemoryArea& vma) {
 
 u64 VMManager::GetTotalMemoryUsage() {
     LOG_WARNING(Kernel, "(STUBBED) called");
-    return 0xBE000000;
+    return 0xF8000000;
 }
 
 u64 VMManager::GetTotalHeapUsage() {
