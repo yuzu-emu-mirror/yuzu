@@ -20,7 +20,7 @@ ResultVal<std::unique_ptr<StorageBackend>> RomFS_FileSystem::OpenFile(const std:
         std::make_unique<RomFS_Storage>(romfs_file, data_offset, data_size));
 }
 
-ResultCode RomFS_FileSystem::DeleteFile(const Path& path) const {
+ResultCode RomFS_FileSystem::DeleteFile(const std::string& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a file from an ROMFS archive (%s).",
                  GetName().c_str());
     // TODO(bunnei): Use correct error code

@@ -31,7 +31,7 @@ public:
 
     ResultVal<std::unique_ptr<StorageBackend>> OpenFile(const std::string& path,
                                                         Mode mode) const override;
-    ResultCode DeleteFile(const Path& path) const override;
+    ResultCode DeleteFile(const std::string& path) const override;
     ResultCode RenameFile(const Path& src_path, const Path& dest_path) const override;
     ResultCode DeleteDirectory(const Path& path) const override;
     ResultCode DeleteDirectoryRecursively(const Path& path) const override;

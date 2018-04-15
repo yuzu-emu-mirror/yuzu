@@ -97,7 +97,7 @@ public:
      * @param path Path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode DeleteFile(const Path& path) const = 0;
+    virtual ResultCode DeleteFile(const std::string& path) const = 0;
 
     /**
      * Create a directory specified by its path
