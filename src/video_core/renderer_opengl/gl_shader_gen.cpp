@@ -7,12 +7,12 @@
 
 namespace GLShader {
 
-std::string GenerateVertexShader(const MaxwellVSConfig& config) {
+std::string GenerateVertexShader(const ShaderSetup& setup, const MaxwellVSConfig& config) {
     UNREACHABLE();
     return {};
 }
 
-std::string GenerateFragmentShader(const MaxwellFSConfig& config) {
+std::string GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSConfig& config) {
     UNREACHABLE();
     return {};
 }

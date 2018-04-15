@@ -427,14 +427,11 @@ public:
                         BitField<0, 1, u32> enable;
                         BitField<4, 4, ShaderProgram> program;
                     };
-                    u32 start_id;
-                    INSERT_PADDING_WORDS(1);
-                    u32 gpr_alloc;
-                    ShaderStage type;
-                    INSERT_PADDING_WORDS(9);
+                    u32 offset;
+                    INSERT_PADDING_WORDS(14);
                 } shader_config[MaxShaderProgram];
 
-                INSERT_PADDING_WORDS(0x8C);
+                INSERT_PADDING_WORDS(0x80);
 
                 struct {
                     u32 cb_size;
@@ -507,6 +504,7 @@ public:
     };
 
     State state{};
+    MemoryManager& memory_manager;
 
     /// Reads a register value located at the input method address
     u32 GetRegisterValue(u32 method) const;
@@ -521,8 +519,6 @@ public:
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
 private:
-    MemoryManager& memory_manager;
-
     std::unordered_map<u32, std::vector<u32>> uploaded_macros;
 
     /// Macro method that is currently being executed / being fed parameters.

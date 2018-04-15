@@ -5,23 +5,20 @@
 #include <array>
 #include <functional>
 #include <string>
+#include <boost/optional.hpp>
 #include "common/common_types.h"
+#include "video_core/engines/maxwell_3d.h"
+#include "video_core/renderer_opengl/gl_shader_gen.h"
 
-namespace Maxwell3D {
-namespace Shader {
+namespace GLShader {
 namespace Decompiler {
 
-constexpr size_t MAX_PROGRAM_CODE_LENGTH{0x100000};
-constexpr size_t MAX_SWIZZLE_DATA_LENGTH{0x100000};
+using Tegra::Engines::Maxwell3D;
 
-std::string DecompileProgram(const std::array<u32, MAX_PROGRAM_CODE_LENGTH>& program_code,
-                             const std::array<u32, MAX_SWIZZLE_DATA_LENGTH>& swizzle_data,
-                             u32 main_offset,
-                             const std::function<std::string(u32)>& inputreg_getter,
-                             const std::function<std::string(u32)>& outputreg_getter,
-                             bool sanitize_mul, const std::string& emit_cb = "",
-                             const std::string& setemit_cb = "");
+std::string GetCommonDeclarations();
+
+boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
+                                              Maxwell3D::Regs::ShaderStage stage);
 
 } // namespace Decompiler
-} // namespace Shader
-} // namespace Maxwell3D
+} // namespace GLShader

@@ -9,6 +9,7 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_compute.cpp
     engines/maxwell_compute.h
+    engines/shader_bytecode.h
     gpu.cpp
     gpu.h
     macro_interpreter.cpp
@@ -27,6 +28,8 @@ add_library(video_core STATIC
     renderer_opengl/gl_shader_decompiler.h
     renderer_opengl/gl_shader_gen.cpp
     renderer_opengl/gl_shader_gen.h
+    renderer_opengl/gl_shader_manager.cpp
+    renderer_opengl/gl_shader_manager.h
     renderer_opengl/gl_shader_util.cpp
     renderer_opengl/gl_shader_util.h
     renderer_opengl/gl_state.cpp

@@ -10,6 +10,14 @@
 #include "common/logging/log.h"
 #include "video_core/engines/maxwell_3d.h"
 
+using GLvec2 = std::array<GLfloat, 2>;
+using GLvec3 = std::array<GLfloat, 3>;
+using GLvec4 = std::array<GLfloat, 4>;
+
+using GLuvec2 = std::array<GLuint, 2>;
+using GLuvec3 = std::array<GLuint, 3>;
+using GLuvec4 = std::array<GLuint, 4>;
+
 namespace MaxwellToGL {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
@@ -39,6 +47,8 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
 
 inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     switch (topology) {
+    case Maxwell::PrimitiveTopology::Triangles:
+        return GL_TRIANGLES;
     case Maxwell::PrimitiveTopology::TriangleStrip:
         return GL_TRIANGLE_STRIP;
     }

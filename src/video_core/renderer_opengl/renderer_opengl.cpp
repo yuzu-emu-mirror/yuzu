@@ -57,7 +57,7 @@ uniform sampler2D color_texture;
 void main() {
     // Swap RGBA -> ABGR so we don't have to do this on the CPU. This needs to change if we have to
     // support more framebuffer pixel formats.
-    color = texture(color_texture, frag_tex_coord).abgr;
+    color = texture(color_texture, frag_tex_coord);
 }
 )";
 
@@ -210,7 +210,7 @@ void RendererOpenGL::InitOpenGLObjects() {
                  0.0f);
 
     // Link shaders and get variable locations
-    shader.Create(vertex_shader, nullptr, fragment_shader);
+    shader.CreateFromSource(vertex_shader, nullptr, fragment_shader);
     state.draw.shader_program = shader.handle;
     state.Apply();
     uniform_modelview_matrix = glGetUniformLocation(shader.handle, "modelview_matrix");
@@ -311,10 +311,10 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
         }
 
     std::array<ScreenRectVertex, 4> vertices = {{
-        ScreenRectVertex(x, y, texcoords.top, right),
-        ScreenRectVertex(x + w, y, texcoords.bottom, right),
-        ScreenRectVertex(x, y + h, texcoords.top, left),
-        ScreenRectVertex(x + w, y + h, texcoords.bottom, left),
+        ScreenRectVertex(x, y, texcoords.top, left),
+        ScreenRectVertex(x + w, y, texcoords.bottom, left),
+        ScreenRectVertex(x, y + h, texcoords.top, right),
+        ScreenRectVertex(x + w, y + h, texcoords.bottom, right),
     }};
 
     state.texture_units[0].texture_2d = screen_info.display_texture;

@@ -818,7 +818,7 @@ void main() {
     color = texelFetch(tbo, tbo_offset).rabg;
 }
 )";
-    d24s8_abgr_shader.Create(vs_source, nullptr, fs_source);
+    d24s8_abgr_shader.CreateFromSource(vs_source, nullptr, fs_source);
 
     OpenGLState state = OpenGLState::GetCurState();
     GLuint old_program = state.draw.shader_program;
