@@ -236,7 +236,7 @@ public:
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
-            {1, nullptr, "DeleteFile"},
+            {1, &IFileSystem::DeleteFile, "DeleteFile"},
             {2, &IFileSystem::CreateDirectory, "CreateDirectory"},
             {3, nullptr, "DeleteDirectory"},
             {4, nullptr, "DeleteDirectoryRecursively"},
@@ -271,6 +271,20 @@ public:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateFile(name, size));
+    }
+
+    void DeleteFile(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        auto file_buffer = ctx.ReadBuffer();
+        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
+
+        std::string name(file_buffer.begin(), end);
+
+        LOG_DEBUG(Service_FS, "called file %s", name.c_str());
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(backend->DeleteFile(name));
     }
 
     void CreateDirectory(Kernel::HLERequestContext& ctx) {

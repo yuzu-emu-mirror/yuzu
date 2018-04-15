@@ -57,10 +57,14 @@ ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::
         std::make_unique<Disk_Storage>(std::move(file)));
 }
 
-ResultCode Disk_FileSystem::DeleteFile(const Path& path) const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
-    // TODO(bunnei): Use correct error code
-    return ResultCode(-1);
+ResultCode Disk_FileSystem::DeleteFile(const std::string& path) const {
+    if (!FileUtil::Exists(path)) {
+        return ERROR_PATH_NOT_FOUND;
+    }
+
+    FileUtil::Delete(path);
+
+    return RESULT_SUCCESS;
 }
 
 ResultCode Disk_FileSystem::RenameFile(const Path& src_path, const Path& dest_path) const {
