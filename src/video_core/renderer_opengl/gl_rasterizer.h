@@ -88,7 +88,8 @@ private:
     void BindTextures();
 
     /// Configures the current constbuffers to use for the draw command.
-    void SetupConstBuffers();
+    void SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage,
+                           const std::vector<GLShader::ConstBufferEntry>& entries);
 
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);
