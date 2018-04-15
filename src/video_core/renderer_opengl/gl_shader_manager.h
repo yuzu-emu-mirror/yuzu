@@ -121,6 +121,17 @@ public:
         return result;
     }
 
+    GLuint GetCurrentProgramStage(Maxwell3D::Regs::ShaderStage stage) {
+        switch (stage) {
+        case Maxwell3D::Regs::ShaderStage::Vertex:
+            return current.vs;
+        case Maxwell3D::Regs::ShaderStage::Fragment:
+            return current.fs;
+        }
+
+        UNREACHABLE();
+    }
+
     void UseTrivialGeometryShader() {
         current.gs = 0;
     }

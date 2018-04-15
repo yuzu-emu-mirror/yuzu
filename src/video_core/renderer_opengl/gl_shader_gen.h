@@ -19,10 +19,13 @@ constexpr size_t MAX_PROGRAM_CODE_LENGTH{0x1000};
 using ProgramCode = std::array<u64, MAX_PROGRAM_CODE_LENGTH>;
 
 class ConstBufferEntry {
+    using Maxwell = Tegra::Engines::Maxwell3D::Regs;
+
 public:
-    void MarkAsUsed(unsigned index, unsigned offset) {
+    void MarkAsUsed(unsigned index, unsigned offset, Maxwell::ShaderStage stage) {
         is_used = true;
         this->index = index;
+        this->stage = stage;
         max_offset = std::max(max_offset, offset);
     }
 
@@ -38,10 +41,19 @@ public:
         return max_offset + 1;
     }
 
+    std::string GetName() const {
+        return BufferBaseNames[static_cast<size_t>(stage)] + std::to_string(index);
+    }
+
 private:
+    static constexpr std::array<const char*, Maxwell::MaxShaderStage> BufferBaseNames = {
+        "buffer_vs_c", "buffer_tessc_c", "buffer_tesse_c", "buffer_gs_c", "buffer_fs_c",
+    };
+
     bool is_used{};
     unsigned index{};
     unsigned max_offset{};
+    Maxwell::ShaderStage stage;
 };
 
 struct ShaderEntries {
