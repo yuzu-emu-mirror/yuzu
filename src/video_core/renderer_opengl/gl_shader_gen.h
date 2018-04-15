@@ -7,6 +7,8 @@
 #include <array>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 #include "common/common_types.h"
 #include "common/hash.h"
 
@@ -15,6 +17,38 @@ namespace GLShader {
 constexpr size_t MAX_PROGRAM_CODE_LENGTH{0x1000};
 
 using ProgramCode = std::array<u64, MAX_PROGRAM_CODE_LENGTH>;
+
+class ConstBufferEntry {
+public:
+    void MarkAsUsed(unsigned index, unsigned offset) {
+        is_used = true;
+        this->index = index;
+        max_offset = std::max(max_offset, offset);
+    }
+
+    bool IsUsed() const {
+        return is_used;
+    }
+
+    unsigned GetIndex() const {
+        return index;
+    }
+
+    unsigned GetSize() const {
+        return max_offset + 1;
+    }
+
+private:
+    bool is_used{};
+    unsigned index{};
+    unsigned max_offset{};
+};
+
+struct ShaderEntries {
+    std::vector<ConstBufferEntry> const_buffer_entries;
+};
+
+using ProgramResult = std::pair<std::string, ShaderEntries>;
 
 struct ShaderSetup {
     ShaderSetup(ProgramCode&& program_code) : program_code(std::move(program_code)) {}
@@ -58,13 +92,13 @@ struct MaxwellFSConfig : Common::HashableStruct<MaxwellShaderConfigCommon> {
  * Generates the GLSL vertex shader program source code for the given VS program
  * @returns String of the shader source code
  */
-std::string GenerateVertexShader(const ShaderSetup& setup, const MaxwellVSConfig& config);
+ProgramResult GenerateVertexShader(const ShaderSetup& setup, const MaxwellVSConfig& config);
 
 /**
  * Generates the GLSL fragment shader program source code for the given FS program
  * @returns String of the shader source code
  */
-std::string GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSConfig& config);
+ProgramResult GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSConfig& config);
 
 } // namespace GLShader
 

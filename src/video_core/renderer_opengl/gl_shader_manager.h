@@ -41,19 +41,25 @@ class OGLShaderStage {
 public:
     OGLShaderStage() = default;
 
-    void Create(const char* source, GLenum type) {
+    void Create(const ProgramResult& program_result, GLenum type) {
         OGLShader shader;
-        shader.Create(source, type);
+        shader.Create(program_result.first.c_str(), type);
         program.Create(true, shader.handle);
         Impl::SetShaderUniformBlockBindings(program.handle);
         Impl::SetShaderSamplerBindings(program.handle);
+        entries = program_result.second;
     }
     GLuint GetHandle() const {
         return program.handle;
     }
 
+    ShaderEntries GetEntries() const {
+        return entries;
+    }
+
 private:
     OGLProgram program;
+    ShaderEntries entries;
 };
 
 // TODO(wwylele): beautify this doc
@@ -61,25 +67,28 @@ private:
 // The double cache is needed because diffent KeyConfigType, which includes a hash of the code
 // region (including its leftover unused code) can generate the same GLSL code.
 template <typename KeyConfigType,
-          std::string (*CodeGenerator)(const ShaderSetup&, const KeyConfigType&), GLenum ShaderType>
+          ProgramResult (*CodeGenerator)(const ShaderSetup&, const KeyConfigType&),
+          GLenum ShaderType>
 class ShaderCache {
 public:
     ShaderCache() = default;
 
-    GLuint Get(const KeyConfigType& key, const ShaderSetup& setup) {
+    using Result = std::pair<GLuint, ShaderEntries>;
+
+    Result Get(const KeyConfigType& key, const ShaderSetup& setup) {
         auto map_it = shader_map.find(key);
         if (map_it == shader_map.end()) {
-            std::string program = CodeGenerator(setup, key);
+            ProgramResult program = CodeGenerator(setup, key);
 
-            auto [iter, new_shader] = shader_cache.emplace(program, OGLShaderStage{});
+            auto [iter, new_shader] = shader_cache.emplace(program.first, OGLShaderStage{});
             OGLShaderStage& cached_shader = iter->second;
             if (new_shader) {
-                cached_shader.Create(program.c_str(), ShaderType);
+                cached_shader.Create(program, ShaderType);
             }
             shader_map[key] = &cached_shader;
-            return cached_shader.GetHandle();
+            return {cached_shader.GetHandle(), program.second};
         } else {
-            return map_it->second->GetHandle();
+            return {map_it->second->GetHandle(), map_it->second->GetEntries()};
         }
     }
 
@@ -98,12 +107,18 @@ public:
         pipeline.Create();
     }
 
-    void UseProgrammableVertexShader(const MaxwellVSConfig& config, const ShaderSetup setup) {
-        current.vs = vertex_shaders.Get(config, setup);
+    ShaderEntries UseProgrammableVertexShader(const MaxwellVSConfig& config,
+                                              const ShaderSetup setup) {
+        ShaderEntries result;
+        std::tie(current.vs, result) = vertex_shaders.Get(config, setup);
+        return result;
     }
 
-    void UseProgrammableFragmentShader(const MaxwellFSConfig& config, const ShaderSetup setup) {
-        current.fs = fragment_shaders.Get(config, setup);
+    ShaderEntries UseProgrammableFragmentShader(const MaxwellFSConfig& config,
+                                                const ShaderSetup setup) {
+        ShaderEntries result;
+        std::tie(current.fs, result) = fragment_shaders.Get(config, setup);
+        return result;
     }
 
     void UseTrivialGeometryShader() {

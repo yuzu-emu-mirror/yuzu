@@ -140,6 +140,11 @@ public:
         return declarations.GetResult() + shader.GetResult();
     }
 
+    /// Returns entries in the shader that are useful for external functions
+    ShaderEntries GetEntries() const {
+        return {GetConstBuffersDeclarations()};
+    }
+
 private:
     /// Gets the Subroutine object corresponding to the specified address.
     const Subroutine& GetSubroutine(u32 begin, u32 end) const {
@@ -186,10 +191,9 @@ private:
     }
 
     /// Generates code representing a uniform (C buffer) register.
-    std::string GetUniform(const Uniform& reg) const {
-        std::string index = std::to_string(reg.index);
-        return "uniform_" + index + "[" + std::to_string(reg.offset >> 2) + "][" +
-               std::to_string(reg.offset & 3) + "]";
+    std::string GetUniform(const Uniform& reg) {
+        declr_const_buffers[reg.index].MarkAsUsed(reg.index, reg.offset);
+        return 'c' + std::to_string(reg.index) + '[' + std::to_string(reg.offset) + ']';
     }
 
     /**
@@ -439,6 +443,14 @@ private:
         GenerateDeclarations();
     }
 
+    /// Returns a list of constant buffer declarations
+    std::vector<ConstBufferEntry> GetConstBuffersDeclarations() const {
+        std::vector<ConstBufferEntry> result;
+        std::copy_if(declr_const_buffers.begin(), declr_const_buffers.end(),
+                     std::back_inserter(result), [](const auto& entry) { return entry.IsUsed(); });
+        return result;
+    }
+
     /// Add declarations for registers
     void GenerateDeclarations() {
         for (const auto& reg : declr_register) {
@@ -463,6 +475,17 @@ private:
                                  ") out vec4 " + GetOutputAttribute(index) + ";");
         }
         declarations.AddLine("");
+
+        unsigned const_buffer_layout = 0;
+        for (const auto& entry : GetConstBuffersDeclarations()) {
+            declarations.AddLine("layout(std430, binding = " + std::to_string(const_buffer_layout) +
+                                 ") buffer c" + std::to_string(entry.GetIndex()) + "_buffer");
+            declarations.AddLine("{");
+            declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
+            declarations.AddLine("};");
+            declarations.AddLine("");
+            ++const_buffer_layout;
+        }
     }
 
 private:
@@ -478,18 +501,19 @@ private:
     std::set<std::string> declr_register;
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
-}; // namespace Decompiler
+    std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
+};
 
 std::string GetCommonDeclarations() {
     return "bool exec_shader();";
 }
 
-boost::optional<std::string> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
-                                              Maxwell3D::Regs::ShaderStage stage) {
+boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
+                                                Maxwell3D::Regs::ShaderStage stage) {
     try {
         auto subroutines = ControlFlowAnalyzer(program_code, main_offset).GetSubroutines();
         GLSLGenerator generator(subroutines, program_code, main_offset, stage);
-        return generator.GetShaderCode();
+        return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
         LOG_ERROR(HW_GPU, "Shader decompilation failed: %s", exception.what());
     }
