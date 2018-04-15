@@ -47,10 +47,10 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
     FileUtil::CreateFullPath(filepath); // Create path if not already created
     FileUtil::IOFile file(filepath, "rb");
 
+    shared_font = std::make_shared<std::vector<u8>>(SHARED_FONT_MEM_SIZE);
     if (file.IsOpen()) {
         // Read shared font data
         ASSERT(file.GetSize() == SHARED_FONT_MEM_SIZE);
-        shared_font = std::make_shared<std::vector<u8>>(static_cast<size_t>(file.GetSize()));
         file.ReadBytes(shared_font->data(), shared_font->size());
     } else {
         LOG_WARNING(Service_NS, "Unable to load shared font: %s", filepath.c_str());
@@ -97,22 +97,19 @@ void PL_U::GetSharedMemoryAddressOffset(Kernel::HLERequestContext& ctx) {
 }
 
 void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
-    if (shared_font != nullptr) {
-        // TODO(bunnei): This is a less-than-ideal solution to load a RAM dump of the Switch shared
-        // font data. This (likely) relies on exact address, size, and offsets from the original
-        // dump. In the future, we need to replace this with a more robust solution.
+    // TODO(bunnei): This is a less-than-ideal solution to load a RAM dump of the Switch shared
+    // font data. This (likely) relies on exact address, size, and offsets from the original
+    // dump. In the future, we need to replace this with a more robust solution.
 
-        // Map backing memory for the font data
-        Core::CurrentProcess()->vm_manager.MapMemoryBlock(SHARED_FONT_MEM_VADDR, shared_font, 0,
-                                                          SHARED_FONT_MEM_SIZE,
-                                                          Kernel::MemoryState::Shared);
+    // Map backing memory for the font data
+    Core::CurrentProcess()->vm_manager.MapMemoryBlock(
+        SHARED_FONT_MEM_VADDR, shared_font, 0, SHARED_FONT_MEM_SIZE, Kernel::MemoryState::Shared);
 
-        // Create shared font memory object
-        shared_font_mem = Kernel::SharedMemory::Create(
-            Core::CurrentProcess(), SHARED_FONT_MEM_SIZE, Kernel::MemoryPermission::ReadWrite,
-            Kernel::MemoryPermission::Read, SHARED_FONT_MEM_VADDR, Kernel::MemoryRegion::BASE,
-            "PL_U:shared_font_mem");
-    }
+    // Create shared font memory object
+    shared_font_mem = Kernel::SharedMemory::Create(
+        Core::CurrentProcess(), SHARED_FONT_MEM_SIZE, Kernel::MemoryPermission::ReadWrite,
+        Kernel::MemoryPermission::Read, SHARED_FONT_MEM_VADDR, Kernel::MemoryRegion::BASE,
+        "PL_U:shared_font_mem");
 
     LOG_DEBUG(Service_NS, "called");
     IPC::ResponseBuilder rb{ctx, 2, 1};
