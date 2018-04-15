@@ -193,6 +193,9 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
     auto& gpu = Core::System().GetInstance().GPU().Maxwell3D();
     ASSERT_MSG(!gpu.regs.shader_config[0].enable, "VertexA is unsupported!");
 
+    // Next available bindpoint to use when uploading the const buffers to the GLSL shaders.
+    u32 current_constbuffer_bindpoint = 0;
+
     for (unsigned index = 1; index < Maxwell::MaxShaderProgram; ++index) {
         ptr_pos += sizeof(GLShader::MaxwellUniformData);
 
@@ -223,6 +226,10 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         Memory::ReadBlock(cpu_address, program_code.data(), program_code.size() * sizeof(u64));
         GLShader::ShaderSetup setup{std::move(program_code)};
 
+        static constexpr std::array<const char*, Maxwell::MaxShaderStage> base_names = {
+            "buffer_vs_c", "buffer_tessc_c", "buffer_tesse_c", "buffer_gs_c", "buffer_fs_c",
+        };
+
         GLShader::ShaderEntries shader_resources;
 
         switch (program) {
@@ -244,9 +251,13 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
             UNREACHABLE();
         }
 
+        GLuint gl_stage_program = shader_program_manager->GetCurrentProgramStage(
+            static_cast<Maxwell::ShaderStage>(stage));
+
         // Configure the const buffers for this shader stage.
-        SetupConstBuffers(static_cast<Maxwell::ShaderStage>(stage),
-                          shader_resources.const_buffer_entries);
+        current_constbuffer_bindpoint = SetupConstBuffers(
+            static_cast<Maxwell::ShaderStage>(stage), gl_stage_program, base_names[stage],
+            current_constbuffer_bindpoint, shader_resources.const_buffer_entries);
     }
 
     shader_program_manager->UseTrivialGeometryShader();
@@ -543,8 +554,9 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
     }
 }
 
-void RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage,
-                                         const std::vector<GLShader::ConstBufferEntry>& entries) {
+u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint program,
+                                        const std::string& base_name, u32 current_bindpoint,
+                                        const std::vector<GLShader::ConstBufferEntry>& entries) {
     auto& gpu = Core::System::GetInstance().GPU();
     auto& maxwell3d = gpu.Get3DEngine();
 
@@ -568,7 +580,7 @@ void RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage,
 
         ASSERT_MSG(buffer.enabled, "Attempted to upload disabled constbuffer");
         buffer_draw_state.enabled = true;
-        buffer_draw_state.bindpoint = bindpoint;
+        buffer_draw_state.bindpoint = current_bindpoint + bindpoint;
 
         VAddr addr = gpu.memory_manager->PhysicalToVirtualAddress(buffer.address);
         std::vector<u8> data(used_buffer.GetSize() * sizeof(float));
@@ -577,9 +589,17 @@ void RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage,
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_draw_state.ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, data.size(), data.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        // Now configure the bindpoint of the buffer inside the shader
+        std::string buffer_name = base_name + std::to_string(used_buffer.GetIndex());
+        GLuint index =
+            glGetProgramResourceIndex(program, GL_SHADER_STORAGE_BLOCK, buffer_name.c_str());
+        glShaderStorageBlockBinding(program, index, buffer_draw_state.bindpoint);
     }
 
     state.Apply();
+
+    return current_bindpoint + entries.size();
 }
 
 void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,
