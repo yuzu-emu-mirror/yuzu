@@ -571,10 +571,11 @@ void RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage,
         buffer_draw_state.bindpoint = bindpoint;
 
         VAddr addr = gpu.memory_manager->PhysicalToVirtualAddress(buffer.address);
-        const u8* data = Memory::GetPointer(addr);
+        std::vector<u8> data(used_buffer.GetSize() * sizeof(float));
+        Memory::ReadBlock(addr, data.data(), data.size());
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_draw_state.ssbo);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, used_buffer.GetSize() * sizeof(float), data,
-                     GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, data.size(), data.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
