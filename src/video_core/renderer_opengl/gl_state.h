@@ -124,7 +124,7 @@ public:
         GLuint shader_program;   // GL_CURRENT_PROGRAM
         GLuint program_pipeline; // GL_PROGRAM_PIPELINE_BINDING
         struct ConstBufferConfig {
-            bool enabled;
+            bool enabled = false;
             GLuint bindpoint;
             GLuint ssbo;
         };
