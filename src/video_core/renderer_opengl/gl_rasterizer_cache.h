@@ -225,6 +225,7 @@ struct SurfaceParams {
     u32 width = 0;
     u32 height = 0;
     u32 stride = 0;
+    u32 block_height = 0;
     u16 res_scale = 1;
 
     bool is_tiled = false;
