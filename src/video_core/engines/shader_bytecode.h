@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <map>
 #include <string>
 #include "common/bit_field.h"
@@ -289,6 +290,7 @@ enum class SubOp : u64 {
     Lg2 = 0x3,
     Rcp = 0x4,
     Rsq = 0x5,
+    Min = 0x8,
 };
 
 union Instruction {
@@ -307,11 +309,22 @@ union Instruction {
     BitField<39, 8, Register> gpr39;
 
     union {
+        BitField<20, 19, u64> imm20;
         BitField<45, 1, u64> negate_b;
         BitField<46, 1, u64> abs_a;
         BitField<48, 1, u64> negate_a;
         BitField<49, 1, u64> abs_b;
         BitField<50, 1, u64> abs_d;
+        BitField<56, 1, u64> negate_imm;
+
+        float GetImm20() const {
+            float result{};
+            u32 imm{static_cast<u32>(imm20)};
+            imm <<= 12;
+            imm |= negate_imm ? 0x80000000 : 0;
+            std::memcpy(&result, &imm, sizeof(imm));
+            return result;
+        }
     } alu;
 
     union {
@@ -319,6 +332,7 @@ union Instruction {
         BitField<49, 1, u64> negate_c;
     } ffma;
 
+    BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
 

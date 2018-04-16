@@ -190,6 +190,11 @@ private:
         }
     }
 
+    /// Generates code representing an immediate value
+    static std::string GetImmediate(const Instruction& instr) {
+        return std::to_string(instr.alu.GetImm20());
+    }
+
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg, unsigned elem = 0) {
         if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
@@ -269,24 +274,32 @@ private:
             }
 
             std::string op_b = instr.alu.negate_b ? "-" : "";
-            if (instr.is_b_gpr) {
-                op_b += GetRegister(instr.gpr20);
+
+            if (instr.is_b_imm) {
+                op_b += GetImmediate(instr);
             } else {
-                op_b += GetUniform(instr.uniform);
+                if (instr.is_b_gpr) {
+                    op_b += GetRegister(instr.gpr20);
+                } else {
+                    op_b += GetUniform(instr.uniform);
+                }
             }
+
             if (instr.alu.abs_b) {
                 op_b = "abs(" + op_b + ")";
             }
 
             switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::FMUL_C:
-            case OpCode::Id::FMUL_R: {
-                SetDest(0, dest, op_a + " * " + op_b, 1, 1);
+            case OpCode::Id::FMUL_R:
+            case OpCode::Id::FMUL_IMM: {
+                SetDest(0, dest, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
             case OpCode::Id::FADD_C:
-            case OpCode::Id::FADD_R: {
-                SetDest(0, dest, op_a + " + " + op_b, 1, 1);
+            case OpCode::Id::FADD_R:
+            case OpCode::Id::FADD_IMM: {
+                SetDest(0, dest, op_a + " + " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
             case OpCode::Id::MUFU: {
@@ -316,16 +329,28 @@ private:
 
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = GetRegister(instr.gpr8);
-
             std::string op_b = instr.ffma.negate_b ? "-" : "";
-            op_b += GetUniform(instr.uniform);
-
             std::string op_c = instr.ffma.negate_c ? "-" : "";
-            op_c += GetRegister(instr.gpr39);
 
             switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::FFMA_CR: {
-                SetDest(0, dest, op_a + " * " + op_b + " + " + op_c, 1, 1);
+                op_b += GetUniform(instr.uniform);
+                op_c += GetRegister(instr.gpr39);
+                break;
+            }
+            case OpCode::Id::FFMA_RR: {
+                op_b += GetRegister(instr.gpr20);
+                op_c += GetRegister(instr.gpr39);
+                break;
+            }
+            case OpCode::Id::FFMA_RC: {
+                op_b += GetRegister(instr.gpr39);
+                op_c += GetUniform(instr.uniform);
+                break;
+            }
+            case OpCode::Id::FFMA_IMM: {
+                op_b += GetImmediate(instr);
+                op_c += GetRegister(instr.gpr39);
                 break;
             }
             default: {
@@ -336,6 +361,8 @@ private:
                 break;
             }
             }
+
+            SetDest(0, dest, op_a + " * " + op_b + " + " + op_c, 1, 1);
             break;
         }
         case OpCode::Type::Memory: {
