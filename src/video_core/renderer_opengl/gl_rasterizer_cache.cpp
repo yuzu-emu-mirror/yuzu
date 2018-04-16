@@ -1041,9 +1041,18 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     params.height = config.tic.Height();
     params.is_tiled = config.tic.IsTiled();
     params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
+
+    if (config.tic.IsTiled()) {
+        params.block_height = config.tic.BlockHeight();
+    } else {
+        // Use the texture-provided stride value if the texture isn't tiled.
+        params.stride = params.PixelsInBytes(config.tic.Pitch());
+    }
+
     params.UpdateParams();
 
-    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0) {
+    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0 ||
+        params.stride != params.width) {
         Surface src_surface;
         MathUtil::Rectangle<u32> rect;
         std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);

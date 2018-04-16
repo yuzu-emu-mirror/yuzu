@@ -105,6 +105,13 @@ struct TICEntry {
         return height_minus_1 + 1;
     }
 
+    u32 BlockHeight() const {
+        ASSERT(header_version == TICHeaderVersion::BlockLinear ||
+               header_version == TICHeaderVersion::BlockLinearColorKey);
+        // The block height is stored in log2 format.
+        return 1 << block_height;
+    }
+
     bool IsTiled() const {
         return header_version == TICHeaderVersion::BlockLinear ||
                header_version == TICHeaderVersion::BlockLinearColorKey;

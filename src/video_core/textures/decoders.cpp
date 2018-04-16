@@ -56,11 +56,10 @@ u32 BytesPerPixel(TextureFormat format) {
     }
 }
 
-std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width, u32 height) {
+std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width, u32 height,
+                                 u32 block_height) {
     u8* data = Memory::GetPointer(address);
     u32 bytes_per_pixel = BytesPerPixel(format);
-
-    static constexpr u32 DefaultBlockHeight = 16;
 
     std::vector<u8> unswizzled_data(width * height * bytes_per_pixel);
 
@@ -68,11 +67,11 @@ std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width,
     case TextureFormat::DXT1:
         // In the DXT1 format, each 4x4 tile is swizzled instead of just individual pixel values.
         CopySwizzledData(width / 4, height / 4, bytes_per_pixel, bytes_per_pixel, data,
-                         unswizzled_data.data(), true, DefaultBlockHeight);
+                         unswizzled_data.data(), true, block_height);
         break;
     case TextureFormat::A8R8G8B8:
         CopySwizzledData(width, height, bytes_per_pixel, bytes_per_pixel, data,
-                         unswizzled_data.data(), true, DefaultBlockHeight);
+                         unswizzled_data.data(), true, block_height);
         break;
     default:
         UNIMPLEMENTED_MSG("Format not implemented");
