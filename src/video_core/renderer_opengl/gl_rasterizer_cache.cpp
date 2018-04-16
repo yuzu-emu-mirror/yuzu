@@ -20,6 +20,7 @@
 #include "common/math_util.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
+#include "common/swap.h"
 #include "common/vector_math.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
@@ -514,6 +515,12 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
         const u32 bytes_per_pixel{GetFormatBpp() >> 3};
         std::memcpy(&gl_buffer[start_offset], texture_src_data + start_offset,
                     bytes_per_pixel * width * height);
+
+        // TODO(bunnei): HACK HACK HACK - Remove before checkin!
+        u32* gl_words = reinterpret_cast<u32*>(&gl_buffer[start_offset]);
+        for (unsigned index = 0; index < width * height; ++index) {
+            gl_words[index] = Common::swap32(gl_words[index]);
+        }
 
     } else {
         morton_to_gl_fns[static_cast<size_t>(pixel_format)](
