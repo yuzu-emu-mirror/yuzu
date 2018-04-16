@@ -241,12 +241,13 @@ private:
      * @param value the code representing the value to assign.
      */
     void SetDest(u64 elem, const std::string& reg, const std::string& value,
-                 u64 dest_num_components, u64 value_num_components) {
+                 u64 dest_num_components, u64 value_num_components, bool is_abs = false) {
         std::string swizzle = ".";
         swizzle += "xyzw"[elem];
 
         std::string dest = reg + (dest_num_components != 1 ? swizzle : "");
         std::string src = "(" + value + ")" + (value_num_components != 1 ? swizzle : "");
+        src = is_abs ? "abs(" + src + ")" : src;
 
         shader.AddLine(dest + " = " + src + ";");
     }
@@ -264,8 +265,6 @@ private:
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
-            ASSERT_MSG(!instr.alu.abs_d, "unimplemented");
-
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.alu.negate_a ? "-" : "";
             op_a += GetRegister(instr.gpr8);
@@ -304,8 +303,26 @@ private:
             }
             case OpCode::Id::MUFU: {
                 switch (instr.sub_op) {
+                case SubOp::Cos:
+                    SetDest(0, dest, "cos(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    break;
+                case SubOp::Sin:
+                    SetDest(0, dest, "sin(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    break;
+                case SubOp::Ex2:
+                    SetDest(0, dest, "exp2(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    break;
+                case SubOp::Lg2:
+                    SetDest(0, dest, "log2(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    break;
                 case SubOp::Rcp:
-                    SetDest(0, dest, "1.0 / " + op_a, 1, 1);
+                    SetDest(0, dest, "1.0 / " + op_a, 1, 1, instr.alu.abs_d);
+                    break;
+                case SubOp::Rsq:
+                    SetDest(0, dest, "inversesqrt(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    break;
+                case SubOp::Min:
+                    SetDest(0, dest, "min(" + op_a + "," + op_b + ")", 1, 1, instr.alu.abs_d);
                     break;
                 default:
                     LOG_ERROR(HW_GPU, "Unhandled sub op: 0x%02x", (int)instr.sub_op.Value());
@@ -324,9 +341,6 @@ private:
             break;
         }
         case OpCode::Type::Ffma: {
-            ASSERT_MSG(!instr.ffma.negate_b, "untested");
-            ASSERT_MSG(!instr.ffma.negate_c, "untested");
-
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = GetRegister(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
