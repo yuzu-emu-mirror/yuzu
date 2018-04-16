@@ -199,7 +199,7 @@ private:
     std::string GetRegister(const Register& reg, unsigned elem = 0) {
         if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
             // GPRs 0-3 are output color for the fragment shader
-            return std::string{"color."} + "rgba"[reg + elem];
+            return std::string{"color."} + "rgba"[(reg + elem) & 3];
         }
 
         return *declr_register.insert("register_" + std::to_string(reg + elem)).first;
