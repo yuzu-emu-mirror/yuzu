@@ -12,6 +12,8 @@ add_library(core STATIC
     file_sys/errors.h
     file_sys/filesystem.cpp
     file_sys/filesystem.h
+    file_sys/partition_filesystem.cpp
+    file_sys/partition_filesystem.h
     file_sys/path_parser.cpp
     file_sys/path_parser.h
     file_sys/program_metadata.cpp
