@@ -156,23 +156,27 @@ private:
 
     /// Generates code representing an input attribute register.
     std::string GetInputAttribute(Attribute::Index attribute) {
-        declr_input_attribute.insert(attribute);
+        switch (attribute) {
+        case Attribute::Index::Position:
+            return "position";
+        default:
+            const u32 index{static_cast<u32>(attribute) -
+                            static_cast<u32>(Attribute::Index::Attribute_0)};
+            if (attribute >= Attribute::Index::Attribute_0) {
+                declr_input_attribute.insert(attribute);
+                return "input_attribute_" + std::to_string(index);
+            }
 
-        const u32 index{static_cast<u32>(attribute) -
-                        static_cast<u32>(Attribute::Index::Attribute_0)};
-        if (attribute >= Attribute::Index::Attribute_0) {
-            return "input_attribute_" + std::to_string(index);
+            LOG_CRITICAL(HW_GPU, "Unhandled input attribute: 0x%02x", index);
+            UNREACHABLE();
         }
-
-        LOG_CRITICAL(HW_GPU, "Unhandled input attribute: 0x%02x", index);
-        UNREACHABLE();
     }
 
     /// Generates code representing an output attribute register.
     std::string GetOutputAttribute(Attribute::Index attribute) {
         switch (attribute) {
         case Attribute::Index::Position:
-            return "gl_Position";
+            return "position";
         default:
             const u32 index{static_cast<u32>(attribute) -
                             static_cast<u32>(Attribute::Index::Attribute_0)};
@@ -381,12 +385,6 @@ private:
             }
             case OpCode::Id::IPA: {
                 const auto& attribute = instr.attribute.fmt28;
-
-                if (attribute.index == Attribute::Index::Position) {
-                    LOG_CRITICAL(HW_GPU, "Unimplemented");
-                    break;
-                }
-
                 std::string dest = GetRegister(instr.gpr0);
                 SetDest(attribute.element, dest, GetInputAttribute(attribute.index), 1, 4);
                 break;
