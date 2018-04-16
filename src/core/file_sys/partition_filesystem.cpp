@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <utility>
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/file_sys/partition_filesystem.h"
@@ -44,8 +45,8 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, siz
     return result;
 }
 
-Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8> file_data, size_t offset) {
-    size_t total_size = static_cast<size_t>(file_data.size() - offset);
+Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8>& file_data, size_t offset) {
+    size_t total_size = file_data.size() - offset;
     if (total_size < sizeof(Header))
         return Loader::ResultStatus::Error;
 
@@ -61,7 +62,7 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8> file_data, 
         memcpy(&entry.fs_entry, &file_data[entries_offset + (i * entry_size)], sizeof(FSEntry));
         entry.name = std::string(reinterpret_cast<const char*>(
             &file_data[strtab_offset + entry.fs_entry.strtab_offset]));
-        pfs_entries.push_back(entry);
+        pfs_entries.push_back(std::move(entry));
     }
 
     content_offset = strtab_offset + pfs_header.strtab_size;
@@ -69,7 +70,7 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8> file_data, 
     return Loader::ResultStatus::Success;
 }
 
-u32 PartitionFilesystem::GetNumEntries(void) const {
+u32 PartitionFilesystem::GetNumEntries() const {
     return pfs_header.num_entries;
 }
 
