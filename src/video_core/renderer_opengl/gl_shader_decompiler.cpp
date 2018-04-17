@@ -207,7 +207,8 @@ private:
 
     /// Generates code representing a uniform (C buffer) register.
     std::string GetUniform(const Uniform& reg) {
-        declr_const_buffers[reg.index].MarkAsUsed(reg.index, reg.offset, stage);
+        declr_const_buffers[reg.index].MarkAsUsed(static_cast<unsigned>(reg.index),
+                                                  static_cast<unsigned>(reg.offset), stage);
         return 'c' + std::to_string(reg.index) + '[' + std::to_string(reg.offset) + ']';
     }
 
