@@ -167,7 +167,7 @@ private:
                 return "input_attribute_" + std::to_string(index);
             }
 
-            LOG_CRITICAL(HW_GPU, "Unhandled input attribute: 0x%02x", index);
+            NGLOG_CRITICAL(HW_GPU, "Unhandled input attribute: {}", index);
             UNREACHABLE();
         }
     }
@@ -185,7 +185,7 @@ private:
                 return "output_attribute_" + std::to_string(index);
             }
 
-            LOG_CRITICAL(HW_GPU, "Unhandled output attribute: 0x%02x", index);
+            NGLOG_CRITICAL(HW_GPU, "Unhandled output attribute: {}", index);
             UNREACHABLE();
         }
     }
@@ -325,17 +325,17 @@ private:
                     SetDest(0, dest, "min(" + op_a + "," + op_b + ")", 1, 1, instr.alu.abs_d);
                     break;
                 default:
-                    LOG_ERROR(HW_GPU, "Unhandled sub op: 0x%02x", (int)instr.sub_op.Value());
-                    throw DecompileFail("Unhandled sub op");
+                    NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {}",
+                                   static_cast<unsigned>(instr.sub_op.Value()));
+                    UNREACHABLE();
                 }
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: 0x%02x (%s): 0x%08x",
-                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                throw DecompileFail("Unhandled instruction");
-                break;
+                NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {} ({}): {}",
+                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                UNREACHABLE();
             }
             }
             break;
@@ -368,11 +368,10 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic FFMA instruction: 0x%02x (%s): 0x%08x",
-                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                throw DecompileFail("Unhandled instruction");
-                break;
+                NGLOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {} ({}): {}",
+                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                UNREACHABLE();
             }
             }
 
@@ -407,11 +406,10 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: 0x%02x (%s): 0x%08x",
-                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                throw DecompileFail("Unhandled instruction");
-                break;
+                NGLOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {} ({}): {}",
+                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                UNREACHABLE();
             }
             }
             break;
@@ -431,10 +429,10 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled instruction: 0x%02x (%s): 0x%08x",
-                             static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                             OpCode::GetInfo(instr.opcode).name.c_str(), instr.hex);
-                break;
+                NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {} ({}): {}",
+                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
+                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                UNREACHABLE();
             }
             }
 
@@ -600,7 +598,7 @@ boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code,
         GLSLGenerator generator(subroutines, program_code, main_offset, stage);
         return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
-        LOG_ERROR(HW_GPU, "Shader decompilation failed: %s", exception.what());
+        NGLOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());
     }
     return boost::none;
 }
