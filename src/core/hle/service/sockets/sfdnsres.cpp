@@ -30,6 +30,7 @@ SFDNSRES::SFDNSRES() : ServiceFramework("sfdnsres") {
         {7, nullptr, "GetNameInfo"},
         {8, nullptr, "RequestCancelHandle"},
         {9, nullptr, "CancelSocketCall"},
+        {11, nullptr, "ClearDnsIpServerAddressArray"},
     };
     RegisterHandlers(functions);
 }

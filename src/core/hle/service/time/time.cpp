@@ -20,7 +20,11 @@ public:
     ISystemClock() : ServiceFramework("ISystemClock") {
         static const FunctionInfo functions[] = {
             {0, &ISystemClock::GetCurrentTime, "GetCurrentTime"},
-            {2, &ISystemClock::GetSystemClockContext, "GetSystemClockContext"}};
+            {1, nullptr, "SetCurrentTime"},
+            {2, &ISystemClock::GetSystemClockContext, "GetSystemClockContext"},
+            {3, nullptr, "SetSystemClockContext"},
+
+        };
         RegisterHandlers(functions);
     }
 
