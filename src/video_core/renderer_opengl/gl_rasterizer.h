@@ -155,7 +155,6 @@ private:
 
     GLsizeiptr vs_input_size;
 
-    void AnalyzeVertexArray(bool is_indexed);
     void SetupVertexArray(u8* array_ptr, GLintptr buffer_offset);
 
     std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::MaxShaderStage> uniform_buffers;
