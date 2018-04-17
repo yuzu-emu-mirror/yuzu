@@ -13,7 +13,7 @@ namespace Tegra {
 namespace Shader {
 
 struct Register {
-    Register() = default;
+    constexpr Register() = default;
 
     constexpr Register(u64 value) : value(value) {}
 
@@ -40,13 +40,13 @@ struct Register {
     }
 
 private:
-    u64 value;
+    u64 value{};
 };
 
 union Attribute {
     Attribute() = default;
 
-    constexpr Attribute(u64 value) : value(value) {}
+    constexpr explicit Attribute(u64 value) : value(value) {}
 
     enum class Index : u64 {
         Position = 7,
@@ -65,20 +65,20 @@ union Attribute {
     } fmt28;
 
     BitField<39, 8, u64> reg;
-    u64 value;
+    u64 value{};
 };
 
 union Sampler {
     Sampler() = default;
 
-    constexpr Sampler(u64 value) : value(value) {}
+    constexpr explicit Sampler(u64 value) : value(value) {}
 
     enum class Index : u64 {
         Sampler_0 = 8,
     };
 
     BitField<36, 13, Index> index;
-    u64 value;
+    u64 value{};
 };
 
 union Uniform {
@@ -248,7 +248,7 @@ union OpCode {
     BitField<55, 9, Id> op3;
     BitField<52, 12, Id> op4;
     BitField<51, 13, Id> op5;
-    u64 value;
+    u64 value{};
 };
 static_assert(sizeof(OpCode) == 0x8, "Incorrect structure size");
 
