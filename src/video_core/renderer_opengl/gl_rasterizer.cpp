@@ -151,9 +151,9 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     // to avoid OpenGL errors.
     for (unsigned index = 0; index < 16; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
-        LOG_DEBUG(HW_GPU, "vertex attrib %d, count=%d, size=%s, type=%s, offset=%d, normalize=%d",
-                  index, attrib.ComponentCount(), attrib.SizeString().c_str(),
-                  attrib.TypeString().c_str(), attrib.offset.Value(), attrib.IsNormalized());
+        NGLOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
+                    index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
+                    attrib.offset.Value(), attrib.IsNormalized());
 
         glVertexAttribPointer(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
                               attrib.IsNormalized() ? GL_TRUE : GL_FALSE, vertex_array.stride,
