@@ -58,12 +58,11 @@ struct SurfaceParams {
     };
 
     enum class SurfaceType {
-        Color = 0,
-        Texture = 1,
-        Depth = 2,
-        DepthStencil = 3,
-        Fill = 4,
-        Invalid = 5
+        ColorTexture = 0,
+        Depth = 1,
+        DepthStencil = 2,
+        Fill = 3,
+        Invalid = 4,
     };
 
     static constexpr unsigned int GetFormatBpp(PixelFormat format) {
@@ -131,8 +130,7 @@ struct SurfaceParams {
         SurfaceType a_type = GetFormatType(pixel_format_a);
         SurfaceType b_type = GetFormatType(pixel_format_b);
 
-        if ((a_type == SurfaceType::Color || a_type == SurfaceType::Texture) &&
-            (b_type == SurfaceType::Color || b_type == SurfaceType::Texture)) {
+        if (a_type == SurfaceType::ColorTexture && b_type == SurfaceType::ColorTexture) {
             return true;
         }
 
@@ -148,12 +146,8 @@ struct SurfaceParams {
     }
 
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
-        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::ABGR8)) {
-            return SurfaceType::Color;
-        }
-
         if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::DXT1)) {
-            return SurfaceType::Texture;
+            return SurfaceType::ColorTexture;
         }
 
         // TODO(Subv): Implement the other formats

@@ -47,26 +47,20 @@ struct FormatTuple {
     u32 compression_factor;
 };
 
-static constexpr std::array<FormatTuple, 1> fb_format_tuples = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, false, 1}, // RGBA8
-}};
-
 static constexpr std::array<FormatTuple, 2> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                   // ABGR8
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format) {
+    using Tegra::Texture::ComponentType;
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
-    if (type == SurfaceType::Color) {
-        ASSERT(static_cast<size_t>(pixel_format) < fb_format_tuples.size());
-        return fb_format_tuples[static_cast<unsigned int>(pixel_format)];
+    if (type == SurfaceType::ColorTexture) {
+        ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
+        return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
         // TODO(Subv): Implement depth formats
         ASSERT_MSG(false, "Unimplemented");
-    } else if (type == SurfaceType::Texture) {
-        ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
-        return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     }
 
     UNREACHABLE();
@@ -180,7 +174,7 @@ static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rec
 
     u32 buffers = 0;
 
-    if (type == SurfaceType::Color || type == SurfaceType::Texture) {
+    if (type == SurfaceType::ColorTexture) {
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, src_tex,
                                0);
         glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
@@ -658,7 +652,7 @@ void CachedSurface::DownloadGLTexture(const MathUtil::Rectangle<u32>& rect, GLui
         state.draw.read_framebuffer = read_fb_handle;
         state.Apply();
 
-        if (type == SurfaceType::Color || type == SurfaceType::Texture) {
+        if (type == SurfaceType::ColorTexture) {
             glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                                    texture.handle, 0);
             glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
@@ -1300,7 +1294,6 @@ void RasterizerCacheOpenGL::InvalidateRegion(VAddr addr, u64 size, const Surface
     const SurfaceInterval invalid_interval(addr, addr + size);
 
     if (region_owner != nullptr) {
-        ASSERT(region_owner->type != SurfaceType::Texture);
         ASSERT(addr >= region_owner->addr && addr + size <= region_owner->end);
         // Surfaces can't have a gap
         ASSERT(region_owner->width == region_owner->stride);
