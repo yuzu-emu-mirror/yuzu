@@ -87,6 +87,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
             return PixelFormat::RGBA8;
         default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -96,6 +97,7 @@ struct SurfaceParams {
         case Tegra::FramebufferConfig::PixelFormat::ABGR8:
             return PixelFormat::RGBA8;
         default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -108,6 +110,7 @@ struct SurfaceParams {
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
