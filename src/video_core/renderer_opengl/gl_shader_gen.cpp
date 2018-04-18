@@ -27,10 +27,13 @@ out gl_PerVertex {
     vec4 gl_Position;
 };
 
+out vec4 position;
+
 void main() {
     exec_shader();
-}
 
+    gl_Position = position;
+}
 )";
     out += program.first;
     return {out, program.second};
@@ -46,6 +49,7 @@ ProgramResult GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSCo
                                 .get_value_or({});
     out += R"(
 
+in vec4 position;
 out vec4 color;
 
 uniform sampler2D tex[32];

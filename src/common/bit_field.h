@@ -192,11 +192,6 @@ private:
     static_assert(position < 8 * sizeof(T), "Invalid position");
     static_assert(bits <= 8 * sizeof(T), "Invalid number of bits");
     static_assert(bits > 0, "Invalid number of bits");
-    static_assert(std::is_pod<T>::value, "Invalid base type");
+    static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable in a BitField");
 };
 #pragma pack()
-
-#if (__GNUC__ >= 5) || defined(__clang__) || defined(_MSC_VER)
-static_assert(std::is_trivially_copyable<BitField<0, 1, unsigned>>::value,
-              "BitField must be trivially copyable");
-#endif
