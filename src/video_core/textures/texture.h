@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -57,6 +58,8 @@ union TextureHandle {
 static_assert(sizeof(TextureHandle) == 4, "TextureHandle has wrong size");
 
 struct TICEntry {
+    static constexpr u32 DefaultBlockHeight = 16;
+
     union {
         u32 raw;
         BitField<0, 7, TextureFormat> format;
@@ -70,7 +73,12 @@ struct TICEntry {
         BitField<0, 16, u32> address_high;
         BitField<21, 3, TICHeaderVersion> header_version;
     };
-    INSERT_PADDING_BYTES(4);
+    union {
+        BitField<3, 3, u32> block_height;
+
+        // High 16 bits of the pitch value
+        BitField<0, 16, u32> pitch_high;
+    };
     union {
         BitField<0, 16, u32> width_minus_1;
         BitField<23, 4, TextureType> texture_type;
@@ -82,12 +90,26 @@ struct TICEntry {
         return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) | address_low);
     }
 
+    u32 Pitch() const {
+        ASSERT(header_version == TICHeaderVersion::Pitch ||
+               header_version == TICHeaderVersion::PitchColorKey);
+        // The pitch value is 21 bits, and is 32B aligned.
+        return pitch_high << 5;
+    }
+
     u32 Width() const {
         return width_minus_1 + 1;
     }
 
     u32 Height() const {
         return height_minus_1 + 1;
+    }
+
+    u32 BlockHeight() const {
+        ASSERT(header_version == TICHeaderVersion::BlockLinear ||
+               header_version == TICHeaderVersion::BlockLinearColorKey);
+        // The block height is stored in log2 format.
+        return 1 << block_height;
     }
 
     bool IsTiled() const {

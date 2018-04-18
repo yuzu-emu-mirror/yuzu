@@ -523,7 +523,8 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
     src_params.width = std::min(framebuffer.width, pixel_stride);
     src_params.height = framebuffer.height;
     src_params.stride = pixel_stride;
-    src_params.is_tiled = false;
+    src_params.is_tiled = true;
+    src_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     src_params.pixel_format =
         SurfaceParams::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format);
     src_params.UpdateParams();

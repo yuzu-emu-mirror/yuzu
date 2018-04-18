@@ -115,6 +115,18 @@ struct SurfaceParams {
         }
     }
 
+    static Tegra::Texture::TextureFormat TextureFormatFromPixelFormat(PixelFormat format) {
+        // TODO(Subv): Properly implement this
+        switch (format) {
+        case PixelFormat::RGBA8:
+            return Tegra::Texture::TextureFormat::A8R8G8B8;
+        case PixelFormat::DXT1:
+            return Tegra::Texture::TextureFormat::DXT1;
+        default:
+            UNREACHABLE();
+        }
+    }
+
     static bool CheckFormatsBlittable(PixelFormat pixel_format_a, PixelFormat pixel_format_b) {
         SurfaceType a_type = GetFormatType(pixel_format_a);
         SurfaceType b_type = GetFormatType(pixel_format_b);
@@ -213,6 +225,7 @@ struct SurfaceParams {
     u32 width = 0;
     u32 height = 0;
     u32 stride = 0;
+    u32 block_height = 0;
     u16 res_scale = 1;
 
     bool is_tiled = false;

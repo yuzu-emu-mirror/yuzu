@@ -102,39 +102,36 @@ static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
 }
 
 template <bool morton_to_gl, PixelFormat format>
-void MortonCopy(u32 stride, u32 height, u8* gl_buffer, VAddr base, VAddr start, VAddr end) {
+void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, VAddr base, VAddr start,
+                VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
 
-    // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check the
-    // configuration for this and perform more generic un/swizzle
-    LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-    VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
-                                   Memory::GetPointer(base), gl_buffer, morton_to_gl);
+    if (morton_to_gl) {
+        auto data = Tegra::Texture::UnswizzleTexture(
+            base, SurfaceParams::TextureFormatFromPixelFormat(format), stride, height,
+            block_height);
+        std::memcpy(gl_buffer, data.data(), data.size());
+    } else {
+        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
+        // the configuration for this and perform more generic un/swizzle
+        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+        VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
+                                       Memory::GetPointer(base), gl_buffer, morton_to_gl);
+    }
 }
 
-template <>
-void MortonCopy<true, PixelFormat::DXT1>(u32 stride, u32 height, u8* gl_buffer, VAddr base,
-                                         VAddr start, VAddr end) {
-    constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(PixelFormat::DXT1) / 8;
-    constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(PixelFormat::DXT1);
-
-    // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check the
-    // configuration for this and perform more generic un/swizzle
-    LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-    auto data =
-        Tegra::Texture::UnswizzleTexture(base, Tegra::Texture::TextureFormat::DXT1, stride, height);
-    std::memcpy(gl_buffer, data.data(), data.size());
-}
-
-static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 2> morton_to_gl_fns = {
-    MortonCopy<true, PixelFormat::RGBA8>,
-    MortonCopy<true, PixelFormat::DXT1>,
+static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr), 2> morton_to_gl_fns =
+    {
+        MortonCopy<true, PixelFormat::RGBA8>,
+        MortonCopy<true, PixelFormat::DXT1>,
 };
 
-static constexpr std::array<void (*)(u32, u32, u8*, VAddr, VAddr, VAddr), 2> gl_to_morton_fns = {
-    MortonCopy<false, PixelFormat::RGBA8>,
-    MortonCopy<false, PixelFormat::DXT1>,
+static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr), 2> gl_to_morton_fns =
+    {
+        MortonCopy<false, PixelFormat::RGBA8>,
+        // TODO(Subv): Swizzling the DXT1 format is not yet supported
+        nullptr,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -311,15 +308,16 @@ MathUtil::Rectangle<u32> SurfaceParams::GetScaledSubRect(const SurfaceParams& su
 
 bool SurfaceParams::ExactMatch(const SurfaceParams& other_surface) const {
     return std::tie(other_surface.addr, other_surface.width, other_surface.height,
-                    other_surface.stride, other_surface.pixel_format, other_surface.is_tiled) ==
-               std::tie(addr, width, height, stride, pixel_format, is_tiled) &&
+                    other_surface.stride, other_surface.block_height, other_surface.pixel_format,
+                    other_surface.is_tiled) ==
+               std::tie(addr, width, height, stride, block_height, pixel_format, is_tiled) &&
            pixel_format != PixelFormat::Invalid;
 }
 
 bool SurfaceParams::CanSubRect(const SurfaceParams& sub_surface) const {
     return sub_surface.addr >= addr && sub_surface.end <= end &&
            sub_surface.pixel_format == pixel_format && pixel_format != PixelFormat::Invalid &&
-           sub_surface.is_tiled == is_tiled &&
+           sub_surface.is_tiled == is_tiled && sub_surface.block_height == block_height &&
            (sub_surface.addr - addr) % BytesInPixels(is_tiled ? 64 : 1) == 0 &&
            (sub_surface.stride == stride || sub_surface.height <= (is_tiled ? 8u : 1u)) &&
            GetSubRect(sub_surface).left + sub_surface.width <= stride;
@@ -328,7 +326,8 @@ bool SurfaceParams::CanSubRect(const SurfaceParams& sub_surface) const {
 bool SurfaceParams::CanExpand(const SurfaceParams& expanded_surface) const {
     return pixel_format != PixelFormat::Invalid && pixel_format == expanded_surface.pixel_format &&
            addr <= expanded_surface.end && expanded_surface.addr <= end &&
-           is_tiled == expanded_surface.is_tiled && stride == expanded_surface.stride &&
+           is_tiled == expanded_surface.is_tiled && block_height == expanded_surface.block_height &&
+           stride == expanded_surface.stride &&
            (std::max(expanded_surface.addr, addr) - std::min(expanded_surface.addr, addr)) %
                    BytesInPixels(stride * (is_tiled ? 8 : 1)) ==
                0;
@@ -339,6 +338,9 @@ bool SurfaceParams::CanTexCopy(const SurfaceParams& texcopy_params) const {
         end < texcopy_params.end) {
         return false;
     }
+    if (texcopy_params.block_height != block_height)
+        return false;
+
     if (texcopy_params.width != texcopy_params.stride) {
         const u32 tile_stride = static_cast<u32>(BytesInPixels(stride * (is_tiled ? 8 : 1)));
         return (texcopy_params.addr - addr) % BytesInPixels(is_tiled ? 64 : 1) == 0 &&
@@ -481,18 +483,13 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
     const u64 start_offset = load_start - addr;
 
     if (!is_tiled) {
-        ASSERT(type == SurfaceType::Color);
         const u32 bytes_per_pixel{GetFormatBpp() >> 3};
 
-        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
-        // the configuration for this and perform more generic un/swizzle
-        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-        VideoCore::MortonCopyPixels128(width, height, bytes_per_pixel, 4,
-                                       texture_src_data + start_offset, &gl_buffer[start_offset],
-                                       true);
+        std::memcpy(&gl_buffer[start_offset], texture_src_data + start_offset,
+                    bytes_per_pixel * width * height);
     } else {
-        morton_to_gl_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
-                                                            load_start, load_end);
+        morton_to_gl_fns[static_cast<size_t>(pixel_format)](
+            stride, block_height, height, &gl_buffer[0], addr, load_start, load_end);
     }
 }
 
@@ -533,11 +530,10 @@ void CachedSurface::FlushGLBuffer(VAddr flush_start, VAddr flush_end) {
         if (backup_bytes)
             std::memcpy(&dst_buffer[coarse_start_offset], &backup_data[0], backup_bytes);
     } else if (!is_tiled) {
-        ASSERT(type == SurfaceType::Color);
         std::memcpy(dst_buffer + start_offset, &gl_buffer[start_offset], flush_end - flush_start);
     } else {
-        gl_to_morton_fns[static_cast<size_t>(pixel_format)](stride, height, &gl_buffer[0], addr,
-                                                            flush_start, flush_end);
+        gl_to_morton_fns[static_cast<size_t>(pixel_format)](
+            stride, block_height, height, &gl_buffer[0], addr, flush_start, flush_end);
     }
 }
 
@@ -1041,9 +1037,18 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     params.height = config.tic.Height();
     params.is_tiled = config.tic.IsTiled();
     params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
+
+    if (config.tic.IsTiled()) {
+        params.block_height = config.tic.BlockHeight();
+    } else {
+        // Use the texture-provided stride value if the texture isn't tiled.
+        params.stride = params.PixelsInBytes(config.tic.Pitch());
+    }
+
     params.UpdateParams();
 
-    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0) {
+    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0 ||
+        params.stride != params.width) {
         Surface src_surface;
         MathUtil::Rectangle<u32> rect;
         std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);
@@ -1094,6 +1099,8 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     color_params.res_scale = resolution_scale_factor;
     color_params.width = config.width;
     color_params.height = config.height;
+    // TODO(Subv): Can framebuffers use a different block height?
+    color_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     SurfaceParams depth_params = color_params;
 
     color_params.addr = memory_manager->PhysicalToVirtualAddress(config.Address());
