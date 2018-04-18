@@ -52,7 +52,7 @@ static constexpr std::array<FormatTuple, 1> fb_format_tuples = {{
 }};
 
 static constexpr std::array<FormatTuple, 2> tex_format_tuples = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, false, 1},                       // RGBA8
+    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                   // ABGR8
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
 }};
 
@@ -123,13 +123,13 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, VAddr b
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr), 2> morton_to_gl_fns =
     {
-        MortonCopy<true, PixelFormat::RGBA8>,
+        MortonCopy<true, PixelFormat::ABGR8>,
         MortonCopy<true, PixelFormat::DXT1>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr), 2> gl_to_morton_fns =
     {
-        MortonCopy<false, PixelFormat::RGBA8>,
+        MortonCopy<false, PixelFormat::ABGR8>,
         // TODO(Subv): Swizzling the DXT1 format is not yet supported
         nullptr,
 };
