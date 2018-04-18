@@ -446,7 +446,32 @@ void RasterizerOpenGL::BindTextures() {
     }
 }
 
-void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 id) {}
+void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 method) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    switch (method) {
+    case MAXWELL3D_REG_INDEX(blend.separate_alpha):
+        ASSERT_MSG(false, "unimplemented");
+        break;
+    case MAXWELL3D_REG_INDEX(blend.equation_rgb):
+        state.blend.rgb_equation = MaxwellToGL::BlendEquation(regs.blend.equation_rgb);
+        break;
+    case MAXWELL3D_REG_INDEX(blend.factor_source_rgb):
+        state.blend.src_rgb_func = MaxwellToGL::BlendFunc(regs.blend.factor_source_rgb);
+        break;
+    case MAXWELL3D_REG_INDEX(blend.factor_dest_rgb):
+        state.blend.dst_rgb_func = MaxwellToGL::BlendFunc(regs.blend.factor_dest_rgb);
+        break;
+    case MAXWELL3D_REG_INDEX(blend.equation_a):
+        state.blend.a_equation = MaxwellToGL::BlendEquation(regs.blend.equation_a);
+        break;
+    case MAXWELL3D_REG_INDEX(blend.factor_source_a):
+        state.blend.src_a_func = MaxwellToGL::BlendFunc(regs.blend.factor_source_a);
+        break;
+    case MAXWELL3D_REG_INDEX(blend.factor_dest_a):
+        state.blend.dst_a_func = MaxwellToGL::BlendFunc(regs.blend.factor_dest_a);
+        break;
+    }
+}
 
 void RasterizerOpenGL::FlushAll() {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);

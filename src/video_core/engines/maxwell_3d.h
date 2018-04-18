@@ -20,6 +20,9 @@
 namespace Tegra {
 namespace Engines {
 
+#define MAXWELL3D_REG_INDEX(field_name)                                                            \
+    (offsetof(Tegra::Engines::Maxwell3D::Regs, field_name) / sizeof(u32))
+
 class Maxwell3D final {
 public:
     explicit Maxwell3D(MemoryManager& memory_manager);
@@ -254,6 +257,46 @@ public:
             UnsignedInt = 0x2,
         };
 
+        struct Blend {
+            enum class Equation : u32 {
+                Add = 1,
+                Subtract = 2,
+                ReverseSubtract = 3,
+                Min = 4,
+                Max = 5,
+            };
+
+            enum class Factor : u32 {
+                Zero = 0x1,
+                One = 0x2,
+                SourceColor = 0x3,
+                OneMinusSourceColor = 0x4,
+                SourceAlpha = 0x5,
+                OneMinusSourceAlpha = 0x6,
+                DestAlpha = 0x7,
+                OneMinusDestAlpha = 0x8,
+                DestColor = 0x9,
+                OneMinusDestColor = 0xa,
+                SourceAlphaSaturate = 0xb,
+                Source1Color = 0x10,
+                OneMinusSource1Color = 0x11,
+                Source1Alpha = 0x12,
+                OneMinusSource1Alpha = 0x13,
+                ConstantColor = 0x61,
+                OneMinusConstantColor = 0x62,
+                ConstantAlpha = 0x63,
+                OneMinusConstantAlpha = 0x64,
+            };
+
+            u32 separate_alpha;
+            Equation equation_rgb;
+            Factor factor_source_rgb;
+            Factor factor_dest_rgb;
+            Equation equation_a;
+            Factor factor_source_a;
+            Factor factor_dest_a;
+        };
+
         union {
             struct {
                 INSERT_PADDING_WORDS(0x200);
@@ -451,7 +494,9 @@ public:
                     }
                 } vertex_array[NumVertexArrays];
 
-                INSERT_PADDING_WORDS(0x40);
+                Blend blend;
+
+                INSERT_PADDING_WORDS(0x39);
 
                 struct {
                     u32 limit_high;
@@ -616,6 +661,7 @@ ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
+ASSERT_REG_POSITION(blend, 0x780);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
 ASSERT_REG_POSITION(const_buffer, 0x8E0);
