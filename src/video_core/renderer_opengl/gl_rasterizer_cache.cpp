@@ -36,6 +36,7 @@
 
 using SurfaceType = SurfaceParams::SurfaceType;
 using PixelFormat = SurfaceParams::PixelFormat;
+using ComponentType = SurfaceParams::ComponentType;
 
 struct FormatTuple {
     GLint internal_format;
@@ -52,11 +53,12 @@ static constexpr std::array<FormatTuple, 2> tex_format_tuples = {{
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
 }};
 
-static const FormatTuple& GetFormatTuple(PixelFormat pixel_format) {
-    using Tegra::Texture::ComponentType;
+static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
     if (type == SurfaceType::ColorTexture) {
         ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
+        // For now only UNORM components are supported
+        ASSERT(component_type == ComponentType::UNorm);
         return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
         // TODO(Subv): Implement depth formats
@@ -303,8 +305,9 @@ MathUtil::Rectangle<u32> SurfaceParams::GetScaledSubRect(const SurfaceParams& su
 bool SurfaceParams::ExactMatch(const SurfaceParams& other_surface) const {
     return std::tie(other_surface.addr, other_surface.width, other_surface.height,
                     other_surface.stride, other_surface.block_height, other_surface.pixel_format,
-                    other_surface.is_tiled) ==
-               std::tie(addr, width, height, stride, block_height, pixel_format, is_tiled) &&
+                    other_surface.component_type,
+                    other_surface.is_tiled) == std::tie(addr, width, height, stride, block_height,
+                                                        pixel_format, component_type, is_tiled) &&
            pixel_format != PixelFormat::Invalid;
 }
 
@@ -312,6 +315,7 @@ bool SurfaceParams::CanSubRect(const SurfaceParams& sub_surface) const {
     return sub_surface.addr >= addr && sub_surface.end <= end &&
            sub_surface.pixel_format == pixel_format && pixel_format != PixelFormat::Invalid &&
            sub_surface.is_tiled == is_tiled && sub_surface.block_height == block_height &&
+           sub_surface.component_type == component_type &&
            (sub_surface.addr - addr) % BytesInPixels(is_tiled ? 64 : 1) == 0 &&
            (sub_surface.stride == stride || sub_surface.height <= (is_tiled ? 8u : 1u)) &&
            GetSubRect(sub_surface).left + sub_surface.width <= stride;
@@ -321,7 +325,7 @@ bool SurfaceParams::CanExpand(const SurfaceParams& expanded_surface) const {
     return pixel_format != PixelFormat::Invalid && pixel_format == expanded_surface.pixel_format &&
            addr <= expanded_surface.end && expanded_surface.addr <= end &&
            is_tiled == expanded_surface.is_tiled && block_height == expanded_surface.block_height &&
-           stride == expanded_surface.stride &&
+           component_type == expanded_surface.component_type && stride == expanded_surface.stride &&
            (std::max(expanded_surface.addr, addr) - std::min(expanded_surface.addr, addr)) %
                    BytesInPixels(stride * (is_tiled ? 8 : 1)) ==
                0;
@@ -332,7 +336,8 @@ bool SurfaceParams::CanTexCopy(const SurfaceParams& texcopy_params) const {
         end < texcopy_params.end) {
         return false;
     }
-    if (texcopy_params.block_height != block_height)
+    if (texcopy_params.block_height != block_height ||
+        texcopy_params.component_type != component_type)
         return false;
 
     if (texcopy_params.width != texcopy_params.stride) {
@@ -546,7 +551,7 @@ void CachedSurface::UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint
     GLint y0 = static_cast<GLint>(rect.bottom);
     size_t buffer_offset = (y0 * stride + x0) * GetGLBytesPerPixel(pixel_format);
 
-    const FormatTuple& tuple = GetFormatTuple(pixel_format);
+    const FormatTuple& tuple = GetFormatTuple(pixel_format, component_type);
     GLuint target_tex = texture.handle;
 
     // If not 1x scale, create 1x texture that we will blit from to replace texture subrect in
@@ -619,7 +624,7 @@ void CachedSurface::DownloadGLTexture(const MathUtil::Rectangle<u32>& rect, GLui
     OpenGLState prev_state = state;
     SCOPE_EXIT({ prev_state.Apply(); });
 
-    const FormatTuple& tuple = GetFormatTuple(pixel_format);
+    const FormatTuple& tuple = GetFormatTuple(pixel_format, component_type);
 
     // Ensure no bad interactions with GL_PACK_ALIGNMENT
     ASSERT(stride * GetGLBytesPerPixel(pixel_format) % 4 == 0);
@@ -1032,6 +1037,13 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     params.is_tiled = config.tic.IsTiled();
     params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
 
+    // TODO(Subv): Different types per component are not supported.
+    ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
+           config.tic.r_type.Value() == config.tic.b_type.Value() &&
+           config.tic.r_type.Value() == config.tic.a_type.Value());
+
+    params.component_type = SurfaceParams::ComponentTypeFromTexture(config.tic.r_type.Value());
+
     if (config.tic.IsTiled()) {
         params.block_height = config.tic.BlockHeight();
     } else {
@@ -1099,6 +1111,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
 
     color_params.addr = memory_manager->PhysicalToVirtualAddress(config.Address());
     color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
+    color_params.component_type = SurfaceParams::ComponentTypeFromRenderTarget(config.format);
     color_params.UpdateParams();
 
     ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
@@ -1355,7 +1368,8 @@ Surface RasterizerCacheOpenGL::CreateSurface(const SurfaceParams& params) {
 
     surface->gl_buffer_size = 0;
     surface->invalid_regions.insert(surface->GetInterval());
-    AllocateSurfaceTexture(surface->texture.handle, GetFormatTuple(surface->pixel_format),
+    AllocateSurfaceTexture(surface->texture.handle,
+                           GetFormatTuple(surface->pixel_format, surface->component_type),
                            surface->GetScaledWidth(), surface->GetScaledHeight());
 
     return surface;

@@ -57,6 +57,15 @@ struct SurfaceParams {
         Invalid = 255,
     };
 
+    enum class ComponentType {
+        Invalid = 0,
+        SNorm = 1,
+        UNorm = 2,
+        SInt = 3,
+        UInt = 4,
+        Float = 5,
+    };
+
     enum class SurfaceType {
         ColorTexture = 0,
         Depth = 1,
@@ -122,6 +131,40 @@ struct SurfaceParams {
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         default:
+            UNREACHABLE();
+        }
+    }
+
+    static ComponentType ComponentTypeFromTexture(Tegra::Texture::ComponentType type) {
+        // TODO(Subv): Implement more component types
+        switch (type) {
+        case Tegra::Texture::ComponentType::UNORM:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented component type={}", static_cast<u32>(type));
+            UNREACHABLE();
+        }
+    }
+
+    static ComponentType ComponentTypeFromRenderTarget(Tegra::RenderTargetFormat format) {
+        // TODO(Subv): Implement more render targets
+        switch (format) {
+        case Tegra::RenderTargetFormat::RGBA8_UNORM:
+        case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
+    }
+
+    static ComponentType ComponentTypeFromGPUPixelFormat(
+        Tegra::FramebufferConfig::PixelFormat format) {
+        switch (format) {
+        case Tegra::FramebufferConfig::PixelFormat::ABGR8:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -225,6 +268,7 @@ struct SurfaceParams {
     bool is_tiled = false;
     PixelFormat pixel_format = PixelFormat::Invalid;
     SurfaceType type = SurfaceType::Invalid;
+    ComponentType component_type = ComponentType::Invalid;
 };
 
 struct CachedSurface : SurfaceParams {

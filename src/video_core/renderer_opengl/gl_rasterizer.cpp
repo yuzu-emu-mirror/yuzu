@@ -527,6 +527,8 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
     src_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     src_params.pixel_format =
         SurfaceParams::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format);
+    src_params.component_type =
+        SurfaceParams::ComponentTypeFromGPUPixelFormat(framebuffer.pixel_format);
     src_params.UpdateParams();
 
     MathUtil::Rectangle<u32> src_rect;
