@@ -336,7 +336,7 @@ private:
                 NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {} ({}): {}",
                                static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
                                OpCode::GetInfo(instr.opcode).name, instr.hex);
-                UNREACHABLE();
+                // UNREACHABLE();
             }
             }
             break;
@@ -433,7 +433,7 @@ private:
                 NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {} ({}): {}",
                                static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
                                OpCode::GetInfo(instr.opcode).name, instr.hex);
-                UNREACHABLE();
+                // UNREACHABLE();
             }
             }
 
