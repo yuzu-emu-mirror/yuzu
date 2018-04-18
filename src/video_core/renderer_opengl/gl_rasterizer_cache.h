@@ -52,18 +52,26 @@ enum class ScaleMatch {
 
 struct SurfaceParams {
     enum class PixelFormat {
-        RGBA8 = 0,
+        ABGR8 = 0,
         DXT1 = 1,
         Invalid = 255,
     };
 
+    enum class ComponentType {
+        Invalid = 0,
+        SNorm = 1,
+        UNorm = 2,
+        SInt = 3,
+        UInt = 4,
+        Float = 5,
+    };
+
     enum class SurfaceType {
-        Color = 0,
-        Texture = 1,
-        Depth = 2,
-        DepthStencil = 3,
-        Fill = 4,
-        Invalid = 5
+        ColorTexture = 0,
+        Depth = 1,
+        DepthStencil = 2,
+        Fill = 3,
+        Invalid = 4,
     };
 
     static constexpr unsigned int GetFormatBpp(PixelFormat format) {
@@ -71,7 +79,7 @@ struct SurfaceParams {
             return 0;
 
         constexpr std::array<unsigned int, 2> bpp_table = {
-            32, // RGBA8
+            32, // ABGR8
             64, // DXT1
         };
 
@@ -85,7 +93,7 @@ struct SurfaceParams {
     static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
-            return PixelFormat::RGBA8;
+            return PixelFormat::ABGR8;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -95,7 +103,7 @@ struct SurfaceParams {
     static PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
         switch (format) {
         case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-            return PixelFormat::RGBA8;
+            return PixelFormat::ABGR8;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -106,7 +114,7 @@ struct SurfaceParams {
         // TODO(Subv): Properly implement this
         switch (format) {
         case Tegra::Texture::TextureFormat::A8R8G8B8:
-            return PixelFormat::RGBA8;
+            return PixelFormat::ABGR8;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         default:
@@ -118,7 +126,7 @@ struct SurfaceParams {
     static Tegra::Texture::TextureFormat TextureFormatFromPixelFormat(PixelFormat format) {
         // TODO(Subv): Properly implement this
         switch (format) {
-        case PixelFormat::RGBA8:
+        case PixelFormat::ABGR8:
             return Tegra::Texture::TextureFormat::A8R8G8B8;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
@@ -127,12 +135,45 @@ struct SurfaceParams {
         }
     }
 
+    static ComponentType ComponentTypeFromTexture(Tegra::Texture::ComponentType type) {
+        // TODO(Subv): Implement more component types
+        switch (type) {
+        case Tegra::Texture::ComponentType::UNORM:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented component type={}", static_cast<u32>(type));
+            UNREACHABLE();
+        }
+    }
+
+    static ComponentType ComponentTypeFromRenderTarget(Tegra::RenderTargetFormat format) {
+        // TODO(Subv): Implement more render targets
+        switch (format) {
+        case Tegra::RenderTargetFormat::RGBA8_UNORM:
+        case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
+    }
+
+    static ComponentType ComponentTypeFromGPUPixelFormat(
+        Tegra::FramebufferConfig::PixelFormat format) {
+        switch (format) {
+        case Tegra::FramebufferConfig::PixelFormat::ABGR8:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
+    }
+
     static bool CheckFormatsBlittable(PixelFormat pixel_format_a, PixelFormat pixel_format_b) {
         SurfaceType a_type = GetFormatType(pixel_format_a);
         SurfaceType b_type = GetFormatType(pixel_format_b);
 
-        if ((a_type == SurfaceType::Color || a_type == SurfaceType::Texture) &&
-            (b_type == SurfaceType::Color || b_type == SurfaceType::Texture)) {
+        if (a_type == SurfaceType::ColorTexture && b_type == SurfaceType::ColorTexture) {
             return true;
         }
 
@@ -148,12 +189,8 @@ struct SurfaceParams {
     }
 
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
-        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::RGBA8)) {
-            return SurfaceType::Color;
-        }
-
         if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::DXT1)) {
-            return SurfaceType::Texture;
+            return SurfaceType::ColorTexture;
         }
 
         // TODO(Subv): Implement the other formats
@@ -231,6 +268,7 @@ struct SurfaceParams {
     bool is_tiled = false;
     PixelFormat pixel_format = PixelFormat::Invalid;
     SurfaceType type = SurfaceType::Invalid;
+    ComponentType component_type = ComponentType::Invalid;
 };
 
 struct CachedSurface : SurfaceParams {
