@@ -29,9 +29,15 @@ out gl_PerVertex {
 
 out vec4 position;
 
+layout (std140) uniform vs_config {
+    vec4 viewport_flip;
+};
+
 void main() {
     exec_shader();
 
+    // Viewport can be flipped, which is unsupported by glViewport
+    position.xy *= viewport_flip.xy;
     gl_Position = position;
 }
 )";
@@ -51,6 +57,10 @@ ProgramResult GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSCo
 
 in vec4 position;
 out vec4 color;
+
+layout (std140) uniform fs_config {
+    vec4 viewport_flip;
+};
 
 uniform sampler2D tex[32];
 

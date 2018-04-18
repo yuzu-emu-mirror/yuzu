@@ -319,7 +319,15 @@ public:
                     }
                 } rt[NumRenderTargets];
 
-                INSERT_PADDING_WORDS(0x80);
+                struct {
+                    f32 scale_x;
+                    f32 scale_y;
+                    f32 scale_z;
+                    u32 translate_x;
+                    u32 translate_y;
+                    u32 translate_z;
+                    INSERT_PADDING_WORDS(2);
+                } viewport_transform[NumViewports];
 
                 struct {
                     union {
@@ -649,6 +657,7 @@ private:
                   "Field " #field_name " has invalid position")
 
 ASSERT_REG_POSITION(rt, 0x200);
+ASSERT_REG_POSITION(viewport_transform[0], 0x280);
 ASSERT_REG_POSITION(viewport, 0x300);
 ASSERT_REG_POSITION(vertex_buffer, 0x35D);
 ASSERT_REG_POSITION(zeta, 0x3F8);

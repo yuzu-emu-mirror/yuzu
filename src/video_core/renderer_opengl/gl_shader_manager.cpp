@@ -53,6 +53,12 @@ void SetShaderSamplerBindings(GLuint shader) {
 
 } // namespace Impl
 
-void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {}
+void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    // TODO(bunnei): Support more than one viewport
+    viewport_flip[0] = regs.viewport_transform[0].scale_x < 0.0 ? -1.0 : 1.0;
+    viewport_flip[1] = regs.viewport_transform[0].scale_y < 0.0 ? -1.0 : 1.0;
+}
 
 } // namespace GLShader
