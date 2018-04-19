@@ -37,6 +37,15 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
+#ifdef _WIN32
+extern "C" {
+// tells Nvidia and AMD drivers to use the dedicated GPU by default on laptops with switchable
+// graphics
+__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"
