@@ -49,9 +49,11 @@ struct FormatTuple {
 };
 
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                   // ABGR8
-    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false, 1},                      // B5G6R5
-    {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
+    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                     // ABGR8
+    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false, 1},                        // B5G6R5
+    {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16},   // DXT1
+    {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT23
+    {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT45
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
@@ -82,23 +84,6 @@ static u16 GetResolutionScaleFactor() {
 }
 
 template <bool morton_to_gl, PixelFormat format>
-static void MortonCopyTile(u32 stride, u8* tile_buffer, u8* gl_buffer) {
-    constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
-    constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
-    for (u32 y = 0; y < 8; ++y) {
-        for (u32 x = 0; x < 8; ++x) {
-            u8* tile_ptr = tile_buffer + VideoCore::MortonInterleave(x, y) * bytes_per_pixel;
-            u8* gl_ptr = gl_buffer + ((7 - y) * stride + x) * gl_bytes_per_pixel;
-            if (morton_to_gl) {
-                std::memcpy(gl_ptr, tile_ptr, bytes_per_pixel);
-            } else {
-                std::memcpy(tile_ptr, gl_ptr, bytes_per_pixel);
-            }
-        }
-    }
-}
-
-template <bool morton_to_gl, PixelFormat format>
 void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, VAddr base, VAddr start,
                 VAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
@@ -121,9 +106,9 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, VAddr b
 static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
                             SurfaceParams::MaxPixelFormat>
     morton_to_gl_fns = {
-        MortonCopy<true, PixelFormat::ABGR8>,
-        MortonCopy<true, PixelFormat::B5G6R5>,
-        MortonCopy<true, PixelFormat::DXT1>,
+        MortonCopy<true, PixelFormat::ABGR8>, MortonCopy<true, PixelFormat::B5G6R5>,
+        MortonCopy<true, PixelFormat::DXT1>,  MortonCopy<true, PixelFormat::DXT23>,
+        MortonCopy<true, PixelFormat::DXT45>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
@@ -131,7 +116,9 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
     gl_to_morton_fns = {
         MortonCopy<false, PixelFormat::ABGR8>,
         MortonCopy<false, PixelFormat::B5G6R5>,
-        // TODO(Subv): Swizzling the DXT1 format is not yet supported
+        // TODO(Subv): Swizzling the DXT1/DXT23/DXT45 formats is not yet supported
+        nullptr,
+        nullptr,
         nullptr,
 };
 
