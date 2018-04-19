@@ -55,6 +55,8 @@ struct SurfaceParams {
         ABGR8 = 0,
         B5G6R5 = 1,
         DXT1 = 2,
+        DXT23 = 3,
+        DXT45 = 4,
 
         Max,
         Invalid = 255,
@@ -84,9 +86,11 @@ struct SurfaceParams {
             return 0;
 
         constexpr std::array<unsigned int, MaxPixelFormat> bpp_table = {
-            32, // ABGR8
-            16, // B5G6R5
-            64, // DXT1
+            32,  // ABGR8
+            16,  // B5G6R5
+            64,  // DXT1
+            128, // DXT23
+            128, // DXT45
         };
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -125,6 +129,10 @@ struct SurfaceParams {
             return PixelFormat::B5G6R5;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
+        case Tegra::Texture::TextureFormat::DXT23:
+            return PixelFormat::DXT23;
+        case Tegra::Texture::TextureFormat::DXT45:
+            return PixelFormat::DXT45;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -140,6 +148,10 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::B5G6R5;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
+        case PixelFormat::DXT23:
+            return Tegra::Texture::TextureFormat::DXT23;
+        case PixelFormat::DXT45:
+            return Tegra::Texture::TextureFormat::DXT45;
         default:
             UNREACHABLE();
         }
