@@ -90,6 +90,7 @@ union OpCode {
     enum class Id : u64 {
         TEXS = 0x6C,
         IPA = 0xE0,
+        FMUL32_IMM = 0x1E,
         FFMA_IMM = 0x65,
         FFMA_CR = 0x93,
         FFMA_RC = 0xA3,
@@ -142,6 +143,7 @@ union OpCode {
 
         switch (op2) {
         case Id::IPA:
+        case Id::FMUL32_IMM:
             return op2;
         }
 
@@ -235,6 +237,7 @@ union OpCode {
         info_table[Id::FMUL_R] = {Type::Arithmetic, "fmul_r"};
         info_table[Id::FMUL_C] = {Type::Arithmetic, "fmul_c"};
         info_table[Id::FMUL_IMM] = {Type::Arithmetic, "fmul_imm"};
+        info_table[Id::FMUL32_IMM] = {Type::Arithmetic, "fmul32_imm"};
         info_table[Id::FSETP_C] = {Type::Arithmetic, "fsetp_c"};
         info_table[Id::FSETP_R] = {Type::Arithmetic, "fsetp_r"};
         info_table[Id::EXIT] = {Type::Trivial, "exit"};
@@ -309,7 +312,8 @@ union Instruction {
     BitField<39, 8, Register> gpr39;
 
     union {
-        BitField<20, 19, u64> imm20;
+        BitField<20, 19, u64> imm20_19;
+        BitField<20, 32, u64> imm20_32;
         BitField<45, 1, u64> negate_b;
         BitField<46, 1, u64> abs_a;
         BitField<48, 1, u64> negate_a;
@@ -317,11 +321,18 @@ union Instruction {
         BitField<50, 1, u64> abs_d;
         BitField<56, 1, u64> negate_imm;
 
-        float GetImm20() const {
+        float GetImm20_19() const {
             float result{};
-            u32 imm{static_cast<u32>(imm20)};
+            u32 imm{static_cast<u32>(imm20_19)};
             imm <<= 12;
             imm |= negate_imm ? 0x80000000 : 0;
+            std::memcpy(&result, &imm, sizeof(imm));
+            return result;
+        }
+
+        float GetImm20_32() const {
+            float result{};
+            u32 imm{static_cast<u32>(imm20_32)};
             std::memcpy(&result, &imm, sizeof(imm));
             return result;
         }
