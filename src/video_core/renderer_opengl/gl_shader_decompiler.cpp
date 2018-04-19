@@ -112,7 +112,7 @@ public:
     void AddLine(const std::string& text) {
         DEBUG_ASSERT(scope >= 0);
         if (!text.empty()) {
-            shader_source += std::string(static_cast<size_t>(scope) * 4, ' ');
+            AppendIndentation();
         }
         shader_source += text + '\n';
     }
@@ -124,6 +124,10 @@ public:
     int scope = 0;
 
 private:
+    void AppendIndentation() {
+        shader_source.append(static_cast<size_t>(scope) * 4, ' ');
+    }
+
     std::string shader_source;
 };
 
