@@ -399,11 +399,18 @@ private:
                 const std::string op_a = GetRegister(instr.gpr8);
                 const std::string op_b = GetRegister(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
-                const std::string coord = "vec2(" + op_a + ", " + op_b + ")";
-                const std::string texture = "texture(" + sampler + ", " + coord + ")";
+                const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
+                // Add an extra scope and declare the texture coords inside to prevent overwriting
+                // them in case they are used as outputs of the texs instruction.
+                shader.AddLine("{");
+                ++shader.scope;
+                shader.AddLine(coord);
+                const std::string texture = "texture(" + sampler + ", coords)";
                 for (unsigned elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
                     SetDest(elem, GetRegister(instr.gpr0, elem), texture, 1, 4);
                 }
+                --shader.scope;
+                shader.AddLine("}");
                 break;
             }
             default: {
