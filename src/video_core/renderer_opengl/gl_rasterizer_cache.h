@@ -55,6 +55,7 @@ struct SurfaceParams {
         ABGR8 = 0,
         B5G6R5 = 1,
         DXT1 = 2,
+        RGB10_A2 = 3,
 
         Max,
         Invalid = 255,
@@ -87,6 +88,7 @@ struct SurfaceParams {
             32, // ABGR8
             16, // B5G6R5
             64, // DXT1
+            32, // RGB10_A2
         };
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -100,6 +102,8 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
             return PixelFormat::ABGR8;
+        case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+            return PixelFormat::RGB10_A2;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -140,6 +144,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::B5G6R5;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
+        case PixelFormat::RGB10_A2:
+            return Tegra::Texture::TextureFormat::RGB10_A2;
         default:
             UNREACHABLE();
         }
