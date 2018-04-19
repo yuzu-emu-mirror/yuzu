@@ -53,9 +53,14 @@ enum class ScaleMatch {
 struct SurfaceParams {
     enum class PixelFormat {
         ABGR8 = 0,
-        DXT1 = 1,
+        B5G6R5 = 1,
+        DXT1 = 2,
+
+        Max,
         Invalid = 255,
     };
+
+    static constexpr size_t MaxPixelFormat = static_cast<size_t>(PixelFormat::Max);
 
     enum class ComponentType {
         Invalid = 0,
@@ -78,8 +83,9 @@ struct SurfaceParams {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        constexpr std::array<unsigned int, 2> bpp_table = {
+        constexpr std::array<unsigned int, MaxPixelFormat> bpp_table = {
             32, // ABGR8
+            16, // B5G6R5
             64, // DXT1
         };
 
@@ -115,6 +121,8 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::Texture::TextureFormat::A8R8G8B8:
             return PixelFormat::ABGR8;
+        case Tegra::Texture::TextureFormat::B5G6R5:
+            return PixelFormat::B5G6R5;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         default:
@@ -128,6 +136,8 @@ struct SurfaceParams {
         switch (format) {
         case PixelFormat::ABGR8:
             return Tegra::Texture::TextureFormat::A8R8G8B8;
+        case PixelFormat::B5G6R5:
+            return Tegra::Texture::TextureFormat::B5G6R5;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         default:
@@ -189,7 +199,7 @@ struct SurfaceParams {
     }
 
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
-        if ((unsigned int)pixel_format <= static_cast<unsigned int>(PixelFormat::DXT1)) {
+        if (static_cast<size_t>(pixel_format) < MaxPixelFormat) {
             return SurfaceType::ColorTexture;
         }
 
