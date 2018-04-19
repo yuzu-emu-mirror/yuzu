@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "common/alignment.h"
+#include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -127,6 +128,8 @@ void NVFlinger::Compose() {
 
         // Search for a queued buffer and acquire it
         auto buffer = buffer_queue->AcquireBuffer();
+
+        MicroProfileFlip();
 
         if (buffer == boost::none) {
             // There was no queued buffer to draw, render previous frame
