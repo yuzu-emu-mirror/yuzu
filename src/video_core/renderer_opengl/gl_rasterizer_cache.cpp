@@ -52,6 +52,7 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                   // ABGR8
     {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false, 1},                      // B5G6R5
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT1
+    {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_10_10_10_2, false, 1},                 // RGB10_A2
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
@@ -124,6 +125,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
         MortonCopy<true, PixelFormat::ABGR8>,
         MortonCopy<true, PixelFormat::B5G6R5>,
         MortonCopy<true, PixelFormat::DXT1>,
+        MortonCopy<true, PixelFormat::RGB10_A2>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
@@ -133,6 +135,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
         MortonCopy<false, PixelFormat::B5G6R5>,
         // TODO(Subv): Swizzling the DXT1 format is not yet supported
         nullptr,
+        MortonCopy<false, PixelFormat::RGB10_A2>,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface

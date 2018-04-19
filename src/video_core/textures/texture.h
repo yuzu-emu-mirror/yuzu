@@ -19,6 +19,7 @@ enum class TextureFormat : u32 {
     DXT1 = 0x24,
     DXT23 = 0x25,
     DXT45 = 0x26,
+    RGB10_A2 = 0xD1,
 };
 
 enum class TextureType : u32 {
