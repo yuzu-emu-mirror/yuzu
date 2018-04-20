@@ -190,9 +190,14 @@ private:
         }
     }
 
-    /// Generates code representing an immediate value
-    static std::string GetImmediate(const Instruction& instr) {
-        return std::to_string(instr.alu.GetImm20());
+    /// Generates code representing a 19-bit immediate value
+    static std::string GetImmediate19(const Instruction& instr) {
+        return std::to_string(instr.alu.GetImm20_19());
+    }
+
+    /// Generates code representing a 32-bit immediate value
+    static std::string GetImmediate32(const Instruction& instr) {
+        return std::to_string(instr.alu.GetImm20_32());
     }
 
     /// Generates code representing a temporary (GPR) register.
@@ -276,7 +281,7 @@ private:
             std::string op_b = instr.alu.negate_b ? "-" : "";
 
             if (instr.is_b_imm) {
-                op_b += GetImmediate(instr);
+                op_b += GetImmediate19(instr);
             } else {
                 if (instr.is_b_gpr) {
                     op_b += GetRegister(instr.gpr20);
@@ -294,6 +299,11 @@ private:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
                 SetDest(0, dest, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
+                break;
+            }
+            case OpCode::Id::FMUL32_IMM: {
+                // fmul32i doesn't have abs or neg bits.
+                SetDest(0, dest, GetRegister(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
                 break;
             }
             case OpCode::Id::FADD_C:
@@ -364,7 +374,7 @@ private:
                 break;
             }
             case OpCode::Id::FFMA_IMM: {
-                op_b += GetImmediate(instr);
+                op_b += GetImmediate19(instr);
                 op_c += GetRegister(instr.gpr39);
                 break;
             }
@@ -399,11 +409,18 @@ private:
                 const std::string op_a = GetRegister(instr.gpr8);
                 const std::string op_b = GetRegister(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
-                const std::string coord = "vec2(" + op_a + ", " + op_b + ")";
-                const std::string texture = "texture(" + sampler + ", " + coord + ")";
+                const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
+                // Add an extra scope and declare the texture coords inside to prevent overwriting
+                // them in case they are used as outputs of the texs instruction.
+                shader.AddLine("{");
+                ++shader.scope;
+                shader.AddLine(coord);
+                const std::string texture = "texture(" + sampler + ", coords)";
                 for (unsigned elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
                     SetDest(elem, GetRegister(instr.gpr0, elem), texture, 1, 4);
                 }
+                --shader.scope;
+                shader.AddLine("}");
                 break;
             }
             default: {
@@ -586,7 +603,7 @@ private:
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
     std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
-};
+}; // namespace Decompiler
 
 std::string GetCommonDeclarations() {
     return "bool exec_shader();";
