@@ -13,6 +13,9 @@ namespace Tegra {
 namespace Shader {
 
 struct Register {
+    // Register 255 is special cased to always be 0
+    static constexpr size_t ZeroIndex = 255;
+
     constexpr Register() = default;
 
     constexpr Register(u64 value) : value(value) {}
