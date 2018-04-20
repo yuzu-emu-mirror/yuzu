@@ -117,6 +117,13 @@ public:
         shader_source += text + '\n';
     }
 
+    void AddLine(char character) {
+        DEBUG_ASSERT(scope >= 0);
+        AppendIndentation();
+        shader_source += character;
+        shader_source += '\n';
+    }
+
     std::string GetResult() {
         return std::move(shader_source);
     }
@@ -511,14 +518,14 @@ private:
                     }
 
                     --shader.scope;
-                    shader.AddLine("}");
+                    shader.AddLine('}');
                 }
 
                 shader.AddLine("default: return false;");
-                shader.AddLine("}");
+                shader.AddLine('}');
 
                 --shader.scope;
-                shader.AddLine("}");
+                shader.AddLine('}');
 
                 shader.AddLine("return false;");
             }
@@ -568,7 +575,7 @@ private:
         unsigned const_buffer_layout = 0;
         for (const auto& entry : GetConstBuffersDeclarations()) {
             declarations.AddLine("layout(std430) buffer " + entry.GetName());
-            declarations.AddLine("{");
+            declarations.AddLine('{');
             declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
             declarations.AddLine("};");
             declarations.AddLine("");
