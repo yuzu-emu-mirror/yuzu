@@ -77,9 +77,6 @@ void Thread::Stop() {
     }
     wait_objects.clear();
 
-    // Release all the mutexes that this thread holds
-    ReleaseThreadMutexes(this);
-
     // Mark the TLS slot in the thread's page as free.
     u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
     u64 tls_slot =

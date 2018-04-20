@@ -55,7 +55,6 @@ enum class ThreadWakeupReason {
 
 namespace Kernel {
 
-class Mutex;
 class Process;
 
 class Thread final : public WaitObject {
@@ -205,12 +204,6 @@ public:
     s32 processor_id;
 
     VAddr tls_address; ///< Virtual address of the Thread Local Storage of the thread
-
-    /// Mutexes currently held by this thread, which will be released when it exits.
-    boost::container::flat_set<SharedPtr<Mutex>> held_mutexes;
-
-    /// Mutexes that this thread is currently waiting for.
-    boost::container::flat_set<SharedPtr<Mutex>> pending_mutexes;
 
     SharedPtr<Process> owner_process; ///< Process that owns this thread
 
