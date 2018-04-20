@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "video_core/engines/shader_bytecode.h"
@@ -109,12 +110,25 @@ private:
 
 class ShaderWriter {
 public:
-    void AddLine(const std::string& text) {
+    void AddLine(std::string_view text) {
         DEBUG_ASSERT(scope >= 0);
         if (!text.empty()) {
-            shader_source += std::string(static_cast<size_t>(scope) * 4, ' ');
+            AppendIndentation();
         }
-        shader_source += text + '\n';
+        shader_source += text;
+        AddNewLine();
+    }
+
+    void AddLine(char character) {
+        DEBUG_ASSERT(scope >= 0);
+        AppendIndentation();
+        shader_source += character;
+        AddNewLine();
+    }
+
+    void AddNewLine() {
+        DEBUG_ASSERT(scope >= 0);
+        shader_source += '\n';
     }
 
     std::string GetResult() {
@@ -124,6 +138,10 @@ public:
     int scope = 0;
 
 private:
+    void AppendIndentation() {
+        shader_source.append(static_cast<size_t>(scope) * 4, ' ');
+    }
+
     std::string shader_source;
 };
 
@@ -481,7 +499,7 @@ private:
         for (const auto& subroutine : subroutines) {
             shader.AddLine("bool " + subroutine.GetName() + "();");
         }
-        shader.AddLine("");
+        shader.AddNewLine();
 
         // Add the main entry point
         shader.AddLine("bool exec_shader() {");
@@ -524,14 +542,14 @@ private:
                     }
 
                     --shader.scope;
-                    shader.AddLine("}");
+                    shader.AddLine('}');
                 }
 
                 shader.AddLine("default: return false;");
-                shader.AddLine("}");
+                shader.AddLine('}');
 
                 --shader.scope;
-                shader.AddLine("}");
+                shader.AddLine('}');
 
                 shader.AddLine("return false;");
             }
@@ -558,7 +576,7 @@ private:
         for (const auto& reg : declr_register) {
             declarations.AddLine("float " + reg + " = 0.0;");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         for (const auto& index : declr_input_attribute) {
             // TODO(bunnei): Use proper number of elements for these
@@ -567,7 +585,7 @@ private:
                                                 static_cast<u32>(Attribute::Index::Attribute_0)) +
                                  ") in vec4 " + GetInputAttribute(index) + ";");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         for (const auto& index : declr_output_attribute) {
             // TODO(bunnei): Use proper number of elements for these
@@ -576,15 +594,15 @@ private:
                                                 static_cast<u32>(Attribute::Index::Attribute_0)) +
                                  ") out vec4 " + GetOutputAttribute(index) + ";");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         unsigned const_buffer_layout = 0;
         for (const auto& entry : GetConstBuffersDeclarations()) {
             declarations.AddLine("layout(std430) buffer " + entry.GetName());
-            declarations.AddLine("{");
+            declarations.AddLine('{');
             declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
             declarations.AddLine("};");
-            declarations.AddLine("");
+            declarations.AddNewLine();
             ++const_buffer_layout;
         }
     }
