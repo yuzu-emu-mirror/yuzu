@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "video_core/engines/shader_bytecode.h"
@@ -109,7 +110,7 @@ private:
 
 class ShaderWriter {
 public:
-    void AddLine(const std::string& text) {
+    void AddLine(std::string_view text) {
         DEBUG_ASSERT(scope >= 0);
         if (!text.empty()) {
             AppendIndentation();
