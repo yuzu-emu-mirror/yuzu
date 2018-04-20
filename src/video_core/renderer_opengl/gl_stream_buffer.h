@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma once
+
 #include <memory>
 #include <glad/glad.h>
 #include "common/common_types.h"
