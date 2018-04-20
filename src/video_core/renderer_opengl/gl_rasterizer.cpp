@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -290,18 +291,18 @@ void RasterizerOpenGL::DrawArrays() {
                               : (depth_surface == nullptr ? 1u : depth_surface->res_scale);
 
     MathUtil::Rectangle<u32> draw_rect{
-        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
-                                                  viewport_rect.left * res_scale,
-                                              surfaces_rect.left, surfaces_rect.right)), // Left
-        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
-                                                  viewport_rect.top * res_scale,
-                                              surfaces_rect.bottom, surfaces_rect.top)), // Top
-        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.left) +
-                                                  viewport_rect.right * res_scale,
-                                              surfaces_rect.left, surfaces_rect.right)), // Right
-        static_cast<u32>(MathUtil::Clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
-                                                  viewport_rect.bottom * res_scale,
-                                              surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
+        static_cast<u32>(
+            std::clamp<s32>(static_cast<s32>(surfaces_rect.left) + viewport_rect.left * res_scale,
+                            surfaces_rect.left, surfaces_rect.right)), // Left
+        static_cast<u32>(
+            std::clamp<s32>(static_cast<s32>(surfaces_rect.bottom) + viewport_rect.top * res_scale,
+                            surfaces_rect.bottom, surfaces_rect.top)), // Top
+        static_cast<u32>(
+            std::clamp<s32>(static_cast<s32>(surfaces_rect.left) + viewport_rect.right * res_scale,
+                            surfaces_rect.left, surfaces_rect.right)), // Right
+        static_cast<u32>(std::clamp<s32>(static_cast<s32>(surfaces_rect.bottom) +
+                                             viewport_rect.bottom * res_scale,
+                                         surfaces_rect.bottom, surfaces_rect.top))}; // Bottom
 
     // Bind the framebuffer surfaces
     BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
