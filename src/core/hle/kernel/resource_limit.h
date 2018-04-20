@@ -16,17 +16,17 @@ enum class ResourceLimitCategory : u8 {
     OTHER = 3
 };
 
-enum ResourceTypes {
-    PRIORITY = 0,
-    COMMIT = 1,
-    THREAD = 2,
-    EVENT = 3,
-    MUTEX = 4,
-    SEMAPHORE = 5,
-    TIMER = 6,
-    SHARED_MEMORY = 7,
-    ADDRESS_ARBITER = 8,
-    CPU_TIME = 9,
+enum class ResourceType {
+    Priority = 0,
+    Commit = 1,
+    Thread = 2,
+    Event = 3,
+    Mutex = 4,
+    Semaphore = 5,
+    Timer = 6,
+    SharedMemory = 7,
+    AddressArbiter = 8,
+    CPUTime = 9,
 };
 
 class ResourceLimit final : public Object {
@@ -60,14 +60,14 @@ public:
      * @param resource Requested resource type
      * @returns The current value of the resource type
      */
-    s32 GetCurrentResourceValue(u32 resource) const;
+    s32 GetCurrentResourceValue(ResourceType resource) const;
 
     /**
      * Gets the max value for the specified resource.
      * @param resource Requested resource type
      * @returns The max value of the resource type
      */
-    u32 GetMaxResourceValue(u32 resource) const;
+    u32 GetMaxResourceValue(ResourceType resource) const;
 
     /// Name of resource limit object.
     std::string name;
