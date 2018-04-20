@@ -672,7 +672,8 @@ void CachedSurface::DownloadGLTexture(const MathUtil::Rectangle<u32>& rect, GLui
     glPixelStorei(GL_PACK_ROW_LENGTH, 0);
 }
 
-enum MatchFlags {
+enum class MatchFlags {
+    None = 0,
     Invalid = 1,      // Flag that can be applied to other match types, invalid matches require
                       // validation before they can be used
     Exact = 1 << 1,   // Surfaces perfectly match
@@ -684,6 +685,10 @@ enum MatchFlags {
 
 constexpr MatchFlags operator|(MatchFlags lhs, MatchFlags rhs) {
     return static_cast<MatchFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
+
+constexpr MatchFlags operator&(MatchFlags lhs, MatchFlags rhs) {
+    return static_cast<MatchFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
 /// Get the best surface match (and its match type) for the given flags
@@ -703,15 +708,15 @@ Surface FindMatch(const SurfaceCache& surface_cache, const SurfaceParams& params
                                          : (params.res_scale <= surface->res_scale);
             // validity will be checked in GetCopyableInterval
             bool is_valid =
-                find_flags & MatchFlags::Copy
+                (find_flags & MatchFlags::Copy) != MatchFlags::None
                     ? true
                     : surface->IsRegionValid(validate_interval.value_or(params.GetInterval()));
 
-            if (!(find_flags & MatchFlags::Invalid) && !is_valid)
+            if ((find_flags & MatchFlags::Invalid) == MatchFlags::None && !is_valid)
                 continue;
 
             auto IsMatch_Helper = [&](auto check_type, auto match_fn) {
-                if (!(find_flags & check_type))
+                if ((find_flags & check_type) == MatchFlags::None)
                     return;
 
                 bool matched;
