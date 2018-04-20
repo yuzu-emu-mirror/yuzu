@@ -13,7 +13,6 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
-#include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/mutex.h"
@@ -394,11 +393,6 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
     }
 
     thread->SetPriority(priority);
-    thread->UpdatePriority();
-
-    // Update the mutexes that this thread is waiting for
-    for (auto& mutex : thread->pending_mutexes)
-        mutex->UpdatePriority();
 
     Core::System::GetInstance().PrepareReschedule();
     return RESULT_SUCCESS;

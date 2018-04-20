@@ -329,15 +329,6 @@ void Thread::SetPriority(u32 priority) {
     nominal_priority = current_priority = priority;
 }
 
-void Thread::UpdatePriority() {
-    u32 best_priority = nominal_priority;
-    for (auto& mutex : held_mutexes) {
-        if (mutex->priority < best_priority)
-            best_priority = mutex->priority;
-    }
-    BoostPriority(best_priority);
-}
-
 void Thread::BoostPriority(u32 priority) {
     Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
     current_priority = priority;

@@ -104,12 +104,6 @@ public:
     void SetPriority(u32 priority);
 
     /**
-     * Boost's a thread's priority to the best priority among the thread's held mutexes.
-     * This prevents priority inversion via priority inheritance.
-     */
-    void UpdatePriority();
-
-    /**
      * Temporarily boosts the thread's priority until the next time it is scheduled
      * @param priority The new priority
      */
