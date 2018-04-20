@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <iterator>
 
 #include "common/logging/log.h"
 #include "common/microprofile.h"
@@ -946,7 +947,7 @@ static const FunctionDef SVC_Table[] = {
 };
 
 static const FunctionDef* GetSVCInfo(u32 func_num) {
-    if (func_num >= ARRAY_SIZE(SVC_Table)) {
+    if (func_num >= std::size(SVC_Table)) {
         LOG_ERROR(Kernel_SVC, "unknown svc=0x%02X", func_num);
         return nullptr;
     }
