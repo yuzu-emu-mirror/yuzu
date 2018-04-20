@@ -77,6 +77,18 @@ public:
     /// Sets the has_waiters bit in the guest state.
     void SetHasWaiters(bool has_waiters);
 
+    /// Flag that indicates that a mutex still has threads waiting for it.
+    static constexpr u32 MutexHasWaitersFlag = 0x40000000;
+    /// Mask of the bits in a mutex address value that contain the mutex owner.
+    static constexpr u32 MutexOwnerMask = 0xBFFFFFFF;
+
+    /// Attempts to acquire a mutex at the specified address.
+    static ResultCode TryAcquire(VAddr address, Handle holding_thread_handle,
+                                 Handle requesting_thread_handle);
+
+    /// Releases the mutex at the specified address.
+    static ResultCode Release(VAddr address);
+
 private:
     Mutex();
     ~Mutex() override;

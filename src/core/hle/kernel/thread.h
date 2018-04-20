@@ -43,6 +43,7 @@ enum ThreadStatus {
     THREADSTATUS_WAIT_IPC,       ///< Waiting for the reply from an IPC request
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
     THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true
+    THREADSTATUS_WAIT_MUTEX,     ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
     THREADSTATUS_DORMANT,        ///< Created but not yet made ready
     THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
 };
@@ -217,7 +218,10 @@ public:
     // passed to WaitSynchronization1/N.
     std::vector<SharedPtr<WaitObject>> wait_objects;
 
-    VAddr wait_address; ///< If waiting on an AddressArbiter, this is the arbitration address
+    // If waiting on a ConditionVariable, this is the ConditionVariable  address
+    VAddr condvar_wait_address;
+    VAddr mutex_wait_address; ///< If waiting on a Mutex, this is the mutex address
+    Handle wait_handle;       ///< The handle used to wait for the mutex.
 
     std::string name;
 

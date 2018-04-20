@@ -262,32 +262,14 @@ static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
               "requesting_current_thread_handle=0x%08X",
               holding_thread_handle, mutex_addr, requesting_thread_handle);
 
-    SharedPtr<Thread> holding_thread = g_handle_table.Get<Thread>(holding_thread_handle);
-    SharedPtr<Thread> requesting_thread = g_handle_table.Get<Thread>(requesting_thread_handle);
-
-    ASSERT(requesting_thread);
-    ASSERT(requesting_thread == GetCurrentThread());
-
-    SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
-    if (!mutex) {
-        // Create a new mutex for the specified address if one does not already exist
-        mutex = Mutex::Create(holding_thread, mutex_addr);
-        mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
-    }
-
-    ASSERT(holding_thread == mutex->GetHoldingThread());
-
-    return WaitSynchronization1(mutex, requesting_thread.get());
+    return Mutex::TryAcquire(mutex_addr, holding_thread_handle, requesting_thread_handle);
 }
 
 /// Unlock a mutex
 static ResultCode ArbitrateUnlock(VAddr mutex_addr) {
     LOG_TRACE(Kernel_SVC, "called mutex_addr=0x%llx", mutex_addr);
 
-    SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
-    ASSERT(mutex);
-
-    return mutex->Release(GetCurrentThread());
+    return Mutex::Release(mutex_addr);
 }
 
 /// Break program execution

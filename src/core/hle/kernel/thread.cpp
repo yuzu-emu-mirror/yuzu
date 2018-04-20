@@ -126,6 +126,14 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
             resume = thread->wakeup_callback(ThreadWakeupReason::Timeout, thread, nullptr, 0);
     }
 
+    if (thread->mutex_wait_address != 0 || thread->condvar_wait_address != 0 ||
+        thread->wait_handle) {
+        ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+        thread->mutex_wait_address = 0;
+        thread->condvar_wait_address = 0;
+        thread->wait_handle = 0;
+    }
+
     if (resume)
         thread->ResumeFromWait();
 }
@@ -151,6 +159,7 @@ void Thread::ResumeFromWait() {
     case THREADSTATUS_WAIT_HLE_EVENT:
     case THREADSTATUS_WAIT_SLEEP:
     case THREADSTATUS_WAIT_IPC:
+    case THREADSTATUS_WAIT_MUTEX:
         break;
 
     case THREADSTATUS_READY:
@@ -256,7 +265,9 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;
     thread->wait_objects.clear();
-    thread->wait_address = 0;
+    thread->mutex_wait_address = 0;
+    thread->condvar_wait_address = 0;
+    thread->wait_handle = 0;
     thread->name = std::move(name);
     thread->callback_handle = wakeup_callback_handle_table.Create(thread).Unwrap();
     thread->owner_process = owner_process;
