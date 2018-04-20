@@ -43,7 +43,7 @@ protected:
 
 class Disk_Storage : public StorageBackend {
 public:
-    Disk_Storage(std::shared_ptr<FileUtil::IOFile> file) : file(std::move(file)) {}
+    explicit Disk_Storage(std::shared_ptr<FileUtil::IOFile> file) : file(std::move(file)) {}
 
     ResultVal<size_t> Read(u64 offset, size_t length, u8* buffer) const override;
     ResultVal<size_t> Write(u64 offset, size_t length, bool flush, const u8* buffer) const override;
@@ -60,7 +60,7 @@ private:
 
 class Disk_Directory : public DirectoryBackend {
 public:
-    Disk_Directory(const std::string& path);
+    explicit Disk_Directory(const std::string& path);
 
     ~Disk_Directory() override {
         Close();
