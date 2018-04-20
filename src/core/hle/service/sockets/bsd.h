@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 class BSD final : public ServiceFramework<BSD> {
 public:
@@ -27,5 +26,4 @@ private:
     u32 next_fd = 1;
 };
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

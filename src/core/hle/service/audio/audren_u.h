@@ -10,8 +10,7 @@ namespace Kernel {
 class HLERequestContext;
 }
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class AudRenU final : public ServiceFramework<AudRenU> {
 public:
@@ -24,5 +23,4 @@ private:
     void GetAudioDevice(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/audrec_u.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class IFinalOutputRecorder final : public ServiceFramework<IFinalOutputRecorder> {
 public:
@@ -36,5 +35,4 @@ AudRecU::AudRecU() : ServiceFramework("audrec:u") {
     RegisterHandlers(functions);
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

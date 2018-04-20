@@ -6,13 +6,11 @@
 
 #include "core/hle/service/acc/acc.h"
 
-namespace Service {
-namespace Account {
+namespace Service::Account {
 
 class ACC_U0 final : public Module::Interface {
 public:
     explicit ACC_U0(std::shared_ptr<Module> module);
 };
 
-} // namespace Account
-} // namespace Service
+} // namespace Service::Account

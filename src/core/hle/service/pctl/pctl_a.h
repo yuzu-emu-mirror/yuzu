@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace PCTL {
+namespace Service::PCTL {
 
 class PCTL_A final : public ServiceFramework<PCTL_A> {
 public:
@@ -18,5 +17,4 @@ private:
     void CreateService(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace PCTL
-} // namespace Service
+} // namespace Service::PCTL

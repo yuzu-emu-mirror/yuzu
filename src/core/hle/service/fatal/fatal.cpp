@@ -8,8 +8,7 @@
 #include "core/hle/service/fatal/fatal_p.h"
 #include "core/hle/service/fatal/fatal_u.h"
 
-namespace Service {
-namespace Fatal {
+namespace Service::Fatal {
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
@@ -34,5 +33,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<Fatal_U>(module)->InstallAsService(service_manager);
 }
 
-} // namespace Fatal
-} // namespace Service
+} // namespace Service::Fatal

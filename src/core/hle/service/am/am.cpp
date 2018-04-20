@@ -14,8 +14,7 @@
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/settings.h"
 
-namespace Service {
-namespace AM {
+namespace Service::AM {
 
 IWindowController::IWindowController() : ServiceFramework("IWindowController") {
     static const FunctionInfo functions[] = {
@@ -571,5 +570,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager,
     std::make_shared<AppletOE>(nvflinger)->InstallAsService(service_manager);
 }
 
-} // namespace AM
-} // namespace Service
+} // namespace Service::AM

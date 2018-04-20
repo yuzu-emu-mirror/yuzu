@@ -5,8 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/sockets/sfdnsres.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
@@ -35,5 +34,4 @@ SFDNSRES::SFDNSRES() : ServiceFramework("sfdnsres") {
     RegisterHandlers(functions);
 }
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

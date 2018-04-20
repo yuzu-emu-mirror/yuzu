@@ -16,8 +16,7 @@
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
-namespace Service {
-namespace NVFlinger {
+namespace Service::NVFlinger {
 
 constexpr size_t SCREEN_REFRESH_RATE = 60;
 constexpr u64 frame_ticks = static_cast<u64>(BASE_CLOCK_RATE / SCREEN_REFRESH_RATE);
@@ -165,5 +164,4 @@ Display::Display(u64 id, std::string name) : id(id), name(std::move(name)) {
     vsync_event = Kernel::Event::Create(Kernel::ResetType::Pulse, "Display VSync Event");
 }
 
-} // namespace NVFlinger
-} // namespace Service
+} // namespace Service::NVFlinger

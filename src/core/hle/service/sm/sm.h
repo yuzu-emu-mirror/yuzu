@@ -17,8 +17,7 @@ class ServerPort;
 class SessionRequestHandler;
 } // namespace Kernel
 
-namespace Service {
-namespace SM {
+namespace Service::SM {
 
 /// Interface to "sm:" service
 class SM final : public ServiceFramework<SM> {
@@ -62,5 +61,4 @@ private:
 
 extern std::shared_ptr<ServiceManager> g_service_manager;
 
-} // namespace SM
-} // namespace Service
+} // namespace Service::SM

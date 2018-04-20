@@ -6,11 +6,9 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 /// Registers all Settings services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

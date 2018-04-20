@@ -10,9 +10,7 @@
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 class nvmap;
 
@@ -31,6 +29,4 @@ private:
     std::shared_ptr<nvmap> nvmap_dev;
 };
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

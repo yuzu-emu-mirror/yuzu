@@ -14,8 +14,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvdrv/nvmemp.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 std::weak_ptr<Module> nvdrv;
 
@@ -69,5 +68,4 @@ ResultCode Module::Close(u32 fd) {
     return RESULT_SUCCESS;
 }
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

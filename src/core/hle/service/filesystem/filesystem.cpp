@@ -10,8 +10,7 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
-namespace Service {
-namespace FileSystem {
+namespace Service::FileSystem {
 
 /**
  * Map of registered file systems, identified by type. Once an file system is registered here, it
@@ -75,5 +74,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<FSP_SRV>()->InstallAsService(service_manager);
 }
 
-} // namespace FileSystem
-} // namespace Service
+} // namespace Service::FileSystem

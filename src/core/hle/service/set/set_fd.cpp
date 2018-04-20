@@ -4,8 +4,7 @@
 
 #include "core/hle/service/set/set_fd.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 SET_FD::SET_FD() : ServiceFramework("set:fd") {
     static const FunctionInfo functions[] = {
@@ -21,5 +20,4 @@ SET_FD::SET_FD() : ServiceFramework("set:fd") {
     RegisterHandlers(functions);
 }
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

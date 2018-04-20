@@ -5,8 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ssl/ssl.h"
 
-namespace Service {
-namespace SSL {
+namespace Service::SSL {
 
 class ISslConnection final : public ServiceFramework<ISslConnection> {
 public:
@@ -107,5 +106,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<SSL>()->InstallAsService(service_manager);
 }
 
-} // namespace SSL
-} // namespace Service
+} // namespace Service::SSL

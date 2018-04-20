@@ -5,8 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/sockets/bsd.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
@@ -111,5 +110,4 @@ BSD::BSD(const char* name) : ServiceFramework(name) {
     RegisterHandlers(functions);
 }
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

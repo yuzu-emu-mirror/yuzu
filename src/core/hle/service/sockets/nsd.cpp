@@ -4,8 +4,7 @@
 
 #include "core/hle/service/sockets/nsd.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 NSD::NSD(const char* name) : ServiceFramework(name) {
     static const FunctionInfo functions[] = {
@@ -30,5 +29,4 @@ NSD::NSD(const char* name) : ServiceFramework(name) {
     RegisterHandlers(functions);
 }
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

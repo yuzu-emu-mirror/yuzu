@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Time {
+namespace Service::Time {
 
 // TODO(Rozelette) RE this structure
 struct LocationName {
@@ -66,5 +65,4 @@ public:
 /// Registers all Time services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Time
-} // namespace Service
+} // namespace Service::Time

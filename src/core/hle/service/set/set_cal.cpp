@@ -4,8 +4,7 @@
 
 #include "core/hle/service/set/set_cal.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 SET_CAL::SET_CAL() : ServiceFramework("set:cal") {
     static const FunctionInfo functions[] = {
@@ -45,5 +44,4 @@ SET_CAL::SET_CAL() : ServiceFramework("set:cal") {
     RegisterHandlers(functions);
 }
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

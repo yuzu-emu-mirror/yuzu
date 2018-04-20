@@ -6,13 +6,11 @@
 
 #include "core/hle/service/nfp/nfp.h"
 
-namespace Service {
-namespace NFP {
+namespace Service::NFP {
 
 class NFP_User final : public Module::Interface {
 public:
     explicit NFP_User(std::shared_ptr<Module> module);
 };
 
-} // namespace NFP
-} // namespace Service
+} // namespace Service::NFP

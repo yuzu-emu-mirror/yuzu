@@ -7,8 +7,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/apm/interface.h"
 
-namespace Service {
-namespace APM {
+namespace Service::APM {
 
 class ISession final : public ServiceFramework<ISession> {
 public:
@@ -62,5 +61,4 @@ void APM::OpenSession(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<ISession>();
 }
 
-} // namespace APM
-} // namespace Service
+} // namespace Service::APM

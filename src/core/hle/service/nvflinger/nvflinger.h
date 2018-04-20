@@ -12,8 +12,7 @@ namespace CoreTiming {
 struct EventType;
 }
 
-namespace Service {
-namespace NVFlinger {
+namespace Service::NVFlinger {
 
 class BufferQueue;
 
@@ -80,5 +79,4 @@ private:
     CoreTiming::EventType* composition_event;
 };
 
-} // namespace NVFlinger
-} // namespace Service
+} // namespace Service::NVFlinger

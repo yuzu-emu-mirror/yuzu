@@ -7,8 +7,7 @@
 #include "core/hle/service/service.h"
 #include "core/settings.h"
 
-namespace Service {
-namespace HID {
+namespace Service::HID {
 
 // Begin enums and output structs
 
@@ -337,5 +336,4 @@ void ReloadInputDevices();
 /// Registers all HID services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace HID
-} // namespace Service
+} // namespace Service::HID

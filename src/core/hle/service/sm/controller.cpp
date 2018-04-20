@@ -7,8 +7,7 @@
 #include "core/hle/kernel/session.h"
 #include "core/hle/service/sm/controller.h"
 
-namespace Service {
-namespace SM {
+namespace Service::SM {
 
 void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
     ASSERT_MSG(!ctx.Session()->IsDomain(), "session is alread a domain");
@@ -58,5 +57,4 @@ Controller::Controller() : ServiceFramework("IpcController") {
     RegisterHandlers(functions);
 }
 
-} // namespace SM
-} // namespace Service
+} // namespace Service::SM

@@ -5,12 +5,10 @@
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/ns/pl_u.h"
 
-namespace Service {
-namespace NS {
+namespace Service::NS {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<PL_U>()->InstallAsService(service_manager);
 }
 
-} // namespace NS
-} // namespace Service
+} // namespace Service::NS

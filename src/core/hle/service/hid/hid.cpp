@@ -14,8 +14,7 @@
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace HID {
+namespace Service::HID {
 
 // Updating period for each HID device.
 // TODO(shinyquagsire23): These need better values.
@@ -434,5 +433,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<Hid>()->InstallAsService(service_manager);
 }
 
-} // namespace HID
-} // namespace Service
+} // namespace Service::HID

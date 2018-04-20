@@ -9,8 +9,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/audren_u.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 /// TODO(bunnei): Find a proper value for the audio_ticks
 constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 200)};
@@ -272,5 +271,4 @@ void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Audio, "called");
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

@@ -9,9 +9,7 @@
 #include "common/logging/log.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 VAddr nvmap::GetObjectAddress(u32 handle) const {
     auto object = GetObject(handle);
@@ -144,6 +142,4 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     return 0;
 }
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

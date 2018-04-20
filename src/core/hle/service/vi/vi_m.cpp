@@ -4,8 +4,7 @@
 
 #include "core/hle/service/vi/vi_m.h"
 
-namespace Service {
-namespace VI {
+namespace Service::VI {
 
 VI_M::VI_M(std::shared_ptr<Module> module, std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
     : Module::Interface(std::move(module), "vi:m", std::move(nv_flinger)) {
@@ -16,5 +15,4 @@ VI_M::VI_M(std::shared_ptr<Module> module, std::shared_ptr<NVFlinger::NVFlinger>
     RegisterHandlers(functions);
 }
 
-} // namespace VI
-} // namespace Service
+} // namespace Service::VI

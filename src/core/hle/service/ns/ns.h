@@ -6,11 +6,9 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace NS {
+namespace Service::NS {
 
 /// Registers all NS services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace NS
-} // namespace Service
+} // namespace Service::NS

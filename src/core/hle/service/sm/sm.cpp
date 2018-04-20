@@ -12,8 +12,7 @@
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
 
-namespace Service {
-namespace SM {
+namespace Service::SM {
 
 void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
@@ -132,5 +131,4 @@ SM::SM(std::shared_ptr<ServiceManager> service_manager)
     RegisterHandlers(functions);
 }
 
-} // namespace SM
-} // namespace Service
+} // namespace Service::SM

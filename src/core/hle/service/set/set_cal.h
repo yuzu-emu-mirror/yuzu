@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 class SET_CAL final : public ServiceFramework<SET_CAL> {
 public:
@@ -15,5 +14,4 @@ public:
     ~SET_CAL() = default;
 };
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

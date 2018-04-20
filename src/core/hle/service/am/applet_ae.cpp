@@ -8,8 +8,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
 
-namespace Service {
-namespace AM {
+namespace Service::AM {
 
 class ILibraryAppletProxy final : public ServiceFramework<ILibraryAppletProxy> {
 public:
@@ -109,5 +108,4 @@ AppletAE::AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
     RegisterHandlers(functions);
 }
 
-} // namespace AM
-} // namespace Service
+} // namespace Service::AM

@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/audin_u.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class IAudioIn final : public ServiceFramework<IAudioIn> {
 public:
@@ -44,5 +43,4 @@ AudInU::AudInU() : ServiceFramework("audin:u") {
     RegisterHandlers(functions);
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

@@ -6,11 +6,9 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace PCTL {
+namespace Service::PCTL {
 
 /// Registers all PCTL services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace PCTL
-} // namespace Service
+} // namespace Service::PCTL

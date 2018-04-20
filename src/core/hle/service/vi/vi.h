@@ -11,8 +11,7 @@ namespace CoreTiming {
 struct EventType;
 }
 
-namespace Service {
-namespace VI {
+namespace Service::VI {
 
 enum class DisplayResolution : u32 {
     DockedWidth = 1920,
@@ -40,5 +39,4 @@ public:
 void InstallInterfaces(SM::ServiceManager& service_manager,
                        std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
 
-} // namespace VI
-} // namespace Service
+} // namespace Service::VI

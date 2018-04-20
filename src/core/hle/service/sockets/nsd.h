@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 class NSD final : public ServiceFramework<NSD> {
 public:
@@ -16,5 +15,4 @@ public:
     ~NSD() = default;
 };
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets
