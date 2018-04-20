@@ -7,8 +7,7 @@
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/service/set/set_sys.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 void SET_SYS::GetColorSetId(Kernel::HLERequestContext& ctx) {
 
@@ -173,5 +172,4 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
     RegisterHandlers(functions);
 }
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

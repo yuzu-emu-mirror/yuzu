@@ -14,8 +14,7 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
-namespace Service {
-namespace FileSystem {
+namespace Service::FileSystem {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
@@ -573,5 +572,4 @@ void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
     OpenDataStorageByCurrentProcess(ctx);
 }
 
-} // namespace FileSystem
-} // namespace Service
+} // namespace Service::FileSystem

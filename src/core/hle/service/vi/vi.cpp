@@ -21,8 +21,7 @@
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
-namespace Service {
-namespace VI {
+namespace Service::VI {
 
 struct DisplayInfo {
     char display_name[0x40]{"Default"};
@@ -967,5 +966,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager,
     std::make_shared<VI_U>(module, nv_flinger)->InstallAsService(service_manager);
 }
 
-} // namespace VI
-} // namespace Service
+} // namespace Service::VI

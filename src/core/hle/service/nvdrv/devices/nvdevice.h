@@ -9,9 +9,7 @@
 #include "common/common_types.h"
 #include "common/swap.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 /// Represents an abstract nvidia device node. It is to be subclassed by concrete device nodes to
 /// implement the ioctl interface.
@@ -38,6 +36,4 @@ public:
     virtual u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) = 0;
 };
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

@@ -4,8 +4,7 @@
 
 #include "core/hle/service/nifm/nifm_a.h"
 
-namespace Service {
-namespace NIFM {
+namespace Service::NIFM {
 
 NIFM_A::NIFM_A(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "nifm:a") {
     static const FunctionInfo functions[] = {
@@ -15,5 +14,4 @@ NIFM_A::NIFM_A(std::shared_ptr<Module> module) : Module::Interface(std::move(mod
     RegisterHandlers(functions);
 }
 
-} // namespace NIFM
-} // namespace Service
+} // namespace Service::NIFM

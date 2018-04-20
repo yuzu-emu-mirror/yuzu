@@ -9,8 +9,7 @@
 #include "core/hle/service/nvdrv/interface.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 void NVDRV::Open(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_NVDRV, "called");
@@ -111,5 +110,4 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
     query_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "NVDRV::query_event");
 }
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 class SET_FD final : public ServiceFramework<SET_FD> {
 public:
@@ -15,5 +14,4 @@ public:
     ~SET_FD() = default;
 };
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

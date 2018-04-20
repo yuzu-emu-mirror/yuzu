@@ -4,8 +4,7 @@
 
 #include "core/hle/service/friend/friend_u.h"
 
-namespace Service {
-namespace Friend {
+namespace Service::Friend {
 
 Friend_U::Friend_U(std::shared_ptr<Module> module)
     : Module::Interface(std::move(module), "friend:u") {
@@ -16,5 +15,4 @@ Friend_U::Friend_U(std::shared_ptr<Module> module)
     RegisterHandlers(functions);
 }
 
-} // namespace Friend
-} // namespace Service
+} // namespace Service::Friend

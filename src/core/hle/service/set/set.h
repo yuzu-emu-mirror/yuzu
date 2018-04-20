@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 class SET final : public ServiceFramework<SET> {
 public:
@@ -18,5 +17,4 @@ private:
     void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

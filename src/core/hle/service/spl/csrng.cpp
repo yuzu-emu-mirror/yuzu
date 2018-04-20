@@ -4,8 +4,7 @@
 
 #include "core/hle/service/spl/csrng.h"
 
-namespace Service {
-namespace SPL {
+namespace Service::SPL {
 
 CSRNG::CSRNG(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "csrng") {
     static const FunctionInfo functions[] = {
@@ -14,5 +13,4 @@ CSRNG::CSRNG(std::shared_ptr<Module> module) : Module::Interface(std::move(modul
     RegisterHandlers(functions);
 }
 
-} // namespace SPL
-} // namespace Service
+} // namespace Service::SPL

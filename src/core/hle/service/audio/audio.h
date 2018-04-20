@@ -6,11 +6,9 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 /// Registers all Audio services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

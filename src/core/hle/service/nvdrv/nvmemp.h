@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 class NVMEMP final : public ServiceFramework<NVMEMP> {
 public:
@@ -19,5 +18,4 @@ private:
     void Cmd1(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

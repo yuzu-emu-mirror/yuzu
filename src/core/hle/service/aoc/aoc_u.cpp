@@ -6,8 +6,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/aoc/aoc_u.h"
 
-namespace Service {
-namespace AOC {
+namespace Service::AOC {
 
 AOC_U::AOC_U() : ServiceFramework("aoc:u") {
     static const FunctionInfo functions[] = {
@@ -42,5 +41,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<AOC_U>()->InstallAsService(service_manager);
 }
 
-} // namespace AOC
-} // namespace Service
+} // namespace Service::AOC

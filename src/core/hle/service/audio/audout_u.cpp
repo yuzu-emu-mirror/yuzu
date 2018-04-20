@@ -10,8 +10,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/audout_u.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 /// Switch sample rate frequency
 constexpr u32 sample_rate{48000};
@@ -204,5 +203,4 @@ AudOutU::AudOutU() : ServiceFramework("audout:u") {
     RegisterHandlers(functions);
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

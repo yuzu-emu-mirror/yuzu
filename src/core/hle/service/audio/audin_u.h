@@ -10,8 +10,7 @@ namespace Kernel {
 class HLERequestContext;
 }
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class AudInU final : public ServiceFramework<AudInU> {
 public:
@@ -19,5 +18,4 @@ public:
     ~AudInU() = default;
 };
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

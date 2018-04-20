@@ -6,13 +6,11 @@
 
 #include "core/hle/service/friend/friend.h"
 
-namespace Service {
-namespace Friend {
+namespace Service::Friend {
 
 class Friend_A final : public Module::Interface {
 public:
     explicit Friend_A(std::shared_ptr<Module> module);
 };
 
-} // namespace Friend
-} // namespace Service
+} // namespace Service::Friend

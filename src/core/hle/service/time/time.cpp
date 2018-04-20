@@ -12,8 +12,7 @@
 #include "core/hle/service/time/time_s.h"
 #include "core/hle/service/time/time_u.h"
 
-namespace Service {
-namespace Time {
+namespace Service::Time {
 
 class ISystemClock final : public ServiceFramework<ISystemClock> {
 public:
@@ -166,5 +165,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<TIME_U>(time)->InstallAsService(service_manager);
 }
 
-} // namespace Time
-} // namespace Service
+} // namespace Service::Time

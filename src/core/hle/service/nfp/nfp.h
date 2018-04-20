@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace NFP {
+namespace Service::NFP {
 
 class Module final {
 public:
@@ -24,5 +23,4 @@ public:
 
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace NFP
-} // namespace Service
+} // namespace Service::NFP

@@ -7,8 +7,7 @@
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 
-namespace Service {
-namespace NFP {
+namespace Service::NFP {
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
@@ -24,5 +23,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<NFP_User>(module)->InstallAsService(service_manager);
 }
 
-} // namespace NFP
-} // namespace Service
+} // namespace Service::NFP

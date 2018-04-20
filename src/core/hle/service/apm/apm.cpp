@@ -7,8 +7,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/apm/interface.h"
 
-namespace Service {
-namespace APM {
+namespace Service::APM {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module_ = std::make_shared<Module>();
@@ -16,5 +15,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<APM>(module_, "apm:p")->InstallAsService(service_manager);
 }
 
-} // namespace APM
-} // namespace Service
+} // namespace Service::APM

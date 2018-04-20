@@ -10,8 +10,7 @@
 #include "core/hle/service/acc/acc_u0.h"
 #include "core/hle/service/acc/acc_u1.h"
 
-namespace Service {
-namespace Account {
+namespace Service::Account {
 
 // TODO: RE this structure
 struct UserData {
@@ -148,5 +147,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<ACC_U1>(module)->InstallAsService(service_manager);
 }
 
-} // namespace Account
-} // namespace Service
+} // namespace Service::Account

@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 class SFDNSRES final : public ServiceFramework<SFDNSRES> {
 public:
@@ -19,5 +18,4 @@ private:
     void GetAddrInfo(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

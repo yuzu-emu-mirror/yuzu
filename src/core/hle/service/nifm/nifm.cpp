@@ -9,8 +9,7 @@
 #include "core/hle/service/nifm/nifm_s.h"
 #include "core/hle/service/nifm/nifm_u.h"
 
-namespace Service {
-namespace NIFM {
+namespace Service::NIFM {
 
 class IScanRequest final : public ServiceFramework<IScanRequest> {
 public:
@@ -208,5 +207,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<NIFM_U>(module)->InstallAsService(service_manager);
 }
 
-} // namespace NIFM
-} // namespace Service
+} // namespace Service::NIFM

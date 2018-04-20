@@ -8,8 +8,7 @@
 #include "core/hle/service/set/set_sys.h"
 #include "core/hle/service/set/settings.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<SET>()->InstallAsService(service_manager);
@@ -18,5 +17,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<SET_SYS>()->InstallAsService(service_manager);
 }
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

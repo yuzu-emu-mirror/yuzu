@@ -4,8 +4,7 @@
 
 #include "core/hle/service/spl/spl.h"
 
-namespace Service {
-namespace SPL {
+namespace Service::SPL {
 
 SPL::SPL(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "spl:") {
     static const FunctionInfo functions[] = {
@@ -43,5 +42,4 @@ SPL::SPL(std::shared_ptr<Module> module) : Module::Interface(std::move(module), 
     RegisterHandlers(functions);
 }
 
-} // namespace SPL
-} // namespace Service
+} // namespace Service::SPL

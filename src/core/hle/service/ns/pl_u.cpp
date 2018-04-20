@@ -8,8 +8,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/ns/pl_u.h"
 
-namespace Service {
-namespace NS {
+namespace Service::NS {
 
 struct FontRegion {
     u32 offset;
@@ -117,5 +116,4 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
     rb.PushCopyObjects(shared_font_mem);
 }
 
-} // namespace NS
-} // namespace Service
+} // namespace Service::NS

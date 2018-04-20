@@ -11,8 +11,7 @@
 #include "core/hle/service/spl/module.h"
 #include "core/hle/service/spl/spl.h"
 
-namespace Service {
-namespace SPL {
+namespace Service::SPL {
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
@@ -38,5 +37,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<SPL>(module)->InstallAsService(service_manager);
 }
 
-} // namespace SPL
-} // namespace Service
+} // namespace Service::SPL

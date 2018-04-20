@@ -4,8 +4,7 @@
 
 #include "core/hle/service/time/time_s.h"
 
-namespace Service {
-namespace Time {
+namespace Service::Time {
 
 TIME_S::TIME_S(std::shared_ptr<Module> time) : Module::Interface(std::move(time), "time:s") {
     static const FunctionInfo functions[] = {
@@ -29,5 +28,4 @@ TIME_S::TIME_S(std::shared_ptr<Module> time) : Module::Interface(std::move(time)
     RegisterHandlers(functions);
 }
 
-} // namespace Time
-} // namespace Service
+} // namespace Service::Time

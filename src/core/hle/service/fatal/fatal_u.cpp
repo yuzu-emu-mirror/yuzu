@@ -4,8 +4,7 @@
 
 #include "core/hle/service/fatal/fatal_u.h"
 
-namespace Service {
-namespace Fatal {
+namespace Service::Fatal {
 
 Fatal_U::Fatal_U(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "fatal:u") {
     static const FunctionInfo functions[] = {
@@ -15,5 +14,4 @@ Fatal_U::Fatal_U(std::shared_ptr<Module> module) : Module::Interface(std::move(m
     RegisterHandlers(functions);
 }
 
-} // namespace Fatal
-} // namespace Service
+} // namespace Service::Fatal

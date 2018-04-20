@@ -9,8 +9,7 @@
 #include "core/hle/service/audio/audren_u.h"
 #include "core/hle/service/audio/codecctl.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<AudOutU>()->InstallAsService(service_manager);
@@ -20,5 +19,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<CodecCtl>()->InstallAsService(service_manager);
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace SM {
+namespace Service::SM {
 
 class Controller final : public ServiceFramework<Controller> {
 public:
@@ -21,5 +20,4 @@ private:
     void QueryPointerBufferSize(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace SM
-} // namespace Service
+} // namespace Service::SM

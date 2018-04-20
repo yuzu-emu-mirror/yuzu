@@ -10,8 +10,7 @@
 #include "common/common_types.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 namespace Devices {
 class nvdevice;
@@ -61,5 +60,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager);
 
 extern std::weak_ptr<Module> nvdrv;
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

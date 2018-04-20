@@ -11,9 +11,7 @@
 #include "common/common_types.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 class nvhost_ctrl final : public nvdevice {
 public:
@@ -55,6 +53,4 @@ private:
     u32 IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

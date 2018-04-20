@@ -10,8 +10,7 @@ namespace Kernel {
 class HLERequestContext;
 }
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class IAudioOut;
 
@@ -37,5 +36,4 @@ private:
     };
 };
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

@@ -10,9 +10,7 @@
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 u32 nvdisp_disp0::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     UNIMPLEMENTED();
@@ -35,6 +33,4 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
     VideoCore::g_renderer->SwapBuffers(framebuffer);
 }
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

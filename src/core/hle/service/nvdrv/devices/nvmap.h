@@ -12,9 +12,7 @@
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 
-namespace Service {
-namespace Nvidia {
-namespace Devices {
+namespace Service::Nvidia::Devices {
 
 class nvmap final : public nvdevice {
 public:
@@ -111,6 +109,4 @@ private:
     u32 IocParam(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
-} // namespace Devices
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia::Devices

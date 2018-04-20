@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace SSL {
+namespace Service::SSL {
 
 class SSL final : public ServiceFramework<SSL> {
 public:
@@ -21,5 +20,4 @@ private:
 /// Registers all SSL services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace SSL
-} // namespace Service
+} // namespace Service::SSL

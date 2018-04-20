@@ -6,8 +6,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/pctl/pctl_a.h"
 
-namespace Service {
-namespace PCTL {
+namespace Service::PCTL {
 
 class IParentalControlService final : public ServiceFramework<IParentalControlService> {
 public:
@@ -125,5 +124,4 @@ PCTL_A::PCTL_A() : ServiceFramework("pctl:a") {
     RegisterHandlers(functions);
 }
 
-} // namespace PCTL
-} // namespace Service
+} // namespace Service::PCTL

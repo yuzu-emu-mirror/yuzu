@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 class SET_SYS final : public ServiceFramework<SET_SYS> {
 public:
@@ -18,5 +17,4 @@ private:
     void GetColorSetId(Kernel::HLERequestContext& ctx);
 };
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

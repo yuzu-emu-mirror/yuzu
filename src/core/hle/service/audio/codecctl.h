@@ -10,8 +10,7 @@ namespace Kernel {
 class HLERequestContext;
 }
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 class CodecCtl final : public ServiceFramework<CodecCtl> {
 public:
@@ -19,5 +18,4 @@ public:
     ~CodecCtl() = default;
 };
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

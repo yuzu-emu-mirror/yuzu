@@ -8,8 +8,7 @@
 #include "core/hle/kernel/shared_memory.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace NS {
+namespace Service::NS {
 
 class PL_U final : public ServiceFramework<PL_U> {
 public:
@@ -30,5 +29,4 @@ private:
     std::shared_ptr<std::vector<u8>> shared_font;
 };
 
-} // namespace NS
-} // namespace Service
+} // namespace Service::NS

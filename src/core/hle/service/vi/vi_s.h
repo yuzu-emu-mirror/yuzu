@@ -6,13 +6,11 @@
 
 #include "core/hle/service/vi/vi.h"
 
-namespace Service {
-namespace VI {
+namespace Service::VI {
 
 class VI_S final : public Module::Interface {
 public:
     explicit VI_S(std::shared_ptr<Module> module, std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
 };
 
-} // namespace VI
-} // namespace Service
+} // namespace Service::VI

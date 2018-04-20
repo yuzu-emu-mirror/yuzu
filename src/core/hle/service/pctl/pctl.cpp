@@ -5,12 +5,10 @@
 #include "core/hle/service/pctl/pctl.h"
 #include "core/hle/service/pctl/pctl_a.h"
 
-namespace Service {
-namespace PCTL {
+namespace Service::PCTL {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<PCTL_A>()->InstallAsService(service_manager);
 }
 
-} // namespace PCTL
-} // namespace Service
+} // namespace Service::PCTL

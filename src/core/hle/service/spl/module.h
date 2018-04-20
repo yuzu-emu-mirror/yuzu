@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace SPL {
+namespace Service::SPL {
 
 class Module final {
 public:
@@ -25,5 +24,4 @@ public:
 /// Registers all SPL services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace SPL
-} // namespace Service
+} // namespace Service::SPL

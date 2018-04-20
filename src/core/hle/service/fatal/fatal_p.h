@@ -6,13 +6,11 @@
 
 #include "core/hle/service/fatal/fatal.h"
 
-namespace Service {
-namespace Fatal {
+namespace Service::Fatal {
 
 class Fatal_P final : public Module::Interface {
 public:
     explicit Fatal_P(std::shared_ptr<Module> module);
 };
 
-} // namespace Fatal
-} // namespace Service
+} // namespace Service::Fatal

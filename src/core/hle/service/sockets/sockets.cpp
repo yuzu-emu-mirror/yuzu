@@ -7,8 +7,7 @@
 #include "core/hle/service/sockets/sfdnsres.h"
 #include "core/hle/service/sockets/sockets.h"
 
-namespace Service {
-namespace Sockets {
+namespace Service::Sockets {
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<BSD>("bsd:s")->InstallAsService(service_manager);
@@ -18,5 +17,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<SFDNSRES>()->InstallAsService(service_manager);
 }
 
-} // namespace Sockets
-} // namespace Service
+} // namespace Service::Sockets

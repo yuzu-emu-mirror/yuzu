@@ -6,13 +6,11 @@
 
 #include "core/hle/service/nifm/nifm.h"
 
-namespace Service {
-namespace NIFM {
+namespace Service::NIFM {
 
 class NIFM_A final : public Module::Interface {
 public:
     explicit NIFM_A(std::shared_ptr<Module> module);
 };
 
-} // namespace NIFM
-} // namespace Service
+} // namespace Service::NIFM

@@ -8,8 +8,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvdrv/nvmemp.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 NVMEMP::NVMEMP() : ServiceFramework("nvmemp") {
     static const FunctionInfo functions[] = {
@@ -27,5 +26,4 @@ void NVMEMP::Cmd1(Kernel::HLERequestContext& ctx) {
     UNIMPLEMENTED();
 }
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

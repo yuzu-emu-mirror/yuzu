@@ -6,13 +6,11 @@
 
 #include "core/hle/service/time/time.h"
 
-namespace Service {
-namespace Time {
+namespace Service::Time {
 
 class TIME_S final : public Module::Interface {
 public:
     explicit TIME_S(std::shared_ptr<Module> time);
 };
 
-} // namespace Time
-} // namespace Service
+} // namespace Service::Time

@@ -4,8 +4,7 @@
 
 #include "core/hle/service/nfp/nfp_user.h"
 
-namespace Service {
-namespace NFP {
+namespace Service::NFP {
 
 NFP_User::NFP_User(std::shared_ptr<Module> module)
     : Module::Interface(std::move(module), "nfp:user") {
@@ -15,5 +14,4 @@ NFP_User::NFP_User(std::shared_ptr<Module> module)
     RegisterHandlers(functions);
 }
 
-} // namespace NFP
-} // namespace Service
+} // namespace Service::NFP

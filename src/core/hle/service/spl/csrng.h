@@ -6,13 +6,11 @@
 
 #include "core/hle/service/spl/module.h"
 
-namespace Service {
-namespace SPL {
+namespace Service::SPL {
 
 class CSRNG final : public Module::Interface {
 public:
     explicit CSRNG(std::shared_ptr<Module> module);
 };
 
-} // namespace SPL
-} // namespace Service
+} // namespace Service::SPL

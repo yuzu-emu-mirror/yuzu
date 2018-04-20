@@ -9,8 +9,7 @@
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/service/set/set.h"
 
-namespace Service {
-namespace Set {
+namespace Service::Set {
 
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
@@ -41,5 +40,4 @@ SET::SET() : ServiceFramework("set") {
     RegisterHandlers(functions);
 }
 
-} // namespace Set
-} // namespace Service
+} // namespace Service::Set

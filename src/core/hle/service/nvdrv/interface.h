@@ -10,8 +10,7 @@
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Nvidia {
+namespace Service::Nvidia {
 
 class NVDRV final : public ServiceFramework<NVDRV> {
 public:
@@ -34,5 +33,4 @@ private:
     Kernel::SharedPtr<Kernel::Event> query_event;
 };
 
-} // namespace Nvidia
-} // namespace Service
+} // namespace Service::Nvidia

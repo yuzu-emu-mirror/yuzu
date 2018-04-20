@@ -7,8 +7,7 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/service/audio/codecctl.h"
 
-namespace Service {
-namespace Audio {
+namespace Service::Audio {
 
 CodecCtl::CodecCtl() : ServiceFramework("codecctl") {
     static const FunctionInfo functions[] = {
@@ -29,5 +28,4 @@ CodecCtl::CodecCtl() : ServiceFramework("codecctl") {
     RegisterHandlers(functions);
 }
 
-} // namespace Audio
-} // namespace Service
+} // namespace Service::Audio

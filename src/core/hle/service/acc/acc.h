@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Account {
+namespace Service::Account {
 
 class Module final {
 public:
@@ -31,5 +30,4 @@ public:
 /// Registers all ACC services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Account
-} // namespace Service
+} // namespace Service::Account

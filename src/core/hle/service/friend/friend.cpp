@@ -8,8 +8,7 @@
 #include "core/hle/service/friend/friend_a.h"
 #include "core/hle/service/friend/friend_u.h"
 
-namespace Service {
-namespace Friend {
+namespace Service::Friend {
 
 void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
@@ -26,5 +25,4 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<Friend_U>(module)->InstallAsService(service_manager);
 }
 
-} // namespace Friend
-} // namespace Service
+} // namespace Service::Friend

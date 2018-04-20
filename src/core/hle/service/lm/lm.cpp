@@ -9,8 +9,7 @@
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/service/lm/lm.h"
 
-namespace Service {
-namespace LM {
+namespace Service::LM {
 
 class Logger final : public ServiceFramework<Logger> {
 public:
@@ -189,5 +188,4 @@ LM::LM() : ServiceFramework("lm") {
     RegisterHandlers(functions);
 }
 
-} // namespace LM
-} // namespace Service
+} // namespace Service::LM

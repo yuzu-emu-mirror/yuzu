@@ -4,8 +4,7 @@
 
 #include "core/hle/service/acc/acc_aa.h"
 
-namespace Service {
-namespace Account {
+namespace Service::Account {
 
 ACC_AA::ACC_AA(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "acc:aa") {
     static const FunctionInfo functions[] = {
@@ -18,5 +17,4 @@ ACC_AA::ACC_AA(std::shared_ptr<Module> module) : Module::Interface(std::move(mod
     RegisterHandlers(functions);
 }
 
-} // namespace Account
-} // namespace Service
+} // namespace Service::Account

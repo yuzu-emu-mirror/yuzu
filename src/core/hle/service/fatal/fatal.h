@@ -6,8 +6,7 @@
 
 #include "core/hle/service/service.h"
 
-namespace Service {
-namespace Fatal {
+namespace Service::Fatal {
 
 class Module final {
 public:
@@ -25,5 +24,4 @@ public:
 
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Fatal
-} // namespace Service
+} // namespace Service::Fatal
