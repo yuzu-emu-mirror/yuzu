@@ -55,10 +55,6 @@ public:
     T x;
     T y;
 
-    T* AsArray() {
-        return &x;
-    }
-
     Vec2() = default;
     Vec2(const T& _x, const T& _y) : x(_x), y(_y) {}
 
@@ -69,11 +65,6 @@ public:
 
     static Vec2 AssignToAll(const T& f) {
         return Vec2<T>(f, f);
-    }
-
-    void Write(T a[2]) {
-        a[0] = x;
-        a[1] = y;
     }
 
     Vec2<decltype(T{} + T{})> operator+(const Vec2& other) const {
@@ -205,10 +196,6 @@ public:
     T y;
     T z;
 
-    T* AsArray() {
-        return &x;
-    }
-
     Vec3() = default;
     Vec3(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {}
 
@@ -223,12 +210,6 @@ public:
 
     static Vec3 AssignToAll(const T& f) {
         return MakeVec(f, f, f);
-    }
-
-    void Write(T a[3]) {
-        a[0] = x;
-        a[1] = y;
-        a[2] = z;
     }
 
     Vec3<decltype(T{} + T{})> operator+(const Vec3& other) const {
@@ -416,10 +397,6 @@ public:
     T z;
     T w;
 
-    T* AsArray() {
-        return &x;
-    }
-
     Vec4() = default;
     Vec4(const T& _x, const T& _y, const T& _z, const T& _w) : x(_x), y(_y), z(_z), w(_w) {}
 
@@ -434,13 +411,6 @@ public:
 
     static Vec4 AssignToAll(const T& f) {
         return Vec4<T>(f, f, f, f);
-    }
-
-    void Write(T a[4]) {
-        a[0] = x;
-        a[1] = y;
-        a[2] = z;
-        a[3] = w;
     }
 
     Vec4<decltype(T{} + T{})> operator+(const Vec4& other) const {
