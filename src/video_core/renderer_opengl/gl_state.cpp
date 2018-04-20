@@ -2,8 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <iterator>
 #include <glad/glad.h>
-#include "common/common_funcs.h"
 #include "common/logging/log.h"
 #include "video_core/renderer_opengl/gl_state.h"
 
@@ -192,7 +192,7 @@ void OpenGLState::Apply() const {
     }
 
     // Textures
-    for (unsigned i = 0; i < ARRAY_SIZE(texture_units); ++i) {
+    for (size_t i = 0; i < std::size(texture_units); ++i) {
         if (texture_units[i].texture_2d != cur_state.texture_units[i].texture_2d) {
             glActiveTexture(TextureUnits::MaxwellTexture(i).Enum());
             glBindTexture(GL_TEXTURE_2D, texture_units[i].texture_2d);
