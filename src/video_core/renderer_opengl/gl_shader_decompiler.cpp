@@ -114,13 +114,19 @@ public:
         if (!text.empty()) {
             AppendIndentation();
         }
-        shader_source += text + '\n';
+        shader_source += text;
+        AddNewLine();
     }
 
     void AddLine(char character) {
         DEBUG_ASSERT(scope >= 0);
         AppendIndentation();
         shader_source += character;
+        AddNewLine();
+    }
+
+    void AddNewLine() {
+        DEBUG_ASSERT(scope >= 0);
         shader_source += '\n';
     }
 
@@ -475,7 +481,7 @@ private:
         for (const auto& subroutine : subroutines) {
             shader.AddLine("bool " + subroutine.GetName() + "();");
         }
-        shader.AddLine("");
+        shader.AddNewLine();
 
         // Add the main entry point
         shader.AddLine("bool exec_shader() {");
@@ -552,7 +558,7 @@ private:
         for (const auto& reg : declr_register) {
             declarations.AddLine("float " + reg + " = 0.0;");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         for (const auto& index : declr_input_attribute) {
             // TODO(bunnei): Use proper number of elements for these
@@ -561,7 +567,7 @@ private:
                                                 static_cast<u32>(Attribute::Index::Attribute_0)) +
                                  ") in vec4 " + GetInputAttribute(index) + ";");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         for (const auto& index : declr_output_attribute) {
             // TODO(bunnei): Use proper number of elements for these
@@ -570,7 +576,7 @@ private:
                                                 static_cast<u32>(Attribute::Index::Attribute_0)) +
                                  ") out vec4 " + GetOutputAttribute(index) + ";");
         }
-        declarations.AddLine("");
+        declarations.AddNewLine();
 
         unsigned const_buffer_layout = 0;
         for (const auto& entry : GetConstBuffersDeclarations()) {
@@ -578,7 +584,7 @@ private:
             declarations.AddLine('{');
             declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
             declarations.AddLine("};");
-            declarations.AddLine("");
+            declarations.AddNewLine();
             ++const_buffer_layout;
         }
     }
