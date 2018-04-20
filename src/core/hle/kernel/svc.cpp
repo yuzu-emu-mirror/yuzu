@@ -616,77 +616,18 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
     SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     ASSERT(thread);
 
-    SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(mutex_addr);
-    if (!mutex) {
-        // Create a new mutex for the specified address if one does not already exist
-        mutex = Mutex::Create(thread, mutex_addr);
-        mutex->name = Common::StringFromFormat("mutex-%llx", mutex_addr);
-    }
+    CASCADE_CODE(Mutex::Release(mutex_addr));
 
-    SharedPtr<ConditionVariable> condition_variable =
-        g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
-    if (!condition_variable) {
-        // Create a new condition_variable for the specified address if one does not already exist
-        condition_variable = ConditionVariable::Create(condition_variable_addr).Unwrap();
-        condition_variable->name =
-            Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
-    }
+    SharedPtr<Thread> current_thread = GetCurrentThread();
+    current_thread->condvar_wait_address = condition_variable_addr;
+    current_thread->mutex_wait_address = mutex_addr;
+    current_thread->wait_handle = thread_handle;
+    current_thread->status = THREADSTATUS_WAIT_MUTEX;
+    current_thread->wakeup_callback = nullptr;
 
-    if (condition_variable->mutex_addr) {
-        // Previously created the ConditionVariable using WaitProcessWideKeyAtomic, verify
-        // everything is correct
-        ASSERT(condition_variable->mutex_addr == mutex_addr);
-    } else {
-        // Previously created the ConditionVariable using SignalProcessWideKey, set the mutex
-        // associated with it
-        condition_variable->mutex_addr = mutex_addr;
-    }
+    current_thread->WakeAfterDelay(nano_seconds);
 
-    if (mutex->GetOwnerHandle()) {
-        // Release the mutex if the current thread is holding it
-        mutex->Release(thread.get());
-    }
-
-    auto wakeup_callback = [mutex, nano_seconds](ThreadWakeupReason reason,
-                                                 SharedPtr<Thread> thread,
-                                                 SharedPtr<WaitObject> object, size_t index) {
-        ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
-
-        if (reason == ThreadWakeupReason::Timeout) {
-            thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
-            return true;
-        }
-
-        ASSERT(reason == ThreadWakeupReason::Signal);
-
-        // Now try to acquire the mutex and don't resume if it's not available.
-        if (!mutex->ShouldWait(thread.get())) {
-            mutex->Acquire(thread.get());
-            thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
-            return true;
-        }
-
-        if (nano_seconds == 0) {
-            thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
-            return true;
-        }
-
-        thread->wait_objects = {mutex};
-        mutex->AddWaitingThread(thread);
-        thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
-
-        // Create an event to wake the thread up after the
-        // specified nanosecond delay has passed
-        thread->WakeAfterDelay(nano_seconds);
-        thread->wakeup_callback = DefaultThreadWakeupCallback;
-
-        Core::System::GetInstance().PrepareReschedule();
-
-        return false;
-    };
-    CASCADE_CODE(
-        WaitSynchronization1(condition_variable, thread.get(), nano_seconds, wakeup_callback));
-
+    Core::System::GetInstance().PrepareReschedule();
     return RESULT_SUCCESS;
 }
 
@@ -695,24 +636,46 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
     LOG_TRACE(Kernel_SVC, "called, condition_variable_addr=0x%llx, target=0x%08x",
               condition_variable_addr, target);
 
-    // Wakeup all or one thread - Any other value is unimplemented
-    ASSERT(target == -1 || target == 1);
+    u32 processed = 0;
+    auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
 
-    SharedPtr<ConditionVariable> condition_variable =
-        g_object_address_table.Get<ConditionVariable>(condition_variable_addr);
-    if (!condition_variable) {
-        // Create a new condition_variable for the specified address if one does not already exist
-        condition_variable = ConditionVariable::Create(condition_variable_addr).Unwrap();
-        condition_variable->name =
-            Common::StringFromFormat("condition-variable-%llx", condition_variable_addr);
-    }
+    for (auto& thread : thread_list) {
+        if (thread->condvar_wait_address != condition_variable_addr)
+            continue;
 
-    CASCADE_CODE(condition_variable->Release(target));
+        // Only process up to 'target' threads, unless 'target' is -1, in which case process
+        // them all.
+        if (target != -1 && processed >= target)
+            break;
 
-    if (condition_variable->mutex_addr) {
-        // If a mutex was created for this condition_variable, wait the current thread on it
-        SharedPtr<Mutex> mutex = g_object_address_table.Get<Mutex>(condition_variable->mutex_addr);
-        return WaitSynchronization1(mutex, GetCurrentThread());
+        // If the mutex is not yet acquired, acquire it.
+        u32 mutex_val = Memory::Read32(thread->mutex_wait_address);
+
+        if (mutex_val == 0) {
+            // We were able to acquire the mutex, resume this thread.
+            Memory::Write32(thread->mutex_wait_address, thread->wait_handle);
+            ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+            thread->ResumeFromWait();
+
+            thread->mutex_wait_address = 0;
+            thread->condvar_wait_address = 0;
+            thread->wait_handle = 0;
+        } else {
+            // Couldn't acquire the mutex, block the thread.
+            Handle owner_handle = static_cast<Handle>(mutex_val & Mutex::MutexOwnerMask);
+            auto owner = g_handle_table.Get<Thread>(owner_handle);
+            ASSERT(owner);
+            ASSERT(thread->status != THREADSTATUS_RUNNING);
+            thread->status = THREADSTATUS_WAIT_MUTEX;
+            thread->wakeup_callback = nullptr;
+
+            // Signal that the mutex now has a waiting thread.
+            Memory::Write32(thread->mutex_wait_address, mutex_val | Mutex::MutexHasWaitersFlag);
+
+            Core::System::GetInstance().PrepareReschedule();
+        }
+
+        ++processed;
     }
 
     return RESULT_SUCCESS;
