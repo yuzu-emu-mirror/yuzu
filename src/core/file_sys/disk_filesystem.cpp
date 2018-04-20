@@ -183,7 +183,7 @@ bool Disk_Storage::SetSize(const u64 size) const {
     return true;
 }
 
-Disk_Directory::Disk_Directory(const std::string& path) : directory() {
+Disk_Directory::Disk_Directory(const std::string& path) {
     unsigned size = FileUtil::ScanDirectoryTree(path, directory);
     directory.size = size;
     directory.isDirectory = true;
