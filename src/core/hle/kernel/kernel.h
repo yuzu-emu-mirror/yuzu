@@ -18,12 +18,10 @@ using Handle = u32;
 enum class HandleType : u32 {
     Unknown,
     Event,
-    Mutex,
     SharedMemory,
     Thread,
     Process,
     AddressArbiter,
-    ConditionVariable,
     Timer,
     ResourceLimit,
     CodeSet,
@@ -63,9 +61,7 @@ public:
     bool IsWaitable() const {
         switch (GetHandleType()) {
         case HandleType::Event:
-        case HandleType::Mutex:
         case HandleType::Thread:
-        case HandleType::ConditionVariable:
         case HandleType::Timer:
         case HandleType::ServerPort:
         case HandleType::ServerSession:
