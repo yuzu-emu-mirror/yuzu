@@ -276,6 +276,18 @@ private:
         shader.AddLine(dest + " = " + src + ";");
     }
 
+    /*
+     * Returns whether the instruction at the specified offset is a 'sched' instruction.
+     * Sched instructions always appear before a sequence of 3 instructions.
+     */
+    bool IsSchedInstruction(u32 offset) const {
+        // sched instructions appear once every 4 instructions.
+        static constexpr size_t SchedPeriod = 4;
+        u32 absolute_offset = offset - main_offset;
+
+        return (absolute_offset % SchedPeriod) == 0;
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -283,6 +295,10 @@ private:
      * + 1. If the current instruction always terminates the program, returns PROGRAM_END.
      */
     u32 CompileInstr(u32 offset) {
+        // Ignore sched instructions when generating code.
+        if (IsSchedInstruction(offset))
+            return offset + 1;
+
         const Instruction instr = {program_code[offset]};
 
         shader.AddLine("// " + std::to_string(offset) + ": " + OpCode::GetInfo(instr.opcode).name);
