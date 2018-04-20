@@ -294,6 +294,25 @@ private:
     }
 
     /*
+     * Returns the condition to use in the 'if' for a predicated instruction.
+     * @param instr Instruction to generate the if condition for.
+     * @returns string containing the predicate condition.
+     */
+    std::string GetPredicateCondition(Instruction instr) const {
+        using Tegra::Shader::Pred;
+        ASSERT(instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex));
+
+        std::string variable =
+            'p' + std::to_string(static_cast<u64>(instr.pred.pred_index.Value()));
+
+        if (instr.negate_pred) {
+            return "!(" + variable + ')';
+        }
+
+        return variable;
+    }
+
+    /*
      * Returns whether the instruction at the specified offset is a 'sched' instruction.
      * Sched instructions always appear before a sequence of 3 instructions.
      */
@@ -319,6 +338,16 @@ private:
         const Instruction instr = {program_code[offset]};
 
         shader.AddLine("// " + std::to_string(offset) + ": " + OpCode::GetInfo(instr.opcode).name);
+
+        using Tegra::Shader::Pred;
+        ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
+                   "NeverExecute predicate not implemented");
+
+        if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
+            shader.AddLine("if (" + GetPredicateCondition(instr) + ')');
+            shader.AddLine('{');
+            ++shader.scope;
+        }
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
@@ -557,6 +586,12 @@ private:
 
             break;
         }
+        }
+
+        // Close the predicate condition scope.
+        if (instr.pred != Pred::UnusedIndex) {
+            --shader.scope;
+            shader.AddLine('}');
         }
 
         return offset + 1;

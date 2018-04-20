@@ -331,7 +331,11 @@ union Instruction {
     OpCode opcode;
     BitField<0, 8, Register> gpr0;
     BitField<8, 8, Register> gpr8;
-    BitField<16, 4, Pred> pred;
+    union {
+        BitField<16, 4, Pred> full_pred;
+        BitField<16, 3, u64> pred_index;
+    } pred;
+    BitField<19, 1, u64> negate_pred;
     BitField<20, 8, Register> gpr20;
     BitField<20, 7, SubOp> sub_op;
     BitField<28, 8, Register> gpr28;
