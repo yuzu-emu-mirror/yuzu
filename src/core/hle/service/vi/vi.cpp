@@ -582,7 +582,7 @@ public:
             {2203, nullptr, "SetLayerSize"},
             {2204, nullptr, "GetLayerZ"},
             {2205, &ISystemDisplayService::SetLayerZ, "SetLayerZ"},
-            {2207, nullptr, "SetLayerVisibility"},
+            {2207, &ISystemDisplayService::SetLayerVisibility, "SetLayerVisibility"},
             {2209, nullptr, "SetLayerAlpha"},
             {2312, nullptr, "CreateStrayLayer"},
             {2400, nullptr, "OpenIndirectLayer"},
@@ -632,6 +632,16 @@ private:
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
     }
+
+    void SetLayerVisibility(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        u64 layer_id = rp.Pop<u64>();
+        bool visibility = rp.Pop<bool>();
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x%x, visibility=%u", layer_id,
+                    visibility);
+    }
 };
 
 class IManagerDisplayService final : public ServiceFramework<IManagerDisplayService> {
@@ -663,7 +673,7 @@ public:
             {4206, nullptr, "SetDefaultDisplay"},
             {6000, &IManagerDisplayService::AddToLayerStack, "AddToLayerStack"},
             {6001, nullptr, "RemoveFromLayerStack"},
-            {6002, nullptr, "SetLayerVisibility"},
+            {6002, &IManagerDisplayService::SetLayerVisibility, "SetLayerVisibility"},
             {6003, nullptr, "SetLayerConfig"},
             {6004, nullptr, "AttachLayerPresentationTracer"},
             {6005, nullptr, "DetachLayerPresentationTracer"},
@@ -745,6 +755,16 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
+    void SetLayerVisibility(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        u64 layer_id = rp.Pop<u64>();
+        bool visibility = rp.Pop<bool>();
+        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        rb.Push(RESULT_SUCCESS);
+        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x%x, visibility=%u", layer_id,
+                    visibility);
+    }
+
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
 };
 
@@ -815,15 +835,15 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
         rb.Push(RESULT_SUCCESS);
 
         if (Settings::values.use_docked_mode) {
-            rb.Push(static_cast<u32>(DisplayResolution::DockedWidth));
-            rb.Push(static_cast<u32>(DisplayResolution::DockedHeight));
+            rb.Push(static_cast<u64>(DisplayResolution::DockedWidth));
+            rb.Push(static_cast<u64>(DisplayResolution::DockedHeight));
         } else {
-            rb.Push(static_cast<u32>(DisplayResolution::UndockedWidth));
-            rb.Push(static_cast<u32>(DisplayResolution::UndockedHeight));
+            rb.Push(static_cast<u64>(DisplayResolution::UndockedWidth));
+            rb.Push(static_cast<u64>(DisplayResolution::UndockedHeight));
         }
     }
 
