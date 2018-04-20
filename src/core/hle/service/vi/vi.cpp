@@ -150,7 +150,7 @@ private:
 
 class NativeWindow : public Parcel {
 public:
-    explicit NativeWindow(u32 id) : Parcel() {
+    explicit NativeWindow(u32 id) {
         data.id = id;
     }
     ~NativeWindow() override = default;
@@ -197,7 +197,7 @@ public:
 
 class IGBPConnectResponseParcel : public Parcel {
 public:
-    explicit IGBPConnectResponseParcel(u32 width, u32 height) : Parcel() {
+    explicit IGBPConnectResponseParcel(u32 width, u32 height) {
         data.width = width;
         data.height = height;
     }
@@ -247,10 +247,6 @@ public:
 };
 
 class IGBPSetPreallocatedBufferResponseParcel : public Parcel {
-public:
-    IGBPSetPreallocatedBufferResponseParcel() : Parcel() {}
-    ~IGBPSetPreallocatedBufferResponseParcel() override = default;
-
 protected:
     void SerializeData() override {
         // TODO(Subv): Find out what this means
@@ -289,7 +285,7 @@ static_assert(sizeof(BufferProducerFence) == 36, "BufferProducerFence has wrong 
 
 class IGBPDequeueBufferResponseParcel : public Parcel {
 public:
-    explicit IGBPDequeueBufferResponseParcel(u32 slot) : Parcel(), slot(slot) {}
+    explicit IGBPDequeueBufferResponseParcel(u32 slot) : slot(slot) {}
     ~IGBPDequeueBufferResponseParcel() override = default;
 
 protected:
@@ -383,7 +379,7 @@ public:
 
 class IGBPQueueBufferResponseParcel : public Parcel {
 public:
-    explicit IGBPQueueBufferResponseParcel(u32 width, u32 height) : Parcel() {
+    explicit IGBPQueueBufferResponseParcel(u32 width, u32 height) {
         data.width = width;
         data.height = height;
     }
@@ -424,7 +420,7 @@ public:
 
 class IGBPQueryResponseParcel : public Parcel {
 public:
-    explicit IGBPQueryResponseParcel(u32 value) : Parcel(), value(value) {}
+    explicit IGBPQueryResponseParcel(u32 value) : value(value) {}
     ~IGBPQueryResponseParcel() override = default;
 
 protected:
