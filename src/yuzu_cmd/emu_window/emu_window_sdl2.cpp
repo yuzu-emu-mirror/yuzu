@@ -56,7 +56,28 @@ void EmuWindow_SDL2::OnResize() {
     UpdateCurrentFramebufferLayout(width, height);
 }
 
-EmuWindow_SDL2::EmuWindow_SDL2() {
+void EmuWindow_SDL2::Fullscreen() {
+    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN) == 0) {
+        return;
+    }
+
+    NGLOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
+
+    // Try a different fullscreening method
+    NGLOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
+    if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
+        return;
+    }
+
+    NGLOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
+
+    // Fallback algorithm: Maximise window.
+    // Works on all systems (unless something is seriously wrong), so no fallback for this one.
+    NGLOG_INFO(Frontend, "Falling back on a maximised window...");
+    SDL_MaximizeWindow(render_window);
+}
+
+EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
     InputCommon::Init();
 
     SDL_SetMainReady();
@@ -88,6 +109,10 @@ EmuWindow_SDL2::EmuWindow_SDL2() {
     if (render_window == nullptr) {
         LOG_CRITICAL(Frontend, "Failed to create SDL2 window! Exiting...");
         exit(1);
+    }
+
+    if (fullscreen) {
+        Fullscreen();
     }
 
     gl_context = SDL_GL_CreateContext(render_window);
