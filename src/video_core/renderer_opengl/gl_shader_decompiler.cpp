@@ -97,11 +97,12 @@ private:
             return exit_method;
 
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
-            const Instruction instr = {program_code[offset]};
-            switch (instr.opcode.EffectiveOpCode()) {
-            case OpCode::Id::EXIT: {
-                return exit_method = ExitMethod::AlwaysEnd;
-            }
+            if (const auto opcode = OpCode::Decode({program_code[offset]})) {
+                switch (opcode->GetId()) {
+                case OpCode::Id::EXIT: {
+                    return exit_method = ExitMethod::AlwaysEnd;
+                }
+                }
             }
         }
         return exit_method = ExitMethod::AlwaysReturn;
@@ -332,12 +333,20 @@ private:
      */
     u32 CompileInstr(u32 offset) {
         // Ignore sched instructions when generating code.
-        if (IsSchedInstruction(offset))
+        if (IsSchedInstruction(offset)) {
             return offset + 1;
+        }
 
         const Instruction instr = {program_code[offset]};
+        const auto opcode = OpCode::Decode(instr);
 
-        shader.AddLine("// " + std::to_string(offset) + ": " + OpCode::GetInfo(instr.opcode).name);
+        // Decoding failure
+        if (!opcode) {
+            NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", instr.value);
+            UNREACHABLE();
+        }
+
+        shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName());
 
         using Tegra::Shader::Pred;
         ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
@@ -349,7 +358,7 @@ private:
             ++shader.scope;
         }
 
-        switch (OpCode::GetInfo(instr.opcode).type) {
+        switch (opcode->GetType()) {
         case OpCode::Type::Arithmetic: {
             std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.alu.negate_a ? "-" : "";
@@ -374,7 +383,7 @@ private:
                 op_b = "abs(" + op_b + ")";
             }
 
-            switch (instr.opcode.EffectiveOpCode()) {
+            switch (opcode->GetId()) {
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
@@ -424,8 +433,8 @@ private:
             }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {} ({}): {}",
-                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
+                               instr.value);
                 UNREACHABLE();
             }
             }
@@ -437,7 +446,7 @@ private:
             std::string op_b = instr.ffma.negate_b ? "-" : "";
             std::string op_c = instr.ffma.negate_c ? "-" : "";
 
-            switch (instr.opcode.EffectiveOpCode()) {
+            switch (opcode->GetId()) {
             case OpCode::Id::FFMA_CR: {
                 op_b += GetUniform(instr.uniform);
                 op_c += GetRegister(instr.gpr39);
@@ -460,8 +469,8 @@ private:
             }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {} ({}): {}",
-                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
+                               instr.value);
                 UNREACHABLE();
             }
             }
@@ -473,7 +482,7 @@ private:
             std::string gpr0 = GetRegister(instr.gpr0);
             const Attribute::Index attribute = instr.attribute.fmt20.index;
 
-            switch (instr.opcode.EffectiveOpCode()) {
+            switch (opcode->GetId()) {
             case OpCode::Id::LD_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 SetDest(instr.attribute.fmt20.element, gpr0, GetInputAttribute(attribute), 1, 4);
@@ -505,8 +514,8 @@ private:
             }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {} ({}): {}",
-                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
+                               instr.value);
                 UNREACHABLE();
             }
             }
@@ -564,7 +573,7 @@ private:
             break;
         }
         default: {
-            switch (instr.opcode.EffectiveOpCode()) {
+            switch (opcode->GetId()) {
             case OpCode::Id::EXIT: {
                 ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
                            "Predicated exits not implemented");
@@ -584,8 +593,8 @@ private:
             }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {} ({}): {}",
-                               static_cast<unsigned>(instr.opcode.EffectiveOpCode()),
-                               OpCode::GetInfo(instr.opcode).name, instr.hex);
+                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
+                               instr.value);
                 UNREACHABLE();
             }
             }

@@ -4,10 +4,16 @@
 
 #pragma once
 
+#include <bitset>
 #include <cstring>
 #include <map>
 #include <string>
+#include <vector>
+
+#include <boost/optional.hpp>
+
 #include "common/bit_field.h"
+#include "common/common_types.h"
 
 namespace Tegra {
 namespace Shader {
@@ -89,188 +95,12 @@ union Uniform {
     BitField<34, 5, u64> index;
 };
 
-union OpCode {
-    enum class Id : u64 {
-        TEXS = 0x6C,
-        IPA = 0xE0,
-        FMUL32_IMM = 0x1E,
-        FFMA_IMM = 0x65,
-        FFMA_CR = 0x93,
-        FFMA_RC = 0xA3,
-        FFMA_RR = 0xB3,
-
-        FADD_C = 0x98B,
-        FMUL_C = 0x98D,
-        MUFU = 0xA10,
-        FADD_R = 0xB8B,
-        FMUL_R = 0xB8D,
-        LD_A = 0x1DFB,
-        ST_A = 0x1DFE,
-
-        FSETP_R = 0x5BB,
-        FSETP_C = 0x4BB,
-        FSETP_IMM = 0x36B,
-        FSETP_NEG_IMM = 0x37B,
-        EXIT = 0xE30,
-        KIL = 0xE33,
-
-        FMUL_IMM = 0x70D,
-        FMUL_IMM_x = 0x72D,
-        FADD_IMM = 0x70B,
-        FADD_IMM_x = 0x72B,
-    };
-
-    enum class Type {
-        Trivial,
-        Arithmetic,
-        Ffma,
-        Flow,
-        Memory,
-        FloatPredicate,
-        Unknown,
-    };
-
-    struct Info {
-        Type type;
-        std::string name;
-    };
-
-    OpCode() = default;
-
-    constexpr OpCode(Id value) : value(static_cast<u64>(value)) {}
-
-    constexpr OpCode(u64 value) : value{value} {}
-
-    constexpr Id EffectiveOpCode() const {
-        switch (op1) {
-        case Id::TEXS:
-            return op1;
-        }
-
-        switch (op2) {
-        case Id::IPA:
-        case Id::FMUL32_IMM:
-            return op2;
-        }
-
-        switch (op3) {
-        case Id::FFMA_IMM:
-        case Id::FFMA_CR:
-        case Id::FFMA_RC:
-        case Id::FFMA_RR:
-            return op3;
-        }
-
-        switch (op4) {
-        case Id::EXIT:
-        case Id::FSETP_R:
-        case Id::FSETP_C:
-        case Id::KIL:
-            return op4;
-        case Id::FSETP_IMM:
-        case Id::FSETP_NEG_IMM:
-            return Id::FSETP_IMM;
-        }
-
-        switch (op5) {
-        case Id::MUFU:
-        case Id::LD_A:
-        case Id::ST_A:
-        case Id::FADD_R:
-        case Id::FADD_C:
-        case Id::FMUL_R:
-        case Id::FMUL_C:
-            return op5;
-
-        case Id::FMUL_IMM:
-        case Id::FMUL_IMM_x:
-            return Id::FMUL_IMM;
-
-        case Id::FADD_IMM:
-        case Id::FADD_IMM_x:
-            return Id::FADD_IMM;
-        }
-
-        return static_cast<Id>(value);
-    }
-
-    static const Info& GetInfo(const OpCode& opcode) {
-        static const std::map<Id, Info> info_table{BuildInfoTable()};
-        const auto& search{info_table.find(opcode.EffectiveOpCode())};
-        if (search != info_table.end()) {
-            return search->second;
-        }
-
-        static const Info unknown{Type::Unknown, "UNK"};
-        return unknown;
-    }
-
-    constexpr operator Id() const {
-        return static_cast<Id>(value);
-    }
-
-    constexpr OpCode operator<<(size_t bits) const {
-        return value << bits;
-    }
-
-    constexpr OpCode operator>>(size_t bits) const {
-        return value >> bits;
-    }
-
-    template <typename T>
-    constexpr u64 operator-(const T& oth) const {
-        return value - oth;
-    }
-
-    constexpr u64 operator&(const OpCode& oth) const {
-        return value & oth.value;
-    }
-
-    constexpr u64 operator~() const {
-        return ~value;
-    }
-
-    static std::map<Id, Info> BuildInfoTable() {
-        std::map<Id, Info> info_table;
-        info_table[Id::TEXS] = {Type::Memory, "texs"};
-        info_table[Id::LD_A] = {Type::Memory, "ld_a"};
-        info_table[Id::ST_A] = {Type::Memory, "st_a"};
-        info_table[Id::MUFU] = {Type::Arithmetic, "mufu"};
-        info_table[Id::FFMA_IMM] = {Type::Ffma, "ffma_imm"};
-        info_table[Id::FFMA_CR] = {Type::Ffma, "ffma_cr"};
-        info_table[Id::FFMA_RC] = {Type::Ffma, "ffma_rc"};
-        info_table[Id::FFMA_RR] = {Type::Ffma, "ffma_rr"};
-        info_table[Id::FADD_R] = {Type::Arithmetic, "fadd_r"};
-        info_table[Id::FADD_C] = {Type::Arithmetic, "fadd_c"};
-        info_table[Id::FADD_IMM] = {Type::Arithmetic, "fadd_imm"};
-        info_table[Id::FMUL_R] = {Type::Arithmetic, "fmul_r"};
-        info_table[Id::FMUL_C] = {Type::Arithmetic, "fmul_c"};
-        info_table[Id::FMUL_IMM] = {Type::Arithmetic, "fmul_imm"};
-        info_table[Id::FMUL32_IMM] = {Type::Arithmetic, "fmul32_imm"};
-        info_table[Id::FSETP_C] = {Type::FloatPredicate, "fsetp_c"};
-        info_table[Id::FSETP_R] = {Type::FloatPredicate, "fsetp_r"};
-        info_table[Id::FSETP_IMM] = {Type::FloatPredicate, "fsetp_imm"};
-        info_table[Id::EXIT] = {Type::Trivial, "exit"};
-        info_table[Id::IPA] = {Type::Trivial, "ipa"};
-        info_table[Id::KIL] = {Type::Flow, "kil"};
-        return info_table;
-    }
-
-    BitField<57, 7, Id> op1;
-    BitField<56, 8, Id> op2;
-    BitField<55, 9, Id> op3;
-    BitField<52, 12, Id> op4;
-    BitField<51, 13, Id> op5;
-    u64 value{};
-};
-static_assert(sizeof(OpCode) == 0x8, "Incorrect structure size");
-
 } // namespace Shader
 } // namespace Tegra
 
 namespace std {
 
-// TODO(bunne): The below is forbidden by the C++ standard, but works fine. See #330.
+// TODO(bunnei): The below is forbidden by the C++ standard, but works fine. See #330.
 template <>
 struct make_unsigned<Tegra::Shader::Attribute> {
     using type = Tegra::Shader::Attribute;
@@ -279,11 +109,6 @@ struct make_unsigned<Tegra::Shader::Attribute> {
 template <>
 struct make_unsigned<Tegra::Shader::Register> {
     using type = Tegra::Shader::Register;
-};
-
-template <>
-struct make_unsigned<Tegra::Shader::OpCode> {
-    using type = Tegra::Shader::OpCode;
 };
 
 } // namespace std
@@ -324,11 +149,12 @@ enum class SubOp : u64 {
 
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
-        hex = instr.hex;
+        value = instr.value;
         return *this;
     }
 
-    OpCode opcode;
+    constexpr Instruction(u64 value) : value{value} {}
+
     BitField<0, 8, Register> gpr0;
     BitField<8, 8, Register> gpr8;
     union {
@@ -340,6 +166,7 @@ union Instruction {
     BitField<20, 7, SubOp> sub_op;
     BitField<28, 8, Register> gpr28;
     BitField<39, 8, Register> gpr39;
+    BitField<48, 16, u64> opcode;
 
     union {
         BitField<20, 19, u64> imm20_19;
@@ -395,11 +222,171 @@ union Instruction {
     Uniform uniform;
     Sampler sampler;
 
-    u64 hex;
+    u64 value;
 };
 static_assert(sizeof(Instruction) == 0x8, "Incorrect structure size");
 static_assert(std::is_standard_layout<Instruction>::value,
               "Structure does not have standard layout");
+
+class OpCode {
+public:
+    enum class Id {
+        KIL,
+        LD_A,
+        ST_A,
+        TEXS,
+        EXIT,
+        IPA,
+        FFMA_IMM,
+        FFMA_CR,
+        FFMA_RC,
+        FFMA_RR,
+        FADD_C,
+        FADD_R,
+        FADD_IMM,
+        FMUL_C,
+        FMUL_R,
+        FMUL_IMM,
+        FMUL32_IMM,
+        MUFU,
+        FSETP_R,
+        FSETP_C,
+        FSETP_IMM,
+    };
+
+    enum class Type {
+        Trivial,
+        Arithmetic,
+        Ffma,
+        Flow,
+        Memory,
+        FloatPredicate,
+        Unknown,
+    };
+
+    class Matcher {
+    public:
+        Matcher(const char* const name, u16 mask, u16 expected, OpCode::Id id, OpCode::Type type)
+            : name{name}, mask{mask}, expected{expected}, id{id}, type{type} {}
+
+        const char* GetName() const {
+            return name;
+        }
+
+        u16 GetMask() const {
+            return mask;
+        }
+
+        Id GetId() const {
+            return id;
+        }
+
+        Type GetType() const {
+            return type;
+        }
+
+        /**
+         * Tests to see if the given instruction is the instruction this matcher represents.
+         * @param instruction The instruction to test
+         * @returns true if the given instruction matches.
+         */
+        bool Matches(u16 instruction) const {
+            return (instruction & mask) == expected;
+        }
+
+    private:
+        const char* name;
+        u16 mask;
+        u16 expected;
+        Id id;
+        Type type;
+    };
+
+    static boost::optional<const Matcher&> Decode(Instruction instr) {
+        static const auto table{GetDecodeTable()};
+
+        const auto matches_instruction = [instr](const auto& matcher) {
+            return matcher.Matches(static_cast<u16>(instr.opcode));
+        };
+
+        auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
+        return iter != table.end() ? boost::optional<const Matcher&>(*iter) : boost::none;
+    }
+
+private:
+    struct Detail {
+    private:
+        static constexpr size_t opcode_bitsize = 16;
+
+        /**
+         * Generates the mask and the expected value after masking from a given bitstring.
+         * A '0' in a bitstring indicates that a zero must be present at that bit position.
+         * A '1' in a bitstring indicates that a one must be present at that bit position.
+         */
+        static auto GetMaskAndExpect(const char* const bitstring) {
+            u16 mask = 0, expect = 0;
+            for (size_t i = 0; i < opcode_bitsize; i++) {
+                const size_t bit_position = opcode_bitsize - i - 1;
+                switch (bitstring[i]) {
+                case '0':
+                    mask |= 1 << bit_position;
+                    break;
+                case '1':
+                    expect |= 1 << bit_position;
+                    mask |= 1 << bit_position;
+                    break;
+                default:
+                    // Ignore
+                    break;
+                }
+            }
+            return std::make_tuple(mask, expect);
+        }
+
+    public:
+        /// Creates a matcher that can match and parse instructions based on bitstring.
+        static auto GetMatcher(const char* const bitstring, OpCode::Id op, OpCode::Type type,
+                               const char* const name) {
+            const auto mask_expect = GetMaskAndExpect(bitstring);
+            return Matcher(name, std::get<0>(mask_expect), std::get<1>(mask_expect), op, type);
+        }
+    };
+
+    static std::vector<Matcher> GetDecodeTable() {
+        std::vector<Matcher> table = {
+#define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
+            INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
+            INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
+            INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
+            INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
+            INST("111000110000----", Id::EXIT, Type::Trivial, "EXIT"),
+            INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
+            INST("001100101-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
+            INST("010010011-------", Id::FFMA_CR, Type::Ffma, "FFMA_CR"),
+            INST("010100011-------", Id::FFMA_RC, Type::Ffma, "FFMA_RC"),
+            INST("010110011-------", Id::FFMA_RR, Type::Ffma, "FFMA_RR"),
+            INST("0100110001011---", Id::FADD_C, Type::Arithmetic, "FADD_C"),
+            INST("0101110001011---", Id::FADD_R, Type::Arithmetic, "FADD_R"),
+            INST("0011100-01011---", Id::FADD_IMM, Type::Arithmetic, "FADD_IMM"),
+            INST("0100110001101---", Id::FMUL_C, Type::Arithmetic, "FMUL_C"),
+            INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
+            INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
+            INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
+            INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
+            INST("010110111011----", Id::FSETP_R, Type::FloatPredicate, "FSETP_R"),
+            INST("010010111011----", Id::FSETP_C, Type::FloatPredicate, "FSETP_C"),
+            INST("0011011-1011----", Id::FSETP_IMM, Type::FloatPredicate, "FSETP_IMM"),
+        };
+#undef INST
+        std::stable_sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
+            // If a matcher has more bits in its mask it is more specific, so it
+            // should come first.
+            return std::bitset<16>(a.GetMask()).count() > std::bitset<16>(b.GetMask()).count();
+        });
+
+        return table;
+    }
+};
 
 } // namespace Shader
 } // namespace Tegra
