@@ -41,6 +41,7 @@ static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"
                  "-g, --gdbport=NUMBER  Enable gdb stub on port NUMBER\n"
+                 "-f, --fullscreen     Start in fullscreen mode\n"
                  "-h, --help            Display this help and exit\n"
                  "-v, --version         Output version information and exit\n";
 }
@@ -67,15 +68,18 @@ int main(int argc, char** argv) {
 #endif
     std::string filepath;
 
+    bool fullscreen = false;
+
     static struct option long_options[] = {
         {"gdbport", required_argument, 0, 'g'},
+        {"fullscreen", no_argument, 0, 'f'},
         {"help", no_argument, 0, 'h'},
         {"version", no_argument, 0, 'v'},
         {0, 0, 0, 0},
     };
 
     while (optind < argc) {
-        char arg = getopt_long(argc, argv, "g:hv", long_options, &option_index);
+        char arg = getopt_long(argc, argv, "g:fhv", long_options, &option_index);
         if (arg != -1) {
             switch (arg) {
             case 'g':
@@ -88,6 +92,10 @@ int main(int argc, char** argv) {
                     perror("--gdbport");
                     exit(1);
                 }
+                break;
+            case 'f':
+                fullscreen = true;
+                NGLOG_INFO(Frontend, "Starting in fullscreen mode...");
                 break;
             case 'h':
                 PrintHelp(argv[0]);
@@ -128,7 +136,7 @@ int main(int argc, char** argv) {
     Settings::values.use_gdbstub = use_gdbstub;
     Settings::Apply();
 
-    std::unique_ptr<EmuWindow_SDL2> emu_window{std::make_unique<EmuWindow_SDL2>()};
+    std::unique_ptr<EmuWindow_SDL2> emu_window{std::make_unique<EmuWindow_SDL2>(fullscreen)};
 
     Core::System& system{Core::System::GetInstance()};
 
