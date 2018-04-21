@@ -407,7 +407,7 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
     // Note: The kernel uses the current process's resource limit instead of
     // the one from the thread owner's resource limit.
     SharedPtr<ResourceLimit>& resource_limit = Core::CurrentProcess()->resource_limit;
-    if (resource_limit->GetMaxResourceValue(ResourceTypes::PRIORITY) > priority) {
+    if (resource_limit->GetMaxResourceValue(ResourceType::Priority) > priority) {
         return ERR_NOT_AUTHORIZED;
     }
 
@@ -541,7 +541,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     }
 
     SharedPtr<ResourceLimit>& resource_limit = Core::CurrentProcess()->resource_limit;
-    if (resource_limit->GetMaxResourceValue(ResourceTypes::PRIORITY) > priority) {
+    if (resource_limit->GetMaxResourceValue(ResourceType::Priority) > priority) {
         return ERR_NOT_AUTHORIZED;
     }
 

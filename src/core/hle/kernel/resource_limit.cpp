@@ -34,57 +34,57 @@ SharedPtr<ResourceLimit> ResourceLimit::GetForCategory(ResourceLimitCategory cat
     }
 }
 
-s32 ResourceLimit::GetCurrentResourceValue(u32 resource) const {
+s32 ResourceLimit::GetCurrentResourceValue(ResourceType resource) const {
     switch (resource) {
-    case COMMIT:
+    case ResourceType::Commit:
         return current_commit;
-    case THREAD:
+    case ResourceType::Thread:
         return current_threads;
-    case EVENT:
+    case ResourceType::Event:
         return current_events;
-    case MUTEX:
+    case ResourceType::Mutex:
         return current_mutexes;
-    case SEMAPHORE:
+    case ResourceType::Semaphore:
         return current_semaphores;
-    case TIMER:
+    case ResourceType::Timer:
         return current_timers;
-    case SHARED_MEMORY:
+    case ResourceType::SharedMemory:
         return current_shared_mems;
-    case ADDRESS_ARBITER:
+    case ResourceType::AddressArbiter:
         return current_address_arbiters;
-    case CPU_TIME:
+    case ResourceType::CPUTime:
         return current_cpu_time;
     default:
-        LOG_ERROR(Kernel, "Unknown resource type=%08X", resource);
+        LOG_ERROR(Kernel, "Unknown resource type=%08X", static_cast<u32>(resource));
         UNIMPLEMENTED();
         return 0;
     }
 }
 
-u32 ResourceLimit::GetMaxResourceValue(u32 resource) const {
+u32 ResourceLimit::GetMaxResourceValue(ResourceType resource) const {
     switch (resource) {
-    case PRIORITY:
+    case ResourceType::Priority:
         return max_priority;
-    case COMMIT:
+    case ResourceType::Commit:
         return max_commit;
-    case THREAD:
+    case ResourceType::Thread:
         return max_threads;
-    case EVENT:
+    case ResourceType::Event:
         return max_events;
-    case MUTEX:
+    case ResourceType::Mutex:
         return max_mutexes;
-    case SEMAPHORE:
+    case ResourceType::Semaphore:
         return max_semaphores;
-    case TIMER:
+    case ResourceType::Timer:
         return max_timers;
-    case SHARED_MEMORY:
+    case ResourceType::SharedMemory:
         return max_shared_mems;
-    case ADDRESS_ARBITER:
+    case ResourceType::AddressArbiter:
         return max_address_arbiters;
-    case CPU_TIME:
+    case ResourceType::CPUTime:
         return max_cpu_time;
     default:
-        LOG_ERROR(Kernel, "Unknown resource type=%08X", resource);
+        LOG_ERROR(Kernel, "Unknown resource type=%08X", static_cast<u32>(resource));
         UNIMPLEMENTED();
         return 0;
     }
