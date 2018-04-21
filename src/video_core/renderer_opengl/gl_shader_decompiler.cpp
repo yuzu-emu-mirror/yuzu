@@ -342,7 +342,7 @@ private:
 
         // Decoding failure
         if (!opcode) {
-            NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", instr.value);
+            NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
             UNREACHABLE();
         }
 
@@ -425,16 +425,14 @@ private:
                     SetDest(0, dest, "min(" + op_a + "," + op_b + ")", 1, 1, instr.alu.abs_d);
                     break;
                 default:
-                    NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {}",
+                    NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
                                    static_cast<unsigned>(instr.sub_op.Value()));
                     UNREACHABLE();
                 }
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {} ({}): {}",
-                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
-                               instr.value);
+                NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -468,9 +466,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {} ({}): {}",
-                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
-                               instr.value);
+                NGLOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -513,9 +509,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {} ({}): {}",
-                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
-                               instr.value);
+                NGLOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -592,9 +586,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {} ({}): {}",
-                               static_cast<unsigned>(opcode->GetId()), opcode->GetName(),
-                               instr.value);
+                NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
