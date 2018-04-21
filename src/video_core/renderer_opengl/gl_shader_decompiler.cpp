@@ -220,6 +220,8 @@ private:
 
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg, unsigned elem = 0) {
+        if (reg == Register::ZeroIndex)
+            return "0";
         if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
             // GPRs 0-3 are output color for the fragment shader
             return std::string{"color."} + "rgba"[(reg + elem) & 3];
@@ -276,6 +278,52 @@ private:
         shader.AddLine(dest + " = " + src + ";");
     }
 
+    /*
+     * Writes code that assigns a predicate boolean variable.
+     * @param pred The id of the predicate to write to.
+     * @param value The expression value to assign to the predicate.
+     */
+    void SetPredicate(u64 pred, const std::string& value) {
+        using Tegra::Shader::Pred;
+        // Can't assign to the constant predicate.
+        ASSERT(pred != static_cast<u64>(Pred::UnusedIndex));
+
+        std::string variable = 'p' + std::to_string(pred);
+        shader.AddLine(variable + " = " + value + ';');
+        declr_predicates.insert(std::move(variable));
+    }
+
+    /*
+     * Returns the condition to use in the 'if' for a predicated instruction.
+     * @param instr Instruction to generate the if condition for.
+     * @returns string containing the predicate condition.
+     */
+    std::string GetPredicateCondition(Instruction instr) const {
+        using Tegra::Shader::Pred;
+        ASSERT(instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex));
+
+        std::string variable =
+            'p' + std::to_string(static_cast<u64>(instr.pred.pred_index.Value()));
+
+        if (instr.negate_pred) {
+            return "!(" + variable + ')';
+        }
+
+        return variable;
+    }
+
+    /*
+     * Returns whether the instruction at the specified offset is a 'sched' instruction.
+     * Sched instructions always appear before a sequence of 3 instructions.
+     */
+    bool IsSchedInstruction(u32 offset) const {
+        // sched instructions appear once every 4 instructions.
+        static constexpr size_t SchedPeriod = 4;
+        u32 absolute_offset = offset - main_offset;
+
+        return (absolute_offset % SchedPeriod) == 0;
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -283,9 +331,23 @@ private:
      * + 1. If the current instruction always terminates the program, returns PROGRAM_END.
      */
     u32 CompileInstr(u32 offset) {
+        // Ignore sched instructions when generating code.
+        if (IsSchedInstruction(offset))
+            return offset + 1;
+
         const Instruction instr = {program_code[offset]};
 
         shader.AddLine("// " + std::to_string(offset) + ": " + OpCode::GetInfo(instr.opcode).name);
+
+        using Tegra::Shader::Pred;
+        ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
+                   "NeverExecute predicate not implemented");
+
+        if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
+            shader.AddLine("if (" + GetPredicateCondition(instr) + ')');
+            shader.AddLine('{');
+            ++shader.scope;
+        }
 
         switch (OpCode::GetInfo(instr.opcode).type) {
         case OpCode::Type::Arithmetic: {
@@ -450,12 +512,68 @@ private:
             }
             break;
         }
+        case OpCode::Type::FloatPredicate: {
+            std::string op_a = instr.fsetp.neg_a ? "-" : "";
+            op_a += GetRegister(instr.gpr8);
 
+            if (instr.fsetp.abs_a) {
+                op_a = "abs(" + op_a + ')';
+            }
+
+            std::string op_b{};
+
+            if (instr.is_b_imm) {
+                if (instr.fsetp.neg_b) {
+                    // Only the immediate version of fsetp has a neg_b bit.
+                    op_b += '-';
+                }
+                op_b += '(' + GetImmediate19(instr) + ')';
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += GetRegister(instr.gpr20);
+                } else {
+                    op_b += GetUniform(instr.uniform);
+                }
+            }
+
+            if (instr.fsetp.abs_b) {
+                op_b = "abs(" + op_b + ')';
+            }
+
+            using Tegra::Shader::Pred;
+            ASSERT_MSG(instr.fsetp.pred0 == static_cast<u64>(Pred::UnusedIndex) &&
+                           instr.fsetp.pred39 == static_cast<u64>(Pred::UnusedIndex),
+                       "Compound predicates are not implemented");
+
+            // We can't use the constant predicate as destination.
+            ASSERT(instr.fsetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
+
+            using Tegra::Shader::PredCondition;
+            switch (instr.fsetp.cond) {
+            case PredCondition::LessThan:
+                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") < (" + op_b + ')');
+                break;
+            case PredCondition::Equal:
+                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") == (" + op_b + ')');
+                break;
+            default:
+                NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
+                               static_cast<unsigned>(instr.fsetp.cond.Value()), op_a, op_b);
+                UNREACHABLE();
+            }
+            break;
+        }
         default: {
             switch (instr.opcode.EffectiveOpCode()) {
             case OpCode::Id::EXIT: {
+                ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
+                           "Predicated exits not implemented");
                 shader.AddLine("return true;");
                 offset = PROGRAM_END - 1;
+                break;
+            }
+            case OpCode::Id::KIL: {
+                shader.AddLine("discard;");
                 break;
             }
             case OpCode::Id::IPA: {
@@ -474,6 +592,12 @@ private:
 
             break;
         }
+        }
+
+        // Close the predicate condition scope.
+        if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
+            --shader.scope;
+            shader.AddLine('}');
         }
 
         return offset + 1;
@@ -605,6 +729,12 @@ private:
             declarations.AddNewLine();
             ++const_buffer_layout;
         }
+
+        declarations.AddNewLine();
+        for (const auto& pred : declr_predicates) {
+            declarations.AddLine("bool " + pred + " = false;");
+        }
+        declarations.AddNewLine();
     }
 
 private:
@@ -618,6 +748,7 @@ private:
 
     // Declarations
     std::set<std::string> declr_register;
+    std::set<std::string> declr_predicates;
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
     std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;

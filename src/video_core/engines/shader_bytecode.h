@@ -13,6 +13,9 @@ namespace Tegra {
 namespace Shader {
 
 struct Register {
+    // Register 255 is special cased to always be 0
+    static constexpr size_t ZeroIndex = 255;
+
     constexpr Register() = default;
 
     constexpr Register(u64 value) : value(value) {}
@@ -106,6 +109,8 @@ union OpCode {
 
         FSETP_R = 0x5BB,
         FSETP_C = 0x4BB,
+        FSETP_IMM = 0x36B,
+        FSETP_NEG_IMM = 0x37B,
         EXIT = 0xE30,
         KIL = 0xE33,
 
@@ -121,6 +126,7 @@ union OpCode {
         Ffma,
         Flow,
         Memory,
+        FloatPredicate,
         Unknown,
     };
 
@@ -161,6 +167,9 @@ union OpCode {
         case Id::FSETP_C:
         case Id::KIL:
             return op4;
+        case Id::FSETP_IMM:
+        case Id::FSETP_NEG_IMM:
+            return Id::FSETP_IMM;
         }
 
         switch (op5) {
@@ -238,8 +247,9 @@ union OpCode {
         info_table[Id::FMUL_C] = {Type::Arithmetic, "fmul_c"};
         info_table[Id::FMUL_IMM] = {Type::Arithmetic, "fmul_imm"};
         info_table[Id::FMUL32_IMM] = {Type::Arithmetic, "fmul32_imm"};
-        info_table[Id::FSETP_C] = {Type::Arithmetic, "fsetp_c"};
-        info_table[Id::FSETP_R] = {Type::Arithmetic, "fsetp_r"};
+        info_table[Id::FSETP_C] = {Type::FloatPredicate, "fsetp_c"};
+        info_table[Id::FSETP_R] = {Type::FloatPredicate, "fsetp_r"};
+        info_table[Id::FSETP_IMM] = {Type::FloatPredicate, "fsetp_imm"};
         info_table[Id::EXIT] = {Type::Trivial, "exit"};
         info_table[Id::IPA] = {Type::Trivial, "ipa"};
         info_table[Id::KIL] = {Type::Flow, "kil"};
@@ -283,7 +293,23 @@ namespace Shader {
 
 enum class Pred : u64 {
     UnusedIndex = 0x7,
-    NeverExecute = 0xf,
+    NeverExecute = 0xF,
+};
+
+enum class PredCondition : u64 {
+    LessThan = 1,
+    Equal = 2,
+    LessEqual = 3,
+    GreaterThan = 4,
+    NotEqual = 5,
+    GreaterEqual = 6,
+    // TODO(Subv): Other condition types
+};
+
+enum class PredOperation : u64 {
+    And = 0,
+    Or = 1,
+    Xor = 2,
 };
 
 enum class SubOp : u64 {
@@ -305,7 +331,11 @@ union Instruction {
     OpCode opcode;
     BitField<0, 8, Register> gpr0;
     BitField<8, 8, Register> gpr8;
-    BitField<16, 4, Pred> pred;
+    union {
+        BitField<16, 4, Pred> full_pred;
+        BitField<16, 3, u64> pred_index;
+    } pred;
+    BitField<19, 1, u64> negate_pred;
     BitField<20, 8, Register> gpr20;
     BitField<20, 7, SubOp> sub_op;
     BitField<28, 8, Register> gpr28;
@@ -342,6 +372,20 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
+
+    union {
+        BitField<0, 3, u64> pred0;
+        BitField<3, 3, u64> pred3;
+        BitField<7, 1, u64> abs_a;
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<43, 1, u64> neg_a;
+        BitField<44, 1, u64> abs_b;
+        BitField<45, 2, PredOperation> op;
+        BitField<47, 1, u64> ftz;
+        BitField<48, 4, PredCondition> cond;
+        BitField<56, 1, u64> neg_b;
+    } fsetp;
 
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
