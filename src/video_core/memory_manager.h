@@ -6,6 +6,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 #include <boost/optional.hpp>
 
@@ -26,6 +27,7 @@ public:
     GPUVAddr MapBufferEx(VAddr cpu_addr, u64 size);
     GPUVAddr MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size);
     boost::optional<VAddr> GpuToCpuAddress(GPUVAddr gpu_addr);
+    std::vector<GPUVAddr> CpuToGpuAddress(VAddr cpu_addr) const;
 
     static constexpr u64 PAGE_BITS = 16;
     static constexpr u64 PAGE_SIZE = 1 << PAGE_BITS;
@@ -51,6 +53,14 @@ private:
 
     using PageBlock = std::array<VAddr, PAGE_BLOCK_SIZE>;
     std::array<std::unique_ptr<PageBlock>, PAGE_TABLE_SIZE> page_table{};
+
+    struct MappedRegion {
+        VAddr cpu_addr;
+        GPUVAddr gpu_addr;
+        u64 size;
+    };
+
+    std::vector<MappedRegion> mapped_regions;
 };
 
 } // namespace Tegra

@@ -38,6 +38,9 @@ GPUVAddr MemoryManager::MapBufferEx(VAddr cpu_addr, u64 size) {
         PageSlot(*gpu_addr + offset) = cpu_addr + offset;
     }
 
+    MappedRegion region{cpu_addr, *gpu_addr, size};
+    mapped_regions.push_back(region);
+
     return *gpu_addr;
 }
 
@@ -48,6 +51,9 @@ GPUVAddr MemoryManager::MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size)
         ASSERT(PageSlot(gpu_addr + offset) == static_cast<u64>(PageStatus::Allocated));
         PageSlot(gpu_addr + offset) = cpu_addr + offset;
     }
+
+    MappedRegion region{cpu_addr, gpu_addr, size};
+    mapped_regions.push_back(region);
 
     return gpu_addr;
 }
@@ -82,6 +88,17 @@ boost::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) {
     }
 
     return base_addr + (gpu_addr & PAGE_MASK);
+}
+
+std::vector<GPUVAddr> MemoryManager::CpuToGpuAddress(VAddr cpu_addr) const {
+    std::vector<GPUVAddr> results;
+    for (const auto& region : mapped_regions) {
+        if (cpu_addr >= region.cpu_addr && cpu_addr < (region.cpu_addr + region.size)) {
+            u64 offset = cpu_addr - region.cpu_addr;
+            results.push_back(region.gpu_addr + offset);
+        }
+    }
+    return results;
 }
 
 bool MemoryManager::IsPageMapped(GPUVAddr gpu_addr) {
