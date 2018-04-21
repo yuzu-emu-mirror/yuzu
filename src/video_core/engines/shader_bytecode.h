@@ -234,10 +234,12 @@ public:
         KIL,
         LD_A,
         ST_A,
-        TEXS,
+        TEXQ, // Texture Query
+        TEXS, // Texture Fetch with scalar/non-vec4 source/destinations
+        TLDS, // Texture Load with scalar/non-vec4 source/destinations
         EXIT,
         IPA,
-        FFMA_IMM,
+        FFMA_IMM, // Fused Multiply and Add
         FFMA_CR,
         FFMA_RC,
         FFMA_RR,
@@ -248,10 +250,31 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
-        MUFU,
+        MUFU, // Multi-Function Operator
+        RRO,  // Range Reduction Operator
+        F2F_C,
+        F2F_R,
+        F2F_IMM,
+        F2I_C,
+        F2I_R,
+        F2I_IMM,
+        I2F_C,
+        I2F_R,
+        I2F_IMM,
+        LOP32I,
+        MOV_C,
+        MOV_R,
+        MOV_IMM,
+        MOV32I,
+        SHR_C,
+        SHR_R,
+        SHR_IMM,
+        FSETP_C, // Set Predicate
         FSETP_R,
-        FSETP_C,
         FSETP_IMM,
+        ISETP_C,
+        ISETP_IMM,
+        ISETP_R,
     };
 
     enum class Type {
@@ -261,6 +284,7 @@ public:
         Flow,
         Memory,
         FloatPredicate,
+        IntegerPredicate,
         Unknown,
     };
 
@@ -358,7 +382,9 @@ private:
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
+            INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
+            INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
             INST("111000110000----", Id::EXIT, Type::Trivial, "EXIT"),
             INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
             INST("001100101-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
@@ -373,9 +399,30 @@ private:
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
-            INST("010110111011----", Id::FSETP_R, Type::FloatPredicate, "FSETP_R"),
+            INST("0101110010010---", Id::RRO, Type::Arithmetic, "RRO"),
+            INST("0100110010101---", Id::F2F_C, Type::Arithmetic, "F2F_C"),
+            INST("0101110010101---", Id::F2F_R, Type::Arithmetic, "F2F_R"),
+            INST("0011100-10101---", Id::F2F_IMM, Type::Arithmetic, "F2F_IMM"),
+            INST("0100110010110---", Id::F2I_C, Type::Arithmetic, "F2I_C"),
+            INST("0101110010110---", Id::F2I_R, Type::Arithmetic, "F2I_R"),
+            INST("0011100-10110---", Id::F2I_IMM, Type::Arithmetic, "F2I_IMM"),
+            INST("0100110010111---", Id::I2F_C, Type::Arithmetic, "I2F_C"),
+            INST("0101110010111---", Id::I2F_R, Type::Arithmetic, "I2F_R"),
+            INST("0011100-10111---", Id::I2F_IMM, Type::Arithmetic, "I2F_IMM"),
+            INST("000001----------", Id::LOP32I, Type::Arithmetic, "LOP32I"),
+            INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
+            INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
+            INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
+            INST("000000010000----", Id::MOV32I, Type::Arithmetic, "MOV32I"),
+            INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
+            INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
+            INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
             INST("010010111011----", Id::FSETP_C, Type::FloatPredicate, "FSETP_C"),
+            INST("010110111011----", Id::FSETP_R, Type::FloatPredicate, "FSETP_R"),
             INST("0011011-1011----", Id::FSETP_IMM, Type::FloatPredicate, "FSETP_IMM"),
+            INST("010010110110----", Id::ISETP_C, Type::IntegerPredicate, "ISETP_C"),
+            INST("010110110110----", Id::ISETP_R, Type::IntegerPredicate, "ISETP_R"),
+            INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerPredicate, "ISETP_IMM"),
         };
 #undef INST
         std::stable_sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
