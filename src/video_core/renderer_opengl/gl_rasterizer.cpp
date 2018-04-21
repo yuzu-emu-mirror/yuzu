@@ -14,7 +14,6 @@
 #include "common/math_util.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
-#include "common/vector_math.h"
 #include "core/core.h"
 #include "core/hle/kernel/process.h"
 #include "core/settings.h"

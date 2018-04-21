@@ -6,15 +6,10 @@
 
 #include <array>
 #include <cstddef>
-#include <cstring>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 #include <glad/glad.h>
-#include "common/bit_field.h"
 #include "common/common_types.h"
-#include "common/hash.h"
-#include "common/vector_math.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
