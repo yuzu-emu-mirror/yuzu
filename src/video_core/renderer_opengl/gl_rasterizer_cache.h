@@ -54,9 +54,10 @@ struct SurfaceParams {
     enum class PixelFormat {
         ABGR8 = 0,
         B5G6R5 = 1,
-        DXT1 = 2,
-        DXT23 = 3,
-        DXT45 = 4,
+        A2B10G10R10 = 2,
+        DXT1 = 3,
+        DXT23 = 4,
+        DXT45 = 5,
 
         Max,
         Invalid = 255,
@@ -88,6 +89,7 @@ struct SurfaceParams {
         constexpr std::array<unsigned int, MaxPixelFormat> bpp_table = {
             32,  // ABGR8
             16,  // B5G6R5
+            32,  // A2B10G10R10
             64,  // DXT1
             128, // DXT23
             128, // DXT45
@@ -127,6 +129,8 @@ struct SurfaceParams {
             return PixelFormat::ABGR8;
         case Tegra::Texture::TextureFormat::B5G6R5:
             return PixelFormat::B5G6R5;
+        case Tegra::Texture::TextureFormat::A2B10G10R10:
+            return PixelFormat::A2B10G10R10;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -146,6 +150,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::A8R8G8B8;
         case PixelFormat::B5G6R5:
             return Tegra::Texture::TextureFormat::B5G6R5;
+        case PixelFormat::A2B10G10R10:
+            return Tegra::Texture::TextureFormat::A2B10G10R10;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         case PixelFormat::DXT23:
