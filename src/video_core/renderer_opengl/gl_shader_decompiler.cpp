@@ -431,6 +431,10 @@ private:
                 }
                 break;
             }
+            case OpCode::Id::RRO: {
+                NGLOG_DEBUG(HW_GPU, "Skipping RRO instruction");
+                break;
+            }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
                 UNREACHABLE();
