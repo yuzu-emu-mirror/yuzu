@@ -73,9 +73,14 @@ boost::optional<GPUVAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
     return {};
 }
 
-VAddr MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) {
+boost::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) {
     VAddr base_addr = PageSlot(gpu_addr);
     ASSERT(base_addr != static_cast<u64>(PageStatus::Unmapped));
+
+    if (base_addr == static_cast<u64>(PageStatus::Allocated)) {
+        return {};
+    }
+
     return base_addr + (gpu_addr & PAGE_MASK);
 }
 

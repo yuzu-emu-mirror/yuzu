@@ -150,7 +150,7 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
         u64 size = end - start + 1;
 
         // Copy vertex array data
-        const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(start)};
+        const VAddr data_addr{*memory_manager->GpuToCpuAddress(start)};
         res_cache.FlushRegion(data_addr, size, nullptr);
         Memory::ReadBlock(data_addr, array_ptr, size);
 
@@ -233,8 +233,8 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
         // Fetch program code from memory
         GLShader::ProgramCode program_code;
         const u64 gpu_address{gpu.regs.code_address.CodeAddress() + shader_config.offset};
-        const VAddr cpu_address{gpu.memory_manager.GpuToCpuAddress(gpu_address)};
-        Memory::ReadBlock(cpu_address, program_code.data(), program_code.size() * sizeof(u64));
+        const boost::optional<VAddr> cpu_address{gpu.memory_manager.GpuToCpuAddress(gpu_address)};
+        Memory::ReadBlock(*cpu_address, program_code.data(), program_code.size() * sizeof(u64));
         GLShader::ShaderSetup setup{std::move(program_code)};
 
         GLShader::ShaderEntries shader_resources;
@@ -394,9 +394,9 @@ void RasterizerOpenGL::DrawArrays() {
     GLintptr index_buffer_offset = 0;
     if (is_indexed) {
         const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
-        const VAddr index_data_addr{
+        const boost::optional<VAddr> index_data_addr{
             memory_manager->GpuToCpuAddress(regs.index_array.StartAddress())};
-        Memory::ReadBlock(index_data_addr, offseted_buffer, index_buffer_size);
+        Memory::ReadBlock(*index_data_addr, offseted_buffer, index_buffer_size);
 
         index_buffer_offset = buffer_offset;
         offseted_buffer += index_buffer_size;
@@ -659,9 +659,9 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         buffer_draw_state.enabled = true;
         buffer_draw_state.bindpoint = current_bindpoint + bindpoint;
 
-        VAddr addr = gpu.memory_manager->GpuToCpuAddress(buffer.address);
+        boost::optional<VAddr> addr = gpu.memory_manager->GpuToCpuAddress(buffer.address);
         std::vector<u8> data(used_buffer.GetSize() * sizeof(float));
-        Memory::ReadBlock(addr, data.data(), data.size());
+        Memory::ReadBlock(*addr, data.data(), data.size());
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_draw_state.ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, data.size(), data.data(), GL_DYNAMIC_DRAW);

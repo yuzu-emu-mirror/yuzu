@@ -378,10 +378,10 @@ void GraphicsSurfaceWidget::OnUpdate() {
     // TODO: Implement a good way to visualize alpha components!
 
     QImage decoded_image(surface_width, surface_height, QImage::Format_ARGB32);
-    VAddr address = gpu.memory_manager->GpuToCpuAddress(surface_address);
+    boost::optional<VAddr> address = gpu.memory_manager->GpuToCpuAddress(surface_address);
 
     auto unswizzled_data =
-        Tegra::Texture::UnswizzleTexture(address, surface_format, surface_width, surface_height);
+        Tegra::Texture::UnswizzleTexture(*address, surface_format, surface_width, surface_height);
 
     auto texture_data = Tegra::Texture::DecodeTexture(unswizzled_data, surface_format,
                                                       surface_width, surface_height);
@@ -437,9 +437,9 @@ void GraphicsSurfaceWidget::SaveSurface() {
             pixmap->save(&file, "PNG");
     } else if (selectedFilter == bin_filter) {
         auto& gpu = Core::System::GetInstance().GPU();
-        VAddr address = gpu.memory_manager->GpuToCpuAddress(surface_address);
+        boost::optional<VAddr> address = gpu.memory_manager->GpuToCpuAddress(surface_address);
 
-        const u8* buffer = Memory::GetPointer(address);
+        const u8* buffer = Memory::GetPointer(*address);
         ASSERT_MSG(buffer != nullptr, "Memory not accessible");
 
         QFile file(filename);

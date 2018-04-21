@@ -1028,7 +1028,7 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     auto& gpu = Core::System::GetInstance().GPU();
 
     SurfaceParams params;
-    params.addr = gpu.memory_manager->GpuToCpuAddress(config.tic.Address());
+    params.addr = *gpu.memory_manager->GpuToCpuAddress(config.tic.Address());
     params.width = config.tic.Width();
     params.height = config.tic.Height();
     params.is_tiled = config.tic.IsTiled();
@@ -1106,7 +1106,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     color_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     SurfaceParams depth_params = color_params;
 
-    color_params.addr = memory_manager->GpuToCpuAddress(config.Address());
+    color_params.addr = *memory_manager->GpuToCpuAddress(config.Address());
     color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
     color_params.component_type = SurfaceParams::ComponentTypeFromRenderTarget(config.format);
     color_params.UpdateParams();

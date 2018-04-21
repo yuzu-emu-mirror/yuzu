@@ -6,6 +6,9 @@
 
 #include <array>
 #include <memory>
+
+#include <boost/optional.hpp>
+
 #include "common/common_types.h"
 #include "core/memory.h"
 
@@ -22,7 +25,7 @@ public:
     GPUVAddr AllocateSpace(GPUVAddr gpu_addr, u64 size, u64 align);
     GPUVAddr MapBufferEx(VAddr cpu_addr, u64 size);
     GPUVAddr MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size);
-    VAddr GpuToCpuAddress(GPUVAddr gpu_addr);
+    boost::optional<VAddr> GpuToCpuAddress(GPUVAddr gpu_addr);
 
     static constexpr u64 PAGE_BITS = 16;
     static constexpr u64 PAGE_SIZE = 1 << PAGE_BITS;
