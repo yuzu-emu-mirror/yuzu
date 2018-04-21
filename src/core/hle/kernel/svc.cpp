@@ -621,6 +621,8 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
 
     current_thread->WakeAfterDelay(nano_seconds);
 
+    // Note: Deliberately don't attempt to inherit the lock owner's priority.
+
     Core::System::GetInstance().PrepareReschedule();
     return RESULT_SUCCESS;
 }
@@ -651,6 +653,11 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
             ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
             thread->ResumeFromWait();
 
+            auto lock_owner = thread->lock_owner;
+            if (lock_owner)
+                lock_owner->RemoveMutexWaiter(thread);
+
+            thread->lock_owner = nullptr;
             thread->mutex_wait_address = 0;
             thread->condvar_wait_address = 0;
             thread->wait_handle = 0;
@@ -665,6 +672,8 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 
             // Signal that the mutex now has a waiting thread.
             Memory::Write32(thread->mutex_wait_address, mutex_val | Mutex::MutexHasWaitersFlag);
+
+            owner->AddMutexWaiter(thread);
 
             Core::System::GetInstance().PrepareReschedule();
         }

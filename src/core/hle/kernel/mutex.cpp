@@ -18,13 +18,13 @@ namespace Kernel {
 
 /// Returns the number of threads that are waiting for a mutex, and the highest priority one among
 /// those.
-static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(VAddr mutex_addr) {
-    auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
+static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(
+    SharedPtr<Thread> current_thread, VAddr mutex_addr) {
 
     SharedPtr<Thread> highest_priority_thread;
     u32 num_waiters = 0;
 
-    for (auto& thread : thread_list) {
+    for (auto& thread : current_thread->wait_mutex_threads) {
         if (thread->mutex_wait_address != mutex_addr)
             continue;
 
@@ -38,6 +38,21 @@ static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(VA
     }
 
     return {highest_priority_thread, num_waiters};
+}
+
+/// Update the mutex owner field of all threads waiting on the mutex to point to the new owner.
+static void TransferMutexOwnership(VAddr mutex_addr, SharedPtr<Thread> current_thread,
+                                   SharedPtr<Thread> new_owner) {
+    auto threads = current_thread->wait_mutex_threads;
+    for (auto& thread : threads) {
+        if (thread->mutex_wait_address != mutex_addr)
+            continue;
+
+        ASSERT(thread->lock_owner == current_thread);
+        current_thread->RemoveMutexWaiter(thread);
+        if (new_owner != thread)
+            new_owner->AddMutexWaiter(thread);
+    }
 }
 
 ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
@@ -65,11 +80,14 @@ ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
         return ERR_INVALID_HANDLE;
 
     // Wait until the mutex is released
-    requesting_thread->mutex_wait_address = address;
-    requesting_thread->wait_handle = requesting_thread_handle;
+    GetCurrentThread()->mutex_wait_address = address;
+    GetCurrentThread()->wait_handle = requesting_thread_handle;
 
-    requesting_thread->status = THREADSTATUS_WAIT_MUTEX;
-    requesting_thread->wakeup_callback = nullptr;
+    GetCurrentThread()->status = THREADSTATUS_WAIT_MUTEX;
+    GetCurrentThread()->wakeup_callback = nullptr;
+
+    // Update the lock holder thread's priority to prevent priority inversion.
+    holding_thread->AddMutexWaiter(GetCurrentThread());
 
     Core::System::GetInstance().PrepareReschedule();
 
@@ -82,13 +100,17 @@ ResultCode Mutex::Release(VAddr address) {
         return ResultCode(ErrorModule::Kernel, ErrCodes::MisalignedAddress);
     }
 
-    auto [thread, num_waiters] = GetHighestPriorityMutexWaitingThread(address);
+    auto [thread, num_waiters] = GetHighestPriorityMutexWaitingThread(GetCurrentThread(), address);
 
     // There are no more threads waiting for the mutex, release it completely.
     if (thread == nullptr) {
+        ASSERT(GetCurrentThread()->wait_mutex_threads.empty());
         Memory::Write32(address, 0);
         return RESULT_SUCCESS;
     }
+
+    // Transfer the ownership of the mutex from the previous owner to the new one.
+    TransferMutexOwnership(address, GetCurrentThread(), thread);
 
     u32 mutex_value = thread->wait_handle;
 
@@ -103,6 +125,7 @@ ResultCode Mutex::Release(VAddr address) {
     ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
     thread->ResumeFromWait();
 
+    thread->lock_owner = nullptr;
     thread->condvar_wait_address = 0;
     thread->mutex_wait_address = 0;
     thread->wait_handle = 0;

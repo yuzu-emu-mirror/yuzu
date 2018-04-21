@@ -109,6 +109,15 @@ public:
      */
     void BoostPriority(u32 priority);
 
+    /// Adds a thread to the list of threads that are waiting for a lock held by this thread.
+    void AddMutexWaiter(SharedPtr<Thread> thread);
+
+    /// Removes a thread from the list of threads that are waiting for a lock held by this thread.
+    void RemoveMutexWaiter(SharedPtr<Thread> thread);
+
+    /// Recalculates the current priority taking into account priority inheritance.
+    void UpdatePriority();
+
     /**
      * Gets the thread's thread ID
      * @return The thread's ID
@@ -204,6 +213,12 @@ public:
     /// Objects that the thread is waiting on, in the same order as they were
     // passed to WaitSynchronization1/N.
     std::vector<SharedPtr<WaitObject>> wait_objects;
+
+    /// List of threads that are waiting for a mutex that is held by this thread.
+    std::vector<SharedPtr<Thread>> wait_mutex_threads;
+
+    /// Thread that owns the lock that this thread is waiting for.
+    SharedPtr<Thread> lock_owner;
 
     // If waiting on a ConditionVariable, this is the ConditionVariable  address
     VAddr condvar_wait_address;

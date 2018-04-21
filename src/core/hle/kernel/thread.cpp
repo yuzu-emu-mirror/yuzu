@@ -129,6 +129,11 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
         thread->mutex_wait_address = 0;
         thread->condvar_wait_address = 0;
         thread->wait_handle = 0;
+
+        auto lock_owner = thread->lock_owner;
+        // Threads waking up by timeout from WaitProcessWideKey do not perform priority inheritance
+        // and don't have a lock owner.
+        ASSERT(lock_owner == nullptr);
     }
 
     if (resume)
@@ -325,8 +330,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 void Thread::SetPriority(u32 priority) {
     ASSERT_MSG(priority <= THREADPRIO_LOWEST && priority >= THREADPRIO_HIGHEST,
                "Invalid priority value.");
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
-    nominal_priority = current_priority = priority;
+    nominal_priority = priority;
+    UpdatePriority();
 }
 
 void Thread::BoostPriority(u32 priority) {
@@ -374,6 +379,38 @@ VAddr Thread::GetCommandBufferAddress() const {
     // Offset from the start of TLS at which the IPC command buffer begins.
     static constexpr int CommandHeaderOffset = 0x80;
     return GetTLSAddress() + CommandHeaderOffset;
+}
+
+void Thread::AddMutexWaiter(SharedPtr<Thread> thread) {
+    thread->lock_owner = this;
+    wait_mutex_threads.emplace_back(std::move(thread));
+    UpdatePriority();
+}
+
+void Thread::RemoveMutexWaiter(SharedPtr<Thread> thread) {
+    boost::remove_erase(wait_mutex_threads, thread);
+    thread->lock_owner = nullptr;
+    UpdatePriority();
+}
+
+void Thread::UpdatePriority() {
+    // Find the highest priority among all the threads that are waiting for this thread's lock
+    u32 new_priority = nominal_priority;
+    for (const auto& thread : wait_mutex_threads) {
+        if (thread->nominal_priority < new_priority)
+            new_priority = thread->nominal_priority;
+    }
+
+    if (new_priority == current_priority)
+        return;
+
+    Core::System::GetInstance().Scheduler().SetThreadPriority(this, new_priority);
+
+    current_priority = new_priority;
+
+    // Recursively update the priority of the thread that depends on the priority of this one.
+    if (lock_owner)
+        lock_owner->UpdatePriority();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
