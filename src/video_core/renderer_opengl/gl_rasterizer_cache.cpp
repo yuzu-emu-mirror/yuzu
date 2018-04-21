@@ -7,7 +7,6 @@
 #include <cstring>
 #include <iterator>
 #include <memory>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 #include <boost/optional.hpp>
@@ -20,7 +19,6 @@
 #include "common/math_util.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
-#include "common/vector_math.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
 #include "core/hle/kernel/process.h"
