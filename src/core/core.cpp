@@ -12,10 +12,13 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/gdbstub/gdbstub.h"
+#include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/service/service.h"
+#include "core/hle/service/sm/controller.h"
+#include "core/hle/service/sm/sm.h"
 #include "core/hw/hw.h"
 #include "core/loader/loader.h"
 #include "core/memory_setup.h"
@@ -25,6 +28,8 @@
 namespace Core {
 
 /*static*/ System System::s_instance;
+
+System::~System() = default;
 
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
@@ -167,10 +172,12 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
 
     telemetry_session = std::make_unique<Core::TelemetrySession>();
 
+    service_manager = std::make_shared<Service::SM::ServiceManager>();
+
     HW::Init();
     Kernel::Init(system_mode);
     scheduler = std::make_unique<Kernel::Scheduler>(cpu_core.get());
-    Service::Init();
+    Service::Init(service_manager);
     GDBStub::Init();
 
     if (!VideoCore::Init(emu_window)) {
@@ -200,17 +207,26 @@ void System::Shutdown() {
     VideoCore::Shutdown();
     GDBStub::Shutdown();
     Service::Shutdown();
-    scheduler = nullptr;
+    scheduler.reset();
     Kernel::Shutdown();
     HW::Shutdown();
-    telemetry_session = nullptr;
-    gpu_core = nullptr;
-    cpu_core = nullptr;
+    service_manager.reset();
+    telemetry_session.reset();
+    gpu_core.reset();
+    cpu_core.reset();
     CoreTiming::Shutdown();
 
-    app_loader = nullptr;
+    app_loader.reset();
 
     LOG_DEBUG(Core, "Shutdown OK");
+}
+
+Service::SM::ServiceManager& System::ServiceManager() {
+    return *service_manager;
+}
+
+const Service::SM::ServiceManager& System::ServiceManager() const {
+    return *service_manager;
 }
 
 } // namespace Core

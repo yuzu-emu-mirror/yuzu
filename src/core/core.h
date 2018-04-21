@@ -19,10 +19,16 @@
 class EmuWindow;
 class ARM_Interface;
 
+namespace Service::SM {
+class ServiceManager;
+}
+
 namespace Core {
 
 class System {
 public:
+    ~System();
+
     /**
      * Gets the instance of the System singleton class.
      * @returns Reference to the instance of the System singleton class.
@@ -137,6 +143,9 @@ public:
         return *app_loader;
     }
 
+    Service::SM::ServiceManager& ServiceManager();
+    const Service::SM::ServiceManager& ServiceManager() const;
+
     void SetGPUDebugContext(std::shared_ptr<Tegra::DebugContext> context) {
         debug_context = std::move(context);
     }
@@ -170,6 +179,9 @@ private:
 
     /// When true, signals that a reschedule should happen
     bool reschedule_pending{};
+
+    /// Service manager
+    std::shared_ptr<Service::SM::ServiceManager> service_manager;
 
     /// Telemetry session for this emulation session
     std::unique_ptr<Core::TelemetrySession> telemetry_session;

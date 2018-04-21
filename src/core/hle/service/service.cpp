@@ -145,7 +145,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
         return ResultCode(ErrorModule::HIPC, ErrorDescription::RemoteProcessDead);
     }
     case IPC::CommandType::Control: {
-        SM::g_service_manager->InvokeControlRequest(context);
+        Core::System::GetInstance().ServiceManager().InvokeControlRequest(context);
         break;
     }
     case IPC::CommandType::Request: {
@@ -170,42 +170,40 @@ void AddNamedPort(std::string name, SharedPtr<ClientPort> port) {
 }
 
 /// Initialize ServiceManager
-void Init() {
+void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
     auto nv_flinger = std::make_shared<NVFlinger::NVFlinger>();
 
-    SM::g_service_manager = std::make_shared<SM::ServiceManager>();
-    SM::ServiceManager::InstallInterfaces(SM::g_service_manager);
+    SM::ServiceManager::InstallInterfaces(sm);
 
-    Account::InstallInterfaces(*SM::g_service_manager);
-    AM::InstallInterfaces(*SM::g_service_manager, nv_flinger);
-    AOC::InstallInterfaces(*SM::g_service_manager);
-    APM::InstallInterfaces(*SM::g_service_manager);
-    Audio::InstallInterfaces(*SM::g_service_manager);
-    Fatal::InstallInterfaces(*SM::g_service_manager);
-    FileSystem::InstallInterfaces(*SM::g_service_manager);
-    Friend::InstallInterfaces(*SM::g_service_manager);
-    HID::InstallInterfaces(*SM::g_service_manager);
-    LM::InstallInterfaces(*SM::g_service_manager);
-    NFP::InstallInterfaces(*SM::g_service_manager);
-    NIFM::InstallInterfaces(*SM::g_service_manager);
-    NS::InstallInterfaces(*SM::g_service_manager);
-    Nvidia::InstallInterfaces(*SM::g_service_manager);
-    PCTL::InstallInterfaces(*SM::g_service_manager);
-    Sockets::InstallInterfaces(*SM::g_service_manager);
-    SPL::InstallInterfaces(*SM::g_service_manager);
-    SSL::InstallInterfaces(*SM::g_service_manager);
-    Time::InstallInterfaces(*SM::g_service_manager);
-    VI::InstallInterfaces(*SM::g_service_manager, nv_flinger);
-    Set::InstallInterfaces(*SM::g_service_manager);
+    Account::InstallInterfaces(*sm);
+    AM::InstallInterfaces(*sm, nv_flinger);
+    AOC::InstallInterfaces(*sm);
+    APM::InstallInterfaces(*sm);
+    Audio::InstallInterfaces(*sm);
+    Fatal::InstallInterfaces(*sm);
+    FileSystem::InstallInterfaces(*sm);
+    Friend::InstallInterfaces(*sm);
+    HID::InstallInterfaces(*sm);
+    LM::InstallInterfaces(*sm);
+    NFP::InstallInterfaces(*sm);
+    NIFM::InstallInterfaces(*sm);
+    NS::InstallInterfaces(*sm);
+    Nvidia::InstallInterfaces(*sm);
+    PCTL::InstallInterfaces(*sm);
+    Sockets::InstallInterfaces(*sm);
+    SPL::InstallInterfaces(*sm);
+    SSL::InstallInterfaces(*sm);
+    Time::InstallInterfaces(*sm);
+    VI::InstallInterfaces(*sm, nv_flinger);
+    Set::InstallInterfaces(*sm);
 
     LOG_DEBUG(Service, "initialized OK");
 }
 
 /// Shutdown ServiceManager
 void Shutdown() {
-    SM::g_service_manager = nullptr;
     g_kernel_named_ports.clear();
     LOG_DEBUG(Service, "shutdown OK");
 }

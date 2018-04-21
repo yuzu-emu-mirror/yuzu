@@ -14,6 +14,8 @@
 
 namespace Service::SM {
 
+ServiceManager::~ServiceManager() = default;
+
 void ServiceManager::InvokeControlRequest(Kernel::HLERequestContext& context) {
     controller_interface->InvokeRequest(context);
 }
@@ -72,7 +74,7 @@ ResultVal<Kernel::SharedPtr<Kernel::ClientSession>> ServiceManager::ConnectToSer
     return client_port->Connect();
 }
 
-std::shared_ptr<ServiceManager> g_service_manager;
+SM::~SM() = default;
 
 /**
  * SM::Initialize service function
