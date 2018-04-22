@@ -127,7 +127,8 @@ RasterizerOpenGL::~RasterizerOpenGL() {
     }
 }
 
-void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
+std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
+                                                             GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VAO);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
     const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
@@ -136,43 +137,59 @@ void RasterizerOpenGL::SetupVertexArray(u8* array_ptr, GLintptr buffer_offset) {
     state.draw.vertex_buffer = stream_buffer->GetHandle();
     state.Apply();
 
-    // TODO(bunnei): Add support for 1+ vertex arrays
-    const auto& vertex_array{regs.vertex_array[0]};
-    const auto& vertex_array_limit{regs.vertex_array_limit[0]};
-    ASSERT_MSG(vertex_array.enable, "vertex array 0 is disabled?");
-    ASSERT_MSG(!vertex_array.divisor, "vertex array 0 divisor is unimplemented!");
-    for (unsigned index = 1; index < Maxwell::NumVertexArrays; ++index) {
-        ASSERT_MSG(!regs.vertex_array[index].enable, "vertex array %d is unimplemented!", index);
+    // Upload all guest vertex arrays sequentially to our buffer
+    for (u32 index = 0; index < Maxwell::NumVertexArrays; ++index) {
+        const auto& vertex_array = regs.vertex_array[index];
+        if (!vertex_array.IsEnabled())
+            continue;
+
+        const Tegra::GPUVAddr start = vertex_array.StartAddress();
+        const Tegra::GPUVAddr end = regs.vertex_array_limit[index].LimitAddress();
+
+        ASSERT(end > start);
+        u64 size = end - start + 1;
+
+        // Copy vertex array data
+        const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(start)};
+        res_cache.FlushRegion(data_addr, size, nullptr);
+        Memory::ReadBlock(data_addr, array_ptr, size);
+
+        // Bind the vertex array to the buffer at the current offset.
+        glBindVertexBuffer(index, stream_buffer->GetHandle(), buffer_offset, vertex_array.stride);
+
+        ASSERT_MSG(vertex_array.divisor == 0, "Vertex buffer divisor unimplemented");
+
+        array_ptr += size;
+        buffer_offset += size;
     }
 
     // Use the vertex array as-is, assumes that the data is formatted correctly for OpenGL.
     // Enables the first 16 vertex attributes always, as we don't know which ones are actually used
-    // until shader time. Note, Tegra technically supports 32, but we're cappinig this to 16 for now
+    // until shader time. Note, Tegra technically supports 32, but we're capping this to 16 for now
     // to avoid OpenGL errors.
+    // TODO(Subv): Analyze the shader to identify which attributes are actually used and don't
+    // assume every shader uses them all.
     for (unsigned index = 0; index < 16; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
         NGLOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
                     index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
                     attrib.offset.Value(), attrib.IsNormalized());
 
-        glVertexAttribPointer(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
-                              attrib.IsNormalized() ? GL_TRUE : GL_FALSE, vertex_array.stride,
-                              reinterpret_cast<GLvoid*>(buffer_offset + attrib.offset));
+        auto& buffer = regs.vertex_array[attrib.buffer];
+        ASSERT(buffer.IsEnabled());
+
         glEnableVertexAttribArray(index);
+        glVertexAttribFormat(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
+                             attrib.IsNormalized() ? GL_TRUE : GL_FALSE, attrib.offset);
+        glVertexAttribBinding(index, attrib.buffer);
+
         hw_vao_enabled_attributes[index] = true;
     }
 
-    // Copy vertex array data
-    const u64 data_size{vertex_array_limit.LimitAddress() - vertex_array.StartAddress() + 1};
-    const VAddr data_addr{memory_manager->PhysicalToVirtualAddress(vertex_array.StartAddress())};
-    res_cache.FlushRegion(data_addr, data_size, nullptr);
-    Memory::ReadBlock(data_addr, array_ptr, data_size);
-
-    array_ptr += data_size;
-    buffer_offset += data_size;
+    return {array_ptr, buffer_offset};
 }
 
-void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size_t ptr_pos) {
+void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
     // Helper function for uploading uniform data
     const auto copy_buffer = [&](GLuint handle, GLintptr offset, GLsizeiptr size) {
         if (has_ARB_direct_state_access) {
@@ -190,8 +207,6 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
     u32 current_constbuffer_bindpoint = 0;
 
     for (unsigned index = 1; index < Maxwell::MaxShaderProgram; ++index) {
-        ptr_pos += sizeof(GLShader::MaxwellUniformData);
-
         auto& shader_config = gpu.regs.shader_config[index];
         const Maxwell::ShaderProgram program{static_cast<Maxwell::ShaderProgram>(index)};
 
@@ -205,12 +220,15 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
         }
 
         // Upload uniform data as one UBO per stage
-        const GLintptr ubo_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
+        const GLintptr ubo_offset = buffer_offset;
         copy_buffer(uniform_buffers[stage].handle, ubo_offset,
                     sizeof(GLShader::MaxwellUniformData));
         GLShader::MaxwellUniformData* ub_ptr =
-            reinterpret_cast<GLShader::MaxwellUniformData*>(&buffer_ptr[ptr_pos]);
+            reinterpret_cast<GLShader::MaxwellUniformData*>(buffer_ptr);
         ub_ptr->SetFromRegs(gpu.state.shader_stages[stage]);
+
+        buffer_ptr += sizeof(GLShader::MaxwellUniformData);
+        buffer_offset += sizeof(GLShader::MaxwellUniformData);
 
         // Fetch program code from memory
         GLShader::ProgramCode program_code;
@@ -250,6 +268,24 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size
     }
 
     shader_program_manager->UseTrivialGeometryShader();
+}
+
+size_t RasterizerOpenGL::CalculateVertexArraysSize() const {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    size_t size = 0;
+    for (u32 index = 0; index < Maxwell::NumVertexArrays; ++index) {
+        if (!regs.vertex_array[index].IsEnabled())
+            continue;
+
+        const Tegra::GPUVAddr start = regs.vertex_array[index].StartAddress();
+        const Tegra::GPUVAddr end = regs.vertex_array_limit[index].LimitAddress();
+
+        ASSERT(end > start);
+        size += end - start + 1;
+    }
+
+    return size;
 }
 
 bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
@@ -329,44 +365,49 @@ void RasterizerOpenGL::DrawArrays() {
     const u64 index_buffer_size{regs.index_array.count * regs.index_array.FormatSizeInBytes()};
     const unsigned vertex_num{is_indexed ? regs.index_array.count : regs.vertex_buffer.count};
 
-    // TODO(bunnei): Add support for 1+ vertex arrays
-    vs_input_size = vertex_num * regs.vertex_array[0].stride;
-
     state.draw.vertex_buffer = stream_buffer->GetHandle();
     state.Apply();
 
-    size_t buffer_size = static_cast<size_t>(vs_input_size);
+    size_t buffer_size = CalculateVertexArraysSize();
+
     if (is_indexed) {
-        buffer_size = Common::AlignUp(buffer_size, 4) + index_buffer_size;
+        buffer_size = Common::AlignUp<size_t>(buffer_size, 4) + index_buffer_size;
     }
 
     // Uniform space for the 5 shader stages
-    buffer_size += sizeof(GLShader::MaxwellUniformData) * Maxwell::MaxShaderStage;
+    buffer_size = Common::AlignUp<size_t>(buffer_size, 4) +
+                  sizeof(GLShader::MaxwellUniformData) * Maxwell::MaxShaderStage;
 
-    size_t ptr_pos = 0;
     u8* buffer_ptr;
     GLintptr buffer_offset;
     std::tie(buffer_ptr, buffer_offset) =
         stream_buffer->Map(static_cast<GLsizeiptr>(buffer_size), 4);
 
-    SetupVertexArray(buffer_ptr, buffer_offset);
-    ptr_pos += vs_input_size;
+    u8* offseted_buffer;
+    std::tie(offseted_buffer, buffer_offset) = SetupVertexArrays(buffer_ptr, buffer_offset);
+
+    offseted_buffer =
+        reinterpret_cast<u8*>(Common::AlignUp(reinterpret_cast<size_t>(offseted_buffer), 4));
+    buffer_offset = Common::AlignUp<size_t>(buffer_offset, 4);
 
     // If indexed mode, copy the index buffer
     GLintptr index_buffer_offset = 0;
     if (is_indexed) {
-        ptr_pos = Common::AlignUp(ptr_pos, 4);
-
         const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
         const VAddr index_data_addr{
             memory_manager->PhysicalToVirtualAddress(regs.index_array.StartAddress())};
-        Memory::ReadBlock(index_data_addr, &buffer_ptr[ptr_pos], index_buffer_size);
+        Memory::ReadBlock(index_data_addr, offseted_buffer, index_buffer_size);
 
-        index_buffer_offset = buffer_offset + static_cast<GLintptr>(ptr_pos);
-        ptr_pos += index_buffer_size;
+        index_buffer_offset = buffer_offset;
+        offseted_buffer += index_buffer_size;
+        buffer_offset += index_buffer_size;
     }
 
-    SetupShaders(buffer_ptr, buffer_offset, ptr_pos);
+    offseted_buffer =
+        reinterpret_cast<u8*>(Common::AlignUp(reinterpret_cast<size_t>(offseted_buffer), 4));
+    buffer_offset = Common::AlignUp<size_t>(buffer_offset, 4);
+
+    SetupShaders(offseted_buffer, buffer_offset);
 
     stream_buffer->Unmap();
 
