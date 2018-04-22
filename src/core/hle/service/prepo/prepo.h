@@ -11,7 +11,7 @@ namespace Service::Playreport {
 
 class Playreport final : public ServiceFramework<Playreport> {
 public:
-    Playreport(const char* name);
+    explicit Playreport(const char* name);
     ~Playreport() = default;
 
 private:
@@ -20,4 +20,4 @@ private:
 
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-}; // namespace Service::Playreport
+} // namespace Service::Playreport
