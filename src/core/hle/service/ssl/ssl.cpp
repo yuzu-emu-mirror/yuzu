@@ -96,10 +96,19 @@ SSL::SSL() : ServiceFramework("ssl") {
         {2, nullptr, "GetCertificates"},
         {3, nullptr, "GetCertificateBufSize"},
         {4, nullptr, "DebugIoctl"},
-        {5, nullptr, "SetInterfaceVersion"},
+        {5, &SSL::SetInterfaceVersion, "SetInterfaceVersion"},
         {6, nullptr, "FlushSessionCache"},
     };
     RegisterHandlers(functions);
+}
+
+void SSL::SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u32 unk1 = rp.Pop<u32>(); // Probably minor/major?
+    u32 unk2 = rp.Pop<u32>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

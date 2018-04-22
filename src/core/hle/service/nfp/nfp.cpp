@@ -12,10 +12,27 @@ namespace Service::NFP {
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
 
-void Module::Interface::Unknown(Kernel::HLERequestContext& ctx) {
+class IUser final : public ServiceFramework<IUser> {
+public:
+    IUser() : ServiceFramework("IUser") {
+        static const FunctionInfo functions[] = {
+            {0, &IUser::Initialize, "Initialize"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    void Initialize(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+};
+
+void Module::Interface::GetIUserInterface(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_NFP, "(STUBBED) called");
-    IPC::ResponseBuilder rb{ctx, 2};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IUser>();
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

@@ -14,7 +14,7 @@ public:
     public:
         Interface(std::shared_ptr<Module> module, const char* name);
 
-        void Unknown(Kernel::HLERequestContext& ctx);
+        void GetIUserInterface(Kernel::HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;
