@@ -42,8 +42,6 @@ add_library(core STATIC
     hle/kernel/client_port.h
     hle/kernel/client_session.cpp
     hle/kernel/client_session.h
-    hle/kernel/condition_variable.cpp
-    hle/kernel/condition_variable.h
     hle/kernel/errors.h
     hle/kernel/event.cpp
     hle/kernel/event.h

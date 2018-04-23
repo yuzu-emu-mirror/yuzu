@@ -16,8 +16,6 @@ class EmuThread;
 namespace Kernel {
 class WaitObject;
 class Event;
-class Mutex;
-class ConditionVariable;
 class Thread;
 class Timer;
 } // namespace Kernel
@@ -59,6 +57,20 @@ class WaitTreeExpandableItem : public WaitTreeItem {
     Q_OBJECT
 public:
     bool IsExpandable() const override;
+};
+
+class WaitTreeMutexInfo : public WaitTreeExpandableItem {
+    Q_OBJECT
+public:
+    explicit WaitTreeMutexInfo(VAddr mutex_address);
+    QString GetText() const override;
+    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
+
+private:
+    VAddr mutex_address;
+    u32 mutex_value;
+    Kernel::Handle owner_handle;
+    Kernel::SharedPtr<Kernel::Thread> owner;
 };
 
 class WaitTreeWaitObject : public WaitTreeExpandableItem {
@@ -104,38 +116,11 @@ public:
     std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
 };
 
-class WaitTreeMutex : public WaitTreeWaitObject {
-    Q_OBJECT
-public:
-    explicit WaitTreeMutex(const Kernel::Mutex& object);
-    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-};
-
-class WaitTreeConditionVariable : public WaitTreeWaitObject {
-    Q_OBJECT
-public:
-    explicit WaitTreeConditionVariable(const Kernel::ConditionVariable& object);
-    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-};
-
 class WaitTreeTimer : public WaitTreeWaitObject {
     Q_OBJECT
 public:
     explicit WaitTreeTimer(const Kernel::Timer& object);
     std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-};
-
-class WaitTreeMutexList : public WaitTreeExpandableItem {
-    Q_OBJECT
-public:
-    explicit WaitTreeMutexList(
-        const boost::container::flat_set<Kernel::SharedPtr<Kernel::Mutex>>& list);
-
-    QString GetText() const override;
-    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
-
-private:
-    const boost::container::flat_set<Kernel::SharedPtr<Kernel::Mutex>>& mutex_list;
 };
 
 class WaitTreeThreadList : public WaitTreeExpandableItem {

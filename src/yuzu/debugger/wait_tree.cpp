@@ -6,8 +6,8 @@
 #include "yuzu/util/util.h"
 
 #include "core/core.h"
-#include "core/hle/kernel/condition_variable.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/mutex.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/timer.h"
@@ -67,6 +67,29 @@ QString WaitTreeText::GetText() const {
     return text;
 }
 
+WaitTreeMutexInfo::WaitTreeMutexInfo(VAddr mutex_address) : mutex_address(mutex_address) {
+    mutex_value = Memory::Read32(mutex_address);
+    owner_handle = static_cast<Kernel::Handle>(mutex_value & Kernel::Mutex::MutexOwnerMask);
+    owner = Kernel::g_handle_table.Get<Kernel::Thread>(owner_handle);
+}
+
+QString WaitTreeMutexInfo::GetText() const {
+    return tr("waiting for mutex 0x%1").arg(mutex_address, 16, 16, QLatin1Char('0'));
+}
+
+std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() const {
+    std::vector<std::unique_ptr<WaitTreeItem>> list;
+
+    bool has_waiters = (mutex_value & Kernel::Mutex::MutexHasWaitersFlag) != 0;
+
+    list.push_back(std::make_unique<WaitTreeText>(tr("has waiters: %1").arg(has_waiters)));
+    list.push_back(std::make_unique<WaitTreeText>(
+        tr("owner handle: 0x%1").arg(owner_handle, 8, 16, QLatin1Char('0'))));
+    if (owner != nullptr)
+        list.push_back(std::make_unique<WaitTreeThread>(*owner));
+    return list;
+}
+
 WaitTreeWaitObject::WaitTreeWaitObject(const Kernel::WaitObject& o) : object(o) {}
 
 bool WaitTreeExpandableItem::IsExpandable() const {
@@ -84,11 +107,6 @@ std::unique_ptr<WaitTreeWaitObject> WaitTreeWaitObject::make(const Kernel::WaitO
     switch (object.GetHandleType()) {
     case Kernel::HandleType::Event:
         return std::make_unique<WaitTreeEvent>(static_cast<const Kernel::Event&>(object));
-    case Kernel::HandleType::Mutex:
-        return std::make_unique<WaitTreeMutex>(static_cast<const Kernel::Mutex&>(object));
-    case Kernel::HandleType::ConditionVariable:
-        return std::make_unique<WaitTreeConditionVariable>(
-            static_cast<const Kernel::ConditionVariable&>(object));
     case Kernel::HandleType::Timer:
         return std::make_unique<WaitTreeTimer>(static_cast<const Kernel::Timer&>(object));
     case Kernel::HandleType::Thread:
@@ -160,6 +178,9 @@ QString WaitTreeThread::GetText() const {
     case THREADSTATUS_WAIT_SYNCH_ANY:
         status = tr("waiting for objects");
         break;
+    case THREADSTATUS_WAIT_MUTEX:
+        status = tr("waiting for mutex");
+        break;
     case THREADSTATUS_DORMANT:
         status = tr("dormant");
         break;
@@ -186,6 +207,7 @@ QColor WaitTreeThread::GetColor() const {
         return QColor(Qt::GlobalColor::darkYellow);
     case THREADSTATUS_WAIT_SYNCH_ALL:
     case THREADSTATUS_WAIT_SYNCH_ANY:
+    case THREADSTATUS_WAIT_MUTEX:
         return QColor(Qt::GlobalColor::red);
     case THREADSTATUS_DORMANT:
         return QColor(Qt::GlobalColor::darkCyan);
@@ -225,11 +247,11 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     list.push_back(std::make_unique<WaitTreeText>(
         tr("last running ticks = %1").arg(thread.last_running_ticks)));
 
-    if (thread.held_mutexes.empty()) {
-        list.push_back(std::make_unique<WaitTreeText>(tr("not holding mutex")));
-    } else {
-        list.push_back(std::make_unique<WaitTreeMutexList>(thread.held_mutexes));
-    }
+    if (thread.mutex_wait_address != 0)
+        list.push_back(std::make_unique<WaitTreeMutexInfo>(thread.mutex_wait_address));
+    else
+        list.push_back(std::make_unique<WaitTreeText>(tr("not waiting for mutex")));
+
     if (thread.status == THREADSTATUS_WAIT_SYNCH_ANY ||
         thread.status == THREADSTATUS_WAIT_SYNCH_ALL) {
         list.push_back(std::make_unique<WaitTreeObjectList>(thread.wait_objects,
@@ -250,33 +272,6 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeEvent::GetChildren() const {
     return list;
 }
 
-WaitTreeMutex::WaitTreeMutex(const Kernel::Mutex& object) : WaitTreeWaitObject(object) {}
-
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutex::GetChildren() const {
-    std::vector<std::unique_ptr<WaitTreeItem>> list(WaitTreeWaitObject::GetChildren());
-
-    const auto& mutex = static_cast<const Kernel::Mutex&>(object);
-    if (mutex.GetHasWaiters()) {
-        list.push_back(std::make_unique<WaitTreeText>(tr("locked by thread:")));
-        list.push_back(std::make_unique<WaitTreeThread>(*mutex.GetHoldingThread()));
-    } else {
-        list.push_back(std::make_unique<WaitTreeText>(tr("free")));
-    }
-    return list;
-}
-
-WaitTreeConditionVariable::WaitTreeConditionVariable(const Kernel::ConditionVariable& object)
-    : WaitTreeWaitObject(object) {}
-
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeConditionVariable::GetChildren() const {
-    std::vector<std::unique_ptr<WaitTreeItem>> list(WaitTreeWaitObject::GetChildren());
-
-    const auto& condition_variable = static_cast<const Kernel::ConditionVariable&>(object);
-    list.push_back(std::make_unique<WaitTreeText>(
-        tr("available count = %1").arg(condition_variable.GetAvailableCount())));
-    return list;
-}
-
 WaitTreeTimer::WaitTreeTimer(const Kernel::Timer& object) : WaitTreeWaitObject(object) {}
 
 std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeTimer::GetChildren() const {
@@ -290,21 +285,6 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeTimer::GetChildren() const {
         std::make_unique<WaitTreeText>(tr("initial delay = %1").arg(timer.initial_delay)));
     list.push_back(
         std::make_unique<WaitTreeText>(tr("interval delay = %1").arg(timer.interval_delay)));
-    return list;
-}
-
-WaitTreeMutexList::WaitTreeMutexList(
-    const boost::container::flat_set<Kernel::SharedPtr<Kernel::Mutex>>& list)
-    : mutex_list(list) {}
-
-QString WaitTreeMutexList::GetText() const {
-    return tr("holding mutexes");
-}
-
-std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexList::GetChildren() const {
-    std::vector<std::unique_ptr<WaitTreeItem>> list(mutex_list.size());
-    std::transform(mutex_list.begin(), mutex_list.end(), list.begin(),
-                   [](const auto& t) { return std::make_unique<WaitTreeMutex>(*t); });
     return list;
 }
 

@@ -77,9 +77,6 @@ void Thread::Stop() {
     }
     wait_objects.clear();
 
-    // Release all the mutexes that this thread holds
-    ReleaseThreadMutexes(this);
-
     // Mark the TLS slot in the thread's page as free.
     u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
     u64 tls_slot =
@@ -126,6 +123,19 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
             resume = thread->wakeup_callback(ThreadWakeupReason::Timeout, thread, nullptr, 0);
     }
 
+    if (thread->mutex_wait_address != 0 || thread->condvar_wait_address != 0 ||
+        thread->wait_handle) {
+        ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+        thread->mutex_wait_address = 0;
+        thread->condvar_wait_address = 0;
+        thread->wait_handle = 0;
+
+        auto lock_owner = thread->lock_owner;
+        // Threads waking up by timeout from WaitProcessWideKey do not perform priority inheritance
+        // and don't have a lock owner.
+        ASSERT(lock_owner == nullptr);
+    }
+
     if (resume)
         thread->ResumeFromWait();
 }
@@ -151,6 +161,7 @@ void Thread::ResumeFromWait() {
     case THREADSTATUS_WAIT_HLE_EVENT:
     case THREADSTATUS_WAIT_SLEEP:
     case THREADSTATUS_WAIT_IPC:
+    case THREADSTATUS_WAIT_MUTEX:
         break;
 
     case THREADSTATUS_READY:
@@ -256,7 +267,9 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;
     thread->wait_objects.clear();
-    thread->wait_address = 0;
+    thread->mutex_wait_address = 0;
+    thread->condvar_wait_address = 0;
+    thread->wait_handle = 0;
     thread->name = std::move(name);
     thread->callback_handle = wakeup_callback_handle_table.Create(thread).Unwrap();
     thread->owner_process = owner_process;
@@ -317,17 +330,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 void Thread::SetPriority(u32 priority) {
     ASSERT_MSG(priority <= THREADPRIO_LOWEST && priority >= THREADPRIO_HIGHEST,
                "Invalid priority value.");
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
-    nominal_priority = current_priority = priority;
-}
-
-void Thread::UpdatePriority() {
-    u32 best_priority = nominal_priority;
-    for (auto& mutex : held_mutexes) {
-        if (mutex->priority < best_priority)
-            best_priority = mutex->priority;
-    }
-    BoostPriority(best_priority);
+    nominal_priority = priority;
+    UpdatePriority();
 }
 
 void Thread::BoostPriority(u32 priority) {
@@ -375,6 +379,38 @@ VAddr Thread::GetCommandBufferAddress() const {
     // Offset from the start of TLS at which the IPC command buffer begins.
     static constexpr int CommandHeaderOffset = 0x80;
     return GetTLSAddress() + CommandHeaderOffset;
+}
+
+void Thread::AddMutexWaiter(SharedPtr<Thread> thread) {
+    thread->lock_owner = this;
+    wait_mutex_threads.emplace_back(std::move(thread));
+    UpdatePriority();
+}
+
+void Thread::RemoveMutexWaiter(SharedPtr<Thread> thread) {
+    boost::remove_erase(wait_mutex_threads, thread);
+    thread->lock_owner = nullptr;
+    UpdatePriority();
+}
+
+void Thread::UpdatePriority() {
+    // Find the highest priority among all the threads that are waiting for this thread's lock
+    u32 new_priority = nominal_priority;
+    for (const auto& thread : wait_mutex_threads) {
+        if (thread->nominal_priority < new_priority)
+            new_priority = thread->nominal_priority;
+    }
+
+    if (new_priority == current_priority)
+        return;
+
+    Core::System::GetInstance().Scheduler().SetThreadPriority(this, new_priority);
+
+    current_priority = new_priority;
+
+    // Recursively update the priority of the thread that depends on the priority of this one.
+    if (lock_owner)
+        lock_owner->UpdatePriority();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

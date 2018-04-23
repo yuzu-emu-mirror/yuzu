@@ -9,7 +9,8 @@
 #include "core/core_timing.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 
-namespace Service::NVFlinger {
+namespace Service {
+namespace NVFlinger {
 
 BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {
     native_handle = Kernel::Event::Create(Kernel::ResetType::OneShot, "BufferQueue NativeHandle");
@@ -110,4 +111,5 @@ void BufferQueue::SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_eve
     buffer_wait_event = std::move(wait_event);
 }
 
-} // namespace Service::NVFlinger
+} // namespace NVFlinger
+} // namespace Service
