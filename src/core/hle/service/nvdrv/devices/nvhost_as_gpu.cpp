@@ -27,6 +27,11 @@ u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vecto
     case IoctlCommand::IocGetVaRegionsCommand:
         return GetVARegions(input, output);
     }
+
+    if (static_cast<IoctlCommand>(command.cmd.Value()) == IoctlCommand::IocRemapCommand)
+        return Remap(input, output);
+
+    UNIMPLEMENTED_MSG("Unimplemented ioctl command");
     return 0;
 }
 
@@ -56,6 +61,36 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
     return 0;
 }
 
+u32 nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& output) {
+    size_t num_entries = input.size() / sizeof(IoctlRemapEntry);
+
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, num_entries=0x{:X}", num_entries);
+
+    std::vector<IoctlRemapEntry> entries(num_entries);
+    std::memcpy(entries.data(), input.data(), input.size());
+
+    auto& gpu = Core::System::GetInstance().GPU();
+
+    for (const auto& entry : entries) {
+        NGLOG_WARNING(Service_NVDRV, "remap entry, offset=0x{:X} handle=0x{:X} pages=0x{:X}",
+                      entry.offset, entry.nvmap_handle, entry.pages);
+        Tegra::GPUVAddr offset = static_cast<Tegra::GPUVAddr>(entry.offset) << 0x10;
+
+        auto object = nvmap_dev->GetObject(entry.nvmap_handle);
+        ASSERT(object);
+
+        ASSERT(object->status == nvmap::Object::Status::Allocated);
+
+        u64 size = static_cast<u64>(entry.pages) << 0x10;
+        ASSERT(size <= object->size);
+
+        Tegra::GPUVAddr returned = gpu.memory_manager->MapBufferEx(object->addr, offset, size);
+        ASSERT(returned == offset);
+    }
+    std::memcpy(output.data(), entries.data(), output.size());
+    return 0;
+}
+
 u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlMapBufferEx params{};
     std::memcpy(&params, input.data(), input.size());
@@ -72,6 +107,16 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
 
     auto object = nvmap_dev->GetObject(params.nvmap_handle);
     ASSERT(object);
+
+    // We can only map objects that have already been assigned a CPU address.
+    ASSERT(object->status == nvmap::Object::Status::Allocated);
+
+    ASSERT(params.buffer_offset == 0);
+
+    // The real nvservices doesn't make a distinction between handles and ids, and
+    // object can only have one handle and it will be the same as its id. Assert that this is the
+    // case to prevent unexpected behavior.
+    ASSERT(object->id == params.nvmap_handle);
 
     auto& gpu = Core::System::GetInstance().GPU();
 
