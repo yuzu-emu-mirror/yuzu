@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "common/alignment.h"
 #include "common/assert.h"
 #include "video_core/memory_manager.h"
 
@@ -11,7 +12,8 @@ PAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
     boost::optional<PAddr> paddr = FindFreeBlock(size, align);
     ASSERT(paddr);
 
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(*paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
         PageSlot(*paddr + offset) = static_cast<u64>(PageStatus::Allocated);
     }
 
@@ -19,13 +21,8 @@ PAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
 }
 
 PAddr MemoryManager::AllocateSpace(PAddr paddr, u64 size, u64 align) {
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
-        if (IsPageMapped(paddr + offset)) {
-            return AllocateSpace(size, align);
-        }
-    }
-
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
         PageSlot(paddr + offset) = static_cast<u64>(PageStatus::Allocated);
     }
 
@@ -33,12 +30,11 @@ PAddr MemoryManager::AllocateSpace(PAddr paddr, u64 size, u64 align) {
 }
 
 PAddr MemoryManager::MapBufferEx(VAddr vaddr, u64 size) {
-    vaddr &= ~Memory::PAGE_MASK;
-
-    boost::optional<PAddr> paddr = FindFreeBlock(size);
+    boost::optional<PAddr> paddr = FindFreeBlock(size, PAGE_SIZE);
     ASSERT(paddr);
 
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(*paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
         PageSlot(*paddr + offset) = vaddr + offset;
     }
 
@@ -46,16 +42,10 @@ PAddr MemoryManager::MapBufferEx(VAddr vaddr, u64 size) {
 }
 
 PAddr MemoryManager::MapBufferEx(VAddr vaddr, PAddr paddr, u64 size) {
-    vaddr &= ~Memory::PAGE_MASK;
-    paddr &= ~Memory::PAGE_MASK;
+    ASSERT((paddr & PAGE_MASK) == 0);
 
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
-        if (PageSlot(paddr + offset) != static_cast<u64>(PageStatus::Allocated)) {
-            return MapBufferEx(vaddr, size);
-        }
-    }
-
-    for (u64 offset = 0; offset < size; offset += Memory::PAGE_SIZE) {
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(paddr + offset) == static_cast<u64>(PageStatus::Allocated));
         PageSlot(paddr + offset) = vaddr + offset;
     }
 
@@ -63,23 +53,20 @@ PAddr MemoryManager::MapBufferEx(VAddr vaddr, PAddr paddr, u64 size) {
 }
 
 boost::optional<PAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
-    PAddr paddr{};
-    u64 free_space{};
-    align = (align + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
+    PAddr paddr = 0;
+    u64 free_space = 0;
+    align = (align + PAGE_MASK) & ~PAGE_MASK;
 
     while (paddr + free_space < MAX_ADDRESS) {
         if (!IsPageMapped(paddr + free_space)) {
-            free_space += Memory::PAGE_SIZE;
+            free_space += PAGE_SIZE;
             if (free_space >= size) {
                 return paddr;
             }
         } else {
-            paddr += free_space + Memory::PAGE_SIZE;
+            paddr += free_space + PAGE_SIZE;
             free_space = 0;
-            const u64 remainder{paddr % align};
-            if (!remainder) {
-                paddr = (paddr - remainder) + align;
-            }
+            paddr = Common::AlignUp(paddr, align);
         }
     }
 
@@ -89,7 +76,7 @@ boost::optional<PAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
 VAddr MemoryManager::PhysicalToVirtualAddress(PAddr paddr) {
     VAddr base_addr = PageSlot(paddr);
     ASSERT(base_addr != static_cast<u64>(PageStatus::Unmapped));
-    return base_addr + (paddr & Memory::PAGE_MASK);
+    return base_addr + (paddr & PAGE_MASK);
 }
 
 bool MemoryManager::IsPageMapped(PAddr paddr) {
@@ -97,14 +84,14 @@ bool MemoryManager::IsPageMapped(PAddr paddr) {
 }
 
 VAddr& MemoryManager::PageSlot(PAddr paddr) {
-    auto& block = page_table[(paddr >> (Memory::PAGE_BITS + PAGE_TABLE_BITS)) & PAGE_TABLE_MASK];
+    auto& block = page_table[(paddr >> (PAGE_BITS + PAGE_TABLE_BITS)) & PAGE_TABLE_MASK];
     if (!block) {
         block = std::make_unique<PageBlock>();
         for (unsigned index = 0; index < PAGE_BLOCK_SIZE; index++) {
             (*block)[index] = static_cast<u64>(PageStatus::Unmapped);
         }
     }
-    return (*block)[(paddr >> Memory::PAGE_BITS) & PAGE_BLOCK_MASK];
+    return (*block)[(paddr >> PAGE_BITS) & PAGE_BLOCK_MASK];
 }
 
 } // namespace Tegra

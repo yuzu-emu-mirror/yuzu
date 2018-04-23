@@ -24,6 +24,10 @@ public:
     PAddr MapBufferEx(VAddr vaddr, PAddr paddr, u64 size);
     VAddr PhysicalToVirtualAddress(PAddr paddr);
 
+    static constexpr u64 PAGE_BITS = 16;
+    static constexpr u64 PAGE_SIZE = 1 << PAGE_BITS;
+    static constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
+
 private:
     boost::optional<PAddr> FindFreeBlock(u64 size, u64 align = 1);
     bool IsPageMapped(PAddr paddr);
@@ -35,7 +39,7 @@ private:
     };
 
     static constexpr u64 MAX_ADDRESS{0x10000000000ULL};
-    static constexpr u64 PAGE_TABLE_BITS{14};
+    static constexpr u64 PAGE_TABLE_BITS{10};
     static constexpr u64 PAGE_TABLE_SIZE{1 << PAGE_TABLE_BITS};
     static constexpr u64 PAGE_TABLE_MASK{PAGE_TABLE_SIZE - 1};
     static constexpr u64 PAGE_BLOCK_BITS{14};
