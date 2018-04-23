@@ -13,7 +13,7 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvdisp_disp0::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    UNIMPLEMENTED();
+    UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
 }
 

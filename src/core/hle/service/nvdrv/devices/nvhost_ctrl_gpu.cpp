@@ -25,7 +25,7 @@ u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vec
     case IoctlCommand::IocZcullGetInfo:
         return ZCullGetInfo(input, output);
     }
-    UNIMPLEMENTED();
+    UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
 }
 
