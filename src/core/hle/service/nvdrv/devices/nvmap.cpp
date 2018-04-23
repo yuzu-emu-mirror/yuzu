@@ -32,7 +32,7 @@ u32 nvmap::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& o
         return IocParam(input, output);
     }
 
-    UNIMPLEMENTED();
+    UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
 }
 
