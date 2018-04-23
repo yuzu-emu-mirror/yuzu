@@ -147,11 +147,36 @@ void Maxwell3D::ProcessQueryGet() {
     // VAddr before writing.
     VAddr address = memory_manager.PhysicalToVirtualAddress(sequence_address);
 
+    // TODO(Subv): Support the other query units.
+    ASSERT_MSG(regs.query.query_get.unit == Regs::QueryUnit::Crop,
+               "Units other than CROP are unimplemented");
+    ASSERT_MSG(regs.query.query_get.short_query,
+               "Writing the entire query result structure is unimplemented");
+
+    u32 value = Memory::Read32(address);
+    u32 result = 0;
+
+    // TODO(Subv): Support the other query variables
+    switch (regs.query.query_get.select) {
+    case Regs::QuerySelect::Zero:
+        result = 0;
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unimplemented query select type %u",
+                          static_cast<u32>(regs.query.query_get.select.Value()));
+    }
+
+    // TODO(Subv): Research and implement how query sync conditions work.
+
     switch (regs.query.query_get.mode) {
-    case Regs::QueryMode::Write: {
+    case Regs::QueryMode::Write:
+    case Regs::QueryMode::Write2: {
         // Write the current query sequence to the sequence address.
         u32 sequence = regs.query.query_sequence;
         Memory::Write32(address, sequence);
+
+        // TODO(Subv): Write the proper query response structure to the address when not using short
+        // mode.
         break;
     }
     default:

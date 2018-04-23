@@ -46,6 +46,29 @@ public:
         enum class QueryMode : u32 {
             Write = 0,
             Sync = 1,
+            // TODO(Subv): It is currently unknown what the difference between method 2 and method 0
+            // is.
+            Write2 = 2,
+        };
+
+        enum class QueryUnit : u32 {
+            VFetch = 1,
+            VP = 2,
+            Rast = 4,
+            StrmOut = 5,
+            GP = 6,
+            ZCull = 7,
+            Prop = 10,
+            Crop = 15,
+        };
+
+        enum class QuerySelect : u32 {
+            Zero = 0,
+        };
+
+        enum class QuerySyncCondition : u32 {
+            NotEqual = 0,
+            GreaterThan = 1,
         };
 
         enum class ShaderProgram : u32 {
@@ -476,7 +499,10 @@ public:
                         u32 raw;
                         BitField<0, 2, QueryMode> mode;
                         BitField<4, 1, u32> fence;
-                        BitField<12, 4, u32> unit;
+                        BitField<12, 4, QueryUnit> unit;
+                        BitField<16, 1, QuerySyncCondition> sync_cond;
+                        BitField<23, 5, QuerySelect> select;
+                        BitField<28, 1, u32> short_query;
                     } query_get;
 
                     GPUVAddr QueryAddress() const {
