@@ -134,7 +134,8 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
                     SHARED_FONT_REGIONS[language_code].offset);
     Memory::Write32(ctx.BufferDescriptorB()[2].Address(), SHARED_FONT_REGIONS[language_code].size);
 
-    for (int i = 0, offset = 4; i < SHARED_FONT_REGIONS.size(); i++) {
+    int offset = 4;
+    for (size_t i = 0; i < SHARED_FONT_REGIONS.size(); i++) {
         if (i == language_code)
             continue;
         Memory::Write32(ctx.BufferDescriptorB()[0].Address() + offset, language_code);
