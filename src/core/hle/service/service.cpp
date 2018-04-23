@@ -193,7 +193,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     NS::InstallInterfaces(*sm);
     Nvidia::InstallInterfaces(*sm);
     PCTL::InstallInterfaces(*sm);
-    Playreport::InstallInterfaces(*sm);
+    PlayReport::InstallInterfaces(*sm);
     Sockets::InstallInterfaces(*sm);
     SPL::InstallInterfaces(*sm);
     SSL::InstallInterfaces(*sm);

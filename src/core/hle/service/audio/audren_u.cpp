@@ -163,12 +163,10 @@ public:
             {0x4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
             {0x5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
             {0x6, &IAudioDevice::ListAudioDeviceName,
-             "ListAudioDeviceNameAuto"}, // Are these any different?
-            {0x7, &IAudioDevice::SetAudioDeviceOutputVolume,
-             "SetAudioDeviceOutputVolumeAuto"}, // Are these any different?
+             "ListAudioDeviceNameAuto"}, // TODO(ogniK): Confirm if autos are identical to non auto
+            {0x7, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolumeAuto"},
             {0x8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
-            {0xa, &IAudioDevice::GetActiveAudioDeviceName,
-             "GetActiveAudioDeviceNameAuto"}, // Are these any different?
+            {0xa, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
             {0xb, nullptr, "QueryAudioDeviceInputEvent"},
             {0xc, nullptr, "QueryAudioDeviceOutputEvent"}};
         RegisterHandlers(functions);

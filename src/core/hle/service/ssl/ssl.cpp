@@ -103,6 +103,7 @@ SSL::SSL() : ServiceFramework("ssl") {
 }
 
 void SSL::SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_SSL, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u32 unk1 = rp.Pop<u32>(); // Probably minor/major?
     u32 unk2 = rp.Pop<u32>();

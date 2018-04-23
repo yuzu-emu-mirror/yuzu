@@ -9,7 +9,7 @@ namespace Service::NFP {
 NFP_User::NFP_User(std::shared_ptr<Module> module)
     : Module::Interface(std::move(module), "nfp:user") {
     static const FunctionInfo functions[] = {
-        {0, &NFP_User::GetIUserInterface, "GetIUserInterface"},
+        {0, &NFP_User::CreateUserInterface, "CreateUserInterface"},
     };
     RegisterHandlers(functions);
 }

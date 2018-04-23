@@ -7,12 +7,12 @@
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/service.h"
 
-namespace Service::Playreport {
+namespace Service::PlayReport {
 
-class Playreport final : public ServiceFramework<Playreport> {
+class PlayReport final : public ServiceFramework<PlayReport> {
 public:
-    explicit Playreport(const char* name);
-    ~Playreport() = default;
+    explicit PlayReport(const char* name);
+    ~PlayReport() = default;
 
 private:
     void SaveReportWithUser(Kernel::HLERequestContext& ctx);
@@ -20,4 +20,4 @@ private:
 
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Service::Playreport
+} // namespace Service::PlayReport

@@ -4,15 +4,28 @@
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/prepo/prepo.h"
 
-namespace Service::Playreport {
-Playreport::Playreport(const char* name) : ServiceFramework(name) {
+namespace Service::PlayReport {
+PlayReport::PlayReport(const char* name) : ServiceFramework(name) {
     static const FunctionInfo functions[] = {
-        {10101, &Playreport::SaveReportWithUser, "SaveReportWithUser"},
+        {10100, nullptr, "SaveReport"},
+        {10101, &PlayReport::SaveReportWithUser, "SaveReportWithUser"},
+        {10200, nullptr, "RequestImmediateTransmission"},
+        {10300, nullptr, "GetTransmissionStatus"},
+        {20100, nullptr, "SaveSystemReport"},
+        {20200, nullptr, "SetOperationMode"},
+        {20101, nullptr, "SaveSystemReportWithUser"},
+        {30100, nullptr, "ClearStorage"},
+        {40100, nullptr, "IsUserAgreementCheckEnabled"},
+        {40101, nullptr, "SetUserAgreementCheckEnabled"},
+        {90100, nullptr, "GetStorageUsage"},
+        {90200, nullptr, "GetStatistics"},
+        {90201, nullptr, "GetThroughputHistory"},
+        {90300, nullptr, "GetLastUploadError"},
     };
     RegisterHandlers(functions);
 };
 
-void Playreport::SaveReportWithUser(Kernel::HLERequestContext& ctx) {
+void PlayReport::SaveReportWithUser(Kernel::HLERequestContext& ctx) {
     /*IPC::RequestParser rp{ctx};
     auto Uid = rp.PopRaw<std::array<u64, 2>>();
     u64 unk = rp.Pop<u64>();
@@ -23,18 +36,19 @@ void Playreport::SaveReportWithUser(Kernel::HLERequestContext& ctx) {
     std::vector<u8> buffer2;
     buffer.reserve(ctx.BufferDescriptorA()[0].Size());
     Memory::ReadBlock(ctx.BufferDescriptorA()[0].Address(), buffer.data(), buffer.size());*/
+    // TODO(ogniK): Do we want to add play report? ^ Buffers/Data required for it
 
-    // If we ever want to add play reports
+    LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 };
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    std::make_shared<Playreport>("prepo:a")->InstallAsService(service_manager);
-    std::make_shared<Playreport>("prepo:m")->InstallAsService(service_manager);
-    std::make_shared<Playreport>("prepo:s")->InstallAsService(service_manager);
-    std::make_shared<Playreport>("prepo:u")->InstallAsService(service_manager);
+    std::make_shared<PlayReport>("prepo:a")->InstallAsService(service_manager);
+    std::make_shared<PlayReport>("prepo:m")->InstallAsService(service_manager);
+    std::make_shared<PlayReport>("prepo:s")->InstallAsService(service_manager);
+    std::make_shared<PlayReport>("prepo:u")->InstallAsService(service_manager);
 }
 
-} // namespace Service::Playreport
+} // namespace Service::PlayReport
