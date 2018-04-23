@@ -37,7 +37,7 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
         {2, &PL_U::GetSize, "GetSize"},
         {3, &PL_U::GetSharedMemoryAddressOffset, "GetSharedMemoryAddressOffset"},
         {4, &PL_U::GetSharedMemoryNativeHandle, "GetSharedMemoryNativeHandle"},
-        {5, nullptr, "GetSharedFontInOrderOfPriority"},
+        {5, &PL_U::GetSharedFontInOrderOfPriority, "GetSharedFontInOrderOfPriority"},
     };
     RegisterHandlers(functions);
 
@@ -114,6 +114,36 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(shared_font_mem);
+}
+
+void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const u32 language_code{rp.Pop<u32>()};
+    LOG_DEBUG(Service_NS, "called, language_code=%d", language_code);
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded
+    rb.Push<u32>(static_cast<u32>(SHARED_FONT_REGIONS.size()));
+
+    std::vector<u32> languages;
+    std::vector<u32> offsets;
+    std::vector<u32> sizes;
+
+    Memory::Write32(ctx.BufferDescriptorB()[0].Address(), language_code);
+    Memory::Write32(ctx.BufferDescriptorB()[1].Address(),
+                    SHARED_FONT_REGIONS[language_code].offset);
+    Memory::Write32(ctx.BufferDescriptorB()[2].Address(), SHARED_FONT_REGIONS[language_code].size);
+
+    for (int i = 0, offset = 4; i < SHARED_FONT_REGIONS.size(); i++) {
+        if (i == language_code)
+            continue;
+        Memory::Write32(ctx.BufferDescriptorB()[0].Address() + offset, language_code);
+        Memory::Write32(ctx.BufferDescriptorB()[1].Address() + offset,
+                        SHARED_FONT_REGIONS[language_code].offset);
+        Memory::Write32(ctx.BufferDescriptorB()[2].Address() + offset,
+                        SHARED_FONT_REGIONS[language_code].size);
+        offset += 4;
+    }
 }
 
 } // namespace Service::NS

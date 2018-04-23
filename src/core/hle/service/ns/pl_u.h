@@ -21,6 +21,7 @@ private:
     void GetSize(Kernel::HLERequestContext& ctx);
     void GetSharedMemoryAddressOffset(Kernel::HLERequestContext& ctx);
     void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
+    void GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx);
 
     /// Handle to shared memory region designated for a shared font
     Kernel::SharedPtr<Kernel::SharedMemory> shared_font_mem;
