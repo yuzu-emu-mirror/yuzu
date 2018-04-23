@@ -25,6 +25,8 @@ static Tegra::Texture::TextureFormat ConvertToTextureFormat(
     switch (render_target_format) {
     case Tegra::RenderTargetFormat::RGBA8_UNORM:
         return Tegra::Texture::TextureFormat::A8R8G8B8;
+    case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+        return Tegra::Texture::TextureFormat::A2B10G10R10;
     default:
         UNIMPLEMENTED_MSG("Unimplemented RT format");
     }

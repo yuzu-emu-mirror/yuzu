@@ -106,6 +106,8 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
             return PixelFormat::ABGR8;
+        case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+            return PixelFormat::A2B10G10R10;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
