@@ -108,6 +108,16 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     auto object = nvmap_dev->GetObject(params.nvmap_handle);
     ASSERT(object);
 
+    // We can only map objects that have already been assigned a CPU address.
+    ASSERT(object->status == nvmap::Object::Status::Allocated);
+
+    ASSERT(params.buffer_offset == 0);
+
+    // The real nvservices doesn't make a distinction between handles and ids, and
+    // object can only have one handle and it will be the same as its id. Assert that this is the
+    // case to prevent unexpected behavior.
+    ASSERT(object->id == params.nvmap_handle);
+
     auto& gpu = Core::System::GetInstance().GPU();
 
     if (params.flags & 1) {
