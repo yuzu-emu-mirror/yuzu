@@ -7,7 +7,12 @@
 namespace Tegra {
 namespace Engines {
 
-void Fermi2D::WriteReg(u32 method, u32 value) {}
+Fermi2D::Fermi2D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
+
+void Fermi2D::WriteReg(u32 method, u32 value) {
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid Fermi2D register, increase the size of the Regs structure");
+}
 
 } // namespace Engines
 } // namespace Tegra
