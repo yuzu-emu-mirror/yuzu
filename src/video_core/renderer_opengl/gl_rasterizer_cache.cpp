@@ -1428,9 +1428,9 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
 }
 
 void RasterizerCacheOpenGL::UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) {
-    const u64 num_pages =
-        ((addr + size - 1) >> Memory::PAGE_BITS) - (addr >> Memory::PAGE_BITS) + 1;
-    const u64 page_start = addr >> Memory::PAGE_BITS;
+    const u64 num_pages = ((addr + size - 1) >> Tegra::MemoryManager::PAGE_BITS) -
+                          (addr >> Tegra::MemoryManager::PAGE_BITS) + 1;
+    const u64 page_start = addr >> Tegra::MemoryManager::PAGE_BITS;
     const u64 page_end = page_start + num_pages;
 
     // Interval maps will erase segments if count reaches 0, so if delta is negative we have to
@@ -1444,9 +1444,9 @@ void RasterizerCacheOpenGL::UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 siz
         const int count = pair.second;
 
         const Tegra::GPUVAddr interval_start_addr = boost::icl::first(interval)
-                                                    << Memory::PAGE_BITS;
+                                                    << Tegra::MemoryManager::PAGE_BITS;
         const Tegra::GPUVAddr interval_end_addr = boost::icl::last_next(interval)
-                                                  << Memory::PAGE_BITS;
+                                                  << Tegra::MemoryManager::PAGE_BITS;
         const u64 interval_size = interval_end_addr - interval_start_addr;
 
         if (delta > 0 && count == delta)
