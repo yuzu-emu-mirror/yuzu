@@ -94,7 +94,7 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::
     } else {
         // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
         // the configuration for this and perform more generic un/swizzle
-        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+        NGLOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
         VideoCore::MortonCopyPixels128(
             stride, height, bytes_per_pixel, gl_bytes_per_pixel,
             Memory::GetPointer(*gpu.memory_manager->GpuToCpuAddress(base)), gl_buffer,
@@ -1112,7 +1112,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     const auto& config = regs.rt[0];
 
     // TODO(bunnei): This is hard corded to use just the first render buffer
-    LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
+    NGLOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
 
     // update resolution_scale_factor and reset cache if changed
     // TODO (bunnei): This code was ported as-is from Citra, and is technically not thread-safe. We
@@ -1157,8 +1157,8 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     // Make sure that framebuffers don't overlap if both color and depth are being used
     if (using_color_fb && using_depth_fb &&
         boost::icl::length(color_vp_interval & depth_vp_interval)) {
-        LOG_CRITICAL(Render_OpenGL, "Color and depth framebuffer memory regions overlap; "
-                                    "overlapping framebuffers not supported!");
+        NGLOG_CRITICAL(Render_OpenGL, "Color and depth framebuffer memory regions overlap; "
+                                      "overlapping framebuffers not supported!");
         using_depth_fb = false;
     }
 
