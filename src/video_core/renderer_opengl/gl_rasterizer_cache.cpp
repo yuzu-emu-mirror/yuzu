@@ -82,7 +82,7 @@ static u16 GetResolutionScaleFactor() {
 template <bool morton_to_gl, PixelFormat format>
 void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::GPUVAddr base,
                 Tegra::GPUVAddr start, Tegra::GPUVAddr end) {
-    constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
+    constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / CHAR_BIT;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
     const auto& gpu = Core::System::GetInstance().GPU();
 
@@ -358,9 +358,9 @@ bool CachedSurface::CanFill(const SurfaceParams& dest_surface,
         boost::icl::last_next(fill_interval) <= end && // dest_surface is within our fill range
         dest_surface.FromInterval(fill_interval).GetInterval() ==
             fill_interval) { // make sure interval is a rectangle in dest surface
-        if (fill_size * 8 != dest_surface.GetFormatBpp()) {
+        if (fill_size * CHAR_BIT != dest_surface.GetFormatBpp()) {
             // Check if bits repeat for our fill_size
-            const u32 dest_bytes_per_pixel = std::max(dest_surface.GetFormatBpp() / 8, 1u);
+            const u32 dest_bytes_per_pixel = std::max(dest_surface.GetFormatBpp() / CHAR_BIT, 1u);
             std::vector<u8> fill_test(fill_size * dest_bytes_per_pixel);
 
             for (u32 i = 0; i < dest_bytes_per_pixel; ++i)

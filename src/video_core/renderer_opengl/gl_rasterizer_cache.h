@@ -374,7 +374,7 @@ struct CachedSurface : SurfaceParams {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        return SurfaceParams::GetFormatBpp(format) / 8;
+        return SurfaceParams::GetFormatBpp(format) / CHAR_BIT;
     }
 
     std::unique_ptr<u8[]> gl_buffer;
