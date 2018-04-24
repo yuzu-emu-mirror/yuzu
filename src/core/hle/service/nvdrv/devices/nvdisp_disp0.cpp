@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cinttypes>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
@@ -21,8 +22,9 @@ void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u3
                         u32 stride, NVFlinger::BufferQueue::BufferTransformFlags transform) {
     VAddr addr = nvmap_dev->GetObjectAddress(buffer_handle);
     LOG_WARNING(Service,
-                "Drawing from address %lx offset %08X Width %u Height %u Stride %u Format %u", addr,
-                offset, width, height, stride, format);
+                "Drawing from address %" PRIx64
+                " offset %08X Width %u Height %u Stride %u Format %u",
+                addr, offset, width, height, stride, format);
 
     using PixelFormat = Tegra::FramebufferConfig::PixelFormat;
     const Tegra::FramebufferConfig framebuffer{
