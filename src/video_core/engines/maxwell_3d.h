@@ -500,6 +500,11 @@ public:
                         return static_cast<GPUVAddr>((static_cast<GPUVAddr>(start_high) << 32) |
                                                      start_low);
                     }
+
+                    bool IsEnabled() const {
+                        return enable != 0 && StartAddress() != 0;
+                    }
+
                 } vertex_array[NumVertexArrays];
 
                 Blend blend;
