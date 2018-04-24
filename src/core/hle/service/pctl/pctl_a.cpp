@@ -113,7 +113,7 @@ void PCTL_A::CreateService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IParentalControlService>();
-    LOG_DEBUG(Service_PCTL, "called");
+    NGLOG_DEBUG(Service_PCTL, "called");
 }
 
 PCTL_A::PCTL_A() : ServiceFramework("pctl:a") {
