@@ -83,26 +83,30 @@ static u16 GetResolutionScaleFactor() {
 }
 
 template <bool morton_to_gl, PixelFormat format>
-void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, VAddr base, VAddr start,
-                VAddr end) {
+void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::GPUVAddr base,
+                Tegra::GPUVAddr start, Tegra::GPUVAddr end) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / 8;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
+    const auto& gpu = Core::System::GetInstance().GPU();
 
     if (morton_to_gl) {
         auto data = Tegra::Texture::UnswizzleTexture(
-            base, SurfaceParams::TextureFormatFromPixelFormat(format), stride, height,
-            block_height);
+            *gpu.memory_manager->GpuToCpuAddress(base),
+            SurfaceParams::TextureFormatFromPixelFormat(format), stride, height, block_height);
         std::memcpy(gl_buffer, data.data(), data.size());
     } else {
         // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
         // the configuration for this and perform more generic un/swizzle
         LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-        VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
-                                       Memory::GetPointer(base), gl_buffer, morton_to_gl);
+        VideoCore::MortonCopyPixels128(
+            stride, height, bytes_per_pixel, gl_bytes_per_pixel,
+            Memory::GetPointer(*gpu.memory_manager->GpuToCpuAddress(base)), gl_buffer,
+            morton_to_gl);
     }
 }
 
-static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
+static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra::GPUVAddr,
+                                     Tegra::GPUVAddr),
                             SurfaceParams::MaxPixelFormat>
     morton_to_gl_fns = {
         MortonCopy<true, PixelFormat::ABGR8>,       MortonCopy<true, PixelFormat::B5G6R5>,
@@ -110,7 +114,8 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
         MortonCopy<true, PixelFormat::DXT23>,       MortonCopy<true, PixelFormat::DXT45>,
 };
 
-static constexpr std::array<void (*)(u32, u32, u32, u8*, VAddr, VAddr, VAddr),
+static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra::GPUVAddr,
+                                     Tegra::GPUVAddr),
                             SurfaceParams::MaxPixelFormat>
     gl_to_morton_fns = {
         MortonCopy<false, PixelFormat::ABGR8>,
@@ -219,9 +224,9 @@ SurfaceParams SurfaceParams::FromInterval(SurfaceInterval interval) const {
     SurfaceParams params = *this;
     const u32 tiled_size = is_tiled ? 8 : 1;
     const u64 stride_tiled_bytes = BytesInPixels(stride * tiled_size);
-    VAddr aligned_start =
+    Tegra::GPUVAddr aligned_start =
         addr + Common::AlignDown(boost::icl::first(interval) - addr, stride_tiled_bytes);
-    VAddr aligned_end =
+    Tegra::GPUVAddr aligned_end =
         addr + Common::AlignUp(boost::icl::last_next(interval) - addr, stride_tiled_bytes);
 
     if (aligned_end - aligned_start > stride_tiled_bytes) {
@@ -342,6 +347,13 @@ bool SurfaceParams::CanTexCopy(const SurfaceParams& texcopy_params) const {
     return FromInterval(texcopy_params.GetInterval()).GetInterval() == texcopy_params.GetInterval();
 }
 
+VAddr SurfaceParams::GetCpuAddr() const {
+    // When this function is used, only cpu_addr or (GPU) addr should be set, not both
+    ASSERT(!(cpu_addr && addr));
+    const auto& gpu = Core::System::GetInstance().GPU();
+    return cpu_addr.get_value_or(*gpu.memory_manager->GpuToCpuAddress(addr));
+}
+
 bool CachedSurface::CanFill(const SurfaceParams& dest_surface,
                             SurfaceInterval fill_interval) const {
     if (type == SurfaceType::Fill && IsRegionValid(fill_interval) &&
@@ -456,10 +468,10 @@ void RasterizerCacheOpenGL::CopySurface(const Surface& src_surface, const Surfac
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64, 192));
-void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
+void CachedSurface::LoadGLBuffer(Tegra::GPUVAddr load_start, Tegra::GPUVAddr load_end) {
     ASSERT(type != SurfaceType::Fill);
 
-    u8* const texture_src_data = Memory::GetPointer(addr);
+    u8* const texture_src_data = Memory::GetPointer(GetCpuAddr());
     if (texture_src_data == nullptr)
         return;
 
@@ -485,8 +497,8 @@ void CachedSurface::LoadGLBuffer(VAddr load_start, VAddr load_end) {
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
-void CachedSurface::FlushGLBuffer(VAddr flush_start, VAddr flush_end) {
-    u8* const dst_buffer = Memory::GetPointer(addr);
+void CachedSurface::FlushGLBuffer(Tegra::GPUVAddr flush_start, Tegra::GPUVAddr flush_end) {
+    u8* const dst_buffer = Memory::GetPointer(GetCpuAddr());
     if (dst_buffer == nullptr)
         return;
 
@@ -1028,7 +1040,7 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     auto& gpu = Core::System::GetInstance().GPU();
 
     SurfaceParams params;
-    params.addr = *gpu.memory_manager->GpuToCpuAddress(config.tic.Address());
+    params.addr = config.tic.Address();
     params.width = config.tic.Width();
     params.height = config.tic.Height();
     params.is_tiled = config.tic.IsTiled();
@@ -1045,7 +1057,7 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
         params.block_height = config.tic.BlockHeight();
     } else {
         // Use the texture-provided stride value if the texture isn't tiled.
-        params.stride = params.PixelsInBytes(config.tic.Pitch());
+        params.stride = static_cast<u32>(params.PixelsInBytes(config.tic.Pitch()));
     }
 
     params.UpdateParams();
@@ -1073,7 +1085,6 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
-    const auto& memory_manager = Core::System().GetInstance().GPU().memory_manager;
     const auto& config = regs.rt[0];
 
     // TODO(bunnei): This is hard corded to use just the first render buffer
@@ -1106,7 +1117,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     color_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     SurfaceParams depth_params = color_params;
 
-    color_params.addr = *memory_manager->GpuToCpuAddress(config.Address());
+    color_params.addr = config.Address();
     color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
     color_params.component_type = SurfaceParams::ComponentTypeFromRenderTarget(config.format);
     color_params.UpdateParams();
@@ -1222,7 +1233,8 @@ void RasterizerCacheOpenGL::DuplicateSurface(const Surface& src_surface,
     }
 }
 
-void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, VAddr addr, u64 size) {
+void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, Tegra::GPUVAddr addr,
+                                            u64 size) {
     if (size == 0)
         return;
 
@@ -1261,7 +1273,7 @@ void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, VAddr addr, 
     }
 }
 
-void RasterizerCacheOpenGL::FlushRegion(VAddr addr, u64 size, Surface flush_surface) {
+void RasterizerCacheOpenGL::FlushRegion(Tegra::GPUVAddr addr, u64 size, Surface flush_surface) {
     if (size == 0)
         return;
 
@@ -1297,7 +1309,8 @@ void RasterizerCacheOpenGL::FlushAll() {
     FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
 }
 
-void RasterizerCacheOpenGL::InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner) {
+void RasterizerCacheOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, u64 size,
+                                             const Surface& region_owner) {
     if (size == 0)
         return;
 
@@ -1390,7 +1403,7 @@ void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
     surface_cache.subtract({surface->GetInterval(), SurfaceSet{surface}});
 }
 
-void RasterizerCacheOpenGL::UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {
+void RasterizerCacheOpenGL::UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) {
     const u64 num_pages =
         ((addr + size - 1) >> Memory::PAGE_BITS) - (addr >> Memory::PAGE_BITS) + 1;
     const u64 page_start = addr >> Memory::PAGE_BITS;
@@ -1406,8 +1419,10 @@ void RasterizerCacheOpenGL::UpdatePagesCachedCount(VAddr addr, u64 size, int del
         const auto interval = pair.first & pages_interval;
         const int count = pair.second;
 
-        const VAddr interval_start_addr = boost::icl::first(interval) << Memory::PAGE_BITS;
-        const VAddr interval_end_addr = boost::icl::last_next(interval) << Memory::PAGE_BITS;
+        const Tegra::GPUVAddr interval_start_addr = boost::icl::first(interval)
+                                                    << Memory::PAGE_BITS;
+        const Tegra::GPUVAddr interval_end_addr = boost::icl::last_next(interval)
+                                                  << Memory::PAGE_BITS;
         const u64 interval_size = interval_end_addr - interval_start_addr;
 
         if (delta > 0 && count == delta)

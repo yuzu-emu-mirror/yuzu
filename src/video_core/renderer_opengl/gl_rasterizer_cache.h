@@ -17,12 +17,14 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
+#include <boost/optional.hpp>
 #include <glad/glad.h>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
 #include "video_core/gpu.h"
+#include "video_core/memory_manager.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/textures/texture.h"
 
@@ -30,9 +32,9 @@ struct CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
 using SurfaceSet = std::set<Surface>;
 
-using SurfaceRegions = boost::icl::interval_set<VAddr>;
-using SurfaceMap = boost::icl::interval_map<VAddr, Surface>;
-using SurfaceCache = boost::icl::interval_map<VAddr, SurfaceSet>;
+using SurfaceRegions = boost::icl::interval_set<Tegra::GPUVAddr>;
+using SurfaceMap = boost::icl::interval_map<Tegra::GPUVAddr, Surface>;
+using SurfaceCache = boost::icl::interval_map<Tegra::GPUVAddr, SurfaceSet>;
 
 using SurfaceInterval = SurfaceCache::interval_type;
 static_assert(std::is_same<SurfaceRegions::interval_type, SurfaceCache::interval_type>() &&
@@ -277,6 +279,8 @@ struct SurfaceParams {
         return pixels * GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
+    VAddr GetCpuAddr() const;
+
     bool ExactMatch(const SurfaceParams& other_surface) const;
     bool CanSubRect(const SurfaceParams& sub_surface) const;
     bool CanExpand(const SurfaceParams& expanded_surface) const;
@@ -285,8 +289,9 @@ struct SurfaceParams {
     MathUtil::Rectangle<u32> GetSubRect(const SurfaceParams& sub_surface) const;
     MathUtil::Rectangle<u32> GetScaledSubRect(const SurfaceParams& sub_surface) const;
 
-    VAddr addr = 0;
-    VAddr end = 0;
+    Tegra::GPUVAddr addr = 0;
+    Tegra::GPUVAddr end = 0;
+    boost::optional<VAddr> cpu_addr;
     u64 size = 0;
 
     u32 width = 0;
@@ -332,8 +337,8 @@ struct CachedSurface : SurfaceParams {
     size_t gl_buffer_size = 0;
 
     // Read/Write data in Switch memory to/from gl_buffer
-    void LoadGLBuffer(VAddr load_start, VAddr load_end);
-    void FlushGLBuffer(VAddr flush_start, VAddr flush_end);
+    void LoadGLBuffer(Tegra::GPUVAddr load_start, Tegra::GPUVAddr load_end);
+    void FlushGLBuffer(Tegra::GPUVAddr flush_start, Tegra::GPUVAddr flush_end);
 
     // Upload/Download data in gl_buffer in/to this surface's texture
     void UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint read_fb_handle,
@@ -381,10 +386,10 @@ public:
     SurfaceRect_Tuple GetTexCopySurface(const SurfaceParams& params);
 
     /// Write any cached resources overlapping the region back to memory (if dirty)
-    void FlushRegion(VAddr addr, u64 size, Surface flush_surface = nullptr);
+    void FlushRegion(Tegra::GPUVAddr addr, u64 size, Surface flush_surface = nullptr);
 
     /// Mark region as being invalidated by region_owner (nullptr if Switch memory)
-    void InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner);
+    void InvalidateRegion(Tegra::GPUVAddr addr, u64 size, const Surface& region_owner);
 
     /// Flush all cached resources tracked by this cache manager
     void FlushAll();
@@ -393,7 +398,7 @@ private:
     void DuplicateSurface(const Surface& src_surface, const Surface& dest_surface);
 
     /// Update surface's texture for given region when necessary
-    void ValidateSurface(const Surface& surface, VAddr addr, u64 size);
+    void ValidateSurface(const Surface& surface, Tegra::GPUVAddr addr, u64 size);
 
     /// Create a new surface
     Surface CreateSurface(const SurfaceParams& params);
@@ -405,7 +410,7 @@ private:
     void UnregisterSurface(const Surface& surface);
 
     /// Increase/decrease the number of surface in pages touching the specified region
-    void UpdatePagesCachedCount(VAddr addr, u64 size, int delta);
+    void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
 
     SurfaceCache surface_cache;
     PageMap cached_pages;

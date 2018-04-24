@@ -150,9 +150,8 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
         u64 size = end - start + 1;
 
         // Copy vertex array data
-        const VAddr data_addr{*memory_manager->GpuToCpuAddress(start)};
-        res_cache.FlushRegion(data_addr, size, nullptr);
-        Memory::ReadBlock(data_addr, array_ptr, size);
+        res_cache.FlushRegion(start, size, nullptr);
+        Memory::ReadBlock(*memory_manager->GpuToCpuAddress(start), array_ptr, size);
 
         // Bind the vertex array to the buffer at the current offset.
         glBindVertexBuffer(index, stream_buffer->GetHandle(), buffer_offset, vertex_array.stride);
@@ -519,17 +518,17 @@ void RasterizerOpenGL::FlushAll() {
     res_cache.FlushAll();
 }
 
-void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {
+void RasterizerOpenGL::FlushRegion(Tegra::GPUVAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size);
 }
 
-void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size) {
+void RasterizerOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.InvalidateRegion(addr, size, nullptr);
 }
 
-void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
+void RasterizerOpenGL::FlushAndInvalidateRegion(Tegra::GPUVAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     res_cache.FlushRegion(addr, size);
     res_cache.InvalidateRegion(addr, size, nullptr);
@@ -560,7 +559,7 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
 
     SurfaceParams src_params;
-    src_params.addr = framebuffer_addr;
+    src_params.cpu_addr = framebuffer_addr;
     src_params.width = std::min(framebuffer.width, pixel_stride);
     src_params.height = framebuffer.height;
     src_params.stride = pixel_stride;

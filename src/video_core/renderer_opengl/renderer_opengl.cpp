@@ -152,7 +152,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
         screen_info.display_texture = screen_info.texture.resource.handle;
         screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-        Rasterizer()->FlushRegion(framebuffer_addr, size_in_bytes);
+        Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
+                                             Memory::FlushMode::Flush);
 
         VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bytes_per_pixel, 4,
                                        Memory::GetPointer(framebuffer_addr),

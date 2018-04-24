@@ -325,15 +325,29 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
-    if (start == 0) {
+void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached) {
+    if (gpu_addr == 0) {
         return;
     }
 
-    u64 num_pages = ((start + size - 1) >> PAGE_BITS) - (start >> PAGE_BITS) + 1;
-    VAddr vaddr = start;
+    // Iterate over a contiguous CPU address space, which corresponds to the specified GPU address
+    // space, marking the region as un/cached. The region is marked un/cached at a granularity of
+    // CPU pages, hence why we iterate on a CPU page basis (note: GPU page size is different). This
+    // assumes the specified GPU address region is contiguous as well.
 
-    for (unsigned i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
+    u64 num_pages = ((gpu_addr + size - 1) >> PAGE_BITS) - (gpu_addr >> PAGE_BITS) + 1;
+    for (unsigned i = 0; i < num_pages; ++i, gpu_addr += PAGE_SIZE) {
+        boost::optional<VAddr> maybe_vaddr =
+            Core::System::GetInstance().GPU().memory_manager->GpuToCpuAddress(gpu_addr);
+        // The GPU <-> CPU virtual memory mapping is not 1:1
+        if (!maybe_vaddr) {
+            LOG_ERROR(HW_Memory,
+                      "Trying to flush a cached region to an invalid physical address %08X",
+                      gpu_addr);
+            continue;
+        }
+        VAddr vaddr = *maybe_vaddr;
+
         PageType& page_type = current_page_table->attributes[vaddr >> PAGE_BITS];
 
         if (cached) {
@@ -347,6 +361,10 @@ void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
                 page_type = PageType::RasterizerCachedMemory;
                 current_page_table->pointers[vaddr >> PAGE_BITS] = nullptr;
                 break;
+            case PageType::RasterizerCachedMemory:
+                // There can be more than one GPU region mapped per CPU region, so it's common that
+                // this area is already marked as cached.
+                break;
             default:
                 UNREACHABLE();
             }
@@ -356,6 +374,10 @@ void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
             case PageType::Unmapped:
                 // It is not necessary for a process to have this region mapped into its address
                 // space, for example, a system module need not have a VRAM mapping.
+                break;
+            case PageType::Memory:
+                // There can be more than one GPU region mapped per CPU region, so it's common that
+                // this area is already unmarked as cached.
                 break;
             case PageType::RasterizerCachedMemory: {
                 u8* pointer = GetPointerFromVMA(vaddr & ~PAGE_MASK);
@@ -394,19 +416,29 @@ void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
 
         VAddr overlap_start = std::max(start, region_start);
         VAddr overlap_end = std::min(end, region_end);
+
+        std::vector<Tegra::GPUVAddr> gpu_addresses =
+            Core::System::GetInstance().GPU().memory_manager->CpuToGpuAddress(overlap_start);
+
+        if (gpu_addresses.empty()) {
+            return;
+        }
+
         u64 overlap_size = overlap_end - overlap_start;
 
-        auto* rasterizer = VideoCore::g_renderer->Rasterizer();
-        switch (mode) {
-        case FlushMode::Flush:
-            rasterizer->FlushRegion(overlap_start, overlap_size);
-            break;
-        case FlushMode::Invalidate:
-            rasterizer->InvalidateRegion(overlap_start, overlap_size);
-            break;
-        case FlushMode::FlushAndInvalidate:
-            rasterizer->FlushAndInvalidateRegion(overlap_start, overlap_size);
-            break;
+        for (const auto& gpu_address : gpu_addresses) {
+            auto* rasterizer = VideoCore::g_renderer->Rasterizer();
+            switch (mode) {
+            case FlushMode::Flush:
+                rasterizer->FlushRegion(gpu_address, overlap_size);
+                break;
+            case FlushMode::Invalidate:
+                rasterizer->InvalidateRegion(gpu_address, overlap_size);
+                break;
+            case FlushMode::FlushAndInvalidate:
+                rasterizer->FlushAndInvalidateRegion(gpu_address, overlap_size);
+                break;
+            }
         }
     };
 

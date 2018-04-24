@@ -11,7 +11,6 @@
 #include <boost/optional.hpp>
 
 #include "common/common_types.h"
-#include "core/memory.h"
 
 namespace Tegra {
 
