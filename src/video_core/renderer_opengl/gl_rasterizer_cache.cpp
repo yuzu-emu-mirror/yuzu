@@ -954,6 +954,33 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params, ScaleMatc
     return surface;
 }
 
+boost::optional<Tegra::GPUVAddr> RasterizerCacheOpenGL::TryFindFramebufferGpuAddress(
+    VAddr cpu_addr) const {
+    // Tries to find the GPU address of a framebuffer based on the CPU address. This is because
+    // final output framebuffers are specified by CPU address, but internally our GPU cache uses GPU
+    // addresses. We iterate through all cached framebuffers, and compare their starting CPU address
+    // to the one provided. This is obviously not great, and won't work if the framebuffer overlaps
+    // surfaces.
+
+    std::vector<Tegra::GPUVAddr> gpu_addresses;
+    for (const auto& pair : surface_cache) {
+        for (const auto& surface : pair.second) {
+            const VAddr surface_cpu_addr = surface->GetCpuAddr();
+            if (cpu_addr >= surface_cpu_addr && cpu_addr < (surface_cpu_addr + surface->size)) {
+                ASSERT_MSG(cpu_addr == surface_cpu_addr, "overlapping surfaces are unsupported");
+                gpu_addresses.push_back(surface->addr);
+            }
+        }
+    }
+
+    if (gpu_addresses.empty()) {
+        return {};
+    }
+
+    ASSERT_MSG(gpu_addresses.size() == 1, ">1 surface is unsupported");
+    return gpu_addresses[0];
+}
+
 SurfaceRect_Tuple RasterizerCacheOpenGL::GetSurfaceSubRect(const SurfaceParams& params,
                                                            ScaleMatch match_res_scale,
                                                            bool load_if_create) {

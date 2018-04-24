@@ -411,6 +411,9 @@ public:
     Surface GetSurface(const SurfaceParams& params, ScaleMatch match_res_scale,
                        bool load_if_create);
 
+    /// Tries to find a framebuffer GPU address based on the provided CPU address
+    boost::optional<Tegra::GPUVAddr> TryFindFramebufferGpuAddress(VAddr cpu_addr) const;
+
     /// Attempt to find a subrect (resolution scaled) of a surface, otherwise loads a texture from
     /// Switch memory to OpenGL and caches it (if not already cached)
     SurfaceRect_Tuple GetSurfaceSubRect(const SurfaceParams& params, ScaleMatch match_res_scale,

@@ -560,6 +560,7 @@ bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebu
 
     SurfaceParams src_params;
     src_params.cpu_addr = framebuffer_addr;
+    src_params.addr = res_cache.TryFindFramebufferGpuAddress(framebuffer_addr).get_value_or(0);
     src_params.width = std::min(framebuffer.width, pixel_stride);
     src_params.height = framebuffer.height;
     src_params.stride = pixel_stride;
