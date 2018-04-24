@@ -181,10 +181,10 @@ add_library(core STATIC
     hle/service/nvflinger/buffer_queue.h
     hle/service/nvflinger/nvflinger.cpp
     hle/service/nvflinger/nvflinger.h
+    hle/service/pctl/module.cpp
+    hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
-    hle/service/pctl/pctl_a.cpp
-    hle/service/pctl/pctl_a.h
     hle/service/service.cpp
     hle/service/service.h
     hle/service/set/set.cpp
