@@ -6,8 +6,10 @@
 
 #include <array>
 #include "common/assert.h"
+#include "common/bit_field.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 
 namespace Tegra {
@@ -27,9 +29,59 @@ public:
     struct Regs {
         static constexpr size_t NUM_REGS = 0x258;
 
+        struct Surface {
+            RenderTargetFormat format;
+            BitField<0, 1, u32> linear;
+            union {
+                BitField<0, 4, u32> block_depth;
+                BitField<4, 4, u32> block_height;
+                BitField<8, 4, u32> block_width;
+            };
+            u32 depth;
+            u32 layer;
+            u32 pitch;
+            u32 width;
+            u32 height;
+            u32 address_high;
+            u32 address_low;
+
+            GPUVAddr Address() const {
+                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
+                                             address_low);
+            }
+        };
+        static_assert(sizeof(Surface) == 0x28, "Surface has incorrect size");
+
+        enum class Operation : u32 {
+            SrcCopyAnd = 0,
+            ROPAnd = 1,
+            Blend = 2,
+            SrcCopy = 3,
+            ROP = 4,
+            SrcCopyPremult = 5,
+            BlendPremult = 6,
+        };
+
         union {
             struct {
-                INSERT_PADDING_WORDS(0x258);
+                INSERT_PADDING_WORDS(0x80);
+
+                Surface dst;
+
+                INSERT_PADDING_WORDS(2);
+
+                Surface src;
+
+                INSERT_PADDING_WORDS(0x15);
+
+                Operation operation;
+
+                INSERT_PADDING_WORDS(0x9);
+
+                // TODO(Subv): This is only a guess.
+                u32 trigger;
+
+                INSERT_PADDING_WORDS(0x1A3);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -42,6 +94,10 @@ public:
     static_assert(offsetof(Fermi2D::Regs, field_name) == position * 4,                             \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(dst, 0x80);
+ASSERT_REG_POSITION(src, 0x8C);
+ASSERT_REG_POSITION(operation, 0xAB);
+ASSERT_REG_POSITION(trigger, 0xB5);
 #undef ASSERT_REG_POSITION
 
 } // namespace Engines
