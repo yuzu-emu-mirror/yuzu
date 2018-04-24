@@ -322,7 +322,15 @@ public:
 
         union {
             struct {
-                INSERT_PADDING_WORDS(0x200);
+                INSERT_PADDING_WORDS(0x45);
+
+                struct {
+                    INSERT_PADDING_WORDS(1);
+                    u32 data;
+                    u32 entry;
+                } macros;
+
+                INSERT_PADDING_WORDS(0x1B8);
 
                 struct {
                     u32 address_high;
@@ -637,9 +645,6 @@ public:
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value, u32 remaining_params);
 
-    /// Uploads the code for a GPU macro program associated with the specified entry.
-    void SubmitMacroCode(u32 entry, std::vector<u32> code);
-
     /// Returns a list of enabled textures for the specified shader stage.
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
@@ -670,6 +675,9 @@ private:
      */
     void CallMacroMethod(u32 method, std::vector<u32> parameters);
 
+    /// Handles writes to the macro uploading registers.
+    void ProcessMacroUpload(u32 data);
+
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
@@ -687,6 +695,7 @@ private:
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(macros, 0x45);
 ASSERT_REG_POSITION(rt, 0x200);
 ASSERT_REG_POSITION(viewport_transform[0], 0x280);
 ASSERT_REG_POSITION(viewport, 0x300);
