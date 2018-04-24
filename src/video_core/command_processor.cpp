@@ -27,7 +27,7 @@ enum class BufferMethods {
     SetGraphMacroCode = 0x45,
     SetGraphMacroCodeArg = 0x46,
     SetGraphMacroEntry = 0x47,
-    CountBufferMethods = 0x100,
+    CountBufferMethods = 0x40,
 };
 
 void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) {
