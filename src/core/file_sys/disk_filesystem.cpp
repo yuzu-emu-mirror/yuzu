@@ -67,10 +67,16 @@ ResultCode Disk_FileSystem::DeleteFile(const std::string& path) const {
     return RESULT_SUCCESS;
 }
 
-ResultCode Disk_FileSystem::RenameFile(const Path& src_path, const Path& dest_path) const {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
+ResultCode Disk_FileSystem::RenameFile(const std::string& src_path,
+                                       const std::string& dest_path) const {
+    const std::string full_src_path = base_directory + src_path;
+    const std::string full_dest_path = base_directory + dest_path;
+
+    if (!FileUtil::Exists(full_src_path)) {
+        return ERROR_PATH_NOT_FOUND;
+    }
     // TODO(wwylele): Use correct error code
-    return ResultCode(-1);
+    return FileUtil::Rename(full_src_path, full_dest_path) ? RESULT_SUCCESS : ResultCode(-1);
 }
 
 ResultCode Disk_FileSystem::DeleteDirectory(const Path& path) const {
