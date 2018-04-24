@@ -270,10 +270,9 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     GLint internal_format;
     switch (framebuffer.pixel_format) {
     case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-        // Use RGBA8 and swap in the fragment shader
         internal_format = GL_RGBA;
         texture.gl_format = GL_RGBA;
-        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8;
+        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:
