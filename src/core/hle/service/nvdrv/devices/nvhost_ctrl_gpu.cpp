@@ -10,8 +10,8 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%zx, output_size=0x%zx",
-              command.raw, input.size(), output.size());
+    NGLOG_DEBUG(Service_NVDRV, "called, command={:#010X}, input_size={:#X}, output_size={:#X}",
+                command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetCharacteristicsCommand:
@@ -30,7 +30,7 @@ u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vec
 }
 
 u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called");
+    NGLOG_DEBUG(Service_NVDRV, "called");
     IoctlCharacteristics params{};
     std::memcpy(&params, input.data(), input.size());
     params.gc.arch = 0x120;
@@ -77,14 +77,14 @@ u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vecto
 u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, mask=0x%x, mask_buf_addr=0x%" PRIx64,
-                params.mask_buf_size, params.mask_buf_addr);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, mask={:#X}, mask_buf_addr={:#X}",
+                  params.mask_buf_size, params.mask_buf_addr);
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
 }
 
 u32 nvhost_ctrl_gpu::GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called");
+    NGLOG_DEBUG(Service_NVDRV, "called");
     IoctlActiveSlotMask params{};
     std::memcpy(&params, input.data(), input.size());
     params.slot = 0x07;
@@ -94,7 +94,7 @@ u32 nvhost_ctrl_gpu::GetActiveSlotMask(const std::vector<u8>& input, std::vector
 }
 
 u32 nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called");
+    NGLOG_DEBUG(Service_NVDRV, "called");
     IoctlZcullGetCtxSize params{};
     std::memcpy(&params, input.data(), input.size());
     params.size = 0x1;
@@ -103,7 +103,7 @@ u32 nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u
 }
 
 u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called");
+    NGLOG_DEBUG(Service_NVDRV, "called");
     IoctlNvgpuGpuZcullGetInfoArgs params{};
     std::memcpy(&params, input.data(), input.size());
     params.width_align_pixels = 0x20;

@@ -22,7 +22,7 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
 
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_SET, "(STUBBED) called");
+    NGLOG_WARNING(Service_SET, "(STUBBED) called");
 }
 
 SET::SET() : ServiceFramework("set") {
