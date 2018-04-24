@@ -239,7 +239,7 @@ public:
             {2, &IFileSystem::CreateDirectory, "CreateDirectory"},
             {3, nullptr, "DeleteDirectory"},
             {4, nullptr, "DeleteDirectoryRecursively"},
-            {5, nullptr, "RenameFile"},
+            {5, &IFileSystem::RenameFile, "RenameFile"},
             {6, nullptr, "RenameDirectory"},
             {7, &IFileSystem::GetEntryType, "GetEntryType"},
             {8, &IFileSystem::OpenFile, "OpenFile"},
@@ -298,6 +298,26 @@ public:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateDirectory(name));
+    }
+
+    void RenameFile(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        std::vector<u8> buffer;
+        buffer.resize(ctx.BufferDescriptorX()[0].Size());
+        Memory::ReadBlock(ctx.BufferDescriptorX()[0].Address(), buffer.data(), buffer.size());
+        auto end = std::find(buffer.begin(), buffer.end(), '\0');
+        std::string src_name(buffer.begin(), end);
+
+        buffer.resize(ctx.BufferDescriptorX()[1].Size());
+        Memory::ReadBlock(ctx.BufferDescriptorX()[1].Address(), buffer.data(), buffer.size());
+        end = std::find(buffer.begin(), buffer.end(), '\0');
+        std::string dst_name(buffer.begin(), end);
+
+        LOG_DEBUG(Service_FS, "called file '%s' to file '%s'", src_name.c_str(), dst_name.c_str());
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(backend->RenameFile(src_name, dst_name));
     }
 
     void OpenFile(Kernel::HLERequestContext& ctx) {

@@ -27,7 +27,8 @@ ResultCode RomFS_FileSystem::DeleteFile(const std::string& path) const {
     return ResultCode(-1);
 }
 
-ResultCode RomFS_FileSystem::RenameFile(const Path& src_path, const Path& dest_path) const {
+ResultCode RomFS_FileSystem::RenameFile(const std::string& src_path,
+                                        const std::string& dest_path) const {
     LOG_CRITICAL(Service_FS, "Attempted to rename a file within an ROMFS archive (%s).",
                  GetName().c_str());
     // TODO(wwylele): Use correct error code

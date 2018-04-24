@@ -126,7 +126,8 @@ public:
      * @param dest_path Destination path relative to the archive
      * @return Result of the operation
      */
-    virtual ResultCode RenameFile(const Path& src_path, const Path& dest_path) const = 0;
+    virtual ResultCode RenameFile(const std::string& src_path,
+                                  const std::string& dest_path) const = 0;
 
     /**
      * Rename a Directory specified by its path
