@@ -33,9 +33,6 @@ void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
 }
 
 void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
-    ASSERT_MSG(method < Regs::NUM_REGS,
-               "Invalid Maxwell3D register, increase the size of the Regs structure");
-
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
 
     // It is an error to write to a register other than the current macro's ARG register before it
@@ -63,6 +60,9 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         }
         return;
     }
+
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid Maxwell3D register, increase the size of the Regs structure");
 
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);

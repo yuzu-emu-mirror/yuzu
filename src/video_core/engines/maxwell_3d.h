@@ -31,7 +31,7 @@ public:
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
     struct Regs {
-        static constexpr size_t NUM_REGS = 0xE36;
+        static constexpr size_t NUM_REGS = 0xE00;
 
         static constexpr size_t NumRenderTargets = 8;
         static constexpr size_t NumViewports = 16;
@@ -613,7 +613,7 @@ public:
                     u32 size[MaxShaderStage];
                 } tex_info_buffers;
 
-                INSERT_PADDING_WORDS(0x102);
+                INSERT_PADDING_WORDS(0xCC);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
