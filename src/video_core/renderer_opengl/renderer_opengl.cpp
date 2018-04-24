@@ -295,7 +295,7 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
-    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset)
+    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset) {
         if (framebuffer_transform_flags == Tegra::FramebufferConfig::TransformFlags::FlipV) {
             // Flip the framebuffer vertically
             left = texcoords.right;
@@ -306,6 +306,7 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
                          framebuffer_transform_flags);
             UNIMPLEMENTED();
         }
+    }
 
     std::array<ScreenRectVertex, 4> vertices = {{
         ScreenRectVertex(x, y, texcoords.top, left),
