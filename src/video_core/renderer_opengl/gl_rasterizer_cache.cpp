@@ -41,18 +41,15 @@ struct FormatTuple {
     GLenum format;
     GLenum type;
     bool compressed;
-    // How many pixels in the original texture are equivalent to one pixel in the compressed
-    // texture.
-    u32 compression_factor;
 };
 
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
-    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false, 1},                     // ABGR8
-    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false, 1},                        // B5G6R5
-    {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, false, 1},               // A2B10G10R10
-    {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true, 16},   // DXT1
-    {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT23
-    {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true, 16}, // DXT45
+    {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},                    // ABGR8
+    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false},                       // B5G6R5
+    {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, false},              // A2B10G10R10
+    {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true},   // DXT1
+    {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT23
+    {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT45
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
@@ -476,7 +473,7 @@ void CachedSurface::LoadGLBuffer(Tegra::GPUVAddr load_start, Tegra::GPUVAddr loa
         return;
 
     if (gl_buffer == nullptr) {
-        gl_buffer_size = width * height * GetGLBytesPerPixel(pixel_format);
+        gl_buffer_size = GetActualWidth() * GetActualHeight() * GetGLBytesPerPixel(pixel_format);
         gl_buffer.reset(new u8[gl_buffer_size]);
     }
 
@@ -491,8 +488,9 @@ void CachedSurface::LoadGLBuffer(Tegra::GPUVAddr load_start, Tegra::GPUVAddr loa
         std::memcpy(&gl_buffer[start_offset], texture_src_data + start_offset,
                     bytes_per_pixel * width * height);
     } else {
-        morton_to_gl_fns[static_cast<size_t>(pixel_format)](
-            stride, block_height, height, &gl_buffer[0], addr, load_start, load_end);
+        morton_to_gl_fns[static_cast<size_t>(pixel_format)](GetActualWidth(), block_height,
+                                                            GetActualHeight(), &gl_buffer[0], addr,
+                                                            load_start, load_end);
     }
 }
 
@@ -548,7 +546,8 @@ void CachedSurface::UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint
 
     MICROPROFILE_SCOPE(OpenGL_TextureUL);
 
-    ASSERT(gl_buffer_size == width * height * GetGLBytesPerPixel(pixel_format));
+    ASSERT(gl_buffer_size ==
+           GetActualWidth() * GetActualHeight() * GetGLBytesPerPixel(pixel_format));
 
     // Load data from memory to the surface
     GLint x0 = static_cast<GLint>(rect.left);
@@ -583,11 +582,9 @@ void CachedSurface::UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint
     glActiveTexture(GL_TEXTURE0);
     if (tuple.compressed) {
         glCompressedTexImage2D(GL_TEXTURE_2D, 0, tuple.internal_format,
-                               static_cast<GLsizei>(rect.GetWidth()),
-                               static_cast<GLsizei>(rect.GetHeight()), 0,
-                               rect.GetWidth() * rect.GetHeight() *
-                                   GetGLBytesPerPixel(pixel_format) / tuple.compression_factor,
-                               &gl_buffer[buffer_offset]);
+                               static_cast<GLsizei>(rect.GetWidth() * GetCompresssionFactor()),
+                               static_cast<GLsizei>(rect.GetHeight() * GetCompresssionFactor()), 0,
+                               size, &gl_buffer[buffer_offset]);
     } else {
         glTexSubImage2D(GL_TEXTURE_2D, 0, x0, y0, static_cast<GLsizei>(rect.GetWidth()),
                         static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
@@ -1041,10 +1038,10 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
     SurfaceParams params;
     params.addr = config.tic.Address();
-    params.width = config.tic.Width();
-    params.height = config.tic.Height();
     params.is_tiled = config.tic.IsTiled();
     params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
+    params.width = config.tic.Width() / params.GetCompresssionFactor();
+    params.height = config.tic.Height() / params.GetCompresssionFactor();
 
     // TODO(Subv): Different types per component are not supported.
     ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&

@@ -84,23 +84,49 @@ struct SurfaceParams {
         Invalid = 4,
     };
 
-    static constexpr unsigned int GetFormatBpp(PixelFormat format) {
+    /**
+     * Gets the compression factor for the specified PixelFormat. This applies to just the
+     * "compressed width" and "compressed height", not the overall compression factor of a
+     * compressed image. This is used for maintaining proper surface sizes for compressed texture
+     * formats.
+     */
+    static constexpr u32 GetCompresssionFactor(PixelFormat format) {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        constexpr std::array<unsigned int, MaxPixelFormat> bpp_table = {
+        constexpr std::array<u32, MaxPixelFormat> compression_factor_table = {{
+            1, // ABGR8
+            1, // B5G6R5
+            1, // A2B10G10R10
+            4, // DXT1
+            4, // DXT23
+            4, // DXT45
+        }};
+
+        ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
+        return compression_factor_table[static_cast<size_t>(format)];
+    }
+    u32 GetCompresssionFactor() const {
+        return GetCompresssionFactor(pixel_format);
+    }
+
+    static constexpr u32 GetFormatBpp(PixelFormat format) {
+        if (format == PixelFormat::Invalid)
+            return 0;
+
+        constexpr std::array<u32, MaxPixelFormat> bpp_table = {{
             32,  // ABGR8
             16,  // B5G6R5
             32,  // A2B10G10R10
             64,  // DXT1
             128, // DXT23
             128, // DXT45
-        };
+        }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
         return bpp_table[static_cast<size_t>(format)];
     }
-    unsigned int GetFormatBpp() const {
+    u32 GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
     }
 
@@ -254,6 +280,24 @@ struct SurfaceParams {
 
     // Returns the region of the biggest valid rectange within interval
     SurfaceInterval GetCopyableInterval(const Surface& src_surface) const;
+
+    /**
+     * Gets the actual width (in pixels) of the surface. This is provided because `width` is used
+     * for tracking the surface region in memory, which may be compressed for certain formats. In
+     * this scenario, `width` is actually the compressed width.
+     */
+    u32 GetActualWidth() const {
+        return width * GetCompresssionFactor();
+    }
+
+    /**
+     * Gets the actual height (in pixels) of the surface. This is provided because `height` is used
+     * for tracking the surface region in memory, which may be compressed for certain formats. In
+     * this scenario, `height` is actually the compressed height.
+     */
+    u32 GetActualHeight() const {
+        return height * GetCompresssionFactor();
+    }
 
     u32 GetScaledWidth() const {
         return width * res_scale;
