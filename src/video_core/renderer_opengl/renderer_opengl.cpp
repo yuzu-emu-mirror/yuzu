@@ -302,8 +302,8 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
             right = texcoords.left;
         } else {
             // Other transformations are unsupported
-            LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags=%d",
-                         framebuffer_transform_flags);
+            NGLOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags={}",
+                           static_cast<u32>(framebuffer_transform_flags));
             UNIMPLEMENTED();
         }
     }
@@ -428,9 +428,9 @@ bool RendererOpenGL::Init() {
     const char* gpu_vendor{reinterpret_cast<char const*>(glGetString(GL_VENDOR))};
     const char* gpu_model{reinterpret_cast<char const*>(glGetString(GL_RENDERER))};
 
-    LOG_INFO(Render_OpenGL, "GL_VERSION: %s", gl_version);
-    LOG_INFO(Render_OpenGL, "GL_VENDOR: %s", gpu_vendor);
-    LOG_INFO(Render_OpenGL, "GL_RENDERER: %s", gpu_model);
+    NGLOG_INFO(Render_OpenGL, "GL_VERSION: {}", gl_version);
+    NGLOG_INFO(Render_OpenGL, "GL_VENDOR: {}", gpu_vendor);
+    NGLOG_INFO(Render_OpenGL, "GL_RENDERER: {}", gpu_model);
 
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Vendor", gpu_vendor);
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Model", gpu_model);

@@ -116,7 +116,7 @@ RasterizerOpenGL::RasterizerOpenGL() {
 
     glEnable(GL_BLEND);
 
-    LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
+    NGLOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
@@ -252,8 +252,8 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
             break;
         }
         default:
-            LOG_CRITICAL(HW_GPU, "Unimplemented shader index=%d, enable=%d, offset=0x%08X", index,
-                         shader_config.enable.Value(), shader_config.offset);
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset={:#010X}",
+                           index, shader_config.enable.Value(), shader_config.offset);
             UNREACHABLE();
         }
 
