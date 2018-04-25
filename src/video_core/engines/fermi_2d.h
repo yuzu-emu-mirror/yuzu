@@ -88,6 +88,11 @@ public:
     } regs{};
 
     MemoryManager& memory_manager;
+
+private:
+    /// Performs the copy from the source surface to the destination surface as configured in the
+    /// registers.
+    void HandleSurfaceCopy();
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
