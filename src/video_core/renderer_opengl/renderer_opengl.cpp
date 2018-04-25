@@ -152,7 +152,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
         screen_info.display_texture = screen_info.texture.resource.handle;
         screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-        Rasterizer()->FlushRegion(framebuffer_addr, size_in_bytes);
+        Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
+                                             Memory::FlushMode::Flush);
 
         VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bytes_per_pixel, 4,
                                        Memory::GetPointer(framebuffer_addr),
@@ -269,10 +270,9 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     GLint internal_format;
     switch (framebuffer.pixel_format) {
     case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-        // Use RGBA8 and swap in the fragment shader
         internal_format = GL_RGBA;
         texture.gl_format = GL_RGBA;
-        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8;
+        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:

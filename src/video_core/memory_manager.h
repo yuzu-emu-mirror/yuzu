@@ -6,8 +6,11 @@
 
 #include <array>
 #include <memory>
+#include <vector>
+
+#include <boost/optional.hpp>
+
 #include "common/common_types.h"
-#include "core/memory.h"
 
 namespace Tegra {
 
@@ -18,20 +21,21 @@ class MemoryManager final {
 public:
     MemoryManager() = default;
 
-    PAddr AllocateSpace(u64 size, u64 align);
-    PAddr AllocateSpace(PAddr paddr, u64 size, u64 align);
-    PAddr MapBufferEx(VAddr vaddr, u64 size);
-    PAddr MapBufferEx(VAddr vaddr, PAddr paddr, u64 size);
-    VAddr PhysicalToVirtualAddress(PAddr paddr);
+    GPUVAddr AllocateSpace(u64 size, u64 align);
+    GPUVAddr AllocateSpace(GPUVAddr gpu_addr, u64 size, u64 align);
+    GPUVAddr MapBufferEx(VAddr cpu_addr, u64 size);
+    GPUVAddr MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size);
+    boost::optional<VAddr> GpuToCpuAddress(GPUVAddr gpu_addr);
+    std::vector<GPUVAddr> CpuToGpuAddress(VAddr cpu_addr) const;
 
     static constexpr u64 PAGE_BITS = 16;
     static constexpr u64 PAGE_SIZE = 1 << PAGE_BITS;
     static constexpr u64 PAGE_MASK = PAGE_SIZE - 1;
 
 private:
-    boost::optional<PAddr> FindFreeBlock(u64 size, u64 align = 1);
-    bool IsPageMapped(PAddr paddr);
-    VAddr& PageSlot(PAddr paddr);
+    boost::optional<GPUVAddr> FindFreeBlock(u64 size, u64 align = 1);
+    bool IsPageMapped(GPUVAddr gpu_addr);
+    VAddr& PageSlot(GPUVAddr gpu_addr);
 
     enum class PageStatus : u64 {
         Unmapped = 0xFFFFFFFFFFFFFFFFULL,
@@ -48,6 +52,14 @@ private:
 
     using PageBlock = std::array<VAddr, PAGE_BLOCK_SIZE>;
     std::array<std::unique_ptr<PageBlock>, PAGE_TABLE_SIZE> page_table{};
+
+    struct MappedRegion {
+        VAddr cpu_addr;
+        GPUVAddr gpu_addr;
+        u64 size;
+    };
+
+    std::vector<MappedRegion> mapped_regions;
 };
 
 } // namespace Tegra

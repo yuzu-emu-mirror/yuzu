@@ -90,11 +90,9 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) 
 }
 
 void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
-    // TODO(Subv): PhysicalToVirtualAddress is a misnomer, it converts a GPU VAddr into an
-    // application VAddr.
-    const VAddr head_address = memory_manager->PhysicalToVirtualAddress(address);
-    VAddr current_addr = head_address;
-    while (current_addr < head_address + size * sizeof(CommandHeader)) {
+    const boost::optional<VAddr> head_address = memory_manager->GpuToCpuAddress(address);
+    VAddr current_addr = *head_address;
+    while (current_addr < *head_address + size * sizeof(CommandHeader)) {
         const CommandHeader header = {Memory::Read32(current_addr)};
         current_addr += sizeof(u32);
 

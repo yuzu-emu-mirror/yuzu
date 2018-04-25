@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include "common/assert.h"
+#include "core/memory.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 

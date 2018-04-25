@@ -17,12 +17,14 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
+#include <boost/optional.hpp>
 #include <glad/glad.h>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/math_util.h"
 #include "video_core/gpu.h"
+#include "video_core/memory_manager.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/textures/texture.h"
 
@@ -30,9 +32,9 @@ struct CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
 using SurfaceSet = std::set<Surface>;
 
-using SurfaceRegions = boost::icl::interval_set<VAddr>;
-using SurfaceMap = boost::icl::interval_map<VAddr, Surface>;
-using SurfaceCache = boost::icl::interval_map<VAddr, SurfaceSet>;
+using SurfaceRegions = boost::icl::interval_set<Tegra::GPUVAddr>;
+using SurfaceMap = boost::icl::interval_map<Tegra::GPUVAddr, Surface>;
+using SurfaceCache = boost::icl::interval_map<Tegra::GPUVAddr, SurfaceSet>;
 
 using SurfaceInterval = SurfaceCache::interval_type;
 static_assert(std::is_same<SurfaceRegions::interval_type, SurfaceCache::interval_type>() &&
@@ -82,23 +84,49 @@ struct SurfaceParams {
         Invalid = 4,
     };
 
-    static constexpr unsigned int GetFormatBpp(PixelFormat format) {
+    /**
+     * Gets the compression factor for the specified PixelFormat. This applies to just the
+     * "compressed width" and "compressed height", not the overall compression factor of a
+     * compressed image. This is used for maintaining proper surface sizes for compressed texture
+     * formats.
+     */
+    static constexpr u32 GetCompresssionFactor(PixelFormat format) {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        constexpr std::array<unsigned int, MaxPixelFormat> bpp_table = {
+        constexpr std::array<u32, MaxPixelFormat> compression_factor_table = {{
+            1, // ABGR8
+            1, // B5G6R5
+            1, // A2B10G10R10
+            4, // DXT1
+            4, // DXT23
+            4, // DXT45
+        }};
+
+        ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
+        return compression_factor_table[static_cast<size_t>(format)];
+    }
+    u32 GetCompresssionFactor() const {
+        return GetCompresssionFactor(pixel_format);
+    }
+
+    static constexpr u32 GetFormatBpp(PixelFormat format) {
+        if (format == PixelFormat::Invalid)
+            return 0;
+
+        constexpr std::array<u32, MaxPixelFormat> bpp_table = {{
             32,  // ABGR8
             16,  // B5G6R5
             32,  // A2B10G10R10
             64,  // DXT1
             128, // DXT23
             128, // DXT45
-        };
+        }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
         return bpp_table[static_cast<size_t>(format)];
     }
-    unsigned int GetFormatBpp() const {
+    u32 GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
     }
 
@@ -253,6 +281,24 @@ struct SurfaceParams {
     // Returns the region of the biggest valid rectange within interval
     SurfaceInterval GetCopyableInterval(const Surface& src_surface) const;
 
+    /**
+     * Gets the actual width (in pixels) of the surface. This is provided because `width` is used
+     * for tracking the surface region in memory, which may be compressed for certain formats. In
+     * this scenario, `width` is actually the compressed width.
+     */
+    u32 GetActualWidth() const {
+        return width * GetCompresssionFactor();
+    }
+
+    /**
+     * Gets the actual height (in pixels) of the surface. This is provided because `height` is used
+     * for tracking the surface region in memory, which may be compressed for certain formats. In
+     * this scenario, `height` is actually the compressed height.
+     */
+    u32 GetActualHeight() const {
+        return height * GetCompresssionFactor();
+    }
+
     u32 GetScaledWidth() const {
         return width * res_scale;
     }
@@ -277,6 +323,8 @@ struct SurfaceParams {
         return pixels * GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
+    VAddr GetCpuAddr() const;
+
     bool ExactMatch(const SurfaceParams& other_surface) const;
     bool CanSubRect(const SurfaceParams& sub_surface) const;
     bool CanExpand(const SurfaceParams& expanded_surface) const;
@@ -285,8 +333,9 @@ struct SurfaceParams {
     MathUtil::Rectangle<u32> GetSubRect(const SurfaceParams& sub_surface) const;
     MathUtil::Rectangle<u32> GetScaledSubRect(const SurfaceParams& sub_surface) const;
 
-    VAddr addr = 0;
-    VAddr end = 0;
+    Tegra::GPUVAddr addr = 0;
+    Tegra::GPUVAddr end = 0;
+    boost::optional<VAddr> cpu_addr;
     u64 size = 0;
 
     u32 width = 0;
@@ -325,15 +374,15 @@ struct CachedSurface : SurfaceParams {
         if (format == PixelFormat::Invalid)
             return 0;
 
-        return SurfaceParams::GetFormatBpp(format) / 8;
+        return SurfaceParams::GetFormatBpp(format) / CHAR_BIT;
     }
 
     std::unique_ptr<u8[]> gl_buffer;
     size_t gl_buffer_size = 0;
 
     // Read/Write data in Switch memory to/from gl_buffer
-    void LoadGLBuffer(VAddr load_start, VAddr load_end);
-    void FlushGLBuffer(VAddr flush_start, VAddr flush_end);
+    void LoadGLBuffer(Tegra::GPUVAddr load_start, Tegra::GPUVAddr load_end);
+    void FlushGLBuffer(Tegra::GPUVAddr flush_start, Tegra::GPUVAddr flush_end);
 
     // Upload/Download data in gl_buffer in/to this surface's texture
     void UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint read_fb_handle,
@@ -362,6 +411,9 @@ public:
     Surface GetSurface(const SurfaceParams& params, ScaleMatch match_res_scale,
                        bool load_if_create);
 
+    /// Tries to find a framebuffer GPU address based on the provided CPU address
+    boost::optional<Tegra::GPUVAddr> TryFindFramebufferGpuAddress(VAddr cpu_addr) const;
+
     /// Attempt to find a subrect (resolution scaled) of a surface, otherwise loads a texture from
     /// Switch memory to OpenGL and caches it (if not already cached)
     SurfaceRect_Tuple GetSurfaceSubRect(const SurfaceParams& params, ScaleMatch match_res_scale,
@@ -381,10 +433,10 @@ public:
     SurfaceRect_Tuple GetTexCopySurface(const SurfaceParams& params);
 
     /// Write any cached resources overlapping the region back to memory (if dirty)
-    void FlushRegion(VAddr addr, u64 size, Surface flush_surface = nullptr);
+    void FlushRegion(Tegra::GPUVAddr addr, u64 size, Surface flush_surface = nullptr);
 
     /// Mark region as being invalidated by region_owner (nullptr if Switch memory)
-    void InvalidateRegion(VAddr addr, u64 size, const Surface& region_owner);
+    void InvalidateRegion(Tegra::GPUVAddr addr, u64 size, const Surface& region_owner);
 
     /// Flush all cached resources tracked by this cache manager
     void FlushAll();
@@ -393,7 +445,7 @@ private:
     void DuplicateSurface(const Surface& src_surface, const Surface& dest_surface);
 
     /// Update surface's texture for given region when necessary
-    void ValidateSurface(const Surface& surface, VAddr addr, u64 size);
+    void ValidateSurface(const Surface& surface, Tegra::GPUVAddr addr, u64 size);
 
     /// Create a new surface
     Surface CreateSurface(const SurfaceParams& params);
@@ -405,7 +457,7 @@ private:
     void UnregisterSurface(const Surface& surface);
 
     /// Increase/decrease the number of surface in pages touching the specified region
-    void UpdatePagesCachedCount(VAddr addr, u64 size, int delta);
+    void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
 
     SurfaceCache surface_cache;
     PageMap cached_pages;

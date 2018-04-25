@@ -8,90 +8,112 @@
 
 namespace Tegra {
 
-PAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
-    boost::optional<PAddr> paddr = FindFreeBlock(size, align);
-    ASSERT(paddr);
+GPUVAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
+    boost::optional<GPUVAddr> gpu_addr = FindFreeBlock(size, align);
+    ASSERT(gpu_addr);
 
     for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
-        ASSERT(PageSlot(*paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
-        PageSlot(*paddr + offset) = static_cast<u64>(PageStatus::Allocated);
+        ASSERT(PageSlot(*gpu_addr + offset) == static_cast<u64>(PageStatus::Unmapped));
+        PageSlot(*gpu_addr + offset) = static_cast<u64>(PageStatus::Allocated);
     }
 
-    return *paddr;
+    return *gpu_addr;
 }
 
-PAddr MemoryManager::AllocateSpace(PAddr paddr, u64 size, u64 align) {
+GPUVAddr MemoryManager::AllocateSpace(GPUVAddr gpu_addr, u64 size, u64 align) {
     for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
-        ASSERT(PageSlot(paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
-        PageSlot(paddr + offset) = static_cast<u64>(PageStatus::Allocated);
+        ASSERT(PageSlot(gpu_addr + offset) == static_cast<u64>(PageStatus::Unmapped));
+        PageSlot(gpu_addr + offset) = static_cast<u64>(PageStatus::Allocated);
     }
 
-    return paddr;
+    return gpu_addr;
 }
 
-PAddr MemoryManager::MapBufferEx(VAddr vaddr, u64 size) {
-    boost::optional<PAddr> paddr = FindFreeBlock(size, PAGE_SIZE);
-    ASSERT(paddr);
-
-    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
-        ASSERT(PageSlot(*paddr + offset) == static_cast<u64>(PageStatus::Unmapped));
-        PageSlot(*paddr + offset) = vaddr + offset;
-    }
-
-    return *paddr;
-}
-
-PAddr MemoryManager::MapBufferEx(VAddr vaddr, PAddr paddr, u64 size) {
-    ASSERT((paddr & PAGE_MASK) == 0);
+GPUVAddr MemoryManager::MapBufferEx(VAddr cpu_addr, u64 size) {
+    boost::optional<GPUVAddr> gpu_addr = FindFreeBlock(size, PAGE_SIZE);
+    ASSERT(gpu_addr);
 
     for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
-        ASSERT(PageSlot(paddr + offset) == static_cast<u64>(PageStatus::Allocated));
-        PageSlot(paddr + offset) = vaddr + offset;
+        ASSERT(PageSlot(*gpu_addr + offset) == static_cast<u64>(PageStatus::Unmapped));
+        PageSlot(*gpu_addr + offset) = cpu_addr + offset;
     }
 
-    return paddr;
+    MappedRegion region{cpu_addr, *gpu_addr, size};
+    mapped_regions.push_back(region);
+
+    return *gpu_addr;
 }
 
-boost::optional<PAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
-    PAddr paddr = 0;
+GPUVAddr MemoryManager::MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size) {
+    ASSERT((gpu_addr & PAGE_MASK) == 0);
+
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(gpu_addr + offset) == static_cast<u64>(PageStatus::Allocated));
+        PageSlot(gpu_addr + offset) = cpu_addr + offset;
+    }
+
+    MappedRegion region{cpu_addr, gpu_addr, size};
+    mapped_regions.push_back(region);
+
+    return gpu_addr;
+}
+
+boost::optional<GPUVAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
+    GPUVAddr gpu_addr = 0;
     u64 free_space = 0;
     align = (align + PAGE_MASK) & ~PAGE_MASK;
 
-    while (paddr + free_space < MAX_ADDRESS) {
-        if (!IsPageMapped(paddr + free_space)) {
+    while (gpu_addr + free_space < MAX_ADDRESS) {
+        if (!IsPageMapped(gpu_addr + free_space)) {
             free_space += PAGE_SIZE;
             if (free_space >= size) {
-                return paddr;
+                return gpu_addr;
             }
         } else {
-            paddr += free_space + PAGE_SIZE;
+            gpu_addr += free_space + PAGE_SIZE;
             free_space = 0;
-            paddr = Common::AlignUp(paddr, align);
+            gpu_addr = Common::AlignUp(gpu_addr, align);
         }
     }
 
     return {};
 }
 
-VAddr MemoryManager::PhysicalToVirtualAddress(PAddr paddr) {
-    VAddr base_addr = PageSlot(paddr);
+boost::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) {
+    VAddr base_addr = PageSlot(gpu_addr);
     ASSERT(base_addr != static_cast<u64>(PageStatus::Unmapped));
-    return base_addr + (paddr & PAGE_MASK);
+
+    if (base_addr == static_cast<u64>(PageStatus::Allocated)) {
+        return {};
+    }
+
+    return base_addr + (gpu_addr & PAGE_MASK);
 }
 
-bool MemoryManager::IsPageMapped(PAddr paddr) {
-    return PageSlot(paddr) != static_cast<u64>(PageStatus::Unmapped);
+std::vector<GPUVAddr> MemoryManager::CpuToGpuAddress(VAddr cpu_addr) const {
+    std::vector<GPUVAddr> results;
+    for (const auto& region : mapped_regions) {
+        if (cpu_addr >= region.cpu_addr && cpu_addr < (region.cpu_addr + region.size)) {
+            u64 offset = cpu_addr - region.cpu_addr;
+            results.push_back(region.gpu_addr + offset);
+        }
+    }
+    return results;
 }
 
-VAddr& MemoryManager::PageSlot(PAddr paddr) {
-    auto& block = page_table[(paddr >> (PAGE_BITS + PAGE_TABLE_BITS)) & PAGE_TABLE_MASK];
+bool MemoryManager::IsPageMapped(GPUVAddr gpu_addr) {
+    return PageSlot(gpu_addr) != static_cast<u64>(PageStatus::Unmapped);
+}
+
+VAddr& MemoryManager::PageSlot(GPUVAddr gpu_addr) {
+    auto& block = page_table[(gpu_addr >> (PAGE_BITS + PAGE_TABLE_BITS)) & PAGE_TABLE_MASK];
     if (!block) {
         block = std::make_unique<PageBlock>();
         for (unsigned index = 0; index < PAGE_BLOCK_SIZE; index++) {
             (*block)[index] = static_cast<u64>(PageStatus::Unmapped);
         }
     }
-    return (*block)[(paddr >> PAGE_BITS) & PAGE_BLOCK_MASK];
+    return (*block)[(gpu_addr >> PAGE_BITS) & PAGE_BLOCK_MASK];
 }
 
 } // namespace Tegra
