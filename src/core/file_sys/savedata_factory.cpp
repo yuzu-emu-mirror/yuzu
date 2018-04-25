@@ -30,7 +30,7 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path&
 }
 
 ResultCode SaveData_Factory::Format(const Path& path) {
-    LOG_WARNING(Service_FS, "Format archive %s", GetName().c_str());
+    NGLOG_WARNING(Service_FS, "Format archive {}", GetName());
     // Create the save data directory.
     if (!FileUtil::CreateFullPath(GetFullPath())) {
         // TODO(Subv): Find the correct error code.
@@ -41,7 +41,7 @@ ResultCode SaveData_Factory::Format(const Path& path) {
 }
 
 ResultVal<ArchiveFormatInfo> SaveData_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive %s", GetName().c_str());
+    NGLOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
 }

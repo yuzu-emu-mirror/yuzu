@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/file_sys/program_metadata.h"
@@ -22,7 +21,7 @@ Loader::ResultStatus ProgramMetadata::Load(const std::string& file_path) {
 
     Loader::ResultStatus result = Load(file_data);
     if (result != Loader::ResultStatus::Success)
-        LOG_ERROR(Service_FS, "Failed to load NPDM from file %s!", file_path.c_str());
+        NGLOG_ERROR(Service_FS, "Failed to load NPDM from file {}!", file_path);
 
     return result;
 }
@@ -77,14 +76,14 @@ u64 ProgramMetadata::GetFilesystemPermissions() const {
 }
 
 void ProgramMetadata::Print() const {
-    LOG_DEBUG(Service_FS, "Magic:                  %.4s", npdm_header.magic.data());
-    LOG_DEBUG(Service_FS, "Main thread priority:   0x%02x", npdm_header.main_thread_priority);
-    LOG_DEBUG(Service_FS, "Main thread core:       %u", npdm_header.main_thread_cpu);
-    LOG_DEBUG(Service_FS, "Main thread stack size: 0x%x bytes", npdm_header.main_stack_size);
-    LOG_DEBUG(Service_FS, "Process category:       %u", npdm_header.process_category);
-    LOG_DEBUG(Service_FS, "Flags:                  %02x", npdm_header.flags);
-    LOG_DEBUG(Service_FS, " > 64-bit instructions: %s",
-              npdm_header.has_64_bit_instructions ? "YES" : "NO");
+    NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", npdm_header.magic.data());
+    NGLOG_DEBUG(Service_FS, "Main thread priority:   {:#04X}", npdm_header.main_thread_priority);
+    NGLOG_DEBUG(Service_FS, "Main thread core:       {}", npdm_header.main_thread_cpu);
+    NGLOG_DEBUG(Service_FS, "Main thread stack size: {:#X} bytes", npdm_header.main_stack_size);
+    NGLOG_DEBUG(Service_FS, "Process category:       {}", npdm_header.process_category);
+    NGLOG_DEBUG(Service_FS, "Flags:                  {:02X}", npdm_header.flags);
+    NGLOG_DEBUG(Service_FS, " > 64-bit instructions: {}",
+                npdm_header.has_64_bit_instructions ? "YES" : "NO");
 
     auto address_space = "Unknown";
     switch (npdm_header.address_space_type) {
@@ -96,19 +95,19 @@ void ProgramMetadata::Print() const {
         break;
     }
 
-    LOG_DEBUG(Service_FS, " > Address space:       %s\n", address_space);
+    NGLOG_DEBUG(Service_FS, " > Address space:       {}\n", address_space);
 
     // Begin ACID printing (potential perms, signed)
-    LOG_DEBUG(Service_FS, "Magic:                  %.4s", acid_header.magic.data());
-    LOG_DEBUG(Service_FS, "Flags:                  %02x", acid_header.flags);
-    LOG_DEBUG(Service_FS, " > Is Retail:           %s", acid_header.is_retail ? "YES" : "NO");
-    LOG_DEBUG(Service_FS, "Title ID Min:           %016" PRIX64, acid_header.title_id_min);
-    LOG_DEBUG(Service_FS, "Title ID Max:           %016" PRIX64, acid_header.title_id_max);
-    LOG_DEBUG(Service_FS, "Filesystem Access:      %016" PRIX64 "\n", acid_file_access.permissions);
+    NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", acid_header.magic.data());
+    NGLOG_DEBUG(Service_FS, "Flags:                  {:02X}", acid_header.flags);
+    NGLOG_DEBUG(Service_FS, " > Is Retail:           {}", acid_header.is_retail ? "YES" : "NO");
+    NGLOG_DEBUG(Service_FS, "Title ID Min:           {:016X}", acid_header.title_id_min);
+    NGLOG_DEBUG(Service_FS, "Title ID Max:           {:016X}", acid_header.title_id_max);
+    NGLOG_DEBUG(Service_FS, "Filesystem Access:      {:016X}\n", acid_file_access.permissions);
 
     // Begin ACI0 printing (actual perms, unsigned)
-    LOG_DEBUG(Service_FS, "Magic:                  %.4s", aci_header.magic.data());
-    LOG_DEBUG(Service_FS, "Title ID:               %016" PRIX64, aci_header.title_id);
-    LOG_DEBUG(Service_FS, "Filesystem Access:      %016" PRIX64 "\n", aci_file_access.permissions);
+    NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", aci_header.magic.data());
+    NGLOG_DEBUG(Service_FS, "Title ID:               {:016X}", aci_header.title_id);
+    NGLOG_DEBUG(Service_FS, "Filesystem Access:      {:016X}\n", aci_file_access.permissions);
 }
 } // namespace FileSys

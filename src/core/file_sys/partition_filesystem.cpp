@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
 #include <utility>
 #include "common/file_util.h"
 #include "common/logging/log.h"
@@ -40,7 +39,7 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, siz
 
     Loader::ResultStatus result = Load(file_data);
     if (result != Loader::ResultStatus::Success)
-        LOG_ERROR(Service_FS, "Failed to load PFS from file %s!", file_path.c_str());
+        NGLOG_ERROR(Service_FS, "Failed to load PFS from file {}!", file_path);
 
     return result;
 }
