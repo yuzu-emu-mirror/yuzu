@@ -214,6 +214,20 @@ union Instruction {
         BitField<56, 1, u64> neg_b;
     } fsetp;
 
+    union {
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<43, 1, u64> neg_a;
+        BitField<44, 1, u64> abs_b;
+        BitField<45, 2, PredOperation> op;
+        BitField<48, 4, PredCondition> cond;
+        BitField<53, 1, u64> neg_b;
+        BitField<54, 1, u64> abs_a;
+        BitField<52, 1, u64> bf;
+        BitField<55, 1, u64> ftz;
+        BitField<56, 1, u64> neg_imm;
+    } fset;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
@@ -272,6 +286,9 @@ public:
         FSETP_C, // Set Predicate
         FSETP_R,
         FSETP_IMM,
+        FSET_C,
+        FSET_R,
+        FSET_IMM,
         ISETP_C,
         ISETP_IMM,
         ISETP_R,
@@ -283,8 +300,9 @@ public:
         Ffma,
         Flow,
         Memory,
-        FloatPredicate,
-        IntegerPredicate,
+        FloatSet,
+        FloatSetPredicate,
+        IntegerSetPredicate,
         Unknown,
     };
 
@@ -417,12 +435,15 @@ private:
             INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
             INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
             INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
-            INST("010010111011----", Id::FSETP_C, Type::FloatPredicate, "FSETP_C"),
-            INST("010110111011----", Id::FSETP_R, Type::FloatPredicate, "FSETP_R"),
-            INST("0011011-1011----", Id::FSETP_IMM, Type::FloatPredicate, "FSETP_IMM"),
-            INST("010010110110----", Id::ISETP_C, Type::IntegerPredicate, "ISETP_C"),
-            INST("010110110110----", Id::ISETP_R, Type::IntegerPredicate, "ISETP_R"),
-            INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerPredicate, "ISETP_IMM"),
+            INST("01011000--------", Id::FSET_R, Type::FloatSet, "FSET_R"),
+            INST("0100100---------", Id::FSET_C, Type::FloatSet, "FSET_C"),
+            INST("0011000---------", Id::FSET_IMM, Type::FloatSet, "FSET_IMM"),
+            INST("010010111011----", Id::FSETP_C, Type::FloatSetPredicate, "FSETP_C"),
+            INST("010110111011----", Id::FSETP_R, Type::FloatSetPredicate, "FSETP_R"),
+            INST("0011011-1011----", Id::FSETP_IMM, Type::FloatSetPredicate, "FSETP_IMM"),
+            INST("010010110110----", Id::ISETP_C, Type::IntegerSetPredicate, "ISETP_C"),
+            INST("010110110110----", Id::ISETP_R, Type::IntegerSetPredicate, "ISETP_R"),
+            INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerSetPredicate, "ISETP_IMM"),
         };
 #undef INST
         std::stable_sort(table.begin(), table.end(), [](const auto& a, const auto& b) {

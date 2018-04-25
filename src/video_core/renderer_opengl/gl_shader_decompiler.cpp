@@ -519,7 +519,7 @@ private:
             }
             break;
         }
-        case OpCode::Type::FloatPredicate: {
+        case OpCode::Type::FloatSetPredicate: {
             std::string op_a = instr.fsetp.neg_a ? "-" : "";
             op_a += GetRegister(instr.gpr8);
 
