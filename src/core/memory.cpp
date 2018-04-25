@@ -172,7 +172,7 @@ T Read(const VAddr vaddr) {
         NGLOG_ERROR(HW_Memory, "Unmapped Read{} @ {:#010X}", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Flush);
@@ -205,7 +205,7 @@ void Write(const VAddr vaddr, const T data) {
                     vaddr);
         return;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Invalidate);
