@@ -29,7 +29,7 @@
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/pctl/pctl.h"
+#include "core/hle/service/pctl/module.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/controller.h"

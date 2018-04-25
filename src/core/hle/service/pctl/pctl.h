@@ -4,11 +4,13 @@
 
 #pragma once
 
-#include "core/hle/service/service.h"
+#include "core/hle/service/pctl/module.h"
 
 namespace Service::PCTL {
 
-/// Registers all PCTL services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager);
+class PCTL final : public Module::Interface {
+public:
+    explicit PCTL(std::shared_ptr<Module> module, const char* name);
+};
 
 } // namespace Service::PCTL
