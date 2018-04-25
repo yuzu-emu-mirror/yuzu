@@ -570,6 +570,59 @@ private:
             }
             break;
         }
+        case OpCode::Type::FloatSet: {
+            std::string dest = GetRegister(instr.gpr0);
+            std::string op_a = instr.fset.neg_a ? "-" : "";
+            op_a += GetRegister(instr.gpr8);
+
+            if (instr.fset.abs_a) {
+                op_a = "abs(" + op_a + ')';
+            }
+
+            std::string op_b = instr.fset.neg_b ? "-" : "";
+
+            if (instr.is_b_imm) {
+                std::string imm = GetImmediate19(instr);
+                if (instr.fset.neg_imm)
+                    op_b += "(-" + imm + ')';
+                else
+                    op_b += imm;
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += GetRegister(instr.gpr20);
+                } else {
+                    op_b += GetUniform(instr.uniform);
+                }
+            }
+
+            if (instr.fset.abs_b) {
+                op_b = "abs(" + op_b + ")";
+            }
+
+            using Tegra::Shader::Pred;
+            ASSERT_MSG(instr.fset.pred39 == static_cast<u64>(Pred::UnusedIndex),
+                       "Compound predicates are not implemented");
+
+            // The fset instruction sets a register to 1.0 if the condition is true, and to 0
+            // otherwise.
+            using Tegra::Shader::PredCondition;
+            switch (instr.fset.cond) {
+            case PredCondition::LessThan:
+                SetDest(0, dest, "((" + op_a + ") < (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                break;
+            case PredCondition::Equal:
+                SetDest(0, dest, "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                break;
+            case PredCondition::GreaterThan:
+                SetDest(0, dest, "((" + op_a + ") > (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                break;
+            default:
+                NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
+                               static_cast<unsigned>(instr.fset.cond.Value()), op_a, op_b);
+                UNREACHABLE();
+            }
+            break;
+        }
         default: {
             switch (opcode->GetId()) {
             case OpCode::Id::EXIT: {
