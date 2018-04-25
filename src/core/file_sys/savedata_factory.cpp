@@ -2,11 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
 #include <memory>
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "common/string_util.h"
 #include "core/core.h"
 #include "core/file_sys/disk_filesystem.h"
 #include "core/file_sys/savedata_factory.h"
@@ -50,8 +48,7 @@ std::string SaveData_Factory::GetFullPath() const {
     u64 title_id = Core::CurrentProcess()->program_id;
     // TODO(Subv): Somehow obtain this value.
     u32 user = 0;
-    return Common::StringFromFormat("%ssave/%016" PRIX64 "/%08X/", nand_directory.c_str(), title_id,
-                                    user);
+    return fmt::format("{}save/{:016X}/{:08X}/", nand_directory, title_id, user);
 }
 
 } // namespace FileSys
