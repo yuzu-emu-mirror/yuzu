@@ -73,7 +73,7 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeade
 
     file.Seek(header.offset, SEEK_SET);
     if (compressed_size != file.ReadBytes(compressed_data.data(), compressed_size)) {
-        LOG_CRITICAL(Loader, "Failed to read %d NSO LZ4 compressed bytes", compressed_size);
+        NGLOG_CRITICAL(Loader, "Failed to read {} NSO LZ4 compressed bytes", compressed_size);
         return {};
     }
 
@@ -158,8 +158,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     // Load module
     LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);
-    LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, filepath.c_str(),
-              Memory::PROCESS_IMAGE_VADDR);
+    NGLOG_DEBUG(Loader, "loaded module {} @ {:#X}", filepath, Memory::PROCESS_IMAGE_VADDR);
 
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;
