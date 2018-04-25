@@ -21,6 +21,9 @@ enum class RenderTargetFormat : u32 {
     RGBA8_SRGB = 0xD6,
 };
 
+/// Returns the number of bytes per pixel of each rendertarget format.
+u32 RenderTargetBytesPerPixel(RenderTargetFormat format);
+
 class DebugContext;
 
 /**
