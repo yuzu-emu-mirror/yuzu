@@ -659,6 +659,10 @@ void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr, 
     }
 }
 
+void CopyBlock(VAddr dest_addr, VAddr src_addr, size_t size) {
+    CopyBlock(*Core::CurrentProcess(), dest_addr, src_addr, size);
+}
+
 boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
     if (addr == 0) {
         return 0;

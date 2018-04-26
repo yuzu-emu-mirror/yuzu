@@ -22,10 +22,6 @@ constexpr u32 MacroRegistersStart = 0xE00;
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager)
     : memory_manager(memory_manager), macro_interpreter(*this) {}
 
-void Maxwell3D::SubmitMacroCode(u32 entry, std::vector<u32> code) {
-    uploaded_macros[entry * 2 + MacroRegistersStart] = std::move(code);
-}
-
 void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
     auto macro_code = uploaded_macros.find(method);
     // The requested macro must have been uploaded already.
@@ -37,9 +33,6 @@ void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
 }
 
 void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
-    ASSERT_MSG(method < Regs::NUM_REGS,
-               "Invalid Maxwell3D register, increase the size of the Regs structure");
-
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
 
     // It is an error to write to a register other than the current macro's ARG register before it
@@ -68,6 +61,9 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         return;
     }
 
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid Maxwell3D register, increase the size of the Regs structure");
+
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
     }
@@ -75,6 +71,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     regs.reg_array[method] = value;
 
     switch (method) {
+    case MAXWELL3D_REG_INDEX(macros.data): {
+        ProcessMacroUpload(value);
+        break;
+    }
     case MAXWELL3D_REG_INDEX(code_address.code_address_high):
     case MAXWELL3D_REG_INDEX(code_address.code_address_low): {
         // Note: For some reason games (like Puyo Puyo Tetris) seem to write 0 to the CODE_ADDRESS
@@ -139,6 +139,12 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandProcessed, nullptr);
     }
+}
+
+void Maxwell3D::ProcessMacroUpload(u32 data) {
+    // Store the uploaded macro code to interpret them when they're called.
+    auto& macro = uploaded_macros[regs.macros.entry * 2 + MacroRegistersStart];
+    macro.push_back(data);
 }
 
 void Maxwell3D::ProcessQueryGet() {
