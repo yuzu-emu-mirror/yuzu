@@ -106,7 +106,7 @@ void SSL::SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_SSL, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u32 unk1 = rp.Pop<u32>(); // Probably minor/major?
-    u32 unk2 = rp.Pop<u32>();
+    u32 unk2 = rp.Pop<u32>(); // TODO(ogniK): Figure out what this does
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

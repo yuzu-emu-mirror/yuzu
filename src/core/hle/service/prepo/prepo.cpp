@@ -26,18 +26,7 @@ PlayReport::PlayReport(const char* name) : ServiceFramework(name) {
 };
 
 void PlayReport::SaveReportWithUser(Kernel::HLERequestContext& ctx) {
-    /*IPC::RequestParser rp{ctx};
-    auto Uid = rp.PopRaw<std::array<u64, 2>>();
-    u64 unk = rp.Pop<u64>();
-    std::vector<u8> buffer;
-    buffer.reserve(ctx.BufferDescriptorX()[0].Size());
-    Memory::ReadBlock(ctx.BufferDescriptorX()[0].Address(), buffer.data(), buffer.size());
-
-    std::vector<u8> buffer2;
-    buffer.reserve(ctx.BufferDescriptorA()[0].Size());
-    Memory::ReadBlock(ctx.BufferDescriptorA()[0].Address(), buffer.data(), buffer.size());*/
-    // TODO(ogniK): Do we want to add play report? ^ Buffers/Data required for it
-
+    // TODO(ogniK): Do we want to add play report?
     LOG_WARNING(Service_PREPO, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
