@@ -221,14 +221,11 @@ private:
 
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg, unsigned elem = 0) {
-        if (reg == Register::ZeroIndex)
+        if (reg == Register::ZeroIndex) {
             return "0";
-        if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
-            // GPRs 0-3 are output color for the fragment shader
-            return std::string{"color."} + "rgba"[(reg + elem) & 3];
         }
-
-        return *declr_register.insert("register_" + std::to_string(reg + elem)).first;
+        return *declr_register.insert("register_" + std::to_string(reg.GetSwizzledIndex(elem)))
+                    .first;
     }
 
     /// Generates code representing a uniform (C buffer) register.
@@ -628,6 +625,15 @@ private:
             case OpCode::Id::EXIT: {
                 ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
                            "Predicated exits not implemented");
+
+                // Final color output is currently hardcoded to GPR0-3 for fragment shaders
+                if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
+                    shader.AddLine("color.r = " + GetRegister(0) + ";");
+                    shader.AddLine("color.g = " + GetRegister(1) + ";");
+                    shader.AddLine("color.b = " + GetRegister(2) + ";");
+                    shader.AddLine("color.a = " + GetRegister(3) + ";");
+                }
+
                 shader.AddLine("return true;");
                 offset = PROGRAM_END - 1;
                 break;
