@@ -164,19 +164,19 @@ public:
     }
 
     /// Helper function to read a buffer using the appropriate buffer descriptor
-    std::vector<u8> ReadBuffer() const;
+    std::vector<u8> ReadBuffer(int buffer_index = 0) const;
 
     /// Helper function to write a buffer using the appropriate buffer descriptor
-    size_t WriteBuffer(const void* buffer, size_t size) const;
+    size_t WriteBuffer(const void* buffer, size_t size, int buffer_index = 0) const;
 
     /// Helper function to write a buffer using the appropriate buffer descriptor
-    size_t WriteBuffer(const std::vector<u8>& buffer) const;
+    size_t WriteBuffer(const std::vector<u8>& buffer, int buffer_index = 0) const;
 
     /// Helper function to get the size of the input buffer
-    size_t GetReadBufferSize() const;
+    size_t GetReadBufferSize(int buffer_index = 0) const;
 
     /// Helper function to get the size of the output buffer
-    size_t GetWriteBufferSize() const;
+    size_t GetWriteBufferSize(int buffer_index = 0) const;
 
     template <typename T>
     SharedPtr<T> GetCopyObject(size_t index) {

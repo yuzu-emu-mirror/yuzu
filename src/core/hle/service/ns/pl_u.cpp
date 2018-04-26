@@ -121,29 +121,32 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     const u32 language_code{rp.Pop<u32>()};
     LOG_DEBUG(Service_NS, "called, language_code=%d", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
-    rb.Push(RESULT_SUCCESS);
-    rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded
-    rb.Push<u32>(static_cast<u32>(SHARED_FONT_REGIONS.size()));
+    if (language_code > SHARED_FONT_REGIONS.size()) {
+        rb.Push(ResultCode(-1));                          // TODO(ogniK): Find real result code
+        rb.Push<u8>(static_cast<u8>(LoadState::Loading)); // Fonts Loaded
+        rb.Push<u32>(0);
+        return;
+    }
 
-    std::vector<u32> languages;
-    std::vector<u32> offsets;
-    std::vector<u32> sizes;
+    std::vector<u32> font_codes = {language_code};
+    std::vector<u32> font_offsets = {SHARED_FONT_REGIONS[language_code].offset};
+    std::vector<u32> font_sizes = {SHARED_FONT_REGIONS[language_code].size};
 
-    Memory::Write32(ctx.BufferDescriptorB()[0].Address(), language_code);
-    Memory::Write32(ctx.BufferDescriptorB()[1].Address(),
-                    SHARED_FONT_REGIONS[language_code].offset);
-    Memory::Write32(ctx.BufferDescriptorB()[2].Address(), SHARED_FONT_REGIONS[language_code].size);
-
-    for (int i = 0, offset = 4; i < SHARED_FONT_REGIONS.size(); i++) {
+    for (size_t i = 0; i < SHARED_FONT_REGIONS.size(); i++) {
         if (i == language_code)
             continue;
-        Memory::Write32(ctx.BufferDescriptorB()[0].Address() + offset, language_code);
-        Memory::Write32(ctx.BufferDescriptorB()[1].Address() + offset,
-                        SHARED_FONT_REGIONS[language_code].offset);
-        Memory::Write32(ctx.BufferDescriptorB()[2].Address() + offset,
-                        SHARED_FONT_REGIONS[language_code].size);
-        offset += 4;
+        font_codes.push_back(static_cast<u32>(i));
+        font_offsets.push_back(SHARED_FONT_REGIONS[i].offset);
+        font_sizes.push_back(SHARED_FONT_REGIONS[i].size);
     }
+
+    ctx.WriteBuffer(font_codes.data(), font_codes.size(), 0);
+    ctx.WriteBuffer(font_offsets.data(), font_offsets.size(), 1);
+    ctx.WriteBuffer(font_sizes.data(), font_sizes.size(), 2);
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded
+    rb.Push<u32>(static_cast<u32>(font_codes.size()));
 }
 
 } // namespace Service::NS
