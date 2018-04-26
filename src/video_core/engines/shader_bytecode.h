@@ -19,7 +19,10 @@ namespace Tegra {
 namespace Shader {
 
 struct Register {
-    // Register 255 is special cased to always be 0
+    /// Number of registers
+    static constexpr size_t NumRegisters = 256;
+
+    /// Register 255 is special cased to always be 0
     static constexpr size_t ZeroIndex = 255;
 
     constexpr Register() = default;
@@ -46,6 +49,11 @@ struct Register {
 
     constexpr u64 operator~() const {
         return ~value;
+    }
+
+    u64 GetSwizzledIndex(u64 elem) const {
+        elem = (value + elem) & 3;
+        return (value & ~3) + elem;
     }
 
 private:

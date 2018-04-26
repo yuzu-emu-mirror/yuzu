@@ -146,6 +146,90 @@ private:
     std::string shader_source;
 };
 
+/**
+ * Represents an emulated shader register, used to track the state of that register for emulation
+ * with GLSL. At this time, a register can be used as a float or an integer. This class is used for
+ * bookkeeping within the GLSL program.
+ */
+class GLSLRegister {
+public:
+    GLSLRegister(size_t index, ShaderWriter& shader)
+        : index{index}, shader{shader}, float_str{"freg_" + std::to_string(index)},
+          integer_str{"ireg_" + std::to_string(index)} {}
+
+    /// Returns a GLSL string representing the current state of the register
+    const std::string& GetActiveString() {
+        declr_type.insert(active_type);
+
+        switch (active_type) {
+        case Type::Float:
+            return float_str;
+        case Type::Integer:
+            return integer_str;
+        }
+
+        UNREACHABLE();
+        return float_str;
+    }
+
+    /// Returns a GLSL string representing the register as a float
+    const std::string& GetFloatString() const {
+        ASSERT(IsFloatUsed());
+        return float_str;
+    }
+
+    /// Returns a GLSL string representing the register as an integer
+    const std::string& GetIntegerString() const {
+        ASSERT(IsIntegerUsed());
+        return integer_str;
+    }
+
+    /// Convert the current register state from float to integer
+    void FloatToInteger() {
+        ASSERT(active_type == Type::Float);
+
+        const std::string src = GetActiveString();
+        active_type = Type::Integer;
+        const std::string dest = GetActiveString();
+
+        shader.AddLine(dest + " = floatBitsToInt(" + src + ");");
+    }
+
+    /// Convert the current register state from integer to float
+    void IntegerToFloat() {
+        ASSERT(active_type == Type::Integer);
+
+        const std::string src = GetActiveString();
+        active_type = Type::Float;
+        const std::string dest = GetActiveString();
+
+        shader.AddLine(dest + " = intBitsToFloat(" + src + ");");
+    }
+
+    /// Returns true if the register was ever used as a float, used for register declarations
+    bool IsFloatUsed() const {
+        return declr_type.find(Type::Float) != declr_type.end();
+    }
+
+    /// Returns true if the register was ever used as an integer, used for register declarations
+    bool IsIntegerUsed() const {
+        return declr_type.find(Type::Integer) != declr_type.end();
+    }
+
+private:
+    enum class Type {
+        Float,
+        Integer,
+    };
+
+    const size_t index;
+    const std::string float_str;
+    const std::string integer_str;
+    ShaderWriter& shader;
+    Type active_type{Type::Float};
+    std::set<Type> declr_type;
+};
+
 class GLSLGenerator {
 public:
     GLSLGenerator(const std::set<Subroutine>& subroutines, const ProgramCode& program_code,
@@ -153,6 +237,7 @@ public:
         : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
           stage(stage) {
 
+        BuildRegisterList();
         Generate();
     }
 
@@ -166,6 +251,13 @@ public:
     }
 
 private:
+    /// Build the GLSL register list
+    void BuildRegisterList() {
+        for (size_t index = 0; index < Register::NumRegisters; ++index) {
+            regs.emplace_back(index, shader);
+        }
+    }
+
     /// Gets the Subroutine object corresponding to the specified address.
     const Subroutine& GetSubroutine(u32 begin, u32 end) const {
         auto iter = subroutines.find(Subroutine{begin, end});
@@ -221,14 +313,11 @@ private:
 
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg, unsigned elem = 0) {
-        if (reg == Register::ZeroIndex)
+        if (reg == Register::ZeroIndex) {
             return "0";
-        if (stage == Maxwell3D::Regs::ShaderStage::Fragment && reg < 4) {
-            // GPRs 0-3 are output color for the fragment shader
-            return std::string{"color."} + "rgba"[(reg + elem) & 3];
         }
 
-        return *declr_register.insert("register_" + std::to_string(reg + elem)).first;
+        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
     }
 
     /// Generates code representing a uniform (C buffer) register.
@@ -628,6 +717,15 @@ private:
             case OpCode::Id::EXIT: {
                 ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
                            "Predicated exits not implemented");
+
+                // Final color output is currently hardcoded to GPR0-3 for fragment shaders
+                if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
+                    shader.AddLine("color.r = " + GetRegister(0) + ";");
+                    shader.AddLine("color.g = " + GetRegister(1) + ";");
+                    shader.AddLine("color.b = " + GetRegister(2) + ";");
+                    shader.AddLine("color.a = " + GetRegister(3) + ";");
+                }
+
                 shader.AddLine("return true;");
                 offset = PROGRAM_END - 1;
                 break;
@@ -755,8 +853,13 @@ private:
 
     /// Add declarations for registers
     void GenerateDeclarations() {
-        for (const auto& reg : declr_register) {
-            declarations.AddLine("float " + reg + " = 0.0;");
+        for (const auto& reg : regs) {
+            if (reg.IsFloatUsed()) {
+                declarations.AddLine("float " + reg.GetFloatString() + " = 0.0;");
+            }
+            if (reg.IsIntegerUsed()) {
+                declarations.AddLine("int " + reg.GetIntegerString() + " = 0;");
+            }
         }
         declarations.AddNewLine();
 
@@ -803,9 +906,9 @@ private:
 
     ShaderWriter shader;
     ShaderWriter declarations;
+    std::vector<GLSLRegister> regs;
 
     // Declarations
-    std::set<std::string> declr_register;
     std::set<std::string> declr_predicates;
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
