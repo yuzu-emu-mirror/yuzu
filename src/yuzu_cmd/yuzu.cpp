@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     auto argv_w = CommandLineToArgvW(GetCommandLineW(), &argc_w);
 
     if (argv_w == nullptr) {
-        LOG_CRITICAL(Frontend, "Failed to get command line arguments");
+        NGLOG_CRITICAL(Frontend, "Failed to get command line arguments");
         return -1;
     }
 #endif
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
     SCOPE_EXIT({ MicroProfileShutdown(); });
 
     if (filepath.empty()) {
-        LOG_CRITICAL(Frontend, "Failed to load ROM: No ROM specified");
+        NGLOG_CRITICAL(Frontend, "Failed to load ROM: No ROM specified");
         return -1;
     }
 
@@ -155,28 +155,28 @@ int main(int argc, char** argv) {
 
     switch (load_result) {
     case Core::System::ResultStatus::ErrorGetLoader:
-        LOG_CRITICAL(Frontend, "Failed to obtain loader for %s!", filepath.c_str());
+        NGLOG_CRITICAL(Frontend, "Failed to obtain loader for %s!", filepath.c_str());
         return -1;
     case Core::System::ResultStatus::ErrorLoader:
-        LOG_CRITICAL(Frontend, "Failed to load ROM!");
+        NGLOG_CRITICAL(Frontend, "Failed to load ROM!");
         return -1;
     case Core::System::ResultStatus::ErrorLoader_ErrorEncrypted:
-        LOG_CRITICAL(Frontend, "The game that you are trying to load must be decrypted before "
-                               "being used with yuzu. \n\n For more information on dumping and "
-                               "decrypting games, please refer to: "
-                               "https://yuzu-emu.org/wiki/dumping-game-cartridges/");
+        NGLOG_CRITICAL(Frontend, "The game that you are trying to load must be decrypted before "
+                                 "being used with yuzu. \n\n For more information on dumping and "
+                                 "decrypting games, please refer to: "
+                                 "https://yuzu-emu.org/wiki/dumping-game-cartridges/");
         return -1;
     case Core::System::ResultStatus::ErrorLoader_ErrorInvalidFormat:
-        LOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
+        NGLOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
         return -1;
     case Core::System::ResultStatus::ErrorNotInitialized:
-        LOG_CRITICAL(Frontend, "CPUCore not initialized");
+        NGLOG_CRITICAL(Frontend, "CPUCore not initialized");
         return -1;
     case Core::System::ResultStatus::ErrorSystemMode:
-        LOG_CRITICAL(Frontend, "Failed to determine system mode!");
+        NGLOG_CRITICAL(Frontend, "Failed to determine system mode!");
         return -1;
     case Core::System::ResultStatus::ErrorVideoCore:
-        LOG_CRITICAL(Frontend, "VideoCore not initialized");
+        NGLOG_CRITICAL(Frontend, "VideoCore not initialized");
         return -1;
     case Core::System::ResultStatus::Success:
         break; // Expected case
