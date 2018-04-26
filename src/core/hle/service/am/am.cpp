@@ -28,14 +28,14 @@ IWindowController::IWindowController() : ServiceFramework("IWindowController") {
 }
 
 void IWindowController::GetAppletResourceUserId(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0);
 }
 
 void IWindowController::AcquireForegroundRights(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -54,20 +54,20 @@ IAudioController::IAudioController() : ServiceFramework("IAudioController") {
 }
 
 void IAudioController::SetExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IAudioController::GetMainAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(volume);
 }
 
 void IAudioController::GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(volume);
@@ -139,14 +139,14 @@ void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::SetRestartMessageEnabled(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::SetPerformanceModeChangedNotification(Kernel::HLERequestContext& ctx) {
@@ -157,14 +157,14 @@ void ISelfController::SetPerformanceModeChangedNotification(Kernel::HLERequestCo
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called flag=%u", static_cast<u32>(flag));
+    NGLOG_WARNING(Service_AM, "(STUBBED) called flag={}", flag);
 }
 
 void ISelfController::SetScreenShotPermission(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {
@@ -175,7 +175,7 @@ void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestCont
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called flag=%u", static_cast<u32>(flag));
+    NGLOG_WARNING(Service_AM, "(STUBBED) called flag={}", flag);
 }
 
 void ISelfController::SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx) {
@@ -188,21 +188,21 @@ void ISelfController::SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called enabled=%u", static_cast<u32>(enabled));
+    NGLOG_WARNING(Service_AM, "(STUBBED) called enabled={}", enabled);
 }
 
 void ISelfController::LockExit(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::UnlockExit(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx) {
@@ -212,7 +212,7 @@ void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext&
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(launchable_event);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) {
@@ -225,7 +225,7 @@ void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) 
     rb.Push(RESULT_SUCCESS);
     rb.Push(layer_id);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter") {
@@ -269,7 +269,7 @@ void ICommonStateGetter::GetEventHandle(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(event);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
@@ -277,7 +277,7 @@ void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(15);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
@@ -285,7 +285,7 @@ void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u8>(FocusState::InFocus));
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
@@ -294,7 +294,7 @@ void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u8>(use_docked_mode ? OperationMode::Docked : OperationMode::Handheld));
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
@@ -304,7 +304,7 @@ void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
     rb.Push(static_cast<u32>(use_docked_mode ? APM::PerformanceMode::Docked
                                              : APM::PerformanceMode::Handheld));
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
@@ -344,7 +344,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(state_changed_event);
 
-        LOG_WARNING(Service_AM, "(STUBBED) called");
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
     }
 
     Kernel::SharedPtr<Kernel::Event> state_changed_event;
@@ -368,7 +368,7 @@ void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) 
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<AM::ILibraryAppletAccessor>();
 
-    LOG_DEBUG(Service_AM, "called");
+    NGLOG_DEBUG(Service_AM, "called");
 }
 
 class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
@@ -392,7 +392,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u64>(buffer.size()));
 
-        LOG_DEBUG(Service_AM, "called");
+        NGLOG_DEBUG(Service_AM, "called");
     }
 
     void Read(Kernel::HLERequestContext& ctx) {
@@ -410,7 +410,7 @@ private:
 
         rb.Push(RESULT_SUCCESS);
 
-        LOG_DEBUG(Service_AM, "called");
+        NGLOG_DEBUG(Service_AM, "called");
     }
 };
 
@@ -434,7 +434,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
 
-        LOG_DEBUG(Service_AM, "called");
+        NGLOG_DEBUG(Service_AM, "called");
     }
 };
 
@@ -498,14 +498,14 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<AM::IStorage>(buffer);
 
-    LOG_DEBUG(Service_AM, "called");
+    NGLOG_DEBUG(Service_AM, "called");
 }
 
 void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u128 uid = rp.PopRaw<u128>();
 
-    LOG_WARNING(Service, "(STUBBED) called uid = %016" PRIX64 "%016" PRIX64, uid[1], uid[0]);
+    NGLOG_WARNING(Service, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 4};
 
@@ -533,27 +533,27 @@ void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called, result=0x%08X", result);
+    NGLOG_WARNING(Service_AM, "(STUBBED) called, result={:#010}", result);
 }
 
 void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(SystemLanguage::English);
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IApplicationFunctions::InitializeGamePlayRecording(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IApplicationFunctions::SetGamePlayRecordingState(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IApplicationFunctions::NotifyRunning(Kernel::HLERequestContext& ctx) {
@@ -561,7 +561,7 @@ void IApplicationFunctions::NotifyRunning(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u8>(0); // Unknown, seems to be ignored by official processes
 
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager,

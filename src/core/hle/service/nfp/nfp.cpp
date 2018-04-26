@@ -13,7 +13,7 @@ Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
 
 void Module::Interface::Unknown(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NFP, "(STUBBED) called");
+    NGLOG_WARNING(Service_NFP, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }

@@ -132,7 +132,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
-            LOG_DEBUG(Loader, "loaded module %s @ 0x%" PRIx64, module, load_addr);
+            NGLOG_DEBUG(Loader, "loaded module {} @ {:#X}", module, load_addr);
         } else {
             next_load_addr = load_addr;
         }
@@ -163,7 +163,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset, u64& size) {
 
     if (filepath_romfs.empty()) {
-        LOG_DEBUG(Loader, "No RomFS available");
+        NGLOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
@@ -176,8 +176,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     offset = 0;
     size = romfs_file->GetSize();
 
-    LOG_DEBUG(Loader, "RomFS offset:           0x%016" PRIX64, offset);
-    LOG_DEBUG(Loader, "RomFS size:             0x%016" PRIX64, size);
+    NGLOG_DEBUG(Loader, "RomFS offset:           {:#018X}", offset);
+    NGLOG_DEBUG(Loader, "RomFS size:             {:#018X}", size);
 
     // Reset read pointer
     file.Seek(0, SEEK_SET);

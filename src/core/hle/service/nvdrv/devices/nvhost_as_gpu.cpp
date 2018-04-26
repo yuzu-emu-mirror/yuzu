@@ -12,8 +12,8 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_DEBUG(Service_NVDRV, "called, command=0x%08x, input_size=0x%zx, output_size=0x%zx",
-              command.raw, input.size(), output.size());
+    NGLOG_DEBUG(Service_NVDRV, "called, command={:#010X}, input_size={:#X}, output_size={:#X}",
+                command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocInitalizeExCommand:
@@ -27,13 +27,18 @@ u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vecto
     case IoctlCommand::IocGetVaRegionsCommand:
         return GetVARegions(input, output);
     }
+
+    if (static_cast<IoctlCommand>(command.cmd.Value()) == IoctlCommand::IocRemapCommand)
+        return Remap(input, output);
+
+    UNIMPLEMENTED_MSG("Unimplemented ioctl command");
     return 0;
 }
 
 u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlInitalizeEx params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size=0x%x", params.big_page_size);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size={:#X}", params.big_page_size);
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
@@ -41,8 +46,8 @@ u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlAllocSpace params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_DEBUG(Service_NVDRV, "called, pages=%x, page_size=%x, flags=%x", params.pages,
-              params.page_size, params.flags);
+    NGLOG_DEBUG(Service_NVDRV, "called, pages={:X}, page_size={:X}, flags={:X}", params.pages,
+                params.page_size, params.flags);
 
     auto& gpu = Core::System::GetInstance().GPU();
     const u64 size{static_cast<u64>(params.pages) * static_cast<u64>(params.page_size)};
@@ -56,15 +61,45 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
     return 0;
 }
 
+u32 nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& output) {
+    size_t num_entries = input.size() / sizeof(IoctlRemapEntry);
+
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, num_entries=0x{:X}", num_entries);
+
+    std::vector<IoctlRemapEntry> entries(num_entries);
+    std::memcpy(entries.data(), input.data(), input.size());
+
+    auto& gpu = Core::System::GetInstance().GPU();
+
+    for (const auto& entry : entries) {
+        NGLOG_WARNING(Service_NVDRV, "remap entry, offset=0x{:X} handle=0x{:X} pages=0x{:X}",
+                      entry.offset, entry.nvmap_handle, entry.pages);
+        Tegra::GPUVAddr offset = static_cast<Tegra::GPUVAddr>(entry.offset) << 0x10;
+
+        auto object = nvmap_dev->GetObject(entry.nvmap_handle);
+        ASSERT(object);
+
+        ASSERT(object->status == nvmap::Object::Status::Allocated);
+
+        u64 size = static_cast<u64>(entry.pages) << 0x10;
+        ASSERT(size <= object->size);
+
+        Tegra::GPUVAddr returned = gpu.memory_manager->MapBufferEx(object->addr, offset, size);
+        ASSERT(returned == offset);
+    }
+    std::memcpy(output.data(), entries.data(), output.size());
+    return 0;
+}
+
 u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlMapBufferEx params{};
     std::memcpy(&params, input.data(), input.size());
 
-    LOG_DEBUG(Service_NVDRV,
-              "called, flags=%x, nvmap_handle=%x, buffer_offset=%" PRIu64 ", mapping_size=%" PRIu64
-              ", offset=%" PRIu64,
-              params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
-              params.offset);
+    NGLOG_DEBUG(Service_NVDRV,
+                "called, flags={:X}, nvmap_handle={:X}, buffer_offset={}, mapping_size={}"
+                ", offset={}",
+                params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
+                params.offset);
 
     if (!params.nvmap_handle) {
         return 0;
@@ -72,6 +107,16 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
 
     auto object = nvmap_dev->GetObject(params.nvmap_handle);
     ASSERT(object);
+
+    // We can only map objects that have already been assigned a CPU address.
+    ASSERT(object->status == nvmap::Object::Status::Allocated);
+
+    ASSERT(params.buffer_offset == 0);
+
+    // The real nvservices doesn't make a distinction between handles and ids, and
+    // object can only have one handle and it will be the same as its id. Assert that this is the
+    // case to prevent unexpected behavior.
+    ASSERT(object->id == params.nvmap_handle);
 
     auto& gpu = Core::System::GetInstance().GPU();
 
@@ -88,7 +133,7 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlBindChannel params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_DEBUG(Service_NVDRV, "called, fd=%x", params.fd);
+    NGLOG_DEBUG(Service_NVDRV, "called, fd={:X}", params.fd);
     channel = params.fd;
     std::memcpy(output.data(), &params, output.size());
     return 0;
@@ -97,8 +142,8 @@ u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr=%" PRIu64 ", buf_size=%x",
-                params.buf_addr, params.buf_size);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr={:X}, buf_size={:X}", params.buf_addr,
+                  params.buf_size);
 
     params.buf_size = 0x30;
     params.regions[0].offset = 0x04000000;

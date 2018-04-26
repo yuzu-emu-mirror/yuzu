@@ -22,10 +22,6 @@ constexpr u32 MacroRegistersStart = 0xE00;
 Maxwell3D::Maxwell3D(MemoryManager& memory_manager)
     : memory_manager(memory_manager), macro_interpreter(*this) {}
 
-void Maxwell3D::SubmitMacroCode(u32 entry, std::vector<u32> code) {
-    uploaded_macros[entry * 2 + MacroRegistersStart] = std::move(code);
-}
-
 void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
     auto macro_code = uploaded_macros.find(method);
     // The requested macro must have been uploaded already.
@@ -37,9 +33,6 @@ void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
 }
 
 void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
-    ASSERT_MSG(method < Regs::NUM_REGS,
-               "Invalid Maxwell3D register, increase the size of the Regs structure");
-
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
 
     // It is an error to write to a register other than the current macro's ARG register before it
@@ -68,6 +61,9 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         return;
     }
 
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid Maxwell3D register, increase the size of the Regs structure");
+
     if (debug_context) {
         debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
     }
@@ -75,6 +71,10 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     regs.reg_array[method] = value;
 
     switch (method) {
+    case MAXWELL3D_REG_INDEX(macros.data): {
+        ProcessMacroUpload(value);
+        break;
+    }
     case MAXWELL3D_REG_INDEX(code_address.code_address_high):
     case MAXWELL3D_REG_INDEX(code_address.code_address_low): {
         // Note: For some reason games (like Puyo Puyo Tetris) seem to write 0 to the CODE_ADDRESS
@@ -141,17 +141,48 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
     }
 }
 
+void Maxwell3D::ProcessMacroUpload(u32 data) {
+    // Store the uploaded macro code to interpret them when they're called.
+    auto& macro = uploaded_macros[regs.macros.entry * 2 + MacroRegistersStart];
+    macro.push_back(data);
+}
+
 void Maxwell3D::ProcessQueryGet() {
     GPUVAddr sequence_address = regs.query.QueryAddress();
     // Since the sequence address is given as a GPU VAddr, we have to convert it to an application
     // VAddr before writing.
-    VAddr address = memory_manager.PhysicalToVirtualAddress(sequence_address);
+    boost::optional<VAddr> address = memory_manager.GpuToCpuAddress(sequence_address);
+
+    // TODO(Subv): Support the other query units.
+    ASSERT_MSG(regs.query.query_get.unit == Regs::QueryUnit::Crop,
+               "Units other than CROP are unimplemented");
+    ASSERT_MSG(regs.query.query_get.short_query,
+               "Writing the entire query result structure is unimplemented");
+
+    u32 value = Memory::Read32(*address);
+    u32 result = 0;
+
+    // TODO(Subv): Support the other query variables
+    switch (regs.query.query_get.select) {
+    case Regs::QuerySelect::Zero:
+        result = 0;
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unimplemented query select type %u",
+                          static_cast<u32>(regs.query.query_get.select.Value()));
+    }
+
+    // TODO(Subv): Research and implement how query sync conditions work.
 
     switch (regs.query.query_get.mode) {
-    case Regs::QueryMode::Write: {
+    case Regs::QueryMode::Write:
+    case Regs::QueryMode::Write2: {
         // Write the current query sequence to the sequence address.
         u32 sequence = regs.query.query_sequence;
-        Memory::Write32(address, sequence);
+        Memory::Write32(*address, sequence);
+
+        // TODO(Subv): Write the proper query response structure to the address when not using short
+        // mode.
         break;
     }
     default:
@@ -161,8 +192,8 @@ void Maxwell3D::ProcessQueryGet() {
 }
 
 void Maxwell3D::DrawArrays() {
-    LOG_DEBUG(HW_GPU, "called, topology=%d, count=%d", regs.draw.topology.Value(),
-              regs.vertex_buffer.count);
+    NGLOG_DEBUG(HW_GPU, "called, topology={}, count={}",
+                static_cast<u32>(regs.draw.topology.Value()), regs.vertex_buffer.count);
     ASSERT_MSG(!(regs.index_array.count && regs.vertex_buffer.count), "Both indexed and direct?");
 
     auto debug_context = Core::System::GetInstance().GetGPUDebugContext();
@@ -200,10 +231,10 @@ void Maxwell3D::ProcessCBData(u32 value) {
     // Don't allow writing past the end of the buffer.
     ASSERT(regs.const_buffer.cb_pos + sizeof(u32) <= regs.const_buffer.cb_size);
 
-    VAddr address =
-        memory_manager.PhysicalToVirtualAddress(buffer_address + regs.const_buffer.cb_pos);
+    boost::optional<VAddr> address =
+        memory_manager.GpuToCpuAddress(buffer_address + regs.const_buffer.cb_pos);
 
-    Memory::Write32(address, value);
+    Memory::Write32(*address, value);
 
     // Increment the current buffer position.
     regs.const_buffer.cb_pos = regs.const_buffer.cb_pos + 4;
@@ -213,10 +244,10 @@ Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
     GPUVAddr tic_base_address = regs.tic.TICAddress();
 
     GPUVAddr tic_address_gpu = tic_base_address + tic_index * sizeof(Texture::TICEntry);
-    VAddr tic_address_cpu = memory_manager.PhysicalToVirtualAddress(tic_address_gpu);
+    boost::optional<VAddr> tic_address_cpu = memory_manager.GpuToCpuAddress(tic_address_gpu);
 
     Texture::TICEntry tic_entry;
-    Memory::ReadBlock(tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
+    Memory::ReadBlock(*tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
 
     ASSERT_MSG(tic_entry.header_version == Texture::TICHeaderVersion::BlockLinear ||
                    tic_entry.header_version == Texture::TICHeaderVersion::Pitch,
@@ -243,10 +274,10 @@ Texture::TSCEntry Maxwell3D::GetTSCEntry(u32 tsc_index) const {
     GPUVAddr tsc_base_address = regs.tsc.TSCAddress();
 
     GPUVAddr tsc_address_gpu = tsc_base_address + tsc_index * sizeof(Texture::TSCEntry);
-    VAddr tsc_address_cpu = memory_manager.PhysicalToVirtualAddress(tsc_address_gpu);
+    boost::optional<VAddr> tsc_address_cpu = memory_manager.GpuToCpuAddress(tsc_address_gpu);
 
     Texture::TSCEntry tsc_entry;
-    Memory::ReadBlock(tsc_address_cpu, &tsc_entry, sizeof(Texture::TSCEntry));
+    Memory::ReadBlock(*tsc_address_cpu, &tsc_entry, sizeof(Texture::TSCEntry));
     return tsc_entry;
 }
 
@@ -268,7 +299,7 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
          current_texture < tex_info_buffer_end; current_texture += sizeof(Texture::TextureHandle)) {
 
         Texture::TextureHandle tex_handle{
-            Memory::Read32(memory_manager.PhysicalToVirtualAddress(current_texture))};
+            Memory::Read32(*memory_manager.GpuToCpuAddress(current_texture))};
 
         Texture::FullTextureInfo tex_info{};
         // TODO(Subv): Use the shader to determine which textures are actually accessed.

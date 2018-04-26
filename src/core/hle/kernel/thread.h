@@ -18,7 +18,7 @@
 enum ThreadPriority : u32 {
     THREADPRIO_HIGHEST = 0,       ///< Highest thread priority
     THREADPRIO_USERLAND_MAX = 24, ///< Highest thread priority for userland apps
-    THREADPRIO_DEFAULT = 48,      ///< Default thread priority for userland apps
+    THREADPRIO_DEFAULT = 44,      ///< Default thread priority for userland apps
     THREADPRIO_LOWEST = 63,       ///< Lowest thread priority
 };
 
@@ -43,6 +43,7 @@ enum ThreadStatus {
     THREADSTATUS_WAIT_IPC,       ///< Waiting for the reply from an IPC request
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
     THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true
+    THREADSTATUS_WAIT_MUTEX,     ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
     THREADSTATUS_DORMANT,        ///< Created but not yet made ready
     THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
 };
@@ -54,7 +55,6 @@ enum class ThreadWakeupReason {
 
 namespace Kernel {
 
-class Mutex;
 class Process;
 
 class Thread final : public WaitObject {
@@ -104,16 +104,19 @@ public:
     void SetPriority(u32 priority);
 
     /**
-     * Boost's a thread's priority to the best priority among the thread's held mutexes.
-     * This prevents priority inversion via priority inheritance.
-     */
-    void UpdatePriority();
-
-    /**
      * Temporarily boosts the thread's priority until the next time it is scheduled
      * @param priority The new priority
      */
     void BoostPriority(u32 priority);
+
+    /// Adds a thread to the list of threads that are waiting for a lock held by this thread.
+    void AddMutexWaiter(SharedPtr<Thread> thread);
+
+    /// Removes a thread from the list of threads that are waiting for a lock held by this thread.
+    void RemoveMutexWaiter(SharedPtr<Thread> thread);
+
+    /// Recalculates the current priority taking into account priority inheritance.
+    void UpdatePriority();
 
     /**
      * Gets the thread's thread ID
@@ -205,19 +208,22 @@ public:
 
     VAddr tls_address; ///< Virtual address of the Thread Local Storage of the thread
 
-    /// Mutexes currently held by this thread, which will be released when it exits.
-    boost::container::flat_set<SharedPtr<Mutex>> held_mutexes;
-
-    /// Mutexes that this thread is currently waiting for.
-    boost::container::flat_set<SharedPtr<Mutex>> pending_mutexes;
-
     SharedPtr<Process> owner_process; ///< Process that owns this thread
 
     /// Objects that the thread is waiting on, in the same order as they were
     // passed to WaitSynchronization1/N.
     std::vector<SharedPtr<WaitObject>> wait_objects;
 
-    VAddr wait_address; ///< If waiting on an AddressArbiter, this is the arbitration address
+    /// List of threads that are waiting for a mutex that is held by this thread.
+    std::vector<SharedPtr<Thread>> wait_mutex_threads;
+
+    /// Thread that owns the lock that this thread is waiting for.
+    SharedPtr<Thread> lock_owner;
+
+    // If waiting on a ConditionVariable, this is the ConditionVariable  address
+    VAddr condvar_wait_address;
+    VAddr mutex_wait_address; ///< If waiting on a Mutex, this is the mutex address
+    Handle wait_handle;       ///< The handle used to wait for the mutex.
 
     std::string name;
 

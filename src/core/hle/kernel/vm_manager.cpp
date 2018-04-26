@@ -379,22 +379,22 @@ void VMManager::UpdatePageTableForVMA(const VirtualMemoryArea& vma) {
 }
 
 u64 VMManager::GetTotalMemoryUsage() {
-    LOG_WARNING(Kernel, "(STUBBED) called");
+    NGLOG_WARNING(Kernel, "(STUBBED) called");
     return 0xF8000000;
 }
 
 u64 VMManager::GetTotalHeapUsage() {
-    LOG_WARNING(Kernel, "(STUBBED) called");
+    NGLOG_WARNING(Kernel, "(STUBBED) called");
     return 0x0;
 }
 
 VAddr VMManager::GetAddressSpaceBaseAddr() {
-    LOG_WARNING(Kernel, "(STUBBED) called");
+    NGLOG_WARNING(Kernel, "(STUBBED) called");
     return 0x8000000;
 }
 
 u64 VMManager::GetAddressSpaceSize() {
-    LOG_WARNING(Kernel, "(STUBBED) called");
+    NGLOG_WARNING(Kernel, "(STUBBED) called");
     return MAX_ADDRESS;
 }
 

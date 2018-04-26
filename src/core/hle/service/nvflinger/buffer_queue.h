@@ -13,7 +13,8 @@ namespace CoreTiming {
 struct EventType;
 }
 
-namespace Service::NVFlinger {
+namespace Service {
+namespace NVFlinger {
 
 struct IGBPBuffer {
     u32_le magic;
@@ -97,4 +98,5 @@ private:
     Kernel::SharedPtr<Kernel::Event> buffer_wait_event;
 };
 
-} // namespace Service::NVFlinger
+} // namespace NVFlinger
+} // namespace Service

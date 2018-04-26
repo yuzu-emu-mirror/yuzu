@@ -84,7 +84,7 @@ void Linker::WriteRelocations(std::vector<u8>& program_image, const std::vector<
             }
             break;
         default:
-            LOG_CRITICAL(Loader, "Unknown relocation type: %d", static_cast<int>(rela.type));
+            NGLOG_CRITICAL(Loader, "Unknown relocation type: {}", static_cast<int>(rela.type));
             break;
         }
     }
@@ -141,7 +141,7 @@ void Linker::ResolveImports() {
         if (search != exports.end()) {
             Memory::Write64(import.second.ea, search->second + import.second.addend);
         } else {
-            LOG_ERROR(Loader, "Unresolved import: %s", import.first.c_str());
+            NGLOG_ERROR(Loader, "Unresolved import: {}", import.first);
         }
     }
 }

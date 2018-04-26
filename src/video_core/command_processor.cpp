@@ -24,41 +24,18 @@ namespace Tegra {
 
 enum class BufferMethods {
     BindObject = 0,
-    SetGraphMacroCode = 0x45,
-    SetGraphMacroCodeArg = 0x46,
-    SetGraphMacroEntry = 0x47,
-    CountBufferMethods = 0x100,
+    CountBufferMethods = 0x40,
 };
 
 void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) {
-    LOG_WARNING(HW_GPU, "Processing method %08X on subchannel %u value %08X remaining params %u",
-                method, subchannel, value, remaining_params);
-
-    if (method == static_cast<u32>(BufferMethods::SetGraphMacroEntry)) {
-        // Prepare to upload a new macro, reset the upload counter.
-        LOG_DEBUG(HW_GPU, "Uploading GPU macro %08X", value);
-        current_macro_entry = value;
-        current_macro_code.clear();
-        return;
-    }
-
-    if (method == static_cast<u32>(BufferMethods::SetGraphMacroCodeArg)) {
-        // Append a new code word to the current macro.
-        current_macro_code.push_back(value);
-
-        // There are no more params remaining, submit the code to the 3D engine.
-        if (remaining_params == 0) {
-            maxwell_3d->SubmitMacroCode(current_macro_entry, std::move(current_macro_code));
-            current_macro_entry = InvalidGraphMacroEntry;
-            current_macro_code.clear();
-        }
-
-        return;
-    }
+    NGLOG_WARNING(HW_GPU,
+                  "Processing method {:08X} on subchannel {} value "
+                  "{:08X} remaining params {}",
+                  method, subchannel, value, remaining_params);
 
     if (method == static_cast<u32>(BufferMethods::BindObject)) {
         // Bind the current subchannel to the desired engine id.
-        LOG_DEBUG(HW_GPU, "Binding subchannel %u to engine %u", subchannel, value);
+        NGLOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", subchannel, value);
         ASSERT(bound_engines.find(subchannel) == bound_engines.end());
         bound_engines[subchannel] = static_cast<EngineID>(value);
         return;
@@ -66,7 +43,7 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) 
 
     if (method < static_cast<u32>(BufferMethods::CountBufferMethods)) {
         // TODO(Subv): Research and implement these methods.
-        LOG_ERROR(HW_GPU, "Special buffer methods other than Bind are not implemented");
+        NGLOG_ERROR(HW_GPU, "Special buffer methods other than Bind are not implemented");
         return;
     }
 
@@ -90,11 +67,9 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) 
 }
 
 void GPU::ProcessCommandList(GPUVAddr address, u32 size) {
-    // TODO(Subv): PhysicalToVirtualAddress is a misnomer, it converts a GPU VAddr into an
-    // application VAddr.
-    const VAddr head_address = memory_manager->PhysicalToVirtualAddress(address);
-    VAddr current_addr = head_address;
-    while (current_addr < head_address + size * sizeof(CommandHeader)) {
+    const boost::optional<VAddr> head_address = memory_manager->GpuToCpuAddress(address);
+    VAddr current_addr = *head_address;
+    while (current_addr < *head_address + size * sizeof(CommandHeader)) {
         const CommandHeader header = {Memory::Read32(current_addr)};
         current_addr += sizeof(u32);
 

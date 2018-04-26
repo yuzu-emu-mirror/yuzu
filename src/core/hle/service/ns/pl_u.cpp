@@ -52,7 +52,7 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
         ASSERT(file.GetSize() == SHARED_FONT_MEM_SIZE);
         file.ReadBytes(shared_font->data(), shared_font->size());
     } else {
-        LOG_WARNING(Service_NS, "Unable to load shared font: %s", filepath.c_str());
+        NGLOG_WARNING(Service_NS, "Unable to load shared font: {}", filepath);
     }
 }
 
@@ -60,7 +60,7 @@ void PL_U::RequestLoad(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u32 shared_font_type{rp.Pop<u32>()};
 
-    LOG_DEBUG(Service_NS, "called, shared_font_type=%d", shared_font_type);
+    NGLOG_DEBUG(Service_NS, "called, shared_font_type={}", shared_font_type);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -69,7 +69,7 @@ void PL_U::GetLoadState(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u32 font_id{rp.Pop<u32>()};
 
-    LOG_DEBUG(Service_NS, "called, font_id=%d", font_id);
+    NGLOG_DEBUG(Service_NS, "called, font_id={}", font_id);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(static_cast<u32>(LoadState::Done));
@@ -79,7 +79,7 @@ void PL_U::GetSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u32 font_id{rp.Pop<u32>()};
 
-    LOG_DEBUG(Service_NS, "called, font_id=%d", font_id);
+    NGLOG_DEBUG(Service_NS, "called, font_id={}", font_id);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(SHARED_FONT_REGIONS[font_id].size);
@@ -89,7 +89,7 @@ void PL_U::GetSharedMemoryAddressOffset(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u32 font_id{rp.Pop<u32>()};
 
-    LOG_DEBUG(Service_NS, "called, font_id=%d", font_id);
+    NGLOG_DEBUG(Service_NS, "called, font_id={}", font_id);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(SHARED_FONT_REGIONS[font_id].offset);
@@ -110,7 +110,7 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
         Kernel::MemoryPermission::Read, SHARED_FONT_MEM_VADDR, Kernel::MemoryRegion::BASE,
         "PL_U:shared_font_mem");
 
-    LOG_DEBUG(Service_NS, "called");
+    NGLOG_DEBUG(Service_NS, "called");
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(shared_font_mem);

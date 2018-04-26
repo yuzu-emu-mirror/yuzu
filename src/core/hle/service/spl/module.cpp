@@ -28,7 +28,7 @@ void Module::Interface::GetRandomBytes(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    LOG_DEBUG(Service_SPL, "called");
+    NGLOG_DEBUG(Service_SPL, "called");
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

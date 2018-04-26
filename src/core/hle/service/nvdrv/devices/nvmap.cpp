@@ -32,7 +32,7 @@ u32 nvmap::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& o
         return IocParam(input, output);
     }
 
-    UNIMPLEMENTED();
+    UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
 }
 
@@ -49,7 +49,7 @@ u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     u32 handle = next_handle++;
     handles[handle] = std::move(object);
 
-    LOG_DEBUG(Service_NVDRV, "size=0x%08X", params.size);
+    NGLOG_DEBUG(Service_NVDRV, "size={:#010X}", params.size);
 
     params.handle = handle;
 
@@ -70,7 +70,7 @@ u32 nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
     object->addr = params.addr;
     object->status = Object::Status::Allocated;
 
-    LOG_DEBUG(Service_NVDRV, "called, addr=0x%" PRIx64, params.addr);
+    NGLOG_DEBUG(Service_NVDRV, "called, addr={:X}", params.addr);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
@@ -80,7 +80,7 @@ u32 nvmap::IocGetId(const std::vector<u8>& input, std::vector<u8>& output) {
     IocGetIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "called");
+    NGLOG_WARNING(Service_NVDRV, "called");
 
     auto object = GetObject(params.handle);
     ASSERT(object);
@@ -95,7 +95,7 @@ u32 nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
     IocFromIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     auto itr = std::find_if(handles.begin(), handles.end(),
                             [&](const auto& entry) { return entry.second->id == params.id; });
@@ -114,7 +114,7 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     IocParamParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called type=%u", params.type);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.type);
 
     auto object = GetObject(params.handle);
     ASSERT(object);

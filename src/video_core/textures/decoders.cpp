@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include "common/assert.h"
+#include "core/memory.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 
@@ -26,9 +27,8 @@ static u32 GetSwizzleOffset(u32 x, u32 y, u32 image_width, u32 bytes_per_pixel, 
     return address;
 }
 
-static void CopySwizzledData(u32 width, u32 height, u32 bytes_per_pixel, u32 out_bytes_per_pixel,
-                             u8* swizzled_data, u8* unswizzled_data, bool unswizzle,
-                             u32 block_height) {
+void CopySwizzledData(u32 width, u32 height, u32 bytes_per_pixel, u32 out_bytes_per_pixel,
+                      u8* swizzled_data, u8* unswizzled_data, bool unswizzle, u32 block_height) {
     u8* data_ptrs[2];
     for (unsigned y = 0; y < height; ++y) {
         for (unsigned x = 0; x < width; ++x) {

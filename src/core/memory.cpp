@@ -39,8 +39,8 @@ PageTable* GetCurrentPageTable() {
 }
 
 static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, PageType type) {
-    LOG_DEBUG(HW_Memory, "Mapping %p onto %016" PRIX64 "-%016" PRIX64, memory, base * PAGE_SIZE,
-              (base + size) * PAGE_SIZE);
+    NGLOG_DEBUG(HW_Memory, "Mapping {} onto {:016X}-{:016X}", fmt::ptr(memory), base * PAGE_SIZE,
+                (base + size) * PAGE_SIZE);
 
     RasterizerFlushVirtualRegion(base << PAGE_BITS, size * PAGE_SIZE,
                                  FlushMode::FlushAndInvalidate);
@@ -169,10 +169,10 @@ T Read(const VAddr vaddr) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Read%lu @ 0x%08X", sizeof(T) * 8, vaddr);
+        NGLOG_ERROR(HW_Memory, "Unmapped Read{} @ {:#010X}", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Flush);
@@ -201,11 +201,11 @@ void Write(const VAddr vaddr, const T data) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        LOG_ERROR(HW_Memory, "unmapped Write%lu 0x%08X @ 0x%08X", sizeof(data) * 8, (u32)data,
-                  vaddr);
+        NGLOG_ERROR(HW_Memory, "Unmapped Write{} {:#010X} @ {:#018X}", sizeof(data) * 8, (u32)data,
+                    vaddr);
         return;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %08X", vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Invalidate);
@@ -251,7 +251,7 @@ u8* GetPointer(const VAddr vaddr) {
         return GetPointerFromVMA(vaddr);
     }
 
-    LOG_ERROR(HW_Memory, "unknown GetPointer @ 0x%08x", vaddr);
+    NGLOG_ERROR(HW_Memory, "Unknown GetPointer @ {:#018X}", vaddr);
     return nullptr;
 }
 
@@ -288,13 +288,12 @@ u8* GetPhysicalPointer(PAddr address) {
         });
 
     if (area == std::end(memory_areas)) {
-        LOG_ERROR(HW_Memory, "unknown GetPhysicalPointer @ 0x%016" PRIX64, address);
+        NGLOG_ERROR(HW_Memory, "Unknown GetPhysicalPointer @ {:#018X}", address);
         return nullptr;
     }
 
     if (area->paddr_base == IO_AREA_PADDR) {
-        LOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr=0x%016" PRIX64,
-                  address);
+        NGLOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr={:018X}", address);
         return nullptr;
     }
 
@@ -325,15 +324,29 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
-    if (start == 0) {
+void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached) {
+    if (gpu_addr == 0) {
         return;
     }
 
-    u64 num_pages = ((start + size - 1) >> PAGE_BITS) - (start >> PAGE_BITS) + 1;
-    VAddr vaddr = start;
+    // Iterate over a contiguous CPU address space, which corresponds to the specified GPU address
+    // space, marking the region as un/cached. The region is marked un/cached at a granularity of
+    // CPU pages, hence why we iterate on a CPU page basis (note: GPU page size is different). This
+    // assumes the specified GPU address region is contiguous as well.
 
-    for (unsigned i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
+    u64 num_pages = ((gpu_addr + size - 1) >> PAGE_BITS) - (gpu_addr >> PAGE_BITS) + 1;
+    for (unsigned i = 0; i < num_pages; ++i, gpu_addr += PAGE_SIZE) {
+        boost::optional<VAddr> maybe_vaddr =
+            Core::System::GetInstance().GPU().memory_manager->GpuToCpuAddress(gpu_addr);
+        // The GPU <-> CPU virtual memory mapping is not 1:1
+        if (!maybe_vaddr) {
+            NGLOG_ERROR(HW_Memory,
+                        "Trying to flush a cached region to an invalid physical address {:016X}",
+                        gpu_addr);
+            continue;
+        }
+        VAddr vaddr = *maybe_vaddr;
+
         PageType& page_type = current_page_table->attributes[vaddr >> PAGE_BITS];
 
         if (cached) {
@@ -347,6 +360,10 @@ void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
                 page_type = PageType::RasterizerCachedMemory;
                 current_page_table->pointers[vaddr >> PAGE_BITS] = nullptr;
                 break;
+            case PageType::RasterizerCachedMemory:
+                // There can be more than one GPU region mapped per CPU region, so it's common that
+                // this area is already marked as cached.
+                break;
             default:
                 UNREACHABLE();
             }
@@ -356,6 +373,10 @@ void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached) {
             case PageType::Unmapped:
                 // It is not necessary for a process to have this region mapped into its address
                 // space, for example, a system module need not have a VRAM mapping.
+                break;
+            case PageType::Memory:
+                // There can be more than one GPU region mapped per CPU region, so it's common that
+                // this area is already unmarked as cached.
                 break;
             case PageType::RasterizerCachedMemory: {
                 u8* pointer = GetPointerFromVMA(vaddr & ~PAGE_MASK);
@@ -394,19 +415,29 @@ void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
 
         VAddr overlap_start = std::max(start, region_start);
         VAddr overlap_end = std::min(end, region_end);
+
+        std::vector<Tegra::GPUVAddr> gpu_addresses =
+            Core::System::GetInstance().GPU().memory_manager->CpuToGpuAddress(overlap_start);
+
+        if (gpu_addresses.empty()) {
+            return;
+        }
+
         u64 overlap_size = overlap_end - overlap_start;
 
-        auto* rasterizer = VideoCore::g_renderer->Rasterizer();
-        switch (mode) {
-        case FlushMode::Flush:
-            rasterizer->FlushRegion(overlap_start, overlap_size);
-            break;
-        case FlushMode::Invalidate:
-            rasterizer->InvalidateRegion(overlap_start, overlap_size);
-            break;
-        case FlushMode::FlushAndInvalidate:
-            rasterizer->FlushAndInvalidateRegion(overlap_start, overlap_size);
-            break;
+        for (const auto& gpu_address : gpu_addresses) {
+            auto* rasterizer = VideoCore::g_renderer->Rasterizer();
+            switch (mode) {
+            case FlushMode::Flush:
+                rasterizer->FlushRegion(gpu_address, overlap_size);
+                break;
+            case FlushMode::Invalidate:
+                rasterizer->InvalidateRegion(gpu_address, overlap_size);
+                break;
+            case FlushMode::FlushAndInvalidate:
+                rasterizer->FlushAndInvalidateRegion(gpu_address, overlap_size);
+                break;
+            }
         }
     };
 
@@ -445,8 +476,9 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped ReadBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
-                      current_vaddr, src_addr, size);
+            NGLOG_ERROR(HW_Memory,
+                        "Unmapped ReadBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
         }
@@ -508,9 +540,9 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory,
-                      "unmapped WriteBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
-                      current_vaddr, dest_addr, size);
+            NGLOG_ERROR(HW_Memory,
+                        "Unmapped WriteBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        current_vaddr, dest_addr, size);
             break;
         }
         case PageType::Memory: {
@@ -556,8 +588,9 @@ void ZeroBlock(const Kernel::Process& process, const VAddr dest_addr, const size
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped ZeroBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
-                      current_vaddr, dest_addr, size);
+            NGLOG_ERROR(HW_Memory,
+                        "Unmapped ZeroBlock @ {:#018X} (start address = {#:018X}, size = {})",
+                        current_vaddr, dest_addr, size);
             break;
         }
         case PageType::Memory: {
@@ -596,8 +629,9 @@ void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr, 
 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
-            LOG_ERROR(HW_Memory, "unmapped CopyBlock @ 0x%08X (start address = 0x%08X, size = %zu)",
-                      current_vaddr, src_addr, size);
+            NGLOG_ERROR(HW_Memory,
+                        "Unmapped CopyBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        current_vaddr, src_addr, size);
             ZeroBlock(process, dest_addr, copy_amount);
             break;
         }
@@ -625,6 +659,10 @@ void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr, 
     }
 }
 
+void CopyBlock(VAddr dest_addr, VAddr src_addr, size_t size) {
+    CopyBlock(*Core::CurrentProcess(), dest_addr, src_addr, size);
+}
+
 boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
     if (addr == 0) {
         return 0;
@@ -646,7 +684,7 @@ boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
 PAddr VirtualToPhysicalAddress(const VAddr addr) {
     auto paddr = TryVirtualToPhysicalAddress(addr);
     if (!paddr) {
-        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x%016" PRIX64, addr);
+        NGLOG_ERROR(HW_Memory, "Unknown virtual address @ {:#018X}", addr);
         // To help with debugging, set bit on address so that it's obviously invalid.
         return addr | 0x80000000;
     }

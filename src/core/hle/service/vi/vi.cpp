@@ -470,7 +470,7 @@ private:
         u32 flags = rp.Pop<u32>();
         auto buffer_queue = nv_flinger->GetBufferQueue(id);
 
-        LOG_DEBUG(Service_VI, "called, transaction=%x", static_cast<u32>(transaction));
+        NGLOG_DEBUG(Service_VI, "called, transaction={:X}", static_cast<u32>(transaction));
 
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{ctx.ReadBuffer()};
@@ -532,7 +532,7 @@ private:
             IGBPQueryResponseParcel response{value};
             ctx.WriteBuffer(response.Serialize());
         } else if (transaction == TransactionId::CancelBuffer) {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
+            NGLOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
@@ -547,7 +547,8 @@ private:
         s32 addval = rp.PopRaw<s32>();
         u32 type = rp.Pop<u32>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called id=%u, addval=%08X, type=%08X", id, addval, type);
+        NGLOG_WARNING(Service_VI, "(STUBBED) called id={}, addval={:08X}, type={:08X}", id, addval,
+                      type);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -561,7 +562,7 @@ private:
 
         // TODO(Subv): Find out what this actually is.
 
-        LOG_WARNING(Service_VI, "(STUBBED) called id=%u, unknown=%08X", id, unknown);
+        NGLOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(buffer_queue->GetNativeHandle());
@@ -624,7 +625,7 @@ public:
 
 private:
     void SetLayerZ(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
         u64 z_value = rp.Pop<u64>();
@@ -639,8 +640,8 @@ private:
         bool visibility = rp.Pop<bool>();
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
-        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x%x, visibility=%u", layer_id,
-                    visibility);
+        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id={:#010X}, visibility={}", layer_id,
+                      visibility);
     }
 };
 
@@ -722,7 +723,7 @@ public:
 
 private:
     void CloseDisplay(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 display = rp.Pop<u64>();
 
@@ -731,7 +732,7 @@ private:
     }
 
     void CreateManagedLayer(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u32 unknown = rp.Pop<u32>();
         rp.Skip(1, false);
@@ -746,7 +747,7 @@ private:
     }
 
     void AddToLayerStack(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u32 stack = rp.Pop<u32>();
         u64 layer_id = rp.Pop<u64>();
@@ -761,8 +762,8 @@ private:
         bool visibility = rp.Pop<bool>();
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
-        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x%x, visibility=%u", layer_id,
-                    visibility);
+        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id={:#X}, visibility={}", layer_id,
+                      visibility);
     }
 
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;
@@ -775,7 +776,7 @@ public:
 
 private:
     void GetRelayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -783,7 +784,7 @@ private:
     }
 
     void GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -791,7 +792,7 @@ private:
     }
 
     void GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -799,7 +800,7 @@ private:
     }
 
     void GetIndirectDisplayTransactionService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -807,7 +808,7 @@ private:
     }
 
     void OpenDisplay(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
         auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -822,7 +823,7 @@ private:
     }
 
     void CloseDisplay(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
@@ -831,7 +832,7 @@ private:
     }
 
     void GetDisplayResolution(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
@@ -848,7 +849,7 @@ private:
     }
 
     void SetLayerScalingMode(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u32 scaling_mode = rp.Pop<u32>();
         u64 unknown = rp.Pop<u64>();
@@ -864,11 +865,11 @@ private:
         IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(1);
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
     }
 
     void OpenLayer(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_VI, "called");
+        NGLOG_DEBUG(Service_VI, "called");
         IPC::RequestParser rp{ctx};
         auto name_buf = rp.PopRaw<std::array<u8, 0x40>>();
         auto end = std::find(name_buf.begin(), name_buf.end(), '\0');
@@ -888,7 +889,7 @@ private:
     }
 
     void CreateStrayLayer(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_VI, "called");
+        NGLOG_DEBUG(Service_VI, "called");
 
         IPC::RequestParser rp{ctx};
         u32 flags = rp.Pop<u32>();
@@ -908,7 +909,7 @@ private:
     }
 
     void DestroyStrayLayer(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
@@ -918,7 +919,7 @@ private:
     }
 
     void GetDisplayVsyncEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        NGLOG_WARNING(Service_VI, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
@@ -967,7 +968,7 @@ Module::Interface::Interface(std::shared_ptr<Module> module, const char* name,
     : ServiceFramework(name), module(std::move(module)), nv_flinger(std::move(nv_flinger)) {}
 
 void Module::Interface::GetDisplayService(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_VI, "(STUBBED) called");
+    NGLOG_WARNING(Service_VI, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);

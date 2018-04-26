@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
 #include <memory>
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -26,13 +25,13 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SDMC_Factory::Open(const Path& pat
 }
 
 ResultCode SDMC_Factory::Format(const Path& path) {
-    LOG_ERROR(Service_FS, "Unimplemented Format archive %s", GetName().c_str());
+    NGLOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
     // TODO(Subv): Find the right error code for this
     return ResultCode(-1);
 }
 
 ResultVal<ArchiveFormatInfo> SDMC_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive %s", GetName().c_str());
+    NGLOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
 }

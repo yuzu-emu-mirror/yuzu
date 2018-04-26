@@ -29,7 +29,7 @@
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/pctl/pctl.h"
+#include "core/hle/service/pctl/module.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/controller.h"
@@ -120,7 +120,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     }
     buf.push_back('}');
 
-    LOG_ERROR(Service, "unknown / unimplemented %s", fmt::to_string(buf).c_str());
+    NGLOG_ERROR(Service, "unknown / unimplemented {}", fmt::to_string(buf));
     UNIMPLEMENTED();
 }
 
@@ -131,8 +131,8 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
         return ReportUnimplementedFunction(ctx, info);
     }
 
-    LOG_TRACE(
-        Service, "%s",
+    NGLOG_TRACE(
+        Service, "{}",
         MakeFunctionString(info->name, GetServiceName().c_str(), ctx.CommandBuffer()).c_str());
     handler_invoker(this, info->handler_callback, ctx);
 }
@@ -199,12 +199,12 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     VI::InstallInterfaces(*sm, nv_flinger);
     Set::InstallInterfaces(*sm);
 
-    LOG_DEBUG(Service, "initialized OK");
+    NGLOG_DEBUG(Service, "initialized OK");
 }
 
 /// Shutdown ServiceManager
 void Shutdown() {
     g_kernel_named_ports.clear();
-    LOG_DEBUG(Service, "shutdown OK");
+    NGLOG_DEBUG(Service, "shutdown OK");
 }
 } // namespace Service

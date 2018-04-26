@@ -20,6 +20,7 @@ enum {
     MaxConnectionsReached = 52,
 
     // Confirmed Switch OS error codes
+    MisalignedAddress = 102,
     InvalidHandle = 114,
     Timeout = 117,
     SynchronizationCanceled = 118,

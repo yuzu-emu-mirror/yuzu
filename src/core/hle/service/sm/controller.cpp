@@ -17,7 +17,7 @@ void Controller::ConvertSessionToDomain(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(1); // Converted sessions start with 1 request handler
 
-    LOG_DEBUG(Service, "called, server_session=%d", ctx.Session()->GetObjectId());
+    NGLOG_DEBUG(Service, "called, server_session={}", ctx.Session()->GetObjectId());
 }
 
 void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
@@ -29,11 +29,11 @@ void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
     Kernel::SharedPtr<Kernel::ClientSession> session{ctx.Session()->parent->client};
     rb.PushMoveObjects(session);
 
-    LOG_DEBUG(Service, "called, session=%u", session->GetObjectId());
+    NGLOG_DEBUG(Service, "called, session={}", session->GetObjectId());
 }
 
 void Controller::DuplicateSessionEx(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called, using DuplicateSession");
+    NGLOG_WARNING(Service, "(STUBBED) called, using DuplicateSession");
 
     DuplicateSession(ctx);
 }
@@ -43,7 +43,7 @@ void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0x500);
 
-    LOG_WARNING(Service, "(STUBBED) called");
+    NGLOG_WARNING(Service, "(STUBBED) called");
 }
 
 Controller::Controller() : ServiceFramework("IpcController") {
