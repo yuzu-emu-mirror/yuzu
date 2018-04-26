@@ -42,8 +42,6 @@ add_library(core STATIC
     hle/kernel/client_port.h
     hle/kernel/client_session.cpp
     hle/kernel/client_session.h
-    hle/kernel/condition_variable.cpp
-    hle/kernel/condition_variable.h
     hle/kernel/errors.h
     hle/kernel/event.cpp
     hle/kernel/event.h
@@ -183,10 +181,10 @@ add_library(core STATIC
     hle/service/nvflinger/buffer_queue.h
     hle/service/nvflinger/nvflinger.cpp
     hle/service/nvflinger/nvflinger.h
+    hle/service/pctl/module.cpp
+    hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
-    hle/service/pctl/pctl_a.cpp
-    hle/service/pctl/pctl_a.h
     hle/service/prepo/prepo.cpp
     hle/service/prepo/prepo.h
     hle/service/service.cpp

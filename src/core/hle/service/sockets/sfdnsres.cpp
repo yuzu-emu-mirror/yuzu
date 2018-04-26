@@ -10,7 +10,7 @@ namespace Service::Sockets {
 void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
-    LOG_WARNING(Service, "(STUBBED) called");
+    NGLOG_WARNING(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
 

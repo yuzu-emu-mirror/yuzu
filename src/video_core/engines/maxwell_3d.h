@@ -31,7 +31,7 @@ public:
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
     struct Regs {
-        static constexpr size_t NUM_REGS = 0xE36;
+        static constexpr size_t NUM_REGS = 0xE00;
 
         static constexpr size_t NumRenderTargets = 8;
         static constexpr size_t NumViewports = 16;
@@ -46,6 +46,29 @@ public:
         enum class QueryMode : u32 {
             Write = 0,
             Sync = 1,
+            // TODO(Subv): It is currently unknown what the difference between method 2 and method 0
+            // is.
+            Write2 = 2,
+        };
+
+        enum class QueryUnit : u32 {
+            VFetch = 1,
+            VP = 2,
+            Rast = 4,
+            StrmOut = 5,
+            GP = 6,
+            ZCull = 7,
+            Prop = 10,
+            Crop = 15,
+        };
+
+        enum class QuerySelect : u32 {
+            Zero = 0,
+        };
+
+        enum class QuerySyncCondition : u32 {
+            NotEqual = 0,
+            GreaterThan = 1,
         };
 
         enum class ShaderProgram : u32 {
@@ -299,7 +322,15 @@ public:
 
         union {
             struct {
-                INSERT_PADDING_WORDS(0x200);
+                INSERT_PADDING_WORDS(0x45);
+
+                struct {
+                    INSERT_PADDING_WORDS(1);
+                    u32 data;
+                    u32 entry;
+                } macros;
+
+                INSERT_PADDING_WORDS(0x1B8);
 
                 struct {
                     u32 address_high;
@@ -476,7 +507,10 @@ public:
                         u32 raw;
                         BitField<0, 2, QueryMode> mode;
                         BitField<4, 1, u32> fence;
-                        BitField<12, 4, u32> unit;
+                        BitField<12, 4, QueryUnit> unit;
+                        BitField<16, 1, QuerySyncCondition> sync_cond;
+                        BitField<23, 5, QuerySelect> select;
+                        BitField<28, 1, u32> short_query;
                     } query_get;
 
                     GPUVAddr QueryAddress() const {
@@ -500,6 +534,11 @@ public:
                         return static_cast<GPUVAddr>((static_cast<GPUVAddr>(start_high) << 32) |
                                                      start_low);
                     }
+
+                    bool IsEnabled() const {
+                        return enable != 0 && StartAddress() != 0;
+                    }
+
                 } vertex_array[NumVertexArrays];
 
                 Blend blend;
@@ -574,7 +613,7 @@ public:
                     u32 size[MaxShaderStage];
                 } tex_info_buffers;
 
-                INSERT_PADDING_WORDS(0x102);
+                INSERT_PADDING_WORDS(0xCC);
             };
             std::array<u32, NUM_REGS> reg_array;
         };
@@ -606,9 +645,6 @@ public:
     /// Write the value to the register identified by method.
     void WriteReg(u32 method, u32 value, u32 remaining_params);
 
-    /// Uploads the code for a GPU macro program associated with the specified entry.
-    void SubmitMacroCode(u32 entry, std::vector<u32> code);
-
     /// Returns a list of enabled textures for the specified shader stage.
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
@@ -639,6 +675,9 @@ private:
      */
     void CallMacroMethod(u32 method, std::vector<u32> parameters);
 
+    /// Handles writes to the macro uploading registers.
+    void ProcessMacroUpload(u32 data);
+
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
@@ -656,6 +695,7 @@ private:
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \
                   "Field " #field_name " has invalid position")
 
+ASSERT_REG_POSITION(macros, 0x45);
 ASSERT_REG_POSITION(rt, 0x200);
 ASSERT_REG_POSITION(viewport_transform[0], 0x280);
 ASSERT_REG_POSITION(viewport, 0x300);

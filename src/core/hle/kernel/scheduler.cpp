@@ -94,11 +94,11 @@ void Scheduler::Reschedule() {
     Thread* next = PopNextReadyThread();
 
     if (cur && next) {
-        LOG_TRACE(Kernel, "context switch %u -> %u", cur->GetObjectId(), next->GetObjectId());
+        NGLOG_TRACE(Kernel, "context switch {} -> {}", cur->GetObjectId(), next->GetObjectId());
     } else if (cur) {
-        LOG_TRACE(Kernel, "context switch %u -> idle", cur->GetObjectId());
+        NGLOG_TRACE(Kernel, "context switch {} -> idle", cur->GetObjectId());
     } else if (next) {
-        LOG_TRACE(Kernel, "context switch idle -> %u", next->GetObjectId());
+        NGLOG_TRACE(Kernel, "context switch idle -> {}", next->GetObjectId());
     }
 
     SwitchContext(next);

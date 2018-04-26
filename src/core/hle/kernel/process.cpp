@@ -54,7 +54,7 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
             continue;
         } else if ((type & 0xF00) == 0xE00) { // 0x0FFF
             // Allowed interrupts list
-            LOG_WARNING(Loader, "ExHeader allowed interrupts list ignored");
+            NGLOG_WARNING(Loader, "ExHeader allowed interrupts list ignored");
         } else if ((type & 0xF80) == 0xF00) { // 0x07FF
             // Allowed syscalls mask
             unsigned int index = ((descriptor >> 24) & 7) * 24;
@@ -74,7 +74,7 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
         } else if ((type & 0xFFE) == 0xFF8) { // 0x001F
             // Mapped memory range
             if (i + 1 >= len || ((kernel_caps[i + 1] >> 20) & 0xFFE) != 0xFF8) {
-                LOG_WARNING(Loader, "Incomplete exheader memory range descriptor ignored.");
+                NGLOG_WARNING(Loader, "Incomplete exheader memory range descriptor ignored.");
                 continue;
             }
             u32 end_desc = kernel_caps[i + 1];
@@ -109,9 +109,9 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
 
             int minor = kernel_version & 0xFF;
             int major = (kernel_version >> 8) & 0xFF;
-            LOG_INFO(Loader, "ExHeader kernel version: %d.%d", major, minor);
+            NGLOG_INFO(Loader, "ExHeader kernel version: {}.{}", major, minor);
         } else {
-            LOG_ERROR(Loader, "Unhandled kernel caps descriptor: 0x%08X", descriptor);
+            NGLOG_ERROR(Loader, "Unhandled kernel caps descriptor: {:#010X}", descriptor);
         }
     }
 }

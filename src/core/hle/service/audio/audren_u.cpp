@@ -56,7 +56,7 @@ private:
     }
 
     void RequestUpdateAudioRenderer(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_Audio, "%s", ctx.Description().c_str());
+        NGLOG_DEBUG(Service_Audio, "{}", ctx.Description());
         AudioRendererResponseData response_data{};
 
         response_data.section_0_size =
@@ -79,7 +79,7 @@ private:
 
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
     void StartAudioRenderer(Kernel::HLERequestContext& ctx) {
@@ -87,7 +87,7 @@ private:
 
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
     void StopAudioRenderer(Kernel::HLERequestContext& ctx) {
@@ -95,7 +95,7 @@ private:
 
         rb.Push(RESULT_SUCCESS);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
     void QuerySystemEvent(Kernel::HLERequestContext& ctx) {
@@ -105,7 +105,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(system_event);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
     struct AudioRendererStateEntry {
@@ -177,7 +177,7 @@ public:
 
 private:
     void ListAudioDeviceName(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioInterface";
@@ -189,7 +189,7 @@ private:
     }
 
     void SetAudioDeviceOutputVolume(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
 
         IPC::RequestParser rp{ctx};
         f32 volume = static_cast<f32>(rp.Pop<u32>());
@@ -202,7 +202,7 @@ private:
     }
 
     void GetActiveAudioDeviceName(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioDevice";
@@ -214,7 +214,7 @@ private:
     }
 
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
 
         buffer_event->Signal();
 
@@ -224,7 +224,7 @@ private:
     }
 
     void GetActiveChannelCount(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(1);
@@ -251,7 +251,7 @@ void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<Audio::IAudioRenderer>();
 
-    LOG_DEBUG(Service_Audio, "called");
+    NGLOG_DEBUG(Service_Audio, "called");
 }
 
 void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
@@ -260,7 +260,7 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0x4000);
 
-    LOG_WARNING(Service_Audio, "(STUBBED) called");
+    NGLOG_WARNING(Service_Audio, "(STUBBED) called");
 }
 
 void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
@@ -269,7 +269,7 @@ void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<Audio::IAudioDevice>();
 
-    LOG_DEBUG(Service_Audio, "called");
+    NGLOG_DEBUG(Service_Audio, "called");
 }
 
 } // namespace Service::Audio

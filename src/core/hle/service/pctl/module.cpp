@@ -4,7 +4,8 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
-#include "core/hle/service/pctl/pctl_a.h"
+#include "core/hle/service/pctl/module.h"
+#include "core/hle/service/pctl/pctl.h"
 
 namespace Service::PCTL {
 
@@ -12,7 +13,7 @@ class IParentalControlService final : public ServiceFramework<IParentalControlSe
 public:
     IParentalControlService() : ServiceFramework("IParentalControlService") {
         static const FunctionInfo functions[] = {
-            {1, nullptr, "Initialize"},
+            {1, &IParentalControlService::Initialize, "Initialize"},
             {1001, nullptr, "CheckFreeCommunicationPermission"},
             {1002, nullptr, "ConfirmLaunchApplicationPermission"},
             {1003, nullptr, "ConfirmResumeApplicationPermission"},
@@ -108,20 +109,38 @@ public:
         };
         RegisterHandlers(functions);
     }
+
+private:
+    void Initialize(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_PCTL, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 0, 0};
+        rb.Push(RESULT_SUCCESS);
+    }
 };
-void PCTL_A::CreateService(Kernel::HLERequestContext& ctx) {
+
+void Module::Interface::CreateService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IParentalControlService>();
-    LOG_DEBUG(Service_PCTL, "called");
+    NGLOG_DEBUG(Service_PCTL, "called");
 }
 
-PCTL_A::PCTL_A() : ServiceFramework("pctl:a") {
-    static const FunctionInfo functions[] = {
-        {0, &PCTL_A::CreateService, "CreateService"},
-        {1, nullptr, "CreateServiceWithoutInitialize"},
-    };
-    RegisterHandlers(functions);
+void Module::Interface::CreateServiceWithoutInitialize(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IParentalControlService>();
+    NGLOG_DEBUG(Service_PCTL, "called");
+}
+
+Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
+    : ServiceFramework(name), module(std::move(module)) {}
+
+void InstallInterfaces(SM::ServiceManager& service_manager) {
+    auto module = std::make_shared<Module>();
+    std::make_shared<PCTL>(module, "pctl")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(module, "pctl:a")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(module, "pctl:r")->InstallAsService(service_manager);
+    std::make_shared<PCTL>(module, "pctl:s")->InstallAsService(service_manager);
 }
 
 } // namespace Service::PCTL

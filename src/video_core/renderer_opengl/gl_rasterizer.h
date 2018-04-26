@@ -11,6 +11,7 @@
 #include <glad/glad.h>
 #include "common/common_types.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
@@ -29,9 +30,9 @@ public:
     void DrawArrays() override;
     void NotifyMaxwellRegisterChanged(u32 method) override;
     void FlushAll() override;
-    void FlushRegion(VAddr addr, u64 size) override;
-    void InvalidateRegion(VAddr addr, u64 size) override;
-    void FlushAndInvalidateRegion(VAddr addr, u64 size) override;
+    void FlushRegion(Tegra::GPUVAddr addr, u64 size) override;
+    void InvalidateRegion(Tegra::GPUVAddr addr, u64 size) override;
+    void FlushAndInvalidateRegion(Tegra::GPUVAddr addr, u64 size) override;
     bool AccelerateDisplayTransfer(const void* config) override;
     bool AccelerateTextureCopy(const void* config) override;
     bool AccelerateFill(const void* config) override;
@@ -148,13 +149,13 @@ private:
     static constexpr size_t STREAM_BUFFER_SIZE = 4 * 1024 * 1024;
     std::unique_ptr<OGLStreamBuffer> stream_buffer;
 
-    GLsizeiptr vs_input_size;
+    size_t CalculateVertexArraysSize() const;
 
-    void SetupVertexArray(u8* array_ptr, GLintptr buffer_offset);
+    std::pair<u8*, GLintptr> SetupVertexArrays(u8* array_ptr, GLintptr buffer_offset);
 
     std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::MaxShaderStage> uniform_buffers;
 
-    void SetupShaders(u8* buffer_ptr, GLintptr buffer_offset, size_t ptr_pos);
+    void SetupShaders(u8* buffer_ptr, GLintptr buffer_offset);
 
     enum class AccelDraw { Disabled, Arrays, Indexed };
     AccelDraw accelerate_draw;

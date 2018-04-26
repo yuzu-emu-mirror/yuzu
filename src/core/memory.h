@@ -14,6 +14,7 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "core/memory_hook.h"
+#include "video_core/memory_manager.h"
 
 namespace Kernel {
 class Process;
@@ -258,7 +259,7 @@ enum class FlushMode {
 /**
  * Mark each page touching the region as cached.
  */
-void RasterizerMarkRegionCached(VAddr start, u64 size, bool cached);
+void RasterizerMarkRegionCached(Tegra::GPUVAddr start, u64 size, bool cached);
 
 /**
  * Flushes and invalidates any externally cached rasterizer resources touching the given virtual

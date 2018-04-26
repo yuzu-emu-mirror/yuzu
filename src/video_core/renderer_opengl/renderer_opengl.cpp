@@ -152,7 +152,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
         screen_info.display_texture = screen_info.texture.resource.handle;
         screen_info.display_texcoords = MathUtil::Rectangle<float>(0.f, 0.f, 1.f, 1.f);
 
-        Rasterizer()->FlushRegion(framebuffer_addr, size_in_bytes);
+        Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
+                                             Memory::FlushMode::Flush);
 
         VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bytes_per_pixel, 4,
                                        Memory::GetPointer(framebuffer_addr),
@@ -269,10 +270,9 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
     GLint internal_format;
     switch (framebuffer.pixel_format) {
     case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-        // Use RGBA8 and swap in the fragment shader
         internal_format = GL_RGBA;
         texture.gl_format = GL_RGBA;
-        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8;
+        texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:
@@ -295,17 +295,18 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
-    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset)
+    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset) {
         if (framebuffer_transform_flags == Tegra::FramebufferConfig::TransformFlags::FlipV) {
             // Flip the framebuffer vertically
             left = texcoords.right;
             right = texcoords.left;
         } else {
             // Other transformations are unsupported
-            LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags=%d",
-                         framebuffer_transform_flags);
+            NGLOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags={}",
+                           static_cast<u32>(framebuffer_transform_flags));
             UNIMPLEMENTED();
         }
+    }
 
     std::array<ScreenRectVertex, 4> vertices = {{
         ScreenRectVertex(x, y, texcoords.top, left),
@@ -427,9 +428,9 @@ bool RendererOpenGL::Init() {
     const char* gpu_vendor{reinterpret_cast<char const*>(glGetString(GL_VENDOR))};
     const char* gpu_model{reinterpret_cast<char const*>(glGetString(GL_RENDERER))};
 
-    LOG_INFO(Render_OpenGL, "GL_VERSION: %s", gl_version);
-    LOG_INFO(Render_OpenGL, "GL_VENDOR: %s", gpu_vendor);
-    LOG_INFO(Render_OpenGL, "GL_RENDERER: %s", gpu_model);
+    NGLOG_INFO(Render_OpenGL, "GL_VERSION: {}", gl_version);
+    NGLOG_INFO(Render_OpenGL, "GL_VENDOR: {}", gpu_vendor);
+    NGLOG_INFO(Render_OpenGL, "GL_RENDERER: {}", gpu_model);
 
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Vendor", gpu_vendor);
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Model", gpu_model);
