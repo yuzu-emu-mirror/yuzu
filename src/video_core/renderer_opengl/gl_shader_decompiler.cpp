@@ -620,6 +620,11 @@ private:
             }
 
             switch (opcode->GetId()) {
+            case OpCode::Id::MOV32_IMM: {
+                // mov32i doesn't have abs or neg bits.
+                regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
+                break;
+            }
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
