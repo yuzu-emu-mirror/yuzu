@@ -168,7 +168,7 @@ void Maxwell3D::ProcessQueryGet() {
         result = 0;
         break;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented query select type %u",
+        UNIMPLEMENTED_MSG("Unimplemented query select type {}",
                           static_cast<u32>(regs.query.query_get.select.Value()));
     }
 
@@ -186,7 +186,7 @@ void Maxwell3D::ProcessQueryGet() {
         break;
     }
     default:
-        UNIMPLEMENTED_MSG("Query mode %u not implemented",
+        UNIMPLEMENTED_MSG("Query mode {} not implemented",
                           static_cast<u32>(regs.query.query_get.mode.Value()));
     }
 }

@@ -30,7 +30,7 @@ LoadDll LoadDll::g_load_dll;
 #define CHECKED(expr)                                                                              \
     do {                                                                                           \
         if (auto _cerr = (expr)) {                                                                 \
-            ASSERT_MSG(false, "Call " #expr " failed with error: %u (%s)\n", _cerr,                \
+            ASSERT_MSG(false, "Call " #expr " failed with error: {} ({})\n", _cerr,                \
                        uc_strerror(_cerr));                                                        \
         }                                                                                          \
     } while (0)
@@ -53,7 +53,7 @@ static bool UnmappedMemoryHook(uc_engine* uc, uc_mem_type type, u64 addr, int si
                                void* user_data) {
     ARM_Interface::ThreadContext ctx{};
     Core::CPU().SaveContext(ctx);
-    ASSERT_MSG(false, "Attempted to read from unmapped memory: 0x%lx, pc=0x%lx, lr=0x%lx", addr,
+    ASSERT_MSG(false, "Attempted to read from unmapped memory: {:#X}, pc={:#X}, lr={:#X}", addr,
                ctx.pc, ctx.cpu_registers[30]);
     return {};
 }

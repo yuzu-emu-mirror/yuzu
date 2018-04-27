@@ -113,7 +113,7 @@ bool MacroInterpreter::Step(const std::vector<u32>& code, bool is_delay_slot) {
         break;
     }
     default:
-        UNIMPLEMENTED_MSG("Unimplemented macro operation %u",
+        UNIMPLEMENTED_MSG("Unimplemented macro operation {}",
                           static_cast<u32>(opcode.operation.Value()));
     }
 
@@ -154,7 +154,7 @@ u32 MacroInterpreter::GetALUResult(ALUOperation operation, u32 src_a, u32 src_b)
         return ~(src_a & src_b);
 
     default:
-        UNIMPLEMENTED_MSG("Unimplemented ALU operation %u", static_cast<u32>(operation));
+        UNIMPLEMENTED_MSG("Unimplemented ALU operation {}", static_cast<u32>(operation));
     }
 }
 
@@ -201,7 +201,7 @@ void MacroInterpreter::ProcessResult(ResultOperation operation, u32 reg, u32 res
         Send((result >> 12) & 0b111111);
         break;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented result operation %u", static_cast<u32>(operation));
+        UNIMPLEMENTED_MSG("Unimplemented result operation {}", static_cast<u32>(operation));
     }
 }
 

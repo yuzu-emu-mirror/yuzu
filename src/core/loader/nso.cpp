@@ -84,7 +84,7 @@ static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeade
         reinterpret_cast<char*>(uncompressed_data.data()), compressed_size, header.size);
 
     ASSERT_MSG(bytes_uncompressed == header.size && bytes_uncompressed == uncompressed_data.size(),
-               "%d != %u != %zu", bytes_uncompressed, header.size, uncompressed_data.size());
+               "{} != {} != {}", bytes_uncompressed, header.size, uncompressed_data.size());
 
     return uncompressed_data;
 }

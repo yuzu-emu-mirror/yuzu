@@ -76,7 +76,7 @@ public:
         case Dynarmic::A64::Exception::Yield:
             return;
         default:
-            ASSERT_MSG(false, "ExceptionRaised(exception = %zu, pc = %" PRIx64 ")",
+            ASSERT_MSG(false, "ExceptionRaised(exception = {}, pc = {:X})",
                        static_cast<size_t>(exception), pc);
         }
     }

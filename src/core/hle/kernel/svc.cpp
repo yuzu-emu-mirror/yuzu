@@ -539,7 +539,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
                     processor_id);
         break;
     default:
-        ASSERT_MSG(false, "Unsupported thread processor ID: %d", processor_id);
+        ASSERT_MSG(false, "Unsupported thread processor ID: {}", processor_id);
         break;
     }
 
