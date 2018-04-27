@@ -10,12 +10,12 @@ namespace Kernel {
 ObjectAddressTable g_object_address_table;
 
 void ObjectAddressTable::Insert(VAddr addr, SharedPtr<Object> obj) {
-    ASSERT_MSG(objects.find(addr) == objects.end(), "Object already exists with addr=0x%lx", addr);
+    ASSERT_MSG(objects.find(addr) == objects.end(), "Object already exists with addr={:#X}", addr);
     objects[addr] = obj;
 }
 
 void ObjectAddressTable::Close(VAddr addr) {
-    ASSERT_MSG(objects.find(addr) != objects.end(), "Object does not exist with addr=0x%lx", addr);
+    ASSERT_MSG(objects.find(addr) != objects.end(), "Object does not exist with addr={:#X}", addr);
     objects.erase(addr);
 }
 

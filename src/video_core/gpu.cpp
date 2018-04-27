@@ -30,7 +30,7 @@ u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
     case RenderTargetFormat::RGB10_A2_UNORM:
         return 4;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented render target format %u", static_cast<u32>(format));
+        UNIMPLEMENTED_MSG("Unimplemented render target format {}", static_cast<u32>(format));
     }
 }
 
