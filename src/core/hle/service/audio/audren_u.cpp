@@ -162,12 +162,13 @@ public:
             {0x3, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceName"},
             {0x4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
             {0x5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
-            {0x6, nullptr, "ListAudioDeviceNameAuto"},
-            {0x7, nullptr, "SetAudioDeviceOutputVolumeAuto"},
+            {0x6, &IAudioDevice::ListAudioDeviceName,
+             "ListAudioDeviceNameAuto"}, // TODO(ogniK): Confirm if autos are identical to non auto
+            {0x7, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolumeAuto"},
             {0x8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
-            {0x10, nullptr, "GetActiveAudioDeviceNameAuto"},
-            {0x11, nullptr, "QueryAudioDeviceInputEvent"},
-            {0x12, nullptr, "QueryAudioDeviceOutputEvent"}};
+            {0xa, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
+            {0xb, nullptr, "QueryAudioDeviceInputEvent"},
+            {0xc, nullptr, "QueryAudioDeviceOutputEvent"}};
         RegisterHandlers(functions);
 
         buffer_event =
@@ -257,7 +258,7 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0x400);
+    rb.Push<u64>(0x4000);
 
     NGLOG_WARNING(Service_Audio, "(STUBBED) called");
 }

@@ -79,6 +79,7 @@ u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& 
     std::memcpy(&params, input.data(), input.size());
     NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, mask={:#X}, mask_buf_addr={:#X}",
                   params.mask_buf_size, params.mask_buf_addr);
+    params.unk = 0xcafe; // TODO(ogniK): Needs to be non 0, what does this actually do?
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
 }
