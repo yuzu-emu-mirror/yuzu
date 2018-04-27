@@ -47,14 +47,14 @@ public:
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 };
 
 void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NFP, "(STUBBED) called");
+    NGLOG_DEBUG(Service_NFP, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IUser>();

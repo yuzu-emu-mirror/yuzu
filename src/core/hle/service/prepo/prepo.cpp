@@ -27,7 +27,7 @@ PlayReport::PlayReport(const char* name) : ServiceFramework(name) {
 
 void PlayReport::SaveReportWithUser(Kernel::HLERequestContext& ctx) {
     // TODO(ogniK): Do we want to add play report?
-    LOG_WARNING(Service_PREPO, "(STUBBED) called");
+    NGLOG_WARNING(Service_PREPO, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
