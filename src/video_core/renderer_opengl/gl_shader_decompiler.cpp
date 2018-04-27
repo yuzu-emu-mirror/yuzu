@@ -41,7 +41,7 @@ enum class ExitMethod {
 struct Subroutine {
     /// Generates a name suitable for GLSL source code.
     std::string GetName() const {
-        return "sub_" + std::to_string(begin) + "_" + std::to_string(end);
+        return "sub_" + std::to_string(begin) + '_' + std::to_string(end);
     }
 
     u32 begin;              ///< Entry point of the subroutine.
@@ -216,6 +216,16 @@ public:
         return declr_type.find(Type::Integer) != declr_type.end();
     }
 
+    /// Returns true if the active type is float
+    bool IsFloat() const {
+        return active_type == Type::Float;
+    }
+
+    /// Returns true if the active type is integer
+    bool IsInteger() const {
+        return active_type == Type::Integer;
+    }
+
 private:
     enum class Type {
         Float,
@@ -230,39 +240,166 @@ private:
     std::set<Type> declr_type;
 };
 
-class GLSLGenerator {
+/**
+ * Used to manage shader registers that are emulated with GLSL. This class keeps track of the state
+ * of all registers (e.g. whether they are currently being used as Floats or Integers), and
+ * generates the necessary GLSL code to perform conversions as needed. This class is used for
+ * bookkeeping within the GLSL program.
+ */
+class GLSLRegisterManager {
 public:
-    GLSLGenerator(const std::set<Subroutine>& subroutines, const ProgramCode& program_code,
-                  u32 main_offset, Maxwell3D::Regs::ShaderStage stage)
-        : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
-          stage(stage) {
-
+    GLSLRegisterManager(ShaderWriter& shader, ShaderWriter& declarations,
+                        const Maxwell3D::Regs::ShaderStage& stage)
+        : shader{shader}, declarations{declarations}, stage{stage} {
         BuildRegisterList();
-        Generate();
     }
 
-    std::string GetShaderCode() {
-        return declarations.GetResult() + shader.GetResult();
+    /// Generates code representing a temporary (GPR) register.
+    std::string GetRegister(const Register& reg, unsigned elem = 0) {
+        if (reg == Register::ZeroIndex) {
+            return "0";
+        }
+
+        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
     }
 
-    /// Returns entries in the shader that are useful for external functions
-    ShaderEntries GetEntries() const {
-        return {GetConstBuffersDeclarations()};
+    /**
+     * Writes code that does a register assignment to float value operation. Should only be used
+     * with shader instructions that deal with floats.
+     * @param reg The destination register to use.
+     * @param elem The element to use for the operation.
+     * @param value The code representing the value to assign.
+     * @param dest_num_components Number of components in the destination.
+     * @param value_num_components Number of components in the value.
+     * @param is_abs Optional, when True, applies absolute value to output.
+     * @param dest_elem Optional, the destination element to use for the operation.
+     */
+    void SetRegisterToFloat(const Register& reg, u64 elem, const std::string& value,
+                            u64 dest_num_components, u64 value_num_components, bool is_abs = false,
+                            u64 dest_elem = 0) {
+        ASSERT(regs[reg].IsFloat());
+
+        std::string dest = GetRegister(reg, dest_elem);
+        if (dest_num_components > 1) {
+            dest += GetSwizzle(elem);
+        }
+
+        std::string src = '(' + value + ')';
+        if (value_num_components > 1) {
+            src += GetSwizzle(elem);
+        }
+
+        src = is_abs ? "abs(" + src + ')' : src;
+
+        shader.AddLine(dest + " = " + src + ';');
+    }
+
+    /**
+     * Writes code that does a register assignment to input attribute operation. Input attributes
+     * are stored as floats, so this may require conversion.
+     * @param reg The destination register to use.
+     * @param elem The element to use for the operation.
+     * @param attribute The input attibute to use as the source value.
+     */
+    void SetRegisterToInputAttibute(const Register& reg, u64 elem, Attribute::Index attribute) {
+        std::string dest = GetRegister(reg);
+        std::string src = GetInputAttribute(attribute) + GetSwizzle(elem);
+
+        if (regs[reg].IsFloat()) {
+            shader.AddLine(dest + " = " + src + ';');
+        } else if (regs[reg].IsInteger()) {
+            shader.AddLine(dest + " = floatBitsToInt(" + src + ");");
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    /**
+     * Writes code that does a output attribute assignment to register operation. Output attributes
+     * are stored as floats, so this may require conversion.
+     * @param attribute The destination output attribute.
+     * @param elem The element to use for the operation.
+     * @param reg The register to use as the source value.
+     */
+    void SetOutputAttributeToRegister(Attribute::Index attribute, u64 elem, const Register& reg) {
+        std::string dest = GetOutputAttribute(attribute) + GetSwizzle(elem);
+        std::string src = GetRegister(reg);
+        ASSERT_MSG(regs[reg].IsFloat(), "Output attributes must be set to a float");
+        shader.AddLine(dest + " = " + src + ';');
+    }
+
+    /// Generates code representing a uniform (C buffer) register.
+    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+        declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
+                                                      static_cast<unsigned>(uniform.offset), stage);
+        std::string value =
+            'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
+
+        if (regs[dest_reg].IsFloat()) {
+            return value;
+        } else if (regs[dest_reg].IsInteger()) {
+            return "floatBitsToInt(" + value + ')';
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    /// Add declarations for registers
+    void GenerateDeclarations() {
+        for (const auto& reg : regs) {
+            if (reg.IsFloatUsed()) {
+                declarations.AddLine("float " + reg.GetFloatString() + " = 0.0;");
+            }
+            if (reg.IsIntegerUsed()) {
+                declarations.AddLine("int " + reg.GetIntegerString() + " = 0;");
+            }
+        }
+        declarations.AddNewLine();
+
+        for (const auto& index : declr_input_attribute) {
+            // TODO(bunnei): Use proper number of elements for these
+            declarations.AddLine("layout(location = " +
+                                 std::to_string(static_cast<u32>(index) -
+                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
+                                 ") in vec4 " + GetInputAttribute(index) + ';');
+        }
+        declarations.AddNewLine();
+
+        for (const auto& index : declr_output_attribute) {
+            // TODO(bunnei): Use proper number of elements for these
+            declarations.AddLine("layout(location = " +
+                                 std::to_string(static_cast<u32>(index) -
+                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
+                                 ") out vec4 " + GetOutputAttribute(index) + ';');
+        }
+        declarations.AddNewLine();
+
+        unsigned const_buffer_layout = 0;
+        for (const auto& entry : GetConstBuffersDeclarations()) {
+            declarations.AddLine("layout(std430) buffer " + entry.GetName());
+            declarations.AddLine('{');
+            declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
+            declarations.AddLine("};");
+            declarations.AddNewLine();
+            ++const_buffer_layout;
+        }
+        declarations.AddNewLine();
+    }
+
+    /// Returns a list of constant buffer declarations
+    std::vector<ConstBufferEntry> GetConstBuffersDeclarations() const {
+        std::vector<ConstBufferEntry> result;
+        std::copy_if(declr_const_buffers.begin(), declr_const_buffers.end(),
+                     std::back_inserter(result), [](const auto& entry) { return entry.IsUsed(); });
+        return result;
     }
 
 private:
-    /// Build the GLSL register list
+    /// Build the GLSL register list.
     void BuildRegisterList() {
         for (size_t index = 0; index < Register::NumRegisters; ++index) {
             regs.emplace_back(index, shader);
         }
-    }
-
-    /// Gets the Subroutine object corresponding to the specified address.
-    const Subroutine& GetSubroutine(u32 begin, u32 end) const {
-        auto iter = subroutines.find(Subroutine{begin, end});
-        ASSERT(iter != subroutines.end());
-        return *iter;
     }
 
     /// Generates code representing an input attribute register.
@@ -301,6 +438,50 @@ private:
         }
     }
 
+    /// Generates code to use for a swizzle operation.
+    static std::string GetSwizzle(u64 elem) {
+        ASSERT(elem <= 3);
+        std::string swizzle = ".";
+        swizzle += "xyzw"[elem];
+        return swizzle;
+    }
+
+    ShaderWriter& shader;
+    ShaderWriter& declarations;
+    std::vector<GLSLRegister> regs;
+    std::set<Attribute::Index> declr_input_attribute;
+    std::set<Attribute::Index> declr_output_attribute;
+    std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
+    const Maxwell3D::Regs::ShaderStage& stage;
+};
+
+class GLSLGenerator {
+public:
+    GLSLGenerator(const std::set<Subroutine>& subroutines, const ProgramCode& program_code,
+                  u32 main_offset, Maxwell3D::Regs::ShaderStage stage)
+        : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
+          stage(stage) {
+
+        Generate();
+    }
+
+    std::string GetShaderCode() {
+        return declarations.GetResult() + shader.GetResult();
+    }
+
+    /// Returns entries in the shader that are useful for external functions
+    ShaderEntries GetEntries() const {
+        return {regs.GetConstBuffersDeclarations()};
+    }
+
+private:
+    /// Gets the Subroutine object corresponding to the specified address.
+    const Subroutine& GetSubroutine(u32 begin, u32 end) const {
+        auto iter = subroutines.find(Subroutine{begin, end});
+        ASSERT(iter != subroutines.end());
+        return *iter;
+    }
+
     /// Generates code representing a 19-bit immediate value
     static std::string GetImmediate19(const Instruction& instr) {
         return std::to_string(instr.alu.GetImm20_19());
@@ -311,29 +492,13 @@ private:
         return std::to_string(instr.alu.GetImm20_32());
     }
 
-    /// Generates code representing a temporary (GPR) register.
-    std::string GetRegister(const Register& reg, unsigned elem = 0) {
-        if (reg == Register::ZeroIndex) {
-            return "0";
-        }
-
-        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
-    }
-
-    /// Generates code representing a uniform (C buffer) register.
-    std::string GetUniform(const Uniform& reg) {
-        declr_const_buffers[reg.index].MarkAsUsed(static_cast<unsigned>(reg.index),
-                                                  static_cast<unsigned>(reg.offset), stage);
-        return 'c' + std::to_string(reg.index) + '[' + std::to_string(reg.offset) + ']';
-    }
-
     /// Generates code representing a texture sampler.
     std::string GetSampler(const Sampler& sampler) const {
         // TODO(Subv): Support more than just texture sampler 0
         ASSERT_MSG(sampler.index == Sampler::Index::Sampler_0, "unsupported");
         const unsigned index{static_cast<unsigned>(sampler.index.Value()) -
                              static_cast<unsigned>(Sampler::Index::Sampler_0)};
-        return "tex[" + std::to_string(index) + "]";
+        return "tex[" + std::to_string(index) + ']';
     }
 
     /**
@@ -349,23 +514,6 @@ private:
         } else {
             shader.AddLine(subroutine.GetName() + "();");
         }
-    }
-
-    /**
-     * Writes code that does an assignment operation.
-     * @param reg the destination register code.
-     * @param value the code representing the value to assign.
-     */
-    void SetDest(u64 elem, const std::string& reg, const std::string& value,
-                 u64 dest_num_components, u64 value_num_components, bool is_abs = false) {
-        std::string swizzle = ".";
-        swizzle += "xyzw"[elem];
-
-        std::string dest = reg + (dest_num_components != 1 ? swizzle : "");
-        std::string src = "(" + value + ")" + (value_num_components != 1 ? swizzle : "");
-        src = is_abs ? "abs(" + src + ")" : src;
-
-        shader.AddLine(dest + " = " + src + ";");
     }
 
     /*
@@ -449,11 +597,10 @@ private:
 
         switch (opcode->GetType()) {
         case OpCode::Type::Arithmetic: {
-            std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.alu.negate_a ? "-" : "";
-            op_a += GetRegister(instr.gpr8);
+            op_a += regs.GetRegister(instr.gpr8);
             if (instr.alu.abs_a) {
-                op_a = "abs(" + op_a + ")";
+                op_a = "abs(" + op_a + ')';
             }
 
             std::string op_b = instr.alu.negate_b ? "-" : "";
@@ -462,56 +609,64 @@ private:
                 op_b += GetImmediate19(instr);
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += GetRegister(instr.gpr20);
+                    op_b += regs.GetRegister(instr.gpr20);
                 } else {
-                    op_b += GetUniform(instr.uniform);
+                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
             }
 
             if (instr.alu.abs_b) {
-                op_b = "abs(" + op_b + ")";
+                op_b = "abs(" + op_b + ')';
             }
 
             switch (opcode->GetId()) {
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
-                SetDest(0, dest, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
             case OpCode::Id::FMUL32_IMM: {
                 // fmul32i doesn't have abs or neg bits.
-                SetDest(0, dest, GetRegister(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
+                regs.SetRegisterToFloat(
+                    instr.gpr0, 0, regs.GetRegister(instr.gpr8) + " * " + GetImmediate32(instr), 1,
+                    1);
                 break;
             }
             case OpCode::Id::FADD_C:
             case OpCode::Id::FADD_R:
             case OpCode::Id::FADD_IMM: {
-                SetDest(0, dest, op_a + " + " + op_b, 1, 1, instr.alu.abs_d);
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " + " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
             case OpCode::Id::MUFU: {
                 switch (instr.sub_op) {
                 case SubOp::Cos:
-                    SetDest(0, dest, "cos(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "cos(" + op_a + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 case SubOp::Sin:
-                    SetDest(0, dest, "sin(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "sin(" + op_a + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 case SubOp::Ex2:
-                    SetDest(0, dest, "exp2(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "exp2(" + op_a + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 case SubOp::Lg2:
-                    SetDest(0, dest, "log2(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "log2(" + op_a + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 case SubOp::Rcp:
-                    SetDest(0, dest, "1.0 / " + op_a, 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "1.0 / " + op_a, 1, 1, instr.alu.abs_d);
                     break;
                 case SubOp::Rsq:
-                    SetDest(0, dest, "inversesqrt(" + op_a + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "inversesqrt(" + op_a + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 case SubOp::Min:
-                    SetDest(0, dest, "min(" + op_a + "," + op_b + ")", 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "min(" + op_a + "," + op_b + ')', 1, 1,
+                                            instr.alu.abs_d);
                     break;
                 default:
                     NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
@@ -532,30 +687,29 @@ private:
             break;
         }
         case OpCode::Type::Ffma: {
-            std::string dest = GetRegister(instr.gpr0);
-            std::string op_a = GetRegister(instr.gpr8);
+            std::string op_a = regs.GetRegister(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
             std::string op_c = instr.ffma.negate_c ? "-" : "";
 
             switch (opcode->GetId()) {
             case OpCode::Id::FFMA_CR: {
-                op_b += GetUniform(instr.uniform);
-                op_c += GetRegister(instr.gpr39);
+                op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_c += regs.GetRegister(instr.gpr39);
                 break;
             }
             case OpCode::Id::FFMA_RR: {
-                op_b += GetRegister(instr.gpr20);
-                op_c += GetRegister(instr.gpr39);
+                op_b += regs.GetRegister(instr.gpr20);
+                op_c += regs.GetRegister(instr.gpr39);
                 break;
             }
             case OpCode::Id::FFMA_RC: {
-                op_b += GetRegister(instr.gpr39);
-                op_c += GetUniform(instr.uniform);
+                op_b += regs.GetRegister(instr.gpr39);
+                op_c += regs.GetUniform(instr.uniform, instr.gpr0);
                 break;
             }
             case OpCode::Id::FFMA_IMM: {
                 op_b += GetImmediate19(instr);
-                op_c += GetRegister(instr.gpr39);
+                op_c += regs.GetRegister(instr.gpr39);
                 break;
             }
             default: {
@@ -564,28 +718,29 @@ private:
             }
             }
 
-            SetDest(0, dest, op_a + " * " + op_b + " + " + op_c, 1, 1);
+            regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b + " + " + op_c, 1, 1);
             break;
         }
         case OpCode::Type::Memory: {
-            std::string gpr0 = GetRegister(instr.gpr0);
             const Attribute::Index attribute = instr.attribute.fmt20.index;
 
             switch (opcode->GetId()) {
             case OpCode::Id::LD_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
-                SetDest(instr.attribute.fmt20.element, gpr0, GetInputAttribute(attribute), 1, 4);
+                regs.SetRegisterToInputAttibute(instr.gpr0, instr.attribute.fmt20.element,
+                                                attribute);
                 break;
             }
             case OpCode::Id::ST_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
-                SetDest(instr.attribute.fmt20.element, GetOutputAttribute(attribute), gpr0, 4, 1);
+                regs.SetOutputAttributeToRegister(attribute, instr.attribute.fmt20.element,
+                                                  instr.gpr0);
                 break;
             }
             case OpCode::Id::TEXS: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
-                const std::string op_a = GetRegister(instr.gpr8);
-                const std::string op_b = GetRegister(instr.gpr20);
+                const std::string op_a = regs.GetRegister(instr.gpr8);
+                const std::string op_b = regs.GetRegister(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
                 // Add an extra scope and declare the texture coords inside to prevent overwriting
@@ -595,7 +750,7 @@ private:
                 shader.AddLine(coord);
                 const std::string texture = "texture(" + sampler + ", coords)";
                 for (unsigned elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
-                    SetDest(elem, GetRegister(instr.gpr0, elem), texture, 1, 4);
+                    regs.SetRegisterToFloat(instr.gpr0, elem, texture, 1, 4, false, elem);
                 }
                 --shader.scope;
                 shader.AddLine("}");
@@ -610,7 +765,7 @@ private:
         }
         case OpCode::Type::FloatSetPredicate: {
             std::string op_a = instr.fsetp.neg_a ? "-" : "";
-            op_a += GetRegister(instr.gpr8);
+            op_a += regs.GetRegister(instr.gpr8);
 
             if (instr.fsetp.abs_a) {
                 op_a = "abs(" + op_a + ')';
@@ -626,9 +781,9 @@ private:
                 op_b += '(' + GetImmediate19(instr) + ')';
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += GetRegister(instr.gpr20);
+                    op_b += regs.GetRegister(instr.gpr20);
                 } else {
-                    op_b += GetUniform(instr.uniform);
+                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
             }
 
@@ -660,9 +815,8 @@ private:
             break;
         }
         case OpCode::Type::FloatSet: {
-            std::string dest = GetRegister(instr.gpr0);
             std::string op_a = instr.fset.neg_a ? "-" : "";
-            op_a += GetRegister(instr.gpr8);
+            op_a += regs.GetRegister(instr.gpr8);
 
             if (instr.fset.abs_a) {
                 op_a = "abs(" + op_a + ')';
@@ -678,14 +832,14 @@ private:
                     op_b += imm;
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += GetRegister(instr.gpr20);
+                    op_b += regs.GetRegister(instr.gpr20);
                 } else {
-                    op_b += GetUniform(instr.uniform);
+                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
             }
 
             if (instr.fset.abs_b) {
-                op_b = "abs(" + op_b + ")";
+                op_b = "abs(" + op_b + ')';
             }
 
             using Tegra::Shader::Pred;
@@ -697,13 +851,16 @@ private:
             using Tegra::Shader::PredCondition;
             switch (instr.fset.cond) {
             case PredCondition::LessThan:
-                SetDest(0, dest, "((" + op_a + ") < (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                regs.SetRegisterToFloat(instr.gpr0, 0,
+                                        "((" + op_a + ") < (" + op_b + ")) ? 1.0 : 0", 1, 1);
                 break;
             case PredCondition::Equal:
-                SetDest(0, dest, "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                regs.SetRegisterToFloat(instr.gpr0, 0,
+                                        "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
                 break;
             case PredCondition::GreaterThan:
-                SetDest(0, dest, "((" + op_a + ") > (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                regs.SetRegisterToFloat(instr.gpr0, 0,
+                                        "((" + op_a + ") > (" + op_b + ")) ? 1.0 : 0", 1, 1);
                 break;
             default:
                 NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
@@ -720,10 +877,10 @@ private:
 
                 // Final color output is currently hardcoded to GPR0-3 for fragment shaders
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
-                    shader.AddLine("color.r = " + GetRegister(0) + ";");
-                    shader.AddLine("color.g = " + GetRegister(1) + ";");
-                    shader.AddLine("color.b = " + GetRegister(2) + ";");
-                    shader.AddLine("color.a = " + GetRegister(3) + ";");
+                    shader.AddLine("color.r = " + regs.GetRegister(0) + ';');
+                    shader.AddLine("color.g = " + regs.GetRegister(1) + ';');
+                    shader.AddLine("color.b = " + regs.GetRegister(2) + ';');
+                    shader.AddLine("color.a = " + regs.GetRegister(3) + ';');
                 }
 
                 shader.AddLine("return true;");
@@ -736,8 +893,7 @@ private:
             }
             case OpCode::Id::IPA: {
                 const auto& attribute = instr.attribute.fmt28;
-                std::string dest = GetRegister(instr.gpr0);
-                SetDest(attribute.element, dest, GetInputAttribute(attribute.index), 1, 4);
+                regs.SetRegisterToInputAttibute(instr.gpr0, attribute.element, attribute.index);
                 break;
             }
             default: {
@@ -843,55 +999,10 @@ private:
         GenerateDeclarations();
     }
 
-    /// Returns a list of constant buffer declarations
-    std::vector<ConstBufferEntry> GetConstBuffersDeclarations() const {
-        std::vector<ConstBufferEntry> result;
-        std::copy_if(declr_const_buffers.begin(), declr_const_buffers.end(),
-                     std::back_inserter(result), [](const auto& entry) { return entry.IsUsed(); });
-        return result;
-    }
-
     /// Add declarations for registers
     void GenerateDeclarations() {
-        for (const auto& reg : regs) {
-            if (reg.IsFloatUsed()) {
-                declarations.AddLine("float " + reg.GetFloatString() + " = 0.0;");
-            }
-            if (reg.IsIntegerUsed()) {
-                declarations.AddLine("int " + reg.GetIntegerString() + " = 0;");
-            }
-        }
-        declarations.AddNewLine();
+        regs.GenerateDeclarations();
 
-        for (const auto& index : declr_input_attribute) {
-            // TODO(bunnei): Use proper number of elements for these
-            declarations.AddLine("layout(location = " +
-                                 std::to_string(static_cast<u32>(index) -
-                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
-                                 ") in vec4 " + GetInputAttribute(index) + ";");
-        }
-        declarations.AddNewLine();
-
-        for (const auto& index : declr_output_attribute) {
-            // TODO(bunnei): Use proper number of elements for these
-            declarations.AddLine("layout(location = " +
-                                 std::to_string(static_cast<u32>(index) -
-                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
-                                 ") out vec4 " + GetOutputAttribute(index) + ";");
-        }
-        declarations.AddNewLine();
-
-        unsigned const_buffer_layout = 0;
-        for (const auto& entry : GetConstBuffersDeclarations()) {
-            declarations.AddLine("layout(std430) buffer " + entry.GetName());
-            declarations.AddLine('{');
-            declarations.AddLine("    float c" + std::to_string(entry.GetIndex()) + "[];");
-            declarations.AddLine("};");
-            declarations.AddNewLine();
-            ++const_buffer_layout;
-        }
-
-        declarations.AddNewLine();
         for (const auto& pred : declr_predicates) {
             declarations.AddLine("bool " + pred + " = false;");
         }
@@ -906,13 +1017,10 @@ private:
 
     ShaderWriter shader;
     ShaderWriter declarations;
-    std::vector<GLSLRegister> regs;
+    GLSLRegisterManager regs{shader, declarations, stage};
 
     // Declarations
     std::set<std::string> declr_predicates;
-    std::set<Attribute::Index> declr_input_attribute;
-    std::set<Attribute::Index> declr_output_attribute;
-    std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
 }; // namespace Decompiler
 
 std::string GetCommonDeclarations() {
