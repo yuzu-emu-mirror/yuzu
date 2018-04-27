@@ -187,7 +187,7 @@ public:
     void RefreshMemoryBlockMappings(const std::vector<u8>* block);
 
     /// Dumps the address space layout to the log, for debugging
-    void LogLayout(Log::Level log_level) const;
+    void LogLayout() const;
 
     /// Gets the total memory usage, used by svcGetInfo
     u64 GetTotalMemoryUsage();

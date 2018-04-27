@@ -134,7 +134,7 @@ void Process::Run(VAddr entry_point, s32 main_thread_priority, u32 stack_size) {
         HandleSpecialMapping(vm_manager, mapping);
     }
 
-    vm_manager.LogLayout(Log::Level::Debug);
+    vm_manager.LogLayout();
     status = ProcessStatus::Running;
 
     Kernel::SetupMainThread(entry_point, main_thread_priority, this);
