@@ -2,11 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
-#include <array>
-#include <cstdio>
+#include <utility>
 #include "common/assert.h"
-#include "common/common_funcs.h" // snprintf compatibility define
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -130,21 +127,6 @@ static Filter* filter = nullptr;
 
 void SetFilter(Filter* new_filter) {
     filter = new_filter;
-}
-
-void LogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                const char* function, const char* format, ...) {
-    if (filter && !filter->CheckMessage(log_class, log_level))
-        return;
-    std::array<char, 4 * 1024> formatting_buffer;
-    va_list args;
-    va_start(args, format);
-    vsnprintf(formatting_buffer.data(), formatting_buffer.size(), format, args);
-    va_end(args);
-    Entry entry = CreateEntry(log_class, log_level, filename, line_num, function,
-                              std::string(formatting_buffer.data()));
-
-    PrintColoredMessage(entry);
 }
 
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
