@@ -156,20 +156,27 @@ public:
     enum class Type {
         Float,
         Integer,
+        UnsignedInteger,
     };
 
     GLSLRegister(size_t index, ShaderWriter& shader) : index{index}, shader{shader} {}
 
+    /// Gets the GLSL type string for a register
     static std::string GetTypeString(Type type) {
         switch (type) {
         case Type::Float:
             return "float";
+        case Type::Integer:
+            return "int";
+        case Type::UnsignedInteger:
+            return "uint";
         }
 
         UNREACHABLE();
         return {};
     }
 
+    /// Gets the GLSL register prefix string, used for declarations and referencing
     static std::string GetPrefixString(Type type) {
         return "reg_" + GetTypeString(type) + '_';
     }
@@ -223,18 +230,35 @@ public:
         BuildRegisterList();
     }
 
-    /// Generates code representing a temporary (GPR) register.
-    std::string GetRegister(const Register& reg, unsigned elem = 0) {
-        if (reg == Register::ZeroIndex) {
-            return "0";
-        }
-
-        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
+    /**
+     * Gets a register as an float.
+     * @param reg The register to get.
+     * @param elem The element to use for the operation.
+     * @returns GLSL string corresponding to the register as a float.
+     */
+    std::string GetRegisterAsFloat(const Register& reg, unsigned elem = 0) {
+        ASSERT(regs[reg].IsFloat());
+        return GetRegister(reg, elem);
     }
 
     /**
-     * Writes code that does a register assignment to float value operation. Should only be used
-     * with shader instructions that deal with floats.
+     * Gets a register as an integer.
+     * @param reg The register to get.
+     * @param elem The element to use for the operation.
+     * @param is_signed Whether to get the register as a signed (or unsigned) integer.
+     * @returns GLSL string corresponding to the register as an integer.
+     */
+    std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0,
+                                     bool is_signed = true) {
+        const std::string func = GetGLSLConversionFunc(
+            GLSLRegister::Type::Float,
+            is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger);
+
+        return func + '(' + GetRegister(reg, elem) + ')';
+    }
+
+    /**
+     * Writes code that does a register assignment to float value operation.
      * @param reg The destination register to use.
      * @param elem The element to use for the operation.
      * @param value The code representing the value to assign.
@@ -246,21 +270,28 @@ public:
     void SetRegisterToFloat(const Register& reg, u64 elem, const std::string& value,
                             u64 dest_num_components, u64 value_num_components, bool is_abs = false,
                             u64 dest_elem = 0) {
-        ASSERT(regs[reg].IsFloat());
+        SetRegister(reg, elem, value, dest_num_components, value_num_components, is_abs, dest_elem);
+    }
 
-        std::string dest = GetRegister(reg, dest_elem);
-        if (dest_num_components > 1) {
-            dest += GetSwizzle(elem);
-        }
+    /**
+     * Writes code that does a register assignment to integer value operation.
+     * @param reg The destination register to use.
+     * @param elem The element to use for the operation.
+     * @param value The code representing the value to assign.
+     * @param dest_num_components Number of components in the destination.
+     * @param value_num_components Number of components in the value.
+     * @param is_abs Optional, when True, applies absolute value to output.
+     * @param dest_elem Optional, the destination element to use for the operation.
+     */
+    void SetRegisterToInteger(const Register& reg, bool is_signed, u64 elem,
+                              const std::string& value, u64 dest_num_components,
+                              u64 value_num_components, bool is_abs = false, u64 dest_elem = 0) {
+        const std::string func = GetGLSLConversionFunc(
+            is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger,
+            GLSLRegister::Type::Float);
 
-        std::string src = '(' + value + ')';
-        if (value_num_components > 1) {
-            src += GetSwizzle(elem);
-        }
-
-        src = is_abs ? "abs(" + src + ')' : src;
-
-        shader.AddLine(dest + " = " + src + ';');
+        SetRegister(reg, elem, func + '(' + value + ')', dest_num_components, value_num_components,
+                    is_abs, dest_elem);
     }
 
     /**
@@ -271,7 +302,7 @@ public:
      * @param attribute The input attibute to use as the source value.
      */
     void SetRegisterToInputAttibute(const Register& reg, u64 elem, Attribute::Index attribute) {
-        std::string dest = GetRegister(reg);
+        std::string dest = GetRegisterAsFloat(reg);
         std::string src = GetInputAttribute(attribute) + GetSwizzle(elem);
 
         if (regs[reg].IsFloat()) {
@@ -292,7 +323,7 @@ public:
      */
     void SetOutputAttributeToRegister(Attribute::Index attribute, u64 elem, const Register& reg) {
         std::string dest = GetOutputAttribute(attribute) + GetSwizzle(elem);
-        std::string src = GetRegister(reg);
+        std::string src = GetRegisterAsFloat(reg);
         ASSERT_MSG(regs[reg].IsFloat(), "Output attributes must be set to a float");
         shader.AddLine(dest + " = " + src + ';');
     }
@@ -363,6 +394,51 @@ public:
     }
 
 private:
+    /// Build GLSL conversion function, e.g. floatBitsToInt, intBitsToFloat, etc.
+    const std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
+        const std::string src_type = GLSLRegister::GetTypeString(src);
+        std::string dest_type = GLSLRegister::GetTypeString(dest);
+        dest_type[0] = toupper(dest_type[0]);
+        return src_type + "BitsTo" + dest_type;
+    }
+
+    /// Generates code representing a temporary (GPR) register.
+    std::string GetRegister(const Register& reg, unsigned elem) {
+        if (reg == Register::ZeroIndex) {
+            return "0";
+        }
+
+        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
+    }
+
+    /**
+     * Writes code that does a register assignment to value operation.
+     * @param reg The destination register to use.
+     * @param elem The element to use for the operation.
+     * @param value The code representing the value to assign.
+     * @param dest_num_components Number of components in the destination.
+     * @param value_num_components Number of components in the value.
+     * @param is_abs Optional, when True, applies absolute value to output.
+     * @param dest_elem Optional, the destination element to use for the operation.
+     */
+    void SetRegister(const Register& reg, u64 elem, const std::string& value,
+                     u64 dest_num_components, u64 value_num_components, bool is_abs,
+                     u64 dest_elem) {
+        std::string dest = GetRegister(reg, dest_elem);
+        if (dest_num_components > 1) {
+            dest += GetSwizzle(elem);
+        }
+
+        std::string src = '(' + value + ')';
+        if (value_num_components > 1) {
+            src += GetSwizzle(elem);
+        }
+
+        src = is_abs ? "abs(" + src + ')' : src;
+
+        shader.AddLine(dest + " = " + src + ';');
+    }
+
     /// Build the GLSL register list.
     void BuildRegisterList() {
         for (size_t index = 0; index < Register::NumRegisters; ++index) {
@@ -566,7 +642,7 @@ private:
         switch (opcode->GetType()) {
         case OpCode::Type::Arithmetic: {
             std::string op_a = instr.alu.negate_a ? "-" : "";
-            op_a += regs.GetRegister(instr.gpr8);
+            op_a += regs.GetRegisterAsFloat(instr.gpr8);
             if (instr.alu.abs_a) {
                 op_a = "abs(" + op_a + ')';
             }
@@ -577,7 +653,7 @@ private:
                 op_b += GetImmediate19(instr);
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += regs.GetRegister(instr.gpr20);
+                    op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
                     op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
@@ -602,8 +678,8 @@ private:
             case OpCode::Id::FMUL32_IMM: {
                 // fmul32i doesn't have abs or neg bits.
                 regs.SetRegisterToFloat(
-                    instr.gpr0, 0, regs.GetRegister(instr.gpr8) + " * " + GetImmediate32(instr), 1,
-                    1);
+                    instr.gpr0, 0,
+                    regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
                 break;
             }
             case OpCode::Id::FADD_C:
@@ -660,29 +736,29 @@ private:
             break;
         }
         case OpCode::Type::Ffma: {
-            std::string op_a = regs.GetRegister(instr.gpr8);
+            std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
             std::string op_c = instr.ffma.negate_c ? "-" : "";
 
             switch (opcode->GetId()) {
             case OpCode::Id::FFMA_CR: {
                 op_b += regs.GetUniform(instr.uniform, instr.gpr0);
-                op_c += regs.GetRegister(instr.gpr39);
+                op_c += regs.GetRegisterAsFloat(instr.gpr39);
                 break;
             }
             case OpCode::Id::FFMA_RR: {
-                op_b += regs.GetRegister(instr.gpr20);
-                op_c += regs.GetRegister(instr.gpr39);
+                op_b += regs.GetRegisterAsFloat(instr.gpr20);
+                op_c += regs.GetRegisterAsFloat(instr.gpr39);
                 break;
             }
             case OpCode::Id::FFMA_RC: {
-                op_b += regs.GetRegister(instr.gpr39);
+                op_b += regs.GetRegisterAsFloat(instr.gpr39);
                 op_c += regs.GetUniform(instr.uniform, instr.gpr0);
                 break;
             }
             case OpCode::Id::FFMA_IMM: {
                 op_b += GetImmediate19(instr);
-                op_c += regs.GetRegister(instr.gpr39);
+                op_c += regs.GetRegisterAsFloat(instr.gpr39);
                 break;
             }
             default: {
@@ -712,8 +788,8 @@ private:
             }
             case OpCode::Id::TEXS: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
-                const std::string op_a = regs.GetRegister(instr.gpr8);
-                const std::string op_b = regs.GetRegister(instr.gpr20);
+                const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
+                const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
                 // Add an extra scope and declare the texture coords inside to prevent overwriting
@@ -738,7 +814,7 @@ private:
         }
         case OpCode::Type::FloatSetPredicate: {
             std::string op_a = instr.fsetp.neg_a ? "-" : "";
-            op_a += regs.GetRegister(instr.gpr8);
+            op_a += regs.GetRegisterAsFloat(instr.gpr8);
 
             if (instr.fsetp.abs_a) {
                 op_a = "abs(" + op_a + ')';
@@ -754,7 +830,7 @@ private:
                 op_b += '(' + GetImmediate19(instr) + ')';
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += regs.GetRegister(instr.gpr20);
+                    op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
                     op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
@@ -789,7 +865,7 @@ private:
         }
         case OpCode::Type::FloatSet: {
             std::string op_a = instr.fset.neg_a ? "-" : "";
-            op_a += regs.GetRegister(instr.gpr8);
+            op_a += regs.GetRegisterAsFloat(instr.gpr8);
 
             if (instr.fset.abs_a) {
                 op_a = "abs(" + op_a + ')';
@@ -805,7 +881,7 @@ private:
                     op_b += imm;
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += regs.GetRegister(instr.gpr20);
+                    op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
                     op_b += regs.GetUniform(instr.uniform, instr.gpr0);
                 }
@@ -850,10 +926,10 @@ private:
 
                 // Final color output is currently hardcoded to GPR0-3 for fragment shaders
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
-                    shader.AddLine("color.r = " + regs.GetRegister(0) + ';');
-                    shader.AddLine("color.g = " + regs.GetRegister(1) + ';');
-                    shader.AddLine("color.b = " + regs.GetRegister(2) + ';');
-                    shader.AddLine("color.a = " + regs.GetRegister(3) + ';');
+                    shader.AddLine("color.r = " + regs.GetRegisterAsFloat(0) + ';');
+                    shader.AddLine("color.g = " + regs.GetRegisterAsFloat(1) + ';');
+                    shader.AddLine("color.b = " + regs.GetRegisterAsFloat(2) + ';');
+                    shader.AddLine("color.a = " + regs.GetRegisterAsFloat(3) + ';');
                 }
 
                 shader.AddLine("return true;");
