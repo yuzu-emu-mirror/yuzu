@@ -153,85 +153,54 @@ private:
  */
 class GLSLRegister {
 public:
-    GLSLRegister(size_t index, ShaderWriter& shader)
-        : index{index}, shader{shader}, float_str{"freg_" + std::to_string(index)},
-          integer_str{"ireg_" + std::to_string(index)} {}
-
-    /// Returns a GLSL string representing the current state of the register
-    const std::string& GetActiveString() {
-        declr_type.insert(active_type);
-
-        switch (active_type) {
-        case Type::Float:
-            return float_str;
-        case Type::Integer:
-            return integer_str;
-        }
-
-        UNREACHABLE();
-        return float_str;
-    }
-
-    /// Returns a GLSL string representing the register as a float
-    const std::string& GetFloatString() const {
-        ASSERT(IsFloatUsed());
-        return float_str;
-    }
-
-    /// Returns a GLSL string representing the register as an integer
-    const std::string& GetIntegerString() const {
-        ASSERT(IsIntegerUsed());
-        return integer_str;
-    }
-
-    /// Convert the current register state from float to integer
-    void FloatToInteger() {
-        ASSERT(active_type == Type::Float);
-
-        const std::string src = GetActiveString();
-        active_type = Type::Integer;
-        const std::string dest = GetActiveString();
-
-        shader.AddLine(dest + " = floatBitsToInt(" + src + ");");
-    }
-
-    /// Convert the current register state from integer to float
-    void IntegerToFloat() {
-        ASSERT(active_type == Type::Integer);
-
-        const std::string src = GetActiveString();
-        active_type = Type::Float;
-        const std::string dest = GetActiveString();
-
-        shader.AddLine(dest + " = intBitsToFloat(" + src + ");");
-    }
-
-    /// Returns true if the register was ever used as a float, used for register declarations
-    bool IsFloatUsed() const {
-        return declr_type.find(Type::Float) != declr_type.end();
-    }
-
-    /// Returns true if the register was ever used as an integer, used for register declarations
-    bool IsIntegerUsed() const {
-        return declr_type.find(Type::Integer) != declr_type.end();
-    }
-
-    /// Returns true if the active type is float
-    bool IsFloat() const {
-        return active_type == Type::Float;
-    }
-
-    /// Returns true if the active type is integer
-    bool IsInteger() const {
-        return active_type == Type::Integer;
-    }
-
-private:
     enum class Type {
         Float,
         Integer,
     };
 
+    GLSLRegister(size_t index, ShaderWriter& shader) : index{index}, shader{shader} {}
+
+    static std::string GetTypeString(Type type) {
+        switch (type) {
+        case Type::Float:
+            return "float";
+        }
+
+        UNREACHABLE();
+        return {};
+    }
+
+    static std::string GetPrefixString(Type type) {
+        return "reg_" + GetTypeString(type) + '_';
+    }
+
+    /// Returns a GLSL string representing the current state of the register
+    const std::string GetActiveString() {
+        declr_type.insert(active_type);
+        return GetPrefixString(active_type) + std::to_string(index);
+    }
+
+    /// Returns true if the active type is a float
+    bool IsFloat() const {
+        return active_type == Type::Float;
+    }
+
+    /// Returns true if the active type is an integer
+    bool IsInteger() const {
+        return active_type == Type::Integer;
+    }
+
+    /// Returns the index of the register
+    size_t GetIndex() const {
+        return index;
+    }
+
+    /// Returns a set of the declared types of the register
+    const std::set<Type>& DeclaredTypes() const {
+        return declr_type;
+    }
+
+private:
     const size_t index;
     const std::string float_str;
     const std::string integer_str;
@@ -347,11 +316,10 @@ public:
     /// Add declarations for registers
     void GenerateDeclarations() {
         for (const auto& reg : regs) {
-            if (reg.IsFloatUsed()) {
-                declarations.AddLine("float " + reg.GetFloatString() + " = 0.0;");
-            }
-            if (reg.IsIntegerUsed()) {
-                declarations.AddLine("int " + reg.GetIntegerString() + " = 0;");
+            for (const auto& type : reg.DeclaredTypes()) {
+                declarations.AddLine(GLSLRegister::GetTypeString(type) + ' ' +
+                                     GLSLRegister::GetPrefixString(type) +
+                                     std::to_string(reg.GetIndex()) + " = 0;");
             }
         }
         declarations.AddNewLine();
