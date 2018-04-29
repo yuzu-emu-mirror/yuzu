@@ -122,6 +122,7 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     NGLOG_DEBUG(Service_NS, "called, language_code=%d", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
     if (language_code > SHARED_FONT_REGIONS.size()) {
+        NGLOG_WARNING(Service_NS, "language_code > SHARED_FONT_REGIONS.size()! Failing");
         rb.Push(ResultCode(-1));                          // TODO(ogniK): Find real result code
         rb.Push<u8>(static_cast<u8>(LoadState::Loading)); // Fonts Loaded
         rb.Push<u32>(0);
