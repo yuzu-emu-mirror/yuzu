@@ -882,6 +882,9 @@ private:
             case PredCondition::Equal:
                 SetPredicate(instr.fsetp.pred3, '(' + op_a + ") == (" + op_b + ')');
                 break;
+            case PredCondition::LessEqual:
+                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") <= (" + op_b + ')');
+                break;
             default:
                 NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
                                static_cast<unsigned>(instr.fsetp.cond.Value()), op_a, op_b);
@@ -932,6 +935,10 @@ private:
             case PredCondition::Equal:
                 regs.SetRegisterToFloat(instr.gpr0, 0,
                                         "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
+                break;
+            case PredCondition::LessEqual:
+                regs.SetRegisterToFloat(instr.gpr0, 0,
+                                        "((" + op_a + ") <= (" + op_b + ")) ? 1.0 : 0", 1, 1);
                 break;
             case PredCondition::GreaterThan:
                 regs.SetRegisterToFloat(instr.gpr0, 0,
