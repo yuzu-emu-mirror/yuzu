@@ -770,6 +770,32 @@ private:
             regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b + " + " + op_c, 1, 1);
             break;
         }
+        case OpCode::Type::Conversion: {
+            ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
+            ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
+            ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
+            ASSERT_MSG(!instr.conversion.saturate_a, "Unimplemented");
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::I2I_R:
+            case OpCode::Id::I2F_R: {
+                std::string op_a =
+                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_signed);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_signed, 0, op_a, 1, 1);
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
         case OpCode::Type::Memory: {
             const Attribute::Index attribute = instr.attribute.fmt20.index;
 
