@@ -664,7 +664,8 @@ private:
             }
 
             switch (opcode->GetId()) {
-            case OpCode::Id::MOV_C: {
+            case OpCode::Id::MOV_C:
+            case OpCode::Id::MOV_R: {
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_b, 1, 1);
                 break;
             }
