@@ -202,11 +202,15 @@ public:
         return items_written;
     }
 
-    size_t ReadBytes(void* data, size_t length) {
+    template <typename T>
+    size_t ReadBytes(T* data, size_t length) {
+        static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return ReadArray(reinterpret_cast<char*>(data), length);
     }
 
-    size_t WriteBytes(const void* data, size_t length) {
+    template <typename T>
+    size_t WriteBytes(const T* data, size_t length) {
+        static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return WriteArray(reinterpret_cast<const char*>(data), length);
     }
 
