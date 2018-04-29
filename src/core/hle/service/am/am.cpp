@@ -12,6 +12,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/set/set.h"
 #include "core/settings.h"
 
 namespace Service::AM {
@@ -537,10 +538,11 @@ void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
 }
 
 void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
+    // TODO(bunnei): This should be configurable
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(SystemLanguage::English);
-    NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    rb.Push(static_cast<u64>(Service::Set::LanguageCode::EN_US));
+    NGLOG_DEBUG(Service_AM, "called");
 }
 
 void IApplicationFunctions::InitializeGamePlayRecording(Kernel::HLERequestContext& ctx) {

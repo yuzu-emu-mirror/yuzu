@@ -14,15 +14,33 @@ namespace Service::Set {
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u32 id = rp.Pop<u32>();
-    constexpr std::array<u8, 13> lang_codes{};
 
-    ctx.WriteBuffer(lang_codes.data(), lang_codes.size());
+    static constexpr std::array<LanguageCode, 17> available_language_codes = {{
+        LanguageCode::JA,
+        LanguageCode::EN_US,
+        LanguageCode::FR,
+        LanguageCode::DE,
+        LanguageCode::IT,
+        LanguageCode::ES,
+        LanguageCode::ZH_CN,
+        LanguageCode::KO,
+        LanguageCode::NL,
+        LanguageCode::PT,
+        LanguageCode::RU,
+        LanguageCode::ZH_TW,
+        LanguageCode::EN_GB,
+        LanguageCode::FR_CA,
+        LanguageCode::ES_419,
+        LanguageCode::ZH_HANS,
+        LanguageCode::ZH_HANT,
+    }};
+    ctx.WriteBuffer(available_language_codes.data(), available_language_codes.size());
 
-    IPC::ResponseBuilder rb{ctx, 2};
-
+    IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
+    rb.Push(static_cast<u64>(available_language_codes.size()));
 
-    NGLOG_WARNING(Service_SET, "(STUBBED) called");
+    NGLOG_DEBUG(Service_SET, "called");
 }
 
 SET::SET() : ServiceFramework("set") {
