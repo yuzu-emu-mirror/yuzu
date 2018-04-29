@@ -25,6 +25,13 @@ struct Register {
     /// Register 255 is special cased to always be 0
     static constexpr size_t ZeroIndex = 255;
 
+    enum class Size : u64 {
+        Byte = 0,
+        Short = 1,
+        Word = 2,
+        Long = 3,
+    };
+
     constexpr Register() = default;
 
     constexpr Register(u64 value) : value(value) {}
@@ -236,6 +243,15 @@ union Instruction {
         BitField<56, 1, u64> neg_imm;
     } fset;
 
+    union {
+        BitField<10, 2, Register::Size> size;
+        BitField<13, 1, u64> is_signed;
+        BitField<41, 2, u64> selector;
+        BitField<45, 1, u64> negate_a;
+        BitField<49, 1, u64> abs_a;
+        BitField<50, 1, u64> saturate_a;
+    } conversion;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
@@ -290,7 +306,7 @@ public:
         MOV_C,
         MOV_R,
         MOV_IMM,
-        MOV32I,
+        MOV32_IMM,
         SHR_C,
         SHR_R,
         SHR_IMM,
@@ -314,6 +330,7 @@ public:
         FloatSet,
         FloatSetPredicate,
         IntegerSetPredicate,
+        Conversion,
         Unknown,
     };
 
@@ -435,20 +452,20 @@ private:
             INST("0100110010110---", Id::F2I_C, Type::Arithmetic, "F2I_C"),
             INST("0101110010110---", Id::F2I_R, Type::Arithmetic, "F2I_R"),
             INST("0011100-10110---", Id::F2I_IMM, Type::Arithmetic, "F2I_IMM"),
-            INST("0100110010111---", Id::I2F_C, Type::Arithmetic, "I2F_C"),
-            INST("0101110010111---", Id::I2F_R, Type::Arithmetic, "I2F_R"),
-            INST("0011100-10111---", Id::I2F_IMM, Type::Arithmetic, "I2F_IMM"),
-            INST("0100110011100---", Id::I2I_C, Type::Arithmetic, "I2I_C"),
-            INST("0101110011100---", Id::I2I_R, Type::Arithmetic, "I2I_R"),
-            INST("01110001-1000---", Id::I2I_IMM, Type::Arithmetic, "I2I_IMM"),
             INST("000001----------", Id::LOP32I, Type::Arithmetic, "LOP32I"),
             INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
-            INST("000000010000----", Id::MOV32I, Type::Arithmetic, "MOV32I"),
+            INST("000000010000----", Id::MOV32_IMM, Type::Arithmetic, "MOV32_IMM"),
             INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
             INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
             INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
+            INST("0100110011100---", Id::I2I_C, Type::Conversion, "I2I_C"),
+            INST("0101110011100---", Id::I2I_R, Type::Conversion, "I2I_R"),
+            INST("01110001-1000---", Id::I2I_IMM, Type::Conversion, "I2I_IMM"),
+            INST("0100110010111---", Id::I2F_C, Type::Conversion, "I2F_C"),
+            INST("0101110010111---", Id::I2F_R, Type::Conversion, "I2F_R"),
+            INST("0011100-10111---", Id::I2F_IMM, Type::Conversion, "I2F_IMM"),
             INST("01011000--------", Id::FSET_R, Type::FloatSet, "FSET_R"),
             INST("0100100---------", Id::FSET_C, Type::FloatSet, "FSET_C"),
             INST("0011000---------", Id::FSET_IMM, Type::FloatSet, "FSET_IMM"),
