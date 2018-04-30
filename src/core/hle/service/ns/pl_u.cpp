@@ -118,7 +118,7 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
 
 void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const u32 language_code{rp.Pop<u32>()};
+    const u32 language_code{rp.Pop<u32>()}; // TODO(ogniK): Check if language code or index
     NGLOG_DEBUG(Service_NS, "called, language_code=%d", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
     if (language_code > SHARED_FONT_REGIONS.size()) {
