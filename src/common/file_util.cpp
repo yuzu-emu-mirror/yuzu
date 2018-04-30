@@ -809,16 +809,16 @@ IOFile::~IOFile() {
     Close();
 }
 
-IOFile::IOFile(IOFile&& other) {
+IOFile::IOFile(IOFile&& other) noexcept {
     Swap(other);
 }
 
-IOFile& IOFile::operator=(IOFile&& other) {
+IOFile& IOFile::operator=(IOFile&& other) noexcept {
     Swap(other);
     return *this;
 }
 
-void IOFile::Swap(IOFile& other) {
+void IOFile::Swap(IOFile& other) noexcept {
     std::swap(m_file, other.m_file);
     std::swap(m_good, other.m_good);
 }
