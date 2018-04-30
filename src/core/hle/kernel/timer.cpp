@@ -57,7 +57,8 @@ void Timer::Set(s64 initial, s64 interval) {
         // Immediately invoke the callback
         Signal(0);
     } else {
-        CoreTiming::ScheduleEvent(nsToCycles(initial), timer_callback_event_type, callback_handle);
+        CoreTiming::ScheduleEvent(CoreTiming::nsToCycles(initial), timer_callback_event_type,
+                                  callback_handle);
     }
 }
 
@@ -86,7 +87,7 @@ void Timer::Signal(int cycles_late) {
 
     if (interval_delay != 0) {
         // Reschedule the timer with the interval delay
-        CoreTiming::ScheduleEvent(nsToCycles(interval_delay) - cycles_late,
+        CoreTiming::ScheduleEvent(CoreTiming::nsToCycles(interval_delay) - cycles_late,
                                   timer_callback_event_type, callback_handle);
     }
 }

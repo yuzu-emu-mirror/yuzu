@@ -18,7 +18,7 @@ constexpr u32 sample_rate{48000};
 /// to more audio channels (probably when Docked I guess)
 constexpr u32 audio_channels{2};
 /// TODO(st4rk): find a proper value for the audio_ticks
-constexpr u64 audio_ticks{static_cast<u64>(BASE_CLOCK_RATE / 500)};
+constexpr u64 audio_ticks{static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / 500)};
 
 class IAudioOut final : public ServiceFramework<IAudioOut> {
 public:
