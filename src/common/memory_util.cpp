@@ -167,8 +167,7 @@ std::string MemUsage() {
         return "MemUsage Error";
 
     if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        Ret = Common::StringFromFormat(
-            "%s K", Common::ThousandSeparate(pmc.WorkingSetSize / 1024, 7).c_str());
+        Ret = fmt::format("{} K", Common::ThousandSeparate(pmc.WorkingSetSize / 1024, 7));
 
     CloseHandle(hProcess);
     return Ret;

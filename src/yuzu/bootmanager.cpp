@@ -4,6 +4,8 @@
 #include <QScreen>
 #include <QWindow>
 
+#include <fmt/format.h>
+
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
 #include "common/string_util.h"
@@ -102,8 +104,8 @@ private:
 GRenderWindow::GRenderWindow(QWidget* parent, EmuThread* emu_thread)
     : QWidget(parent), child(nullptr), emu_thread(emu_thread) {
 
-    std::string window_title = Common::StringFromFormat("yuzu %s| %s-%s", Common::g_build_name,
-                                                        Common::g_scm_branch, Common::g_scm_desc);
+    std::string window_title = fmt::format("yuzu {} | {}-{}", Common::g_build_name,
+                                           Common::g_scm_branch, Common::g_scm_desc);
     setWindowTitle(QString::fromStdString(window_title));
 
     InputCommon::Init();
