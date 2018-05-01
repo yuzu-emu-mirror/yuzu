@@ -49,7 +49,6 @@ u32 nvhost_gpu::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output
     std::memcpy(&params, input.data(), input.size());
     NGLOG_DEBUG(Service_NVDRV, "called, fd={}", params.nvmap_fd);
     nvmap_fd = params.nvmap_fd;
-    std::memcpy(output.data(), &params, output.size());
     return 0;
 }
 
@@ -58,7 +57,6 @@ u32 nvhost_gpu::SetClientData(const std::vector<u8>& input, std::vector<u8>& out
     IoctlClientData params{};
     std::memcpy(&params, input.data(), input.size());
     user_data = params.data;
-    std::memcpy(output.data(), &params, output.size());
     return 0;
 }
 
@@ -91,7 +89,6 @@ u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& 
 u32 nvhost_gpu::SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output) {
     std::memcpy(&channel_priority, input.data(), input.size());
     NGLOG_DEBUG(Service_NVDRV, "(STUBBED) called, priority={:X}", channel_priority);
-    std::memcpy(output.data(), &channel_priority, output.size());
     return 0;
 }
 
