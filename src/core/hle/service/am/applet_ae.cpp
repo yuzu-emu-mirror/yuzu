@@ -97,7 +97,7 @@ private:
 
 class ISystemAppletProxy final : public ServiceFramework<ISystemAppletProxy> {
 public:
-    ISystemAppletProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+    explicit ISystemAppletProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
         : ServiceFramework("ISystemAppletProxy"), nvflinger(std::move(nvflinger)) {
         static const FunctionInfo functions[] = {
             {0, &ISystemAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},
