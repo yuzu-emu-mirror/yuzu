@@ -118,23 +118,15 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
 
 void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const u32 language_code{rp.Pop<u32>()}; // TODO(ogniK): Check if language code or index
-    NGLOG_DEBUG(Service_NS, "called, language_code=%d", language_code);
+    const u32 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
+    NGLOG_DEBUG(Service_NS, "called, language_code=%x", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
-    if (language_code > SHARED_FONT_REGIONS.size()) {
-        NGLOG_WARNING(Service_NS, "language_code > SHARED_FONT_REGIONS.size()! Failing");
-        rb.Push(ResultCode(-1));                          // TODO(ogniK): Find real result code
-        rb.Push<u8>(static_cast<u8>(LoadState::Loading)); // Fonts Loaded
-        rb.Push<u32>(0);
-        return;
-    }
-
-    std::vector<u32> font_codes = {language_code};
-    std::vector<u32> font_offsets = {SHARED_FONT_REGIONS[language_code].offset};
-    std::vector<u32> font_sizes = {SHARED_FONT_REGIONS[language_code].size};
+    std::vector<u32> font_codes = {1}; // 1 seems to be first on hardware
+    std::vector<u32> font_offsets = {SHARED_FONT_REGIONS[1].offset};
+    std::vector<u32> font_sizes = {SHARED_FONT_REGIONS[1].size};
 
     for (size_t i = 0; i < SHARED_FONT_REGIONS.size(); i++) {
-        if (i == language_code)
+        if (i == 1)
             continue;
         font_codes.push_back(static_cast<u32>(i));
         font_offsets.push_back(SHARED_FONT_REGIONS[i].offset);
