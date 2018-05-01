@@ -37,7 +37,7 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
         {2, &PL_U::GetSize, "GetSize"},
         {3, &PL_U::GetSharedMemoryAddressOffset, "GetSharedMemoryAddressOffset"},
         {4, &PL_U::GetSharedMemoryNativeHandle, "GetSharedMemoryNativeHandle"},
-        {5, nullptr, "GetSharedFontInOrderOfPriority"},
+        {5, &PL_U::GetSharedFontInOrderOfPriority, "GetSharedFontInOrderOfPriority"},
     };
     RegisterHandlers(functions);
 
@@ -114,6 +114,31 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(shared_font_mem);
+}
+
+void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const u64 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
+    NGLOG_DEBUG(Service_NS, "called, language_code=%lx", language_code);
+    IPC::ResponseBuilder rb{ctx, 4};
+    std::vector<u32> font_codes;
+    std::vector<u32> font_offsets;
+    std::vector<u32> font_sizes;
+
+    // TODO(ogniK): Have actual priority order
+    for (size_t i = 0; i < SHARED_FONT_REGIONS.size(); i++) {
+        font_codes.push_back(static_cast<u32>(i));
+        font_offsets.push_back(SHARED_FONT_REGIONS[i].offset);
+        font_sizes.push_back(SHARED_FONT_REGIONS[i].size);
+    }
+
+    ctx.WriteBuffer(font_codes.data(), font_codes.size(), 0);
+    ctx.WriteBuffer(font_offsets.data(), font_offsets.size(), 1);
+    ctx.WriteBuffer(font_sizes.data(), font_sizes.size(), 2);
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded
+    rb.Push<u32>(static_cast<u32>(font_codes.size()));
 }
 
 } // namespace Service::NS

@@ -251,24 +251,26 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
     return RESULT_SUCCESS;
 }
 
-std::vector<u8> HLERequestContext::ReadBuffer() const {
+std::vector<u8> HLERequestContext::ReadBuffer(int buffer_index) const {
     std::vector<u8> buffer;
-    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[0].Size()};
+    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[buffer_index].Size()};
 
     if (is_buffer_a) {
-        buffer.resize(BufferDescriptorA()[0].Size());
-        Memory::ReadBlock(BufferDescriptorA()[0].Address(), buffer.data(), buffer.size());
+        buffer.resize(BufferDescriptorA()[buffer_index].Size());
+        Memory::ReadBlock(BufferDescriptorA()[buffer_index].Address(), buffer.data(),
+                          buffer.size());
     } else {
-        buffer.resize(BufferDescriptorX()[0].Size());
-        Memory::ReadBlock(BufferDescriptorX()[0].Address(), buffer.data(), buffer.size());
+        buffer.resize(BufferDescriptorX()[buffer_index].Size());
+        Memory::ReadBlock(BufferDescriptorX()[buffer_index].Address(), buffer.data(),
+                          buffer.size());
     }
 
     return buffer;
 }
 
-size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size) const {
-    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
-    const size_t buffer_size{GetWriteBufferSize()};
+size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size, int buffer_index) const {
+    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[buffer_index].Size()};
+    const size_t buffer_size{GetWriteBufferSize(buffer_index)};
     if (size > buffer_size) {
         NGLOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
                        buffer_size);
@@ -276,26 +278,28 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size) const {
     }
 
     if (is_buffer_b) {
-        Memory::WriteBlock(BufferDescriptorB()[0].Address(), buffer, size);
+        Memory::WriteBlock(BufferDescriptorB()[buffer_index].Address(), buffer, size);
     } else {
-        Memory::WriteBlock(BufferDescriptorC()[0].Address(), buffer, size);
+        Memory::WriteBlock(BufferDescriptorC()[buffer_index].Address(), buffer, size);
     }
 
     return size;
 }
 
-size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer) const {
+size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer, int buffer_index) const {
     return WriteBuffer(buffer.data(), buffer.size());
 }
 
-size_t HLERequestContext::GetReadBufferSize() const {
-    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[0].Size()};
-    return is_buffer_a ? BufferDescriptorA()[0].Size() : BufferDescriptorX()[0].Size();
+size_t HLERequestContext::GetReadBufferSize(int buffer_index) const {
+    const bool is_buffer_a{BufferDescriptorA().size() && BufferDescriptorA()[buffer_index].Size()};
+    return is_buffer_a ? BufferDescriptorA()[buffer_index].Size()
+                       : BufferDescriptorX()[buffer_index].Size();
 }
 
-size_t HLERequestContext::GetWriteBufferSize() const {
-    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[0].Size()};
-    return is_buffer_b ? BufferDescriptorB()[0].Size() : BufferDescriptorC()[0].Size();
+size_t HLERequestContext::GetWriteBufferSize(int buffer_index) const {
+    const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[buffer_index].Size()};
+    return is_buffer_b ? BufferDescriptorB()[buffer_index].Size()
+                       : BufferDescriptorC()[buffer_index].Size();
 }
 
 std::string HLERequestContext::Description() const {
