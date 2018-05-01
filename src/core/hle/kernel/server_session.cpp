@@ -61,6 +61,9 @@ void ServerSession::Acquire(Thread* thread) {
 ResultCode ServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& context) {
     auto& domain_message_header = context.GetDomainMessageHeader();
     if (domain_message_header) {
+        // Set domain handlers in HLE context, used for domain objects (IPC interfaces) as inputs
+        context.SetDomainRequestHandlers(domain_request_handlers);
+
         // If there is a DomainMessageHeader, then this is CommandType "Request"
         const u32 object_id{context.GetDomainMessageHeader()->object_id};
         switch (domain_message_header->command) {

@@ -202,6 +202,16 @@ public:
         domain_objects.emplace_back(std::move(object));
     }
 
+    template <typename T>
+    std::shared_ptr<T> GetDomainRequestHandler(size_t index) const {
+        return std::static_pointer_cast<T>(domain_request_handlers[index]);
+    }
+
+    void SetDomainRequestHandlers(
+        const std::vector<std::shared_ptr<SessionRequestHandler>>& handlers) {
+        domain_request_handlers = handlers;
+    }
+
     /// Clears the list of objects so that no lingering objects are written accidentally to the
     /// response buffer.
     void ClearIncomingObjects() {
@@ -245,6 +255,8 @@ private:
     unsigned data_payload_offset{};
     unsigned buffer_c_offset{};
     u32_le command{};
+
+    std::vector<std::shared_ptr<SessionRequestHandler>> domain_request_handlers;
 };
 
 } // namespace Kernel
