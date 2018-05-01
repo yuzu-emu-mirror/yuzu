@@ -118,8 +118,8 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
 
 void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const u32 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
-    NGLOG_DEBUG(Service_NS, "called, language_code=%x", language_code);
+    const u64 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
+    NGLOG_DEBUG(Service_NS, "called, language_code=%lx", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
     std::vector<u32> font_codes = {1}; // 1 seems to be first on hardware
     std::vector<u32> font_offsets = {SHARED_FONT_REGIONS[1].offset};
