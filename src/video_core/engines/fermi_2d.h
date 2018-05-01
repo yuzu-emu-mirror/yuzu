@@ -49,6 +49,11 @@ public:
                 return static_cast<GPUVAddr>((static_cast<GPUVAddr>(address_high) << 32) |
                                              address_low);
             }
+
+            u32 BlockHeight() const {
+                // The block height is stored in log2 format.
+                return 1 << block_height;
+            }
         };
         static_assert(sizeof(Surface) == 0x28, "Surface has incorrect size");
 

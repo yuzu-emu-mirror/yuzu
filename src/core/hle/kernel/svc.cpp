@@ -510,7 +510,7 @@ static void ExitProcess() {
 /// Creates a new thread
 static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, VAddr stack_top,
                                u32 priority, s32 processor_id) {
-    std::string name = Common::StringFromFormat("unknown-%llx", entry_point);
+    std::string name = fmt::format("unknown-{:X}", entry_point);
 
     if (priority > THREADPRIO_LOWEST) {
         return ERR_OUT_OF_RANGE;
@@ -539,7 +539,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
                     processor_id);
         break;
     default:
-        ASSERT_MSG(false, "Unsupported thread processor ID: %d", processor_id);
+        ASSERT_MSG(false, "Unsupported thread processor ID: {}", processor_id);
         break;
     }
 

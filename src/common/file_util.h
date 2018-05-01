@@ -160,22 +160,18 @@ public:
 
     ~IOFile();
 
-    IOFile(IOFile&& other);
-    IOFile& operator=(IOFile&& other);
+    IOFile(IOFile&& other) noexcept;
+    IOFile& operator=(IOFile&& other) noexcept;
 
-    void Swap(IOFile& other);
+    void Swap(IOFile& other) noexcept;
 
     bool Open(const std::string& filename, const char openmode[]);
     bool Close();
 
     template <typename T>
     size_t ReadArray(T* data, size_t length) {
-        static_assert(std::is_standard_layout<T>(),
-                      "Given array does not consist of standard layout objects");
-#if (__GNUC__ >= 5) || defined(__clang__) || defined(_MSC_VER)
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
-#endif
 
         if (!IsOpen()) {
             m_good = false;
@@ -191,12 +187,8 @@ public:
 
     template <typename T>
     size_t WriteArray(const T* data, size_t length) {
-        static_assert(std::is_standard_layout<T>(),
-                      "Given array does not consist of standard layout objects");
-#if (__GNUC__ >= 5) || defined(__clang__) || defined(_MSC_VER)
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
-#endif
 
         if (!IsOpen()) {
             m_good = false;
@@ -210,11 +202,15 @@ public:
         return items_written;
     }
 
-    size_t ReadBytes(void* data, size_t length) {
+    template <typename T>
+    size_t ReadBytes(T* data, size_t length) {
+        static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return ReadArray(reinterpret_cast<char*>(data), length);
     }
 
-    size_t WriteBytes(const void* data, size_t length) {
+    template <typename T>
+    size_t WriteBytes(const T* data, size_t length) {
+        static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return WriteArray(reinterpret_cast<const char*>(data), length);
     }
 

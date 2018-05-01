@@ -168,7 +168,7 @@ void Maxwell3D::ProcessQueryGet() {
         result = 0;
         break;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented query select type %u",
+        UNIMPLEMENTED_MSG("Unimplemented query select type {}",
                           static_cast<u32>(regs.query.query_get.select.Value()));
     }
 
@@ -186,7 +186,7 @@ void Maxwell3D::ProcessQueryGet() {
         break;
     }
     default:
-        UNIMPLEMENTED_MSG("Query mode %u not implemented",
+        UNIMPLEMENTED_MSG("Query mode {} not implemented",
                           static_cast<u32>(regs.query.query_get.mode.Value()));
     }
 }
@@ -208,6 +208,16 @@ void Maxwell3D::DrawArrays() {
 
     const bool is_indexed{regs.index_array.count && !regs.vertex_buffer.count};
     VideoCore::g_renderer->Rasterizer()->AccelerateDrawBatch(is_indexed);
+
+    // TODO(bunnei): Below, we reset vertex count so that we can use these registers to determine if
+    // the game is trying to draw indexed or direct mode. This needs to be verified on HW still -
+    // it's possible that it is incorrect and that there is some other register used to specify the
+    // drawing mode.
+    if (is_indexed) {
+        regs.index_array.count = 0;
+    } else {
+        regs.vertex_buffer.count = 0;
+    }
 }
 
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {

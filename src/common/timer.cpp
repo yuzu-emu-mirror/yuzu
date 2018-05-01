@@ -2,7 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <time.h>
+#include <ctime>
+
+#include <fmt/format.h>
+
 #ifdef _WIN32
 #include <windows.h>
 // windows.h needs to be included before other windows headers
@@ -104,8 +107,8 @@ std::string Timer::GetTimeElapsedFormatted() const {
     // Hours
     u32 Hours = Minutes / 60;
 
-    std::string TmpStr = StringFromFormat("%02i:%02i:%02i:%03i", Hours, Minutes % 60, Seconds % 60,
-                                          Milliseconds % 1000);
+    std::string TmpStr = fmt::format("{:02}:{:02}:{:02}:{:03}", Hours, Minutes % 60, Seconds % 60,
+                                     Milliseconds % 1000);
     return TmpStr;
 }
 
@@ -165,11 +168,11 @@ std::string Timer::GetTimeFormatted() {
 #ifdef _WIN32
     struct timeb tp;
     (void)::ftime(&tp);
-    return StringFromFormat("%s:%03i", tmp, tp.millitm);
+    return fmt::format("{}:{:03}", tmp, tp.millitm);
 #else
     struct timeval t;
     (void)gettimeofday(&t, nullptr);
-    return StringFromFormat("%s:%03d", tmp, (int)(t.tv_usec / 1000));
+    return fmt::format("{}:{:03}", tmp, static_cast<int>(t.tv_usec / 1000));
 #endif
 }
 

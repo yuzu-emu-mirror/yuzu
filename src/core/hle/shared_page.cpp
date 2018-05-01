@@ -56,13 +56,14 @@ static void UpdateTimeCallback(u64 userdata, int cycles_late) {
 
     date_time.date_time = GetSystemTime();
     date_time.update_tick = CoreTiming::GetTicks();
-    date_time.tick_to_second_coefficient = BASE_CLOCK_RATE;
+    date_time.tick_to_second_coefficient = CoreTiming::BASE_CLOCK_RATE;
     date_time.tick_offset = 0;
 
     ++shared_page.date_time_counter;
 
     // system time is updated hourly
-    CoreTiming::ScheduleEvent(msToCycles(60 * 60 * 1000) - cycles_late, update_time_event);
+    CoreTiming::ScheduleEvent(CoreTiming::msToCycles(60 * 60 * 1000) - cycles_late,
+                              update_time_event);
 }
 
 void Init() {

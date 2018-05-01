@@ -36,6 +36,18 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         return {};
     }
 
+    case Maxwell::VertexAttribute::Type::SignedNorm: {
+
+        switch (attrib.size) {
+        case Maxwell::VertexAttribute::Size::Size_8_8_8_8:
+            return GL_BYTE;
+        }
+
+        NGLOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
+        UNREACHABLE();
+        return {};
+    }
+
     case Maxwell::VertexAttribute::Type::Float:
         return GL_FLOAT;
     }

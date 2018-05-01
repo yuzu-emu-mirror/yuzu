@@ -29,7 +29,8 @@
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
-#include "core/hle/service/pctl/module.h"
+#include "core/hle/service/pctl/pctl.h"
+#include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
 #include "core/hle/service/sm/controller.h"
@@ -57,10 +58,9 @@ static std::string MakeFunctionString(const char* name, const char* port_name,
     // Number of params == bits 0-5 + bits 6-11
     int num_params = (cmd_buff[0] & 0x3F) + ((cmd_buff[0] >> 6) & 0x3F);
 
-    std::string function_string =
-        Common::StringFromFormat("function '%s': port=%s", name, port_name);
+    std::string function_string = fmt::format("function '{}': port={}", name, port_name);
     for (int i = 1; i <= num_params; ++i) {
-        function_string += Common::StringFromFormat(", cmd_buff[%i]=0x%X", i, cmd_buff[i]);
+        function_string += fmt::format(", cmd_buff[{}]={:#X}", i, cmd_buff[i]);
     }
     return function_string;
 }
@@ -153,7 +153,7 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
         break;
     }
     default:
-        UNIMPLEMENTED_MSG("command_type=%d", static_cast<int>(context.GetCommandType()));
+        UNIMPLEMENTED_MSG("command_type={}", static_cast<int>(context.GetCommandType()));
     }
 
     context.WriteToOutgoingCommandBuffer(*Kernel::GetCurrentThread());
@@ -192,6 +192,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     NS::InstallInterfaces(*sm);
     Nvidia::InstallInterfaces(*sm);
     PCTL::InstallInterfaces(*sm);
+    PlayReport::InstallInterfaces(*sm);
     Sockets::InstallInterfaces(*sm);
     SPL::InstallInterfaces(*sm);
     SSL::InstallInterfaces(*sm);

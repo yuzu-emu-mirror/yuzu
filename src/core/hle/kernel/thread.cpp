@@ -146,7 +146,8 @@ void Thread::WakeAfterDelay(s64 nanoseconds) {
     if (nanoseconds == -1)
         return;
 
-    CoreTiming::ScheduleEvent(nsToCycles(nanoseconds), ThreadWakeupEventType, callback_handle);
+    CoreTiming::ScheduleEvent(CoreTiming::nsToCycles(nanoseconds), ThreadWakeupEventType,
+                              callback_handle);
 }
 
 void Thread::CancelWakeupTimer() {
@@ -175,11 +176,11 @@ void Thread::ResumeFromWait() {
         return;
 
     case THREADSTATUS_RUNNING:
-        DEBUG_ASSERT_MSG(false, "Thread with object id %u has already resumed.", GetObjectId());
+        DEBUG_ASSERT_MSG(false, "Thread with object id {} has already resumed.", GetObjectId());
         return;
     case THREADSTATUS_DEAD:
         // This should never happen, as threads must complete before being stopped.
-        DEBUG_ASSERT_MSG(false, "Thread with object id %u cannot be resumed because it's DEAD.",
+        DEBUG_ASSERT_MSG(false, "Thread with object id {} cannot be resumed because it's DEAD.",
                          GetObjectId());
         return;
     }

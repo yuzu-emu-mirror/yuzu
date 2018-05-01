@@ -398,21 +398,22 @@ static const char* GetType(GLenum type) {
 
 static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum severity,
                                   GLsizei length, const GLchar* message, const void* user_param) {
-    Log::Level level;
+    const char format[] = "{} {} {}: {}";
+    const char* const str_source = GetSource(source);
+    const char* const str_type = GetType(type);
+
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
-        level = Log::Level::Error;
+        NGLOG_ERROR(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        level = Log::Level::Warning;
+        NGLOG_WARNING(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
     case GL_DEBUG_SEVERITY_LOW:
-        level = Log::Level::Debug;
+        NGLOG_DEBUG(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     }
-    LOG_GENERIC(Log::Class::Render_OpenGL, level, "%s %s %d: %s", GetSource(source), GetType(type),
-                id, message);
 }
 
 /// Initialize the renderer

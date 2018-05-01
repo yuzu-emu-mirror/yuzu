@@ -359,19 +359,17 @@ bool GMainWindow::LoadROM(const QString& filename) {
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
         case Core::System::ResultStatus::ErrorGetLoader:
-            LOG_CRITICAL(Frontend, "Failed to obtain loader for %s!",
-                         filename.toStdString().c_str());
+            NGLOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filename.toStdString());
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM format is not supported."));
             break;
         case Core::System::ResultStatus::ErrorUnsupportedArch:
-            LOG_CRITICAL(Frontend, "Unsupported architecture detected!",
-                         filename.toStdString().c_str());
+            NGLOG_CRITICAL(Frontend, "Unsupported architecture detected!", filename.toStdString());
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM uses currently unusable 32-bit architecture"));
             break;
         case Core::System::ResultStatus::ErrorSystemMode:
-            LOG_CRITICAL(Frontend, "Failed to load ROM!");
+            NGLOG_CRITICAL(Frontend, "Failed to load ROM!");
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("Could not determine the system mode."));
             break;
@@ -859,7 +857,7 @@ void GMainWindow::UpdateUITheme() {
         QString theme_uri(":" + UISettings::values.theme + "/style.qss");
         QFile f(theme_uri);
         if (!f.exists()) {
-            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
+            NGLOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
         } else {
             f.open(QFile::ReadOnly | QFile::Text);
             QTextStream ts(&f);

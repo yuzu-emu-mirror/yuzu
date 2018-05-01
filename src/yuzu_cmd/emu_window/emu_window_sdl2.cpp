@@ -7,6 +7,7 @@
 #include <string>
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include <fmt/format.h>
 #include <glad/glad.h>
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
@@ -84,7 +85,7 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
 
     // Initialize the window
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        LOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
+        NGLOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
         exit(1);
     }
 
@@ -97,8 +98,8 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
 
-    std::string window_title = Common::StringFromFormat("yuzu %s| %s-%s ", Common::g_build_name,
-                                                        Common::g_scm_branch, Common::g_scm_desc);
+    std::string window_title = fmt::format("yuzu {} | {}-{}", Common::g_build_name,
+                                           Common::g_scm_branch, Common::g_scm_desc);
     render_window =
         SDL_CreateWindow(window_title.c_str(),
                          SDL_WINDOWPOS_UNDEFINED, // x position
@@ -107,7 +108,7 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
     if (render_window == nullptr) {
-        LOG_CRITICAL(Frontend, "Failed to create SDL2 window! Exiting...");
+        NGLOG_CRITICAL(Frontend, "Failed to create SDL2 window! Exiting...");
         exit(1);
     }
 
@@ -118,12 +119,12 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
     gl_context = SDL_GL_CreateContext(render_window);
 
     if (gl_context == nullptr) {
-        LOG_CRITICAL(Frontend, "Failed to create SDL2 GL context! Exiting...");
+        NGLOG_CRITICAL(Frontend, "Failed to create SDL2 GL context! Exiting...");
         exit(1);
     }
 
     if (!gladLoadGLLoader(static_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-        LOG_CRITICAL(Frontend, "Failed to initialize GL functions! Exiting...");
+        NGLOG_CRITICAL(Frontend, "Failed to initialize GL functions! Exiting...");
         exit(1);
     }
 

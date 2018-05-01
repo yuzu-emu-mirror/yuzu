@@ -59,7 +59,8 @@ public:
 private:
     void GetCurrentTimePoint(Kernel::HLERequestContext& ctx) {
         NGLOG_DEBUG(Service_Time, "called");
-        SteadyClockTimePoint steady_clock_time_point{cyclesToMs(CoreTiming::GetTicks()) / 1000};
+        SteadyClockTimePoint steady_clock_time_point{
+            CoreTiming::cyclesToMs(CoreTiming::GetTicks()) / 1000};
         IPC::ResponseBuilder rb{ctx, (sizeof(SteadyClockTimePoint) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(steady_clock_time_point);

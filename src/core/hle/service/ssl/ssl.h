@@ -15,6 +15,7 @@ public:
 
 private:
     void CreateContext(Kernel::HLERequestContext& ctx);
+    void SetInterfaceVersion(Kernel::HLERequestContext& ctx);
 };
 
 /// Registers all SSL services with the specified service manager.

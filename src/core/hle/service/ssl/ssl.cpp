@@ -96,10 +96,20 @@ SSL::SSL() : ServiceFramework("ssl") {
         {2, nullptr, "GetCertificates"},
         {3, nullptr, "GetCertificateBufSize"},
         {4, nullptr, "DebugIoctl"},
-        {5, nullptr, "SetInterfaceVersion"},
+        {5, &SSL::SetInterfaceVersion, "SetInterfaceVersion"},
         {6, nullptr, "FlushSessionCache"},
     };
     RegisterHandlers(functions);
+}
+
+void SSL::SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+    NGLOG_WARNING(Service_SSL, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
+    u32 unk1 = rp.Pop<u32>(); // Probably minor/major?
+    u32 unk2 = rp.Pop<u32>(); // TODO(ogniK): Figure out what this does
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

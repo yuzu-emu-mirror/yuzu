@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cinttypes>
 #include <cstring>
 #include <boost/optional.hpp>
 #include "common/assert.h"
@@ -47,7 +46,7 @@ static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, Pa
 
     VAddr end = base + size;
     while (base != end) {
-        ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at %016" PRIX64, base);
+        ASSERT_MSG(base < PAGE_TABLE_NUM_ENTRIES, "out of range mapping at {:016X}", base);
 
         page_table.attributes[base] = type;
         page_table.pointers[base] = memory;
@@ -59,14 +58,14 @@ static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, Pa
 }
 
 void MapMemoryRegion(PageTable& page_table, VAddr base, u64 size, u8* target) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: {:016X}", size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: {:016X}", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, target, PageType::Memory);
 }
 
 void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer mmio_handler) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: {:016X}", size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: {:016X}", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
@@ -75,8 +74,8 @@ void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer 
 }
 
 void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
-    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: %016" PRIX64, size);
-    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: %016" PRIX64, base);
+    ASSERT_MSG((size & PAGE_MASK) == 0, "non-page aligned size: {:016X}", size);
+    ASSERT_MSG((base & PAGE_MASK) == 0, "non-page aligned base: {:016X}", base);
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Unmapped);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
@@ -172,7 +171,7 @@ T Read(const VAddr vaddr) {
         NGLOG_ERROR(HW_Memory, "Unmapped Read{} @ {:#010X}", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ {:016X}", vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Flush);
@@ -205,7 +204,7 @@ void Write(const VAddr vaddr, const T data) {
                     vaddr);
         return;
     case PageType::Memory:
-        ASSERT_MSG(false, "Mapped memory page without a pointer @ %016" PRIX64, vaddr);
+        ASSERT_MSG(false, "Mapped memory page without a pointer @ {:016X}", vaddr);
         break;
     case PageType::RasterizerCachedMemory: {
         RasterizerFlushVirtualRegion(vaddr, sizeof(T), FlushMode::Invalidate);
