@@ -5,10 +5,6 @@
 #include <memory>
 #include <utility>
 #include "common/logging/log.h"
-#ifdef ARCHITECTURE_x86_64
-#include "core/arm/dynarmic/arm_dynarmic.h"
-#endif
-#include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/gdbstub/gdbstub.h"
@@ -33,9 +29,6 @@ System::~System() = default;
 
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
-    if (!cpu_core) {
-        return ResultStatus::ErrorNotInitialized;
-    }
 
     if (GDBStub::IsServerEnabled()) {
         GDBStub::HandlePacket();
@@ -52,24 +45,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    // If we don't have a currently active thread then don't execute instructions,
-    // instead advance to the next event and try to yield to the next thread
-    if (Kernel::GetCurrentThread() == nullptr) {
-        NGLOG_TRACE(Core_ARM, "Idling");
-        CoreTiming::Idle();
-        CoreTiming::Advance();
-        PrepareReschedule();
-    } else {
-        CoreTiming::Advance();
-        if (tight_loop) {
-            cpu_core->Run();
-        } else {
-            cpu_core->Step();
-        }
-    }
-
-    HW::Update();
-    Reschedule();
+    cpu_cores[0]->RunLoop(tight_loop);
 
     return status;
 }
@@ -133,21 +109,11 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
 }
 
 void System::PrepareReschedule() {
-    cpu_core->PrepareReschedule();
-    reschedule_pending = true;
+    cpu_cores[0]->PrepareReschedule();
 }
 
 PerfStats::Results System::GetAndResetPerfStats() {
     return perf_stats.GetAndResetStats(CoreTiming::GetGlobalTimeUs());
-}
-
-void System::Reschedule() {
-    if (!reschedule_pending) {
-        return;
-    }
-
-    reschedule_pending = false;
-    Core::System::GetInstance().Scheduler().Reschedule();
 }
 
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
@@ -157,15 +123,8 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
 
     current_process = Kernel::Process::Create("main");
 
-    if (Settings::values.use_cpu_jit) {
-#ifdef ARCHITECTURE_x86_64
-        cpu_core = std::make_shared<ARM_Dynarmic>();
-#else
-        cpu_core = std::make_shared<ARM_Unicorn>();
-        NGLOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
-#endif
-    } else {
-        cpu_core = std::make_shared<ARM_Unicorn>();
+    for (auto& cpu_core : cpu_cores) {
+        cpu_core = std::make_unique<Cpu>();
     }
 
     gpu_core = std::make_unique<Tegra::GPU>();
@@ -176,7 +135,6 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
 
     HW::Init();
     Kernel::Init(system_mode);
-    scheduler = std::make_unique<Kernel::Scheduler>(cpu_core.get());
     Service::Init(service_manager);
     GDBStub::Init();
 
@@ -207,13 +165,16 @@ void System::Shutdown() {
     VideoCore::Shutdown();
     GDBStub::Shutdown();
     Service::Shutdown();
-    scheduler.reset();
     Kernel::Shutdown();
     HW::Shutdown();
     service_manager.reset();
     telemetry_session.reset();
     gpu_core.reset();
-    cpu_core.reset();
+
+    for (auto& cpu_core : cpu_cores) {
+        cpu_core.reset();
+    }
+
     CoreTiming::Shutdown();
 
     app_loader.reset();

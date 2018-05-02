@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
 #include "common/common_types.h"
+#include "core/core_cpu.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
@@ -89,7 +91,7 @@ public:
      * @returns True if the emulated system is powered on, otherwise false.
      */
     bool IsPoweredOn() const {
-        return cpu_core != nullptr;
+        return cpu_cores[0] != nullptr;
     }
 
     /**
@@ -110,7 +112,7 @@ public:
      * @returns A reference to the emulated CPU.
      */
     ARM_Interface& CPU() {
-        return *cpu_core;
+        return cpu_cores[0]->CPU();
     }
 
     Tegra::GPU& GPU() {
@@ -118,7 +120,7 @@ public:
     }
 
     Kernel::Scheduler& Scheduler() {
-        return *scheduler;
+        return cpu_cores[0]->Scheduler();
     }
 
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
@@ -163,18 +165,12 @@ private:
      */
     ResultStatus Init(EmuWindow* emu_window, u32 system_mode);
 
-    /// Reschedule the core emulation
-    void Reschedule();
-
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
 
-    std::shared_ptr<ARM_Interface> cpu_core;
-    std::unique_ptr<Kernel::Scheduler> scheduler;
+    std::array<std::unique_ptr<Cpu>, 4> cpu_cores;
     std::unique_ptr<Tegra::GPU> gpu_core;
-
     std::shared_ptr<Tegra::DebugContext> debug_context;
-
     Kernel::SharedPtr<Kernel::Process> current_process;
 
     /// When true, signals that a reschedule should happen
