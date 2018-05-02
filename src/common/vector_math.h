@@ -52,8 +52,8 @@ static inline Vec4<T> MakeVec(const T& x, const T& y, const T& z, const T& w);
 template <typename T>
 class Vec2 {
 public:
-    T x;
-    T y;
+    T x{};
+    T y{};
 
     Vec2() = default;
     Vec2(const T& _x, const T& _y) : x(_x), y(_y) {}
@@ -192,9 +192,9 @@ inline float Vec2<float>::Normalize() {
 template <typename T>
 class Vec3 {
 public:
-    T x;
-    T y;
-    T z;
+    T x{};
+    T y{};
+    T z{};
 
     Vec3() = default;
     Vec3(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {}
@@ -392,10 +392,10 @@ typedef Vec3<float> Vec3f;
 template <typename T>
 class Vec4 {
 public:
-    T x;
-    T y;
-    T z;
-    T w;
+    T x{};
+    T y{};
+    T z{};
+    T w{};
 
     Vec4() = default;
     Vec4(const T& _x, const T& _y, const T& _z, const T& _w) : x(_x), y(_y), z(_z), w(_w) {}
