@@ -640,7 +640,7 @@ private:
         bool visibility = rp.Pop<bool>();
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id={:#010X}, visibility={}", layer_id,
+        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:08X}, visibility={}", layer_id,
                       visibility);
     }
 };
@@ -762,7 +762,7 @@ private:
         bool visibility = rp.Pop<bool>();
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id={:#X}, visibility={}", layer_id,
+        NGLOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
                       visibility);
     }
 

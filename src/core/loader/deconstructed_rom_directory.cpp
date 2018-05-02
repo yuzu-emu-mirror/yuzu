@@ -132,7 +132,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
-            NGLOG_DEBUG(Loader, "loaded module {} @ {:#X}", module, load_addr);
+            NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         } else {
             next_load_addr = load_addr;
         }
@@ -176,8 +176,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     offset = 0;
     size = romfs_file->GetSize();
 
-    NGLOG_DEBUG(Loader, "RomFS offset:           {:#018X}", offset);
-    NGLOG_DEBUG(Loader, "RomFS size:             {:#018X}", size);
+    NGLOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
+    NGLOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
 
     // Reset read pointer
     file.Seek(0, SEEK_SET);

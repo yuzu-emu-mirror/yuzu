@@ -20,7 +20,7 @@ inline void Read(T& var, const u32 raw_addr) {
 
     // Reads other than u32 are untested, so I'd rather have them abort than silently fail
     if (index >= 0x400 || !std::is_same<T, u32>::value) {
-        NGLOG_ERROR(HW_LCD, "Unknown Read{} @ {:#010X}", sizeof(var) * 8, addr);
+        NGLOG_ERROR(HW_LCD, "Unknown Read{} @ 0x{:08X}", sizeof(var) * 8, addr);
         return;
     }
 
@@ -34,7 +34,7 @@ inline void Write(u32 addr, const T data) {
 
     // Writes other than u32 are untested, so I'd rather have them abort than silently fail
     if (index >= 0x400 || !std::is_same<T, u32>::value) {
-        NGLOG_ERROR(HW_LCD, "Unknown Write{} {:#010X} @ {:#010X}", sizeof(data) * 8, data, addr);
+        NGLOG_ERROR(HW_LCD, "Unknown Write{} 0x{:08X} @ 0x{:08X}", sizeof(data) * 8, data, addr);
         return;
     }
 

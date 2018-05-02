@@ -111,7 +111,7 @@ void Process::ParseKernelCaps(const u32* kernel_caps, size_t len) {
             int major = (kernel_version >> 8) & 0xFF;
             NGLOG_INFO(Loader, "ExHeader kernel version: {}.{}", major, minor);
         } else {
-            NGLOG_ERROR(Loader, "Unhandled kernel caps descriptor: {:#010X}", descriptor);
+            NGLOG_ERROR(Loader, "Unhandled kernel caps descriptor: 0x{:08X}", descriptor);
         }
     }
 }

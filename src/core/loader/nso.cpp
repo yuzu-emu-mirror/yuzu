@@ -158,7 +158,7 @@ ResultStatus AppLoader_NSO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 
     // Load module
     LoadModule(filepath, Memory::PROCESS_IMAGE_VADDR);
-    NGLOG_DEBUG(Loader, "loaded module {} @ {:#X}", filepath, Memory::PROCESS_IMAGE_VADDR);
+    NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", filepath, Memory::PROCESS_IMAGE_VADDR);
 
     process->svc_access_mask.set();
     process->address_mappings = default_address_mappings;

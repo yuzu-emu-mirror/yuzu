@@ -252,7 +252,7 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
             break;
         }
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset={:#010X}",
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset=0x{:08X}",
                            index, shader_config.enable.Value(), shader_config.offset);
             UNREACHABLE();
         }
