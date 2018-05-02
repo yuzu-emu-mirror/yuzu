@@ -167,6 +167,7 @@ struct DomainMessageHeader {
         struct {
             union {
                 BitField<0, 8, CommandType> command;
+                BitField<8, 8, u32_le> input_object_count;
                 BitField<16, 16, u32_le> size;
             };
             u32_le object_id;
