@@ -49,7 +49,7 @@ u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     u32 handle = next_handle++;
     handles[handle] = std::move(object);
 
-    NGLOG_DEBUG(Service_NVDRV, "size={:#010X}", params.size);
+    NGLOG_DEBUG(Service_NVDRV, "size=0x{:08X}", params.size);
 
     params.handle = handle;
 

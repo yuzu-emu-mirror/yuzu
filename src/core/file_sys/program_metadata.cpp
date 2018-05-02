@@ -77,11 +77,11 @@ u64 ProgramMetadata::GetFilesystemPermissions() const {
 
 void ProgramMetadata::Print() const {
     NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", npdm_header.magic.data());
-    NGLOG_DEBUG(Service_FS, "Main thread priority:   {:#04X}", npdm_header.main_thread_priority);
+    NGLOG_DEBUG(Service_FS, "Main thread priority:   0x{:02X}", npdm_header.main_thread_priority);
     NGLOG_DEBUG(Service_FS, "Main thread core:       {}", npdm_header.main_thread_cpu);
-    NGLOG_DEBUG(Service_FS, "Main thread stack size: {:#X} bytes", npdm_header.main_stack_size);
+    NGLOG_DEBUG(Service_FS, "Main thread stack size: 0x{:X} bytes", npdm_header.main_stack_size);
     NGLOG_DEBUG(Service_FS, "Process category:       {}", npdm_header.process_category);
-    NGLOG_DEBUG(Service_FS, "Flags:                  {:02X}", npdm_header.flags);
+    NGLOG_DEBUG(Service_FS, "Flags:                  0x{:02X}", npdm_header.flags);
     NGLOG_DEBUG(Service_FS, " > 64-bit instructions: {}",
                 npdm_header.has_64_bit_instructions ? "YES" : "NO");
 
@@ -99,15 +99,15 @@ void ProgramMetadata::Print() const {
 
     // Begin ACID printing (potential perms, signed)
     NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", acid_header.magic.data());
-    NGLOG_DEBUG(Service_FS, "Flags:                  {:02X}", acid_header.flags);
+    NGLOG_DEBUG(Service_FS, "Flags:                  0x{:02X}", acid_header.flags);
     NGLOG_DEBUG(Service_FS, " > Is Retail:           {}", acid_header.is_retail ? "YES" : "NO");
-    NGLOG_DEBUG(Service_FS, "Title ID Min:           {:016X}", acid_header.title_id_min);
-    NGLOG_DEBUG(Service_FS, "Title ID Max:           {:016X}", acid_header.title_id_max);
-    NGLOG_DEBUG(Service_FS, "Filesystem Access:      {:016X}\n", acid_file_access.permissions);
+    NGLOG_DEBUG(Service_FS, "Title ID Min:           0x{:016X}", acid_header.title_id_min);
+    NGLOG_DEBUG(Service_FS, "Title ID Max:           0x{:016X}", acid_header.title_id_max);
+    NGLOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", acid_file_access.permissions);
 
     // Begin ACI0 printing (actual perms, unsigned)
     NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", aci_header.magic.data());
-    NGLOG_DEBUG(Service_FS, "Title ID:               {:016X}", aci_header.title_id);
-    NGLOG_DEBUG(Service_FS, "Filesystem Access:      {:016X}\n", aci_file_access.permissions);
+    NGLOG_DEBUG(Service_FS, "Title ID:               0x{:016X}", aci_header.title_id);
+    NGLOG_DEBUG(Service_FS, "Filesystem Access:      0x{:016X}\n", aci_file_access.permissions);
 }
 } // namespace FileSys

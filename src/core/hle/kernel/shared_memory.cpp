@@ -107,7 +107,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
 
     // Error out if the requested permissions don't match what the creator process allows.
     if (static_cast<u32>(permissions) & ~static_cast<u32>(own_other_permissions)) {
-        NGLOG_ERROR(Kernel, "cannot map id={}, address={:#X} name={}, permissions don't match",
+        NGLOG_ERROR(Kernel, "cannot map id={}, address=0x{:X} name={}, permissions don't match",
                     GetObjectId(), address, name);
         return ERR_INVALID_COMBINATION;
     }
@@ -115,7 +115,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     // Error out if the provided permissions are not compatible with what the creator process needs.
     if (other_permissions != MemoryPermission::DontCare &&
         static_cast<u32>(this->permissions) & ~static_cast<u32>(other_permissions)) {
-        NGLOG_ERROR(Kernel, "cannot map id={}, address={:#X} name={}, permissions don't match",
+        NGLOG_ERROR(Kernel, "cannot map id={}, address=0x{:X} name={}, permissions don't match",
                     GetObjectId(), address, name);
         return ERR_WRONG_PERMISSION;
     }
@@ -133,7 +133,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     if (result.Failed()) {
         NGLOG_ERROR(
             Kernel,
-            "cannot map id={}, target_address={:#X} name={}, error mapping to virtual memory",
+            "cannot map id={}, target_address=0x{:X} name={}, error mapping to virtual memory",
             GetObjectId(), target_address, name);
         return result.Code();
     }

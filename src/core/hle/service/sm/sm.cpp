@@ -102,7 +102,7 @@ void SM::GetService(Kernel::HLERequestContext& ctx) {
     if (client_port.Failed()) {
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(client_port.Code());
-        NGLOG_ERROR(Service_SM, "called service={} -> error {:#010X}", name,
+        NGLOG_ERROR(Service_SM, "called service={} -> error 0x{:08X}", name,
                     client_port.Code().raw);
         if (name.length() == 0)
             return; // LibNX Fix

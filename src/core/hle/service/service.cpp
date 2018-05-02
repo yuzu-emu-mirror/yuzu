@@ -60,7 +60,7 @@ static std::string MakeFunctionString(const char* name, const char* port_name,
 
     std::string function_string = fmt::format("function '{}': port={}", name, port_name);
     for (int i = 1; i <= num_params; ++i) {
-        function_string += fmt::format(", cmd_buff[{}]={:#X}", i, cmd_buff[i]);
+        function_string += fmt::format(", cmd_buff[{}]=0x{:X}", i, cmd_buff[i]);
     }
     return function_string;
 }
@@ -113,10 +113,10 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     std::string function_name = info == nullptr ? fmt::format("{}", ctx.GetCommand()) : info->name;
 
     fmt::memory_buffer buf;
-    fmt::format_to(buf, "function '{}': port='{}' cmd_buf={{[0]={:#x}", function_name, service_name,
-                   cmd_buf[0]);
+    fmt::format_to(buf, "function '{}': port='{}' cmd_buf={{[0]=0x{:X}", function_name,
+                   service_name, cmd_buf[0]);
     for (int i = 1; i <= 8; ++i) {
-        fmt::format_to(buf, ", [{}]={:#x}", i, cmd_buf[i]);
+        fmt::format_to(buf, ", [{}]=0x{:X}", i, cmd_buf[i]);
     }
     buf.push_back('}');
 

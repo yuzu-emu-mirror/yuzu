@@ -33,7 +33,7 @@ inline void Read(T& var, const u32 addr) {
         LCD::Read(var, addr);
         break;
     default:
-        NGLOG_ERROR(HW_Memory, "Unknown Read{} @ {:#010X}", sizeof(var) * 8, addr);
+        NGLOG_ERROR(HW_Memory, "Unknown Read{} @ 0x{:08X}", sizeof(var) * 8, addr);
         break;
     }
 }
@@ -62,7 +62,7 @@ inline void Write(u32 addr, const T data) {
         LCD::Write(addr, data);
         break;
     default:
-        NGLOG_ERROR(HW_Memory, "Unknown Write{} {:#010X} @ {:#010X}", sizeof(data) * 8, data, addr);
+        NGLOG_ERROR(HW_Memory, "Unknown Write{} 0x{:08X} @ 0x{:08X}", sizeof(data) * 8, data, addr);
         break;
     }
 }

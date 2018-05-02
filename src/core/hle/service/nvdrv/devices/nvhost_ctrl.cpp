@@ -9,7 +9,7 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called, command={:#010X}, input_size={:#X}, output_size={:#X}",
+    NGLOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
                 command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {

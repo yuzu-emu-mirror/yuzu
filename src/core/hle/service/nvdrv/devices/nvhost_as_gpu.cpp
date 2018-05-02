@@ -12,7 +12,7 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called, command={:#010X}, input_size={:#X}, output_size={:#X}",
+    NGLOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
                 command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
@@ -38,7 +38,7 @@ u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vecto
 u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlInitalizeEx params{};
     std::memcpy(&params, input.data(), input.size());
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size={:#X}", params.big_page_size);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size=0x{:X}", params.big_page_size);
     return 0;
 }
 

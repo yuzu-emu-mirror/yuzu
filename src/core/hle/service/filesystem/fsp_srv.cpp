@@ -35,7 +35,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset={:#X}, length={}", offset, length);
+        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -87,7 +87,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset={:#X}, length={}", offset, length);
+        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -124,7 +124,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset={:#X}, length={}", offset, length);
+        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -197,7 +197,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 unk = rp.Pop<u64>();
 
-        NGLOG_DEBUG(Service_FS, "called, unk={:#X}", unk);
+        NGLOG_DEBUG(Service_FS, "called, unk=0x{:X}", unk);
 
         // Calculate how many entries we can fit in the output buffer
         u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
@@ -265,7 +265,7 @@ public:
         u64 mode = rp.Pop<u64>();
         u32 size = rp.Pop<u32>();
 
-        NGLOG_DEBUG(Service_FS, "called file {} mode {:#X} size {:#010X}", name, mode, size);
+        NGLOG_DEBUG(Service_FS, "called file {} mode 0x{:X} size 0x{:08X}", name, mode, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateFile(name, size));

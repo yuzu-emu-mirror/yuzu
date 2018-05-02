@@ -534,7 +534,7 @@ void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
-    NGLOG_WARNING(Service_AM, "(STUBBED) called, result={:#010}", result);
+    NGLOG_WARNING(Service_AM, "(STUBBED) called, result=0x{:08X}", result);
 }
 
 void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {

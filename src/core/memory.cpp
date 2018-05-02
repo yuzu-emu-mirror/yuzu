@@ -168,7 +168,7 @@ T Read(const VAddr vaddr) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        NGLOG_ERROR(HW_Memory, "Unmapped Read{} @ {:#010X}", sizeof(T) * 8, vaddr);
+        NGLOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:08X}", sizeof(T) * 8, vaddr);
         return 0;
     case PageType::Memory:
         ASSERT_MSG(false, "Mapped memory page without a pointer @ {:016X}", vaddr);
@@ -200,8 +200,8 @@ void Write(const VAddr vaddr, const T data) {
     PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
     switch (type) {
     case PageType::Unmapped:
-        NGLOG_ERROR(HW_Memory, "Unmapped Write{} {:#010X} @ {:#018X}", sizeof(data) * 8, (u32)data,
-                    vaddr);
+        NGLOG_ERROR(HW_Memory, "Unmapped Write{} 0x{:08X} @ 0x{:016X}", sizeof(data) * 8,
+                    static_cast<u32>(data), vaddr);
         return;
     case PageType::Memory:
         ASSERT_MSG(false, "Mapped memory page without a pointer @ {:016X}", vaddr);
@@ -250,7 +250,7 @@ u8* GetPointer(const VAddr vaddr) {
         return GetPointerFromVMA(vaddr);
     }
 
-    NGLOG_ERROR(HW_Memory, "Unknown GetPointer @ {:#018X}", vaddr);
+    NGLOG_ERROR(HW_Memory, "Unknown GetPointer @ 0x{:016X}", vaddr);
     return nullptr;
 }
 
@@ -287,12 +287,12 @@ u8* GetPhysicalPointer(PAddr address) {
         });
 
     if (area == std::end(memory_areas)) {
-        NGLOG_ERROR(HW_Memory, "Unknown GetPhysicalPointer @ {:#018X}", address);
+        NGLOG_ERROR(HW_Memory, "Unknown GetPhysicalPointer @ 0x{:016X}", address);
         return nullptr;
     }
 
     if (area->paddr_base == IO_AREA_PADDR) {
-        NGLOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr={:018X}", address);
+        NGLOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr={:016X}", address);
         return nullptr;
     }
 
@@ -476,7 +476,7 @@ void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
             NGLOG_ERROR(HW_Memory,
-                        "Unmapped ReadBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        "Unmapped ReadBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                         current_vaddr, src_addr, size);
             std::memset(dest_buffer, 0, copy_amount);
             break;
@@ -540,7 +540,7 @@ void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const voi
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
             NGLOG_ERROR(HW_Memory,
-                        "Unmapped WriteBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        "Unmapped WriteBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                         current_vaddr, dest_addr, size);
             break;
         }
@@ -588,7 +588,7 @@ void ZeroBlock(const Kernel::Process& process, const VAddr dest_addr, const size
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
             NGLOG_ERROR(HW_Memory,
-                        "Unmapped ZeroBlock @ {:#018X} (start address = {#:018X}, size = {})",
+                        "Unmapped ZeroBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                         current_vaddr, dest_addr, size);
             break;
         }
@@ -629,7 +629,7 @@ void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr, 
         switch (page_table.attributes[page_index]) {
         case PageType::Unmapped: {
             NGLOG_ERROR(HW_Memory,
-                        "Unmapped CopyBlock @ {:#018X} (start address = {:#018X}, size = {})",
+                        "Unmapped CopyBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
                         current_vaddr, src_addr, size);
             ZeroBlock(process, dest_addr, copy_amount);
             break;
@@ -683,7 +683,7 @@ boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
 PAddr VirtualToPhysicalAddress(const VAddr addr) {
     auto paddr = TryVirtualToPhysicalAddress(addr);
     if (!paddr) {
-        NGLOG_ERROR(HW_Memory, "Unknown virtual address @ {:#018X}", addr);
+        NGLOG_ERROR(HW_Memory, "Unknown virtual address @ 0x{:016X}", addr);
         // To help with debugging, set bit on address so that it's obviously invalid.
         return addr | 0x80000000;
     }
