@@ -33,7 +33,7 @@ Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
         arm_interface = std::make_shared<ARM_Unicorn>();
     }
 
-    scheduler = std::make_unique<Kernel::Scheduler>(arm_interface.get());
+    scheduler = std::make_shared<Kernel::Scheduler>(arm_interface.get());
 }
 
 void Cpu::RunLoop(bool tight_loop) {

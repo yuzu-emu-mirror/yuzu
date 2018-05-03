@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -56,6 +57,7 @@ enum class ThreadWakeupReason {
 namespace Kernel {
 
 class Process;
+class Scheduler;
 
 class Thread final : public WaitObject {
 public:
@@ -239,6 +241,8 @@ public:
     // was waiting via WaitSynchronizationN then the object will be the last object that became
     // available. In case of a timeout, the object will be nullptr.
     std::function<WakeupCallback> wakeup_callback;
+
+    std::shared_ptr<Scheduler> scheduler;
 
 private:
     Thread();

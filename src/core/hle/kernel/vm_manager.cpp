@@ -104,8 +104,15 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     VirtualMemoryArea& final_vma = vma_handle->second;
     ASSERT(final_vma.size == size);
 
-    Core::CPU().MapBackingMemory(target, size, block->data() + offset,
-                                 VMAPermission::ReadWriteExecute);
+    auto& system = Core::System::GetInstance();
+    system.ArmInterface(0).MapBackingMemory(target, size, block->data() + offset,
+                                            VMAPermission::ReadWriteExecute);
+    system.ArmInterface(1).MapBackingMemory(target, size, block->data() + offset,
+                                            VMAPermission::ReadWriteExecute);
+    system.ArmInterface(2).MapBackingMemory(target, size, block->data() + offset,
+                                            VMAPermission::ReadWriteExecute);
+    system.ArmInterface(3).MapBackingMemory(target, size, block->data() + offset,
+                                            VMAPermission::ReadWriteExecute);
 
     final_vma.type = VMAType::AllocatedMemoryBlock;
     final_vma.permissions = VMAPermission::ReadWrite;
@@ -126,7 +133,11 @@ ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* me
     VirtualMemoryArea& final_vma = vma_handle->second;
     ASSERT(final_vma.size == size);
 
-    Core::CPU().MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
+    auto& system = Core::System::GetInstance();
+    system.ArmInterface(0).MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
+    system.ArmInterface(1).MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
+    system.ArmInterface(2).MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
+    system.ArmInterface(3).MapBackingMemory(target, size, memory, VMAPermission::ReadWriteExecute);
 
     final_vma.type = VMAType::BackingMemory;
     final_vma.permissions = VMAPermission::ReadWrite;
@@ -184,7 +195,11 @@ ResultCode VMManager::UnmapRange(VAddr target, u64 size) {
 
     ASSERT(FindVMA(target)->second.size >= size);
 
-    Core::CPU().UnmapMemory(target, size);
+    auto& system = Core::System::GetInstance();
+    system.ArmInterface(0).UnmapMemory(target, size);
+    system.ArmInterface(1).UnmapMemory(target, size);
+    system.ArmInterface(2).UnmapMemory(target, size);
+    system.ArmInterface(3).UnmapMemory(target, size);
 
     return RESULT_SUCCESS;
 }

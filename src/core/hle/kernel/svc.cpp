@@ -485,22 +485,28 @@ static void ExitProcess() {
 
     Core::CurrentProcess()->status = ProcessStatus::Exited;
 
-    // Stop all the process threads that are currently waiting for objects.
-    auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
-    for (auto& thread : thread_list) {
-        if (thread->owner_process != Core::CurrentProcess())
-            continue;
+    auto stop_threads = [](const std::vector<SharedPtr<Thread>>& thread_list) {
+        for (auto& thread : thread_list) {
+            if (thread->owner_process != Core::CurrentProcess())
+                continue;
 
-        if (thread == GetCurrentThread())
-            continue;
+            if (thread == GetCurrentThread())
+                continue;
 
-        // TODO(Subv): When are the other running/ready threads terminated?
-        ASSERT_MSG(thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
-                       thread->status == THREADSTATUS_WAIT_SYNCH_ALL,
-                   "Exiting processes with non-waiting threads is currently unimplemented");
+            // TODO(Subv): When are the other running/ready threads terminated?
+            ASSERT_MSG(thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
+                           thread->status == THREADSTATUS_WAIT_SYNCH_ALL,
+                       "Exiting processes with non-waiting threads is currently unimplemented");
 
-        thread->Stop();
-    }
+            thread->Stop();
+        }
+    };
+
+    auto& system = Core::System::GetInstance();
+    stop_threads(system.Scheduler(0)->GetThreadList());
+    stop_threads(system.Scheduler(1)->GetThreadList());
+    stop_threads(system.Scheduler(2)->GetThreadList());
+    stop_threads(system.Scheduler(3)->GetThreadList());
 
     // Kill the current thread
     GetCurrentThread()->Stop();
@@ -530,14 +536,9 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 
     switch (processor_id) {
     case THREADPROCESSORID_0:
-        break;
     case THREADPROCESSORID_1:
     case THREADPROCESSORID_2:
     case THREADPROCESSORID_3:
-        // TODO(bunnei): Implement support for other processor IDs
-        NGLOG_ERROR(Kernel_SVC,
-                    "Newly created thread must run in another thread ({}), unimplemented.",
-                    processor_id);
         break;
     default:
         ASSERT_MSG(false, "Unsupported thread processor ID: {}", processor_id);
@@ -576,7 +577,7 @@ static ResultCode StartThread(Handle thread_handle) {
 
 /// Called when a thread exits
 static void ExitThread() {
-    NGLOG_TRACE(Kernel_SVC, "called, pc=0x{:08X}", Core::CPU().GetPC());
+    NGLOG_TRACE(Kernel_SVC, "called, pc=0x{:08X}", Core::CurrentArmInterface().GetPC());
 
     ExitCurrentThread();
     Core::System::GetInstance().PrepareReschedule();
@@ -588,7 +589,7 @@ static void SleepThread(s64 nanoseconds) {
 
     // Don't attempt to yield execution if there are no available threads to run,
     // this way we avoid a useless reschedule to the idle thread.
-    if (nanoseconds == 0 && !Core::System::GetInstance().Scheduler().HaveReadyThreads())
+    if (nanoseconds == 0 && !Core::System::GetInstance().CurrentScheduler().HaveReadyThreads())
         return;
 
     // Sleep current thread and check for next thread to schedule
@@ -634,7 +635,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
                 condition_variable_addr, target);
 
     u32 processed = 0;
-    auto& thread_list = Core::System::GetInstance().Scheduler().GetThreadList();
+    auto& thread_list = Core::System::GetInstance().CurrentScheduler().GetThreadList();
 
     for (auto& thread : thread_list) {
         if (thread->condvar_wait_address != condition_variable_addr)

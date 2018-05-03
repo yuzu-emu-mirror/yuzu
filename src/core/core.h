@@ -108,20 +108,26 @@ public:
 
     PerfStats::Results GetAndResetPerfStats();
 
-    /**
-     * Gets a reference to the emulated CPU.
-     * @returns A reference to the emulated CPU.
-     */
-    ARM_Interface& CPU() {
-        return CurrentCpuCore().CPU();
+    ARM_Interface& CurrentArmInterface() {
+        return CurrentCpuCore().ArmInterface();
+    }
+
+    ARM_Interface& ArmInterface(size_t core_index) {
+        ASSERT(core_index < NUM_CPU_CORES);
+        return cpu_cores[core_index]->ArmInterface();
     }
 
     Tegra::GPU& GPU() {
         return *gpu_core;
     }
 
-    Kernel::Scheduler& Scheduler() {
-        return CurrentCpuCore().Scheduler();
+    Kernel::Scheduler& CurrentScheduler() {
+        return *CurrentCpuCore().Scheduler();
+    }
+
+    const std::shared_ptr<Kernel::Scheduler>& Scheduler(size_t core_index) {
+        ASSERT(core_index < NUM_CPU_CORES);
+        return cpu_cores[core_index]->Scheduler();
     }
 
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
@@ -198,8 +204,8 @@ private:
     std::map<std::thread::id, std::shared_ptr<Cpu>> thread_to_cpu;
 };
 
-inline ARM_Interface& CPU() {
-    return System::GetInstance().CPU();
+inline ARM_Interface& CurrentArmInterface() {
+    return System::GetInstance().CurrentArmInterface();
 }
 
 inline TelemetrySession& Telemetry() {

@@ -64,7 +64,7 @@ void Thread::Stop() {
     // Clean up thread from ready queue
     // This is only needed when the thread is termintated forcefully (SVC TerminateProcess)
     if (status == THREADSTATUS_READY) {
-        Core::System::GetInstance().Scheduler().UnscheduleThread(this, current_priority);
+        scheduler->UnscheduleThread(this, current_priority);
     }
 
     status = THREADSTATUS_DEAD;
@@ -92,7 +92,7 @@ void WaitCurrentThread_Sleep() {
 void ExitCurrentThread() {
     Thread* thread = GetCurrentThread();
     thread->Stop();
-    Core::System::GetInstance().Scheduler().RemoveThread(thread);
+    Core::System::GetInstance().CurrentScheduler().RemoveThread(thread);
 }
 
 /**
@@ -188,7 +188,7 @@ void Thread::ResumeFromWait() {
     wakeup_callback = nullptr;
 
     status = THREADSTATUS_READY;
-    Core::System::GetInstance().Scheduler().ScheduleThread(this, current_priority);
+    scheduler->ScheduleThread(this, current_priority);
     Core::System::GetInstance().PrepareReschedule();
 }
 
@@ -259,8 +259,6 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 
     SharedPtr<Thread> thread(new Thread);
 
-    Core::System::GetInstance().Scheduler().AddThread(thread, priority);
-
     thread->thread_id = NewThreadId();
     thread->status = THREADSTATUS_DORMANT;
     thread->entry_point = entry_point;
@@ -275,6 +273,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->name = std::move(name);
     thread->callback_handle = wakeup_callback_handle_table.Create(thread).Unwrap();
     thread->owner_process = owner_process;
+    thread->scheduler = Core::System().GetInstance().Scheduler(static_cast<size_t>(processor_id));
+    thread->scheduler->AddThread(thread, priority);
 
     // Find the next available TLS index, and mark it as used
     auto& tls_slots = owner_process->tls_slots;
@@ -337,7 +337,7 @@ void Thread::SetPriority(u32 priority) {
 }
 
 void Thread::BoostPriority(u32 priority) {
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
+    scheduler->SetThreadPriority(this, priority);
     current_priority = priority;
 }
 
@@ -406,7 +406,7 @@ void Thread::UpdatePriority() {
     if (new_priority == current_priority)
         return;
 
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, new_priority);
+    scheduler->SetThreadPriority(this, new_priority);
 
     current_priority = new_priority;
 
@@ -421,7 +421,7 @@ void Thread::UpdatePriority() {
  * Gets the current thread
  */
 Thread* GetCurrentThread() {
-    return Core::System::GetInstance().Scheduler().GetCurrentThread();
+    return Core::System::GetInstance().CurrentScheduler().GetCurrentThread();
 }
 
 void ThreadingInit() {

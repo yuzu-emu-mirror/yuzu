@@ -52,7 +52,7 @@ static void InterruptHook(uc_engine* uc, u32 intNo, void* user_data) {
 static bool UnmappedMemoryHook(uc_engine* uc, uc_mem_type type, u64 addr, int size, u64 value,
                                void* user_data) {
     ARM_Interface::ThreadContext ctx{};
-    Core::CPU().SaveContext(ctx);
+    Core::CurrentArmInterface().SaveContext(ctx);
     ASSERT_MSG(false, "Attempted to read from unmapped memory: 0x{:X}, pc=0x{:X}, lr=0x{:X}", addr,
                ctx.pc, ctx.cpu_registers[30]);
     return {};

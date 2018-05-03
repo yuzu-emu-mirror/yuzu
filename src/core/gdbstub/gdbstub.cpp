@@ -598,11 +598,11 @@ static void ReadRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        LongToGdbHex(reply, Core::CPU().GetReg(static_cast<int>(id)));
+        LongToGdbHex(reply, Core::CurrentArmInterface().GetReg(static_cast<int>(id)));
     } else if (id == PC_REGISTER) {
-        LongToGdbHex(reply, Core::CPU().GetPC());
+        LongToGdbHex(reply, Core::CurrentArmInterface().GetPC());
     } else if (id == CPSR_REGISTER) {
-        IntToGdbHex(reply, Core::CPU().GetCPSR());
+        IntToGdbHex(reply, Core::CurrentArmInterface().GetCPSR());
     } else {
         return SendReply("E01");
     }
@@ -618,16 +618,16 @@ static void ReadRegisters() {
     u8* bufptr = buffer;
 
     for (int reg = 0; reg <= SP_REGISTER; reg++) {
-        LongToGdbHex(bufptr + reg * 16, Core::CPU().GetReg(reg));
+        LongToGdbHex(bufptr + reg * 16, Core::CurrentArmInterface().GetReg(reg));
     }
 
     bufptr += (32 * 16);
 
-    LongToGdbHex(bufptr, Core::CPU().GetPC());
+    LongToGdbHex(bufptr, Core::CurrentArmInterface().GetPC());
 
     bufptr += 16;
 
-    IntToGdbHex(bufptr, Core::CPU().GetCPSR());
+    IntToGdbHex(bufptr, Core::CurrentArmInterface().GetCPSR());
 
     bufptr += 8;
 
@@ -646,11 +646,11 @@ static void WriteRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        Core::CPU().SetReg(id, GdbHexToLong(buffer_ptr));
+        Core::CurrentArmInterface().SetReg(id, GdbHexToLong(buffer_ptr));
     } else if (id == PC_REGISTER) {
-        Core::CPU().SetPC(GdbHexToLong(buffer_ptr));
+        Core::CurrentArmInterface().SetPC(GdbHexToLong(buffer_ptr));
     } else if (id == CPSR_REGISTER) {
-        Core::CPU().SetCPSR(GdbHexToInt(buffer_ptr));
+        Core::CurrentArmInterface().SetCPSR(GdbHexToInt(buffer_ptr));
     } else {
         return SendReply("E01");
     }
@@ -667,11 +667,11 @@ static void WriteRegisters() {
 
     for (int i = 0, reg = 0; reg <= CPSR_REGISTER; i++, reg++) {
         if (reg <= SP_REGISTER) {
-            Core::CPU().SetReg(reg, GdbHexToLong(buffer_ptr + i * 16));
+            Core::CurrentArmInterface().SetReg(reg, GdbHexToLong(buffer_ptr + i * 16));
         } else if (reg == PC_REGISTER) {
-            Core::CPU().SetPC(GdbHexToLong(buffer_ptr + i * 16));
+            Core::CurrentArmInterface().SetPC(GdbHexToLong(buffer_ptr + i * 16));
         } else if (reg == CPSR_REGISTER) {
-            Core::CPU().SetCPSR(GdbHexToInt(buffer_ptr + i * 16));
+            Core::CurrentArmInterface().SetCPSR(GdbHexToInt(buffer_ptr + i * 16));
         } else {
             UNIMPLEMENTED();
         }
