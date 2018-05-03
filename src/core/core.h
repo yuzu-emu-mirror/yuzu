@@ -92,7 +92,7 @@ public:
      * @returns True if the emulated system is powered on, otherwise false.
      */
     bool IsPoweredOn() const {
-        return cpu_cores[0] != nullptr;
+        return cpu_barrier && cpu_barrier->IsAlive();
     }
 
     /**

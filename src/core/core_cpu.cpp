@@ -19,6 +19,30 @@
 
 namespace Core {
 
+void CpuBarrier::NotifyEnd() {
+    std::unique_lock<std::mutex> lock(mutex);
+    end = true;
+    condition.notify_all();
+}
+
+bool CpuBarrier::Rendezvous() {
+    if (end) {
+        return false;
+    } else {
+        std::unique_lock<std::mutex> lock(mutex);
+
+        --cores_waiting;
+        if (!cores_waiting) {
+            cores_waiting = NUM_CPU_CORES;
+            condition.notify_all();
+            return true;
+        }
+
+        condition.wait(lock);
+        return true;
+    }
+}
+
 Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
     : cpu_barrier{std::move(cpu_barrier)}, core_index{core_index} {
 
@@ -38,7 +62,10 @@ Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
 
 void Cpu::RunLoop(bool tight_loop) {
     // Wait for all other CPU cores to complete the previous slice, such that they run in lock-step
-    cpu_barrier->Rendezvous();
+    if (!cpu_barrier->Rendezvous()) {
+        // If rendezvous failed, session has been killed
+        return;
+    }
 
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread

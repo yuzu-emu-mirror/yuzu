@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -22,23 +23,19 @@ constexpr unsigned NUM_CPU_CORES{4};
 
 class CpuBarrier {
 public:
-    void Rendezvous() {
-        std::unique_lock<std::mutex> lock(mutex);
-
-        --cores_waiting;
-        if (!cores_waiting) {
-            cores_waiting = NUM_CPU_CORES;
-            condition.notify_all();
-            return;
-        }
-
-        condition.wait(lock);
+    bool IsAlive() const {
+        return !end;
     }
+
+    void NotifyEnd();
+
+    bool Rendezvous();
 
 private:
     unsigned cores_waiting{NUM_CPU_CORES};
     std::mutex mutex;
     std::condition_variable condition;
+    std::atomic<bool> end{};
 };
 
 class Cpu {

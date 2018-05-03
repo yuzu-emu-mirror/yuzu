@@ -37,6 +37,9 @@ static void RunCpuCore(std::shared_ptr<Cpu> cpu_state) {
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
 
+    // Update thread_to_cpu in case Core 0 is run from a different host thread
+    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
+
     if (GDBStub::IsServerEnabled()) {
         GDBStub::HandlePacket();
 
@@ -186,17 +189,21 @@ void System::Shutdown() {
     gpu_core.reset();
 
     // Close all CPU/threading state
-    thread_to_cpu.clear();
-    for (auto& cpu_core : cpu_cores) {
-        cpu_core.reset();
-    }
+    cpu_barrier->NotifyEnd();
     for (auto& thread : cpu_core_threads) {
         thread->join();
         thread.reset();
     }
+    thread_to_cpu.clear();
+    for (auto& cpu_core : cpu_cores) {
+        cpu_core.reset();
+    }
+    cpu_barrier.reset();
 
+    // Close core timing
     CoreTiming::Shutdown();
 
+    // Close app loader
     app_loader.reset();
 
     NGLOG_DEBUG(Core, "Shutdown OK");
