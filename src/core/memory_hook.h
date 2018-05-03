@@ -23,7 +23,7 @@ namespace Memory {
  */
 class MemoryHook {
 public:
-    virtual ~MemoryHook() = default;
+    virtual ~MemoryHook();
 
     virtual boost::optional<bool> IsValidAddress(VAddr addr) = 0;
 

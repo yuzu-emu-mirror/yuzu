@@ -253,6 +253,7 @@ add_library(core STATIC
     loader/nso.h
     memory.cpp
     memory.h
+    memory_hook.cpp
     memory_hook.h
     memory_setup.h
     perf_stats.cpp
