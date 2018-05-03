@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <thread>
 #include "common/common_types.h"
 #include "core/core_cpu.h"
 #include "core/hle/kernel/kernel.h"
@@ -112,7 +113,7 @@ public:
      * @returns A reference to the emulated CPU.
      */
     ARM_Interface& CPU() {
-        return cpu_cores[0]->CPU();
+        return CurrentCpuCore().CPU();
     }
 
     Tegra::GPU& GPU() {
@@ -120,7 +121,7 @@ public:
     }
 
     Kernel::Scheduler& Scheduler() {
-        return cpu_cores[0]->Scheduler();
+        return CurrentCpuCore().Scheduler();
     }
 
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
@@ -157,6 +158,14 @@ public:
     }
 
 private:
+    /// Returns the current CPU core based on the calling host thread
+    Cpu& CurrentCpuCore() {
+        const auto& search = thread_to_cpu.find(std::this_thread::get_id());
+        ASSERT(search != thread_to_cpu.end());
+        ASSERT(search->second);
+        return *search->second;
+    }
+
     /**
      * Initialize the emulated system.
      * @param emu_window Pointer to the host-system window used for video output and keyboard input.
@@ -167,14 +176,12 @@ private:
 
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
-
-    std::array<std::unique_ptr<Cpu>, 4> cpu_cores;
     std::unique_ptr<Tegra::GPU> gpu_core;
     std::shared_ptr<Tegra::DebugContext> debug_context;
     Kernel::SharedPtr<Kernel::Process> current_process;
-
-    /// When true, signals that a reschedule should happen
-    bool reschedule_pending{};
+    std::shared_ptr<CpuBarrier> cpu_barrier;
+    std::array<std::shared_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
+    std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;
@@ -186,6 +193,9 @@ private:
 
     ResultStatus status = ResultStatus::Success;
     std::string status_details = "";
+
+    /// Map of guest threads to CPU cores
+    std::map<std::thread::id, std::shared_ptr<Cpu>> thread_to_cpu;
 };
 
 inline ARM_Interface& CPU() {

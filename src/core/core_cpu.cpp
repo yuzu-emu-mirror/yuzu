@@ -2,6 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <condition_variable>
+#include <mutex>
+
 #include "common/logging/log.h"
 #ifdef ARCHITECTURE_x86_64
 #include "core/arm/dynarmic/arm_dynarmic.h"
@@ -16,7 +19,9 @@
 
 namespace Core {
 
-Cpu::Cpu() {
+Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
+    : cpu_barrier{std::move(cpu_barrier)}, core_index{core_index} {
+
     if (Settings::values.use_cpu_jit) {
 #ifdef ARCHITECTURE_x86_64
         arm_interface = std::make_shared<ARM_Dynarmic>();
@@ -32,15 +37,25 @@ Cpu::Cpu() {
 }
 
 void Cpu::RunLoop(bool tight_loop) {
+    // Wait for all other CPU cores to complete the previous slice, such that they run in lock-step
+    cpu_barrier->Rendezvous();
+
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread
     if (Kernel::GetCurrentThread() == nullptr) {
-        NGLOG_TRACE(Core, "Idling");
-        CoreTiming::Idle();
-        CoreTiming::Advance();
+        NGLOG_TRACE(Core, "Core-{} idling", core_index);
+
+        if (IsMainCore()) {
+            CoreTiming::Idle();
+            CoreTiming::Advance();
+        }
+
         PrepareReschedule();
     } else {
-        CoreTiming::Advance();
+        if (IsMainCore()) {
+            CoreTiming::Advance();
+        }
+
         if (tight_loop) {
             arm_interface->Run();
         } else {
