@@ -78,6 +78,7 @@ void Config::ReadValues() {
 
     qt_config->beginGroup("Core");
     Settings::values.use_cpu_jit = qt_config->value("use_cpu_jit", true).toBool();
+    Settings::values.use_multi_core = qt_config->value("use_multi_core", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
@@ -177,6 +178,7 @@ void Config::SaveValues() {
 
     qt_config->beginGroup("Core");
     qt_config->setValue("use_cpu_jit", Settings::values.use_cpu_jit);
+    qt_config->setValue("use_multi_core", Settings::values.use_multi_core);
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");

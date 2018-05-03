@@ -112,10 +112,7 @@ public:
         return CurrentCpuCore().ArmInterface();
     }
 
-    ARM_Interface& ArmInterface(size_t core_index) {
-        ASSERT(core_index < NUM_CPU_CORES);
-        return cpu_cores[core_index]->ArmInterface();
-    }
+    ARM_Interface& ArmInterface(size_t core_index);
 
     Tegra::GPU& GPU() {
         return *gpu_core;
@@ -125,10 +122,7 @@ public:
         return *CurrentCpuCore().Scheduler();
     }
 
-    const std::shared_ptr<Kernel::Scheduler>& Scheduler(size_t core_index) {
-        ASSERT(core_index < NUM_CPU_CORES);
-        return cpu_cores[core_index]->Scheduler();
-    }
+    const std::shared_ptr<Kernel::Scheduler>& Scheduler(size_t core_index);
 
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
         return current_process;

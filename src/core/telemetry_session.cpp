@@ -155,6 +155,8 @@ TelemetrySession::TelemetrySession() {
 
     // Log user configuration information
     AddField(Telemetry::FieldType::UserConfig, "Core_UseCpuJit", Settings::values.use_cpu_jit);
+    AddField(Telemetry::FieldType::UserConfig, "Core_UseMultiCore",
+             Settings::values.use_multi_core);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ResolutionFactor",
              Settings::values.resolution_factor);
     AddField(Telemetry::FieldType::UserConfig, "Renderer_ToggleFramelimit",

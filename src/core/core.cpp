@@ -126,6 +126,21 @@ PerfStats::Results System::GetAndResetPerfStats() {
     return perf_stats.GetAndResetStats(CoreTiming::GetGlobalTimeUs());
 }
 
+const std::shared_ptr<Kernel::Scheduler>& System::Scheduler(size_t core_index) {
+    if (!Settings::values.use_multi_core) {
+        // Always use Core 0 scheduler when multicore is disabled
+        return cpu_cores[0]->Scheduler();
+    }
+
+    ASSERT(core_index < NUM_CPU_CORES);
+    return cpu_cores[core_index]->Scheduler();
+}
+
+ARM_Interface& System::ArmInterface(size_t core_index) {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return cpu_cores[core_index]->ArmInterface();
+}
+
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     NGLOG_DEBUG(HW_Memory, "initialized OK");
 
@@ -154,9 +169,12 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     // Create threads for CPU cores 1-3, and build thread_to_cpu map
     // CPU core 0 is run on the main thread
     thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
-    for (size_t index = 0; index < cpu_core_threads.size(); ++index) {
-        cpu_core_threads[index] = std::make_unique<std::thread>(RunCpuCore, cpu_cores[index + 1]);
-        thread_to_cpu[cpu_core_threads[index]->get_id()] = cpu_cores[index + 1];
+    if (Settings::values.use_multi_core) {
+        for (size_t index = 0; index < cpu_core_threads.size(); ++index) {
+            cpu_core_threads[index] =
+                std::make_unique<std::thread>(RunCpuCore, cpu_cores[index + 1]);
+            thread_to_cpu[cpu_core_threads[index]->get_id()] = cpu_cores[index + 1];
+        }
     }
 
     NGLOG_DEBUG(Core, "Initialized OK");
@@ -190,9 +208,11 @@ void System::Shutdown() {
 
     // Close all CPU/threading state
     cpu_barrier->NotifyEnd();
-    for (auto& thread : cpu_core_threads) {
-        thread->join();
-        thread.reset();
+    if (Settings::values.use_multi_core) {
+        for (auto& thread : cpu_core_threads) {
+            thread->join();
+            thread.reset();
+        }
     }
     thread_to_cpu.clear();
     for (auto& cpu_core : cpu_cores) {

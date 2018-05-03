@@ -26,9 +26,12 @@ void CpuBarrier::NotifyEnd() {
 }
 
 bool CpuBarrier::Rendezvous() {
-    if (end) {
-        return false;
-    } else {
+    if (!Settings::values.use_multi_core) {
+        // Meaningless when running in single-core mode
+        return true;
+    }
+
+    if (!end) {
         std::unique_lock<std::mutex> lock(mutex);
 
         --cores_waiting;
@@ -41,6 +44,8 @@ bool CpuBarrier::Rendezvous() {
         condition.wait(lock);
         return true;
     }
+
+    return false;
 }
 
 Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
