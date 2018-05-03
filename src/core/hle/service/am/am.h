@@ -128,7 +128,6 @@ public:
     IHomeMenuFunctions();
 
 private:
-    void GetPopFromGeneralChannelEvent(Kernel::HLERequestContext& ctx);
     void RequestToGetForeground(Kernel::HLERequestContext& ctx);
 };
 

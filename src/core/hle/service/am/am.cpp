@@ -593,17 +593,11 @@ IHomeMenuFunctions::IHomeMenuFunctions() : ServiceFramework("IHomeMenuFunctions"
         {11, nullptr, "LockForeground"},
         {12, nullptr, "UnlockForeground"},
         {20, nullptr, "PopFromGeneralChannel"},
-        {21, &IHomeMenuFunctions::GetPopFromGeneralChannelEvent, "GetPopFromGeneralChannelEvent"},
+        {21, nullptr, "GetPopFromGeneralChannelEvent"},
         {30, nullptr, "GetHomeButtonWriterLockAccessor"},
         {31, nullptr, "GetWriterLockAccessorEx"},
     };
     RegisterHandlers(functions);
-}
-
-void IHomeMenuFunctions::GetPopFromGeneralChannelEvent(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(RESULT_SUCCESS);
-    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IHomeMenuFunctions::RequestToGetForeground(Kernel::HLERequestContext& ctx) {
