@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <limits>
 #include <mutex>
 #include <string>
 #include <tuple>
@@ -57,7 +58,8 @@ static u64 event_fifo_id;
 // to the event_queue by the emu thread
 static Common::MPSCQueue<Event, false> ts_queue;
 
-static constexpr int MAX_SLICE_LENGTH = 20000;
+constexpr int MAX_SLICE_LENGTH = 20000;
+constexpr u64 MAX_VALUE_TO_MULTIPLY = std::numeric_limits<s64>::max() / BASE_CLOCK_RATE;
 
 static s64 idled_cycles;
 
@@ -69,6 +71,54 @@ static bool is_global_timer_sane;
 static EventType* ev_lost = nullptr;
 
 static void EmptyTimedCallback(u64 userdata, s64 cyclesLate) {}
+
+s64 usToCycles(s64 us) {
+    if (us / 1000000 > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
+        return std::numeric_limits<s64>::max();
+    }
+    if (us > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
+        return BASE_CLOCK_RATE * (us / 1000000);
+    }
+    return (BASE_CLOCK_RATE * us) / 1000000;
+}
+
+s64 usToCycles(u64 us) {
+    if (us / 1000000 > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
+        return std::numeric_limits<s64>::max();
+    }
+    if (us > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
+        return BASE_CLOCK_RATE * static_cast<s64>(us / 1000000);
+    }
+    return (BASE_CLOCK_RATE * static_cast<s64>(us)) / 1000000;
+}
+
+s64 nsToCycles(s64 ns) {
+    if (ns / 1000000000 > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
+        return std::numeric_limits<s64>::max();
+    }
+    if (ns > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
+        return BASE_CLOCK_RATE * (ns / 1000000000);
+    }
+    return (BASE_CLOCK_RATE * ns) / 1000000000;
+}
+
+s64 nsToCycles(u64 ns) {
+    if (ns / 1000000000 > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
+        return std::numeric_limits<s64>::max();
+    }
+    if (ns > MAX_VALUE_TO_MULTIPLY) {
+        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
+        return BASE_CLOCK_RATE * (static_cast<s64>(ns) / 1000000000);
+    }
+    return (BASE_CLOCK_RATE * static_cast<s64>(ns)) / 1000000000;
+}
 
 EventType* RegisterEvent(const std::string& name, TimedCallback callback) {
     // check for existing type with same name.

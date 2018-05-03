@@ -18,17 +18,14 @@
  */
 
 #include <functional>
-#include <limits>
 #include <string>
 #include "common/common_types.h"
-#include "common/logging/log.h"
 
 namespace CoreTiming {
 
 // The below clock rate is based on Switch's clockspeed being widely known as 1.020GHz
 // The exact value used is of course unverified.
 constexpr u64 BASE_CLOCK_RATE = 1019215872; // Switch clock speed is 1020MHz un/docked
-constexpr u64 MAX_VALUE_TO_MULTIPLY = std::numeric_limits<s64>::max() / BASE_CLOCK_RATE;
 
 inline s64 msToCycles(int ms) {
     // since ms is int there is no way to overflow
@@ -51,29 +48,9 @@ inline s64 usToCycles(int us) {
     return (BASE_CLOCK_RATE * static_cast<s64>(us) / 1000000);
 }
 
-inline s64 usToCycles(s64 us) {
-    if (us / 1000000 > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
-        return std::numeric_limits<s64>::max();
-    }
-    if (us > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
-        return BASE_CLOCK_RATE * (us / 1000000);
-    }
-    return (BASE_CLOCK_RATE * us) / 1000000;
-}
+s64 usToCycles(s64 us);
 
-inline s64 usToCycles(u64 us) {
-    if (us / 1000000 > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
-        return std::numeric_limits<s64>::max();
-    }
-    if (us > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
-        return BASE_CLOCK_RATE * static_cast<s64>(us / 1000000);
-    }
-    return (BASE_CLOCK_RATE * static_cast<s64>(us)) / 1000000;
-}
+s64 usToCycles(u64 us);
 
 inline s64 nsToCycles(float ns) {
     return static_cast<s64>(BASE_CLOCK_RATE * (0.000000001f) * ns);
@@ -83,29 +60,9 @@ inline s64 nsToCycles(int ns) {
     return BASE_CLOCK_RATE * static_cast<s64>(ns) / 1000000000;
 }
 
-inline s64 nsToCycles(s64 ns) {
-    if (ns / 1000000000 > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
-        return std::numeric_limits<s64>::max();
-    }
-    if (ns > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
-        return BASE_CLOCK_RATE * (ns / 1000000000);
-    }
-    return (BASE_CLOCK_RATE * ns) / 1000000000;
-}
+s64 nsToCycles(s64 ns);
 
-inline s64 nsToCycles(u64 ns) {
-    if (ns / 1000000000 > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_ERROR(Core_Timing, "Integer overflow, use max value");
-        return std::numeric_limits<s64>::max();
-    }
-    if (ns > MAX_VALUE_TO_MULTIPLY) {
-        NGLOG_DEBUG(Core_Timing, "Time very big, do rounding");
-        return BASE_CLOCK_RATE * (static_cast<s64>(ns) / 1000000000);
-    }
-    return (BASE_CLOCK_RATE * static_cast<s64>(ns)) / 1000000000;
-}
+s64 nsToCycles(u64 ns);
 
 inline u64 cyclesToNs(s64 cycles) {
     return cycles * 1000000000 / BASE_CLOCK_RATE;
