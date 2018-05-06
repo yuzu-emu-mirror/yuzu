@@ -401,8 +401,8 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
 
 /// Get which CPU core is executing the current thread
 static u32 GetCurrentProcessorNumber() {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, defaulting to processor 0");
-    return 0;
+    NGLOG_TRACE(Kernel_SVC, "called");
+    return GetCurrentThread()->processor_id;
 }
 
 static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size,
