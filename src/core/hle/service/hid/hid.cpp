@@ -60,7 +60,10 @@ private:
         std::transform(Settings::values.buttons.begin() + Settings::NativeButton::BUTTON_HID_BEGIN,
                        Settings::values.buttons.begin() + Settings::NativeButton::BUTTON_HID_END,
                        buttons.begin(), Input::CreateDevice<Input::ButtonDevice>);
-        // TODO(shinyquagsire23): sticks, gyro, touch, mouse, keyboard
+        std::transform(Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_BEGIN,
+                       Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_END,
+                       sticks.begin(), Input::CreateDevice<Input::AnalogDevice>);
+        // TODO(shinyquagsire23): gyro, touch, mouse, keyboard
     }
 
     void UpdatePadCallback(u64 userdata, int cycles_late) {
@@ -136,7 +139,13 @@ private:
                 state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
                 state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
 
-                // TODO(shinyquagsire23): Analog stick vals
+                float stick_l_x_f, stick_l_y_f, stick_r_x_f, stick_r_y_f;
+                std::tie(stick_l_x_f, stick_l_y_f) = sticks[Joystick_Left]->GetStatus();
+                std::tie(stick_r_x_f, stick_r_y_f) = sticks[Joystick_Right]->GetStatus();
+                entry.joystick_left_x = static_cast<s32>(stick_l_x_f * HID_JOYSTICK_MAX);
+                entry.joystick_left_y = static_cast<s32>(stick_l_y_f * HID_JOYSTICK_MAX);
+                entry.joystick_right_x = static_cast<s32>(stick_r_x_f * HID_JOYSTICK_MAX);
+                entry.joystick_right_y = static_cast<s32>(stick_r_y_f * HID_JOYSTICK_MAX);
             }
         }
 
@@ -200,6 +209,7 @@ private:
     std::atomic<bool> is_device_reload_pending{true};
     std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeButton::NUM_BUTTONS_HID>
         buttons;
+    std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID> sticks;
 };
 
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {

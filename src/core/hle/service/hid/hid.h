@@ -48,6 +48,13 @@ enum ControllerConnectionState {
     ConnectionState_Wired = 1 << 1,
 };
 
+enum ControllerJoystick {
+    Joystick_Left = 0,
+    Joystick_Right = 1,
+
+    Joystick_NumSticks = 2,
+};
+
 enum ControllerID {
     Controller_Player1 = 0,
     Controller_Player2 = 1,
@@ -283,10 +290,10 @@ struct ControllerInputEntry {
     u64 timestamp;
     u64 timestamp_2;
     ControllerPadState buttons;
-    u32 joystick_left_x;
-    u32 joystick_left_y;
-    u32 joystick_right_x;
-    u32 joystick_right_y;
+    s32 joystick_left_x;
+    s32 joystick_left_y;
+    s32 joystick_right_x;
+    s32 joystick_right_y;
     u64 connection_state;
 };
 static_assert(sizeof(ControllerInputEntry) == 0x30,

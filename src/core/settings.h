@@ -99,6 +99,10 @@ enum Values {
     NumAnalogs,
 };
 
+constexpr int STICK_HID_BEGIN = LStick;
+constexpr int STICK_HID_END = NumAnalogs;
+constexpr int NUM_STICKS_HID = NumAnalogs;
+
 static const std::array<const char*, NumAnalogs> mapping = {{
     "lstick",
     "rstick",
