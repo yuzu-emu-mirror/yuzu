@@ -635,53 +635,60 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
                 condition_variable_addr, target);
 
     u32 processed = 0;
-    auto& thread_list = Core::System::GetInstance().CurrentScheduler().GetThreadList();
 
-    for (auto& thread : thread_list) {
-        if (thread->condvar_wait_address != condition_variable_addr)
-            continue;
+    auto signal_process_wide_key = [&](size_t core_index) {
+        const auto& scheduler = Core::System::GetInstance().Scheduler(core_index);
+        for (auto& thread : scheduler->GetThreadList()) {
+            if (thread->condvar_wait_address != condition_variable_addr)
+                continue;
 
-        // Only process up to 'target' threads, unless 'target' is -1, in which case process
-        // them all.
-        if (target != -1 && processed >= target)
-            break;
+            // Only process up to 'target' threads, unless 'target' is -1, in which case process
+            // them all.
+            if (target != -1 && processed >= target)
+                break;
 
-        // If the mutex is not yet acquired, acquire it.
-        u32 mutex_val = Memory::Read32(thread->mutex_wait_address);
+            // If the mutex is not yet acquired, acquire it.
+            u32 mutex_val = Memory::Read32(thread->mutex_wait_address);
 
-        if (mutex_val == 0) {
-            // We were able to acquire the mutex, resume this thread.
-            Memory::Write32(thread->mutex_wait_address, thread->wait_handle);
-            ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
-            thread->ResumeFromWait();
+            if (mutex_val == 0) {
+                // We were able to acquire the mutex, resume this thread.
+                Memory::Write32(thread->mutex_wait_address, thread->wait_handle);
+                ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+                thread->ResumeFromWait();
 
-            auto lock_owner = thread->lock_owner;
-            if (lock_owner)
-                lock_owner->RemoveMutexWaiter(thread);
+                auto lock_owner = thread->lock_owner;
+                if (lock_owner)
+                    lock_owner->RemoveMutexWaiter(thread);
 
-            thread->lock_owner = nullptr;
-            thread->mutex_wait_address = 0;
-            thread->condvar_wait_address = 0;
-            thread->wait_handle = 0;
-        } else {
-            // Couldn't acquire the mutex, block the thread.
-            Handle owner_handle = static_cast<Handle>(mutex_val & Mutex::MutexOwnerMask);
-            auto owner = g_handle_table.Get<Thread>(owner_handle);
-            ASSERT(owner);
-            ASSERT(thread->status != THREADSTATUS_RUNNING);
-            thread->status = THREADSTATUS_WAIT_MUTEX;
-            thread->wakeup_callback = nullptr;
+                thread->lock_owner = nullptr;
+                thread->mutex_wait_address = 0;
+                thread->condvar_wait_address = 0;
+                thread->wait_handle = 0;
+            } else {
+                // Couldn't acquire the mutex, block the thread.
+                Handle owner_handle = static_cast<Handle>(mutex_val & Mutex::MutexOwnerMask);
+                auto owner = g_handle_table.Get<Thread>(owner_handle);
+                ASSERT(owner);
+                ASSERT(thread->status != THREADSTATUS_RUNNING);
+                thread->status = THREADSTATUS_WAIT_MUTEX;
+                thread->wakeup_callback = nullptr;
 
-            // Signal that the mutex now has a waiting thread.
-            Memory::Write32(thread->mutex_wait_address, mutex_val | Mutex::MutexHasWaitersFlag);
+                // Signal that the mutex now has a waiting thread.
+                Memory::Write32(thread->mutex_wait_address, mutex_val | Mutex::MutexHasWaitersFlag);
 
-            owner->AddMutexWaiter(thread);
+                owner->AddMutexWaiter(thread);
 
-            Core::System::GetInstance().PrepareReschedule();
+                Core::System::GetInstance().PrepareReschedule();
+            }
+
+            ++processed;
         }
+    };
 
-        ++processed;
-    }
+    signal_process_wide_key(0);
+    signal_process_wide_key(1);
+    signal_process_wide_key(2);
+    signal_process_wide_key(3);
 
     return RESULT_SUCCESS;
 }
