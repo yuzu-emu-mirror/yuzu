@@ -273,7 +273,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->name = std::move(name);
     thread->callback_handle = wakeup_callback_handle_table.Create(thread).Unwrap();
     thread->owner_process = owner_process;
-    thread->scheduler = Core::System().GetInstance().Scheduler(static_cast<size_t>(processor_id));
+    thread->scheduler = Core::System().GetInstance().Scheduler(processor_id);
     thread->scheduler->AddThread(thread, priority);
 
     // Find the next available TLS index, and mark it as used
@@ -413,6 +413,57 @@ void Thread::UpdatePriority() {
     // Recursively update the priority of the thread that depends on the priority of this one.
     if (lock_owner)
         lock_owner->UpdatePriority();
+}
+
+static s32 GetNextProcessorId(u64 mask) {
+    s32 processor_id{};
+    for (s32 index = 0; index < Core::NUM_CPU_CORES; ++index) {
+        if (mask & (1ULL << index)) {
+            if (!Core::System().GetInstance().Scheduler(index)->GetCurrentThread()) {
+                // Core is enabled and not running any threads, use this one
+                return index;
+            }
+
+            // Core is enabled, but running a thread, less ideal
+            processor_id = index;
+        }
+    }
+
+    return processor_id;
+}
+
+void Thread::ChangeCore(u32 core, u64 mask) {
+    const s32 new_processor_id{GetNextProcessorId(mask)};
+
+    ASSERT(ideal_core == core); // We're not doing anything with this yet, so assert the expected
+    ASSERT(new_processor_id < Core::NUM_CPU_CORES);
+
+    if (new_processor_id == processor_id) {
+        // Already running on ideal core, nothing to do here
+        return;
+    }
+
+    ASSERT(status != THREADSTATUS_RUNNING); // Unsupported
+
+    processor_id = new_processor_id;
+    ideal_core = core;
+    mask = mask;
+
+    // Add thread to new core's scheduler
+    auto& next_scheduler = Core::System().GetInstance().Scheduler(new_processor_id);
+    next_scheduler->AddThread(this, current_priority);
+
+    if (status == THREADSTATUS_READY) {
+        // If the thread was ready, unschedule from the previous core and schedule on the new core
+        scheduler->UnscheduleThread(this, current_priority);
+        next_scheduler->ScheduleThread(this, current_priority);
+    }
+
+    // Remove thread from previous core's scheduler
+    scheduler->RemoveThread(this);
+
+    // Change thread's scheduler
+    scheduler = next_scheduler;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

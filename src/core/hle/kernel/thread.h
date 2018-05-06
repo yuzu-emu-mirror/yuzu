@@ -120,6 +120,9 @@ public:
     /// Recalculates the current priority taking into account priority inheritance.
     void UpdatePriority();
 
+    /// Changes the core that the thread is running or scheduled to run on.
+    void ChangeCore(u32 core, u64 mask);
+
     /**
      * Gets the thread's thread ID
      * @return The thread's ID
@@ -243,6 +246,9 @@ public:
     std::function<WakeupCallback> wakeup_callback;
 
     std::shared_ptr<Scheduler> scheduler;
+
+    u32 ideal_core{0xFFFFFFFF};
+    u64 mask{0x1};
 
 private:
     Thread();
