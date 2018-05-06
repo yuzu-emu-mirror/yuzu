@@ -96,8 +96,8 @@ private:
                 ControllerInputEntry& entry = layout.entries[layout.header.latest_entry];
                 entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
                 entry.timestamp++;
-                entry
-                    .timestamp_2++; // TODO(shinyquagsire23): Is this always identical to timestamp?
+                // TODO(shinyquagsire23): Is this always identical to timestamp?
+                entry.timestamp_2++;
 
                 // TODO(shinyquagsire23): More than just handheld input
                 if (controller != Controller_Handheld)
