@@ -191,6 +191,44 @@ private:
         keyboard.entries[curr_keyboard_entry].timestamp = keyboard_sample_counter;
         keyboard.entries[curr_keyboard_entry].timestamp_2 = keyboard_sample_counter;
 
+        // TODO(shinyquagsire23): Figure out what any of these are
+        for (int i = 0; i < mem.unk_input_1.size(); i++) {
+            UnkInput1& input = mem.unk_input_1[i];
+            const u64 last_input_entry = input.header.latest_entry;
+            const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
+            const u64 input_sample_counter = input.entries[last_input_entry].timestamp + 1;
+
+            input.header.timestamp_ticks = timestamp;
+            input.header.num_entries = input.entries.size();
+            input.header.latest_entry = last_input_entry;
+            input.header.max_entry_index = input.entries.size();
+
+            input.entries[curr_input_entry].timestamp = input_sample_counter;
+            input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
+        }
+
+        for (int i = 0; i < mem.unk_input_2.size(); i++) {
+            UnkInput2& input = mem.unk_input_2[i];
+
+            input.header.timestamp_ticks = timestamp;
+            input.header.num_entries = 17;
+            input.header.latest_entry = 0;
+            input.header.max_entry_index = 0;
+        }
+
+        UnkInput3& input = mem.unk_input_3;
+        const u64 last_input_entry = input.header.latest_entry;
+        const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
+        const u64 input_sample_counter = input.entries[last_input_entry].timestamp + 1;
+
+        input.header.timestamp_ticks = timestamp;
+        input.header.num_entries = input.entries.size();
+        input.header.latest_entry = last_input_entry;
+        input.header.max_entry_index = input.entries.size();
+
+        input.entries[curr_input_entry].timestamp = input_sample_counter;
+        input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
+
         // TODO(shinyquagsire23): Signal events
 
         std::memcpy(shared_mem->GetPointer(), &mem, sizeof(SharedMemory));
