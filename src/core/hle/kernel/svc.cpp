@@ -726,16 +726,31 @@ static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32
     return RESULT_SUCCESS;
 }
 
-static ResultCode GetThreadCoreMask(Handle handle, u32* mask, u64* unknown) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}", handle);
-    *mask = 0x0;
-    *unknown = 0xf;
+static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) {
+    NGLOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}", thread_handle);
+
+    const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
+    if (!thread) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    *core = thread->ideal_core;
+    *mask = thread->mask;
+
     return RESULT_SUCCESS;
 }
 
-static ResultCode SetThreadCoreMask(Handle handle, u32 mask, u64 unknown) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, mask=0x{:08X}, unknown=0x{:X}",
-                  handle, mask, unknown);
+static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
+    NGLOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:08X}, core=0x{:X}", thread_handle,
+                mask, core);
+
+    const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
+    if (!thread) {
+        return ERR_INVALID_HANDLE;
+    }
+
+    thread->ChangeCore(core, mask);
+
     return RESULT_SUCCESS;
 }
 
