@@ -51,8 +51,6 @@ enum ControllerConnectionState {
 enum ControllerJoystick {
     Joystick_Left = 0,
     Joystick_Right = 1,
-
-    Joystick_NumSticks = 2,
 };
 
 enum ControllerID {
