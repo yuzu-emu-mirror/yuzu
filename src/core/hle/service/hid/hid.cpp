@@ -82,7 +82,7 @@ private:
         controller_header.left_color_body = JOYCON_BODY_NEON_BLUE;
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
-        for (int controller = 0; controller < mem.controllers.size(); controller++) {
+        for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
             for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
                 ControllerLayout& layout = mem.controllers[controller].layouts[index];
                 layout.header.num_entries = HID_NUM_ENTRIES;
@@ -139,9 +139,8 @@ private:
                 state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
                 state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
 
-                float stick_l_x_f, stick_l_y_f, stick_r_x_f, stick_r_y_f;
-                std::tie(stick_l_x_f, stick_l_y_f) = sticks[Joystick_Left]->GetStatus();
-                std::tie(stick_r_x_f, stick_r_y_f) = sticks[Joystick_Right]->GetStatus();
+                const auto [stick_l_x_f, stick_l_y_f] = sticks[Joystick_Left]->GetStatus();
+                const auto [stick_r_x_f, stick_r_y_f] = sticks[Joystick_Right]->GetStatus();
                 entry.joystick_left_x = static_cast<s32>(stick_l_x_f * HID_JOYSTICK_MAX);
                 entry.joystick_left_y = static_cast<s32>(stick_l_y_f * HID_JOYSTICK_MAX);
                 entry.joystick_right_x = static_cast<s32>(stick_r_x_f * HID_JOYSTICK_MAX);
@@ -192,7 +191,7 @@ private:
         keyboard.entries[curr_keyboard_entry].timestamp_2 = keyboard_sample_counter;
 
         // TODO(shinyquagsire23): Figure out what any of these are
-        for (int i = 0; i < mem.unk_input_1.size(); i++) {
+        for (size_t i = 0; i < mem.unk_input_1.size(); i++) {
             UnkInput1& input = mem.unk_input_1[i];
             const u64 last_input_entry = input.header.latest_entry;
             const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
@@ -207,7 +206,7 @@ private:
             input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
         }
 
-        for (int i = 0; i < mem.unk_input_2.size(); i++) {
+        for (size_t i = 0; i < mem.unk_input_2.size(); i++) {
             UnkInput2& input = mem.unk_input_2[i];
 
             input.header.timestamp_ticks = timestamp;
