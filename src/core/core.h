@@ -114,6 +114,8 @@ public:
 
     ARM_Interface& ArmInterface(size_t core_index);
 
+    Cpu& CpuCore(size_t core_index);
+
     Tegra::GPU& GPU() {
         return *gpu_core;
     }

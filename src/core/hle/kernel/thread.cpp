@@ -189,7 +189,7 @@ void Thread::ResumeFromWait() {
 
     status = THREADSTATUS_READY;
     scheduler->ScheduleThread(this, current_priority);
-    Core::System::GetInstance().PrepareReschedule();
+    Core::System::GetInstance().CpuCore(processor_id).PrepareReschedule();
 }
 
 /**

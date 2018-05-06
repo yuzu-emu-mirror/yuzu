@@ -625,7 +625,7 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
 
     // Note: Deliberately don't attempt to inherit the lock owner's priority.
 
-    Core::System::GetInstance().PrepareReschedule();
+    Core::System::GetInstance().CpuCore(current_thread->processor_id).PrepareReschedule();
     return RESULT_SUCCESS;
 }
 
@@ -678,7 +678,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 
                 owner->AddMutexWaiter(thread);
 
-                Core::System::GetInstance().PrepareReschedule();
+                Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
             }
 
             ++processed;

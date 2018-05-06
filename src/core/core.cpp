@@ -141,6 +141,11 @@ ARM_Interface& System::ArmInterface(size_t core_index) {
     return cpu_cores[core_index]->ArmInterface();
 }
 
+Cpu& System::CpuCore(size_t core_index) {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return *cpu_cores[core_index];
+}
+
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     NGLOG_DEBUG(HW_Memory, "initialized OK");
 
