@@ -60,7 +60,10 @@ private:
         std::transform(Settings::values.buttons.begin() + Settings::NativeButton::BUTTON_HID_BEGIN,
                        Settings::values.buttons.begin() + Settings::NativeButton::BUTTON_HID_END,
                        buttons.begin(), Input::CreateDevice<Input::ButtonDevice>);
-        // TODO(shinyquagsire23): sticks, gyro, touch, mouse, keyboard
+        std::transform(Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_BEGIN,
+                       Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_END,
+                       sticks.begin(), Input::CreateDevice<Input::AnalogDevice>);
+        // TODO(shinyquagsire23): gyro, touch, mouse, keyboard
     }
 
     void UpdatePadCallback(u64 userdata, int cycles_late) {
@@ -79,61 +82,70 @@ private:
         controller_header.left_color_body = JOYCON_BODY_NEON_BLUE;
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
-        for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
-            ControllerLayout& layout = mem.controllers[Controller_Handheld].layouts[index];
-            layout.header.num_entries = HID_NUM_ENTRIES;
-            layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
+        for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
+            for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
+                ControllerLayout& layout = mem.controllers[controller].layouts[index];
+                layout.header.num_entries = HID_NUM_ENTRIES;
+                layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
 
-            // HID shared memory stores the state of the past 17 samples in a circlular buffer,
-            // each with a timestamp in number of samples since boot.
-            layout.header.timestamp_ticks = CoreTiming::GetTicks();
-            layout.header.latest_entry = (layout.header.latest_entry + 1) % HID_NUM_ENTRIES;
+                // HID shared memory stores the state of the past 17 samples in a circlular buffer,
+                // each with a timestamp in number of samples since boot.
+                layout.header.timestamp_ticks = CoreTiming::GetTicks();
+                layout.header.latest_entry = (layout.header.latest_entry + 1) % HID_NUM_ENTRIES;
 
-            ControllerInputEntry& entry = layout.entries[layout.header.latest_entry];
-            entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
-            entry.timestamp++;
-            entry.timestamp_2++; // TODO(shinyquagsire23): Is this always identical to timestamp?
+                ControllerInputEntry& entry = layout.entries[layout.header.latest_entry];
+                entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
+                entry.timestamp++;
+                // TODO(shinyquagsire23): Is this always identical to timestamp?
+                entry.timestamp_2++;
 
-            // TODO(shinyquagsire23): Set up some LUTs for each layout mapping in the future?
-            // For now everything is just the default handheld layout, but split Joy-Con will
-            // rotate the face buttons and directions for certain layouts.
-            ControllerPadState& state = entry.buttons;
-            using namespace Settings::NativeButton;
-            state.a.Assign(buttons[A - BUTTON_HID_BEGIN]->GetStatus());
-            state.b.Assign(buttons[B - BUTTON_HID_BEGIN]->GetStatus());
-            state.x.Assign(buttons[X - BUTTON_HID_BEGIN]->GetStatus());
-            state.y.Assign(buttons[Y - BUTTON_HID_BEGIN]->GetStatus());
-            state.lstick.Assign(buttons[LStick - BUTTON_HID_BEGIN]->GetStatus());
-            state.rstick.Assign(buttons[RStick - BUTTON_HID_BEGIN]->GetStatus());
-            state.l.Assign(buttons[L - BUTTON_HID_BEGIN]->GetStatus());
-            state.r.Assign(buttons[R - BUTTON_HID_BEGIN]->GetStatus());
-            state.zl.Assign(buttons[ZL - BUTTON_HID_BEGIN]->GetStatus());
-            state.zr.Assign(buttons[ZR - BUTTON_HID_BEGIN]->GetStatus());
-            state.plus.Assign(buttons[Plus - BUTTON_HID_BEGIN]->GetStatus());
-            state.minus.Assign(buttons[Minus - BUTTON_HID_BEGIN]->GetStatus());
+                // TODO(shinyquagsire23): More than just handheld input
+                if (controller != Controller_Handheld)
+                    continue;
 
-            state.dleft.Assign(buttons[DLeft - BUTTON_HID_BEGIN]->GetStatus());
-            state.dup.Assign(buttons[DUp - BUTTON_HID_BEGIN]->GetStatus());
-            state.dright.Assign(buttons[DRight - BUTTON_HID_BEGIN]->GetStatus());
-            state.ddown.Assign(buttons[DDown - BUTTON_HID_BEGIN]->GetStatus());
+                // TODO(shinyquagsire23): Set up some LUTs for each layout mapping in the future?
+                // For now everything is just the default handheld layout, but split Joy-Con will
+                // rotate the face buttons and directions for certain layouts.
+                ControllerPadState& state = entry.buttons;
+                using namespace Settings::NativeButton;
+                state.a.Assign(buttons[A - BUTTON_HID_BEGIN]->GetStatus());
+                state.b.Assign(buttons[B - BUTTON_HID_BEGIN]->GetStatus());
+                state.x.Assign(buttons[X - BUTTON_HID_BEGIN]->GetStatus());
+                state.y.Assign(buttons[Y - BUTTON_HID_BEGIN]->GetStatus());
+                state.lstick.Assign(buttons[LStick - BUTTON_HID_BEGIN]->GetStatus());
+                state.rstick.Assign(buttons[RStick - BUTTON_HID_BEGIN]->GetStatus());
+                state.l.Assign(buttons[L - BUTTON_HID_BEGIN]->GetStatus());
+                state.r.Assign(buttons[R - BUTTON_HID_BEGIN]->GetStatus());
+                state.zl.Assign(buttons[ZL - BUTTON_HID_BEGIN]->GetStatus());
+                state.zr.Assign(buttons[ZR - BUTTON_HID_BEGIN]->GetStatus());
+                state.plus.Assign(buttons[Plus - BUTTON_HID_BEGIN]->GetStatus());
+                state.minus.Assign(buttons[Minus - BUTTON_HID_BEGIN]->GetStatus());
 
-            state.lstick_left.Assign(buttons[LStick_Left - BUTTON_HID_BEGIN]->GetStatus());
-            state.lstick_up.Assign(buttons[LStick_Up - BUTTON_HID_BEGIN]->GetStatus());
-            state.lstick_right.Assign(buttons[LStick_Right - BUTTON_HID_BEGIN]->GetStatus());
-            state.lstick_down.Assign(buttons[LStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+                state.dleft.Assign(buttons[DLeft - BUTTON_HID_BEGIN]->GetStatus());
+                state.dup.Assign(buttons[DUp - BUTTON_HID_BEGIN]->GetStatus());
+                state.dright.Assign(buttons[DRight - BUTTON_HID_BEGIN]->GetStatus());
+                state.ddown.Assign(buttons[DDown - BUTTON_HID_BEGIN]->GetStatus());
 
-            state.rstick_left.Assign(buttons[RStick_Left - BUTTON_HID_BEGIN]->GetStatus());
-            state.rstick_up.Assign(buttons[RStick_Up - BUTTON_HID_BEGIN]->GetStatus());
-            state.rstick_right.Assign(buttons[RStick_Right - BUTTON_HID_BEGIN]->GetStatus());
-            state.rstick_down.Assign(buttons[RStick_Down - BUTTON_HID_BEGIN]->GetStatus());
+                state.lstick_left.Assign(buttons[LStick_Left - BUTTON_HID_BEGIN]->GetStatus());
+                state.lstick_up.Assign(buttons[LStick_Up - BUTTON_HID_BEGIN]->GetStatus());
+                state.lstick_right.Assign(buttons[LStick_Right - BUTTON_HID_BEGIN]->GetStatus());
+                state.lstick_down.Assign(buttons[LStick_Down - BUTTON_HID_BEGIN]->GetStatus());
 
-            state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
-            state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
+                state.rstick_left.Assign(buttons[RStick_Left - BUTTON_HID_BEGIN]->GetStatus());
+                state.rstick_up.Assign(buttons[RStick_Up - BUTTON_HID_BEGIN]->GetStatus());
+                state.rstick_right.Assign(buttons[RStick_Right - BUTTON_HID_BEGIN]->GetStatus());
+                state.rstick_down.Assign(buttons[RStick_Down - BUTTON_HID_BEGIN]->GetStatus());
 
-            // TODO(shinyquagsire23): Analog stick vals
+                state.sl.Assign(buttons[SL - BUTTON_HID_BEGIN]->GetStatus());
+                state.sr.Assign(buttons[SR - BUTTON_HID_BEGIN]->GetStatus());
 
-            // TODO(shinyquagsire23): Update pad info proper, (circular buffers, timestamps,
-            // layouts)
+                const auto [stick_l_x_f, stick_l_y_f] = sticks[Joystick_Left]->GetStatus();
+                const auto [stick_r_x_f, stick_r_y_f] = sticks[Joystick_Right]->GetStatus();
+                entry.joystick_left_x = static_cast<s32>(stick_l_x_f * HID_JOYSTICK_MAX);
+                entry.joystick_left_y = static_cast<s32>(stick_l_y_f * HID_JOYSTICK_MAX);
+                entry.joystick_right_x = static_cast<s32>(stick_r_x_f * HID_JOYSTICK_MAX);
+                entry.joystick_right_y = static_cast<s32>(stick_r_y_f * HID_JOYSTICK_MAX);
+            }
         }
 
         // TODO(bunnei): Properly implement the touch screen, the below will just write empty data
@@ -150,6 +162,71 @@ private:
         touchscreen.header.timestamp = timestamp;
         touchscreen.entries[curr_entry].header.timestamp = sample_counter;
         touchscreen.entries[curr_entry].header.num_touches = 0;
+
+        // TODO(shinyquagsire23): Properly implement mouse
+        Mouse& mouse = mem.mouse;
+        const u64 last_mouse_entry = mouse.header.latest_entry;
+        const u64 curr_mouse_entry = (mouse.header.latest_entry + 1) % mouse.entries.size();
+        const u64 mouse_sample_counter = mouse.entries[last_mouse_entry].timestamp + 1;
+        mouse.header.timestamp_ticks = timestamp;
+        mouse.header.num_entries = mouse.entries.size();
+        mouse.header.max_entry_index = mouse.entries.size();
+        mouse.header.latest_entry = curr_mouse_entry;
+
+        mouse.entries[curr_mouse_entry].timestamp = mouse_sample_counter;
+        mouse.entries[curr_mouse_entry].timestamp_2 = mouse_sample_counter;
+
+        // TODO(shinyquagsire23): Properly implement keyboard
+        Keyboard& keyboard = mem.keyboard;
+        const u64 last_keyboard_entry = keyboard.header.latest_entry;
+        const u64 curr_keyboard_entry =
+            (keyboard.header.latest_entry + 1) % keyboard.entries.size();
+        const u64 keyboard_sample_counter = keyboard.entries[last_keyboard_entry].timestamp + 1;
+        keyboard.header.timestamp_ticks = timestamp;
+        keyboard.header.num_entries = keyboard.entries.size();
+        keyboard.header.latest_entry = last_keyboard_entry;
+        keyboard.header.max_entry_index = keyboard.entries.size();
+
+        keyboard.entries[curr_keyboard_entry].timestamp = keyboard_sample_counter;
+        keyboard.entries[curr_keyboard_entry].timestamp_2 = keyboard_sample_counter;
+
+        // TODO(shinyquagsire23): Figure out what any of these are
+        for (size_t i = 0; i < mem.unk_input_1.size(); i++) {
+            UnkInput1& input = mem.unk_input_1[i];
+            const u64 last_input_entry = input.header.latest_entry;
+            const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
+            const u64 input_sample_counter = input.entries[last_input_entry].timestamp + 1;
+
+            input.header.timestamp_ticks = timestamp;
+            input.header.num_entries = input.entries.size();
+            input.header.latest_entry = last_input_entry;
+            input.header.max_entry_index = input.entries.size();
+
+            input.entries[curr_input_entry].timestamp = input_sample_counter;
+            input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
+        }
+
+        for (size_t i = 0; i < mem.unk_input_2.size(); i++) {
+            UnkInput2& input = mem.unk_input_2[i];
+
+            input.header.timestamp_ticks = timestamp;
+            input.header.num_entries = 17;
+            input.header.latest_entry = 0;
+            input.header.max_entry_index = 0;
+        }
+
+        UnkInput3& input = mem.unk_input_3;
+        const u64 last_input_entry = input.header.latest_entry;
+        const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
+        const u64 input_sample_counter = input.entries[last_input_entry].timestamp + 1;
+
+        input.header.timestamp_ticks = timestamp;
+        input.header.num_entries = input.entries.size();
+        input.header.latest_entry = last_input_entry;
+        input.header.max_entry_index = input.entries.size();
+
+        input.entries[curr_input_entry].timestamp = input_sample_counter;
+        input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
 
         // TODO(shinyquagsire23): Signal events
 
@@ -169,6 +246,7 @@ private:
     std::atomic<bool> is_device_reload_pending{true};
     std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeButton::NUM_BUTTONS_HID>
         buttons;
+    std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID> sticks;
 };
 
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {

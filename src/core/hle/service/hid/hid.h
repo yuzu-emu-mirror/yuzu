@@ -48,6 +48,11 @@ enum ControllerConnectionState {
     ConnectionState_Wired = 1 << 1,
 };
 
+enum ControllerJoystick {
+    Joystick_Left = 0,
+    Joystick_Right = 1,
+};
+
 enum ControllerID {
     Controller_Player1 = 0,
     Controller_Player2 = 1,
@@ -62,6 +67,34 @@ enum ControllerID {
 };
 
 // End enums and output structs
+
+// Begin UnkInput3
+
+struct UnkInput3Header {
+    u64 timestamp_ticks;
+    u64 num_entries;
+    u64 latest_entry;
+    u64 max_entry_index;
+};
+static_assert(sizeof(UnkInput3Header) == 0x20, "HID UnkInput3 header structure has incorrect size");
+
+struct UnkInput3Entry {
+    u64 timestamp;
+    u64 timestamp_2;
+    u64 unk_8;
+    u64 unk_10;
+    u64 unk_18;
+};
+static_assert(sizeof(UnkInput3Entry) == 0x28, "HID UnkInput3 entry structure has incorrect size");
+
+struct UnkInput3 {
+    UnkInput3Header header;
+    std::array<UnkInput3Entry, 17> entries;
+    std::array<u8, 0x138> padding;
+};
+static_assert(sizeof(UnkInput3) == 0x400, "HID UnkInput3 structure has incorrect size");
+
+// End UnkInput3
 
 // Begin TouchScreen
 
@@ -204,6 +237,52 @@ static_assert(sizeof(Keyboard) == 0x400, "HID keyboard structure has incorrect s
 
 // End Keyboard
 
+// Begin UnkInput1
+
+struct UnkInput1Header {
+    u64 timestamp_ticks;
+    u64 num_entries;
+    u64 latest_entry;
+    u64 max_entry_index;
+};
+static_assert(sizeof(UnkInput1Header) == 0x20, "HID UnkInput1 header structure has incorrect size");
+
+struct UnkInput1Entry {
+    u64 timestamp;
+    u64 timestamp_2;
+    u64 unk_8;
+    u64 unk_10;
+    u64 unk_18;
+};
+static_assert(sizeof(UnkInput1Entry) == 0x28, "HID UnkInput1 entry structure has incorrect size");
+
+struct UnkInput1 {
+    UnkInput1Header header;
+    std::array<UnkInput1Entry, 17> entries;
+    std::array<u8, 0x138> padding;
+};
+static_assert(sizeof(UnkInput1) == 0x400, "HID UnkInput1 structure has incorrect size");
+
+// End UnkInput1
+
+// Begin UnkInput2
+
+struct UnkInput2Header {
+    u64 timestamp_ticks;
+    u64 num_entries;
+    u64 latest_entry;
+    u64 max_entry_index;
+};
+static_assert(sizeof(UnkInput2Header) == 0x20, "HID UnkInput2 header structure has incorrect size");
+
+struct UnkInput2 {
+    UnkInput2Header header;
+    std::array<u8, 0x1E0> padding;
+};
+static_assert(sizeof(UnkInput2) == 0x200, "HID UnkInput2 structure has incorrect size");
+
+// End UnkInput2
+
 // Begin Controller
 
 struct ControllerMAC {
@@ -283,10 +362,10 @@ struct ControllerInputEntry {
     u64 timestamp;
     u64 timestamp_2;
     ControllerPadState buttons;
-    u32 joystick_left_x;
-    u32 joystick_left_y;
-    u32 joystick_right_x;
-    u32 joystick_right_y;
+    s32 joystick_left_x;
+    s32 joystick_left_y;
+    s32 joystick_right_x;
+    s32 joystick_right_y;
     u64 connection_state;
 };
 static_assert(sizeof(ControllerInputEntry) == 0x30,
@@ -312,17 +391,12 @@ static_assert(sizeof(Controller) == 0x5000, "HID controller structure has incorr
 // End Controller
 
 struct SharedMemory {
-    std::array<u8, 0x400> header;
+    UnkInput3 unk_input_3;
     TouchScreen touchscreen;
     Mouse mouse;
     Keyboard keyboard;
-    std::array<u8, 0x400> unk_section_1;
-    std::array<u8, 0x400> unk_section_2;
-    std::array<u8, 0x400> unk_section_3;
-    std::array<u8, 0x400> unk_section_4;
-    std::array<u8, 0x200> unk_section_5;
-    std::array<u8, 0x200> unk_section_6;
-    std::array<u8, 0x200> unk_section_7;
+    std::array<UnkInput1, 4> unk_input_1;
+    std::array<UnkInput2, 3> unk_input_2;
     std::array<u8, 0x800> unk_section_8;
     std::array<u8, 0x4000> controller_serials;
     std::array<Controller, 10> controllers;
