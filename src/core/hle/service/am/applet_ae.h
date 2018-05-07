@@ -21,6 +21,8 @@ public:
     ~AppletAE() = default;
 
 private:
+    void OpenSystemAppletProxy(Kernel::HLERequestContext& ctx);
+    void OpenLibraryAppletProxy(Kernel::HLERequestContext& ctx);
     void OpenLibraryAppletProxyOld(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;

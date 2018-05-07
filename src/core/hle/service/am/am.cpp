@@ -103,7 +103,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {40, &ISelfController::CreateManagedDisplayLayer, "CreateManagedDisplayLayer"},
         {41, nullptr, "IsSystemBufferSharingEnabled"},
         {42, nullptr, "GetSystemSharedLayerHandle"},
-        {50, nullptr, "SetHandlesRequestToDisplay"},
+        {50, &ISelfController::SetHandlesRequestToDisplay, "SetHandlesRequestToDisplay"},
         {51, nullptr, "ApproveToDisplay"},
         {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
         {61, nullptr, "SetMediaPlaybackState"},
@@ -225,6 +225,13 @@ void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push(layer_id);
+
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 
     NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
@@ -445,7 +452,8 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {10, nullptr, "CreateApplicationAndPushAndRequestToStart"},
         {11, nullptr, "CreateApplicationAndPushAndRequestToStartForQuest"},
         {12, nullptr, "CreateApplicationAndRequestToStart"},
-        {13, nullptr, "CreateApplicationAndRequestToStartForQuest"},
+        {13, &IApplicationFunctions::CreateApplicationAndRequestToStartForQuest,
+         "CreateApplicationAndRequestToStartForQuest"},
         {20, &IApplicationFunctions::EnsureSaveData, "EnsureSaveData"},
         {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
@@ -500,6 +508,13 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<AM::IStorage>(buffer);
 
     NGLOG_DEBUG(Service_AM, "called");
+}
+
+void IApplicationFunctions::CreateApplicationAndRequestToStartForQuest(
+    Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
@@ -572,4 +587,64 @@ void InstallInterfaces(SM::ServiceManager& service_manager,
     std::make_shared<AppletOE>(nvflinger)->InstallAsService(service_manager);
 }
 
+IHomeMenuFunctions::IHomeMenuFunctions() : ServiceFramework("IHomeMenuFunctions") {
+    static const FunctionInfo functions[] = {
+        {10, &IHomeMenuFunctions::RequestToGetForeground, "RequestToGetForeground"},
+        {11, nullptr, "LockForeground"},
+        {12, nullptr, "UnlockForeground"},
+        {20, nullptr, "PopFromGeneralChannel"},
+        {21, nullptr, "GetPopFromGeneralChannelEvent"},
+        {30, nullptr, "GetHomeButtonWriterLockAccessor"},
+        {31, nullptr, "GetWriterLockAccessorEx"},
+    };
+    RegisterHandlers(functions);
+}
+
+void IHomeMenuFunctions::RequestToGetForeground(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+IGlobalStateController::IGlobalStateController() : ServiceFramework("IGlobalStateController") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "RequestToEnterSleep"},
+        {1, nullptr, "EnterSleep"},
+        {2, nullptr, "StartSleepSequence"},
+        {3, nullptr, "StartShutdownSequence"},
+        {4, nullptr, "StartRebootSequence"},
+        {10, nullptr, "LoadAndApplyIdlePolicySettings"},
+        {11, nullptr, "NotifyCecSettingsChanged"},
+        {12, nullptr, "SetDefaultHomeButtonLongPressTime"},
+        {13, nullptr, "UpdateDefaultDisplayResolution"},
+        {14, nullptr, "ShouldSleepOnBoot"},
+        {15, nullptr, "GetHdcpAuthenticationFailedEvent"},
+    };
+    RegisterHandlers(functions);
+}
+
+IApplicationCreator::IApplicationCreator() : ServiceFramework("IApplicationCreator") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "CreateApplication"},
+        {1, nullptr, "PopLaunchRequestedApplication"},
+        {10, nullptr, "CreateSystemApplication"},
+        {100, nullptr, "PopFloatingApplicationForDevelopment"},
+    };
+    RegisterHandlers(functions);
+}
+
+IProcessWindingController::IProcessWindingController()
+    : ServiceFramework("IProcessWindingController") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetLaunchReason"},
+        {11, nullptr, "OpenCallingLibraryApplet"},
+        {21, nullptr, "PushContext"},
+        {22, nullptr, "PopContext"},
+        {23, nullptr, "CancelWindingReservation"},
+        {30, nullptr, "WindAndDoReserved"},
+        {40, nullptr, "ReserveToStartAndWaitAndUnwindThis"},
+        {41, nullptr, "ReserveToStartAndWait"},
+    };
+    RegisterHandlers(functions);
+}
 } // namespace Service::AM

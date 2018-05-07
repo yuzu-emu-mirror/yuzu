@@ -70,6 +70,7 @@ private:
     void GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx);
     void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx);
     void SetScreenShotPermission(Kernel::HLERequestContext& ctx);
+    void SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
     Kernel::SharedPtr<Kernel::Event> launchable_event;
@@ -113,12 +114,36 @@ public:
 
 private:
     void PopLaunchParameter(Kernel::HLERequestContext& ctx);
+    void CreateApplicationAndRequestToStartForQuest(Kernel::HLERequestContext& ctx);
     void EnsureSaveData(Kernel::HLERequestContext& ctx);
     void SetTerminateResult(Kernel::HLERequestContext& ctx);
     void GetDesiredLanguage(Kernel::HLERequestContext& ctx);
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx);
     void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx);
     void NotifyRunning(Kernel::HLERequestContext& ctx);
+};
+
+class IHomeMenuFunctions final : public ServiceFramework<IHomeMenuFunctions> {
+public:
+    IHomeMenuFunctions();
+
+private:
+    void RequestToGetForeground(Kernel::HLERequestContext& ctx);
+};
+
+class IGlobalStateController final : public ServiceFramework<IGlobalStateController> {
+public:
+    IGlobalStateController();
+};
+
+class IApplicationCreator final : public ServiceFramework<IApplicationCreator> {
+public:
+    IApplicationCreator();
+};
+
+class IProcessWindingController final : public ServiceFramework<IProcessWindingController> {
+public:
+    IProcessWindingController();
 };
 
 /// Registers all AM services with the specified service manager.
