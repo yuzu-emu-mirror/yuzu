@@ -160,13 +160,8 @@ public:
     }
 
 private:
-    /// Returns the current CPU core based on the calling host thread
-    Cpu& CurrentCpuCore() {
-        const auto& search = thread_to_cpu.find(std::this_thread::get_id());
-        ASSERT(search != thread_to_cpu.end());
-        ASSERT(search->second);
-        return *search->second;
-    }
+    /// Returns the currently running CPU core
+    Cpu& CurrentCpuCore();
 
     /**
      * Initialize the emulated system.
@@ -184,6 +179,7 @@ private:
     std::shared_ptr<CpuBarrier> cpu_barrier;
     std::array<std::shared_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
     std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;
+    size_t active_core{}; ///< Active core, only used in single thread mode
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;

@@ -34,6 +34,19 @@ static void RunCpuCore(std::shared_ptr<Cpu> cpu_state) {
     }
 }
 
+Cpu& System::CurrentCpuCore() {
+    // If multicore is enabled, use host thread to figure out the current CPU core
+    if (Settings::values.use_multi_core) {
+        const auto& search = thread_to_cpu.find(std::this_thread::get_id());
+        ASSERT(search != thread_to_cpu.end());
+        ASSERT(search->second);
+        return *search->second;
+    }
+
+    // Otherwise, use single-threaded mode active_core variable
+    return *cpu_cores[active_core];
+}
+
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
 
@@ -55,7 +68,13 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    cpu_cores[0]->RunLoop(tight_loop);
+    for (active_core = 0; active_core < NUM_CPU_CORES; ++active_core) {
+        cpu_cores[active_core]->RunLoop(tight_loop);
+        if (Settings::values.use_multi_core) {
+            // Cores 1-3 are run on other threads in this mode
+            break;
+        }
+    }
 
     return status;
 }
@@ -127,11 +146,6 @@ PerfStats::Results System::GetAndResetPerfStats() {
 }
 
 const std::shared_ptr<Kernel::Scheduler>& System::Scheduler(size_t core_index) {
-    if (!Settings::values.use_multi_core) {
-        // Always use Core 0 scheduler when multicore is disabled
-        return cpu_cores[0]->Scheduler();
-    }
-
     ASSERT(core_index < NUM_CPU_CORES);
     return cpu_cores[core_index]->Scheduler();
 }
