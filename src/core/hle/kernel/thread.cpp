@@ -266,6 +266,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->nominal_priority = thread->current_priority = priority;
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;
+    thread->ideal_core = processor_id;
+    thread->mask = 1 << processor_id;
     thread->wait_objects.clear();
     thread->mutex_wait_address = 0;
     thread->condvar_wait_address = 0;
