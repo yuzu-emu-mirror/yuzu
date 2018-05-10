@@ -248,7 +248,7 @@ public:
     std::shared_ptr<Scheduler> scheduler;
 
     u32 ideal_core{0xFFFFFFFF};
-    u64 mask{0x1};
+    u64 affinity_mask{0x1};
 
 private:
     Thread();

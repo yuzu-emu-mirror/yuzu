@@ -735,7 +735,7 @@ static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) 
     }
 
     *core = thread->ideal_core;
-    *mask = thread->mask;
+    *mask = thread->affinity_mask;
 
     return RESULT_SUCCESS;
 }

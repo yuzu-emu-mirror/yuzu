@@ -249,7 +249,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
 
     list.push_back(std::make_unique<WaitTreeText>(tr("processor = %1").arg(processor)));
     list.push_back(std::make_unique<WaitTreeText>(tr("ideal core = %1").arg(thread.ideal_core)));
-    list.push_back(std::make_unique<WaitTreeText>(tr("affinity mask = %1").arg(thread.mask)));
+    list.push_back(
+        std::make_unique<WaitTreeText>(tr("affinity mask = %1").arg(thread.affinity_mask)));
     list.push_back(std::make_unique<WaitTreeText>(tr("thread id = %1").arg(thread.GetThreadId())));
     list.push_back(std::make_unique<WaitTreeText>(tr("priority = %1(current) / %2(normal)")
                                                       .arg(thread.current_priority)

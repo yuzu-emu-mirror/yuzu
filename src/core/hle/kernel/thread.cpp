@@ -201,7 +201,7 @@ void Thread::ResumeFromWait() {
 
     status = THREADSTATUS_READY;
 
-    boost::optional<s32> new_processor_id = GetNextProcessorId(mask);
+    boost::optional<s32> new_processor_id = GetNextProcessorId(affinity_mask);
     if (!new_processor_id) {
         new_processor_id = processor_id;
     }
@@ -308,7 +308,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;
     thread->ideal_core = processor_id;
-    thread->mask = 1ULL << processor_id;
+    thread->affinity_mask = 1ULL << processor_id;
     thread->wait_objects.clear();
     thread->mutex_wait_address = 0;
     thread->condvar_wait_address = 0;
