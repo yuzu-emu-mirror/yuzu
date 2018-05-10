@@ -106,26 +106,34 @@ public:
     /// Prepare the core emulation for a reschedule
     void PrepareReschedule();
 
+    /// Gets and resets core performance statistics
     PerfStats::Results GetAndResetPerfStats();
 
+    /// Gets an ARM interface to the CPU core that is currently running
     ARM_Interface& CurrentArmInterface() {
         return CurrentCpuCore().ArmInterface();
     }
 
+    /// Gets an ARM interface to the CPU core with the specified index
     ARM_Interface& ArmInterface(size_t core_index);
 
+    /// Gets a CPU interface to the CPU core with the specified index
     Cpu& CpuCore(size_t core_index);
 
+    /// Gets the GPU interface
     Tegra::GPU& GPU() {
         return *gpu_core;
     }
 
+    /// Gets the scheduler for the CPU core that is currently running
     Kernel::Scheduler& CurrentScheduler() {
         return *CurrentCpuCore().Scheduler();
     }
 
+    /// Gets the scheduler for the CPU core with the specified index
     const std::shared_ptr<Kernel::Scheduler>& Scheduler(size_t core_index);
 
+    /// Gets the current process
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
         return current_process;
     }
