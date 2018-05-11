@@ -33,7 +33,7 @@ private:
         IocChannelSetPriorityCommand = 0x4004480D,
         IocAllocGPFIFOEx2Command = 0xC020481A,
         IocAllocObjCtxCommand = 0xC0104809,
-        IocGetWaitbase = 0xC0080003,
+        IocChannelGetWaitbaseCommand = 0xC0080003,
     };
 
     enum class CtxObjects : u32_le {

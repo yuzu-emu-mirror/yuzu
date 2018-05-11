@@ -32,7 +32,7 @@ u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u
         return AllocGPFIFOEx2(input, output);
     case IoctlCommand::IocAllocObjCtxCommand:
         return AllocateObjectContext(input, output);
-    case IoctlCommand::IocGetWaitbase:
+    case IoctlCommand::IocChannelGetWaitbaseCommand:
         return GetWaitbase(input, output);
     }
 
@@ -144,7 +144,7 @@ u32 nvhost_gpu::GetWaitbase(const std::vector<u8>& input, std::vector<u8>& outpu
     IoctlGetWaitbase params{};
     std::memcpy(&params, input.data(), sizeof(IoctlGetWaitbase));
     NGLOG_INFO(Service_NVDRV, "called, unknown={:X}", params.unknown);
-    params.value = 0; // Seems to be hard coded at 0
+    params.value = 0; // Seems to be hard coded at 0str
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
