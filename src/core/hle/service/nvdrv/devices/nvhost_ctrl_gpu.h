@@ -86,7 +86,7 @@ private:
         /// [in]  pointer to TPC mask buffer. It will receive one 32-bit TPC mask per GPC or 0 if
         /// GPC is not enabled or not present. This parameter is ignored if mask_buf_size is 0.
         u64_le mask_buf_addr;
-        u64_le unk; // Nintendo add this?
+        u64_le tpc_mask_size; // Nintendo add this?
     };
     static_assert(sizeof(IoctlGpuGetTpcMasksArgs) == 24,
                   "IoctlGpuGetTpcMasksArgs is incorrect size");
