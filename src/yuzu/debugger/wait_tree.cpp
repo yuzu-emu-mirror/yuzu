@@ -51,13 +51,21 @@ std::size_t WaitTreeItem::Row() const {
 }
 
 std::vector<std::unique_ptr<WaitTreeThread>> WaitTreeItem::MakeThreadItemList() {
-    const auto& threads = Core::System::GetInstance().Scheduler().GetThreadList();
     std::vector<std::unique_ptr<WaitTreeThread>> item_list;
-    item_list.reserve(threads.size());
-    for (std::size_t i = 0; i < threads.size(); ++i) {
-        item_list.push_back(std::make_unique<WaitTreeThread>(*threads[i]));
-        item_list.back()->row = i;
-    }
+    std::size_t row = 0;
+    auto add_threads = [&](const std::vector<Kernel::SharedPtr<Kernel::Thread>>& threads) {
+        for (std::size_t i = 0; i < threads.size(); ++i) {
+            item_list.push_back(std::make_unique<WaitTreeThread>(*threads[i]));
+            item_list.back()->row = row;
+            ++row;
+        }
+    };
+
+    add_threads(Core::System::GetInstance().Scheduler(0)->GetThreadList());
+    add_threads(Core::System::GetInstance().Scheduler(1)->GetThreadList());
+    add_threads(Core::System::GetInstance().Scheduler(2)->GetThreadList());
+    add_threads(Core::System::GetInstance().Scheduler(3)->GetThreadList());
+
     return item_list;
 }
 
@@ -240,6 +248,9 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     }
 
     list.push_back(std::make_unique<WaitTreeText>(tr("processor = %1").arg(processor)));
+    list.push_back(std::make_unique<WaitTreeText>(tr("ideal core = %1").arg(thread.ideal_core)));
+    list.push_back(
+        std::make_unique<WaitTreeText>(tr("affinity mask = %1").arg(thread.affinity_mask)));
     list.push_back(std::make_unique<WaitTreeText>(tr("thread id = %1").arg(thread.GetThreadId())));
     list.push_back(std::make_unique<WaitTreeText>(tr("priority = %1(current) / %2(normal)")
                                                       .arg(thread.current_priority)

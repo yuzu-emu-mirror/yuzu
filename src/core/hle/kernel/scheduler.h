@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <mutex>
 #include <vector>
 #include "common/common_types.h"
 #include "common/thread_queue_list.h"
@@ -68,6 +69,8 @@ private:
     SharedPtr<Thread> current_thread = nullptr;
 
     ARM_Interface* cpu_core;
+
+    static std::mutex scheduler_mutex;
 };
 
 } // namespace Kernel

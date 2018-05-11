@@ -4,6 +4,8 @@ add_library(core STATIC
     arm/unicorn/arm_unicorn.h
     core.cpp
     core.h
+    core_cpu.cpp
+    core_cpu.h
     core_timing.cpp
     core_timing.h
     file_sys/directory.h

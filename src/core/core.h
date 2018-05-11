@@ -4,9 +4,12 @@
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
+#include <thread>
 #include "common/common_types.h"
+#include "core/core_cpu.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
@@ -89,7 +92,7 @@ public:
      * @returns True if the emulated system is powered on, otherwise false.
      */
     bool IsPoweredOn() const {
-        return cpu_core != nullptr;
+        return cpu_barrier && cpu_barrier->IsAlive();
     }
 
     /**
@@ -103,24 +106,34 @@ public:
     /// Prepare the core emulation for a reschedule
     void PrepareReschedule();
 
+    /// Gets and resets core performance statistics
     PerfStats::Results GetAndResetPerfStats();
 
-    /**
-     * Gets a reference to the emulated CPU.
-     * @returns A reference to the emulated CPU.
-     */
-    ARM_Interface& CPU() {
-        return *cpu_core;
+    /// Gets an ARM interface to the CPU core that is currently running
+    ARM_Interface& CurrentArmInterface() {
+        return CurrentCpuCore().ArmInterface();
     }
 
+    /// Gets an ARM interface to the CPU core with the specified index
+    ARM_Interface& ArmInterface(size_t core_index);
+
+    /// Gets a CPU interface to the CPU core with the specified index
+    Cpu& CpuCore(size_t core_index);
+
+    /// Gets the GPU interface
     Tegra::GPU& GPU() {
         return *gpu_core;
     }
 
-    Kernel::Scheduler& Scheduler() {
-        return *scheduler;
+    /// Gets the scheduler for the CPU core that is currently running
+    Kernel::Scheduler& CurrentScheduler() {
+        return *CurrentCpuCore().Scheduler();
     }
 
+    /// Gets the scheduler for the CPU core with the specified index
+    const std::shared_ptr<Kernel::Scheduler>& Scheduler(size_t core_index);
+
+    /// Gets the current process
     Kernel::SharedPtr<Kernel::Process>& CurrentProcess() {
         return current_process;
     }
@@ -155,6 +168,9 @@ public:
     }
 
 private:
+    /// Returns the currently running CPU core
+    Cpu& CurrentCpuCore();
+
     /**
      * Initialize the emulated system.
      * @param emu_window Pointer to the host-system window used for video output and keyboard input.
@@ -163,22 +179,15 @@ private:
      */
     ResultStatus Init(EmuWindow* emu_window, u32 system_mode);
 
-    /// Reschedule the core emulation
-    void Reschedule();
-
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
-
-    std::shared_ptr<ARM_Interface> cpu_core;
-    std::unique_ptr<Kernel::Scheduler> scheduler;
     std::unique_ptr<Tegra::GPU> gpu_core;
-
     std::shared_ptr<Tegra::DebugContext> debug_context;
-
     Kernel::SharedPtr<Kernel::Process> current_process;
-
-    /// When true, signals that a reschedule should happen
-    bool reschedule_pending{};
+    std::shared_ptr<CpuBarrier> cpu_barrier;
+    std::array<std::shared_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
+    std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;
+    size_t active_core{}; ///< Active core, only used in single thread mode
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;
@@ -190,10 +199,13 @@ private:
 
     ResultStatus status = ResultStatus::Success;
     std::string status_details = "";
+
+    /// Map of guest threads to CPU cores
+    std::map<std::thread::id, std::shared_ptr<Cpu>> thread_to_cpu;
 };
 
-inline ARM_Interface& CPU() {
-    return System::GetInstance().CPU();
+inline ARM_Interface& CurrentArmInterface() {
+    return System::GetInstance().CurrentArmInterface();
 }
 
 inline TelemetrySession& Telemetry() {

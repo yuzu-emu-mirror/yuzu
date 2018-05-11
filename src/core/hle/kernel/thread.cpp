@@ -64,7 +64,7 @@ void Thread::Stop() {
     // Clean up thread from ready queue
     // This is only needed when the thread is termintated forcefully (SVC TerminateProcess)
     if (status == THREADSTATUS_READY) {
-        Core::System::GetInstance().Scheduler().UnscheduleThread(this, current_priority);
+        scheduler->UnscheduleThread(this, current_priority);
     }
 
     status = THREADSTATUS_DEAD;
@@ -92,7 +92,7 @@ void WaitCurrentThread_Sleep() {
 void ExitCurrentThread() {
     Thread* thread = GetCurrentThread();
     thread->Stop();
-    Core::System::GetInstance().Scheduler().RemoveThread(thread);
+    Core::System::GetInstance().CurrentScheduler().RemoveThread(thread);
 }
 
 /**
@@ -154,6 +154,18 @@ void Thread::CancelWakeupTimer() {
     CoreTiming::UnscheduleEvent(ThreadWakeupEventType, callback_handle);
 }
 
+static boost::optional<s32> GetNextProcessorId(u64 mask) {
+    for (s32 index = 0; index < Core::NUM_CPU_CORES; ++index) {
+        if (mask & (1ULL << index)) {
+            if (!Core::System().GetInstance().Scheduler(index)->GetCurrentThread()) {
+                // Core is enabled and not running any threads, use this one
+                return index;
+            }
+        }
+    }
+    return {};
+}
+
 void Thread::ResumeFromWait() {
     ASSERT_MSG(wait_objects.empty(), "Thread is waking up while waiting for objects");
 
@@ -188,8 +200,37 @@ void Thread::ResumeFromWait() {
     wakeup_callback = nullptr;
 
     status = THREADSTATUS_READY;
-    Core::System::GetInstance().Scheduler().ScheduleThread(this, current_priority);
-    Core::System::GetInstance().PrepareReschedule();
+
+    boost::optional<s32> new_processor_id = GetNextProcessorId(affinity_mask);
+    if (!new_processor_id) {
+        new_processor_id = processor_id;
+    }
+    if (ideal_core != -1 &&
+        Core::System().GetInstance().Scheduler(ideal_core)->GetCurrentThread() == nullptr) {
+        new_processor_id = ideal_core;
+    }
+
+    ASSERT(*new_processor_id < 4);
+
+    // Add thread to new core's scheduler
+    auto& next_scheduler = Core::System().GetInstance().Scheduler(*new_processor_id);
+
+    if (*new_processor_id != processor_id) {
+        // Remove thread from previous core's scheduler
+        scheduler->RemoveThread(this);
+        next_scheduler->AddThread(this, current_priority);
+    }
+
+    processor_id = *new_processor_id;
+
+    // If the thread was ready, unschedule from the previous core and schedule on the new core
+    scheduler->UnscheduleThread(this, current_priority);
+    next_scheduler->ScheduleThread(this, current_priority);
+
+    // Change thread's scheduler
+    scheduler = next_scheduler;
+
+    Core::System::GetInstance().CpuCore(processor_id).PrepareReschedule();
 }
 
 /**
@@ -259,8 +300,6 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 
     SharedPtr<Thread> thread(new Thread);
 
-    Core::System::GetInstance().Scheduler().AddThread(thread, priority);
-
     thread->thread_id = NewThreadId();
     thread->status = THREADSTATUS_DORMANT;
     thread->entry_point = entry_point;
@@ -268,6 +307,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->nominal_priority = thread->current_priority = priority;
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;
+    thread->ideal_core = processor_id;
+    thread->affinity_mask = 1ULL << processor_id;
     thread->wait_objects.clear();
     thread->mutex_wait_address = 0;
     thread->condvar_wait_address = 0;
@@ -275,6 +316,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->name = std::move(name);
     thread->callback_handle = wakeup_callback_handle_table.Create(thread).Unwrap();
     thread->owner_process = owner_process;
+    thread->scheduler = Core::System().GetInstance().Scheduler(processor_id);
+    thread->scheduler->AddThread(thread, priority);
 
     // Find the next available TLS index, and mark it as used
     auto& tls_slots = owner_process->tls_slots;
@@ -337,7 +380,7 @@ void Thread::SetPriority(u32 priority) {
 }
 
 void Thread::BoostPriority(u32 priority) {
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, priority);
+    scheduler->SetThreadPriority(this, priority);
     current_priority = priority;
 }
 
@@ -406,7 +449,7 @@ void Thread::UpdatePriority() {
     if (new_priority == current_priority)
         return;
 
-    Core::System::GetInstance().Scheduler().SetThreadPriority(this, new_priority);
+    scheduler->SetThreadPriority(this, new_priority);
 
     current_priority = new_priority;
 
@@ -415,13 +458,54 @@ void Thread::UpdatePriority() {
         lock_owner->UpdatePriority();
 }
 
+void Thread::ChangeCore(u32 core, u64 mask) {
+    ideal_core = core;
+    mask = mask;
+
+    if (status != THREADSTATUS_READY) {
+        return;
+    }
+
+    boost::optional<s32> new_processor_id{GetNextProcessorId(mask)};
+
+    if (!new_processor_id) {
+        new_processor_id = processor_id;
+    }
+    if (ideal_core != -1 &&
+        Core::System().GetInstance().Scheduler(ideal_core)->GetCurrentThread() == nullptr) {
+        new_processor_id = ideal_core;
+    }
+
+    ASSERT(new_processor_id < 4);
+
+    // Add thread to new core's scheduler
+    auto& next_scheduler = Core::System().GetInstance().Scheduler(*new_processor_id);
+
+    if (*new_processor_id != processor_id) {
+        // Remove thread from previous core's scheduler
+        scheduler->RemoveThread(this);
+        next_scheduler->AddThread(this, current_priority);
+    }
+
+    processor_id = *new_processor_id;
+
+    // If the thread was ready, unschedule from the previous core and schedule on the new core
+    scheduler->UnscheduleThread(this, current_priority);
+    next_scheduler->ScheduleThread(this, current_priority);
+
+    // Change thread's scheduler
+    scheduler = next_scheduler;
+
+    Core::System::GetInstance().CpuCore(processor_id).PrepareReschedule();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Gets the current thread
  */
 Thread* GetCurrentThread() {
-    return Core::System::GetInstance().Scheduler().GetCurrentThread();
+    return Core::System::GetInstance().CurrentScheduler().GetCurrentThread();
 }
 
 void ThreadingInit() {

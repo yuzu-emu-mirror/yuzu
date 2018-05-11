@@ -13,14 +13,14 @@
 
 namespace Kernel {
 
-#define PARAM(n) Core::CPU().GetReg(n)
+#define PARAM(n) Core::CurrentArmInterface().GetReg(n)
 
 /**
  * HLE a function return from the current ARM userland process
  * @param res Result to return
  */
 static inline void FuncReturn(u64 res) {
-    Core::CPU().SetReg(0, res);
+    Core::CurrentArmInterface().SetReg(0, res);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +45,7 @@ template <ResultCode func(u32*, u32)>
 void SvcWrap() {
     u32 param_1 = 0;
     u32 retval = func(&param_1, (u32)PARAM(1)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -53,7 +53,7 @@ template <ResultCode func(u32*, u64)>
 void SvcWrap() {
     u32 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -66,7 +66,7 @@ template <ResultCode func(u64*, u64)>
 void SvcWrap() {
     u64 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -85,8 +85,8 @@ void SvcWrap() {
     u32 param_1 = 0;
     u64 param_2 = 0;
     ResultCode retval = func((u32)(PARAM(2) & 0xFFFFFFFF), &param_1, &param_2);
-    Core::CPU().SetReg(1, param_1);
-    Core::CPU().SetReg(2, param_2);
+    Core::CurrentArmInterface().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(2, param_2);
     FuncReturn(retval.raw);
 }
 
@@ -120,7 +120,7 @@ template <ResultCode func(u32*, u64, u64, s64)>
 void SvcWrap() {
     u32 param_1 = 0;
     ResultCode retval = func(&param_1, PARAM(1), (u32)(PARAM(2) & 0xFFFFFFFF), (s64)PARAM(3));
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval.raw);
 }
 
@@ -133,7 +133,7 @@ template <ResultCode func(u64*, u64, u64, u64)>
 void SvcWrap() {
     u64 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1), PARAM(2), PARAM(3)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -143,7 +143,7 @@ void SvcWrap() {
     u32 retval =
         func(&param_1, PARAM(1), PARAM(2), PARAM(3), (u32)PARAM(4), (s32)(PARAM(5) & 0xFFFFFFFF))
             .raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -166,7 +166,7 @@ template <ResultCode func(u32*, u64, u64, u32)>
 void SvcWrap() {
     u32 param_1 = 0;
     u32 retval = func(&param_1, PARAM(1), PARAM(2), (u32)(PARAM(3) & 0xFFFFFFFF)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 
@@ -175,7 +175,7 @@ void SvcWrap() {
     u32 param_1 = 0;
     u32 retval =
         func(&param_1, PARAM(1), (u32)(PARAM(2) & 0xFFFFFFFF), (u32)(PARAM(3) & 0xFFFFFFFF)).raw;
-    Core::CPU().SetReg(1, param_1);
+    Core::CurrentArmInterface().SetReg(1, param_1);
     FuncReturn(retval);
 }
 

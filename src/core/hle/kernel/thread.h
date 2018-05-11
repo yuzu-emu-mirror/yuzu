@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -56,6 +57,7 @@ enum class ThreadWakeupReason {
 namespace Kernel {
 
 class Process;
+class Scheduler;
 
 class Thread final : public WaitObject {
 public:
@@ -117,6 +119,9 @@ public:
 
     /// Recalculates the current priority taking into account priority inheritance.
     void UpdatePriority();
+
+    /// Changes the core that the thread is running or scheduled to run on.
+    void ChangeCore(u32 core, u64 mask);
 
     /**
      * Gets the thread's thread ID
@@ -239,6 +244,11 @@ public:
     // was waiting via WaitSynchronizationN then the object will be the last object that became
     // available. In case of a timeout, the object will be nullptr.
     std::function<WakeupCallback> wakeup_callback;
+
+    std::shared_ptr<Scheduler> scheduler;
+
+    u32 ideal_core{0xFFFFFFFF};
+    u64 affinity_mask{0x1};
 
 private:
     Thread();

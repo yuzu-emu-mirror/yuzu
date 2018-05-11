@@ -5,10 +5,6 @@
 #include <memory>
 #include <utility>
 #include "common/logging/log.h"
-#ifdef ARCHITECTURE_x86_64
-#include "core/arm/dynarmic/arm_dynarmic.h"
-#endif
-#include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/gdbstub/gdbstub.h"
@@ -31,11 +27,31 @@ namespace Core {
 
 System::~System() = default;
 
+/// Runs a CPU core while the system is powered on
+static void RunCpuCore(std::shared_ptr<Cpu> cpu_state) {
+    while (Core::System().GetInstance().IsPoweredOn()) {
+        cpu_state->RunLoop(true);
+    }
+}
+
+Cpu& System::CurrentCpuCore() {
+    // If multicore is enabled, use host thread to figure out the current CPU core
+    if (Settings::values.use_multi_core) {
+        const auto& search = thread_to_cpu.find(std::this_thread::get_id());
+        ASSERT(search != thread_to_cpu.end());
+        ASSERT(search->second);
+        return *search->second;
+    }
+
+    // Otherwise, use single-threaded mode active_core variable
+    return *cpu_cores[active_core];
+}
+
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
-    if (!cpu_core) {
-        return ResultStatus::ErrorNotInitialized;
-    }
+
+    // Update thread_to_cpu in case Core 0 is run from a different host thread
+    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
 
     if (GDBStub::IsServerEnabled()) {
         GDBStub::HandlePacket();
@@ -52,24 +68,13 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    // If we don't have a currently active thread then don't execute instructions,
-    // instead advance to the next event and try to yield to the next thread
-    if (Kernel::GetCurrentThread() == nullptr) {
-        NGLOG_TRACE(Core_ARM, "Idling");
-        CoreTiming::Idle();
-        CoreTiming::Advance();
-        PrepareReschedule();
-    } else {
-        CoreTiming::Advance();
-        if (tight_loop) {
-            cpu_core->Run();
-        } else {
-            cpu_core->Step();
+    for (active_core = 0; active_core < NUM_CPU_CORES; ++active_core) {
+        cpu_cores[active_core]->RunLoop(tight_loop);
+        if (Settings::values.use_multi_core) {
+            // Cores 1-3 are run on other threads in this mode
+            break;
         }
     }
-
-    HW::Update();
-    Reschedule();
 
     return status;
 }
@@ -133,21 +138,26 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
 }
 
 void System::PrepareReschedule() {
-    cpu_core->PrepareReschedule();
-    reschedule_pending = true;
+    CurrentCpuCore().PrepareReschedule();
 }
 
 PerfStats::Results System::GetAndResetPerfStats() {
     return perf_stats.GetAndResetStats(CoreTiming::GetGlobalTimeUs());
 }
 
-void System::Reschedule() {
-    if (!reschedule_pending) {
-        return;
-    }
+const std::shared_ptr<Kernel::Scheduler>& System::Scheduler(size_t core_index) {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return cpu_cores[core_index]->Scheduler();
+}
 
-    reschedule_pending = false;
-    Core::System::GetInstance().Scheduler().Reschedule();
+ARM_Interface& System::ArmInterface(size_t core_index) {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return cpu_cores[core_index]->ArmInterface();
+}
+
+Cpu& System::CpuCore(size_t core_index) {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return *cpu_cores[core_index];
 }
 
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
@@ -157,31 +167,33 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
 
     current_process = Kernel::Process::Create("main");
 
-    if (Settings::values.use_cpu_jit) {
-#ifdef ARCHITECTURE_x86_64
-        cpu_core = std::make_shared<ARM_Dynarmic>();
-#else
-        cpu_core = std::make_shared<ARM_Unicorn>();
-        NGLOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
-#endif
-    } else {
-        cpu_core = std::make_shared<ARM_Unicorn>();
+    cpu_barrier = std::make_shared<CpuBarrier>();
+    for (size_t index = 0; index < cpu_cores.size(); ++index) {
+        cpu_cores[index] = std::make_shared<Cpu>(cpu_barrier, index);
     }
 
     gpu_core = std::make_unique<Tegra::GPU>();
-
     telemetry_session = std::make_unique<Core::TelemetrySession>();
-
     service_manager = std::make_shared<Service::SM::ServiceManager>();
 
     HW::Init();
     Kernel::Init(system_mode);
-    scheduler = std::make_unique<Kernel::Scheduler>(cpu_core.get());
     Service::Init(service_manager);
     GDBStub::Init();
 
     if (!VideoCore::Init(emu_window)) {
         return ResultStatus::ErrorVideoCore;
+    }
+
+    // Create threads for CPU cores 1-3, and build thread_to_cpu map
+    // CPU core 0 is run on the main thread
+    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
+    if (Settings::values.use_multi_core) {
+        for (size_t index = 0; index < cpu_core_threads.size(); ++index) {
+            cpu_core_threads[index] =
+                std::make_unique<std::thread>(RunCpuCore, cpu_cores[index + 1]);
+            thread_to_cpu[cpu_core_threads[index]->get_id()] = cpu_cores[index + 1];
+        }
     }
 
     NGLOG_DEBUG(Core, "Initialized OK");
@@ -207,15 +219,30 @@ void System::Shutdown() {
     VideoCore::Shutdown();
     GDBStub::Shutdown();
     Service::Shutdown();
-    scheduler.reset();
     Kernel::Shutdown();
     HW::Shutdown();
     service_manager.reset();
     telemetry_session.reset();
     gpu_core.reset();
-    cpu_core.reset();
+
+    // Close all CPU/threading state
+    cpu_barrier->NotifyEnd();
+    if (Settings::values.use_multi_core) {
+        for (auto& thread : cpu_core_threads) {
+            thread->join();
+            thread.reset();
+        }
+    }
+    thread_to_cpu.clear();
+    for (auto& cpu_core : cpu_cores) {
+        cpu_core.reset();
+    }
+    cpu_barrier.reset();
+
+    // Close core timing
     CoreTiming::Shutdown();
 
+    // Close app loader
     app_loader.reset();
 
     NGLOG_DEBUG(Core, "Shutdown OK");

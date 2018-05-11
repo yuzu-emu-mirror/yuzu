@@ -28,8 +28,13 @@ static PageTable* current_page_table = nullptr;
 
 void SetCurrentPageTable(PageTable* page_table) {
     current_page_table = page_table;
-    if (Core::System::GetInstance().IsPoweredOn()) {
-        Core::CPU().PageTableChanged();
+
+    auto& system = Core::System::GetInstance();
+    if (system.IsPoweredOn()) {
+        system.ArmInterface(0).PageTableChanged();
+        system.ArmInterface(1).PageTableChanged();
+        system.ArmInterface(2).PageTableChanged();
+        system.ArmInterface(3).PageTableChanged();
     }
 }
 

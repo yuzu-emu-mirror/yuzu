@@ -63,7 +63,7 @@ void RegistersWidget::OnDebugModeEntered() {
 
     for (int i = 0; i < core_registers->childCount(); ++i)
         core_registers->child(i)->setText(
-            1, QString("0x%1").arg(Core::CPU().GetReg(i), 8, 16, QLatin1Char('0')));
+            1, QString("0x%1").arg(Core::CurrentArmInterface().GetReg(i), 8, 16, QLatin1Char('0')));
 
     UpdateCPSRValues();
 }
@@ -122,7 +122,7 @@ void RegistersWidget::CreateCPSRChildren() {
 }
 
 void RegistersWidget::UpdateCPSRValues() {
-    const u32 cpsr_val = Core::CPU().GetCPSR();
+    const u32 cpsr_val = Core::CurrentArmInterface().GetCPSR();
 
     cpsr->setText(1, QString("0x%1").arg(cpsr_val, 8, 16, QLatin1Char('0')));
     cpsr->child(0)->setText(

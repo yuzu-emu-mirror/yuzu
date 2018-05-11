@@ -80,6 +80,10 @@ touch_device=
 # 0: Interpreter (slow), 1 (default): JIT (fast)
 use_cpu_jit =
 
+# Whether to use multi-core for CPU emulation
+# 0 (default): Disabled, 1: Enabled
+use_multi_core=
+
 [Renderer]
 # Whether to use software or hardware rendering.
 # 0: Software, 1 (default): Hardware
