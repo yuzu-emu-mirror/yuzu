@@ -77,9 +77,13 @@ u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vecto
 u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, mask=0x{:X}, mask_buf_addr=0x{:X}",
-                  params.mask_buf_size, params.mask_buf_addr);
-    params.unk = 0xcafe; // TODO(ogniK): Needs to be non 0, what does this actually do?
+    NGLOG_INFO(Service_NVDRV, "called, mask=0x{:X}, mask_buf_addr=0x{:X}", params.mask_buf_size,
+               params.mask_buf_addr);
+    // TODO(ogniK): Confirm value on hardware
+    if (params.mask_buf_size)
+        params.tpc_mask_size = 4 * 1; // 4 * num_gpc
+    else
+        params.tpc_mask_size = 0;
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
 }
