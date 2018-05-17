@@ -110,7 +110,9 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
     // Padding to align to 16 bytes
     rp.AlignWithPadding();
 
-    if (Session()->IsDomain() && (command_header->type == IPC::CommandType::Request || !incoming)) {
+    if (Session()->IsDomain() && ((command_header->type == IPC::CommandType::Request ||
+                                   command_header->type == IPC::CommandType::RequestWithContext) ||
+                                  !incoming)) {
         // If this is an incoming message, only CommandType "Request" has a domain header
         // All outgoing domain messages have the domain header, if only incoming has it
         if (incoming || domain_message_header) {

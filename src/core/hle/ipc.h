@@ -32,6 +32,8 @@ enum class CommandType : u32 {
     Close = 2,
     Request = 4,
     Control = 5,
+    RequestWithContext = 6,
+    ControlWithContext = 7,
     Unspecified,
 };
 
