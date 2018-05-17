@@ -13,7 +13,7 @@ namespace Service::Fatal {
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
 
-void Module::Interface::FatalSimple(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
     u32 error_code = rp.Pop<u32>();
     NGLOG_WARNING(Service_Fatal, "(STUBBED) called, error_code=0x{:X}", error_code);
@@ -21,7 +21,7 @@ void Module::Interface::FatalSimple(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 }
 
-void Module::Interface::TransitionToFatalError(Kernel::HLERequestContext& ctx) {
+void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx) {
     NGLOG_WARNING(Service_Fatal, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
