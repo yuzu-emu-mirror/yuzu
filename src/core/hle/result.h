@@ -112,8 +112,6 @@ enum class ErrorModule : u32 {
     Migration = 216,
     MigrationLdcServ = 217,
     libnx = 345,
-    HomebrewABI = 346,
-    HomebrewLoader = 347,
     libnxNvidiaErrors = 348,
     GeneralWebApplet = 800,
     WifiWebAuthApplet = 809,
