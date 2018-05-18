@@ -111,8 +111,6 @@ enum class ErrorModule : u32 {
     GRC = 212,
     Migration = 216,
     MigrationLdcServ = 217,
-    libnx = 345,
-    libnxNvidiaErrors = 348,
     GeneralWebApplet = 800,
     WifiWebAuthApplet = 809,
     WhitelistedApplet = 810,
