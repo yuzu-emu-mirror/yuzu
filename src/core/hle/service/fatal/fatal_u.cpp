@@ -8,8 +8,9 @@ namespace Service::Fatal {
 
 Fatal_U::Fatal_U(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "fatal:u") {
     static const FunctionInfo functions[] = {
-        {1, &Fatal_U::FatalSimple, "FatalSimple"},
-        {2, &Fatal_U::TransitionToFatalError, "TransitionToFatalError"},
+        {0, nullptr, "ThrowFatal"},
+        {1, &Fatal_U::ThrowFatalWithPolicy, "ThrowFatalWithPolicy"},
+        {2, &Fatal_U::ThrowFatalWithCpuContext, "ThrowFatalWithCpuContext"},
     };
     RegisterHandlers(functions);
 }

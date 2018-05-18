@@ -1,7 +1,7 @@
 yuzu emulator
 =============
-[![Travis CI Build Status](https://travis-ci.org/yuzu-emu/yuzu.svg?branch=master)](https://travis-ci.org/yuzu-emu/yuzu)
-[![AppVeyor CI Build Status](https://ci.appveyor.com/api/projects/status/77k97svb2usreu68?svg=true)](https://ci.appveyor.com/project/bunnei/yuzu)
+[![Build Status Travis](https://travis-ci.com/greggameplayer/yuzu.svg?branch=master)](https://travis-ci.com/greggameplayer/yuzu)
+[![Build status Appveyor](https://ci.appveyor.com/api/projects/status/pipaumalhd8uo2jm?svg=true)](https://ci.appveyor.com/project/greggameplayer/yuzu)
 
 yuzu is an experimental open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
 
