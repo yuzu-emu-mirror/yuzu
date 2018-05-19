@@ -134,7 +134,6 @@ private:
     std::unique_ptr<GLShader::ProgramManager> shader_program_manager;
     OGLVertexArray sw_vao;
     OGLVertexArray hw_vao;
-    std::array<bool, 16> hw_vao_enabled_attributes;
 
     std::array<SamplerInfo, GLShader::NumTextureSamplers> texture_samplers;
     std::array<std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::MaxConstBuffers>,
