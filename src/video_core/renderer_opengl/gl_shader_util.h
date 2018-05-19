@@ -4,12 +4,34 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 #include <glad/glad.h>
 #include "common/assert.h"
 #include "common/logging/log.h"
 
 namespace GLShader {
+
+/**
+ * Utility function to log the source code of a list of shaders.
+ * @param shaders The OpenGL shaders whose source we will print.
+ */
+template <typename... T>
+void LogShaderSource(T... shaders) {
+    auto shader_list = {shaders...};
+
+    for (const auto& shader : shader_list) {
+        if (shader == 0)
+            continue;
+
+        GLint source_length;
+        glGetShaderiv(shader, GL_SHADER_SOURCE_LENGTH, &source_length);
+
+        std::string source(source_length, ' ');
+        glGetShaderSource(shader, source_length, nullptr, &source[0]);
+        NGLOG_INFO(Render_OpenGL, "Shader source {}", source);
+    }
+}
 
 /**
  * Utility function to create and compile an OpenGL GLSL shader
@@ -53,6 +75,11 @@ GLuint LoadProgram(bool separable_program, T... shaders) {
         } else {
             NGLOG_ERROR(Render_OpenGL, "Error linking shader:\n{}", program_error);
         }
+    }
+
+    if (result == GL_FALSE) {
+        // There was a problem linking the shader, print the source for debugging purposes.
+        LogShaderSource(shaders...);
     }
 
     ASSERT_MSG(result == GL_TRUE, "Shader not linked");
