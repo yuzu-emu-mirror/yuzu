@@ -202,7 +202,7 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
     thread->WakeAfterDelay(nano_seconds);
     thread->wakeup_callback = DefaultThreadWakeupCallback;
 
-    Core::System::GetInstance().PrepareReschedule();
+    Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
 
     return RESULT_TIMEOUT;
 }
@@ -365,7 +365,7 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
 
     thread->SetPriority(priority);
 
-    Core::System::GetInstance().PrepareReschedule();
+    Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
     return RESULT_SUCCESS;
 }
 
@@ -522,6 +522,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     *out_handle = thread->guest_handle;
 
     Core::System::GetInstance().PrepareReschedule();
+    Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
 
     NGLOG_TRACE(Kernel_SVC,
                 "called entrypoint=0x{:08X} ({}), arg=0x{:08X}, stacktop=0x{:08X}, "
@@ -540,7 +541,10 @@ static ResultCode StartThread(Handle thread_handle) {
         return ERR_INVALID_HANDLE;
     }
 
+    ASSERT(thread->status == THREADSTATUS_DORMANT);
+
     thread->ResumeFromWait();
+    Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
 
     return RESULT_SUCCESS;
 }
