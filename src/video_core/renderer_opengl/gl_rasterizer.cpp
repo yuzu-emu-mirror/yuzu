@@ -75,14 +75,11 @@ RasterizerOpenGL::RasterizerOpenGL() {
     // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
     state.clip_distance[0] = true;
 
-    // Generate VBO, VAO and UBO
-    vertex_buffer = OGLStreamBuffer::MakeBuffer(GLAD_GL_ARB_buffer_storage, GL_ARRAY_BUFFER);
-    vertex_buffer->Create(VERTEX_BUFFER_SIZE, VERTEX_BUFFER_SIZE / 2);
+    // Generate VAO and UBO
     sw_vao.Create();
     uniform_buffer.Create();
 
     state.draw.vertex_array = sw_vao.handle;
-    state.draw.vertex_buffer = vertex_buffer->GetHandle();
     state.draw.uniform_buffer = uniform_buffer.handle;
     state.Apply();
 

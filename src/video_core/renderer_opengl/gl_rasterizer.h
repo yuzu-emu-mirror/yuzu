@@ -141,13 +141,10 @@ private:
                Tegra::Engines::Maxwell3D::Regs::MaxShaderStage>
         ssbos;
 
-    static constexpr size_t VERTEX_BUFFER_SIZE = 128 * 1024 * 1024;
-    std::unique_ptr<OGLStreamBuffer> vertex_buffer;
+    static constexpr size_t STREAM_BUFFER_SIZE = 128 * 1024 * 1024;
+    std::unique_ptr<OGLStreamBuffer> stream_buffer;
     OGLBuffer uniform_buffer;
     OGLFramebuffer framebuffer;
-
-    static constexpr size_t STREAM_BUFFER_SIZE = 4 * 1024 * 1024;
-    std::unique_ptr<OGLStreamBuffer> stream_buffer;
 
     size_t CalculateVertexArraysSize() const;
 
