@@ -144,10 +144,12 @@ ResultCode ServiceFrameworkBase::HandleSyncRequest(Kernel::HLERequestContext& co
         rb.Push(RESULT_SUCCESS);
         return ResultCode(ErrorModule::HIPC, ErrorDescription::RemoteProcessDead);
     }
+    case IPC::CommandType::ControlWithContext:
     case IPC::CommandType::Control: {
         Core::System::GetInstance().ServiceManager().InvokeControlRequest(context);
         break;
     }
+    case IPC::CommandType::RequestWithContext:
     case IPC::CommandType::Request: {
         InvokeRequest(context);
         break;
