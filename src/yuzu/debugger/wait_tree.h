@@ -73,6 +73,17 @@ private:
     Kernel::SharedPtr<Kernel::Thread> owner;
 };
 
+class WaitTreeCallstack : public WaitTreeExpandableItem {
+    Q_OBJECT
+public:
+    explicit WaitTreeCallstack(const Kernel::Thread& thread);
+    QString GetText() const override;
+    std::vector<std::unique_ptr<WaitTreeItem>> GetChildren() const override;
+
+private:
+    const Kernel::Thread& thread;
+};
+
 class WaitTreeWaitObject : public WaitTreeExpandableItem {
     Q_OBJECT
 public:
