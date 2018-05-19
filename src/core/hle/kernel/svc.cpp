@@ -145,36 +145,6 @@ static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thr
     return true;
 };
 
-/// Wait for a kernel object to synchronize, timeout after the specified nanoseconds
-static ResultCode WaitSynchronization1(
-    SharedPtr<WaitObject> object, Thread* thread, s64 nano_seconds = -1,
-    std::function<Thread::WakeupCallback> wakeup_callback = DefaultThreadWakeupCallback) {
-
-    if (!object) {
-        return ERR_INVALID_HANDLE;
-    }
-
-    if (object->ShouldWait(thread)) {
-        if (nano_seconds == 0) {
-            return RESULT_TIMEOUT;
-        }
-
-        thread->wait_objects = {object};
-        object->AddWaitingThread(thread);
-        thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
-
-        // Create an event to wake the thread up after the specified nanosecond delay has passed
-        thread->WakeAfterDelay(nano_seconds);
-        thread->wakeup_callback = wakeup_callback;
-
-        Core::System::GetInstance().PrepareReschedule();
-    } else {
-        object->Acquire(thread);
-    }
-
-    return RESULT_SUCCESS;
-}
-
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
 static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 handle_count,
                                       s64 nano_seconds) {
