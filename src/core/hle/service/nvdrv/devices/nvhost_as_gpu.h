@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "common/common_types.h"
@@ -30,6 +31,7 @@ private:
         IocMapBufferExCommand = 0xC0284106,
         IocBindChannelCommand = 0x40044101,
         IocGetVaRegionsCommand = 0xC0404108,
+        IocUnmapBufferCommand = 0xC0084105,
     };
 
     struct IoctlInitalizeEx {
@@ -76,6 +78,11 @@ private:
     };
     static_assert(sizeof(IoctlMapBufferEx) == 40, "IoctlMapBufferEx is incorrect size");
 
+    struct IoctlUnmapBuffer {
+        u64_le offset;
+    };
+    static_assert(sizeof(IoctlUnmapBuffer) == 8, "IoctlUnmapBuffer is incorrect size");
+
     struct IoctlBindChannel {
         u32_le fd;
     };
@@ -98,12 +105,22 @@ private:
     static_assert(sizeof(IoctlGetVaRegions) == 16 + sizeof(IoctlVaRegion) * 2,
                   "IoctlGetVaRegions is incorrect size");
 
+    struct BufferMapping {
+        u64 offset;
+        u64 size;
+        u32 nvmap_handle;
+    };
+
+    /// Map containing the nvmap object mappings in GPU memory.
+    std::unordered_map<u64, BufferMapping> buffer_mappings;
+
     u32 channel{};
 
     u32 InitalizeEx(const std::vector<u8>& input, std::vector<u8>& output);
     u32 AllocateSpace(const std::vector<u8>& input, std::vector<u8>& output);
     u32 Remap(const std::vector<u8>& input, std::vector<u8>& output);
     u32 MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
     u32 BindChannel(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetVARegions(const std::vector<u8>& input, std::vector<u8>& output);
 
