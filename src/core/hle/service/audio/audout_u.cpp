@@ -196,10 +196,10 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
 }
 
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
-    static const FunctionInfo functions[] = {{0x00000000, &AudOutU::ListAudioOuts, "ListAudioOuts"},
-                                             {0x00000001, &AudOutU::OpenAudioOut, "OpenAudioOut"},
-                                             {0x00000002, nullptr, "ListAudioOutsAuto"},
-                                             {0x00000003, nullptr, "OpenAudioOutAuto"}};
+    static const FunctionInfo functions[] = {{0, &AudOutU::ListAudioOuts, "ListAudioOuts"},
+                                             {1, &AudOutU::OpenAudioOut, "OpenAudioOut"},
+                                             {2, nullptr, "ListAudioOutsAuto"},
+                                             {3, nullptr, "OpenAudioOutAuto"}};
     RegisterHandlers(functions);
 }
 
