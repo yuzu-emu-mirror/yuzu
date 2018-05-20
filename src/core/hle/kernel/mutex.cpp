@@ -104,7 +104,6 @@ ResultCode Mutex::Release(VAddr address) {
 
     // There are no more threads waiting for the mutex, release it completely.
     if (thread == nullptr) {
-        ASSERT(GetCurrentThread()->wait_mutex_threads.empty());
         Memory::Write32(address, 0);
         return RESULT_SUCCESS;
     }
