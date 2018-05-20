@@ -30,6 +30,8 @@ u32 nvmap::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& o
         return IocFromId(input, output);
     case IoctlCommand::Param:
         return IocParam(input, output);
+    case IoctlCommand::Free:
+        return IocFree(input, output);
     }
 
     UNIMPLEMENTED_MSG("Unimplemented ioctl");
@@ -45,6 +47,7 @@ u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     object->id = next_id++;
     object->size = params.size;
     object->status = Object::Status::Created;
+    object->refcount = 1;
 
     u32 handle = next_handle++;
     handles[handle] = std::move(object);
@@ -101,6 +104,8 @@ u32 nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
                             [&](const auto& entry) { return entry.second->id == params.id; });
     ASSERT(itr != handles.end());
 
+    itr->second->refcount++;
+
     // Return the existing handle instead of creating a new one.
     params.handle = itr->first;
 
@@ -137,6 +142,36 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     default:
         UNIMPLEMENTED();
     }
+
+    std::memcpy(output.data(), &params, sizeof(params));
+    return 0;
+}
+
+u32 nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
+    enum FreeFlags {
+        Freed = 0,
+        NotFreedYet = 1,
+    };
+
+    IocFreeParams params;
+    std::memcpy(&params, input.data(), sizeof(params));
+
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+
+    auto itr = handles.find(params.handle);
+    ASSERT(itr != handles.end());
+
+    itr->second->refcount--;
+
+    params.refcount = itr->second->refcount;
+    params.size = itr->second->size;
+
+    if (itr->second->refcount == 0)
+        params.flags = Freed;
+    else
+        params.flags = NotFreedYet;
+
+    handles.erase(params.handle);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
