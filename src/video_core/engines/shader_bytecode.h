@@ -193,6 +193,11 @@ union Instruction {
         BitField<50, 1, u64> abs_d;
         BitField<56, 1, u64> negate_imm;
 
+        union {
+            BitField<39, 3, u64> pred;
+            BitField<42, 1, u64> negate_pred;
+        } fmnmx;
+
         float GetImm20_19() const {
             float result{};
             u32 imm{static_cast<u32>(imm20_19)};
