@@ -38,6 +38,7 @@ AudInU::AudInU() : ServiceFramework("audin:u") {
         {0, nullptr, "ListAudioIns"},
         {1, nullptr, "OpenAudioIn"},
         {3, nullptr, "OpenAudioInAuto"},
+        {2, nullptr, "Unknown"},
         {4, nullptr, "ListAudioInsAuto"},
     };
     RegisterHandlers(functions);
