@@ -156,19 +156,20 @@ class IAudioDevice final : public ServiceFramework<IAudioDevice> {
 public:
     IAudioDevice() : ServiceFramework("IAudioDevice") {
         static const FunctionInfo functions[] = {
-            {0x0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
-            {0x1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"},
-            {0x2, nullptr, "GetAudioDeviceOutputVolume"},
-            {0x3, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceName"},
-            {0x4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
-            {0x5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
-            {0x6, &IAudioDevice::ListAudioDeviceName,
+            {0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
+            {1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"},
+            {2, nullptr, "GetAudioDeviceOutputVolume"},
+            {3, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceName"},
+            {4, &IAudioDevice::QueryAudioDeviceSystemEvent, "QueryAudioDeviceSystemEvent"},
+            {5, &IAudioDevice::GetActiveChannelCount, "GetActiveChannelCount"},
+            {6, &IAudioDevice::ListAudioDeviceName,
              "ListAudioDeviceNameAuto"}, // TODO(ogniK): Confirm if autos are identical to non auto
-            {0x7, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolumeAuto"},
-            {0x8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
-            {0xa, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
-            {0xb, nullptr, "QueryAudioDeviceInputEvent"},
-            {0xc, nullptr, "QueryAudioDeviceOutputEvent"}};
+            {7, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolumeAuto"},
+            {8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
+            {10, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
+            {11, nullptr, "QueryAudioDeviceInputEvent"},
+            {12, nullptr, "QueryAudioDeviceOutputEvent"},
+        };
         RegisterHandlers(functions);
 
         buffer_event =

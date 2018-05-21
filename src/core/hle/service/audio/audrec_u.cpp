@@ -20,6 +20,7 @@ public:
             {4, nullptr, "RegisterBufferEvent"},
             {5, nullptr, "GetReleasedFinalOutputRecorderBuffer"},
             {6, nullptr, "ContainsFinalOutputRecorderBuffer"},
+            {7, nullptr, "Unknown"},
             {8, nullptr, "AppendFinalOutputRecorderBufferAuto"},
             {9, nullptr, "GetReleasedFinalOutputRecorderBufferAuto"},
         };
@@ -30,7 +31,7 @@ public:
 
 AudRecU::AudRecU() : ServiceFramework("audrec:u") {
     static const FunctionInfo functions[] = {
-        {0x00000000, nullptr, "OpenFinalOutputRecorder"},
+        {0, nullptr, "OpenFinalOutputRecorder"},
     };
     RegisterHandlers(functions);
 }

@@ -35,10 +35,8 @@ public:
 
 AudInU::AudInU() : ServiceFramework("audin:u") {
     static const FunctionInfo functions[] = {
-        {0, nullptr, "ListAudioIns"},
-        {1, nullptr, "OpenAudioIn"},
-        {3, nullptr, "OpenAudioInAuto"},
-        {4, nullptr, "ListAudioInsAuto"},
+        {0, nullptr, "ListAudioIns"},    {1, nullptr, "OpenAudioIn"},      {2, nullptr, "Unknown"},
+        {3, nullptr, "OpenAudioInAuto"}, {4, nullptr, "ListAudioInsAuto"},
     };
     RegisterHandlers(functions);
 }
