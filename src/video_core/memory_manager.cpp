@@ -58,6 +58,25 @@ GPUVAddr MemoryManager::MapBufferEx(VAddr cpu_addr, GPUVAddr gpu_addr, u64 size)
     return gpu_addr;
 }
 
+GPUVAddr MemoryManager::UnmapBuffer(GPUVAddr gpu_addr, u64 size) {
+    ASSERT((gpu_addr & PAGE_MASK) == 0);
+
+    for (u64 offset = 0; offset < size; offset += PAGE_SIZE) {
+        ASSERT(PageSlot(gpu_addr + offset) != static_cast<u64>(PageStatus::Allocated) &&
+               PageSlot(gpu_addr + offset) != static_cast<u64>(PageStatus::Unmapped));
+        PageSlot(gpu_addr + offset) = static_cast<u64>(PageStatus::Unmapped);
+    }
+
+    // Delete the region mappings that are contained within the unmapped region
+    mapped_regions.erase(std::remove_if(mapped_regions.begin(), mapped_regions.end(),
+                                        [&](const MappedRegion& region) {
+                                            return region.gpu_addr <= gpu_addr &&
+                                                   region.gpu_addr + region.size < gpu_addr + size;
+                                        }),
+                         mapped_regions.end());
+    return gpu_addr;
+}
+
 boost::optional<GPUVAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
     GPUVAddr gpu_addr = 0;
     u64 free_space = 0;

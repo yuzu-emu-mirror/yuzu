@@ -34,6 +34,7 @@ public:
         u8 kind;
         VAddr addr;
         Status status;
+        u32 refcount;
     };
 
     std::shared_ptr<Object> GetObject(u32 handle) const {
@@ -59,7 +60,8 @@ private:
         FromId = 0xC0080103,
         Alloc = 0xC0200104,
         Param = 0xC00C0109,
-        GetId = 0xC008010E
+        GetId = 0xC008010E,
+        Free = 0xC0180105,
     };
 
     struct IocCreateParams {
@@ -102,11 +104,21 @@ private:
         u32_le value;
     };
 
+    struct IocFreeParams {
+        u32_le handle;
+        INSERT_PADDING_BYTES(4);
+        u64_le refcount;
+        u32_le size;
+        u32_le flags;
+    };
+    static_assert(sizeof(IocFreeParams) == 24, "IocFreeParams has wrong size");
+
     u32 IocCreate(const std::vector<u8>& input, std::vector<u8>& output);
     u32 IocAlloc(const std::vector<u8>& input, std::vector<u8>& output);
     u32 IocGetId(const std::vector<u8>& input, std::vector<u8>& output);
     u32 IocFromId(const std::vector<u8>& input, std::vector<u8>& output);
     u32 IocParam(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 IocFree(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Service::Nvidia::Devices

@@ -26,6 +26,8 @@ u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vecto
         return BindChannel(input, output);
     case IoctlCommand::IocGetVaRegionsCommand:
         return GetVARegions(input, output);
+    case IoctlCommand::IocUnmapBufferCommand:
+        return UnmapBuffer(input, output);
     }
 
     if (static_cast<IoctlCommand>(command.cmd.Value()) == IoctlCommand::IocRemapCommand)
@@ -124,6 +126,37 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     } else {
         params.offset = gpu.memory_manager->MapBufferEx(object->addr, object->size);
     }
+
+    // Create a new mapping entry for this operation.
+    ASSERT_MSG(buffer_mappings.find(params.offset) == buffer_mappings.end(),
+               "Offset is already mapped");
+
+    BufferMapping mapping{};
+    mapping.nvmap_handle = params.nvmap_handle;
+    mapping.offset = params.offset;
+    mapping.size = object->size;
+
+    buffer_mappings[params.offset] = mapping;
+
+    std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_as_gpu::UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output) {
+    IoctlUnmapBuffer params{};
+    std::memcpy(&params, input.data(), input.size());
+
+    NGLOG_DEBUG(Service_NVDRV, "called, offset=0x{:X}", params.offset);
+
+    auto& gpu = Core::System::GetInstance().GPU();
+
+    auto itr = buffer_mappings.find(params.offset);
+
+    ASSERT_MSG(itr != buffer_mappings.end(), "Tried to unmap invalid mapping");
+
+    params.offset = gpu.memory_manager->UnmapBuffer(params.offset, itr->second.size);
+
+    buffer_mappings.erase(itr->second.offset);
 
     std::memcpy(output.data(), &params, output.size());
     return 0;
