@@ -320,6 +320,7 @@ public:
         ISETP_C,
         ISETP_IMM,
         ISETP_R,
+        PSETP,
     };
 
     enum class Type {
@@ -331,6 +332,7 @@ public:
         FloatSet,
         FloatSetPredicate,
         IntegerSetPredicate,
+        PredicateSetPredicate,
         Conversion,
         Unknown,
     };
@@ -477,6 +479,7 @@ private:
             INST("010010110110----", Id::ISETP_C, Type::IntegerSetPredicate, "ISETP_C"),
             INST("010110110110----", Id::ISETP_R, Type::IntegerSetPredicate, "ISETP_R"),
             INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerSetPredicate, "ISETP_IMM"),
+            INST("0101000010010---", Id::PSETP, Type::PredicateSetPredicate, "PSETP"),
         };
 #undef INST
         std::stable_sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
