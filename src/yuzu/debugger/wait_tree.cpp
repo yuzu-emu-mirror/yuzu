@@ -98,6 +98,30 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() cons
     return list;
 }
 
+WaitTreeCallstack::WaitTreeCallstack(const Kernel::Thread& thread) : thread(thread) {}
+
+QString WaitTreeCallstack::GetText() const {
+    return tr("Call stack");
+}
+
+std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeCallstack::GetChildren() const {
+    std::vector<std::unique_ptr<WaitTreeItem>> list;
+
+    constexpr size_t BaseRegister = 29;
+    u64 base_pointer = thread.context.cpu_registers[BaseRegister];
+
+    while (base_pointer != 0) {
+        u64 lr = Memory::Read64(base_pointer + sizeof(u64));
+        if (lr == 0)
+            break;
+        list.push_back(
+            std::make_unique<WaitTreeText>(tr("0x%1").arg(lr - sizeof(u32), 16, 16, QChar('0'))));
+        base_pointer = Memory::Read64(base_pointer);
+    }
+
+    return list;
+}
+
 WaitTreeWaitObject::WaitTreeWaitObject(const Kernel::WaitObject& o) : object(o) {}
 
 bool WaitTreeExpandableItem::IsExpandable() const {
@@ -268,6 +292,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
         list.push_back(std::make_unique<WaitTreeObjectList>(thread.wait_objects,
                                                             thread.IsSleepingOnWaitAll()));
     }
+
+    list.push_back(std::make_unique<WaitTreeCallstack>(thread));
 
     return list;
 }
