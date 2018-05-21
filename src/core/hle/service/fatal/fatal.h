@@ -14,8 +14,8 @@ public:
     public:
         Interface(std::shared_ptr<Module> module, const char* name);
 
-        void FatalSimple(Kernel::HLERequestContext& ctx);
-        void TransitionToFatalError(Kernel::HLERequestContext& ctx);
+        void ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx);
+        void ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> module;
