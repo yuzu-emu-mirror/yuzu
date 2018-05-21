@@ -75,14 +75,11 @@ RasterizerOpenGL::RasterizerOpenGL() {
     // Clipping plane 0 is always enabled for PICA fixed clip plane z <= 0
     state.clip_distance[0] = true;
 
-    // Generate VBO, VAO and UBO
-    vertex_buffer = OGLStreamBuffer::MakeBuffer(GLAD_GL_ARB_buffer_storage, GL_ARRAY_BUFFER);
-    vertex_buffer->Create(VERTEX_BUFFER_SIZE, VERTEX_BUFFER_SIZE / 2);
+    // Generate VAO and UBO
     sw_vao.Create();
     uniform_buffer.Create();
 
     state.draw.vertex_array = sw_vao.handle;
-    state.draw.vertex_buffer = vertex_buffer->GetHandle();
     state.draw.uniform_buffer = uniform_buffer.handle;
     state.Apply();
 
@@ -90,7 +87,6 @@ RasterizerOpenGL::RasterizerOpenGL() {
     framebuffer.Create();
 
     hw_vao.Create();
-    hw_vao_enabled_attributes.fill(false);
 
     stream_buffer = OGLStreamBuffer::MakeBuffer(has_ARB_buffer_storage, GL_ARRAY_BUFFER);
     stream_buffer->Create(STREAM_BUFFER_SIZE, STREAM_BUFFER_SIZE / 2);
@@ -181,8 +177,6 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
         glVertexAttribFormat(index, attrib.ComponentCount(), MaxwellToGL::VertexType(attrib),
                              attrib.IsNormalized() ? GL_TRUE : GL_FALSE, attrib.offset);
         glVertexAttribBinding(index, attrib.buffer);
-
-        hw_vao_enabled_attributes[index] = true;
     }
 
     return {array_ptr, buffer_offset};
