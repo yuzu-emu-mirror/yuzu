@@ -580,14 +580,17 @@ private:
      * @param instr Instruction to generate the if condition for.
      * @returns string containing the predicate condition.
      */
-    std::string GetPredicateCondition(Instruction instr) const {
+    std::string GetPredicateCondition(u64 index, bool negate) const {
         using Tegra::Shader::Pred;
-        ASSERT(instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex));
+        std::string variable;
 
-        std::string variable =
-            'p' + std::to_string(static_cast<u64>(instr.pred.pred_index.Value()));
+        // Index 7 is used as an 'Always True' condition.
+        if (index == static_cast<u64>(Pred::UnusedIndex))
+            variable = "true";
+        else
+            variable = 'p' + std::to_string(index);
 
-        if (instr.negate_pred) {
+        if (negate) {
             return "!(" + variable + ')';
         }
 
@@ -634,7 +637,9 @@ private:
                    "NeverExecute predicate not implemented");
 
         if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
-            shader.AddLine("if (" + GetPredicateCondition(instr) + ')');
+            shader.AddLine("if (" +
+                           GetPredicateCondition(instr.pred.pred_index, instr.negate_pred != 0) +
+                           ')');
             shader.AddLine('{');
             ++shader.scope;
         }
@@ -728,6 +733,16 @@ private:
                                    static_cast<unsigned>(instr.sub_op.Value()));
                     UNREACHABLE();
                 }
+                break;
+            }
+            case OpCode::Id::FMNMX: {
+                std::string condition =
+                    GetPredicateCondition(instr.alu.fmnmx.pred, instr.alu.fmnmx.negate_pred != 0);
+                std::string parameters = op_a + ',' + op_b;
+                regs.SetRegisterToFloat(instr.gpr0, 0,
+                                        '(' + condition + ") ? min(" + parameters + ") : max(" +
+                                            parameters + ')',
+                                        1, 1);
                 break;
             }
             case OpCode::Id::RRO: {
