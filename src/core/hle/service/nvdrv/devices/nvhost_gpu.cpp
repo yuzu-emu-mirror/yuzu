@@ -143,8 +143,8 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
 u32 nvhost_gpu::GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetWaitbase params{};
     std::memcpy(&params, input.data(), sizeof(IoctlGetWaitbase));
-    NGLOG_INFO(Service_NVDRV, "called, unknown={:X}", params.unknown);
-    params.value = 0; // Seems to be hard coded at 0str
+    NGLOG_INFO(Service_NVDRV, "called, unknown=0x{:X}", params.unknown);
+    params.value = 0; // Seems to be hard coded at 0
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
