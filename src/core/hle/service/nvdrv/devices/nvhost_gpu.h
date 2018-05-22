@@ -33,6 +33,7 @@ private:
         IocChannelSetPriorityCommand = 0x4004480D,
         IocAllocGPFIFOEx2Command = 0xC020481A,
         IocAllocObjCtxCommand = 0xC0104809,
+        IocChannelGetWaitbaseCommand = 0xC0080003,
     };
 
     enum class CtxObjects : u32_le {
@@ -117,7 +118,13 @@ private:
         IoctlFence fence_out; // returned new fence object for others to wait on
     };
     static_assert(sizeof(IoctlSubmitGpfifo) == 16 + sizeof(IoctlFence),
-                  "submit_gpfifo is incorrect size");
+                  "IoctlSubmitGpfifo is incorrect size");
+
+    struct IoctlGetWaitbase {
+        u32 unknown; // seems to be ignored? Nintendo added this
+        u32 value;
+    };
+    static_assert(sizeof(IoctlGetWaitbase) == 8, "IoctlGetWaitbase is incorrect size");
 
     u32_le nvmap_fd{};
     u64_le user_data{};
@@ -133,6 +140,7 @@ private:
     u32 AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output);
     u32 AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::shared_ptr<nvmap> nvmap_dev;
 };
