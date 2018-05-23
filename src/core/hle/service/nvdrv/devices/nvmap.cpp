@@ -119,25 +119,25 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     IocParamParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.type);
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.param);
 
     auto object = GetObject(params.handle);
     ASSERT(object);
     ASSERT(object->status == Object::Status::Allocated);
 
-    switch (static_cast<ParamTypes>(params.type)) {
+    switch (static_cast<ParamTypes>(params.param)) {
     case ParamTypes::Size:
-        params.value = object->size;
+        params.result = object->size;
         break;
     case ParamTypes::Alignment:
-        params.value = object->align;
+        params.result = object->align;
         break;
     case ParamTypes::Heap:
         // TODO(Subv): Seems to be a hardcoded value?
-        params.value = 0x40000000;
+        params.result = 0x40000000;
         break;
     case ParamTypes::Kind:
-        params.value = object->kind;
+        params.result = object->kind;
         break;
     default:
         UNIMPLEMENTED();

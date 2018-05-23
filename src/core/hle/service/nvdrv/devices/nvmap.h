@@ -59,17 +59,25 @@ private:
         Create = 0xC0080101,
         FromId = 0xC0080103,
         Alloc = 0xC0200104,
+        Free = 0xC0180105,
         Param = 0xC00C0109,
         GetId = 0xC008010E,
-        Free = 0xC0180105,
     };
-
     struct IocCreateParams {
         // Input
         u32_le size;
         // Output
         u32_le handle;
     };
+    static_assert(sizeof(IocCreateParams) == 8, "IocCreateParams has wrong size");
+
+    struct IocFromIdParams {
+        // Input
+        u32_le id;
+        // Output
+        u32_le handle;
+    };
+    static_assert(sizeof(IocFromIdParams) == 8, "IocFromIdParams has wrong size");
 
     struct IocAllocParams {
         // Input
@@ -81,28 +89,7 @@ private:
         INSERT_PADDING_BYTES(7);
         u64_le addr;
     };
-
-    struct IocGetIdParams {
-        // Output
-        u32_le id;
-        // Input
-        u32_le handle;
-    };
-
-    struct IocFromIdParams {
-        // Input
-        u32_le id;
-        // Output
-        u32_le handle;
-    };
-
-    struct IocParamParams {
-        // Input
-        u32_le handle;
-        u32_le type;
-        // Output
-        u32_le value;
-    };
+    static_assert(sizeof(IocAllocParams) == 32, "IocAllocParams has wrong size");
 
     struct IocFreeParams {
         u32_le handle;
@@ -112,6 +99,23 @@ private:
         u32_le flags;
     };
     static_assert(sizeof(IocFreeParams) == 24, "IocFreeParams has wrong size");
+
+    struct IocParamParams {
+        // Input
+        u32_le handle;
+        u32_le param;
+        // Output
+        u32_le result;
+    };
+    static_assert(sizeof(IocParamParams) == 12, "IocParamParams has wrong size");
+
+    struct IocGetIdParams {
+        // Output
+        u32_le id;
+        // Input
+        u32_le handle;
+    };
+    static_assert(sizeof(IocGetIdParams) == 8, "IocGetIdParams has wrong size");
 
     u32 IocCreate(const std::vector<u8>& input, std::vector<u8>& output);
     u32 IocAlloc(const std::vector<u8>& input, std::vector<u8>& output);
