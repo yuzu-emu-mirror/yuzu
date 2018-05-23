@@ -84,8 +84,8 @@ IDisplayController::IDisplayController() : ServiceFramework("IDisplayController"
         {5, nullptr, "GetLastForegroundCaptureImageEx"},
         {6, nullptr, "GetLastApplicationCaptureImageEx"},
         {7, nullptr, "GetCallerAppletCaptureImageEx"},
-        {8, nullptr, "TakeScreenShotOfOwnLayer"}, //2.0.0+
-        {9, nullptr, "CopyBetweenCaptureBuffers"}, //5.0.0+
+        {8, nullptr, "TakeScreenShotOfOwnLayer"},  // 2.0.0+
+        {9, nullptr, "CopyBetweenCaptureBuffers"}, // 5.0.0+
         {10, nullptr, "AcquireLastApplicationCaptureBuffer"},
         {11, nullptr, "ReleaseLastApplicationCaptureBuffer"},
         {12, nullptr, "AcquireLastForegroundCaptureBuffer"},
@@ -95,10 +95,10 @@ IDisplayController::IDisplayController() : ServiceFramework("IDisplayController"
         {16, nullptr, "AcquireLastApplicationCaptureBufferEx"},
         {17, nullptr, "AcquireLastForegroundCaptureBufferEx"},
         {18, nullptr, "AcquireCallerAppletCaptureBufferEx"},
-        //2.0.0+
+        // 2.0.0+
         {20, nullptr, "ClearCaptureBuffer"},
         {21, nullptr, "ClearAppletTransitionBuffer"},
-        //4.0.0+
+        // 4.0.0+
         {22, nullptr, "AcquireLastApplicationCaptureSharedBuffer"},
         {23, nullptr, "ReleaseLastApplicationCaptureSharedBuffer"},
         {24, nullptr, "AcquireLastForegroundCaptureSharedBuffer"},
