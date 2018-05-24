@@ -259,46 +259,47 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto params = rp.PopRaw<WorkerBufferParameters>();
 
-    u64 buffer_sz = ((4 * params.Unknown8 + 0x3f) & ~0x3f);
-    buffer_sz += (params.UnknownC * 1024);
-    buffer_sz += 0x940 * (params.UnknownC + 1);
-    buffer_sz += 0x3F0 * params.voiceCount;
-    buffer_sz += (8 * params.UnknownC + 0x17) & ~0xF;
-    buffer_sz += (8 * params.voiceCount + 0xF) & ~0xF;
-    buffer_sz += ((0x3C0 * (params.sinkCount + params.UnknownC) + 4 * params.sampleCount) *
-                      (params.Unknown8 + 6) +
+    u64 buffer_sz = ((4 * params.unknown8 + 0x3f) & ~0x3f);
+    buffer_sz += (params.unknownC * 1024);
+    buffer_sz += 0x940 * (params.unknownC + 1);
+    buffer_sz += 0x3F0 * params.voice_count;
+    buffer_sz += (8 * params.unknownC + 0x17) & ~0xF;
+    buffer_sz += (8 * params.voice_count + 0xF) & ~0xF;
+    buffer_sz += ((0x3C0 * (params.sink_count + params.unknownC) + 4 * params.sample_count) *
+                      (params.unknown8 + 6) +
                   0x3F) &
                  ~0x3f;
 
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.MAGIC)) {
-        u32 count = params.UnknownC + 1;
-        u64 nodeCount = (count + 0x3f) & ~0x3f;
-        u64 NodeStateBufferSz = 4 * (nodeCount * nodeCount) + 0xC * nodeCount + 2 * (nodeCount / 8);
-        u64 EdgeMatrixBufferSz = 0;
-        nodeCount = (count * count + 0x3f) & ~0x3f;
-        if (nodeCount >> 31 != 0) {
-            EdgeMatrixBufferSz = (nodeCount | 7) / 8;
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
+        u32 count = params.unknownC + 1;
+        u64 node_count = (count + 0x3f) & ~0x3f;
+        u64 node_state_buffer_sz =
+            4 * (node_count * node_count) + 0xC * node_count + 2 * (node_count / 8);
+        u64 edge_matrix_buffer_sz = 0;
+        node_count = (count * count + 0x3f) & ~0x3f;
+        if (node_count >> 31 != 0) {
+            edge_matrix_buffer_sz = (node_count | 7) / 8;
         } else {
-            EdgeMatrixBufferSz = nodeCount / 8;
+            edge_matrix_buffer_sz = node_count / 8;
         }
-        buffer_sz += (NodeStateBufferSz + EdgeMatrixBufferSz + 0xF) & ~0xF;
+        buffer_sz += (node_state_buffer_sz + edge_matrix_buffer_sz + 0xF) & ~0xF;
     }
 
-    buffer_sz += 0x20 * (params.effectCount + 4 * params.voiceCount) + 0x50;
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.MAGIC)) {
-        buffer_sz += 0xE0 * params.Unknown2C;
-        buffer_sz += 0x20 * params.splitterCount;
-        buffer_sz += ((4 * params.Unknown2C + 0xF) & ~0xF);
+    buffer_sz += 0x20 * (params.effect_count + 4 * params.voice_count) + 0x50;
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
+        buffer_sz += 0xE0 * params.unknown2c;
+        buffer_sz += 0x20 * params.splitter_count;
+        buffer_sz += ((4 * params.unknown2c + 0xF) & ~0xF);
     }
-    buffer_sz = ((buffer_sz + 0x3F) & ~0x3F) + 0x170 * params.sinkCount;
-    u64 output_sz = buffer_sz + 0x280 * params.sinkCount + 0x4B0 * params.effectCount +
-                    ((params.voiceCount * 256) | 0x40);
+    buffer_sz = ((buffer_sz + 0x3F) & ~0x3F) + 0x170 * params.sink_count;
+    u64 output_sz = buffer_sz + 0x280 * params.sink_count + 0x4B0 * params.effect_count +
+                    ((params.voice_count * 256) | 0x40);
 
-    if (params.Unknown1C >= 1) {
+    if (params.unknown1c >= 1) {
         output_sz =
-            ((((16 * params.sinkCount + 16 * params.effectCount + 16 * params.voiceCount + 16) +
+            ((((16 * params.sink_count + 16 * params.effect_count + 16 * params.voice_count + 16) +
                0x658) *
-                  (params.Unknown1C + 1) +
+                  (params.unknown1c + 1) +
               0xFF) &
              ~0x3f) +
             output_sz;

@@ -23,20 +23,20 @@ private:
     void GetAudioDevice(Kernel::HLERequestContext& ctx);
 
     struct WorkerBufferParameters {
-        u32_le sampleRate;
-        u32_le sampleCount;
-        u32_le Unknown8;
-        u32_le UnknownC;
-        u32_le voiceCount;
-        u32_le sinkCount;
-        u32_le effectCount;
-        u32_le Unknown1C;
-        u8 Unknown20;
+        u32_le sample_rate;
+        u32_le sample_count;
+        u32_le unknown8;
+        u32_le unknownC;
+        u32_le voice_count;
+        u32_le sink_count;
+        u32_le effect_count;
+        u32_le unknown1c;
+        u8 unknown20;
         u8 padding1[3];
-        u32_le splitterCount;
-        u32_le Unknown2C;
+        u32_le splitter_count;
+        u32_le unknown2c;
         u8 padding2[4];
-        u32_le MAGIC;
+        u32_le magic;
     };
     static_assert(sizeof(WorkerBufferParameters) == 52,
                   "WorkerBufferParameters is an invalid size");
