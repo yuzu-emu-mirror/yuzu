@@ -7,8 +7,19 @@
 #include <string>
 #include <thread>
 
-// This needs to be included before getopt.h because the latter #defines symbols used by it
+#include "common/logging/backend.h"
+#include "common/logging/filter.h"
+#include "common/logging/log.h"
 #include "common/microprofile.h"
+#include "common/scm_rev.h"
+#include "common/scope_exit.h"
+#include "common/string_util.h"
+#include "core/core.h"
+#include "core/gdbstub/gdbstub.h"
+#include "core/loader/loader.h"
+#include "core/settings.h"
+#include "yuzu_cmd/config.h"
+#include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
 #ifdef _MSC_VER
 #include <getopt.h>
@@ -23,19 +34,6 @@
 
 #include <shellapi.h>
 #endif
-
-#include "common/logging/backend.h"
-#include "common/logging/filter.h"
-#include "common/logging/log.h"
-#include "common/scm_rev.h"
-#include "common/scope_exit.h"
-#include "common/string_util.h"
-#include "core/core.h"
-#include "core/gdbstub/gdbstub.h"
-#include "core/loader/loader.h"
-#include "core/settings.h"
-#include "yuzu_cmd/config.h"
-#include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
 #ifdef _WIN32
 extern "C" {
