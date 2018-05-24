@@ -256,12 +256,61 @@ void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
 }
 
 void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    auto params = rp.PopRaw<WorkerBufferParameters>();
+
+    u64 buffer_sz = ((4 * params.Unknown8 + 0x3f) & ~0x3f);
+    buffer_sz += (params.UnknownC * 1024);
+    buffer_sz += 0x940 * (params.UnknownC + 1);
+    buffer_sz += 0x3F0 * params.voiceCount;
+    buffer_sz += (8 * params.UnknownC + 0x17) & ~0xF;
+    buffer_sz += (8 * params.voiceCount + 0xF) & ~0xF;
+    buffer_sz += ((0x3C0 * (params.sinkCount + params.UnknownC) + 4 * params.sampleCount) *
+                      (params.Unknown8 + 6) +
+                  0x3F) &
+                 ~0x3f;
+
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.MAGIC)) {
+        u32 count = params.UnknownC + 1;
+        u64 nodeCount = (count + 0x3f) & ~0x3f;
+        u64 NodeStateBufferSz = 4 * (nodeCount * nodeCount) + 0xC * nodeCount + 2 * (nodeCount / 8);
+        u64 EdgeMatrixBufferSz = 0;
+        nodeCount = (count * count + 0x3f) & ~0x3f;
+        if (nodeCount >> 31 != 0) {
+            EdgeMatrixBufferSz = (nodeCount | 7) / 8;
+        } else {
+            EdgeMatrixBufferSz = nodeCount / 8;
+        }
+        buffer_sz += (NodeStateBufferSz + EdgeMatrixBufferSz + 0xF) & ~0xF;
+    }
+
+    buffer_sz += 0x20 * (params.effectCount + 4 * params.voiceCount) + 0x50;
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.MAGIC)) {
+        buffer_sz += 0xE0 * params.Unknown2C;
+        buffer_sz += 0x20 * params.splitterCount;
+        buffer_sz += ((4 * params.Unknown2C + 0xF) & ~0xF);
+    }
+    buffer_sz = ((buffer_sz + 0x3F) & ~0x3F) + 0x170 * params.sinkCount;
+    u64 output_sz = buffer_sz + 0x280 * params.sinkCount + 0x4B0 * params.effectCount +
+                    ((params.voiceCount * 256) | 0x40);
+
+    if (params.Unknown1C >= 1) {
+        output_sz =
+            ((((16 * params.sinkCount + 16 * params.effectCount + 16 * params.voiceCount + 16) +
+               0x658) *
+                  (params.Unknown1C + 1) +
+              0xFF) &
+             ~0x3f) +
+            output_sz;
+    }
+    output_sz = (output_sz + 0x1907d) & ~0xFFF;
+
     IPC::ResponseBuilder rb{ctx, 4};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0x4000);
+    rb.Push<u64>(output_sz);
 
-    NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+    NGLOG_DEBUG(Service_Audio, "called, buffer_size=0x{:X}", output_sz);
 }
 
 void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
@@ -271,6 +320,16 @@ void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<Audio::IAudioDevice>();
 
     NGLOG_DEBUG(Service_Audio, "called");
+}
+
+bool AudRenU::IsFeatureSupported(AudioFeatures feature, u32_le Revision) {
+    u32_be version_num = (Revision - 0x30564552); // Byte swap
+    switch (feature) {
+    case AudioFeatures::Splitter:
+        return version_num >= 2;
+    default:
+        return false;
+    }
 }
 
 } // namespace Service::Audio
