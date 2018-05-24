@@ -45,7 +45,7 @@ private:
         Splitter,
     };
 
-    bool IsFeatureSupported(AudioFeatures feature, u32_le Revision);
+    const bool IsFeatureSupported(AudioFeatures feature, u32_le revision);
 };
 
 } // namespace Service::Audio
