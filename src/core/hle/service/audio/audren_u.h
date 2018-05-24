@@ -42,7 +42,6 @@ private:
                   "WorkerBufferParameters is an invalid size");
 
     enum class AudioFeatures : u32 {
-        UNKNOWN = 0, // Placeholder
         Splitter,
     };
 
