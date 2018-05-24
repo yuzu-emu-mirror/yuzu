@@ -25,6 +25,7 @@ private:
         IocGetActiveSlotMaskCommand = 0x80084714,
         IocZcullGetCtxSizeCommand = 0x80044701,
         IocZcullGetInfo = 0x80284702,
+        IocZbcSetTable = 0x402C4703,
     };
 
     struct IoctlGpuCharacteristics {
@@ -117,11 +118,21 @@ private:
     static_assert(sizeof(IoctlNvgpuGpuZcullGetInfoArgs) == 40,
                   "IoctlNvgpuGpuZcullGetInfoArgs is incorrect size");
 
+    struct IoctlZbcSetTable {
+        u32_le color_ds[4];
+        u32_le color_l2[4];
+        u32_le depth;
+        u32_le format;
+        u32_le type;
+    };
+    static_assert(sizeof(IoctlZbcSetTable) == 44, "IoctlZbcSetTable is incorrect size");
+
     u32 GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Service::Nvidia::Devices
