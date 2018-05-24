@@ -323,7 +323,7 @@ void AudRenU::GetAudioDevice(Kernel::HLERequestContext& ctx) {
     NGLOG_DEBUG(Service_Audio, "called");
 }
 
-const bool AudRenU::IsFeatureSupported(AudioFeatures feature, u32_le revision) {
+bool AudRenU::IsFeatureSupported(AudioFeatures feature, u32_le revision) const {
     u32_be version_num = (revision - Common::MakeMagic('R', 'E', 'V', '0')); // Byte swap
     switch (feature) {
     case AudioFeatures::Splitter:
