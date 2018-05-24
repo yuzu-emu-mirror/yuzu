@@ -24,6 +24,8 @@ u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vec
         return ZCullGetCtxSize(input, output);
     case IoctlCommand::IocZcullGetInfo:
         return ZCullGetInfo(input, output);
+    case IoctlCommand::IocZbcSetTable:
+        return ZBCSetTable(input, output);
     }
     UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
@@ -121,6 +123,15 @@ u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>&
     params.subregion_width_align_pixels = 0x20;
     params.subregion_height_align_pixels = 0x40;
     params.subregion_count = 0x10;
+    std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output) {
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    IoctlZbcSetTable params{};
+    std::memcpy(&params, input.data(), input.size());
+    // TODO(ogniK): What does this even actually do?
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
