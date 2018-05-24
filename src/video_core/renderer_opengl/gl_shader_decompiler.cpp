@@ -609,6 +609,7 @@ private:
             {PredCondition::LessThan, "<"},
             {PredCondition::Equal, "=="},
             {PredCondition::LessEqual, "<="},
+            {PredCondition::GreaterThan, ">"},
         };
 
         auto comparison = PredicateComparisonStrings.find(condition);
@@ -628,7 +629,7 @@ private:
         static const std::unordered_map<PredOperation, const char*> PredicateOperationStrings = {
             {PredOperation::And, "&&"},
             {PredOperation::Or, "||"},
-            {PredOperation::Xor, "^"},
+            {PredOperation::Xor, "^^"},
         };
 
         auto op = PredicateOperationStrings.find(operation);
@@ -977,35 +978,18 @@ private:
                 op_b = "abs(" + op_b + ')';
             }
 
-            using Tegra::Shader::Pred;
-            ASSERT_MSG(instr.fset.pred39 == static_cast<u64>(Pred::UnusedIndex),
-                       "Compound predicates are not implemented");
-
             // The fset instruction sets a register to 1.0 if the condition is true, and to 0
             // otherwise.
-            using Tegra::Shader::PredCondition;
-            switch (instr.fset.cond) {
-            case PredCondition::LessThan:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") < (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::Equal:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::LessEqual:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") <= (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::GreaterThan:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") > (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            default:
-                NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
-                               static_cast<unsigned>(instr.fset.cond.Value()), op_a, op_b);
-                UNREACHABLE();
-            }
+            std::string second_pred =
+                GetPredicateCondition(instr.fset.pred39, instr.fset.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.fset.cond);
+            std::string combiner = GetPredicateCombiner(instr.fset.op);
+
+            std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
+                                    combiner + " (" + second_pred + "))";
+
+            regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
             break;
         }
         default: {
