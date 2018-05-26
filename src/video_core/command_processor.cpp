@@ -36,7 +36,6 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) 
     if (method == static_cast<u32>(BufferMethods::BindObject)) {
         // Bind the current subchannel to the desired engine id.
         NGLOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", subchannel, value);
-        ASSERT(bound_engines.find(subchannel) == bound_engines.end());
         bound_engines[subchannel] = static_cast<EngineID>(value);
         return;
     }
