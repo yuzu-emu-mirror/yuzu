@@ -34,6 +34,8 @@ u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u
         return AllocateObjectContext(input, output);
     case IoctlCommand::IocChannelGetWaitbaseCommand:
         return GetWaitbase(input, output);
+    case IoctlCommand::IocChannelSetTimeoutCommand:
+        return ChannelSetTimeout(input, output);
     }
 
     if (command.group == NVGPU_IOCTL_MAGIC) {
@@ -146,6 +148,13 @@ u32 nvhost_gpu::GetWaitbase(const std::vector<u8>& input, std::vector<u8>& outpu
     NGLOG_INFO(Service_NVDRV, "called, unknown=0x{:X}", params.unknown);
     params.value = 0; // Seems to be hard coded at 0
     std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_gpu::ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output) {
+    IoctlChannelSetTimeout params{};
+    std::memcpy(&params, input.data(), sizeof(IoctlChannelSetTimeout));
+    NGLOG_INFO(Service_NVDRV, "called, timeout=0x{:X}", params.timeout);
     return 0;
 }
 

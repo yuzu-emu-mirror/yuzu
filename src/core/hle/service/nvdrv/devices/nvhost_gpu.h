@@ -34,6 +34,7 @@ private:
         IocAllocGPFIFOEx2Command = 0xC020481A,
         IocAllocObjCtxCommand = 0xC0104809,
         IocChannelGetWaitbaseCommand = 0xC0080003,
+        IocChannelSetTimeoutCommand = 0x40044803,
     };
 
     enum class CtxObjects : u32_le {
@@ -49,6 +50,11 @@ private:
         u32_le nvmap_fd;
     };
     static_assert(sizeof(IoctlSetNvmapFD) == 4, "IoctlSetNvmapFD is incorrect size");
+
+    struct IoctlChannelSetTimeout {
+        u32_le timeout;
+    };
+    static_assert(sizeof(IoctlChannelSetTimeout) == 4, "IoctlChannelSetTimeout is incorrect size");
 
     struct IoctlClientData {
         u64_le data;
@@ -141,6 +147,7 @@ private:
     u32 AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::shared_ptr<nvmap> nvmap_dev;
 };
