@@ -98,7 +98,7 @@ void AppletOE::OpenApplicationProxy(Kernel::HLERequestContext& ctx) {
 AppletOE::AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
     : ServiceFramework("appletOE"), nvflinger(std::move(nvflinger)) {
     static const FunctionInfo functions[] = {
-        {0x00000000, &AppletOE::OpenApplicationProxy, "OpenApplicationProxy"},
+        {0, &AppletOE::OpenApplicationProxy, "OpenApplicationProxy"},
     };
     RegisterHandlers(functions);
 }

@@ -47,9 +47,12 @@ enum class GetInfoType : u64 {
     NewMapRegionSize = 15,
     // 3.0.0+
     IsVirtualAddressMemoryEnabled = 16,
+    PersonalMmHeapUsage = 17,
     TitleId = 18,
     // 4.0.0+
     PrivilegedProcessId = 19,
+    // 5.0.0+
+    UserExceptionContextAddr = 20,
 };
 
 void CallSVC(u32 immediate);

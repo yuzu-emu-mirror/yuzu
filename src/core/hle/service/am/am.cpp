@@ -74,7 +74,40 @@ void IAudioController::GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestCo
     rb.Push(volume);
 }
 
-IDisplayController::IDisplayController() : ServiceFramework("IDisplayController") {}
+IDisplayController::IDisplayController() : ServiceFramework("IDisplayController") {
+    static const FunctionInfo functions[] = {
+        {0, nullptr, "GetLastForegroundCaptureImage"},
+        {1, nullptr, "UpdateLastForegroundCaptureImage"},
+        {2, nullptr, "GetLastApplicationCaptureImage"},
+        {3, nullptr, "GetCallerAppletCaptureImage"},
+        {4, nullptr, "UpdateCallerAppletCaptureImage"},
+        {5, nullptr, "GetLastForegroundCaptureImageEx"},
+        {6, nullptr, "GetLastApplicationCaptureImageEx"},
+        {7, nullptr, "GetCallerAppletCaptureImageEx"},
+        {8, nullptr, "TakeScreenShotOfOwnLayer"},  // 2.0.0+
+        {9, nullptr, "CopyBetweenCaptureBuffers"}, // 5.0.0+
+        {10, nullptr, "AcquireLastApplicationCaptureBuffer"},
+        {11, nullptr, "ReleaseLastApplicationCaptureBuffer"},
+        {12, nullptr, "AcquireLastForegroundCaptureBuffer"},
+        {13, nullptr, "ReleaseLastForegroundCaptureBuffer"},
+        {14, nullptr, "AcquireCallerAppletCaptureBuffer"},
+        {15, nullptr, "ReleaseCallerAppletCaptureBuffer"},
+        {16, nullptr, "AcquireLastApplicationCaptureBufferEx"},
+        {17, nullptr, "AcquireLastForegroundCaptureBufferEx"},
+        {18, nullptr, "AcquireCallerAppletCaptureBufferEx"},
+        // 2.0.0+
+        {20, nullptr, "ClearCaptureBuffer"},
+        {21, nullptr, "ClearAppletTransitionBuffer"},
+        // 4.0.0+
+        {22, nullptr, "AcquireLastApplicationCaptureSharedBuffer"},
+        {23, nullptr, "ReleaseLastApplicationCaptureSharedBuffer"},
+        {24, nullptr, "AcquireLastForegroundCaptureSharedBuffer"},
+        {25, nullptr, "ReleaseLastForegroundCaptureSharedBuffer"},
+        {26, nullptr, "AcquireCallerAppletCaptureSharedBuffer"},
+        {27, nullptr, "ReleaseCallerAppletCaptureSharedBuffer"},
+    };
+    RegisterHandlers(functions);
+}
 
 IDebugFunctions::IDebugFunctions() : ServiceFramework("IDebugFunctions") {}
 

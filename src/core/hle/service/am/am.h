@@ -18,10 +18,25 @@ class NVFlinger;
 
 namespace AM {
 
-// TODO: Add more languages
 enum SystemLanguage {
     Japanese = 0,
-    English = 1,
+    English = 1, // en-US
+    French = 2,
+    German = 3,
+    Italian = 4,
+    Spanish = 5,
+    Chinese = 6,
+    Korean = 7,
+    Dutch = 8,
+    Portuguese = 9,
+    Russian = 10,
+    Taiwanese = 11,
+    BritishEnglish = 12, // en-GB
+    CanadianFrench = 13,
+    LatinAmericanSpanish = 14, // es-419
+    // 4.0.0+
+    SimplifiedChinese = 15,
+    TraditionalChinese = 16,
 };
 
 class IWindowController final : public ServiceFramework<IWindowController> {
