@@ -597,6 +597,46 @@ private:
         return variable;
     }
 
+    /**
+     * Returns the comparison string to use to compare two values in the 'set' family of
+     * instructions.
+     * @params condition The condition used in the 'set'-family instruction.
+     * @returns String corresponding to the GLSL operator that matches the desired comparison.
+     */
+    std::string GetPredicateComparison(Tegra::Shader::PredCondition condition) const {
+        using Tegra::Shader::PredCondition;
+        static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
+            {PredCondition::LessThan, "<"},
+            {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},
+            {PredCondition::GreaterThan, ">"},
+        };
+
+        auto comparison = PredicateComparisonStrings.find(condition);
+        ASSERT_MSG(comparison != PredicateComparisonStrings.end(),
+                   "Unknown predicate comparison operation");
+        return comparison->second;
+    }
+
+    /**
+     * Returns the operator string to use to combine two predicates in the 'setp' family of
+     * instructions.
+     * @params operation The operator used in the 'setp'-family instruction.
+     * @returns String corresponding to the GLSL operator that matches the desired operator.
+     */
+    std::string GetPredicateCombiner(Tegra::Shader::PredOperation operation) const {
+        using Tegra::Shader::PredOperation;
+        static const std::unordered_map<PredOperation, const char*> PredicateOperationStrings = {
+            {PredOperation::And, "&&"},
+            {PredOperation::Or, "||"},
+            {PredOperation::Xor, "^^"},
+        };
+
+        auto op = PredicateOperationStrings.find(operation);
+        ASSERT_MSG(op != PredicateOperationStrings.end(), "Unknown predicate operation");
+        return op->second;
+    }
+
     /*
      * Returns whether the instruction at the specified offset is a 'sched' instruction.
      * Sched instructions always appear before a sequence of 3 instructions.
@@ -888,28 +928,25 @@ private:
             }
 
             using Tegra::Shader::Pred;
-            ASSERT_MSG(instr.fsetp.pred0 == static_cast<u64>(Pred::UnusedIndex) &&
-                           instr.fsetp.pred39 == static_cast<u64>(Pred::UnusedIndex),
-                       "Compound predicates are not implemented");
-
             // We can't use the constant predicate as destination.
             ASSERT(instr.fsetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
 
-            using Tegra::Shader::PredCondition;
-            switch (instr.fsetp.cond) {
-            case PredCondition::LessThan:
-                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") < (" + op_b + ')');
-                break;
-            case PredCondition::Equal:
-                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") == (" + op_b + ')');
-                break;
-            case PredCondition::LessEqual:
-                SetPredicate(instr.fsetp.pred3, '(' + op_a + ") <= (" + op_b + ')');
-                break;
-            default:
-                NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
-                               static_cast<unsigned>(instr.fsetp.cond.Value()), op_a, op_b);
-                UNREACHABLE();
+            std::string second_pred =
+                GetPredicateCondition(instr.fsetp.pred39, instr.fsetp.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.fsetp.cond);
+            std::string combiner = GetPredicateCombiner(instr.fsetp.op);
+
+            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            // Set the primary predicate to the result of Predicate OP SecondPredicate
+            SetPredicate(instr.fsetp.pred3,
+                         '(' + predicate + ") " + combiner + " (" + second_pred + ')');
+
+            if (instr.fsetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate, if
+                // enabled
+                SetPredicate(instr.fsetp.pred0,
+                             "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
             }
             break;
         }
@@ -941,35 +978,18 @@ private:
                 op_b = "abs(" + op_b + ')';
             }
 
-            using Tegra::Shader::Pred;
-            ASSERT_MSG(instr.fset.pred39 == static_cast<u64>(Pred::UnusedIndex),
-                       "Compound predicates are not implemented");
-
             // The fset instruction sets a register to 1.0 if the condition is true, and to 0
             // otherwise.
-            using Tegra::Shader::PredCondition;
-            switch (instr.fset.cond) {
-            case PredCondition::LessThan:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") < (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::Equal:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") == (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::LessEqual:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") <= (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            case PredCondition::GreaterThan:
-                regs.SetRegisterToFloat(instr.gpr0, 0,
-                                        "((" + op_a + ") > (" + op_b + ")) ? 1.0 : 0", 1, 1);
-                break;
-            default:
-                NGLOG_CRITICAL(HW_GPU, "Unhandled predicate condition: {} (a: {}, b: {})",
-                               static_cast<unsigned>(instr.fset.cond.Value()), op_a, op_b);
-                UNREACHABLE();
-            }
+            std::string second_pred =
+                GetPredicateCondition(instr.fset.pred39, instr.fset.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.fset.cond);
+            std::string combiner = GetPredicateCombiner(instr.fset.op);
+
+            std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
+                                    combiner + " (" + second_pred + "))";
+
+            regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
             break;
         }
         default: {
