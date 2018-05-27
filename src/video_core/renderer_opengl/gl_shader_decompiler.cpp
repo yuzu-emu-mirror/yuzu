@@ -606,10 +606,9 @@ private:
     std::string GetPredicateComparison(Tegra::Shader::PredCondition condition) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},
-            {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="},
-            {PredCondition::GreaterThan, ">"},
+            {PredCondition::LessThan, "<"},      {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},    {PredCondition::GreaterThan, ">"},
+            {PredCondition::GreaterEqual, ">="},
         };
 
         auto comparison = PredicateComparisonStrings.find(condition);
@@ -775,7 +774,9 @@ private:
                 }
                 break;
             }
-            case OpCode::Id::FMNMX: {
+            case OpCode::Id::FMNMX_C:
+            case OpCode::Id::FMNMX_R:
+            case OpCode::Id::FMNMX_IMM: {
                 std::string condition =
                     GetPredicateCondition(instr.alu.fmnmx.pred, instr.alu.fmnmx.negate_pred != 0);
                 std::string parameters = op_a + ',' + op_b;

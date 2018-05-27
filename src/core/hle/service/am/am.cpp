@@ -490,7 +490,7 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {20, &IApplicationFunctions::EnsureSaveData, "EnsureSaveData"},
         {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
-        {23, nullptr, "GetDisplayVersion"},
+        {23, &IApplicationFunctions::GetDisplayVersion, "GetDisplayVersion"},
         {24, nullptr, "GetLaunchStorageInfoForDebug"},
         {25, nullptr, "ExtendSaveData"},
         {26, nullptr, "GetSaveDataSize"},
@@ -583,6 +583,14 @@ void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 
     NGLOG_WARNING(Service_AM, "(STUBBED) called, result=0x{:08X}", result);
+}
+
+void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(1);
+    rb.Push<u64>(0);
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
