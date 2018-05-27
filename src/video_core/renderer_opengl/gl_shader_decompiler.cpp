@@ -775,7 +775,9 @@ private:
                 }
                 break;
             }
-            case OpCode::Id::FMNMX: {
+            case OpCode::Id::FMNMX_C:
+            case OpCode::Id::FMNMX_R:
+            case OpCode::Id::FMNMX_IMM: {
                 std::string condition =
                     GetPredicateCondition(instr.alu.fmnmx.pred, instr.alu.fmnmx.negate_pred != 0);
                 std::string parameters = op_a + ',' + op_b;

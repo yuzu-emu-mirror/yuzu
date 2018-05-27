@@ -1,4 +1,4 @@
-// Copyright 2018 yuzu Emulator Project
+﻿// Copyright 2018 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -315,7 +315,9 @@ public:
         SHR_C,
         SHR_R,
         SHR_IMM,
-        FMNMX,
+        FMNMX_C,
+        FMNMX_R,
+        FMNMX_IMM,
         FSETP_C, // Set Predicate
         FSETP_R,
         FSETP_IMM,
@@ -468,7 +470,9 @@ private:
             INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
             INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
             INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
-            INST("0101110001100---", Id::FMNMX, Type::Arithmetic, "FMNMX"),
+            INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
+            INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
+            INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
             INST("0100110011100---", Id::I2I_C, Type::Conversion, "I2I_C"),
             INST("0101110011100---", Id::I2I_R, Type::Conversion, "I2I_R"),
             INST("01110001-1000---", Id::I2I_IMM, Type::Conversion, "I2I_IMM"),
