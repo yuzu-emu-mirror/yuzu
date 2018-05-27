@@ -606,10 +606,9 @@ private:
     std::string GetPredicateComparison(Tegra::Shader::PredCondition condition) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},
-            {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="},
-            {PredCondition::GreaterThan, ">"},
+            {PredCondition::LessThan, "<"},      {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},    {PredCondition::GreaterThan, ">"},
+            {PredCondition::GreaterEqual, ">="},
         };
 
         auto comparison = PredicateComparisonStrings.find(condition);
