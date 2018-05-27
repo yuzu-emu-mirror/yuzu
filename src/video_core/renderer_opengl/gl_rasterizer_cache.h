@@ -57,9 +57,10 @@ struct SurfaceParams {
         ABGR8 = 0,
         B5G6R5 = 1,
         A2B10G10R10 = 2,
-        DXT1 = 3,
-        DXT23 = 4,
-        DXT45 = 5,
+        A1B5G5R5 = 3,
+        DXT1 = 4,
+        DXT23 = 5,
+        DXT45 = 6,
 
         Max,
         Invalid = 255,
@@ -98,6 +99,7 @@ struct SurfaceParams {
             1, // ABGR8
             1, // B5G6R5
             1, // A2B10G10R10
+            1, // A1B5G5R5
             4, // DXT1
             4, // DXT23
             4, // DXT45
@@ -118,6 +120,7 @@ struct SurfaceParams {
             32,  // ABGR8
             16,  // B5G6R5
             32,  // A2B10G10R10
+            16,  // A1B5G5R5
             64,  // DXT1
             128, // DXT23
             128, // DXT45
@@ -133,6 +136,7 @@ struct SurfaceParams {
     static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
+        case Tegra::RenderTargetFormat::RGBA8_SRGB:
             return PixelFormat::ABGR8;
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return PixelFormat::A2B10G10R10;
@@ -161,6 +165,8 @@ struct SurfaceParams {
             return PixelFormat::B5G6R5;
         case Tegra::Texture::TextureFormat::A2B10G10R10:
             return PixelFormat::A2B10G10R10;
+        case Tegra::Texture::TextureFormat::A1B5G5R5:
+            return PixelFormat::A1B5G5R5;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -182,6 +188,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::B5G6R5;
         case PixelFormat::A2B10G10R10:
             return Tegra::Texture::TextureFormat::A2B10G10R10;
+        case PixelFormat::A1B5G5R5:
+            return Tegra::Texture::TextureFormat::A1B5G5R5;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         case PixelFormat::DXT23:
@@ -208,6 +216,7 @@ struct SurfaceParams {
         // TODO(Subv): Implement more render targets
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
+        case Tegra::RenderTargetFormat::RGBA8_SRGB:
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return ComponentType::UNorm;
         default:
