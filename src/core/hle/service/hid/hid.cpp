@@ -329,6 +329,7 @@ public:
             {130, nullptr, "SwapNpadAssignment"},
             {131, nullptr, "IsUnintendedHomeButtonInputProtectionEnabled"},
             {132, nullptr, "EnableUnintendedHomeButtonInputProtection"},
+            {133, nullptr, "SetNpadJoyAssignmentModeSingleWithDestination"}, // 5.0.0+
             {200, &Hid::GetVibrationDeviceInfo, "GetVibrationDeviceInfo"},
             {201, &Hid::SendVibrationValue, "SendVibrationValue"},
             {202, &Hid::GetActualVibrationValue, "GetActualVibrationValue"},
@@ -336,9 +337,24 @@ public:
             {204, nullptr, "PermitVibration"},
             {205, nullptr, "IsVibrationPermitted"},
             {206, &Hid::SendVibrationValues, "SendVibrationValues"},
+            // 4.0.0+
+            {207, nullptr, "SendVibrationGcErmCommand"},
+            {208, nullptr, "GetActualVibrationGcErmCommand"},
+            {209, nullptr, "BeginPermitVibrationSession"},
+            {210, nullptr, "EndPermitVibrationSession"},
+            // ------
             {300, nullptr, "ActivateConsoleSixAxisSensor"},
             {301, nullptr, "StartConsoleSixAxisSensor"},
             {302, nullptr, "StopConsoleSixAxisSensor"},
+            // 5.0.0+
+            {303, nullptr, "ActivateSevenSixAxisSensor"},
+            {304, nullptr, "StartSevenSixAxisSensor"},
+            {305, nullptr, "StopSevenSixAxisSensor"},
+            {306, nullptr, "InitializeSevenSixAxisSensor"},
+            {307, nullptr, "FinalizeSevenSixAxisSensor"},
+            {308, nullptr, "SetSevenSixAxisSensorFusionStrength"},
+            {309, nullptr, "GetSevenSixAxisSensorFusionStrength"},
+            // ------
             {400, nullptr, "IsUsbFullKeyControllerEnabled"},
             {401, nullptr, "EnableUsbFullKeyController"},
             {402, nullptr, "IsUsbFullKeyControllerConnected"},
