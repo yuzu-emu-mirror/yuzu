@@ -20,6 +20,7 @@
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/audio/audio.h"
+#include "core/hle/service/bcat/bcat.h"
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/friend/friend.h"
@@ -183,6 +184,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     AM::InstallInterfaces(*sm, nv_flinger);
     AOC::InstallInterfaces(*sm);
     APM::InstallInterfaces(*sm);
+    BCAT::InstallInterfaces(*sm);
     Audio::InstallInterfaces(*sm);
     Fatal::InstallInterfaces(*sm);
     FileSystem::InstallInterfaces(*sm);
