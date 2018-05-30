@@ -853,7 +853,13 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
-                regs.SetRegisterToFloat(instr.gpr0, 0, regs.GetRegisterAsFloat(instr.gpr20), 1, 1);
+                std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
                 break;
             }
             default: {
