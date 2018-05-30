@@ -476,7 +476,7 @@ void Thread::ChangeCore(u32 core, u64 mask) {
         new_processor_id = ideal_core;
     }
 
-    ASSERT(new_processor_id < 4);
+    ASSERT(*new_processor_id < 4);
 
     // Add thread to new core's scheduler
     auto& next_scheduler = Core::System().GetInstance().Scheduler(*new_processor_id);
