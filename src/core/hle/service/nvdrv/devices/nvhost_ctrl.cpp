@@ -19,6 +19,8 @@ u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<
         return IocCtrlEventWait(input, output, false);
     case IoctlCommand::IocCtrlEventWaitAsyncCommand:
         return IocCtrlEventWait(input, output, true);
+    case IoctlCommand::IocCtrlEventRegisterCommand:
+        return IocCtrlEventRegister(input, output);
     }
     UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
@@ -58,6 +60,12 @@ u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>&
     // TODO(Subv): Implement actual syncpt waiting.
     params.value = 0;
     std::memcpy(output.data(), &params, sizeof(params));
+    return 0;
+}
+
+u32 nvhost_ctrl::IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output) {
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    // TODO(bunnei): Implement this.
     return 0;
 }
 
