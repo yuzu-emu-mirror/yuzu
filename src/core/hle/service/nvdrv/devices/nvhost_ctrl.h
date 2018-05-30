@@ -134,7 +134,7 @@ private:
 
     u32 NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output);
 
-    u32 IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output, bool is_async);
 };
 
 } // namespace Service::Nvidia::Devices
