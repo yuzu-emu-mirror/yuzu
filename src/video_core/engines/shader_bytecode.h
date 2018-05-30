@@ -75,6 +75,10 @@ union Attribute {
     enum class Index : u64 {
         Position = 7,
         Attribute_0 = 8,
+        // This attribute contains a tuple of (~, ~, InstanceId, VertexId) when inside a vertex
+        // shader, and a tuple of (TessCoord.x, TessCoord.y, TessCoord.z, ~) when inside a Tess Eval
+        // shader.
+        TessCoordInstanceIDVertexID = 47,
     };
 
     union {
