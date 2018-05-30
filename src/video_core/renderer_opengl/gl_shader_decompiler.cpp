@@ -834,13 +834,14 @@ private:
         }
         case OpCode::Type::Conversion: {
             ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
-            ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
             ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
             ASSERT_MSG(!instr.conversion.saturate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
             case OpCode::Id::I2I_R:
             case OpCode::Id::I2F_R: {
+                ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
+
                 std::string op_a =
                     regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_signed);
 
@@ -849,6 +850,16 @@ private:
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_signed, 0, op_a, 1, 1);
+                break;
+            }
+            case OpCode::Id::F2F_R: {
+                std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
                 break;
             }
             default: {
