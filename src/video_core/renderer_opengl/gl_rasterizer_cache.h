@@ -58,9 +58,10 @@ struct SurfaceParams {
         B5G6R5 = 1,
         A2B10G10R10 = 2,
         A1B5G5R5 = 3,
-        DXT1 = 4,
-        DXT23 = 5,
-        DXT45 = 6,
+        R8 = 4,
+        DXT1 = 5,
+        DXT23 = 6,
+        DXT45 = 7,
 
         Max,
         Invalid = 255,
@@ -100,6 +101,7 @@ struct SurfaceParams {
             1, // B5G6R5
             1, // A2B10G10R10
             1, // A1B5G5R5
+            1, // R8
             4, // DXT1
             4, // DXT23
             4, // DXT45
@@ -121,6 +123,7 @@ struct SurfaceParams {
             16,  // B5G6R5
             32,  // A2B10G10R10
             16,  // A1B5G5R5
+            8,   // R8
             64,  // DXT1
             128, // DXT23
             128, // DXT45
@@ -167,6 +170,8 @@ struct SurfaceParams {
             return PixelFormat::A2B10G10R10;
         case Tegra::Texture::TextureFormat::A1B5G5R5:
             return PixelFormat::A1B5G5R5;
+        case Tegra::Texture::TextureFormat::R8:
+            return PixelFormat::R8;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -190,6 +195,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::A2B10G10R10;
         case PixelFormat::A1B5G5R5:
             return Tegra::Texture::TextureFormat::A1B5G5R5;
+        case PixelFormat::R8:
+            return Tegra::Texture::TextureFormat::R8;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         case PixelFormat::DXT23:
