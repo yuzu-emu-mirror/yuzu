@@ -21,7 +21,9 @@ enum {
 
     // Confirmed Switch OS error codes
     MisalignedAddress = 102,
+    InvalidProcessorId = 113,
     InvalidHandle = 114,
+    InvalidCombination = 116,
     Timeout = 117,
     SynchronizationCanceled = 118,
     TooLarge = 119,
