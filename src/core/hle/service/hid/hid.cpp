@@ -358,6 +358,27 @@ public:
             {400, nullptr, "IsUsbFullKeyControllerEnabled"},
             {401, nullptr, "EnableUsbFullKeyController"},
             {402, nullptr, "IsUsbFullKeyControllerConnected"},
+            // 4.0.0+
+            {403, nullptr, "HasBattery"},
+            {404, nullptr, "HasLeftRightBattery"},
+            {405, nullptr, "GetNpadInterfaceType"},
+            {406, nullptr, "GetNpadLeftRightInterfaceType"},
+            // 5.0.0+
+            {500, nullptr, "GetPalmaConnectionHandle"},
+            {501, nullptr, "InitializePalma"},
+            {502, nullptr, "AcquirePalmaOperationCompleteEvent"},
+            {503, nullptr, "GetPalmaOperationInfo"},
+            {504, nullptr, "PlayPalmaActivity"},
+            {505, nullptr, "SetPalmaFrModeType"},
+            {506, nullptr, "ReadPalmaStep"},
+            {507, nullptr, "EnablePalmaStep"},
+            {508, nullptr, "SuspendPalmaStep"},
+            {509, nullptr, "ResetPalmaStep"},
+            {510, nullptr, "ReadPalmaApplicationSection"},
+            {511, nullptr, "WritePalmaApplicationSection"},
+            {512, nullptr, "ReadPalmaUniqueCode"},
+            {513, nullptr, "SetPalmaUniqueCodeInvalid"},
+            // ------
             {1000, nullptr, "SetNpadCommunicationMode"},
             {1001, nullptr, "GetNpadCommunicationMode"},
         };
