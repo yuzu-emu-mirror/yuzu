@@ -299,7 +299,7 @@ public:
      * are stored as floats, so this may require conversion.
      * @param reg The destination register to use.
      * @param elem The element to use for the operation.
-     * @param attribute The input attibute to use as the source value.
+     * @param attribute The input attribute to use as the source value.
      */
     void SetRegisterToInputAttibute(const Register& reg, u64 elem, Attribute::Index attribute) {
         std::string dest = GetRegisterAsFloat(reg);
@@ -451,6 +451,12 @@ private:
         switch (attribute) {
         case Attribute::Index::Position:
             return "position";
+        case Attribute::Index::TessCoordInstanceIDVertexID:
+            // TODO(Subv): Find out what the values are for the first two elements when inside a
+            // vertex shader, and what's the value of the fourth element when inside a Tess Eval
+            // shader.
+            ASSERT(stage == Maxwell3D::Regs::ShaderStage::Vertex);
+            return "vec4(0, 0, gl_InstanceID, gl_VertexID)";
         default:
             const u32 index{static_cast<u32>(attribute) -
                             static_cast<u32>(Attribute::Index::Attribute_0)};
