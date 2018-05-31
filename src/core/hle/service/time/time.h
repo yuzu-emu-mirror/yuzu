@@ -4,13 +4,13 @@
 
 #pragma once
 
+#include <array>
 #include "core/hle/service/service.h"
 
 namespace Service::Time {
 
-// TODO(Rozelette) RE this structure
 struct LocationName {
-    INSERT_PADDING_BYTES(0x24);
+    std::array<u8, 0x24> name;
 };
 static_assert(sizeof(LocationName) == 0x24, "LocationName is incorrect size");
 
@@ -25,25 +25,33 @@ struct CalendarTime {
 };
 static_assert(sizeof(CalendarTime) == 0x8, "CalendarTime structure has incorrect size");
 
-// TODO(Rozelette) RE this structure
 struct CalendarAdditionalInfo {
-    INSERT_PADDING_BYTES(0x18);
+    u32_le day_of_week;
+    u32_le day_of_year;
+    std::array<u8, 8> name;
+    INSERT_PADDING_BYTES(1);
+    s32_le utc_offset;
 };
 static_assert(sizeof(CalendarAdditionalInfo) == 0x18,
               "CalendarAdditionalInfo structure has incorrect size");
 
-// TODO(bunnei) RE this structure
-struct SystemClockContext {
-    INSERT_PADDING_BYTES(0x20);
+// TODO(mailwl) RE this structure
+struct TimeZoneRule {
+    INSERT_PADDING_BYTES(0x4000);
 };
-static_assert(sizeof(SystemClockContext) == 0x20,
-              "SystemClockContext structure has incorrect size");
 
 struct SteadyClockTimePoint {
-    u64 value;
+    u64_le value;
     INSERT_PADDING_WORDS(4);
 };
 static_assert(sizeof(SteadyClockTimePoint) == 0x18, "SteadyClockTimePoint is incorrect size");
+
+struct SystemClockContext {
+    u64_le offset;
+    SteadyClockTimePoint time_point;
+};
+static_assert(sizeof(SystemClockContext) == 0x20,
+              "SystemClockContext structure has incorrect size");
 
 class Module final {
 public:
