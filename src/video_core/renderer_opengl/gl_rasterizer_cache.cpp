@@ -49,6 +49,7 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, false},              // A2B10G10R10
     {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, false},                // A1B5G5R5
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE, false},                                   // R8
+    {GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, false},                                // RGBA16F
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true},   // DXT1
     {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT23
     {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT45
@@ -59,7 +60,6 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType
     if (type == SurfaceType::ColorTexture) {
         ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
         // For now only UNORM components are supported
-        ASSERT(component_type == ComponentType::UNorm);
         return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
         // TODO(Subv): Implement depth formats
@@ -110,8 +110,9 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
     morton_to_gl_fns = {
         MortonCopy<true, PixelFormat::ABGR8>,       MortonCopy<true, PixelFormat::B5G6R5>,
         MortonCopy<true, PixelFormat::A2B10G10R10>, MortonCopy<true, PixelFormat::A1B5G5R5>,
-        MortonCopy<true, PixelFormat::R8>,          MortonCopy<true, PixelFormat::DXT1>,
-        MortonCopy<true, PixelFormat::DXT23>,       MortonCopy<true, PixelFormat::DXT45>,
+        MortonCopy<true, PixelFormat::R8>,          MortonCopy<true, PixelFormat::RGBA16F>,
+        MortonCopy<true, PixelFormat::DXT1>,        MortonCopy<true, PixelFormat::DXT23>,
+        MortonCopy<true, PixelFormat::DXT45>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra::GPUVAddr,
@@ -123,6 +124,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
         MortonCopy<false, PixelFormat::A2B10G10R10>,
         MortonCopy<false, PixelFormat::A1B5G5R5>,
         MortonCopy<false, PixelFormat::R8>,
+        MortonCopy<false, PixelFormat::RGBA16F>,
         // TODO(Subv): Swizzling the DXT1/DXT23/DXT45 formats is not yet supported
         nullptr,
         nullptr,

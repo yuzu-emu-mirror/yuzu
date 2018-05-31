@@ -59,9 +59,10 @@ struct SurfaceParams {
         A2B10G10R10 = 2,
         A1B5G5R5 = 3,
         R8 = 4,
-        DXT1 = 5,
-        DXT23 = 6,
-        DXT45 = 7,
+        RGBA16F = 5,
+        DXT1 = 6,
+        DXT23 = 7,
+        DXT45 = 8,
 
         Max,
         Invalid = 255,
@@ -102,6 +103,7 @@ struct SurfaceParams {
             1, // A2B10G10R10
             1, // A1B5G5R5
             1, // R8
+            2, // RGBA16F
             4, // DXT1
             4, // DXT23
             4, // DXT45
@@ -124,6 +126,7 @@ struct SurfaceParams {
             32,  // A2B10G10R10
             16,  // A1B5G5R5
             8,   // R8
+            64,  // RGBA16F
             64,  // DXT1
             128, // DXT23
             128, // DXT45
@@ -143,6 +146,8 @@ struct SurfaceParams {
             return PixelFormat::ABGR8;
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return PixelFormat::A2B10G10R10;
+        case Tegra::RenderTargetFormat::RGBA16_FLOAT:
+            return PixelFormat::RGBA16F;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -172,6 +177,8 @@ struct SurfaceParams {
             return PixelFormat::A1B5G5R5;
         case Tegra::Texture::TextureFormat::R8:
             return PixelFormat::R8;
+        case Tegra::Texture::TextureFormat::R16_G16_B16_A16:
+            return PixelFormat::RGBA16F;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -197,6 +204,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::A1B5G5R5;
         case PixelFormat::R8:
             return Tegra::Texture::TextureFormat::R8;
+        case PixelFormat::RGBA16F:
+            return Tegra::Texture::TextureFormat::R16_G16_B16_A16;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         case PixelFormat::DXT23:
@@ -226,6 +235,8 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return ComponentType::UNorm;
+        case Tegra::RenderTargetFormat::RGBA16_FLOAT:
+            return ComponentType::Float;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
