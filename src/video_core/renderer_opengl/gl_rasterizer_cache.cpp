@@ -59,7 +59,8 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
     if (type == SurfaceType::ColorTexture) {
         ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
-        // For now only UNORM components are supported
+        // For now only UNORM components are supported, or RGBA16F which is type FLOAT
+        ASSERT(component_type == ComponentType::UNorm || pixel_format == PixelFormat::RGBA16F);
         return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
         // TODO(Subv): Implement depth formats
