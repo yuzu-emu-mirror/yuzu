@@ -732,12 +732,37 @@ static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) 
 }
 
 static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
-    NGLOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:08X}, core=0x{:X}", thread_handle,
+    NGLOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:16X}, core=0x{:X}", thread_handle,
                 mask, core);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
         return ERR_INVALID_HANDLE;
+    }
+
+    if (core == THREADPROCESSORID_DEFAULT) {
+        ASSERT(thread->owner_process->ideal_processor != THREADPROCESSORID_DEFAULT);
+        // Set the target CPU to the one specified in the process' exheader.
+        core = thread->owner_process->ideal_processor;
+        mask = 1 << core;
+    }
+
+    if (mask == 0) {
+        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidCombination);
+    }
+
+    /// This value is used to only change the affinity mask without changing the current ideal core.
+    static constexpr u32 OnlyChangeMask = static_cast<u32>(-3);
+
+    if (core == OnlyChangeMask) {
+        core = thread->ideal_core;
+    } else if (core >= Core::NUM_CPU_CORES && core != -1) {
+        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidProcessorId);
+    }
+
+    // Error out if the input core isn't enabled in the input mask.
+    if (core < Core::NUM_CPU_CORES && (mask & (1 << core)) == 0) {
+        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidCombination);
     }
 
     thread->ChangeCore(core, mask);

@@ -460,13 +460,13 @@ void Thread::UpdatePriority() {
 
 void Thread::ChangeCore(u32 core, u64 mask) {
     ideal_core = core;
-    mask = mask;
+    affinity_mask = mask;
 
     if (status != THREADSTATUS_READY) {
         return;
     }
 
-    boost::optional<s32> new_processor_id{GetNextProcessorId(mask)};
+    boost::optional<s32> new_processor_id{GetNextProcessorId(affinity_mask)};
 
     if (!new_processor_id) {
         new_processor_id = processor_id;
@@ -476,7 +476,7 @@ void Thread::ChangeCore(u32 core, u64 mask) {
         new_processor_id = ideal_core;
     }
 
-    ASSERT(new_processor_id < 4);
+    ASSERT(*new_processor_id < 4);
 
     // Add thread to new core's scheduler
     auto& next_scheduler = Core::System().GetInstance().Scheduler(*new_processor_id);
