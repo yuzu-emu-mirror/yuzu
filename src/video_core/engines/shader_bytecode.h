@@ -297,8 +297,10 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
-        MUFU, // Multi-Function Operator
-        RRO,  // Range Reduction Operator
+        MUFU,  // Multi-Function Operator
+        RRO_C, // Range Reduction Operator
+        RRO_R,
+        RRO_IMM,
         F2F_C,
         F2F_R,
         F2F_IMM,
@@ -459,7 +461,9 @@ private:
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
-            INST("0101110010010---", Id::RRO, Type::Arithmetic, "RRO"),
+            INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
+            INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
+            INST("0011100-10010---", Id::RRO_IMM, Type::Arithmetic, "RRO_IMM"),
             INST("0100110010101---", Id::F2F_C, Type::Conversion, "F2F_C"),
             INST("0101110010101---", Id::F2F_R, Type::Conversion, "F2F_R"),
             INST("0011100-10101---", Id::F2F_IMM, Type::Conversion, "F2F_IMM"),
