@@ -261,6 +261,11 @@ union Instruction {
         BitField<50, 1, u64> saturate_a;
     } conversion;
 
+    union {
+        // TODO(bunnei): This is just a guess, needs to be verified
+        BitField<52, 1, u64> enable_g_component;
+    } texs;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
