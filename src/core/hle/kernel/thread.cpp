@@ -133,8 +133,11 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
 
         auto lock_owner = thread->lock_owner;
         // Threads waking up by timeout from WaitProcessWideKey do not perform priority inheritance
-        // and don't have a lock owner.
-        ASSERT(lock_owner == nullptr);
+        // and don't have a lock owner unless SignalProcessWideKey was called first and the thread
+        // wasn't awakened due to the mutex already being acquired.
+        if (lock_owner) {
+            lock_owner->RemoveMutexWaiter(thread);
+        }
     }
 
     if (resume)
