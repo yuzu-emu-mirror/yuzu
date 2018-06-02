@@ -63,6 +63,7 @@ struct SurfaceParams {
         DXT1 = 6,
         DXT23 = 7,
         DXT45 = 8,
+        DXN1 = 9, // This is also known as BC4
 
         Max,
         Invalid = 255,
@@ -107,6 +108,7 @@ struct SurfaceParams {
             4, // DXT1
             4, // DXT23
             4, // DXT45
+            4, // DXN1
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -130,6 +132,7 @@ struct SurfaceParams {
             64,  // DXT1
             128, // DXT23
             128, // DXT45
+            64,  // DXN1
         }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -185,6 +188,8 @@ struct SurfaceParams {
             return PixelFormat::DXT23;
         case Tegra::Texture::TextureFormat::DXT45:
             return PixelFormat::DXT45;
+        case Tegra::Texture::TextureFormat::DXN1:
+            return PixelFormat::DXN1;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -212,6 +217,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::DXT23;
         case PixelFormat::DXT45:
             return Tegra::Texture::TextureFormat::DXT45;
+        case PixelFormat::DXN1:
+            return Tegra::Texture::TextureFormat::DXN1;
         default:
             UNREACHABLE();
         }
