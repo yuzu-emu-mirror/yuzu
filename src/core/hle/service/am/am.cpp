@@ -418,19 +418,17 @@ private:
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
-        u64 offset = rp.Pop<u64>();
-
+        const u64 offset{rp.Pop<u64>()};
         const size_t size{ctx.GetWriteBufferSize()};
 
         ASSERT(offset + size <= buffer.size());
 
         ctx.WriteBuffer(buffer.data() + offset, size);
 
-        IPC::ResponseBuilder rb{ctx, 2};
-
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
         rb.Push(RESULT_SUCCESS);
 
-        NGLOG_DEBUG(Service_AM, "called");
+        NGLOG_DEBUG(Service_AM, "called, offset={}", offset);
     }
 };
 
