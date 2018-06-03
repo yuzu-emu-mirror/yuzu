@@ -53,6 +53,7 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true},   // DXT1
     {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT23
     {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT45
+    {GL_COMPRESSED_RED_RGTC1, GL_RED, GL_UNSIGNED_INT_8_8_8_8, true},           // DXN1
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
@@ -113,7 +114,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
         MortonCopy<true, PixelFormat::A2B10G10R10>, MortonCopy<true, PixelFormat::A1B5G5R5>,
         MortonCopy<true, PixelFormat::R8>,          MortonCopy<true, PixelFormat::RGBA16F>,
         MortonCopy<true, PixelFormat::DXT1>,        MortonCopy<true, PixelFormat::DXT23>,
-        MortonCopy<true, PixelFormat::DXT45>,
+        MortonCopy<true, PixelFormat::DXT45>,       MortonCopy<true, PixelFormat::DXN1>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra::GPUVAddr,
@@ -126,7 +127,8 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
         MortonCopy<false, PixelFormat::A1B5G5R5>,
         MortonCopy<false, PixelFormat::R8>,
         MortonCopy<false, PixelFormat::RGBA16F>,
-        // TODO(Subv): Swizzling the DXT1/DXT23/DXT45 formats is not yet supported
+        // TODO(Subv): Swizzling the DXT1/DXT23/DXT45/DXN1 formats is not yet supported
+        nullptr,
         nullptr,
         nullptr,
         nullptr,

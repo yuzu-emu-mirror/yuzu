@@ -46,6 +46,7 @@ void CopySwizzledData(u32 width, u32 height, u32 bytes_per_pixel, u32 out_bytes_
 u32 BytesPerPixel(TextureFormat format) {
     switch (format) {
     case TextureFormat::DXT1:
+    case TextureFormat::DXN1:
         // In this case a 'pixel' actually refers to a 4x4 tile.
         return 8;
     case TextureFormat::DXT23:
@@ -79,7 +80,9 @@ std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width,
     case TextureFormat::DXT1:
     case TextureFormat::DXT23:
     case TextureFormat::DXT45:
-        // In the DXT formats, each 4x4 tile is swizzled instead of just individual pixel values.
+    case TextureFormat::DXN1:
+        // In the DXT and DXN formats, each 4x4 tile is swizzled instead of just individual pixel
+        // values.
         CopySwizzledData(width / 4, height / 4, bytes_per_pixel, bytes_per_pixel, data,
                          unswizzled_data.data(), true, block_height);
         break;
@@ -109,6 +112,7 @@ std::vector<u8> DecodeTexture(const std::vector<u8>& texture_data, TextureFormat
     case TextureFormat::DXT1:
     case TextureFormat::DXT23:
     case TextureFormat::DXT45:
+    case TextureFormat::DXN1:
     case TextureFormat::A8R8G8B8:
     case TextureFormat::A2B10G10R10:
     case TextureFormat::A1B5G5R5:
