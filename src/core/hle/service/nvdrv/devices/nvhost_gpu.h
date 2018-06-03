@@ -63,13 +63,13 @@ private:
         u32_le timeout;
     };
     static_assert(sizeof(IoctlChannelSetTimeout) == 4, "IoctlChannelSetTimeout is incorrect size");
-    
+
     struct IoctlAllocGPFIFO {
         u32_le num_entries;
         u32_le flags;
     };
     static_assert(sizeof(IoctlAllocGPFIFO) == 8, "IoctlAllocGPFIFO is incorrect size");
-    
+
     struct IoctlClientData {
         u64_le data;
     };
@@ -89,18 +89,18 @@ private:
         INSERT_PADDING_WORDS(1);
     };
     static_assert(sizeof(IoctlSetErrorNotifier) == 24, "IoctlSetErrorNotifier is incorrect size");
-    
+
     struct IoctlChannelSetPriority {
         u32_le priority;
     };
     static_assert(sizeof(IoctlChannelSetPriority) == 4, "IoctlChannelSetPriority is incorrect size");
-    
+
     struct IoctlEventIdControl {
         u32_le cmd;    // 0=disable, 1=enable, 2=clear
         u32_le id;
     };
     static_assert(sizeof(IoctlEventIdControl) == 8, "IoctlEventIdControl is incorrect size");
-    
+
     struct IoctlGetErrorNotification {
         u64_le timestamp;
         u32_le info32;
@@ -108,13 +108,13 @@ private:
         u16_le status;       // always 0xFFFF
     };
     static_assert(sizeof(IoctlGetErrorNotification) == 16, "IoctlGetErrorNotification is incorrect size");
-    
+
     struct IoctlFence {
         u32_le id;
         u32_le value;
     };
     static_assert(sizeof(IoctlFence) == 8, "IoctlFence is incorrect size");
-    
+
     struct IoctlAllocGpfifoEx {
         u32_le num_entries;
         u32_le flags;
