@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <stack>
 #include "core/file_sys/filesystem.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
@@ -348,49 +349,6 @@ void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
     NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
-class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
-public:
-    explicit ILibraryAppletAccessor() : ServiceFramework("ILibraryAppletAccessor") {
-        static const FunctionInfo functions[] = {
-            {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
-            {1, nullptr, "IsCompleted"},
-            {10, nullptr, "Start"},
-            {20, nullptr, "RequestExit"},
-            {25, nullptr, "Terminate"},
-            {30, nullptr, "GetResult"},
-            {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
-            {100, nullptr, "PushInData"},
-            {101, nullptr, "PopOutData"},
-            {102, nullptr, "PushExtraStorage"},
-            {103, nullptr, "PushInteractiveInData"},
-            {104, nullptr, "PopInteractiveOutData"},
-            {105, nullptr, "GetPopOutDataEvent"},
-            {106, nullptr, "GetPopInteractiveOutDataEvent"},
-            {110, nullptr, "NeedsToExitProcess"},
-            {120, nullptr, "GetLibraryAppletInfo"},
-            {150, nullptr, "RequestForAppletToGetForeground"},
-            {160, nullptr, "GetIndirectLayerConsumerHandle"},
-        };
-        RegisterHandlers(functions);
-
-        state_changed_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
-                                                    "ILibraryAppletAccessor:StateChangedEvent");
-    }
-
-private:
-    void GetAppletStateChangedEvent(Kernel::HLERequestContext& ctx) {
-        state_changed_event->Signal();
-
-        IPC::ResponseBuilder rb{ctx, 2, 1};
-        rb.Push(RESULT_SUCCESS);
-        rb.PushCopyObjects(state_changed_event);
-
-        NGLOG_WARNING(Service_AM, "(STUBBED) called");
-    }
-
-    Kernel::SharedPtr<Kernel::Event> state_changed_event;
-};
-
 class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
 public:
     explicit IStorageAccessor(std::vector<u8> buffer)
@@ -470,6 +428,60 @@ private:
 
         NGLOG_DEBUG(Service_AM, "called");
     }
+};
+
+class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
+public:
+    explicit ILibraryAppletAccessor() : ServiceFramework("ILibraryAppletAccessor") {
+        static const FunctionInfo functions[] = {
+            {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
+            {1, nullptr, "IsCompleted"},
+            {10, nullptr, "Start"},
+            {20, nullptr, "RequestExit"},
+            {25, nullptr, "Terminate"},
+            {30, nullptr, "GetResult"},
+            {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
+            {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
+            {101, nullptr, "PopOutData"},
+            {102, nullptr, "PushExtraStorage"},
+            {103, nullptr, "PushInteractiveInData"},
+            {104, nullptr, "PopInteractiveOutData"},
+            {105, nullptr, "GetPopOutDataEvent"},
+            {106, nullptr, "GetPopInteractiveOutDataEvent"},
+            {110, nullptr, "NeedsToExitProcess"},
+            {120, nullptr, "GetLibraryAppletInfo"},
+            {150, nullptr, "RequestForAppletToGetForeground"},
+            {160, nullptr, "GetIndirectLayerConsumerHandle"},
+        };
+        RegisterHandlers(functions);
+
+        state_changed_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
+                                                    "ILibraryAppletAccessor:StateChangedEvent");
+    }
+
+private:
+    void GetAppletStateChangedEvent(Kernel::HLERequestContext& ctx) {
+        state_changed_event->Signal();
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(state_changed_event);
+
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
+    void PushInData(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        storage_stack.push(rp.PopIpcInterface<AM::IStorage>());
+
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    std::stack<std::shared_ptr<AM::IStorage>> storage_stack;
+    Kernel::SharedPtr<Kernel::Event> state_changed_event;
 };
 
 ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {
