@@ -97,16 +97,15 @@ private:
     
     struct IoctlEventIdControl {
         u32_le cmd;    // 0=disable, 1=enable, 2=clear
-        u32_le id;     
-        
+        u32_le id;
     };
     static_assert(sizeof(IoctlEventIdControl) == 8, "IoctlEventIdControl is incorrect size");
     
     struct IoctlGetErrorNotification {
-        u64_le timestamp;    
-        u32_le info32;       
-        u16_le info16;       
-        u16_le status;       // always 0xFFFF       
+        u64_le timestamp;
+        u32_le info32;
+        u16_le info16;
+        u16_le status;       // always 0xFFFF
     };
     static_assert(sizeof(IoctlGetErrorNotification) == 16, "IoctlGetErrorNotification is incorrect size");
     
