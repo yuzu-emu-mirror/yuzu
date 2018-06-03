@@ -792,8 +792,13 @@ private:
                                         1, 1);
                 break;
             }
-            case OpCode::Id::RRO: {
-                NGLOG_DEBUG(HW_GPU, "Skipping RRO instruction");
+            case OpCode::Id::RRO_C:
+            case OpCode::Id::RRO_R:
+            case OpCode::Id::RRO_IMM: {
+                // Currently RRO is only implemented as a register move.
+                // Usage of `abs_b` and `negate_b` here should also be correct.
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_b, 1, 1);
+                NGLOG_WARNING(HW_GPU, "RRO instruction is incomplete");
                 break;
             }
             default: {
@@ -897,8 +902,8 @@ private:
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
-                // Add an extra scope and declare the texture coords inside to prevent overwriting
-                // them in case they are used as outputs of the texs instruction.
+                // Add an extra scope and declare the texture coords inside to prevent
+                // overwriting them in case they are used as outputs of the texs instruction.
                 shader.AddLine("{");
                 ++shader.scope;
                 shader.AddLine(coord);
@@ -961,8 +966,8 @@ private:
                          '(' + predicate + ") " + combiner + " (" + second_pred + ')');
 
             if (instr.fsetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
-                // Set the secondary predicate to the result of !Predicate OP SecondPredicate, if
-                // enabled
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate,
+                // if enabled
                 SetPredicate(instr.fsetp.pred0,
                              "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
             }
