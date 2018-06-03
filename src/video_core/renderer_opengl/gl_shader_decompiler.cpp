@@ -896,6 +896,32 @@ private:
                                                   instr.gpr0);
                 break;
             }
+            case OpCode::Id::TEX: {
+                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
+                const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
+                const std::string op_b = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
+                const std::string sampler = GetSampler(instr.sampler);
+                const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
+                // Add an extra scope and declare the texture coords inside to prevent overwriting
+                // them in case they are used as outputs of the texs instruction.
+                shader.AddLine("{");
+                ++shader.scope;
+                shader.AddLine(coord);
+                const std::string texture = "texture(" + sampler + ", coords)";
+
+                size_t dest_elem{};
+                for (size_t elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
+                    if (!instr.tex.IsComponentEnabled(elem)) {
+                        // Skip disabled components
+                        continue;
+                    }
+                    regs.SetRegisterToFloat(instr.gpr0, elem, texture, 1, 4, false, dest_elem);
+                    ++dest_elem;
+                }
+                --shader.scope;
+                shader.AddLine("}");
+                break;
+            }
             case OpCode::Id::TEXS: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
@@ -908,8 +934,23 @@ private:
                 ++shader.scope;
                 shader.AddLine(coord);
                 const std::string texture = "texture(" + sampler + ", coords)";
-                for (unsigned elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
-                    regs.SetRegisterToFloat(instr.gpr0, elem, texture, 1, 4, false, elem);
+
+                // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA goes
+                // into gpr28+0 and gpr28+1
+                size_t offset{};
+                for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
+                    for (unsigned elem = 0; elem < 2; ++elem) {
+                        if (dest + elem >= Register::ZeroIndex) {
+                            // Skip invalid register values
+                            break;
+                        }
+                        regs.SetRegisterToFloat(dest, elem + offset, texture, 1, 4, false, elem);
+                        if (!instr.texs.enable_g_component) {
+                            // Skip the second component
+                            break;
+                        }
+                    }
+                    offset += 2;
                 }
                 --shader.scope;
                 shader.AddLine("}");

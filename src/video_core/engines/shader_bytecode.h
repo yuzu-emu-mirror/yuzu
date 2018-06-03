@@ -261,6 +261,19 @@ union Instruction {
         BitField<50, 1, u64> saturate_a;
     } conversion;
 
+    union {
+        BitField<31, 4, u64> component_mask;
+
+        bool IsComponentEnabled(size_t component) const {
+            return ((1 << component) & component_mask) != 0;
+        }
+    } tex;
+
+    union {
+        // TODO(bunnei): This is just a guess, needs to be verified
+        BitField<52, 1, u64> enable_g_component;
+    } texs;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
@@ -281,6 +294,7 @@ public:
         KIL,
         LD_A,
         ST_A,
+        TEX,
         TEXQ, // Texture Query
         TEXS, // Texture Fetch with scalar/non-vec4 source/destinations
         TLDS, // Texture Load with scalar/non-vec4 source/destinations
@@ -444,6 +458,7 @@ private:
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
+            INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
