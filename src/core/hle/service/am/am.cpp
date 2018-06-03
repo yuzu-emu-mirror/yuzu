@@ -391,27 +391,6 @@ private:
     Kernel::SharedPtr<Kernel::Event> state_changed_event;
 };
 
-ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {
-    static const FunctionInfo functions[] = {
-        {0, &ILibraryAppletCreator::CreateLibraryApplet, "CreateLibraryApplet"},
-        {1, nullptr, "TerminateAllLibraryApplets"},
-        {2, nullptr, "AreAnyLibraryAppletsLeft"},
-        {10, nullptr, "CreateStorage"},
-        {11, nullptr, "CreateTransferMemoryStorage"},
-        {12, nullptr, "CreateHandleStorage"},
-    };
-    RegisterHandlers(functions);
-}
-
-void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<AM::ILibraryAppletAccessor>();
-
-    NGLOG_DEBUG(Service_AM, "called");
-}
-
 class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
 public:
     explicit IStorageAccessor(std::vector<u8> buffer)
@@ -478,6 +457,39 @@ private:
         NGLOG_DEBUG(Service_AM, "called");
     }
 };
+
+ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {
+    static const FunctionInfo functions[] = {
+        {0, &ILibraryAppletCreator::CreateLibraryApplet, "CreateLibraryApplet"},
+        {1, nullptr, "TerminateAllLibraryApplets"},
+        {2, nullptr, "AreAnyLibraryAppletsLeft"},
+        {10, &ILibraryAppletCreator::CreateStorage, "CreateStorage"},
+        {11, nullptr, "CreateTransferMemoryStorage"},
+        {12, nullptr, "CreateHandleStorage"},
+    };
+    RegisterHandlers(functions);
+}
+
+void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<AM::ILibraryAppletAccessor>();
+
+    NGLOG_DEBUG(Service_AM, "called");
+}
+
+void ILibraryAppletCreator::CreateStorage(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const u64 size{rp.Pop<u64>()};
+    std::vector<u8> buffer(size);
+
+    IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 1)};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<AM::IStorage>(std::move(buffer));
+
+    NGLOG_DEBUG(Service_AM, "called, size={}", size);
+}
 
 IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
     static const FunctionInfo functions[] = {
