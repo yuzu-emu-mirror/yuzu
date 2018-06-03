@@ -397,7 +397,7 @@ public:
         : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
         static const FunctionInfo functions[] = {
             {0, &IStorageAccessor::GetSize, "GetSize"},
-            {10, nullptr, "Write"},
+            {10, &IStorageAccessor::Write, "Write"},
             {11, &IStorageAccessor::Read, "Read"},
         };
         RegisterHandlers(functions);
@@ -413,6 +413,22 @@ private:
         rb.Push(static_cast<u64>(buffer.size()));
 
         NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    void Write(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        const u64 offset{rp.Pop<u64>()};
+        const std::vector<u8> data{ctx.ReadBuffer()};
+
+        ASSERT(offset + data.size() <= buffer.size());
+
+        std::memcpy(&buffer[offset], data.data(), data.size());
+
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called, offset={}", offset);
     }
 
     void Read(Kernel::HLERequestContext& ctx) {
