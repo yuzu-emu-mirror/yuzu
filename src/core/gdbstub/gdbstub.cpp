@@ -16,7 +16,6 @@
 #include <fcntl.h>
 
 #ifdef _WIN32
-#define NTDDI_VERSION NTDDI_WIN8
 #include <winsock2.h>
 // winsock2.h needs to be included first to prevent winsock.h being included by other includes
 #include <io.h>
@@ -37,6 +36,7 @@
 //#undef NGLOG_DEBUG
 //#define NGLOG_DEBUG NGLOG_ERROR
 #include "common/string_util.h"
+#include "common/swap.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
 #include "core/core_cpu.h"
@@ -617,8 +617,8 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
     std::string buffer;
     if (full) {
         buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x};", latest_signal, PC_REGISTER,
-                             htonll(regr(PC_REGISTER, thread)), SP_REGISTER,
-                             htonll(regr(SP_REGISTER, thread)));
+                             Common::swap64(regr(PC_REGISTER, thread)), SP_REGISTER,
+                             Common::swap64(regr(SP_REGISTER, thread)));
     } else {
         buffer = fmt::format("T{:02x};", latest_signal);
     }
