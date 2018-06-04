@@ -7,7 +7,6 @@
 #pragma once
 
 #include "common/common_types.h"
-#include "core/hle/kernel/thread.h"
 
 namespace GDBStub {
 
@@ -93,11 +92,5 @@ bool GetCpuStepFlag();
  */
 void SetCpuStepFlag(bool is_step);
 
-/**
- * Send trap signal from thread back to the gdbstub server.
- *
- * @param thread Sending thread.
- * @param trap Trap no.
- */
-void SendTrap(Kernel::Thread* thread, int trap);
+void SendSig(void *thread, int sig);
 } // namespace GDBStub
