@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <stack>
 #include "core/file_sys/filesystem.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
@@ -348,6 +349,87 @@ void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
     NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
+class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
+public:
+    explicit IStorageAccessor(std::vector<u8> buffer)
+        : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
+        static const FunctionInfo functions[] = {
+            {0, &IStorageAccessor::GetSize, "GetSize"},
+            {10, &IStorageAccessor::Write, "Write"},
+            {11, &IStorageAccessor::Read, "Read"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    std::vector<u8> buffer;
+
+    void GetSize(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 4};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(static_cast<u64>(buffer.size()));
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    void Write(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        const u64 offset{rp.Pop<u64>()};
+        const std::vector<u8> data{ctx.ReadBuffer()};
+
+        ASSERT(offset + data.size() <= buffer.size());
+
+        std::memcpy(&buffer[offset], data.data(), data.size());
+
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called, offset={}", offset);
+    }
+
+    void Read(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+
+        const u64 offset{rp.Pop<u64>()};
+        const size_t size{ctx.GetWriteBufferSize()};
+
+        ASSERT(offset + size <= buffer.size());
+
+        ctx.WriteBuffer(buffer.data() + offset, size);
+
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called, offset={}", offset);
+    }
+};
+
+class IStorage final : public ServiceFramework<IStorage> {
+public:
+    explicit IStorage(std::vector<u8> buffer)
+        : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
+        static const FunctionInfo functions[] = {
+            {0, &IStorage::Open, "Open"},
+            {1, nullptr, "OpenTransferStorage"},
+        };
+        RegisterHandlers(functions);
+    }
+
+private:
+    std::vector<u8> buffer;
+
+    void Open(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+};
+
 class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
 public:
     explicit ILibraryAppletAccessor() : ServiceFramework("ILibraryAppletAccessor") {
@@ -359,7 +441,7 @@ public:
             {25, nullptr, "Terminate"},
             {30, nullptr, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
-            {100, nullptr, "PushInData"},
+            {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
             {101, nullptr, "PopOutData"},
             {102, nullptr, "PushExtraStorage"},
             {103, nullptr, "PushInteractiveInData"},
@@ -388,6 +470,17 @@ private:
         NGLOG_WARNING(Service_AM, "(STUBBED) called");
     }
 
+    void PushInData(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        storage_stack.push(rp.PopIpcInterface<AM::IStorage>());
+
+        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    std::stack<std::shared_ptr<AM::IStorage>> storage_stack;
     Kernel::SharedPtr<Kernel::Event> state_changed_event;
 };
 
@@ -396,7 +489,7 @@ ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryApple
         {0, &ILibraryAppletCreator::CreateLibraryApplet, "CreateLibraryApplet"},
         {1, nullptr, "TerminateAllLibraryApplets"},
         {2, nullptr, "AreAnyLibraryAppletsLeft"},
-        {10, nullptr, "CreateStorage"},
+        {10, &ILibraryAppletCreator::CreateStorage, "CreateStorage"},
         {11, nullptr, "CreateTransferMemoryStorage"},
         {12, nullptr, "CreateHandleStorage"},
     };
@@ -412,72 +505,17 @@ void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) 
     NGLOG_DEBUG(Service_AM, "called");
 }
 
-class IStorageAccessor final : public ServiceFramework<IStorageAccessor> {
-public:
-    explicit IStorageAccessor(std::vector<u8> buffer)
-        : ServiceFramework("IStorageAccessor"), buffer(std::move(buffer)) {
-        static const FunctionInfo functions[] = {
-            {0, &IStorageAccessor::GetSize, "GetSize"},
-            {10, nullptr, "Write"},
-            {11, &IStorageAccessor::Read, "Read"},
-        };
-        RegisterHandlers(functions);
-    }
+void ILibraryAppletCreator::CreateStorage(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const u64 size{rp.Pop<u64>()};
+    std::vector<u8> buffer(size);
 
-private:
-    std::vector<u8> buffer;
+    IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 1)};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<AM::IStorage>(std::move(buffer));
 
-    void GetSize(Kernel::HLERequestContext& ctx) {
-        IPC::ResponseBuilder rb{ctx, 4};
-
-        rb.Push(RESULT_SUCCESS);
-        rb.Push(static_cast<u64>(buffer.size()));
-
-        NGLOG_DEBUG(Service_AM, "called");
-    }
-
-    void Read(Kernel::HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-
-        u64 offset = rp.Pop<u64>();
-
-        const size_t size{ctx.GetWriteBufferSize()};
-
-        ASSERT(offset + size <= buffer.size());
-
-        ctx.WriteBuffer(buffer.data() + offset, size);
-
-        IPC::ResponseBuilder rb{ctx, 2};
-
-        rb.Push(RESULT_SUCCESS);
-
-        NGLOG_DEBUG(Service_AM, "called");
-    }
-};
-
-class IStorage final : public ServiceFramework<IStorage> {
-public:
-    explicit IStorage(std::vector<u8> buffer)
-        : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
-        static const FunctionInfo functions[] = {
-            {0, &IStorage::Open, "Open"},
-            {1, nullptr, "OpenTransferStorage"},
-        };
-        RegisterHandlers(functions);
-    }
-
-private:
-    std::vector<u8> buffer;
-
-    void Open(Kernel::HLERequestContext& ctx) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-
-        rb.Push(RESULT_SUCCESS);
-        rb.PushIpcInterface<AM::IStorageAccessor>(buffer);
-
-        NGLOG_DEBUG(Service_AM, "called");
-    }
-};
+    NGLOG_DEBUG(Service_AM, "called, size={}", size);
+}
 
 IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
     static const FunctionInfo functions[] = {

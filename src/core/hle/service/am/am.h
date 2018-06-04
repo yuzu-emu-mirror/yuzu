@@ -121,6 +121,7 @@ public:
 
 private:
     void CreateLibraryApplet(Kernel::HLERequestContext& ctx);
+    void CreateStorage(Kernel::HLERequestContext& ctx);
 };
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {
