@@ -96,7 +96,7 @@ private:
     static_assert(sizeof(IoctlChannelSetPriority) == 4, "IoctlChannelSetPriority is incorrect size");
 
     struct IoctlEventIdControl {
-        u32_le cmd;    // 0=disable, 1=enable, 2=clear
+        u32_le cmd; // 0=disable, 1=enable, 2=clear
         u32_le id;
     };
     static_assert(sizeof(IoctlEventIdControl) == 8, "IoctlEventIdControl is incorrect size");
@@ -105,9 +105,10 @@ private:
         u64_le timestamp;
         u32_le info32;
         u16_le info16;
-        u16_le status;       // always 0xFFFF
+        u16_le status; // always 0xFFFF
     };
-    static_assert(sizeof(IoctlGetErrorNotification) == 16, "IoctlGetErrorNotification is incorrect size");
+    static_assert(sizeof(IoctlGetErrorNotification) == 16, 
+                  "IoctlGetErrorNotification is incorrect size");
 
     struct IoctlFence {
         u32_le id;
