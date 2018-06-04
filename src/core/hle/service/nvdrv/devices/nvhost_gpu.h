@@ -93,7 +93,8 @@ private:
     struct IoctlChannelSetPriority {
         u32_le priority;
     };
-    static_assert(sizeof(IoctlChannelSetPriority) == 4, "IoctlChannelSetPriority is incorrect size");
+    static_assert(sizeof(IoctlChannelSetPriority) == 4,
+                  "IoctlChannelSetPriority is incorrect size");
 
     struct IoctlEventIdControl {
         u32_le cmd; // 0=disable, 1=enable, 2=clear
@@ -125,7 +126,7 @@ private:
         u32_le unk3;
         u32_le unk4;
         u32_le unk5;
-     };
+    };
     static_assert(sizeof(IoctlAllocGpfifoEx) == 32, "IoctlAllocGpfifoEx is incorrect size");
 
     struct IoctlAllocGpfifoEx2 {
