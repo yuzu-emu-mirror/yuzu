@@ -362,6 +362,9 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
+        ISCADD_C, // Scale and Add
+        ISCADD_R,
+        ISCADD_IMM,
         MUFU,  // Multi-Function Operator
         RRO_C, // Range Reduction Operator
         RRO_R,
@@ -405,6 +408,7 @@ public:
         Trivial,
         Arithmetic,
         Logic,
+        ScaledAdd,
         Ffma,
         Flow,
         Memory,
@@ -528,6 +532,9 @@ private:
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
+            INST("0100110000011---", Id::ISCADD_C, Type::ScaledAdd, "ISCADD_C"),
+            INST("0101110000011---", Id::ISCADD_R, Type::ScaledAdd, "ISCADD_R"),
+            INST("0011100-00011---", Id::ISCADD_IMM, Type::ScaledAdd, "ISCADD_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
