@@ -197,6 +197,11 @@ public:
         return active_type == Type::Integer;
     }
 
+    /// Returns the current active type of the register
+    Type GetActiveType() const {
+        return active_type;
+    }
+
     /// Returns the index of the register
     size_t GetIndex() const {
         return index;
@@ -328,20 +333,26 @@ public:
         shader.AddLine(dest + " = " + src + ';');
     }
 
-    /// Generates code representing a uniform (C buffer) register.
-    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+    /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
+    std::string GetUniform(const Uniform& uniform, GLSLRegister::Type type) {
         declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
                                                       static_cast<unsigned>(uniform.offset), stage);
         std::string value =
             'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
 
-        if (regs[dest_reg].IsFloat()) {
+        if (type == GLSLRegister::Type::Float) {
             return value;
-        } else if (regs[dest_reg].IsInteger()) {
+        } else if (type == GLSLRegister::Type::Integer) {
             return "floatBitsToInt(" + value + ')';
         } else {
             UNREACHABLE();
         }
+    }
+
+    /// Generates code representing a uniform (C buffer) register, interpreted as the type of the
+    /// destination register.
+    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+        return GetUniform(uniform, regs[dest_reg].GetActiveType());
     }
 
     /// Add declarations for registers
@@ -986,7 +997,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
@@ -1027,9 +1038,7 @@ private:
             if (instr.is_b_gpr) {
                 op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
             } else {
-                // TODO(Subv): This family of instructions don't store to a GPR, but GetUniform
-                // needs to know the type of the output register.
-                op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
             }
 
             using Tegra::Shader::Pred;
@@ -1075,7 +1084,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
