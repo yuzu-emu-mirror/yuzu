@@ -4,6 +4,7 @@
 
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 
@@ -18,7 +19,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &IUser::Initialize, "Initialize"},
             {1, nullptr, "Finalize"},
-            {2, nullptr, "ListDevices"},
+            {2, &IUser::ListDevices, "ListDevices"},
             {3, nullptr, "StartDetection"},
             {4, nullptr, "StopDetection"},
             {5, nullptr, "Mount"},
@@ -33,24 +34,87 @@ public:
             {14, nullptr, "GetRegisterInfo"},
             {15, nullptr, "GetCommonInfo"},
             {16, nullptr, "GetModelInfo"},
-            {17, nullptr, "AttachActivateEvent"},
-            {18, nullptr, "AttachDeactivateEvent"},
-            {19, nullptr, "GetState"},
-            {20, nullptr, "GetDeviceState"},
-            {21, nullptr, "GetNpadId"},
+            {17, &IUser::AttachActivateEvent, "AttachActivateEvent"},
+            {18, &IUser::AttachDeactivateEvent, "AttachDeactivateEvent"},
+            {19, &IUser::GetState, "GetState"},
+            {20, &IUser::GetDeviceState, "GetDeviceState"},
+            {21, &IUser::GetNpadId, "GetNpadId"},
             {22, nullptr, "GetApplicationArea2"},
             {23, nullptr, "AttachAvailabilityChangeEvent"},
             {24, nullptr, "RecreateApplicationArea"},
         };
         RegisterHandlers(functions);
+
+        activate_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "IUser:ActivateEvent");
+        deactivate_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "IUser:DeactivateEvent");
     }
 
 private:
+    enum class State : u32 {
+        NonInitialized = 0,
+        Initialized = 1,
+    };
+
+    enum class DeviceState : u32 {
+        Initialized = 0,
+    };
+
     void Initialize(Kernel::HLERequestContext& ctx) {
         NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+
+        state = State::Initialized;
+
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
+
+    void ListDevices(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
+    }
+
+    void AttachActivateEvent(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(activate_event);
+    }
+
+    void AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(deactivate_event);
+    }
+
+    void GetState(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(static_cast<u32>(state));
+    }
+
+    void GetDeviceState(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(static_cast<u32>(device_state));
+    }
+
+    void GetNpadId(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
+    }
+
+    State state{State::NonInitialized};
+    DeviceState device_state{DeviceState::Initialized};
+    Kernel::SharedPtr<Kernel::Event> activate_event;
+    Kernel::SharedPtr<Kernel::Event> deactivate_event;
 };
 
 void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
