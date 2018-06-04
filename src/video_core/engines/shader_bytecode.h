@@ -245,9 +245,9 @@ union Instruction {
         BitField<44, 1, u64> abs_b;
         BitField<45, 2, PredOperation> op;
         BitField<48, 4, PredCondition> cond;
+        BitField<52, 1, u64> bf;
         BitField<53, 1, u64> neg_b;
         BitField<54, 1, u64> abs_a;
-        BitField<52, 1, u64> bf;
         BitField<55, 1, u64> ftz;
         BitField<56, 1, u64> neg_imm;
     } fset;

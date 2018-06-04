@@ -1066,7 +1066,12 @@ private:
             std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
                                     combiner + " (" + second_pred + "))";
 
-            regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
+            if (instr.fset.bf) {
+                regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
+            } else {
+                regs.SetRegisterToInteger(instr.gpr0, false, 0, predicate + " ? 0xFFFFFFFF : 0", 1,
+                                          1);
+            }
             break;
         }
         default: {
