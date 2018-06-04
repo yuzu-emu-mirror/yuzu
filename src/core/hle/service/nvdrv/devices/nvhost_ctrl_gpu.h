@@ -148,8 +148,7 @@ private:
         u32_le type;
         u32_le index_size;
     };
-    static_assert(sizeof(IoctlZbcQueryTable) == 52,
-                  "IoctlZbcQueryTable is incorrect size");
+    static_assert(sizeof(IoctlZbcQueryTable) == 52, "IoctlZbcQueryTable is incorrect size");
 
     struct IoctlFlushL2 {
         u32_le flush; // l2_flush | l2_invalidate << 1 | fb_flush << 2
