@@ -436,10 +436,10 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
             {1, nullptr, "IsCompleted"},
-            {10, nullptr, "Start"},
+            {10, &ILibraryAppletAccessor::Start, "Start"},
             {20, nullptr, "RequestExit"},
             {25, nullptr, "Terminate"},
-            {30, nullptr, "GetResult"},
+            {30, &ILibraryAppletAccessor::GetResult, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
             {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
             {101, nullptr, "PopOutData"},
@@ -466,6 +466,20 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(state_changed_event);
+
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
+    void GetResult(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
+    void Start(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
 
         NGLOG_WARNING(Service_AM, "(STUBBED) called");
     }
