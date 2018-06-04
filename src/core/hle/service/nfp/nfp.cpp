@@ -5,6 +5,7 @@
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/service/hid/hid.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
 
@@ -70,10 +71,16 @@ private:
     }
 
     void ListDevices(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        const u32 array_size = rp.Pop<u32>();
+
+        ctx.WriteBuffer(&device_handle, sizeof(device_handle));
+
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called, array_size={}", array_size);
+
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0);
+        rb.Push<u32>(1);
     }
 
     void AttachActivateEvent(Kernel::HLERequestContext& ctx) {
@@ -105,12 +112,17 @@ private:
     }
 
     void GetNpadId(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        const u64 dev_handle = rp.Pop<u64>();
+
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0);
+        rb.Push<u32>(npad_id);
     }
 
+    const u64 device_handle{0xDEAD};
+    const HID::ControllerID npad_id{HID::Controller_Player1};
     State state{State::NonInitialized};
     DeviceState device_state{DeviceState::Initialized};
     Kernel::SharedPtr<Kernel::Event> activate_event;
