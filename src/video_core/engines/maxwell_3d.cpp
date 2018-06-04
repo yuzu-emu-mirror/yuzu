@@ -156,16 +156,15 @@ void Maxwell3D::ProcessQueryGet() {
     // TODO(Subv): Support the other query units.
     ASSERT_MSG(regs.query.query_get.unit == Regs::QueryUnit::Crop,
                "Units other than CROP are unimplemented");
-    ASSERT_MSG(regs.query.query_get.short_query,
-               "Writing the entire query result structure is unimplemented");
 
     u32 value = Memory::Read32(*address);
-    u32 result = 0;
+    u64 result = 0;
 
     // TODO(Subv): Support the other query variables
     switch (regs.query.query_get.select) {
     case Regs::QuerySelect::Zero:
-        result = 0;
+        // This seems to actually write the query sequence to the query address.
+        result = regs.query.query_sequence;
         break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented query select type {}",
@@ -174,15 +173,31 @@ void Maxwell3D::ProcessQueryGet() {
 
     // TODO(Subv): Research and implement how query sync conditions work.
 
+    struct LongQueryResult {
+        u64_le value;
+        u64_le timestamp;
+    };
+    static_assert(sizeof(LongQueryResult) == 16, "LongQueryResult has wrong size");
+
     switch (regs.query.query_get.mode) {
     case Regs::QueryMode::Write:
     case Regs::QueryMode::Write2: {
-        // Write the current query sequence to the sequence address.
         u32 sequence = regs.query.query_sequence;
-        Memory::Write32(*address, sequence);
-
-        // TODO(Subv): Write the proper query response structure to the address when not using short
-        // mode.
+        if (regs.query.query_get.short_query) {
+            // Write the current query sequence to the sequence address.
+            // TODO(Subv): Find out what happens if you use a long query type but mark it as a short
+            // query.
+            Memory::Write32(*address, sequence);
+        } else {
+            // Write the 128-bit result structure in long mode. Note: We emulate an infinitely fast
+            // GPU, this command may actually take a while to complete in real hardware due to GPU
+            // wait queues.
+            LongQueryResult query_result{};
+            query_result.value = result;
+            // TODO(Subv): Generate a real GPU timestamp and write it here instead of 0
+            query_result.timestamp = 0;
+            Memory::WriteBlock(*address, &query_result, sizeof(query_result));
+        }
         break;
     }
     default:
