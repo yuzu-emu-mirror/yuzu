@@ -155,7 +155,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
     RegisterHandlers(functions);
 
     launchable_event =
-        Kernel::Event::Create(Kernel::ResetType::OneShot, "ISelfController:LaunchableEvent");
+        Kernel::Event::Create(Kernel::ResetType::Sticky, "ISelfController:LaunchableEvent");
 }
 
 void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
