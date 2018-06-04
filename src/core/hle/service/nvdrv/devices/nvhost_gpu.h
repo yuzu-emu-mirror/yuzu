@@ -107,7 +107,7 @@ private:
         u16_le info16;
         u16_le status; // always 0xFFFF
     };
-    static_assert(sizeof(IoctlGetErrorNotification) == 16, 
+    static_assert(sizeof(IoctlGetErrorNotification) == 16,
                   "IoctlGetErrorNotification is incorrect size");
 
     struct IoctlFence {
