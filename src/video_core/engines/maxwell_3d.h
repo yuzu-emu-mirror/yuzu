@@ -354,10 +354,35 @@ public:
                     f32 scale_x;
                     f32 scale_y;
                     f32 scale_z;
-                    u32 translate_x;
-                    u32 translate_y;
-                    u32 translate_z;
+                    f32 translate_x;
+                    f32 translate_y;
+                    f32 translate_z;
                     INSERT_PADDING_WORDS(2);
+
+                    MathUtil::Rectangle<s32> GetRect() const {
+                        return {
+                            GetX(),               // left
+                            GetY() + GetHeight(), // top
+                            GetX() + GetWidth(),  // right
+                            GetY()                // bottom
+                        };
+                    };
+
+                    s32 GetX() const {
+                        return static_cast<s32>(std::max(0.0f, translate_x - std::fabs(scale_x)));
+                    }
+
+                    s32 GetY() const {
+                        return static_cast<s32>(std::max(0.0f, translate_y - std::fabs(scale_y)));
+                    }
+
+                    s32 GetWidth() const {
+                        return static_cast<s32>(translate_x + std::fabs(scale_x)) - GetX();
+                    }
+
+                    s32 GetHeight() const {
+                        return static_cast<s32>(translate_y + std::fabs(scale_y)) - GetY();
+                    }
                 } viewport_transform[NumViewports];
 
                 struct {
@@ -371,15 +396,6 @@ public:
                     };
                     float depth_range_near;
                     float depth_range_far;
-
-                    MathUtil::Rectangle<s32> GetRect() const {
-                        return {
-                            static_cast<s32>(x),          // left
-                            static_cast<s32>(y + height), // top
-                            static_cast<s32>(x + width),  // right
-                            static_cast<s32>(y)           // bottom
-                        };
-                    };
                 } viewport[NumViewports];
 
                 INSERT_PADDING_WORDS(0x1D);
