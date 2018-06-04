@@ -88,6 +88,20 @@ private:
         return *subroutines.insert(std::move(subroutine)).first;
     }
 
+    /// Merges exit method of two parallel branches.
+    static ExitMethod ParallelExit(ExitMethod a, ExitMethod b) {
+        if (a == ExitMethod::Undetermined) {
+            return b;
+        }
+        if (b == ExitMethod::Undetermined) {
+            return a;
+        }
+        if (a == b) {
+            return a;
+        }
+        return ExitMethod::Conditional;
+    }
+
     /// Scans a range of code for labels and determines the exit method.
     ExitMethod Scan(u32 begin, u32 end, std::set<u32>& labels) {
         auto [iter, inserted] =
@@ -97,10 +111,18 @@ private:
             return exit_method;
 
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
-            if (const auto opcode = OpCode::Decode({program_code[offset]})) {
+            const Instruction instr = {program_code[offset]};
+            if (const auto opcode = OpCode::Decode(instr)) {
                 switch (opcode->GetId()) {
                 case OpCode::Id::EXIT: {
                     return exit_method = ExitMethod::AlwaysEnd;
+                }
+                case OpCode::Id::BRA: {
+                    u32 target = offset + instr.bra.GetBranchTarget();
+                    labels.insert(target);
+                    ExitMethod no_jmp = Scan(offset + 1, end, labels);
+                    ExitMethod jmp = Scan(target, end, labels);
+                    return exit_method = ParallelExit(no_jmp, jmp);
                 }
                 }
             }
@@ -1079,6 +1101,13 @@ private:
             }
             case OpCode::Id::KIL: {
                 shader.AddLine("discard;");
+                break;
+            }
+            case OpCode::Id::BRA: {
+                ASSERT_MSG(instr.bra.constant_buffer == 0,
+                           "BRA with constant buffers are not implemented");
+                u32 target = offset + instr.bra.GetBranchTarget();
+                shader.AddLine("{ jmp_to = " + std::to_string(target) + "u; break; }");
                 break;
             }
             case OpCode::Id::IPA: {
