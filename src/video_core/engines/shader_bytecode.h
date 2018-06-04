@@ -156,6 +156,13 @@ enum class PredOperation : u64 {
     Xor = 2,
 };
 
+enum class LogicOperation : u64 {
+    And = 0,
+    Or = 1,
+    Xor = 2,
+    PassB = 3,
+};
+
 enum class SubOp : u64 {
     Cos = 0x0,
     Sin = 0x1,
@@ -201,6 +208,12 @@ union Instruction {
             BitField<39, 3, u64> pred;
             BitField<42, 1, u64> negate_pred;
         } fmnmx;
+
+        union {
+            BitField<53, 2, LogicOperation> operation;
+            BitField<55, 1, u64> invert_a;
+            BitField<56, 1, u64> invert_b;
+        } lop;
 
         float GetImm20_19() const {
             float result{};
@@ -367,6 +380,7 @@ public:
     enum class Type {
         Trivial,
         Arithmetic,
+        Logic,
         Ffma,
         Flow,
         Memory,
@@ -499,7 +513,6 @@ private:
             INST("0100110010110---", Id::F2I_C, Type::Arithmetic, "F2I_C"),
             INST("0101110010110---", Id::F2I_R, Type::Arithmetic, "F2I_R"),
             INST("0011100-10110---", Id::F2I_IMM, Type::Arithmetic, "F2I_IMM"),
-            INST("000001----------", Id::LOP32I, Type::Arithmetic, "LOP32I"),
             INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
@@ -510,6 +523,7 @@ private:
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
+            INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
             INST("0100110011100---", Id::I2I_C, Type::Conversion, "I2I_C"),
             INST("0101110011100---", Id::I2I_R, Type::Conversion, "I2I_R"),
             INST("01110001-1000---", Id::I2I_IMM, Type::Conversion, "I2I_IMM"),
