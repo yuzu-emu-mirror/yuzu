@@ -938,18 +938,21 @@ private:
                 // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA goes
                 // into gpr28+0 and gpr28+1
                 size_t offset{};
+
                 for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
                     for (unsigned elem = 0; elem < 2; ++elem) {
-                        if (dest + elem >= Register::ZeroIndex) {
-                            // Skip invalid register values
-                            break;
+                        if (!instr.texs.IsComponentEnabled(elem)) {
+                            // Skip disabled components
+                            continue;
                         }
                         regs.SetRegisterToFloat(dest, elem + offset, texture, 1, 4, false, elem);
-                        if (!instr.texs.enable_g_component) {
-                            // Skip the second component
-                            break;
-                        }
                     }
+
+                    if (!instr.texs.HasTwoDestinations()) {
+                        // Skip the second destination
+                        break;
+                    }
+
                     offset += 2;
                 }
                 --shader.scope;

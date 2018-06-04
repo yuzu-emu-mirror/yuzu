@@ -270,8 +270,22 @@ union Instruction {
     } tex;
 
     union {
-        // TODO(bunnei): This is just a guess, needs to be verified
-        BitField<52, 1, u64> enable_g_component;
+        BitField<50, 3, u64> component_mask_selector;
+        BitField<28, 8, Register> gpr28;
+
+        bool HasTwoDestinations() const {
+            return gpr28.Value() != Register::ZeroIndex;
+        }
+
+        bool IsComponentEnabled(size_t component) const {
+            static constexpr std::array<size_t, 5> one_dest_mask{0x1, 0x2, 0x4, 0x8, 0x3};
+            static constexpr std::array<size_t, 5> two_dest_mask{0x7, 0xb, 0xd, 0xe, 0xf};
+            const auto& mask{HasTwoDestinations() ? two_dest_mask : one_dest_mask};
+
+            ASSERT(component_mask_selector < mask.size());
+
+            return ((1 << component) & mask[component_mask_selector]) != 0;
+        }
     } texs;
 
     BitField<61, 1, u64> is_b_imm;
