@@ -1017,6 +1017,44 @@ private:
             }
             break;
         }
+        case OpCode::Type::IntegerSetPredicate: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.isetp.is_signed);
+
+            std::string op_b{};
+
+            ASSERT_MSG(!instr.is_b_imm, "ISETP_IMM not implemented");
+
+            if (instr.is_b_gpr) {
+                op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+            } else {
+                // TODO(Subv): This family of instructions don't store to a GPR, but GetUniform
+                // needs to know the type of the output register.
+                op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+            }
+
+            using Tegra::Shader::Pred;
+            // We can't use the constant predicate as destination.
+            ASSERT(instr.isetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
+
+            std::string second_pred =
+                GetPredicateCondition(instr.isetp.pred39, instr.isetp.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.isetp.cond);
+            std::string combiner = GetPredicateCombiner(instr.isetp.op);
+
+            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            // Set the primary predicate to the result of Predicate OP SecondPredicate
+            SetPredicate(instr.isetp.pred3,
+                         '(' + predicate + ") " + combiner + " (" + second_pred + ')');
+
+            if (instr.isetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate,
+                // if enabled
+                SetPredicate(instr.isetp.pred0,
+                             "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
+            }
+            break;
+        }
         case OpCode::Type::FloatSet: {
             std::string op_a = instr.fset.neg_a ? "-" : "";
             op_a += regs.GetRegisterAsFloat(instr.gpr8);

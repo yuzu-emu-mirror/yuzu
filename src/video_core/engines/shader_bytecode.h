@@ -239,6 +239,16 @@ union Instruction {
     } fsetp;
 
     union {
+        BitField<0, 3, u64> pred0;
+        BitField<3, 3, u64> pred3;
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<45, 2, PredOperation> op;
+        BitField<48, 1, u64> is_signed;
+        BitField<49, 3, PredCondition> cond;
+    } isetp;
+
+    union {
         BitField<39, 3, u64> pred39;
         BitField<42, 1, u64> neg_pred;
         BitField<43, 1, u64> neg_a;
