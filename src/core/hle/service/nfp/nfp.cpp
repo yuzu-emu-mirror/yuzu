@@ -41,7 +41,7 @@ public:
             {20, &IUser::GetDeviceState, "GetDeviceState"},
             {21, &IUser::GetNpadId, "GetNpadId"},
             {22, nullptr, "GetApplicationArea2"},
-            {23, nullptr, "AttachAvailabilityChangeEvent"},
+            {23, &IUser::AttachAvailabilityChangeEvent, "AttachAvailabilityChangeEvent"},
             {24, nullptr, "RecreateApplicationArea"},
         };
         RegisterHandlers(functions);
@@ -49,6 +49,8 @@ public:
         activate_event = Kernel::Event::Create(Kernel::ResetType::OneShot, "IUser:ActivateEvent");
         deactivate_event =
             Kernel::Event::Create(Kernel::ResetType::OneShot, "IUser:DeactivateEvent");
+        availability_change_event =
+            Kernel::Event::Create(Kernel::ResetType::OneShot, "IUser:AvailabilityChangeEvent");
     }
 
 private:
@@ -80,18 +82,24 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(1);
+        rb.Push<u32>(0);
     }
 
     void AttachActivateEvent(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        const u64 dev_handle = rp.Pop<u64>();
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(activate_event);
     }
 
     void AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        IPC::RequestParser rp{ctx};
+        const u64 dev_handle = rp.Pop<u64>();
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(deactivate_event);
@@ -114,11 +122,20 @@ private:
     void GetNpadId(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
-
         NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(npad_id);
+    }
+
+    void AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const u64 dev_handle = rp.Pop<u64>();
+        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(availability_change_event);
     }
 
     const u64 device_handle{0xDEAD};
@@ -127,6 +144,7 @@ private:
     DeviceState device_state{DeviceState::Initialized};
     Kernel::SharedPtr<Kernel::Event> activate_event;
     Kernel::SharedPtr<Kernel::Event> deactivate_event;
+    Kernel::SharedPtr<Kernel::Event> availability_change_event;
 };
 
 void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
