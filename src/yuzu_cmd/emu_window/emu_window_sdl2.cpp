@@ -78,6 +78,24 @@ void EmuWindow_SDL2::Fullscreen() {
     SDL_MaximizeWindow(render_window);
 }
 
+bool EmuWindow_SDL2::SupportsRequiredGLExtensions() {
+    std::vector<std::string> unsupported_ext;
+
+    if (!GLAD_GL_ARB_program_interface_query)
+        unsupported_ext.push_back("ARB_program_interface_query");
+    if (!GLAD_GL_ARB_separate_shader_objects)
+        unsupported_ext.push_back("ARB_separate_shader_objects");
+    if (!GLAD_GL_ARB_shader_storage_buffer_object)
+        unsupported_ext.push_back("ARB_shader_storage_buffer_object");
+    if (!GLAD_GL_ARB_vertex_attrib_binding)
+        unsupported_ext.push_back("ARB_vertex_attrib_binding");
+
+    for (const std::string& ext : unsupported_ext)
+        NGLOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext);
+
+    return unsupported_ext.empty();
+}
+
 EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
     InputCommon::Init();
 
@@ -125,6 +143,11 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
 
     if (!gladLoadGLLoader(static_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
         NGLOG_CRITICAL(Frontend, "Failed to initialize GL functions! Exiting...");
+        exit(1);
+    }
+
+    if (!SupportsRequiredGLExtensions()) {
+        NGLOG_CRITICAL(Frontend, "GPU does not support all required OpenGL extensions! Exiting...");
         exit(1);
     }
 
