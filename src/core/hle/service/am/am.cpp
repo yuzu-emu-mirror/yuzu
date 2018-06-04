@@ -442,7 +442,7 @@ public:
             {30, &ILibraryAppletAccessor::GetResult, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
             {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
-            {101, nullptr, "PopOutData"},
+            {101, &ILibraryAppletAccessor::PopOutData, "PopOutData"},
             {102, nullptr, "PushExtraStorage"},
             {103, nullptr, "PushInteractiveInData"},
             {104, nullptr, "PopInteractiveOutData"},
@@ -490,6 +490,16 @@ private:
 
         IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
         rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    void PopOutData(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<AM::IStorage>(std::move(storage_stack.top()));
+
+        storage_stack.pop();
 
         NGLOG_DEBUG(Service_AM, "called");
     }
