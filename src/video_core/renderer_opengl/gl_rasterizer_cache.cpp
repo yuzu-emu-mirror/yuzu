@@ -933,7 +933,8 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params, ScaleMatc
     // Use GetSurfaceSubRect instead
     ASSERT(params.width == params.stride);
 
-    ASSERT(!params.is_tiled || (params.width % 8 == 0 && params.height % 8 == 0));
+    ASSERT(!params.is_tiled ||
+           (params.GetActualWidth() % 8 == 0 && params.GetActualHeight() % 8 == 0));
 
     // Check for an exact match in existing surfaces
     Surface surface =

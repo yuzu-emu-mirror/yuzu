@@ -155,7 +155,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
     RegisterHandlers(functions);
 
     launchable_event =
-        Kernel::Event::Create(Kernel::ResetType::OneShot, "ISelfController:LaunchableEvent");
+        Kernel::Event::Create(Kernel::ResetType::Sticky, "ISelfController:LaunchableEvent");
 }
 
 void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
@@ -436,13 +436,13 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
             {1, nullptr, "IsCompleted"},
-            {10, nullptr, "Start"},
+            {10, &ILibraryAppletAccessor::Start, "Start"},
             {20, nullptr, "RequestExit"},
             {25, nullptr, "Terminate"},
-            {30, nullptr, "GetResult"},
+            {30, &ILibraryAppletAccessor::GetResult, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
             {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
-            {101, nullptr, "PopOutData"},
+            {101, &ILibraryAppletAccessor::PopOutData, "PopOutData"},
             {102, nullptr, "PushExtraStorage"},
             {103, nullptr, "PushInteractiveInData"},
             {104, nullptr, "PopInteractiveOutData"},
@@ -470,12 +470,36 @@ private:
         NGLOG_WARNING(Service_AM, "(STUBBED) called");
     }
 
+    void GetResult(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
+    void Start(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+
+        NGLOG_WARNING(Service_AM, "(STUBBED) called");
+    }
+
     void PushInData(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         storage_stack.push(rp.PopIpcInterface<AM::IStorage>());
 
         IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
         rb.Push(RESULT_SUCCESS);
+
+        NGLOG_DEBUG(Service_AM, "called");
+    }
+
+    void PopOutData(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<AM::IStorage>(std::move(storage_stack.top()));
+
+        storage_stack.pop();
 
         NGLOG_DEBUG(Service_AM, "called");
     }

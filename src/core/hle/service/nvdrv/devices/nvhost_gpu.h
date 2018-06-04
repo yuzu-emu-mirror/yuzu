@@ -26,11 +26,19 @@ public:
 private:
     enum class IoctlCommand : u32_le {
         IocSetNVMAPfdCommand = 0x40044801,
+        IocAllocGPFIFOCommand = 0x40084805,
         IocSetClientDataCommand = 0x40084714,
         IocGetClientDataCommand = 0x80084715,
         IocZCullBind = 0xc010480b,
         IocSetErrorNotifierCommand = 0xC018480C,
         IocChannelSetPriorityCommand = 0x4004480D,
+        IocEnableCommand = 0x0000480E,
+        IocDisableCommand = 0x0000480F,
+        IocPreemptCommand = 0x00004810,
+        IocForceResetCommand = 0x00004811,
+        IocEventIdControlCommand = 0x40084812,
+        IocGetErrorNotificationCommand = 0xC0104817,
+        IocAllocGPFIFOExCommand = 0x40204818,
         IocAllocGPFIFOEx2Command = 0xC020481A,
         IocAllocObjCtxCommand = 0xC0104809,
         IocChannelGetWaitbaseCommand = 0xC0080003,
@@ -56,6 +64,12 @@ private:
     };
     static_assert(sizeof(IoctlChannelSetTimeout) == 4, "IoctlChannelSetTimeout is incorrect size");
 
+    struct IoctlAllocGPFIFO {
+        u32_le num_entries;
+        u32_le flags;
+    };
+    static_assert(sizeof(IoctlAllocGPFIFO) == 8, "IoctlAllocGPFIFO is incorrect size");
+
     struct IoctlClientData {
         u64_le data;
     };
@@ -76,11 +90,44 @@ private:
     };
     static_assert(sizeof(IoctlSetErrorNotifier) == 24, "IoctlSetErrorNotifier is incorrect size");
 
+    struct IoctlChannelSetPriority {
+        u32_le priority;
+    };
+    static_assert(sizeof(IoctlChannelSetPriority) == 4,
+                  "IoctlChannelSetPriority is incorrect size");
+
+    struct IoctlEventIdControl {
+        u32_le cmd; // 0=disable, 1=enable, 2=clear
+        u32_le id;
+    };
+    static_assert(sizeof(IoctlEventIdControl) == 8, "IoctlEventIdControl is incorrect size");
+
+    struct IoctlGetErrorNotification {
+        u64_le timestamp;
+        u32_le info32;
+        u16_le info16;
+        u16_le status; // always 0xFFFF
+    };
+    static_assert(sizeof(IoctlGetErrorNotification) == 16,
+                  "IoctlGetErrorNotification is incorrect size");
+
     struct IoctlFence {
         u32_le id;
         u32_le value;
     };
     static_assert(sizeof(IoctlFence) == 8, "IoctlFence is incorrect size");
+
+    struct IoctlAllocGpfifoEx {
+        u32_le num_entries;
+        u32_le flags;
+        u32_le unk0;
+        u32_le unk1;
+        u32_le unk2;
+        u32_le unk3;
+        u32_le unk4;
+        u32_le unk5;
+    };
+    static_assert(sizeof(IoctlAllocGpfifoEx) == 32, "IoctlAllocGpfifoEx is incorrect size");
 
     struct IoctlAllocGpfifoEx2 {
         u32_le num_entries;   // in

@@ -335,6 +335,24 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
     }
 }
 
+bool GMainWindow::SupportsRequiredGLExtensions() {
+    QStringList unsupported_ext;
+
+    if (!GLAD_GL_ARB_program_interface_query)
+        unsupported_ext.append("ARB_program_interface_query");
+    if (!GLAD_GL_ARB_separate_shader_objects)
+        unsupported_ext.append("ARB_separate_shader_objects");
+    if (!GLAD_GL_ARB_shader_storage_buffer_object)
+        unsupported_ext.append("ARB_shader_storage_buffer_object");
+    if (!GLAD_GL_ARB_vertex_attrib_binding)
+        unsupported_ext.append("ARB_vertex_attrib_binding");
+
+    for (const QString& ext : unsupported_ext)
+        NGLOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
+
+    return unsupported_ext.empty();
+}
+
 bool GMainWindow::LoadROM(const QString& filename) {
     // Shutdown previous session if the emu thread is still active...
     if (emu_thread != nullptr)
@@ -347,6 +365,14 @@ bool GMainWindow::LoadROM(const QString& filename) {
         QMessageBox::critical(this, tr("Error while initializing OpenGL 3.3 Core!"),
                               tr("Your GPU may not support OpenGL 3.3, or you do not "
                                  "have the latest graphics driver."));
+        return false;
+    }
+
+    if (!SupportsRequiredGLExtensions()) {
+        QMessageBox::critical(
+            this, tr("Error while initializing OpenGL Core!"),
+            tr("Your GPU may not support one or more required OpenGL extensions. Please "
+               "ensure you have the latest graphics driver. See the log for more details."));
         return false;
     }
 
