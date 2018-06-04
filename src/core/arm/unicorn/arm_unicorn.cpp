@@ -9,8 +9,8 @@
 #include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
 #include "core/core_timing.h"
-#include "core/hle/kernel/svc.h"
 #include "core/gdbstub/gdbstub.h"
+#include "core/hle/kernel/svc.h"
 
 // Load Unicorn DLL once on Windows using RAII
 #ifdef _MSC_VER
@@ -39,11 +39,10 @@ LoadDll LoadDll::g_load_dll;
 static GDBStub::BreakpointAddress bkpt = {0};
 static bool bkptHit = false;
 
-static void CodeHook(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
-{
+static void CodeHook(uc_engine* uc, uint64_t address, uint32_t size, void* user_data) {
     bkpt = GDBStub::GetNextBreakpointFromAddress(address, GDBStub::BreakpointType::Execute);
-    if(GDBStub::IsMemoryBreak() || (bkpt.type != GDBStub::BreakpointType::None && address == bkpt.address))
-    {
+    if (GDBStub::IsMemoryBreak() ||
+        (bkpt.type != GDBStub::BreakpointType::None && address == bkpt.address)) {
         bkptHit = true;
         uc_emu_stop(uc);
     }
@@ -81,8 +80,7 @@ ARM_Unicorn::ARM_Unicorn() {
     uc_hook hook{};
     CHECKED(uc_hook_add(uc, &hook, UC_HOOK_INTR, (void*)InterruptHook, this, 0, -1));
     CHECKED(uc_hook_add(uc, &hook, UC_HOOK_MEM_INVALID, (void*)UnmappedMemoryHook, this, 0, -1));
-    if(GDBStub::IsServerEnabled())
-    {
+    if (GDBStub::IsServerEnabled()) {
         CHECKED(uc_hook_add(uc, &hook, UC_HOOK_CODE, (void*)CodeHook, this, 0, -1));
     }
 }
@@ -173,12 +171,9 @@ void ARM_Unicorn::SetTlsAddress(VAddr base) {
 }
 
 void ARM_Unicorn::Run() {
-    if(GDBStub::IsServerEnabled())
-    {
+    if (GDBStub::IsServerEnabled()) {
         ExecuteInstructions(std::max(4000000, 0));
-    }
-    else
-    {
+    } else {
         ExecuteInstructions(std::max(CoreTiming::GetDowncount(), 0));
     }
 }
@@ -193,16 +188,13 @@ void ARM_Unicorn::ExecuteInstructions(int num_instructions) {
     MICROPROFILE_SCOPE(ARM_Jit);
     CHECKED(uc_emu_start(uc, GetPC(), 1ULL << 63, 0, num_instructions));
     CoreTiming::AddTicks(num_instructions);
-    if(GDBStub::IsServerEnabled())
-    {
-        if(bkptHit)
-        {
+    if (GDBStub::IsServerEnabled()) {
+        if (bkptHit) {
             uc_reg_write(uc, UC_ARM64_REG_PC, &bkpt.address);
         }
-        Kernel::Thread *thread = Kernel::GetCurrentThread();
+        Kernel::Thread* thread = Kernel::GetCurrentThread();
         SaveContext(thread->context);
-        if(bkptHit)
-        {
+        if (bkptHit) {
             bkptHit = false;
             GDBStub::Break();
         }

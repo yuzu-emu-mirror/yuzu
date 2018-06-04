@@ -92,5 +92,5 @@ bool GetCpuStepFlag();
  */
 void SetCpuStepFlag(bool is_step);
 
-void SendSig(void *thread, int sig);
+void SendSig(void* thread, int sig);
 } // namespace GDBStub
