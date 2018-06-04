@@ -288,6 +288,19 @@ union Instruction {
         }
     } texs;
 
+    union {
+        BitField<20, 5, u64> target;
+        BitField<5, 1, u64> constant_buffer;
+
+        s32 GetBranchTarget() const {
+            // Sign extend the branch target offset
+            u32 mask = 1U << (5 - 1);
+            u32 value = static_cast<u32>(target);
+            // The branch offset is relative to the next instruction, so add 1 to it.
+            return static_cast<s32>((value ^ mask) - mask) + 1;
+        }
+    } bra;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
@@ -306,6 +319,7 @@ class OpCode {
 public:
     enum class Id {
         KIL,
+        BRA,
         LD_A,
         ST_A,
         TEX,
@@ -470,6 +484,7 @@ private:
         std::vector<Matcher> table = {
 #define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
+            INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
             INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
