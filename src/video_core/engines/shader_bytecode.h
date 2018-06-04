@@ -173,6 +173,13 @@ enum class SubOp : u64 {
     Min = 0x8,
 };
 
+enum class FloatRoundingOp : u64 {
+    None = 0,
+    Floor = 1,
+    Ceil = 2,
+    Trunc = 3,
+};
+
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
         value = instr.value;
@@ -277,11 +284,20 @@ union Instruction {
 
     union {
         BitField<10, 2, Register::Size> size;
-        BitField<13, 1, u64> is_signed;
+        BitField<12, 1, u64> is_output_signed;
+        BitField<13, 1, u64> is_input_signed;
         BitField<41, 2, u64> selector;
         BitField<45, 1, u64> negate_a;
         BitField<49, 1, u64> abs_a;
         BitField<50, 1, u64> saturate_a;
+
+        union {
+            BitField<39, 2, FloatRoundingOp> rounding;
+        } f2i;
+
+        union {
+            BitField<39, 4, u64> rounding;
+        } f2f;
     } conversion;
 
     union {
@@ -535,9 +551,9 @@ private:
             INST("0100110010101---", Id::F2F_C, Type::Conversion, "F2F_C"),
             INST("0101110010101---", Id::F2F_R, Type::Conversion, "F2F_R"),
             INST("0011100-10101---", Id::F2F_IMM, Type::Conversion, "F2F_IMM"),
-            INST("0100110010110---", Id::F2I_C, Type::Arithmetic, "F2I_C"),
-            INST("0101110010110---", Id::F2I_R, Type::Arithmetic, "F2I_R"),
-            INST("0011100-10110---", Id::F2I_IMM, Type::Arithmetic, "F2I_IMM"),
+            INST("0100110010110---", Id::F2I_C, Type::Conversion, "F2I_C"),
+            INST("0101110010110---", Id::F2I_R, Type::Conversion, "F2I_R"),
+            INST("0011100-10110---", Id::F2I_IMM, Type::Conversion, "F2I_IMM"),
             INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),

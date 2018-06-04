@@ -929,18 +929,20 @@ private:
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
 
                 std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_signed);
+                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
                 }
 
-                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_signed, 0, op_a, 1, 1);
+                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
+                                          1);
                 break;
             }
             case OpCode::Id::I2F_R: {
+                ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
                 std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_signed);
+                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
@@ -950,6 +952,8 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
+                // TODO(Subv): Implement rounding operations.
+                ASSERT_MSG(instr.conversion.f2f.rounding == 0, "Unimplemented rounding operation");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 if (instr.conversion.abs_a) {
@@ -957,6 +961,43 @@ private:
                 }
 
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                break;
+            }
+            case OpCode::Id::F2I_R: {
+                std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                using Tegra::Shader::FloatRoundingOp;
+                switch (instr.conversion.f2i.rounding) {
+                case FloatRoundingOp::None:
+                    break;
+                case FloatRoundingOp::Floor:
+                    op_a = "floor(" + op_a + ')';
+                    break;
+                case FloatRoundingOp::Ceil:
+                    op_a = "ceil(" + op_a + ')';
+                    break;
+                case FloatRoundingOp::Trunc:
+                    op_a = "trunc(" + op_a + ')';
+                    break;
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2i rounding mode {}",
+                                   static_cast<u32>(instr.conversion.f2i.rounding.Value()));
+                    UNREACHABLE();
+                    break;
+                }
+
+                if (instr.conversion.is_output_signed) {
+                    op_a = "int(" + op_a + ')';
+                } else {
+                    op_a = "uint(" + op_a + ')';
+                }
+
+                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
+                                          1);
                 break;
             }
             default: {
