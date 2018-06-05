@@ -325,15 +325,16 @@ union Instruction {
     } texs;
 
     union {
-        BitField<20, 5, u64> target;
+        BitField<20, 24, u64> target;
         BitField<5, 1, u64> constant_buffer;
 
         s32 GetBranchTarget() const {
             // Sign extend the branch target offset
-            u32 mask = 1U << (5 - 1);
+            u32 mask = 1U << (24 - 1);
             u32 value = static_cast<u32>(target);
-            // The branch offset is relative to the next instruction, so add 1 to it.
-            return static_cast<s32>((value ^ mask) - mask) + 1;
+            // The branch offset is relative to the next instruction and is stored in bytes, so
+            // divide it by the size of an instruction and add 1 to it.
+            return static_cast<s32>((value ^ mask) - mask) / sizeof(Instruction) + 1;
         }
     } bra;
 
