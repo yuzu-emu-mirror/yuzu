@@ -156,6 +156,13 @@ enum class PredOperation : u64 {
     Xor = 2,
 };
 
+enum class LogicOperation : u64 {
+    And = 0,
+    Or = 1,
+    Xor = 2,
+    PassB = 3,
+};
+
 enum class SubOp : u64 {
     Cos = 0x0,
     Sin = 0x1,
@@ -202,6 +209,12 @@ union Instruction {
             BitField<42, 1, u64> negate_pred;
         } fmnmx;
 
+        union {
+            BitField<53, 2, LogicOperation> operation;
+            BitField<55, 1, u64> invert_a;
+            BitField<56, 1, u64> invert_b;
+        } lop;
+
         float GetImm20_19() const {
             float result{};
             u32 imm{static_cast<u32>(imm20_19)};
@@ -217,7 +230,20 @@ union Instruction {
             std::memcpy(&result, &imm, sizeof(imm));
             return result;
         }
+
+        s32 GetSignedImm20_20() const {
+            u32 immediate = static_cast<u32>(imm20_19 | (negate_imm << 19));
+            // Sign extend the 20-bit value.
+            u32 mask = 1U << (20 - 1);
+            return static_cast<s32>((immediate ^ mask) - mask);
+        }
     } alu;
+
+    union {
+        BitField<39, 5, u64> shift_amount;
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_a;
+    } iscadd;
 
     union {
         BitField<48, 1, u64> negate_b;
@@ -239,15 +265,25 @@ union Instruction {
     } fsetp;
 
     union {
+        BitField<0, 3, u64> pred0;
+        BitField<3, 3, u64> pred3;
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<45, 2, PredOperation> op;
+        BitField<48, 1, u64> is_signed;
+        BitField<49, 3, PredCondition> cond;
+    } isetp;
+
+    union {
         BitField<39, 3, u64> pred39;
         BitField<42, 1, u64> neg_pred;
         BitField<43, 1, u64> neg_a;
         BitField<44, 1, u64> abs_b;
         BitField<45, 2, PredOperation> op;
         BitField<48, 4, PredCondition> cond;
+        BitField<52, 1, u64> bf;
         BitField<53, 1, u64> neg_b;
         BitField<54, 1, u64> abs_a;
-        BitField<52, 1, u64> bf;
         BitField<55, 1, u64> ftz;
         BitField<56, 1, u64> neg_imm;
     } fset;
@@ -289,15 +325,16 @@ union Instruction {
     } texs;
 
     union {
-        BitField<20, 5, u64> target;
+        BitField<20, 24, u64> target;
         BitField<5, 1, u64> constant_buffer;
 
         s32 GetBranchTarget() const {
             // Sign extend the branch target offset
-            u32 mask = 1U << (5 - 1);
+            u32 mask = 1U << (24 - 1);
             u32 value = static_cast<u32>(target);
-            // The branch offset is relative to the next instruction, so add 1 to it.
-            return static_cast<s32>((value ^ mask) - mask) + 1;
+            // The branch offset is relative to the next instruction and is stored in bytes, so
+            // divide it by the size of an instruction and add 1 to it.
+            return static_cast<s32>((value ^ mask) - mask) / sizeof(Instruction) + 1;
         }
     } bra;
 
@@ -339,6 +376,9 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
+        ISCADD_C, // Scale and Add
+        ISCADD_R,
+        ISCADD_IMM,
         MUFU,  // Multi-Function Operator
         RRO_C, // Range Reduction Operator
         RRO_R,
@@ -360,6 +400,9 @@ public:
         MOV_R,
         MOV_IMM,
         MOV32_IMM,
+        SHL_C,
+        SHL_R,
+        SHL_IMM,
         SHR_C,
         SHR_R,
         SHR_IMM,
@@ -381,6 +424,9 @@ public:
     enum class Type {
         Trivial,
         Arithmetic,
+        Logic,
+        Shift,
+        ScaledAdd,
         Ffma,
         Flow,
         Memory,
@@ -504,6 +550,9 @@ private:
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
+            INST("0100110000011---", Id::ISCADD_C, Type::ScaledAdd, "ISCADD_C"),
+            INST("0101110000011---", Id::ISCADD_R, Type::ScaledAdd, "ISCADD_R"),
+            INST("0011100-00011---", Id::ISCADD_IMM, Type::ScaledAdd, "ISCADD_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
@@ -514,17 +563,20 @@ private:
             INST("0100110010110---", Id::F2I_C, Type::Arithmetic, "F2I_C"),
             INST("0101110010110---", Id::F2I_R, Type::Arithmetic, "F2I_R"),
             INST("0011100-10110---", Id::F2I_IMM, Type::Arithmetic, "F2I_IMM"),
-            INST("000001----------", Id::LOP32I, Type::Arithmetic, "LOP32I"),
             INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
             INST("000000010000----", Id::MOV32_IMM, Type::Arithmetic, "MOV32_IMM"),
-            INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
-            INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
-            INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
+            INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
+            INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
+            INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
+            INST("0011100-01001---", Id::SHL_IMM, Type::Shift, "SHL_IMM"),
+            INST("0100110000101---", Id::SHR_C, Type::Shift, "SHR_C"),
+            INST("0101110000101---", Id::SHR_R, Type::Shift, "SHR_R"),
+            INST("0011100-00101---", Id::SHR_IMM, Type::Shift, "SHR_IMM"),
             INST("0100110011100---", Id::I2I_C, Type::Conversion, "I2I_C"),
             INST("0101110011100---", Id::I2I_R, Type::Conversion, "I2I_R"),
             INST("01110001-1000---", Id::I2I_IMM, Type::Conversion, "I2I_IMM"),
