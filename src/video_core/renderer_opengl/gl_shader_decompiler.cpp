@@ -115,7 +115,16 @@ private:
             if (const auto opcode = OpCode::Decode(instr)) {
                 switch (opcode->GetId()) {
                 case OpCode::Id::EXIT: {
-                    return exit_method = ExitMethod::AlwaysEnd;
+                    // The EXIT instruction can be predicated, which means that the shader can
+                    // conditionally end on this instruction. We have to consider the case where the
+                    // condition is not met and check the exit method of that other basic block.
+                    using Tegra::Shader::Pred;
+                    if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                        return exit_method = ExitMethod::AlwaysEnd;
+                    } else {
+                        ExitMethod not_met = Scan(offset + 1, end, labels);
+                        return exit_method = ParallelExit(ExitMethod::AlwaysEnd, not_met);
+                    }
                 }
                 case OpCode::Id::BRA: {
                     u32 target = offset + instr.bra.GetBranchTarget();
