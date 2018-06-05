@@ -7,6 +7,7 @@
 #include <unicorn/unicorn.h>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
+#include "core/gdbstub/gdbstub.h"
 
 class ARM_Unicorn final : public ARM_Interface {
 public:
@@ -35,7 +36,10 @@ public:
     void Step() override;
     void ClearInstructionCache() override;
     void PageTableChanged() override{};
+    void RecordBreak(GDBStub::BreakpointAddress bkpt);
 
 private:
     uc_engine* uc{};
+    GDBStub::BreakpointAddress last_bkpt{};
+    bool last_bkpt_hit;
 };
