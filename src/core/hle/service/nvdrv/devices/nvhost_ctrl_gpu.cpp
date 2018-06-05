@@ -149,7 +149,7 @@ u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>
     return 0;
 }
 
-u32 nvhost_ctrl_gpu::FlushL2(onst std::vector<u8>& input, std::vector<u8>& output) {
+u32 nvhost_ctrl_gpu::FlushL2(const std::vector<u8>& input, std::vector<u8>& output) {
     NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IoctlFlushL2 params{};
     std::memcpy(&params, input.data(), input.size());
