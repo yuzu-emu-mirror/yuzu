@@ -36,12 +36,20 @@ install:
         }
 
 before_build:
+  # Install Ninja
+  - set NINJA_URL="https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip"
+  - appveyor DownloadFile %NINJA_URL% -FileName ninja.zip
+  - 7z x ninja.zip -oC:\projects\deps\ninja > nul
+  - set PATH=C:\projects\deps\ninja;%PATH%
+  - ninja --version
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+
   - mkdir %BUILD_TYPE%_build
   - cd %BUILD_TYPE%_build
   - ps: |
         if ($env:BUILD_TYPE -eq 'msvc') {
           # redirect stderr and change the exit code to prevent powershell from cancelling the build if cmake prints a warning
-          cmd /C 'cmake -G "Visual Studio 15 2017 Win64" -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_BUNDLED_UNICORN=1 .. 2>&1 && exit 0'
+          cmd /C 'cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_BUNDLED_UNICORN=1 .. 2>&1 && exit 0'
         } else {
           C:\msys64\usr\bin\bash.exe -lc "cmake -G 'MSYS Makefiles' -DYUZU_BUILD_UNICORN=1 -DCMAKE_BUILD_TYPE=Release .. 2>&1"
         }
@@ -51,7 +59,7 @@ build_script:
   - ps: |
         if ($env:BUILD_TYPE -eq 'msvc') {
           # https://www.appveyor.com/docs/build-phase
-          msbuild msvc_build/yuzu.sln /maxcpucount /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+          ninja -C msvc_build
         } else {
           C:\msys64\usr\bin\bash.exe -lc 'mingw32-make -C mingw_build/ 2>&1'
         }
@@ -80,7 +88,7 @@ after_build:
           $env:BUILD_SYMBOLS = $MSVC_BUILD_PDB
           $env:BUILD_UPDATE = $MSVC_SEVENZIP
 
-          $BUILD_DIR = ".\msvc_build\bin\Release"
+          $BUILD_DIR = ".\msvc_build\bin"
 
           # Make a debug symbol upload
           mkdir pdb
