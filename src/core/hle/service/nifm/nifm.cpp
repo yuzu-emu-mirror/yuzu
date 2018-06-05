@@ -38,7 +38,7 @@ public:
             {8, nullptr, "SetPriority"},
             {9, nullptr, "SetNetworkProfileId"},
             {10, nullptr, "SetRejectable"},
-            {11, nullptr, "SetConnectionConfirmationOption"},
+            {11, &IRequest::SetConnectionConfirmationOption, "SetConnectionConfirmationOption"},
             {12, nullptr, "SetPersistent"},
             {13, nullptr, "SetInstant"},
             {14, nullptr, "SetSustainable"},
@@ -67,18 +67,27 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }
+
     void GetResult(Kernel::HLERequestContext& ctx) {
         NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
+
     void GetSystemEventReadableHandles(Kernel::HLERequestContext& ctx) {
         NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event1, event2);
     }
+
     void Cancel(Kernel::HLERequestContext& ctx) {
+        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void SetConnectionConfirmationOption(Kernel::HLERequestContext& ctx) {
         NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
