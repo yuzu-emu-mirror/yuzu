@@ -233,6 +233,22 @@ union Instruction {
     } alu;
 
     union {
+        BitField<39, 5, u64> shift_amount;
+        BitField<20, 19, u64> immediate_low;
+        BitField<56, 1, u64> immediate_high;
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_a;
+
+        s32 GetImmediate() const {
+            u32 immediate = static_cast<u32>(immediate_low | (immediate_high << 19));
+            // Sign extend the 20-bit value.
+            u32 mask = 1U << (20 - 1);
+            return static_cast<s32>((immediate ^ mask) - mask);
+        }
+
+    } iscadd;
+
+    union {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
@@ -362,6 +378,9 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
+        ISCADD_C, // Scale and Add
+        ISCADD_R,
+        ISCADD_IMM,
         MUFU,  // Multi-Function Operator
         RRO_C, // Range Reduction Operator
         RRO_R,
@@ -405,6 +424,7 @@ public:
         Trivial,
         Arithmetic,
         Logic,
+        ScaledAdd,
         Ffma,
         Flow,
         Memory,
@@ -528,6 +548,9 @@ private:
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
+            INST("0100110000011---", Id::ISCADD_C, Type::ScaledAdd, "ISCADD_C"),
+            INST("0101110000011---", Id::ISCADD_R, Type::ScaledAdd, "ISCADD_R"),
+            INST("0011100-00011---", Id::ISCADD_IMM, Type::ScaledAdd, "ISCADD_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
