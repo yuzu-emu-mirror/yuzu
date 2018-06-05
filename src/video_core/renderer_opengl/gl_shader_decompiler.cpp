@@ -841,6 +841,49 @@ private:
             }
             break;
         }
+        case OpCode::Type::Logic: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+
+            if (instr.alu.lop.invert_a)
+                op_a = "~(" + op_a + ')';
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::LOP32I: {
+                u32 imm = static_cast<u32>(instr.alu.imm20_32.Value());
+
+                if (instr.alu.lop.invert_b)
+                    imm = ~imm;
+
+                switch (instr.alu.lop.operation) {
+                case Tegra::Shader::LogicOperation::And: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                case Tegra::Shader::LogicOperation::Or: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                case Tegra::Shader::LogicOperation::Xor: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented lop32i operation: {}",
+                                   static_cast<u32>(instr.alu.lop.operation.Value()));
+                    UNREACHABLE();
+                }
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled logic instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
         case OpCode::Type::Ffma: {
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
