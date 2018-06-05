@@ -124,7 +124,7 @@ else()
     # /EHsc - C++-only exception handling semantics
     # /Zc:throwingNew - let codegen assume `operator new` will never return null
     # /Zc:inline - let codegen omit inline functions in object files
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /EHsc /std:c++latest /Zc:throwingNew,inline" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /EHsc /Zc:throwingNew,inline" CACHE STRING "" FORCE)
 
     # /MDd - Multi-threaded Debug Runtime DLL
     set(CMAKE_C_FLAGS_DEBUG   "/Od /MDd" CACHE STRING "" FORCE)
