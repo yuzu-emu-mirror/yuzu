@@ -884,6 +884,30 @@ private:
             }
             break;
         }
+        case OpCode::Type::ScaledAdd: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+
+            if (instr.iscadd.negate_a)
+                op_a = '-' + op_a;
+
+            std::string op_b = instr.iscadd.negate_b ? "-" : "";
+
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.iscadd.GetImmediate()) + ')';
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20);
+                } else {
+                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                }
+            }
+
+            std::string shift = std::to_string(instr.iscadd.shift_amount.Value());
+
+            regs.SetRegisterToInteger(instr.gpr0, true, 0,
+                                      "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
+            break;
+        }
         case OpCode::Type::Ffma: {
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";

@@ -233,6 +233,22 @@ union Instruction {
     } alu;
 
     union {
+        BitField<39, 5, u64> shift_amount;
+        BitField<20, 19, u64> immediate_low;
+        BitField<56, 1, u64> immediate_high;
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_a;
+
+        s32 GetImmediate() const {
+            u32 immediate = static_cast<u32>(immediate_low | (immediate_high << 19));
+            // Sign extend the 20-bit value.
+            u32 mask = 1U << (20 - 1);
+            return static_cast<s32>((immediate ^ mask) - mask);
+        }
+
+    } iscadd;
+
+    union {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
