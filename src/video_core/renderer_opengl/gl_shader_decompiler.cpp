@@ -115,7 +115,16 @@ private:
             if (const auto opcode = OpCode::Decode(instr)) {
                 switch (opcode->GetId()) {
                 case OpCode::Id::EXIT: {
-                    return exit_method = ExitMethod::AlwaysEnd;
+                    // The EXIT instruction can be predicated, which means that the shader can
+                    // conditionally end on this instruction. We have to consider the case where the
+                    // condition is not met and check the exit method of that other basic block.
+                    using Tegra::Shader::Pred;
+                    if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                        return exit_method = ExitMethod::AlwaysEnd;
+                    } else {
+                        ExitMethod not_met = Scan(offset + 1, end, labels);
+                        return exit_method = ParallelExit(ExitMethod::AlwaysEnd, not_met);
+                    }
                 }
                 case OpCode::Id::BRA: {
                     u32 target = offset + instr.bra.GetBranchTarget();
@@ -1213,9 +1222,6 @@ private:
         default: {
             switch (opcode->GetId()) {
             case OpCode::Id::EXIT: {
-                ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
-                           "Predicated exits not implemented");
-
                 // Final color output is currently hardcoded to GPR0-3 for fragment shaders
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
                     shader.AddLine("color.r = " + regs.GetRegisterAsFloat(0) + ';');
@@ -1225,7 +1231,12 @@ private:
                 }
 
                 shader.AddLine("return true;");
-                offset = PROGRAM_END - 1;
+                if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                    // If this is an unconditional exit then just end processing here, otherwise we
+                    // have to account for the possibility of the condition not being met, so
+                    // continue processing the next instruction.
+                    offset = PROGRAM_END - 1;
+                }
                 break;
             }
             case OpCode::Id::KIL: {
