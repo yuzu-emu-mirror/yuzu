@@ -884,6 +884,35 @@ private:
             }
             break;
         }
+
+        case OpCode::Type::Shift: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+            std::string op_b;
+
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20);
+                } else {
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                }
+            }
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::SHL_C:
+            case OpCode::Id::SHL_R:
+            case OpCode::Id::SHL_IMM:
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
+                break;
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
+
         case OpCode::Type::ScaledAdd: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
 
@@ -893,7 +922,7 @@ private:
             std::string op_b = instr.iscadd.negate_b ? "-" : "";
 
             if (instr.is_b_imm) {
-                op_b += '(' + std::to_string(instr.iscadd.GetImmediate()) + ')';
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
             } else {
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);

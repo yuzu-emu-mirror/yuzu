@@ -230,22 +230,19 @@ union Instruction {
             std::memcpy(&result, &imm, sizeof(imm));
             return result;
         }
-    } alu;
 
-    union {
-        BitField<39, 5, u64> shift_amount;
-        BitField<20, 19, u64> immediate_low;
-        BitField<56, 1, u64> immediate_high;
-        BitField<48, 1, u64> negate_b;
-        BitField<49, 1, u64> negate_a;
-
-        s32 GetImmediate() const {
-            u32 immediate = static_cast<u32>(immediate_low | (immediate_high << 19));
+        s32 GetSignedImm20_20() const {
+            u32 immediate = static_cast<u32>(imm20_19 | (negate_imm << 19));
             // Sign extend the 20-bit value.
             u32 mask = 1U << (20 - 1);
             return static_cast<s32>((immediate ^ mask) - mask);
         }
+    } alu;
 
+    union {
+        BitField<39, 5, u64> shift_amount;
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_a;
     } iscadd;
 
     union {
@@ -402,6 +399,9 @@ public:
         MOV_R,
         MOV_IMM,
         MOV32_IMM,
+        SHL_C,
+        SHL_R,
+        SHL_IMM,
         SHR_C,
         SHR_R,
         SHR_IMM,
@@ -424,6 +424,7 @@ public:
         Trivial,
         Arithmetic,
         Logic,
+        Shift,
         ScaledAdd,
         Ffma,
         Flow,
@@ -565,13 +566,16 @@ private:
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
             INST("000000010000----", Id::MOV32_IMM, Type::Arithmetic, "MOV32_IMM"),
-            INST("0100110000101---", Id::SHR_C, Type::Arithmetic, "SHR_C"),
-            INST("0101110000101---", Id::SHR_R, Type::Arithmetic, "SHR_R"),
-            INST("0011100-00101---", Id::SHR_IMM, Type::Arithmetic, "SHR_IMM"),
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
             INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
+            INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
+            INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
+            INST("0011100-01001---", Id::SHL_IMM, Type::Shift, "SHL_IMM"),
+            INST("0100110000101---", Id::SHR_C, Type::Shift, "SHR_C"),
+            INST("0101110000101---", Id::SHR_R, Type::Shift, "SHR_R"),
+            INST("0011100-00101---", Id::SHR_IMM, Type::Shift, "SHR_IMM"),
             INST("0100110011100---", Id::I2I_C, Type::Conversion, "I2I_C"),
             INST("0101110011100---", Id::I2I_R, Type::Conversion, "I2I_R"),
             INST("01110001-1000---", Id::I2I_IMM, Type::Conversion, "I2I_IMM"),
