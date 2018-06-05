@@ -927,7 +927,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
                 }
             }
 
