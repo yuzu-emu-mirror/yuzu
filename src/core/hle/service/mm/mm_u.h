@@ -20,7 +20,9 @@ private:
     void SetAndWait(Kernel::HLERequestContext& ctx);
     void Get(Kernel::HLERequestContext& ctx);
 
-    u32 value;
+    u32 min{0};
+    u32 max{0};
+    u32 current{0};
 };
 
 /// Registers all MM services with the specified service manager.

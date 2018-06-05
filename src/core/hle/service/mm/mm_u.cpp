@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <sstream>
-#include <string>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_session.h"
@@ -23,9 +21,11 @@ void MM_U::Initialize(Kernel::HLERequestContext& ctx) {
 
 void MM_U::SetAndWait(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    value = rp.Pop<u32>();
+    min = rp.Pop<u32>();
+    max = rp.Pop<u32>();
+    current = min;
 
-    NGLOG_WARNING(Service_MM, "(STUBBED) called, value=0x{:X}", value);
+    NGLOG_WARNING(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -34,7 +34,7 @@ void MM_U::Get(Kernel::HLERequestContext& ctx) {
     NGLOG_WARNING(Service_MM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(value);
+    rb.Push(current);
 }
 
 MM_U::MM_U() : ServiceFramework("mm:u") {
