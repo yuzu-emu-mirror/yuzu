@@ -219,6 +219,11 @@ public:
         return active_type == Type::Integer;
     }
 
+    /// Returns the current active type of the register
+    Type GetActiveType() const {
+        return active_type;
+    }
+
     /// Returns the index of the register
     size_t GetIndex() const {
         return index;
@@ -350,20 +355,26 @@ public:
         shader.AddLine(dest + " = " + src + ';');
     }
 
-    /// Generates code representing a uniform (C buffer) register.
-    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+    /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
+    std::string GetUniform(const Uniform& uniform, GLSLRegister::Type type) {
         declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
                                                       static_cast<unsigned>(uniform.offset), stage);
         std::string value =
             'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
 
-        if (regs[dest_reg].IsFloat()) {
+        if (type == GLSLRegister::Type::Float) {
             return value;
-        } else if (regs[dest_reg].IsInteger()) {
+        } else if (type == GLSLRegister::Type::Integer) {
             return "floatBitsToInt(" + value + ')';
         } else {
             UNREACHABLE();
         }
+    }
+
+    /// Generates code representing a uniform (C buffer) register, interpreted as the type of the
+    /// destination register.
+    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+        return GetUniform(uniform, regs[dest_reg].GetActiveType());
     }
 
     /// Add declarations for registers
@@ -1018,7 +1029,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
@@ -1049,6 +1060,42 @@ private:
             }
             break;
         }
+        case OpCode::Type::IntegerSetPredicate: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.isetp.is_signed);
+
+            std::string op_b{};
+
+            ASSERT_MSG(!instr.is_b_imm, "ISETP_IMM not implemented");
+
+            if (instr.is_b_gpr) {
+                op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+            } else {
+                op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+            }
+
+            using Tegra::Shader::Pred;
+            // We can't use the constant predicate as destination.
+            ASSERT(instr.isetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
+
+            std::string second_pred =
+                GetPredicateCondition(instr.isetp.pred39, instr.isetp.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.isetp.cond);
+            std::string combiner = GetPredicateCombiner(instr.isetp.op);
+
+            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            // Set the primary predicate to the result of Predicate OP SecondPredicate
+            SetPredicate(instr.isetp.pred3,
+                         '(' + predicate + ") " + combiner + " (" + second_pred + ')');
+
+            if (instr.isetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate,
+                // if enabled
+                SetPredicate(instr.isetp.pred0,
+                             "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
+            }
+            break;
+        }
         case OpCode::Type::FloatSet: {
             std::string op_a = instr.fset.neg_a ? "-" : "";
             op_a += regs.GetRegisterAsFloat(instr.gpr8);
@@ -1069,7 +1116,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
