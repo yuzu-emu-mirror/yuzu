@@ -31,10 +31,6 @@
 #endif
 
 #include "common/logging/log.h"
-//#undef NGLOG_INFO
-//#define NGLOG_INFO NGLOG_ERROR
-//#undef NGLOG_DEBUG
-//#define NGLOG_DEBUG NGLOG_ERROR
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/arm/arm_interface.h"
@@ -147,8 +143,7 @@ static u32 command_length;
 static u32 latest_signal = 0;
 static bool memory_break = false;
 
-Kernel::Thread* thread = nullptr;
-int current_core = 0;
+static Kernel::Thread* current_thread = nullptr;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -156,6 +151,7 @@ static u16 gdbstub_port = 24689;
 
 static bool halt_loop = true;
 static bool step_loop = false;
+static bool send_trap = false;
 
 // If set to false, the server will never be started and no
 // gdbstub-related functions will be executed.
@@ -175,22 +171,20 @@ static std::map<u64, Breakpoint> breakpoints_execute;
 static std::map<u64, Breakpoint> breakpoints_read;
 static std::map<u64, Breakpoint> breakpoints_write;
 
-Kernel::Thread* FindThread(int id, int& current_core) {
-    Kernel::Thread* thread = nullptr;
+static Kernel::Thread* FindThreadById(int id) {
     for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
-        auto list = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-        for (auto it = list.begin(); it != list.end(); it++) {
-            if ((*it)->GetThreadId() == id) {
-                thread = &(*(*it));
-                current_core = core;
-                break;
+        auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+        for (auto thread : threads) {
+            if (thread->GetThreadId() == id) {
+                current_thread = thread.get();
+                return current_thread;
             }
         }
     }
-    return thread;
+    return nullptr;
 }
 
-static u64 regr(int id, Kernel::Thread* thread = nullptr) {
+static u64 RegRead(int id, Kernel::Thread* thread = nullptr) {
     if (!thread) {
         return 0;
     }
@@ -208,7 +202,7 @@ static u64 regr(int id, Kernel::Thread* thread = nullptr) {
     }
 }
 
-static void regw(int id, u64 val, Kernel::Thread* thread = nullptr) {
+static void RegWrite(int id, u64 val, Kernel::Thread* thread = nullptr) {
     if (!thread) {
         return;
     }
@@ -550,12 +544,9 @@ static void HandleQuery() {
     } else if (strncmp(query, "fThreadInfo", strlen("fThreadInfo")) == 0) {
         std::string val = "m";
         for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
-            auto list = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-            for (auto it = list.begin(); it != list.end(); it++) {
-                char tmp[17] = {0};
-                memset(tmp, 0, sizeof(tmp));
-                sprintf(tmp, "%x", (*it)->GetThreadId());
-                val += (char*)tmp;
+            auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+            for (auto thread : threads) {
+                val += fmt::format("{:x}", thread->GetThreadId());
                 val += ",";
             }
         }
@@ -571,18 +562,20 @@ static void HandleQuery() {
 /// Handle set thread command from gdb client.
 static void HandleSetThread() {
     if (memcmp(command_buffer, "Hc", 2) == 0 || memcmp(command_buffer, "Hg", 2) == 0) {
-        int threadid = -1;
+        int thread_id = -1;
         if (command_buffer[2] != '-') {
-            threadid = (int)HexToInt(command_buffer + 2, strlen((char*)command_buffer + 2));
+            thread_id = static_cast<int>(HexToInt(
+                command_buffer + 2,
+                command_length - 2 /*strlen(reinterpret_cast<char*>(command_buffer) + 2)*/));
         }
-        if (threadid >= 1) {
-            thread = FindThread(threadid, current_core);
+        if (thread_id >= 1) {
+            current_thread = FindThreadById(thread_id);
         }
-        if (!thread) {
-            threadid = 1;
-            thread = FindThread(threadid, current_core);
+        if (!current_thread) {
+            thread_id = 1;
+            current_thread = FindThreadById(thread_id);
         }
-        if (thread) {
+        if (current_thread) {
             SendReply("OK");
             return;
         }
@@ -590,12 +583,15 @@ static void HandleSetThread() {
     SendReply("E01");
 }
 
-static void isThreadAlive() {
-    int threadid = (int)HexToInt(command_buffer + 1, strlen((char*)command_buffer + 1));
-    if (threadid == 0) {
-        threadid = 1;
+/// Handle thread alive command from gdb client.
+static void HandleThreadAlive() {
+    int thread_id = static_cast<int>(
+        HexToInt(command_buffer + 1,
+                 command_length - 1 /*strlen(reinterpret_cast<char*>(command_buffer) + 1)*/));
+    if (thread_id == 0) {
+        thread_id = 1;
     }
-    if (FindThread(threadid, current_core)) {
+    if (FindThreadById(thread_id)) {
         SendReply("OK");
         return;
     }
@@ -617,15 +613,13 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
     std::string buffer;
     if (full) {
         buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x};", latest_signal, PC_REGISTER,
-                             Common::swap64(regr(PC_REGISTER, thread)), SP_REGISTER,
-                             Common::swap64(regr(SP_REGISTER, thread)));
+                             Common::swap64(RegRead(PC_REGISTER, thread)), SP_REGISTER,
+                             Common::swap64(RegRead(SP_REGISTER, thread)));
     } else {
         buffer = fmt::format("T{:02x};", latest_signal);
     }
 
     buffer += fmt::format("thread:{:x};", thread->GetThreadId());
-
-    // NGLOG_ERROR(Debug_GDBStub, "Sig: {}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -642,7 +636,7 @@ static void ReadCommand() {
     } else if (c == 0x03) {
         NGLOG_INFO(Debug_GDBStub, "gdb: found break command");
         halt_loop = true;
-        SendSignal(thread, SIGTRAP);
+        SendSignal(current_thread, SIGTRAP);
         return;
     } else if (c != GDB_STUB_START) {
         NGLOG_DEBUG(Debug_GDBStub, "gdb: read invalid byte {:02X}", c);
@@ -713,11 +707,11 @@ static void ReadRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        LongToGdbHex(reply, regr(id, thread));
+        LongToGdbHex(reply, RegRead(id, current_thread));
     } else if (id == PC_REGISTER) {
-        LongToGdbHex(reply, regr(id, thread));
+        LongToGdbHex(reply, RegRead(id, current_thread));
     } else if (id == CPSR_REGISTER) {
-        IntToGdbHex(reply, (u32)regr(id, thread));
+        IntToGdbHex(reply, (u32)RegRead(id, current_thread));
     } else {
         return SendReply("E01");
     }
@@ -733,16 +727,16 @@ static void ReadRegisters() {
     u8* bufptr = buffer;
 
     for (int reg = 0; reg <= SP_REGISTER; reg++) {
-        LongToGdbHex(bufptr + reg * 16, regr(reg, thread));
+        LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
     bufptr += (32 * 16);
 
-    LongToGdbHex(bufptr, regr(PC_REGISTER, thread));
+    LongToGdbHex(bufptr, RegRead(PC_REGISTER, current_thread));
 
     bufptr += 16;
 
-    IntToGdbHex(bufptr, (u32)regr(CPSR_REGISTER, thread));
+    IntToGdbHex(bufptr, (u32)RegRead(CPSR_REGISTER, current_thread));
 
     bufptr += 8;
 
@@ -761,11 +755,11 @@ static void WriteRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        regw(id, GdbHexToLong(buffer_ptr), thread);
+        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
     } else if (id == PC_REGISTER) {
-        regw(id, GdbHexToLong(buffer_ptr), thread);
+        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
     } else if (id == CPSR_REGISTER) {
-        regw(id, GdbHexToInt(buffer_ptr), thread);
+        RegWrite(id, GdbHexToInt(buffer_ptr), current_thread);
     } else {
         return SendReply("E01");
     }
@@ -782,11 +776,11 @@ static void WriteRegisters() {
 
     for (int i = 0, reg = 0; reg <= CPSR_REGISTER; i++, reg++) {
         if (reg <= SP_REGISTER) {
-            regw(reg, GdbHexToLong(buffer_ptr + i * 16), thread);
+            RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == PC_REGISTER) {
-            regw(PC_REGISTER, GdbHexToLong(buffer_ptr + i * 16), thread);
+            RegWrite(PC_REGISTER, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == CPSR_REGISTER) {
-            regw(CPSR_REGISTER, GdbHexToInt(buffer_ptr + i * 16), thread);
+            RegWrite(CPSR_REGISTER, GdbHexToInt(buffer_ptr + i * 16), current_thread);
         } else {
             UNIMPLEMENTED();
         }
@@ -846,12 +840,9 @@ static void WriteMemory() {
     SendReply("OK");
 }
 
-bool send_trap = false;
-
 void Break(bool is_memory_break) {
     if (!halt_loop) {
         halt_loop = true;
-        // SendSignal(SIGTRAP);
         send_trap = true;
     }
 
@@ -862,10 +853,10 @@ void Break(bool is_memory_break) {
 static void Step() {
     step_loop = true;
     halt_loop = true;
-    // SendSignal(SIGTRAP);
     send_trap = true;
 }
 
+/// Tell the CPU if we hit a memory breakpoint.
 bool IsMemoryBreak() {
     if (IsConnected()) {
         return false;
@@ -1015,7 +1006,7 @@ void HandlePacket() {
         HandleSetThread();
         break;
     case '?':
-        SendSignal(thread, latest_signal);
+        SendSignal(current_thread, latest_signal);
         break;
     case 'k':
         Shutdown();
@@ -1053,7 +1044,7 @@ void HandlePacket() {
         AddBreakpoint();
         break;
     case 'T':
-        isThreadAlive();
+        HandleThreadAlive();
         break;
     default:
         SendReply("");
@@ -1200,10 +1191,10 @@ void SetCpuStepFlag(bool is_step) {
     step_loop = is_step;
 }
 
-void SendSig(void* _thread, int sig) {
+void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
         send_trap = false;
-        SendSignal((Kernel::Thread*)_thread, sig);
+        SendSignal(thread, trap);
     }
 }
 }; // namespace GDBStub
