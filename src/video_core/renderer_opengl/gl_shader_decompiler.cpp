@@ -895,7 +895,7 @@ private:
         }
 
         case OpCode::Type::Shift: {
-            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
             std::string op_b;
 
             if (instr.is_b_imm) {
