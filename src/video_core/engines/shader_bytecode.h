@@ -175,6 +175,15 @@ enum class FloatRoundingOp : u64 {
     Trunc = 3,
 };
 
+enum class UniformType : u64 {
+    UnsignedByte = 0,
+    SignedByte = 1,
+    UnsignedShort = 2,
+    SignedShort = 3,
+    Single = 4,
+    Double = 5,
+};
+
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
         value = instr.value;
@@ -251,6 +260,11 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
+
+    union {
+        BitField<48, 3, UniformType> type;
+        BitField<44, 2, u64> unknown;
+    } ld_c;
 
     union {
         BitField<0, 3, u64> pred0;
@@ -378,6 +392,7 @@ public:
         KIL,
         BRA,
         LD_A,
+        LD_C,
         ST_A,
         TEX,
         TEXQ, // Texture Query
@@ -552,6 +567,7 @@ private:
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
+            INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
             INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),

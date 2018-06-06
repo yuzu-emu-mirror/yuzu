@@ -1090,6 +1090,33 @@ private:
                                                 attribute);
                 break;
             }
+            case OpCode::Id::LD_C: {
+                ASSERT_MSG(instr.ld_c.unknown == 0, "Unimplemented");
+
+                std::string op_a =
+                    regs.GetUniformIndirect(instr.cbuf36.index, instr.cbuf36.offset + 0, instr.gpr8,
+                                            GLSLRegister::Type::Float);
+                std::string op_b =
+                    regs.GetUniformIndirect(instr.cbuf36.index, instr.cbuf36.offset + 4, instr.gpr8,
+                                            GLSLRegister::Type::Float);
+
+                switch (instr.ld_c.type.Value()) {
+                case Tegra::Shader::UniformType::Single:
+                    regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                    break;
+
+                case Tegra::Shader::UniformType::Double:
+                    regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                    regs.SetRegisterToFloat(instr.gpr0.Value() + 1, 0, op_b, 1, 1);
+                    break;
+
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unhandled type: {}",
+                                   static_cast<unsigned>(instr.ld_c.type.Value()));
+                    UNREACHABLE();
+                }
+                break;
+            }
             case OpCode::Id::ST_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 regs.SetOutputAttributeToRegister(attribute, instr.attribute.fmt20.element,
