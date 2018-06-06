@@ -1278,16 +1278,17 @@ private:
         }
         case OpCode::Type::IntegerSetPredicate: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.isetp.is_signed);
+            std::string op_b;
 
-            std::string op_b{};
-
-            ASSERT_MSG(!instr.is_b_imm, "ISETP_IMM not implemented");
-
-            if (instr.is_b_gpr) {
-                op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
             } else {
-                op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
-                                        GLSLRegister::Type::Integer);
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+                } else {
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
+                }
             }
 
             using Tegra::Shader::Pred;
