@@ -654,7 +654,16 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         buffer_draw_state.bindpoint = current_bindpoint + bindpoint;
 
         boost::optional<VAddr> addr = gpu.memory_manager->GpuToCpuAddress(buffer.address);
-        std::vector<u8> data(used_buffer.GetSize() * sizeof(float));
+
+        std::vector<u8> data;
+        if (used_buffer.IsIndirect()) {
+            // Buffer is accessed indirectly, so upload the entire thing
+            data.resize(buffer.size * sizeof(float));
+        } else {
+            // Buffer is accessed directly, upload just what we use
+            data.resize(used_buffer.GetSize() * sizeof(float));
+        }
+
         Memory::ReadBlock(*addr, data.data(), data.size());
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer_draw_state.ssbo);

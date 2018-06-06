@@ -377,6 +377,21 @@ public:
         }
     }
 
+    std::string GetUniformIndirect(u64 index, s64 offset, const Register& index_reg,
+                                   GLSLRegister::Type type) {
+        declr_const_buffers[index].MarkAsUsedIndirect(index, stage);
+        std::string value = 'c' + std::to_string(index) + "[(floatBitsToInt(" +
+                            GetRegister(index_reg, 0) + ") + " + std::to_string(offset) + ") / 4]";
+
+        if (type == GLSLRegister::Type::Float) {
+            return value;
+        } else if (type == GLSLRegister::Type::Integer) {
+            return "floatBitsToInt(" + value + ')';
+        } else {
+            UNREACHABLE();
+        }
+    }
+
     /// Add declarations for registers
     void GenerateDeclarations() {
         for (const auto& reg : regs) {

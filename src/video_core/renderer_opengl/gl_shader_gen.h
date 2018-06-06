@@ -22,15 +22,26 @@ class ConstBufferEntry {
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 public:
-    void MarkAsUsed(unsigned index, unsigned offset, Maxwell::ShaderStage stage) {
+    void MarkAsUsed(u64 index, u64 offset, Maxwell::ShaderStage stage) {
         is_used = true;
-        this->index = index;
+        this->index = static_cast<unsigned>(index);
         this->stage = stage;
-        max_offset = std::max(max_offset, offset);
+        max_offset = std::max(max_offset, static_cast<unsigned>(offset));
+    }
+
+    void MarkAsUsedIndirect(u64 index, Maxwell::ShaderStage stage) {
+        is_used = true;
+        is_indirect = true;
+        this->index = static_cast<unsigned>(index);
+        this->stage = stage;
     }
 
     bool IsUsed() const {
         return is_used;
+    }
+
+    bool IsIndirect() const {
+        return is_indirect;
     }
 
     unsigned GetIndex() const {
@@ -51,6 +62,7 @@ private:
     };
 
     bool is_used{};
+    bool is_indirect{};
     unsigned index{};
     unsigned max_offset{};
     Maxwell::ShaderStage stage;
