@@ -20,7 +20,6 @@ using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
 using Tegra::Shader::Sampler;
 using Tegra::Shader::SubOp;
-using Tegra::Shader::Uniform;
 
 constexpr u32 PROGRAM_END = MAX_PROGRAM_CODE_LENGTH;
 
@@ -365,11 +364,9 @@ public:
     }
 
     /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
-    std::string GetUniform(const Uniform& uniform, GLSLRegister::Type type) {
-        declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
-                                                      static_cast<unsigned>(uniform.offset), stage);
-        std::string value =
-            'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
+    std::string GetUniform(u64 index, u64 offset, GLSLRegister::Type type) {
+        declr_const_buffers[index].MarkAsUsed(index, offset, stage);
+        std::string value = 'c' + std::to_string(index) + '[' + std::to_string(offset) + ']';
 
         if (type == GLSLRegister::Type::Float) {
             return value;
@@ -378,12 +375,6 @@ public:
         } else {
             UNREACHABLE();
         }
-    }
-
-    /// Generates code representing a uniform (C buffer) register, interpreted as the type of the
-    /// destination register.
-    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
-        return GetUniform(uniform, regs[dest_reg].GetActiveType());
     }
 
     /// Add declarations for registers
@@ -747,7 +738,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
@@ -904,7 +896,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
                 }
             }
 
@@ -936,7 +929,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
                 }
             }
 
@@ -953,7 +947,8 @@ private:
 
             switch (opcode->GetId()) {
             case OpCode::Id::FFMA_CR: {
-                op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                        GLSLRegister::Type::Float);
                 op_c += regs.GetRegisterAsFloat(instr.gpr39);
                 break;
             }
@@ -964,7 +959,8 @@ private:
             }
             case OpCode::Id::FFMA_RC: {
                 op_b += regs.GetRegisterAsFloat(instr.gpr39);
-                op_c += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_c += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                        GLSLRegister::Type::Float);
                 break;
             }
             case OpCode::Id::FFMA_IMM: {
@@ -1175,7 +1171,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
@@ -1216,7 +1213,8 @@ private:
             if (instr.is_b_gpr) {
                 op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
             } else {
-                op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                        GLSLRegister::Type::Integer);
             }
 
             using Tegra::Shader::Pred;
@@ -1262,7 +1260,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 

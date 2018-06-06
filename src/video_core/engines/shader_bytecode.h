@@ -109,11 +109,6 @@ union Sampler {
     u64 value{};
 };
 
-union Uniform {
-    BitField<20, 14, u64> offset;
-    BitField<34, 5, u64> index;
-};
-
 } // namespace Shader
 } // namespace Tegra
 
@@ -354,12 +349,21 @@ union Instruction {
         }
     } bra;
 
+    union {
+        BitField<20, 14, u64> offset;
+        BitField<34, 5, u64> index;
+    } cbuf34;
+
+    union {
+        BitField<20, 16, s64> offset;
+        BitField<36, 5, u64> index;
+    } cbuf36;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
 
     Attribute attribute;
-    Uniform uniform;
     Sampler sampler;
 
     u64 value;
