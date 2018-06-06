@@ -62,8 +62,6 @@ layout (std140) uniform fs_config {
     vec4 viewport_flip;
 };
 
-uniform sampler2D tex[32];
-
 void main() {
     exec_shader();
 }

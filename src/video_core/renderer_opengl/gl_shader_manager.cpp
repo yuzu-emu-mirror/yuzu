@@ -32,25 +32,6 @@ void SetShaderUniformBlockBindings(GLuint shader) {
                                  sizeof(MaxwellUniformData));
 }
 
-void SetShaderSamplerBindings(GLuint shader) {
-    OpenGLState cur_state = OpenGLState::GetCurState();
-    GLuint old_program = std::exchange(cur_state.draw.shader_program, shader);
-    cur_state.Apply();
-
-    // Set the texture samplers to correspond to different texture units
-    for (u32 texture = 0; texture < NumTextureSamplers; ++texture) {
-        // Set the texture samplers to correspond to different texture units
-        std::string uniform_name = "tex[" + std::to_string(texture) + "]";
-        GLint uniform_tex = glGetUniformLocation(shader, uniform_name.c_str());
-        if (uniform_tex != -1) {
-            glUniform1i(uniform_tex, TextureUnits::MaxwellTexture(texture).id);
-        }
-    }
-
-    cur_state.draw.shader_program = old_program;
-    cur_state.Apply();
-}
-
 } // namespace Impl
 
 void MaxwellUniformData::SetFromRegs(const Maxwell3D::State::ShaderStageInfo& shader_stage) {

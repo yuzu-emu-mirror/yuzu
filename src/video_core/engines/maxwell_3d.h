@@ -664,6 +664,9 @@ public:
     /// Returns a list of enabled textures for the specified shader stage.
     std::vector<Texture::FullTextureInfo> GetStageTextures(Regs::ShaderStage stage) const;
 
+    /// Returns the texture information for a specific texture in a specific shader stage.
+    Texture::FullTextureInfo GetStageTexture(Regs::ShaderStage stage, size_t offset) const;
+
     /// Returns whether the specified shader stage is enabled or not.
     bool IsShaderStageEnabled(Regs::ShaderStage stage) const;
 
