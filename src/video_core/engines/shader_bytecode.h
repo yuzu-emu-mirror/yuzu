@@ -109,11 +109,6 @@ union Sampler {
     u64 value{};
 };
 
-union Uniform {
-    BitField<20, 14, u64> offset;
-    BitField<34, 5, u64> index;
-};
-
 } // namespace Shader
 } // namespace Tegra
 
@@ -178,6 +173,15 @@ enum class FloatRoundingOp : u64 {
     Floor = 1,
     Ceil = 2,
     Trunc = 3,
+};
+
+enum class UniformType : u64 {
+    UnsignedByte = 0,
+    SignedByte = 1,
+    UnsignedShort = 2,
+    SignedShort = 3,
+    Single = 4,
+    Double = 5,
 };
 
 union Instruction {
@@ -256,6 +260,11 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
+
+    union {
+        BitField<48, 3, UniformType> type;
+        BitField<44, 2, u64> unknown;
+    } ld_c;
 
     union {
         BitField<0, 3, u64> pred0;
@@ -354,12 +363,21 @@ union Instruction {
         }
     } bra;
 
+    union {
+        BitField<20, 14, u64> offset;
+        BitField<34, 5, u64> index;
+    } cbuf34;
+
+    union {
+        BitField<20, 16, s64> offset;
+        BitField<36, 5, u64> index;
+    } cbuf36;
+
     BitField<61, 1, u64> is_b_imm;
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
 
     Attribute attribute;
-    Uniform uniform;
     Sampler sampler;
 
     u64 value;
@@ -374,6 +392,7 @@ public:
         KIL,
         BRA,
         LD_A,
+        LD_C,
         ST_A,
         TEX,
         TEXQ, // Texture Query
@@ -548,6 +567,7 @@ private:
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
+            INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
             INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
