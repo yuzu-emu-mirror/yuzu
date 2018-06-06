@@ -681,6 +681,14 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
         Surface surface = res_cache.GetTextureSurface(texture);
         if (surface != nullptr) {
             state.texture_units[current_bindpoint].texture_2d = surface->texture.handle;
+            state.texture_units[current_bindpoint].swizzle.r =
+                MaxwellToGL::SwizzleSource(texture.tic.x_source);
+            state.texture_units[current_bindpoint].swizzle.g =
+                MaxwellToGL::SwizzleSource(texture.tic.y_source);
+            state.texture_units[current_bindpoint].swizzle.b =
+                MaxwellToGL::SwizzleSource(texture.tic.z_source);
+            state.texture_units[current_bindpoint].swizzle.a =
+                MaxwellToGL::SwizzleSource(texture.tic.w_source);
         } else {
             // Can occur when texture addr is null or its memory is unmapped/invalid
             state.texture_units[current_bindpoint].texture_2d = 0;
