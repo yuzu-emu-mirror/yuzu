@@ -26,6 +26,8 @@ u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
     ASSERT(format != RenderTargetFormat::NONE);
 
     switch (format) {
+    case RenderTargetFormat::RGBA32_FLOAT:
+        return 16;
     case RenderTargetFormat::RGBA8_UNORM:
     case RenderTargetFormat::RGB10_A2_UNORM:
         return 4;
