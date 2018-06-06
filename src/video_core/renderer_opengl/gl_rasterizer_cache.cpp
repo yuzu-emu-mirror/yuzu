@@ -50,6 +50,7 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, false},                // A1B5G5R5
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE, false},                                   // R8
     {GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, false},                                // RGBA16F
+    {GL_R11F_G11F_B10F, GL_RGB, GL_UNSIGNED_INT_10F_11F_11F_REV, false},        // R11FG11FB10F
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, true},   // DXT1
     {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT23
     {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, true}, // DXT45
@@ -60,8 +61,10 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
     if (type == SurfaceType::ColorTexture) {
         ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
-        // For now only UNORM components are supported, or RGBA16F which is type FLOAT
-        ASSERT(component_type == ComponentType::UNorm || pixel_format == PixelFormat::RGBA16F);
+        // For now only UNORM components are supported, or either R11FG11FB10F or RGBA16F which are
+        // type FLOAT
+        ASSERT(component_type == ComponentType::UNorm || pixel_format == PixelFormat::RGBA16F ||
+               pixel_format == PixelFormat::R11FG11FB10F);
         return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
     } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
         // TODO(Subv): Implement depth formats
@@ -110,11 +113,12 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
                                      Tegra::GPUVAddr),
                             SurfaceParams::MaxPixelFormat>
     morton_to_gl_fns = {
-        MortonCopy<true, PixelFormat::ABGR8>,       MortonCopy<true, PixelFormat::B5G6R5>,
-        MortonCopy<true, PixelFormat::A2B10G10R10>, MortonCopy<true, PixelFormat::A1B5G5R5>,
-        MortonCopy<true, PixelFormat::R8>,          MortonCopy<true, PixelFormat::RGBA16F>,
-        MortonCopy<true, PixelFormat::DXT1>,        MortonCopy<true, PixelFormat::DXT23>,
-        MortonCopy<true, PixelFormat::DXT45>,       MortonCopy<true, PixelFormat::DXN1>,
+        MortonCopy<true, PixelFormat::ABGR8>,        MortonCopy<true, PixelFormat::B5G6R5>,
+        MortonCopy<true, PixelFormat::A2B10G10R10>,  MortonCopy<true, PixelFormat::A1B5G5R5>,
+        MortonCopy<true, PixelFormat::R8>,           MortonCopy<true, PixelFormat::RGBA16F>,
+        MortonCopy<true, PixelFormat::R11FG11FB10F>, MortonCopy<true, PixelFormat::DXT1>,
+        MortonCopy<true, PixelFormat::DXT23>,        MortonCopy<true, PixelFormat::DXT45>,
+        MortonCopy<true, PixelFormat::DXN1>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra::GPUVAddr,
@@ -127,6 +131,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr, Tegra:
         MortonCopy<false, PixelFormat::A1B5G5R5>,
         MortonCopy<false, PixelFormat::R8>,
         MortonCopy<false, PixelFormat::RGBA16F>,
+        MortonCopy<false, PixelFormat::R11FG11FB10F>,
         // TODO(Subv): Swizzling the DXT1/DXT23/DXT45/DXN1 formats is not yet supported
         nullptr,
         nullptr,

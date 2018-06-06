@@ -15,10 +15,12 @@ namespace Tegra {
 
 enum class RenderTargetFormat : u32 {
     NONE = 0x0,
+    RGBA32_FLOAT = 0xC0,
     RGBA16_FLOAT = 0xCA,
     RGB10_A2_UNORM = 0xD1,
     RGBA8_UNORM = 0xD5,
     RGBA8_SRGB = 0xD6,
+    R11G11B10_FLOAT = 0xE0,
 };
 
 /// Returns the number of bytes per pixel of each rendertarget format.

@@ -298,7 +298,7 @@ void RasterizerOpenGL::DrawArrays() {
     const bool has_stencil = false;
     const bool using_color_fb = true;
     const bool using_depth_fb = false;
-    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
     const bool write_color_fb =
         state.color_mask.red_enabled == GL_TRUE || state.color_mask.green_enabled == GL_TRUE ||
@@ -702,7 +702,7 @@ void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,
 
 void RasterizerOpenGL::SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
-    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport[0].GetRect()};
+    const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
     state.viewport.x = static_cast<GLint>(surfaces_rect.left) + viewport_rect.left * res_scale;
     state.viewport.y = static_cast<GLint>(surfaces_rect.bottom) + viewport_rect.bottom * res_scale;

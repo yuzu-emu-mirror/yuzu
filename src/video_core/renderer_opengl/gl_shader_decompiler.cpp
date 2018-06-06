@@ -88,6 +88,20 @@ private:
         return *subroutines.insert(std::move(subroutine)).first;
     }
 
+    /// Merges exit method of two parallel branches.
+    static ExitMethod ParallelExit(ExitMethod a, ExitMethod b) {
+        if (a == ExitMethod::Undetermined) {
+            return b;
+        }
+        if (b == ExitMethod::Undetermined) {
+            return a;
+        }
+        if (a == b) {
+            return a;
+        }
+        return ExitMethod::Conditional;
+    }
+
     /// Scans a range of code for labels and determines the exit method.
     ExitMethod Scan(u32 begin, u32 end, std::set<u32>& labels) {
         auto [iter, inserted] =
@@ -97,10 +111,27 @@ private:
             return exit_method;
 
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
-            if (const auto opcode = OpCode::Decode({program_code[offset]})) {
+            const Instruction instr = {program_code[offset]};
+            if (const auto opcode = OpCode::Decode(instr)) {
                 switch (opcode->GetId()) {
                 case OpCode::Id::EXIT: {
-                    return exit_method = ExitMethod::AlwaysEnd;
+                    // The EXIT instruction can be predicated, which means that the shader can
+                    // conditionally end on this instruction. We have to consider the case where the
+                    // condition is not met and check the exit method of that other basic block.
+                    using Tegra::Shader::Pred;
+                    if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                        return exit_method = ExitMethod::AlwaysEnd;
+                    } else {
+                        ExitMethod not_met = Scan(offset + 1, end, labels);
+                        return exit_method = ParallelExit(ExitMethod::AlwaysEnd, not_met);
+                    }
+                }
+                case OpCode::Id::BRA: {
+                    u32 target = offset + instr.bra.GetBranchTarget();
+                    labels.insert(target);
+                    ExitMethod no_jmp = Scan(offset + 1, end, labels);
+                    ExitMethod jmp = Scan(target, end, labels);
+                    return exit_method = ParallelExit(no_jmp, jmp);
                 }
                 }
             }
@@ -195,6 +226,11 @@ public:
     /// Returns true if the active type is an integer
     bool IsInteger() const {
         return active_type == Type::Integer;
+    }
+
+    /// Returns the current active type of the register
+    Type GetActiveType() const {
+        return active_type;
     }
 
     /// Returns the index of the register
@@ -328,20 +364,26 @@ public:
         shader.AddLine(dest + " = " + src + ';');
     }
 
-    /// Generates code representing a uniform (C buffer) register.
-    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+    /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
+    std::string GetUniform(const Uniform& uniform, GLSLRegister::Type type) {
         declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
                                                       static_cast<unsigned>(uniform.offset), stage);
         std::string value =
             'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
 
-        if (regs[dest_reg].IsFloat()) {
+        if (type == GLSLRegister::Type::Float) {
             return value;
-        } else if (regs[dest_reg].IsInteger()) {
+        } else if (type == GLSLRegister::Type::Integer) {
             return "floatBitsToInt(" + value + ')';
         } else {
             UNREACHABLE();
         }
+    }
+
+    /// Generates code representing a uniform (C buffer) register, interpreted as the type of the
+    /// destination register.
+    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
+        return GetUniform(uniform, regs[dest_reg].GetActiveType());
     }
 
     /// Add declarations for registers
@@ -612,9 +654,9 @@ private:
     std::string GetPredicateComparison(Tegra::Shader::PredCondition condition) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},      {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="},    {PredCondition::GreaterThan, ">"},
-            {PredCondition::GreaterEqual, ">="},
+            {PredCondition::LessThan, "<"},   {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="}, {PredCondition::GreaterThan, ">"},
+            {PredCondition::NotEqual, "!="},  {PredCondition::GreaterEqual, ">="},
         };
 
         auto comparison = PredicateComparisonStrings.find(condition);
@@ -808,6 +850,102 @@ private:
             }
             break;
         }
+        case OpCode::Type::Logic: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+
+            if (instr.alu.lop.invert_a)
+                op_a = "~(" + op_a + ')';
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::LOP32I: {
+                u32 imm = static_cast<u32>(instr.alu.imm20_32.Value());
+
+                if (instr.alu.lop.invert_b)
+                    imm = ~imm;
+
+                switch (instr.alu.lop.operation) {
+                case Tegra::Shader::LogicOperation::And: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                case Tegra::Shader::LogicOperation::Or: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                case Tegra::Shader::LogicOperation::Xor: {
+                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                                              '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
+                    break;
+                }
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented lop32i operation: {}",
+                                   static_cast<u32>(instr.alu.lop.operation.Value()));
+                    UNREACHABLE();
+                }
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled logic instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
+
+        case OpCode::Type::Shift: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+            std::string op_b;
+
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20);
+                } else {
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                }
+            }
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::SHL_C:
+            case OpCode::Id::SHL_R:
+            case OpCode::Id::SHL_IMM:
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
+                break;
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
+
+        case OpCode::Type::ScaledAdd: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+
+            if (instr.iscadd.negate_a)
+                op_a = '-' + op_a;
+
+            std::string op_b = instr.iscadd.negate_b ? "-" : "";
+
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20);
+                } else {
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                }
+            }
+
+            std::string shift = std::to_string(instr.iscadd.shift_amount.Value());
+
+            regs.SetRegisterToInteger(instr.gpr0, true, 0,
+                                      "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
+            break;
+        }
         case OpCode::Type::Ffma: {
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
@@ -849,21 +987,35 @@ private:
             ASSERT_MSG(!instr.conversion.saturate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
-            case OpCode::Id::I2I_R:
-            case OpCode::Id::I2F_R: {
+            case OpCode::Id::I2I_R: {
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
 
                 std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_signed);
+                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
                 }
 
-                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_signed, 0, op_a, 1, 1);
+                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
+                                          1);
+                break;
+            }
+            case OpCode::Id::I2F_R: {
+                ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
+                std::string op_a =
+                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
                 break;
             }
             case OpCode::Id::F2F_R: {
+                // TODO(Subv): Implement rounding operations.
+                ASSERT_MSG(instr.conversion.f2f.rounding == 0, "Unimplemented rounding operation");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 if (instr.conversion.abs_a) {
@@ -871,6 +1023,43 @@ private:
                 }
 
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                break;
+            }
+            case OpCode::Id::F2I_R: {
+                std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                if (instr.conversion.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                using Tegra::Shader::FloatRoundingOp;
+                switch (instr.conversion.f2i.rounding) {
+                case FloatRoundingOp::None:
+                    break;
+                case FloatRoundingOp::Floor:
+                    op_a = "floor(" + op_a + ')';
+                    break;
+                case FloatRoundingOp::Ceil:
+                    op_a = "ceil(" + op_a + ')';
+                    break;
+                case FloatRoundingOp::Trunc:
+                    op_a = "trunc(" + op_a + ')';
+                    break;
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2i rounding mode {}",
+                                   static_cast<u32>(instr.conversion.f2i.rounding.Value()));
+                    UNREACHABLE();
+                    break;
+                }
+
+                if (instr.conversion.is_output_signed) {
+                    op_a = "int(" + op_a + ')';
+                } else {
+                    op_a = "uint(" + op_a + ')';
+                }
+
+                regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
+                                          1);
                 break;
             }
             default: {
@@ -986,7 +1175,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
@@ -1017,6 +1206,42 @@ private:
             }
             break;
         }
+        case OpCode::Type::IntegerSetPredicate: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.isetp.is_signed);
+
+            std::string op_b{};
+
+            ASSERT_MSG(!instr.is_b_imm, "ISETP_IMM not implemented");
+
+            if (instr.is_b_gpr) {
+                op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+            } else {
+                op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+            }
+
+            using Tegra::Shader::Pred;
+            // We can't use the constant predicate as destination.
+            ASSERT(instr.isetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
+
+            std::string second_pred =
+                GetPredicateCondition(instr.isetp.pred39, instr.isetp.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.isetp.cond);
+            std::string combiner = GetPredicateCombiner(instr.isetp.op);
+
+            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            // Set the primary predicate to the result of Predicate OP SecondPredicate
+            SetPredicate(instr.isetp.pred3,
+                         '(' + predicate + ") " + combiner + " (" + second_pred + ')');
+
+            if (instr.isetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate,
+                // if enabled
+                SetPredicate(instr.isetp.pred0,
+                             "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
+            }
+            break;
+        }
         case OpCode::Type::FloatSet: {
             std::string op_a = instr.fset.neg_a ? "-" : "";
             op_a += regs.GetRegisterAsFloat(instr.gpr8);
@@ -1037,7 +1262,7 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
                 }
             }
 
@@ -1056,15 +1281,17 @@ private:
             std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
                                     combiner + " (" + second_pred + "))";
 
-            regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
+            if (instr.fset.bf) {
+                regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
+            } else {
+                regs.SetRegisterToInteger(instr.gpr0, false, 0, predicate + " ? 0xFFFFFFFF : 0", 1,
+                                          1);
+            }
             break;
         }
         default: {
             switch (opcode->GetId()) {
             case OpCode::Id::EXIT: {
-                ASSERT_MSG(instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex),
-                           "Predicated exits not implemented");
-
                 // Final color output is currently hardcoded to GPR0-3 for fragment shaders
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
                     shader.AddLine("color.r = " + regs.GetRegisterAsFloat(0) + ';');
@@ -1074,11 +1301,23 @@ private:
                 }
 
                 shader.AddLine("return true;");
-                offset = PROGRAM_END - 1;
+                if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                    // If this is an unconditional exit then just end processing here, otherwise we
+                    // have to account for the possibility of the condition not being met, so
+                    // continue processing the next instruction.
+                    offset = PROGRAM_END - 1;
+                }
                 break;
             }
             case OpCode::Id::KIL: {
                 shader.AddLine("discard;");
+                break;
+            }
+            case OpCode::Id::BRA: {
+                ASSERT_MSG(instr.bra.constant_buffer == 0,
+                           "BRA with constant buffers are not implemented");
+                u32 target = offset + instr.bra.GetBranchTarget();
+                shader.AddLine("{ jmp_to = " + std::to_string(target) + "u; break; }");
                 break;
             }
             case OpCode::Id::IPA: {
