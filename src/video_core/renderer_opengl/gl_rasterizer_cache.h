@@ -104,7 +104,7 @@ struct SurfaceParams {
             1, // A2B10G10R10
             1, // A1B5G5R5
             1, // R8
-            2, // RGBA16F
+            1, // RGBA16F
             4, // DXT1
             4, // DXT23
             4, // DXT45
