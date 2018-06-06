@@ -26,6 +26,10 @@ u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vec
         return ZCullGetInfo(input, output);
     case IoctlCommand::IocZbcSetTable:
         return ZBCSetTable(input, output);
+    case IoctlCommand::IocZbcQueryTable:
+        return ZBCQueryTable(input, output);
+    case IoctlCommand::IocFlushL2:
+        return FlushL2(input, output);
     }
     UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
@@ -132,6 +136,24 @@ u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& 
     IoctlZbcSetTable params{};
     std::memcpy(&params, input.data(), input.size());
     // TODO(ogniK): What does this even actually do?
+    std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output) {
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    IoctlZbcQueryTable params{};
+    std::memcpy(&params, input.data(), input.size());
+    // TODO : To implement properly
+    std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_ctrl_gpu::FlushL2(const std::vector<u8>& input, std::vector<u8>& output) {
+    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    IoctlFlushL2 params{};
+    std::memcpy(&params, input.data(), input.size());
+    // TODO : To implement properly
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
