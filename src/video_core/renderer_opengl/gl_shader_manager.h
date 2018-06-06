@@ -45,7 +45,6 @@ public:
         shader.Create(program_result.first.c_str(), type);
         program.Create(true, shader.handle);
         Impl::SetShaderUniformBlockBindings(program.handle);
-        Impl::SetShaderSamplerBindings(program.handle);
         entries = program_result.second;
     }
     GLuint GetHandle() const {

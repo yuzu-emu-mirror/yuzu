@@ -56,8 +56,48 @@ private:
     Maxwell::ShaderStage stage;
 };
 
+class SamplerEntry {
+    using Maxwell = Tegra::Engines::Maxwell3D::Regs;
+
+public:
+    SamplerEntry(Maxwell::ShaderStage stage, size_t offset, size_t index)
+        : offset(offset), stage(stage), sampler_index(index) {}
+
+    size_t GetOffset() const {
+        return offset;
+    }
+
+    size_t GetIndex() const {
+        return sampler_index;
+    }
+
+    Maxwell::ShaderStage GetStage() const {
+        return stage;
+    }
+
+    std::string GetName() const {
+        return std::string(TextureSamplerNames[static_cast<size_t>(stage)]) + '[' +
+               std::to_string(sampler_index) + ']';
+    }
+
+    static std::string GetArrayName(Maxwell::ShaderStage stage) {
+        return TextureSamplerNames[static_cast<size_t>(stage)];
+    }
+
+private:
+    static constexpr std::array<const char*, Maxwell::MaxShaderStage> TextureSamplerNames = {
+        "tex_vs", "tex_tessc", "tex_tesse", "tex_gs", "tex_fs",
+    };
+    /// Offset in TSC memory from which to read the sampler object, as specified by the sampling
+    /// instruction.
+    size_t offset;
+    Maxwell::ShaderStage stage; ///< Shader stage where this sampler was used.
+    size_t sampler_index;       ///< Value used to index into the generated GLSL sampler array.
+};
+
 struct ShaderEntries {
     std::vector<ConstBufferEntry> const_buffer_entries;
+    std::vector<SamplerEntry> texture_samplers;
 };
 
 using ProgramResult = std::pair<std::string, ShaderEntries>;

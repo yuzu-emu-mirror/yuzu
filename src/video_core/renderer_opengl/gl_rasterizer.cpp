@@ -196,8 +196,10 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
     auto& gpu = Core::System().GetInstance().GPU().Maxwell3D();
     ASSERT_MSG(!gpu.regs.shader_config[0].enable, "VertexA is unsupported!");
 
-    // Next available bindpoint to use when uploading the const buffers to the GLSL shaders.
+    // Next available bindpoints to use when uploading the const buffers and textures to the GLSL
+    // shaders.
     u32 current_constbuffer_bindpoint = 0;
+    u32 current_texture_bindpoint = 0;
 
     for (unsigned index = 1; index < Maxwell::MaxShaderProgram; ++index) {
         auto& shader_config = gpu.regs.shader_config[index];
@@ -258,6 +260,11 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
         current_constbuffer_bindpoint =
             SetupConstBuffers(static_cast<Maxwell::ShaderStage>(stage), gl_stage_program,
                               current_constbuffer_bindpoint, shader_resources.const_buffer_entries);
+
+        // Configure the textures for this shader stage.
+        current_texture_bindpoint =
+            SetupTextures(static_cast<Maxwell::ShaderStage>(stage), gl_stage_program,
+                          current_texture_bindpoint, shader_resources.texture_samplers);
     }
 
     shader_program_manager->UseTrivialGeometryShader();
@@ -340,9 +347,6 @@ void RasterizerOpenGL::DrawArrays() {
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
-
-    // Sync and bind the texture surfaces
-    BindTextures();
 
     // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
     // scissor test to prevent drawing outside of the framebuffer region
@@ -444,39 +448,6 @@ void RasterizerOpenGL::DrawArrays() {
         auto interval = depth_surface->GetSubRectInterval(draw_rect_unscaled);
         res_cache.InvalidateRegion(boost::icl::first(interval), boost::icl::length(interval),
                                    depth_surface);
-    }
-}
-
-void RasterizerOpenGL::BindTextures() {
-    using Regs = Tegra::Engines::Maxwell3D::Regs;
-    auto& maxwell3d = Core::System::GetInstance().GPU().Get3DEngine();
-
-    // Each Maxwell shader stage can have an arbitrary number of textures, but we're limited to a
-    // certain number in OpenGL. We try to only use the minimum amount of host textures by not
-    // keeping a 1:1 relation between guest texture ids and host texture ids, ie, guest texture id 8
-    // can be host texture id 0 if it's the only texture used in the guest shader program.
-    u32 host_texture_index = 0;
-    for (u32 stage = 0; stage < Regs::MaxShaderStage; ++stage) {
-        ASSERT(host_texture_index < texture_samplers.size());
-        const auto textures = maxwell3d.GetStageTextures(static_cast<Regs::ShaderStage>(stage));
-        for (unsigned texture_index = 0; texture_index < textures.size(); ++texture_index) {
-            const auto& texture = textures[texture_index];
-
-            if (texture.enabled) {
-                texture_samplers[host_texture_index].SyncWithConfig(texture.tsc);
-                Surface surface = res_cache.GetTextureSurface(texture);
-                if (surface != nullptr) {
-                    state.texture_units[host_texture_index].texture_2d = surface->texture.handle;
-                } else {
-                    // Can occur when texture addr is null or its memory is unmapped/invalid
-                    state.texture_units[texture_index].texture_2d = 0;
-                }
-
-                ++host_texture_index;
-            } else {
-                state.texture_units[texture_index].texture_2d = 0;
-            }
-        }
     }
 }
 
@@ -672,6 +643,44 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
     state.Apply();
 
     return current_bindpoint + entries.size();
+}
+
+u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, u32 current_unit,
+                                    const std::vector<GLShader::SamplerEntry>& entries) {
+    auto& gpu = Core::System::GetInstance().GPU();
+    auto& maxwell3d = gpu.Get3DEngine();
+
+    ASSERT_MSG(maxwell3d.IsShaderStageEnabled(stage),
+               "Attempted to upload textures of disabled shader stage");
+
+    ASSERT_MSG(current_unit + entries.size() <= std::size(state.texture_units),
+               "Exceeded the number of active textures.");
+
+    for (u32 bindpoint = 0; bindpoint < entries.size(); ++bindpoint) {
+        const auto& entry = entries[bindpoint];
+        u32 current_bindpoint = current_unit + bindpoint;
+
+        // Bind the uniform to the sampler.
+        GLint uniform = glGetUniformLocation(program, entry.GetName().c_str());
+        ASSERT(uniform != -1);
+        glProgramUniform1i(program, uniform, current_bindpoint);
+
+        const auto texture = maxwell3d.GetStageTexture(entry.GetStage(), entry.GetOffset());
+        ASSERT(texture.enabled);
+
+        texture_samplers[current_bindpoint].SyncWithConfig(texture.tsc);
+        Surface surface = res_cache.GetTextureSurface(texture);
+        if (surface != nullptr) {
+            state.texture_units[current_bindpoint].texture_2d = surface->texture.handle;
+        } else {
+            // Can occur when texture addr is null or its memory is unmapped/invalid
+            state.texture_units[current_bindpoint].texture_2d = 0;
+        }
+    }
+
+    state.Apply();
+
+    return current_unit + entries.size();
 }
 
 void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,

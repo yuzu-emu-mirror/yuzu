@@ -425,6 +425,14 @@ public:
             ++const_buffer_layout;
         }
         declarations.AddNewLine();
+
+        // Append the sampler2D array for the used textures.
+        size_t num_samplers = GetSamplers().size();
+        if (num_samplers > 0) {
+            declarations.AddLine("uniform sampler2D " + SamplerEntry::GetArrayName(stage) + '[' +
+                                 std::to_string(num_samplers) + "];");
+            declarations.AddNewLine();
+        }
     }
 
     /// Returns a list of constant buffer declarations
@@ -433,6 +441,32 @@ public:
         std::copy_if(declr_const_buffers.begin(), declr_const_buffers.end(),
                      std::back_inserter(result), [](const auto& entry) { return entry.IsUsed(); });
         return result;
+    }
+
+    /// Returns a list of samplers used in the shader
+    std::vector<SamplerEntry> GetSamplers() const {
+        return used_samplers;
+    }
+
+    /// Returns the GLSL sampler used for the input shader sampler, and creates a new one if
+    /// necessary.
+    std::string AccessSampler(const Sampler& sampler) {
+        size_t offset = static_cast<size_t>(sampler.index.Value());
+
+        // If this sampler has already been used, return the existing mapping.
+        auto itr =
+            std::find_if(used_samplers.begin(), used_samplers.end(),
+                         [&](const SamplerEntry& entry) { return entry.GetOffset() == offset; });
+
+        if (itr != used_samplers.end()) {
+            return itr->GetName();
+        }
+
+        // Otherwise create a new mapping for this sampler
+        size_t next_index = used_samplers.size();
+        SamplerEntry entry{stage, offset, next_index};
+        used_samplers.emplace_back(entry);
+        return entry.GetName();
     }
 
 private:
@@ -544,6 +578,7 @@ private:
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
     std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
+    std::vector<SamplerEntry> used_samplers;
     const Maxwell3D::Regs::ShaderStage& stage;
 };
 
@@ -563,7 +598,7 @@ public:
 
     /// Returns entries in the shader that are useful for external functions
     ShaderEntries GetEntries() const {
-        return {regs.GetConstBuffersDeclarations()};
+        return {regs.GetConstBuffersDeclarations(), regs.GetSamplers()};
     }
 
 private:
@@ -585,12 +620,8 @@ private:
     }
 
     /// Generates code representing a texture sampler.
-    std::string GetSampler(const Sampler& sampler) const {
-        // TODO(Subv): Support more than just texture sampler 0
-        ASSERT_MSG(sampler.index == Sampler::Index::Sampler_0, "unsupported");
-        const unsigned index{static_cast<unsigned>(sampler.index.Value()) -
-                             static_cast<unsigned>(Sampler::Index::Sampler_0)};
-        return "tex[" + std::to_string(index) + ']';
+    std::string GetSampler(const Sampler& sampler) {
+        return regs.AccessSampler(sampler);
     }
 
     /**
