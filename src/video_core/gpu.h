@@ -19,6 +19,7 @@ enum class RenderTargetFormat : u32 {
     RGB10_A2_UNORM = 0xD1,
     RGBA8_UNORM = 0xD5,
     RGBA8_SRGB = 0xD6,
+    R11G11B10_FLOAT = 0xE0,
 };
 
 /// Returns the number of bytes per pixel of each rendertarget format.
