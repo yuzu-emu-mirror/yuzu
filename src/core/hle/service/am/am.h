@@ -138,6 +138,7 @@ private:
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx);
     void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx);
     void NotifyRunning(Kernel::HLERequestContext& ctx);
+    void GetPseudoDeviceId(Kernel::HLERequestContext& ctx);
 };
 
 class IHomeMenuFunctions final : public ServiceFramework<IHomeMenuFunctions> {
