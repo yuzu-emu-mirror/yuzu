@@ -144,6 +144,7 @@ static u32 latest_signal = 0;
 static bool memory_break = false;
 
 static Kernel::Thread* current_thread = nullptr;
+static int thread_id = -1;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -562,11 +563,9 @@ static void HandleQuery() {
 /// Handle set thread command from gdb client.
 static void HandleSetThread() {
     if (memcmp(command_buffer, "Hc", 2) == 0 || memcmp(command_buffer, "Hg", 2) == 0) {
-        int thread_id = -1;
+        thread_id = -1;
         if (command_buffer[2] != '-') {
-            thread_id = static_cast<int>(HexToInt(
-                command_buffer + 2,
-                command_length - 2 /*strlen(reinterpret_cast<char*>(command_buffer) + 2)*/));
+            thread_id = static_cast<int>(HexToInt(command_buffer + 2, command_length - 2));
         }
         if (thread_id >= 1) {
             current_thread = FindThreadById(thread_id);
@@ -585,9 +584,7 @@ static void HandleSetThread() {
 
 /// Handle thread alive command from gdb client.
 static void HandleThreadAlive() {
-    int thread_id = static_cast<int>(
-        HexToInt(command_buffer + 1,
-                 command_length - 1 /*strlen(reinterpret_cast<char*>(command_buffer) + 1)*/));
+    int thread_id = static_cast<int>(HexToInt(command_buffer + 1, command_length - 1));
     if (thread_id == 0) {
         thread_id = 1;
     }
@@ -1192,7 +1189,9 @@ void SetCpuStepFlag(bool is_step) {
 }
 
 void SendTrap(Kernel::Thread* thread, int trap) {
-    if (send_trap) {
+    //NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(), thread_id, trap,
+    //            send_trap);
+    if (send_trap && (thread == current_thread)) {
         send_trap = false;
         SendSignal(thread, trap);
     }
