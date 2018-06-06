@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <vector>
-#include "core/hle/kernel/kernel.h"
 #include "core/hle/service/service.h"
 
 namespace Service::MM {
