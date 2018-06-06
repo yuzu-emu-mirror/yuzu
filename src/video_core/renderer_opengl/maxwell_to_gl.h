@@ -100,6 +100,8 @@ inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
     switch (wrap_mode) {
     case Tegra::Texture::WrapMode::Wrap:
         return GL_REPEAT;
+    case Tegra::Texture::WrapMode::Mirror:
+        return GL_MIRRORED_REPEAT;
     case Tegra::Texture::WrapMode::ClampToEdge:
         return GL_CLAMP_TO_EDGE;
     case Tegra::Texture::WrapMode::ClampOGL:

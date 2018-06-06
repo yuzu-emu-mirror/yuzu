@@ -26,6 +26,18 @@ private:
         IocZcullGetCtxSizeCommand = 0x80044701,
         IocZcullGetInfo = 0x80284702,
         IocZbcSetTable = 0x402C4703,
+        IocZbcQueryTable = 0xC0344704,
+        IocFlushL2 = 0x40084707,
+        IocInvalICache = 0x4008470D,
+        IocSetMmudebugMode = 0x4008470E,
+        IocSetSmDebugMode = 0x4010470F,
+        IocWaitForPause = 0xC0084710,
+        IocGetTcpExceptionEnStatus = 0x80084711,
+        IocNumVsms = 0x80084712,
+        IocVsmsMapping = 0xC0044713,
+        IocGetErrorChannelUserData = 0xC008471B,
+        IocGetGpuTime = 0xC010471C,
+        IocGetCpuTimeCorrelationInfo = 0xC108471D,
     };
 
     struct IoctlGpuCharacteristics {
@@ -127,12 +139,31 @@ private:
     };
     static_assert(sizeof(IoctlZbcSetTable) == 44, "IoctlZbcSetTable is incorrect size");
 
+    struct IoctlZbcQueryTable {
+        u32_le color_ds[4];
+        u32_le color_l2[4];
+        u32_le depth;
+        u32_le ref_cnt;
+        u32_le format;
+        u32_le type;
+        u32_le index_size;
+    };
+    static_assert(sizeof(IoctlZbcQueryTable) == 52, "IoctlZbcQueryTable is incorrect size");
+
+    struct IoctlFlushL2 {
+        u32_le flush; // l2_flush | l2_invalidate << 1 | fb_flush << 2
+        u32_le reserved;
+    };
+    static_assert(sizeof(IoctlFlushL2) == 8, "IoctlFlushL2 is incorrect size");
+
     u32 GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 FlushL2(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Service::Nvidia::Devices

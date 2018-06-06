@@ -561,7 +561,7 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {32, nullptr, "BeginBlockingHomeButton"},
         {33, nullptr, "EndBlockingHomeButton"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
-        {50, nullptr, "GetPseudoDeviceId"},
+        {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
         {60, nullptr, "SetMediaPlaybackStateForApplication"},
         {65, nullptr, "IsGamePlayRecordingSupported"},
         {66, &IApplicationFunctions::InitializeGamePlayRecording, "InitializeGamePlayRecording"},
@@ -680,6 +680,17 @@ void IApplicationFunctions::NotifyRunning(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u8>(0); // Unknown, seems to be ignored by official processes
+
+    NGLOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void IApplicationFunctions::GetPseudoDeviceId(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+
+    // Returns a 128-bit UUID
+    rb.Push<u64>(0);
+    rb.Push<u64>(0);
 
     NGLOG_WARNING(Service_AM, "(STUBBED) called");
 }
