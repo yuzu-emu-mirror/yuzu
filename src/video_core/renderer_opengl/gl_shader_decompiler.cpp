@@ -888,8 +888,33 @@ private:
             }
             break;
         }
+        case OpCode::Type::Bfe: {
+            ASSERT_MSG(!instr.bfe.negate_b, "Unimplemented");
+
+            std::string op_a = instr.bfe.negate_a ? "-" : "";
+            op_a += regs.GetRegisterAsInteger(instr.gpr8);
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::BFE_IMM: {
+                std::string inner_shift =
+                    '(' + op_a + " << " + std::to_string(instr.bfe.GetLeftShiftValue()) + ')';
+                std::string outer_shift =
+                    '(' + inner_shift + " >> " +
+                    std::to_string(instr.bfe.GetLeftShiftValue() + instr.bfe.shift_position) + ')';
+
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, outer_shift, 1, 1);
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+
+            break;
+        }
         case OpCode::Type::Logic: {
-            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
 
             if (instr.alu.lop.invert_a)
                 op_a = "~(" + op_a + ')';
@@ -903,17 +928,17 @@ private:
 
                 switch (instr.alu.lop.operation) {
                 case Tegra::Shader::LogicOperation::And: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Or: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Xor: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }

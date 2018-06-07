@@ -266,6 +266,17 @@ union Instruction {
     } iscadd;
 
     union {
+        BitField<20, 8, u64> shift_position;
+        BitField<28, 8, u64> shift_length;
+        BitField<48, 1, u64> negate_b;
+        BitField<49, 1, u64> negate_a;
+
+        u64 GetLeftShiftValue() const {
+            return 32 - (shift_position + shift_length);
+        }
+    } bfe;
+
+    union {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_c;
     } ffma;
@@ -478,6 +489,7 @@ public:
     enum class Type {
         Trivial,
         Arithmetic,
+        Bfe,
         Logic,
         Shift,
         ScaledAdd,
@@ -584,9 +596,6 @@ private:
         std::vector<Matcher> table = {
 #define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
-            INST("0100110000000---", Id::BFE_C, Type::Flow, "BFE_C"),
-            INST("0101110000000---", Id::BFE_R, Type::Flow, "BFE_R"),
-            INST("0011100-00000---", Id::BFE_IMM, Type::Flow, "BFE_IMM"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
@@ -631,6 +640,9 @@ private:
             INST("0100110000100---", Id::IMNMX_C, Type::Arithmetic, "FMNMX_IMM"),
             INST("0101110000100---", Id::IMNMX_R, Type::Arithmetic, "FMNMX_IMM"),
             INST("0011100-00100---", Id::IMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
+            INST("0100110000000---", Id::BFE_C, Type::Bfe, "BFE_C"),
+            INST("0101110000000---", Id::BFE_R, Type::Bfe, "BFE_R"),
+            INST("0011100-00000---", Id::BFE_IMM, Type::Bfe, "BFE_IMM"),
             INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
