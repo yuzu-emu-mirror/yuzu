@@ -168,11 +168,20 @@ enum class SubOp : u64 {
     Min = 0x8,
 };
 
-enum class FloatRoundingOp : u64 {
+enum class F2iRoundingOp : u64 {
     None = 0,
     Floor = 1,
     Ceil = 2,
     Trunc = 3,
+};
+
+enum class F2fRoundingOp : u64 {
+    None = 0,
+    Pass = 3,
+    Round = 8,
+    Floor = 9,
+    Ceil = 10,
+    Trunc = 11,
 };
 
 enum class UniformType : u64 {
@@ -314,11 +323,11 @@ union Instruction {
         BitField<50, 1, u64> saturate_a;
 
         union {
-            BitField<39, 2, FloatRoundingOp> rounding;
+            BitField<39, 2, F2iRoundingOp> rounding;
         } f2i;
 
         union {
-            BitField<39, 4, u64> rounding;
+            BitField<39, 4, F2fRoundingOp> rounding;
         } f2f;
     } conversion;
 

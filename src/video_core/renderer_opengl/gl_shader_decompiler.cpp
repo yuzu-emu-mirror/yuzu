@@ -1056,9 +1056,26 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
-                // TODO(Subv): Implement rounding operations.
-                ASSERT_MSG(instr.conversion.f2f.rounding == 0, "Unimplemented rounding operation");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                switch (instr.conversion.f2f.rounding) {
+                case Tegra::Shader::F2fRoundingOp::None:
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Floor:
+                    op_a = "floor(" + op_a + ')';
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Ceil:
+                    op_a = "ceil(" + op_a + ')';
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Trunc:
+                    op_a = "trunc(" + op_a + ')';
+                    break;
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2f rounding mode {}",
+                                   static_cast<u32>(instr.conversion.f2f.rounding.Value()));
+                    UNREACHABLE();
+                    break;
+                }
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
@@ -1074,17 +1091,16 @@ private:
                     op_a = "abs(" + op_a + ')';
                 }
 
-                using Tegra::Shader::FloatRoundingOp;
                 switch (instr.conversion.f2i.rounding) {
-                case FloatRoundingOp::None:
+                case Tegra::Shader::F2iRoundingOp::None:
                     break;
-                case FloatRoundingOp::Floor:
+                case Tegra::Shader::F2iRoundingOp::Floor:
                     op_a = "floor(" + op_a + ')';
                     break;
-                case FloatRoundingOp::Ceil:
+                case Tegra::Shader::F2iRoundingOp::Ceil:
                     op_a = "ceil(" + op_a + ')';
                     break;
-                case FloatRoundingOp::Trunc:
+                case Tegra::Shader::F2iRoundingOp::Trunc:
                     op_a = "trunc(" + op_a + ')';
                     break;
                 default:
