@@ -169,60 +169,10 @@ static void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tup
 static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rect, GLuint dst_tex,
                          const MathUtil::Rectangle<u32>& dst_rect, SurfaceType type,
                          GLuint read_fb_handle, GLuint draw_fb_handle) {
-    OpenGLState state = OpenGLState::GetCurState();
 
-    OpenGLState prev_state = state;
-    SCOPE_EXIT({ prev_state.Apply(); });
-
-    // Make sure textures aren't bound to texture units, since going to bind them to framebuffer
-    // components
-    state.ResetTexture(src_tex);
-    state.ResetTexture(dst_tex);
-
-    state.draw.read_framebuffer = read_fb_handle;
-    state.draw.draw_framebuffer = draw_fb_handle;
-    state.Apply();
-
-    u32 buffers = 0;
-
-    if (type == SurfaceType::ColorTexture) {
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, src_tex,
-                               0);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
-                               0);
-
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst_tex,
-                               0);
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
-                               0);
-
-        buffers = GL_COLOR_BUFFER_BIT;
-    } else if (type == SurfaceType::Depth) {
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, src_tex, 0);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dst_tex, 0);
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-
-        buffers = GL_DEPTH_BUFFER_BIT;
-    } else if (type == SurfaceType::DepthStencil) {
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-                               src_tex, 0);
-
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
-                               dst_tex, 0);
-
-        buffers = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-    }
-
-    glBlitFramebuffer(src_rect.left, src_rect.bottom, src_rect.right, src_rect.top, dst_rect.left,
-                      dst_rect.bottom, dst_rect.right, dst_rect.top, buffers,
-                      buffers == GL_COLOR_BUFFER_BIT ? GL_LINEAR : GL_NEAREST);
-
+    glCopyImageSubData(src_tex, GL_TEXTURE_2D, 0, src_rect.left, src_rect.bottom, 0, dst_tex,
+                       GL_TEXTURE_2D, 0, dst_rect.left, dst_rect.bottom, 0, src_rect.GetWidth(),
+                       src_rect.GetHeight(), 0);
     return true;
 }
 
@@ -1102,16 +1052,19 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
     params.UpdateParams();
 
-    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0 ||
+    if (params.GetActualWidth() % 8 != 0 || params.GetActualHeight() % 8 != 0 ||
         params.stride != params.width) {
         Surface src_surface;
         MathUtil::Rectangle<u32> rect;
         std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);
 
+        rect = rect.Scale(params.GetCompresssionFactor());
+
         params.res_scale = src_surface->res_scale;
         Surface tmp_surface = CreateSurface(params);
-        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle,
-                     tmp_surface->GetScaledRect(),
+
+        auto dst_rect = tmp_surface->GetScaledRect().Scale(params.GetCompresssionFactor());
+        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle, dst_rect,
                      SurfaceParams::GetFormatType(params.pixel_format), read_framebuffer.handle,
                      draw_framebuffer.handle);
 

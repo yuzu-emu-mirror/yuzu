@@ -354,6 +354,40 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
     return textures;
 }
 
+Texture::FullTextureInfo Maxwell3D::GetStageTexture(Regs::ShaderStage stage, size_t offset) const {
+    auto& shader = state.shader_stages[static_cast<size_t>(stage)];
+    auto& tex_info_buffer = shader.const_buffers[regs.tex_cb_index];
+    ASSERT(tex_info_buffer.enabled && tex_info_buffer.address != 0);
+
+    GPUVAddr tex_info_address = tex_info_buffer.address + offset * sizeof(Texture::TextureHandle);
+
+    ASSERT(tex_info_address < tex_info_buffer.address + tex_info_buffer.size);
+
+    boost::optional<VAddr> tex_address_cpu = memory_manager.GpuToCpuAddress(tex_info_address);
+    Texture::TextureHandle tex_handle{Memory::Read32(*tex_address_cpu)};
+
+    Texture::FullTextureInfo tex_info{};
+    tex_info.index = static_cast<u32>(offset);
+
+    // Load the TIC data.
+    if (tex_handle.tic_id != 0) {
+        tex_info.enabled = true;
+
+        auto tic_entry = GetTICEntry(tex_handle.tic_id);
+        // TODO(Subv): Workaround for BitField's move constructor being deleted.
+        std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
+    }
+
+    // Load the TSC data
+    if (tex_handle.tsc_id != 0) {
+        auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
+        // TODO(Subv): Workaround for BitField's move constructor being deleted.
+        std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
+    }
+
+    return tex_info;
+}
+
 u32 Maxwell3D::GetRegisterValue(u32 method) const {
     ASSERT_MSG(method < Regs::NUM_REGS, "Invalid Maxwell3D register");
     return regs.reg_array[method];

@@ -122,6 +122,17 @@ enum class ComponentType : u32 {
     FLOAT = 7
 };
 
+enum class SwizzleSource : u32 {
+    Zero = 0,
+
+    R = 2,
+    G = 3,
+    B = 4,
+    A = 5,
+    OneInt = 6,
+    OneFloat = 7,
+};
+
 union TextureHandle {
     u32 raw;
     BitField<0, 20, u32> tic_id;
@@ -139,6 +150,11 @@ struct TICEntry {
         BitField<10, 3, ComponentType> g_type;
         BitField<13, 3, ComponentType> b_type;
         BitField<16, 3, ComponentType> a_type;
+
+        BitField<19, 3, SwizzleSource> x_source;
+        BitField<22, 3, SwizzleSource> y_source;
+        BitField<25, 3, SwizzleSource> z_source;
+        BitField<28, 3, SwizzleSource> w_source;
     };
     u32 address_low;
     union {

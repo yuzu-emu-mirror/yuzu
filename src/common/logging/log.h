@@ -61,6 +61,7 @@ enum class Class : ClassType {
     Service_FS,        ///< The FS (Filesystem) service
     Service_HID,       ///< The HID (Human interface device) service
     Service_LM,        ///< The LM (Logger) service
+    Service_MM,        ///< The MM (Multimedia) service
     Service_NFP,       ///< The NFP service
     Service_NIFM,      ///< The NIFM (Network interface) service
     Service_NS,        ///< The NS services

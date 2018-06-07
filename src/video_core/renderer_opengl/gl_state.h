@@ -85,6 +85,12 @@ public:
     struct {
         GLuint texture_2d; // GL_TEXTURE_BINDING_2D
         GLuint sampler;    // GL_SAMPLER_BINDING
+        struct {
+            GLint r; // GL_TEXTURE_SWIZZLE_R
+            GLint g; // GL_TEXTURE_SWIZZLE_G
+            GLint b; // GL_TEXTURE_SWIZZLE_B
+            GLint a; // GL_TEXTURE_SWIZZLE_A
+        } swizzle;
     } texture_units[32];
 
     struct {

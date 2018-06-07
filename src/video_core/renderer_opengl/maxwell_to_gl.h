@@ -180,4 +180,25 @@ inline GLenum BlendFunc(Maxwell::Blend::Factor factor) {
     return {};
 }
 
+inline GLenum SwizzleSource(Tegra::Texture::SwizzleSource source) {
+    switch (source) {
+    case Tegra::Texture::SwizzleSource::Zero:
+        return GL_ZERO;
+    case Tegra::Texture::SwizzleSource::R:
+        return GL_RED;
+    case Tegra::Texture::SwizzleSource::G:
+        return GL_GREEN;
+    case Tegra::Texture::SwizzleSource::B:
+        return GL_BLUE;
+    case Tegra::Texture::SwizzleSource::A:
+        return GL_ALPHA;
+    case Tegra::Texture::SwizzleSource::OneInt:
+    case Tegra::Texture::SwizzleSource::OneFloat:
+        return GL_ONE;
+    }
+    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented swizzle source={}", static_cast<u32>(source));
+    UNREACHABLE();
+    return {};
+}
+
 } // namespace MaxwellToGL

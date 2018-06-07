@@ -20,7 +20,6 @@ using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
 using Tegra::Shader::Sampler;
 using Tegra::Shader::SubOp;
-using Tegra::Shader::Uniform;
 
 constexpr u32 PROGRAM_END = MAX_PROGRAM_CODE_LENGTH;
 
@@ -365,11 +364,9 @@ public:
     }
 
     /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
-    std::string GetUniform(const Uniform& uniform, GLSLRegister::Type type) {
-        declr_const_buffers[uniform.index].MarkAsUsed(static_cast<unsigned>(uniform.index),
-                                                      static_cast<unsigned>(uniform.offset), stage);
-        std::string value =
-            'c' + std::to_string(uniform.index) + '[' + std::to_string(uniform.offset) + ']';
+    std::string GetUniform(u64 index, u64 offset, GLSLRegister::Type type) {
+        declr_const_buffers[index].MarkAsUsed(index, offset, stage);
+        std::string value = 'c' + std::to_string(index) + '[' + std::to_string(offset) + ']';
 
         if (type == GLSLRegister::Type::Float) {
             return value;
@@ -380,10 +377,19 @@ public:
         }
     }
 
-    /// Generates code representing a uniform (C buffer) register, interpreted as the type of the
-    /// destination register.
-    std::string GetUniform(const Uniform& uniform, const Register& dest_reg) {
-        return GetUniform(uniform, regs[dest_reg].GetActiveType());
+    std::string GetUniformIndirect(u64 index, s64 offset, const Register& index_reg,
+                                   GLSLRegister::Type type) {
+        declr_const_buffers[index].MarkAsUsedIndirect(index, stage);
+        std::string value = 'c' + std::to_string(index) + "[(floatBitsToInt(" +
+                            GetRegister(index_reg, 0) + ") + " + std::to_string(offset) + ") / 4]";
+
+        if (type == GLSLRegister::Type::Float) {
+            return value;
+        } else if (type == GLSLRegister::Type::Integer) {
+            return "floatBitsToInt(" + value + ')';
+        } else {
+            UNREACHABLE();
+        }
     }
 
     /// Add declarations for registers
@@ -425,6 +431,14 @@ public:
             ++const_buffer_layout;
         }
         declarations.AddNewLine();
+
+        // Append the sampler2D array for the used textures.
+        size_t num_samplers = GetSamplers().size();
+        if (num_samplers > 0) {
+            declarations.AddLine("uniform sampler2D " + SamplerEntry::GetArrayName(stage) + '[' +
+                                 std::to_string(num_samplers) + "];");
+            declarations.AddNewLine();
+        }
     }
 
     /// Returns a list of constant buffer declarations
@@ -433,6 +447,32 @@ public:
         std::copy_if(declr_const_buffers.begin(), declr_const_buffers.end(),
                      std::back_inserter(result), [](const auto& entry) { return entry.IsUsed(); });
         return result;
+    }
+
+    /// Returns a list of samplers used in the shader
+    std::vector<SamplerEntry> GetSamplers() const {
+        return used_samplers;
+    }
+
+    /// Returns the GLSL sampler used for the input shader sampler, and creates a new one if
+    /// necessary.
+    std::string AccessSampler(const Sampler& sampler) {
+        size_t offset = static_cast<size_t>(sampler.index.Value());
+
+        // If this sampler has already been used, return the existing mapping.
+        auto itr =
+            std::find_if(used_samplers.begin(), used_samplers.end(),
+                         [&](const SamplerEntry& entry) { return entry.GetOffset() == offset; });
+
+        if (itr != used_samplers.end()) {
+            return itr->GetName();
+        }
+
+        // Otherwise create a new mapping for this sampler
+        size_t next_index = used_samplers.size();
+        SamplerEntry entry{stage, offset, next_index};
+        used_samplers.emplace_back(entry);
+        return entry.GetName();
     }
 
 private:
@@ -544,6 +584,7 @@ private:
     std::set<Attribute::Index> declr_input_attribute;
     std::set<Attribute::Index> declr_output_attribute;
     std::array<ConstBufferEntry, Maxwell3D::Regs::MaxConstBuffers> declr_const_buffers;
+    std::vector<SamplerEntry> used_samplers;
     const Maxwell3D::Regs::ShaderStage& stage;
 };
 
@@ -563,7 +604,7 @@ public:
 
     /// Returns entries in the shader that are useful for external functions
     ShaderEntries GetEntries() const {
-        return {regs.GetConstBuffersDeclarations()};
+        return {regs.GetConstBuffersDeclarations(), regs.GetSamplers()};
     }
 
 private:
@@ -585,12 +626,8 @@ private:
     }
 
     /// Generates code representing a texture sampler.
-    std::string GetSampler(const Sampler& sampler) const {
-        // TODO(Subv): Support more than just texture sampler 0
-        ASSERT_MSG(sampler.index == Sampler::Index::Sampler_0, "unsupported");
-        const unsigned index{static_cast<unsigned>(sampler.index.Value()) -
-                             static_cast<unsigned>(Sampler::Index::Sampler_0)};
-        return "tex[" + std::to_string(index) + ']';
+    std::string GetSampler(const Sampler& sampler) {
+        return regs.AccessSampler(sampler);
     }
 
     /**
@@ -747,7 +784,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
@@ -850,8 +888,33 @@ private:
             }
             break;
         }
+        case OpCode::Type::Bfe: {
+            ASSERT_MSG(!instr.bfe.negate_b, "Unimplemented");
+
+            std::string op_a = instr.bfe.negate_a ? "-" : "";
+            op_a += regs.GetRegisterAsInteger(instr.gpr8);
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::BFE_IMM: {
+                std::string inner_shift =
+                    '(' + op_a + " << " + std::to_string(instr.bfe.GetLeftShiftValue()) + ')';
+                std::string outer_shift =
+                    '(' + inner_shift + " >> " +
+                    std::to_string(instr.bfe.GetLeftShiftValue() + instr.bfe.shift_position) + ')';
+
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, outer_shift, 1, 1);
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+
+            break;
+        }
         case OpCode::Type::Logic: {
-            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
 
             if (instr.alu.lop.invert_a)
                 op_a = "~(" + op_a + ')';
@@ -865,17 +928,17 @@ private:
 
                 switch (instr.alu.lop.operation) {
                 case Tegra::Shader::LogicOperation::And: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Or: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Xor: {
-                    regs.SetRegisterToInteger(instr.gpr0, false, 0,
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                               '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
                     break;
                 }
@@ -904,7 +967,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
                 }
             }
 
@@ -936,7 +1000,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsInteger(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
                 }
             }
 
@@ -953,7 +1018,8 @@ private:
 
             switch (opcode->GetId()) {
             case OpCode::Id::FFMA_CR: {
-                op_b += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                        GLSLRegister::Type::Float);
                 op_c += regs.GetRegisterAsFloat(instr.gpr39);
                 break;
             }
@@ -964,7 +1030,8 @@ private:
             }
             case OpCode::Id::FFMA_RC: {
                 op_b += regs.GetRegisterAsFloat(instr.gpr39);
-                op_c += regs.GetUniform(instr.uniform, instr.gpr0);
+                op_c += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                        GLSLRegister::Type::Float);
                 break;
             }
             case OpCode::Id::FFMA_IMM: {
@@ -1014,9 +1081,26 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
-                // TODO(Subv): Implement rounding operations.
-                ASSERT_MSG(instr.conversion.f2f.rounding == 0, "Unimplemented rounding operation");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
+
+                switch (instr.conversion.f2f.rounding) {
+                case Tegra::Shader::F2fRoundingOp::None:
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Floor:
+                    op_a = "floor(" + op_a + ')';
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Ceil:
+                    op_a = "ceil(" + op_a + ')';
+                    break;
+                case Tegra::Shader::F2fRoundingOp::Trunc:
+                    op_a = "trunc(" + op_a + ')';
+                    break;
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2f rounding mode {}",
+                                   static_cast<u32>(instr.conversion.f2f.rounding.Value()));
+                    UNREACHABLE();
+                    break;
+                }
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
@@ -1032,17 +1116,16 @@ private:
                     op_a = "abs(" + op_a + ')';
                 }
 
-                using Tegra::Shader::FloatRoundingOp;
                 switch (instr.conversion.f2i.rounding) {
-                case FloatRoundingOp::None:
+                case Tegra::Shader::F2iRoundingOp::None:
                     break;
-                case FloatRoundingOp::Floor:
+                case Tegra::Shader::F2iRoundingOp::Floor:
                     op_a = "floor(" + op_a + ')';
                     break;
-                case FloatRoundingOp::Ceil:
+                case Tegra::Shader::F2iRoundingOp::Ceil:
                     op_a = "ceil(" + op_a + ')';
                     break;
-                case FloatRoundingOp::Trunc:
+                case Tegra::Shader::F2iRoundingOp::Trunc:
                     op_a = "trunc(" + op_a + ')';
                     break;
                 default:
@@ -1070,23 +1153,47 @@ private:
             break;
         }
         case OpCode::Type::Memory: {
-            const Attribute::Index attribute = instr.attribute.fmt20.index;
-
             switch (opcode->GetId()) {
             case OpCode::Id::LD_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 regs.SetRegisterToInputAttibute(instr.gpr0, instr.attribute.fmt20.element,
-                                                attribute);
+                                                instr.attribute.fmt20.index);
+                break;
+            }
+            case OpCode::Id::LD_C: {
+                ASSERT_MSG(instr.ld_c.unknown == 0, "Unimplemented");
+
+                std::string op_a =
+                    regs.GetUniformIndirect(instr.cbuf36.index, instr.cbuf36.offset + 0, instr.gpr8,
+                                            GLSLRegister::Type::Float);
+                std::string op_b =
+                    regs.GetUniformIndirect(instr.cbuf36.index, instr.cbuf36.offset + 4, instr.gpr8,
+                                            GLSLRegister::Type::Float);
+
+                switch (instr.ld_c.type.Value()) {
+                case Tegra::Shader::UniformType::Single:
+                    regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                    break;
+
+                case Tegra::Shader::UniformType::Double:
+                    regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                    regs.SetRegisterToFloat(instr.gpr0.Value() + 1, 0, op_b, 1, 1);
+                    break;
+
+                default:
+                    NGLOG_CRITICAL(HW_GPU, "Unhandled type: {}",
+                                   static_cast<unsigned>(instr.ld_c.type.Value()));
+                    UNREACHABLE();
+                }
                 break;
             }
             case OpCode::Id::ST_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
-                regs.SetOutputAttributeToRegister(attribute, instr.attribute.fmt20.element,
-                                                  instr.gpr0);
+                regs.SetOutputAttributeToRegister(instr.attribute.fmt20.index,
+                                                  instr.attribute.fmt20.element, instr.gpr0);
                 break;
             }
             case OpCode::Id::TEX: {
-                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                 const std::string sampler = GetSampler(instr.sampler);
@@ -1099,7 +1206,7 @@ private:
                 const std::string texture = "texture(" + sampler + ", coords)";
 
                 size_t dest_elem{};
-                for (size_t elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
+                for (size_t elem = 0; elem < 4; ++elem) {
                     if (!instr.tex.IsComponentEnabled(elem)) {
                         // Skip disabled components
                         continue;
@@ -1112,7 +1219,6 @@ private:
                 break;
             }
             case OpCode::Id::TEXS: {
-                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
@@ -1175,7 +1281,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
@@ -1208,15 +1315,17 @@ private:
         }
         case OpCode::Type::IntegerSetPredicate: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.isetp.is_signed);
+            std::string op_b;
 
-            std::string op_b{};
-
-            ASSERT_MSG(!instr.is_b_imm, "ISETP_IMM not implemented");
-
-            if (instr.is_b_gpr) {
-                op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+            if (instr.is_b_imm) {
+                op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
             } else {
-                op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Integer);
+                if (instr.is_b_gpr) {
+                    op_b += regs.GetRegisterAsInteger(instr.gpr20, 0, instr.isetp.is_signed);
+                } else {
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Integer);
+                }
             }
 
             using Tegra::Shader::Pred;
@@ -1262,7 +1371,8 @@ private:
                 if (instr.is_b_gpr) {
                     op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.uniform, GLSLRegister::Type::Float);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
