@@ -553,32 +553,27 @@ static void HandleQuery() {
         SendReply(val.c_str());
     } else if (strncmp(query, "sThreadInfo", strlen("sThreadInfo")) == 0) {
         SendReply("l");
-    }
-    else if(strncmp(query, "Xfer:threads:read", strlen("Xfer:threads:read")) == 0)
-    {
+    } else if (strncmp(query, "Xfer:threads:read", strlen("Xfer:threads:read")) == 0) {
         std::string buffer;
         buffer += "l<?xml version=\"1.0\"?>";
         buffer += "<threads>";
-        for(int core = 0; core < Core::NUM_CPU_CORES; core++)
-        {
+        for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
             auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-            for(auto thread : threads)
-            {
-                //buffer += fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread 0x{:016x} (LWP {:x})"></thread>)*",
+            for (auto thread : threads) {
+                // buffer += fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread 0x{:016x}
+                // (LWP {:x})"></thread>)*",
                 //                      thread->GetThreadId(),
                 //                      core,
                 //                      reinterpret_cast<u64>(thread.get()),
                 //                      thread->GetThreadId());
-                buffer += fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread {:x}"></thread>)*",
-                                      thread->GetThreadId(),
-                                      core,
-                                      thread->GetThreadId());
+                buffer +=
+                    fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread {:x}"></thread>)*",
+                                thread->GetThreadId(), core, thread->GetThreadId());
             }
         }
         buffer += "</threads>";
         SendReply(buffer.c_str());
-    }
-    else {
+    } else {
         SendReply("");
     }
 }
@@ -640,6 +635,8 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
     }
 
     buffer += fmt::format("thread:{:x};", thread->GetThreadId());
+
+    // NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -862,7 +859,7 @@ static void WriteMemory() {
 
 void Break(bool is_memory_break) {
     if (!halt_loop) {
-        halt_loop = true;
+        // halt_loop = true;
         send_trap = true;
     }
 
@@ -1212,10 +1209,12 @@ void SetCpuStepFlag(bool is_step) {
 }
 
 void SendTrap(Kernel::Thread* thread, int trap) {
-    //NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(), thread_id, trap,
-    //            send_trap);
-    if (send_trap && (thread == current_thread)) {
+    // NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {} {}", send_trap, thread->GetThreadId(),
+    //            current_thread->GetThreadId(), halt_loop, step_loop);
+    if (send_trap && (!halt_loop || (thread == current_thread))) {
         send_trap = false;
+        halt_loop = true;
+        // NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
         SendSignal(thread, trap);
     }
 }
