@@ -1112,13 +1112,11 @@ private:
             break;
         }
         case OpCode::Type::Memory: {
-            const Attribute::Index attribute = instr.attribute.fmt20.index;
-
             switch (opcode->GetId()) {
             case OpCode::Id::LD_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
                 regs.SetRegisterToInputAttibute(instr.gpr0, instr.attribute.fmt20.element,
-                                                attribute);
+                                                instr.attribute.fmt20.index);
                 break;
             }
             case OpCode::Id::LD_C: {
@@ -1150,12 +1148,11 @@ private:
             }
             case OpCode::Id::ST_A: {
                 ASSERT_MSG(instr.attribute.fmt20.size == 0, "untested");
-                regs.SetOutputAttributeToRegister(attribute, instr.attribute.fmt20.element,
-                                                  instr.gpr0);
+                regs.SetOutputAttributeToRegister(instr.attribute.fmt20.index,
+                                                  instr.attribute.fmt20.element, instr.gpr0);
                 break;
             }
             case OpCode::Id::TEX: {
-                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                 const std::string sampler = GetSampler(instr.sampler);
@@ -1168,7 +1165,7 @@ private:
                 const std::string texture = "texture(" + sampler + ", coords)";
 
                 size_t dest_elem{};
-                for (size_t elem = 0; elem < instr.attribute.fmt20.size; ++elem) {
+                for (size_t elem = 0; elem < 4; ++elem) {
                     if (!instr.tex.IsComponentEnabled(elem)) {
                         // Skip disabled components
                         continue;
@@ -1181,7 +1178,6 @@ private:
                 break;
             }
             case OpCode::Id::TEXS: {
-                ASSERT_MSG(instr.attribute.fmt20.size == 4, "untested");
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);

@@ -390,6 +390,9 @@ class OpCode {
 public:
     enum class Id {
         KIL,
+        BFE_C,
+        BFE_R,
+        BFE_IMM,
         BRA,
         LD_A,
         LD_C,
@@ -444,6 +447,9 @@ public:
         FMNMX_C,
         FMNMX_R,
         FMNMX_IMM,
+        IMNMX_C,
+        IMNMX_R,
+        IMNMX_IMM,
         FSETP_C, // Set Predicate
         FSETP_R,
         FSETP_IMM,
@@ -454,6 +460,10 @@ public:
         ISETP_IMM,
         ISETP_R,
         PSETP,
+        XMAD_IMM,
+        XMAD_CR,
+        XMAD_RC,
+        XMAD_RR,
     };
 
     enum class Type {
@@ -565,6 +575,9 @@ private:
         std::vector<Matcher> table = {
 #define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
+            INST("0100110000000---", Id::BFE_C, Type::Flow, "BFE_C"),
+            INST("0101110000000---", Id::BFE_R, Type::Flow, "BFE_R"),
+            INST("0011100-00000---", Id::BFE_IMM, Type::Flow, "BFE_IMM"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
@@ -606,6 +619,9 @@ private:
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
+            INST("0100110000100---", Id::IMNMX_C, Type::Arithmetic, "FMNMX_IMM"),
+            INST("0101110000100---", Id::IMNMX_R, Type::Arithmetic, "FMNMX_IMM"),
+            INST("0011100-00100---", Id::IMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
             INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
@@ -629,6 +645,10 @@ private:
             INST("010110110110----", Id::ISETP_R, Type::IntegerSetPredicate, "ISETP_R"),
             INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerSetPredicate, "ISETP_IMM"),
             INST("0101000010010---", Id::PSETP, Type::PredicateSetPredicate, "PSETP"),
+            INST("0011011-00------", Id::XMAD_IMM, Type::Arithmetic, "XMAD_IMM"),
+            INST("0100111---------", Id::XMAD_CR, Type::Arithmetic, "XMAD_CR"),
+            INST("010100010-------", Id::XMAD_RC, Type::Arithmetic, "XMAD_RC"),
+            INST("0101101100------", Id::XMAD_RR, Type::Arithmetic, "XMAD_RR"),
         };
 #undef INST
         std::stable_sort(table.begin(), table.end(), [](const auto& a, const auto& b) {
