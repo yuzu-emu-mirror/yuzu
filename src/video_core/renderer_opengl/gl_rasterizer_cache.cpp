@@ -1052,16 +1052,19 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
     params.UpdateParams();
 
-    if (config.tic.Width() % 8 != 0 || config.tic.Height() % 8 != 0 ||
+    if (params.GetActualWidth() % 8 != 0 || params.GetActualHeight() % 8 != 0 ||
         params.stride != params.width) {
         Surface src_surface;
         MathUtil::Rectangle<u32> rect;
         std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);
 
+        rect = rect.Scale(params.GetCompresssionFactor());
+
         params.res_scale = src_surface->res_scale;
         Surface tmp_surface = CreateSurface(params);
-        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle,
-                     tmp_surface->GetScaledRect(),
+
+        auto dst_rect = tmp_surface->GetScaledRect().Scale(params.GetCompresssionFactor());
+        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle, dst_rect,
                      SurfaceParams::GetFormatType(params.pixel_format), read_framebuffer.handle,
                      draw_framebuffer.handle);
 
