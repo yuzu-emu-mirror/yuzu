@@ -214,13 +214,14 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
             continue;
         }
 
+        GLShader::MaxwellUniformData ubo{};
+        ubo.SetFromRegs(gpu.state.shader_stages[stage]);
+        std::memcpy(buffer_ptr, &ubo, sizeof(ubo));
+
         // Upload uniform data as one UBO per stage
         const GLintptr ubo_offset = buffer_offset;
         copy_buffer(uniform_buffers[stage].handle, ubo_offset,
                     sizeof(GLShader::MaxwellUniformData));
-        GLShader::MaxwellUniformData* ub_ptr =
-            reinterpret_cast<GLShader::MaxwellUniformData*>(buffer_ptr);
-        ub_ptr->SetFromRegs(gpu.state.shader_stages[stage]);
 
         buffer_ptr += sizeof(GLShader::MaxwellUniformData);
         buffer_offset += sizeof(GLShader::MaxwellUniformData);
