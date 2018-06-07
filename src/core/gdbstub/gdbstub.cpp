@@ -144,7 +144,6 @@ static u32 latest_signal = 0;
 static bool memory_break = false;
 
 static Kernel::Thread* current_thread = nullptr;
-static int thread_id = -1;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -177,8 +176,7 @@ static Kernel::Thread* FindThreadById(int id) {
         auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
         for (auto thread : threads) {
             if (thread->GetThreadId() == id) {
-                current_thread = thread.get();
-                return current_thread;
+                return thread.get();
             }
         }
     }
@@ -535,7 +533,7 @@ static void HandleQuery() {
         SendReply("T0");
     } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
         // PacketSize needs to be large enough for target xml
-        SendReply("PacketSize=2000;qXfer:features:read+");
+        SendReply("PacketSize=2000;qXfer:features:read+;qXfer:threads:read+");
     } else if (strncmp(query, "Xfer:features:read:target.xml:",
                        strlen("Xfer:features:read:target.xml:")) == 0) {
         SendReply(target_xml);
@@ -555,7 +553,32 @@ static void HandleQuery() {
         SendReply(val.c_str());
     } else if (strncmp(query, "sThreadInfo", strlen("sThreadInfo")) == 0) {
         SendReply("l");
-    } else {
+    }
+    else if(strncmp(query, "Xfer:threads:read", strlen("Xfer:threads:read")) == 0)
+    {
+        std::string buffer;
+        buffer += "l<?xml version=\"1.0\"?>";
+        buffer += "<threads>";
+        for(int core = 0; core < Core::NUM_CPU_CORES; core++)
+        {
+            auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+            for(auto thread : threads)
+            {
+                //buffer += fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread 0x{:016x} (LWP {:x})"></thread>)*",
+                //                      thread->GetThreadId(),
+                //                      core,
+                //                      reinterpret_cast<u64>(thread.get()),
+                //                      thread->GetThreadId());
+                buffer += fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread {:x}"></thread>)*",
+                                      thread->GetThreadId(),
+                                      core,
+                                      thread->GetThreadId());
+            }
+        }
+        buffer += "</threads>";
+        SendReply(buffer.c_str());
+    }
+    else {
         SendReply("");
     }
 }
@@ -563,7 +586,7 @@ static void HandleQuery() {
 /// Handle set thread command from gdb client.
 static void HandleSetThread() {
     if (memcmp(command_buffer, "Hc", 2) == 0 || memcmp(command_buffer, "Hg", 2) == 0) {
-        thread_id = -1;
+        int thread_id = -1;
         if (command_buffer[2] != '-') {
             thread_id = static_cast<int>(HexToInt(command_buffer + 2, command_length - 2));
         }
