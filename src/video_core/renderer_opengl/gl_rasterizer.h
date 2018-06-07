@@ -80,9 +80,6 @@ private:
     void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
                                  bool has_stencil);
 
-    /// Binds the required textures to OpenGL before drawing a batch.
-    void BindTextures();
-
     /*
      * Configures the current constbuffers to use for the draw command.
      * @param stage The shader stage to configure buffers for.
@@ -94,6 +91,17 @@ private:
     u32 SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, GLuint program,
                           u32 current_bindpoint,
                           const std::vector<GLShader::ConstBufferEntry>& entries);
+
+    /*
+     * Configures the current textures to use for the draw command.
+     * @param stage The shader stage to configure textures for.
+     * @param program The OpenGL program object that contains the specified stage.
+     * @param current_unit The offset at which to start counting unused texture units.
+     * @param entries Vector describing the textures that are actually used in the guest shader.
+     * @returns The next available bindpoint for use in the next shader stage.
+     */
+    u32 SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, GLuint program,
+                      u32 current_unit, const std::vector<GLShader::SamplerEntry>& entries);
 
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect, u16 res_scale);

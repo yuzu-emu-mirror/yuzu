@@ -50,6 +50,10 @@ OpenGLState::OpenGLState() {
     for (auto& texture_unit : texture_units) {
         texture_unit.texture_2d = 0;
         texture_unit.sampler = 0;
+        texture_unit.swizzle.r = GL_RED;
+        texture_unit.swizzle.g = GL_GREEN;
+        texture_unit.swizzle.b = GL_BLUE;
+        texture_unit.swizzle.a = GL_ALPHA;
     }
 
     lighting_lut.texture_buffer = 0;
@@ -199,6 +203,15 @@ void OpenGLState::Apply() const {
         }
         if (texture_units[i].sampler != cur_state.texture_units[i].sampler) {
             glBindSampler(i, texture_units[i].sampler);
+        }
+        // Update the texture swizzle
+        if (texture_units[i].swizzle.r != cur_state.texture_units[i].swizzle.r ||
+            texture_units[i].swizzle.g != cur_state.texture_units[i].swizzle.g ||
+            texture_units[i].swizzle.b != cur_state.texture_units[i].swizzle.b ||
+            texture_units[i].swizzle.a != cur_state.texture_units[i].swizzle.a) {
+            std::array<GLint, 4> mask = {texture_units[i].swizzle.r, texture_units[i].swizzle.g,
+                                         texture_units[i].swizzle.b, texture_units[i].swizzle.a};
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask.data());
         }
     }
 
