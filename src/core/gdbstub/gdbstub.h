@@ -80,10 +80,10 @@ BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, GDBStub::BreakpointTy
  */
 bool CheckBreakpoint(PAddr addr, GDBStub::BreakpointType type);
 
-// If set to true, the CPU will halt at the beginning of the next CPU loop.
+/// If set to true, the CPU will halt at the beginning of the next CPU loop.
 bool GetCpuHaltFlag();
 
-// If set to true and the CPU is halted, the CPU will step one instruction.
+/// If set to true and the CPU is halted, the CPU will step one instruction.
 bool GetCpuStepFlag();
 
 /**
@@ -100,4 +100,7 @@ void SetCpuStepFlag(bool is_step);
  * @param trap Trap no.
  */
 void SendTrap(Kernel::Thread* thread, int trap);
+
+/// Flush all pending trap signals gathered by SendTrap above.
+void FlushTraps();
 } // namespace GDBStub

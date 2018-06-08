@@ -143,7 +143,8 @@ static u32 command_length;
 static u32 latest_signal = 0;
 static bool memory_break = false;
 
-static Kernel::Thread* current_thread = nullptr;
+static Kernel::Thread* current_thread_c = nullptr;
+static Kernel::Thread* current_thread_g = nullptr;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -582,6 +583,7 @@ static void HandleQuery() {
 static void HandleSetThread() {
     if (memcmp(command_buffer, "Hc", 2) == 0 || memcmp(command_buffer, "Hg", 2) == 0) {
         int thread_id = -1;
+        static Kernel::Thread* current_thread;
         if (command_buffer[2] != '-') {
             thread_id = static_cast<int>(HexToInt(command_buffer + 2, command_length - 2));
         }
@@ -593,6 +595,14 @@ static void HandleSetThread() {
             current_thread = FindThreadById(thread_id);
         }
         if (current_thread) {
+            if(command_buffer[1] == 'c')
+            {
+                current_thread_c = current_thread;
+            }
+            else
+            {
+                current_thread_g = current_thread;
+            }
             SendReply("OK");
             return;
         }
@@ -627,16 +637,16 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
 
     std::string buffer;
     if (full) {
-        buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x};", latest_signal, PC_REGISTER,
+        buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x}", latest_signal, PC_REGISTER,
                              Common::swap64(RegRead(PC_REGISTER, thread)), SP_REGISTER,
                              Common::swap64(RegRead(SP_REGISTER, thread)));
     } else {
-        buffer = fmt::format("T{:02x};", latest_signal);
+        buffer = fmt::format("T{:02x}", latest_signal);
     }
 
-    buffer += fmt::format("thread:{:x};", thread->GetThreadId());
+    buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
 
-    NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
+    //NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -653,7 +663,7 @@ static void ReadCommand() {
     } else if (c == 0x03) {
         NGLOG_INFO(Debug_GDBStub, "gdb: found break command");
         halt_loop = true;
-        SendSignal(current_thread, SIGTRAP);
+        SendSignal(current_thread_c, SIGTRAP);
         return;
     } else if (c != GDB_STUB_START) {
         NGLOG_DEBUG(Debug_GDBStub, "gdb: read invalid byte {:02X}", c);
@@ -724,11 +734,11 @@ static void ReadRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        LongToGdbHex(reply, RegRead(id, current_thread));
+        LongToGdbHex(reply, RegRead(id, current_thread_g));
     } else if (id == PC_REGISTER) {
-        LongToGdbHex(reply, RegRead(id, current_thread));
+        LongToGdbHex(reply, RegRead(id, current_thread_g));
     } else if (id == CPSR_REGISTER) {
-        IntToGdbHex(reply, (u32)RegRead(id, current_thread));
+        IntToGdbHex(reply, (u32)RegRead(id, current_thread_g));
     } else {
         return SendReply("E01");
     }
@@ -744,16 +754,16 @@ static void ReadRegisters() {
     u8* bufptr = buffer;
 
     for (int reg = 0; reg <= SP_REGISTER; reg++) {
-        LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
+        LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread_g));
     }
 
     bufptr += (32 * 16);
 
-    LongToGdbHex(bufptr, RegRead(PC_REGISTER, current_thread));
+    LongToGdbHex(bufptr, RegRead(PC_REGISTER, current_thread_g));
 
     bufptr += 16;
 
-    IntToGdbHex(bufptr, (u32)RegRead(CPSR_REGISTER, current_thread));
+    IntToGdbHex(bufptr, (u32)RegRead(CPSR_REGISTER, current_thread_g));
 
     bufptr += 8;
 
@@ -772,11 +782,11 @@ static void WriteRegister() {
     }
 
     if (id <= SP_REGISTER) {
-        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread_g);
     } else if (id == PC_REGISTER) {
-        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread_g);
     } else if (id == CPSR_REGISTER) {
-        RegWrite(id, GdbHexToInt(buffer_ptr), current_thread);
+        RegWrite(id, GdbHexToInt(buffer_ptr), current_thread_g);
     } else {
         return SendReply("E01");
     }
@@ -793,11 +803,11 @@ static void WriteRegisters() {
 
     for (int i = 0, reg = 0; reg <= CPSR_REGISTER; i++, reg++) {
         if (reg <= SP_REGISTER) {
-            RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
+            RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread_g);
         } else if (reg == PC_REGISTER) {
-            RegWrite(PC_REGISTER, GdbHexToLong(buffer_ptr + i * 16), current_thread);
+            RegWrite(PC_REGISTER, GdbHexToLong(buffer_ptr + i * 16), current_thread_g);
         } else if (reg == CPSR_REGISTER) {
-            RegWrite(CPSR_REGISTER, GdbHexToInt(buffer_ptr + i * 16), current_thread);
+            RegWrite(CPSR_REGISTER, GdbHexToInt(buffer_ptr + i * 16), current_thread_g);
         } else {
             UNIMPLEMENTED();
         }
@@ -1023,7 +1033,11 @@ void HandlePacket() {
         HandleSetThread();
         break;
     case '?':
-        SendSignal(current_thread, latest_signal);
+        if(!current_thread_c)
+        {
+            current_thread_c = current_thread_g;
+        }
+        SendSignal(current_thread_c, latest_signal);
         break;
     case 'k':
         Shutdown();
@@ -1208,16 +1222,37 @@ void SetCpuStepFlag(bool is_step) {
     step_loop = is_step;
 }
 
+struct Trap
+{
+    Kernel::Thread* thread;
+    int trap;
+};
+
+static std::vector<Trap> traps;
+
 void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
-        NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
-                    current_thread->GetThreadId(), halt_loop, step_loop);
-        if (!halt_loop || (thread == current_thread)) {
-            NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
-            halt_loop = true;
-            send_trap = false;
-            SendSignal(thread, trap);
+        traps.push_back(Trap{thread, trap});
+    }
+}
+
+void FlushTraps()
+{
+    if(traps.size())
+    {
+        halt_loop = true;
+        send_trap = false;
+        for(auto& trap : traps)
+        {
+            if(trap.thread == current_thread_c)
+            {
+                SendSignal(trap.thread, trap.trap);
+                traps.resize(0);
+                return;
+            }
         }
+        SendSignal(traps[0].thread, traps[0].trap);
+        traps.resize(0);
     }
 }
 }; // namespace GDBStub
