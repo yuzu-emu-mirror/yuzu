@@ -68,7 +68,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    for (active_core = 0; active_core < NUM_CPU_CORES; ++active_core) { 
+    for (active_core = 4; active_core < NUM_CPU_CORES; ++active_core) { 
         cpu_cores[active_core]->RunLoop(tight_loop);
         if (Settings::values.use_multi_core) {
             // Cores 1-3 are run on other threads in this mode
