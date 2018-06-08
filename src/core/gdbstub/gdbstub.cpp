@@ -636,7 +636,7 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
 
     buffer += fmt::format("thread:{:x};", thread->GetThreadId());
 
-    // NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
+    NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -1209,13 +1209,15 @@ void SetCpuStepFlag(bool is_step) {
 }
 
 void SendTrap(Kernel::Thread* thread, int trap) {
-    // NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {} {}", send_trap, thread->GetThreadId(),
-    //            current_thread->GetThreadId(), halt_loop, step_loop);
-    if (send_trap && (!halt_loop || (thread == current_thread))) {
-        send_trap = false;
-        halt_loop = true;
-        // NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
-        SendSignal(thread, trap);
+    if (send_trap) {
+        NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
+                    current_thread->GetThreadId(), halt_loop, step_loop);
+        if (!halt_loop || (thread == current_thread)) {
+            NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
+            halt_loop = true;
+            send_trap = false;
+            SendSignal(thread, trap);
+        }
     }
 }
 }; // namespace GDBStub
