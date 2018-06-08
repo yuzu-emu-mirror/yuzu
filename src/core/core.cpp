@@ -51,7 +51,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
 
     // Update thread_to_cpu in case Core 0 is run from a different host thread
-    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
+    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[4];
 
     if (GDBStub::IsServerEnabled()) {
         GDBStub::HandlePacket();
