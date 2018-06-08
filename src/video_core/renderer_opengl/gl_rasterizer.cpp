@@ -218,6 +218,9 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
         ubo.SetFromRegs(gpu.state.shader_stages[stage]);
         std::memcpy(buffer_ptr, &ubo, sizeof(ubo));
 
+        // Flush the buffer so that the GPU can see the data we just wrote.
+        glFlushMappedBufferRange(GL_ARRAY_BUFFER, buffer_offset, sizeof(ubo));
+
         // Upload uniform data as one UBO per stage
         const GLintptr ubo_offset = buffer_offset;
         copy_buffer(uniform_buffers[stage].handle, ubo_offset,
