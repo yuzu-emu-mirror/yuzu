@@ -349,6 +349,9 @@ void RasterizerOpenGL::DrawArrays() {
     // Sync the viewport
     SyncViewport(surfaces_rect, res_scale);
 
+    // Sync the blend state registers
+    SyncBlendState();
+
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
 
@@ -735,14 +738,21 @@ void RasterizerOpenGL::SyncDepthOffset() {
     UNREACHABLE();
 }
 
-void RasterizerOpenGL::SyncBlendEnabled() {
-    UNREACHABLE();
-}
+void RasterizerOpenGL::SyncBlendState() {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    ASSERT_MSG(regs.independent_blend_enable == 1, "Only independent blending is implemented");
 
-void RasterizerOpenGL::SyncBlendFuncs() {
-    UNREACHABLE();
-}
+    // TODO(Subv): Support more than just render target 0.
+    state.blend.enabled = regs.blend.enable[0] != 0;
 
-void RasterizerOpenGL::SyncBlendColor() {
-    UNREACHABLE();
+    if (!state.blend.enabled)
+        return;
+
+    ASSERT_MSG(!regs.independent_blend[0].separate_alpha, "Unimplemented");
+    state.blend.rgb_equation = MaxwellToGL::BlendEquation(regs.independent_blend[0].equation_rgb);
+    state.blend.src_rgb_func = MaxwellToGL::BlendFunc(regs.independent_blend[0].factor_source_rgb);
+    state.blend.dst_rgb_func = MaxwellToGL::BlendFunc(regs.independent_blend[0].factor_dest_rgb);
+    state.blend.a_equation = MaxwellToGL::BlendEquation(regs.independent_blend[0].equation_a);
+    state.blend.src_a_func = MaxwellToGL::BlendFunc(regs.independent_blend[0].factor_source_a);
+    state.blend.dst_a_func = MaxwellToGL::BlendFunc(regs.independent_blend[0].factor_dest_a);
 }

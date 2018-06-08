@@ -121,14 +121,8 @@ private:
     /// Syncs the depth offset to match the guest state
     void SyncDepthOffset();
 
-    /// Syncs the blend enabled status to match the guest state
-    void SyncBlendEnabled();
-
-    /// Syncs the blend functions to match the guest state
-    void SyncBlendFuncs();
-
-    /// Syncs the blend color to match the guest state
-    void SyncBlendColor();
+    /// Syncs the blend state to match the guest state
+    void SyncBlendState();
 
     bool has_ARB_buffer_storage;
     bool has_ARB_direct_state_access;
