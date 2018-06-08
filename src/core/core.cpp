@@ -44,14 +44,14 @@ Cpu& System::CurrentCpuCore() {
     }
 
     // Otherwise, use single-threaded mode active_core variable
-    return *cpu_cores[active_core];
+     return *cpu_cores[active_core = 4]; 
 }
 
 System::ResultStatus System::RunLoop(bool tight_loop) {
     status = ResultStatus::Success;
 
     // Update thread_to_cpu in case Core 0 is run from a different host thread
-    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0];
+    thread_to_cpu[std::this_thread::get_id()] = cpu_cores[4];
 
     if (GDBStub::IsServerEnabled()) {
         GDBStub::HandlePacket();
@@ -68,7 +68,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    for (active_core = 0; active_core < NUM_CPU_CORES; ++active_core) {
+    for (active_core = 4; active_core < NUM_CPU_CORES; ++active_core) { 
         cpu_cores[active_core]->RunLoop(tight_loop);
         if (Settings::values.use_multi_core) {
             // Cores 1-3 are run on other threads in this mode
