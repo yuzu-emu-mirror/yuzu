@@ -318,6 +318,7 @@ public:
             Equation equation_a;
             Factor factor_source_a;
             Factor factor_dest_a;
+            INSERT_PADDING_WORDS(1);
         };
 
         union {
@@ -432,7 +433,27 @@ public:
                     };
                 } rt_control;
 
-                INSERT_PADDING_WORDS(0xCF);
+                INSERT_PADDING_WORDS(0x31);
+
+                u32 independent_blend_enable;
+
+                INSERT_PADDING_WORDS(0x15);
+
+                struct {
+                    u32 separate_alpha;
+                    Blend::Equation equation_rgb;
+                    Blend::Factor factor_source_rgb;
+                    Blend::Factor factor_dest_rgb;
+                    Blend::Equation equation_a;
+                    Blend::Factor factor_source_a;
+                    INSERT_PADDING_WORDS(1);
+                    Blend::Factor factor_dest_a;
+
+                    u32 enable_common;
+                    u32 enable[NumRenderTargets];
+                } blend;
+
+                INSERT_PADDING_WORDS(0x77);
 
                 struct {
                     u32 tsc_address_high;
@@ -557,9 +578,7 @@ public:
 
                 } vertex_array[NumVertexArrays];
 
-                Blend blend;
-
-                INSERT_PADDING_WORDS(0x39);
+                Blend independent_blend[NumRenderTargets];
 
                 struct {
                     u32 limit_high;
@@ -722,6 +741,8 @@ ASSERT_REG_POSITION(vertex_buffer, 0x35D);
 ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
 ASSERT_REG_POSITION(rt_control, 0x487);
+ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
+ASSERT_REG_POSITION(blend, 0x4CF);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(code_address, 0x582);
@@ -729,7 +750,7 @@ ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
-ASSERT_REG_POSITION(blend, 0x780);
+ASSERT_REG_POSITION(independent_blend, 0x780);
 ASSERT_REG_POSITION(vertex_array_limit[0], 0x7C0);
 ASSERT_REG_POSITION(shader_config[0], 0x800);
 ASSERT_REG_POSITION(const_buffer, 0x8E0);
