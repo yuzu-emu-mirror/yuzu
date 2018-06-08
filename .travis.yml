@@ -42,3 +42,7 @@ notifications:
   webhooks:
     urls:
       - https://api.yuzu-emu.org/code/travis/notify
+
+cache:
+  directories:
+    - $HOME/.ccache
