@@ -414,6 +414,7 @@ class OpCode {
 public:
     enum class Id {
         KIL,
+        SSY,
         BFE_C,
         BFE_R,
         BFE_IMM,
@@ -603,6 +604,7 @@ private:
         std::vector<Matcher> table = {
 #define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
+            INST("111000101001----", Id::SSY, Type::Flow, "SSY"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),

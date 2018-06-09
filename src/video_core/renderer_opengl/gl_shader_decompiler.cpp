@@ -1478,6 +1478,11 @@ private:
                 regs.SetRegisterToInputAttibute(instr.gpr0, attribute.element, attribute.index);
                 break;
             }
+            case OpCode::Id::SSY: {
+                // The SSY opcode tells the GPU where to re-converge divergent execution paths, we
+                // can ignore this when generating GLSL code.
+                break;
+            }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode->GetName());
                 UNREACHABLE();
