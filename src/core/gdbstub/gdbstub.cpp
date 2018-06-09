@@ -61,7 +61,7 @@ const u32 SIGTERM = 15;
 const u32 MSG_WAITALL = 8;
 #endif
 
-const u32 X30_REGISTER = 30;
+const u32 LR_REGISTER = 30;
 const u32 SP_REGISTER = 31;
 const u32 PC_REGISTER = 32;
 const u32 CPSR_REGISTER = 33;
@@ -632,22 +632,21 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
 
     latest_signal = signal;
 
-    if(!thread)
-    {
+    if (!thread) {
         full = false;
     }
 
     std::string buffer;
     if (full) {
-        buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x}", latest_signal, PC_REGISTER,
-                             Common::swap64(RegRead(PC_REGISTER, thread)), SP_REGISTER,
-                             Common::swap64(RegRead(SP_REGISTER, thread)));
+        buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x};{:02x}:{:016x}", latest_signal,
+                             PC_REGISTER, Common::swap64(RegRead(PC_REGISTER, thread)), SP_REGISTER,
+                             Common::swap64(RegRead(SP_REGISTER, thread)), LR_REGISTER,
+                             Common::swap64(RegRead(LR_REGISTER, thread)));
     } else {
         buffer = fmt::format("T{:02x}", latest_signal);
     }
 
-    if(thread)
-    {
+    if (thread) {
         buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
     }
 
