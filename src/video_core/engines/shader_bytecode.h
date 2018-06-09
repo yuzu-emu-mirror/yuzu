@@ -330,6 +330,15 @@ union Instruction {
     } fset;
 
     union {
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<44, 1, u64> bf;
+        BitField<45, 2, PredOperation> op;
+        BitField<48, 1, u64> is_signed;
+        BitField<49, 3, PredCondition> cond;
+    } iset;
+
+    union {
         BitField<10, 2, Register::Size> size;
         BitField<12, 1, u64> is_output_signed;
         BitField<13, 1, u64> is_input_signed;
