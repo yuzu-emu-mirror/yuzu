@@ -260,6 +260,10 @@ union Instruction {
     } alu;
 
     union {
+        BitField<48, 1, u64> is_signed;
+    } shift;
+
+    union {
         BitField<39, 5, u64> shift_amount;
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
