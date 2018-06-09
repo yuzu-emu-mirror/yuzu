@@ -76,11 +76,6 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    if(GDBStub::IsServerEnabled())
-    {
-        GDBStub::FlushTraps();
-    }
-
     return status;
 }
 
