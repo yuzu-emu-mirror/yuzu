@@ -21,6 +21,8 @@ std::string ToUpper(std::string str);
 
 std::string ArrayToString(const u8* data, size_t size, int line_len = 20, bool spaces = true);
 
+std::string StringFromBuffer(const std::vector<u8>& data);
+
 std::string StripSpaces(const std::string& s);
 std::string StripQuotes(const std::string& s);
 

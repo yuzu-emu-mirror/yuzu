@@ -1033,8 +1033,11 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
     params.addr = config.tic.Address();
     params.is_tiled = config.tic.IsTiled();
     params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
-    params.width = config.tic.Width() / params.GetCompresssionFactor();
-    params.height = config.tic.Height() / params.GetCompresssionFactor();
+
+    params.width = Common::AlignUp(config.tic.Width(), params.GetCompresssionFactor()) /
+                   params.GetCompresssionFactor();
+    params.height = Common::AlignUp(config.tic.Height(), params.GetCompresssionFactor()) /
+                    params.GetCompresssionFactor();
 
     // TODO(Subv): Different types per component are not supported.
     ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
@@ -1045,6 +1048,8 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
     if (config.tic.IsTiled()) {
         params.block_height = config.tic.BlockHeight();
+        params.width = Common::AlignUp(params.width, params.block_height);
+        params.height = Common::AlignUp(params.height, params.block_height);
     } else {
         // Use the texture-provided stride value if the texture isn't tiled.
         params.stride = static_cast<u32>(params.PixelsInBytes(config.tic.Pitch()));

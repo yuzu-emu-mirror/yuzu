@@ -64,6 +64,10 @@ std::string ArrayToString(const u8* data, size_t size, int line_len, bool spaces
     return oss.str();
 }
 
+std::string StringFromBuffer(const std::vector<u8>& data) {
+    return std::string(data.begin(), std::find(data.begin(), data.end(), '\0'));
+}
+
 // Turns "  hej " into "hej". Also handles tabs.
 std::string StripSpaces(const std::string& str) {
     const size_t s = str.find_first_not_of(" \t\r\n");

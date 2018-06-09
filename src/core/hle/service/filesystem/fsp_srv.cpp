@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include "common/logging/log.h"
+#include "common/string_util.h"
 #include "core/core.h"
 #include "core/file_sys/directory.h"
 #include "core/file_sys/filesystem.h"
@@ -258,9 +259,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         u64 mode = rp.Pop<u64>();
         u32 size = rp.Pop<u32>();
@@ -275,9 +274,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         NGLOG_DEBUG(Service_FS, "called file {}", name);
 
@@ -289,9 +286,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         NGLOG_DEBUG(Service_FS, "called directory {}", name);
 
@@ -305,13 +300,11 @@ public:
         std::vector<u8> buffer;
         buffer.resize(ctx.BufferDescriptorX()[0].Size());
         Memory::ReadBlock(ctx.BufferDescriptorX()[0].Address(), buffer.data(), buffer.size());
-        auto end = std::find(buffer.begin(), buffer.end(), '\0');
-        std::string src_name(buffer.begin(), end);
+        std::string src_name = Common::StringFromBuffer(buffer);
 
         buffer.resize(ctx.BufferDescriptorX()[1].Size());
         Memory::ReadBlock(ctx.BufferDescriptorX()[1].Address(), buffer.data(), buffer.size());
-        end = std::find(buffer.begin(), buffer.end(), '\0');
-        std::string dst_name(buffer.begin(), end);
+        std::string dst_name = Common::StringFromBuffer(buffer);
 
         NGLOG_DEBUG(Service_FS, "called file '{}' to file '{}'", src_name, dst_name);
 
@@ -323,9 +316,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         auto mode = static_cast<FileSys::Mode>(rp.Pop<u32>());
 
@@ -349,9 +340,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         // TODO(Subv): Implement this filter.
         u32 filter_flags = rp.Pop<u32>();
@@ -376,9 +365,7 @@ public:
         IPC::RequestParser rp{ctx};
 
         auto file_buffer = ctx.ReadBuffer();
-        auto end = std::find(file_buffer.begin(), file_buffer.end(), '\0');
-
-        std::string name(file_buffer.begin(), end);
+        std::string name = Common::StringFromBuffer(file_buffer);
 
         NGLOG_DEBUG(Service_FS, "called file {}", name);
 

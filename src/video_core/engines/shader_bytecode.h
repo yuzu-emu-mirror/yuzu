@@ -213,6 +213,7 @@ union Instruction {
     BitField<28, 8, Register> gpr28;
     BitField<39, 8, Register> gpr39;
     BitField<48, 16, u64> opcode;
+    BitField<50, 1, u64> saturate_a;
 
     union {
         BitField<20, 19, u64> imm20_19;
@@ -260,10 +261,14 @@ union Instruction {
     } alu;
 
     union {
+        BitField<48, 1, u64> is_signed;
+    } shift;
+
+    union {
         BitField<39, 5, u64> shift_amount;
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
-    } iscadd;
+    } alu_integer;
 
     union {
         BitField<20, 8, u64> shift_position;
@@ -331,7 +336,6 @@ union Instruction {
         BitField<41, 2, u64> selector;
         BitField<45, 1, u64> negate_a;
         BitField<49, 1, u64> abs_a;
-        BitField<50, 1, u64> saturate_a;
 
         union {
             BitField<39, 2, F2iRoundingOp> rounding;
@@ -410,6 +414,7 @@ class OpCode {
 public:
     enum class Id {
         KIL,
+        SSY,
         BFE_C,
         BFE_R,
         BFE_IMM,
@@ -434,6 +439,9 @@ public:
         FMUL_R,
         FMUL_IMM,
         FMUL32_IMM,
+        IADD_C,
+        IADD_R,
+        IADD_IMM,
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
@@ -489,10 +497,10 @@ public:
     enum class Type {
         Trivial,
         Arithmetic,
+        ArithmeticInteger,
         Bfe,
         Logic,
         Shift,
-        ScaledAdd,
         Ffma,
         Flow,
         Memory,
@@ -596,6 +604,7 @@ private:
         std::vector<Matcher> table = {
 #define INST(bitstring, op, type, name) Detail::GetMatcher(bitstring, op, type, name)
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
+            INST("111000101001----", Id::SSY, Type::Flow, "SSY"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
@@ -617,9 +626,12 @@ private:
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
             INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
-            INST("0100110000011---", Id::ISCADD_C, Type::ScaledAdd, "ISCADD_C"),
-            INST("0101110000011---", Id::ISCADD_R, Type::ScaledAdd, "ISCADD_R"),
-            INST("0011100-00011---", Id::ISCADD_IMM, Type::ScaledAdd, "ISCADD_IMM"),
+            INST("0100110000010---", Id::IADD_C, Type::ArithmeticInteger, "IADD_C"),
+            INST("0101110000010---", Id::IADD_R, Type::ArithmeticInteger, "IADD_R"),
+            INST("0011100-00010---", Id::IADD_IMM, Type::ArithmeticInteger, "IADD_IMM"),
+            INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
+            INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
+            INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
