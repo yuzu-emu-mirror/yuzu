@@ -808,6 +808,8 @@ private:
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
+                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
@@ -821,10 +823,14 @@ private:
             case OpCode::Id::FADD_C:
             case OpCode::Id::FADD_R:
             case OpCode::Id::FADD_IMM: {
+                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " + " + op_b, 1, 1, instr.alu.abs_d);
                 break;
             }
             case OpCode::Id::MUFU: {
+                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+
                 switch (instr.sub_op) {
                 case SubOp::Cos:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "cos(" + op_a + ')', 1, 1,
@@ -1012,6 +1018,8 @@ private:
             break;
         }
         case OpCode::Type::Ffma: {
+            ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
             std::string op_c = instr.ffma.negate_c ? "-" : "";
@@ -1051,7 +1059,7 @@ private:
         case OpCode::Type::Conversion: {
             ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
             ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
-            ASSERT_MSG(!instr.conversion.saturate_a, "Unimplemented");
+            ASSERT_MSG(!instr.saturate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
             case OpCode::Id::I2I_R: {
@@ -1081,6 +1089,8 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
+                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 switch (instr.conversion.f2f.rounding) {
@@ -1198,8 +1208,8 @@ private:
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
-                // Add an extra scope and declare the texture coords inside to prevent overwriting
-                // them in case they are used as outputs of the texs instruction.
+                // Add an extra scope and declare the texture coords inside to prevent
+                // overwriting them in case they are used as outputs of the texs instruction.
                 shader.AddLine("{");
                 ++shader.scope;
                 shader.AddLine(coord);
@@ -1230,8 +1240,8 @@ private:
                 shader.AddLine(coord);
                 const std::string texture = "texture(" + sampler + ", coords)";
 
-                // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA goes
-                // into gpr28+0 and gpr28+1
+                // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
+                // goes into gpr28+0 and gpr28+1
                 size_t offset{};
 
                 for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
@@ -1412,8 +1422,8 @@ private:
 
                 shader.AddLine("return true;");
                 if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
-                    // If this is an unconditional exit then just end processing here, otherwise we
-                    // have to account for the possibility of the condition not being met, so
+                    // If this is an unconditional exit then just end processing here, otherwise
+                    // we have to account for the possibility of the condition not being met, so
                     // continue processing the next instruction.
                     offset = PROGRAM_END - 1;
                 }

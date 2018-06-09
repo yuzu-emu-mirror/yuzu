@@ -213,6 +213,7 @@ union Instruction {
     BitField<28, 8, Register> gpr28;
     BitField<39, 8, Register> gpr39;
     BitField<48, 16, u64> opcode;
+    BitField<50, 1, u64> saturate_a;
 
     union {
         BitField<20, 19, u64> imm20_19;
@@ -331,7 +332,6 @@ union Instruction {
         BitField<41, 2, u64> selector;
         BitField<45, 1, u64> negate_a;
         BitField<49, 1, u64> abs_a;
-        BitField<50, 1, u64> saturate_a;
 
         union {
             BitField<39, 2, F2iRoundingOp> rounding;
