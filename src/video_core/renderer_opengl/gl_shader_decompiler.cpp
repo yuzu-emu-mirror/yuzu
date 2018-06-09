@@ -992,13 +992,13 @@ private:
             break;
         }
 
-        case OpCode::Type::ScaledAdd: {
+        case OpCode::Type::ArithmeticInteger: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
 
-            if (instr.iscadd.negate_a)
+            if (instr.alu_integer.negate_a)
                 op_a = '-' + op_a;
 
-            std::string op_b = instr.iscadd.negate_b ? "-" : "";
+            std::string op_b = instr.alu_integer.negate_b ? "-" : "";
 
             if (instr.is_b_imm) {
                 op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
@@ -1011,10 +1011,30 @@ private:
                 }
             }
 
-            std::string shift = std::to_string(instr.iscadd.shift_amount.Value());
+            switch (opcode->GetId()) {
+            case OpCode::Id::IADD_C:
+            case OpCode::Id::IADD_R:
+            case OpCode::Id::IADD_IMM: {
+                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1);
+                break;
+            }
+            case OpCode::Id::ISCADD_C:
+            case OpCode::Id::ISCADD_R:
+            case OpCode::Id::ISCADD_IMM: {
+                std::string shift = std::to_string(instr.alu_integer.shift_amount.Value());
 
-            regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                      "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
+                regs.SetRegisterToInteger(instr.gpr0, true, 0,
+                                          "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
+                               opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+
             break;
         }
         case OpCode::Type::Ffma: {
