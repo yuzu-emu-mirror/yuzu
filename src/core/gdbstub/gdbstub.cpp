@@ -650,7 +650,7 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
         buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
     }
 
-    NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
+    // NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -872,10 +872,11 @@ static void WriteMemory() {
 }
 
 void Break(bool is_memory_break) {
-    if (!halt_loop) {
-        // halt_loop = true;
-        send_trap = true;
-    }
+    // if (!halt_loop) {
+    //    halt_loop = true;
+    //}
+
+    send_trap = true;
 
     memory_break = is_memory_break;
 }
@@ -1224,14 +1225,15 @@ void SetCpuStepFlag(bool is_step) {
 
 void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
-        NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
-                    current_thread_c->GetThreadId(), halt_loop, step_loop);
-        if (!halt_loop || (thread == current_thread_c)) {
-            NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
-            halt_loop = true;
-            send_trap = false;
+        // NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
+        //            current_thread_c->GetThreadId(), halt_loop, step_loop);
+        if (!halt_loop || (current_thread_c == thread)) {
+            // NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
+            current_thread_c = thread;
             SendSignal(thread, trap);
         }
+        halt_loop = true;
+        send_trap = false;
     }
 }
 }; // namespace GDBStub
