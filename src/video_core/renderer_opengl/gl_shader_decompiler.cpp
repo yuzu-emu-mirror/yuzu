@@ -979,6 +979,19 @@ private:
             }
 
             switch (opcode->GetId()) {
+            case OpCode::Id::SHR_C:
+            case OpCode::Id::SHR_R:
+            case OpCode::Id::SHR_IMM: {
+                if (!instr.shift.is_signed) {
+                    // Logical shift right
+                    op_a = "uint(" + op_a + ')';
+                }
+
+                // Cast to int is superfluous for arithmetic shift, it's only for a logical shift
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, "int(" + op_a + " >> " + op_b + ')',
+                                          1, 1);
+                break;
+            }
             case OpCode::Id::SHL_C:
             case OpCode::Id::SHL_R:
             case OpCode::Id::SHL_IMM:
