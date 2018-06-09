@@ -595,12 +595,9 @@ static void HandleSetThread() {
             current_thread = FindThreadById(thread_id);
         }
         if (current_thread) {
-            if(command_buffer[1] == 'c')
-            {
+            if (command_buffer[1] == 'c') {
                 current_thread_c = current_thread;
-            }
-            else
-            {
+            } else {
                 current_thread_g = current_thread;
             }
             SendReply("OK");
@@ -635,6 +632,11 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
 
     latest_signal = signal;
 
+    if(!thread)
+    {
+        full = false;
+    }
+
     std::string buffer;
     if (full) {
         buffer = fmt::format("T{:02x}{:02x}:{:016x};{:02x}:{:016x}", latest_signal, PC_REGISTER,
@@ -644,9 +646,12 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
         buffer = fmt::format("T{:02x}", latest_signal);
     }
 
-    buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
+    if(thread)
+    {
+        buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
+    }
 
-    //NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
+    NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
 
     SendReply(buffer.c_str());
 }
@@ -1033,10 +1038,6 @@ void HandlePacket() {
         HandleSetThread();
         break;
     case '?':
-        if(!current_thread_c)
-        {
-            current_thread_c = current_thread_g;
-        }
         SendSignal(current_thread_c, latest_signal);
         break;
     case 'k':
@@ -1222,37 +1223,16 @@ void SetCpuStepFlag(bool is_step) {
     step_loop = is_step;
 }
 
-struct Trap
-{
-    Kernel::Thread* thread;
-    int trap;
-};
-
-static std::vector<Trap> traps;
-
 void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
-        traps.push_back(Trap{thread, trap});
-    }
-}
-
-void FlushTraps()
-{
-    if(traps.size())
-    {
-        halt_loop = true;
-        send_trap = false;
-        for(auto& trap : traps)
-        {
-            if(trap.thread == current_thread_c)
-            {
-                SendSignal(trap.thread, trap.trap);
-                traps.resize(0);
-                return;
-            }
+        NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
+                    current_thread_c->GetThreadId(), halt_loop, step_loop);
+        if (!halt_loop || (thread == current_thread_c)) {
+            NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
+            halt_loop = true;
+            send_trap = false;
+            SendSignal(thread, trap);
         }
-        SendSignal(traps[0].thread, traps[0].trap);
-        traps.resize(0);
     }
 }
 }; // namespace GDBStub

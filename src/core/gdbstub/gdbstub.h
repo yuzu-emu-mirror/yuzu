@@ -100,7 +100,4 @@ void SetCpuStepFlag(bool is_step);
  * @param trap Trap no.
  */
 void SendTrap(Kernel::Thread* thread, int trap);
-
-/// Flush all pending trap signals gathered by SendTrap above.
-void FlushTraps();
 } // namespace GDBStub
