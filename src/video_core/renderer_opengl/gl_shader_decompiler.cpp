@@ -1423,8 +1423,8 @@ private:
                 op_b = "abs(" + op_b + ')';
             }
 
-            // The fset instruction sets a register to 1.0 if the condition is true, and to 0
-            // otherwise.
+            // The fset instruction sets a register to 1.0 or -1 (depending on the bf bit) if the
+            // condition is true, and to 0 otherwise.
             std::string second_pred =
                 GetPredicateCondition(instr.fset.pred39, instr.fset.neg_pred != 0);
 
@@ -1435,6 +1435,41 @@ private:
                                     combiner + " (" + second_pred + "))";
 
             if (instr.fset.bf) {
+                regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
+            } else {
+                regs.SetRegisterToInteger(instr.gpr0, false, 0, predicate + " ? 0xFFFFFFFF : 0", 1,
+                                          1);
+            }
+            break;
+        }
+        case OpCode::Type::IntegerSet: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, instr.iset.is_signed);
+
+            std::string op_b;
+
+            if (instr.is_b_imm) {
+                op_b = std::to_string(instr.alu.GetSignedImm20_20());
+            } else {
+                if (instr.is_b_gpr) {
+                    op_b = regs.GetRegisterAsInteger(instr.gpr20, 0, instr.iset.is_signed);
+                } else {
+                    op_b = regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                           GLSLRegister::Type::Integer);
+                }
+            }
+
+            // The iset instruction sets a register to 1.0 or -1 (depending on the bf bit) if the
+            // condition is true, and to 0 otherwise.
+            std::string second_pred =
+                GetPredicateCondition(instr.iset.pred39, instr.iset.neg_pred != 0);
+
+            std::string comparator = GetPredicateComparison(instr.iset.cond);
+            std::string combiner = GetPredicateCombiner(instr.iset.op);
+
+            std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
+                                    combiner + " (" + second_pred + "))";
+
+            if (instr.iset.bf) {
                 regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
             } else {
                 regs.SetRegisterToInteger(instr.gpr0, false, 0, predicate + " ? 0xFFFFFFFF : 0", 1,
