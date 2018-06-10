@@ -330,6 +330,15 @@ union Instruction {
     } fset;
 
     union {
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred;
+        BitField<44, 1, u64> bf;
+        BitField<45, 2, PredOperation> op;
+        BitField<48, 1, u64> is_signed;
+        BitField<49, 3, PredCondition> cond;
+    } iset;
+
+    union {
         BitField<10, 2, Register::Size> size;
         BitField<12, 1, u64> is_output_signed;
         BitField<13, 1, u64> is_input_signed;
@@ -487,6 +496,9 @@ public:
         ISETP_C,
         ISETP_IMM,
         ISETP_R,
+        ISET_R,
+        ISET_C,
+        ISET_IMM,
         PSETP,
         XMAD_IMM,
         XMAD_CR,
@@ -506,6 +518,7 @@ public:
         Memory,
         FloatSet,
         FloatSetPredicate,
+        IntegerSet,
         IntegerSetPredicate,
         PredicateSetPredicate,
         Conversion,
@@ -677,6 +690,9 @@ private:
             INST("010010110110----", Id::ISETP_C, Type::IntegerSetPredicate, "ISETP_C"),
             INST("010110110110----", Id::ISETP_R, Type::IntegerSetPredicate, "ISETP_R"),
             INST("0011011-0110----", Id::ISETP_IMM, Type::IntegerSetPredicate, "ISETP_IMM"),
+            INST("010110110101----", Id::ISET_R, Type::IntegerSet, "ISET_R"),
+            INST("010010110101----", Id::ISET_C, Type::IntegerSet, "ISET_C"),
+            INST("0011011-0101----", Id::ISET_IMM, Type::IntegerSet, "ISET_IMM"),
             INST("0101000010010---", Id::PSETP, Type::PredicateSetPredicate, "PSETP"),
             INST("0011011-00------", Id::XMAD_IMM, Type::Arithmetic, "XMAD_IMM"),
             INST("0100111---------", Id::XMAD_CR, Type::Arithmetic, "XMAD_CR"),
