@@ -635,8 +635,6 @@ static void SendSignal(Kernel::Thread* thread, u32 signal, bool full = true) {
         buffer += fmt::format(";thread:{:x};", thread->GetThreadId());
     }
 
-    // NGLOG_ERROR(Debug_GDBStub, "{}", buffer.c_str());
-
     SendReply(buffer.c_str());
 }
 
@@ -857,10 +855,6 @@ static void WriteMemory() {
 }
 
 void Break(bool is_memory_break) {
-    // if (!halt_loop) {
-    //    halt_loop = true;
-    //}
-
     send_trap = true;
 
     memory_break = is_memory_break;
@@ -1210,10 +1204,7 @@ void SetCpuStepFlag(bool is_step) {
 
 void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
-        // NGLOG_ERROR(Debug_GDBStub, "SendTrap {} {} {} {}", thread->GetThreadId(),
-        //            current_thread->GetThreadId(), halt_loop, step_loop);
         if (!halt_loop || (current_thread == thread)) {
-            // NGLOG_ERROR(Debug_GDBStub, "SendTrap Fired!");
             current_thread = thread;
             SendSignal(thread, trap);
         }
