@@ -144,6 +144,7 @@ static u32 latest_signal = 0;
 static bool memory_break = false;
 
 static Kernel::Thread* current_thread = nullptr;
+static unsigned current_core = 0;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -172,10 +173,11 @@ static std::map<u64, Breakpoint> breakpoints_read;
 static std::map<u64, Breakpoint> breakpoints_write;
 
 static Kernel::Thread* FindThreadById(int id) {
-    for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
+    for (unsigned core = 0; core < Core::NUM_CPU_CORES; core++) {
         auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
         for (auto thread : threads) {
             if (thread->GetThreadId() == id) {
+                current_core = core;
                 return thread.get();
             }
         }
@@ -778,6 +780,8 @@ static void WriteRegister() {
         return SendReply("E01");
     }
 
+    Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
+
     SendReply("OK");
 }
 
@@ -799,6 +803,8 @@ static void WriteRegisters() {
             UNIMPLEMENTED();
         }
     }
+
+    Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
 
     SendReply("OK");
 }
@@ -862,6 +868,10 @@ void Break(bool is_memory_break) {
 
 /// Tell the CPU that it should perform a single step.
 static void Step() {
+    if (command_length > 1) {
+        RegWrite(PC_REGISTER, GdbHexToLong(command_buffer + 1), current_thread);
+        Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
+    }
     step_loop = true;
     halt_loop = true;
     send_trap = true;
