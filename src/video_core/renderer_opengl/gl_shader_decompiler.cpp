@@ -1003,6 +1003,27 @@ private:
             break;
         }
 
+        case OpCode::Type::ArithmeticIntegerImmediate: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+
+            if (instr.iadd32i.negate_a)
+                op_a = '-' + op_a;
+
+            std::string op_b = '(' + std::to_string(instr.alu.imm20_32.Value()) + ')';
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::IADD32I:
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1,
+                                          instr.iadd32i.saturate != 0);
+                break;
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
+                               opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
         case OpCode::Type::ArithmeticInteger: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
 
