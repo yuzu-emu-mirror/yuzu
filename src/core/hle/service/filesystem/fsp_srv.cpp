@@ -7,6 +7,7 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/file_sys/directory.h"
+#include "core/file_sys/errors.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/storage.h"
 #include "core/hle/ipc_helpers.h"
@@ -531,12 +532,20 @@ void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
     NGLOG_WARNING(Service_FS, "(STUBBED) called");
 
+    // TODO(Subv): Read the input parameters and mount the requested savedata instead of always
+    // mounting the current process' savedata.
     FileSys::Path unused;
-    auto filesystem = OpenFileSystem(Type::SaveData, unused).Unwrap();
+    auto filesystem = OpenFileSystem(Type::SaveData, unused);
+
+    if (filesystem.Failed()) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 0};
+        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::SaveDataNotFound));
+        return;
+    }
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
+    rb.PushIpcInterface<IFileSystem>(std::move(filesystem.Unwrap()));
 }
 
 void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
