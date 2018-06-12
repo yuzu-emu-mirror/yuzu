@@ -16,6 +16,7 @@
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_compute.h"
+#include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
@@ -60,8 +61,11 @@ void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) 
     case EngineID::MAXWELL_COMPUTE_B:
         maxwell_compute->WriteReg(method, value);
         break;
+    case EngineID::MAXWELL_DMA_COPY_A:
+        maxwell_dma->WriteReg(method, value);
+        break;
     default:
-        UNIMPLEMENTED();
+        UNIMPLEMENTED_MSG("Unimplemented engine");
     }
 }
 
