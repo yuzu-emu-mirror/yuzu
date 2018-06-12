@@ -217,7 +217,7 @@ union Instruction {
 
     union {
         BitField<20, 19, u64> imm20_19;
-        BitField<20, 32, u64> imm20_32;
+        BitField<20, 32, s64> imm20_32;
         BitField<45, 1, u64> negate_b;
         BitField<46, 1, u64> abs_a;
         BitField<48, 1, u64> negate_a;
@@ -247,7 +247,7 @@ union Instruction {
 
         float GetImm20_32() const {
             float result{};
-            u32 imm{static_cast<u32>(imm20_32)};
+            s32 imm{static_cast<s32>(imm20_32)};
             std::memcpy(&result, &imm, sizeof(imm));
             return result;
         }
@@ -269,6 +269,11 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
     } alu_integer;
+
+    union {
+        BitField<54, 1, u64> saturate;
+        BitField<56, 1, u64> negate_a;
+    } iadd32i;
 
     union {
         BitField<20, 8, u64> shift_position;
@@ -451,6 +456,7 @@ public:
         IADD_C,
         IADD_R,
         IADD_IMM,
+        IADD32I,
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
@@ -510,6 +516,7 @@ public:
         Trivial,
         Arithmetic,
         ArithmeticInteger,
+        ArithmeticIntegerImmediate,
         Bfe,
         Logic,
         Shift,
@@ -642,6 +649,7 @@ private:
             INST("0100110000010---", Id::IADD_C, Type::ArithmeticInteger, "IADD_C"),
             INST("0101110000010---", Id::IADD_R, Type::ArithmeticInteger, "IADD_R"),
             INST("0011100-00010---", Id::IADD_IMM, Type::ArithmeticInteger, "IADD_IMM"),
+            INST("0001110---------", Id::IADD32I, Type::ArithmeticIntegerImmediate, "IADD32I"),
             INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
             INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
             INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
