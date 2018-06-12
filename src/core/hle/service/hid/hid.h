@@ -12,7 +12,7 @@ namespace Service::HID {
 // Begin enums and output structs
 
 constexpr u32 HID_NUM_ENTRIES = 17;
-constexpr u32 HID_NUM_LAYOUTS = 2;
+constexpr u32 HID_NUM_LAYOUTS = 7;
 constexpr s32 HID_JOYSTICK_MAX = 0x8000;
 constexpr s32 HID_JOYSTICK_MIN = -0x8000;
 
