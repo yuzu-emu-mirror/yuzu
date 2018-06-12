@@ -299,13 +299,15 @@ public:
      * @param value The code representing the value to assign.
      * @param dest_num_components Number of components in the destination.
      * @param value_num_components Number of components in the value.
-     * @param is_abs Optional, when True, applies absolute value to output.
+     * @param is_saturated Optional, when True, saturates the provided value.
      * @param dest_elem Optional, the destination element to use for the operation.
      */
     void SetRegisterToFloat(const Register& reg, u64 elem, const std::string& value,
-                            u64 dest_num_components, u64 value_num_components, bool is_abs = false,
-                            u64 dest_elem = 0) {
-        SetRegister(reg, elem, value, dest_num_components, value_num_components, is_abs, dest_elem);
+                            u64 dest_num_components, u64 value_num_components,
+                            bool is_saturated = false, u64 dest_elem = 0) {
+
+        SetRegister(reg, elem, is_saturated ? "clamp(" + value + ", 0.0, 1.0)" : value,
+                    dest_num_components, value_num_components, dest_elem);
     }
 
     /**
@@ -315,18 +317,21 @@ public:
      * @param value The code representing the value to assign.
      * @param dest_num_components Number of components in the destination.
      * @param value_num_components Number of components in the value.
-     * @param is_abs Optional, when True, applies absolute value to output.
+     * @param is_saturated Optional, when True, saturates the provided value.
      * @param dest_elem Optional, the destination element to use for the operation.
      */
     void SetRegisterToInteger(const Register& reg, bool is_signed, u64 elem,
                               const std::string& value, u64 dest_num_components,
-                              u64 value_num_components, bool is_abs = false, u64 dest_elem = 0) {
+                              u64 value_num_components, bool is_saturated = false,
+                              u64 dest_elem = 0) {
+        ASSERT_MSG(!is_saturated, "Unimplemented");
+
         const std::string func = GetGLSLConversionFunc(
             is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger,
             GLSLRegister::Type::Float);
 
         SetRegister(reg, elem, func + '(' + value + ')', dest_num_components, value_num_components,
-                    is_abs, dest_elem);
+                    dest_elem);
     }
 
     /**
@@ -500,12 +505,10 @@ private:
      * @param value The code representing the value to assign.
      * @param dest_num_components Number of components in the destination.
      * @param value_num_components Number of components in the value.
-     * @param is_abs Optional, when True, applies absolute value to output.
      * @param dest_elem Optional, the destination element to use for the operation.
      */
     void SetRegister(const Register& reg, u64 elem, const std::string& value,
-                     u64 dest_num_components, u64 value_num_components, bool is_abs,
-                     u64 dest_elem) {
+                     u64 dest_num_components, u64 value_num_components, u64 dest_elem) {
         std::string dest = GetRegister(reg, dest_elem);
         if (dest_num_components > 1) {
             dest += GetSwizzle(elem);
@@ -515,8 +518,6 @@ private:
         if (value_num_components > 1) {
             src += GetSwizzle(elem);
         }
-
-        src = is_abs ? "abs(" + src + ')' : src;
 
         shader.AddLine(dest + " = " + src + ';');
     }
@@ -808,9 +809,8 @@ private:
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
-                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-
-                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1, instr.alu.abs_d);
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1,
+                                        instr.alu.saturate_d);
                 break;
             }
             case OpCode::Id::FMUL32_IMM: {
@@ -823,41 +823,39 @@ private:
             case OpCode::Id::FADD_C:
             case OpCode::Id::FADD_R:
             case OpCode::Id::FADD_IMM: {
-                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-
-                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " + " + op_b, 1, 1, instr.alu.abs_d);
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " + " + op_b, 1, 1,
+                                        instr.alu.saturate_d);
                 break;
             }
             case OpCode::Id::MUFU: {
-                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-
                 switch (instr.sub_op) {
                 case SubOp::Cos:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "cos(" + op_a + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Sin:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "sin(" + op_a + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Ex2:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "exp2(" + op_a + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Lg2:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "log2(" + op_a + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Rcp:
-                    regs.SetRegisterToFloat(instr.gpr0, 0, "1.0 / " + op_a, 1, 1, instr.alu.abs_d);
+                    regs.SetRegisterToFloat(instr.gpr0, 0, "1.0 / " + op_a, 1, 1,
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Rsq:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "inversesqrt(" + op_a + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 case SubOp::Min:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "min(" + op_a + "," + op_b + ')', 1, 1,
-                                            instr.alu.abs_d);
+                                            instr.alu.saturate_d);
                     break;
                 default:
                     NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
@@ -1028,8 +1026,8 @@ private:
             case OpCode::Id::IADD_C:
             case OpCode::Id::IADD_R:
             case OpCode::Id::IADD_IMM: {
-                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1);
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1,
+                                          instr.alu.saturate_d);
                 break;
             }
             case OpCode::Id::ISCADD_C:
@@ -1051,8 +1049,6 @@ private:
             break;
         }
         case OpCode::Type::Ffma: {
-            ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             std::string op_b = instr.ffma.negate_b ? "-" : "";
             std::string op_c = instr.ffma.negate_c ? "-" : "";
@@ -1086,13 +1082,13 @@ private:
             }
             }
 
-            regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b + " + " + op_c, 1, 1);
+            regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b + " + " + op_c, 1, 1,
+                                    instr.alu.saturate_d);
             break;
         }
         case OpCode::Type::Conversion: {
             ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
             ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
-            ASSERT_MSG(!instr.saturate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
             case OpCode::Id::I2I_R: {
@@ -1106,7 +1102,7 @@ private:
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
-                                          1);
+                                          1, instr.alu.saturate_d);
                 break;
             }
             case OpCode::Id::I2F_R: {
@@ -1122,8 +1118,6 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
-                ASSERT_MSG(!instr.saturate_a, "Unimplemented");
-
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 switch (instr.conversion.f2f.rounding) {
@@ -1149,7 +1143,7 @@ private:
                     op_a = "abs(" + op_a + ')';
                 }
 
-                regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1);
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a, 1, 1, instr.alu.saturate_d);
                 break;
             }
             case OpCode::Id::F2I_R: {
