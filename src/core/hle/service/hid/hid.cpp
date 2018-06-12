@@ -94,7 +94,6 @@ private:
                 layout.header.latest_entry = (layout.header.latest_entry + 1) % HID_NUM_ENTRIES;
 
                 ControllerInputEntry& entry = layout.entries[layout.header.latest_entry];
-                entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
                 entry.timestamp++;
                 // TODO(shinyquagsire23): Is this always identical to timestamp?
                 entry.timestamp_2++;
@@ -102,6 +101,8 @@ private:
                 // TODO(shinyquagsire23): More than just handheld input
                 if (controller != Controller_Handheld)
                     continue;
+
+                entry.connection_state = ConnectionState_Connected | ConnectionState_Wired;
 
                 // TODO(shinyquagsire23): Set up some LUTs for each layout mapping in the future?
                 // For now everything is just the default handheld layout, but split Joy-Con will
