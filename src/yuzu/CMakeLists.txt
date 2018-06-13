@@ -32,8 +32,6 @@ add_executable(yuzu
     debugger/graphics/graphics_surface.h
     debugger/profiler.cpp
     debugger/profiler.h
-    debugger/registers.cpp
-    debugger/registers.h
     debugger/wait_tree.cpp
     debugger/wait_tree.h
     game_list.cpp
@@ -60,7 +58,6 @@ set(UIS
     configuration/configure_graphics.ui
     configuration/configure_input.ui
     configuration/configure_system.ui
-    debugger/registers.ui
     hotkeys.ui
     main.ui
 )

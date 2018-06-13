@@ -19,7 +19,6 @@ class GraphicsSurfaceWidget;
 class GRenderWindow;
 class MicroProfileDialog;
 class ProfilerWidget;
-class RegistersWidget;
 class WaitTreeWidget;
 
 namespace Tegra {
@@ -163,7 +162,6 @@ private:
     // Debugger panes
     ProfilerWidget* profilerWidget;
     MicroProfileDialog* microProfileDialog;
-    RegistersWidget* registersWidget;
     GraphicsBreakPointsWidget* graphicsBreakpointsWidget;
     GraphicsSurfaceWidget* graphicsSurfaceWidget;
     WaitTreeWidget* waitTreeWidget;
