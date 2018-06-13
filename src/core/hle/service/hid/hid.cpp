@@ -83,7 +83,10 @@ private:
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
         for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
-            for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
+            for (int index = 0;
+                 index <
+                 (controller != Controller_Handheld ? HID_NUM_LAYOUTS : HID_NUM_LAYOUTS_HANDHELD);
+                 index++) {
                 ControllerLayout& layout = mem.controllers[controller].layouts[index];
                 layout.header.num_entries = HID_NUM_ENTRIES;
                 layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
