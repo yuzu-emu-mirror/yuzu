@@ -33,7 +33,6 @@
 #include "yuzu/debugger/graphics/graphics_breakpoints.h"
 #include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/debugger/profiler.h"
-#include "yuzu/debugger/registers.h"
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/game_list.h"
 #include "yuzu/hotkeys.h"
@@ -168,15 +167,6 @@ void GMainWindow::InitializeDebugWidgets() {
     microProfileDialog->hide();
     debug_menu->addAction(microProfileDialog->toggleViewAction());
 #endif
-
-    registersWidget = new RegistersWidget(this);
-    addDockWidget(Qt::RightDockWidgetArea, registersWidget);
-    registersWidget->hide();
-    debug_menu->addAction(registersWidget->toggleViewAction());
-    connect(this, &GMainWindow::EmulationStarting, registersWidget,
-            &RegistersWidget::OnEmulationStarting);
-    connect(this, &GMainWindow::EmulationStopping, registersWidget,
-            &RegistersWidget::OnEmulationStopping);
 
     graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(debug_context, this);
     addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
@@ -460,17 +450,12 @@ void GMainWindow::BootGame(const QString& filename) {
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our views
     // before the CPU continues
-    connect(emu_thread.get(), &EmuThread::DebugModeEntered, registersWidget,
-            &RegistersWidget::OnDebugModeEntered, Qt::BlockingQueuedConnection);
     connect(emu_thread.get(), &EmuThread::DebugModeEntered, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeEntered, Qt::BlockingQueuedConnection);
-    connect(emu_thread.get(), &EmuThread::DebugModeLeft, registersWidget,
-            &RegistersWidget::OnDebugModeLeft, Qt::BlockingQueuedConnection);
     connect(emu_thread.get(), &EmuThread::DebugModeLeft, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeLeft, Qt::BlockingQueuedConnection);
 
     // Update the GUI
-    registersWidget->OnDebugModeEntered();
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
     }
