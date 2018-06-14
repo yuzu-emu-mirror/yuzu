@@ -550,6 +550,8 @@ void GMainWindow::OnMenuLoadFile() {
     for (const auto& piece : game_list->supported_file_extensions)
         extensions += "*." + piece + " ";
 
+    extensions += "main ";
+
     QString file_filter = tr("Switch Executable") + " (" + extensions + ")";
     file_filter += ";;" + tr("All Files (*.*)");
 
