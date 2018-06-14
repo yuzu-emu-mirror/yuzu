@@ -265,8 +265,17 @@ void GameList::ValidateEntry(const QModelIndex& item) {
     if (file_path.isEmpty())
         return;
     std::string std_file_path(file_path.toStdString());
-    if (!FileUtil::Exists(std_file_path) || FileUtil::IsDirectory(std_file_path))
+    if (!FileUtil::Exists(std_file_path))
         return;
+    if (FileUtil::IsDirectory(std_file_path)) {
+        QDir dir(std_file_path.c_str());
+        QStringList matching_main = dir.entryList(QStringList("main"), QDir::Files);
+        if (matching_main.size() == 1) {
+            emit GameChosen(dir.path() + DIR_SEP + matching_main[0]);
+        }
+        return;
+    }
+
     // Users usually want to run a diffrent game after closing one
     search_field->clear();
     emit GameChosen(file_path);
@@ -368,10 +377,10 @@ static bool IsExtractedNCAMain(const std::string& file_name) {
     return QFileInfo(file_name.c_str()).fileName() == "main";
 }
 
-static QString FormatGameName(std::string physical_name) {
-    QFileInfo fileInfo(physical_name.c_str());
+static QString FormatGameName(const std::string& physical_name) {
+    QFileInfo file_info(physical_name.c_str());
     if (IsExtractedNCAMain(physical_name)) {
-        return fileInfo.dir().dirName();
+        return file_info.dir().path();
     } else {
         return QString::fromStdString(physical_name);
     }

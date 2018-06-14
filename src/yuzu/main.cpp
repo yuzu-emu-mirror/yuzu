@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QtGui>
 #include <QtWidgets>
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -568,9 +569,12 @@ void GMainWindow::OnMenuLoadFile() {
 void GMainWindow::OnMenuLoadFolder() {
     QDir dir = QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
 
-    QStringList matchingMain = dir.entryList(QStringList() << "main", QDir::Files);
-    if (matchingMain.size() == 1) {
-        BootGame(matchingMain[0]);
+    QStringList matching_main = dir.entryList(QStringList("main"), QDir::Files);
+    if (matching_main.size() == 1) {
+        BootGame(dir.path() + DIR_SEP + matching_main[0]);
+    } else {
+        QMessageBox::warning(this, tr("Invalid Directory Selected"),
+                             tr("The directory you have selected does not contain a 'main' file."));
     }
 }
 
