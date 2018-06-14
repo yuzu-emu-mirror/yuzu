@@ -13,7 +13,6 @@ namespace Service::HID {
 
 constexpr u32 HID_NUM_ENTRIES = 17;
 constexpr u32 HID_NUM_LAYOUTS = 7;
-constexpr u32 HID_NUM_LAYOUTS_HANDHELD = 2;
 constexpr s32 HID_JOYSTICK_MAX = 0x8000;
 constexpr s32 HID_JOYSTICK_MIN = -0x8000;
 

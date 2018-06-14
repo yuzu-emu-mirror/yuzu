@@ -16,14 +16,6 @@
 
 namespace Service::HID {
 
-int GetNumberLayoutsForController(size_t controller_id) {
-    if (controller_id == Controller_Handheld) {
-        return HID_NUM_LAYOUTS_HANDHELD;
-    } else {
-        return HID_NUM_LAYOUTS;
-    }
-}
-
 // Updating period for each HID device.
 // TODO(shinyquagsire23): These need better values.
 constexpr u64 pad_update_ticks = CoreTiming::BASE_CLOCK_RATE / 10000;
@@ -91,7 +83,11 @@ private:
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
         for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
-            for (int index = 0; index < GetNumberLayoutsForController(controller); index++) {
+            for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
+                // TODO(DarkLordZach): Is this layout/controller config actually invalid?
+                if (controller == Controller_Handheld && index == Layout_Single)
+                    continue;
+
                 ControllerLayout& layout = mem.controllers[controller].layouts[index];
                 layout.header.num_entries = HID_NUM_ENTRIES;
                 layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
