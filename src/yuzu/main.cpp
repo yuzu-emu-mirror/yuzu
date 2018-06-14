@@ -278,6 +278,7 @@ void GMainWindow::ConnectWidgetEvents() {
 void GMainWindow::ConnectMenuEvents() {
     // File
     connect(ui.action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
+    connect(ui.action_Load_Folder, &QAction::triggered, this, &GMainWindow::OnMenuLoadFolder);
     connect(ui.action_Select_Game_List_Root, &QAction::triggered, this,
             &GMainWindow::OnMenuSelectGameListRoot);
     connect(ui.action_Exit, &QAction::triggered, this, &QMainWindow::close);
@@ -561,6 +562,15 @@ void GMainWindow::OnMenuLoadFile() {
         UISettings::values.roms_path = QFileInfo(filename).path();
 
         BootGame(filename);
+    }
+}
+
+void GMainWindow::OnMenuLoadFolder() {
+    QDir dir = QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
+
+    QStringList matchingMain = dir.entryList(QStringList() << "main", QDir::Files);
+    if (matchingMain.size() == 1) {
+        BootGame(matchingMain[0]);
     }
 }
 
