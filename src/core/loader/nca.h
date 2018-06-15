@@ -12,7 +12,7 @@
 
 namespace Loader {
 
-/// Loads an NRO file
+/// Loads an NCA file
 class AppLoader_NCA final : public AppLoader, Linker {
 public:
     AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath);
