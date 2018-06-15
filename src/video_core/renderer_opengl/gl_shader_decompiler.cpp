@@ -930,20 +930,26 @@ private:
                 if (instr.alu.lop.invert_b)
                     imm = ~imm;
 
+                std::string op_b = std::to_string(imm);
+
                 switch (instr.alu.lop.operation) {
                 case Tegra::Shader::LogicOperation::And: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " & " + op_b + ')',
+                                              1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Or: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " | " + op_b + ')',
+                                              1, 1);
                     break;
                 }
                 case Tegra::Shader::LogicOperation::Xor: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " ^ " + op_b + ')',
+                                              1, 1);
+                    break;
+                }
+                case Tegra::Shader::LogicOperation::PassB: {
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0, op_b, 1, 1);
                     break;
                 }
                 default:
