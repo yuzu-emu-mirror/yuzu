@@ -15,9 +15,6 @@
 #include "core/memory.h"
 #include "nca.h"
 
-#include "../../../externals/cryptopp/cryptopp/aes.h"
-using CryptoPP::AES;
-
 namespace Loader {
 
 enum NcaContentType {
@@ -42,10 +39,10 @@ struct NcaHeader {
     u32 sdk_version;
     u8 crypto_type_2;
     INSERT_PADDING_BYTES(0x9);
-    u128 rights_id;
-    u128 section_tables[0x4];
-    u256 hash_tables[0x4];
-    u128 key_area[0x4];
+    u8 rights_id[0x10];
+    u8 section_tables[0x4][0x10];
+    u8 hash_tables[0x4][0x20];
+    u8 key_area[0x4][0x10];
     INSERT_PADDING_BYTES(0xC0);
     INSERT_PADDING_BYTES(0x800);
 };
@@ -112,9 +109,9 @@ AppLoader_NCA::AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath)
     : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
 FileType AppLoader_NCA::IdentifyType(FileUtil::IOFile& file, const std::string&) {
-
+    file.Seek(0, SEEK_SET);
     std::array<u8, 0xC00> header_enc_array{};
-    if (1 != file.ReadArray(header_enc_array.data(), 0xC00))
+    if (0xC00 != file.ReadBytes(header_enc_array.data(), 0xC00))
         return FileType::Error;
 
     // NcaHeader header = DecryptHeader(header_enc_array);
