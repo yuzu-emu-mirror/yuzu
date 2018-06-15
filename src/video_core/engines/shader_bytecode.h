@@ -343,7 +343,8 @@ union Instruction {
     } iset;
 
     union {
-        BitField<10, 2, Register::Size> size;
+        BitField<8, 2, Register::Size> dest_size;
+        BitField<10, 2, Register::Size> src_size;
         BitField<12, 1, u64> is_output_signed;
         BitField<13, 1, u64> is_input_signed;
         BitField<41, 2, u64> selector;
