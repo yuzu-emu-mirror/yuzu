@@ -15,6 +15,9 @@
 #include "core/memory.h"
 #include "nca.h"
 
+#include "../../../externals/cryptopp/cryptopp/aes.h"
+using CryptoPP::AES;
+
 namespace Loader {
 
 enum NcaContentType {
@@ -48,63 +51,62 @@ struct NcaHeader {
 };
 static_assert(sizeof(NcaHeader) == 0xC00, "NcaHeader has incorrect size.");
 
-/**
- * Adapted from hactool/aes.c, void aes_xts_decrypt(aes_ctx_t *ctx, void *dst,
- *      const void *src, size_t l, size_t sector, size_t sector_size)
- * and from various other functions in aes.c (get_tweak, aes_setiv, aes_decrypt)
- *
- * Copyright (c) 2018, SciresM
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- */
-template <size_t size>
-static std::array<u8, size> AesXtsDecrypt(std::array<u8, size> in, size_t sector_size) {
-    std::array<u8, 0x10> tweak;
-    ASSERT(size % sector_size == 0);
-
-    u8 sector = 0;
-
-    for (size_t i = 0; i < size; i += sector_size) {
-
-        // Get tweak
-        size_t sector_temp = sector++;
-        for (int i = 0xF; i >= 0; --i) {
-            tweak[i] = static_cast<u8>(sector_temp);
-            sector_temp >>= 8;
-        }
-
-        // Decrypt using lib or something
-    }
-}
-
-/**
- * Adapted from hactool/nca.c, int nca_decrypt_header(nca_ctx_t *ctx)
- *
- * Copyright (c) 2018, SciresM
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- */
-static NcaHeader DecryptHeader(std::array<u8, 0xC00> enc_data) {
-    // Just in case its decrypted.
-    NcaHeader* header = reinterpret_cast<NcaHeader*>(enc_data.data());
-    if (header->magic == Common::MakeMagic('N', 'C', 'A', '2') ||
-        header->magic == Common::MakeMagic('N', 'C', 'A', '3'))
-        return *header;
-
-    std::array<u8, 0xC00> dec = AesXtsDecrypt(enc_data, 0x200);
-
-    header = reinterpret_cast<NcaHeader*>(dec.data());
-    return *header;
-}
+///**
+// * Adapted from hactool/aes.c, void aes_xts_decrypt(aes_ctx_t *ctx, void *dst,
+// *      const void *src, size_t l, size_t sector, size_t sector_size)
+// * and from various other functions in aes.c (get_tweak, aes_setiv, aes_decrypt)
+// *
+// * Copyright (c) 2018, SciresM
+// *
+// * Permission to use, copy, modify, and/or distribute this software for any
+// * purpose with or without fee is hereby granted, provided that the above
+// * copyright notice and this permission notice appear in all copies.
+// */
+// template <size_t size>
+// static std::array<u8, size> AesXtsDecrypt(std::array<u8, size> in, size_t sector_size) {
+//    std::array<u8, 0x10> tweak;
+//    ASSERT(size % sector_size == 0);
+//
+//    u8 sector = 0;
+//
+//    for (size_t i = 0; i < size; i += sector_size) {
+//
+//        // Get tweak
+//        size_t sector_temp = sector++;
+//        for (int i = 0xF; i >= 0; --i) {
+//            tweak[i] = static_cast<u8>(sector_temp);
+//            sector_temp >>= 8;
+//        }
+//
+//
+//    }
+//}
 
 static bool IsValidNca(const NcaHeader& header) {
     return header.magic == Common::MakeMagic('N', 'C', 'A', '2') ||
            header.magic == Common::MakeMagic('N', 'C', 'A', '3');
 }
+
+///**
+// * Adapted from hactool/nca.c, int nca_decrypt_header(nca_ctx_t *ctx)
+// *
+// * Copyright (c) 2018, SciresM
+// *
+// * Permission to use, copy, modify, and/or distribute this software for any
+// * purpose with or without fee is hereby granted, provided that the above
+// * copyright notice and this permission notice appear in all copies.
+// */
+// static NcaHeader DecryptHeader(std::array<u8, 0xC00> enc_data) {
+//    // Just in case its decrypted.
+//    NcaHeader header = *reinterpret_cast<NcaHeader*>(enc_data.data());
+//    if (IsValidNca(header))
+//        return header;
+//
+//    std::array<u8, 0xC00> dec = AesXtsDecrypt(enc_data, 0x200);
+//
+//    header = *reinterpret_cast<NcaHeader*>(dec.data());
+//    return header;
+//}
 
 AppLoader_NCA::AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath)
     : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
@@ -115,7 +117,9 @@ FileType AppLoader_NCA::IdentifyType(FileUtil::IOFile& file, const std::string&)
     if (1 != file.ReadArray(header_enc_array.data(), 0xC00))
         return FileType::Error;
 
-    NcaHeader header = DecryptHeader(header_enc_array);
+    // NcaHeader header = DecryptHeader(header_enc_array);
+    // TODO(DarkLordZach): Assuming everything is decrypted. Add crypto support.
+    NcaHeader header = *reinterpret_cast<NcaHeader*>(header_enc_array.data());
 
     if (IsValidNca(header) && header.content_type == NCT_PROGRAM)
         return FileType::NCA;
