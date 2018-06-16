@@ -14,19 +14,30 @@
 
 namespace Loader {
 
-class Nca {
-    FileSys::PartitionFilesystem GetPFS(u8 id);
+// TODO(DarkLordZach): Add support for encrypted.
+struct Nca {
+    Nca(FileUtil::IOFile&& file, std::string path);
+
+    FileSys::PartitionFilesystem GetPfs(u8 id);
 
     u8 GetExeFsPfsId();
 
-    u64 GetExeFsFileOffset();
-    u64 GetExeFsFileSize();
+    u64 GetExeFsFileOffset(const std::string& file_name);
+    u64 GetExeFsFileSize(const std::string& file_name);
 
-    u64 GetRomFSOffset();
-    u64 GetRomFSSize();
+    u64 GetRomFsOffset();
+    u64 GetRomFsSize();
+
+    std::vector<u8> GetExeFsFile(const std::string& file_name);
 
 private:
     std::vector<FileSys::PartitionFilesystem> pfs;
+    std::vector<u64> pfs_offset;
+
+    u64 romfs_offset;
+    u64 romfs_size;
+
+    FileUtil::IOFile file;
     std::string path;
 };
 

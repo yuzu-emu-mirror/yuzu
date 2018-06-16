@@ -111,6 +111,60 @@ static_assert(sizeof(Pfs0Superblock) == 0x200, "Pfs0Superblock has incorrect siz
 //    }
 //}
 
+Nca::Nca(FileUtil::IOFile&& file, std::string path) : file(std::move(file)), path(path) {
+    // Parse headers and fill pfs, pfs_offset, romfs_offset, and romfs_size.
+}
+
+FileSys::PartitionFilesystem Nca::GetPfs(u8 id) {
+    return pfs[id];
+}
+
+// TODO(DarkLordZach): INLINE THIS
+static bool contains(const std::vector<std::string>& vec, std::string str) {
+    return std::find(vec.begin(), vec.end(), str) != vec.end();
+}
+
+static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
+    std::vector<std::string> entry_names(pfs.GetNumEntries());
+    for (int i = 0; i < entry_names.size(); ++i)
+        entry_names[i] = pfs.GetEntryName(i);
+
+    // According to switchbrew, an exefs must only contain these two files:
+    return contains(entry_names, "main") && contains(entry_names, "main.ndpm");
+}
+
+u8 Nca::GetExeFsPfsId() {
+    for (int i = 0; i < pfs.size(); ++i) {
+        if (IsPfsExeFs(pfs[i]))
+            return i;
+    }
+
+    return -1;
+}
+
+u64 Nca::GetExeFsFileOffset(const std::string& file_name) {
+    return pfs[GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[GetExeFsPfsId()];
+}
+
+u64 Nca::GetExeFsFileSize(const std::string& file_name) {
+    return pfs[GetExeFsPfsId()].GetFileSize(file_name);
+}
+
+u64 Nca::GetRomFsOffset() {
+    return romfs_offset;
+}
+
+u64 Nca::GetRomFsSize() {
+    return romfs_size;
+}
+
+std::vector<u8> Nca::GetExeFsFile(const std::string& file_name) {
+    std::vector<u8> out(GetExeFsFileSize(file_name));
+    file.Seek(GetExeFsFileOffset(file_name), SEEK_SET);
+    file.ReadBytes(out.data(), GetExeFsFileSize(file_name));
+    return out;
+}
+
 static bool IsValidNca(const NcaHeader& header) {
     return header.magic == Common::MakeMagic('N', 'C', 'A', '2') ||
            header.magic == Common::MakeMagic('N', 'C', 'A', '3');
@@ -164,12 +218,9 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    pfs.Load(filepath, 0x8000);
+    Nca nca{};
 
-    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
-
-    std::vector<u8> npdm(pfs0.GetFileSize("main.npdm"));
-    file.Seek(pfs0.GetFileOffset("main.npdm"), SEEK_SET);
+    std::vector<u8> npdm = nca.GetExeFsFile("main.ndpm");
     if (npdm.size() != file.ReadBytes(npdm.data(), npdm.size()))
         return ResultStatus::Error;
 
@@ -188,10 +239,10 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(module, ) if (next_load_addr) {
+        next_load_addr = AppLoader_NSO::LoadModule(module, nca.GetExeFsFile(module), load_addr);
+        if (next_load_addr) {
             NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
-        }
-        else {
+        } else {
             next_load_addr = load_addr;
         }
     }
