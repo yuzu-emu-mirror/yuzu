@@ -83,36 +83,10 @@ struct Pfs0Superblock {
 };
 static_assert(sizeof(Pfs0Superblock) == 0x200, "Pfs0Superblock has incorrect size.");
 
-///**
-// * Adapted from hactool/aes.c, void aes_xts_decrypt(aes_ctx_t *ctx, void *dst,
-// *      const void *src, size_t l, size_t sector, size_t sector_size)
-// * and from various other functions in aes.c (get_tweak, aes_setiv, aes_decrypt)
-// *
-// * Copyright (c) 2018, SciresM
-// *
-// * Permission to use, copy, modify, and/or distribute this software for any
-// * purpose with or without fee is hereby granted, provided that the above
-// * copyright notice and this permission notice appear in all copies.
-// */
-// template <size_t size>
-// static std::array<u8, size> AesXtsDecrypt(std::array<u8, size> in, size_t sector_size) {
-//    std::array<u8, 0x10> tweak;
-//    ASSERT(size % sector_size == 0);
-//
-//    u8 sector = 0;
-//
-//    for (size_t i = 0; i < size; i += sector_size) {
-//
-//        // Get tweak
-//        size_t sector_temp = sector++;
-//        for (int i = 0xF; i >= 0; --i) {
-//            tweak[i] = static_cast<u8>(sector_temp);
-//            sector_temp >>= 8;
-//        }
-//
-//
-//    }
-//}
+static bool IsValidNca(const NcaHeader& header) {
+    return header.magic == Common::MakeMagic('N', 'C', 'A', '2') ||
+           header.magic == Common::MakeMagic('N', 'C', 'A', '3');
+}
 
 Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)), path(path) {
     file.Seek(0, SEEK_SET);
@@ -121,6 +95,7 @@ Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)
         NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
     NcaHeader header = *reinterpret_cast<NcaHeader*>(header_array.data());
+    valid = IsValidNca(header);
 
     int number_sections =
         std::count_if(std::begin(header.section_tables), std::end(header.section_tables),
@@ -156,11 +131,6 @@ FileSys::PartitionFilesystem Nca::GetPfs(u8 id) {
     return pfs[id];
 }
 
-// TODO(DarkLordZach): INLINE THIS
-static bool contains(const std::vector<std::string>& vec, std::string str) {
-    return std::find(vec.begin(), vec.end(), str) != vec.end();
-}
-
 static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
     // According to switchbrew, an exefs must only contain these two files:
     return pfs.GetFileSize("main") > 0 && pfs.GetFileSize("main.npdm") > 0;
@@ -176,10 +146,14 @@ u8 Nca::GetExeFsPfsId() {
 }
 
 u64 Nca::GetExeFsFileOffset(const std::string& file_name) {
+    if (GetExeFsPfsId() < 0)
+        return 0;
     return pfs[GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[GetExeFsPfsId()];
 }
 
 u64 Nca::GetExeFsFileSize(const std::string& file_name) {
+    if (GetExeFsPfsId() < 0)
+        return 0;
     return pfs[GetExeFsPfsId()].GetFileSize(file_name);
 }
 
@@ -191,38 +165,16 @@ u64 Nca::GetRomFsSize() {
     return romfs_size;
 }
 
+bool Nca::IsValid() {
+    return valid;
+}
+
 std::vector<u8> Nca::GetExeFsFile(const std::string& file_name) {
     std::vector<u8> out(GetExeFsFileSize(file_name));
     file.Seek(GetExeFsFileOffset(file_name), SEEK_SET);
     file.ReadBytes(out.data(), GetExeFsFileSize(file_name));
     return out;
 }
-
-static bool IsValidNca(const NcaHeader& header) {
-    return header.magic == Common::MakeMagic('N', 'C', 'A', '2') ||
-           header.magic == Common::MakeMagic('N', 'C', 'A', '3');
-}
-
-///**
-// * Adapted from hactool/nca.c, int nca_decrypt_header(nca_ctx_t *ctx)
-// *
-// * Copyright (c) 2018, SciresM
-// *
-// * Permission to use, copy, modify, and/or distribute this software for any
-// * purpose with or without fee is hereby granted, provided that the above
-// * copyright notice and this permission notice appear in all copies.
-// */
-// static NcaHeader DecryptHeader(std::array<u8, 0xC00> enc_data) {
-//    // Just in case its decrypted.
-//    NcaHeader header = *reinterpret_cast<NcaHeader*>(enc_data.data());
-//    if (IsValidNca(header))
-//        return header;
-//
-//    std::array<u8, 0xC00> dec = AesXtsDecrypt(enc_data, 0x200);
-//
-//    header = *reinterpret_cast<NcaHeader*>(dec.data());
-//    return header;
-//}
 
 AppLoader_NCA::AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath)
     : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
@@ -252,6 +204,10 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     }
 
     nca = std::make_unique<Nca>(std::move(file), filepath);
+
+    if (!nca->IsValid()) {
+        return ResultStatus::ErrorInvalidFormat;
+    }
 
     ResultStatus result = metadata.Load(nca->GetExeFsFile("main.npdm"));
     if (result != ResultStatus::Success) {

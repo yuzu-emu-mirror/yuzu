@@ -28,6 +28,8 @@ struct Nca {
     u64 GetRomFsOffset();
     u64 GetRomFsSize();
 
+    bool IsValid();
+
     std::vector<u8> GetExeFsFile(const std::string& file_name);
 
 private:
@@ -36,6 +38,8 @@ private:
 
     u64 romfs_offset = 0;
     u64 romfs_size = 0;
+
+    bool valid = false;
 
     FileUtil::IOFile file;
     std::string path;
