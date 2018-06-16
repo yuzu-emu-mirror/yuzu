@@ -118,11 +118,15 @@ Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)
             if (0x200 != file.ReadBytes(&sb, 0x200))
                 NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
-            pfs.emplace_back();
-            pfs[pfs.size() - 1].Load(path, (header.section_tables[i].media_offset << 9) +
-                                               sb.pfs0_header_offset);
-            pfs_offset.emplace_back((header.section_tables[i].media_offset << 9) +
-                                    sb.pfs0_header_offset);
+            u64 offset = (static_cast<u64>(header.section_tables[i].media_offset) << 9) +
+                         sb.pfs0_header_offset;
+            FileSys::PartitionFilesystem npfs{};
+            ResultStatus status = npfs.Load(path, offset);
+
+            if (status == ResultStatus::Success) {
+                pfs.emplace_back(std::move(npfs));
+                pfs_offset.emplace_back(offset);
+            }
         }
     }
 }
@@ -146,13 +150,13 @@ u8 Nca::GetExeFsPfsId() {
 }
 
 u64 Nca::GetExeFsFileOffset(const std::string& file_name) {
-    if (GetExeFsPfsId() < 0)
+    if (GetExeFsPfsId() == 255)
         return 0;
     return pfs[GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[GetExeFsPfsId()];
 }
 
 u64 Nca::GetExeFsFileSize(const std::string& file_name) {
-    if (GetExeFsPfsId() < 0)
+    if (GetExeFsPfsId() == 255)
         return 0;
     return pfs[GetExeFsPfsId()].GetFileSize(file_name);
 }
