@@ -266,6 +266,27 @@ public:
     }
 
     /**
+     * Returns code that does an integer size conversion for the specified size.
+     * @param value Value to perform integer size conversion on.
+     * @param size Register size to use for conversion instructions.
+     * @returns GLSL string corresponding to the value converted to the specified size.
+     */
+    static std::string ConvertIntegerSize(const std::string& value, Register::Size size) {
+        switch (size) {
+        case Register::Size::Byte:
+            return "((" + value + " << 24) >> 24)";
+        case Register::Size::Short:
+            return "((" + value + " << 16) >> 16)";
+        case Register::Size::Word:
+            // Default - do nothing
+            return value;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented conversion size {}", static_cast<u32>(size));
+            UNREACHABLE();
+        }
+    }
+
+    /**
      * Gets a register as an float.
      * @param reg The register to get.
      * @param elem The element to use for the operation.
@@ -281,15 +302,18 @@ public:
      * @param reg The register to get.
      * @param elem The element to use for the operation.
      * @param is_signed Whether to get the register as a signed (or unsigned) integer.
+     * @param size Register size to use for conversion instructions.
      * @returns GLSL string corresponding to the register as an integer.
      */
-    std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0,
-                                     bool is_signed = true) {
+    std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0, bool is_signed = true,
+                                     Register::Size size = Register::Size::Word) {
         const std::string func = GetGLSLConversionFunc(
             GLSLRegister::Type::Float,
             is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger);
 
-        return func + '(' + GetRegister(reg, elem) + ')';
+        std::string value = func + '(' + GetRegister(reg, elem) + ')';
+
+        return ConvertIntegerSize(value, size);
     }
 
     /**
@@ -319,19 +343,20 @@ public:
      * @param value_num_components Number of components in the value.
      * @param is_saturated Optional, when True, saturates the provided value.
      * @param dest_elem Optional, the destination element to use for the operation.
+     * @param size Register size to use for conversion instructions.
      */
     void SetRegisterToInteger(const Register& reg, bool is_signed, u64 elem,
                               const std::string& value, u64 dest_num_components,
                               u64 value_num_components, bool is_saturated = false,
-                              u64 dest_elem = 0) {
+                              u64 dest_elem = 0, Register::Size size = Register::Size::Word) {
         ASSERT_MSG(!is_saturated, "Unimplemented");
 
         const std::string func = GetGLSLConversionFunc(
             is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger,
             GLSLRegister::Type::Float);
 
-        SetRegister(reg, elem, func + '(' + value + ')', dest_num_components, value_num_components,
-                    dest_elem);
+        SetRegister(reg, elem, func + '(' + ConvertIntegerSize(value, size) + ')',
+                    dest_num_components, value_num_components, dest_elem);
     }
 
     /**
@@ -1114,28 +1139,28 @@ private:
             break;
         }
         case OpCode::Type::Conversion: {
-            ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
             ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
             case OpCode::Id::I2I_R: {
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
 
-                std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
+                std::string op_a = regs.GetRegisterAsInteger(
+                    instr.gpr20, 0, instr.conversion.is_input_signed, instr.conversion.src_size);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
-                                          1, instr.alu.saturate_d);
+                                          1, instr.alu.saturate_d, 0, instr.conversion.dest_size);
                 break;
             }
             case OpCode::Id::I2F_R: {
+                ASSERT_MSG(instr.conversion.dest_size == Register::Size::Word, "Unimplemented");
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
-                std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
+                std::string op_a = regs.GetRegisterAsInteger(
+                    instr.gpr20, 0, instr.conversion.is_input_signed, instr.conversion.src_size);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
@@ -1145,6 +1170,8 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
+                ASSERT_MSG(instr.conversion.dest_size == Register::Size::Word, "Unimplemented");
+                ASSERT_MSG(instr.conversion.src_size == Register::Size::Word, "Unimplemented");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 switch (instr.conversion.f2f.rounding) {
@@ -1174,6 +1201,7 @@ private:
                 break;
             }
             case OpCode::Id::F2I_R: {
+                ASSERT_MSG(instr.conversion.src_size == Register::Size::Word, "Unimplemented");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 if (instr.conversion.abs_a) {
@@ -1206,7 +1234,7 @@ private:
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
-                                          1);
+                                          1, false, 0, instr.conversion.dest_size);
                 break;
             }
             default: {
