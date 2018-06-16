@@ -100,8 +100,10 @@ static constexpr u32 PageAlignSize(u32 size) {
 
 VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& file_data,
                                 VAddr load_base) {
-    NsoHeader nso_header{};
-    memcpy(&nso_header, file_data.data(), sizeof(NsoHeader));
+    if (file_data.size() < sizeof(NsoHeader))
+        return {};
+
+    const NsoHeader nso_header = *reinterpret_cast<const NsoHeader* const>(file_data.data());
 
     if (nso_header.magic != Common::MakeMagic('N', 'S', 'O', '0'))
         return {};
@@ -110,7 +112,7 @@ VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& 
     Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
     std::vector<u8> program_image;
     for (int i = 0; i < nso_header.segments.size(); ++i) {
-        std::vector<u8> compressed_data{};
+        std::vector<u8> compressed_data(nso_header.segments_compressed_size[i]);
         for (int j = 0; j < nso_header.segments_compressed_size[i]; ++j)
             compressed_data[j] = file_data[nso_header.segments[i].offset + j];
         std::vector<u8> data = DecompressSegment(compressed_data, nso_header.segments[i]);

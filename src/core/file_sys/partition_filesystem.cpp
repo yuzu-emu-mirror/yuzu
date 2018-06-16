@@ -19,6 +19,7 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, siz
     if (file.GetSize() < sizeof(Header))
         return Loader::ResultStatus::Error;
 
+    file.Seek(offset, SEEK_SET);
     // For cartridges, HFSs can get very large, so we need to calculate the size up to
     // the actual content itself instead of just blindly reading in the entire file.
     Header pfs_header;

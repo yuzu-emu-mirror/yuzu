@@ -30,6 +30,15 @@ enum NcaContentType {
     NCT_DATA = 4
 };
 
+enum NcaSectionFilesystemType { NSFS_PFS0 = 0x2, NSFS_ROMFS = 0x3 };
+
+struct NcaSectionTableEntry {
+    u32 media_offset;
+    u32 media_end_offset;
+    INSERT_PADDING_BYTES(0x8);
+};
+static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has incorrect size.");
+
 struct NcaHeader {
     u8 rsa_signature_1[0x100];
     u8 rsa_signature_2[0x100];
@@ -43,21 +52,14 @@ struct NcaHeader {
     INSERT_PADDING_BYTES(0x4);
     u32 sdk_version;
     u8 crypto_type_2;
-    INSERT_PADDING_BYTES(0x9);
+    INSERT_PADDING_BYTES(15);
     u8 rights_id[0x10];
-    u8 section_tables[0x4][0x10];
+    NcaSectionTableEntry section_tables[0x4];
     u8 hash_tables[0x4][0x20];
     u8 key_area[0x4][0x10];
     INSERT_PADDING_BYTES(0xC0);
 };
 static_assert(sizeof(NcaHeader) == 0x400, "NcaHeader has incorrect size.");
-
-struct NcaSectionTableEntry {
-    u32 media_offset;
-    u32 media_end_offset;
-    INSERT_PADDING_BYTES(0x8);
-};
-static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has incorrect size.");
 
 struct NcaSectionHeaderBlock {
     INSERT_PADDING_BYTES(3);
@@ -111,8 +113,42 @@ static_assert(sizeof(Pfs0Superblock) == 0x200, "Pfs0Superblock has incorrect siz
 //    }
 //}
 
-Nca::Nca(FileUtil::IOFile&& file, std::string path) : file(std::move(file)), path(path) {
-    // Parse headers and fill pfs, pfs_offset, romfs_offset, and romfs_size.
+Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)), path(path) {
+    file.Seek(0, SEEK_SET);
+    std::array<u8, 0x400> header_array{};
+    if (0x400 != file.ReadBytes(header_array.data(), 0x400))
+        NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+
+    NcaHeader header = *reinterpret_cast<NcaHeader*>(header_array.data());
+
+    int number_sections =
+        std::count_if(std::begin(header.section_tables), std::end(header.section_tables),
+                      [](NcaSectionTableEntry entry) { return entry.media_offset > 0; });
+
+    for (int i = 0; i < number_sections; ++i) {
+        file.Seek(0x400 + (i << 9), SEEK_SET);
+        std::array<u8, 0x10> array{};
+        if (0x10 != file.ReadBytes(array.data(), 0x10))
+            NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+
+        NcaSectionHeaderBlock block = *reinterpret_cast<NcaSectionHeaderBlock*>(array.data());
+
+        if (block.filesystem_type == NSFS_ROMFS) {
+            romfs_offset = (header.section_tables[i].media_offset << 9);
+            romfs_size = (header.section_tables[i].media_end_offset << 9) - romfs_offset;
+        } else if (block.filesystem_type == NSFS_PFS0) {
+            Pfs0Superblock sb;
+            file.Seek(0x400 + (i << 9), SEEK_SET);
+            if (0x200 != file.ReadBytes(&sb, 0x200))
+                NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+
+            pfs.emplace_back();
+            pfs[pfs.size() - 1].Load(path, (header.section_tables[i].media_offset << 9) +
+                                               sb.pfs0_header_offset);
+            pfs_offset.emplace_back((header.section_tables[i].media_offset << 9) +
+                                    sb.pfs0_header_offset);
+        }
+    }
 }
 
 FileSys::PartitionFilesystem Nca::GetPfs(u8 id) {
@@ -125,12 +161,8 @@ static bool contains(const std::vector<std::string>& vec, std::string str) {
 }
 
 static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
-    std::vector<std::string> entry_names(pfs.GetNumEntries());
-    for (int i = 0; i < entry_names.size(); ++i)
-        entry_names[i] = pfs.GetEntryName(i);
-
     // According to switchbrew, an exefs must only contain these two files:
-    return contains(entry_names, "main") && contains(entry_names, "main.ndpm");
+    return pfs.GetFileSize("main") > 0 && pfs.GetFileSize("main.npdm") > 0;
 }
 
 u8 Nca::GetExeFsPfsId() {
@@ -218,13 +250,9 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    Nca nca{};
+    Nca nca{std::move(file), filepath};
 
-    std::vector<u8> npdm = nca.GetExeFsFile("main.ndpm");
-    if (npdm.size() != file.ReadBytes(npdm.data(), npdm.size()))
-        return ResultStatus::Error;
-
-    ResultStatus result = metadata.Load(npdm);
+    ResultStatus result = metadata.Load(nca.GetExeFsFile("main.npdm"));
     if (result != ResultStatus::Success) {
         return result;
     }
