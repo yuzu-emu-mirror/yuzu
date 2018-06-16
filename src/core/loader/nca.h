@@ -34,8 +34,8 @@ private:
     std::vector<FileSys::PartitionFilesystem> pfs;
     std::vector<u64> pfs_offset;
 
-    u64 romfs_offset;
-    u64 romfs_size;
+    u64 romfs_offset = 0;
+    u64 romfs_size = 0;
 
     FileUtil::IOFile file;
     std::string path;
@@ -60,9 +60,14 @@ public:
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
+    ResultStatus ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                           u64& size) override;
+
 private:
     std::string filepath;
     FileSys::ProgramMetadata metadata;
+
+    std::unique_ptr<Nca> nca;
 };
 
 } // namespace Loader

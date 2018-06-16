@@ -15,6 +15,7 @@
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
+#include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/nro.h"
 #include "core/memory.h"
 #include "nca.h"
@@ -250,9 +251,9 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    Nca nca{std::move(file), filepath};
+    nca = std::make_unique<Nca>(std::move(file), filepath);
 
-    ResultStatus result = metadata.Load(nca.GetExeFsFile("main.npdm"));
+    ResultStatus result = metadata.Load(nca->GetExeFsFile("main.npdm"));
     if (result != ResultStatus::Success) {
         return result;
     }
@@ -267,7 +268,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(module, nca.GetExeFsFile(module), load_addr);
+        next_load_addr = AppLoader_NSO::LoadModule(module, nca->GetExeFsFile(module), load_addr);
         if (next_load_addr) {
             NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         } else {
@@ -283,9 +284,29 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->Run(Memory::PROCESS_IMAGE_VADDR, metadata.GetMainThreadPriority(),
                  metadata.GetMainThreadStackSize());
 
-    // Load the RomFS
+    if (nca->GetRomFsSize() > 0)
+        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
+                                                Service::FileSystem::Type::RomFS);
 
     is_loaded = true;
+    return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_NCA::ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                                      u64& size) {
+    if (nca->GetRomFsSize() == 0) {
+        NGLOG_DEBUG(Loader, "No RomFS available");
+        return ResultStatus::ErrorNotUsed;
+    }
+
+    romfs_file = std::make_shared<FileUtil::IOFile>(filepath, "rb");
+
+    offset = nca->GetRomFsOffset();
+    size = nca->GetRomFsSize();
+
+    NGLOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
+    NGLOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
+
     return ResultStatus::Success;
 }
 
