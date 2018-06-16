@@ -283,7 +283,10 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->Run(Memory::PROCESS_IMAGE_VADDR, metadata.GetMainThreadPriority(),
                  metadata.GetMainThreadStackSize());
 
-    return ResultStatus::Error;
+    // Load the RomFS
+
+    is_loaded = true;
+    return ResultStatus::Success;
 }
 
 } // namespace Loader
