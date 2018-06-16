@@ -5,15 +5,20 @@
 #include <vector>
 
 #include "common/common_funcs.h"
+#include "common/common_paths.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/core.h"
+#include "core/file_sys/disk_filesystem.h"
+#include "core/file_sys/program_metadata.h"
+#include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/loader/nro.h"
 #include "core/memory.h"
 #include "nca.h"
+#include "nso.h"
 
 namespace Loader {
 
@@ -44,9 +49,36 @@ struct NcaHeader {
     u8 hash_tables[0x4][0x20];
     u8 key_area[0x4][0x10];
     INSERT_PADDING_BYTES(0xC0);
-    INSERT_PADDING_BYTES(0x800);
 };
-static_assert(sizeof(NcaHeader) == 0xC00, "NcaHeader has incorrect size.");
+static_assert(sizeof(NcaHeader) == 0x400, "NcaHeader has incorrect size.");
+
+struct NcaSectionTableEntry {
+    u32 media_offset;
+    u32 media_end_offset;
+    INSERT_PADDING_BYTES(0x8);
+};
+static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has incorrect size.");
+
+struct NcaSectionHeaderBlock {
+    INSERT_PADDING_BYTES(3);
+    u8 filesystem_type;
+    u8 crypto_type;
+    INSERT_PADDING_BYTES(3);
+};
+static_assert(sizeof(NcaSectionHeaderBlock) == 0x8, "NcaSectionHeaderBlock has incorrect size.");
+
+struct Pfs0Superblock {
+    NcaSectionHeaderBlock header_block;
+    std::array<u8, 0x20> hash;
+    u32 size;
+    INSERT_PADDING_BYTES(4);
+    u64 hash_table_offset;
+    u64 hash_table_size;
+    u64 pfs0_header_offset;
+    u64 pfs0_size;
+    INSERT_PADDING_BYTES(432);
+};
+static_assert(sizeof(Pfs0Superblock) == 0x200, "Pfs0Superblock has incorrect size.");
 
 ///**
 // * Adapted from hactool/aes.c, void aes_xts_decrypt(aes_ctx_t *ctx, void *dst,
@@ -110,8 +142,8 @@ AppLoader_NCA::AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath)
 
 FileType AppLoader_NCA::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     file.Seek(0, SEEK_SET);
-    std::array<u8, 0xC00> header_enc_array{};
-    if (0xC00 != file.ReadBytes(header_enc_array.data(), 0xC00))
+    std::array<u8, 0x400> header_enc_array{};
+    if (0x400 != file.ReadBytes(header_enc_array.data(), 0x400))
         return FileType::Error;
 
     // NcaHeader header = DecryptHeader(header_enc_array);
@@ -125,7 +157,53 @@ FileType AppLoader_NCA::IdentifyType(FileUtil::IOFile& file, const std::string&)
 }
 
 ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
-    NGLOG_CRITICAL(Loader, "UNIMPLEMENTED!");
+    if (is_loaded) {
+        return ResultStatus::ErrorAlreadyLoaded;
+    }
+    if (!file.IsOpen()) {
+        return ResultStatus::Error;
+    }
+
+    pfs.Load(filepath, 0x8000);
+
+    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
+
+    std::vector<u8> npdm(pfs0.GetFileSize("main.npdm"));
+    file.Seek(pfs0.GetFileOffset("main.npdm"), SEEK_SET);
+    if (npdm.size() != file.ReadBytes(npdm.data(), npdm.size()))
+        return ResultStatus::Error;
+
+    ResultStatus result = metadata.Load(npdm);
+    if (result != ResultStatus::Success) {
+        return result;
+    }
+    metadata.Print();
+
+    const FileSys::ProgramAddressSpaceType arch_bits{metadata.GetAddressSpaceType()};
+    if (arch_bits == FileSys::ProgramAddressSpaceType::Is32Bit) {
+        return ResultStatus::ErrorUnsupportedArch;
+    }
+
+    VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
+    for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
+                               "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
+        const VAddr load_addr = next_load_addr;
+        next_load_addr = AppLoader_NSO::LoadModule(module, ) if (next_load_addr) {
+            NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
+        }
+        else {
+            next_load_addr = load_addr;
+        }
+    }
+
+    process->program_id = metadata.GetTitleID();
+    process->svc_access_mask.set();
+    process->address_mappings = default_address_mappings;
+    process->resource_limit =
+        Kernel::ResourceLimit::GetForCategory(Kernel::ResourceLimitCategory::APPLICATION);
+    process->Run(Memory::PROCESS_IMAGE_VADDR, metadata.GetMainThreadPriority(),
+                 metadata.GetMainThreadStackSize());
+
     return ResultStatus::Error;
 }
 
