@@ -230,6 +230,14 @@ union Instruction {
         } fmnmx;
 
         union {
+            BitField<39, 1, u64> invert_a;
+            BitField<40, 1, u64> invert_b;
+            BitField<41, 2, LogicOperation> operation;
+            BitField<44, 2, u64> unk44;
+            BitField<48, 3, Pred> pred48;
+        } lop;
+
+        union {
             BitField<53, 2, LogicOperation> operation;
             BitField<55, 1, u64> invert_a;
             BitField<56, 1, u64> invert_b;
@@ -476,6 +484,9 @@ public:
         I2I_C,
         I2I_R,
         I2I_IMM,
+        LOP_C,
+        LOP_R,
+        LOP_IMM,
         LOP32I,
         MOV_C,
         MOV_R,
@@ -675,6 +686,9 @@ private:
             INST("0100110000000---", Id::BFE_C, Type::Bfe, "BFE_C"),
             INST("0101110000000---", Id::BFE_R, Type::Bfe, "BFE_R"),
             INST("0011100-00000---", Id::BFE_IMM, Type::Bfe, "BFE_IMM"),
+            INST("0100110001000---", Id::LOP_C, Type::ArithmeticInteger, "LOP_C"),
+            INST("0101110001000---", Id::LOP_R, Type::ArithmeticInteger, "LOP_R"),
+            INST("0011100001000---", Id::LOP_IMM, Type::ArithmeticInteger, "LOP_IMM"),
             INST("000001----------", Id::LOP32I, Type::ArithmeticIntegerImmediate, "LOP32I"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
