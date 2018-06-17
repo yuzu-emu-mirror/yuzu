@@ -34,8 +34,8 @@ enum NcaContentType {
 enum NcaSectionFilesystemType { NSFS_PFS0 = 0x2, NSFS_ROMFS = 0x3 };
 
 struct NcaSectionTableEntry {
-    u32 media_offset;
-    u32 media_end_offset;
+    u32_le media_offset;
+    u32_le media_end_offset;
     INSERT_PADDING_BYTES(0x8);
 };
 static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has incorrect size.");
@@ -43,15 +43,15 @@ static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has in
 struct NcaHeader {
     u8 rsa_signature_1[0x100];
     u8 rsa_signature_2[0x100];
-    u32 magic;
+    u32_le magic;
     u8 is_system;
     u8 content_type;
     u8 crypto_type;
     u8 key_index;
-    u64 size;
-    u64 title_id;
+    u64_le size;
+    u64_le title_id;
     INSERT_PADDING_BYTES(0x4);
-    u32 sdk_version;
+    u32_le sdk_version;
     u8 crypto_type_2;
     INSERT_PADDING_BYTES(15);
     u8 rights_id[0x10];
@@ -73,12 +73,12 @@ static_assert(sizeof(NcaSectionHeaderBlock) == 0x8, "NcaSectionHeaderBlock has i
 struct Pfs0Superblock {
     NcaSectionHeaderBlock header_block;
     std::array<u8, 0x20> hash;
-    u32 size;
+    u32_le size;
     INSERT_PADDING_BYTES(4);
-    u64 hash_table_offset;
-    u64 hash_table_size;
-    u64 pfs0_header_offset;
-    u64 pfs0_size;
+    u64_le hash_table_offset;
+    u64_le hash_table_size;
+    u64_le pfs0_header_offset;
+    u64_le pfs0_size;
     INSERT_PADDING_BYTES(432);
 };
 static_assert(sizeof(Pfs0Superblock) == 0x200, "Pfs0Superblock has incorrect size.");

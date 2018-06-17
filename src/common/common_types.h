@@ -48,9 +48,6 @@ using PAddr = u64; ///< Represents a pointer in the ARM11 physical address space
 using u128 = std::array<std::uint64_t, 2>;
 static_assert(sizeof(u128) == 16, "u128 must be 128 bits wide");
 
-using u256 = std::array<std::uint64_t, 4>;
-static_assert(sizeof(u256) == 32, "u256 must be 256 bits wide");
-
 // An inheritable class to disallow the copy constructor and operator= functions
 class NonCopyable {
 protected:
