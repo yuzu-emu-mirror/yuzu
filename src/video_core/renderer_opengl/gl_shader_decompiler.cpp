@@ -16,6 +16,7 @@ namespace Decompiler {
 
 using Tegra::Shader::Attribute;
 using Tegra::Shader::Instruction;
+using Tegra::Shader::LogicOperation;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
 using Tegra::Shader::Sampler;
@@ -759,6 +760,31 @@ private:
         return (absolute_offset % SchedPeriod) == 0;
     }
 
+    void WriteLogicOperation(Register dest, LogicOperation logic_op, const std::string& op_a,
+                             const std::string& op_b) {
+        switch (logic_op) {
+        case LogicOperation::And: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " & " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::Or: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " | " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::Xor: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " ^ " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::PassB: {
+            regs.SetRegisterToInteger(dest, true, 0, op_b, 1, 1);
+            break;
+        }
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented logic operation: {}", static_cast<u32>(logic_op));
+            UNREACHABLE();
+        }
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -942,55 +968,6 @@ private:
 
             break;
         }
-        case OpCode::Type::Logic: {
-            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
-
-            if (instr.alu.lop.invert_a)
-                op_a = "~(" + op_a + ')';
-
-            switch (opcode->GetId()) {
-            case OpCode::Id::LOP32I: {
-                u32 imm = static_cast<u32>(instr.alu.imm20_32.Value());
-
-                if (instr.alu.lop.invert_b)
-                    imm = ~imm;
-
-                std::string op_b = std::to_string(imm);
-
-                switch (instr.alu.lop.operation) {
-                case Tegra::Shader::LogicOperation::And: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " & " + op_b + ')',
-                                              1, 1);
-                    break;
-                }
-                case Tegra::Shader::LogicOperation::Or: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " | " + op_b + ')',
-                                              1, 1);
-                    break;
-                }
-                case Tegra::Shader::LogicOperation::Xor: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0, '(' + op_a + " ^ " + op_b + ')',
-                                              1, 1);
-                    break;
-                }
-                case Tegra::Shader::LogicOperation::PassB: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0, op_b, 1, 1);
-                    break;
-                }
-                default:
-                    NGLOG_CRITICAL(HW_GPU, "Unimplemented lop32i operation: {}",
-                                   static_cast<u32>(instr.alu.lop.operation.Value()));
-                    UNREACHABLE();
-                }
-                break;
-            }
-            default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled logic instruction: {}", opcode->GetName());
-                UNREACHABLE();
-            }
-            }
-            break;
-        }
 
         case OpCode::Type::Shift: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
@@ -1036,17 +1013,26 @@ private:
 
         case OpCode::Type::ArithmeticIntegerImmediate: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
-
-            if (instr.iadd32i.negate_a)
-                op_a = '-' + op_a;
-
-            std::string op_b = '(' + std::to_string(instr.alu.imm20_32.Value()) + ')';
+            std::string op_b = std::to_string(instr.alu.imm20_32.Value());
 
             switch (opcode->GetId()) {
             case OpCode::Id::IADD32I:
+                if (instr.iadd32i.negate_a)
+                    op_a = "-(" + op_a + ')';
+
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1,
                                           instr.iadd32i.saturate != 0);
                 break;
+            case OpCode::Id::LOP32I: {
+                if (instr.alu.lop32i.invert_a)
+                    op_a = "~(" + op_a + ')';
+
+                if (instr.alu.lop32i.invert_b)
+                    op_b = "~(" + op_b + ')';
+
+                WriteLogicOperation(instr.gpr0, instr.alu.lop32i.operation, op_a, op_b);
+                break;
+            }
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
                                opcode->GetName());

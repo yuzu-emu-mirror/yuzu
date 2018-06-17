@@ -233,7 +233,7 @@ union Instruction {
             BitField<53, 2, LogicOperation> operation;
             BitField<55, 1, u64> invert_a;
             BitField<56, 1, u64> invert_b;
-        } lop;
+        } lop32i;
 
         float GetImm20_19() const {
             float result{};
@@ -518,7 +518,6 @@ public:
         ArithmeticInteger,
         ArithmeticIntegerImmediate,
         Bfe,
-        Logic,
         Shift,
         Ffma,
         Flow,
@@ -676,7 +675,7 @@ private:
             INST("0100110000000---", Id::BFE_C, Type::Bfe, "BFE_C"),
             INST("0101110000000---", Id::BFE_R, Type::Bfe, "BFE_R"),
             INST("0011100-00000---", Id::BFE_IMM, Type::Bfe, "BFE_IMM"),
-            INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
+            INST("000001----------", Id::LOP32I, Type::ArithmeticIntegerImmediate, "LOP32I"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
             INST("0011100-01001---", Id::SHL_IMM, Type::Shift, "SHL_IMM"),
