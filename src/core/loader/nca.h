@@ -20,7 +20,7 @@ struct Nca {
 
     FileSys::PartitionFilesystem GetPfs(u8 id);
 
-    u8 GetExeFsPfsId();
+    boost::optional<u8> GetExeFsPfsId();
 
     u64 GetExeFsFileOffset(const std::string& file_name);
     u64 GetExeFsFileSize(const std::string& file_name);

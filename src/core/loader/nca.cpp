@@ -5,21 +5,18 @@
 #include <vector>
 
 #include "common/common_funcs.h"
-#include "common/common_paths.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/core.h"
-#include "core/file_sys/disk_filesystem.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
-#include "core/loader/nro.h"
+#include "core/loader/nca.h"
+#include "core/loader/nso.h"
 #include "core/memory.h"
-#include "nca.h"
-#include "nso.h"
 
 namespace Loader {
 
@@ -140,25 +137,25 @@ static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
     return pfs.GetFileSize("main") > 0 && pfs.GetFileSize("main.npdm") > 0;
 }
 
-u8 Nca::GetExeFsPfsId() {
-    for (int i = 0; i < pfs.size(); ++i) {
+boost::optional<u8> Nca::GetExeFsPfsId() {
+    for (size_t i = 0; i < pfs.size(); ++i) {
         if (IsPfsExeFs(pfs[i]))
             return i;
     }
 
-    return -1;
+    return boost::none;
 }
 
 u64 Nca::GetExeFsFileOffset(const std::string& file_name) {
-    if (GetExeFsPfsId() == 255)
+    if (GetExeFsPfsId() == boost::none)
         return 0;
-    return pfs[GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[GetExeFsPfsId()];
+    return pfs[*GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[*GetExeFsPfsId()];
 }
 
 u64 Nca::GetExeFsFileSize(const std::string& file_name) {
-    if (GetExeFsPfsId() == 255)
+    if (GetExeFsPfsId() == boost::none)
         return 0;
-    return pfs[GetExeFsPfsId()].GetFileSize(file_name);
+    return pfs[*GetExeFsPfsId()].GetFileSize(file_name);
 }
 
 u64 Nca::GetRomFsOffset() {

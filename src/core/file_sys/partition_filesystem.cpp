@@ -26,15 +26,12 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, siz
     if (!file.ReadBytes(&pfs_header, sizeof(Header)))
         return Loader::ResultStatus::Error;
 
-    bool is_hfs;
-
-    if (pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0')) {
-        is_hfs = true;
-    } else if (pfs_header.magic == Common::MakeMagic('P', 'F', 'S', '0')) {
-        is_hfs = false;
-    } else {
+    if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
+        pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
         return Loader::ResultStatus::ErrorInvalidFormat;
     }
+
+    bool is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
     size_t entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
     size_t metadata_size =
@@ -60,13 +57,12 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8>& file_data,
         return Loader::ResultStatus::Error;
 
     memcpy(&pfs_header, &file_data[offset], sizeof(Header));
-    if (pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0')) {
-        is_hfs = true;
-    } else if (pfs_header.magic == Common::MakeMagic('P', 'F', 'S', '0')) {
-        is_hfs = false;
-    } else {
+    if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
+        pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
         return Loader::ResultStatus::ErrorInvalidFormat;
     }
+
+    is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
     size_t entries_offset = offset + sizeof(Header);
     size_t entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
