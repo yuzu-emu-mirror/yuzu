@@ -21,7 +21,7 @@ struct VfsFile : NonCopyable {
     virtual std::string GetName() = 0;
     virtual u64 GetSize() = 0;
     virtual bool Resize(u64 new_size) = 0;
-    virtual boost::optional<VfsDirectory> GetContainingDirectory() = 0;
+    virtual std::shared_ptr<VfsDirectory> GetContainingDirectory() = 0;
 
     virtual bool IsWritable() = 0;
     virtual bool IsReadable() = 0;
@@ -65,14 +65,21 @@ struct VfsFile : NonCopyable {
     virtual u64 ReplaceBytes(const std::vector<u8>& data);
 
     virtual bool Rename(const std::string& name) = 0;
+
+    ~VfsFile();
 };
 
 struct VfsDirectory : NonCopyable {
-    virtual std::vector<VfsFile> GetFiles() = 0;
-    virtual boost::optional<VfsFile> GetFile(const std::string& name);
+    virtual bool IsReady() = 0;
+    virtual bool IsGood() = 0;
+    virtual operator bool();
+    virtual void ResetState() = 0;
 
-    virtual std::vector<VfsDirectory> GetSubdirectories() = 0;
-    virtual boost::optional<VfsDirectory> GetSubdirectory(const std::string& name);
+    virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() = 0;
+    virtual std::shared_ptr<VfsFile> GetFile(const std::string& name);
+
+    virtual std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() = 0;
+    virtual std::shared_ptr<VfsDirectory> GetSubdirectory(const std::string& name);
 
     virtual bool IsWritable() = 0;
     virtual bool IsReadable() = 0;
@@ -81,10 +88,10 @@ struct VfsDirectory : NonCopyable {
 
     virtual std::string GetName() = 0;
     virtual u64 GetSize();
-    virtual boost::optional<VfsDirectory> GetParentDirectory() = 0;
+    virtual std::shared_ptr<VfsDirectory> GetParentDirectory() = 0;
 
-    virtual boost::optional<VfsDirectory> CreateSubdirectory(const std::string& name) = 0;
-    virtual boost::optional<VfsFile> CreateFile(const std::string& name) = 0;
+    virtual std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) = 0;
+    virtual std::shared_ptr<VfsFile> CreateFile(const std::string& name) = 0;
 
     virtual bool DeleteSubdirectory(const std::string& name) = 0;
     virtual bool DeleteFile(const std::string& name) = 0;
@@ -92,5 +99,7 @@ struct VfsDirectory : NonCopyable {
     virtual bool Rename(const std::string& name) = 0;
 
     virtual bool Copy(const std::string& src, const std::string& dest);
+
+    ~VfsDirectory();
 };
 } // namespace FileSys

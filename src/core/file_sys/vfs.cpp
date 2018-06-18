@@ -28,18 +28,22 @@ u64 VfsFile::ReplaceBytes(const std::vector<u8>& data) {
     return WriteBytes(data, 0);
 }
 
-boost::optional<VfsFile> VfsDirectory::GetFile(const std::string& name) {
+VfsDirectory::operator bool() {
+    return IsGood();
+}
+
+std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) {
     auto files = GetFiles();
     auto iter = std::find_if(files.begin(), files.end(),
                              [&name](auto file1) { return name == file1.GetName(); });
-    return iter == files.end() ? boost::none : boost::make_optional(*iter);
+    return iter == files.end() ? nullptr : std::move(*iter);
 }
 
-boost::optional<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) {
+std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) {
     auto subs = GetSubdirectories();
     auto iter = std::find_if(subs.begin(), subs.end(),
                              [&name](auto file1) { return name == file1.GetName(); });
-    return iter == subs.end() ? boost::none : boost::make_optional(*iter);
+    return iter == subs.end() ? nullptr : std::move(*iter);
 }
 
 u64 VfsDirectory::GetSize() {
@@ -54,10 +58,14 @@ u64 VfsDirectory::GetSize() {
 
 bool VfsDirectory::Copy(const std::string& src, const std::string& dest) {
     auto f1 = CreateFile(src), f2 = CreateFile(dest);
-    if (f1 == boost::none || f2 == boost::none)
+    if (f1 == nullptr || f2 == nullptr)
         return false;
 
     return f2->ReplaceBytes(f1->ReadAllBytes()) == f1->GetSize();
 }
+
+VfsFile::~VfsFile() {}
+
+VfsDirectory::~VfsDirectory() {}
 
 } // namespace FileSys
