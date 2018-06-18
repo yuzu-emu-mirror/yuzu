@@ -41,6 +41,8 @@ add_library(video_core STATIC
     renderer_opengl/maxwell_to_gl.h
     renderer_opengl/renderer_opengl.cpp
     renderer_opengl/renderer_opengl.h
+    textures/astc.cpp
+    textures/astc.h
     textures/decoders.cpp
     textures/decoders.h
     textures/texture.h
