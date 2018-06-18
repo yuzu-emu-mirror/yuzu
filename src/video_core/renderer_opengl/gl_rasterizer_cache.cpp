@@ -888,9 +888,6 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params, ScaleMatc
     // Use GetSurfaceSubRect instead
     ASSERT(params.width == params.stride);
 
-    ASSERT(!params.is_tiled ||
-           (params.GetActualWidth() % 8 == 0 && params.GetActualHeight() % 8 == 0));
-
     // Check for an exact match in existing surfaces
     Surface surface =
         FindMatch<MatchFlags::Exact | MatchFlags::Invalid>(surface_cache, params, match_res_scale);
@@ -1048,34 +1045,19 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
     if (config.tic.IsTiled()) {
         params.block_height = config.tic.BlockHeight();
-        params.width = Common::AlignUp(params.width, params.block_height);
-        params.height = Common::AlignUp(params.height, params.block_height);
+
+        // TODO(bunnei): The below align up is a hack. This is here because some compressed textures
+        // are not a multiple of their own compression factor, and so this accounts for that. This
+        // could potentially result in an extra row of 4px being decoded if a texture is not a
+        // multiple of 4.
+        params.width = Common::AlignUp(params.width, 4);
+        params.height = Common::AlignUp(params.height, 4);
     } else {
         // Use the texture-provided stride value if the texture isn't tiled.
         params.stride = static_cast<u32>(params.PixelsInBytes(config.tic.Pitch()));
     }
 
     params.UpdateParams();
-
-    if (params.GetActualWidth() % 8 != 0 || params.GetActualHeight() % 8 != 0 ||
-        params.stride != params.width) {
-        Surface src_surface;
-        MathUtil::Rectangle<u32> rect;
-        std::tie(src_surface, rect) = GetSurfaceSubRect(params, ScaleMatch::Ignore, true);
-
-        rect = rect.Scale(params.GetCompresssionFactor());
-
-        params.res_scale = src_surface->res_scale;
-        Surface tmp_surface = CreateSurface(params);
-
-        auto dst_rect = tmp_surface->GetScaledRect().Scale(params.GetCompresssionFactor());
-        BlitTextures(src_surface->texture.handle, rect, tmp_surface->texture.handle, dst_rect,
-                     SurfaceParams::GetFormatType(params.pixel_format), read_framebuffer.handle,
-                     draw_framebuffer.handle);
-
-        remove_surfaces.emplace(tmp_surface);
-        return tmp_surface;
-    }
 
     return GetSurface(params, ScaleMatch::Ignore, true);
 }
@@ -1251,7 +1233,7 @@ void RasterizerCacheOpenGL::ValidateSurface(const Surface& surface, Tegra::GPUVA
 
         const auto interval = *it & validate_interval;
         // Look for a valid surface to copy from
-        SurfaceParams params = surface->FromInterval(interval);
+        SurfaceParams params = *surface;
 
         Surface copy_surface =
             FindMatch<MatchFlags::Copy>(surface_cache, params, ScaleMatch::Ignore, interval);
