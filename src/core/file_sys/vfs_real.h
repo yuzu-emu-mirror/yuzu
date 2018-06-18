@@ -31,7 +31,7 @@ private:
 };
 
 struct RealVfsDirectory : public VfsDirectory {
-    explicit RealVfsDirectory(const std::string& name);
+    explicit RealVfsDirectory(const std::string& path, const char openmode[]);
 
     bool IsReady() override;
     bool IsGood() override;
@@ -42,14 +42,18 @@ struct RealVfsDirectory : public VfsDirectory {
     bool IsReadable() override;
     bool IsRoot() override;
     std::string GetName() override;
-    u64 GetSize() override;
     std::shared_ptr<VfsDirectory> GetParentDirectory() override;
     std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
     std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
     bool DeleteSubdirectory(const std::string& name) override;
     bool DeleteFile(const std::string& name) override;
     bool Rename(const std::string& name) override;
-    bool Copy(const std::string& src, const std::string& dest) override;
+
+private:
+    std::string path;
+    std::string mode;
+    std::vector<std::shared_ptr<VfsFile>> files;
+    std::vector<std::shared_ptr<VfsDirectory>> subdirectories;
 };
 
 } // namespace FileSys
