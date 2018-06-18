@@ -5,6 +5,7 @@
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_compute.h"
+#include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
 
 namespace Tegra {
@@ -14,6 +15,7 @@ GPU::GPU() {
     maxwell_3d = std::make_unique<Engines::Maxwell3D>(*memory_manager);
     fermi_2d = std::make_unique<Engines::Fermi2D>(*memory_manager);
     maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
+    maxwell_dma = std::make_unique<Engines::MaxwellDMA>(*memory_manager);
 }
 
 GPU::~GPU() = default;

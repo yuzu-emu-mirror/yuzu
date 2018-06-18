@@ -47,6 +47,7 @@ void Fermi2D::HandleSurfaceCopy() {
 
     if (regs.src.linear == regs.dst.linear) {
         // If the input layout and the output layout are the same, just perform a raw copy.
+        ASSERT(regs.src.BlockHeight() == regs.dst.BlockHeight());
         Memory::CopyBlock(dest_cpu, source_cpu,
                           src_bytes_per_pixel * regs.dst.width * regs.dst.height);
         return;

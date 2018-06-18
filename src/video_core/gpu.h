@@ -63,6 +63,7 @@ namespace Engines {
 class Fermi2D;
 class Maxwell3D;
 class MaxwellCompute;
+class MaxwellDMA;
 } // namespace Engines
 
 enum class EngineID {
@@ -103,6 +104,8 @@ private:
     std::unique_ptr<Engines::Fermi2D> fermi_2d;
     /// Compute engine
     std::unique_ptr<Engines::MaxwellCompute> maxwell_compute;
+    /// DMA engine
+    std::unique_ptr<Engines::MaxwellDMA> maxwell_dma;
 };
 
 } // namespace Tegra

@@ -16,6 +16,7 @@ namespace Decompiler {
 
 using Tegra::Shader::Attribute;
 using Tegra::Shader::Instruction;
+using Tegra::Shader::LogicOperation;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::Register;
 using Tegra::Shader::Sampler;
@@ -266,6 +267,27 @@ public:
     }
 
     /**
+     * Returns code that does an integer size conversion for the specified size.
+     * @param value Value to perform integer size conversion on.
+     * @param size Register size to use for conversion instructions.
+     * @returns GLSL string corresponding to the value converted to the specified size.
+     */
+    static std::string ConvertIntegerSize(const std::string& value, Register::Size size) {
+        switch (size) {
+        case Register::Size::Byte:
+            return "((" + value + " << 24) >> 24)";
+        case Register::Size::Short:
+            return "((" + value + " << 16) >> 16)";
+        case Register::Size::Word:
+            // Default - do nothing
+            return value;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented conversion size {}", static_cast<u32>(size));
+            UNREACHABLE();
+        }
+    }
+
+    /**
      * Gets a register as an float.
      * @param reg The register to get.
      * @param elem The element to use for the operation.
@@ -281,15 +303,18 @@ public:
      * @param reg The register to get.
      * @param elem The element to use for the operation.
      * @param is_signed Whether to get the register as a signed (or unsigned) integer.
+     * @param size Register size to use for conversion instructions.
      * @returns GLSL string corresponding to the register as an integer.
      */
-    std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0,
-                                     bool is_signed = true) {
+    std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0, bool is_signed = true,
+                                     Register::Size size = Register::Size::Word) {
         const std::string func = GetGLSLConversionFunc(
             GLSLRegister::Type::Float,
             is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger);
 
-        return func + '(' + GetRegister(reg, elem) + ')';
+        std::string value = func + '(' + GetRegister(reg, elem) + ')';
+
+        return ConvertIntegerSize(value, size);
     }
 
     /**
@@ -319,19 +344,20 @@ public:
      * @param value_num_components Number of components in the value.
      * @param is_saturated Optional, when True, saturates the provided value.
      * @param dest_elem Optional, the destination element to use for the operation.
+     * @param size Register size to use for conversion instructions.
      */
     void SetRegisterToInteger(const Register& reg, bool is_signed, u64 elem,
                               const std::string& value, u64 dest_num_components,
                               u64 value_num_components, bool is_saturated = false,
-                              u64 dest_elem = 0) {
+                              u64 dest_elem = 0, Register::Size size = Register::Size::Word) {
         ASSERT_MSG(!is_saturated, "Unimplemented");
 
         const std::string func = GetGLSLConversionFunc(
             is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger,
             GLSLRegister::Type::Float);
 
-        SetRegister(reg, elem, func + '(' + value + ')', dest_num_components, value_num_components,
-                    dest_elem);
+        SetRegister(reg, elem, func + '(' + ConvertIntegerSize(value, size) + ')',
+                    dest_num_components, value_num_components, dest_elem);
     }
 
     /**
@@ -734,6 +760,31 @@ private:
         return (absolute_offset % SchedPeriod) == 0;
     }
 
+    void WriteLogicOperation(Register dest, LogicOperation logic_op, const std::string& op_a,
+                             const std::string& op_b) {
+        switch (logic_op) {
+        case LogicOperation::And: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " & " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::Or: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " | " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::Xor: {
+            regs.SetRegisterToInteger(dest, true, 0, '(' + op_a + " ^ " + op_b + ')', 1, 1);
+            break;
+        }
+        case LogicOperation::PassB: {
+            regs.SetRegisterToInteger(dest, true, 0, op_b, 1, 1);
+            break;
+        }
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented logic operation: {}", static_cast<u32>(logic_op));
+            UNREACHABLE();
+        }
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -917,49 +968,6 @@ private:
 
             break;
         }
-        case OpCode::Type::Logic: {
-            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
-
-            if (instr.alu.lop.invert_a)
-                op_a = "~(" + op_a + ')';
-
-            switch (opcode->GetId()) {
-            case OpCode::Id::LOP32I: {
-                u32 imm = static_cast<u32>(instr.alu.imm20_32.Value());
-
-                if (instr.alu.lop.invert_b)
-                    imm = ~imm;
-
-                switch (instr.alu.lop.operation) {
-                case Tegra::Shader::LogicOperation::And: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " & " + std::to_string(imm) + ')', 1, 1);
-                    break;
-                }
-                case Tegra::Shader::LogicOperation::Or: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " | " + std::to_string(imm) + ')', 1, 1);
-                    break;
-                }
-                case Tegra::Shader::LogicOperation::Xor: {
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0,
-                                              '(' + op_a + " ^ " + std::to_string(imm) + ')', 1, 1);
-                    break;
-                }
-                default:
-                    NGLOG_CRITICAL(HW_GPU, "Unimplemented lop32i operation: {}",
-                                   static_cast<u32>(instr.alu.lop.operation.Value()));
-                    UNREACHABLE();
-                }
-                break;
-            }
-            default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled logic instruction: {}", opcode->GetName());
-                UNREACHABLE();
-            }
-            }
-            break;
-        }
 
         case OpCode::Type::Shift: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8, 0, true);
@@ -1003,14 +1011,39 @@ private:
             break;
         }
 
+        case OpCode::Type::ArithmeticIntegerImmediate: {
+            std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+            std::string op_b = std::to_string(instr.alu.imm20_32.Value());
+
+            switch (opcode->GetId()) {
+            case OpCode::Id::IADD32I:
+                if (instr.iadd32i.negate_a)
+                    op_a = "-(" + op_a + ')';
+
+                regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1,
+                                          instr.iadd32i.saturate != 0);
+                break;
+            case OpCode::Id::LOP32I: {
+                if (instr.alu.lop32i.invert_a)
+                    op_a = "~(" + op_a + ')';
+
+                if (instr.alu.lop32i.invert_b)
+                    op_b = "~(" + op_b + ')';
+
+                WriteLogicOperation(instr.gpr0, instr.alu.lop32i.operation, op_a, op_b);
+                break;
+            }
+            default: {
+                NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
+                               opcode->GetName());
+                UNREACHABLE();
+            }
+            }
+            break;
+        }
         case OpCode::Type::ArithmeticInteger: {
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
-
-            if (instr.alu_integer.negate_a)
-                op_a = '-' + op_a;
-
-            std::string op_b = instr.alu_integer.negate_b ? "-" : "";
-
+            std::string op_b;
             if (instr.is_b_imm) {
                 op_b += '(' + std::to_string(instr.alu.GetSignedImm20_20()) + ')';
             } else {
@@ -1026,6 +1059,12 @@ private:
             case OpCode::Id::IADD_C:
             case OpCode::Id::IADD_R:
             case OpCode::Id::IADD_IMM: {
+                if (instr.alu_integer.negate_a)
+                    op_a = "-(" + op_a + ')';
+
+                if (instr.alu_integer.negate_b)
+                    op_b = "-(" + op_b + ')';
+
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " + " + op_b, 1, 1,
                                           instr.alu.saturate_d);
                 break;
@@ -1033,10 +1072,31 @@ private:
             case OpCode::Id::ISCADD_C:
             case OpCode::Id::ISCADD_R:
             case OpCode::Id::ISCADD_IMM: {
+                if (instr.alu_integer.negate_a)
+                    op_a = "-(" + op_a + ')';
+
+                if (instr.alu_integer.negate_b)
+                    op_b = "-(" + op_b + ')';
+
                 std::string shift = std::to_string(instr.alu_integer.shift_amount.Value());
 
                 regs.SetRegisterToInteger(instr.gpr0, true, 0,
                                           "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
+                break;
+            }
+            case OpCode::Id::LOP_C:
+            case OpCode::Id::LOP_R:
+            case OpCode::Id::LOP_IMM: {
+                ASSERT_MSG(!instr.alu.lop.unk44, "Unimplemented");
+                ASSERT_MSG(instr.alu.lop.pred48 == Pred::UnusedIndex, "Unimplemented");
+
+                if (instr.alu.lop.invert_a)
+                    op_a = "~(" + op_a + ')';
+
+                if (instr.alu.lop.invert_b)
+                    op_b = "~(" + op_b + ')';
+
+                WriteLogicOperation(instr.gpr0, instr.alu.lop.operation, op_a, op_b);
                 break;
             }
             default: {
@@ -1087,28 +1147,28 @@ private:
             break;
         }
         case OpCode::Type::Conversion: {
-            ASSERT_MSG(instr.conversion.size == Register::Size::Word, "Unimplemented");
             ASSERT_MSG(!instr.conversion.negate_a, "Unimplemented");
 
             switch (opcode->GetId()) {
             case OpCode::Id::I2I_R: {
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
 
-                std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
+                std::string op_a = regs.GetRegisterAsInteger(
+                    instr.gpr20, 0, instr.conversion.is_input_signed, instr.conversion.src_size);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
-                                          1, instr.alu.saturate_d);
+                                          1, instr.alu.saturate_d, 0, instr.conversion.dest_size);
                 break;
             }
             case OpCode::Id::I2F_R: {
+                ASSERT_MSG(instr.conversion.dest_size == Register::Size::Word, "Unimplemented");
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
-                std::string op_a =
-                    regs.GetRegisterAsInteger(instr.gpr20, 0, instr.conversion.is_input_signed);
+                std::string op_a = regs.GetRegisterAsInteger(
+                    instr.gpr20, 0, instr.conversion.is_input_signed, instr.conversion.src_size);
 
                 if (instr.conversion.abs_a) {
                     op_a = "abs(" + op_a + ')';
@@ -1118,6 +1178,8 @@ private:
                 break;
             }
             case OpCode::Id::F2F_R: {
+                ASSERT_MSG(instr.conversion.dest_size == Register::Size::Word, "Unimplemented");
+                ASSERT_MSG(instr.conversion.src_size == Register::Size::Word, "Unimplemented");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 switch (instr.conversion.f2f.rounding) {
@@ -1147,6 +1209,7 @@ private:
                 break;
             }
             case OpCode::Id::F2I_R: {
+                ASSERT_MSG(instr.conversion.src_size == Register::Size::Word, "Unimplemented");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 if (instr.conversion.abs_a) {
@@ -1179,7 +1242,7 @@ private:
                 }
 
                 regs.SetRegisterToInteger(instr.gpr0, instr.conversion.is_output_signed, 0, op_a, 1,
-                                          1);
+                                          1, false, 0, instr.conversion.dest_size);
                 break;
             }
             default: {
