@@ -65,6 +65,7 @@ struct SurfaceParams {
         DXT23 = 8,
         DXT45 = 9,
         DXN1 = 10, // This is also known as BC4
+        ASTC_2D_4X4 = 11,
 
         Max,
         Invalid = 255,
@@ -111,6 +112,7 @@ struct SurfaceParams {
             4, // DXT23
             4, // DXT45
             4, // DXN1
+            1, // ASTC_2D_4X4
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -136,6 +138,7 @@ struct SurfaceParams {
             128, // DXT23
             128, // DXT45
             64,  // DXN1
+            32,  // ASTC_2D_4X4
         }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -159,6 +162,15 @@ struct SurfaceParams {
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
+        }
+    }
+
+    static bool IsFormatASTC(PixelFormat format) {
+        switch (format) {
+        case PixelFormat::ASTC_2D_4X4:
+            return true;
+        default:
+            return false;
         }
     }
 
@@ -197,6 +209,8 @@ struct SurfaceParams {
             return PixelFormat::DXT45;
         case Tegra::Texture::TextureFormat::DXN1:
             return PixelFormat::DXN1;
+        case Tegra::Texture::TextureFormat::ASTC_2D_4X4:
+            return PixelFormat::ASTC_2D_4X4;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -228,6 +242,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::DXT45;
         case PixelFormat::DXN1:
             return Tegra::Texture::TextureFormat::DXN1;
+        case PixelFormat::ASTC_2D_4X4:
+            return Tegra::Texture::TextureFormat::ASTC_2D_4X4;
         default:
             UNREACHABLE();
         }
