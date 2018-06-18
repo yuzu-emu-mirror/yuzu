@@ -740,7 +740,6 @@ void RasterizerOpenGL::SyncDepthOffset() {
 
 void RasterizerOpenGL::SyncBlendState() {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
-    ASSERT_MSG(regs.independent_blend_enable == 1, "Only independent blending is implemented");
 
     // TODO(Subv): Support more than just render target 0.
     state.blend.enabled = regs.blend.enable[0] != 0;
@@ -748,6 +747,7 @@ void RasterizerOpenGL::SyncBlendState() {
     if (!state.blend.enabled)
         return;
 
+    ASSERT_MSG(regs.independent_blend_enable == 1, "Only independent blending is implemented");
     ASSERT_MSG(!regs.independent_blend[0].separate_alpha, "Unimplemented");
     state.blend.rgb_equation = MaxwellToGL::BlendEquation(regs.independent_blend[0].equation_rgb);
     state.blend.src_rgb_func = MaxwellToGL::BlendFunc(regs.independent_blend[0].factor_source_rgb);
