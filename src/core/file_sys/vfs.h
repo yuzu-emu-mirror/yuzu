@@ -4,69 +4,93 @@
 
 #pragma once
 
-#include "boost/optional.hpp"
-#include "common/common_types.h"
 #include <string>
 #include <vector>
+#include "boost/optional.hpp"
+#include "common/common_types.h"
 
-namespace FileSys
-{
-    struct VfsDirectory;
+namespace FileSys {
+struct VfsDirectory;
 
-    struct VfsFile : NonCopyable
-    {
-        bool IsReady();
-        bool IsGood();
-        operator bool();
-        void ResetState();
+struct VfsFile : NonCopyable {
+    virtual bool IsReady() = 0;
+    virtual bool IsGood() = 0;
+    virtual operator bool();
+    virtual void ResetState() = 0;
 
-        std::string GetName();
-        u64 GetSize();
-        bool Resize(u64 new_size);
-        boost::optional<VfsDirectory> GetContainingDirectory();
+    virtual std::string GetName() = 0;
+    virtual u64 GetSize() = 0;
+    virtual bool Resize(u64 new_size) = 0;
+    virtual boost::optional<VfsDirectory> GetContainingDirectory() = 0;
 
-        bool IsWritable();
-        bool IsReadable();
+    virtual bool IsWritable() = 0;
+    virtual bool IsReadable() = 0;
 
-        std::vector<u8> ReadBytes(u64 offset, u64 length);
-        template <typename T> u64 ReadBytes(T* data, u64 offset, u64 length);
+    virtual boost::optional<u8> ReadByte(u64 offset);
+    virtual std::vector<u8> ReadBytes(u64 offset, u64 length) = 0;
 
-        template <typename T> std::vector<T> ReadArray(u64 offset, u64 number_elements);
-        template <typename T> u64 ReadArray(T* data, u64 offset, u64 number_elements);
+    template <typename T>
+    u64 ReadBytes(T* data, u64 offset, u64 length) {
+        static_assert(std::is_trivially_copyable<T>(),
+                      "Given array does not consist of trivially copyable objects");
+        return ReadArray<u8>(reinterpret_cast<u8*>(data), offset, length);
+    }
 
-        std::vector<u8> ReadAllBytes();
+    template <typename T>
+    std::vector<T> ReadArray(u64 offset, u64 number_elements) {
+        static_assert(std::is_trivially_copyable<T>(),
+                      "Given array does not consist of trivially copyable objects");
 
-        void WriteBytes(const std::vector<u8>& data, u64 offset);
-        void ReplaceBytes(const std::vector<u8>& data);
+        auto vec = ReadBytes(offset, number_elements * sizeof(T));
+        std::vector<T> out_vec(number_elements);
+        memcpy(out_vec.data(), vec.data(), vec.size());
+        return out_vec;
+    }
 
-        bool Rename(const std::string& name);
-    };
+    template <typename T>
+    u64 ReadArray(T* data, u64 offset, u64 number_elements) {
+        static_assert(std::is_trivially_copyable<T>(),
+                      "Given array does not consist of trivially copyable objects");
 
-    struct VfsDirectory : NonCopyable
-    {
-        std::vector<VfsFile> GetFiles();
-        boost::optional<VfsFile> GetFile(const std::string& name);
+        std::vector<T> vec = ReadArray<T>(offset, number_elements);
+        for (size_t i = 0; i < vec.size(); ++i)
+            data[i] = vec[i];
 
-        std::vector<VfsDirectory> GetSubdirectories();
-        boost::optional<VfsFile> GetSubdirectory(const std::string& name);
+        return vec.size();
+    }
 
-        bool IsWritable();
-        bool IsReadable();
+    virtual std::vector<u8> ReadAllBytes();
 
-        bool IsRoot();
+    virtual u64 WriteBytes(const std::vector<u8>& data, u64 offset) = 0;
+    virtual u64 ReplaceBytes(const std::vector<u8>& data);
 
-        std::string GetName();
-        u64 GetSize();
-        boost::optional<VfsDirectory> GetParentDirectory();
+    virtual bool Rename(const std::string& name) = 0;
+};
 
-        boost::optional<VfsDirectory> CreateSubdirectory(const std::string& name);
-        boost::optional<VfsFile> CreateFile(const std::string& name);
+struct VfsDirectory : NonCopyable {
+    virtual std::vector<VfsFile> GetFiles() = 0;
+    virtual boost::optional<VfsFile> GetFile(const std::string& name);
 
-        bool DeleteSubdirectory(const std::string& name);
-        bool DeleteFile(const std::string& name);
+    virtual std::vector<VfsDirectory> GetSubdirectories() = 0;
+    virtual boost::optional<VfsDirectory> GetSubdirectory(const std::string& name);
 
-        bool Rename(const std::string& name);
+    virtual bool IsWritable() = 0;
+    virtual bool IsReadable() = 0;
 
-        bool Copy(const std::string& src, const std::string& dest);
-    };
-}
+    virtual bool IsRoot() = 0;
+
+    virtual std::string GetName() = 0;
+    virtual u64 GetSize();
+    virtual boost::optional<VfsDirectory> GetParentDirectory() = 0;
+
+    virtual boost::optional<VfsDirectory> CreateSubdirectory(const std::string& name) = 0;
+    virtual boost::optional<VfsFile> CreateFile(const std::string& name) = 0;
+
+    virtual bool DeleteSubdirectory(const std::string& name) = 0;
+    virtual bool DeleteFile(const std::string& name) = 0;
+
+    virtual bool Rename(const std::string& name) = 0;
+
+    virtual bool Copy(const std::string& src, const std::string& dest);
+};
+} // namespace FileSys
