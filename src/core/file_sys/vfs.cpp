@@ -35,23 +35,25 @@ VfsDirectory::operator bool() {
 std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) {
     auto files = GetFiles();
     auto iter = std::find_if(files.begin(), files.end(),
-                             [&name](auto file1) { return name == file1.GetName(); });
+                             [&name](auto file1) { return name == file1->GetName(); });
     return iter == files.end() ? nullptr : std::move(*iter);
 }
 
 std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) {
     auto subs = GetSubdirectories();
     auto iter = std::find_if(subs.begin(), subs.end(),
-                             [&name](auto file1) { return name == file1.GetName(); });
+                             [&name](auto file1) { return name == file1->GetName(); });
     return iter == subs.end() ? nullptr : std::move(*iter);
 }
 
 u64 VfsDirectory::GetSize() {
     auto files = GetFiles();
-    auto file_total = std::accumulate(files.begin(), files.end(), 0);
+    auto file_total = std::accumulate(files.begin(), files.end(), 0ull,
+                                      [](auto f1, auto f2) { return f1 + f2->GetSize(); });
 
     auto sub_dir = GetSubdirectories();
-    auto subdir_total = std::accumulate(sub_dir.begin(), sub_dir.end(), 0);
+    auto subdir_total = std::accumulate(sub_dir.begin(), sub_dir.end(), 0ull,
+                                        [](auto f1, auto f2) { return f1 + f2->GetSize(); });
 
     return file_total + subdir_total;
 }
