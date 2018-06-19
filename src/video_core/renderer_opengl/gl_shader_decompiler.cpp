@@ -852,23 +852,11 @@ private:
                 break;
             }
 
-            case OpCode::Id::MOV32_IMM: {
-                // mov32i doesn't have abs or neg bits.
-                regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
-                break;
-            }
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1,
                                         instr.alu.saturate_d);
-                break;
-            }
-            case OpCode::Id::FMUL32_IMM: {
-                // fmul32i doesn't have abs or neg bits.
-                regs.SetRegisterToFloat(
-                    instr.gpr0, 0,
-                    regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
                 break;
             }
             case OpCode::Id::FADD_C:
@@ -939,6 +927,21 @@ private:
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
                 UNREACHABLE();
+            }
+            }
+            break;
+        }
+        case OpCode::Type::ArithmeticImmediate: {
+            switch (opcode->GetId()) {
+            case OpCode::Id::MOV32_IMM: {
+                regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
+                break;
+            }
+            case OpCode::Id::FMUL32_IMM: {
+                regs.SetRegisterToFloat(
+                    instr.gpr0, 0,
+                    regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
+                break;
             }
             }
             break;
