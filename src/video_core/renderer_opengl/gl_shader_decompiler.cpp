@@ -822,27 +822,34 @@ private:
 
         switch (opcode->GetType()) {
         case OpCode::Type::Arithmetic: {
-            std::string op_a = instr.alu.negate_a ? "-" : "";
-            op_a += regs.GetRegisterAsFloat(instr.gpr8);
+            std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
             if (instr.alu.abs_a) {
                 op_a = "abs(" + op_a + ')';
             }
 
-            std::string op_b = instr.alu.negate_b ? "-" : "";
+            if (instr.alu.negate_a) {
+                op_a = "-(" + op_a + ')';
+            }
+
+            std::string op_b;
 
             if (instr.is_b_imm) {
-                op_b += GetImmediate19(instr);
+                op_b = GetImmediate19(instr);
             } else {
                 if (instr.is_b_gpr) {
-                    op_b += regs.GetRegisterAsFloat(instr.gpr20);
+                    op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
-                                            GLSLRegister::Type::Float);
+                    op_b = regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                           GLSLRegister::Type::Float);
                 }
             }
 
             if (instr.alu.abs_b) {
                 op_b = "abs(" + op_b + ')';
+            }
+
+            if (instr.alu.negate_b) {
+                op_b = "-(" + op_b + ')';
             }
 
             switch (opcode->GetId()) {
