@@ -36,6 +36,8 @@ public:
 
 private:
     void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
+
+    void GetAvailableLanguageCodes2(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Service::Set

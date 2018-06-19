@@ -43,6 +43,38 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     NGLOG_DEBUG(Service_SET, "called");
 }
 
+void SET::GetAvailableLanguageCodes2(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u32 id = rp.Pop<u32>();
+
+    static constexpr std::array<LanguageCode, 17> available_language_codes = {{
+        LanguageCode::JA,
+        LanguageCode::EN_US,
+        LanguageCode::FR,
+        LanguageCode::DE,
+        LanguageCode::IT,
+        LanguageCode::ES,
+        LanguageCode::ZH_CN,
+        LanguageCode::KO,
+        LanguageCode::NL,
+        LanguageCode::PT,
+        LanguageCode::RU,
+        LanguageCode::ZH_TW,
+        LanguageCode::EN_GB,
+        LanguageCode::FR_CA,
+        LanguageCode::ES_419,
+        LanguageCode::ZH_HANS,
+        LanguageCode::ZH_HANT,
+    }};
+    ctx.WriteBuffer(available_language_codes.data(), available_language_codes.size());
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(static_cast<u64>(available_language_codes.size()));
+
+    NGLOG_DEBUG(Service_SET, "called");
+}
+
 SET::SET() : ServiceFramework("set") {
     static const FunctionInfo functions[] = {
         {0, nullptr, "GetLanguageCode"},
@@ -50,7 +82,7 @@ SET::SET() : ServiceFramework("set") {
         {2, nullptr, "MakeLanguageCode"},
         {3, nullptr, "GetAvailableLanguageCodeCount"},
         {4, nullptr, "GetRegionCode"},
-        {5, nullptr, "GetAvailableLanguageCodes2"},
+        {5, &SET::GetAvailableLanguageCodes2, "GetAvailableLanguageCodes2"},
         {6, nullptr, "GetAvailableLanguageCodeCount2"},
         {7, nullptr, "GetKeyCodeMap"},
         {8, nullptr, "GetQuestFlag"},

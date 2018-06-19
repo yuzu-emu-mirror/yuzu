@@ -84,6 +84,10 @@ private:
 
         for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
             for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
+                // TODO(DarkLordZach): Is this layout/controller config actually invalid?
+                if (controller == Controller_Handheld && index == Layout_Single)
+                    continue;
+
                 ControllerLayout& layout = mem.controllers[controller].layouts[index];
                 layout.header.num_entries = HID_NUM_ENTRIES;
                 layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
