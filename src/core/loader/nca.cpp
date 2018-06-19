@@ -20,15 +20,15 @@
 
 namespace Loader {
 
-enum NcaContentType {
-    NCT_PROGRAM = 0,
-    NCT_META = 1,
-    NCT_CONTROL = 2,
-    NCT_MANUAL = 3,
-    NCT_DATA = 4
-};
+// Media offsets in headers are stored divided by 512. Mult. by this to get real offset.
+constexpr u64 MEDIA_OFFSET_MULTIPLIER = 0x200;
 
-enum NcaSectionFilesystemType { NSFS_PFS0 = 0x2, NSFS_ROMFS = 0x3 };
+constexpr u64 SECTION_HEADER_SIZE = 0x200;
+constexpr u64 SECTION_HEADER_OFFSET = 0x400;
+
+enum class NcaContentType : u8 { Program = 0, Meta = 1, Control = 2, Manual = 3, Data = 4 };
+
+enum class NcaSectionFilesystemType : u8 { PFS0 = 0x2, ROMFS = 0x3 };
 
 struct NcaSectionTableEntry {
     u32_le media_offset;
@@ -38,11 +38,11 @@ struct NcaSectionTableEntry {
 static_assert(sizeof(NcaSectionTableEntry) == 0x10, "NcaSectionTableEntry has incorrect size.");
 
 struct NcaHeader {
-    u8 rsa_signature_1[0x100];
-    u8 rsa_signature_2[0x100];
+    std::array<u8, 0x100> rsa_signature_1;
+    std::array<u8, 0x100> rsa_signature_2;
     u32_le magic;
     u8 is_system;
-    u8 content_type;
+    NcaContentType content_type;
     u8 crypto_type;
     u8 key_index;
     u64_le size;
@@ -51,17 +51,17 @@ struct NcaHeader {
     u32_le sdk_version;
     u8 crypto_type_2;
     INSERT_PADDING_BYTES(15);
-    u8 rights_id[0x10];
-    NcaSectionTableEntry section_tables[0x4];
-    u8 hash_tables[0x4][0x20];
-    u8 key_area[0x4][0x10];
+    std::array<u8, 0x10> rights_id;
+    std::array<NcaSectionTableEntry, 0x4> section_tables;
+    std::array<std::array<u8, 0x20>, 0x4> hash_tables;
+    std::array<std::array<u8, 0x10>, 0x4> key_area;
     INSERT_PADDING_BYTES(0xC0);
 };
 static_assert(sizeof(NcaHeader) == 0x400, "NcaHeader has incorrect size.");
 
 struct NcaSectionHeaderBlock {
     INSERT_PADDING_BYTES(3);
-    u8 filesystem_type;
+    NcaSectionFilesystemType filesystem_type;
     u8 crypto_type;
     INSERT_PADDING_BYTES(3);
 };
@@ -85,37 +85,79 @@ static bool IsValidNca(const NcaHeader& header) {
            header.magic == Common::MakeMagic('N', 'C', 'A', '3');
 }
 
-Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)), path(path) {
+// TODO(DarkLordZach): Add support for encrypted.
+class Nca final {
+    std::vector<FileSys::PartitionFilesystem> pfs;
+    std::vector<u64> pfs_offset;
+
+    u64 romfs_offset = 0;
+    u64 romfs_size = 0;
+
+    boost::optional<u8> exefs_id = boost::none;
+
+    FileUtil::IOFile file;
+    std::string path;
+
+    u64 GetExeFsFileOffset(const std::string& file_name) const;
+    u64 GetExeFsFileSize(const std::string& file_name) const;
+
+public:
+    ResultStatus Load(FileUtil::IOFile&& file, std::string path);
+
+    FileSys::PartitionFilesystem GetPfs(u8 id) const;
+
+    u64 GetRomFsOffset() const;
+    u64 GetRomFsSize() const;
+
+    std::vector<u8> GetExeFsFile(const std::string& file_name);
+};
+
+static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
+    // According to switchbrew, an exefs must only contain these two files:
+    return pfs.GetFileSize("main") > 0 && pfs.GetFileSize("main.npdm") > 0;
+}
+
+ResultStatus Nca::Load(FileUtil::IOFile&& in_file, std::string in_path) {
+    file = std::move(in_file);
+    path = in_path;
     file.Seek(0, SEEK_SET);
-    std::array<u8, 0x400> header_array{};
-    if (0x400 != file.ReadBytes(header_array.data(), 0x400))
+    std::array<u8, sizeof(NcaHeader)> header_array{};
+    if (sizeof(NcaHeader) != file.ReadBytes(header_array.data(), sizeof(NcaHeader)))
         NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
-    NcaHeader header = *reinterpret_cast<NcaHeader*>(header_array.data());
-    valid = IsValidNca(header);
+    NcaHeader header{};
+    std::memcpy(&header, header_array.data(), sizeof(NcaHeader));
+    if (!IsValidNca(header))
+        return ResultStatus::ErrorInvalidFormat;
 
     int number_sections =
         std::count_if(std::begin(header.section_tables), std::end(header.section_tables),
                       [](NcaSectionTableEntry entry) { return entry.media_offset > 0; });
 
     for (int i = 0; i < number_sections; ++i) {
-        file.Seek(0x400 + (i << 9), SEEK_SET);
-        std::array<u8, 0x10> array{};
-        if (0x10 != file.ReadBytes(array.data(), 0x10))
+        // Seek to beginning of this section.
+        file.Seek(SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE, SEEK_SET);
+        std::array<u8, sizeof(NcaSectionHeaderBlock)> array{};
+        if (sizeof(NcaSectionHeaderBlock) !=
+            file.ReadBytes(array.data(), sizeof(NcaSectionHeaderBlock)))
             NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
-        NcaSectionHeaderBlock block = *reinterpret_cast<NcaSectionHeaderBlock*>(array.data());
+        NcaSectionHeaderBlock block{};
+        std::memcpy(&block, array.data(), sizeof(NcaSectionHeaderBlock));
 
-        if (block.filesystem_type == NSFS_ROMFS) {
-            romfs_offset = (header.section_tables[i].media_offset << 9);
-            romfs_size = (header.section_tables[i].media_end_offset << 9) - romfs_offset;
-        } else if (block.filesystem_type == NSFS_PFS0) {
-            Pfs0Superblock sb;
-            file.Seek(0x400 + (i << 9), SEEK_SET);
-            if (0x200 != file.ReadBytes(&sb, 0x200))
+        if (block.filesystem_type == NcaSectionFilesystemType::ROMFS) {
+            romfs_offset = header.section_tables[i].media_offset * MEDIA_OFFSET_MULTIPLIER;
+            romfs_size =
+                header.section_tables[i].media_end_offset * MEDIA_OFFSET_MULTIPLIER - romfs_offset;
+        } else if (block.filesystem_type == NcaSectionFilesystemType::PFS0) {
+            Pfs0Superblock sb{};
+            // Seek back to beginning of this section.
+            file.Seek(SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE, SEEK_SET);
+            if (sizeof(Pfs0Superblock) != file.ReadBytes(&sb, sizeof(Pfs0Superblock)))
                 NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
-            u64 offset = (static_cast<u64>(header.section_tables[i].media_offset) << 9) +
+            u64 offset = (static_cast<u64>(header.section_tables[i].media_offset) *
+                          MEDIA_OFFSET_MULTIPLIER) +
                          sb.pfs0_header_offset;
             FileSys::PartitionFilesystem npfs{};
             ResultStatus status = npfs.Load(path, offset);
@@ -126,48 +168,37 @@ Nca::Nca(FileUtil::IOFile&& in_file, std::string path) : file(std::move(in_file)
             }
         }
     }
+
+    for (size_t i = 0; i < pfs.size(); ++i) {
+        if (IsPfsExeFs(pfs[i]))
+            exefs_id = i;
+    }
+
+    return ResultStatus::Success;
 }
 
-FileSys::PartitionFilesystem Nca::GetPfs(u8 id) {
+FileSys::PartitionFilesystem Nca::GetPfs(u8 id) const {
     return pfs[id];
 }
 
-static bool IsPfsExeFs(const FileSys::PartitionFilesystem& pfs) {
-    // According to switchbrew, an exefs must only contain these two files:
-    return pfs.GetFileSize("main") > 0 && pfs.GetFileSize("main.npdm") > 0;
-}
-
-boost::optional<u8> Nca::GetExeFsPfsId() {
-    for (size_t i = 0; i < pfs.size(); ++i) {
-        if (IsPfsExeFs(pfs[i]))
-            return i;
-    }
-
-    return boost::none;
-}
-
-u64 Nca::GetExeFsFileOffset(const std::string& file_name) {
-    if (GetExeFsPfsId() == boost::none)
+u64 Nca::GetExeFsFileOffset(const std::string& file_name) const {
+    if (exefs_id == boost::none)
         return 0;
-    return pfs[*GetExeFsPfsId()].GetFileOffset(file_name) + pfs_offset[*GetExeFsPfsId()];
+    return pfs[*exefs_id].GetFileOffset(file_name) + pfs_offset[*exefs_id];
 }
 
-u64 Nca::GetExeFsFileSize(const std::string& file_name) {
-    if (GetExeFsPfsId() == boost::none)
+u64 Nca::GetExeFsFileSize(const std::string& file_name) const {
+    if (exefs_id == boost::none)
         return 0;
-    return pfs[*GetExeFsPfsId()].GetFileSize(file_name);
+    return pfs[*exefs_id].GetFileSize(file_name);
 }
 
-u64 Nca::GetRomFsOffset() {
+u64 Nca::GetRomFsOffset() const {
     return romfs_offset;
 }
 
-u64 Nca::GetRomFsSize() {
+u64 Nca::GetRomFsSize() const {
     return romfs_size;
-}
-
-bool Nca::IsValid() {
-    return valid;
 }
 
 std::vector<u8> Nca::GetExeFsFile(const std::string& file_name) {
@@ -186,11 +217,11 @@ FileType AppLoader_NCA::IdentifyType(FileUtil::IOFile& file, const std::string&)
     if (0x400 != file.ReadBytes(header_enc_array.data(), 0x400))
         return FileType::Error;
 
-    // NcaHeader header = DecryptHeader(header_enc_array);
     // TODO(DarkLordZach): Assuming everything is decrypted. Add crypto support.
-    NcaHeader header = *reinterpret_cast<NcaHeader*>(header_enc_array.data());
+    NcaHeader header{};
+    std::memcpy(&header, header_enc_array.data(), sizeof(NcaHeader));
 
-    if (IsValidNca(header) && header.content_type == NCT_PROGRAM)
+    if (IsValidNca(header) && header.content_type == NcaContentType::Program)
         return FileType::NCA;
 
     return FileType::Error;
@@ -204,13 +235,13 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::Error;
     }
 
-    nca = std::make_unique<Nca>(std::move(file), filepath);
-
-    if (!nca->IsValid()) {
-        return ResultStatus::ErrorInvalidFormat;
+    nca = std::make_unique<Nca>();
+    ResultStatus result = nca->Load(std::move(file), filepath);
+    if (result != ResultStatus::Success) {
+        return result;
     }
 
-    ResultStatus result = metadata.Load(nca->GetExeFsFile("main.npdm"));
+    result = metadata.Load(nca->GetExeFsFile("main.npdm"));
     if (result != ResultStatus::Success) {
         return result;
     }
@@ -266,5 +297,7 @@ ResultStatus AppLoader_NCA::ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_f
 
     return ResultStatus::Success;
 }
+
+AppLoader_NCA::~AppLoader_NCA() = default;
 
 } // namespace Loader

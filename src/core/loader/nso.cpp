@@ -81,7 +81,7 @@ static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
 }
 
 static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeader& header,
-                                   int compressed_size) {
+                                   size_t compressed_size) {
     std::vector<u8> compressed_data;
     compressed_data.resize(compressed_size);
 
@@ -103,7 +103,8 @@ VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& 
     if (file_data.size() < sizeof(NsoHeader))
         return {};
 
-    const NsoHeader nso_header = *reinterpret_cast<const NsoHeader* const>(file_data.data());
+    NsoHeader nso_header;
+    std::memcpy(&nso_header, file_data.data(), sizeof(NsoHeader));
 
     if (nso_header.magic != Common::MakeMagic('N', 'S', 'O', '0'))
         return {};

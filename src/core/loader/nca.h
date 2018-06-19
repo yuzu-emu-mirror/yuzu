@@ -9,44 +9,14 @@
 #include "core/file_sys/partition_filesystem.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/loader/linker.h"
 #include "core/loader/loader.h"
 
 namespace Loader {
 
-// TODO(DarkLordZach): Add support for encrypted.
-struct Nca {
-    Nca(FileUtil::IOFile&& file, std::string path);
-
-    FileSys::PartitionFilesystem GetPfs(u8 id);
-
-    boost::optional<u8> GetExeFsPfsId();
-
-    u64 GetExeFsFileOffset(const std::string& file_name);
-    u64 GetExeFsFileSize(const std::string& file_name);
-
-    u64 GetRomFsOffset();
-    u64 GetRomFsSize();
-
-    bool IsValid();
-
-    std::vector<u8> GetExeFsFile(const std::string& file_name);
-
-private:
-    std::vector<FileSys::PartitionFilesystem> pfs;
-    std::vector<u64> pfs_offset;
-
-    u64 romfs_offset = 0;
-    u64 romfs_size = 0;
-
-    bool valid = false;
-
-    FileUtil::IOFile file;
-    std::string path;
-};
+class Nca;
 
 /// Loads an NCA file
-class AppLoader_NCA final : public AppLoader, Linker {
+class AppLoader_NCA final : public AppLoader {
 public:
     AppLoader_NCA(FileUtil::IOFile&& file, std::string filepath);
 
@@ -66,6 +36,8 @@ public:
 
     ResultStatus ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
                            u64& size) override;
+
+    ~AppLoader_NCA();
 
 private:
     std::string filepath;
