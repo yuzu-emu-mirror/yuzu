@@ -822,34 +822,27 @@ private:
 
         switch (opcode->GetType()) {
         case OpCode::Type::Arithmetic: {
-            std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
+            std::string op_a = instr.alu.negate_a ? "-" : "";
+            op_a += regs.GetRegisterAsFloat(instr.gpr8);
             if (instr.alu.abs_a) {
                 op_a = "abs(" + op_a + ')';
             }
 
-            if (instr.alu.negate_a) {
-                op_a = "-(" + op_a + ')';
-            }
-
-            std::string op_b;
+            std::string op_b = instr.alu.negate_b ? "-" : "";
 
             if (instr.is_b_imm) {
-                op_b = GetImmediate19(instr);
+                op_b += GetImmediate19(instr);
             } else {
                 if (instr.is_b_gpr) {
-                    op_b = regs.GetRegisterAsFloat(instr.gpr20);
+                    op_b += regs.GetRegisterAsFloat(instr.gpr20);
                 } else {
-                    op_b = regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
-                                           GLSLRegister::Type::Float);
+                    op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
+                                            GLSLRegister::Type::Float);
                 }
             }
 
             if (instr.alu.abs_b) {
                 op_b = "abs(" + op_b + ')';
-            }
-
-            if (instr.alu.negate_b) {
-                op_b = "-(" + op_b + ')';
             }
 
             switch (opcode->GetId()) {
@@ -859,11 +852,23 @@ private:
                 break;
             }
 
+            case OpCode::Id::MOV32_IMM: {
+                // mov32i doesn't have abs or neg bits.
+                regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
+                break;
+            }
             case OpCode::Id::FMUL_C:
             case OpCode::Id::FMUL_R:
             case OpCode::Id::FMUL_IMM: {
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " * " + op_b, 1, 1,
                                         instr.alu.saturate_d);
+                break;
+            }
+            case OpCode::Id::FMUL32_IMM: {
+                // fmul32i doesn't have abs or neg bits.
+                regs.SetRegisterToFloat(
+                    instr.gpr0, 0,
+                    regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
                 break;
             }
             case OpCode::Id::FADD_C:
@@ -934,21 +939,6 @@ private:
             default: {
                 NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
                 UNREACHABLE();
-            }
-            }
-            break;
-        }
-        case OpCode::Type::ArithmeticImmediate: {
-            switch (opcode->GetId()) {
-            case OpCode::Id::MOV32_IMM: {
-                regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
-                break;
-            }
-            case OpCode::Id::FMUL32_IMM: {
-                regs.SetRegisterToFloat(
-                    instr.gpr0, 0,
-                    regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
-                break;
             }
             }
             break;
