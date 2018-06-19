@@ -12,9 +12,6 @@
 namespace Service::Set {
 
 void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ctx};
-    u32 id = rp.Pop<u32>();
-
     static constexpr std::array<LanguageCode, 17> available_language_codes = {{
         LanguageCode::JA,
         LanguageCode::EN_US,
@@ -50,7 +47,7 @@ SET::SET() : ServiceFramework("set") {
         {2, nullptr, "MakeLanguageCode"},
         {3, nullptr, "GetAvailableLanguageCodeCount"},
         {4, nullptr, "GetRegionCode"},
-        {5, nullptr, "GetAvailableLanguageCodes2"},
+        {5, &SET::GetAvailableLanguageCodes, "GetAvailableLanguageCodes2"},
         {6, nullptr, "GetAvailableLanguageCodeCount2"},
         {7, nullptr, "GetKeyCodeMap"},
         {8, nullptr, "GetQuestFlag"},
