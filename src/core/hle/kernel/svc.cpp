@@ -316,6 +316,11 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
                       "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
         break;
+    case GetInfoType::UserExceptionContextAddr:
+        NGLOG_WARNING(Kernel_SVC,
+                      "(STUBBED) Attempted to query user exception context address, returned 0");
+        *result = 0;
+        break;
     default:
         UNIMPLEMENTED();
     }
