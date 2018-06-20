@@ -6,8 +6,8 @@
 
 namespace FileSys {
 
-OffsetVfsFile::OffsetVfsFile(VfsFile&& file, u64 offset, u64 size)
-    : file(std::make_unique<VfsFile>(file)), offset(offset), size(size) {}
+OffsetVfsFile::OffsetVfsFile(std::unique_ptr<VfsFile>&& file, u64 offset, u64 size)
+    : file(std::move(file)), offset(offset), size(size) {}
 
 bool OffsetVfsFile::IsReady() {
     return file->IsReady();
@@ -57,7 +57,7 @@ std::vector<u8> OffsetVfsFile::ReadBytes(u64 r_offset, u64 r_length) {
 u64 OffsetVfsFile::WriteBytes(const std::vector<u8>& data, u64 r_offset) {
     auto end = data.end();
     if (data.size() + r_offset > size)
-        end = data.begin + size - r_offset;
+        end = data.begin() + size - r_offset;
 
     return file->WriteBytes(std::vector<u8>(data.begin(), end), r_offset + offset);
 }
