@@ -328,8 +328,9 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
 
         Texture::FullTextureInfo tex_info{};
         // TODO(Subv): Use the shader to determine which textures are actually accessed.
-        tex_info.index = (current_texture - tex_info_buffer.address - TextureInfoOffset) /
-                         sizeof(Texture::TextureHandle);
+        tex_info.index =
+            static_cast<u32>(current_texture - tex_info_buffer.address - TextureInfoOffset) /
+            sizeof(Texture::TextureHandle);
 
         // Load the TIC data.
         if (tex_handle.tic_id != 0) {

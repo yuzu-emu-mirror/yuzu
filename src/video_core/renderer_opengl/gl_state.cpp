@@ -196,13 +196,13 @@ void OpenGLState::Apply() const {
     }
 
     // Textures
-    for (size_t i = 0; i < std::size(texture_units); ++i) {
+    for (int i = 0; i < std::size(texture_units); ++i) {
         if (texture_units[i].texture_2d != cur_state.texture_units[i].texture_2d) {
             glActiveTexture(TextureUnits::MaxwellTexture(i).Enum());
             glBindTexture(GL_TEXTURE_2D, texture_units[i].texture_2d);
         }
         if (texture_units[i].sampler != cur_state.texture_units[i].sampler) {
-            glBindSampler(i, texture_units[i].sampler);
+            glBindSampler(static_cast<GLuint>(i), texture_units[i].sampler);
         }
         // Update the texture swizzle
         if (texture_units[i].swizzle.r != cur_state.texture_units[i].swizzle.r ||
