@@ -328,7 +328,7 @@ bool AudRenU::IsFeatureSupported(AudioFeatures feature, u32_le revision) const {
     u32_be version_num = (revision - Common::MakeMagic('R', 'E', 'V', '0')); // Byte swap
     switch (feature) {
     case AudioFeatures::Splitter:
-        return version_num >= 2;
+        return version_num >= 2u;
     default:
         return false;
     }

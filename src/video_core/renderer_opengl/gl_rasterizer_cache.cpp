@@ -575,7 +575,7 @@ void CachedSurface::UploadGLTexture(const MathUtil::Rectangle<u32>& rect, GLuint
         glCompressedTexImage2D(GL_TEXTURE_2D, 0, tuple.internal_format,
                                static_cast<GLsizei>(rect.GetWidth() * GetCompresssionFactor()),
                                static_cast<GLsizei>(rect.GetHeight() * GetCompresssionFactor()), 0,
-                               size, &gl_buffer[buffer_offset]);
+                               static_cast<GLsizei>(size), &gl_buffer[buffer_offset]);
     } else {
         glTexSubImage2D(GL_TEXTURE_2D, 0, x0, y0, static_cast<GLsizei>(rect.GetWidth()),
                         static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,

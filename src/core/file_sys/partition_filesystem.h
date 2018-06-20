@@ -27,9 +27,9 @@ public:
     Loader::ResultStatus Load(const std::vector<u8>& file_data, size_t offset = 0);
 
     u32 GetNumEntries() const;
-    u64 GetEntryOffset(int index) const;
-    u64 GetEntrySize(int index) const;
-    std::string GetEntryName(int index) const;
+    u64 GetEntryOffset(u32 index) const;
+    u64 GetEntrySize(u32 index) const;
+    std::string GetEntryName(u32 index) const;
     u64 GetFileOffset(const std::string& name) const;
     u64 GetFileSize(const std::string& name) const;
 

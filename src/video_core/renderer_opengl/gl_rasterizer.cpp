@@ -633,7 +633,7 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
 
     state.Apply();
 
-    return current_bindpoint + entries.size();
+    return current_bindpoint + static_cast<u32>(entries.size());
 }
 
 u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, u32 current_unit,
@@ -679,7 +679,7 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
 
     state.Apply();
 
-    return current_unit + entries.size();
+    return current_unit + static_cast<u32>(entries.size());
 }
 
 void RasterizerOpenGL::BindFramebufferSurfaces(const Surface& color_surface,

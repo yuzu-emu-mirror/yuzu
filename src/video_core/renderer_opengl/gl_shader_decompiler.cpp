@@ -535,7 +535,7 @@ private:
      */
     void SetRegister(const Register& reg, u64 elem, const std::string& value,
                      u64 dest_num_components, u64 value_num_components, u64 dest_elem) {
-        std::string dest = GetRegister(reg, dest_elem);
+        std::string dest = GetRegister(reg, static_cast<u32>(dest_elem));
         if (dest_num_components > 1) {
             dest += GetSwizzle(elem);
         }
