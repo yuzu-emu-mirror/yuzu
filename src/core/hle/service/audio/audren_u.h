@@ -22,7 +22,7 @@ private:
     void GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx);
     void GetAudioDevice(Kernel::HLERequestContext& ctx);
 
-    struct WorkerBufferParameters {
+    struct AudioRendererParameters {
         u32_le sample_rate;
         u32_le sample_count;
         u32_le unknown8;
@@ -38,8 +38,8 @@ private:
         u8 padding2[4];
         u32_le magic;
     };
-    static_assert(sizeof(WorkerBufferParameters) == 52,
-                  "WorkerBufferParameters is an invalid size");
+    static_assert(sizeof(AudioRendererParameters) == 52,
+                  "AudioRendererParameters is an invalid size");
 
     enum class AudioFeatures : u32 {
         Splitter,
