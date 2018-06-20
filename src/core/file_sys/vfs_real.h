@@ -9,7 +9,7 @@
 namespace FileSys {
 
 struct RealVfsFile : public VfsFile {
-    explicit RealVfsFile(const std::string& name, const char openmode[]);
+    RealVfsFile(const std::string& name, const char openmode[]);
 
     bool IsReady() override;
     bool IsGood() override;
@@ -31,7 +31,7 @@ private:
 };
 
 struct RealVfsDirectory : public VfsDirectory {
-    explicit RealVfsDirectory(const std::string& path, const char openmode[]);
+    RealVfsDirectory(const std::string& path, const char openmode[]);
 
     bool IsReady() override;
     bool IsGood() override;
