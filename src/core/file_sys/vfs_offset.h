@@ -8,7 +8,7 @@
 namespace FileSys {
 
 struct OffsetVfsFile : public VfsFile {
-    OffsetVfsFile(VfsFile&& file, u64 offset, u64 size);
+    OffsetVfsFile(std::unique_ptr<VfsFile>&& file, u64 offset, u64 size);
 
     bool IsReady() override;
     bool IsGood() override;
