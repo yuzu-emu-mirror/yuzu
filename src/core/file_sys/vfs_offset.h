@@ -3,7 +3,7 @@
 // Refer to the license.txt file included.
 
 #pragma once
-#include "vfs.h"
+#include "core/file_sys/vfs.h"
 
 namespace FileSys {
 
