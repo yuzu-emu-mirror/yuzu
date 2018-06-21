@@ -692,6 +692,8 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 
 // Wait for an address (via Address Arbiter)
 static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout) {
+    NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
+        address, type, value, timeout);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
         return ERR_INVALID_ADDRESS_STATE;
@@ -715,6 +717,8 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
 
 // Signals to an address (via Address Arbiter)
 static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to_wake) {
+    NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}",
+        address, type, value, num_to_wake);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
         return ERR_INVALID_ADDRESS_STATE;

@@ -232,7 +232,7 @@ public:
     Handle wait_handle;         ///< The handle used to wait for the mutex.
 
     // If waiting for an AddressArbiter, this is the address being waited on.
-    VAddr arb_wait_address;
+    VAddr arb_wait_address{0};
     ResultCode arb_wait_result{RESULT_SUCCESS}; ///< Result returned when done waiting on AddressArbiter.
 
     std::string name;
