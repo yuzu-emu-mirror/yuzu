@@ -45,6 +45,7 @@ enum ThreadStatus {
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
     THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true
     THREADSTATUS_WAIT_MUTEX,     ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
+    THREADSTATUS_WAIT_ARB,       ///< Waiting due to a SignalToAddress/WaitForAddress svc
     THREADSTATUS_DORMANT,        ///< Created but not yet made ready
     THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
 };

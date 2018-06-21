@@ -20,13 +20,15 @@ enum {
     MaxConnectionsReached = 52,
 
     // Confirmed Switch OS error codes
-    MisalignedAddress = 102,
+    InvalidAddress = 102,
+    InvalidMemoryState = 106,
     InvalidProcessorId = 113,
     InvalidHandle = 114,
     InvalidCombination = 116,
     Timeout = 117,
     SynchronizationCanceled = 118,
     TooLarge = 119,
+    InvalidEnumValue = 120,
 };
 }
 
@@ -39,13 +41,13 @@ constexpr ResultCode ERR_SESSION_CLOSED_BY_REMOTE(-1);
 constexpr ResultCode ERR_PORT_NAME_TOO_LONG(-1);
 constexpr ResultCode ERR_WRONG_PERMISSION(-1);
 constexpr ResultCode ERR_MAX_CONNECTIONS_REACHED(-1);
-constexpr ResultCode ERR_INVALID_ENUM_VALUE(-1);
+constexpr ResultCode ERR_INVALID_ENUM_VALUE(ErrorModule::Kernel, ErrCodes::InvalidEnumValue);
 constexpr ResultCode ERR_INVALID_ENUM_VALUE_FND(-1);
 constexpr ResultCode ERR_INVALID_COMBINATION(-1);
 constexpr ResultCode ERR_INVALID_COMBINATION_KERNEL(-1);
 constexpr ResultCode ERR_OUT_OF_MEMORY(-1);
-constexpr ResultCode ERR_INVALID_ADDRESS(-1);
-constexpr ResultCode ERR_INVALID_ADDRESS_STATE(-1);
+constexpr ResultCode ERR_INVALID_ADDRESS(ErrorModule::Kernel, ErrCodes::InvalidAddress);
+constexpr ResultCode ERR_INVALID_ADDRESS_STATE(ErrorModule::Kernel, ErrCodes::InvalidMemoryState);
 constexpr ResultCode ERR_INVALID_HANDLE(ErrorModule::Kernel, ErrCodes::InvalidHandle);
 constexpr ResultCode ERR_INVALID_POINTER(-1);
 constexpr ResultCode ERR_INVALID_OBJECT_ADDR(-1);

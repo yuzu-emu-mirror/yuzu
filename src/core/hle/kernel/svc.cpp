@@ -11,6 +11,7 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/hle/kernel/address_arbiter.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
 #include "core/hle/kernel/event.h"
@@ -580,7 +581,7 @@ static void SleepThread(s64 nanoseconds) {
     Core::System::GetInstance().PrepareReschedule();
 }
 
-/// Signal process wide key atomic
+/// Wait process wide key atomic
 static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_variable_addr,
                                            Handle thread_handle, s64 nano_seconds) {
     NGLOG_TRACE(
@@ -687,6 +688,52 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
     }
 
     return RESULT_SUCCESS;
+}
+
+// Wait for an address (via Address Arbiter)
+static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout) {
+    // If the passed address is a kernel virtual address, return invalid memory state.
+    if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+    // If the address is not properly aligned to 4 bytes, return invalid address.
+    if (address % sizeof(u32) != 0) {
+        return ERR_INVALID_ADDRESS;
+    }
+
+    switch ((AddressArbiter::ArbitrationType)type) {
+        case AddressArbiter::ArbitrationType::WaitIfLessThan:
+            return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, false);
+        case AddressArbiter::ArbitrationType::DecrementAndWaitIfLessThan:
+            return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, true);
+        case AddressArbiter::ArbitrationType::WaitIfEqual:
+            return AddressArbiter::WaitForAddressIfEqual(address, value, timeout);
+        default:
+            return ERR_INVALID_ENUM_VALUE;
+    }
+}
+
+// Signals to an address (via Address Arbiter)
+static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to_wake) {
+    // If the passed address is a kernel virtual address, return invalid memory state.
+    if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+    // If the address is not properly aligned to 4 bytes, return invalid address.
+    if (address % sizeof(u32) != 0) {
+        return ERR_INVALID_ADDRESS;
+    }
+
+    switch ((AddressArbiter::SignalType)type) {
+        case AddressArbiter::SignalType::Signal:
+            return AddressArbiter::SignalToAddress(address, value, num_to_wake);
+        case AddressArbiter::SignalType::IncrementAndSignalIfEqual:
+            return AddressArbiter::IncrementAndSignalToAddressIfEqual(address, value, num_to_wake);
+        case AddressArbiter::SignalType::ModifyByWaitingCountAndSignalIfEqual:
+            return AddressArbiter::ModifyByWaitingCountAndSignalToAddressIfEqual(address, value, num_to_wake);
+        default:
+            return ERR_INVALID_ENUM_VALUE;
+    }
 }
 
 /// This returns the total CPU ticks elapsed since the CPU was powered-on
@@ -861,8 +908,8 @@ static const FunctionDef SVC_Table[] = {
     {0x31, nullptr, "GetResourceLimitCurrentValue"},
     {0x32, SvcWrap<SetThreadActivity>, "SetThreadActivity"},
     {0x33, SvcWrap<GetThreadContext>, "GetThreadContext"},
-    {0x34, nullptr, "WaitForAddress"},
-    {0x35, nullptr, "SignalToAddress"},
+    {0x34, SvcWrap<WaitForAddress>, "WaitForAddress"},
+    {0x35, SvcWrap<SignalToAddress>, "SignalToAddress"},
     {0x36, nullptr, "Unknown"},
     {0x37, nullptr, "Unknown"},
     {0x38, nullptr, "Unknown"},
