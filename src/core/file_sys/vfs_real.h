@@ -4,7 +4,7 @@
 
 #pragma once
 #include "common/file_util.h"
-#include "core\file_sys\vfs.h"
+#include "core/file_sys/vfs.h"
 
 namespace FileSys {
 
