@@ -68,6 +68,7 @@ namespace Kernel {
             for (size_t i = 0; i < last; i++) {
                 ASSERT(waiting_threads[i]->status = THREADSTATUS_WAIT_ARB);
                 waiting_threads[i]->arb_wait_result = RESULT_SUCCESS;
+                waiting_threads[i]->arb_wait_address = 0;
                 waiting_threads[i]->ResumeFromWait();
             }
 
