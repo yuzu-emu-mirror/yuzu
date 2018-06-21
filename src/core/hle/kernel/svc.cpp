@@ -726,7 +726,7 @@ static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to
 
     switch ((AddressArbiter::SignalType)type) {
         case AddressArbiter::SignalType::Signal:
-            return AddressArbiter::SignalToAddress(address, value, num_to_wake);
+            return AddressArbiter::SignalToAddress(address, num_to_wake);
         case AddressArbiter::SignalType::IncrementAndSignalIfEqual:
             return AddressArbiter::IncrementAndSignalToAddressIfEqual(address, value, num_to_wake);
         case AddressArbiter::SignalType::ModifyByWaitingCountAndSignalIfEqual:

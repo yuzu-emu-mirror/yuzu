@@ -213,7 +213,7 @@ QString WaitTreeThread::GetText() const {
     case THREADSTATUS_WAIT_MUTEX:
         status = tr("waiting for mutex");
         break;
-    case THREADSTATUS_WAIT_MUTEX:
+    case THREADSTATUS_WAIT_ARB:
         status = tr("waiting for address arbiter");
         break;
     case THREADSTATUS_DORMANT:

@@ -230,8 +230,10 @@ public:
     VAddr condvar_wait_address;
     VAddr mutex_wait_address;   ///< If waiting on a Mutex, this is the mutex address
     Handle wait_handle;         ///< The handle used to wait for the mutex.
-    VAddr arb_wait_address;     ///< If waiting for an AddressArbiter, this is the address
-    ResultCode arb_wait_result; ///< If waiting for an AddressArbiter, this is the result that will be returned.
+
+    // If waiting for an AddressArbiter, this is the address being waited on.
+    VAddr arb_wait_address;
+    ResultCode arb_wait_result{RESULT_SUCCESS}; ///< Result returned when done waiting on AddressArbiter.
 
     std::string name;
 

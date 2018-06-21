@@ -21,7 +21,7 @@ namespace Kernel {
             ModifyByWaitingCountAndSignalIfEqual = 2,
         };
 
-        ResultCode SignalToAddress(VAddr address, s32 value, s32 num_to_wake);
+        ResultCode SignalToAddress(VAddr address, s32 num_to_wake);
         ResultCode IncrementAndSignalToAddressIfEqual(VAddr address, s32 value, s32 num_to_wake);
         ResultCode ModifyByWaitingCountAndSignalToAddressIfEqual(VAddr address, s32 value, s32 num_to_wake);
 
