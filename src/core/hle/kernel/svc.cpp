@@ -749,7 +749,7 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
         ASSERT(thread->owner_process->ideal_processor != THREADPROCESSORID_DEFAULT);
         // Set the target CPU to the one specified in the process' exheader.
         core = thread->owner_process->ideal_processor;
-        mask = 1 << core;
+        mask = 1ull << core;
     }
 
     if (mask == 0) {
@@ -766,7 +766,7 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
     }
 
     // Error out if the input core isn't enabled in the input mask.
-    if (core < Core::NUM_CPU_CORES && (mask & (1 << core)) == 0) {
+    if (core < Core::NUM_CPU_CORES && (mask & (1ull << core)) == 0) {
         return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidCombination);
     }
 

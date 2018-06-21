@@ -73,21 +73,21 @@ u32 PartitionFilesystem::GetNumEntries() const {
     return pfs_header.num_entries;
 }
 
-u64 PartitionFilesystem::GetEntryOffset(int index) const {
+u64 PartitionFilesystem::GetEntryOffset(u32 index) const {
     if (index > GetNumEntries())
         return 0;
 
     return content_offset + pfs_entries[index].fs_entry.offset;
 }
 
-u64 PartitionFilesystem::GetEntrySize(int index) const {
+u64 PartitionFilesystem::GetEntrySize(u32 index) const {
     if (index > GetNumEntries())
         return 0;
 
     return pfs_entries[index].fs_entry.size;
 }
 
-std::string PartitionFilesystem::GetEntryName(int index) const {
+std::string PartitionFilesystem::GetEntryName(u32 index) const {
     if (index > GetNumEntries())
         return "";
 

@@ -372,7 +372,7 @@ union Instruction {
         BitField<31, 4, u64> component_mask;
 
         bool IsComponentEnabled(size_t component) const {
-            return ((1 << component) & component_mask) != 0;
+            return ((1ull << component) & component_mask) != 0;
         }
     } tex;
 
@@ -391,7 +391,7 @@ union Instruction {
 
             ASSERT(component_mask_selector < mask.size());
 
-            return ((1 << component) & mask[component_mask_selector]) != 0;
+            return ((1ull << component) & mask[component_mask_selector]) != 0;
         }
     } texs;
 
