@@ -140,6 +140,11 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
         }
     }
 
+    if (thread->arb_wait_address != 0) {
+        ASSERT(thread->status == THREADSTATUS_WAIT_ARB);
+        thread->arb_wait_address = 0;
+    }
+
     if (resume)
         thread->ResumeFromWait();
 }
@@ -179,6 +184,7 @@ void Thread::ResumeFromWait() {
     case THREADSTATUS_WAIT_SLEEP:
     case THREADSTATUS_WAIT_IPC:
     case THREADSTATUS_WAIT_MUTEX:
+    case THREADSTATUS_WAIT_ARB:
         break;
 
     case THREADSTATUS_READY:

@@ -29,6 +29,7 @@ enum {
     SynchronizationCanceled = 118,
     TooLarge = 119,
     InvalidEnumValue = 120,
+    InvalidState = 125,
 };
 }
 
@@ -49,6 +50,7 @@ constexpr ResultCode ERR_OUT_OF_MEMORY(-1);
 constexpr ResultCode ERR_INVALID_ADDRESS(ErrorModule::Kernel, ErrCodes::InvalidAddress);
 constexpr ResultCode ERR_INVALID_ADDRESS_STATE(ErrorModule::Kernel, ErrCodes::InvalidMemoryState);
 constexpr ResultCode ERR_INVALID_HANDLE(ErrorModule::Kernel, ErrCodes::InvalidHandle);
+constexpr ResultCode ERR_INVALID_STATE(ErrorModule::Kernel, ErrCodes::InvalidState);
 constexpr ResultCode ERR_INVALID_POINTER(-1);
 constexpr ResultCode ERR_INVALID_OBJECT_ADDR(-1);
 constexpr ResultCode ERR_NOT_AUTHORIZED(-1);
