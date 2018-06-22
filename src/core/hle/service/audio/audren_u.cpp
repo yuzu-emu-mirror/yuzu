@@ -76,10 +76,10 @@ private:
         std::memcpy(output.data(), &response_data, sizeof(AudioRendererResponse));
         std::vector<MemoryPoolEntry> memory_pool(memory_pool_count);
         for (unsigned i = 0; i < memory_pool.size(); i++) {
-            if (mem_pool_info[i].pool_state == MemoryPoolStates::MPS_RequestAttach)
-                memory_pool[i].state = MemoryPoolStates::MPS_Attached;
-            else if (mem_pool_info[i].pool_state == MemoryPoolStates::MPS_RequestDetatch)
-                memory_pool[i].state = MemoryPoolStates::MPS_Detatched;
+            if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestAttach)
+                memory_pool[i].state = MemoryPoolStates::Attached;
+            else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetatch)
+                memory_pool[i].state = MemoryPoolStates::Detatched;
             else
                 memory_pool[i].state = mem_pool_info[i].pool_state;
         }
@@ -120,8 +120,18 @@ private:
         NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
+    enum class MemoryPoolStates : u32_le {
+        Invalid = 0x0,
+        Unknown = 0x1,
+        RequestDetatch = 0x2,
+        Detatched = 0x3,
+        RequestAttach = 0x4,
+        Attached = 0x5,
+        Released = 0x6,
+    };
+
     struct MemoryPoolEntry {
-        u32_le state;
+        MemoryPoolStates state;
         u32_le unknown_4;
         u32_le unknown_8;
         u32_le unknown_c;
@@ -131,20 +141,10 @@ private:
     struct MemoryPoolInfo {
         u64_le pool_address;
         u64_le pool_size;
-        u32_le pool_state;
+        MemoryPoolStates pool_state;
         INSERT_PADDING_WORDS(3); // Unknown
     };
     static_assert(sizeof(MemoryPoolInfo) == 0x20, "MemoryPoolInfo has wrong size");
-
-    enum MemoryPoolStates : u32 {
-        MPS_Invalid = 0x0,
-        MPS_Unknown = 0x1,
-        MPS_RequestDetatch = 0x2,
-        MPS_Detatched = 0x3,
-        MPS_RequestAttach = 0x4,
-        MPS_Attached = 0x5,
-        MPS_Released = 0x6,
-    };
 
     struct AudioRendererConfig {
         u32 revision;
