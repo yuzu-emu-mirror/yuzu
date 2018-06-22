@@ -181,12 +181,16 @@ void SvcWrap() {
 
 template <ResultCode func(u64, u32, s32, s64)>
 void SvcWrap() {
-    FuncReturn(func(PARAM(0), (u32)(PARAM(1) & 0xFFFFFFFF), (s32)(PARAM(2) & 0xFFFFFFFF), (s64)PARAM(3)).raw);
+    FuncReturn(
+        func(PARAM(0), (u32)(PARAM(1) & 0xFFFFFFFF), (s32)(PARAM(2) & 0xFFFFFFFF), (s64)PARAM(3))
+            .raw);
 }
 
 template <ResultCode func(u64, u32, s32, s32)>
 void SvcWrap() {
-    FuncReturn(func(PARAM(0), (u32)(PARAM(1) & 0xFFFFFFFF), (s32)(PARAM(2) & 0xFFFFFFFF), (s32)(PARAM(3) & 0xFFFFFFFF)).raw);
+    FuncReturn(func(PARAM(0), (u32)(PARAM(1) & 0xFFFFFFFF), (s32)(PARAM(2) & 0xFFFFFFFF),
+                    (s32)(PARAM(3) & 0xFFFFFFFF))
+                   .raw);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

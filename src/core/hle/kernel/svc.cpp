@@ -693,7 +693,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 // Wait for an address (via Address Arbiter)
 static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout) {
     NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
-        address, type, value, timeout);
+                  address, type, value, timeout);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
         return ERR_INVALID_ADDRESS_STATE;
@@ -704,21 +704,22 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
     }
 
     switch ((AddressArbiter::ArbitrationType)type) {
-        case AddressArbiter::ArbitrationType::WaitIfLessThan:
-            return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, false);
-        case AddressArbiter::ArbitrationType::DecrementAndWaitIfLessThan:
-            return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, true);
-        case AddressArbiter::ArbitrationType::WaitIfEqual:
-            return AddressArbiter::WaitForAddressIfEqual(address, value, timeout);
-        default:
-            return ERR_INVALID_ENUM_VALUE;
+    case AddressArbiter::ArbitrationType::WaitIfLessThan:
+        return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, false);
+    case AddressArbiter::ArbitrationType::DecrementAndWaitIfLessThan:
+        return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, true);
+    case AddressArbiter::ArbitrationType::WaitIfEqual:
+        return AddressArbiter::WaitForAddressIfEqual(address, value, timeout);
+    default:
+        return ERR_INVALID_ENUM_VALUE;
     }
 }
 
 // Signals to an address (via Address Arbiter)
 static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to_wake) {
-    NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}",
-        address, type, value, num_to_wake);
+    NGLOG_WARNING(Kernel_SVC,
+                  "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}", address,
+                  type, value, num_to_wake);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
         return ERR_INVALID_ADDRESS_STATE;
@@ -729,14 +730,15 @@ static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to
     }
 
     switch ((AddressArbiter::SignalType)type) {
-        case AddressArbiter::SignalType::Signal:
-            return AddressArbiter::SignalToAddress(address, num_to_wake);
-        case AddressArbiter::SignalType::IncrementAndSignalIfEqual:
-            return AddressArbiter::IncrementAndSignalToAddressIfEqual(address, value, num_to_wake);
-        case AddressArbiter::SignalType::ModifyByWaitingCountAndSignalIfEqual:
-            return AddressArbiter::ModifyByWaitingCountAndSignalToAddressIfEqual(address, value, num_to_wake);
-        default:
-            return ERR_INVALID_ENUM_VALUE;
+    case AddressArbiter::SignalType::Signal:
+        return AddressArbiter::SignalToAddress(address, num_to_wake);
+    case AddressArbiter::SignalType::IncrementAndSignalIfEqual:
+        return AddressArbiter::IncrementAndSignalToAddressIfEqual(address, value, num_to_wake);
+    case AddressArbiter::SignalType::ModifyByWaitingCountAndSignalIfEqual:
+        return AddressArbiter::ModifyByWaitingCountAndSignalToAddressIfEqual(address, value,
+                                                                             num_to_wake);
+    default:
+        return ERR_INVALID_ENUM_VALUE;
     }
 }
 
