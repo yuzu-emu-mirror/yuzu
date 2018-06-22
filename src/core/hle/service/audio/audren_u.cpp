@@ -332,9 +332,9 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
 
     buffer_sz += 0x20 * (params.effect_count + 4 * params.voice_count) + 0x50;
     if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
-        buffer_sz += 0xE0 * params.unknown2c;
+        buffer_sz += 0xE0 * params.unknown_2c;
         buffer_sz += 0x20 * params.splitter_count;
-        buffer_sz += Common::AlignUp(4 * params.unknown2c, 0x10);
+        buffer_sz += Common::AlignUp(4 * params.unknown_2c, 0x10);
     }
     buffer_sz = Common::AlignUp(buffer_sz, 0x40) + 0x170 * params.sink_count;
     u64 output_sz = buffer_sz + 0x280 * params.sink_count + 0x4B0 * params.effect_count +
