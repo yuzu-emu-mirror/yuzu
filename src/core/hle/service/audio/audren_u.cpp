@@ -17,8 +17,8 @@ constexpr u64 audio_ticks{static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
-    IAudioRenderer(AudioRendererParameters _worker_params)
-        : ServiceFramework("IAudioRenderer"), worker_params(_worker_params) {
+    IAudioRenderer(AudioRendererParameters audren_params)
+        : ServiceFramework("IAudioRenderer"), worker_params(audren_params) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetAudioRendererSampleRate"},
             {1, nullptr, "GetAudioRendererSampleCount"},
@@ -304,19 +304,19 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto params = rp.PopRaw<AudioRendererParameters>();
 
-    u64 buffer_sz = Common::AlignUp(4 * params.unknown8, 0x40);
-    buffer_sz += params.unknownC * 1024;
-    buffer_sz += 0x940 * (params.unknownC + 1);
+    u64 buffer_sz = Common::AlignUp(4 * params.unknown_8, 0x40);
+    buffer_sz += params.unknown_c * 1024;
+    buffer_sz += 0x940 * (params.unknown_c + 1);
     buffer_sz += 0x3F0 * params.voice_count;
-    buffer_sz += Common::AlignUp(8 * (params.unknownC + 1), 0x10);
+    buffer_sz += Common::AlignUp(8 * (params.unknown_c + 1), 0x10);
     buffer_sz += Common::AlignUp(8 * params.voice_count, 0x10);
     buffer_sz +=
-        Common::AlignUp((0x3C0 * (params.sink_count + params.unknownC) + 4 * params.sample_count) *
-                            (params.unknown8 + 6),
+        Common::AlignUp((0x3C0 * (params.sink_count + params.unknown_c) + 4 * params.sample_count) *
+                            (params.unknown_8 + 6),
                         0x40);
 
     if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
-        u32 count = params.unknownC + 1;
+        u32 count = params.unknown_c + 1;
         u64 node_count = Common::AlignUp(count, 0x40);
         u64 node_state_buffer_sz =
             4 * (node_count * node_count) + 0xC * node_count + 2 * (node_count / 8);
@@ -340,11 +340,11 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     u64 output_sz = buffer_sz + 0x280 * params.sink_count + 0x4B0 * params.effect_count +
                     ((params.voice_count * 256) | 0x40);
 
-    if (params.unknown1c >= 1) {
+    if (params.unknown_1c >= 1) {
         output_sz = Common::AlignUp(((16 * params.sink_count + 16 * params.effect_count +
                                       16 * params.voice_count + 16) +
                                      0x658) *
-                                            (params.unknown1c + 1) +
+                                            (params.unknown_1c + 1) +
                                         0xc0,
                                     0x40) +
                     output_sz;
