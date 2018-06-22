@@ -20,14 +20,14 @@ namespace Kernel {
         ResultCode WaitForAddress(VAddr address, s64 timeout) {
             SharedPtr<Thread> current_thread = GetCurrentThread();
             current_thread->arb_wait_address = address;
-            current_thread->arb_wait_result = RESULT_TIMEOUT;
             current_thread->status = THREADSTATUS_WAIT_ARB;
             current_thread->wakeup_callback = nullptr;
 
             current_thread->WakeAfterDelay(timeout);
 
             Core::System::GetInstance().CpuCore(current_thread->processor_id).PrepareReschedule();
-            return current_thread->arb_wait_result;
+            // This should never actually execute.
+            return RESULT_SUCCESS;
         }
 
         // Gets the threads waiting on an address.
@@ -67,7 +67,7 @@ namespace Kernel {
             // TODO: Rescheduling should not occur while waking threads. How can it be prevented?
             for (size_t i = 0; i < last; i++) {
                 ASSERT(waiting_threads[i]->status = THREADSTATUS_WAIT_ARB);
-                waiting_threads[i]->arb_wait_result = RESULT_SUCCESS;
+                waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
                 waiting_threads[i]->arb_wait_address = 0;
                 waiting_threads[i]->ResumeFromWait();
             }
@@ -91,17 +91,9 @@ namespace Kernel {
                 return ERR_INVALID_ADDRESS_STATE;
             }
 
-            s32 cur_value;
-            // Get value, incrementing if equal.
-            {
-                // Increment if Equal must be an atomic operation.
-                std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
-                cur_value = (s32)Memory::Read32(address);
-                if (cur_value == value) {
-                    Memory::Write32(address, (u32)(cur_value + 1));
-                }
-            }
-            if (cur_value != value) {
+            if ((s32)Memory::Read32(address) == value) {
+                Memory::Write32(address, (u32)(value + 1));
+            } else {
                 return ERR_INVALID_STATE;
             }
 
@@ -128,18 +120,10 @@ namespace Kernel {
             } else {
                 updated_value = value;
             }
-            s32 cur_value;
-            // Perform an atomic update if equal.
-            {
-                std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
-                cur_value = (s32)Memory::Read32(address);
-                if (cur_value == value) {
-                    Memory::Write32(address, (u32)(updated_value));
-                }
-            }
 
-            // Only continue if equal.
-            if (cur_value != value) {
+            if ((s32)Memory::Read32(address) == value) {
+                Memory::Write32(address, (u32)(updated_value));
+            } else {
                 return ERR_INVALID_STATE;
             }
 
@@ -154,17 +138,10 @@ namespace Kernel {
                 return ERR_INVALID_ADDRESS_STATE;
             }
 
-            s32 cur_value;
-            // Get value, decrementing if less than
-            {
-                // Decrement if less than must be an atomic operation.
-                std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
-                cur_value = (s32)Memory::Read32(address);
-                if (cur_value < value) {
-                    Memory::Write32(address, (u32)(cur_value - 1));
-                }
-            }
-            if (cur_value >= value) {
+            s32 cur_value = (s32)Memory::Read32(address);
+            if (cur_value < value) {
+                Memory::Write32(address, (u32)(cur_value - 1));
+            } else {
                 return ERR_INVALID_STATE;
             }
             // Short-circuit without rescheduling, if timeout is zero.

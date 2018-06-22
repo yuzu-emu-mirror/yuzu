@@ -233,7 +233,6 @@ public:
 
     // If waiting for an AddressArbiter, this is the address being waited on.
     VAddr arb_wait_address{0};
-    ResultCode arb_wait_result{RESULT_SUCCESS}; ///< Result returned when done waiting on AddressArbiter.
 
     std::string name;
 
