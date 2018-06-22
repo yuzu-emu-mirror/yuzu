@@ -17,7 +17,7 @@ namespace Kernel {
 namespace AddressArbiter {
 
 // Performs actual address waiting logic.
-ResultCode WaitForAddress(VAddr address, s64 timeout) {
+static ResultCode WaitForAddress(VAddr address, s64 timeout) {
     SharedPtr<Thread> current_thread = GetCurrentThread();
     current_thread->arb_wait_address = address;
     current_thread->status = THREADSTATUS_WAIT_ARB;
@@ -26,12 +26,12 @@ ResultCode WaitForAddress(VAddr address, s64 timeout) {
     current_thread->WakeAfterDelay(timeout);
 
     Core::System::GetInstance().CpuCore(current_thread->processor_id).PrepareReschedule();
-    // This should never actually execute.
-    return RESULT_SUCCESS;
+    return RESULT_TIMEOUT;
 }
 
 // Gets the threads waiting on an address.
-void GetThreadsWaitingOnAddress(std::vector<SharedPtr<Thread>>& waiting_threads, VAddr address) {
+static void GetThreadsWaitingOnAddress(std::vector<SharedPtr<Thread>>& waiting_threads,
+                                       VAddr address) {
     auto RetrieveWaitingThreads =
         [](size_t core_index, std::vector<SharedPtr<Thread>>& waiting_threads, VAddr arb_addr) {
             const auto& scheduler = Core::System::GetInstance().Scheduler(core_index);
@@ -56,7 +56,7 @@ void GetThreadsWaitingOnAddress(std::vector<SharedPtr<Thread>>& waiting_threads,
 }
 
 // Wake up num_to_wake (or all) threads in a vector.
-void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num_to_wake) {
+static void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num_to_wake) {
     // Only process up to 'target' threads, unless 'target' is <= 0, in which case process
     // them all.
     size_t last = waiting_threads.size();
@@ -64,7 +64,6 @@ void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num_to_wak
         last = num_to_wake;
 
     // Signal the waiting threads.
-    // TODO: Rescheduling should not occur while waking threads. How can it be prevented?
     for (size_t i = 0; i < last; i++) {
         ASSERT(waiting_threads[i]->status = THREADSTATUS_WAIT_ARB);
         waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
@@ -90,8 +89,8 @@ ResultCode IncrementAndSignalToAddressIfEqual(VAddr address, s32 value, s32 num_
         return ERR_INVALID_ADDRESS_STATE;
     }
 
-    if ((s32)Memory::Read32(address) == value) {
-        Memory::Write32(address, (u32)(value + 1));
+    if (static_cast<s32>(Memory::Read32(address)) == value) {
+        Memory::Write32(address, static_cast<u32>(value + 1));
     } else {
         return ERR_INVALID_STATE;
     }
@@ -122,8 +121,8 @@ ResultCode ModifyByWaitingCountAndSignalToAddressIfEqual(VAddr address, s32 valu
         updated_value = value;
     }
 
-    if ((s32)Memory::Read32(address) == value) {
-        Memory::Write32(address, (u32)(updated_value));
+    if (static_cast<s32>(Memory::Read32(address)) == value) {
+        Memory::Write32(address, static_cast<u32>(updated_value));
     } else {
         return ERR_INVALID_STATE;
     }
@@ -139,9 +138,9 @@ ResultCode WaitForAddressIfLessThan(VAddr address, s32 value, s64 timeout, bool 
         return ERR_INVALID_ADDRESS_STATE;
     }
 
-    s32 cur_value = (s32)Memory::Read32(address);
+    s32 cur_value = static_cast<s32>(Memory::Read32(address));
     if (cur_value < value) {
-        Memory::Write32(address, (u32)(cur_value - 1));
+        Memory::Write32(address, static_cast<u32>(cur_value - 1));
     } else {
         return ERR_INVALID_STATE;
     }
@@ -160,7 +159,7 @@ ResultCode WaitForAddressIfEqual(VAddr address, s32 value, s64 timeout) {
         return ERR_INVALID_ADDRESS_STATE;
     }
     // Only wait for the address if equal.
-    if ((s32)Memory::Read32(address) != value) {
+    if (static_cast<s32>(Memory::Read32(address)) != value) {
         return ERR_INVALID_STATE;
     }
     // Short-circuit without rescheduling, if timeout is zero.

@@ -695,7 +695,7 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
     NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
                   address, type, value, timeout);
     // If the passed address is a kernel virtual address, return invalid memory state.
-    if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
+    if (Memory::IsKernelVirtualAddress(address)) {
         return ERR_INVALID_ADDRESS_STATE;
     }
     // If the address is not properly aligned to 4 bytes, return invalid address.
@@ -703,7 +703,7 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
         return ERR_INVALID_ADDRESS;
     }
 
-    switch ((AddressArbiter::ArbitrationType)type) {
+    switch (static_cast<AddressArbiter::ArbitrationType>(type)) {
     case AddressArbiter::ArbitrationType::WaitIfLessThan:
         return AddressArbiter::WaitForAddressIfLessThan(address, value, timeout, false);
     case AddressArbiter::ArbitrationType::DecrementAndWaitIfLessThan:
@@ -721,7 +721,7 @@ static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to
                   "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}", address,
                   type, value, num_to_wake);
     // If the passed address is a kernel virtual address, return invalid memory state.
-    if ((address + 0x8000000000LL) < 0x7FFFE00000LL) {
+    if (Memory::IsKernelVirtualAddress(address)) {
         return ERR_INVALID_ADDRESS_STATE;
     }
     // If the address is not properly aligned to 4 bytes, return invalid address.
@@ -729,7 +729,7 @@ static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to
         return ERR_INVALID_ADDRESS;
     }
 
-    switch ((AddressArbiter::SignalType)type) {
+    switch (static_cast<AddressArbiter::SignalType>(type)) {
     case AddressArbiter::SignalType::Signal:
         return AddressArbiter::SignalToAddress(address, num_to_wake);
     case AddressArbiter::SignalType::IncrementAndSignalIfEqual:
