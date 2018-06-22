@@ -315,7 +315,7 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
                             (params.unknown8 + 6),
                         0x40);
 
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
         u32 count = params.unknownC + 1;
         u64 node_count = Common::AlignUp(count, 0x40);
         u64 node_state_buffer_sz =
@@ -331,7 +331,7 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     }
 
     buffer_sz += 0x20 * (params.effect_count + 4 * params.voice_count) + 0x50;
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
         buffer_sz += 0xE0 * params.unknown2c;
         buffer_sz += 0x20 * params.splitter_count;
         buffer_sz += Common::AlignUp(4 * params.unknown2c, 0x10);
