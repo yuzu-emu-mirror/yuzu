@@ -22,11 +22,11 @@ struct AudioRendererParameters {
     u32_le effect_count;
     u32_le unknown1c;
     u8 unknown20;
-    u8 padding1[3];
+    INSERT_PADDING_BYTES(3);
     u32_le splitter_count;
     u32_le unknown2c;
-    u8 padding2[4];
-    u32_le magic;
+    INSERT_PADDING_WORDS(1);
+    u32_le revision;
 };
 static_assert(sizeof(AudioRendererParameters) == 52, "AudioRendererParameters is an invalid size");
 

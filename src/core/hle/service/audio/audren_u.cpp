@@ -163,7 +163,7 @@ private:
 
     struct AudioRendererResponse {
         AudioRendererResponse(const AudioRendererParameters& config) {
-            revision = config.magic;
+            revision = config.revision;
             error_info_size = 0xb0;
             memory_pools_size = (config.effect_count + (config.voice_count * 4)) * 0x10;
             voices_size = config.voice_count * 0x10;
