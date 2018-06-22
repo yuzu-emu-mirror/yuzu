@@ -45,6 +45,7 @@ enum ThreadStatus {
     THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
     THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true
     THREADSTATUS_WAIT_MUTEX,     ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
+    THREADSTATUS_WAIT_ARB,       ///< Waiting due to a SignalToAddress/WaitForAddress svc
     THREADSTATUS_DORMANT,        ///< Created but not yet made ready
     THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
 };
@@ -229,6 +230,9 @@ public:
     VAddr condvar_wait_address;
     VAddr mutex_wait_address; ///< If waiting on a Mutex, this is the mutex address
     Handle wait_handle;       ///< The handle used to wait for the mutex.
+
+    // If waiting for an AddressArbiter, this is the address being waited on.
+    VAddr arb_wait_address{0};
 
     std::string name;
 
