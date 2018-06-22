@@ -39,6 +39,10 @@ void main() {
     // Viewport can be flipped, which is unsupported by glViewport
     position.xy *= viewport_flip.xy;
     gl_Position = position;
+
+    // TODO(bunnei): This is likely a hack, position.w should be interpolated as 1.0
+    // For now, this is here to bring order in lieu of proper emulation
+    position.w = 1.0;
 }
 )";
     out += program.first;

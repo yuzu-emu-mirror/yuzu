@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QtGui>
 #include <QtWidgets>
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -33,7 +34,6 @@
 #include "yuzu/debugger/graphics/graphics_breakpoints.h"
 #include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/debugger/profiler.h"
-#include "yuzu/debugger/registers.h"
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/game_list.h"
 #include "yuzu/hotkeys.h"
@@ -169,15 +169,6 @@ void GMainWindow::InitializeDebugWidgets() {
     debug_menu->addAction(microProfileDialog->toggleViewAction());
 #endif
 
-    registersWidget = new RegistersWidget(this);
-    addDockWidget(Qt::RightDockWidgetArea, registersWidget);
-    registersWidget->hide();
-    debug_menu->addAction(registersWidget->toggleViewAction());
-    connect(this, &GMainWindow::EmulationStarting, registersWidget,
-            &RegistersWidget::OnEmulationStarting);
-    connect(this, &GMainWindow::EmulationStopping, registersWidget,
-            &RegistersWidget::OnEmulationStopping);
-
     graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(debug_context, this);
     addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
     graphicsBreakpointsWidget->hide();
@@ -288,6 +279,7 @@ void GMainWindow::ConnectWidgetEvents() {
 void GMainWindow::ConnectMenuEvents() {
     // File
     connect(ui.action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
+    connect(ui.action_Load_Folder, &QAction::triggered, this, &GMainWindow::OnMenuLoadFolder);
     connect(ui.action_Select_Game_List_Root, &QAction::triggered, this,
             &GMainWindow::OnMenuSelectGameListRoot);
     connect(ui.action_Exit, &QAction::triggered, this, &QMainWindow::close);
@@ -460,17 +452,12 @@ void GMainWindow::BootGame(const QString& filename) {
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our views
     // before the CPU continues
-    connect(emu_thread.get(), &EmuThread::DebugModeEntered, registersWidget,
-            &RegistersWidget::OnDebugModeEntered, Qt::BlockingQueuedConnection);
     connect(emu_thread.get(), &EmuThread::DebugModeEntered, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeEntered, Qt::BlockingQueuedConnection);
-    connect(emu_thread.get(), &EmuThread::DebugModeLeft, registersWidget,
-            &RegistersWidget::OnDebugModeLeft, Qt::BlockingQueuedConnection);
     connect(emu_thread.get(), &EmuThread::DebugModeLeft, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeLeft, Qt::BlockingQueuedConnection);
 
     // Update the GUI
-    registersWidget->OnDebugModeEntered();
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
     }
@@ -565,6 +552,8 @@ void GMainWindow::OnMenuLoadFile() {
     for (const auto& piece : game_list->supported_file_extensions)
         extensions += "*." + piece + " ";
 
+    extensions += "main ";
+
     QString file_filter = tr("Switch Executable") + " (" + extensions + ")";
     file_filter += ";;" + tr("All Files (*.*)");
 
@@ -574,6 +563,18 @@ void GMainWindow::OnMenuLoadFile() {
         UISettings::values.roms_path = QFileInfo(filename).path();
 
         BootGame(filename);
+    }
+}
+
+void GMainWindow::OnMenuLoadFolder() {
+    QDir dir = QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
+
+    QStringList matching_main = dir.entryList(QStringList("main"), QDir::Files);
+    if (matching_main.size() == 1) {
+        BootGame(dir.path() + DIR_SEP + matching_main[0]);
+    } else {
+        QMessageBox::warning(this, tr("Invalid Directory Selected"),
+                             tr("The directory you have selected does not contain a 'main' file."));
     }
 }
 

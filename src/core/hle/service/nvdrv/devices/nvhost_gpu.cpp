@@ -121,8 +121,9 @@ u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<
 }
 
 u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output) {
-    if (input.size() < sizeof(IoctlSubmitGpfifo))
+    if (input.size() < sizeof(IoctlSubmitGpfifo)) {
         UNIMPLEMENTED();
+    }
     IoctlSubmitGpfifo params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSubmitGpfifo));
     NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo={:X}, num_entries={:X}, flags={:X}",

@@ -216,7 +216,7 @@ union Instruction {
 
     union {
         BitField<20, 19, u64> imm20_19;
-        BitField<20, 32, u64> imm20_32;
+        BitField<20, 32, s64> imm20_32;
         BitField<45, 1, u64> negate_b;
         BitField<46, 1, u64> abs_a;
         BitField<48, 1, u64> negate_a;
@@ -230,10 +230,18 @@ union Instruction {
         } fmnmx;
 
         union {
+            BitField<39, 1, u64> invert_a;
+            BitField<40, 1, u64> invert_b;
+            BitField<41, 2, LogicOperation> operation;
+            BitField<44, 2, u64> unk44;
+            BitField<48, 3, Pred> pred48;
+        } lop;
+
+        union {
             BitField<53, 2, LogicOperation> operation;
             BitField<55, 1, u64> invert_a;
             BitField<56, 1, u64> invert_b;
-        } lop;
+        } lop32i;
 
         float GetImm20_19() const {
             float result{};
@@ -246,7 +254,7 @@ union Instruction {
 
         float GetImm20_32() const {
             float result{};
-            u32 imm{static_cast<u32>(imm20_32)};
+            s32 imm{static_cast<s32>(imm20_32)};
             std::memcpy(&result, &imm, sizeof(imm));
             return result;
         }
@@ -268,6 +276,11 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
     } alu_integer;
+
+    union {
+        BitField<54, 1, u64> saturate;
+        BitField<56, 1, u64> negate_a;
+    } iadd32i;
 
     union {
         BitField<20, 8, u64> shift_position;
@@ -338,7 +351,8 @@ union Instruction {
     } iset;
 
     union {
-        BitField<10, 2, Register::Size> size;
+        BitField<8, 2, Register::Size> dest_size;
+        BitField<10, 2, Register::Size> src_size;
         BitField<12, 1, u64> is_output_signed;
         BitField<13, 1, u64> is_input_signed;
         BitField<41, 2, u64> selector;
@@ -358,7 +372,7 @@ union Instruction {
         BitField<31, 4, u64> component_mask;
 
         bool IsComponentEnabled(size_t component) const {
-            return ((1 << component) & component_mask) != 0;
+            return ((1ull << component) & component_mask) != 0;
         }
     } tex;
 
@@ -377,7 +391,7 @@ union Instruction {
 
             ASSERT(component_mask_selector < mask.size());
 
-            return ((1 << component) & mask[component_mask_selector]) != 0;
+            return ((1ull << component) & mask[component_mask_selector]) != 0;
         }
     } texs;
 
@@ -450,6 +464,7 @@ public:
         IADD_C,
         IADD_R,
         IADD_IMM,
+        IADD32I,
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
@@ -469,6 +484,9 @@ public:
         I2I_C,
         I2I_R,
         I2I_IMM,
+        LOP_C,
+        LOP_R,
+        LOP_IMM,
         LOP32I,
         MOV_C,
         MOV_R,
@@ -508,9 +526,10 @@ public:
     enum class Type {
         Trivial,
         Arithmetic,
+        ArithmeticImmediate,
         ArithmeticInteger,
+        ArithmeticIntegerImmediate,
         Bfe,
-        Logic,
         Shift,
         Ffma,
         Flow,
@@ -637,10 +656,11 @@ private:
             INST("0100110001101---", Id::FMUL_C, Type::Arithmetic, "FMUL_C"),
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),
-            INST("00011110--------", Id::FMUL32_IMM, Type::Arithmetic, "FMUL32_IMM"),
+            INST("00011110--------", Id::FMUL32_IMM, Type::ArithmeticImmediate, "FMUL32_IMM"),
             INST("0100110000010---", Id::IADD_C, Type::ArithmeticInteger, "IADD_C"),
             INST("0101110000010---", Id::IADD_R, Type::ArithmeticInteger, "IADD_R"),
             INST("0011100-00010---", Id::IADD_IMM, Type::ArithmeticInteger, "IADD_IMM"),
+            INST("0001110---------", Id::IADD32I, Type::ArithmeticIntegerImmediate, "IADD32I"),
             INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
             INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
             INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
@@ -657,7 +677,7 @@ private:
             INST("0100110010011---", Id::MOV_C, Type::Arithmetic, "MOV_C"),
             INST("0101110010011---", Id::MOV_R, Type::Arithmetic, "MOV_R"),
             INST("0011100-10011---", Id::MOV_IMM, Type::Arithmetic, "MOV_IMM"),
-            INST("000000010000----", Id::MOV32_IMM, Type::Arithmetic, "MOV32_IMM"),
+            INST("000000010000----", Id::MOV32_IMM, Type::ArithmeticImmediate, "MOV32_IMM"),
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
@@ -667,7 +687,10 @@ private:
             INST("0100110000000---", Id::BFE_C, Type::Bfe, "BFE_C"),
             INST("0101110000000---", Id::BFE_R, Type::Bfe, "BFE_R"),
             INST("0011100-00000---", Id::BFE_IMM, Type::Bfe, "BFE_IMM"),
-            INST("000001----------", Id::LOP32I, Type::Logic, "LOP32I"),
+            INST("0100110001000---", Id::LOP_C, Type::ArithmeticInteger, "LOP_C"),
+            INST("0101110001000---", Id::LOP_R, Type::ArithmeticInteger, "LOP_R"),
+            INST("0011100001000---", Id::LOP_IMM, Type::ArithmeticInteger, "LOP_IMM"),
+            INST("000001----------", Id::LOP32I, Type::ArithmeticIntegerImmediate, "LOP32I"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
             INST("0011100-01001---", Id::SHL_IMM, Type::Shift, "SHL_IMM"),
