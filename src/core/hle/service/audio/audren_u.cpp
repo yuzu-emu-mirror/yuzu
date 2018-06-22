@@ -120,7 +120,7 @@ private:
         NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
-    enum class MemoryPoolStates : u32_le {
+    enum class MemoryPoolStates : u32 { // Should be LE
         Invalid = 0x0,
         Unknown = 0x1,
         RequestDetatch = 0x2,
