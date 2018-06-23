@@ -173,7 +173,7 @@ private:
         INSERT_PADDING_WORDS(6);
         u32_le total_size;
     };
-    static_assert(sizeof(UpdateDataHeader) == 0x40, "AudioRendererResponse has wrong size");
+    static_assert(sizeof(UpdateDataHeader) == 0x40, "UpdateDataHeader has wrong size");
 
     /// This is used to trigger the audio event callback.
     CoreTiming::EventType* audio_event;
