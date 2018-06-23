@@ -12,6 +12,24 @@ class HLERequestContext;
 
 namespace Service::Audio {
 
+struct AudioRendererParameters {
+    u32_le sample_rate;
+    u32_le sample_count;
+    u32_le unknown_8;
+    u32_le unknown_c;
+    u32_le voice_count;
+    u32_le sink_count;
+    u32_le effect_count;
+    u32_le unknown_1c;
+    u8 unknown_20;
+    INSERT_PADDING_BYTES(3);
+    u32_le splitter_count;
+    u32_le unknown_2c;
+    INSERT_PADDING_WORDS(1);
+    u32_le revision;
+};
+static_assert(sizeof(AudioRendererParameters) == 52, "AudioRendererParameters is an invalid size");
+
 class AudRenU final : public ServiceFramework<AudRenU> {
 public:
     explicit AudRenU();
@@ -21,25 +39,6 @@ private:
     void OpenAudioRenderer(Kernel::HLERequestContext& ctx);
     void GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx);
     void GetAudioDevice(Kernel::HLERequestContext& ctx);
-
-    struct AudioRendererParameters {
-        u32_le sample_rate;
-        u32_le sample_count;
-        u32_le unknown8;
-        u32_le unknownC;
-        u32_le voice_count;
-        u32_le sink_count;
-        u32_le effect_count;
-        u32_le unknown1c;
-        u8 unknown20;
-        u8 padding1[3];
-        u32_le splitter_count;
-        u32_le unknown2c;
-        u8 padding2[4];
-        u32_le magic;
-    };
-    static_assert(sizeof(AudioRendererParameters) == 52,
-                  "AudioRendererParameters is an invalid size");
 
     enum class AudioFeatures : u32 {
         Splitter,
