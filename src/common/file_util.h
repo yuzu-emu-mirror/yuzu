@@ -213,7 +213,7 @@ public:
         return WriteArray(str.c_str(), str.length());
     }
 
-    bool IsOpen() const const {
+    bool IsOpen() const {
         return nullptr != m_file;
     }
 
