@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <filesystem>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "boost/optional.hpp"
 #include "common/common_types.h"
@@ -13,82 +15,93 @@ namespace FileSys {
 struct VfsDirectory;
 
 struct VfsFile : NonCopyable {
-    virtual bool IsReady() = 0;
-    virtual bool IsGood() = 0;
-    virtual operator bool();
-    virtual void ResetState() = 0;
+    virtual ~VfsFile();
 
-    virtual std::string GetName() = 0;
-    virtual u64 GetSize() = 0;
-    virtual bool Resize(u64 new_size) = 0;
-    virtual std::shared_ptr<VfsDirectory> GetContainingDirectory() = 0;
+    virtual std::string GetName() const = 0;
+    virtual size_t GetSize() const = 0;
+    virtual bool Resize(size_t new_size) = 0;
+    virtual std::shared_ptr<VfsDirectory> GetContainingDirectory() const = 0;
 
-    virtual bool IsWritable() = 0;
-    virtual bool IsReadable() = 0;
+    virtual bool IsWritable() const = 0;
+    virtual bool IsReadable() const = 0;
 
-    virtual boost::optional<u8> ReadByte(u64 offset);
-    virtual std::vector<u8> ReadBytes(u64 offset, u64 length) = 0;
+    virtual size_t Read(u8* data, size_t length, size_t offset = 0) const = 0;
+    virtual size_t Write(const u8* data, size_t length, size_t offset = 0) = 0;
+
+    virtual boost::optional<u8> ReadByte(size_t offset = 0) const;
+    virtual std::vector<u8> ReadBytes(size_t size, size_t offset = 0) const;
+    virtual std::vector<u8> ReadAllBytes() const;
 
     template <typename T>
-    u64 ReadBytes(T* data, u64 offset, u64 length) {
-        static_assert(std::is_trivially_copyable<T>(),
-                      "Given array does not consist of trivially copyable objects");
-        return ReadArray<u8>(reinterpret_cast<u8*>(data), offset, length);
+    size_t ReadArray(T* data, size_t number_elements, size_t offset = 0) const {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+
+        return Read(data, number_elements * sizeof(T), offset);
     }
 
     template <typename T>
-    std::vector<T> ReadArray(u64 offset, u64 number_elements) {
-        static_assert(std::is_trivially_copyable<T>(),
-                      "Given array does not consist of trivially copyable objects");
-
-        auto vec = ReadBytes(offset, number_elements * sizeof(T));
-        std::vector<T> out_vec(number_elements);
-        memcpy(out_vec.data(), vec.data(), vec.size());
-        return out_vec;
+    size_t ReadBytes(T* data, size_t size, size_t offset = 0) const {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+        return Read(reinterpret_cast<u8*>(data), size, offset);
     }
 
     template <typename T>
-    u64 ReadArray(T* data, u64 offset, u64 number_elements) {
-        static_assert(std::is_trivially_copyable<T>(),
-                      "Given array does not consist of trivially copyable objects");
-
-        std::vector<T> vec = ReadArray<T>(offset, number_elements);
-        for (size_t i = 0; i < vec.size(); ++i)
-            data[i] = vec[i];
-
-        return vec.size();
+    size_t ReadObject(T& data, size_t offset = 0) const {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+        return Read(&data, sizeof(T), offset);
     }
 
-    virtual std::vector<u8> ReadAllBytes();
+    virtual bool WriteByte(u8 data, size_t offset = 0);
+    virtual size_t WriteBytes(std::vector<u8> data, size_t offset = 0);
 
-    virtual u64 WriteBytes(const std::vector<u8>& data, u64 offset) = 0;
-    virtual u64 ReplaceBytes(const std::vector<u8>& data);
+    template <typename T>
+    size_t WriteArray(T* data, size_t number_elements, size_t offset = 0) {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+
+        return Write(data, number_elements * sizeof(T), offset);
+    }
+
+    template <typename T>
+    size_t WriteBytes(T* data, size_t size, size_t offset = 0) {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+        return Write(reinterpret_cast<u8*>(data), size, offset);
+    }
+
+    template <typename T>
+    size_t WriteObject(T& data, size_t offset = 0) {
+        static_assert(std::is_trivially_copyable<T>::value,
+                      "Data type must be trivially copyable.");
+        return Write(&data, sizeof(T), offset);
+    }
 
     virtual bool Rename(const std::string& name) = 0;
-
-    ~VfsFile();
 };
 
 struct VfsDirectory : NonCopyable {
-    virtual bool IsReady() = 0;
-    virtual bool IsGood() = 0;
-    virtual operator bool();
-    virtual void ResetState() = 0;
+    virtual ~VfsDirectory();
 
-    virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() = 0;
-    virtual std::shared_ptr<VfsFile> GetFile(const std::string& name);
+    virtual std::shared_ptr<VfsFile> GetFileRelative(const std::filesystem::path& path) const;
+    virtual std::shared_ptr<VfsFile> GetFileAbsolute(const std::filesystem::path& path) const;
 
-    virtual std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() = 0;
-    virtual std::shared_ptr<VfsDirectory> GetSubdirectory(const std::string& name);
+    virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() const = 0;
+    virtual std::shared_ptr<VfsFile> GetFile(const std::string& name) const;
 
-    virtual bool IsWritable() = 0;
-    virtual bool IsReadable() = 0;
+    virtual std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const = 0;
+    virtual std::shared_ptr<VfsDirectory> GetSubdirectory(const std::string& name) const;
 
-    virtual bool IsRoot() = 0;
+    virtual bool IsWritable() const = 0;
+    virtual bool IsReadable() const = 0;
 
-    virtual std::string GetName() = 0;
-    virtual u64 GetSize();
-    virtual std::shared_ptr<VfsDirectory> GetParentDirectory() = 0;
+    virtual bool IsRoot() const;
+
+    virtual std::string GetName() const = 0;
+    virtual size_t GetSize() const;
+    virtual std::shared_ptr<VfsDirectory> GetParentDirectory() const = 0;
 
     virtual std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) = 0;
     virtual std::shared_ptr<VfsFile> CreateFile(const std::string& name) = 0;
@@ -99,7 +112,5 @@ struct VfsDirectory : NonCopyable {
     virtual bool Rename(const std::string& name) = 0;
 
     virtual bool Copy(const std::string& src, const std::string& dest);
-
-    ~VfsDirectory();
 };
 } // namespace FileSys

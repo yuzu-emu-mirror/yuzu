@@ -172,41 +172,27 @@ public:
     bool Close();
 
     template <typename T>
-    size_t ReadArray(T* data, size_t length) {
+    size_t ReadArray(T* data, size_t length) const {
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
 
-        if (!IsOpen()) {
-            m_good = false;
+        if (!IsOpen())
             return -1;
-        }
 
-        size_t items_read = std::fread(data, sizeof(T), length, m_file);
-        if (items_read != length)
-            m_good = false;
-
-        return items_read;
+        return std::fread(data, sizeof(T), length, m_file);
     }
 
     template <typename T>
     size_t WriteArray(const T* data, size_t length) {
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
-
-        if (!IsOpen()) {
-            m_good = false;
+        if (!IsOpen())
             return -1;
-        }
-
-        size_t items_written = std::fwrite(data, sizeof(T), length, m_file);
-        if (items_written != length)
-            m_good = false;
-
-        return items_written;
+        return std::fwrite(data, sizeof(T), length, m_file);
     }
 
     template <typename T>
-    size_t ReadBytes(T* data, size_t length) {
+    size_t ReadBytes(T* data, size_t length) const {
         static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return ReadArray(reinterpret_cast<char*>(data), length);
     }
@@ -227,19 +213,11 @@ public:
         return WriteArray(str.c_str(), str.length());
     }
 
-    bool IsOpen() const {
+    bool IsOpen() const const {
         return nullptr != m_file;
     }
 
-    // m_good is set to false when a read, write or other function fails
-    bool IsGood() const {
-        return m_good;
-    }
-    explicit operator bool() const {
-        return IsGood();
-    }
-
-    bool Seek(s64 off, int origin);
+    bool Seek(s64 off, int origin) const;
     u64 Tell() const;
     u64 GetSize() const;
     bool Resize(u64 size);
@@ -247,13 +225,11 @@ public:
 
     // clear error state
     void Clear() {
-        m_good = true;
         std::clearerr(m_file);
     }
 
 private:
     std::FILE* m_file = nullptr;
-    bool m_good = true;
 };
 
 } // namespace FileUtil

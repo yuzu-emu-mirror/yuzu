@@ -750,7 +750,7 @@ size_t WriteStringToFile(bool text_file, const std::string& str, const char* fil
 size_t ReadFileToString(bool text_file, const char* filename, std::string& str) {
     IOFile file(filename, text_file ? "r" : "rb");
 
-    if (!file)
+    if (!file.IsOpen())
         return false;
 
     str.resize(static_cast<u32>(file.GetSize()));
@@ -820,7 +820,6 @@ IOFile& IOFile::operator=(IOFile&& other) noexcept {
 
 void IOFile::Swap(IOFile& other) noexcept {
     std::swap(m_file, other.m_file);
-    std::swap(m_good, other.m_good);
 }
 
 bool IOFile::Open(const std::string& filename, const char openmode[], int flags) {
@@ -837,16 +836,15 @@ bool IOFile::Open(const std::string& filename, const char openmode[], int flags)
     m_file = fopen(filename.c_str(), openmode);
 #endif
 
-    m_good = IsOpen();
-    return m_good;
+    return IsOpen();
 }
 
 bool IOFile::Close() {
     if (!IsOpen() || 0 != std::fclose(m_file))
-        m_good = false;
+        return false;
 
     m_file = nullptr;
-    return m_good;
+    return true;
 }
 
 u64 IOFile::GetSize() const {
@@ -856,11 +854,8 @@ u64 IOFile::GetSize() const {
     return 0;
 }
 
-bool IOFile::Seek(s64 off, int origin) {
-    if (!IsOpen() || 0 != fseeko(m_file, off, origin))
-        m_good = false;
-
-    return m_good;
+bool IOFile::Seek(s64 off, int origin) const {
+    return IsOpen() && 0 == fseeko(m_file, off, origin);
 }
 
 u64 IOFile::Tell() const {
@@ -871,26 +866,20 @@ u64 IOFile::Tell() const {
 }
 
 bool IOFile::Flush() {
-    if (!IsOpen() || 0 != std::fflush(m_file))
-        m_good = false;
-
-    return m_good;
+    return IsOpen() && 0 == std::fflush(m_file);
 }
 
 bool IOFile::Resize(u64 size) {
-    if (!IsOpen() || 0 !=
+    return IsOpen() && 0 ==
 #ifdef _WIN32
-                         // ector: _chsize sucks, not 64-bit safe
-                         // F|RES: changed to _chsize_s. i think it is 64-bit safe
-                         _chsize_s(_fileno(m_file), size)
+                           // ector: _chsize sucks, not 64-bit safe
+                           // F|RES: changed to _chsize_s. i think it is 64-bit safe
+                           _chsize_s(_fileno(m_file), size)
 #else
-                         // TODO: handle 64bit and growing
-                         ftruncate(fileno(m_file), size)
+                           // TODO: handle 64bit and growing
+                           ftruncate(fileno(m_file), size)
 #endif
-    )
-        m_good = false;
-
-    return m_good;
+        ;
 }
 
 } // namespace FileUtil

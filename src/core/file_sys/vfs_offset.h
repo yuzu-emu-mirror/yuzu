@@ -3,30 +3,36 @@
 // Refer to the license.txt file included.
 
 #pragma once
+
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
 
 struct OffsetVfsFile : public VfsFile {
-    OffsetVfsFile(std::unique_ptr<VfsFile>&& file, u64 offset, u64 size);
+    OffsetVfsFile(std::unique_ptr<VfsFile>&& file, size_t offset, size_t size);
 
-    bool IsReady() override;
-    bool IsGood() override;
-    void ResetState() override;
-    std::string GetName() override;
-    u64 GetSize() override;
-    bool Resize(u64 new_size) override;
-    std::shared_ptr<VfsDirectory> GetContainingDirectory() override;
-    bool IsWritable() override;
-    bool IsReadable() override;
-    std::vector<u8> ReadBytes(u64 offset, u64 length) override;
-    u64 WriteBytes(const std::vector<u8>& data, u64 offset) override;
+    std::string GetName() const override;
+    size_t GetSize() const override;
+    bool Resize(size_t new_size) override;
+    std::shared_ptr<VfsDirectory> GetContainingDirectory() const override;
+    bool IsWritable() const override;
+    bool IsReadable() const override;
+    size_t Read(u8* data, size_t length, size_t offset) const override;
+    size_t Write(const u8* data, size_t length, size_t offset) override;
+    boost::optional<u8> ReadByte(size_t offset) const override;
+    std::vector<u8> ReadBytes(size_t size, size_t offset) const override;
+    std::vector<u8> ReadAllBytes() const override;
+    bool WriteByte(u8 data, size_t offset) override;
+    size_t WriteBytes(std::vector<u8> data, size_t offset) override;
+
     bool Rename(const std::string& name) override;
 
 private:
+    size_t TrimToFit(size_t r_size, size_t r_offset) const;
+
     std::unique_ptr<VfsFile> file;
-    u64 offset;
-    u64 size;
+    size_t offset;
+    size_t size;
 };
 
 } // namespace FileSys

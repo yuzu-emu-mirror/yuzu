@@ -3,46 +3,42 @@
 // Refer to the license.txt file included.
 
 #pragma once
+
+#include <filesystem>
 #include "common/file_util.h"
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
 
 struct RealVfsFile : public VfsFile {
-    RealVfsFile(const std::string& name, const char openmode[]);
+    RealVfsFile(const std::filesystem::path& name, std::filesystem::perms perms);
 
-    bool IsReady() override;
-    bool IsGood() override;
-    void ResetState() override;
-    std::string GetName() override;
-    u64 GetSize() override;
-    bool Resize(u64 new_size) override;
-    std::shared_ptr<VfsDirectory> GetContainingDirectory() override;
-    bool IsWritable() override;
-    bool IsReadable() override;
-    std::vector<u8> ReadBytes(u64 offset, u64 length) override;
-    u64 WriteBytes(const std::vector<u8>& data, u64 offset) override;
+    std::string GetName() const override;
+    size_t GetSize() const override;
+    bool Resize(size_t new_size) override;
+    std::shared_ptr<VfsDirectory> GetContainingDirectory() const override;
+    bool IsWritable() const override;
+    bool IsReadable() const override;
+    size_t Read(u8* data, size_t length, size_t offset) const override;
+    size_t Write(const u8* data, size_t length, size_t offset) override;
     bool Rename(const std::string& name) override;
 
 private:
     FileUtil::IOFile backing;
-    std::string path;
-    std::string mode;
+    std::filesystem::path path;
+    std::filesystem::perms perms;
 };
 
 struct RealVfsDirectory : public VfsDirectory {
-    RealVfsDirectory(const std::string& path, const char openmode[]);
+    RealVfsDirectory(const std::filesystem::path& path, std::filesystem::perms perms);
 
-    bool IsReady() override;
-    bool IsGood() override;
-    void ResetState() override;
-    std::vector<std::shared_ptr<VfsFile>> GetFiles() override;
-    std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() override;
-    bool IsWritable() override;
-    bool IsReadable() override;
-    bool IsRoot() override;
-    std::string GetName() override;
-    std::shared_ptr<VfsDirectory> GetParentDirectory() override;
+    std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
+    std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
+    bool IsWritable() const override;
+    bool IsReadable() const override;
+    bool IsRoot() const override;
+    std::string GetName() const override;
+    std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
     std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
     std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
     bool DeleteSubdirectory(const std::string& name) override;
@@ -50,8 +46,8 @@ struct RealVfsDirectory : public VfsDirectory {
     bool Rename(const std::string& name) override;
 
 private:
-    std::string path;
-    std::string mode;
+    std::filesystem::path path;
+    std::filesystem::perms perms;
     std::vector<std::shared_ptr<VfsFile>> files;
     std::vector<std::shared_ptr<VfsDirectory>> subdirectories;
 };
