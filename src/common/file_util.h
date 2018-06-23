@@ -206,7 +206,7 @@ public:
         return WriteArray(&object, 1);
     }
 
-    bool IsOpen() const const {
+    bool IsOpen() const {
         return nullptr != m_file;
     }
 
