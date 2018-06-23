@@ -78,8 +78,8 @@ private:
         for (unsigned i = 0; i < memory_pool.size(); i++) {
             if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestAttach)
                 memory_pool[i].state = MemoryPoolStates::Attached;
-            else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetatch)
-                memory_pool[i].state = MemoryPoolStates::Detatched;
+            else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetach)
+                memory_pool[i].state = MemoryPoolStates::Detached;
             else
                 memory_pool[i].state = mem_pool_info[i].pool_state;
         }
@@ -123,8 +123,8 @@ private:
     enum class MemoryPoolStates : u32 { // Should be LE
         Invalid = 0x0,
         Unknown = 0x1,
-        RequestDetatch = 0x2,
-        Detatched = 0x3,
+        RequestDetach = 0x2,
+        Detached = 0x3,
         RequestAttach = 0x4,
         Attached = 0x5,
         Released = 0x6,
