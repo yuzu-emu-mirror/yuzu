@@ -40,7 +40,7 @@ size_t VfsFile::WriteBytes(std::vector<u8> data, size_t offset) {
     return Write(data.data(), data.size(), offset);
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::filesystem::path& path) const {
+std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const filesystem::path& path) const {
     if (path.parent_path() == path.root_path())
         return GetFile(path.filename().string());
 
@@ -54,7 +54,7 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::filesystem::pa
     return sub->GetFileRelative(path.root_path().string() + rest);
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const std::filesystem::path& path) const {
+std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const filesystem::path& path) const {
     if (IsRoot())
         return GetFileRelative(path);
 

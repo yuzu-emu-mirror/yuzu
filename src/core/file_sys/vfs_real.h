@@ -11,7 +11,7 @@
 namespace FileSys {
 
 struct RealVfsFile : public VfsFile {
-    RealVfsFile(const std::filesystem::path& name, std::filesystem::perms perms);
+    RealVfsFile(const filesystem::path& name, filesystem::perms perms);
 
     std::string GetName() const override;
     size_t GetSize() const override;
@@ -25,12 +25,12 @@ struct RealVfsFile : public VfsFile {
 
 private:
     FileUtil::IOFile backing;
-    std::filesystem::path path;
-    std::filesystem::perms perms;
+    filesystem::path path;
+    filesystem::perms perms;
 };
 
 struct RealVfsDirectory : public VfsDirectory {
-    RealVfsDirectory(const std::filesystem::path& path, std::filesystem::perms perms);
+    RealVfsDirectory(const filesystem::path& path, filesystem::perms perms);
 
     std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
     std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
@@ -46,8 +46,8 @@ struct RealVfsDirectory : public VfsDirectory {
     bool Rename(const std::string& name) override;
 
 private:
-    std::filesystem::path path;
-    std::filesystem::perms perms;
+    filesystem::path path;
+    filesystem::perms perms;
     std::vector<std::shared_ptr<VfsFile>> files;
     std::vector<std::shared_ptr<VfsDirectory>> subdirectories;
 };

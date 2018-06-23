@@ -4,12 +4,13 @@
 
 #pragma once
 
-#include <filesystem>
 #include <string>
 #include <type_traits>
 #include <vector>
 #include "boost/optional.hpp"
 #include "common/common_types.h"
+#include "common/file_util.h"
+#include "common/std_filesystem.h"
 
 namespace FileSys {
 struct VfsDirectory;
@@ -85,8 +86,8 @@ struct VfsFile : NonCopyable {
 struct VfsDirectory : NonCopyable {
     virtual ~VfsDirectory();
 
-    virtual std::shared_ptr<VfsFile> GetFileRelative(const std::filesystem::path& path) const;
-    virtual std::shared_ptr<VfsFile> GetFileAbsolute(const std::filesystem::path& path) const;
+    virtual std::shared_ptr<VfsFile> GetFileRelative(const filesystem::path& path) const;
+    virtual std::shared_ptr<VfsFile> GetFileAbsolute(const filesystem::path& path) const;
 
     virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() const = 0;
     virtual std::shared_ptr<VfsFile> GetFile(const std::string& name) const;

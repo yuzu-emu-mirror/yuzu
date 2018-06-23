@@ -7,16 +7,16 @@
 
 namespace FileSys {
 
-static const char* PermissionsToCharArray(std::filesystem::perms perms) {
+static const char* PermissionsToCharArray(filesystem::perms perms) {
     std::string out;
-    if ((perms & std::filesystem::perms::owner_read) != std::filesystem::perms::none)
+    if ((perms & filesystem::perms::owner_read) != filesystem::perms::none)
         out += "r";
-    if ((perms & std::filesystem::perms::owner_write) != std::filesystem::perms::none)
+    if ((perms & filesystem::perms::owner_write) != filesystem::perms::none)
         out += "w";
     return out.c_str();
 }
 
-RealVfsFile::RealVfsFile(const std::filesystem::path& path_, std::filesystem::perms perms_)
+RealVfsFile::RealVfsFile(const filesystem::path& path_, filesystem::perms perms_)
     : backing(path_.string(), PermissionsToCharArray(perms_)), path(path_), perms(perms_) {}
 
 std::string RealVfsFile::GetName() const {
@@ -36,11 +36,11 @@ std::shared_ptr<VfsDirectory> RealVfsFile::GetContainingDirectory() const {
 }
 
 bool RealVfsFile::IsWritable() const {
-    return (perms & std::filesystem::perms::owner_write) != std::filesystem::perms::none;
+    return (perms & filesystem::perms::owner_write) != filesystem::perms::none;
 }
 
 bool RealVfsFile::IsReadable() const {
-    return (perms & std::filesystem::perms::owner_read) != std::filesystem::perms::none;
+    return (perms & filesystem::perms::owner_read) != filesystem::perms::none;
 }
 
 size_t RealVfsFile::Read(u8* data, size_t length, size_t offset) const {
@@ -62,13 +62,12 @@ bool RealVfsFile::Rename(const std::string& name) {
     return out;
 }
 
-RealVfsDirectory::RealVfsDirectory(const std::filesystem::path& path_,
-                                   std::filesystem::perms perms_)
+RealVfsDirectory::RealVfsDirectory(const filesystem::path& path_, filesystem::perms perms_)
     : path(path_), perms(perms_) {
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
-        if (std::filesystem::is_directory(entry.path()))
+    for (const auto& entry : filesystem::directory_iterator(path)) {
+        if (filesystem::is_directory(entry.path()))
             subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(entry.path(), perms));
-        else if (std::filesystem::is_regular_file(entry.path()))
+        else if (filesystem::is_regular_file(entry.path()))
             files.emplace_back(std::make_shared<RealVfsFile>(entry.path(), perms));
     }
 }
@@ -82,11 +81,11 @@ std::vector<std::shared_ptr<VfsDirectory>> RealVfsDirectory::GetSubdirectories()
 }
 
 bool RealVfsDirectory::IsWritable() const {
-    return (perms & std::filesystem::perms::owner_write) != std::filesystem::perms::none;
+    return (perms & filesystem::perms::owner_write) != filesystem::perms::none;
 }
 
 bool RealVfsDirectory::IsReadable() const {
-    return (perms & std::filesystem::perms::owner_read) != std::filesystem::perms::none;
+    return (perms & filesystem::perms::owner_read) != filesystem::perms::none;
 }
 
 std::string RealVfsDirectory::GetName() const {
