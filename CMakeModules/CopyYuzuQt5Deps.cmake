@@ -1,6 +1,6 @@
 function(copy_yuzu_Qt5_deps target_dir)
     include(WindowsCopyFiles)
-    set(DLL_DEST "${CMAKE_BINARY_DIR}/bin/")
+    set(DLL_DEST "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
     set(Qt5_DLL_DIR "${Qt5_DIR}/../../../bin")
     set(Qt5_PLATFORMS_DIR "${Qt5_DIR}/../../../plugins/platforms/")
     set(PLATFORMS ${DLL_DEST}platforms/)
