@@ -17,7 +17,7 @@ constexpr u64 audio_ticks{static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
-    IAudioRenderer(AudioRendererParameters audren_params)
+    IAudioRenderer(AudioRendererParameter audren_params)
         : ServiceFramework("IAudioRenderer"), worker_params(audren_params) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetAudioRendererSampleRate"},
@@ -149,7 +149,7 @@ private:
     struct UpdateDataHeader {
         UpdateDataHeader() {}
 
-        UpdateDataHeader(const AudioRendererParameters& config) {
+        UpdateDataHeader(const AudioRendererParameter& config) {
             revision = config.revision;
             behavior_size = 0xb0;
             memory_pools_size = (config.effect_count + (config.voice_count * 4)) * 0x10;
@@ -179,7 +179,7 @@ private:
     CoreTiming::EventType* audio_event;
 
     Kernel::SharedPtr<Kernel::Event> system_event;
-    AudioRendererParameters worker_params;
+    AudioRendererParameter worker_params;
 };
 
 class IAudioDevice final : public ServiceFramework<IAudioDevice> {
@@ -278,7 +278,7 @@ AudRenU::AudRenU() : ServiceFramework("audren:u") {
 
 void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto params = rp.PopRaw<AudioRendererParameters>();
+    auto params = rp.PopRaw<AudioRendererParameter>();
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
     rb.Push(RESULT_SUCCESS);
@@ -289,7 +289,7 @@ void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
 
 void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto params = rp.PopRaw<AudioRendererParameters>();
+    auto params = rp.PopRaw<AudioRendererParameter>();
 
     u64 buffer_sz = Common::AlignUp(4 * params.unknown_8, 0x40);
     buffer_sz += params.unknown_c * 1024;
