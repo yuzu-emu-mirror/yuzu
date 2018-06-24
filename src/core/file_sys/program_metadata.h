@@ -10,6 +10,7 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "partition_filesystem.h"
 
 namespace Loader {
 enum class ResultStatus;
@@ -37,8 +38,7 @@ enum class ProgramFilePermission : u64 {
  */
 class ProgramMetadata {
 public:
-    Loader::ResultStatus Load(const std::string& file_path);
-    Loader::ResultStatus Load(const std::vector<u8> file_data, size_t offset = 0);
+    Loader::ResultStatus Load(v_file file);
 
     bool Is64BitProgram() const;
     ProgramAddressSpaceType GetAddressSpaceType() const;

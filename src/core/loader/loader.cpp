@@ -21,11 +21,11 @@ const std::initializer_list<Kernel::AddressMapping> default_address_mappings = {
     {0x1F000000, 0x600000, false}, // entire VRAM
 };
 
-FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath) {
+FileType IdentifyFile(v_file file) {
     FileType type;
 
 #define CHECK_TYPE(loader)                                                                         \
-    type = AppLoader_##loader::IdentifyType(file, filepath);                                       \
+    type = AppLoader_##loader::IdentifyType(file);                                                 \
     if (FileType::Error != type)                                                                   \
         return type;
 
@@ -93,58 +93,47 @@ const char* GetFileTypeString(FileType type) {
  * @param filepath the file full path (with name)
  * @return std::unique_ptr<AppLoader> a pointer to a loader object;  nullptr for unsupported type
  */
-static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileType type,
-                                                const std::string& filename,
-                                                const std::string& filepath) {
+static std::unique_ptr<AppLoader> GetFileLoader(v_file file, FileType type) {
     switch (type) {
 
     // Standard ELF file format.
     case FileType::ELF:
-        return std::make_unique<AppLoader_ELF>(std::move(file), filename);
+        return std::make_unique<AppLoader_ELF>(file);
 
     // NX NSO file format.
     case FileType::NSO:
-        return std::make_unique<AppLoader_NSO>(std::move(file), filepath);
+        return std::make_unique<AppLoader_NSO>(file);
 
     // NX NRO file format.
     case FileType::NRO:
-        return std::make_unique<AppLoader_NRO>(std::move(file), filepath);
+        return std::make_unique<AppLoader_NRO>(file);
 
     // NX NCA file format.
     case FileType::NCA:
-        return std::make_unique<AppLoader_NCA>(std::move(file), filepath);
+        return std::make_unique<AppLoader_NCA>(file);
 
     // NX deconstructed ROM directory.
     case FileType::DeconstructedRomDirectory:
-        return std::make_unique<AppLoader_DeconstructedRomDirectory>(std::move(file), filepath);
+        return std::make_unique<AppLoader_DeconstructedRomDirectory>(file);
 
     default:
         return nullptr;
     }
 }
 
-std::unique_ptr<AppLoader> GetLoader(const std::string& filename) {
-    FileUtil::IOFile file(filename, "rb");
-    if (!file.IsOpen()) {
-        LOG_ERROR(Loader, "Failed to load file {}", filename);
-        return nullptr;
-    }
-
-    std::string filename_filename, filename_extension;
-    Common::SplitPath(filename, nullptr, &filename_filename, &filename_extension);
-
-    FileType type = IdentifyFile(file, filename);
-    FileType filename_type = GuessFromExtension(filename_extension);
+std::unique_ptr<AppLoader> GetLoader(v_file file) {
+    FileType type = IdentifyFile(file);
+    FileType filename_type = GuessFromExtension(file->GetExtension());
 
     if (type != filename_type) {
-        LOG_WARNING(Loader, "File {} has a different type than its extension.", filename);
+        NGLOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());
         if (FileType::Unknown == type)
             type = filename_type;
     }
 
-    LOG_DEBUG(Loader, "Loading file {} as {}...", filename, GetFileTypeString(type));
+    NGLOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
 
-    return GetFileLoader(std::move(file), type, filename_filename, filename);
+    return GetFileLoader(file, type);
 }
 
 } // namespace Loader

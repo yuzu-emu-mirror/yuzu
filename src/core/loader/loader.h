@@ -13,6 +13,7 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "common/file_util.h"
+#include "core/file_sys/vfs.h"
 #include "core/hle/kernel/kernel.h"
 
 namespace Kernel {
@@ -79,7 +80,7 @@ enum class ResultStatus {
 /// Interface for loading an application
 class AppLoader : NonCopyable {
 public:
-    AppLoader(FileUtil::IOFile&& file) : file(std::move(file)) {}
+    AppLoader(v_file file) : file(std::move(file)) {}
     virtual ~AppLoader() {}
 
     /**
@@ -154,26 +155,20 @@ public:
     /**
      * Get the RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
-     * @param romfs_file The file containing the RomFS
-     * @param offset The offset the romfs begins on
-     * @param size The size of the romfs
+     * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
-                                   u64& size) {
+    virtual ResultStatus ReadRomFS(v_dir& dir) {
         return ResultStatus::ErrorNotImplemented;
     }
 
     /**
      * Get the update RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
-     * @param romfs_file The file containing the RomFS
-     * @param offset The offset the romfs begins on
-     * @param size The size of the romfs
+     * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadUpdateRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
-                                         u64& size) {
+    virtual ResultStatus ReadUpdateRomFS(v_dir& file) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -187,7 +182,7 @@ public:
     }
 
 protected:
-    FileUtil::IOFile file;
+    v_file file;
     bool is_loaded = false;
 };
 

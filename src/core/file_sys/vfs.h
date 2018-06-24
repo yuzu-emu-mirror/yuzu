@@ -13,12 +13,20 @@
 #include "common/std_filesystem.h"
 
 namespace FileSys {
+struct VfsFile;
 struct VfsDirectory;
+} // namespace FileSys
+
+using v_dir = std::shared_ptr<FileSys::VfsDirectory>;
+using v_file = std::shared_ptr<FileSys::VfsFile>;
+
+namespace FileSys {
 
 struct VfsFile : NonCopyable {
     virtual ~VfsFile();
 
     virtual std::string GetName() const = 0;
+    virtual std::string GetExtension() const;
     virtual size_t GetSize() const = 0;
     virtual bool Resize(size_t new_size) = 0;
     virtual std::shared_ptr<VfsDirectory> GetContainingDirectory() const = 0;
@@ -113,5 +121,23 @@ struct VfsDirectory : NonCopyable {
     virtual bool Rename(const std::string& name) = 0;
 
     virtual bool Copy(const std::string& src, const std::string& dest);
+
+    template <typename Directory>
+    bool InterpretAsDirectory(v_file file) {
+        return ReplaceFileWithSubdirectory(file, std::make_shared<Directory>(file));
+    }
+
+protected:
+    virtual bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) = 0;
+};
+
+struct ReadOnlyVfsDirectory : public VfsDirectory {
+    bool IsWritable() const override;
+    bool IsReadable() const override;
+    std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
+    std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
+    bool DeleteSubdirectory(const std::string& name) override;
+    bool DeleteFile(const std::string& name) override;
+    bool Rename(const std::string& name) override;
 };
 } // namespace FileSys

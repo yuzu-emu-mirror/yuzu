@@ -14,6 +14,7 @@
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/storage.h"
 #include "core/hle/result.h"
+#include "core/hle/service/filesystem/filesystem.h"
 
 namespace FileSys {
 

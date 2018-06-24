@@ -10,6 +10,14 @@ namespace FileSys {
 
 VfsFile::~VfsFile() = default;
 
+std::string VfsFile::GetExtension() const {
+    size_t index = GetName().find_last_of('.');
+    if (index == std::string::npos)
+        return "";
+    else
+        return GetName().substr(index + 1);
+}
+
 VfsDirectory::~VfsDirectory() = default;
 
 boost::optional<u8> VfsFile::ReadByte(size_t offset) const {
@@ -108,4 +116,31 @@ bool VfsDirectory::Copy(const std::string& src, const std::string& dest) {
     return f2->WriteBytes(f1->ReadAllBytes()) == f1->GetSize();
 }
 
+bool ReadOnlyVfsDirectory::IsWritable() const {
+    return false;
+}
+
+bool ReadOnlyVfsDirectory::IsReadable() const {
+    return true;
+}
+
+std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectory::CreateSubdirectory(const std::string& name) {
+    return nullptr;
+}
+
+std::shared_ptr<VfsFile> ReadOnlyVfsDirectory::CreateFile(const std::string& name) {
+    return nullptr;
+}
+
+bool ReadOnlyVfsDirectory::DeleteSubdirectory(const std::string& name) {
+    return false;
+}
+
+bool ReadOnlyVfsDirectory::DeleteFile(const std::string& name) {
+    return false;
+}
+
+bool ReadOnlyVfsDirectory::Rename(const std::string& name) {
+    return false;
+}
 } // namespace FileSys

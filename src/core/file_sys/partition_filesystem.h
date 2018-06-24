@@ -22,23 +22,18 @@ namespace FileSys {
  * Helper which implements an interface to parse PFS/HFS filesystems.
  * Data can either be loaded from a file path or data with an offset into it.
  */
-class PartitionFilesystem : public VfsDirectory {
+class PartitionFilesystem : public ReadOnlyVfsDirectory {
 public:
     Loader::ResultStatus Load(std::shared_ptr<VfsFile> file);
 
     std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
     std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
-    bool IsWritable() const override;
-    bool IsReadable() const override;
     std::string GetName() const override;
     std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
-    std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
-    std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
-    bool DeleteSubdirectory(const std::string& name) override;
-    bool DeleteFile(const std::string& name) override;
-    bool Rename(const std::string& name) override;
-
     void PrintDebugInfo() const;
+
+protected:
+    bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
 
 private:
     struct Header {
@@ -81,7 +76,8 @@ private:
     bool is_hfs;
     size_t content_offset;
 
-    std::vector<std::shared_ptr<VfsFile>> pfs_files;
+    std::vector<v_file> pfs_files;
+    std::vector<v_dir> pfs_dirs;
 };
 
 } // namespace FileSys

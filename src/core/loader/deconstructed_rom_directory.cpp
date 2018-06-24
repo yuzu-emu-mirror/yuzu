@@ -8,6 +8,7 @@
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/file_sys/content_archive.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
@@ -46,55 +47,11 @@ static std::string FindRomFS(const std::string& directory) {
     return filepath_romfs;
 }
 
-AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileUtil::IOFile&& file,
-                                                                         std::string filepath)
-    : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
+AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(v_file file)
+    : AppLoader(file) {}
 
-FileType AppLoader_DeconstructedRomDirectory::IdentifyType(FileUtil::IOFile& file,
-                                                           const std::string& filepath) {
-    bool is_main_found{};
-    bool is_npdm_found{};
-    bool is_rtld_found{};
-    bool is_sdk_found{};
-
-    const auto callback = [&](unsigned* num_entries_out, const std::string& directory,
-                              const std::string& virtual_name) -> bool {
-        // Skip directories
-        std::string physical_name = directory + virtual_name;
-        if (FileUtil::IsDirectory(physical_name)) {
-            return true;
-        }
-
-        // Verify filename
-        if (Common::ToLower(virtual_name) == "main") {
-            is_main_found = true;
-        } else if (Common::ToLower(virtual_name) == "main.npdm") {
-            is_npdm_found = true;
-            return true;
-        } else if (Common::ToLower(virtual_name) == "rtld") {
-            is_rtld_found = true;
-        } else if (Common::ToLower(virtual_name) == "sdk") {
-            is_sdk_found = true;
-        } else {
-            // Continue searching
-            return true;
-        }
-
-        // Verify file is an NSO
-        FileUtil::IOFile file(physical_name, "rb");
-        if (AppLoader_NSO::IdentifyType(file, physical_name) != FileType::NSO) {
-            return false;
-        }
-
-        // We are done if we've found and verified all required NSOs
-        return !(is_main_found && is_npdm_found && is_rtld_found && is_sdk_found);
-    };
-
-    // Search the directory recursively, looking for the required modules
-    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
-    FileUtil::ForeachDirectoryEntry(nullptr, directory, callback);
-
-    if (is_main_found && is_npdm_found && is_rtld_found && is_sdk_found) {
+FileType AppLoader_DeconstructedRomDirectory::IdentifyType(v_file file) {
+    if (FileSys::IsDirectoryExeFs(file->GetContainingDirectory())) {
         return FileType::DeconstructedRomDirectory;
     }
 
@@ -106,14 +63,13 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     if (is_loaded) {
         return ResultStatus::ErrorAlreadyLoaded;
     }
-    if (!file.IsOpen()) {
-        return ResultStatus::Error;
-    }
 
-    const std::string directory = filepath.substr(0, filepath.find_last_of("/\\")) + DIR_SEP;
-    const std::string npdm_path = directory + DIR_SEP + "main.npdm";
+    const v_dir dir = file->GetContainingDirectory();
+    const v_file npdm = dir->GetFile("main.npdm");
+    if (npdm == nullptr)
+        return ResultStatus::ErrorInvalidFormat;
 
-    ResultStatus result = metadata.Load(npdm_path);
+    ResultStatus result = metadata.Load(npdm);
     if (result != ResultStatus::Success) {
         return result;
     }
@@ -128,9 +84,10 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
-        const std::string path = directory + DIR_SEP + module;
         const VAddr load_addr = next_load_addr;
-        next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
+        const v_file module_file = dir->GetFile(module);
+        if (module_file != nullptr)
+            next_load_addr = AppLoader_NSO::LoadModule(module_file, load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         } else {
@@ -147,10 +104,16 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
                  metadata.GetMainThreadStackSize());
 
     // Find the RomFS by searching for a ".romfs" file in this directory
-    filepath_romfs = FindRomFS(directory);
+    const auto romfs_iter =
+        std::find_if(dir->GetFiles().begin(), dir->GetFiles().end(), [](const v_file& file) {
+            return file->GetName().find(".romfs") != std::string::npos;
+        });
+
+    // TODO(DarkLordZach): Identify RomFS if its a subdirectory.
+    romfs = std::make_shared<RomFs>((romfs_iter == dir->GetFiles().end()) ? nullptr : *romfs_iter);
 
     // Register the RomFS if a ".romfs" file was found
-    if (!filepath_romfs.empty()) {
+    if (romfs != nullptr) {
         Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
                                                 Service::FileSystem::Type::RomFS);
     }
@@ -159,28 +122,14 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     return ResultStatus::Success;
 }
 
-ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
-    std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset, u64& size) {
+ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(v_dir& dir) {
 
     if (filepath_romfs.empty()) {
         LOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
-    // We reopen the file, to allow its position to be independent
-    romfs_file = std::make_shared<FileUtil::IOFile>(filepath_romfs, "rb");
-    if (!romfs_file->IsOpen()) {
-        return ResultStatus::Error;
-    }
-
-    offset = 0;
-    size = romfs_file->GetSize();
-
-    LOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
-    LOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
-
-    // Reset read pointer
-    file.Seek(0, SEEK_SET);
+    dir = romfs;
 
     return ResultStatus::Success;
 }
