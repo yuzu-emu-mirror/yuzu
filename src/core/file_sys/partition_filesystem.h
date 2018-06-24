@@ -10,6 +10,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "core/file_sys/vfs.h"
 
 namespace Loader {
 enum class ResultStatus;
@@ -21,19 +22,23 @@ namespace FileSys {
  * Helper which implements an interface to parse PFS/HFS filesystems.
  * Data can either be loaded from a file path or data with an offset into it.
  */
-class PartitionFilesystem {
+class PartitionFilesystem : public VfsDirectory {
 public:
-    Loader::ResultStatus Load(const std::string& file_path, size_t offset = 0);
-    Loader::ResultStatus Load(const std::vector<u8>& file_data, size_t offset = 0);
+    Loader::ResultStatus Load(std::shared_ptr<VfsFile> file);
 
-    u32 GetNumEntries() const;
-    u64 GetEntryOffset(u32 index) const;
-    u64 GetEntrySize(u32 index) const;
-    std::string GetEntryName(u32 index) const;
-    u64 GetFileOffset(const std::string& name) const;
-    u64 GetFileSize(const std::string& name) const;
+    std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
+    std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
+    bool IsWritable() const override;
+    bool IsReadable() const override;
+    std::string GetName() const override;
+    std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
+    std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
+    std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
+    bool DeleteSubdirectory(const std::string& name) override;
+    bool DeleteFile(const std::string& name) override;
+    bool Rename(const std::string& name) override;
 
-    void Print() const;
+    void PrintDebugInfo() const;
 
 private:
     struct Header {
@@ -72,16 +77,11 @@ private:
 
 #pragma pack(pop)
 
-    struct FileEntry {
-        FSEntry fs_entry;
-        std::string name;
-    };
-
     Header pfs_header;
     bool is_hfs;
     size_t content_offset;
 
-    std::vector<FileEntry> pfs_entries;
+    std::vector<std::shared_ptr<VfsFile>> pfs_files;
 };
 
 } // namespace FileSys

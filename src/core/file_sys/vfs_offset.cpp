@@ -6,11 +6,12 @@
 
 namespace FileSys {
 
-OffsetVfsFile::OffsetVfsFile(std::unique_ptr<VfsFile>&& file_, u64 offset_, u64 size_)
-    : file(std::move(file_)), offset(offset_), size(size_) {}
+OffsetVfsFile::OffsetVfsFile(std::shared_ptr<VfsFile> file_, u64 size_, u64 offset_,
+                             const std::string& name_)
+    : file(file_), offset(offset_), size(size_), name(name_) {}
 
 std::string OffsetVfsFile::GetName() const {
-    return file->GetName();
+    return name.empty() ? file->GetName() : name;
 }
 
 u64 OffsetVfsFile::GetSize() const {
@@ -74,6 +75,10 @@ size_t OffsetVfsFile::WriteBytes(std::vector<u8> data, size_t r_offset) {
 
 bool OffsetVfsFile::Rename(const std::string& name) {
     return file->Rename(name);
+}
+
+size_t OffsetVfsFile::GetOffset() const {
+    return offset;
 }
 
 size_t OffsetVfsFile::TrimToFit(size_t r_size, size_t r_offset) const {

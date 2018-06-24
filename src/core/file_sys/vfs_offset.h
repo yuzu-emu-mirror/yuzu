@@ -9,7 +9,8 @@
 namespace FileSys {
 
 struct OffsetVfsFile : public VfsFile {
-    OffsetVfsFile(std::unique_ptr<VfsFile>&& file, size_t offset, size_t size);
+    OffsetVfsFile(std::shared_ptr<VfsFile> file, size_t size, size_t offset = 0,
+                  const std::string& new_name = "");
 
     std::string GetName() const override;
     size_t GetSize() const override;
@@ -27,12 +28,15 @@ struct OffsetVfsFile : public VfsFile {
 
     bool Rename(const std::string& name) override;
 
+    size_t GetOffset() const;
+
 private:
     size_t TrimToFit(size_t r_size, size_t r_offset) const;
 
-    std::unique_ptr<VfsFile> file;
+    std::shared_ptr<VfsFile> file;
     size_t offset;
     size_t size;
+    std::string name;
 };
 
 } // namespace FileSys

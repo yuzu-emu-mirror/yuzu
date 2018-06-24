@@ -38,7 +38,7 @@ struct VfsFile : NonCopyable {
         static_assert(std::is_trivially_copyable<T>::value,
                       "Data type must be trivially copyable.");
 
-        return Read(data, number_elements * sizeof(T), offset);
+        return Read(reinterpret_cast<u8*>(data), number_elements * sizeof(T), offset);
     }
 
     template <typename T>
@@ -49,10 +49,10 @@ struct VfsFile : NonCopyable {
     }
 
     template <typename T>
-    size_t ReadObject(T& data, size_t offset = 0) const {
+    size_t ReadObject(T* data, size_t offset = 0) const {
         static_assert(std::is_trivially_copyable<T>::value,
                       "Data type must be trivially copyable.");
-        return Read(&data, sizeof(T), offset);
+        return Read(reinterpret_cast<u8*>(data), sizeof(T), offset);
     }
 
     virtual bool WriteByte(u8 data, size_t offset = 0);
