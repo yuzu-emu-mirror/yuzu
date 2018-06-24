@@ -36,7 +36,8 @@ SurfaceParams::SurfaceParams(const Tegra::Texture::FullTextureInfo& config)
       component_type(ComponentTypeFromTexture(config.tic.r_type.Value())),
       type(GetFormatType(pixel_format)),
       width(Common::AlignUp(config.tic.Width(), GetCompressionFactor(pixel_format))),
-      height(Common::AlignUp(config.tic.Height(), GetCompressionFactor(pixel_format))) {
+      height(Common::AlignUp(config.tic.Height(), GetCompressionFactor(pixel_format))),
+      size_in_bytes(SizeInBytes()) {
 
     // TODO(Subv): Different types per component are not supported.
     ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
@@ -49,7 +50,8 @@ SurfaceParams::SurfaceParams(const Tegra::Engines::Maxwell3D::Regs::RenderTarget
       block_height(Tegra::Texture::TICEntry::DefaultBlockHeight),
       pixel_format(PixelFormatFromRenderTargetFormat(config.format)),
       component_type(ComponentTypeFromRenderTarget(config.format)),
-      type(GetFormatType(pixel_format)), width(config.width), height(config.height) {}
+      type(GetFormatType(pixel_format)), width(config.width), height(config.height),
+      size_in_bytes(SizeInBytes()) {}
 
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},                    // ABGR8
@@ -70,8 +72,8 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType
     const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
     if (type == SurfaceType::ColorTexture) {
         ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
-        // For now only UNORM components are supported, or either R11FG11FB10F or RGBA16F which are
-        // type FLOAT
+        // For now only UNORM components are supported, or either R11FG11FB10F or RGBA16F which
+        // are type FLOAT
         ASSERT(component_type == ComponentType::UNorm || pixel_format == PixelFormat::RGBA16F ||
                pixel_format == PixelFormat::R11FG11FB10F);
         return tex_format_tuples[static_cast<unsigned int>(pixel_format)];
@@ -127,14 +129,15 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::
             SurfaceParams::TextureFormatFromPixelFormat(format), stride, height, block_height);
 
         if (IsPixelFormatASTC(format)) {
-            // ASTC formats are converted to RGBA8 in software, as most PC GPUs do not support this
+            // ASTC formats are converted to RGBA8 in software, as most PC GPUs do not support
+            // this
             ConvertASTCToRGBA8(data, format, stride, height);
         }
 
         std::memcpy(gl_buffer, data.data(), data.size());
     } else {
-        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should check
-        // the configuration for this and perform more generic un/swizzle
+        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should
+        // check the configuration for this and perform more generic un/swizzle
         NGLOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
         VideoCore::MortonCopyPixels128(
             stride, height, bytes_per_pixel, gl_bytes_per_pixel,
@@ -243,7 +246,7 @@ void CachedSurface::FlushGLBuffer() {
     MICROPROFILE_SCOPE(OpenGL_SurfaceFlush);
 
     if (!params.is_tiled) {
-        std::memcpy(dst_buffer, &gl_buffer[0], params.SizeInBytes());
+        std::memcpy(dst_buffer, &gl_buffer[0], params.size_in_bytes);
     } else {
         gl_to_morton_fns[static_cast<size_t>(params.pixel_format)](
             params.width, params.block_height, params.height, &gl_buffer[0], params.addr);
@@ -283,7 +286,7 @@ void CachedSurface::UploadGLTexture(GLuint read_fb_handle, GLuint draw_fb_handle
     if (tuple.compressed) {
         glCompressedTexImage2D(
             GL_TEXTURE_2D, 0, tuple.internal_format, static_cast<GLsizei>(params.width),
-            static_cast<GLsizei>(params.height), 0, static_cast<GLsizei>(params.SizeInBytes()),
+            static_cast<GLsizei>(params.height), 0, static_cast<GLsizei>(params.size_in_bytes),
             &gl_buffer[buffer_offset]);
     } else {
         glTexSubImage2D(GL_TEXTURE_2D, 0, x0, y0, static_cast<GLsizei>(rect.GetWidth()),

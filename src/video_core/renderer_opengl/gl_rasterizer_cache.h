@@ -256,6 +256,7 @@ struct SurfaceParams {
     const SurfaceType type;
     const u32 width;
     const u32 height;
+    const size_t size_in_bytes;
 };
 
 class CachedSurface final {
