@@ -65,6 +65,8 @@ const u32 LR_REGISTER = 30;
 const u32 SP_REGISTER = 31;
 const u32 PC_REGISTER = 32;
 const u32 CPSR_REGISTER = 33;
+const u32 UC_ARM64_REG_Q0 = 34;
+const u32 FPSCR_REGISTER = 66;
 
 // For sample XML files see the GDB source /gdb/features
 // GDB also wants the l character at the start
@@ -129,6 +131,41 @@ static const char* target_xml =
       <field name="N" start="31" end="31"/>
     </flags>
     <reg name="cpsr" bitsize="32" type="cpsr_flags"/>
+  </feature>
+  <feature name="org.gnu.gdb.aarch64.fpu">
+  <reg name="d0" bitsize="64" type="ieee_double"/>
+  <reg name="d1" bitsize="64" type="ieee_double"/>
+  <reg name="d2" bitsize="64" type="ieee_double"/>
+  <reg name="d3" bitsize="64" type="ieee_double"/>
+  <reg name="d4" bitsize="64" type="ieee_double"/>
+  <reg name="d5" bitsize="64" type="ieee_double"/>
+  <reg name="d6" bitsize="64" type="ieee_double"/>
+  <reg name="d7" bitsize="64" type="ieee_double"/>
+  <reg name="d8" bitsize="64" type="ieee_double"/>
+  <reg name="d9" bitsize="64" type="ieee_double"/>
+  <reg name="d10" bitsize="64" type="ieee_double"/>
+  <reg name="d11" bitsize="64" type="ieee_double"/>
+  <reg name="d12" bitsize="64" type="ieee_double"/>
+  <reg name="d13" bitsize="64" type="ieee_double"/>
+  <reg name="d14" bitsize="64" type="ieee_double"/>
+  <reg name="d15" bitsize="64" type="ieee_double"/>
+  <reg name="d16" bitsize="64" type="ieee_double"/>
+  <reg name="d17" bitsize="64" type="ieee_double"/>
+  <reg name="d18" bitsize="64" type="ieee_double"/>
+  <reg name="d19" bitsize="64" type="ieee_double"/>
+  <reg name="d20" bitsize="64" type="ieee_double"/>
+  <reg name="d21" bitsize="64" type="ieee_double"/>
+  <reg name="d22" bitsize="64" type="ieee_double"/>
+  <reg name="d23" bitsize="64" type="ieee_double"/>
+  <reg name="d24" bitsize="64" type="ieee_double"/>
+  <reg name="d25" bitsize="64" type="ieee_double"/>
+  <reg name="d26" bitsize="64" type="ieee_double"/>
+  <reg name="d27" bitsize="64" type="ieee_double"/>
+  <reg name="d28" bitsize="64" type="ieee_double"/>
+  <reg name="d29" bitsize="64" type="ieee_double"/>
+  <reg name="d30" bitsize="64" type="ieee_double"/>
+  <reg name="d31" bitsize="64" type="ieee_double"/>
+  <reg name="fpscr" bitsize="32" type="int" group="float"/>
   </feature>
 </target>
 )";
@@ -198,6 +235,8 @@ static u64 RegRead(int id, Kernel::Thread* thread = nullptr) {
         return thread->context.pc;
     } else if (id == CPSR_REGISTER) {
         return thread->context.cpsr;
+    } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
+        return thread->context.fpu_registers[id-UC_ARM64_REG_Q0][0];
     } else {
         return 0;
     }
@@ -216,6 +255,8 @@ static void RegWrite(int id, u64 val, Kernel::Thread* thread = nullptr) {
         thread->context.pc = val;
     } else if (id == CPSR_REGISTER) {
         thread->context.cpsr = val;
+    } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
+        thread->context.fpu_registers[id-(CPSR_REGISTER+1)][0] = val;
     }
 }
 
@@ -337,6 +378,21 @@ static void LongToGdbHex(u8* dest, u64 v) {
 }
 
 /**
+ * Convert a u128 into a gdb-formatted hex string.
+ *
+ * @param dest Pointer to buffer to store output hex string characters.
+ * @param v    Value to convert.
+ */
+// static void LongLongToGdbHex(u8* dest, u128 v)
+//{
+//    for(int i = 0; i < 32; i += 2)
+//    {
+//        dest[i + 1] = NibbleToHex(static_cast<u8>(v >> (4 * i)));
+//        dest[i] = NibbleToHex(static_cast<u8>(v >> (4 * (i + 1))));
+//    }
+//}
+
+/**
  * Convert a gdb-formatted hex string into a u32.
  *
  * @param src Pointer to hex string.
@@ -367,6 +423,24 @@ static u64 GdbHexToLong(const u8* src) {
 
     return output;
 }
+
+/**
+ * Convert a gdb-formatted hex string into a u128.
+ *
+ * @param src Pointer to hex string.
+ */
+// static u128 GdbHexToLong(const u8* src)
+//{
+//    u128 output = 0;
+//
+//    for(int i = 0; i < 32; i += 2)
+//    {
+//        output = (output << 4) | HexCharToValue(src[15 - i - 1]);
+//        output = (output << 4) | HexCharToValue(src[15 - i]);
+//    }
+//
+//    return output;
+//}
 
 /// Read a byte from the gdb client.
 static u8 ReadByte() {
@@ -728,8 +802,13 @@ static void ReadRegister() {
         LongToGdbHex(reply, RegRead(id, current_thread));
     } else if (id == CPSR_REGISTER) {
         IntToGdbHex(reply, (u32)RegRead(id, current_thread));
+    } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
+        LongToGdbHex(reply, RegRead(id, current_thread));
+    } else if (id == FPSCR_REGISTER) {
+        LongToGdbHex(reply, RegRead(998, current_thread));
     } else {
-        return SendReply("E01");
+        //return SendReply("E01");
+        LongToGdbHex(reply, RegRead(997, current_thread));
     }
 
     SendReply(reinterpret_cast<char*>(reply));
@@ -756,6 +835,16 @@ static void ReadRegisters() {
 
     bufptr += 8;
 
+    for (int reg = UC_ARM64_REG_Q0; reg <= UC_ARM64_REG_Q0 + 31; reg++) {
+        LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
+    }
+
+    bufptr += (32 * 32);
+
+    LongToGdbHex(bufptr, RegRead(998, current_thread));
+
+    bufptr += 8;
+
     SendReply(reinterpret_cast<char*>(buffer));
 }
 
@@ -776,8 +865,13 @@ static void WriteRegister() {
         RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
     } else if (id == CPSR_REGISTER) {
         RegWrite(id, GdbHexToInt(buffer_ptr), current_thread);
+    } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
+        RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
+    } else if (id == FPSCR_REGISTER) {
+        RegWrite(998, GdbHexToLong(buffer_ptr), current_thread);
     } else {
-        return SendReply("E01");
+        //return SendReply("E01");
+        RegWrite(997, GdbHexToLong(buffer_ptr), current_thread);
     }
 
     Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
@@ -792,13 +886,17 @@ static void WriteRegisters() {
     if (command_buffer[0] != 'G')
         return SendReply("E01");
 
-    for (int i = 0, reg = 0; reg <= CPSR_REGISTER; i++, reg++) {
+    for (int i = 0, reg = 0; reg <= FPSCR_REGISTER; i++, reg++) {
         if (reg <= SP_REGISTER) {
             RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == PC_REGISTER) {
             RegWrite(PC_REGISTER, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == CPSR_REGISTER) {
             RegWrite(CPSR_REGISTER, GdbHexToInt(buffer_ptr + i * 16), current_thread);
+        } else if (reg >= UC_ARM64_REG_Q0 && reg < FPSCR_REGISTER) {
+            RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
+        } else if (reg == FPSCR_REGISTER) {
+            RegWrite(998, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else {
             UNIMPLEMENTED();
         }
