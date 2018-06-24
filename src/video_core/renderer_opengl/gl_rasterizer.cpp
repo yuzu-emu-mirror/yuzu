@@ -468,11 +468,30 @@ bool RasterizerOpenGL::AccelerateFill(const void* config) {
     return true;
 }
 
-bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
+bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
                                          VAddr framebuffer_addr, u32 pixel_stride,
                                          ScreenInfo& screen_info) {
-    // TODO(bunnei): ImplementMe
-    return false;
+    if (!framebuffer_addr) {
+        return {};
+    }
+
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+
+    const auto& surface{res_cache.TryFindFramebufferSurface(framebuffer_addr)};
+    if (!surface) {
+        return {};
+    }
+
+    // Verify that the cached surface is the same size and format as the requested framebuffer
+    const auto& params{surface->GetSurfaceParams()};
+    const auto& pixel_format{SurfaceParams::PixelFormatFromGPUPixelFormat(config.pixel_format)};
+    ASSERT_MSG(params.width == config.width, "Framebuffer width is different");
+    ASSERT_MSG(params.height == config.height, "Framebuffer height is different");
+    ASSERT_MSG(params.pixel_format == pixel_format, "Framebuffer pixel_format is different");
+
+    screen_info.display_texture = surface->Texture().handle;
+
+    return true;
 }
 
 void RasterizerOpenGL::SamplerInfo::Create() {

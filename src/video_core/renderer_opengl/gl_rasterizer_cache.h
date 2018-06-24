@@ -220,6 +220,16 @@ struct SurfaceParams {
         }
     }
 
+    static PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
+        switch (format) {
+        case Tegra::FramebufferConfig::PixelFormat::ABGR8:
+            return PixelFormat::ABGR8;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
+    }
+
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
         if (static_cast<size_t>(pixel_format) < MaxPixelFormat) {
             return SurfaceType::ColorTexture;
@@ -302,6 +312,7 @@ public:
                                                     const MathUtil::Rectangle<s32>& viewport);
     void LoadSurface(const Surface& surface);
     void FlushSurface(const Surface& surface);
+    Surface TryFindFramebufferSurface(VAddr cpu_addr) const;
 
 private:
     Surface GetSurface(const SurfaceParams& params);
