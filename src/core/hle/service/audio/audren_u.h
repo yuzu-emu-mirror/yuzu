@@ -12,7 +12,7 @@ class HLERequestContext;
 
 namespace Service::Audio {
 
-struct AudioRendererParameters {
+struct AudioRendererParameter {
     u32_le sample_rate;
     u32_le sample_count;
     u32_le unknown_8;
@@ -28,7 +28,7 @@ struct AudioRendererParameters {
     INSERT_PADDING_WORDS(1);
     u32_le revision;
 };
-static_assert(sizeof(AudioRendererParameters) == 52, "AudioRendererParameters is an invalid size");
+static_assert(sizeof(AudioRendererParameter) == 52, "AudioRendererParameter is an invalid size");
 
 class AudRenU final : public ServiceFramework<AudRenU> {
 public:
