@@ -29,6 +29,12 @@ add_library(core STATIC
     file_sys/sdmc_factory.cpp
     file_sys/sdmc_factory.h
     file_sys/storage.h
+    file_sys/vfs.cpp
+    file_sys/vfs.h
+    file_sys/vfs_offset.cpp
+    file_sys/vfs_offset.h
+    file_sys/vfs_real.cpp
+    file_sys/vfs_real.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
