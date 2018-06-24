@@ -29,6 +29,28 @@ struct FormatTuple {
     bool compressed;
 };
 
+SurfaceParams::SurfaceParams(const Tegra::Texture::FullTextureInfo& config)
+    : addr(config.tic.Address()), is_tiled(config.tic.IsTiled()),
+      block_height(is_tiled ? config.tic.BlockHeight() : 0),
+      pixel_format(PixelFormatFromTextureFormat(config.tic.format)),
+      component_type(ComponentTypeFromTexture(config.tic.r_type.Value())),
+      type(GetFormatType(pixel_format)),
+      width(Common::AlignUp(config.tic.Width(), GetCompressionFactor(pixel_format))),
+      height(Common::AlignUp(config.tic.Height(), GetCompressionFactor(pixel_format))) {
+
+    // TODO(Subv): Different types per component are not supported.
+    ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
+           config.tic.r_type.Value() == config.tic.b_type.Value() &&
+           config.tic.r_type.Value() == config.tic.a_type.Value());
+}
+
+SurfaceParams::SurfaceParams(const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config)
+    : addr(config.Address()), is_tiled(true),
+      block_height(Tegra::Texture::TICEntry::DefaultBlockHeight),
+      pixel_format(PixelFormatFromRenderTargetFormat(config.format)),
+      component_type(ComponentTypeFromRenderTarget(config.format)),
+      type(GetFormatType(pixel_format)), width(config.width), height(config.height) {}
+
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},                    // ABGR8
     {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false},                       // B5G6R5
@@ -333,56 +355,19 @@ RasterizerCacheOpenGL::RasterizerCacheOpenGL() {
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextureInfo& config) {
-    auto& gpu = Core::System::GetInstance().GPU();
-
-    SurfaceParams params;
-    params.addr = config.tic.Address();
-    params.is_tiled = config.tic.IsTiled();
-    params.pixel_format = SurfaceParams::PixelFormatFromTextureFormat(config.tic.format);
-    params.component_type = SurfaceParams::ComponentTypeFromTexture(config.tic.r_type.Value());
-    params.type = SurfaceParams::GetFormatType(params.pixel_format);
-    params.width = Common::AlignUp(config.tic.Width(), params.GetCompressionFactor());
-    params.height = Common::AlignUp(config.tic.Height(), params.GetCompressionFactor());
-
-    if (params.is_tiled) {
-        params.block_height = config.tic.BlockHeight();
-    }
-
-    // TODO(Subv): Different types per component are not supported.
-    ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
-           config.tic.r_type.Value() == config.tic.b_type.Value() &&
-           config.tic.r_type.Value() == config.tic.a_type.Value());
-
-    return GetSurface(params);
+    return GetSurface(SurfaceParams(config));
 }
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
-    const auto& config = regs.rt[0];
 
     // TODO(bunnei): This is hard corded to use just the first render buffer
     NGLOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
 
-    MathUtil::Rectangle<u32> viewport_clamped{
-        static_cast<u32>(std::clamp(viewport.left, 0, static_cast<s32>(config.width))),
-        static_cast<u32>(std::clamp(viewport.top, 0, static_cast<s32>(config.height))),
-        static_cast<u32>(std::clamp(viewport.right, 0, static_cast<s32>(config.width))),
-        static_cast<u32>(std::clamp(viewport.bottom, 0, static_cast<s32>(config.height)))};
-
     // get color and depth surfaces
-    SurfaceParams color_params;
-    color_params.is_tiled = true;
-    color_params.width = config.width;
-    color_params.height = config.height;
-    // TODO(Subv): Can framebuffers use a different block height?
-    color_params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
+    SurfaceParams color_params(regs.rt[0]);
     SurfaceParams depth_params = color_params;
-
-    color_params.addr = config.Address();
-    color_params.pixel_format = SurfaceParams::PixelFormatFromRenderTargetFormat(config.format);
-    color_params.component_type = SurfaceParams::ComponentTypeFromRenderTarget(config.format);
-    color_params.type = SurfaceParams::GetFormatType(color_params.pixel_format);
 
     ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
 

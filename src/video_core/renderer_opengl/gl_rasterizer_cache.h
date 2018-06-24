@@ -10,6 +10,7 @@
 
 #include "common/common_types.h"
 #include "common/math_util.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/textures/texture.h"
 
@@ -82,9 +83,6 @@ struct SurfaceParams {
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
         return compression_factor_table[static_cast<size_t>(format)];
-    }
-    u32 GetCompressionFactor() const {
-        return GetCompressionFactor(pixel_format);
     }
 
     static constexpr u32 GetFormatBpp(PixelFormat format) {
@@ -238,25 +236,27 @@ struct SurfaceParams {
     }
 
     size_t SizeInBytes() const {
-        const u32 compression_factor{GetCompressionFactor()};
+        const u32 compression_factor{GetCompressionFactor(pixel_format)};
         ASSERT(width % compression_factor == 0);
         ASSERT(height % compression_factor == 0);
         return (width / compression_factor) * (height / compression_factor) *
                GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
+    SurfaceParams(const Tegra::Texture::FullTextureInfo& config);
+    SurfaceParams(const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
+
     VAddr GetCpuAddr() const;
 
-    Tegra::GPUVAddr addr;
-    u32 width;
-    u32 height;
-    u32 block_height;
-    bool is_tiled;
-    PixelFormat pixel_format;
-    SurfaceType type;
-    ComponentType component_type;
+    const Tegra::GPUVAddr addr;
+    const bool is_tiled;
+    const u32 block_height;
+    const PixelFormat pixel_format;
+    const ComponentType component_type;
+    const SurfaceType type;
+    const u32 width;
+    const u32 height;
 };
-static_assert(std::is_pod<SurfaceParams>::value, "SurfaceParams is not POD");
 
 class CachedSurface final {
 public:
