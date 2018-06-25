@@ -8,6 +8,7 @@
 #include "core/hle/service/audio/audrec_u.h"
 #include "core/hle/service/audio/audren_u.h"
 #include "core/hle/service/audio/codecctl.h"
+#include "core/hle/service/audio/hwopus.h"
 
 namespace Service::Audio {
 
@@ -17,6 +18,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<AudRecU>()->InstallAsService(service_manager);
     std::make_shared<AudRenU>()->InstallAsService(service_manager);
     std::make_shared<CodecCtl>()->InstallAsService(service_manager);
+    std::make_shared<HwOpus>()->InstallAsService(service_manager);
 }
 
 } // namespace Service::Audio
