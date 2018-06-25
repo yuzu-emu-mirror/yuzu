@@ -36,7 +36,6 @@ struct RealVfsDirectory : public VfsDirectory {
     std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
     bool IsWritable() const override;
     bool IsReadable() const override;
-    bool IsRoot() const override;
     std::string GetName() const override;
     std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
     std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
@@ -44,6 +43,9 @@ struct RealVfsDirectory : public VfsDirectory {
     bool DeleteSubdirectory(const std::string& name) override;
     bool DeleteFile(const std::string& name) override;
     bool Rename(const std::string& name) override;
+
+protected:
+    bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
 
 private:
     filesystem::path path;

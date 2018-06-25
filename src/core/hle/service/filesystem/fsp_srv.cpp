@@ -19,8 +19,7 @@ namespace Service::FileSystem {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    IStorage(std::unique_ptr<FileSys::StorageBackend>&& backend)
-        : ServiceFramework("IStorage"), backend(std::move(backend)) {
+    IStorage(v_file backend_) : ServiceFramework("IStorage"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
             {3, nullptr, "SetSize"},      {4, nullptr, "GetSize"}, {5, nullptr, "OperateRange"},
@@ -29,7 +28,7 @@ public:
     }
 
 private:
-    std::unique_ptr<FileSys::StorageBackend> backend;
+    v_file backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -51,8 +50,8 @@ private:
         }
 
         // Read the data from the Storage backend
-        std::vector<u8> output(length);
-        ResultVal<size_t> res = backend->Read(offset, length, output.data());
+        std::vector<u8> output = backend->ReadBytes(length, offset);
+        auto res = MakeResult<size_t>(output.size());
         if (res.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(res.Code());
@@ -69,8 +68,7 @@ private:
 
 class IFile final : public ServiceFramework<IFile> {
 public:
-    explicit IFile(std::unique_ptr<FileSys::StorageBackend>&& backend)
-        : ServiceFramework("IFile"), backend(std::move(backend)) {
+    explicit IFile(v_file backend_) : ServiceFramework("IFile"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
             {2, &IFile::Flush, "Flush"},     {3, &IFile::SetSize, "SetSize"},
@@ -80,7 +78,7 @@ public:
     }
 
 private:
-    std::unique_ptr<FileSys::StorageBackend> backend;
+    v_file backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -103,8 +101,8 @@ private:
         }
 
         // Read the data from the Storage backend
-        std::vector<u8> output(length);
-        ResultVal<size_t> res = backend->Read(offset, length, output.data());
+        std::vector<u8> output = backend->ReadBytes(length, offset);
+        auto res = MakeResult<size_t>(output.size());
         if (res.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(res.Code());
@@ -140,8 +138,7 @@ private:
         }
 
         // Write the data to the Storage backend
-        std::vector<u8> data = ctx.ReadBuffer();
-        ResultVal<size_t> res = backend->Write(offset, length, true, data.data());
+        auto res = MakeResult<size_t>(backend->WriteBytes(ctx.ReadBuffer(), length, offset));
         if (res.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(res.Code());
@@ -153,8 +150,9 @@ private:
     }
 
     void Flush(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_FS, "called");
-        backend->Flush();
+        NGLOG_DEBUG(Service_FS, "called");
+
+        // Exists for SDK compatibiltity -- No need to flush file.
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -163,7 +161,7 @@ private:
     void SetSize(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 size = rp.Pop<u64>();
-        backend->SetSize(size);
+        backend->Resize(size);
         LOG_DEBUG(Service_FS, "called, size={}", size);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -232,7 +230,7 @@ private:
 
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
-    explicit IFileSystem(std::unique_ptr<FileSys::FileSystemBackend>&& backend)
+    explicit IFileSystem(v_dir backend)
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
@@ -267,7 +265,12 @@ public:
         LOG_DEBUG(Service_FS, "called file {} mode 0x{:X} size 0x{:08X}", name, mode, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(backend->CreateFile(name, size));
+        auto b1 = backend->CreateFile(name);
+        if (b1 == nullptr) {
+        }
+        auto b2 = b1->Res
+
+                      rb.Push(? RESULT_SUCCESS : ResultCode(-1));
     }
 
     void DeleteFile(Kernel::HLERequestContext& ctx) {
@@ -291,7 +294,8 @@ public:
         LOG_DEBUG(Service_FS, "called directory {}", name);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(backend->CreateDirectory(name));
+        auto dir = backend->CreateSubdirectory(name);
+        rb.Push(dir == nullptr ? -1 : 0);
     }
 
     void RenameFile(Kernel::HLERequestContext& ctx) {
@@ -389,7 +393,7 @@ public:
     }
 
 private:
-    std::unique_ptr<FileSys::FileSystemBackend> backend;
+    v_dir backend;
 };
 
 FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
@@ -490,10 +494,9 @@ void FSP_SRV::TryLoadRomFS() {
     if (romfs) {
         return;
     }
-    FileSys::Path unused;
-    auto res = OpenFileSystem(Type::RomFS, unused);
+    auto res = OpenRomFS();
     if (res.Succeeded()) {
-        romfs = std::move(res.Unwrap());
+        romfs = res.Unwrap();
     }
 }
 
@@ -507,8 +510,7 @@ void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    FileSys::Path unused;
-    auto filesystem = OpenFileSystem(Type::SDMC, unused).Unwrap();
+    auto filesystem = OpenFileSystem(Type::SDMC).Unwrap();
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -556,15 +558,6 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
         LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultCode(-1));
-        return;
-    }
-
-    // Attempt to open a StorageBackend interface to the RomFS
-    auto storage = romfs->OpenFile({}, {});
-    if (storage.Failed()) {
-        LOG_CRITICAL(Service_FS, "no storage interface available!");
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(storage.Code());
         return;
     }
 

@@ -6,7 +6,7 @@
 
 #include <string>
 #include "common/common_types.h"
-#include "core/file_sys/partition_filesystem.h"
+#include "core/file_sys/content_archive.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/loader/loader.h"
@@ -31,14 +31,14 @@ public:
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
-    ResultStatus ReadRomFS(v_dir& dir) override;
+    ResultStatus ReadRomFS(v_file& file) override;
 
     ~AppLoader_NCA();
 
 private:
     FileSys::ProgramMetadata metadata;
 
-    std::unique_ptr<FileSys::Nca> nca;
+    std::unique_ptr<FileSys::NCA> nca;
 };
 
 } // namespace Loader

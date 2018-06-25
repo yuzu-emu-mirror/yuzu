@@ -125,4 +125,16 @@ bool RealVfsDirectory::Rename(const std::string& name) {
     return FileUtil::Rename(path.string(), (path / name).string());
 }
 
+bool RealVfsDirectory::ReplaceFileWithSubdirectory(v_file file, v_dir dir) {
+    auto iter = std::find(files.begin(), files.end(), file);
+    if (iter == files.end())
+        return false;
+
+    files[iter - files.begin()] = files.back();
+    files.pop_back();
+
+    subdirectories.emplace_back(dir);
+
+    return true;
+}
 } // namespace FileSys

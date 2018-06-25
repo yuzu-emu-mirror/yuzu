@@ -14,12 +14,18 @@ Loader::ResultStatus ProgramMetadata::Load(v_file file) {
     if (total_size < sizeof(Header))
         return Loader::ResultStatus::Error;
 
-    if (sizeof(Header) != file->ReadObject(&npdm_header))
+    // TODO(DarkLordZach): Use ReadObject when Header/AcidHeader becomes trivially copyable.
+    std::vector<u8> npdm_header_data = file->ReadBytes(sizeof(Header));
+    if (sizeof(Header) != npdm_header_data.size())
         return Loader::ResultStatus::Error;
+    std::memcpy(&npdm_header, npdm_header_data.data(), sizeof(Header));
+
+    std::vector<u8> acid_header_data = file->ReadBytes(sizeof(AcidHeader), npdm_header.acid_offset);
+    if (sizeof(AcidHeader) != acid_header_data.size())
+        return Loader::ResultStatus::Error;
+    std::memcpy(&acid_header, acid_header_data.data(), sizeof(AcidHeader));
 
     if (sizeof(AciHeader) != file->ReadObject(&aci_header, npdm_header.aci_offset))
-        return Loader::ResultStatus::Error;
-    if (sizeof(AcidHeader) != file->ReadObject(&acid_header, npdm_header.acid_offset))
         return Loader::ResultStatus::Error;
 
     if (sizeof(FileAccessControl) != file->ReadObject(&acid_file_access, acid_header.fac_offset))

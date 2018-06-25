@@ -24,7 +24,8 @@ namespace FileSys {
  */
 class PartitionFilesystem : public ReadOnlyVfsDirectory {
 public:
-    Loader::ResultStatus Load(std::shared_ptr<VfsFile> file);
+    explicit PartitionFilesystem(std::shared_ptr<VfsFile> file);
+    Loader::ResultStatus GetStatus() const;
 
     std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
     std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
@@ -71,6 +72,8 @@ private:
     static_assert(sizeof(HFSEntry) == 0x40, "HFS entry structure size is wrong");
 
 #pragma pack(pop)
+
+    Loader::ResultStatus status;
 
     Header pfs_header;
     bool is_hfs;

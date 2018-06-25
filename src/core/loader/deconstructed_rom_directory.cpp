@@ -4,12 +4,10 @@
 
 #include <cinttypes>
 #include "common/common_funcs.h"
-#include "common/common_paths.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/file_sys/content_archive.h"
-#include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -51,7 +49,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(v_file 
     : AppLoader(file) {}
 
 FileType AppLoader_DeconstructedRomDirectory::IdentifyType(v_file file) {
-    if (FileSys::IsDirectoryExeFs(file->GetContainingDirectory())) {
+    if (FileSys::IsDirectoryExeFS(file->GetContainingDirectory())) {
         return FileType::DeconstructedRomDirectory;
     }
 
@@ -110,26 +108,19 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         });
 
     // TODO(DarkLordZach): Identify RomFS if its a subdirectory.
-    romfs = std::make_shared<RomFs>((romfs_iter == dir->GetFiles().end()) ? nullptr : *romfs_iter);
-
-    // Register the RomFS if a ".romfs" file was found
-    if (romfs != nullptr) {
-        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
-                                                Service::FileSystem::Type::RomFS);
-    }
+    romfs = (romfs_iter == dir->GetFiles().end()) ? nullptr : *romfs_iter;
 
     is_loaded = true;
     return ResultStatus::Success;
 }
 
-ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(v_dir& dir) {
-
-    if (filepath_romfs.empty()) {
+ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(v_file& file) {
+    if (romfs == nullptr) {
         LOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
-    dir = romfs;
+    file = romfs;
 
     return ResultStatus::Success;
 }

@@ -37,6 +37,7 @@ struct NsoHeader {
     std::array<u32_le, 3> segments_compressed_size;
 };
 static_assert(sizeof(NsoHeader) == 0x6c, "NsoHeader has incorrect size.");
+static_assert(std::is_trivially_copyable<NsoHeader>::value, "NsoHeader isn't trivially copyable.");
 
 struct ModHeader {
     u32_le magic;
@@ -99,7 +100,7 @@ VAddr AppLoader_NSO::LoadModule(v_file file, VAddr load_base) {
         return {};
 
     NsoHeader nso_header{};
-    if (sizeof(NsoHeader) != file->ReadObject(&file))
+    if (sizeof(NsoHeader) != file->ReadObject(&nso_header))
         return {};
 
     if (nso_header.magic != Common::MakeMagic('N', 'S', 'O', '0'))

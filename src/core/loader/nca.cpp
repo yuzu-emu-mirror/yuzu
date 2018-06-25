@@ -4,14 +4,11 @@
 
 #include <vector>
 
-#include "common/common_funcs.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
-#include "common/swap.h"
 #include "core/core.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/program_metadata.h"
-#include "core/file_sys/romfs_factory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -21,15 +18,15 @@
 
 namespace Loader {
 
-AppLoader_NCA::AppLoader_NCA(v_file file) : AppLoader(std::move(file)) {}
+AppLoader_NCA::AppLoader_NCA(v_file file) : AppLoader(file) {}
 
 FileType AppLoader_NCA::IdentifyType(v_file file) {
     // TODO(DarkLordZach): Assuming everything is decrypted. Add crypto support.
-    FileSys::NcaHeader header{};
-    if (sizeof(FileSys::NcaHeader) != file->ReadObject(&header))
+    FileSys::NCAHeader header{};
+    if (sizeof(FileSys::NCAHeader) != file->ReadObject(&header))
         return FileType::Error;
 
-    if (IsValidNca(header) && header.content_type == FileSys::NcaContentType::Program)
+    if (IsValidNCA(header) && header.content_type == FileSys::NCAContentType::Program)
         return FileType::NCA;
 
     return FileType::Error;
@@ -40,16 +37,16 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         return ResultStatus::ErrorAlreadyLoaded;
     }
 
-    nca = std::make_unique<FileSys::Nca>();
-    ResultStatus result = nca->Load(file);
+    nca = std::make_unique<FileSys::NCA>(file);
+    ResultStatus result = nca->GetStatus();
     if (result != ResultStatus::Success) {
         return result;
     }
 
-    if (nca->GetType() != FileSys::NcaContentType::Program)
+    if (nca->GetType() != FileSys::NCAContentType::Program)
         return ResultStatus::ErrorInvalidFormat;
 
-    auto exefs = nca->GetExeFs();
+    auto exefs = nca->GetExeFS();
 
     if (exefs == nullptr)
         return ResultStatus::ErrorInvalidFormat;
@@ -85,23 +82,19 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     process->Run(Memory::PROCESS_IMAGE_VADDR, metadata.GetMainThreadPriority(),
                  metadata.GetMainThreadStackSize());
 
-    if (nca->GetRomFs() != nullptr)
-        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
-                                                Service::FileSystem::Type::RomFS);
-
     is_loaded = true;
     return ResultStatus::Success;
 }
 
-ResultStatus AppLoader_NCA::ReadRomFS(v_dir& dir) {
-    const auto romfs = nca->GetRomFs();
+ResultStatus AppLoader_NCA::ReadRomFS(v_file& file) {
+    const auto romfs = nca->GetRomFS();
 
     if (romfs == nullptr) {
         NGLOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
-    dir = romfs;
+    file = romfs;
 
     return ResultStatus::Success;
 }

@@ -158,7 +158,7 @@ public:
      * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadRomFS(v_dir& dir) {
+    virtual ResultStatus ReadRomFS(v_file& dir) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -168,7 +168,7 @@ public:
      * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadUpdateRomFS(v_dir& file) {
+    virtual ResultStatus ReadUpdateRomFS(v_file& file) {
         return ResultStatus::ErrorNotImplemented;
     }
 

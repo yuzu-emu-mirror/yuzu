@@ -35,10 +35,10 @@ public:
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
-    ResultStatus ReadRomFS(v_dir& dir) override;
+    ResultStatus ReadRomFS(v_file& file) override;
 
 private:
-    v_dir romfs;
+    v_file romfs;
     FileSys::ProgramMetadata metadata;
 };
 

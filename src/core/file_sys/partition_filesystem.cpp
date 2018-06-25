@@ -11,20 +11,25 @@
 
 namespace FileSys {
 
-Loader::ResultStatus PartitionFilesystem::Load(std::shared_ptr<VfsFile> file) {
+PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
     // At least be as large as the header
-    if (file->GetSize() < sizeof(Header))
-        return Loader::ResultStatus::Error;
+    if (file->GetSize() < sizeof(Header)) {
+        status = Loader::ResultStatus::Error;
+        return;
+    }
 
     // For cartridges, HFSs can get very large, so we need to calculate the size up to
     // the actual content itself instead of just blindly reading in the entire file.
     Header pfs_header;
-    if (!file->ReadObject(&pfs_header))
-        return Loader::ResultStatus::Error;
+    if (!file->ReadObject(&pfs_header)) {
+        status = Loader::ResultStatus::Error;
+        return;
+    }
 
     if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
         pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
-        return Loader::ResultStatus::ErrorInvalidFormat;
+        status = Loader::ResultStatus::ErrorInvalidFormat;
+        return;
     }
 
     bool is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
@@ -36,17 +41,22 @@ Loader::ResultStatus PartitionFilesystem::Load(std::shared_ptr<VfsFile> file) {
     // Actually read in now...
     std::vector<u8> file_data = file->ReadBytes(metadata_size);
 
-    if (file_data.size() != metadata_size)
-        return Loader::ResultStatus::Error;
+    if (file_data.size() != metadata_size) {
+        status = Loader::ResultStatus::Error;
+        return;
+    }
 
     size_t total_size = file_data.size();
-    if (total_size < sizeof(Header))
-        return Loader::ResultStatus::Error;
+    if (total_size < sizeof(Header)) {
+        status = Loader::ResultStatus::Error;
+        return;
+    }
 
     memcpy(&pfs_header, &file_data, sizeof(Header));
     if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
         pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
-        return Loader::ResultStatus::ErrorInvalidFormat;
+        status = Loader::ResultStatus::ErrorInvalidFormat;
+        return;
     }
 
     is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
@@ -65,7 +75,11 @@ Loader::ResultStatus PartitionFilesystem::Load(std::shared_ptr<VfsFile> file) {
             std::make_shared<OffsetVfsFile>(file, entry.size, content_offset + entry.offset, name));
     }
 
-    return Loader::ResultStatus::Success;
+    status = Loader::ResultStatus::Success;
+}
+
+Loader::ResultStatus PartitionFilesystem::GetStatus() const {
+    return status;
 }
 
 std::vector<std::shared_ptr<VfsFile>> PartitionFilesystem::GetFiles() const {
