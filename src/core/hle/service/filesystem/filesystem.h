@@ -34,7 +34,7 @@ class VfsDirectoryServiceWrapper {
     v_dir backing;
 
 public:
-    VfsDirectoryServiceWrapper(v_dir backing);
+    explicit VfsDirectoryServiceWrapper(v_dir backing);
 
     /**
      * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)

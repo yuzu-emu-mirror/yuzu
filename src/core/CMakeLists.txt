@@ -20,8 +20,7 @@ add_library(core STATIC
     file_sys/path_parser.h
     file_sys/program_metadata.cpp
     file_sys/program_metadata.h
-    file_sys/romfs.cpp
-    file_sys/romfs.h
+    file_sys/storage.h
     file_sys/vfs.cpp
     file_sys/vfs.h
     file_sys/vfs_offset.cpp

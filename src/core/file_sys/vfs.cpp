@@ -69,6 +69,17 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const filesystem::path& p
     return GetParentDirectory()->GetFileAbsolute(path);
 }
 
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const filesystem::path& path) const {
+    return "";
+}
+
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(const filesystem::path& path) const {
+    if (IsRoot())
+        return GetDirectoryRelative(path);
+
+    return GetParentDirectory()->GetDirectoryAbsolute(path);
+}
+
 std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) const {
     const auto& files = GetFiles();
     const auto& iter = std::find_if(files.begin(), files.end(), [&name](const auto& file1) {

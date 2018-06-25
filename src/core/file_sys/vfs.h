@@ -97,6 +97,9 @@ struct VfsDirectory : NonCopyable {
     virtual std::shared_ptr<VfsFile> GetFileRelative(const filesystem::path& path) const;
     virtual std::shared_ptr<VfsFile> GetFileAbsolute(const filesystem::path& path) const;
 
+    virtual std::shared_ptr<VfsDirectory> GetDirectoryRelative(const filesystem::path& path) const;
+    virtual std::shared_ptr<VfsDirectory> GetDirectoryAbsolute(const filesystem::path& path) const;
+
     virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() const = 0;
     virtual std::shared_ptr<VfsFile> GetFile(const std::string& name) const;
 

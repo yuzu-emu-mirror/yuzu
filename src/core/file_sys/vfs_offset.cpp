@@ -6,7 +6,7 @@
 
 namespace FileSys {
 
-OffsetVfsFile::OffsetVfsFile(std::shared_ptr<VfsFile> file_, u64 size_, u64 offset_,
+OffsetVfsFile::OffsetVfsFile(std::shared_ptr<VfsFile> file_, size_t size_, size_t offset_,
                              const std::string& name_)
     : file(file_), offset(offset_), size(size_), name(name_) {}
 
@@ -14,17 +14,20 @@ std::string OffsetVfsFile::GetName() const {
     return name.empty() ? file->GetName() : name;
 }
 
-u64 OffsetVfsFile::GetSize() const {
+size_t OffsetVfsFile::GetSize() const {
     return size;
 }
 
-bool OffsetVfsFile::Resize(u64 new_size) {
+bool OffsetVfsFile::Resize(size_t new_size) {
     if (offset + new_size < file->GetSize()) {
         size = new_size;
-        return true;
+    } else {
+        auto res = file->Resize(offset + new_size);
+        if (!res) return false;
+        size = new_size;
     }
 
-    return false;
+    return true;
 }
 
 std::shared_ptr<VfsDirectory> OffsetVfsFile::GetContainingDirectory() const {
