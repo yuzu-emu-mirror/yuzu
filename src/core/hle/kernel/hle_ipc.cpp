@@ -271,6 +271,11 @@ std::vector<u8> HLERequestContext::ReadBuffer(int buffer_index) const {
 }
 
 size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size, int buffer_index) const {
+    if (size == 0) {
+        NGLOG_WARNING(Core, "skip empty buffer write");
+        return 0;
+    }
+
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[buffer_index].Size()};
     const size_t buffer_size{GetWriteBufferSize(buffer_index)};
     if (size > buffer_size) {

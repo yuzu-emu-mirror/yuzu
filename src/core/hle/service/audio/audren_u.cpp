@@ -17,7 +17,8 @@ constexpr u64 audio_ticks{static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
-    IAudioRenderer() : ServiceFramework("IAudioRenderer") {
+    IAudioRenderer(AudioRendererParameter audren_params)
+        : ServiceFramework("IAudioRenderer"), worker_params(audren_params) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetAudioRendererSampleRate"},
             {1, nullptr, "GetAudioRendererSampleCount"},
@@ -57,27 +58,37 @@ private:
     }
 
     void RequestUpdateAudioRenderer(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_Audio, "{}", ctx.Description());
-        AudioRendererResponseData response_data{};
+        UpdateDataHeader config{};
+        auto buf = ctx.ReadBuffer();
+        std::memcpy(&config, buf.data(), sizeof(UpdateDataHeader));
+        u32 memory_pool_count = worker_params.effect_count + (worker_params.voice_count * 4);
 
-        response_data.section_0_size =
-            static_cast<u32>(response_data.state_entries.size() * sizeof(AudioRendererStateEntry));
-        response_data.section_1_size = static_cast<u32>(response_data.section_1.size());
-        response_data.section_2_size = static_cast<u32>(response_data.section_2.size());
-        response_data.section_3_size = static_cast<u32>(response_data.section_3.size());
-        response_data.section_4_size = static_cast<u32>(response_data.section_4.size());
-        response_data.section_5_size = static_cast<u32>(response_data.section_5.size());
-        response_data.total_size = sizeof(AudioRendererResponseData);
+        std::vector<MemoryPoolInfo> mem_pool_info(memory_pool_count);
+        std::memcpy(mem_pool_info.data(),
+                    buf.data() + sizeof(UpdateDataHeader) + config.behavior_size,
+                    memory_pool_count * sizeof(MemoryPoolInfo));
 
-        for (unsigned i = 0; i < response_data.state_entries.size(); i++) {
-            // 4 = Busy and 5 = Ready?
-            response_data.state_entries[i].state = 5;
+        UpdateDataHeader response_data{worker_params};
+
+        ASSERT(ctx.GetWriteBufferSize() == response_data.total_size);
+
+        std::vector<u8> output(response_data.total_size);
+        std::memcpy(output.data(), &response_data, sizeof(UpdateDataHeader));
+        std::vector<MemoryPoolEntry> memory_pool(memory_pool_count);
+        for (unsigned i = 0; i < memory_pool.size(); i++) {
+            if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestAttach)
+                memory_pool[i].state = MemoryPoolStates::Attached;
+            else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetach)
+                memory_pool[i].state = MemoryPoolStates::Detached;
+            else
+                memory_pool[i].state = mem_pool_info[i].pool_state;
         }
+        std::memcpy(output.data() + sizeof(UpdateDataHeader), memory_pool.data(),
+                    response_data.memory_pools_size);
 
-        ctx.WriteBuffer(&response_data, response_data.total_size);
+        ctx.WriteBuffer(output);
 
         IPC::ResponseBuilder rb{ctx, 2};
-
         rb.Push(RESULT_SUCCESS);
 
         NGLOG_WARNING(Service_Audio, "(STUBBED) called");
@@ -109,48 +120,66 @@ private:
         NGLOG_WARNING(Service_Audio, "(STUBBED) called");
     }
 
-    struct AudioRendererStateEntry {
-        u32_le state;
+    enum class MemoryPoolStates : u32 { // Should be LE
+        Invalid = 0x0,
+        Unknown = 0x1,
+        RequestDetach = 0x2,
+        Detached = 0x3,
+        RequestAttach = 0x4,
+        Attached = 0x5,
+        Released = 0x6,
+    };
+
+    struct MemoryPoolEntry {
+        MemoryPoolStates state;
         u32_le unknown_4;
         u32_le unknown_8;
         u32_le unknown_c;
     };
-    static_assert(sizeof(AudioRendererStateEntry) == 0x10,
-                  "AudioRendererStateEntry has wrong size");
+    static_assert(sizeof(MemoryPoolEntry) == 0x10, "MemoryPoolEntry has wrong size");
 
-    struct AudioRendererResponseData {
-        u32_le unknown_0;
-        u32_le section_5_size;
-        u32_le section_0_size;
-        u32_le section_1_size;
-        u32_le unknown_10;
-        u32_le section_2_size;
-        u32_le unknown_18;
-        u32_le section_3_size;
-        u32_le section_4_size;
-        u32_le unknown_24;
-        u32_le unknown_28;
-        u32_le unknown_2c;
-        u32_le unknown_30;
-        u32_le unknown_34;
-        u32_le unknown_38;
-        u32_le total_size;
-
-        std::array<AudioRendererStateEntry, 0x18e> state_entries;
-
-        std::array<u8, 0x600> section_1;
-        std::array<u8, 0xe0> section_2;
-        std::array<u8, 0x20> section_3;
-        std::array<u8, 0x10> section_4;
-        std::array<u8, 0xb0> section_5;
+    struct MemoryPoolInfo {
+        u64_le pool_address;
+        u64_le pool_size;
+        MemoryPoolStates pool_state;
+        INSERT_PADDING_WORDS(3); // Unknown
     };
-    static_assert(sizeof(AudioRendererResponseData) == 0x20e0,
-                  "AudioRendererResponseData has wrong size");
+    static_assert(sizeof(MemoryPoolInfo) == 0x20, "MemoryPoolInfo has wrong size");
+
+    struct UpdateDataHeader {
+        UpdateDataHeader() {}
+
+        UpdateDataHeader(const AudioRendererParameter& config) {
+            revision = config.revision;
+            behavior_size = 0xb0;
+            memory_pools_size = (config.effect_count + (config.voice_count * 4)) * 0x10;
+            voices_size = config.voice_count * 0x10;
+            effects_size = config.effect_count * 0x10;
+            sinks_size = config.sink_count * 0x20;
+            performance_manager_size = 0x10;
+            total_size = sizeof(UpdateDataHeader) + behavior_size + memory_pools_size +
+                         voices_size + effects_size + sinks_size + performance_manager_size;
+        }
+
+        u32_le revision;
+        u32_le behavior_size;
+        u32_le memory_pools_size;
+        u32_le voices_size;
+        u32_le voice_resource_size;
+        u32_le effects_size;
+        u32_le mixes_size;
+        u32_le sinks_size;
+        u32_le performance_manager_size;
+        INSERT_PADDING_WORDS(6);
+        u32_le total_size;
+    };
+    static_assert(sizeof(UpdateDataHeader) == 0x40, "UpdateDataHeader has wrong size");
 
     /// This is used to trigger the audio event callback.
     CoreTiming::EventType* audio_event;
 
     Kernel::SharedPtr<Kernel::Event> system_event;
+    AudioRendererParameter worker_params;
 };
 
 class IAudioDevice final : public ServiceFramework<IAudioDevice> {
@@ -248,31 +277,33 @@ AudRenU::AudRenU() : ServiceFramework("audren:u") {
 }
 
 void AudRenU::OpenAudioRenderer(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    auto params = rp.PopRaw<AudioRendererParameter>();
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<Audio::IAudioRenderer>();
+    rb.PushIpcInterface<Audio::IAudioRenderer>(std::move(params));
 
     NGLOG_DEBUG(Service_Audio, "called");
 }
 
 void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto params = rp.PopRaw<WorkerBufferParameters>();
+    auto params = rp.PopRaw<AudioRendererParameter>();
 
-    u64 buffer_sz = Common::AlignUp(4 * params.unknown8, 0x40);
-    buffer_sz += params.unknownC * 1024;
-    buffer_sz += 0x940 * (params.unknownC + 1);
+    u64 buffer_sz = Common::AlignUp(4 * params.unknown_8, 0x40);
+    buffer_sz += params.unknown_c * 1024;
+    buffer_sz += 0x940 * (params.unknown_c + 1);
     buffer_sz += 0x3F0 * params.voice_count;
-    buffer_sz += Common::AlignUp(8 * (params.unknownC + 1), 0x10);
+    buffer_sz += Common::AlignUp(8 * (params.unknown_c + 1), 0x10);
     buffer_sz += Common::AlignUp(8 * params.voice_count, 0x10);
     buffer_sz +=
-        Common::AlignUp((0x3C0 * (params.sink_count + params.unknownC) + 4 * params.sample_count) *
-                            (params.unknown8 + 6),
+        Common::AlignUp((0x3C0 * (params.sink_count + params.unknown_c) + 4 * params.sample_count) *
+                            (params.unknown_8 + 6),
                         0x40);
 
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
-        u32 count = params.unknownC + 1;
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
+        u32 count = params.unknown_c + 1;
         u64 node_count = Common::AlignUp(count, 0x40);
         u64 node_state_buffer_sz =
             4 * (node_count * node_count) + 0xC * node_count + 2 * (node_count / 8);
@@ -287,20 +318,20 @@ void AudRenU::GetAudioRendererWorkBufferSize(Kernel::HLERequestContext& ctx) {
     }
 
     buffer_sz += 0x20 * (params.effect_count + 4 * params.voice_count) + 0x50;
-    if (IsFeatureSupported(AudioFeatures::Splitter, params.magic)) {
-        buffer_sz += 0xE0 * params.unknown2c;
+    if (IsFeatureSupported(AudioFeatures::Splitter, params.revision)) {
+        buffer_sz += 0xE0 * params.unknown_2c;
         buffer_sz += 0x20 * params.splitter_count;
-        buffer_sz += Common::AlignUp(4 * params.unknown2c, 0x10);
+        buffer_sz += Common::AlignUp(4 * params.unknown_2c, 0x10);
     }
     buffer_sz = Common::AlignUp(buffer_sz, 0x40) + 0x170 * params.sink_count;
     u64 output_sz = buffer_sz + 0x280 * params.sink_count + 0x4B0 * params.effect_count +
                     ((params.voice_count * 256) | 0x40);
 
-    if (params.unknown1c >= 1) {
+    if (params.unknown_1c >= 1) {
         output_sz = Common::AlignUp(((16 * params.sink_count + 16 * params.effect_count +
                                       16 * params.voice_count + 16) +
                                      0x658) *
-                                            (params.unknown1c + 1) +
+                                            (params.unknown_1c + 1) +
                                         0xc0,
                                     0x40) +
                     output_sz;

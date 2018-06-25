@@ -241,6 +241,10 @@ bool IsValidVirtualAddress(const VAddr vaddr) {
     return IsValidVirtualAddress(*Core::CurrentProcess(), vaddr);
 }
 
+bool IsKernelVirtualAddress(const VAddr vaddr) {
+    return KERNEL_REGION_VADDR <= vaddr && vaddr < KERNEL_REGION_END;
+}
+
 bool IsValidPhysicalAddress(const PAddr paddr) {
     return GetPhysicalPointer(paddr) != nullptr;
 }

@@ -188,6 +188,11 @@ enum : VAddr {
     MAP_REGION_VADDR = NEW_MAP_REGION_VADDR_END,
     MAP_REGION_SIZE = 0x1000000000,
     MAP_REGION_VADDR_END = MAP_REGION_VADDR + MAP_REGION_SIZE,
+
+    /// Kernel Virtual Address Range
+    KERNEL_REGION_VADDR = 0xFFFFFF8000000000,
+    KERNEL_REGION_SIZE = 0x7FFFE00000,
+    KERNEL_REGION_END = KERNEL_REGION_VADDR + KERNEL_REGION_SIZE,
 };
 
 /// Currently active page table
@@ -197,6 +202,8 @@ PageTable* GetCurrentPageTable();
 /// Determines if the given VAddr is valid for the specified process.
 bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr);
 bool IsValidVirtualAddress(const VAddr addr);
+/// Determines if the given VAddr is a kernel address
+bool IsKernelVirtualAddress(const VAddr addr);
 
 bool IsValidPhysicalAddress(const PAddr addr);
 
