@@ -29,29 +29,37 @@ struct FormatTuple {
     bool compressed;
 };
 
-SurfaceParams::SurfaceParams(const Tegra::Texture::FullTextureInfo& config)
-    : addr(config.tic.Address()), is_tiled(config.tic.IsTiled()),
-      block_height(is_tiled ? config.tic.BlockHeight() : 0),
-      pixel_format(PixelFormatFromTextureFormat(config.tic.format)),
-      component_type(ComponentTypeFromTexture(config.tic.r_type.Value())),
-      type(GetFormatType(pixel_format)),
-      width(Common::AlignUp(config.tic.Width(), GetCompressionFactor(pixel_format))),
-      height(Common::AlignUp(config.tic.Height(), GetCompressionFactor(pixel_format))),
-      size_in_bytes(SizeInBytes()) {
+/*static*/ SurfaceParams SurfaceParams::CreateForTexture(
+    const Tegra::Texture::FullTextureInfo& config) {
 
-    // TODO(Subv): Different types per component are not supported.
-    ASSERT(config.tic.r_type.Value() == config.tic.g_type.Value() &&
-           config.tic.r_type.Value() == config.tic.b_type.Value() &&
-           config.tic.r_type.Value() == config.tic.a_type.Value());
+    SurfaceParams params{};
+    params.addr = config.tic.Address();
+    params.is_tiled = config.tic.IsTiled();
+    params.block_height = params.is_tiled ? config.tic.BlockHeight() : 0,
+    params.pixel_format = PixelFormatFromTextureFormat(config.tic.format);
+    params.component_type = ComponentTypeFromTexture(config.tic.r_type.Value());
+    params.type = GetFormatType(params.pixel_format);
+    params.width = Common::AlignUp(config.tic.Width(), GetCompressionFactor(params.pixel_format));
+    params.height = Common::AlignUp(config.tic.Height(), GetCompressionFactor(params.pixel_format));
+    params.size_in_bytes = params.SizeInBytes();
+    return params;
 }
 
-SurfaceParams::SurfaceParams(const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config)
-    : addr(config.Address()), is_tiled(true),
-      block_height(Tegra::Texture::TICEntry::DefaultBlockHeight),
-      pixel_format(PixelFormatFromRenderTargetFormat(config.format)),
-      component_type(ComponentTypeFromRenderTarget(config.format)),
-      type(GetFormatType(pixel_format)), width(config.width), height(config.height),
-      size_in_bytes(SizeInBytes()) {}
+/*static*/ SurfaceParams SurfaceParams::CreateForFramebuffer(
+    const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config) {
+
+    SurfaceParams params{};
+    params.addr = config.Address();
+    params.is_tiled = true;
+    params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
+    params.pixel_format = PixelFormatFromRenderTargetFormat(config.format);
+    params.component_type = ComponentTypeFromRenderTarget(config.format);
+    params.type = GetFormatType(params.pixel_format);
+    params.width = config.width;
+    params.height = config.height;
+    params.size_in_bytes = params.SizeInBytes();
+    return params;
+}
 
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},                    // ABGR8
@@ -358,7 +366,7 @@ RasterizerCacheOpenGL::RasterizerCacheOpenGL() {
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextureInfo& config) {
-    return GetSurface(SurfaceParams(config));
+    return GetSurface(SurfaceParams::CreateForTexture(config));
 }
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
@@ -369,8 +377,8 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     NGLOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
 
     // get color and depth surfaces
-    SurfaceParams color_params(regs.rt[0]);
-    SurfaceParams depth_params = color_params;
+    const SurfaceParams color_params{SurfaceParams::CreateForFramebuffer(regs.rt[0])};
+    const SurfaceParams depth_params{color_params};
 
     ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
 
@@ -423,13 +431,14 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
     }
 
     // Check for an exact match in existing surfaces
-    auto search = surface_cache.find(params.addr);
+    const auto& surface_key{SurfaceKey::Create(params)};
+    const auto& search{surface_cache.find(surface_key)};
     Surface surface;
     if (search != surface_cache.end()) {
         surface = search->second;
     } else {
         surface = std::make_shared<CachedSurface>(params);
-        surface_cache[params.addr] = surface;
+        surface_cache[surface_key] = surface;
     }
 
     LoadSurface(surface);
@@ -439,10 +448,10 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
 
 Surface RasterizerCacheOpenGL::TryFindFramebufferSurface(VAddr cpu_addr) const {
     // Tries to find the GPU address of a framebuffer based on the CPU address. This is because
-    // final output framebuffers are specified by CPU address, but internally our GPU cache uses GPU
-    // addresses. We iterate through all cached framebuffers, and compare their starting CPU address
-    // to the one provided. This is obviously not great, and won't work if the framebuffer overlaps
-    // surfaces.
+    // final output framebuffers are specified by CPU address, but internally our GPU cache uses
+    // GPU addresses. We iterate through all cached framebuffers, and compare their starting CPU
+    // address to the one provided. This is obviously not great, and won't work if the
+    // framebuffer overlaps surfaces.
 
     std::vector<Surface> surfaces;
     for (const auto& surface : surface_cache) {

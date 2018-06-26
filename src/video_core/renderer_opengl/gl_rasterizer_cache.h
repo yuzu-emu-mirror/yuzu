@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "common/common_types.h"
+#include "common/hash.h"
 #include "common/math_util.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
@@ -253,21 +254,40 @@ struct SurfaceParams {
                GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
-    SurfaceParams(const Tegra::Texture::FullTextureInfo& config);
-    SurfaceParams(const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
-
     VAddr GetCpuAddr() const;
 
-    const Tegra::GPUVAddr addr;
-    const bool is_tiled;
-    const u32 block_height;
-    const PixelFormat pixel_format;
-    const ComponentType component_type;
-    const SurfaceType type;
-    const u32 width;
-    const u32 height;
-    const size_t size_in_bytes;
+    static SurfaceParams CreateForTexture(const Tegra::Texture::FullTextureInfo& config);
+
+    static SurfaceParams CreateForFramebuffer(
+        const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
+
+    Tegra::GPUVAddr addr;
+    bool is_tiled;
+    u32 block_height;
+    PixelFormat pixel_format;
+    ComponentType component_type;
+    SurfaceType type;
+    u32 width;
+    u32 height;
+    size_t size_in_bytes;
 };
+
+struct SurfaceKey : Common::HashableStruct<SurfaceParams> {
+    static SurfaceKey Create(const SurfaceParams& params) {
+        SurfaceKey res;
+        res.state = params;
+        return res;
+    }
+};
+
+namespace std {
+template <>
+struct hash<SurfaceKey> {
+    size_t operator()(const SurfaceKey& k) const {
+        return k.Hash();
+    }
+};
+} // namespace std
 
 class CachedSurface final {
 public:
@@ -317,7 +337,7 @@ public:
 private:
     Surface GetSurface(const SurfaceParams& params);
 
-    std::map<Tegra::GPUVAddr, Surface> surface_cache;
+    std::unordered_map<SurfaceKey, Surface> surface_cache;
     OGLFramebuffer read_framebuffer;
     OGLFramebuffer draw_framebuffer;
 };
