@@ -435,22 +435,35 @@ void RasterizerOpenGL::DrawArrays() {
 
     // Mark framebuffer surfaces as dirty
     if (color_surface != nullptr && write_color_fb) {
-        res_cache.FlushSurface(color_surface);
+        res_cache.MarkSurfaceAsDirty(color_surface);
     }
     if (depth_surface != nullptr && write_depth_fb) {
-        res_cache.FlushSurface(depth_surface);
+        res_cache.MarkSurfaceAsDirty(depth_surface);
     }
 }
 
 void RasterizerOpenGL::NotifyMaxwellRegisterChanged(u32 method) {}
 
-void RasterizerOpenGL::FlushAll() {}
+void RasterizerOpenGL::FlushAll() {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
+}
 
-void RasterizerOpenGL::FlushRegion(Tegra::GPUVAddr addr, u64 size) {}
+void RasterizerOpenGL::FlushRegion(Tegra::GPUVAddr addr, u64 size) {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.FlushRegion(addr, size);
+}
 
-void RasterizerOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, u64 size) {}
+void RasterizerOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, u64 size) {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.InvalidateRegion(addr, size);
+}
 
-void RasterizerOpenGL::FlushAndInvalidateRegion(Tegra::GPUVAddr addr, u64 size) {}
+void RasterizerOpenGL::FlushAndInvalidateRegion(Tegra::GPUVAddr addr, u64 size) {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.FlushRegion(addr, size);
+    res_cache.InvalidateRegion(addr, size);
+}
 
 bool RasterizerOpenGL::AccelerateDisplayTransfer(const void* config) {
     MICROPROFILE_SCOPE(OpenGL_Blits);

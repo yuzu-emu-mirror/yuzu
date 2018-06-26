@@ -12,6 +12,7 @@
 #include "core/core.h"
 #include "core/hle/kernel/process.h"
 #include "core/memory.h"
+#include "core/settings.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/textures/astc.h"
@@ -215,7 +216,7 @@ static void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tup
     cur_state.Apply();
 }
 
-CachedSurface::CachedSurface(const SurfaceParams& params) : params(params), gl_buffer_size(0) {
+CachedSurface::CachedSurface(const SurfaceParams& params) : params(params) {
     texture.Create();
     const auto& rect{params.GetRect()};
     AllocateSurfaceTexture(texture.handle,
@@ -370,6 +371,12 @@ RasterizerCacheOpenGL::RasterizerCacheOpenGL() {
     draw_framebuffer.Create();
 }
 
+RasterizerCacheOpenGL::~RasterizerCacheOpenGL() {
+    while (!surface_cache.empty()) {
+        UnregisterSurface(surface_cache.begin()->second);
+    }
+}
+
 Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextureInfo& config) {
     return GetSurface(SurfaceParams::CreateForTexture(config));
 }
@@ -425,9 +432,17 @@ void RasterizerCacheOpenGL::LoadSurface(const Surface& surface) {
     surface->UploadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
 }
 
-void RasterizerCacheOpenGL::FlushSurface(const Surface& surface) {
-    surface->DownloadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
-    surface->FlushGLBuffer();
+void RasterizerCacheOpenGL::MarkSurfaceAsDirty(const Surface& surface) {
+    if (Settings::values.use_accurate_framebuffers) {
+        // If enabled, always flush dirty surfaces
+        surface->DownloadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
+        surface->FlushGLBuffer();
+    } else {
+        // Otherwise, don't mark surfaces that we write to as cached, because the resulting loads
+        // and flushes are very slow and do not seem to improve accuracy
+        const auto& params{surface->GetSurfaceParams()};
+        Memory::RasterizerMarkRegionCached(params.addr, params.size_in_bytes, false);
+    }
 }
 
 Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
@@ -441,12 +456,15 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
     Surface surface;
     if (search != surface_cache.end()) {
         surface = search->second;
+        if (Settings::values.use_accurate_framebuffers) {
+            // Reload the surface from Switch memory
+            LoadSurface(surface);
+        }
     } else {
         surface = std::make_shared<CachedSurface>(params);
-        surface_cache[surface_key] = surface;
+        RegisterSurface(surface);
+        LoadSurface(surface);
     }
-
-    LoadSurface(surface);
 
     return surface;
 }
@@ -475,4 +493,88 @@ Surface RasterizerCacheOpenGL::TryFindFramebufferSurface(VAddr cpu_addr) const {
     ASSERT_MSG(surfaces.size() == 1, ">1 surface is unsupported");
 
     return surfaces[0];
+}
+
+void RasterizerCacheOpenGL::FlushRegion(Tegra::GPUVAddr /*addr*/, size_t /*size*/) {
+    // TODO(bunnei): This is unused in the current implementation of the rasterizer cache. We should
+    // probably implement this in the future, but for now, the `use_accurate_framebufers` setting
+    // can be used to always flush.
+}
+
+void RasterizerCacheOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, size_t size) {
+    for (const auto& pair : surface_cache) {
+        const auto& surface{pair.second};
+        const auto& params{surface->GetSurfaceParams()};
+
+        if (params.IsOverlappingRegion(addr, size)) {
+            UnregisterSurface(surface);
+        }
+    }
+}
+
+void RasterizerCacheOpenGL::RegisterSurface(const Surface& surface) {
+    const auto& params{surface->GetSurfaceParams()};
+    const auto& surface_key{SurfaceKey::Create(params)};
+    const auto& search{surface_cache.find(surface_key)};
+
+    if (search != surface_cache.end()) {
+        // Registered already
+        return;
+    }
+
+    surface_cache[surface_key] = surface;
+    UpdatePagesCachedCount(params.addr, params.size_in_bytes, 1);
+}
+
+void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
+    const auto& params{surface->GetSurfaceParams()};
+    const auto& surface_key{SurfaceKey::Create(params)};
+    const auto& search{surface_cache.find(surface_key)};
+
+    if (search == surface_cache.end()) {
+        // Unregistered already
+        return;
+    }
+
+    UpdatePagesCachedCount(params.addr, params.size_in_bytes, -1);
+    surface_cache.erase(search);
+}
+
+template <typename Map, typename Interval>
+constexpr auto RangeFromInterval(Map& map, const Interval& interval) {
+    return boost::make_iterator_range(map.equal_range(interval));
+}
+
+void RasterizerCacheOpenGL::UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) {
+    const u64 num_pages = ((addr + size - 1) >> Tegra::MemoryManager::PAGE_BITS) -
+                          (addr >> Tegra::MemoryManager::PAGE_BITS) + 1;
+    const u64 page_start = addr >> Tegra::MemoryManager::PAGE_BITS;
+    const u64 page_end = page_start + num_pages;
+
+    // Interval maps will erase segments if count reaches 0, so if delta is negative we have to
+    // subtract after iterating
+    const auto pages_interval = PageMap::interval_type::right_open(page_start, page_end);
+    if (delta > 0)
+        cached_pages.add({pages_interval, delta});
+
+    for (const auto& pair : RangeFromInterval(cached_pages, pages_interval)) {
+        const auto interval = pair.first & pages_interval;
+        const int count = pair.second;
+
+        const Tegra::GPUVAddr interval_start_addr = boost::icl::first(interval)
+                                                    << Tegra::MemoryManager::PAGE_BITS;
+        const Tegra::GPUVAddr interval_end_addr = boost::icl::last_next(interval)
+                                                  << Tegra::MemoryManager::PAGE_BITS;
+        const u64 interval_size = interval_end_addr - interval_start_addr;
+
+        if (delta > 0 && count == delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, true);
+        else if (delta < 0 && count == -delta)
+            Memory::RasterizerMarkRegionCached(interval_start_addr, interval_size, false);
+        else
+            ASSERT(count >= 0);
+    }
+
+    if (delta < 0)
+        cached_pages.add({pages_interval, delta});
 }

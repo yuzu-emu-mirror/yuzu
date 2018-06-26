@@ -8,7 +8,7 @@
 #include <map>
 #include <memory>
 #include <vector>
-
+#include <boost/icl/interval_map.hpp>
 #include "common/common_types.h"
 #include "common/hash.h"
 #include "common/math_util.h"
@@ -19,6 +19,7 @@
 class CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
 using SurfaceSurfaceRect_Tuple = std::tuple<Surface, Surface, MathUtil::Rectangle<u32>>;
+using PageMap = boost::icl::interval_map<u64, int>;
 
 struct SurfaceParams {
     enum class PixelFormat {
@@ -243,8 +244,10 @@ struct SurfaceParams {
         return SurfaceType::Invalid;
     }
 
+    /// Returns the rectangle corresponding to this surface
     MathUtil::Rectangle<u32> GetRect() const;
 
+    /// Returns the size of this surface in bytes, adjusted for compression
     size_t SizeInBytes() const {
         const u32 compression_factor{GetCompressionFactor(pixel_format)};
         ASSERT(width % compression_factor == 0);
@@ -253,10 +256,18 @@ struct SurfaceParams {
                GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
+    /// Returns the CPU virtual address for this surface
     VAddr GetCpuAddr() const;
 
+    /// Returns true if the specified region overlaps with this surface's region in Switch memory
+    bool IsOverlappingRegion(Tegra::GPUVAddr region_addr, size_t region_size) const {
+        return addr <= (region_addr + region_size) && region_addr <= (addr + size_in_bytes);
+    }
+
+    /// Creates SurfaceParams from a texture configation
     static SurfaceParams CreateForTexture(const Tegra::Texture::FullTextureInfo& config);
 
+    /// Creates SurfaceParams from a framebuffer configation
     static SurfaceParams CreateForFramebuffer(
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
 
@@ -272,6 +283,7 @@ struct SurfaceParams {
     size_t size_in_bytes;
 };
 
+/// Hashable variation of SurfaceParams, used for a key in the surface cache
 struct SurfaceKey : Common::HashableStruct<SurfaceParams> {
     static SurfaceKey Create(const SurfaceParams& params) {
         SurfaceKey res;
@@ -325,18 +337,43 @@ private:
 class RasterizerCacheOpenGL final : NonCopyable {
 public:
     RasterizerCacheOpenGL();
+    ~RasterizerCacheOpenGL();
 
+    /// Get a surface based on the texture configuration
     Surface GetTextureSurface(const Tegra::Texture::FullTextureInfo& config);
+
+    /// Get the color and depth surfaces based on the framebuffer configuration
     SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,
                                                     const MathUtil::Rectangle<s32>& viewport);
-    void LoadSurface(const Surface& surface);
-    void FlushSurface(const Surface& surface);
+
+    /// Marks the specified surface as "dirty", in that it is out of sync with Switch memory
+    void MarkSurfaceAsDirty(const Surface& surface);
+
+    /// Tries to find a framebuffer GPU address based on the provided CPU address
     Surface TryFindFramebufferSurface(VAddr cpu_addr) const;
 
+    /// Write any cached resources overlapping the region back to memory (if dirty)
+    void FlushRegion(Tegra::GPUVAddr addr, size_t size);
+
+    /// Mark the specified region as being invalidated
+    void InvalidateRegion(Tegra::GPUVAddr addr, size_t size);
+
 private:
+    void LoadSurface(const Surface& surface);
     Surface GetSurface(const SurfaceParams& params);
 
+    /// Register surface into the cache
+    void RegisterSurface(const Surface& surface);
+
+    /// Remove surface from the cache
+    void UnregisterSurface(const Surface& surface);
+
+    /// Increase/decrease the number of surface in pages touching the specified region
+    void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
+
     std::unordered_map<SurfaceKey, Surface> surface_cache;
+    PageMap cached_pages;
+
     OGLFramebuffer read_framebuffer;
     OGLFramebuffer draw_framebuffer;
 };
