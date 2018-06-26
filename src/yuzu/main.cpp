@@ -334,8 +334,6 @@ bool GMainWindow::SupportsRequiredGLExtensions() {
         unsupported_ext.append("ARB_program_interface_query");
     if (!GLAD_GL_ARB_separate_shader_objects)
         unsupported_ext.append("ARB_separate_shader_objects");
-    if (!GLAD_GL_ARB_shader_storage_buffer_object)
-        unsupported_ext.append("ARB_shader_storage_buffer_object");
     if (!GLAD_GL_ARB_vertex_attrib_binding)
         unsupported_ext.append("ARB_vertex_attrib_binding");
 
