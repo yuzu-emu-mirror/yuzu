@@ -91,6 +91,19 @@ public:
             GLint b; // GL_TEXTURE_SWIZZLE_B
             GLint a; // GL_TEXTURE_SWIZZLE_A
         } swizzle;
+
+        void Unbind() {
+            texture_2d = 0;
+            swizzle.r = GL_RED;
+            swizzle.g = GL_GREEN;
+            swizzle.b = GL_BLUE;
+            swizzle.a = GL_ALPHA;
+        }
+
+        void Reset() {
+            Unbind();
+            sampler = 0;
+        }
     } texture_units[32];
 
     struct {
@@ -165,7 +178,7 @@ public:
     void Apply() const;
 
     /// Resets any references to the given resource
-    OpenGLState& ResetTexture(GLuint handle);
+    OpenGLState& UnbindTexture(GLuint handle);
     OpenGLState& ResetSampler(GLuint handle);
     OpenGLState& ResetProgram(GLuint handle);
     OpenGLState& ResetPipeline(GLuint handle);

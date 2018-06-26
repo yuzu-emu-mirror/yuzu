@@ -437,7 +437,7 @@ void RasterizerOpenGL::DrawArrays() {
 
     // Unbind textures for potential future use as framebuffer attachments
     for (auto& texture_unit : state.texture_units) {
-        texture_unit.texture_2d = 0;
+        texture_unit.Unbind();
     }
     state.Apply();
 
