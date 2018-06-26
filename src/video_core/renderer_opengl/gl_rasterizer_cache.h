@@ -7,6 +7,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "common/common_types.h"
 #include "common/hash.h"
@@ -79,7 +80,7 @@ struct SurfaceParams {
             4, // DXT23
             4, // DXT45
             4, // DXN1
-            1, // ASTC_2D_4X4
+            4, // ASTC_2D_4X4
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -242,9 +243,7 @@ struct SurfaceParams {
         return SurfaceType::Invalid;
     }
 
-    MathUtil::Rectangle<u32> GetRect() const {
-        return {0, height, width, 0};
-    }
+    MathUtil::Rectangle<u32> GetRect() const;
 
     size_t SizeInBytes() const {
         const u32 compression_factor{GetCompressionFactor(pixel_format)};
@@ -269,6 +268,7 @@ struct SurfaceParams {
     SurfaceType type;
     u32 width;
     u32 height;
+    u32 unaligned_height;
     size_t size_in_bytes;
 };
 
@@ -318,8 +318,7 @@ public:
 
 private:
     OGLTexture texture;
-    std::unique_ptr<u8[]> gl_buffer;
-    size_t gl_buffer_size;
+    std::vector<u8> gl_buffer;
     SurfaceParams params;
 };
 

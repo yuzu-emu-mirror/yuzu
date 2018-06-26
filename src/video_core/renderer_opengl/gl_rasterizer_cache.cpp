@@ -41,6 +41,7 @@ struct FormatTuple {
     params.type = GetFormatType(params.pixel_format);
     params.width = Common::AlignUp(config.tic.Width(), GetCompressionFactor(params.pixel_format));
     params.height = Common::AlignUp(config.tic.Height(), GetCompressionFactor(params.pixel_format));
+    params.unaligned_height = config.tic.Height();
     params.size_in_bytes = params.SizeInBytes();
     return params;
 }
@@ -57,6 +58,7 @@ struct FormatTuple {
     params.type = GetFormatType(params.pixel_format);
     params.width = config.width;
     params.height = config.height;
+    params.unaligned_height = config.height;
     params.size_in_bytes = params.SizeInBytes();
     return params;
 }
@@ -108,20 +110,29 @@ static bool IsPixelFormatASTC(PixelFormat format) {
     }
 }
 
-static void ConvertASTCToRGBA8(std::vector<u8>& data, PixelFormat format, u32 width, u32 height) {
-    u32 block_width{};
-    u32 block_height{};
-
+static std::pair<u32, u32> GetASTCBlockSize(PixelFormat format) {
     switch (format) {
     case PixelFormat::ASTC_2D_4X4:
-        block_width = 4;
-        block_height = 4;
-        break;
+        return {4, 4};
     default:
         NGLOG_CRITICAL(HW_GPU, "Unhandled format: {}", static_cast<u32>(format));
         UNREACHABLE();
     }
+}
 
+MathUtil::Rectangle<u32> SurfaceParams::GetRect() const {
+    u32 actual_height{unaligned_height};
+    if (IsPixelFormatASTC(pixel_format)) {
+        // ASTC formats must stop at the ATSC block size boundary
+        actual_height = Common::AlignDown(actual_height, GetASTCBlockSize(pixel_format).second);
+    }
+    return {0, actual_height, width, 0};
+}
+
+static void ConvertASTCToRGBA8(std::vector<u8>& data, PixelFormat format, u32 width, u32 height) {
+    u32 block_width{};
+    u32 block_height{};
+    std::tie(block_width, block_height) = GetASTCBlockSize(format);
     data = Tegra::Texture::ASTC::Decompress(data, width, height, block_width, block_height);
 }
 
@@ -135,12 +146,6 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::
         auto data = Tegra::Texture::UnswizzleTexture(
             *gpu.memory_manager->GpuToCpuAddress(addr),
             SurfaceParams::TextureFormatFromPixelFormat(format), stride, height, block_height);
-
-        if (IsPixelFormatASTC(format)) {
-            // ASTC formats are converted to RGBA8 in software, as most PC GPUs do not support
-            // this
-            ConvertASTCToRGBA8(data, format, stride, height);
-        }
 
         std::memcpy(gl_buffer, data.data(), data.size());
     } else {
@@ -212,9 +217,10 @@ static void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tup
 
 CachedSurface::CachedSurface(const SurfaceParams& params) : params(params), gl_buffer_size(0) {
     texture.Create();
+    const auto& rect{params.GetRect()};
     AllocateSurfaceTexture(texture.handle,
-                           GetFormatTuple(params.pixel_format, params.component_type), params.width,
-                           params.height);
+                           GetFormatTuple(params.pixel_format, params.component_type),
+                           rect.GetWidth(), rect.GetHeight());
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64, 192));
@@ -225,21 +231,23 @@ void CachedSurface::LoadGLBuffer() {
 
     ASSERT(texture_src_data);
 
-    if (!gl_buffer) {
-        gl_buffer_size = params.width * params.height * GetGLBytesPerPixel(params.pixel_format);
-        gl_buffer.reset(new u8[gl_buffer_size]);
-    }
+    gl_buffer.resize(params.width * params.height * GetGLBytesPerPixel(params.pixel_format));
 
     MICROPROFILE_SCOPE(OpenGL_SurfaceLoad);
 
     if (!params.is_tiled) {
         const u32 bytes_per_pixel{params.GetFormatBpp() >> 3};
 
-        std::memcpy(&gl_buffer[0], texture_src_data,
+        std::memcpy(gl_buffer.data(), texture_src_data,
                     bytes_per_pixel * params.width * params.height);
     } else {
         morton_to_gl_fns[static_cast<size_t>(params.pixel_format)](
-            params.width, params.block_height, params.height, &gl_buffer[0], params.addr);
+            params.width, params.block_height, params.height, gl_buffer.data(), params.addr);
+    }
+
+    if (IsPixelFormatASTC(params.pixel_format)) {
+        // ASTC formats are converted to RGBA8 in software, as most PC GPUs do not support this
+        ConvertASTCToRGBA8(gl_buffer, params.pixel_format, params.width, params.height);
     }
 }
 
@@ -248,16 +256,16 @@ void CachedSurface::FlushGLBuffer() {
     u8* const dst_buffer = Memory::GetPointer(params.GetCpuAddr());
 
     ASSERT(dst_buffer);
-    ASSERT(gl_buffer_size ==
+    ASSERT(gl_buffer.size() ==
            params.width * params.height * GetGLBytesPerPixel(params.pixel_format));
 
     MICROPROFILE_SCOPE(OpenGL_SurfaceFlush);
 
     if (!params.is_tiled) {
-        std::memcpy(dst_buffer, &gl_buffer[0], params.size_in_bytes);
+        std::memcpy(dst_buffer, gl_buffer.data(), params.size_in_bytes);
     } else {
         gl_to_morton_fns[static_cast<size_t>(params.pixel_format)](
-            params.width, params.block_height, params.height, &gl_buffer[0], params.addr);
+            params.width, params.block_height, params.height, gl_buffer.data(), params.addr);
     }
 }
 
@@ -268,7 +276,7 @@ void CachedSurface::UploadGLTexture(GLuint read_fb_handle, GLuint draw_fb_handle
 
     MICROPROFILE_SCOPE(OpenGL_TextureUL);
 
-    ASSERT(gl_buffer_size ==
+    ASSERT(gl_buffer.size() ==
            params.width * params.height * GetGLBytesPerPixel(params.pixel_format));
 
     const auto& rect{params.GetRect()};
@@ -315,10 +323,7 @@ void CachedSurface::DownloadGLTexture(GLuint read_fb_handle, GLuint draw_fb_hand
 
     MICROPROFILE_SCOPE(OpenGL_TextureDL);
 
-    if (!gl_buffer) {
-        gl_buffer_size = params.width * params.height * GetGLBytesPerPixel(params.pixel_format);
-        gl_buffer.reset(new u8[gl_buffer_size]);
-    }
+    gl_buffer.resize(params.width * params.height * GetGLBytesPerPixel(params.pixel_format));
 
     OpenGLState state = OpenGLState::GetCurState();
     OpenGLState prev_state = state;
