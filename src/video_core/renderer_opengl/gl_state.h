@@ -94,34 +94,6 @@ public:
     } texture_units[32];
 
     struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } lighting_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } fog_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_noise_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_color_map;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_alpha_map;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_diff_lut;
-
-    struct {
         GLuint read_framebuffer; // GL_READ_FRAMEBUFFER_BINDING
         GLuint draw_framebuffer; // GL_DRAW_FRAMEBUFFER_BINDING
         GLuint vertex_array;     // GL_VERTEX_ARRAY_BINDING
