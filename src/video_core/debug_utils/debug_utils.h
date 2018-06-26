@@ -55,8 +55,10 @@ public:
         virtual ~BreakPointObserver() {
             auto context = context_weak.lock();
             if (context) {
-                std::unique_lock<std::mutex> lock(context->breakpoint_mutex);
-                context->breakpoint_observers.remove(this);
+                {
+                    std::unique_lock<std::mutex> lock(context->breakpoint_mutex);
+                    context->breakpoint_observers.remove(this);
+                }
 
                 // If we are the last observer to be destroyed, tell the debugger context that
                 // it is free to continue. In particular, this is required for a proper yuzu
