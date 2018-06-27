@@ -91,35 +91,20 @@ public:
             GLint b; // GL_TEXTURE_SWIZZLE_B
             GLint a; // GL_TEXTURE_SWIZZLE_A
         } swizzle;
+
+        void Unbind() {
+            texture_2d = 0;
+            swizzle.r = GL_RED;
+            swizzle.g = GL_GREEN;
+            swizzle.b = GL_BLUE;
+            swizzle.a = GL_ALPHA;
+        }
+
+        void Reset() {
+            Unbind();
+            sampler = 0;
+        }
     } texture_units[32];
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } lighting_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } fog_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_noise_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_color_map;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_alpha_map;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_lut;
-
-    struct {
-        GLuint texture_buffer; // GL_TEXTURE_BINDING_BUFFER
-    } proctex_diff_lut;
 
     struct {
         GLuint read_framebuffer; // GL_READ_FRAMEBUFFER_BINDING
@@ -165,7 +150,7 @@ public:
     void Apply() const;
 
     /// Resets any references to the given resource
-    OpenGLState& ResetTexture(GLuint handle);
+    OpenGLState& UnbindTexture(GLuint handle);
     OpenGLState& ResetSampler(GLuint handle);
     OpenGLState& ResetProgram(GLuint handle);
     OpenGLState& ResetPipeline(GLuint handle);

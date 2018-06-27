@@ -811,6 +811,7 @@ private:
         if (!opcode) {
             NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
             UNREACHABLE();
+            return offset + 1;
         }
 
         shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName());
