@@ -44,7 +44,7 @@ static_assert(sizeof(NCAHeader) == 0x400, "NCAHeader has incorrect size.");
 
 static bool IsDirectoryExeFS(std::shared_ptr<FileSys::VfsDirectory> pfs) {
     // According to switchbrew, an exefs must only contain these two files:
-    return pfs->GetFile("main") != nullptr && pfs->GetFile("main.ndpm") != nullptr;
+    return pfs->GetFile("main") != nullptr && pfs->GetFile("main.npdm") != nullptr;
 }
 
 static bool IsValidNCA(const NCAHeader& header) {

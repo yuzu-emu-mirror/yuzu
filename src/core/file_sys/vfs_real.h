@@ -11,7 +11,8 @@
 namespace FileSys {
 
 struct RealVfsFile : public VfsFile {
-    RealVfsFile(const filesystem::path& name, filesystem::perms perms);
+    RealVfsFile(const filesystem::path& name,
+                filesystem::perms perms = filesystem::perms::owner_read);
 
     std::string GetName() const override;
     size_t GetSize() const override;

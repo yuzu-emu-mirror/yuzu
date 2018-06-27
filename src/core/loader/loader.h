@@ -37,10 +37,9 @@ enum class FileType {
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
  * @param file open file
- * @param filepath Path of the file that we are opening.
  * @return FileType of file
  */
-FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath);
+FileType IdentifyFile(v_file file);
 
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
@@ -197,6 +196,6 @@ extern const std::initializer_list<Kernel::AddressMapping> default_address_mappi
  * @param filename String filename of bootable file
  * @return best loader for this file
  */
-std::unique_ptr<AppLoader> GetLoader(const std::string& filename);
+std::unique_ptr<AppLoader> GetLoader(v_file file);
 
 } // namespace Loader

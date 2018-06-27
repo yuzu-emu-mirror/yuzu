@@ -137,8 +137,10 @@ private:
             return;
         }
 
+        std::vector<u8> data = ctx.ReadBuffer();
+        data.resize(length);
         // Write the data to the Storage backend
-        auto res = MakeResult<size_t>(backend->WriteBytes(ctx.ReadBuffer(), length, offset));
+        auto res = MakeResult<size_t>(backend->WriteBytes(data, offset));
         if (res.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(res.Code());
@@ -180,17 +182,37 @@ private:
 
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
-    explicit IDirectory(std::unique_ptr<FileSys::DirectoryBackend>&& backend)
-        : ServiceFramework("IDirectory"), backend(std::move(backend)) {
+    explicit IDirectory(v_dir backend_) : ServiceFramework("IDirectory"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
         };
         RegisterHandlers(functions);
+
+        // Build entry index now to save time later.
+        for (const auto& file : backend->GetFiles()) {
+            FileSys::Entry entry;
+            entry.filename[0] = '\0';
+            strncat(entry.filename, file->GetName().c_str(), FileSys::FILENAME_LENGTH - 1);
+            entry.type = FileSys::File;
+            entry.file_size = file->GetSize();
+            entries.emplace_back(entry);
+        }
+
+        for (const auto& dir : backend->GetSubdirectories()) {
+            FileSys::Entry entry;
+            entry.filename[0] = '\0';
+            strncat(entry.filename, dir->GetName().c_str(), FileSys::FILENAME_LENGTH - 1);
+            entry.type = FileSys::Directory;
+            entry.file_size = dir->GetSize();
+            entries.emplace_back(entry);
+        }
     }
 
 private:
-    std::unique_ptr<FileSys::DirectoryBackend> backend;
+    v_dir backend;
+    std::vector<FileSys::Entry> entries;
+    u64 next_entry_index = 0;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -201,26 +223,29 @@ private:
         // Calculate how many entries we can fit in the output buffer
         u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
 
+        // Cap at total number of entries.
+        u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
+
         // Read the data from the Directory backend
-        std::vector<FileSys::Entry> entries(count_entries);
-        u64 read_entries = backend->Read(count_entries, entries.data());
+        std::vector<FileSys::Entry> entry_data(entries.begin() + next_entry_index,
+                                               entries.begin() + next_entry_index + actual_entries);
 
         // Convert the data into a byte array
-        std::vector<u8> output(entries.size() * sizeof(FileSys::Entry));
-        std::memcpy(output.data(), entries.data(), output.size());
+        std::vector<u8> output(entry_data.size() * sizeof(FileSys::Entry));
+        std::memcpy(output.data(), entry_data.data(), output.size());
 
         // Write the data to memory
         ctx.WriteBuffer(output);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(read_entries);
+        rb.Push(actual_entries);
     }
 
     void GetEntryCount(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_FS, "called");
 
-        u64 count = backend->GetEntryCount();
+        u64 count = entries.size() - next_entry_index;
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
@@ -265,12 +290,7 @@ public:
         LOG_DEBUG(Service_FS, "called file {} mode 0x{:X} size 0x{:08X}", name, mode, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        auto b1 = backend->CreateFile(name);
-        if (b1 == nullptr) {
-        }
-        auto b2 = b1->Res
-
-                      rb.Push(? RESULT_SUCCESS : ResultCode(-1));
+        rb.Push(backend.CreateFile(name, size));
     }
 
     void DeleteFile(Kernel::HLERequestContext& ctx) {
@@ -282,7 +302,7 @@ public:
         LOG_DEBUG(Service_FS, "called file {}", name);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(backend->DeleteFile(name));
+        rb.Push(backend.DeleteFile(name));
     }
 
     void CreateDirectory(Kernel::HLERequestContext& ctx) {
@@ -294,8 +314,7 @@ public:
         LOG_DEBUG(Service_FS, "called directory {}", name);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        auto dir = backend->CreateSubdirectory(name);
-        rb.Push(dir == nullptr ? -1 : 0);
+        rb.Push(backend.CreateDirectory(name));
     }
 
     void RenameFile(Kernel::HLERequestContext& ctx) {
@@ -313,7 +332,7 @@ public:
         LOG_DEBUG(Service_FS, "called file '{}' to file '{}'", src_name, dst_name);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(backend->RenameFile(src_name, dst_name));
+        rb.Push(backend.RenameFile(src_name, dst_name));
     }
 
     void OpenFile(Kernel::HLERequestContext& ctx) {
@@ -326,14 +345,14 @@ public:
 
         LOG_DEBUG(Service_FS, "called file {} mode {}", name, static_cast<u32>(mode));
 
-        auto result = backend->OpenFile(name, mode);
+        auto result = backend.OpenFile(name, mode);
         if (result.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(result.Code());
             return;
         }
 
-        auto file = std::move(result.Unwrap());
+        IFile file(result.Unwrap());
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -351,14 +370,14 @@ public:
 
         LOG_DEBUG(Service_FS, "called directory {} filter {}", name, filter_flags);
 
-        auto result = backend->OpenDirectory(name);
+        auto result = backend.OpenDirectory(name);
         if (result.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(result.Code());
             return;
         }
 
-        auto directory = std::move(result.Unwrap());
+        IDirectory directory(result.Unwrap());
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -373,7 +392,7 @@ public:
 
         LOG_DEBUG(Service_FS, "called file {}", name);
 
-        auto result = backend->GetEntryType(name);
+        auto result = backend.GetEntryType(name);
         if (result.Failed()) {
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(result.Code());
@@ -393,7 +412,7 @@ public:
     }
 
 private:
-    v_dir backend;
+    VfsDirectoryServiceWrapper backend;
 };
 
 FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
@@ -510,7 +529,7 @@ void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    auto filesystem = OpenFileSystem(Type::SDMC).Unwrap();
+    IFileSystem filesystem(OpenFileSystem(Type::SDMC).Unwrap());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -533,8 +552,7 @@ void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
-    FileSys::Path unused;
-    auto filesystem = OpenFileSystem(Type::SaveData, unused).Unwrap();
+    IFileSystem filesystem(OpenFileSystem(Type::SaveData).Unwrap());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -561,9 +579,11 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    IStorage storage(romfs);
+
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IStorage>(std::move(storage.Unwrap()));
+    rb.PushIpcInterface<IStorage>(std::move(storage));
 }
 
 void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {

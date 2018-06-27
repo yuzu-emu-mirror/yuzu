@@ -7,116 +7,132 @@
 #include "common/file_util.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/vfs.h"
+#include "core/file_sys/vfs_offset.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
 namespace Service::FileSystem {
 
-VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(v_dir backing_) : backing(backing_) { }
+VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(v_dir backing_) : backing(backing_) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 size) const {
     filesystem::path s_path(path);
     auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    auto file = dir->CreateFile(path.filename().string());
-    if (file == nullptr) return ResultCode(-1);
-    if (!file->Resize(size)) return ResultCode(-1);
+    auto file = dir->CreateFile(s_path.filename().string());
+    if (file == nullptr)
+        return ResultCode(-1);
+    if (!file->Resize(size))
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const {
     filesystem::path s_path(path);
     auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!backing->DeleteFile(s_path.filename().string())) return ResultCode(-1);
+    if (!backing->DeleteFile(s_path.filename().string()))
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) const {
     filesystem::path s_path(path);
     auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    auto new_dir = dir->CreateSubdirectory(path.filename().name);
-    if (new_dir == nullptr) return ResultCode(-1);
+    auto new_dir = dir->CreateSubdirectory(s_path.filename().string());
+    if (new_dir == nullptr)
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) const {
     filesystem::path s_path(path);
     auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!dir->DeleteSubdirectory(path.filename().string())) return ResultCode(-1);
+    if (!dir->DeleteSubdirectory(s_path.filename().string()))
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path) const {
     filesystem::path s_path(path);
     auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!dir->DeleteSubdirectoryRecursive(path.filename().string())) return ResultCode(-1);
+    if (!dir->DeleteSubdirectoryRecursive(s_path.filename().string()))
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
-ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path, const std::string& dest_path) const {
+ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
+                                                  const std::string& dest_path) const {
     filesystem::path s_path(src_path);
     auto file = backing->GetFileRelative(s_path);
     file->GetContainingDirectory()->DeleteFile(file->GetName());
     auto res_code = CreateFile(dest_path, file->GetSize());
-    if (res_code != RESULT_SUCCESS) return res_code;
+    if (res_code != RESULT_SUCCESS)
+        return res_code;
     auto file2 = backing->GetFileRelative(filesystem::path(dest_path));
-    if (file2->WriteBytes(file->ReadAllBytes() != file->GetSize()) return ResultCode(-1);
+    if (file2->WriteBytes(file->ReadAllBytes()) != file->GetSize())
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
-ResultCode
-VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path, const std::string& dest_path) const {
+ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path,
+                                                       const std::string& dest_path) const {
     filesystem::path s_path(src_path);
     auto file = backing->GetFileRelative(s_path);
     file->GetContainingDirectory()->DeleteFile(file->GetName());
     auto res_code = CreateFile(dest_path, file->GetSize());
-    if (res_code != RESULT_SUCCESS) return res_code;
+    if (res_code != RESULT_SUCCESS)
+        return res_code;
     auto file2 = backing->GetFileRelative(filesystem::path(dest_path));
-    if (file2->WriteBytes(file->ReadAllBytes() != file->GetSize())) return ResultCode(-1);
+    if (file2->WriteBytes(file->ReadAllBytes()) != file->GetSize())
+        return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
-// TODO(DarkLordZach): Verify path usage.
-ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path, FileSys::Mode mode) const {
+ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
+                                                       FileSys::Mode mode) const {
     auto file = backing->GetFileRelative(filesystem::path(path));
-    if (file == nullptr) return ResultVal<v_file>(-1);
-    if (mode == FileSys::Mode::Append) return MakeResult(std::make_shared<OffsetVfsFile>(file, 0, file->GetSize()));
-    else if (mode == FileSys::Mode::Write && file->IsWritable()) return file;
-    else if (mode == FileSys::Mode::Read && file->IsReadable()) return file;
-    return ResultVal<v_file>(-1);
+    if (file == nullptr)
+        return ResultCode(-1);
+    if (mode == FileSys::Mode::Append)
+        return MakeResult<v_file>(
+            std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
+    else if (mode == FileSys::Mode::Write && file->IsWritable())
+        return MakeResult<v_file>(file);
+    else if (mode == FileSys::Mode::Read && file->IsReadable())
+        return MakeResult<v_file>(file);
+    return ResultCode(-1);
 }
 
-// TODO(DarkLordZach): Verify path usage.
 ResultVal<v_dir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) const {
     auto dir = backing->GetDirectoryRelative(filesystem::path(path));
-    if (dir == nullptr) return ResultVal<v_dir>(-1);
-    return MakeResult(RESULT_SUCCESS, dir);
+    if (dir == nullptr)
+        return ResultCode(-1);
+    return MakeResult(dir);
 }
 
 u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
     // TODO(DarkLordZach): Infinite? Actual? Is this actually used productively or...?
+    if (backing->IsWritable())
+        return -1;
+
     return 0;
 }
 
-// TODO(DarkLordZach): Verify path usage.
-ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(const std::string& path) const {
+ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
+    const std::string& path) const {
     filesystem::path r_path(path);
     auto dir = backing->GetDirectoryRelative(r_path.parent_path());
-    if (dir == nullptr) return ResultVal<FileSys::EntryType>(-1);
-    if (dir->GetFile(r_path.filename().string()) != nullptr) return MakeResult(FileSys::EntryType::File);
-    if (dir->GetSubdirectory(r_path.filename().string()) != nullptr) return MakeResult(FileSys::EntryType::Directory);
-    return ResultVal<FileSys::EntryType>(-1);
+    if (dir == nullptr)
+        return ResultCode(-1);
+    if (dir->GetFile(r_path.filename().string()) != nullptr)
+        return MakeResult(FileSys::EntryType::File);
+    if (dir->GetSubdirectory(r_path.filename().string()) != nullptr)
+        return MakeResult(FileSys::EntryType::Directory);
+    return ResultCode(-1);
 }
 
 /**
@@ -161,7 +177,8 @@ ResultVal<v_dir> OpenFileSystem(Type type) {
 }
 
 ResultVal<v_file> OpenRomFS() {
-    if (filesystem_romfs == nullptr) return ResultVal<v_file>(-1);
+    if (filesystem_romfs == nullptr)
+        return ResultCode(-1);
     return MakeResult(filesystem_romfs);
 }
 

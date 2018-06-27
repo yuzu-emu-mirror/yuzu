@@ -102,26 +102,18 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
                  metadata.GetMainThreadStackSize());
 
     // Find the RomFS by searching for a ".romfs" file in this directory
-    const auto romfs_iter =
-        std::find_if(dir->GetFiles().begin(), dir->GetFiles().end(), [](const v_file& file) {
-            return file->GetName().find(".romfs") != std::string::npos;
-        });
+    const auto& files = dir->GetFiles();
+    const auto romfs_iter = std::find_if(files.begin(), files.end(), [](const v_file& file) {
+        return file->GetName().find(".romfs") != std::string::npos;
+    });
 
     // TODO(DarkLordZach): Identify RomFS if its a subdirectory.
-    romfs = (romfs_iter == dir->GetFiles().end()) ? nullptr : *romfs_iter;
+    const auto romfs = (romfs_iter == files.end()) ? nullptr : *romfs_iter;
+
+    if (romfs != nullptr)
+        Service::FileSystem::RegisterRomFS(romfs);
 
     is_loaded = true;
-    return ResultStatus::Success;
-}
-
-ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(v_file& file) {
-    if (romfs == nullptr) {
-        LOG_DEBUG(Loader, "No RomFS available");
-        return ResultStatus::ErrorNotUsed;
-    }
-
-    file = romfs;
-
     return ResultStatus::Success;
 }
 

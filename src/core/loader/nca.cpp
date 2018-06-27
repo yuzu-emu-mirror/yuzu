@@ -66,6 +66,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const VAddr load_addr = next_load_addr;
+
         next_load_addr = AppLoader_NSO::LoadModule(exefs->GetFile(module), load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
@@ -83,18 +84,10 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
                  metadata.GetMainThreadStackSize());
 
     is_loaded = true;
-    return ResultStatus::Success;
-}
 
-ResultStatus AppLoader_NCA::ReadRomFS(v_file& file) {
     const auto romfs = nca->GetRomFS();
-
-    if (romfs == nullptr) {
-        NGLOG_DEBUG(Loader, "No RomFS available");
-        return ResultStatus::ErrorNotUsed;
-    }
-
-    file = romfs;
+    if (romfs != nullptr)
+        Service::FileSystem::RegisterRomFS(romfs);
 
     return ResultStatus::Success;
 }

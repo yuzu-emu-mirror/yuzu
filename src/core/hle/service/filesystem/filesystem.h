@@ -6,6 +6,7 @@
 
 #include <memory>
 #include "common/common_types.h"
+#include "core/file_sys/filesystem.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/result.h"
 
@@ -119,10 +120,6 @@ public:
      * @return The type of the specified path or error code
      */
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
-};
-
-class VfsFileServiceWrapper {
-    v_file backing;
 };
 
 /**

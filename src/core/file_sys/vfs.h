@@ -119,6 +119,7 @@ struct VfsDirectory : NonCopyable {
     virtual std::shared_ptr<VfsFile> CreateFile(const std::string& name) = 0;
 
     virtual bool DeleteSubdirectory(const std::string& name) = 0;
+    virtual bool DeleteSubdirectoryRecursive(const std::string& name);
     virtual bool DeleteFile(const std::string& name) = 0;
 
     virtual bool Rename(const std::string& name) = 0;

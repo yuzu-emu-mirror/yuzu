@@ -31,8 +31,6 @@ public:
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
-    ResultStatus ReadRomFS(v_file& file) override;
-
     ~AppLoader_NCA();
 
 private:

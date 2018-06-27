@@ -21,7 +21,7 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
     // For cartridges, HFSs can get very large, so we need to calculate the size up to
     // the actual content itself instead of just blindly reading in the entire file.
     Header pfs_header;
-    if (!file->ReadObject(&pfs_header)) {
+    if (sizeof(Header) != file->ReadObject(&pfs_header)) {
         status = Loader::ResultStatus::Error;
         return;
     }
@@ -52,7 +52,7 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
         return;
     }
 
-    memcpy(&pfs_header, &file_data, sizeof(Header));
+    memcpy(&pfs_header, file_data.data(), sizeof(Header));
     if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
         pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
         status = Loader::ResultStatus::ErrorInvalidFormat;

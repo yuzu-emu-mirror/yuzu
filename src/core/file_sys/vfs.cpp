@@ -54,7 +54,7 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const filesystem::path& p
 
     auto parent = path.parent_path().string();
     parent.replace(path.root_path().string().begin(), path.root_path().string().end(), "");
-    const auto index = parent.find_first_of('\\');
+    const auto index = parent.find_first_of('/');
     const auto first_dir = parent.substr(0, index), rest = parent.substr(index + 1);
     const auto sub = GetSubdirectory(first_dir);
     if (sub == nullptr)
@@ -69,11 +69,23 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const filesystem::path& p
     return GetParentDirectory()->GetFileAbsolute(path);
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const filesystem::path& path) const {
-    return "";
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(
+    const filesystem::path& path) const {
+    if (path.parent_path() == path.root_path())
+        return GetSubdirectory(path.filename().string());
+
+    auto parent = path.parent_path().string();
+    parent.replace(path.root_path().string().begin(), path.root_path().string().end(), "");
+    const auto index = parent.find_first_of('/');
+    const auto first_dir = parent.substr(0, index), rest = parent.substr(index + 1);
+    const auto sub = GetSubdirectory(first_dir);
+    if (sub == nullptr)
+        return nullptr;
+    return sub->GetDirectoryRelative(path.root_path().string() + rest);
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(const filesystem::path& path) const {
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(
+    const filesystem::path& path) const {
     if (IsRoot())
         return GetDirectoryRelative(path);
 
@@ -111,6 +123,23 @@ size_t VfsDirectory::GetSize() const {
                         [](const auto& f1, const auto& f2) { return f1 + f2->GetSize(); });
 
     return file_total + subdir_total;
+}
+
+bool VfsDirectory::DeleteSubdirectoryRecursive(const std::string& name) {
+    auto dir = GetSubdirectory(name);
+    if (dir == nullptr)
+        return false;
+
+    bool success = true;
+    for (const auto& file : dir->GetFiles())
+        if (!DeleteFile(file->GetName()))
+            success = false;
+
+    for (const auto& sdir : dir->GetSubdirectories())
+        if (!dir->DeleteSubdirectoryRecursive(sdir->GetName()))
+            success = false;
+
+    return success;
 }
 
 bool VfsDirectory::Copy(const std::string& src, const std::string& dest) {

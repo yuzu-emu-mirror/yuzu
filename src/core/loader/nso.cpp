@@ -96,6 +96,9 @@ static constexpr u32 PageAlignSize(u32 size) {
 }
 
 VAddr AppLoader_NSO::LoadModule(v_file file, VAddr load_base) {
+    if (file == nullptr)
+        return {};
+
     if (file->GetSize() < sizeof(NsoHeader))
         return {};
 

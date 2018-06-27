@@ -6,6 +6,7 @@
 #include <string>
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/file_sys/vfs_real.h"
 #include "core/hle/kernel/process.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/elf.h"
@@ -41,25 +42,19 @@ FileType IdentifyFile(v_file file) {
 }
 
 FileType IdentifyFile(const std::string& file_name) {
-    FileUtil::IOFile file(file_name, "rb");
-    if (!file.IsOpen()) {
-        LOG_ERROR(Loader, "Failed to load file {}", file_name);
-        return FileType::Unknown;
-    }
-
-    return IdentifyFile(file, file_name);
+    return IdentifyFile(v_file(std::make_shared<FileSys::RealVfsFile>(file_name)));
 }
 
 FileType GuessFromExtension(const std::string& extension_) {
     std::string extension = Common::ToLower(extension_);
 
-    if (extension == ".elf")
+    if (extension == "elf")
         return FileType::ELF;
-    else if (extension == ".nro")
+    else if (extension == "nro")
         return FileType::NRO;
-    else if (extension == ".nso")
+    else if (extension == "nso")
         return FileType::NSO;
-    else if (extension == ".nca")
+    else if (extension == "nca")
         return FileType::NCA;
 
     return FileType::Unknown;
