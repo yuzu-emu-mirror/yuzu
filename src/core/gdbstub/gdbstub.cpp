@@ -635,18 +635,7 @@ static void HandleQuery() {
         SendReply(target_xml);
     } else if (strncmp(query, "Offsets", strlen("Offsets")) == 0) {
         std::string buffer;
-        // if(modules.size())
-        //{
-        //    for(auto module : modules)
-        //    {
-        //        if(stricmp(module.name, "main") == 0)
-        //        {
-        //            buffer = fmt::format("TextSeg={:0x}", module.beg);
-        //        }
-        //    }
-        //}
-        // else
-        { buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR); }
+        buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR);
         SendReply(buffer.c_str());
     } else if (strncmp(query, "fThreadInfo", strlen("fThreadInfo")) == 0) {
         std::string val = "m";
