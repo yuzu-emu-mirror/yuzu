@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <filesystem>
 #include "common/file_util.h"
+#include "common/std_filesystem.h"
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {

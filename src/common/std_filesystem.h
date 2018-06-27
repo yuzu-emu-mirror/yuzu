@@ -4,7 +4,7 @@
 
 #pragma once
 
-#if _MSC_VER
+#if _MSC_VER || (__GNUC__ > 8)
 #include <filesystem>
 namespace filesystem = std::filesystem;
 #else
