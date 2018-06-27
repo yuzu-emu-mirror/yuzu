@@ -46,7 +46,7 @@ struct FormatTuple {
 
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, false},                    // ABGR8
-    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, false},                           // B5G6R5
+    {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, false},                       // B5G6R5
     {GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, false},              // A2B10G10R10
     {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, false},                // A1B5G5R5
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE, false},                                   // R8
@@ -645,7 +645,7 @@ void CachedSurface::DownloadGLTexture(const MathUtil::Rectangle<u32>& rect, GLui
         glActiveTexture(GL_TEXTURE0);
         glGetTexImage(GL_TEXTURE_2D, 0, tuple.format, tuple.type, &gl_buffer[buffer_offset]);
     } else {
-        state.ResetTexture(texture.handle);
+        state.UnbindTexture(texture.handle);
         state.draw.read_framebuffer = read_fb_handle;
         state.Apply();
 

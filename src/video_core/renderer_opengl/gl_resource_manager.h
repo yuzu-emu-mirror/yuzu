@@ -38,7 +38,7 @@ public:
         if (handle == 0)
             return;
         glDeleteTextures(1, &handle);
-        OpenGLState::GetCurState().ResetTexture(handle).Apply();
+        OpenGLState::GetCurState().UnbindTexture(handle).Apply();
         handle = 0;
     }
 
