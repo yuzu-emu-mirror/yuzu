@@ -172,6 +172,22 @@ static std::map<u64, Breakpoint> breakpoints_execute;
 static std::map<u64, Breakpoint> breakpoints_read;
 static std::map<u64, Breakpoint> breakpoints_write;
 
+struct Module {
+    char name[128];
+    PAddr beg;
+    PAddr end;
+};
+
+static std::vector<Module> modules;
+
+void RegisterModule(const char* name, PAddr beg, PAddr end) {
+    Module module;
+    strncpy(module.name, name, sizeof(module.name));
+    module.beg = beg;
+    module.end = end;
+    modules.push_back(module);
+}
+
 static Kernel::Thread* FindThreadById(int id) {
     for (unsigned core = 0; core < Core::NUM_CPU_CORES; core++) {
         auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
@@ -535,12 +551,28 @@ static void HandleQuery() {
         SendReply("T0");
     } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
         // PacketSize needs to be large enough for target xml
-        SendReply("PacketSize=2000;qXfer:features:read+;qXfer:threads:read+");
+        std::string buffer = "PacketSize=2000;qXfer:features:read+;qXfer:threads:read+";
+        if (modules.size()) {
+            buffer += ";qXfer:libraries:read+";
+        }
+        SendReply(buffer.c_str());
     } else if (strncmp(query, "Xfer:features:read:target.xml:",
                        strlen("Xfer:features:read:target.xml:")) == 0) {
         SendReply(target_xml);
     } else if (strncmp(query, "Offsets", strlen("Offsets")) == 0) {
-        std::string buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR);
+        std::string buffer;
+        // if(modules.size())
+        //{
+        //    for(auto module : modules)
+        //    {
+        //        if(stricmp(module.name, "main") == 0)
+        //        {
+        //            buffer = fmt::format("TextSeg={:0x}", module.beg);
+        //        }
+        //    }
+        //}
+        // else
+        { buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR); }
         SendReply(buffer.c_str());
     } else if (strncmp(query, "fThreadInfo", strlen("fThreadInfo")) == 0) {
         std::string val = "m";
@@ -568,6 +600,17 @@ static void HandleQuery() {
             }
         }
         buffer += "</threads>";
+        SendReply(buffer.c_str());
+    } else if (strncmp(query, "Xfer:libraries:read", strlen("Xfer:libraries:read")) == 0) {
+        std::string buffer;
+        buffer += "l<?xml version=\"1.0\"?>";
+        buffer += "<library-list>";
+        for (auto module : modules) {
+            buffer +=
+                fmt::format(R"*("<library name = "{}"><section address = "0x{:x}"/></library>)*",
+                            module.name, module.beg);
+        }
+        buffer += "</library-list>";
         SendReply(buffer.c_str());
     } else {
         SendReply("");
@@ -827,7 +870,7 @@ static void ReadMemory() {
         SendReply("E01");
     }
 
-    if (!Memory::IsValidVirtualAddress(addr)) {
+    if (!Memory::IsValidVirtualAddress(addr) && (addr < Memory::STACK_AREA_VADDR)) {
         return SendReply("E00");
     }
 
@@ -1111,6 +1154,8 @@ static void Init(u16 port) {
     breakpoints_execute.clear();
     breakpoints_read.clear();
     breakpoints_write.clear();
+
+    modules.clear();
 
     // Start gdb server
     NGLOG_INFO(Debug_GDBStub, "Starting GDB server on port {}...", port);
