@@ -5,10 +5,13 @@
 #include "boost/container/flat_map.hpp"
 #include "common/common_paths.h"
 #include "common/file_util.h"
+#include "core/core.h"
+#include "core/file_sys/errors.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_offset.h"
 #include "core/file_sys/vfs_real.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
@@ -96,7 +99,7 @@ ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
                                                        FileSys::Mode mode) const {
     auto file = backing->GetFileRelative(filesystem::path(path));
     if (file == nullptr)
-        return ResultCode(-1);
+        return FileSys::ERROR_FILE_NOT_FOUND;
     if (mode == FileSys::Mode::Append)
         return MakeResult<v_file>(
             std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
@@ -135,22 +138,36 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     return ResultCode(-1);
 }
 
+struct SaveDataDeferredFilesystem : DeferredFilesystem {
+protected:
+    v_dir CreateFilesystem() override {
+        u64 title_id = Core::CurrentProcess()->program_id;
+        // TODO(DarkLordZach): Users
+        u32 user_id = 0;
+        std::string nand_directory = fmt::format(
+            "{}save/{:016X}/{:08X}/", FileUtil::GetUserPath(D_NAND_IDX), title_id, user_id);
+
+        auto savedata =
+            std::make_shared<FileSys::RealVfsDirectory>(nand_directory, filesystem::perms::all);
+        return savedata;
+    }
+};
+
 /**
  * Map of registered file systems, identified by type. Once an file system is registered here, it
  * is never removed until UnregisterFileSystems is called.
  */
-static boost::container::flat_map<Type, v_dir> filesystem_map;
+static boost::container::flat_map<Type, std::unique_ptr<DeferredFilesystem>> filesystem_map;
 static v_file filesystem_romfs;
 
-ResultCode RegisterFileSystem(v_dir factory, Type type) {
-    auto result = filesystem_map.emplace(type, factory);
+ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Type type) {
+    auto result = filesystem_map.emplace(type, std::move(factory));
 
     bool inserted = result.second;
     ASSERT_MSG(inserted, "Tried to register more than one system with same id code");
 
     auto& filesystem = result.first->second;
-    LOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}", filesystem->GetName(),
-              static_cast<u32>(type));
+    NGLOG_DEBUG(Service_FS, "Registered file system with id code 0x{:08X}", static_cast<u32>(type));
     return RESULT_SUCCESS;
 }
 
@@ -173,7 +190,7 @@ ResultVal<v_dir> OpenFileSystem(Type type) {
         return ResultCode(-1);
     }
 
-    return MakeResult(itr->second);
+    return MakeResult(itr->second->Get());
 }
 
 ResultVal<v_file> OpenRomFS() {
@@ -191,7 +208,8 @@ ResultCode FormatFileSystem(Type type) {
         return ResultCode(-1);
     }
 
-    return itr->second->GetParentDirectory()->DeleteSubdirectory(itr->second->GetName())
+    return itr->second->Get()->GetParentDirectory()->DeleteSubdirectory(
+               itr->second->Get()->GetName())
                ? RESULT_SUCCESS
                : ResultCode(-1);
 }
@@ -199,15 +217,11 @@ ResultCode FormatFileSystem(Type type) {
 void RegisterFileSystems() {
     filesystem_map.clear();
 
-    std::string nand_directory = FileUtil::GetUserPath(D_NAND_IDX);
     std::string sd_directory = FileUtil::GetUserPath(D_SDMC_IDX);
+    auto sdcard = std::make_shared<FileSys::RealVfsDirectory>(sd_directory, filesystem::perms::all);
+    RegisterFileSystem(std::make_unique<DeferredFilesystem>(sdcard), Type::SDMC);
 
-    auto savedata =
-        std::make_unique<FileSys::RealVfsDirectory>(nand_directory, filesystem::perms::all);
-    RegisterFileSystem(std::move(savedata), Type::SaveData);
-
-    auto sdcard = std::make_unique<FileSys::RealVfsDirectory>(sd_directory, filesystem::perms::all);
-    RegisterFileSystem(std::move(sdcard), Type::SDMC);
+    RegisterFileSystem(std::make_unique<SaveDataDeferredFilesystem>(), Type::SaveData);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

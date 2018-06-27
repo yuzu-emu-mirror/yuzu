@@ -122,12 +122,33 @@ public:
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
 };
 
+struct DeferredFilesystem {
+    DeferredFilesystem(){};
+
+    explicit DeferredFilesystem(v_dir vfs_directory) : fs(vfs_directory) {}
+
+    v_dir Get() {
+        if (fs == nullptr)
+            fs = CreateFilesystem();
+
+        return fs;
+    }
+
+protected:
+    virtual v_dir CreateFilesystem() {
+        return fs;
+    }
+
+private:
+    v_dir fs;
+};
+
 /**
  * Registers a FileSystem, instances of which can later be opened using its IdCode.
  * @param factory FileSystem backend interface to use
  * @param type Type used to access this type of FileSystem
  */
-ResultCode RegisterFileSystem(v_dir fs, Type type);
+ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& fs, Type type);
 
 ResultCode RegisterRomFS(v_file fs);
 

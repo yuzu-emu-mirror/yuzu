@@ -69,6 +69,9 @@ bool RealVfsFile::Rename(const std::string& name) {
 RealVfsDirectory::RealVfsDirectory(const filesystem::path& path_, filesystem::perms perms_)
     : path(path_), perms(perms_) {
     path.make_preferred();
+    if (!filesystem::exists(path) &&
+        (perms_ & filesystem::perms::owner_write) != filesystem::perms::none)
+        filesystem::create_directory(path);
     for (const auto& entry : filesystem::directory_iterator(path)) {
         if (filesystem::is_directory(entry.path()))
             subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(entry.path(), perms));

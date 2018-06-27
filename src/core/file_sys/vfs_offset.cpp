@@ -23,7 +23,8 @@ bool OffsetVfsFile::Resize(size_t new_size) {
         size = new_size;
     } else {
         auto res = file->Resize(offset + new_size);
-        if (!res) return false;
+        if (!res)
+            return false;
         size = new_size;
     }
 
