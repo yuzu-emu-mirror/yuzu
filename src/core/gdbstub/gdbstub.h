@@ -51,6 +51,9 @@ bool IsServerEnabled();
 /// Returns true if there is an active socket connection.
 bool IsConnected();
 
+/// Register module.
+void RegisterModule(const char* name, PAddr beg, PAddr end);
+
 /**
  * Signal to the gdbstub server that it should halt CPU execution.
  *
