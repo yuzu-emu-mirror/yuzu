@@ -48,12 +48,7 @@ OpenGLState::OpenGLState() {
     logic_op = GL_COPY;
 
     for (auto& texture_unit : texture_units) {
-        texture_unit.texture_2d = 0;
-        texture_unit.sampler = 0;
-        texture_unit.swizzle.r = GL_RED;
-        texture_unit.swizzle.g = GL_GREEN;
-        texture_unit.swizzle.b = GL_BLUE;
-        texture_unit.swizzle.a = GL_ALPHA;
+        texture_unit.Reset();
     }
 
     draw.read_framebuffer = 0;
@@ -286,10 +281,10 @@ void OpenGLState::Apply() const {
     cur_state = *this;
 }
 
-OpenGLState& OpenGLState::ResetTexture(GLuint handle) {
+OpenGLState& OpenGLState::UnbindTexture(GLuint handle) {
     for (auto& unit : texture_units) {
         if (unit.texture_2d == handle) {
-            unit.texture_2d = 0;
+            unit.Unbind();
         }
     }
     return *this;

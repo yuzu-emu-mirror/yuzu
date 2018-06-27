@@ -645,7 +645,7 @@ void CachedSurface::DownloadGLTexture(const MathUtil::Rectangle<u32>& rect, GLui
         glActiveTexture(GL_TEXTURE0);
         glGetTexImage(GL_TEXTURE_2D, 0, tuple.format, tuple.type, &gl_buffer[buffer_offset]);
     } else {
-        state.ResetTexture(texture.handle);
+        state.UnbindTexture(texture.handle);
         state.draw.read_framebuffer = read_fb_handle;
         state.Apply();
 
