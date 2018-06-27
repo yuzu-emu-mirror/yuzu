@@ -613,6 +613,12 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         if (used_buffer.IsIndirect()) {
             // Buffer is accessed indirectly, so upload the entire thing
             size = buffer.size * sizeof(float);
+
+            if (size > MaxConstbufferSize) {
+                NGLOG_ERROR(HW_GPU, "indirect constbuffer size {} exceeds maximum {}", size,
+                            MaxConstbufferSize);
+                size = MaxConstbufferSize;
+            }
         } else {
             // Buffer is accessed directly, upload just what we use
             size = used_buffer.GetSize() * sizeof(float);
