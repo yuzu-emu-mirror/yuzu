@@ -134,7 +134,7 @@ bool SplitPath(const std::string& full_path, std::string* _pPath, std::string* _
     size_t dir_end = full_path.find_last_of("/"
 // windows needs the : included for something like just "C:" to be considered a directory
 #ifdef _WIN32
-                                            ":"
+                                            "\\:"
 #endif
     );
     if (std::string::npos == dir_end)
