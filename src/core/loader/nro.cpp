@@ -9,6 +9,7 @@
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/core.h"
+#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/loader/nro.h"
@@ -114,6 +115,10 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
     Core::CurrentProcess()->LoadModule(codeset, load_base);
+
+    std::string filename;
+    Common::SplitPath(path, nullptr, &filename, nullptr);
+    GDBStub::RegisterModule((filename+".elf").c_str(), load_base, load_base);
 
     return true;
 }
