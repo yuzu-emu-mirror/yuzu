@@ -126,6 +126,8 @@ add_library(core STATIC
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
+    hle/service/audio/hwopus.cpp
+    hle/service/audio/hwopus.h
     hle/service/bcat/module.cpp
     hle/service/bcat/module.h
     hle/service/bcat/bcat.cpp
