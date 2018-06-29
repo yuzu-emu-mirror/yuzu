@@ -398,14 +398,18 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     Surface color_surface;
     if (using_color_fb) {
         color_surface = GetSurface(color_params);
-        color_rect = color_surface->GetSurfaceParams().GetRect();
+        if (color_surface) {
+            color_rect = color_surface->GetSurfaceParams().GetRect();
+        }
     }
 
     MathUtil::Rectangle<u32> depth_rect{};
     Surface depth_surface;
     if (using_depth_fb) {
         depth_surface = GetSurface(depth_params);
-        depth_rect = depth_surface->GetSurfaceParams().GetRect();
+        if (depth_surface) {
+            depth_rect = depth_surface->GetSurfaceParams().GetRect();
+        }
     }
 
     MathUtil::Rectangle<u32> fb_rect{};
