@@ -148,6 +148,11 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<EmuWindow_SDL2> emu_window{std::make_unique<EmuWindow_SDL2>(fullscreen)};
 
+    if (!Settings::values.use_multi_core) {
+        // Single core mode must acquire OpenGL context for entire emulation session
+        emu_window->MakeCurrent();
+    }
+
     Core::System& system{Core::System::GetInstance()};
 
     SCOPE_EXIT({ system.Shutdown(); });

@@ -15,6 +15,7 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
+#include "core/frontend/emu_window.h"
 #include "core/hle/kernel/process.h"
 #include "core/settings.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -22,6 +23,7 @@
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 #include "video_core/renderer_opengl/maxwell_to_gl.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
+#include "video_core/video_core.h"
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 using PixelFormat = SurfaceParams::PixelFormat;
@@ -394,6 +396,8 @@ void RasterizerOpenGL::Clear() {
     if (clear_mask == 0)
         return;
 
+    ScopeAcquireGLContext acquire_context;
+
     auto [dirty_color_surface, dirty_depth_surface] =
         ConfigureFramebuffers(use_color_fb, use_depth_fb);
 
@@ -419,6 +423,8 @@ void RasterizerOpenGL::DrawArrays() {
 
     MICROPROFILE_SCOPE(OpenGL_Drawing);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    ScopeAcquireGLContext acquire_context;
 
     auto [dirty_color_surface, dirty_depth_surface] =
         ConfigureFramebuffers(true, regs.zeta.Address() != 0);
