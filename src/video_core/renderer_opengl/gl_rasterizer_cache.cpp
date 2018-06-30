@@ -74,7 +74,8 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_R8, GL_RED, GL_UNSIGNED_BYTE, ComponentType::UNorm, false},                    // R8
     {GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, ComponentType::Float, false},                 // RGBA16F
     {GL_R11F_G11F_B10F, GL_RGB, GL_UNSIGNED_INT_10F_11F_11F_REV, ComponentType::Float,
-     false}, // R11FG11FB10F
+     false},                                                                     // R11FG11FB10F
+    {GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT, ComponentType::UInt, false}, // RGBA32UI
     {GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm,
      true}, // DXT1
     {GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm,
@@ -170,9 +171,10 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<true, PixelFormat::ABGR8>,        MortonCopy<true, PixelFormat::B5G6R5>,
         MortonCopy<true, PixelFormat::A2B10G10R10>,  MortonCopy<true, PixelFormat::A1B5G5R5>,
         MortonCopy<true, PixelFormat::R8>,           MortonCopy<true, PixelFormat::RGBA16F>,
-        MortonCopy<true, PixelFormat::R11FG11FB10F>, MortonCopy<true, PixelFormat::DXT1>,
-        MortonCopy<true, PixelFormat::DXT23>,        MortonCopy<true, PixelFormat::DXT45>,
-        MortonCopy<true, PixelFormat::DXN1>,         MortonCopy<true, PixelFormat::ASTC_2D_4X4>,
+        MortonCopy<true, PixelFormat::R11FG11FB10F>, MortonCopy<true, PixelFormat::RGBA32UI>,
+        MortonCopy<true, PixelFormat::DXT1>,         MortonCopy<true, PixelFormat::DXT23>,
+        MortonCopy<true, PixelFormat::DXT45>,        MortonCopy<true, PixelFormat::DXN1>,
+        MortonCopy<true, PixelFormat::ASTC_2D_4X4>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
@@ -185,6 +187,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<false, PixelFormat::R8>,
         MortonCopy<false, PixelFormat::RGBA16F>,
         MortonCopy<false, PixelFormat::R11FG11FB10F>,
+        MortonCopy<false, PixelFormat::RGBA32UI>,
         // TODO(Subv): Swizzling the DXT1/DXT23/DXT45/DXN1 formats is not yet supported
         nullptr,
         nullptr,
