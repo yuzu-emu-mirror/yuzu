@@ -256,9 +256,6 @@ struct SurfaceParams {
                GetFormatBpp(pixel_format) / CHAR_BIT;
     }
 
-    /// Returns the CPU virtual address for this surface
-    VAddr GetCpuAddr() const;
-
     /// Returns true if the specified region overlaps with this surface's region in Switch memory
     bool IsOverlappingRegion(Tegra::GPUVAddr region_addr, size_t region_size) const {
         return addr <= (region_addr + region_size) && region_addr <= (addr + size_in_bytes);
@@ -272,6 +269,7 @@ struct SurfaceParams {
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
 
     Tegra::GPUVAddr addr;
+    VAddr cpu_addr;
     bool is_tiled;
     u32 block_height;
     PixelFormat pixel_format;
@@ -350,7 +348,7 @@ public:
     void MarkSurfaceAsDirty(const Surface& surface);
 
     /// Tries to find a framebuffer GPU address based on the provided CPU address
-    Surface TryFindFramebufferSurface(VAddr cpu_addr) const;
+    Surface TryFindFramebufferSurface(Tegra::GPUVAddr gpu_addr) const;
 
     /// Write any cached resources overlapping the region back to memory (if dirty)
     void FlushRegion(Tegra::GPUVAddr addr, size_t size);

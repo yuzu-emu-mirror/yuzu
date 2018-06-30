@@ -11,6 +11,7 @@
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
+#include "video_core/memory_manager.h"
 
 namespace Service::Nvidia::Devices {
 
@@ -18,9 +19,6 @@ class nvmap final : public nvdevice {
 public:
     nvmap() = default;
     ~nvmap() override = default;
-
-    /// Returns the allocated address of an nvmap object given its handle.
-    VAddr GetObjectAddress(u32 handle) const;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;
 
@@ -32,7 +30,8 @@ public:
         u32 flags;
         u32 align;
         u8 kind;
-        VAddr addr;
+        VAddr cpu_addr;
+        Tegra::GPUVAddr gpu_addr;
         Status status;
         u32 refcount;
     };

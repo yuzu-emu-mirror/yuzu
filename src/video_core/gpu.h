@@ -48,7 +48,8 @@ struct FramebufferConfig {
         UNREACHABLE();
     }
 
-    VAddr address;
+    VAddr cpu_addr;
+    Tegra::GPUVAddr gpu_addr;
     u32 offset;
     u32 width;
     u32 height;

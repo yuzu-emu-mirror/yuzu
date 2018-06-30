@@ -33,8 +33,10 @@ struct FormatTuple {
 /*static*/ SurfaceParams SurfaceParams::CreateForTexture(
     const Tegra::Texture::FullTextureInfo& config) {
 
+    const auto& gpu{Core::System::GetInstance().GPU()};
     SurfaceParams params{};
     params.addr = config.tic.Address();
+    params.cpu_addr = gpu.memory_manager->GpuToCpuAddress(params.addr).get_value_or(0);
     params.is_tiled = config.tic.IsTiled();
     params.block_height = params.is_tiled ? config.tic.BlockHeight() : 0,
     params.pixel_format = PixelFormatFromTextureFormat(config.tic.format);
@@ -50,8 +52,10 @@ struct FormatTuple {
 /*static*/ SurfaceParams SurfaceParams::CreateForFramebuffer(
     const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config) {
 
+    const auto& gpu{Core::System::GetInstance().GPU()};
     SurfaceParams params{};
     params.addr = config.Address();
+    params.cpu_addr = *gpu.memory_manager->GpuToCpuAddress(params.addr);
     params.is_tiled = true;
     params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
     params.pixel_format = PixelFormatFromRenderTargetFormat(config.format);
@@ -95,11 +99,6 @@ static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType
 
     UNREACHABLE();
     return {};
-}
-
-VAddr SurfaceParams::GetCpuAddr() const {
-    const auto& gpu = Core::System::GetInstance().GPU();
-    return *gpu.memory_manager->GpuToCpuAddress(addr);
 }
 
 static bool IsPixelFormatASTC(PixelFormat format) {
@@ -228,7 +227,7 @@ MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64
 void CachedSurface::LoadGLBuffer() {
     ASSERT(params.type != SurfaceType::Fill);
 
-    u8* const texture_src_data = Memory::GetPointer(params.GetCpuAddr());
+    u8* const texture_src_data = Memory::GetPointer(params.cpu_addr);
 
     ASSERT(texture_src_data);
 
@@ -254,7 +253,7 @@ void CachedSurface::LoadGLBuffer() {
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
 void CachedSurface::FlushGLBuffer() {
-    u8* const dst_buffer = Memory::GetPointer(params.GetCpuAddr());
+    u8* const dst_buffer = Memory::GetPointer(params.cpu_addr);
 
     ASSERT(dst_buffer);
     ASSERT(gl_buffer.size() ==
@@ -450,7 +449,7 @@ void RasterizerCacheOpenGL::MarkSurfaceAsDirty(const Surface& surface) {
 }
 
 Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
-    if (params.addr == 0 || params.height * params.width == 0) {
+    if (params.cpu_addr == 0 || params.height * params.width == 0) {
         return {};
     }
 
@@ -473,19 +472,16 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
     return surface;
 }
 
-Surface RasterizerCacheOpenGL::TryFindFramebufferSurface(VAddr cpu_addr) const {
-    // Tries to find the GPU address of a framebuffer based on the CPU address. This is because
-    // final output framebuffers are specified by CPU address, but internally our GPU cache uses
-    // GPU addresses. We iterate through all cached framebuffers, and compare their starting CPU
-    // address to the one provided. This is obviously not great, and won't work if the
-    // framebuffer overlaps surfaces.
+Surface RasterizerCacheOpenGL::TryFindFramebufferSurface(Tegra::GPUVAddr gpu_addr) const {
+    // Tries to find a framebuffer based on a GPU address. We iterate through all cached
+    // framebuffers, and compare their starting GPU address to the one provided. This is obviously
+    // not great, and won't work if the framebuffer overlaps surfaces.
 
     std::vector<Surface> surfaces;
     for (const auto& surface : surface_cache) {
         const auto& params = surface.second->GetSurfaceParams();
-        const VAddr surface_cpu_addr = params.GetCpuAddr();
-        if (cpu_addr >= surface_cpu_addr && cpu_addr < (surface_cpu_addr + params.size_in_bytes)) {
-            ASSERT_MSG(cpu_addr == surface_cpu_addr, "overlapping surfaces are unsupported");
+        if (gpu_addr >= params.addr && gpu_addr < (params.addr + params.size_in_bytes)) {
+            ASSERT_MSG(gpu_addr == params.addr, "overlapping surfaces are unsupported");
             surfaces.push_back(surface.second);
         }
     }

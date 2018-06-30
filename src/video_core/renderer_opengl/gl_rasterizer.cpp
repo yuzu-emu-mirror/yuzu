@@ -482,7 +482,7 @@ bool RasterizerOpenGL::AccelerateFill(const void* config) {
 }
 
 bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
-                                         VAddr framebuffer_addr, u32 pixel_stride,
+                                         Tegra::GPUVAddr framebuffer_addr, u32 pixel_stride,
                                          ScreenInfo& screen_info) {
     if (!framebuffer_addr) {
         return {};

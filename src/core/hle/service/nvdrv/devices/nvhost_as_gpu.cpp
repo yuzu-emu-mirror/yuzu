@@ -85,8 +85,8 @@ u32 nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& output) 
         u64 size = static_cast<u64>(entry.pages) << 0x10;
         ASSERT(size <= object->size);
 
-        Tegra::GPUVAddr returned = gpu.memory_manager->MapBufferEx(object->addr, offset, size);
-        ASSERT(returned == offset);
+        object->gpu_addr = gpu.memory_manager->MapBufferEx(object->cpu_addr, offset, size);
+        ASSERT(object->gpu_addr == offset);
     }
     std::memcpy(output.data(), entries.data(), output.size());
     return 0;
@@ -122,10 +122,12 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     auto& gpu = Core::System::GetInstance().GPU();
 
     if (params.flags & 1) {
-        params.offset = gpu.memory_manager->MapBufferEx(object->addr, params.offset, object->size);
+        object->gpu_addr =
+            gpu.memory_manager->MapBufferEx(object->cpu_addr, params.offset, object->size);
     } else {
-        params.offset = gpu.memory_manager->MapBufferEx(object->addr, object->size);
+        object->gpu_addr = gpu.memory_manager->MapBufferEx(object->cpu_addr, object->size);
     }
+    params.offset = object->gpu_addr;
 
     // Create a new mapping entry for this operation.
     ASSERT_MSG(buffer_mappings.find(params.offset) == buffer_mappings.end(),

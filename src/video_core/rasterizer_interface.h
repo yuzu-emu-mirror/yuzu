@@ -51,8 +51,9 @@ public:
     }
 
     /// Attempt to use a faster method to display the framebuffer to screen
-    virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
-                                   u32 pixel_stride, ScreenInfo& screen_info) {
+    virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& config,
+                                   Tegra::GPUVAddr framebuffer_addr, u32 pixel_stride,
+                                   ScreenInfo& screen_info) {
         return false;
     }
 

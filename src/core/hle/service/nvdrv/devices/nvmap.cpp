@@ -11,13 +11,6 @@
 
 namespace Service::Nvidia::Devices {
 
-VAddr nvmap::GetObjectAddress(u32 handle) const {
-    auto object = GetObject(handle);
-    ASSERT(object);
-    ASSERT(object->status == Object::Status::Allocated);
-    return object->addr;
-}
-
 u32 nvmap::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::Create:
@@ -70,7 +63,7 @@ u32 nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
     object->flags = params.flags;
     object->align = params.align;
     object->kind = params.kind;
-    object->addr = params.addr;
+    object->cpu_addr = params.addr;
     object->status = Object::Status::Allocated;
 
     NGLOG_DEBUG(Service_NVDRV, "called, addr={:X}", params.addr);
