@@ -907,10 +907,6 @@ private:
                     regs.SetRegisterToFloat(instr.gpr0, 0, "inversesqrt(" + op_a + ')', 1, 1,
                                             instr.alu.saturate_d);
                     break;
-                case SubOp::Min:
-                    regs.SetRegisterToFloat(instr.gpr0, 0, "min(" + op_a + "," + op_b + ')', 1, 1,
-                                            instr.alu.saturate_d);
-                    break;
                 default:
                     NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
                                    static_cast<unsigned>(instr.sub_op.Value()));
