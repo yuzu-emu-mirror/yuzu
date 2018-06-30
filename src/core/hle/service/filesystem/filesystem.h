@@ -31,6 +31,9 @@ enum class Type {
     SDMC = 3,
 };
 
+// A class that wraps a VfsDirectory with methods that return ResultVal and ResultCode instead of
+// pointers and booleans. This makes using a VfsDirectory with switch services much easier and
+// avoids repetitive code.
 class VfsDirectoryServiceWrapper {
     v_dir backing;
 
@@ -107,7 +110,7 @@ public:
      * @param path Path relative to the archive
      * @return Opened directory, or error code
      */
-    ResultVal<v_dir> OpenDirectory(const std::string& path) const;
+    ResultVal<v_dir> OpenDirectory(const std::string& path);
 
     /**
      * Get the free space
@@ -122,6 +125,10 @@ public:
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
 };
 
+// A class that deferres the creation of a filesystem until a later time.
+// This is useful if construction depends on a variable not known when the filesystem is registered.
+// Construct this with a filesystem (v_dir) to avoid the deferrence feature or override the
+//     CreateFilesystem method which will be called on first use.
 struct DeferredFilesystem {
     DeferredFilesystem(){};
 
@@ -133,6 +140,8 @@ struct DeferredFilesystem {
 
         return fs;
     }
+
+    ~DeferredFilesystem() = default;
 
 protected:
     virtual v_dir CreateFilesystem() {

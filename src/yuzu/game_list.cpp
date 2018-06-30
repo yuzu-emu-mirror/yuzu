@@ -406,7 +406,7 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
         if (!is_dir &&
             (HasSupportedFileExtension(physical_name) || IsExtractedNCAMain(physical_name))) {
             std::unique_ptr<Loader::AppLoader> loader =
-                Loader::GetLoader(std::make_unique<FileSys::RealVfsFile>(physical_name));
+                Loader::GetLoader(std::make_shared<FileSys::RealVfsFile>(physical_name));
             if (!loader)
                 return true;
 

@@ -5,14 +5,14 @@
 #pragma once
 
 #include "common/file_util.h"
-#include "common/std_filesystem.h"
+#include "core/file_sys/filesystem.h"
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
 
+// An implmentation of VfsFile that represents a file on the user's computer.
 struct RealVfsFile : public VfsFile {
-    RealVfsFile(const filesystem::path& name,
-                filesystem::perms perms = filesystem::perms::owner_read);
+    RealVfsFile(const std::string& name, Mode perms = Mode::Read);
 
     std::string GetName() const override;
     size_t GetSize() const override;
@@ -26,12 +26,16 @@ struct RealVfsFile : public VfsFile {
 
 private:
     FileUtil::IOFile backing;
-    filesystem::path path;
-    filesystem::perms perms;
+    std::string path;
+    std::string parent_path;
+    std::vector<std::string> path_components;
+    std::vector<std::string> parent_components;
+    Mode perms;
 };
 
+// An implementation of VfsDirectory that represents a directory on the user's computer.
 struct RealVfsDirectory : public VfsDirectory {
-    RealVfsDirectory(const filesystem::path& path, filesystem::perms perms);
+    RealVfsDirectory(const std::string& path, Mode perms);
 
     std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
     std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
@@ -49,8 +53,11 @@ protected:
     bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
 
 private:
-    filesystem::path path;
-    filesystem::perms perms;
+    std::string path;
+    std::string parent_path;
+    std::vector<std::string> path_components;
+    std::vector<std::string> parent_components;
+    Mode perms;
     std::vector<std::shared_ptr<VfsFile>> files;
     std::vector<std::shared_ptr<VfsDirectory>> subdirectories;
 };

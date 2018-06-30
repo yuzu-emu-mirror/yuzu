@@ -150,6 +150,28 @@ size_t ReadFileToString(bool text_file, const char* filename, std::string& str);
 void SplitFilename83(const std::string& filename, std::array<char, 9>& short_name,
                      std::array<char, 4>& extension);
 
+// Splits the path on '/' or '\' and put the components into a vector
+// i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
+std::vector<std::string> SplitPathComponents(const std::string& filename);
+
+// Gets all of the text prior to the last '/' or '\' in the path.
+std::string GetParentPath(const std::string& path);
+
+// Gets the filename of the path
+std::string GetFilename(const std::string& path);
+
+// Removes the final '/' or '\' if one exists
+std::string RemoveTrailingSlash(const std::string& path);
+
+// Creates a new vector containing indices [first, last) from the original.
+template <typename T>
+std::vector<T> SliceVector(const std::vector<T>& vector, size_t first, size_t last) {
+    if (first >= last)
+        return {};
+    last = std::min<size_t>(last, vector.size());
+    return std::vector<T>(vector.begin() + first, vector.begin() + first + last);
+}
+
 // simple wrapper for cstdlib file functions to
 // hopefully will make error checking easier
 // and make forgetting an fclose() harder

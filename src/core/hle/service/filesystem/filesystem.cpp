@@ -24,9 +24,8 @@ std::string VfsDirectoryServiceWrapper::GetName() const {
 }
 
 ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 size) const {
-    filesystem::path s_path(path);
-    auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    auto file = dir->CreateFile(s_path.filename().string());
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto file = dir->CreateFile(FileUtil::GetFilename(path));
     if (file == nullptr)
         return ResultCode(-1);
     if (!file->Resize(size))
@@ -35,71 +34,53 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 s
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const {
-    filesystem::path s_path(path);
-    auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!backing->DeleteFile(s_path.filename().string()))
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    if (!backing->DeleteFile(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) const {
-    filesystem::path s_path(path);
-    auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    auto new_dir = dir->CreateSubdirectory(s_path.filename().string());
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    if (dir == nullptr && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
+        dir = backing;
+    auto new_dir = dir->CreateSubdirectory(FileUtil::GetFilename(path));
     if (new_dir == nullptr)
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) const {
-    filesystem::path s_path(path);
-    auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!dir->DeleteSubdirectory(s_path.filename().string()))
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    if (!dir->DeleteSubdirectory(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path) const {
-    filesystem::path s_path(path);
-    auto dir = backing->GetDirectoryRelative(s_path.parent_path());
-    if (!dir->DeleteSubdirectoryRecursive(s_path.filename().string()))
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    if (!dir->DeleteSubdirectoryRecursive(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
                                                   const std::string& dest_path) const {
-    filesystem::path s_path(src_path);
-    auto file = backing->GetFileRelative(s_path);
-    file->GetContainingDirectory()->DeleteFile(file->GetName());
-    auto res_code = CreateFile(dest_path, file->GetSize());
-    if (res_code != RESULT_SUCCESS)
-        return res_code;
-    auto file2 = backing->GetFileRelative(filesystem::path(dest_path));
-    if (file2->WriteBytes(file->ReadAllBytes()) != file->GetSize())
-        return ResultCode(-1);
-    return RESULT_SUCCESS;
+    NGLOG_CRITICAL(Service_FS, "unimplemented");
+    return ResultCode(-1);
 }
 
 ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path,
                                                        const std::string& dest_path) const {
-    filesystem::path s_path(src_path);
-    auto file = backing->GetFileRelative(s_path);
-    file->GetContainingDirectory()->DeleteFile(file->GetName());
-    auto res_code = CreateFile(dest_path, file->GetSize());
-    if (res_code != RESULT_SUCCESS)
-        return res_code;
-    auto file2 = backing->GetFileRelative(filesystem::path(dest_path));
-    if (file2->WriteBytes(file->ReadAllBytes()) != file->GetSize())
-        return ResultCode(-1);
-    return RESULT_SUCCESS;
+    NGLOG_CRITICAL(Service_FS, "unimplemented");
+    return ResultCode(-1);
 }
 
 ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
                                                        FileSys::Mode mode) const {
-    auto file = backing->GetFileRelative(filesystem::path(path));
+    auto file = backing->GetFileRelative(path);
     if (file == nullptr)
-        return FileSys::ERROR_FILE_NOT_FOUND;
+        return FileSys::ERROR_PATH_NOT_FOUND;
     if (mode == FileSys::Mode::Append)
         return MakeResult<v_file>(
             std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
@@ -110,8 +91,10 @@ ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
     return ResultCode(-1);
 }
 
-ResultVal<v_dir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(filesystem::path(path));
+ResultVal<v_dir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
+    auto dir = backing->GetDirectoryRelative(path);
+    if (path == "/" || path == "\\")
+        return MakeResult(backing);
     if (dir == nullptr)
         return ResultCode(-1);
     return MakeResult(dir);
@@ -127,17 +110,20 @@ u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
 
 ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     const std::string& path) const {
-    filesystem::path r_path(path);
-    auto dir = backing->GetDirectoryRelative(r_path.parent_path());
+    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
     if (dir == nullptr)
         return ResultCode(-1);
-    if (dir->GetFile(r_path.filename().string()) != nullptr)
+    auto filename = FileUtil::GetFilename(path);
+    if (dir->GetFile(filename) != nullptr)
         return MakeResult(FileSys::EntryType::File);
-    if (dir->GetSubdirectory(r_path.filename().string()) != nullptr)
+    if (dir->GetSubdirectory(filename) != nullptr)
         return MakeResult(FileSys::EntryType::Directory);
     return ResultCode(-1);
 }
 
+// A deferred filesystem for nand save data.
+// This must be deferred because the directory is dependent on title id, which is not set at
+// registration time.
 struct SaveDataDeferredFilesystem : DeferredFilesystem {
 protected:
     v_dir CreateFilesystem() override {
@@ -148,7 +134,7 @@ protected:
             "{}save/{:016X}/{:08X}/", FileUtil::GetUserPath(D_NAND_IDX), title_id, user_id);
 
         auto savedata =
-            std::make_shared<FileSys::RealVfsDirectory>(nand_directory, filesystem::perms::all);
+            std::make_shared<FileSys::RealVfsDirectory>(nand_directory, FileSys::Mode::Write);
         return savedata;
     }
 };
@@ -158,7 +144,7 @@ protected:
  * is never removed until UnregisterFileSystems is called.
  */
 static boost::container::flat_map<Type, std::unique_ptr<DeferredFilesystem>> filesystem_map;
-static v_file filesystem_romfs;
+static v_file filesystem_romfs = nullptr;
 
 ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Type type) {
     auto result = filesystem_map.emplace(type, std::move(factory));
@@ -172,8 +158,8 @@ ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Typ
 }
 
 ResultCode RegisterRomFS(v_file filesystem) {
-    bool inserted = filesystem_romfs == nullptr;
-    ASSERT_MSG(inserted, "Tried to register more than one system with same id code");
+    ASSERT_MSG(filesystem_romfs == nullptr,
+               "Tried to register more than one system with same id code");
 
     filesystem_romfs = filesystem;
     NGLOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}",
@@ -216,9 +202,10 @@ ResultCode FormatFileSystem(Type type) {
 
 void RegisterFileSystems() {
     filesystem_map.clear();
+    filesystem_romfs = nullptr;
 
     std::string sd_directory = FileUtil::GetUserPath(D_SDMC_IDX);
-    auto sdcard = std::make_shared<FileSys::RealVfsDirectory>(sd_directory, filesystem::perms::all);
+    auto sdcard = std::make_shared<FileSys::RealVfsDirectory>(sd_directory, FileSys::Mode::Write);
     RegisterFileSystem(std::make_unique<DeferredFilesystem>(sdcard), Type::SDMC);
 
     RegisterFileSystem(std::make_unique<SaveDataDeferredFilesystem>(), Type::SaveData);

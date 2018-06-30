@@ -52,6 +52,8 @@ static bool IsValidNCA(const NCAHeader& header) {
            header.magic == Common::MakeMagic('N', 'C', 'A', '3');
 }
 
+// An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) conatiner.
+// After construction, use GetStatus to determine if the file is valid and ready to be used.
 class NCA : public ReadOnlyVfsDirectory {
     std::vector<v_dir> dirs{};
     std::vector<v_file> files{};

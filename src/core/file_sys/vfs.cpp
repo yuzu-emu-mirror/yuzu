@@ -48,44 +48,43 @@ size_t VfsFile::WriteBytes(std::vector<u8> data, size_t offset) {
     return Write(data.data(), data.size(), offset);
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const filesystem::path& path) const {
-    if (path.parent_path() == path.root_path())
-        return GetFile(path.filename().string());
-
-    auto parent = path.parent_path().string();
-    parent.replace(path.root_path().string().begin(), path.root_path().string().end(), "");
-    const auto index = parent.find_first_of('/');
-    const auto first_dir = parent.substr(0, index), rest = parent.substr(index + 1);
-    const auto sub = GetSubdirectory(first_dir);
-    if (sub == nullptr)
+std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::string& path) const {
+    auto vec = FileUtil::SplitPathComponents(path);
+    vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
+              vec.end());
+    if (vec.empty())
         return nullptr;
-    return sub->GetFileRelative(path.root_path().string() + rest);
+    if (vec.size() == 1)
+        return GetFile(vec[0]);
+    auto dir = GetSubdirectory(vec[0]);
+    for (auto i = 1u; i < vec.size() - 1; ++i) {
+        dir = dir->GetSubdirectory(vec[i]);
+    }
+    return dir->GetFile(vec.back());
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const filesystem::path& path) const {
+std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const std::string& path) const {
     if (IsRoot())
         return GetFileRelative(path);
 
     return GetParentDirectory()->GetFileAbsolute(path);
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(
-    const filesystem::path& path) const {
-    if (path.parent_path() == path.root_path())
-        return GetSubdirectory(path.filename().string());
-
-    auto parent = path.parent_path().string();
-    parent.replace(path.root_path().string().begin(), path.root_path().string().end(), "");
-    const auto index = parent.find_first_of('/');
-    const auto first_dir = parent.substr(0, index), rest = parent.substr(index + 1);
-    const auto sub = GetSubdirectory(first_dir);
-    if (sub == nullptr)
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const std::string& path) const {
+    auto vec = FileUtil::SplitPathComponents(path);
+    vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
+              vec.end());
+    if (vec.empty())
+        // return std::shared_ptr<VfsDirectory>(this);
         return nullptr;
-    return sub->GetDirectoryRelative(path.root_path().string() + rest);
+    auto dir = GetSubdirectory(vec[0]);
+    for (auto i = 1u; i < vec.size(); ++i) {
+        dir = dir->GetSubdirectory(vec[i]);
+    }
+    return dir;
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(
-    const filesystem::path& path) const {
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(const std::string& path) const {
     if (IsRoot())
         return GetDirectoryRelative(path);
 
@@ -101,6 +100,8 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) const {
 }
 
 std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) const {
+    // if (name == "" || name == "." || name == "/" || name == "\\")
+    //  return std::shared_ptr<VfsDirectory>(const_cast<VfsDirectory*>(this));
     const auto& subs = GetSubdirectories();
     const auto& iter = std::find_if(
         subs.begin(), subs.end(), [&name](const auto& file1) { return name == file1->GetName(); });
@@ -143,7 +144,7 @@ bool VfsDirectory::DeleteSubdirectoryRecursive(const std::string& name) {
 }
 
 bool VfsDirectory::Copy(const std::string& src, const std::string& dest) {
-    const auto f1 = CreateFile(src);
+    const auto f1 = GetFile(src);
     auto f2 = CreateFile(dest);
     if (f1 == nullptr || f2 == nullptr)
         return false;

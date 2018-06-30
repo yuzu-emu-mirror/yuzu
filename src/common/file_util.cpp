@@ -799,6 +799,48 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
     }
 }
 
+std::vector<std::string> SplitPathComponents(const std::string& filename) {
+    auto copy(filename);
+    std::replace(copy.begin(), copy.end(), '\\', '/');
+    std::vector<std::string> out{};
+
+    std::stringstream stream(filename);
+    std::string item;
+    while (std::getline(stream, item, '/'))
+        out.push_back(item);
+
+    return out;
+}
+
+std::string GetParentPath(const std::string& path) {
+    auto out = path;
+    const auto name_bck_index = out.find_last_of('\\');
+    const auto name_fwd_index = out.find_last_of('/');
+    size_t name_index;
+    if (name_bck_index == std::string::npos || name_fwd_index == std::string::npos)
+        name_index = std::min<size_t>(name_bck_index, name_fwd_index);
+    else
+        name_index = std::max<size_t>(name_bck_index, name_fwd_index);
+
+    return out.erase(name_index);
+}
+
+std::string GetFilename(const std::string& path) {
+    auto out = path;
+    std::replace(out.begin(), out.end(), '\\', '/');
+    auto name_index = out.find_last_of('/');
+    if (name_index == std::string::npos)
+        return "";
+    return out.substr(name_index + 1);
+}
+
+std::string RemoveTrailingSlash(const std::string& path) {
+    if (path.back() == '\\' || path.back() == '/')
+        return path.substr(0, path.size() - 1);
+
+    return path;
+}
+
 IOFile::IOFile() {}
 
 IOFile::IOFile(const std::string& filename, const char openmode[], int flags) {
