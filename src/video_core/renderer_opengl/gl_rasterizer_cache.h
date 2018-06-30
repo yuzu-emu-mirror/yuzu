@@ -367,7 +367,7 @@ private:
     void UnregisterSurface(const Surface& surface);
 
     /// Increase/decrease the number of surface in pages touching the specified region
-    void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
+    void UpdatePagesCachedCount(VAddr addr, u64 size, int delta);
 
     std::unordered_map<SurfaceKey, Surface> surface_cache;
     PageMap cached_pages;
