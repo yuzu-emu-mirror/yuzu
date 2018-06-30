@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <sstream>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_paths.h"
