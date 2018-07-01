@@ -719,21 +719,31 @@ private:
     /**
      * Returns the comparison string to use to compare two values in the 'set' family of
      * instructions.
-     * @params condition The condition used in the 'set'-family instruction.
+     * @param condition The condition used in the 'set'-family instruction.
+     * @param op_a First operand to use for the comparison.
+     * @param op_b Second operand to use for the comparison.
      * @returns String corresponding to the GLSL operator that matches the desired comparison.
      */
-    std::string GetPredicateComparison(Tegra::Shader::PredCondition condition) const {
+    std::string GetPredicateComparison(Tegra::Shader::PredCondition condition,
+                                       const std::string& op_a, const std::string& op_b) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},   {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="}, {PredCondition::GreaterThan, ">"},
-            {PredCondition::NotEqual, "!="},  {PredCondition::GreaterEqual, ">="},
+            {PredCondition::LessThan, "<"},         {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},       {PredCondition::GreaterThan, ">"},
+            {PredCondition::NotEqual, "!="},        {PredCondition::GreaterEqual, ">="},
+            {PredCondition::NotEqualWithNan, "!="},
         };
 
-        auto comparison = PredicateComparisonStrings.find(condition);
+        const auto& comparison{PredicateComparisonStrings.find(condition)};
         ASSERT_MSG(comparison != PredicateComparisonStrings.end(),
                    "Unknown predicate comparison operation");
-        return comparison->second;
+
+        std::string predicate{'(' + op_a + ") " + comparison->second + " (" + op_b + ')'};
+        if (condition == PredCondition::NotEqualWithNan) {
+            predicate += " || isnan(" + op_a + ") || isnan(" + op_b + ')';
+        }
+
+        return predicate;
     }
 
     /**
@@ -1415,10 +1425,9 @@ private:
             std::string second_pred =
                 GetPredicateCondition(instr.fsetp.pred39, instr.fsetp.neg_pred != 0);
 
-            std::string comparator = GetPredicateComparison(instr.fsetp.cond);
             std::string combiner = GetPredicateCombiner(instr.fsetp.op);
 
-            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            std::string predicate = GetPredicateComparison(instr.fsetp.cond, op_a, op_b);
             // Set the primary predicate to the result of Predicate OP SecondPredicate
             SetPredicate(instr.fsetp.pred3,
                          '(' + predicate + ") " + combiner + " (" + second_pred + ')');
@@ -1453,10 +1462,9 @@ private:
             std::string second_pred =
                 GetPredicateCondition(instr.isetp.pred39, instr.isetp.neg_pred != 0);
 
-            std::string comparator = GetPredicateComparison(instr.isetp.cond);
             std::string combiner = GetPredicateCombiner(instr.isetp.op);
 
-            std::string predicate = '(' + op_a + ") " + comparator + " (" + op_b + ')';
+            std::string predicate = GetPredicateComparison(instr.isetp.cond, op_a, op_b);
             // Set the primary predicate to the result of Predicate OP SecondPredicate
             SetPredicate(instr.isetp.pred3,
                          '(' + predicate + ") " + combiner + " (" + second_pred + ')');
@@ -1503,11 +1511,10 @@ private:
             std::string second_pred =
                 GetPredicateCondition(instr.fset.pred39, instr.fset.neg_pred != 0);
 
-            std::string comparator = GetPredicateComparison(instr.fset.cond);
             std::string combiner = GetPredicateCombiner(instr.fset.op);
 
-            std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
-                                    combiner + " (" + second_pred + "))";
+            std::string predicate = "((" + GetPredicateComparison(instr.fset.cond, op_a, op_b) +
+                                    ") " + combiner + " (" + second_pred + "))";
 
             if (instr.fset.bf) {
                 regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
@@ -1538,11 +1545,10 @@ private:
             std::string second_pred =
                 GetPredicateCondition(instr.iset.pred39, instr.iset.neg_pred != 0);
 
-            std::string comparator = GetPredicateComparison(instr.iset.cond);
             std::string combiner = GetPredicateCombiner(instr.iset.op);
 
-            std::string predicate = "(((" + op_a + ") " + comparator + " (" + op_b + ")) " +
-                                    combiner + " (" + second_pred + "))";
+            std::string predicate = "((" + GetPredicateComparison(instr.iset.cond, op_a, op_b) +
+                                    ") " + combiner + " (" + second_pred + "))";
 
             if (instr.iset.bf) {
                 regs.SetRegisterToFloat(instr.gpr0, 0, predicate + " ? 1.0 : 0.0", 1, 1);
