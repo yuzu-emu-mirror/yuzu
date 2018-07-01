@@ -166,7 +166,6 @@ enum class SubOp : u64 {
     Lg2 = 0x3,
     Rcp = 0x4,
     Rsq = 0x5,
-    Min = 0x8,
 };
 
 enum class F2iRoundingOp : u64 {
@@ -210,7 +209,7 @@ union Instruction {
     } pred;
     BitField<19, 1, u64> negate_pred;
     BitField<20, 8, Register> gpr20;
-    BitField<20, 7, SubOp> sub_op;
+    BitField<20, 4, SubOp> sub_op;
     BitField<28, 8, Register> gpr28;
     BitField<39, 8, Register> gpr39;
     BitField<48, 16, u64> opcode;
