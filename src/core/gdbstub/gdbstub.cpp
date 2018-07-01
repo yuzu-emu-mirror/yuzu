@@ -670,7 +670,7 @@ static void HandleQuery() {
         buffer += "<library-list>";
         for (auto module : modules) {
             buffer +=
-                fmt::format(R"*("<library name = "{}"><section address = "0x{:x}"/></library>)*",
+                fmt::format(R"*("<library name = "{}"><segment address = "0x{:x}"/></library>)*",
                             module.name, module.beg);
         }
         buffer += "</library-list>";
