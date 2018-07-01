@@ -332,8 +332,8 @@ u8* GetPhysicalPointer(PAddr address) {
     return target_pointer;
 }
 
-void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached) {
-    if (gpu_addr == 0) {
+void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
+    if (vaddr == 0) {
         return;
     }
 
@@ -342,19 +342,8 @@ void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached)
     // CPU pages, hence why we iterate on a CPU page basis (note: GPU page size is different). This
     // assumes the specified GPU address region is contiguous as well.
 
-    u64 num_pages = ((gpu_addr + size - 1) >> PAGE_BITS) - (gpu_addr >> PAGE_BITS) + 1;
-    for (unsigned i = 0; i < num_pages; ++i, gpu_addr += PAGE_SIZE) {
-        boost::optional<VAddr> maybe_vaddr =
-            Core::System::GetInstance().GPU().memory_manager->GpuToCpuAddress(gpu_addr);
-        // The GPU <-> CPU virtual memory mapping is not 1:1
-        if (!maybe_vaddr) {
-            NGLOG_ERROR(HW_Memory,
-                        "Trying to flush a cached region to an invalid physical address {:016X}",
-                        gpu_addr);
-            continue;
-        }
-        VAddr vaddr = *maybe_vaddr;
-
+    u64 num_pages = ((vaddr + size - 1) >> PAGE_BITS) - (vaddr >> PAGE_BITS) + 1;
+    for (unsigned i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
         PageType& page_type = current_page_table->attributes[vaddr >> PAGE_BITS];
 
         if (cached) {

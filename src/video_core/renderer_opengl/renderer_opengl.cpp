@@ -137,8 +137,6 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
                                         ScreenInfo& screen_info) {
     const u32 bytes_per_pixel{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
     const u64 size_in_bytes{framebuffer.stride * framebuffer.height * bytes_per_pixel};
-    const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
-
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
 
@@ -146,17 +144,18 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     // only allows rows to have a memory alignement of 4.
     ASSERT(framebuffer.stride % 4 == 0);
 
-    if (!Rasterizer()->AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride,
-                                         screen_info)) {
+    if (!Rasterizer()->AccelerateDisplay(framebuffer, framebuffer.gpu_addr + framebuffer.offset,
+                                         framebuffer.stride, screen_info)) {
+
         // Reset the screen info's display texture to its own permanent texture
         screen_info.display_texture = screen_info.texture.resource.handle;
 
-        Memory::RasterizerFlushVirtualRegion(framebuffer_addr, size_in_bytes,
-                                             Memory::FlushMode::Flush);
+        const VAddr cpu_addr{framebuffer.cpu_addr + framebuffer.offset};
+        Memory::RasterizerFlushVirtualRegion(cpu_addr, size_in_bytes, Memory::FlushMode::Flush);
 
         VideoCore::MortonCopyPixels128(framebuffer.width, framebuffer.height, bytes_per_pixel, 4,
-                                       Memory::GetPointer(framebuffer_addr),
-                                       gl_framebuffer_data.data(), true);
+                                       Memory::GetPointer(cpu_addr), gl_framebuffer_data.data(),
+                                       true);
 
         state.texture_units[0].texture_2d = screen_info.texture.resource.handle;
         state.Apply();

@@ -19,14 +19,20 @@ u32 nvdisp_disp0::ioctl(Ioctl command, const std::vector<u8>& input, std::vector
 
 void nvdisp_disp0::flip(u32 buffer_handle, u32 offset, u32 format, u32 width, u32 height,
                         u32 stride, NVFlinger::BufferQueue::BufferTransformFlags transform) {
-    VAddr addr = nvmap_dev->GetObjectAddress(buffer_handle);
-    NGLOG_WARNING(Service,
-                  "Drawing from address {:X} offset {:08X} Width {} Height {} Stride {} Format {}",
-                  addr, offset, width, height, stride, format);
+
+    const auto& object{nvmap_dev->GetObject(buffer_handle)};
+    ASSERT(object);
+    ASSERT(object->status == nvmap::Object::Status::Allocated);
 
     using PixelFormat = Tegra::FramebufferConfig::PixelFormat;
-    const Tegra::FramebufferConfig framebuffer{
-        addr, offset, width, height, stride, static_cast<PixelFormat>(format), transform};
+    const Tegra::FramebufferConfig framebuffer{object->cpu_addr,
+                                               object->gpu_addr,
+                                               offset,
+                                               width,
+                                               height,
+                                               stride,
+                                               static_cast<PixelFormat>(format),
+                                               transform};
 
     Core::System::GetInstance().perf_stats.EndGameFrame();
 

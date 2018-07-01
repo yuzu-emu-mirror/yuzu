@@ -36,8 +36,9 @@ public:
     bool AccelerateDisplayTransfer(const void* config) override;
     bool AccelerateTextureCopy(const void* config) override;
     bool AccelerateFill(const void* config) override;
-    bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer, VAddr framebuffer_addr,
-                           u32 pixel_stride, ScreenInfo& screen_info) override;
+    bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer,
+                           Tegra::GPUVAddr framebuffer_addr, u32 pixel_stride,
+                           ScreenInfo& screen_info) override;
     bool AccelerateDrawBatch(bool is_indexed) override;
 
     /// OpenGL shader generated for a given Maxwell register state
