@@ -16,6 +16,7 @@ namespace Tegra {
 enum class RenderTargetFormat : u32 {
     NONE = 0x0,
     RGBA32_FLOAT = 0xC0,
+    RGBA32_UINT = 0xC2,
     RGBA16_FLOAT = 0xCA,
     RGB10_A2_UNORM = 0xD1,
     RGBA8_UNORM = 0xD5,

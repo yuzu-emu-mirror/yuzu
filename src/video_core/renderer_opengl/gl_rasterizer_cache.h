@@ -30,11 +30,12 @@ struct SurfaceParams {
         R8 = 4,
         RGBA16F = 5,
         R11FG11FB10F = 6,
-        DXT1 = 7,
-        DXT23 = 8,
-        DXT45 = 9,
-        DXN1 = 10, // This is also known as BC4
-        ASTC_2D_4X4 = 11,
+        RGBA32UI = 7,
+        DXT1 = 8,
+        DXT23 = 9,
+        DXT45 = 10,
+        DXN1 = 11, // This is also known as BC4
+        ASTC_2D_4X4 = 12,
 
         Max,
         Invalid = 255,
@@ -77,6 +78,7 @@ struct SurfaceParams {
             1, // R8
             1, // RGBA16F
             1, // R11FG11FB10F
+            1, // RGBA32UI
             4, // DXT1
             4, // DXT23
             4, // DXT45
@@ -100,6 +102,7 @@ struct SurfaceParams {
             8,   // R8
             64,  // RGBA16F
             32,  // R11FG11FB10F
+            128, // RGBA32UI
             64,  // DXT1
             128, // DXT23
             128, // DXT45
@@ -125,6 +128,8 @@ struct SurfaceParams {
             return PixelFormat::RGBA16F;
         case Tegra::RenderTargetFormat::R11G11B10_FLOAT:
             return PixelFormat::R11FG11FB10F;
+        case Tegra::RenderTargetFormat::RGBA32_UINT:
+            return PixelFormat::RGBA32UI;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -148,6 +153,8 @@ struct SurfaceParams {
             return PixelFormat::RGBA16F;
         case Tegra::Texture::TextureFormat::BF10GF11RF11:
             return PixelFormat::R11FG11FB10F;
+        case Tegra::Texture::TextureFormat::R32_G32_B32_A32:
+            return PixelFormat::RGBA32UI;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -181,6 +188,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::R16_G16_B16_A16;
         case PixelFormat::R11FG11FB10F:
             return Tegra::Texture::TextureFormat::BF10GF11RF11;
+        case PixelFormat::RGBA32UI:
+            return Tegra::Texture::TextureFormat::R32_G32_B32_A32;
         case PixelFormat::DXT1:
             return Tegra::Texture::TextureFormat::DXT1;
         case PixelFormat::DXT23:
@@ -217,6 +226,8 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
         case Tegra::RenderTargetFormat::R11G11B10_FLOAT:
             return ComponentType::Float;
+        case Tegra::RenderTargetFormat::RGBA32_UINT:
+            return ComponentType::UInt;
         default:
             NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
