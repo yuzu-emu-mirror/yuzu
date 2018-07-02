@@ -13,6 +13,8 @@ constexpr u64 MEDIA_OFFSET_MULTIPLIER = 0x200;
 constexpr u64 SECTION_HEADER_SIZE = 0x200;
 constexpr u64 SECTION_HEADER_OFFSET = 0x400;
 
+constexpr unsigned IVFC_MAX_LEVEL = 6;
+
 namespace FileSys {
 enum class NCASectionFilesystemType : u8 { PFS0 = 0x2, ROMFS = 0x3 };
 
@@ -37,6 +39,24 @@ struct PFS0Superblock {
 };
 static_assert(sizeof(PFS0Superblock) == 0x200, "PFS0Superblock has incorrect size.");
 
+struct IVFCLevel {
+    u64_le offset;
+    u64_le size;
+    u32_le block_size;
+    u32_le reserved;
+};
+static_assert(sizeof(IVFCLevel) == 0x18, "IVFCLevel has incorrect size.");
+
+struct RomFSSuperblock {
+    NCASectionHeaderBlock header_block;
+    u32_le magic;
+    u32_le magic_number;
+    INSERT_PADDING_BYTES(8);
+    std::array<IVFCLevel, 6> levels;
+    INSERT_PADDING_BYTES(64);
+};
+static_assert(sizeof(RomFSSuperblock) == 0xE8, "RomFSSuperblock has incorrect size.");
+
 NCA::NCA(v_file file_) : file(file_) {
     if (sizeof(NCAHeader) != file->ReadObject(&header))
         NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
@@ -58,10 +78,15 @@ NCA::NCA(v_file file_) : file(file_) {
             NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
         if (block.filesystem_type == NCASectionFilesystemType::ROMFS) {
+            RomFSSuperblock sb{};
+            if (sizeof(RomFSSuperblock) !=
+                file->ReadObject(&sb, SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE))
+                NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+
             const size_t romfs_offset =
-                header.section_tables[i].media_offset * MEDIA_OFFSET_MULTIPLIER;
-            const size_t romfs_size =
-                header.section_tables[i].media_end_offset * MEDIA_OFFSET_MULTIPLIER - romfs_offset;
+                header.section_tables[i].media_offset * MEDIA_OFFSET_MULTIPLIER +
+                sb.levels[IVFC_MAX_LEVEL - 1].offset;
+            const size_t romfs_size = sb.levels[IVFC_MAX_LEVEL - 1].size;
             files.emplace_back(std::make_shared<OffsetVfsFile>(file, romfs_size, romfs_offset));
             romfs = files.back();
         } else if (block.filesystem_type == NCASectionFilesystemType::PFS0) {

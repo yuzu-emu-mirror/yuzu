@@ -15,7 +15,7 @@ static std::string PermissionsToCharArray(Mode perms) {
         out += "r";
         break;
     case Mode::Write:
-        out += "w+";
+        out += "r+";
         break;
     case Mode::Append:
         out += "a";
@@ -147,7 +147,9 @@ bool RealVfsDirectory::DeleteFile(const std::string& name) {
 }
 
 bool RealVfsDirectory::Rename(const std::string& name) {
-    throw std::logic_error("lol");
+    /* TODO(DarkLordZach): cppreference says for files, MSVC docs say for files/dirs.
+     * Does C rename(const char*, const char*) work on dirs?
+     */
     return FileUtil::Rename(path, parent_path + DIR_SEP + name);
 }
 

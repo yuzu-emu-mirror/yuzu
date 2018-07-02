@@ -230,6 +230,8 @@ private:
         std::vector<FileSys::Entry> entry_data(entries.begin() + next_entry_index,
                                                entries.begin() + next_entry_index + actual_entries);
 
+        next_entry_index += actual_entries;
+
         // Convert the data into a byte array
         std::vector<u8> output(entry_data.size() * sizeof(FileSys::Entry));
         std::memcpy(output.data(), entry_data.data(), output.size());

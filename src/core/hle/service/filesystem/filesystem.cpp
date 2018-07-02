@@ -17,6 +17,13 @@
 
 namespace Service::FileSystem {
 
+static v_dir GetDirectoryRelativeWrapped(v_dir base, const std::string& dir_name) {
+    if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
+        return base;
+
+    return base->GetDirectoryRelative(dir_name);
+}
+
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(v_dir backing_) : backing(backing_) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
@@ -24,7 +31,7 @@ std::string VfsDirectoryServiceWrapper::GetName() const {
 }
 
 ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 size) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     auto file = dir->CreateFile(FileUtil::GetFilename(path));
     if (file == nullptr)
         return ResultCode(-1);
@@ -34,14 +41,14 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 s
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (!backing->DeleteFile(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (dir == nullptr && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
         dir = backing;
     auto new_dir = dir->CreateSubdirectory(FileUtil::GetFilename(path));
@@ -51,14 +58,14 @@ ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) 
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (!dir->DeleteSubdirectory(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (!dir->DeleteSubdirectoryRecursive(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
@@ -66,13 +73,51 @@ ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::str
 
 ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
                                                   const std::string& dest_path) const {
-    NGLOG_CRITICAL(Service_FS, "unimplemented");
-    return ResultCode(-1);
+    auto src = backing->GetFileRelative(src_path);
+    if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
+        // Use more-optimized vfs implementation rename.
+        if (src == nullptr)
+            return FileSys::ERROR_PATH_NOT_FOUND;
+        if (!src->Rename(FileUtil::GetFilename(dest_path)))
+            return ResultCode(-1);
+        return RESULT_SUCCESS;
+    }
+
+    // Move by hand -- TODO(DarkLordZach): Optimize
+    auto c_res = CreateFile(dest_path, src->GetSize());
+    if (c_res != RESULT_SUCCESS)
+        return c_res;
+
+    auto dest = backing->GetFileRelative(dest_path);
+    ASSERT(dest != nullptr, "Newly created file with success cannot be found.");
+
+    ASSERT(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
+           "Could not write all of the bytes but everything else has succeded.");
+
+    if (!src->GetContainingDirectory()->DeleteFile(FileUtil::GetFilename(src_path)))
+        return ResultCode(-1);
+
+    return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path,
                                                        const std::string& dest_path) const {
-    NGLOG_CRITICAL(Service_FS, "unimplemented");
+    auto src = GetDirectoryRelativeWrapped(backing, src_path);
+    if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
+        // Use more-optimized vfs implementation rename.
+        if (src == nullptr)
+            return FileSys::ERROR_PATH_NOT_FOUND;
+        if (!src->Rename(FileUtil::GetFilename(dest_path)))
+            return ResultCode(-1);
+        return RESULT_SUCCESS;
+    }
+
+    // TODO(DarkLordZach): Implement renaming across the tree (move).
+    ASSERT(false,
+           "Could not rename directory with path \"{}\" to new path \"{}\" because parent dirs "
+           "don't match -- UNIMPLEMENTED",
+           src_path, dest_path);
+
     return ResultCode(-1);
 }
 
@@ -81,20 +126,12 @@ ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
     auto file = backing->GetFileRelative(path);
     if (file == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
-    if (mode == FileSys::Mode::Append)
-        return MakeResult<v_file>(
-            std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
-    else if (mode == FileSys::Mode::Write && file->IsWritable())
-        return MakeResult<v_file>(file);
-    else if (mode == FileSys::Mode::Read && file->IsReadable())
-        return MakeResult<v_file>(file);
-    return ResultCode(-1);
+    // TODO(DarkLordZach): Error checking/result modification with different modes.
+    return MakeResult<v_file>(file);
 }
 
 ResultVal<v_dir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
-    auto dir = backing->GetDirectoryRelative(path);
-    if (path == "/" || path == "\\")
-        return MakeResult(backing);
+    auto dir = GetDirectoryRelativeWrapped(backing, path);
     if (dir == nullptr)
         return ResultCode(-1);
     return MakeResult(dir);
@@ -110,7 +147,7 @@ u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
 
 ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     const std::string& path) const {
-    auto dir = backing->GetDirectoryRelative(FileUtil::GetParentPath(path));
+    auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (dir == nullptr)
         return ResultCode(-1);
     auto filename = FileUtil::GetFilename(path);

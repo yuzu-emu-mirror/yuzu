@@ -58,8 +58,12 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::string& path) 
         return GetFile(vec[0]);
     auto dir = GetSubdirectory(vec[0]);
     for (auto i = 1u; i < vec.size() - 1; ++i) {
+        if (dir == nullptr)
+            return nullptr;
         dir = dir->GetSubdirectory(vec[i]);
     }
+    if (dir == nullptr)
+        return nullptr;
     return dir->GetFile(vec.back());
 }
 
