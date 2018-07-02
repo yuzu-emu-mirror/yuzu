@@ -307,10 +307,10 @@ void RasterizerOpenGL::DrawArrays() {
     // Sync the depth test state before configuring the framebuffer surfaces.
     SyncDepthTestState();
 
-    // TODO(bunnei): Implement these
+    // TODO(bunnei): Implement this
     const bool has_stencil = false;
-    const bool using_color_fb = true;
 
+    const bool using_color_fb = true;
     const bool using_depth_fb = regs.zeta.Address() != 0;
 
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
@@ -343,11 +343,9 @@ void RasterizerOpenGL::DrawArrays() {
     // Bind the framebuffer surfaces
     BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
 
-    // Sync the viewport
     SyncViewport(surfaces_rect);
-
-    // Sync the blend state registers
     SyncBlendState();
+    SyncCullMode();
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
@@ -711,7 +709,11 @@ void RasterizerOpenGL::SyncClipCoef() {
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    UNREACHABLE();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.cull.enabled = regs.cull.enabled != 0;
+    state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
+    state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
