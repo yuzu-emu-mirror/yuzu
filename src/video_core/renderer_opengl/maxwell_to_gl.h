@@ -201,4 +201,54 @@ inline GLenum SwizzleSource(Tegra::Texture::SwizzleSource source) {
     return {};
 }
 
+inline GLenum ComparisonOp(Maxwell::ComparisonOp comparison) {
+    switch (comparison) {
+    case Maxwell::ComparisonOp::Never:
+        return GL_NEVER;
+    case Maxwell::ComparisonOp::Less:
+        return GL_LESS;
+    case Maxwell::ComparisonOp::Equal:
+        return GL_EQUAL;
+    case Maxwell::ComparisonOp::LessEqual:
+        return GL_LEQUAL;
+    case Maxwell::ComparisonOp::Greater:
+        return GL_GREATER;
+    case Maxwell::ComparisonOp::NotEqual:
+        return GL_NOTEQUAL;
+    case Maxwell::ComparisonOp::GreaterEqual:
+        return GL_GEQUAL;
+    case Maxwell::ComparisonOp::Always:
+        return GL_ALWAYS;
+    }
+    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented comparison op={}", static_cast<u32>(comparison));
+    UNREACHABLE();
+    return {};
+}
+
+inline GLenum FrontFace(Maxwell::Cull::FrontFace front_face) {
+    switch (front_face) {
+    case Maxwell::Cull::FrontFace::ClockWise:
+        return GL_CW;
+    case Maxwell::Cull::FrontFace::CounterClockWise:
+        return GL_CCW;
+    }
+    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented front face cull={}", static_cast<u32>(front_face));
+    UNREACHABLE();
+    return {};
+}
+
+inline GLenum CullFace(Maxwell::Cull::CullFace cull_face) {
+    switch (cull_face) {
+    case Maxwell::Cull::CullFace::Front:
+        return GL_FRONT;
+    case Maxwell::Cull::CullFace::Back:
+        return GL_BACK;
+    case Maxwell::Cull::CullFace::FrontAndBack:
+        return GL_FRONT_AND_BACK;
+    }
+    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented cull face={}", static_cast<u32>(cull_face));
+    UNREACHABLE();
+    return {};
+}
+
 } // namespace MaxwellToGL
