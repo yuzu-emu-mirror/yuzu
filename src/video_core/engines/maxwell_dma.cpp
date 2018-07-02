@@ -49,7 +49,11 @@ void MaxwellDMA::HandleCopy() {
     ASSERT(regs.src_params.pos_y == 0);
     ASSERT(regs.dst_params.pos_x == 0);
     ASSERT(regs.dst_params.pos_y == 0);
-    ASSERT(regs.exec.is_dst_linear != regs.exec.is_src_linear);
+
+    if (regs.exec.is_dst_linear == regs.exec.is_src_linear) {
+        Memory::CopyBlock(dest_cpu, source_cpu, regs.x_count * regs.y_count);
+        return;
+    }
 
     u8* src_buffer = Memory::GetPointer(source_cpu);
     u8* dst_buffer = Memory::GetPointer(dest_cpu);
