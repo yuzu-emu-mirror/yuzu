@@ -30,7 +30,7 @@ __declspec(noinline, noreturn)
 #define ASSERT(_a_)                                                                                \
     do                                                                                             \
         if (!(_a_)) {                                                                              \
-            assert_noinline_call([] { NGLOG_CRITICAL(Debug, "Assertion Failed!"); });              \
+            assert_noinline_call([] { LOG_CRITICAL(Debug, "Assertion Failed!"); });              \
         }                                                                                          \
     while (0)
 
@@ -38,7 +38,7 @@ __declspec(noinline, noreturn)
     do                                                                                             \
         if (!(_a_)) {                                                                              \
             assert_noinline_call(                                                                  \
-                [&] { NGLOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); });                \
+                [&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); });                \
         }                                                                                          \
     while (0)
 

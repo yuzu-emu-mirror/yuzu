@@ -283,7 +283,7 @@ public:
             // Default - do nothing
             return value;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented conversion size {}", static_cast<u32>(size));
+            LOG_CRITICAL(HW_GPU, "Unimplemented conversion size {}", static_cast<u32>(size));
             UNREACHABLE();
         }
     }
@@ -581,7 +581,7 @@ private:
                 return "input_attribute_" + std::to_string(index);
             }
 
-            NGLOG_CRITICAL(HW_GPU, "Unhandled input attribute: {}", index);
+            LOG_CRITICAL(HW_GPU, "Unhandled input attribute: {}", index);
             UNREACHABLE();
         }
     }
@@ -599,7 +599,7 @@ private:
                 return "output_attribute_" + std::to_string(index);
             }
 
-            NGLOG_CRITICAL(HW_GPU, "Unhandled output attribute: {}", index);
+            LOG_CRITICAL(HW_GPU, "Unhandled output attribute: {}", index);
             UNREACHABLE();
         }
     }
@@ -797,7 +797,7 @@ private:
             break;
         }
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented logic operation: {}", static_cast<u32>(logic_op));
+            LOG_CRITICAL(HW_GPU, "Unimplemented logic operation: {}", static_cast<u32>(logic_op));
             UNREACHABLE();
         }
     }
@@ -819,7 +819,7 @@ private:
 
         // Decoding failure
         if (!opcode) {
-            NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
+            LOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
             UNREACHABLE();
             return offset + 1;
         }
@@ -918,7 +918,7 @@ private:
                                             instr.alu.saturate_d);
                     break;
                 default:
-                    NGLOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
+                    LOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
                                    static_cast<unsigned>(instr.sub_op.Value()));
                     UNREACHABLE();
                 }
@@ -942,11 +942,11 @@ private:
                 // Currently RRO is only implemented as a register move.
                 // Usage of `abs_b` and `negate_b` here should also be correct.
                 regs.SetRegisterToFloat(instr.gpr0, 0, op_b, 1, 1);
-                NGLOG_WARNING(HW_GPU, "RRO instruction is incomplete");
+                LOG_WARNING(HW_GPU, "RRO instruction is incomplete");
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -985,7 +985,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1028,7 +1028,7 @@ private:
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
                 break;
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1058,7 +1058,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
+                LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
                                opcode->GetName());
                 UNREACHABLE();
             }
@@ -1124,7 +1124,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
+                LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
                                opcode->GetName());
                 UNREACHABLE();
             }
@@ -1161,7 +1161,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1219,7 +1219,7 @@ private:
                     op_a = "trunc(" + op_a + ')';
                     break;
                 default:
-                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2f rounding mode {}",
+                    LOG_CRITICAL(HW_GPU, "Unimplemented f2f rounding mode {}",
                                    static_cast<u32>(instr.conversion.f2f.rounding.Value()));
                     UNREACHABLE();
                     break;
@@ -1253,7 +1253,7 @@ private:
                     op_a = "trunc(" + op_a + ')';
                     break;
                 default:
-                    NGLOG_CRITICAL(HW_GPU, "Unimplemented f2i rounding mode {}",
+                    LOG_CRITICAL(HW_GPU, "Unimplemented f2i rounding mode {}",
                                    static_cast<u32>(instr.conversion.f2i.rounding.Value()));
                     UNREACHABLE();
                     break;
@@ -1270,7 +1270,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1305,7 +1305,7 @@ private:
                     break;
 
                 default:
-                    NGLOG_CRITICAL(HW_GPU, "Unhandled type: {}",
+                    LOG_CRITICAL(HW_GPU, "Unhandled type: {}",
                                    static_cast<unsigned>(instr.ld_c.type.Value()));
                     UNREACHABLE();
                 }
@@ -1379,7 +1379,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1596,7 +1596,7 @@ private:
                 break;
             }
             default: {
-                NGLOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode->GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1736,7 +1736,7 @@ boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code,
         GLSLGenerator generator(subroutines, program_code, main_offset, stage);
         return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
-        NGLOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());
+        LOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());
     }
     return boost::none;
 }

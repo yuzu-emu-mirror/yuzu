@@ -48,7 +48,7 @@ NVFlinger::~NVFlinger() {
 }
 
 u64 NVFlinger::OpenDisplay(const std::string& name) {
-    NGLOG_WARNING(Service, "Opening display {}", name);
+    LOG_WARNING(Service, "Opening display {}", name);
 
     // TODO(Subv): Currently we only support the Default display.
     ASSERT(name == "Default");

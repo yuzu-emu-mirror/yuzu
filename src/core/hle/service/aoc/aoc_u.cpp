@@ -27,14 +27,14 @@ void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0);
-    NGLOG_WARNING(Service_AOC, "(STUBBED) called");
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
 }
 
 void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0);
-    NGLOG_WARNING(Service_AOC, "(STUBBED) called");
+    LOG_WARNING(Service_AOC, "(STUBBED) called");
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

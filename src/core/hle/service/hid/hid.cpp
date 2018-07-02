@@ -53,7 +53,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(shared_mem);
-        NGLOG_DEBUG(Service_HID, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 
     void LoadInputDevices() {
@@ -267,7 +267,7 @@ private:
     void ActivateVibrationDevice(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 };
 
@@ -399,144 +399,144 @@ private:
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IAppletResource>(applet_resource);
-        NGLOG_DEBUG(Service_HID, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 
     void ActivateDebugPad(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void ActivateTouchScreen(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void ActivateMouse(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void ActivateKeyboard(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void GetSupportedNpadStyleSet(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetSupportedNpadIdType(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void ActivateNpad(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void AcquireNpadStyleSetUpdateEventHandle(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void GetPlayerLedPattern(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void GetNpadJoyHoldType(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(joy_hold_type);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetNpadJoyAssignmentModeSingleByDefault(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SendVibrationValue(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void GetActualVibrationValue(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetNpadJoyAssignmentModeDual(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void SetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(0);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
     void CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IActiveVibrationDeviceList>();
-        NGLOG_DEBUG(Service_HID, "called");
+        LOG_DEBUG(Service_HID, "called");
     }
 
     void SendVibrationValues(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        NGLOG_WARNING(Service_HID, "(STUBBED) called");
+        LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 };
 

@@ -338,7 +338,7 @@ bool GMainWindow::SupportsRequiredGLExtensions() {
         unsupported_ext.append("ARB_vertex_attrib_binding");
 
     for (const QString& ext : unsupported_ext)
-        NGLOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
+        LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
 
     return unsupported_ext.empty();
 }
@@ -375,17 +375,17 @@ bool GMainWindow::LoadROM(const QString& filename) {
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
         case Core::System::ResultStatus::ErrorGetLoader:
-            NGLOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filename.toStdString());
+            LOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filename.toStdString());
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM format is not supported."));
             break;
         case Core::System::ResultStatus::ErrorUnsupportedArch:
-            NGLOG_CRITICAL(Frontend, "Unsupported architecture detected!", filename.toStdString());
+            LOG_CRITICAL(Frontend, "Unsupported architecture detected!", filename.toStdString());
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM uses currently unusable 32-bit architecture"));
             break;
         case Core::System::ResultStatus::ErrorSystemMode:
-            NGLOG_CRITICAL(Frontend, "Failed to load ROM!");
+            LOG_CRITICAL(Frontend, "Failed to load ROM!");
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("Could not determine the system mode."));
             break;
@@ -435,7 +435,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
 }
 
 void GMainWindow::BootGame(const QString& filename) {
-    NGLOG_INFO(Frontend, "yuzu starting...");
+    LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
     if (!LoadROM(filename))
@@ -882,7 +882,7 @@ void GMainWindow::UpdateUITheme() {
         QString theme_uri(":" + UISettings::values.theme + "/style.qss");
         QFile f(theme_uri);
         if (!f.exists()) {
-            NGLOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
+            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
         } else {
             f.open(QFile::ReadOnly | QFile::Text);
             QTextStream ts(&f);

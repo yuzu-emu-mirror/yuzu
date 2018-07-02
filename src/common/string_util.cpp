@@ -281,7 +281,7 @@ static std::string CodeToUTF8(const char* fromcode, const std::basic_string<T>& 
 
     iconv_t const conv_desc = iconv_open("UTF-8", fromcode);
     if ((iconv_t)(-1) == conv_desc) {
-        NGLOG_ERROR(Common, "Iconv initialization failure [{}]: {}", fromcode, strerror(errno));
+        LOG_ERROR(Common, "Iconv initialization failure [{}]: {}", fromcode, strerror(errno));
         iconv_close(conv_desc);
         return {};
     }
@@ -310,7 +310,7 @@ static std::string CodeToUTF8(const char* fromcode, const std::basic_string<T>& 
                     ++src_buffer;
                 }
             } else {
-                NGLOG_ERROR(Common, "iconv failure [{}]: {}", fromcode, strerror(errno));
+                LOG_ERROR(Common, "iconv failure [{}]: {}", fromcode, strerror(errno));
                 break;
             }
         }
@@ -329,7 +329,7 @@ std::u16string UTF8ToUTF16(const std::string& input) {
 
     iconv_t const conv_desc = iconv_open("UTF-16LE", "UTF-8");
     if ((iconv_t)(-1) == conv_desc) {
-        NGLOG_ERROR(Common, "Iconv initialization failure [UTF-8]: {}", strerror(errno));
+        LOG_ERROR(Common, "Iconv initialization failure [UTF-8]: {}", strerror(errno));
         iconv_close(conv_desc);
         return {};
     }
@@ -358,7 +358,7 @@ std::u16string UTF8ToUTF16(const std::string& input) {
                     ++src_buffer;
                 }
             } else {
-                NGLOG_ERROR(Common, "iconv failure [UTF-8]: {}", strerror(errno));
+                LOG_ERROR(Common, "iconv failure [UTF-8]: {}", strerror(errno));
                 break;
             }
         }

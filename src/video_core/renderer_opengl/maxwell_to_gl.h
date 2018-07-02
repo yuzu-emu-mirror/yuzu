@@ -31,7 +31,7 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
             return GL_UNSIGNED_BYTE;
         }
 
-        NGLOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
         UNREACHABLE();
         return {};
     }
@@ -43,7 +43,7 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
             return GL_BYTE;
         }
 
-        NGLOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
         UNREACHABLE();
         return {};
     }
@@ -52,7 +52,7 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         return GL_FLOAT;
     }
 
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented vertex type={}", attrib.TypeString());
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex type={}", attrib.TypeString());
     UNREACHABLE();
     return {};
 }
@@ -66,7 +66,7 @@ inline GLenum IndexFormat(Maxwell::IndexFormat index_format) {
     case Maxwell::IndexFormat::UnsignedInt:
         return GL_UNSIGNED_INT;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented index_format={}", static_cast<u32>(index_format));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented index_format={}", static_cast<u32>(index_format));
     UNREACHABLE();
     return {};
 }
@@ -78,7 +78,7 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     case Maxwell::PrimitiveTopology::TriangleStrip:
         return GL_TRIANGLE_STRIP;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented topology={}", static_cast<u32>(topology));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented topology={}", static_cast<u32>(topology));
     UNREACHABLE();
     return {};
 }
@@ -90,7 +90,7 @@ inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode) {
     case Tegra::Texture::TextureFilter::Nearest:
         return GL_NEAREST;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented texture filter mode={}",
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture filter mode={}",
                    static_cast<u32>(filter_mode));
     UNREACHABLE();
     return {};
@@ -110,7 +110,7 @@ inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
         // manually mix them. However the shader part of this is not yet implemented.
         return GL_CLAMP_TO_BORDER;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode={}",
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode={}",
                    static_cast<u32>(wrap_mode));
     UNREACHABLE();
     return {};
@@ -129,7 +129,7 @@ inline GLenum BlendEquation(Maxwell::Blend::Equation equation) {
     case Maxwell::Blend::Equation::Max:
         return GL_MAX;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented blend equation={}", static_cast<u32>(equation));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented blend equation={}", static_cast<u32>(equation));
     UNREACHABLE();
     return {};
 }
@@ -175,7 +175,7 @@ inline GLenum BlendFunc(Maxwell::Blend::Factor factor) {
     case Maxwell::Blend::Factor::OneMinusConstantAlpha:
         return GL_ONE_MINUS_CONSTANT_ALPHA;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented blend factor={}", static_cast<u32>(factor));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented blend factor={}", static_cast<u32>(factor));
     UNREACHABLE();
     return {};
 }
@@ -196,7 +196,7 @@ inline GLenum SwizzleSource(Tegra::Texture::SwizzleSource source) {
     case Tegra::Texture::SwizzleSource::OneFloat:
         return GL_ONE;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented swizzle source={}", static_cast<u32>(source));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented swizzle source={}", static_cast<u32>(source));
     UNREACHABLE();
     return {};
 }
@@ -220,7 +220,7 @@ inline GLenum ComparisonOp(Maxwell::ComparisonOp comparison) {
     case Maxwell::ComparisonOp::Always:
         return GL_ALWAYS;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented comparison op={}", static_cast<u32>(comparison));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented comparison op={}", static_cast<u32>(comparison));
     UNREACHABLE();
     return {};
 }
@@ -232,7 +232,7 @@ inline GLenum FrontFace(Maxwell::Cull::FrontFace front_face) {
     case Maxwell::Cull::FrontFace::CounterClockWise:
         return GL_CCW;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented front face cull={}", static_cast<u32>(front_face));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented front face cull={}", static_cast<u32>(front_face));
     UNREACHABLE();
     return {};
 }
@@ -246,7 +246,7 @@ inline GLenum CullFace(Maxwell::Cull::CullFace cull_face) {
     case Maxwell::Cull::CullFace::FrontAndBack:
         return GL_FRONT_AND_BACK;
     }
-    NGLOG_CRITICAL(Render_OpenGL, "Unimplemented cull face={}", static_cast<u32>(cull_face));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented cull face={}", static_cast<u32>(cull_face));
     UNREACHABLE();
     return {};
 }

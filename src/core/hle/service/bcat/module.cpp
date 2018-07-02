@@ -36,7 +36,7 @@ void Module::Interface::CreateBcatService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IBcatService>();
-    NGLOG_DEBUG(Service_BCAT, "called");
+    LOG_DEBUG(Service_BCAT, "called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)

@@ -25,14 +25,14 @@ ResultCode RegisterFileSystem(std::unique_ptr<FileSys::FileSystemFactory>&& fact
     ASSERT_MSG(inserted, "Tried to register more than one system with same id code");
 
     auto& filesystem = result.first->second;
-    NGLOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}",
+    LOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}",
                 filesystem->GetName(), static_cast<u32>(type));
     return RESULT_SUCCESS;
 }
 
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
                                                                       FileSys::Path& path) {
-    NGLOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
+    LOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
 
     auto itr = filesystem_map.find(type);
     if (itr == filesystem_map.end()) {
@@ -44,7 +44,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
 }
 
 ResultCode FormatFileSystem(Type type) {
-    NGLOG_TRACE(Service_FS, "Formatting FileSystem with type={}", static_cast<u32>(type));
+    LOG_TRACE(Service_FS, "Formatting FileSystem with type={}", static_cast<u32>(type));
 
     auto itr = filesystem_map.find(type);
     if (itr == filesystem_map.end()) {

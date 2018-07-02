@@ -242,7 +242,7 @@ void VMManager::RefreshMemoryBlockMappings(const std::vector<u8>* block) {
 void VMManager::LogLayout() const {
     for (const auto& p : vma_map) {
         const VirtualMemoryArea& vma = p.second;
-        NGLOG_DEBUG(Kernel, "{:016X} - {:016X} size: {:016X} {}{}{} {}", vma.base,
+        LOG_DEBUG(Kernel, "{:016X} - {:016X} size: {:016X} {}{}{} {}", vma.base,
                     vma.base + vma.size, vma.size,
                     (u8)vma.permissions & (u8)VMAPermission::Read ? 'R' : '-',
                     (u8)vma.permissions & (u8)VMAPermission::Write ? 'W' : '-',
@@ -392,22 +392,22 @@ void VMManager::UpdatePageTableForVMA(const VirtualMemoryArea& vma) {
 }
 
 u64 VMManager::GetTotalMemoryUsage() {
-    NGLOG_WARNING(Kernel, "(STUBBED) called");
+    LOG_WARNING(Kernel, "(STUBBED) called");
     return 0xF8000000;
 }
 
 u64 VMManager::GetTotalHeapUsage() {
-    NGLOG_WARNING(Kernel, "(STUBBED) called");
+    LOG_WARNING(Kernel, "(STUBBED) called");
     return 0x0;
 }
 
 VAddr VMManager::GetAddressSpaceBaseAddr() {
-    NGLOG_WARNING(Kernel, "(STUBBED) called");
+    LOG_WARNING(Kernel, "(STUBBED) called");
     return 0x8000000;
 }
 
 u64 VMManager::GetAddressSpaceSize() {
-    NGLOG_WARNING(Kernel, "(STUBBED) called");
+    LOG_WARNING(Kernel, "(STUBBED) called");
     return MAX_ADDRESS;
 }
 

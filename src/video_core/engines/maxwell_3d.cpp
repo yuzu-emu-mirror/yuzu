@@ -207,7 +207,7 @@ void Maxwell3D::ProcessQueryGet() {
 }
 
 void Maxwell3D::DrawArrays() {
-    NGLOG_DEBUG(HW_GPU, "called, topology={}, count={}",
+    LOG_DEBUG(HW_GPU, "called, topology={}, count={}",
                 static_cast<u32>(regs.draw.topology.Value()), regs.vertex_buffer.count);
     ASSERT_MSG(!(regs.index_array.count && regs.vertex_buffer.count), "Both indexed and direct?");
 

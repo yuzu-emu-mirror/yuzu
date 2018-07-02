@@ -29,7 +29,7 @@ private:
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
-        NGLOG_WARNING(Service_APM, "(STUBBED) called mode={} config={}", static_cast<u32>(mode),
+        LOG_WARNING(Service_APM, "(STUBBED) called mode={} config={}", static_cast<u32>(mode),
                       config);
     }
 
@@ -42,7 +42,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0); // Performance configuration
 
-        NGLOG_WARNING(Service_APM, "(STUBBED) called mode={}", static_cast<u32>(mode));
+        LOG_WARNING(Service_APM, "(STUBBED) called mode={}", static_cast<u32>(mode));
     }
 };
 

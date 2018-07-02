@@ -71,7 +71,7 @@ ResultCode ServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& con
             return domain_request_handlers[object_id - 1]->HandleSyncRequest(context);
 
         case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
-            NGLOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", object_id);
+            LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", object_id);
 
             domain_request_handlers[object_id - 1] = nullptr;
 
@@ -81,7 +81,7 @@ ResultCode ServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& con
         }
         }
 
-        NGLOG_CRITICAL(IPC, "Unknown domain command={}",
+        LOG_CRITICAL(IPC, "Unknown domain command={}",
                        static_cast<int>(domain_message_header->command.Value()));
         ASSERT(false);
     }

@@ -9,7 +9,7 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
+    LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
                 command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
@@ -29,7 +29,7 @@ u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<
 u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output) {
     IocGetConfigParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
-    NGLOG_DEBUG(Service_NVDRV, "called, setting={}!{}", params.domain_str.data(),
+    LOG_DEBUG(Service_NVDRV, "called, setting={}!{}", params.domain_str.data(),
                 params.param_str.data());
 
     if (!strcmp(params.domain_str.data(), "nv")) {
@@ -53,7 +53,7 @@ u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>&
                                   bool is_async) {
     IocCtrlEventWaitParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
-    NGLOG_WARNING(Service_NVDRV,
+    LOG_WARNING(Service_NVDRV,
                   "(STUBBED) called, syncpt_id={}, threshold={}, timeout={}, is_async={}",
                   params.syncpt_id, params.threshold, params.timeout, is_async);
 
@@ -64,7 +64,7 @@ u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>&
 }
 
 u32 nvhost_ctrl::IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     // TODO(bunnei): Implement this.
     return 0;
 }

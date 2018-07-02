@@ -301,7 +301,7 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
             right = texcoords.left;
         } else {
             // Other transformations are unsupported
-            NGLOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags={}",
+            LOG_CRITICAL(Render_OpenGL, "Unsupported framebuffer_transform_flags={}",
                            static_cast<u32>(framebuffer_transform_flags));
             UNIMPLEMENTED();
         }
@@ -404,14 +404,14 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
-        NGLOG_ERROR(Render_OpenGL, format, str_source, str_type, id, message);
+        LOG_ERROR(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        NGLOG_WARNING(Render_OpenGL, format, str_source, str_type, id, message);
+        LOG_WARNING(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
     case GL_DEBUG_SEVERITY_LOW:
-        NGLOG_DEBUG(Render_OpenGL, format, str_source, str_type, id, message);
+        LOG_DEBUG(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     }
 }
@@ -429,9 +429,9 @@ bool RendererOpenGL::Init() {
     const char* gpu_vendor{reinterpret_cast<char const*>(glGetString(GL_VENDOR))};
     const char* gpu_model{reinterpret_cast<char const*>(glGetString(GL_RENDERER))};
 
-    NGLOG_INFO(Render_OpenGL, "GL_VERSION: {}", gl_version);
-    NGLOG_INFO(Render_OpenGL, "GL_VENDOR: {}", gpu_vendor);
-    NGLOG_INFO(Render_OpenGL, "GL_RENDERER: {}", gpu_model);
+    LOG_INFO(Render_OpenGL, "GL_VERSION: {}", gl_version);
+    LOG_INFO(Render_OpenGL, "GL_VENDOR: {}", gpu_vendor);
+    LOG_INFO(Render_OpenGL, "GL_RENDERER: {}", gpu_model);
 
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Vendor", gpu_vendor);
     Core::Telemetry().AddField(Telemetry::FieldType::UserSystem, "GPU_Model", gpu_model);

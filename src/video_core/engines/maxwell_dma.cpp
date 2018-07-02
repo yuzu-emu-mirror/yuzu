@@ -31,7 +31,7 @@ void MaxwellDMA::WriteReg(u32 method, u32 value) {
 }
 
 void MaxwellDMA::HandleCopy() {
-    NGLOG_WARNING(HW_GPU, "Requested a DMA copy");
+    LOG_WARNING(HW_GPU, "Requested a DMA copy");
 
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();

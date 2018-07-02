@@ -123,7 +123,7 @@ ResultStatus Nca::Load(FileUtil::IOFile&& in_file, std::string in_path) {
     file.Seek(0, SEEK_SET);
     std::array<u8, sizeof(NcaHeader)> header_array{};
     if (sizeof(NcaHeader) != file.ReadBytes(header_array.data(), sizeof(NcaHeader)))
-        NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+        LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
     NcaHeader header{};
     std::memcpy(&header, header_array.data(), sizeof(NcaHeader));
@@ -140,7 +140,7 @@ ResultStatus Nca::Load(FileUtil::IOFile&& in_file, std::string in_path) {
         std::array<u8, sizeof(NcaSectionHeaderBlock)> array{};
         if (sizeof(NcaSectionHeaderBlock) !=
             file.ReadBytes(array.data(), sizeof(NcaSectionHeaderBlock)))
-            NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+            LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
         NcaSectionHeaderBlock block{};
         std::memcpy(&block, array.data(), sizeof(NcaSectionHeaderBlock));
@@ -154,7 +154,7 @@ ResultStatus Nca::Load(FileUtil::IOFile&& in_file, std::string in_path) {
             // Seek back to beginning of this section.
             file.Seek(SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE, SEEK_SET);
             if (sizeof(Pfs0Superblock) != file.ReadBytes(&sb, sizeof(Pfs0Superblock)))
-                NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+                LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
             u64 offset = (static_cast<u64>(header.section_tables[i].media_offset) *
                           MEDIA_OFFSET_MULTIPLIER) +
@@ -258,7 +258,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(module, nca->GetExeFsFile(module), load_addr);
         if (next_load_addr) {
-            NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
+            LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         } else {
             next_load_addr = load_addr;
         }
@@ -283,7 +283,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 ResultStatus AppLoader_NCA::ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
                                       u64& size) {
     if (nca->GetRomFsSize() == 0) {
-        NGLOG_DEBUG(Loader, "No RomFS available");
+        LOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
@@ -292,8 +292,8 @@ ResultStatus AppLoader_NCA::ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_f
     offset = nca->GetRomFsOffset();
     size = nca->GetRomFsSize();
 
-    NGLOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
-    NGLOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
+    LOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
+    LOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
 
     return ResultStatus::Success;
 }

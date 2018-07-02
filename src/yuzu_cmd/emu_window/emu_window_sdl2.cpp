@@ -62,19 +62,19 @@ void EmuWindow_SDL2::Fullscreen() {
         return;
     }
 
-    NGLOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
+    LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
 
     // Try a different fullscreening method
-    NGLOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
+    LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
     if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
         return;
     }
 
-    NGLOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
+    LOG_ERROR(Frontend, "Borderless fullscreening failed: {}", SDL_GetError());
 
     // Fallback algorithm: Maximise window.
     // Works on all systems (unless something is seriously wrong), so no fallback for this one.
-    NGLOG_INFO(Frontend, "Falling back on a maximised window...");
+    LOG_INFO(Frontend, "Falling back on a maximised window...");
     SDL_MaximizeWindow(render_window);
 }
 
@@ -91,7 +91,7 @@ bool EmuWindow_SDL2::SupportsRequiredGLExtensions() {
         unsupported_ext.push_back("ARB_vertex_attrib_binding");
 
     for (const std::string& ext : unsupported_ext)
-        NGLOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext);
+        LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext);
 
     return unsupported_ext.empty();
 }
@@ -103,7 +103,7 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
 
     // Initialize the window
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        NGLOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
+        LOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
         exit(1);
     }
 
@@ -126,7 +126,7 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 
     if (render_window == nullptr) {
-        NGLOG_CRITICAL(Frontend, "Failed to create SDL2 window! Exiting...");
+        LOG_CRITICAL(Frontend, "Failed to create SDL2 window! Exiting...");
         exit(1);
     }
 
@@ -137,17 +137,17 @@ EmuWindow_SDL2::EmuWindow_SDL2(bool fullscreen) {
     gl_context = SDL_GL_CreateContext(render_window);
 
     if (gl_context == nullptr) {
-        NGLOG_CRITICAL(Frontend, "Failed to create SDL2 GL context! Exiting...");
+        LOG_CRITICAL(Frontend, "Failed to create SDL2 GL context! Exiting...");
         exit(1);
     }
 
     if (!gladLoadGLLoader(static_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-        NGLOG_CRITICAL(Frontend, "Failed to initialize GL functions! Exiting...");
+        LOG_CRITICAL(Frontend, "Failed to initialize GL functions! Exiting...");
         exit(1);
     }
 
     if (!SupportsRequiredGLExtensions()) {
-        NGLOG_CRITICAL(Frontend, "GPU does not support all required OpenGL extensions! Exiting...");
+        LOG_CRITICAL(Frontend, "GPU does not support all required OpenGL extensions! Exiting...");
         exit(1);
     }
 

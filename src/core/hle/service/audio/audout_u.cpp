@@ -60,14 +60,14 @@ public:
 
 private:
     void GetAudioOutState(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_Audio, "called");
+        LOG_DEBUG(Service_Audio, "called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(static_cast<u32>(audio_out_state));
     }
 
     void StartAudioOut(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // Start audio
         audio_out_state = AudioState::Started;
@@ -77,7 +77,7 @@ private:
     }
 
     void StopAudioOut(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // Stop audio
         audio_out_state = AudioState::Stopped;
@@ -89,7 +89,7 @@ private:
     }
 
     void RegisterBufferEvent(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -97,7 +97,7 @@ private:
     }
 
     void AppendAudioOutBuffer(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
         const u64 key{rp.Pop<u64>()};
@@ -108,7 +108,7 @@ private:
     }
 
     void GetReleasedAudioOutBuffer(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // TODO(st4rk): This is how libtransistor currently implements the
         // GetReleasedAudioOutBuffer, it should return the key (a VAddr) to the app and this address
@@ -164,7 +164,7 @@ private:
 };
 
 void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
 
     const std::string audio_interface = "AudioInterface";
@@ -180,7 +180,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
 }
 
 void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
 
     if (!audio_out_interface) {
         audio_out_interface = std::make_shared<IAudioOut>();

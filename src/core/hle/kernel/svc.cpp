@@ -32,7 +32,7 @@ namespace Kernel {
 
 /// Set the process heap to a given Size. It can both extend and shrink the heap.
 static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
-    NGLOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", heap_size);
+    LOG_TRACE(Kernel_SVC, "called, heap_size=0x{:X}", heap_size);
     auto& process = *Core::CurrentProcess();
     CASCADE_RESULT(*heap_addr,
                    process.HeapAllocate(Memory::HEAP_VADDR, heap_size, VMAPermission::ReadWrite));
@@ -40,20 +40,20 @@ static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
 }
 
 static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state1) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x{:X}", addr);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, addr=0x{:X}", addr);
     return RESULT_SUCCESS;
 }
 
 /// Maps a memory range into a different range.
 static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
-    NGLOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
+    LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
                 src_addr, size);
     return Core::CurrentProcess()->MirrorMemory(dst_addr, src_addr, size);
 }
 
 /// Unmaps a region that was previously mapped with svcMapMemory
 static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
-    NGLOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
+    LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
                 src_addr, size);
     return Core::CurrentProcess()->UnmapMemory(dst_addr, src_addr, size);
 }
@@ -69,11 +69,11 @@ static ResultCode ConnectToNamedPort(Handle* out_handle, VAddr port_name_address
     if (port_name.size() > PortNameMaxLength)
         return ERR_PORT_NAME_TOO_LONG;
 
-    NGLOG_TRACE(Kernel_SVC, "called port_name={}", port_name);
+    LOG_TRACE(Kernel_SVC, "called port_name={}", port_name);
 
     auto it = Service::g_kernel_named_ports.find(port_name);
     if (it == Service::g_kernel_named_ports.end()) {
-        NGLOG_WARNING(Kernel_SVC, "tried to connect to unknown port: {}", port_name);
+        LOG_WARNING(Kernel_SVC, "tried to connect to unknown port: {}", port_name);
         return ERR_NOT_FOUND;
     }
 
@@ -91,11 +91,11 @@ static ResultCode ConnectToNamedPort(Handle* out_handle, VAddr port_name_address
 static ResultCode SendSyncRequest(Handle handle) {
     SharedPtr<ClientSession> session = g_handle_table.Get<ClientSession>(handle);
     if (!session) {
-        NGLOG_ERROR(Kernel_SVC, "called with invalid handle=0x{:08X}", handle);
+        LOG_ERROR(Kernel_SVC, "called with invalid handle=0x{:08X}", handle);
         return ERR_INVALID_HANDLE;
     }
 
-    NGLOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
+    LOG_TRACE(Kernel_SVC, "called handle=0x{:08X}({})", handle, session->GetName());
 
     Core::System::GetInstance().PrepareReschedule();
 
@@ -106,7 +106,7 @@ static ResultCode SendSyncRequest(Handle handle) {
 
 /// Get the ID for the specified thread.
 static ResultCode GetThreadId(u32* thread_id, Handle thread_handle) {
-    NGLOG_TRACE(Kernel_SVC, "called thread=0x{:08X}", thread_handle);
+    LOG_TRACE(Kernel_SVC, "called thread=0x{:08X}", thread_handle);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
@@ -119,7 +119,7 @@ static ResultCode GetThreadId(u32* thread_id, Handle thread_handle) {
 
 /// Get the ID of the specified process
 static ResultCode GetProcessId(u32* process_id, Handle process_handle) {
-    NGLOG_TRACE(Kernel_SVC, "called process=0x{:08X}", process_handle);
+    LOG_TRACE(Kernel_SVC, "called process=0x{:08X}", process_handle);
 
     const SharedPtr<Process> process = g_handle_table.Get<Process>(process_handle);
     if (!process) {
@@ -149,7 +149,7 @@ static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thr
 /// Wait for the given handles to synchronize, timeout after the specified nanoseconds
 static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 handle_count,
                                       s64 nano_seconds) {
-    NGLOG_TRACE(Kernel_SVC, "called handles_address=0x{:X}, handle_count={}, nano_seconds={}",
+    LOG_TRACE(Kernel_SVC, "called handles_address=0x{:X}, handle_count={}, nano_seconds={}",
                 handles_address, handle_count, nano_seconds);
 
     if (!Memory::IsValidVirtualAddress(handles_address))
@@ -210,7 +210,7 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
 
 /// Resumes a thread waiting on WaitSynchronization
 static ResultCode CancelSynchronization(Handle thread_handle) {
-    NGLOG_TRACE(Kernel_SVC, "called thread=0x{:X}", thread_handle);
+    LOG_TRACE(Kernel_SVC, "called thread=0x{:X}", thread_handle);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
@@ -227,7 +227,7 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
 /// Attempts to locks a mutex, creating it if it does not already exist
 static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
                                 Handle requesting_thread_handle) {
-    NGLOG_TRACE(Kernel_SVC,
+    LOG_TRACE(Kernel_SVC,
                 "called holding_thread_handle=0x{:08X}, mutex_addr=0x{:X}, "
                 "requesting_current_thread_handle=0x{:08X}",
                 holding_thread_handle, mutex_addr, requesting_thread_handle);
@@ -237,14 +237,14 @@ static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
 
 /// Unlock a mutex
 static ResultCode ArbitrateUnlock(VAddr mutex_addr) {
-    NGLOG_TRACE(Kernel_SVC, "called mutex_addr=0x{:X}", mutex_addr);
+    LOG_TRACE(Kernel_SVC, "called mutex_addr=0x{:X}", mutex_addr);
 
     return Mutex::Release(mutex_addr);
 }
 
 /// Break program execution
 static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
-    NGLOG_CRITICAL(Debug_Emulated, "Emulated program broke execution!");
+    LOG_CRITICAL(Debug_Emulated, "Emulated program broke execution!");
     ASSERT(false);
 }
 
@@ -252,12 +252,12 @@ static void Break(u64 unk_0, u64 unk_1, u64 unk_2) {
 static void OutputDebugString(VAddr address, s32 len) {
     std::string str(len, '\0');
     Memory::ReadBlock(address, str.data(), str.size());
-    NGLOG_DEBUG(Debug_Emulated, "{}", str);
+    LOG_DEBUG(Debug_Emulated, "{}", str);
 }
 
 /// Gets system/memory information for the current process
 static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id) {
-    NGLOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
+    LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
                 info_sub_id, handle);
 
     auto& vm_manager = Core::CurrentProcess()->vm_manager;
@@ -309,16 +309,16 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = Core::CurrentProcess()->is_virtual_address_memory_enabled;
         break;
     case GetInfoType::TitleId:
-        NGLOG_WARNING(Kernel_SVC, "(STUBBED) Attempted to query titleid, returned 0");
+        LOG_WARNING(Kernel_SVC, "(STUBBED) Attempted to query titleid, returned 0");
         *result = 0;
         break;
     case GetInfoType::PrivilegedProcessId:
-        NGLOG_WARNING(Kernel_SVC,
+        LOG_WARNING(Kernel_SVC,
                       "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
         break;
     case GetInfoType::UserExceptionContextAddr:
-        NGLOG_WARNING(Kernel_SVC,
+        LOG_WARNING(Kernel_SVC,
                       "(STUBBED) Attempted to query user exception context address, returned 0");
         *result = 0;
         break;
@@ -331,14 +331,14 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
 
 /// Sets the thread activity
 static ResultCode SetThreadActivity(Handle handle, u32 unknown) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, unknown=0x{:08X}", handle,
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, unknown=0x{:08X}", handle,
                   unknown);
     return RESULT_SUCCESS;
 }
 
 /// Gets the thread context
 static ResultCode GetThreadContext(Handle handle, VAddr addr) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, addr=0x{:X}", handle, addr);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, addr=0x{:X}", handle, addr);
     return RESULT_SUCCESS;
 }
 
@@ -377,13 +377,13 @@ static ResultCode SetThreadPriority(Handle handle, u32 priority) {
 
 /// Get which CPU core is executing the current thread
 static u32 GetCurrentProcessorNumber() {
-    NGLOG_TRACE(Kernel_SVC, "called");
+    LOG_TRACE(Kernel_SVC, "called");
     return GetCurrentThread()->processor_id;
 }
 
 static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size,
                                   u32 permissions) {
-    NGLOG_TRACE(
+    LOG_TRACE(
         Kernel_SVC,
         "called, shared_memory_handle=0x{:X}, addr=0x{:X}, size=0x{:X}, permissions=0x{:08X}",
         shared_memory_handle, addr, size, permissions);
@@ -406,14 +406,14 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
         return shared_memory->Map(Core::CurrentProcess().get(), addr, permissions_type,
                                   MemoryPermission::DontCare);
     default:
-        NGLOG_ERROR(Kernel_SVC, "unknown permissions=0x{:08X}", permissions);
+        LOG_ERROR(Kernel_SVC, "unknown permissions=0x{:08X}", permissions);
     }
 
     return RESULT_SUCCESS;
 }
 
 static ResultCode UnmapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size) {
-    NGLOG_WARNING(Kernel_SVC, "called, shared_memory_handle=0x{:08X}, addr=0x{:X}, size=0x{:X}",
+    LOG_WARNING(Kernel_SVC, "called, shared_memory_handle=0x{:08X}, addr=0x{:X}, size=0x{:X}",
                   shared_memory_handle, addr, size);
 
     SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
@@ -442,19 +442,19 @@ static ResultCode QueryProcessMemory(MemoryInfo* memory_info, PageInfo* /*page_i
         memory_info->type = static_cast<u32>(vma->second.meminfo_state);
     }
 
-    NGLOG_TRACE(Kernel_SVC, "called process=0x{:08X} addr={:X}", process_handle, addr);
+    LOG_TRACE(Kernel_SVC, "called process=0x{:08X} addr={:X}", process_handle, addr);
     return RESULT_SUCCESS;
 }
 
 /// Query memory
 static ResultCode QueryMemory(MemoryInfo* memory_info, PageInfo* page_info, VAddr addr) {
-    NGLOG_TRACE(Kernel_SVC, "called, addr={:X}", addr);
+    LOG_TRACE(Kernel_SVC, "called, addr={:X}", addr);
     return QueryProcessMemory(memory_info, page_info, CurrentProcess, addr);
 }
 
 /// Exits the current process
 static void ExitProcess() {
-    NGLOG_INFO(Kernel_SVC, "Process {} exiting", Core::CurrentProcess()->process_id);
+    LOG_INFO(Kernel_SVC, "Process {} exiting", Core::CurrentProcess()->process_id);
 
     ASSERT_MSG(Core::CurrentProcess()->status == ProcessStatus::Running,
                "Process has already exited");
@@ -530,7 +530,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     Core::System::GetInstance().PrepareReschedule();
     Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
 
-    NGLOG_TRACE(Kernel_SVC,
+    LOG_TRACE(Kernel_SVC,
                 "called entrypoint=0x{:08X} ({}), arg=0x{:08X}, stacktop=0x{:08X}, "
                 "threadpriority=0x{:08X}, processorid=0x{:08X} : created handle=0x{:08X}",
                 entry_point, name, arg, stack_top, priority, processor_id, *out_handle);
@@ -540,7 +540,7 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
 
 /// Starts the thread for the provided handle
 static ResultCode StartThread(Handle thread_handle) {
-    NGLOG_TRACE(Kernel_SVC, "called thread=0x{:08X}", thread_handle);
+    LOG_TRACE(Kernel_SVC, "called thread=0x{:08X}", thread_handle);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
@@ -557,7 +557,7 @@ static ResultCode StartThread(Handle thread_handle) {
 
 /// Called when a thread exits
 static void ExitThread() {
-    NGLOG_TRACE(Kernel_SVC, "called, pc=0x{:08X}", Core::CurrentArmInterface().GetPC());
+    LOG_TRACE(Kernel_SVC, "called, pc=0x{:08X}", Core::CurrentArmInterface().GetPC());
 
     ExitCurrentThread();
     Core::System::GetInstance().PrepareReschedule();
@@ -565,7 +565,7 @@ static void ExitThread() {
 
 /// Sleep the current thread
 static void SleepThread(s64 nanoseconds) {
-    NGLOG_TRACE(Kernel_SVC, "called nanoseconds={}", nanoseconds);
+    LOG_TRACE(Kernel_SVC, "called nanoseconds={}", nanoseconds);
 
     // Don't attempt to yield execution if there are no available threads to run,
     // this way we avoid a useless reschedule to the idle thread.
@@ -584,7 +584,7 @@ static void SleepThread(s64 nanoseconds) {
 /// Wait process wide key atomic
 static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_variable_addr,
                                            Handle thread_handle, s64 nano_seconds) {
-    NGLOG_TRACE(
+    LOG_TRACE(
         Kernel_SVC,
         "called mutex_addr={:X}, condition_variable_addr={:X}, thread_handle=0x{:08X}, timeout={}",
         mutex_addr, condition_variable_addr, thread_handle, nano_seconds);
@@ -611,7 +611,7 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
 
 /// Signal process wide key
 static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target) {
-    NGLOG_TRACE(Kernel_SVC, "called, condition_variable_addr=0x{:X}, target=0x{:08X}",
+    LOG_TRACE(Kernel_SVC, "called, condition_variable_addr=0x{:X}, target=0x{:08X}",
                 condition_variable_addr, target);
 
     auto RetrieveWaitingThreads =
@@ -692,7 +692,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 
 // Wait for an address (via Address Arbiter)
 static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout) {
-    NGLOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
+    LOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
                   address, type, value, timeout);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if (Memory::IsKernelVirtualAddress(address)) {
@@ -717,7 +717,7 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
 
 // Signals to an address (via Address Arbiter)
 static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to_wake) {
-    NGLOG_WARNING(Kernel_SVC,
+    LOG_WARNING(Kernel_SVC,
                   "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}", address,
                   type, value, num_to_wake);
     // If the passed address is a kernel virtual address, return invalid memory state.
@@ -754,13 +754,13 @@ static u64 GetSystemTick() {
 
 /// Close a handle
 static ResultCode CloseHandle(Handle handle) {
-    NGLOG_TRACE(Kernel_SVC, "Closing handle 0x{:08X}", handle);
+    LOG_TRACE(Kernel_SVC, "Closing handle 0x{:08X}", handle);
     return g_handle_table.Close(handle);
 }
 
 /// Reset an event
 static ResultCode ResetSignal(Handle handle) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called handle 0x{:08X}", handle);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called handle 0x{:08X}", handle);
     auto event = g_handle_table.Get<Event>(handle);
     ASSERT(event != nullptr);
     event->Clear();
@@ -769,14 +769,14 @@ static ResultCode ResetSignal(Handle handle) {
 
 /// Creates a TransferMemory object
 static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
-    NGLOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x{:X}, size=0x{:X}, perms=0x{:08X}", addr,
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x{:X}, size=0x{:X}, perms=0x{:08X}", addr,
                   size, permissions);
     *handle = 0;
     return RESULT_SUCCESS;
 }
 
 static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) {
-    NGLOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}", thread_handle);
+    LOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}", thread_handle);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
@@ -790,7 +790,7 @@ static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) 
 }
 
 static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
-    NGLOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:16X}, core=0x{:X}", thread_handle,
+    LOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:16X}, core=0x{:X}", thread_handle,
                 mask, core);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
@@ -830,7 +830,7 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
 
 static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permissions,
                                      u32 remote_permissions) {
-    NGLOG_TRACE(Kernel_SVC, "called, size=0x{:X}, localPerms=0x{:08X}, remotePerms=0x{:08X}", size,
+    LOG_TRACE(Kernel_SVC, "called, size=0x{:X}, localPerms=0x{:08X}, remotePerms=0x{:08X}", size,
                 local_permissions, remote_permissions);
     auto sharedMemHandle =
         SharedMemory::Create(g_handle_table.Get<Process>(KernelHandle::CurrentProcess), size,
@@ -842,7 +842,7 @@ static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permiss
 }
 
 static ResultCode ClearEvent(Handle handle) {
-    NGLOG_TRACE(Kernel_SVC, "called, event=0x{:08X}", handle);
+    LOG_TRACE(Kernel_SVC, "called, event=0x{:08X}", handle);
 
     SharedPtr<Event> evt = g_handle_table.Get<Event>(handle);
     if (evt == nullptr)
@@ -994,7 +994,7 @@ static const FunctionDef SVC_Table[] = {
 
 static const FunctionDef* GetSVCInfo(u32 func_num) {
     if (func_num >= std::size(SVC_Table)) {
-        NGLOG_ERROR(Kernel_SVC, "Unknown svc=0x{:02X}", func_num);
+        LOG_ERROR(Kernel_SVC, "Unknown svc=0x{:02X}", func_num);
         return nullptr;
     }
     return &SVC_Table[func_num];
@@ -1013,10 +1013,10 @@ void CallSVC(u32 immediate) {
         if (info->func) {
             info->func();
         } else {
-            NGLOG_CRITICAL(Kernel_SVC, "Unimplemented SVC function {}(..)", info->name);
+            LOG_CRITICAL(Kernel_SVC, "Unimplemented SVC function {}(..)", info->name);
         }
     } else {
-        NGLOG_CRITICAL(Kernel_SVC, "Unknown SVC function 0x{:X}", immediate);
+        LOG_CRITICAL(Kernel_SVC, "Unknown SVC function 0x{:X}", immediate);
     }
 }
 
