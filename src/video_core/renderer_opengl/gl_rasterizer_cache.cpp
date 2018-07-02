@@ -454,6 +454,11 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
         return {};
     }
 
+    const auto& gpu = Core::System::GetInstance().GPU();
+    // Don't try to create any entries in the cache if the address of the texture is invalid.
+    if (gpu.memory_manager->GpuToCpuAddress(params.addr) == boost::none)
+        return {};
+
     // Check for an exact match in existing surfaces
     const auto& surface_key{SurfaceKey::Create(params)};
     const auto& search{surface_cache.find(surface_key)};
