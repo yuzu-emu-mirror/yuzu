@@ -304,6 +304,9 @@ void RasterizerOpenGL::DrawArrays() {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
+    // Sync the depth test state before configuring the framebuffer surfaces.
+    SyncDepthTestState();
+
     // TODO(bunnei): Implement these
     const bool has_stencil = false;
     const bool using_color_fb = true;
@@ -717,6 +720,14 @@ void RasterizerOpenGL::SyncDepthScale() {
 
 void RasterizerOpenGL::SyncDepthOffset() {
     UNREACHABLE();
+}
+
+void RasterizerOpenGL::SyncDepthTestState() {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.depth.test_enabled = regs.depth_test_enable != 0;
+    state.depth.write_mask = regs.depth_write_enabled ? GL_TRUE : GL_FALSE;
+    state.depth.test_func = MaxwellToGL::ComparisonOp(regs.depth_test_func);
 }
 
 void RasterizerOpenGL::SyncBlendState() {
