@@ -148,6 +148,7 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
 }
 
 u32 nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
+    // TODO(Subv): These flags are unconfirmed.
     enum FreeFlags {
         Freed = 0,
         NotFreedYet = 1,
@@ -161,15 +162,21 @@ u32 nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
     auto itr = handles.find(params.handle);
     ASSERT(itr != handles.end());
 
+    ASSERT(itr->second->refcount > 0);
+
     itr->second->refcount--;
 
-    params.refcount = itr->second->refcount;
     params.size = itr->second->size;
 
-    if (itr->second->refcount == 0)
+    if (itr->second->refcount == 0) {
         params.flags = Freed;
-    else
+        // The address of the nvmap is written to the output if we're finally freeing it, otherwise
+        // 0 is written.
+        params.address = itr->second->addr;
+    } else {
         params.flags = NotFreedYet;
+        params.address = 0;
+    }
 
     handles.erase(params.handle);
 
