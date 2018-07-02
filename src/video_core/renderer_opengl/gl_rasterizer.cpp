@@ -636,7 +636,11 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
         glProgramUniform1i(program, uniform, current_bindpoint);
 
         const auto texture = maxwell3d.GetStageTexture(entry.GetStage(), entry.GetOffset());
-        ASSERT(texture.enabled);
+
+        if (!texture.enabled) {
+            state.texture_units[current_bindpoint].texture_2d = 0;
+            continue;
+        }
 
         texture_samplers[current_bindpoint].SyncWithConfig(texture.tsc);
         Surface surface = res_cache.GetTextureSurface(texture);

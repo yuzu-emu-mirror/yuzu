@@ -100,9 +100,9 @@ boost::optional<GPUVAddr> MemoryManager::FindFreeBlock(u64 size, u64 align) {
 
 boost::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) {
     VAddr base_addr = PageSlot(gpu_addr);
-    ASSERT(base_addr != static_cast<u64>(PageStatus::Unmapped));
 
-    if (base_addr == static_cast<u64>(PageStatus::Allocated)) {
+    if (base_addr == static_cast<u64>(PageStatus::Allocated) ||
+        base_addr == static_cast<u64>(PageStatus::Unmapped)) {
         return {};
     }
 
