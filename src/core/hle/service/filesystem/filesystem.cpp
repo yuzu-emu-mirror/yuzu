@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "boost/container/flat_map.hpp"
+#include "common/assert.h"
 #include "common/common_paths.h"
 #include "common/file_util.h"
 #include "core/core.h"
@@ -89,10 +90,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
         return c_res;
 
     auto dest = backing->GetFileRelative(dest_path);
-    ASSERT(dest != nullptr, "Newly created file with success cannot be found.");
+    ASSERT_MSG(dest != nullptr, "Newly created file with success cannot be found.");
 
-    ASSERT(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
-           "Could not write all of the bytes but everything else has succeded.");
+    ASSERT_MSG(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
+               "Could not write all of the bytes but everything else has succeded.");
 
     if (!src->GetContainingDirectory()->DeleteFile(FileUtil::GetFilename(src_path)))
         return ResultCode(-1);
@@ -113,10 +114,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
     }
 
     // TODO(DarkLordZach): Implement renaming across the tree (move).
-    ASSERT(false,
-           "Could not rename directory with path \"{}\" to new path \"{}\" because parent dirs "
-           "don't match -- UNIMPLEMENTED",
-           src_path, dest_path);
+    ASSERT_MSG(false,
+               "Could not rename directory with path \"{}\" to new path \"{}\" because parent dirs "
+               "don't match -- UNIMPLEMENTED",
+               src_path, dest_path);
 
     return ResultCode(-1);
 }
