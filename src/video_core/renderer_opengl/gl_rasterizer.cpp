@@ -307,7 +307,9 @@ void RasterizerOpenGL::DrawArrays() {
     // TODO(bunnei): Implement these
     const bool has_stencil = false;
     const bool using_color_fb = true;
-    const bool using_depth_fb = false;
+
+    const bool using_depth_fb = regs.zeta.Address() != 0;
+
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
     const bool write_color_fb =

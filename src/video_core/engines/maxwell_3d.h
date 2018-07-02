@@ -413,7 +413,7 @@ public:
                 struct {
                     u32 address_high;
                     u32 address_low;
-                    u32 format;
+                    Tegra::DepthFormat format;
                     u32 block_dimensions;
                     u32 layer_stride;
 

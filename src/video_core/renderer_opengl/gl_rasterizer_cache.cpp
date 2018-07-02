@@ -84,22 +84,18 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
      true},                                                                                 // DXT45
     {GL_COMPRESSED_RED_RGTC1, GL_RED, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm, true}, // DXN1
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, ComponentType::UNorm, false}, // ASTC_2D_4X4
+
+    // DepthStencil formats
+    {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, ComponentType::UNorm,
+     false}, // Z24S8
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
-    const SurfaceType type = SurfaceParams::GetFormatType(pixel_format);
-    if (type == SurfaceType::ColorTexture) {
-        ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
-        auto& format = tex_format_tuples[static_cast<unsigned int>(pixel_format)];
-        ASSERT(component_type == format.component_type);
-        return format;
-    } else if (type == SurfaceType::Depth || type == SurfaceType::DepthStencil) {
-        // TODO(Subv): Implement depth formats
-        ASSERT_MSG(false, "Unimplemented");
-    }
+    ASSERT(static_cast<size_t>(pixel_format) < tex_format_tuples.size());
+    auto& format = tex_format_tuples[static_cast<unsigned int>(pixel_format)];
+    ASSERT(component_type == format.component_type);
 
-    UNREACHABLE();
-    return {};
+    return format;
 }
 
 VAddr SurfaceParams::GetCpuAddr() const {
@@ -149,11 +145,17 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::
     const auto& gpu = Core::System::GetInstance().GPU();
 
     if (morton_to_gl) {
-        auto data = Tegra::Texture::UnswizzleTexture(
-            *gpu.memory_manager->GpuToCpuAddress(addr),
-            SurfaceParams::TextureFormatFromPixelFormat(format), stride, height, block_height);
-
-        std::memcpy(gl_buffer, data.data(), data.size());
+        if (SurfaceParams::GetFormatType(format) == SurfaceType::ColorTexture) {
+            auto data = Tegra::Texture::UnswizzleTexture(
+                *gpu.memory_manager->GpuToCpuAddress(addr),
+                SurfaceParams::TextureFormatFromPixelFormat(format), stride, height, block_height);
+            std::memcpy(gl_buffer, data.data(), data.size());
+        } else {
+            auto data = Tegra::Texture::UnswizzleDepthTexture(
+                *gpu.memory_manager->GpuToCpuAddress(addr),
+                SurfaceParams::DepthFormatFromPixelFormat(format), stride, height, block_height);
+            std::memcpy(gl_buffer, data.data(), data.size());
+        }
     } else {
         // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should
         // check the configuration for this and perform more generic un/swizzle
@@ -174,7 +176,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<true, PixelFormat::R11FG11FB10F>, MortonCopy<true, PixelFormat::RGBA32UI>,
         MortonCopy<true, PixelFormat::DXT1>,         MortonCopy<true, PixelFormat::DXT23>,
         MortonCopy<true, PixelFormat::DXT45>,        MortonCopy<true, PixelFormat::DXN1>,
-        MortonCopy<true, PixelFormat::ASTC_2D_4X4>,
+        MortonCopy<true, PixelFormat::ASTC_2D_4X4>,  MortonCopy<true, PixelFormat::Z24S8>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
@@ -194,6 +196,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         nullptr,
         nullptr,
         MortonCopy<false, PixelFormat::ABGR8>,
+        MortonCopy<false, PixelFormat::Z24S8>,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -397,9 +400,15 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
 
     // get color and depth surfaces
     const SurfaceParams color_params{SurfaceParams::CreateForFramebuffer(regs.rt[0])};
-    const SurfaceParams depth_params{color_params};
+    SurfaceParams depth_params{color_params};
 
-    ASSERT_MSG(!using_depth_fb, "depth buffer is unimplemented");
+    if (using_depth_fb) {
+        depth_params.addr = regs.zeta.Address();
+        depth_params.pixel_format = SurfaceParams::PixelFormatFromDepthFormat(regs.zeta.format);
+        depth_params.component_type = SurfaceParams::ComponentTypeFromDepthFormat(regs.zeta.format);
+        depth_params.type = SurfaceParams::GetFormatType(depth_params.pixel_format);
+        depth_params.size_in_bytes = depth_params.SizeInBytes();
+    }
 
     MathUtil::Rectangle<u32> color_rect{};
     Surface color_surface;
