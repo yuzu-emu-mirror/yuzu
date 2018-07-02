@@ -325,8 +325,7 @@ void GameList::PopupContextMenu(const QPoint& menu_location) {
 void GameList::PopulateAsync(const QString& dir_path, bool deep_scan) {
     if (!FileUtil::Exists(dir_path.toStdString()) ||
         !FileUtil::IsDirectory(dir_path.toStdString())) {
-        LOG_ERROR(Frontend, "Could not find game list folder at {}",
-                    dir_path.toLocal8Bit().data());
+        LOG_ERROR(Frontend, "Could not find game list folder at {}", dir_path.toLocal8Bit().data());
         search_field->setFilterResult(0, 0);
         return;
     }

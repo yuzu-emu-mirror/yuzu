@@ -13,7 +13,7 @@ namespace Service::Nvidia::Devices {
 
 u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocSetNVMAPfdCommand:
@@ -76,7 +76,7 @@ u32 nvhost_gpu::GetClientData(const std::vector<u8>& input, std::vector<u8>& out
 u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output) {
     std::memcpy(&zcull_params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, gpu_va={:X}, mode={:X}", zcull_params.gpu_va,
-                zcull_params.mode);
+              zcull_params.mode);
     std::memcpy(output.data(), &zcull_params, output.size());
     return 0;
 }
@@ -84,8 +84,8 @@ u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output)
 u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetErrorNotifier params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset={:X}, size={:X}, mem={:X}",
-                  params.offset, params.size, params.mem);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset={:X}, size={:X}, mem={:X}", params.offset,
+                params.size, params.mem);
     std::memcpy(output.data(), &params, output.size());
     return 0;
 }
@@ -100,10 +100,10 @@ u32 nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& ou
     IoctlAllocGpfifoEx2 params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV,
-                  "(STUBBED) called, num_entries={:X}, flags={:X}, unk0={:X}, "
-                  "unk1={:X}, unk2={:X}, unk3={:X}",
-                  params.num_entries, params.flags, params.unk0, params.unk1, params.unk2,
-                  params.unk3);
+                "(STUBBED) called, num_entries={:X}, flags={:X}, unk0={:X}, "
+                "unk1={:X}, unk2={:X}, unk3={:X}",
+                params.num_entries, params.flags, params.unk0, params.unk1, params.unk2,
+                params.unk3);
     params.fence_out.id = 0;
     params.fence_out.value = 0;
     std::memcpy(output.data(), &params, output.size());
@@ -114,7 +114,7 @@ u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<
     IoctlAllocObjCtx params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, class_num={:X}, flags={:X}", params.class_num,
-                  params.flags);
+                params.flags);
     params.obj_id = 0x0;
     std::memcpy(output.data(), &params, output.size());
     return 0;
@@ -127,7 +127,7 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     IoctlSubmitGpfifo params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSubmitGpfifo));
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo={:X}, num_entries={:X}, flags={:X}",
-                  params.gpfifo, params.num_entries, params.flags);
+                params.gpfifo, params.num_entries, params.flags);
 
     auto entries = std::vector<IoctlGpfifoEntry>();
     entries.resize(params.num_entries);

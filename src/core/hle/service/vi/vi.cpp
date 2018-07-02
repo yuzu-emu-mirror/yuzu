@@ -548,7 +548,7 @@ private:
         u32 type = rp.Pop<u32>();
 
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, addval={:08X}, type={:08X}", id, addval,
-                      type);
+                    type);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -641,7 +641,7 @@ private:
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:08X}, visibility={}", layer_id,
-                      visibility);
+                    visibility);
     }
 };
 
@@ -763,7 +763,7 @@ private:
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
-                      visibility);
+                    visibility);
     }
 
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;

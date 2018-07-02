@@ -27,7 +27,7 @@ void Fermi2D::WriteReg(u32 method, u32 value) {
 
 void Fermi2D::HandleSurfaceCopy() {
     LOG_WARNING(HW_GPU, "Requested a surface copy with operation {}",
-                  static_cast<u32>(regs.operation));
+                static_cast<u32>(regs.operation));
 
     const GPUVAddr source = regs.src.Address();
     const GPUVAddr dest = regs.dst.Address();

@@ -129,8 +129,8 @@ void PartitionFilesystem::Print() const {
     LOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
     for (u32 i = 0; i < pfs_header.num_entries; i++) {
         LOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
-                    pfs_entries[i].name.c_str(), pfs_entries[i].fs_entry.size,
-                    GetFileOffset(pfs_entries[i].name));
+                  pfs_entries[i].name.c_str(), pfs_entries[i].fs_entry.size,
+                  GetFileOffset(pfs_entries[i].name));
     }
 }
 } // namespace FileSys

@@ -47,14 +47,14 @@ static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state
 /// Maps a memory range into a different range.
 static ResultCode MapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
-                src_addr, size);
+              src_addr, size);
     return Core::CurrentProcess()->MirrorMemory(dst_addr, src_addr, size);
 }
 
 /// Unmaps a region that was previously mapped with svcMapMemory
 static ResultCode UnmapMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
     LOG_TRACE(Kernel_SVC, "called, dst_addr=0x{:X}, src_addr=0x{:X}, size=0x{:X}", dst_addr,
-                src_addr, size);
+              src_addr, size);
     return Core::CurrentProcess()->UnmapMemory(dst_addr, src_addr, size);
 }
 
@@ -150,7 +150,7 @@ static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thr
 static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 handle_count,
                                       s64 nano_seconds) {
     LOG_TRACE(Kernel_SVC, "called handles_address=0x{:X}, handle_count={}, nano_seconds={}",
-                handles_address, handle_count, nano_seconds);
+              handles_address, handle_count, nano_seconds);
 
     if (!Memory::IsValidVirtualAddress(handles_address))
         return ERR_INVALID_POINTER;
@@ -228,9 +228,9 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
 static ResultCode ArbitrateLock(Handle holding_thread_handle, VAddr mutex_addr,
                                 Handle requesting_thread_handle) {
     LOG_TRACE(Kernel_SVC,
-                "called holding_thread_handle=0x{:08X}, mutex_addr=0x{:X}, "
-                "requesting_current_thread_handle=0x{:08X}",
-                holding_thread_handle, mutex_addr, requesting_thread_handle);
+              "called holding_thread_handle=0x{:08X}, mutex_addr=0x{:X}, "
+              "requesting_current_thread_handle=0x{:08X}",
+              holding_thread_handle, mutex_addr, requesting_thread_handle);
 
     return Mutex::TryAcquire(mutex_addr, holding_thread_handle, requesting_thread_handle);
 }
@@ -258,7 +258,7 @@ static void OutputDebugString(VAddr address, s32 len) {
 /// Gets system/memory information for the current process
 static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id) {
     LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
-                info_sub_id, handle);
+              info_sub_id, handle);
 
     auto& vm_manager = Core::CurrentProcess()->vm_manager;
 
@@ -314,12 +314,12 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         break;
     case GetInfoType::PrivilegedProcessId:
         LOG_WARNING(Kernel_SVC,
-                      "(STUBBED) Attempted to query privileged process id bounds, returned 0");
+                    "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
         break;
     case GetInfoType::UserExceptionContextAddr:
         LOG_WARNING(Kernel_SVC,
-                      "(STUBBED) Attempted to query user exception context address, returned 0");
+                    "(STUBBED) Attempted to query user exception context address, returned 0");
         *result = 0;
         break;
     default:
@@ -331,8 +331,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
 
 /// Sets the thread activity
 static ResultCode SetThreadActivity(Handle handle, u32 unknown) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, unknown=0x{:08X}", handle,
-                  unknown);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called, handle=0x{:08X}, unknown=0x{:08X}", handle, unknown);
     return RESULT_SUCCESS;
 }
 
@@ -383,10 +382,9 @@ static u32 GetCurrentProcessorNumber() {
 
 static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size,
                                   u32 permissions) {
-    LOG_TRACE(
-        Kernel_SVC,
-        "called, shared_memory_handle=0x{:X}, addr=0x{:X}, size=0x{:X}, permissions=0x{:08X}",
-        shared_memory_handle, addr, size, permissions);
+    LOG_TRACE(Kernel_SVC,
+              "called, shared_memory_handle=0x{:X}, addr=0x{:X}, size=0x{:X}, permissions=0x{:08X}",
+              shared_memory_handle, addr, size, permissions);
 
     SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
     if (!shared_memory) {
@@ -414,7 +412,7 @@ static ResultCode MapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 s
 
 static ResultCode UnmapSharedMemory(Handle shared_memory_handle, VAddr addr, u64 size) {
     LOG_WARNING(Kernel_SVC, "called, shared_memory_handle=0x{:08X}, addr=0x{:X}, size=0x{:X}",
-                  shared_memory_handle, addr, size);
+                shared_memory_handle, addr, size);
 
     SharedPtr<SharedMemory> shared_memory = g_handle_table.Get<SharedMemory>(shared_memory_handle);
 
@@ -531,9 +529,9 @@ static ResultCode CreateThread(Handle* out_handle, VAddr entry_point, u64 arg, V
     Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
 
     LOG_TRACE(Kernel_SVC,
-                "called entrypoint=0x{:08X} ({}), arg=0x{:08X}, stacktop=0x{:08X}, "
-                "threadpriority=0x{:08X}, processorid=0x{:08X} : created handle=0x{:08X}",
-                entry_point, name, arg, stack_top, priority, processor_id, *out_handle);
+              "called entrypoint=0x{:08X} ({}), arg=0x{:08X}, stacktop=0x{:08X}, "
+              "threadpriority=0x{:08X}, processorid=0x{:08X} : created handle=0x{:08X}",
+              entry_point, name, arg, stack_top, priority, processor_id, *out_handle);
 
     return RESULT_SUCCESS;
 }
@@ -612,7 +610,7 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
 /// Signal process wide key
 static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target) {
     LOG_TRACE(Kernel_SVC, "called, condition_variable_addr=0x{:X}, target=0x{:08X}",
-                condition_variable_addr, target);
+              condition_variable_addr, target);
 
     auto RetrieveWaitingThreads =
         [](size_t core_index, std::vector<SharedPtr<Thread>>& waiting_threads, VAddr condvar_addr) {
@@ -693,7 +691,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 // Wait for an address (via Address Arbiter)
 static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout) {
     LOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, timeout={}",
-                  address, type, value, timeout);
+                address, type, value, timeout);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if (Memory::IsKernelVirtualAddress(address)) {
         return ERR_INVALID_ADDRESS_STATE;
@@ -717,9 +715,8 @@ static ResultCode WaitForAddress(VAddr address, u32 type, s32 value, s64 timeout
 
 // Signals to an address (via Address Arbiter)
 static ResultCode SignalToAddress(VAddr address, u32 type, s32 value, s32 num_to_wake) {
-    LOG_WARNING(Kernel_SVC,
-                  "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}", address,
-                  type, value, num_to_wake);
+    LOG_WARNING(Kernel_SVC, "called, address=0x{:X}, type=0x{:X}, value=0x{:X}, num_to_wake=0x{:X}",
+                address, type, value, num_to_wake);
     // If the passed address is a kernel virtual address, return invalid memory state.
     if (Memory::IsKernelVirtualAddress(address)) {
         return ERR_INVALID_ADDRESS_STATE;
@@ -769,8 +766,8 @@ static ResultCode ResetSignal(Handle handle) {
 
 /// Creates a TransferMemory object
 static ResultCode CreateTransferMemory(Handle* handle, VAddr addr, u64 size, u32 permissions) {
-    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x{:X}, size=0x{:X}, perms=0x{:08X}", addr,
-                  size, permissions);
+    LOG_WARNING(Kernel_SVC, "(STUBBED) called addr=0x{:X}, size=0x{:X}, perms=0x{:08X}", addr, size,
+                permissions);
     *handle = 0;
     return RESULT_SUCCESS;
 }
@@ -791,7 +788,7 @@ static ResultCode GetThreadCoreMask(Handle thread_handle, u32* core, u64* mask) 
 
 static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
     LOG_DEBUG(Kernel_SVC, "called, handle=0x{:08X}, mask=0x{:16X}, core=0x{:X}", thread_handle,
-                mask, core);
+              mask, core);
 
     const SharedPtr<Thread> thread = g_handle_table.Get<Thread>(thread_handle);
     if (!thread) {
@@ -831,7 +828,7 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
 static ResultCode CreateSharedMemory(Handle* handle, u64 size, u32 local_permissions,
                                      u32 remote_permissions) {
     LOG_TRACE(Kernel_SVC, "called, size=0x{:X}, localPerms=0x{:08X}, remotePerms=0x{:08X}", size,
-                local_permissions, remote_permissions);
+              local_permissions, remote_permissions);
     auto sharedMemHandle =
         SharedMemory::Create(g_handle_table.Get<Process>(KernelHandle::CurrentProcess), size,
                              static_cast<MemoryPermission>(local_permissions),

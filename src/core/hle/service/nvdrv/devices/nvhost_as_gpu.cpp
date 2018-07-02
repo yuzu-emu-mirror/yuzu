@@ -15,7 +15,7 @@ namespace Service::Nvidia::Devices {
 
 u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocInitalizeExCommand:
@@ -50,7 +50,7 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
     IoctlAllocSpace params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, pages={:X}, page_size={:X}, flags={:X}", params.pages,
-                params.page_size, params.flags);
+              params.page_size, params.flags);
 
     auto& gpu = Core::System::GetInstance().GPU();
     const u64 size{static_cast<u64>(params.pages) * static_cast<u64>(params.page_size)};
@@ -76,7 +76,7 @@ u32 nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& output) 
 
     for (const auto& entry : entries) {
         LOG_WARNING(Service_NVDRV, "remap entry, offset=0x{:X} handle=0x{:X} pages=0x{:X}",
-                      entry.offset, entry.nvmap_handle, entry.pages);
+                    entry.offset, entry.nvmap_handle, entry.pages);
         Tegra::GPUVAddr offset = static_cast<Tegra::GPUVAddr>(entry.offset) << 0x10;
 
         auto object = nvmap_dev->GetObject(entry.nvmap_handle);
@@ -99,10 +99,10 @@ u32 nvhost_as_gpu::MapBufferEx(const std::vector<u8>& input, std::vector<u8>& ou
     std::memcpy(&params, input.data(), input.size());
 
     LOG_DEBUG(Service_NVDRV,
-                "called, flags={:X}, nvmap_handle={:X}, buffer_offset={}, mapping_size={}"
-                ", offset={}",
-                params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
-                params.offset);
+              "called, flags={:X}, nvmap_handle={:X}, buffer_offset={}, mapping_size={}"
+              ", offset={}",
+              params.flags, params.nvmap_handle, params.buffer_offset, params.mapping_size,
+              params.offset);
 
     if (!params.nvmap_handle) {
         return 0;
@@ -179,7 +179,7 @@ u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& o
     IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr={:X}, buf_size={:X}", params.buf_addr,
-                  params.buf_size);
+                params.buf_size);
 
     params.buf_size = 0x30;
     params.regions[0].offset = 0x04000000;

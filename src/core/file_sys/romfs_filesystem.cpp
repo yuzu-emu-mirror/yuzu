@@ -28,22 +28,21 @@ ResultCode RomFS_FileSystem::DeleteFile(const std::string& path) const {
 
 ResultCode RomFS_FileSystem::RenameFile(const std::string& src_path,
                                         const std::string& dest_path) const {
-    LOG_CRITICAL(Service_FS, "Attempted to rename a file within an ROMFS archive ({}).",
-                   GetName());
+    LOG_CRITICAL(Service_FS, "Attempted to rename a file within an ROMFS archive ({}).", GetName());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode RomFS_FileSystem::DeleteDirectory(const Path& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a directory from an ROMFS archive ({}).",
-                   GetName());
+                 GetName());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode RomFS_FileSystem::DeleteDirectoryRecursively(const Path& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to delete a directory from an ROMFS archive ({}).",
-                   GetName());
+                 GetName());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
@@ -56,14 +55,13 @@ ResultCode RomFS_FileSystem::CreateFile(const std::string& path, u64 size) const
 
 ResultCode RomFS_FileSystem::CreateDirectory(const std::string& path) const {
     LOG_CRITICAL(Service_FS, "Attempted to create a directory in an ROMFS archive ({}).",
-                   GetName());
+                 GetName());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode RomFS_FileSystem::RenameDirectory(const Path& src_path, const Path& dest_path) const {
-    LOG_CRITICAL(Service_FS, "Attempted to rename a file within an ROMFS archive ({}).",
-                   GetName());
+    LOG_CRITICAL(Service_FS, "Attempted to rename a file within an ROMFS archive ({}).", GetName());
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }

@@ -30,7 +30,7 @@ private:
         rb.Push(RESULT_SUCCESS);
 
         LOG_WARNING(Service_APM, "(STUBBED) called mode={} config={}", static_cast<u32>(mode),
-                      config);
+                    config);
     }
 
     void GetPerformanceConfiguration(Kernel::HLERequestContext& ctx) {

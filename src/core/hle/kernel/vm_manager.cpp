@@ -243,11 +243,11 @@ void VMManager::LogLayout() const {
     for (const auto& p : vma_map) {
         const VirtualMemoryArea& vma = p.second;
         LOG_DEBUG(Kernel, "{:016X} - {:016X} size: {:016X} {}{}{} {}", vma.base,
-                    vma.base + vma.size, vma.size,
-                    (u8)vma.permissions & (u8)VMAPermission::Read ? 'R' : '-',
-                    (u8)vma.permissions & (u8)VMAPermission::Write ? 'W' : '-',
-                    (u8)vma.permissions & (u8)VMAPermission::Execute ? 'X' : '-',
-                    GetMemoryStateName(vma.meminfo_state));
+                  vma.base + vma.size, vma.size,
+                  (u8)vma.permissions & (u8)VMAPermission::Read ? 'R' : '-',
+                  (u8)vma.permissions & (u8)VMAPermission::Write ? 'W' : '-',
+                  (u8)vma.permissions & (u8)VMAPermission::Execute ? 'X' : '-',
+                  GetMemoryStateName(vma.meminfo_state));
     }
 }
 

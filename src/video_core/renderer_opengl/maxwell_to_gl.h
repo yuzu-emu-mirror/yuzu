@@ -91,7 +91,7 @@ inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode) {
         return GL_NEAREST;
     }
     LOG_CRITICAL(Render_OpenGL, "Unimplemented texture filter mode={}",
-                   static_cast<u32>(filter_mode));
+                 static_cast<u32>(filter_mode));
     UNREACHABLE();
     return {};
 }
@@ -110,8 +110,7 @@ inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
         // manually mix them. However the shader part of this is not yet implemented.
         return GL_CLAMP_TO_BORDER;
     }
-    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode={}",
-                   static_cast<u32>(wrap_mode));
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode={}", static_cast<u32>(wrap_mode));
     UNREACHABLE();
     return {};
 }

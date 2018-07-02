@@ -83,7 +83,7 @@ void ProgramMetadata::Print() const {
     LOG_DEBUG(Service_FS, "Process category:       {}", npdm_header.process_category);
     LOG_DEBUG(Service_FS, "Flags:                  0x{:02X}", npdm_header.flags);
     LOG_DEBUG(Service_FS, " > 64-bit instructions: {}",
-                npdm_header.has_64_bit_instructions ? "YES" : "NO");
+              npdm_header.has_64_bit_instructions ? "YES" : "NO");
 
     auto address_space = "Unknown";
     switch (npdm_header.address_space_type) {

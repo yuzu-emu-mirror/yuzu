@@ -95,7 +95,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
 
     if (system_mode.second != Loader::ResultStatus::Success) {
         LOG_CRITICAL(Core, "Failed to determine system mode (Error {})!",
-                       static_cast<int>(system_mode.second));
+                     static_cast<int>(system_mode.second));
 
         switch (system_mode.second) {
         case Loader::ResultStatus::ErrorEncrypted:
@@ -112,7 +112,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
     ResultStatus init_result{Init(emu_window, system_mode.first.get())};
     if (init_result != ResultStatus::Success) {
         LOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
-                       static_cast<int>(init_result));
+                     static_cast<int>(init_result));
         System::Shutdown();
         return init_result;
     }

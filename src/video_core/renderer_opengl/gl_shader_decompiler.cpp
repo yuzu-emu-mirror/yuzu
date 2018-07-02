@@ -919,7 +919,7 @@ private:
                     break;
                 default:
                     LOG_CRITICAL(HW_GPU, "Unhandled MUFU sub op: {0:x}",
-                                   static_cast<unsigned>(instr.sub_op.Value()));
+                                 static_cast<unsigned>(instr.sub_op.Value()));
                     UNREACHABLE();
                 }
                 break;
@@ -1059,7 +1059,7 @@ private:
             }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
-                               opcode->GetName());
+                             opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1125,7 +1125,7 @@ private:
             }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
-                               opcode->GetName());
+                             opcode->GetName());
                 UNREACHABLE();
             }
             }
@@ -1220,7 +1220,7 @@ private:
                     break;
                 default:
                     LOG_CRITICAL(HW_GPU, "Unimplemented f2f rounding mode {}",
-                                   static_cast<u32>(instr.conversion.f2f.rounding.Value()));
+                                 static_cast<u32>(instr.conversion.f2f.rounding.Value()));
                     UNREACHABLE();
                     break;
                 }
@@ -1254,7 +1254,7 @@ private:
                     break;
                 default:
                     LOG_CRITICAL(HW_GPU, "Unimplemented f2i rounding mode {}",
-                                   static_cast<u32>(instr.conversion.f2i.rounding.Value()));
+                                 static_cast<u32>(instr.conversion.f2i.rounding.Value()));
                     UNREACHABLE();
                     break;
                 }
@@ -1306,7 +1306,7 @@ private:
 
                 default:
                     LOG_CRITICAL(HW_GPU, "Unhandled type: {}",
-                                   static_cast<unsigned>(instr.ld_c.type.Value()));
+                                 static_cast<unsigned>(instr.ld_c.type.Value()));
                     UNREACHABLE();
                 }
                 break;

@@ -414,7 +414,7 @@ static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
     auto bp = p.find(static_cast<u64>(addr));
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
-                    bp->second.len, bp->second.addr, static_cast<int>(type));
+                  bp->second.len, bp->second.addr, static_cast<int>(type));
         p.erase(static_cast<u64>(addr));
     }
 }
@@ -460,9 +460,9 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
 
         if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
             LOG_DEBUG(Debug_GDBStub,
-                        "Found breakpoint type {} @ {:016X}, range: {:016X}"
-                        " - {:016X} ({:X} bytes)",
-                        static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
+                      "Found breakpoint type {} @ {:016X}, range: {:016X}"
+                      " - {:016X} ({:X} bytes)",
+                      static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
             return true;
         }
     }
@@ -658,10 +658,9 @@ static void ReadCommand() {
     u8 checksum_calculated = CalculateChecksum(command_buffer, command_length);
 
     if (checksum_received != checksum_calculated) {
-        LOG_ERROR(
-            Debug_GDBStub,
-            "gdb: invalid checksum: calculated {:02X} and read {:02X} for ${}# (length: {})",
-            checksum_calculated, checksum_received, command_buffer, command_length);
+        LOG_ERROR(Debug_GDBStub,
+                  "gdb: invalid checksum: calculated {:02X} and read {:02X} for ${}# (length: {})",
+                  checksum_calculated, checksum_received, command_buffer, command_length);
 
         command_length = 0;
 
@@ -889,7 +888,7 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
-                static_cast<int>(type), breakpoint.len, breakpoint.addr);
+              static_cast<int>(type), breakpoint.len, breakpoint.addr);
 
     return true;
 }

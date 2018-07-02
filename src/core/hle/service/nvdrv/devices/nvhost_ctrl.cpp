@@ -10,7 +10,7 @@ namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetConfigCommand:
@@ -30,7 +30,7 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
     IocGetConfigParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
     LOG_DEBUG(Service_NVDRV, "called, setting={}!{}", params.domain_str.data(),
-                params.param_str.data());
+              params.param_str.data());
 
     if (!strcmp(params.domain_str.data(), "nv")) {
         if (!strcmp(params.param_str.data(), "NV_MEMORY_PROFILER")) {
@@ -54,8 +54,8 @@ u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>&
     IocCtrlEventWaitParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
     LOG_WARNING(Service_NVDRV,
-                  "(STUBBED) called, syncpt_id={}, threshold={}, timeout={}, is_async={}",
-                  params.syncpt_id, params.threshold, params.timeout, is_async);
+                "(STUBBED) called, syncpt_id={}, threshold={}, timeout={}, is_async={}",
+                params.syncpt_id, params.threshold, params.timeout, is_async);
 
     // TODO(Subv): Implement actual syncpt waiting.
     params.value = 0;

@@ -11,7 +11,7 @@ namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
     LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetCharacteristicsCommand:
@@ -84,7 +84,7 @@ u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& 
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_INFO(Service_NVDRV, "called, mask=0x{:X}, mask_buf_addr=0x{:X}", params.mask_buf_size,
-               params.mask_buf_addr);
+             params.mask_buf_addr);
     // TODO(ogniK): Confirm value on hardware
     if (params.mask_buf_size)
         params.tpc_mask_size = 4 * 1; // 4 * num_gpc

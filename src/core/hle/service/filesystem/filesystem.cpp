@@ -25,8 +25,8 @@ ResultCode RegisterFileSystem(std::unique_ptr<FileSys::FileSystemFactory>&& fact
     ASSERT_MSG(inserted, "Tried to register more than one system with same id code");
 
     auto& filesystem = result.first->second;
-    LOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}",
-                filesystem->GetName(), static_cast<u32>(type));
+    LOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}", filesystem->GetName(),
+              static_cast<u32>(type));
     return RESULT_SUCCESS;
 }
 

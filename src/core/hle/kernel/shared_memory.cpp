@@ -108,7 +108,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     // Error out if the requested permissions don't match what the creator process allows.
     if (static_cast<u32>(permissions) & ~static_cast<u32>(own_other_permissions)) {
         LOG_ERROR(Kernel, "cannot map id={}, address=0x{:X} name={}, permissions don't match",
-                    GetObjectId(), address, name);
+                  GetObjectId(), address, name);
         return ERR_INVALID_COMBINATION;
     }
 
@@ -116,7 +116,7 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     if (other_permissions != MemoryPermission::DontCare &&
         static_cast<u32>(this->permissions) & ~static_cast<u32>(other_permissions)) {
         LOG_ERROR(Kernel, "cannot map id={}, address=0x{:X} name={}, permissions don't match",
-                    GetObjectId(), address, name);
+                  GetObjectId(), address, name);
         return ERR_WRONG_PERMISSION;
     }
 
