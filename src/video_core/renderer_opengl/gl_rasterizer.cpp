@@ -412,12 +412,14 @@ void RasterizerOpenGL::DrawArrays() {
 
     const GLenum primitive_mode{MaxwellToGL::PrimitiveTopology(regs.draw.topology)};
     if (is_indexed) {
-        const GLint index_min{static_cast<GLint>(regs.index_array.first)};
-        const GLint index_max{static_cast<GLint>(regs.index_array.first + regs.index_array.count)};
-        glDrawRangeElementsBaseVertex(primitive_mode, index_min, index_max, regs.index_array.count,
-                                      MaxwellToGL::IndexFormat(regs.index_array.format),
-                                      reinterpret_cast<const void*>(index_buffer_offset),
-                                      -index_min);
+        const GLint base_vertex{static_cast<GLint>(regs.vb_element_base)};
+
+        // Adjust the index buffer offset so it points to the first desired index.
+        index_buffer_offset += regs.index_array.first * regs.index_array.FormatSizeInBytes();
+
+        glDrawElementsBaseVertex(primitive_mode, regs.index_array.count,
+                                 MaxwellToGL::IndexFormat(regs.index_array.format),
+                                 reinterpret_cast<const void*>(index_buffer_offset), base_vertex);
     } else {
         glDrawArrays(primitive_mode, 0, regs.vertex_buffer.count);
     }
