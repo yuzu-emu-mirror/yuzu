@@ -421,7 +421,7 @@ void RasterizerOpenGL::DrawArrays() {
                                  MaxwellToGL::IndexFormat(regs.index_array.format),
                                  reinterpret_cast<const void*>(index_buffer_offset), base_vertex);
     } else {
-        glDrawArrays(primitive_mode, 0, regs.vertex_buffer.count);
+        glDrawArrays(primitive_mode, regs.vertex_buffer.first, regs.vertex_buffer.count);
     }
 
     // Disable scissor test
