@@ -9,7 +9,7 @@
 
 namespace FileSys {
 
-Loader::ResultStatus ProgramMetadata::Load(v_file file) {
+Loader::ResultStatus ProgramMetadata::Load(VirtualFile file) {
     size_t total_size = static_cast<size_t>(file->GetSize());
     if (total_size < sizeof(Header))
         return Loader::ResultStatus::Error;

@@ -109,7 +109,7 @@ void PartitionFilesystem::PrintDebugInfo() const {
     }
 }
 
-bool PartitionFilesystem::ReplaceFileWithSubdirectory(v_file file, v_dir dir) {
+bool PartitionFilesystem::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
     auto iter = std::find(pfs_files.begin(), pfs_files.end(), file);
     if (iter == pfs_files.end())
         return false;

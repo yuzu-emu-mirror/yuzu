@@ -153,7 +153,7 @@ bool RealVfsDirectory::Rename(const std::string& name) {
     return FileUtil::Rename(path, parent_path + DIR_SEP + name);
 }
 
-bool RealVfsDirectory::ReplaceFileWithSubdirectory(v_file file, v_dir dir) {
+bool RealVfsDirectory::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
     auto iter = std::find(files.begin(), files.end(), file);
     if (iter == files.end())
         return false;

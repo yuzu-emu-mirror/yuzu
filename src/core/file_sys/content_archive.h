@@ -55,19 +55,19 @@ static bool IsValidNCA(const NCAHeader& header) {
 // An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) conatiner.
 // After construction, use GetStatus to determine if the file is valid and ready to be used.
 class NCA : public ReadOnlyVfsDirectory {
-    std::vector<v_dir> dirs{};
-    std::vector<v_file> files{};
+    std::vector<VirtualDir> dirs{};
+    std::vector<VirtualFile> files{};
 
-    v_file romfs = nullptr;
-    v_dir exefs = nullptr;
-    v_file file;
+    VirtualFile romfs = nullptr;
+    VirtualDir exefs = nullptr;
+    VirtualFile file;
 
     NCAHeader header{};
 
     Loader::ResultStatus status{};
 
 public:
-    explicit NCA(v_file file);
+    explicit NCA(VirtualFile file);
     Loader::ResultStatus GetStatus() const;
 
     std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
@@ -78,11 +78,11 @@ public:
     NCAContentType GetType() const;
     u64 GetTitleId() const;
 
-    v_file GetRomFS() const;
-    v_dir GetExeFS() const;
+    VirtualFile GetRomFS() const;
+    VirtualDir GetExeFS() const;
 
 protected:
-    bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
+    bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
 };
 
 } // namespace FileSys

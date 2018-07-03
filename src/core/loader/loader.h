@@ -39,7 +39,7 @@ enum class FileType {
  * @param file open file
  * @return FileType of file
  */
-FileType IdentifyFile(v_file file);
+FileType IdentifyFile(VirtualFile file);
 
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
@@ -79,7 +79,7 @@ enum class ResultStatus {
 /// Interface for loading an application
 class AppLoader : NonCopyable {
 public:
-    AppLoader(v_file file) : file(std::move(file)) {}
+    AppLoader(VirtualFile file) : file(std::move(file)) {}
     virtual ~AppLoader() {}
 
     /**
@@ -157,7 +157,7 @@ public:
      * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadRomFS(v_file& dir) {
+    virtual ResultStatus ReadRomFS(VirtualFile& dir) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -167,7 +167,7 @@ public:
      * @param file The file containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadUpdateRomFS(v_file& file) {
+    virtual ResultStatus ReadUpdateRomFS(VirtualFile& file) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -181,7 +181,7 @@ public:
     }
 
 protected:
-    v_file file;
+    VirtualFile file;
     bool is_loaded = false;
 };
 
@@ -196,6 +196,6 @@ extern const std::initializer_list<Kernel::AddressMapping> default_address_mappi
  * @param filename String filename of bootable file
  * @return best loader for this file
  */
-std::unique_ptr<AppLoader> GetLoader(v_file file);
+std::unique_ptr<AppLoader> GetLoader(VirtualFile file);
 
 } // namespace Loader

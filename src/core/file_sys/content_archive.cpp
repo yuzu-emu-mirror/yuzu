@@ -57,7 +57,7 @@ struct RomFSSuperblock {
 };
 static_assert(sizeof(RomFSSuperblock) == 0xE8, "RomFSSuperblock has incorrect size.");
 
-NCA::NCA(v_file file_) : file(file_) {
+NCA::NCA(VirtualFile file_) : file(file_) {
     if (sizeof(NCAHeader) != file->ReadObject(&header))
         NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
 
@@ -149,15 +149,15 @@ u64 NCA::GetTitleId() const {
     return header.title_id;
 }
 
-v_file NCA::GetRomFS() const {
+VirtualFile NCA::GetRomFS() const {
     return romfs;
 }
 
-v_dir NCA::GetExeFS() const {
+VirtualDir NCA::GetExeFS() const {
     return exefs;
 }
 
-bool NCA::ReplaceFileWithSubdirectory(v_file file, v_dir dir) {
+bool NCA::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
     return false;
 }
 } // namespace FileSys

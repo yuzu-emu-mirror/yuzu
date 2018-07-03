@@ -18,8 +18,8 @@ struct VfsDirectory;
 } // namespace FileSys
 
 // Convenience typedefs to use VfsDirectory and VfsFile
-using v_dir = std::shared_ptr<FileSys::VfsDirectory>;
-using v_file = std::shared_ptr<FileSys::VfsFile>;
+using VirtualDir = std::shared_ptr<FileSys::VfsDirectory>;
+using VirtualFile = std::shared_ptr<FileSys::VfsFile>;
 
 namespace FileSys {
 
@@ -206,7 +206,7 @@ struct VfsDirectory : NonCopyable {
 protected:
     // Backend for InterpretAsDirectory.
     // Removes all references to file and adds a reference to dir in the directory's implementation.
-    virtual bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) = 0;
+    virtual bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) = 0;
 };
 
 // A convenience partial-implementation of VfsDirectory that stubs out methods that should only work

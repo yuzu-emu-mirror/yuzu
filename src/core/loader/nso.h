@@ -15,20 +15,20 @@ namespace Loader {
 /// Loads an NSO file
 class AppLoader_NSO final : public AppLoader, Linker {
 public:
-    AppLoader_NSO(v_file file);
+    AppLoader_NSO(VirtualFile file);
 
     /**
      * Returns the type of the file
      * @param file std::shared_ptr<VfsFile> open file
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(v_file file);
+    static FileType IdentifyType(VirtualFile file);
 
     FileType GetFileType() override {
         return IdentifyType(file);
     }
 
-    static VAddr LoadModule(v_file file, VAddr load_base);
+    static VAddr LoadModule(VirtualFile file, VAddr load_base);
 
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 };

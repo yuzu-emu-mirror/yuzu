@@ -45,10 +45,10 @@ static std::string FindRomFS(const std::string& directory) {
     return filepath_romfs;
 }
 
-AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(v_file file)
+AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(VirtualFile file)
     : AppLoader(file) {}
 
-FileType AppLoader_DeconstructedRomDirectory::IdentifyType(v_file file) {
+FileType AppLoader_DeconstructedRomDirectory::IdentifyType(VirtualFile file) {
     if (FileSys::IsDirectoryExeFS(file->GetContainingDirectory())) {
         return FileType::DeconstructedRomDirectory;
     }
@@ -62,8 +62,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         return ResultStatus::ErrorAlreadyLoaded;
     }
 
-    const v_dir dir = file->GetContainingDirectory();
-    const v_file npdm = dir->GetFile("main.npdm");
+    const VirtualDir dir = file->GetContainingDirectory();
+    const VirtualFile npdm = dir->GetFile("main.npdm");
     if (npdm == nullptr)
         return ResultStatus::ErrorInvalidFormat;
 
@@ -83,7 +83,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const VAddr load_addr = next_load_addr;
-        const v_file module_file = dir->GetFile(module);
+        const VirtualFile module_file = dir->GetFile(module);
         if (module_file != nullptr)
             next_load_addr = AppLoader_NSO::LoadModule(module_file, load_addr);
         if (next_load_addr) {
@@ -103,7 +103,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     // Find the RomFS by searching for a ".romfs" file in this directory
     const auto& files = dir->GetFiles();
-    const auto romfs_iter = std::find_if(files.begin(), files.end(), [](const v_file& file) {
+    const auto romfs_iter = std::find_if(files.begin(), files.end(), [](const VirtualFile& file) {
         return file->GetName().find(".romfs") != std::string::npos;
     });
 

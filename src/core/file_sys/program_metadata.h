@@ -38,7 +38,7 @@ enum class ProgramFilePermission : u64 {
  */
 class ProgramMetadata {
 public:
-    Loader::ResultStatus Load(v_file file);
+    Loader::ResultStatus Load(VirtualFile file);
 
     bool Is64BitProgram() const;
     ProgramAddressSpaceType GetAddressSpaceType() const;

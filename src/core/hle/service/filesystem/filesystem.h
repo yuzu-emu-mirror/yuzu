@@ -35,10 +35,10 @@ enum class Type {
 // pointers and booleans. This makes using a VfsDirectory with switch services much easier and
 // avoids repetitive code.
 class VfsDirectoryServiceWrapper {
-    v_dir backing;
+    VirtualDir backing;
 
 public:
-    explicit VfsDirectoryServiceWrapper(v_dir backing);
+    explicit VfsDirectoryServiceWrapper(VirtualDir backing);
 
     /**
      * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)
@@ -103,14 +103,14 @@ public:
      * @param mode Mode to open the file with
      * @return Opened file, or error code
      */
-    ResultVal<v_file> OpenFile(const std::string& path, FileSys::Mode mode) const;
+    ResultVal<VirtualFile> OpenFile(const std::string& path, FileSys::Mode mode) const;
 
     /**
      * Open a directory specified by its path
      * @param path Path relative to the archive
      * @return Opened directory, or error code
      */
-    ResultVal<v_dir> OpenDirectory(const std::string& path);
+    ResultVal<VirtualDir> OpenDirectory(const std::string& path);
 
     /**
      * Get the free space
@@ -127,14 +127,14 @@ public:
 
 // A class that deferres the creation of a filesystem until a later time.
 // This is useful if construction depends on a variable not known when the filesystem is registered.
-// Construct this with a filesystem (v_dir) to avoid the deferrence feature or override the
+// Construct this with a filesystem (VirtualDir) to avoid the deferrence feature or override the
 //     CreateFilesystem method which will be called on first use.
 struct DeferredFilesystem {
     DeferredFilesystem(){};
 
-    explicit DeferredFilesystem(v_dir vfs_directory) : fs(vfs_directory) {}
+    explicit DeferredFilesystem(VirtualDir vfs_directory) : fs(vfs_directory) {}
 
-    v_dir Get() {
+    VirtualDir Get() {
         if (fs == nullptr)
             fs = CreateFilesystem();
 
@@ -144,12 +144,12 @@ struct DeferredFilesystem {
     ~DeferredFilesystem() = default;
 
 protected:
-    virtual v_dir CreateFilesystem() {
+    virtual VirtualDir CreateFilesystem() {
         return fs;
     }
 
 private:
-    v_dir fs;
+    VirtualDir fs;
 };
 
 /**
@@ -159,7 +159,7 @@ private:
  */
 ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& fs, Type type);
 
-ResultCode RegisterRomFS(v_file fs);
+ResultCode RegisterRomFS(VirtualFile fs);
 
 /**
  * Opens a file system
@@ -167,9 +167,9 @@ ResultCode RegisterRomFS(v_file fs);
  * @param path Path to the file system, used with Binary paths
  * @return FileSys::FileSystemBackend interface to the file system
  */
-ResultVal<v_dir> OpenFileSystem(Type type);
+ResultVal<VirtualDir> OpenFileSystem(Type type);
 
-ResultVal<v_file> OpenRomFS();
+ResultVal<VirtualFile> OpenRomFS();
 
 /**
  * Formats a file system

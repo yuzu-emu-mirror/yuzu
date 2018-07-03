@@ -22,7 +22,7 @@ const std::initializer_list<Kernel::AddressMapping> default_address_mappings = {
     {0x1F000000, 0x600000, false}, // entire VRAM
 };
 
-FileType IdentifyFile(v_file file) {
+FileType IdentifyFile(VirtualFile file) {
     FileType type;
 
 #define CHECK_TYPE(loader)                                                                         \
@@ -42,7 +42,7 @@ FileType IdentifyFile(v_file file) {
 }
 
 FileType IdentifyFile(const std::string& file_name) {
-    return IdentifyFile(v_file(std::make_shared<FileSys::RealVfsFile>(file_name)));
+    return IdentifyFile(VirtualFile(std::make_shared<FileSys::RealVfsFile>(file_name)));
 }
 
 FileType GuessFromExtension(const std::string& extension_) {
@@ -88,7 +88,7 @@ const char* GetFileTypeString(FileType type) {
  * @param filepath the file full path (with name)
  * @return std::unique_ptr<AppLoader> a pointer to a loader object;  nullptr for unsupported type
  */
-static std::unique_ptr<AppLoader> GetFileLoader(v_file file, FileType type) {
+static std::unique_ptr<AppLoader> GetFileLoader(VirtualFile file, FileType type) {
     switch (type) {
 
     // Standard ELF file format.
@@ -116,7 +116,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(v_file file, FileType type) {
     }
 }
 
-std::unique_ptr<AppLoader> GetLoader(v_file file) {
+std::unique_ptr<AppLoader> GetLoader(VirtualFile file) {
     FileType type = IdentifyFile(file);
     FileType filename_type = GuessFromExtension(file->GetExtension());
 

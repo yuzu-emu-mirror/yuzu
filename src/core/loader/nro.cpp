@@ -47,9 +47,9 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-AppLoader_NRO::AppLoader_NRO(v_file file) : AppLoader(file) {}
+AppLoader_NRO::AppLoader_NRO(VirtualFile file) : AppLoader(file) {}
 
-FileType AppLoader_NRO::IdentifyType(v_file file) {
+FileType AppLoader_NRO::IdentifyType(VirtualFile file) {
     // Read NSO header
     NroHeader nro_header{};
     if (sizeof(NroHeader) != file->ReadObject(&nro_header)) {
@@ -65,7 +65,7 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-bool AppLoader_NRO::LoadNro(v_file file, VAddr load_base) {
+bool AppLoader_NRO::LoadNro(VirtualFile file, VAddr load_base) {
     // Read NSO header
     NroHeader nro_header{};
     if (sizeof(NroHeader) != file->ReadObject(&nro_header)) {

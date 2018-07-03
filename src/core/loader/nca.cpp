@@ -18,9 +18,9 @@
 
 namespace Loader {
 
-AppLoader_NCA::AppLoader_NCA(v_file file) : AppLoader(file) {}
+AppLoader_NCA::AppLoader_NCA(VirtualFile file) : AppLoader(file) {}
 
-FileType AppLoader_NCA::IdentifyType(v_file file) {
+FileType AppLoader_NCA::IdentifyType(VirtualFile file) {
     // TODO(DarkLordZach): Assuming everything is decrypted. Add crypto support.
     FileSys::NCAHeader header{};
     if (sizeof(FileSys::NCAHeader) != file->ReadObject(&header))

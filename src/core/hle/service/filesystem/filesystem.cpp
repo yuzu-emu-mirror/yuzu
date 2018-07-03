@@ -18,14 +18,14 @@
 
 namespace Service::FileSystem {
 
-static v_dir GetDirectoryRelativeWrapped(v_dir base, const std::string& dir_name) {
+static VirtualDir GetDirectoryRelativeWrapped(VirtualDir base, const std::string& dir_name) {
     if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
         return base;
 
     return base->GetDirectoryRelative(dir_name);
 }
 
-VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(v_dir backing_) : backing(backing_) {}
+VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(VirtualDir backing_) : backing(backing_) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
@@ -122,16 +122,16 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
     return ResultCode(-1);
 }
 
-ResultVal<v_file> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
+ResultVal<VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
                                                        FileSys::Mode mode) const {
     auto file = backing->GetFileRelative(path);
     if (file == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
     // TODO(DarkLordZach): Error checking/result modification with different modes.
-    return MakeResult<v_file>(file);
+    return MakeResult<VirtualFile>(file);
 }
 
-ResultVal<v_dir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
+ResultVal<VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
     auto dir = GetDirectoryRelativeWrapped(backing, path);
     if (dir == nullptr)
         return ResultCode(-1);
@@ -164,7 +164,7 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
 // registration time.
 struct SaveDataDeferredFilesystem : DeferredFilesystem {
 protected:
-    v_dir CreateFilesystem() override {
+    VirtualDir CreateFilesystem() override {
         u64 title_id = Core::CurrentProcess()->program_id;
         // TODO(DarkLordZach): Users
         u32 user_id = 0;
@@ -182,7 +182,7 @@ protected:
  * is never removed until UnregisterFileSystems is called.
  */
 static boost::container::flat_map<Type, std::unique_ptr<DeferredFilesystem>> filesystem_map;
-static v_file filesystem_romfs = nullptr;
+static VirtualFile filesystem_romfs = nullptr;
 
 ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Type type) {
     auto result = filesystem_map.emplace(type, std::move(factory));
@@ -195,7 +195,7 @@ ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Typ
     return RESULT_SUCCESS;
 }
 
-ResultCode RegisterRomFS(v_file filesystem) {
+ResultCode RegisterRomFS(VirtualFile filesystem) {
     ASSERT_MSG(filesystem_romfs == nullptr,
                "Tried to register more than one system with same id code");
 
@@ -205,7 +205,7 @@ ResultCode RegisterRomFS(v_file filesystem) {
     return RESULT_SUCCESS;
 }
 
-ResultVal<v_dir> OpenFileSystem(Type type) {
+ResultVal<VirtualDir> OpenFileSystem(Type type) {
     NGLOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
 
     auto itr = filesystem_map.find(type);
@@ -217,7 +217,7 @@ ResultVal<v_dir> OpenFileSystem(Type type) {
     return MakeResult(itr->second->Get());
 }
 
-ResultVal<v_file> OpenRomFS() {
+ResultVal<VirtualFile> OpenRomFS() {
     if (filesystem_romfs == nullptr)
         return ResultCode(-1);
     return MakeResult(filesystem_romfs);

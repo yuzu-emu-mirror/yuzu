@@ -29,7 +29,7 @@ private:
     void OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenRomStorage(Kernel::HLERequestContext& ctx);
 
-    v_file romfs;
+    VirtualFile romfs;
 };
 
 } // namespace Service::FileSystem

@@ -50,7 +50,7 @@ struct RealVfsDirectory : public VfsDirectory {
     bool Rename(const std::string& name) override;
 
 protected:
-    bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
+    bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
 
 private:
     std::string path;

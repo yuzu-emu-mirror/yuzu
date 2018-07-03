@@ -19,7 +19,7 @@ namespace Service::FileSystem {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    IStorage(v_file backend_) : ServiceFramework("IStorage"), backend(backend_) {
+    IStorage(VirtualFile backend_) : ServiceFramework("IStorage"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
             {3, nullptr, "SetSize"},      {4, nullptr, "GetSize"}, {5, nullptr, "OperateRange"},
@@ -28,7 +28,7 @@ public:
     }
 
 private:
-    v_file backend;
+    VirtualFile backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -68,7 +68,7 @@ private:
 
 class IFile final : public ServiceFramework<IFile> {
 public:
-    explicit IFile(v_file backend_) : ServiceFramework("IFile"), backend(backend_) {
+    explicit IFile(VirtualFile backend_) : ServiceFramework("IFile"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
             {2, &IFile::Flush, "Flush"},     {3, &IFile::SetSize, "SetSize"},
@@ -78,7 +78,7 @@ public:
     }
 
 private:
-    v_file backend;
+    VirtualFile backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -182,7 +182,7 @@ private:
 
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
-    explicit IDirectory(v_dir backend_) : ServiceFramework("IDirectory"), backend(backend_) {
+    explicit IDirectory(VirtualDir backend_) : ServiceFramework("IDirectory"), backend(backend_) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
@@ -210,7 +210,7 @@ public:
     }
 
 private:
-    v_dir backend;
+    VirtualDir backend;
     std::vector<FileSys::Entry> entries;
     u64 next_entry_index = 0;
 
@@ -257,7 +257,7 @@ private:
 
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
-    explicit IFileSystem(v_dir backend)
+    explicit IFileSystem(VirtualDir backend)
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},

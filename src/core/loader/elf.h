@@ -16,14 +16,14 @@ namespace Loader {
 /// Loads an ELF/AXF file
 class AppLoader_ELF final : public AppLoader {
 public:
-    AppLoader_ELF(v_file file);
+    AppLoader_ELF(VirtualFile file);
 
     /**
      * Returns the type of the file
      * @param file std::shared_ptr<VfsFile> open file
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(v_file file);
+    static FileType IdentifyType(VirtualFile file);
 
     FileType GetFileType() override {
         return IdentifyType(file);

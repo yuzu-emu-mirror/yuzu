@@ -20,14 +20,14 @@ namespace Loader {
  */
 class AppLoader_DeconstructedRomDirectory final : public AppLoader {
 public:
-    AppLoader_DeconstructedRomDirectory(v_file main_file);
+    AppLoader_DeconstructedRomDirectory(VirtualFile main_file);
 
     /**
      * Returns the type of the file
      * @param file std::shared_ptr<VfsFile> open file
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(v_file file);
+    static FileType IdentifyType(VirtualFile file);
 
     FileType GetFileType() override {
         return IdentifyType(file);

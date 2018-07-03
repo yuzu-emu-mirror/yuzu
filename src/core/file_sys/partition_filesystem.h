@@ -34,7 +34,7 @@ public:
     void PrintDebugInfo() const;
 
 protected:
-    bool ReplaceFileWithSubdirectory(v_file file, v_dir dir) override;
+    bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
 
 private:
     struct Header {
@@ -79,8 +79,8 @@ private:
     bool is_hfs;
     size_t content_offset;
 
-    std::vector<v_file> pfs_files;
-    std::vector<v_dir> pfs_dirs;
+    std::vector<VirtualFile> pfs_files;
+    std::vector<VirtualDir> pfs_dirs;
 };
 
 } // namespace FileSys
