@@ -112,7 +112,7 @@ public:
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_PCTL, "(STUBBED) called");
+        LOG_WARNING(Service_PCTL, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};
         rb.Push(RESULT_SUCCESS);
     }
@@ -122,14 +122,14 @@ void Module::Interface::CreateService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IParentalControlService>();
-    NGLOG_DEBUG(Service_PCTL, "called");
+    LOG_DEBUG(Service_PCTL, "called");
 }
 
 void Module::Interface::CreateServiceWithoutInitialize(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IParentalControlService>();
-    NGLOG_DEBUG(Service_PCTL, "called");
+    LOG_DEBUG(Service_PCTL, "called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)

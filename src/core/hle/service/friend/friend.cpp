@@ -13,7 +13,7 @@ namespace Service::Friend {
 void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    NGLOG_WARNING(Service_Friend, "(STUBBED) called");
+    LOG_WARNING(Service_Friend, "(STUBBED) called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)

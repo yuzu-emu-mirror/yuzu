@@ -87,15 +87,15 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
     app_loader = Loader::GetLoader(filepath);
 
     if (!app_loader) {
-        NGLOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
+        LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
         return ResultStatus::ErrorGetLoader;
     }
     std::pair<boost::optional<u32>, Loader::ResultStatus> system_mode =
         app_loader->LoadKernelSystemMode();
 
     if (system_mode.second != Loader::ResultStatus::Success) {
-        NGLOG_CRITICAL(Core, "Failed to determine system mode (Error {})!",
-                       static_cast<int>(system_mode.second));
+        LOG_CRITICAL(Core, "Failed to determine system mode (Error {})!",
+                     static_cast<int>(system_mode.second));
 
         switch (system_mode.second) {
         case Loader::ResultStatus::ErrorEncrypted:
@@ -111,15 +111,15 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
 
     ResultStatus init_result{Init(emu_window, system_mode.first.get())};
     if (init_result != ResultStatus::Success) {
-        NGLOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
-                       static_cast<int>(init_result));
+        LOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
+                     static_cast<int>(init_result));
         System::Shutdown();
         return init_result;
     }
 
     const Loader::ResultStatus load_result{app_loader->Load(current_process)};
     if (Loader::ResultStatus::Success != load_result) {
-        NGLOG_CRITICAL(Core, "Failed to load ROM (Error {})!", static_cast<int>(load_result));
+        LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", static_cast<int>(load_result));
         System::Shutdown();
 
         switch (load_result) {
@@ -161,7 +161,7 @@ Cpu& System::CpuCore(size_t core_index) {
 }
 
 System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
-    NGLOG_DEBUG(HW_Memory, "initialized OK");
+    LOG_DEBUG(HW_Memory, "initialized OK");
 
     CoreTiming::Init();
 
@@ -196,7 +196,7 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
         }
     }
 
-    NGLOG_DEBUG(Core, "Initialized OK");
+    LOG_DEBUG(Core, "Initialized OK");
 
     // Reset counters and set time origin to current frame
     GetAndResetPerfStats();
@@ -245,7 +245,7 @@ void System::Shutdown() {
     // Close app loader
     app_loader.reset();
 
-    NGLOG_DEBUG(Core, "Shutdown OK");
+    LOG_DEBUG(Core, "Shutdown OK");
 }
 
 Service::SM::ServiceManager& System::ServiceManager() {

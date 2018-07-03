@@ -30,6 +30,8 @@ add_executable(yuzu
     debugger/graphics/graphics_breakpoints_p.h
     debugger/graphics/graphics_surface.cpp
     debugger/graphics/graphics_surface.h
+    debugger/console.cpp
+    debugger/console.h
     debugger/profiler.cpp
     debugger/profiler.h
     debugger/wait_tree.cpp
@@ -81,6 +83,14 @@ if (APPLE)
     target_sources(yuzu PRIVATE ${MACOSX_ICON})
     set_target_properties(yuzu PROPERTIES MACOSX_BUNDLE TRUE)
     set_target_properties(yuzu PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
+elseif(WIN32)
+    # compile as a win32 gui application instead of a console application
+    target_link_libraries(yuzu PRIVATE Qt5::WinMain)
+    if(MSVC)
+        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+    elseif(MINGW)
+        set_target_properties(yuzu PROPERTIES LINK_FLAGS_RELEASE "-mwindows")
+    endif()
 endif()
 
 create_target_directory_groups(yuzu)

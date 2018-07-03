@@ -14,7 +14,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager) {
 }
 
 void MM_U::Initialize(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_MM, "(STUBBED) called");
+    LOG_WARNING(Service_MM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -25,13 +25,13 @@ void MM_U::SetAndWait(Kernel::HLERequestContext& ctx) {
     max = rp.Pop<u32>();
     current = min;
 
-    NGLOG_WARNING(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
+    LOG_WARNING(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void MM_U::Get(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_MM, "(STUBBED) called");
+    LOG_WARNING(Service_MM, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(current);

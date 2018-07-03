@@ -29,7 +29,7 @@ void LogShaderSource(T... shaders) {
 
         std::string source(source_length, ' ');
         glGetShaderSource(shader, source_length, nullptr, &source[0]);
-        NGLOG_INFO(Render_OpenGL, "Shader source {}", source);
+        LOG_INFO(Render_OpenGL, "Shader source {}", source);
     }
 }
 
@@ -49,7 +49,7 @@ GLuint LoadShader(const char* source, GLenum type);
 template <typename... T>
 GLuint LoadProgram(bool separable_program, T... shaders) {
     // Link the program
-    NGLOG_DEBUG(Render_OpenGL, "Linking program...");
+    LOG_DEBUG(Render_OpenGL, "Linking program...");
 
     GLuint program_id = glCreateProgram();
 
@@ -71,9 +71,9 @@ GLuint LoadProgram(bool separable_program, T... shaders) {
         std::string program_error(info_log_length, ' ');
         glGetProgramInfoLog(program_id, info_log_length, nullptr, &program_error[0]);
         if (result == GL_TRUE) {
-            NGLOG_DEBUG(Render_OpenGL, "{}", program_error);
+            LOG_DEBUG(Render_OpenGL, "{}", program_error);
         } else {
-            NGLOG_ERROR(Render_OpenGL, "Error linking shader:\n{}", program_error);
+            LOG_ERROR(Render_OpenGL, "Error linking shader:\n{}", program_error);
         }
     }
 

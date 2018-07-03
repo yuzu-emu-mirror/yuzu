@@ -43,7 +43,7 @@ FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath) {
 FileType IdentifyFile(const std::string& file_name) {
     FileUtil::IOFile file(file_name, "rb");
     if (!file.IsOpen()) {
-        NGLOG_ERROR(Loader, "Failed to load file {}", file_name);
+        LOG_ERROR(Loader, "Failed to load file {}", file_name);
         return FileType::Unknown;
     }
 
@@ -126,7 +126,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileUtil::IOFile&& file, FileTyp
 std::unique_ptr<AppLoader> GetLoader(const std::string& filename) {
     FileUtil::IOFile file(filename, "rb");
     if (!file.IsOpen()) {
-        NGLOG_ERROR(Loader, "Failed to load file {}", filename);
+        LOG_ERROR(Loader, "Failed to load file {}", filename);
         return nullptr;
     }
 
@@ -137,12 +137,12 @@ std::unique_ptr<AppLoader> GetLoader(const std::string& filename) {
     FileType filename_type = GuessFromExtension(filename_extension);
 
     if (type != filename_type) {
-        NGLOG_WARNING(Loader, "File {} has a different type than its extension.", filename);
+        LOG_WARNING(Loader, "File {} has a different type than its extension.", filename);
         if (FileType::Unknown == type)
             type = filename_type;
     }
 
-    NGLOG_DEBUG(Loader, "Loading file {} as {}...", filename, GetFileTypeString(type));
+    LOG_DEBUG(Loader, "Loading file {} as {}...", filename, GetFileTypeString(type));
 
     return GetFileLoader(std::move(file), type, filename_filename, filename);
 }

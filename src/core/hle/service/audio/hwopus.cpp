@@ -10,7 +10,7 @@
 namespace Service::Audio {
 
 void HwOpus::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_Audio, "(STUBBED) called");
+    LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0x4000);

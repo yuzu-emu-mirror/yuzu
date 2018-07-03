@@ -37,7 +37,7 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u64>(available_language_codes.size()));
 
-    NGLOG_DEBUG(Service_SET, "called");
+    LOG_DEBUG(Service_SET, "called");
 }
 
 SET::SET() : ServiceFramework("set") {
