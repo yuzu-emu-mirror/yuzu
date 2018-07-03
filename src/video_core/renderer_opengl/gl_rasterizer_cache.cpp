@@ -88,6 +88,8 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     // DepthStencil formats
     {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, ComponentType::UNorm,
      false}, // Z24S8
+    {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, ComponentType::UNorm,
+     false}, // S8Z24
 }};
 
 static const FormatTuple& GetFormatTuple(PixelFormat pixel_format, ComponentType component_type) {
@@ -131,13 +133,6 @@ MathUtil::Rectangle<u32> SurfaceParams::GetRect() const {
     return {0, actual_height, width, 0};
 }
 
-static void ConvertASTCToRGBA8(std::vector<u8>& data, PixelFormat format, u32 width, u32 height) {
-    u32 block_width{};
-    u32 block_height{};
-    std::tie(block_width, block_height) = GetASTCBlockSize(format);
-    data = Tegra::Texture::ASTC::Decompress(data, width, height, block_width, block_height);
-}
-
 template <bool morton_to_gl, PixelFormat format>
 void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::GPUVAddr addr) {
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / CHAR_BIT;
@@ -177,6 +172,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<true, PixelFormat::DXT1>,         MortonCopy<true, PixelFormat::DXT23>,
         MortonCopy<true, PixelFormat::DXT45>,        MortonCopy<true, PixelFormat::DXN1>,
         MortonCopy<true, PixelFormat::ASTC_2D_4X4>,  MortonCopy<true, PixelFormat::Z24S8>,
+        MortonCopy<true, PixelFormat::S8Z24>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
@@ -197,6 +193,7 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         nullptr,
         MortonCopy<false, PixelFormat::ABGR8>,
         MortonCopy<false, PixelFormat::Z24S8>,
+        MortonCopy<false, PixelFormat::S8Z24>,
 };
 
 // Allocate an uninitialized texture of appropriate size and format for the surface
@@ -234,6 +231,71 @@ CachedSurface::CachedSurface(const SurfaceParams& params) : params(params) {
                            rect.GetWidth(), rect.GetHeight());
 }
 
+static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
+    union S8Z24 {
+        BitField<0, 24, u32> z24;
+        BitField<24, 8, u32> s8;
+    };
+    static_assert(sizeof(S8Z24) == 4, "S8Z24 is incorrect size");
+
+    union Z24S8 {
+        BitField<0, 8, u32> s8;
+        BitField<8, 24, u32> z24;
+    };
+    static_assert(sizeof(Z24S8) == 4, "Z24S8 is incorrect size");
+
+    S8Z24 input_pixel{};
+    Z24S8 output_pixel{};
+    for (size_t y = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x) {
+            const size_t offset{y * width + x};
+            std::memcpy(&input_pixel, &data[offset], sizeof(S8Z24));
+            output_pixel.s8.Assign(input_pixel.s8);
+            output_pixel.z24.Assign(input_pixel.z24);
+            std::memcpy(&data[offset], &output_pixel, sizeof(Z24S8));
+        }
+    }
+}
+/**
+ * Helper function to perform software conversion (as needed) when loading a buffer from Switch
+ * memory. This is for Maxwell pixel formats that cannot be represented as-is in OpenGL or with
+ * typical desktop GPUs.
+ */
+static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelFormat pixel_format,
+                                               u32 width, u32 height) {
+    switch (pixel_format) {
+    case PixelFormat::ASTC_2D_4X4: {
+        // Convert ASTC pixel formats to RGBA8, as most desktop GPUs do not support ASTC.
+        u32 block_width{};
+        u32 block_height{};
+        std::tie(block_width, block_height) = GetASTCBlockSize(pixel_format);
+        data = Tegra::Texture::ASTC::Decompress(data, width, height, block_width, block_height);
+        break;
+    }
+    case PixelFormat::S8Z24:
+        // Convert the S8Z24 depth format to Z24S8, as OpenGL does not support S8Z24.
+        ConvertS8Z24ToZ24S8(data, width, height);
+        break;
+    }
+}
+
+/**
+ * Helper function to perform software conversion (as needed) when flushing a buffer to Switch
+ * memory. This is for Maxwell pixel formats that cannot be represented as-is in OpenGL or with
+ * typical desktop GPUs.
+ */
+static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& /*data*/, PixelFormat pixel_format,
+                                                u32 /*width*/, u32 /*height*/) {
+    switch (pixel_format) {
+    case PixelFormat::ASTC_2D_4X4:
+    case PixelFormat::S8Z24:
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented pixel_format={}",
+                     static_cast<u32>(pixel_format));
+        UNREACHABLE();
+        break;
+    }
+}
+
 MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64, 192));
 void CachedSurface::LoadGLBuffer() {
     ASSERT(params.type != SurfaceType::Fill);
@@ -256,10 +318,7 @@ void CachedSurface::LoadGLBuffer() {
             params.width, params.block_height, params.height, gl_buffer.data(), params.addr);
     }
 
-    if (IsPixelFormatASTC(params.pixel_format)) {
-        // ASTC formats are converted to RGBA8 in software, as most PC GPUs do not support this
-        ConvertASTCToRGBA8(gl_buffer, params.pixel_format, params.width, params.height);
-    }
+    ConvertFormatAsNeeded_LoadGLBuffer(gl_buffer, params.pixel_format, params.width, params.height);
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
@@ -271,6 +330,9 @@ void CachedSurface::FlushGLBuffer() {
            params.width * params.height * GetGLBytesPerPixel(params.pixel_format));
 
     MICROPROFILE_SCOPE(OpenGL_SurfaceFlush);
+
+    ConvertFormatAsNeeded_FlushGLBuffer(gl_buffer, params.pixel_format, params.width,
+                                        params.height);
 
     if (!params.is_tiled) {
         std::memcpy(dst_buffer, gl_buffer.data(), params.size_in_bytes);
