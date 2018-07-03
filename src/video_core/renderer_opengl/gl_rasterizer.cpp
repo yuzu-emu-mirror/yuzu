@@ -300,6 +300,20 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
 void RasterizerOpenGL::Clear() {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
+    GLbitfield clear_mask = 0;
+    if (regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
+        regs.clear_buffers.A) {
+        clear_mask |= GL_COLOR_BUFFER_BIT;
+    }
+    if (regs.clear_buffers.Z)
+        clear_mask |= GL_DEPTH_BUFFER_BIT;
+
+    if (clear_mask == 0)
+        return;
+
+    // Sync the depth test state before configuring the framebuffer surfaces.
+    SyncDepthTestState();
+
     // TODO(bunnei): Implement these
     const bool has_stencil = false;
     const bool using_color_fb = true;
@@ -352,10 +366,6 @@ void RasterizerOpenGL::Clear() {
     glClearColor(regs.clear_color[0], regs.clear_color[1], regs.clear_color[2],
                  regs.clear_color[3]);
     glClearDepth(regs.clear_depth);
-
-    GLbitfield clear_mask = GL_COLOR_BUFFER_BIT;
-    if (regs.clear_buffers.Z)
-        clear_mask |= GL_DEPTH_BUFFER_BIT;
 
     glClear(clear_mask);
 

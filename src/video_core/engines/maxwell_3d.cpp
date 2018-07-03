@@ -420,8 +420,9 @@ bool Maxwell3D::IsShaderStageEnabled(Regs::ShaderStage stage) const {
 }
 
 void Maxwell3D::ProcessClearBuffers() {
-    ASSERT(regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
-           regs.clear_buffers.A);
+    ASSERT(regs.clear_buffers.R == regs.clear_buffers.G &&
+           regs.clear_buffers.R == regs.clear_buffers.B &&
+           regs.clear_buffers.R == regs.clear_buffers.A);
 
     VideoCore::g_renderer->Rasterizer()->Clear();
 }
