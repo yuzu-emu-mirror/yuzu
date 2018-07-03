@@ -735,6 +735,10 @@ void RasterizerOpenGL::SyncDepthTestState() {
 
     state.depth.test_enabled = regs.depth_test_enable != 0;
     state.depth.write_mask = regs.depth_write_enabled ? GL_TRUE : GL_FALSE;
+
+    if (!state.depth.test_enabled)
+        return;
+
     state.depth.test_func = MaxwellToGL::ComparisonOp(regs.depth_test_func);
 }
 
