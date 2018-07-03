@@ -718,8 +718,11 @@ void RasterizerOpenGL::SyncCullMode() {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
     state.cull.enabled = regs.cull.enabled != 0;
-    state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
-    state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
+
+    if (state.cull.enabled) {
+        state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
+        state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
+    }
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
