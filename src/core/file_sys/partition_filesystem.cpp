@@ -6,8 +6,8 @@
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/file_sys/partition_filesystem.h"
+#include "core/file_sys/vfs_offset.h"
 #include "core/loader/loader.h"
-#include "vfs_offset.h"
 
 namespace FileSys {
 

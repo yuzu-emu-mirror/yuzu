@@ -18,14 +18,16 @@
 
 namespace Service::FileSystem {
 
-static VirtualDir GetDirectoryRelativeWrapped(VirtualDir base, const std::string& dir_name) {
+static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
+                                                       const std::string& dir_name) {
     if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
         return base;
 
     return base->GetDirectoryRelative(dir_name);
 }
 
-VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(VirtualDir backing_) : backing(backing_) {}
+VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
+    : backing(backing_) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
@@ -122,16 +124,16 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
     return ResultCode(-1);
 }
 
-ResultVal<VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
-                                                            FileSys::Mode mode) const {
+ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
+                                                                     FileSys::Mode mode) const {
     auto file = backing->GetFileRelative(path);
     if (file == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
     // TODO(DarkLordZach): Error checking/result modification with different modes.
-    return MakeResult<VirtualFile>(file);
+    return MakeResult<FileSys::VirtualFile>(file);
 }
 
-ResultVal<VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
+ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
     auto dir = GetDirectoryRelativeWrapped(backing, path);
     if (dir == nullptr)
         return ResultCode(-1);
@@ -141,7 +143,7 @@ ResultVal<VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::strin
 u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
     // TODO(DarkLordZach): Infinite? Actual? Is this actually used productively or...?
     if (backing->IsWritable())
-        return -1;
+        return std::numeric_limits<u64>::max();
 
     return 0;
 }
@@ -164,7 +166,7 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
 // registration time.
 struct SaveDataDeferredFilesystem : DeferredFilesystem {
 protected:
-    VirtualDir CreateFilesystem() override {
+    FileSys::VirtualDir CreateFilesystem() override {
         u64 title_id = Core::CurrentProcess()->program_id;
         // TODO(DarkLordZach): Users
         u32 user_id = 0;
@@ -182,7 +184,7 @@ protected:
  * is never removed until UnregisterFileSystems is called.
  */
 static boost::container::flat_map<Type, std::unique_ptr<DeferredFilesystem>> filesystem_map;
-static VirtualFile filesystem_romfs = nullptr;
+static FileSys::VirtualFile filesystem_romfs = nullptr;
 
 ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Type type) {
     auto result = filesystem_map.emplace(type, std::move(factory));
@@ -195,7 +197,7 @@ ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Typ
     return RESULT_SUCCESS;
 }
 
-ResultCode RegisterRomFS(VirtualFile filesystem) {
+ResultCode RegisterRomFS(FileSys::VirtualFile filesystem) {
     ASSERT_MSG(filesystem_romfs == nullptr,
                "Tried to register more than one system with same id code");
 
@@ -205,7 +207,7 @@ ResultCode RegisterRomFS(VirtualFile filesystem) {
     return RESULT_SUCCESS;
 }
 
-ResultVal<VirtualDir> OpenFileSystem(Type type) {
+ResultVal<FileSys::VirtualDir> OpenFileSystem(Type type) {
     LOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
 
     auto itr = filesystem_map.find(type);
@@ -217,7 +219,7 @@ ResultVal<VirtualDir> OpenFileSystem(Type type) {
     return MakeResult(itr->second->Get());
 }
 
-ResultVal<VirtualFile> OpenRomFS() {
+ResultVal<FileSys::VirtualFile> OpenRomFS() {
     if (filesystem_romfs == nullptr)
         return ResultCode(-1);
     return MakeResult(filesystem_romfs);

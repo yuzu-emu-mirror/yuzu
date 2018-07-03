@@ -7,15 +7,16 @@
 #include "core/file_sys/vfs_offset.h"
 #include "core/loader/loader.h"
 
+namespace FileSys {
+
 // Media offsets in headers are stored divided by 512. Mult. by this to get real offset.
 constexpr u64 MEDIA_OFFSET_MULTIPLIER = 0x200;
 
 constexpr u64 SECTION_HEADER_SIZE = 0x200;
 constexpr u64 SECTION_HEADER_OFFSET = 0x400;
 
-constexpr unsigned IVFC_MAX_LEVEL = 6;
+constexpr u32 IVFC_MAX_LEVEL = 6;
 
-namespace FileSys {
 enum class NCASectionFilesystemType : u8 { PFS0 = 0x2, ROMFS = 0x3 };
 
 struct NCASectionHeaderBlock {
@@ -66,11 +67,11 @@ NCA::NCA(VirtualFile file_) : file(file_) {
         return;
     }
 
-    int number_sections =
+    std::ptrdiff_t number_sections =
         std::count_if(std::begin(header.section_tables), std::end(header.section_tables),
                       [](NCASectionTableEntry entry) { return entry.media_offset > 0; });
 
-    for (int i = 0; i < number_sections; ++i) {
+    for (std::ptrdiff_t i = 0; i < number_sections; ++i) {
         // Seek to beginning of this section.
         NCASectionHeaderBlock block{};
         if (sizeof(NCASectionHeaderBlock) !=

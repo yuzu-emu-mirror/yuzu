@@ -14,8 +14,8 @@ std::string VfsFile::GetExtension() const {
     size_t index = GetName().find_last_of('.');
     if (index == std::string::npos)
         return "";
-    else
-        return GetName().substr(index + 1);
+
+    return GetName().substr(index + 1);
 }
 
 VfsDirectory::~VfsDirectory() = default;
@@ -41,7 +41,7 @@ std::vector<u8> VfsFile::ReadAllBytes() const {
 }
 
 bool VfsFile::WriteByte(u8 data, size_t offset) {
-    return 1 == Write(&data, 1, offset);
+    return Write(&data, 1, offset) == 1;
 }
 
 size_t VfsFile::WriteBytes(std::vector<u8> data, size_t offset) {
@@ -57,7 +57,7 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::string& path) 
     if (vec.size() == 1)
         return GetFile(vec[0]);
     auto dir = GetSubdirectory(vec[0]);
-    for (auto i = 1u; i < vec.size() - 1; ++i) {
+    for (size_t i = 1; i < vec.size() - 1; ++i) {
         if (dir == nullptr)
             return nullptr;
         dir = dir->GetSubdirectory(vec[i]);
@@ -82,7 +82,7 @@ std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const std::stri
         // return std::shared_ptr<VfsDirectory>(this);
         return nullptr;
     auto dir = GetSubdirectory(vec[0]);
-    for (auto i = 1u; i < vec.size(); ++i) {
+    for (size_t i = 1; i < vec.size(); ++i) {
         dir = dir->GetSubdirectory(vec[i]);
     }
     return dir;
@@ -97,19 +97,16 @@ std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(const std::stri
 
 std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) const {
     const auto& files = GetFiles();
-    const auto& iter = std::find_if(files.begin(), files.end(), [&name](const auto& file1) {
-        return name == file1->GetName();
-    });
+    const auto iter = std::find_if(files.begin(), files.end(),
+                                   [&name](const auto& file1) { return name == file1->GetName(); });
     return iter == files.end() ? nullptr : *iter;
 }
 
 std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) const {
-    // if (name == "" || name == "." || name == "/" || name == "\\")
-    //  return std::shared_ptr<VfsDirectory>(const_cast<VfsDirectory*>(this));
     const auto& subs = GetSubdirectories();
-    const auto& iter = std::find_if(
-        subs.begin(), subs.end(), [&name](const auto& file1) { return name == file1->GetName(); });
-    return iter == subs.end() ? nullptr : std::move(*iter);
+    const auto iter = std::find_if(subs.begin(), subs.end(),
+                                   [&name](const auto& file1) { return name == file1->GetName(); });
+    return iter == subs.end() ? nullptr : *iter;
 }
 
 bool VfsDirectory::IsRoot() const {
@@ -136,13 +133,15 @@ bool VfsDirectory::DeleteSubdirectoryRecursive(const std::string& name) {
         return false;
 
     bool success = true;
-    for (const auto& file : dir->GetFiles())
+    for (const auto& file : dir->GetFiles()) {
         if (!DeleteFile(file->GetName()))
             success = false;
+    }
 
-    for (const auto& sdir : dir->GetSubdirectories())
+    for (const auto& sdir : dir->GetSubdirectories()) {
         if (!dir->DeleteSubdirectoryRecursive(sdir->GetName()))
             success = false;
+    }
 
     return success;
 }

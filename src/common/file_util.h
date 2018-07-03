@@ -158,7 +158,7 @@ std::vector<std::string> SplitPathComponents(const std::string& filename);
 std::string GetParentPath(const std::string& path);
 
 // Gets the filename of the path
-std::string GetFilename(const std::string& path);
+std::string GetFilename(std::string path);
 
 // Removes the final '/' or '\' if one exists
 std::string RemoveTrailingSlash(const std::string& path);

@@ -45,10 +45,10 @@ static std::string FindRomFS(const std::string& directory) {
     return filepath_romfs;
 }
 
-AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(VirtualFile file)
-    : AppLoader(file) {}
+AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys::VirtualFile file)
+    : AppLoader(std::move(file)) {}
 
-FileType AppLoader_DeconstructedRomDirectory::IdentifyType(VirtualFile file) {
+FileType AppLoader_DeconstructedRomDirectory::IdentifyType(const FileSys::VirtualFile& file) {
     if (FileSys::IsDirectoryExeFS(file->GetContainingDirectory())) {
         return FileType::DeconstructedRomDirectory;
     }
@@ -62,8 +62,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         return ResultStatus::ErrorAlreadyLoaded;
     }
 
-    const VirtualDir dir = file->GetContainingDirectory();
-    const VirtualFile npdm = dir->GetFile("main.npdm");
+    const FileSys::VirtualDir dir = file->GetContainingDirectory();
+    const FileSys::VirtualFile npdm = dir->GetFile("main.npdm");
     if (npdm == nullptr)
         return ResultStatus::ErrorInvalidFormat;
 
@@ -83,7 +83,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const VAddr load_addr = next_load_addr;
-        const VirtualFile module_file = dir->GetFile(module);
+        const FileSys::VirtualFile module_file = dir->GetFile(module);
         if (module_file != nullptr)
             next_load_addr = AppLoader_NSO::LoadModule(module_file, load_addr);
         if (next_load_addr) {
@@ -103,9 +103,10 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     // Find the RomFS by searching for a ".romfs" file in this directory
     const auto& files = dir->GetFiles();
-    const auto romfs_iter = std::find_if(files.begin(), files.end(), [](const VirtualFile& file) {
-        return file->GetName().find(".romfs") != std::string::npos;
-    });
+    const auto romfs_iter =
+        std::find_if(files.begin(), files.end(), [](const FileSys::VirtualFile& file) {
+            return file->GetName().find(".romfs") != std::string::npos;
+        });
 
     // TODO(DarkLordZach): Identify RomFS if its a subdirectory.
     const auto romfs = (romfs_iter == files.end()) ? nullptr : *romfs_iter;

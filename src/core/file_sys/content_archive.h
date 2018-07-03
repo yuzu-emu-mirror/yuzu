@@ -7,7 +7,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
-#include "partition_filesystem.h"
+#include "core/file_sys/partition_filesystem.h"
 
 namespace FileSys {
 
@@ -55,17 +55,6 @@ static bool IsValidNCA(const NCAHeader& header) {
 // An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) conatiner.
 // After construction, use GetStatus to determine if the file is valid and ready to be used.
 class NCA : public ReadOnlyVfsDirectory {
-    std::vector<VirtualDir> dirs{};
-    std::vector<VirtualFile> files{};
-
-    VirtualFile romfs = nullptr;
-    VirtualDir exefs = nullptr;
-    VirtualFile file;
-
-    NCAHeader header{};
-
-    Loader::ResultStatus status{};
-
 public:
     explicit NCA(VirtualFile file);
     Loader::ResultStatus GetStatus() const;
@@ -83,6 +72,18 @@ public:
 
 protected:
     bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
+
+private:
+    std::vector<VirtualDir> dirs;
+    std::vector<VirtualFile> files;
+
+    VirtualFile romfs = nullptr;
+    VirtualDir exefs = nullptr;
+    VirtualFile file;
+
+    NCAHeader header{};
+
+    Loader::ResultStatus status{};
 };
 
 } // namespace FileSys

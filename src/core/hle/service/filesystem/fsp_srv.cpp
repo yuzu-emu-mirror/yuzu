@@ -19,7 +19,8 @@ namespace Service::FileSystem {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    IStorage(VirtualFile backend_) : ServiceFramework("IStorage"), backend(backend_) {
+    IStorage(FileSys::VirtualFile backend_)
+        : ServiceFramework("IStorage"), backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
             {3, nullptr, "SetSize"},      {4, nullptr, "GetSize"}, {5, nullptr, "OperateRange"},
@@ -28,7 +29,7 @@ public:
     }
 
 private:
-    VirtualFile backend;
+    FileSys::VirtualFile backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -68,7 +69,8 @@ private:
 
 class IFile final : public ServiceFramework<IFile> {
 public:
-    explicit IFile(VirtualFile backend_) : ServiceFramework("IFile"), backend(backend_) {
+    explicit IFile(FileSys::VirtualFile backend_)
+        : ServiceFramework("IFile"), backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
             {2, &IFile::Flush, "Flush"},     {3, &IFile::SetSize, "SetSize"},
@@ -78,7 +80,7 @@ public:
     }
 
 private:
-    VirtualFile backend;
+    FileSys::VirtualFile backend;
 
     void Read(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
@@ -180,9 +182,23 @@ private:
     }
 };
 
+template <typename T>
+static void BuildEntryIndex(std::vector<FileSys::Entry>& entries, const std::vector<T>& new_data,
+                            FileSys::EntryType type) {
+    for (const auto& new_entry : new_data) {
+        FileSys::Entry entry;
+        entry.filename[0] = '\0';
+        std::strncat(entry.filename, new_entry->GetName().c_str(), FileSys::FILENAME_LENGTH - 1);
+        entry.type = type;
+        entry.file_size = new_entry->GetSize();
+        entries.emplace_back(std::move(entry));
+    }
+}
+
 class IDirectory final : public ServiceFramework<IDirectory> {
 public:
-    explicit IDirectory(VirtualDir backend_) : ServiceFramework("IDirectory"), backend(backend_) {
+    explicit IDirectory(FileSys::VirtualDir backend_)
+        : ServiceFramework("IDirectory"), backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
@@ -190,27 +206,12 @@ public:
         RegisterHandlers(functions);
 
         // Build entry index now to save time later.
-        for (const auto& file : backend->GetFiles()) {
-            FileSys::Entry entry;
-            entry.filename[0] = '\0';
-            strncat(entry.filename, file->GetName().c_str(), FileSys::FILENAME_LENGTH - 1);
-            entry.type = FileSys::File;
-            entry.file_size = file->GetSize();
-            entries.emplace_back(entry);
-        }
-
-        for (const auto& dir : backend->GetSubdirectories()) {
-            FileSys::Entry entry;
-            entry.filename[0] = '\0';
-            strncat(entry.filename, dir->GetName().c_str(), FileSys::FILENAME_LENGTH - 1);
-            entry.type = FileSys::Directory;
-            entry.file_size = dir->GetSize();
-            entries.emplace_back(entry);
-        }
+        BuildEntryIndex(entries, backend->GetFiles(), FileSys::File);
+        BuildEntryIndex(entries, backend->GetSubdirectories(), FileSys::Directory);
     }
 
 private:
-    VirtualDir backend;
+    FileSys::VirtualDir backend;
     std::vector<FileSys::Entry> entries;
     u64 next_entry_index = 0;
 
@@ -257,7 +258,7 @@ private:
 
 class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
-    explicit IFileSystem(VirtualDir backend)
+    explicit IFileSystem(FileSys::VirtualDir backend)
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
         static const FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
@@ -517,7 +518,7 @@ void FSP_SRV::TryLoadRomFS() {
     }
     auto res = OpenRomFS();
     if (res.Succeeded()) {
-        romfs = res.Unwrap();
+        romfs = std::move(res.Unwrap());
     }
 }
 

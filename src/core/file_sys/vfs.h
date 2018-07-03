@@ -15,13 +15,10 @@
 namespace FileSys {
 struct VfsFile;
 struct VfsDirectory;
-} // namespace FileSys
 
 // Convenience typedefs to use VfsDirectory and VfsFile
 using VirtualDir = std::shared_ptr<FileSys::VfsDirectory>;
 using VirtualFile = std::shared_ptr<FileSys::VfsFile>;
-
-namespace FileSys {
 
 // A class representing a file in an abstract filesystem.
 struct VfsFile : NonCopyable {

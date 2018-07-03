@@ -84,9 +84,11 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
     if (!FileUtil::Exists(path) && (perms == Mode::Write || perms == Mode::Append))
         FileUtil::CreateDir(path);
     unsigned size;
-    if (perms != Mode::Append)
+    if (perms != Mode::Append) {
         FileUtil::ForeachDirectoryEntry(
-            &size, path, [this](auto x1, auto directory, auto filename) {
+            &size, path,
+            [this](unsigned* entries_out, const std::string& directory,
+                   const std::string& filename) {
                 std::string full_path = directory + DIR_SEP + filename;
                 if (FileUtil::IsDirectory(full_path))
                     subdirectories.emplace_back(
@@ -95,6 +97,7 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
                     files.emplace_back(std::make_shared<RealVfsFile>(full_path, perms));
                 return true;
             });
+    }
 }
 
 std::vector<std::shared_ptr<VfsFile>> RealVfsDirectory::GetFiles() const {
@@ -147,9 +150,6 @@ bool RealVfsDirectory::DeleteFile(const std::string& name) {
 }
 
 bool RealVfsDirectory::Rename(const std::string& name) {
-    /* TODO(DarkLordZach): cppreference says for files, MSVC docs say for files/dirs.
-     * Does C rename(const char*, const char*) work on dirs?
-     */
     return FileUtil::Rename(path, parent_path + DIR_SEP + name);
 }
 

@@ -22,7 +22,7 @@ const std::initializer_list<Kernel::AddressMapping> default_address_mappings = {
     {0x1F000000, 0x600000, false}, // entire VRAM
 };
 
-FileType IdentifyFile(VirtualFile file) {
+FileType IdentifyFile(FileSys::VirtualFile file) {
     FileType type;
 
 #define CHECK_TYPE(loader)                                                                         \
@@ -42,7 +42,7 @@ FileType IdentifyFile(VirtualFile file) {
 }
 
 FileType IdentifyFile(const std::string& file_name) {
-    return IdentifyFile(VirtualFile(std::make_shared<FileSys::RealVfsFile>(file_name)));
+    return IdentifyFile(FileSys::VirtualFile(std::make_shared<FileSys::RealVfsFile>(file_name)));
 }
 
 FileType GuessFromExtension(const std::string& extension_) {
@@ -88,35 +88,35 @@ const char* GetFileTypeString(FileType type) {
  * @param filepath the file full path (with name)
  * @return std::unique_ptr<AppLoader> a pointer to a loader object;  nullptr for unsupported type
  */
-static std::unique_ptr<AppLoader> GetFileLoader(VirtualFile file, FileType type) {
+static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileType type) {
     switch (type) {
 
     // Standard ELF file format.
     case FileType::ELF:
-        return std::make_unique<AppLoader_ELF>(file);
+        return std::make_unique<AppLoader_ELF>(std::move(file));
 
     // NX NSO file format.
     case FileType::NSO:
-        return std::make_unique<AppLoader_NSO>(file);
+        return std::make_unique<AppLoader_NSO>(std::move(file));
 
     // NX NRO file format.
     case FileType::NRO:
-        return std::make_unique<AppLoader_NRO>(file);
+        return std::make_unique<AppLoader_NRO>(std::move(file));
 
     // NX NCA file format.
     case FileType::NCA:
-        return std::make_unique<AppLoader_NCA>(file);
+        return std::make_unique<AppLoader_NCA>(std::move(file));
 
     // NX deconstructed ROM directory.
     case FileType::DeconstructedRomDirectory:
-        return std::make_unique<AppLoader_DeconstructedRomDirectory>(file);
+        return std::make_unique<AppLoader_DeconstructedRomDirectory>(std::move(file));
 
     default:
         return nullptr;
     }
 }
 
-std::unique_ptr<AppLoader> GetLoader(VirtualFile file) {
+std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file) {
     FileType type = IdentifyFile(file);
     FileType filename_type = GuessFromExtension(file->GetExtension());
 
@@ -128,7 +128,7 @@ std::unique_ptr<AppLoader> GetLoader(VirtualFile file) {
 
     LOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
 
-    return GetFileLoader(file, type);
+    return GetFileLoader(std::move(file), type);
 }
 
 } // namespace Loader

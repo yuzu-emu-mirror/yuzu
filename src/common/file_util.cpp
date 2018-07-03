@@ -803,12 +803,12 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
 std::vector<std::string> SplitPathComponents(const std::string& filename) {
     auto copy(filename);
     std::replace(copy.begin(), copy.end(), '\\', '/');
-    std::vector<std::string> out{};
+    std::vector<std::string> out;
 
     std::stringstream stream(filename);
     std::string item;
     while (std::getline(stream, item, '/'))
-        out.push_back(item);
+        out.push_back(std::move(item));
 
     return out;
 }
@@ -826,16 +826,17 @@ std::string GetParentPath(const std::string& path) {
     return out.erase(name_index);
 }
 
-std::string GetFilename(const std::string& path) {
-    auto out = path;
-    std::replace(out.begin(), out.end(), '\\', '/');
-    auto name_index = out.find_last_of('/');
+std::string GetFilename(std::string path) {
+    std::replace(path.begin(), path.end(), '\\', '/');
+    auto name_index = path.find_last_of('/');
     if (name_index == std::string::npos)
         return "";
-    return out.substr(name_index + 1);
+    return path.substr(name_index + 1);
 }
 
 std::string RemoveTrailingSlash(const std::string& path) {
+    if (path.empty())
+        return path;
     if (path.back() == '\\' || path.back() == '/')
         return path.substr(0, path.size() - 1);
 

@@ -37,7 +37,7 @@ struct NsoHeader {
     std::array<u32_le, 3> segments_compressed_size;
 };
 static_assert(sizeof(NsoHeader) == 0x6c, "NsoHeader has incorrect size.");
-static_assert(std::is_trivially_copyable<NsoHeader>::value, "NsoHeader isn't trivially copyable.");
+static_assert(std::is_trivially_copyable_v<NsoHeader>, "NsoHeader isn't trivially copyable.");
 
 struct ModHeader {
     u32_le magic;
@@ -50,9 +50,9 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-AppLoader_NSO::AppLoader_NSO(VirtualFile file) : AppLoader(file) {}
+AppLoader_NSO::AppLoader_NSO(FileSys::VirtualFile file) : AppLoader(std::move(file)) {}
 
-FileType AppLoader_NSO::IdentifyType(VirtualFile file) {
+FileType AppLoader_NSO::IdentifyType(const FileSys::VirtualFile& file) {
     u32 magic = 0;
     file->ReadObject(&magic);
 
@@ -95,7 +95,7 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-VAddr AppLoader_NSO::LoadModule(VirtualFile file, VAddr load_base) {
+VAddr AppLoader_NSO::LoadModule(FileSys::VirtualFile file, VAddr load_base) {
     if (file == nullptr)
         return {};
 

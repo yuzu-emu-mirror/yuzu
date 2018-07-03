@@ -16,14 +16,14 @@ namespace Loader {
 /// Loads an NCA file
 class AppLoader_NCA final : public AppLoader {
 public:
-    AppLoader_NCA(VirtualFile file);
+    explicit AppLoader_NCA(FileSys::VirtualFile file);
 
     /**
      * Returns the type of the file
      * @param file std::shared_ptr<VfsFile> open file
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
-    static FileType IdentifyType(VirtualFile file);
+    static FileType IdentifyType(const FileSys::VirtualFile& file);
 
     FileType GetFileType() override {
         return IdentifyType(file);
