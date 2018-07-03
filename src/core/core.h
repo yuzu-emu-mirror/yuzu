@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 #include "common/common_types.h"
+#include "core/arm/exclusive_monitor.h"
 #include "core/core_cpu.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/scheduler.h"
@@ -114,6 +115,11 @@ public:
         return CurrentCpuCore().ArmInterface();
     }
 
+    /// Gets the index of the currently running CPU core
+    size_t CurrentCoreIndex() {
+        return CurrentCpuCore().CoreIndex();
+    }
+
     /// Gets an ARM interface to the CPU core with the specified index
     ARM_Interface& ArmInterface(size_t core_index);
 
@@ -128,6 +134,11 @@ public:
     /// Gets the scheduler for the CPU core that is currently running
     Kernel::Scheduler& CurrentScheduler() {
         return *CurrentCpuCore().Scheduler();
+    }
+
+    /// Gets the exclusive monitor
+    ExclusiveMonitor& Monitor() {
+        return *cpu_exclusive_monitor;
     }
 
     /// Gets the scheduler for the CPU core with the specified index
@@ -186,6 +197,7 @@ private:
     std::unique_ptr<Tegra::GPU> gpu_core;
     std::shared_ptr<Tegra::DebugContext> debug_context;
     Kernel::SharedPtr<Kernel::Process> current_process;
+    std::shared_ptr<ExclusiveMonitor> cpu_exclusive_monitor;
     std::shared_ptr<CpuBarrier> cpu_barrier;
     std::array<std::shared_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
     std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;

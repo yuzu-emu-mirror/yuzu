@@ -6,15 +6,18 @@
 
 #include <memory>
 #include <dynarmic/A64/a64.h>
+#include <dynarmic/A64/exclusive_monitor.h>
 #include "common/common_types.h"
 #include "core/arm/arm_interface.h"
+#include "core/arm/exclusive_monitor.h"
 #include "core/arm/unicorn/arm_unicorn.h"
 
 class ARM_Dynarmic_Callbacks;
+class DynarmicExclusiveMonitor;
 
 class ARM_Dynarmic final : public ARM_Interface {
 public:
-    ARM_Dynarmic();
+    ARM_Dynarmic(std::shared_ptr<ExclusiveMonitor> exclusive_monitor, size_t core_index);
     ~ARM_Dynarmic();
 
     void MapBackingMemory(VAddr address, size_t size, u8* memory,
@@ -47,10 +50,35 @@ public:
     void PageTableChanged() override;
 
 private:
+    std::unique_ptr<Dynarmic::A64::Jit> MakeJit();
+
     friend class ARM_Dynarmic_Callbacks;
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
     std::unique_ptr<Dynarmic::A64::Jit> jit;
     ARM_Unicorn inner_unicorn;
 
+    size_t core_index;
+    std::shared_ptr<DynarmicExclusiveMonitor> exclusive_monitor;
+
     Memory::PageTable* current_page_table = nullptr;
+};
+
+class DynarmicExclusiveMonitor final : public ExclusiveMonitor {
+public:
+    explicit DynarmicExclusiveMonitor(size_t core_count);
+    ~DynarmicExclusiveMonitor();
+
+    void SetExclusive(size_t core_index, u64 addr) override;
+    void ClearExclusive() override;
+
+    bool ExclusiveWrite8(size_t core_index, u64 vaddr, u8 value) override;
+    bool ExclusiveWrite16(size_t core_index, u64 vaddr, u16 value) override;
+    bool ExclusiveWrite32(size_t core_index, u64 vaddr, u32 value) override;
+    bool ExclusiveWrite64(size_t core_index, u64 vaddr, u64 value) override;
+    bool ExclusiveWrite128(size_t core_index, u64 vaddr,
+                           std::array<std::uint64_t, 2> value) override;
+
+private:
+    friend class ARM_Dynarmic;
+    Dynarmic::A64::ExclusiveMonitor monitor;
 };

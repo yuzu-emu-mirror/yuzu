@@ -1,5 +1,7 @@
 add_library(core STATIC
     arm/arm_interface.h
+    arm/exclusive_monitor.cpp
+    arm/exclusive_monitor.h
     arm/unicorn/arm_unicorn.cpp
     arm/unicorn/arm_unicorn.h
     core.cpp
