@@ -166,6 +166,7 @@ enum class SubOp : u64 {
     Lg2 = 0x3,
     Rcp = 0x4,
     Rsq = 0x5,
+    Sqrt = 0x8,
 };
 
 enum class F2iRoundingOp : u64 {
