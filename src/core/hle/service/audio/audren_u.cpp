@@ -107,8 +107,7 @@ private:
                 }
             }
         }
-        std::memcpy(output.data() + sizeof(UpdateDataHeader) + response_data.memory_pools_size +
-                        response_data.voice_resource_size,
+        std::memcpy(output.data() + sizeof(UpdateDataHeader) + response_data.memory_pools_size,
                     voice_status_list.data(), response_data.voices_size);
 
         ctx.WriteBuffer(output);
