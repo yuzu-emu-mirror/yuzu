@@ -387,7 +387,7 @@ u64 GetSize(FILE* f) {
 bool CreateEmptyFile(const std::string& filename) {
     LOG_TRACE(Common_Filesystem, "{}", filename);
 
-    if (!FileUtil::IOFile(filename, "wb")) {
+    if (!FileUtil::IOFile(filename, "wb").IsOpen()) {
         LOG_ERROR(Common_Filesystem, "failed {}: {}", filename, GetLastErrorMsg());
         return false;
     }

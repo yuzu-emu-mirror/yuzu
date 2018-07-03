@@ -191,7 +191,7 @@ ResultCode RegisterFileSystem(std::unique_ptr<DeferredFilesystem>&& factory, Typ
     ASSERT_MSG(inserted, "Tried to register more than one system with same id code");
 
     auto& filesystem = result.first->second;
-    NGLOG_DEBUG(Service_FS, "Registered file system with id code 0x{:08X}", static_cast<u32>(type));
+    LOG_DEBUG(Service_FS, "Registered file system with id code 0x{:08X}", static_cast<u32>(type));
     return RESULT_SUCCESS;
 }
 
@@ -200,13 +200,13 @@ ResultCode RegisterRomFS(VirtualFile filesystem) {
                "Tried to register more than one system with same id code");
 
     filesystem_romfs = filesystem;
-    NGLOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}",
-                filesystem->GetName(), static_cast<u32>(Type::RomFS));
+    LOG_DEBUG(Service_FS, "Registered file system {} with id code 0x{:08X}", filesystem->GetName(),
+              static_cast<u32>(Type::RomFS));
     return RESULT_SUCCESS;
 }
 
 ResultVal<VirtualDir> OpenFileSystem(Type type) {
-    NGLOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
+    LOG_TRACE(Service_FS, "Opening FileSystem with type={}", static_cast<u32>(type));
 
     auto itr = filesystem_map.find(type);
     if (itr == filesystem_map.end()) {

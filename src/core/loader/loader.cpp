@@ -121,12 +121,12 @@ std::unique_ptr<AppLoader> GetLoader(VirtualFile file) {
     FileType filename_type = GuessFromExtension(file->GetExtension());
 
     if (type != filename_type) {
-        NGLOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());
+        LOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());
         if (FileType::Unknown == type)
             type = filename_type;
     }
 
-    NGLOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
+    LOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
 
     return GetFileLoader(file, type);
 }

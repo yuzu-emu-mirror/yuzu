@@ -59,7 +59,7 @@ static_assert(sizeof(RomFSSuperblock) == 0xE8, "RomFSSuperblock has incorrect si
 
 NCA::NCA(VirtualFile file_) : file(file_) {
     if (sizeof(NCAHeader) != file->ReadObject(&header))
-        NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+        LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
     if (!IsValidNCA(header)) {
         status = Loader::ResultStatus::ErrorInvalidFormat;
@@ -75,13 +75,13 @@ NCA::NCA(VirtualFile file_) : file(file_) {
         NCASectionHeaderBlock block{};
         if (sizeof(NCASectionHeaderBlock) !=
             file->ReadObject(&block, SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE))
-            NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+            LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
         if (block.filesystem_type == NCASectionFilesystemType::ROMFS) {
             RomFSSuperblock sb{};
             if (sizeof(RomFSSuperblock) !=
                 file->ReadObject(&sb, SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE))
-                NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+                LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
             const size_t romfs_offset =
                 header.section_tables[i].media_offset * MEDIA_OFFSET_MULTIPLIER +
@@ -94,7 +94,7 @@ NCA::NCA(VirtualFile file_) : file(file_) {
             // Seek back to beginning of this section.
             if (sizeof(PFS0Superblock) !=
                 file->ReadObject(&sb, SECTION_HEADER_OFFSET + i * SECTION_HEADER_SIZE))
-                NGLOG_CRITICAL(Loader, "File reader errored out during header read.");
+                LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
             u64 offset = (static_cast<u64>(header.section_tables[i].media_offset) *
                           MEDIA_OFFSET_MULTIPLIER) +

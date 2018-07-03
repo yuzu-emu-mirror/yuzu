@@ -100,12 +100,12 @@ std::shared_ptr<VfsDirectory> PartitionFilesystem::GetParentDirectory() const {
 }
 
 void PartitionFilesystem::PrintDebugInfo() const {
-    NGLOG_DEBUG(Service_FS, "Magic:                  {:.4}", pfs_header.magic);
-    NGLOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
+    LOG_DEBUG(Service_FS, "Magic:                  {:.4}", pfs_header.magic);
+    LOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
     for (u32 i = 0; i < pfs_header.num_entries; i++) {
-        NGLOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
-                    pfs_files[i]->GetName(), pfs_files[i]->GetSize(),
-                    dynamic_cast<OffsetVfsFile*>(pfs_files[i].get())->GetOffset());
+        LOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
+                  pfs_files[i]->GetName(), pfs_files[i]->GetSize(),
+                  dynamic_cast<OffsetVfsFile*>(pfs_files[i].get())->GetOffset());
     }
 }
 

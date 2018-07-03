@@ -152,7 +152,7 @@ private:
     }
 
     void Flush(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_FS, "called");
+        LOG_DEBUG(Service_FS, "called");
 
         // Exists for SDK compatibiltity -- No need to flush file.
 
