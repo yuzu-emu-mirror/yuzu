@@ -18,6 +18,11 @@
 
 namespace Service::FileSystem {
 
+// Size of emulated sd card free space, reported in bytes.
+// Just using 128GiB because thats
+// TODO(DarkLordZach): Eventually make this configurable in settings.
+constexpr u64 EMULATED_SD_REPORTED_SIZE = 1 << 37;
+
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
                                                        const std::string& dir_name) {
     if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
@@ -129,7 +134,12 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
     auto file = backing->GetFileRelative(path);
     if (file == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
-    // TODO(DarkLordZach): Error checking/result modification with different modes.
+
+    if ((static_cast<u32>(mode) & static_cast<u32>(FileSys::Mode::Append)) != 0) {
+        return MakeResult<FileSys::VirtualFile>(
+            std::make_shared<FileSys::OffsetVfsFile>(file, 0, file->GetSize()));
+    }
+
     return MakeResult<FileSys::VirtualFile>(file);
 }
 
@@ -141,9 +151,8 @@ ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const s
 }
 
 u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
-    // TODO(DarkLordZach): Infinite? Actual? Is this actually used productively or...?
     if (backing->IsWritable())
-        return std::numeric_limits<u64>::max();
+        return EMULATED_SD_REPORTED_SIZE;
 
     return 0;
 }
