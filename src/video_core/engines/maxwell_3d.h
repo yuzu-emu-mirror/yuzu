@@ -281,14 +281,14 @@ public:
         };
 
         enum class ComparisonOp : u32 {
-            Never = 0x200,
-            Less = 0x201,
-            Equal = 0x202,
-            LessEqual = 0x203,
-            Greater = 0x204,
-            NotEqual = 0x205,
-            GreaterEqual = 0x206,
-            Always = 0x207,
+            Never = 0,
+            Less = 1,
+            Equal = 2,
+            LessEqual = 3,
+            Greater = 4,
+            NotEqual = 5,
+            GreaterEqual = 6,
+            Always = 7,
         };
 
         struct Cull {
@@ -475,7 +475,7 @@ public:
 
                 INSERT_PADDING_WORDS(0x8);
 
-                ComparisonOp depth_test_func;
+                BitField<0, 3, ComparisonOp> depth_test_func;
 
                 INSERT_PADDING_WORDS(0xB);
 
