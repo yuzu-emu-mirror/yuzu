@@ -98,10 +98,10 @@ private:
                 voice_status_list[i].played_sample_count = 0;
                 voice_status_list[i].wave_buffer_consumed = 0;
             } else if (voice_info[i].play_state == (u8)PlayStates::Started) {
-                for (u32 j = 0; j < voice_info[i].wave_buffer_count; j++) {
+                for (u32 buff_idx = 0; buff_idx < voice_info[i].wave_buffer_count; buff_idx++) {
                     voice_status_list[i].played_sample_count +=
-                        (voice_info[i].wave_buffer[i].end_sample_offset -
-                         voice_info[i].wave_buffer[i].start_sample_offset) /
+                        (voice_info[i].wave_buffer[buff_idx].end_sample_offset -
+                         voice_info[i].wave_buffer[buff_idx].start_sample_offset) /
                         2;
                     voice_status_list[i].wave_buffer_consumed++;
                 }
