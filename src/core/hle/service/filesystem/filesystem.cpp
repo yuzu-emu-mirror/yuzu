@@ -19,9 +19,9 @@
 namespace Service::FileSystem {
 
 // Size of emulated sd card free space, reported in bytes.
-// Just using 128GiB because thats
+// Just using 32GB because thats reasonable
 // TODO(DarkLordZach): Eventually make this configurable in settings.
-constexpr u64 EMULATED_SD_REPORTED_SIZE = 1 << 37;
+constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
                                                        const std::string& dir_name) {

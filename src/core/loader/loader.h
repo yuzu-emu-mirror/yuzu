@@ -50,12 +50,12 @@ FileType IdentifyFile(FileSys::VirtualFile file);
 FileType IdentifyFile(const std::string& file_name);
 
 /**
- * Guess the type of a bootable file from its extension
- * @param extension String extension of bootable file
+ * Guess the type of a bootable file from its name
+ * @param name String name of bootable file
  * @return FileType of file. Note: this will return FileType::Unknown if it is unable to determine
  * a filetype, and will never return FileType::Error.
  */
-FileType GuessFromExtension(const std::string& extension);
+FileType GuessFromFilename(const std::string& name);
 
 /**
  * Convert a FileType into a string which can be displayed to the user.

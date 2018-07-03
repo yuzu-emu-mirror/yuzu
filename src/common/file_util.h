@@ -160,6 +160,9 @@ std::string GetParentPath(const std::string& path);
 // Gets the filename of the path
 std::string GetFilename(std::string path);
 
+// Gets the extension of the filename
+std::string GetExtensionFromFilename(const std::string& name);
+
 // Removes the final '/' or '\' if one exists
 std::string RemoveTrailingSlash(const std::string& path);
 

@@ -834,6 +834,14 @@ std::string GetFilename(std::string path) {
     return path.substr(name_index + 1);
 }
 
+std::string GetExtensionFromFilename(const std::string& name) {
+    size_t index = name.find_last_of('.');
+    if (index == std::string::npos)
+        return "";
+
+    return name.substr(index + 1);
+}
+
 std::string RemoveTrailingSlash(const std::string& path) {
     if (path.empty())
         return path;

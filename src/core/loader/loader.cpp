@@ -45,16 +45,19 @@ FileType IdentifyFile(const std::string& file_name) {
     return IdentifyFile(FileSys::VirtualFile(std::make_shared<FileSys::RealVfsFile>(file_name)));
 }
 
-FileType GuessFromExtension(const std::string& extension_) {
-    std::string extension = Common::ToLower(extension_);
+FileType GuessFromFilename(const std::string& name) {
+    if (name == "main")
+        return FileType::DeconstructedRomDirectory;
+
+    const std::string extension = Common::ToLower(FileUtil::GetExtensionFromFilename(name));
 
     if (extension == "elf")
         return FileType::ELF;
-    else if (extension == "nro")
+    if (extension == "nro")
         return FileType::NRO;
-    else if (extension == "nso")
+    if (extension == "nso")
         return FileType::NSO;
-    else if (extension == "nca")
+    if (extension == "nca")
         return FileType::NCA;
 
     return FileType::Unknown;
@@ -118,7 +121,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileT
 
 std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file) {
     FileType type = IdentifyFile(file);
-    FileType filename_type = GuessFromExtension(file->GetExtension());
+    FileType filename_type = GuessFromFilename(file->GetName());
 
     if (type != filename_type) {
         LOG_WARNING(Loader, "File {} has a different type than its extension.", file->GetName());

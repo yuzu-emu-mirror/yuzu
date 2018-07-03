@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include "common/file_util.h"
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
@@ -11,11 +12,7 @@ namespace FileSys {
 VfsFile::~VfsFile() = default;
 
 std::string VfsFile::GetExtension() const {
-    size_t index = GetName().find_last_of('.');
-    if (index == std::string::npos)
-        return "";
-
-    return GetName().substr(index + 1);
+    return FileUtil::GetExtensionFromFilename(GetName());
 }
 
 VfsDirectory::~VfsDirectory() = default;
