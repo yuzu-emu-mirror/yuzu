@@ -123,7 +123,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
 }
 
 ResultVal<VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
-                                                       FileSys::Mode mode) const {
+                                                            FileSys::Mode mode) const {
     auto file = backing->GetFileRelative(path);
     if (file == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
