@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
