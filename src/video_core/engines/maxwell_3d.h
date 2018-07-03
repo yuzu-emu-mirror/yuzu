@@ -280,6 +280,34 @@ public:
             UnsignedInt = 0x2,
         };
 
+        enum class ComparisonOp : u32 {
+            Never = 0x200,
+            Less = 0x201,
+            Equal = 0x202,
+            LessEqual = 0x203,
+            Greater = 0x204,
+            NotEqual = 0x205,
+            GreaterEqual = 0x206,
+            Always = 0x207,
+        };
+
+        struct Cull {
+            enum class FrontFace : u32 {
+                ClockWise = 0x0900,
+                CounterClockWise = 0x0901,
+            };
+
+            enum class CullFace : u32 {
+                Front = 0x0404,
+                Back = 0x0405,
+                FrontAndBack = 0x0408,
+            };
+
+            u32 enabled;
+            FrontFace front_face;
+            CullFace cull_face;
+        };
+
         struct Blend {
             enum class Equation : u32 {
                 Add = 1,
@@ -413,7 +441,7 @@ public:
                 struct {
                     u32 address_high;
                     u32 address_low;
-                    u32 format;
+                    Tegra::DepthFormat format;
                     u32 block_dimensions;
                     u32 layer_stride;
 
@@ -435,11 +463,21 @@ public:
                     };
                 } rt_control;
 
-                INSERT_PADDING_WORDS(0x31);
+                INSERT_PADDING_WORDS(0x2B);
+
+                u32 depth_test_enable;
+
+                INSERT_PADDING_WORDS(0x5);
 
                 u32 independent_blend_enable;
 
-                INSERT_PADDING_WORDS(0x15);
+                u32 depth_write_enabled;
+
+                INSERT_PADDING_WORDS(0x8);
+
+                ComparisonOp depth_test_func;
+
+                INSERT_PADDING_WORDS(0xB);
 
                 struct {
                     u32 separate_alpha;
@@ -540,7 +578,13 @@ public:
                     }
                 } index_array;
 
-                INSERT_PADDING_WORDS(0xC7);
+                INSERT_PADDING_WORDS(0x7);
+
+                INSERT_PADDING_WORDS(0x46);
+
+                Cull cull;
+
+                INSERT_PADDING_WORDS(0x77);
 
                 struct {
                     u32 query_address_high;
@@ -747,7 +791,10 @@ ASSERT_REG_POSITION(vertex_buffer, 0x35D);
 ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
 ASSERT_REG_POSITION(rt_control, 0x487);
+ASSERT_REG_POSITION(depth_test_enable, 0x4B3);
 ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
+ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);
+ASSERT_REG_POSITION(depth_test_func, 0x4C3);
 ASSERT_REG_POSITION(blend, 0x4CF);
 ASSERT_REG_POSITION(vb_element_base, 0x50D);
 ASSERT_REG_POSITION(tsc, 0x557);
@@ -755,6 +802,7 @@ ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(index_array, 0x5F2);
+ASSERT_REG_POSITION(cull, 0x646);
 ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(independent_blend, 0x780);

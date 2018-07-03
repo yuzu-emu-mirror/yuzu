@@ -304,10 +304,15 @@ void RasterizerOpenGL::DrawArrays() {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
-    // TODO(bunnei): Implement these
+    // Sync the depth test state before configuring the framebuffer surfaces.
+    SyncDepthTestState();
+
+    // TODO(bunnei): Implement this
     const bool has_stencil = false;
+
     const bool using_color_fb = true;
-    const bool using_depth_fb = false;
+    const bool using_depth_fb = regs.zeta.Address() != 0;
+
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
     const bool write_color_fb =
@@ -338,11 +343,9 @@ void RasterizerOpenGL::DrawArrays() {
     // Bind the framebuffer surfaces
     BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
 
-    // Sync the viewport
     SyncViewport(surfaces_rect);
-
-    // Sync the blend state registers
     SyncBlendState();
+    SyncCullMode();
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
@@ -712,7 +715,11 @@ void RasterizerOpenGL::SyncClipCoef() {
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    UNREACHABLE();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.cull.enabled = regs.cull.enabled != 0;
+    state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
+    state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
@@ -721,6 +728,14 @@ void RasterizerOpenGL::SyncDepthScale() {
 
 void RasterizerOpenGL::SyncDepthOffset() {
     UNREACHABLE();
+}
+
+void RasterizerOpenGL::SyncDepthTestState() {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.depth.test_enabled = regs.depth_test_enable != 0;
+    state.depth.write_mask = regs.depth_write_enabled ? GL_TRUE : GL_FALSE;
+    state.depth.test_func = MaxwellToGL::ComparisonOp(regs.depth_test_func);
 }
 
 void RasterizerOpenGL::SyncBlendState() {

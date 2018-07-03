@@ -126,6 +126,9 @@ private:
     /// Syncs the depth offset to match the guest state
     void SyncDepthOffset();
 
+    /// Syncs the depth test state to match the guest state
+    void SyncDepthTestState();
+
     /// Syncs the blend state to match the guest state
     void SyncBlendState();
 
