@@ -14,7 +14,7 @@ namespace FileSys {
 RomFS_Factory::RomFS_Factory(Loader::AppLoader& app_loader) {
     // Load the RomFS from the app
     if (Loader::ResultStatus::Success != app_loader.ReadRomFS(romfs_file, data_offset, data_size)) {
-        NGLOG_ERROR(Service_FS, "Unable to read RomFS!");
+        LOG_ERROR(Service_FS, "Unable to read RomFS!");
     }
 }
 
@@ -24,13 +24,13 @@ ResultVal<std::unique_ptr<FileSystemBackend>> RomFS_Factory::Open(const Path& pa
 }
 
 ResultCode RomFS_Factory::Format(const Path& path) {
-    NGLOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
+    LOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
 }
 
 ResultVal<ArchiveFormatInfo> RomFS_Factory::GetFormatInfo(const Path& path) const {
-    NGLOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
+    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
 }

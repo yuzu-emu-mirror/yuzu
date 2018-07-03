@@ -9,8 +9,8 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocSetNVMAPfdCommand:
@@ -24,7 +24,7 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, std::vector
 u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetNvmapFD params{};
     std::memcpy(&params, input.data(), input.size());
-    NGLOG_DEBUG(Service_NVDRV, "called, fd={}", params.nvmap_fd);
+    LOG_DEBUG(Service_NVDRV, "called, fd={}", params.nvmap_fd);
     nvmap_fd = params.nvmap_fd;
     return 0;
 }

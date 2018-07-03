@@ -31,7 +31,7 @@ void MaxwellDMA::WriteReg(u32 method, u32 value) {
 }
 
 void MaxwellDMA::HandleCopy() {
-    NGLOG_WARNING(HW_GPU, "Requested a DMA copy");
+    LOG_WARNING(HW_GPU, "Requested a DMA copy");
 
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();
@@ -49,7 +49,11 @@ void MaxwellDMA::HandleCopy() {
     ASSERT(regs.src_params.pos_y == 0);
     ASSERT(regs.dst_params.pos_x == 0);
     ASSERT(regs.dst_params.pos_y == 0);
-    ASSERT(regs.exec.is_dst_linear != regs.exec.is_src_linear);
+
+    if (regs.exec.is_dst_linear == regs.exec.is_src_linear) {
+        Memory::CopyBlock(dest_cpu, source_cpu, regs.x_count * regs.y_count);
+        return;
+    }
 
     u8* src_buffer = Memory::GetPointer(source_cpu);
     u8* dst_buffer = Memory::GetPointer(dest_cpu);

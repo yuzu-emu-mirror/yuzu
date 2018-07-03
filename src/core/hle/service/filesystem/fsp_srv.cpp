@@ -36,7 +36,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -88,7 +88,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -125,7 +125,7 @@ private:
         const s64 offset = rp.Pop<s64>();
         const s64 length = rp.Pop<s64>();
 
-        NGLOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
+        LOG_DEBUG(Service_FS, "called, offset=0x{:X}, length={}", offset, length);
 
         // Error checking
         if (length < 0) {
@@ -153,7 +153,7 @@ private:
     }
 
     void Flush(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_FS, "called");
+        LOG_DEBUG(Service_FS, "called");
         backend->Flush();
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -164,7 +164,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 size = rp.Pop<u64>();
         backend->SetSize(size);
-        NGLOG_DEBUG(Service_FS, "called, size={}", size);
+        LOG_DEBUG(Service_FS, "called, size={}", size);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -172,7 +172,7 @@ private:
 
     void GetSize(Kernel::HLERequestContext& ctx) {
         const u64 size = backend->GetSize();
-        NGLOG_DEBUG(Service_FS, "called, size={}", size);
+        LOG_DEBUG(Service_FS, "called, size={}", size);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
@@ -198,7 +198,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 unk = rp.Pop<u64>();
 
-        NGLOG_DEBUG(Service_FS, "called, unk=0x{:X}", unk);
+        LOG_DEBUG(Service_FS, "called, unk=0x{:X}", unk);
 
         // Calculate how many entries we can fit in the output buffer
         u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
@@ -220,7 +220,7 @@ private:
     }
 
     void GetEntryCount(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_FS, "called");
+        LOG_DEBUG(Service_FS, "called");
 
         u64 count = backend->GetEntryCount();
 
@@ -264,7 +264,7 @@ public:
         u64 mode = rp.Pop<u64>();
         u32 size = rp.Pop<u32>();
 
-        NGLOG_DEBUG(Service_FS, "called file {} mode 0x{:X} size 0x{:08X}", name, mode, size);
+        LOG_DEBUG(Service_FS, "called file {} mode 0x{:X} size 0x{:08X}", name, mode, size);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateFile(name, size));
@@ -276,7 +276,7 @@ public:
         auto file_buffer = ctx.ReadBuffer();
         std::string name = Common::StringFromBuffer(file_buffer);
 
-        NGLOG_DEBUG(Service_FS, "called file {}", name);
+        LOG_DEBUG(Service_FS, "called file {}", name);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->DeleteFile(name));
@@ -288,7 +288,7 @@ public:
         auto file_buffer = ctx.ReadBuffer();
         std::string name = Common::StringFromBuffer(file_buffer);
 
-        NGLOG_DEBUG(Service_FS, "called directory {}", name);
+        LOG_DEBUG(Service_FS, "called directory {}", name);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->CreateDirectory(name));
@@ -306,7 +306,7 @@ public:
         Memory::ReadBlock(ctx.BufferDescriptorX()[1].Address(), buffer.data(), buffer.size());
         std::string dst_name = Common::StringFromBuffer(buffer);
 
-        NGLOG_DEBUG(Service_FS, "called file '{}' to file '{}'", src_name, dst_name);
+        LOG_DEBUG(Service_FS, "called file '{}' to file '{}'", src_name, dst_name);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(backend->RenameFile(src_name, dst_name));
@@ -320,7 +320,7 @@ public:
 
         auto mode = static_cast<FileSys::Mode>(rp.Pop<u32>());
 
-        NGLOG_DEBUG(Service_FS, "called file {} mode {}", name, static_cast<u32>(mode));
+        LOG_DEBUG(Service_FS, "called file {} mode {}", name, static_cast<u32>(mode));
 
         auto result = backend->OpenFile(name, mode);
         if (result.Failed()) {
@@ -345,7 +345,7 @@ public:
         // TODO(Subv): Implement this filter.
         u32 filter_flags = rp.Pop<u32>();
 
-        NGLOG_DEBUG(Service_FS, "called directory {} filter {}", name, filter_flags);
+        LOG_DEBUG(Service_FS, "called directory {} filter {}", name, filter_flags);
 
         auto result = backend->OpenDirectory(name);
         if (result.Failed()) {
@@ -367,7 +367,7 @@ public:
         auto file_buffer = ctx.ReadBuffer();
         std::string name = Common::StringFromBuffer(file_buffer);
 
-        NGLOG_DEBUG(Service_FS, "called file {}", name);
+        LOG_DEBUG(Service_FS, "called file {}", name);
 
         auto result = backend->GetEntryType(name);
         if (result.Failed()) {
@@ -382,7 +382,7 @@ public:
     }
 
     void Commit(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_FS, "(STUBBED) called");
+        LOG_WARNING(Service_FS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -498,14 +498,14 @@ void FSP_SRV::TryLoadRomFS() {
 }
 
 void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_FS, "called");
+    LOG_DEBUG(Service_FS, "called");
 
     FileSys::Path unused;
     auto filesystem = OpenFileSystem(Type::SDMC, unused).Unwrap();
@@ -522,14 +522,14 @@ void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
     u128 uid = rp.PopRaw<u128>();
 
-    NGLOG_WARNING(Service_FS, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
+    LOG_WARNING(Service_FS, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
 
     FileSys::Path unused;
     auto filesystem = OpenFileSystem(Type::SaveData, unused).Unwrap();
@@ -540,7 +540,7 @@ void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -548,12 +548,12 @@ void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_FS, "called");
+    LOG_DEBUG(Service_FS, "called");
 
     TryLoadRomFS();
     if (!romfs) {
         // TODO (bunnei): Find the right error code to use here
-        NGLOG_CRITICAL(Service_FS, "no file system interface available!");
+        LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultCode(-1));
         return;
@@ -562,7 +562,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     // Attempt to open a StorageBackend interface to the RomFS
     auto storage = romfs->OpenFile({}, {});
     if (storage.Failed()) {
-        NGLOG_CRITICAL(Service_FS, "no storage interface available!");
+        LOG_CRITICAL(Service_FS, "no storage interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(storage.Code());
         return;
@@ -574,7 +574,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called, using OpenDataStorageByCurrentProcess");
+    LOG_WARNING(Service_FS, "(STUBBED) called, using OpenDataStorageByCurrentProcess");
     OpenDataStorageByCurrentProcess(ctx);
 }
 

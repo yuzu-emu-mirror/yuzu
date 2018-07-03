@@ -24,6 +24,15 @@ enum class RenderTargetFormat : u32 {
     R11G11B10_FLOAT = 0xE0,
 };
 
+enum class DepthFormat : u32 {
+    Z32_FLOAT = 0xA,
+    Z16_UNORM = 0x13,
+    S8_Z24_UNORM = 0x14,
+    Z24_X8_UNORM = 0x15,
+    Z24_S8_UNORM = 0x16,
+    Z24_C8_UNORM = 0x18,
+};
+
 /// Returns the number of bytes per pixel of each rendertarget format.
 u32 RenderTargetBytesPerPixel(RenderTargetFormat format);
 

@@ -65,7 +65,7 @@ public:
 
 private:
     void SetOption(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_SSL, "(STUBBED) called");
+        LOG_WARNING(Service_SSL, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
@@ -73,7 +73,7 @@ private:
     }
 
     void CreateConnection(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_SSL, "(STUBBED) called");
+        LOG_WARNING(Service_SSL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -82,7 +82,7 @@ private:
 };
 
 void SSL::CreateContext(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_SSL, "(STUBBED) called");
+    LOG_WARNING(Service_SSL, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -103,7 +103,7 @@ SSL::SSL() : ServiceFramework("ssl") {
 }
 
 void SSL::SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_SSL, "(STUBBED) called");
+    LOG_WARNING(Service_SSL, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
     u32 unk1 = rp.Pop<u32>(); // Probably minor/major?
     u32 unk2 = rp.Pop<u32>(); // TODO(ogniK): Figure out what this does

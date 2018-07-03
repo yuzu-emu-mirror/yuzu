@@ -46,7 +46,7 @@ Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, siz
 
     Loader::ResultStatus result = Load(file_data);
     if (result != Loader::ResultStatus::Success)
-        NGLOG_ERROR(Service_FS, "Failed to load PFS from file {}!", file_path);
+        LOG_ERROR(Service_FS, "Failed to load PFS from file {}!", file_path);
 
     return result;
 }
@@ -125,12 +125,12 @@ u64 PartitionFilesystem::GetFileSize(const std::string& name) const {
 }
 
 void PartitionFilesystem::Print() const {
-    NGLOG_DEBUG(Service_FS, "Magic:                  {}", pfs_header.magic);
-    NGLOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
+    LOG_DEBUG(Service_FS, "Magic:                  {}", pfs_header.magic);
+    LOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
     for (u32 i = 0; i < pfs_header.num_entries; i++) {
-        NGLOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
-                    pfs_entries[i].name.c_str(), pfs_entries[i].fs_entry.size,
-                    GetFileOffset(pfs_entries[i].name));
+        LOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
+                  pfs_entries[i].name.c_str(), pfs_entries[i].fs_entry.size,
+                  GetFileOffset(pfs_entries[i].name));
     }
 }
 } // namespace FileSys

@@ -9,7 +9,6 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/file_sys/romfs_factory.h"
-#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -133,8 +132,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         const VAddr load_addr = next_load_addr;
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
-            NGLOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
-            GDBStub::RegisterModule(module, load_addr, next_load_addr);
+            LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         } else {
             next_load_addr = load_addr;
         }
@@ -165,7 +163,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset, u64& size) {
 
     if (filepath_romfs.empty()) {
-        NGLOG_DEBUG(Loader, "No RomFS available");
+        LOG_DEBUG(Loader, "No RomFS available");
         return ResultStatus::ErrorNotUsed;
     }
 
@@ -178,8 +176,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(
     offset = 0;
     size = romfs_file->GetSize();
 
-    NGLOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
-    NGLOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
+    LOG_DEBUG(Loader, "RomFS offset:           0x{:016X}", offset);
+    LOG_DEBUG(Loader, "RomFS size:             0x{:016X}", size);
 
     // Reset read pointer
     file.Seek(0, SEEK_SET);

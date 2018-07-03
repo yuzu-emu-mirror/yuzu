@@ -112,7 +112,7 @@ RasterizerOpenGL::RasterizerOpenGL() {
 
     glEnable(GL_BLEND);
 
-    NGLOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
+    LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
@@ -165,9 +165,9 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
     // assume every shader uses them all.
     for (unsigned index = 0; index < 16; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
-        NGLOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
-                    index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
-                    attrib.offset.Value(), attrib.IsNormalized());
+        LOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
+                  index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
+                  attrib.offset.Value(), attrib.IsNormalized());
 
         auto& buffer = regs.vertex_array[attrib.buffer];
         ASSERT(buffer.IsEnabled());
@@ -251,8 +251,8 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
             break;
         }
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset=0x{:08X}",
-                           index, shader_config.enable.Value(), shader_config.offset);
+            LOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset=0x{:08X}", index,
+                         shader_config.enable.Value(), shader_config.offset);
             UNREACHABLE();
         }
 
@@ -304,10 +304,15 @@ void RasterizerOpenGL::DrawArrays() {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
-    // TODO(bunnei): Implement these
+    // Sync the depth test state before configuring the framebuffer surfaces.
+    SyncDepthTestState();
+
+    // TODO(bunnei): Implement this
     const bool has_stencil = false;
+
     const bool using_color_fb = true;
-    const bool using_depth_fb = false;
+    const bool using_depth_fb = regs.zeta.Address() != 0;
+
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
     const bool write_color_fb =
@@ -338,11 +343,9 @@ void RasterizerOpenGL::DrawArrays() {
     // Bind the framebuffer surfaces
     BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
 
-    // Sync the viewport
     SyncViewport(surfaces_rect);
-
-    // Sync the blend state registers
     SyncBlendState();
+    SyncCullMode();
 
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
@@ -412,14 +415,16 @@ void RasterizerOpenGL::DrawArrays() {
 
     const GLenum primitive_mode{MaxwellToGL::PrimitiveTopology(regs.draw.topology)};
     if (is_indexed) {
-        const GLint index_min{static_cast<GLint>(regs.index_array.first)};
-        const GLint index_max{static_cast<GLint>(regs.index_array.first + regs.index_array.count)};
-        glDrawRangeElementsBaseVertex(primitive_mode, index_min, index_max, regs.index_array.count,
-                                      MaxwellToGL::IndexFormat(regs.index_array.format),
-                                      reinterpret_cast<const void*>(index_buffer_offset),
-                                      -index_min);
+        const GLint base_vertex{static_cast<GLint>(regs.vb_element_base)};
+
+        // Adjust the index buffer offset so it points to the first desired index.
+        index_buffer_offset += regs.index_array.first * regs.index_array.FormatSizeInBytes();
+
+        glDrawElementsBaseVertex(primitive_mode, regs.index_array.count,
+                                 MaxwellToGL::IndexFormat(regs.index_array.format),
+                                 reinterpret_cast<const void*>(index_buffer_offset), base_vertex);
     } else {
-        glDrawArrays(primitive_mode, 0, regs.vertex_buffer.count);
+        glDrawArrays(primitive_mode, regs.vertex_buffer.first, regs.vertex_buffer.count);
     }
 
     // Disable scissor test
@@ -582,8 +587,8 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
             size = buffer.size * sizeof(float);
 
             if (size > MaxConstbufferSize) {
-                NGLOG_ERROR(HW_GPU, "indirect constbuffer size {} exceeds maximum {}", size,
-                            MaxConstbufferSize);
+                LOG_ERROR(HW_GPU, "indirect constbuffer size {} exceeds maximum {}", size,
+                          MaxConstbufferSize);
                 size = MaxConstbufferSize;
             }
         } else {
@@ -636,7 +641,11 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
         glProgramUniform1i(program, uniform, current_bindpoint);
 
         const auto texture = maxwell3d.GetStageTexture(entry.GetStage(), entry.GetOffset());
-        ASSERT(texture.enabled);
+
+        if (!texture.enabled) {
+            state.texture_units[current_bindpoint].texture_2d = 0;
+            continue;
+        }
 
         texture_samplers[current_bindpoint].SyncWithConfig(texture.tsc);
         Surface surface = res_cache.GetTextureSurface(texture);
@@ -706,7 +715,14 @@ void RasterizerOpenGL::SyncClipCoef() {
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    UNREACHABLE();
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.cull.enabled = regs.cull.enabled != 0;
+
+    if (state.cull.enabled) {
+        state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
+        state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
+    }
 }
 
 void RasterizerOpenGL::SyncDepthScale() {
@@ -715,6 +731,18 @@ void RasterizerOpenGL::SyncDepthScale() {
 
 void RasterizerOpenGL::SyncDepthOffset() {
     UNREACHABLE();
+}
+
+void RasterizerOpenGL::SyncDepthTestState() {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    state.depth.test_enabled = regs.depth_test_enable != 0;
+    state.depth.write_mask = regs.depth_write_enabled ? GL_TRUE : GL_FALSE;
+
+    if (!state.depth.test_enabled)
+        return;
+
+    state.depth.test_func = MaxwellToGL::ComparisonOp(regs.depth_test_func);
 }
 
 void RasterizerOpenGL::SyncBlendState() {

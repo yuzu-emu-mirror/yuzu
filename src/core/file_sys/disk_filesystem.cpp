@@ -80,19 +80,19 @@ ResultCode Disk_FileSystem::RenameFile(const std::string& src_path,
 }
 
 ResultCode Disk_FileSystem::DeleteDirectory(const Path& path) const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode Disk_FileSystem::DeleteDirectoryRecursively(const Path& path) const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode Disk_FileSystem::CreateFile(const std::string& path, u64 size) const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
 
     std::string full_path = base_directory + path;
     if (size == 0) {
@@ -107,7 +107,7 @@ ResultCode Disk_FileSystem::CreateFile(const std::string& path, u64 size) const 
         return RESULT_SUCCESS;
     }
 
-    NGLOG_ERROR(Service_FS, "Too large file");
+    LOG_ERROR(Service_FS, "Too large file");
     // TODO(Subv): Find out the correct error code
     return ResultCode(-1);
 }
@@ -120,13 +120,13 @@ ResultCode Disk_FileSystem::CreateDirectory(const std::string& path) const {
         return RESULT_SUCCESS;
     }
 
-    NGLOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating {}", full_path);
+    LOG_CRITICAL(Service_FS, "(unreachable) Unknown error creating {}", full_path);
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
 
 ResultCode Disk_FileSystem::RenameDirectory(const Path& src_path, const Path& dest_path) const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
     // TODO(wwylele): Use correct error code
     return ResultCode(-1);
 }
@@ -146,7 +146,7 @@ ResultVal<std::unique_ptr<DirectoryBackend>> Disk_FileSystem::OpenDirectory(
 }
 
 u64 Disk_FileSystem::GetFreeSpaceSize() const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
     return 0;
 }
 
@@ -163,14 +163,14 @@ ResultVal<FileSys::EntryType> Disk_FileSystem::GetEntryType(const std::string& p
 }
 
 ResultVal<size_t> Disk_Storage::Read(const u64 offset, const size_t length, u8* buffer) const {
-    NGLOG_TRACE(Service_FS, "called offset={}, length={}", offset, length);
+    LOG_TRACE(Service_FS, "called offset={}, length={}", offset, length);
     file->Seek(offset, SEEK_SET);
     return MakeResult<size_t>(file->ReadBytes(buffer, length));
 }
 
 ResultVal<size_t> Disk_Storage::Write(const u64 offset, const size_t length, const bool flush,
                                       const u8* buffer) const {
-    NGLOG_WARNING(Service_FS, "(STUBBED) called");
+    LOG_WARNING(Service_FS, "(STUBBED) called");
     file->Seek(offset, SEEK_SET);
     size_t written = file->WriteBytes(buffer, length);
     if (flush) {
@@ -204,7 +204,7 @@ u64 Disk_Directory::Read(const u64 count, Entry* entries) {
         const std::string& filename = file.virtualName;
         Entry& entry = entries[entries_read];
 
-        NGLOG_TRACE(Service_FS, "File {}: size={} dir={}", filename, file.size, file.isDirectory);
+        LOG_TRACE(Service_FS, "File {}: size={} dir={}", filename, file.size, file.isDirectory);
 
         // TODO(Link Mauve): use a proper conversion to UTF-16.
         for (size_t j = 0; j < FILENAME_LENGTH; ++j) {

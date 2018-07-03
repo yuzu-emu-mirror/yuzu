@@ -5,6 +5,7 @@
 #include <cstring>
 #include "common/assert.h"
 #include "core/memory.h"
+#include "video_core/gpu.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 
@@ -73,6 +74,16 @@ u32 BytesPerPixel(TextureFormat format) {
     }
 }
 
+static u32 DepthBytesPerPixel(DepthFormat format) {
+    switch (format) {
+    case DepthFormat::Z24_S8_UNORM:
+        return 4;
+    default:
+        UNIMPLEMENTED_MSG("Format not implemented");
+        break;
+    }
+}
+
 std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width, u32 height,
                                  u32 block_height) {
     u8* data = Memory::GetPointer(address);
@@ -99,6 +110,26 @@ std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width,
     case TextureFormat::R32_G32_B32_A32:
     case TextureFormat::BF10GF11RF11:
     case TextureFormat::ASTC_2D_4X4:
+        CopySwizzledData(width, height, bytes_per_pixel, bytes_per_pixel, data,
+                         unswizzled_data.data(), true, block_height);
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Format not implemented");
+        break;
+    }
+
+    return unswizzled_data;
+}
+
+std::vector<u8> UnswizzleDepthTexture(VAddr address, DepthFormat format, u32 width, u32 height,
+                                      u32 block_height) {
+    u8* data = Memory::GetPointer(address);
+    u32 bytes_per_pixel = DepthBytesPerPixel(format);
+
+    std::vector<u8> unswizzled_data(width * height * bytes_per_pixel);
+
+    switch (format) {
+    case DepthFormat::Z24_S8_UNORM:
         CopySwizzledData(width, height, bytes_per_pixel, bytes_per_pixel, data,
                          unswizzled_data.data(), true, block_height);
         break;

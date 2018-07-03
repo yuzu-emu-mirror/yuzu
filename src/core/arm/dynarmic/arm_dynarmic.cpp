@@ -55,8 +55,8 @@ public:
     }
 
     void InterpreterFallback(u64 pc, size_t num_instructions) override {
-        NGLOG_INFO(Core_ARM, "Unicorn fallback @ 0x{:X} for {} instructions (instr = {:08X})", pc,
-                   num_instructions, MemoryReadCode(pc));
+        LOG_INFO(Core_ARM, "Unicorn fallback @ 0x{:X} for {} instructions (instr = {:08X})", pc,
+                 num_instructions, MemoryReadCode(pc));
 
         ARM_Interface::ThreadContext ctx;
         parent.SaveContext(ctx);

@@ -16,7 +16,7 @@ void SET_SYS::GetColorSetId(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 
-    NGLOG_WARNING(Service_SET, "(STUBBED) called");
+    LOG_WARNING(Service_SET, "(STUBBED) called");
 }
 
 SET_SYS::SET_SYS() : ServiceFramework("set:sys") {

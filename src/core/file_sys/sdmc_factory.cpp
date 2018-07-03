@@ -25,13 +25,13 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SDMC_Factory::Open(const Path& pat
 }
 
 ResultCode SDMC_Factory::Format(const Path& path) {
-    NGLOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
+    LOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
     // TODO(Subv): Find the right error code for this
     return ResultCode(-1);
 }
 
 ResultVal<ArchiveFormatInfo> SDMC_Factory::GetFormatInfo(const Path& path) const {
-    NGLOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
+    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
     // TODO(bunnei): Find the right error code for this
     return ResultCode(-1);
 }

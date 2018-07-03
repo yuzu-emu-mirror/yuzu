@@ -122,7 +122,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     }
     buf.push_back('}');
 
-    NGLOG_ERROR(Service, "unknown / unimplemented {}", fmt::to_string(buf));
+    LOG_ERROR(Service, "unknown / unimplemented {}", fmt::to_string(buf));
     UNIMPLEMENTED();
 }
 
@@ -133,7 +133,7 @@ void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
         return ReportUnimplementedFunction(ctx, info);
     }
 
-    NGLOG_TRACE(
+    LOG_TRACE(
         Service, "{}",
         MakeFunctionString(info->name, GetServiceName().c_str(), ctx.CommandBuffer()).c_str());
     handler_invoker(this, info->handler_callback, ctx);
@@ -206,12 +206,12 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     VI::InstallInterfaces(*sm, nv_flinger);
     Set::InstallInterfaces(*sm);
 
-    NGLOG_DEBUG(Service, "initialized OK");
+    LOG_DEBUG(Service, "initialized OK");
 }
 
 /// Shutdown ServiceManager
 void Shutdown() {
     g_kernel_named_ports.clear();
-    NGLOG_DEBUG(Service, "shutdown OK");
+    LOG_DEBUG(Service, "shutdown OK");
 }
 } // namespace Service

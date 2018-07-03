@@ -120,7 +120,7 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
                 std::make_shared<IPC::DomainMessageHeader>(rp.PopRaw<IPC::DomainMessageHeader>());
         } else {
             if (Session()->IsDomain())
-                NGLOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
+                LOG_WARNING(IPC, "Domain request has no DomainMessageHeader!");
         }
     }
 
@@ -272,15 +272,15 @@ std::vector<u8> HLERequestContext::ReadBuffer(int buffer_index) const {
 
 size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size, int buffer_index) const {
     if (size == 0) {
-        NGLOG_WARNING(Core, "skip empty buffer write");
+        LOG_WARNING(Core, "skip empty buffer write");
         return 0;
     }
 
     const bool is_buffer_b{BufferDescriptorB().size() && BufferDescriptorB()[buffer_index].Size()};
     const size_t buffer_size{GetWriteBufferSize(buffer_index)};
     if (size > buffer_size) {
-        NGLOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
-                       buffer_size);
+        LOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
+                     buffer_size);
         size = buffer_size; // TODO(bunnei): This needs to be HW tested
     }
 

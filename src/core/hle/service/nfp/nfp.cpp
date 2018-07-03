@@ -64,7 +64,7 @@ private:
     };
 
     void Initialize(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
 
         state = State::Initialized;
 
@@ -78,7 +78,7 @@ private:
 
         ctx.WriteBuffer(&device_handle, sizeof(device_handle));
 
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called, array_size={}", array_size);
+        LOG_WARNING(Service_NFP, "(STUBBED) called, array_size={}", array_size);
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -88,7 +88,7 @@ private:
     void AttachActivateEvent(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+        LOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -98,7 +98,7 @@ private:
     void AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+        LOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -106,14 +106,14 @@ private:
     }
 
     void GetState(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(static_cast<u32>(state));
     }
 
     void GetDeviceState(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(static_cast<u32>(device_state));
@@ -122,7 +122,7 @@ private:
     void GetNpadId(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+        LOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(npad_id);
@@ -131,7 +131,7 @@ private:
     void AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
-        NGLOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
+        LOG_WARNING(Service_NFP, "(STUBBED) called, dev_handle=0x{:X}", dev_handle);
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -148,7 +148,7 @@ private:
 };
 
 void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_NFP, "called");
+    LOG_DEBUG(Service_NFP, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IUser>();
