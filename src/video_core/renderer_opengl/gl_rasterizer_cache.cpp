@@ -117,7 +117,7 @@ static std::pair<u32, u32> GetASTCBlockSize(PixelFormat format) {
     case PixelFormat::ASTC_2D_4X4:
         return {4, 4};
     default:
-        NGLOG_CRITICAL(HW_GPU, "Unhandled format: {}", static_cast<u32>(format));
+        LOG_CRITICAL(HW_GPU, "Unhandled format: {}", static_cast<u32>(format));
         UNREACHABLE();
     }
 }
@@ -159,7 +159,7 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, Tegra::
     } else {
         // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should
         // check the configuration for this and perform more generic un/swizzle
-        NGLOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
+        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
         VideoCore::MortonCopyPixels128(
             stride, height, bytes_per_pixel, gl_bytes_per_pixel,
             Memory::GetPointer(*gpu.memory_manager->GpuToCpuAddress(addr)), gl_buffer,
@@ -396,7 +396,7 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
     // TODO(bunnei): This is hard corded to use just the first render buffer
-    NGLOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
+    LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
 
     // get color and depth surfaces
     const SurfaceParams color_params{SurfaceParams::CreateForFramebuffer(regs.rt[0])};

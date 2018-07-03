@@ -27,7 +27,7 @@ GLuint LoadShader(const char* source, GLenum type) {
     }
     GLuint shader_id = glCreateShader(type);
     glShaderSource(shader_id, 1, &source, nullptr);
-    NGLOG_DEBUG(Render_OpenGL, "Compiling {} shader...", debug_type);
+    LOG_DEBUG(Render_OpenGL, "Compiling {} shader...", debug_type);
     glCompileShader(shader_id);
 
     GLint result = GL_FALSE;
@@ -39,9 +39,9 @@ GLuint LoadShader(const char* source, GLenum type) {
         std::string shader_error(info_log_length, ' ');
         glGetShaderInfoLog(shader_id, info_log_length, nullptr, &shader_error[0]);
         if (result == GL_TRUE) {
-            NGLOG_DEBUG(Render_OpenGL, "{}", shader_error);
+            LOG_DEBUG(Render_OpenGL, "{}", shader_error);
         } else {
-            NGLOG_ERROR(Render_OpenGL, "Error compiling {} shader:\n{}", debug_type, shader_error);
+            LOG_ERROR(Render_OpenGL, "Error compiling {} shader:\n{}", debug_type, shader_error);
         }
     }
     return shader_id;

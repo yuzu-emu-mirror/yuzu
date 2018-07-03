@@ -62,33 +62,33 @@ public:
 
 private:
     void GetRequestState(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }
 
     void GetResult(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void GetSystemEventReadableHandles(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2, 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(event1, event2);
     }
 
     void Cancel(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void SetConnectionConfirmationOption(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -114,7 +114,7 @@ public:
 
 private:
     void GetClientId(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(0);
@@ -125,7 +125,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IScanRequest>();
 
-        NGLOG_DEBUG(Service_NIFM, "called");
+        LOG_DEBUG(Service_NIFM, "called");
     }
     void CreateRequest(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -133,10 +133,10 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IRequest>();
 
-        NGLOG_DEBUG(Service_NIFM, "called");
+        LOG_DEBUG(Service_NIFM, "called");
     }
     void RemoveNetworkProfile(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_NIFM, "(STUBBED) called");
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -146,7 +146,7 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<INetworkProfile>();
 
-        NGLOG_DEBUG(Service_NIFM, "called");
+        LOG_DEBUG(Service_NIFM, "called");
     }
 };
 
@@ -196,14 +196,14 @@ void Module::Interface::CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IGeneralService>();
-    NGLOG_DEBUG(Service_NIFM, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 void Module::Interface::CreateGeneralService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IGeneralService>();
-    NGLOG_DEBUG(Service_NIFM, "called");
+    LOG_DEBUG(Service_NIFM, "called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)

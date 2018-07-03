@@ -23,7 +23,7 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
     buffer.igbp_buffer = igbp_buffer;
     buffer.status = Buffer::Status::Free;
 
-    NGLOG_WARNING(Service, "Adding graphics buffer {}", slot);
+    LOG_WARNING(Service, "Adding graphics buffer {}", slot);
 
     queue.emplace_back(buffer);
 
@@ -94,7 +94,7 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
 }
 
 u32 BufferQueue::Query(QueryType type) {
-    NGLOG_WARNING(Service, "(STUBBED) called type={}", static_cast<u32>(type));
+    LOG_WARNING(Service, "(STUBBED) called type={}", static_cast<u32>(type));
     switch (type) {
     case QueryType::NativeWindowFormat:
         // TODO(Subv): Use an enum for this

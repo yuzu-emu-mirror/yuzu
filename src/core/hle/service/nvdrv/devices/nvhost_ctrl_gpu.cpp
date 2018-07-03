@@ -10,8 +10,8 @@
 namespace Service::Nvidia::Devices {
 
 u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
-                command.raw, input.size(), output.size());
+    LOG_DEBUG(Service_NVDRV, "called, command=0x{:08X}, input_size=0x{:X}, output_size=0x{:X}",
+              command.raw, input.size(), output.size());
 
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocGetCharacteristicsCommand:
@@ -36,7 +36,7 @@ u32 nvhost_ctrl_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vec
 }
 
 u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
     IoctlCharacteristics params{};
     std::memcpy(&params, input.data(), input.size());
     params.gc.arch = 0x120;
@@ -83,8 +83,8 @@ u32 nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input, std::vecto
 u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGpuGetTpcMasksArgs params{};
     std::memcpy(&params, input.data(), input.size());
-    NGLOG_INFO(Service_NVDRV, "called, mask=0x{:X}, mask_buf_addr=0x{:X}", params.mask_buf_size,
-               params.mask_buf_addr);
+    LOG_INFO(Service_NVDRV, "called, mask=0x{:X}, mask_buf_addr=0x{:X}", params.mask_buf_size,
+             params.mask_buf_addr);
     // TODO(ogniK): Confirm value on hardware
     if (params.mask_buf_size)
         params.tpc_mask_size = 4 * 1; // 4 * num_gpc
@@ -95,7 +95,7 @@ u32 nvhost_ctrl_gpu::GetTPCMasks(const std::vector<u8>& input, std::vector<u8>& 
 }
 
 u32 nvhost_ctrl_gpu::GetActiveSlotMask(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
     IoctlActiveSlotMask params{};
     std::memcpy(&params, input.data(), input.size());
     params.slot = 0x07;
@@ -105,7 +105,7 @@ u32 nvhost_ctrl_gpu::GetActiveSlotMask(const std::vector<u8>& input, std::vector
 }
 
 u32 nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
     IoctlZcullGetCtxSize params{};
     std::memcpy(&params, input.data(), input.size());
     params.size = 0x1;
@@ -114,7 +114,7 @@ u32 nvhost_ctrl_gpu::ZCullGetCtxSize(const std::vector<u8>& input, std::vector<u
 }
 
 u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
     IoctlNvgpuGpuZcullGetInfoArgs params{};
     std::memcpy(&params, input.data(), input.size());
     params.width_align_pixels = 0x20;
@@ -132,7 +132,7 @@ u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>&
 }
 
 u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IoctlZbcSetTable params{};
     std::memcpy(&params, input.data(), input.size());
     // TODO(ogniK): What does this even actually do?
@@ -141,7 +141,7 @@ u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& 
 }
 
 u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IoctlZbcQueryTable params{};
     std::memcpy(&params, input.data(), input.size());
     // TODO : To implement properly
@@ -150,7 +150,7 @@ u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>
 }
 
 u32 nvhost_ctrl_gpu::FlushL2(const std::vector<u8>& input, std::vector<u8>& output) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IoctlFlushL2 params{};
     std::memcpy(&params, input.data(), input.size());
     // TODO : To implement properly

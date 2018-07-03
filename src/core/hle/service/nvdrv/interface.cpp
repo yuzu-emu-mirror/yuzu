@@ -12,7 +12,7 @@
 namespace Service::Nvidia {
 
 void NVDRV::Open(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
 
     const auto& buffer = ctx.ReadBuffer();
     std::string device_name(buffer.begin(), buffer.end());
@@ -25,7 +25,7 @@ void NVDRV::Open(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
 
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
@@ -41,7 +41,7 @@ void NVDRV::Ioctl(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Close(Kernel::HLERequestContext& ctx) {
-    NGLOG_DEBUG(Service_NVDRV, "called");
+    LOG_DEBUG(Service_NVDRV, "called");
 
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
@@ -53,7 +53,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
@@ -63,7 +63,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u32 fd = rp.Pop<u32>();
     u32 event_id = rp.Pop<u32>();
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, fd={:X}, event_id={:X}", fd, event_id);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, fd={:X}, event_id={:X}", fd, event_id);
 
     IPC::ResponseBuilder rb{ctx, 3, 1};
     rb.Push(RESULT_SUCCESS);
@@ -75,14 +75,14 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
 
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
 }
 
 void NVDRV::FinishInitialize(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }

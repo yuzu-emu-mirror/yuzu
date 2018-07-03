@@ -112,7 +112,7 @@ RasterizerOpenGL::RasterizerOpenGL() {
 
     glEnable(GL_BLEND);
 
-    NGLOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
+    LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {
@@ -165,9 +165,9 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
     // assume every shader uses them all.
     for (unsigned index = 0; index < 16; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
-        NGLOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
-                    index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
-                    attrib.offset.Value(), attrib.IsNormalized());
+        LOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
+                  index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
+                  attrib.offset.Value(), attrib.IsNormalized());
 
         auto& buffer = regs.vertex_array[attrib.buffer];
         ASSERT(buffer.IsEnabled());
@@ -251,8 +251,8 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
             break;
         }
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset=0x{:08X}",
-                           index, shader_config.enable.Value(), shader_config.offset);
+            LOG_CRITICAL(HW_GPU, "Unimplemented shader index={}, enable={}, offset=0x{:08X}", index,
+                         shader_config.enable.Value(), shader_config.offset);
             UNREACHABLE();
         }
 
@@ -587,8 +587,8 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
             size = buffer.size * sizeof(float);
 
             if (size > MaxConstbufferSize) {
-                NGLOG_ERROR(HW_GPU, "indirect constbuffer size {} exceeds maximum {}", size,
-                            MaxConstbufferSize);
+                LOG_ERROR(HW_GPU, "indirect constbuffer size {} exceeds maximum {}", size,
+                          MaxConstbufferSize);
                 size = MaxConstbufferSize;
             }
         } else {

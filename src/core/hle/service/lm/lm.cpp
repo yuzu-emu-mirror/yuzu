@@ -141,19 +141,19 @@ private:
         if (header.IsTailLog()) {
             switch (header.severity) {
             case MessageHeader::Severity::Trace:
-                NGLOG_TRACE(Debug_Emulated, "{}", log_stream.str());
+                LOG_TRACE(Debug_Emulated, "{}", log_stream.str());
                 break;
             case MessageHeader::Severity::Info:
-                NGLOG_INFO(Debug_Emulated, "{}", log_stream.str());
+                LOG_INFO(Debug_Emulated, "{}", log_stream.str());
                 break;
             case MessageHeader::Severity::Warning:
-                NGLOG_WARNING(Debug_Emulated, "{}", log_stream.str());
+                LOG_WARNING(Debug_Emulated, "{}", log_stream.str());
                 break;
             case MessageHeader::Severity::Error:
-                NGLOG_ERROR(Debug_Emulated, "{}", log_stream.str());
+                LOG_ERROR(Debug_Emulated, "{}", log_stream.str());
                 break;
             case MessageHeader::Severity::Critical:
-                NGLOG_CRITICAL(Debug_Emulated, "{}", log_stream.str());
+                LOG_CRITICAL(Debug_Emulated, "{}", log_stream.str());
                 break;
             }
         }
@@ -178,7 +178,7 @@ void LM::Initialize(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<Logger>();
 
-    NGLOG_DEBUG(Service_LM, "called");
+    LOG_DEBUG(Service_LM, "called");
 }
 
 LM::LM() : ServiceFramework("lm") {

@@ -32,12 +32,15 @@
 #define SDMC_DIR "sdmc"
 #define NAND_DIR "nand"
 #define SYSDATA_DIR "sysdata"
+#define LOG_DIR "log"
 
 // Filenames
 // Files in the directory returned by GetUserPath(D_CONFIG_IDX)
 #define EMU_CONFIG "emu.ini"
 #define DEBUGGER_CONFIG "debugger.ini"
 #define LOGGER_CONFIG "logger.ini"
+// Files in the directory returned by GetUserPath(D_LOGS_IDX)
+#define LOG_FILE "citra_log.txt"
 
 // Sys files
 #define SHARED_FONT "shared_font.bin"

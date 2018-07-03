@@ -52,7 +52,7 @@ u32 nvmap::IocCreate(const std::vector<u8>& input, std::vector<u8>& output) {
     u32 handle = next_handle++;
     handles[handle] = std::move(object);
 
-    NGLOG_DEBUG(Service_NVDRV, "size=0x{:08X}", params.size);
+    LOG_DEBUG(Service_NVDRV, "size=0x{:08X}", params.size);
 
     params.handle = handle;
 
@@ -73,7 +73,7 @@ u32 nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) {
     object->addr = params.addr;
     object->status = Object::Status::Allocated;
 
-    NGLOG_DEBUG(Service_NVDRV, "called, addr={:X}", params.addr);
+    LOG_DEBUG(Service_NVDRV, "called, addr={:X}", params.addr);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return 0;
@@ -83,7 +83,7 @@ u32 nvmap::IocGetId(const std::vector<u8>& input, std::vector<u8>& output) {
     IocGetIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    NGLOG_WARNING(Service_NVDRV, "called");
+    LOG_WARNING(Service_NVDRV, "called");
 
     auto object = GetObject(params.handle);
     ASSERT(object);
@@ -98,7 +98,7 @@ u32 nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
     IocFromIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     auto itr = std::find_if(handles.begin(), handles.end(),
                             [&](const auto& entry) { return entry.second->id == params.id; });
@@ -119,7 +119,7 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     IocParamParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.param);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.param);
 
     auto object = GetObject(params.handle);
     ASSERT(object);
@@ -157,7 +157,7 @@ u32 nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
     IocFreeParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    NGLOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
 
     auto itr = handles.find(params.handle);
     ASSERT(itr != handles.end());

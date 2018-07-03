@@ -56,7 +56,7 @@ Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
         arm_interface = std::make_shared<ARM_Dynarmic>();
 #else
         cpu_core = std::make_shared<ARM_Unicorn>();
-        NGLOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
+        LOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
 #endif
     } else {
         arm_interface = std::make_shared<ARM_Unicorn>();
@@ -75,7 +75,7 @@ void Cpu::RunLoop(bool tight_loop) {
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread
     if (Kernel::GetCurrentThread() == nullptr) {
-        NGLOG_TRACE(Core, "Core-{} idling", core_index);
+        LOG_TRACE(Core, "Core-{} idling", core_index);
 
         if (IsMainCore()) {
             CoreTiming::Idle();

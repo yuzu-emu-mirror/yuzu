@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -69,7 +70,7 @@ int main(int argc, char** argv) {
     auto argv_w = CommandLineToArgvW(GetCommandLineW(), &argc_w);
 
     if (argv_w == nullptr) {
-        NGLOG_CRITICAL(Frontend, "Failed to get command line arguments");
+        LOG_CRITICAL(Frontend, "Failed to get command line arguments");
         return -1;
     }
 #endif
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
                 break;
             case 'f':
                 fullscreen = true;
-                NGLOG_INFO(Frontend, "Starting in fullscreen mode...");
+                LOG_INFO(Frontend, "Starting in fullscreen mode...");
                 break;
             case 'h':
                 PrintHelp(argv[0]);
@@ -126,13 +127,18 @@ int main(int argc, char** argv) {
 #endif
 
     Log::Filter log_filter(Log::Level::Debug);
-    Log::SetFilter(&log_filter);
+    Log::SetGlobalFilter(log_filter);
+
+    Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
+    FileUtil::CreateFullPath(FileUtil::GetUserPath(D_LOGS_IDX));
+    Log::AddBackend(
+        std::make_unique<Log::FileBackend>(FileUtil::GetUserPath(D_LOGS_IDX) + LOG_FILE));
 
     MicroProfileOnThreadCreate("EmuThread");
     SCOPE_EXIT({ MicroProfileShutdown(); });
 
     if (filepath.empty()) {
-        NGLOG_CRITICAL(Frontend, "Failed to load ROM: No ROM specified");
+        LOG_CRITICAL(Frontend, "Failed to load ROM: No ROM specified");
         return -1;
     }
 
@@ -153,28 +159,28 @@ int main(int argc, char** argv) {
 
     switch (load_result) {
     case Core::System::ResultStatus::ErrorGetLoader:
-        NGLOG_CRITICAL(Frontend, "Failed to obtain loader for %s!", filepath.c_str());
+        LOG_CRITICAL(Frontend, "Failed to obtain loader for %s!", filepath.c_str());
         return -1;
     case Core::System::ResultStatus::ErrorLoader:
-        NGLOG_CRITICAL(Frontend, "Failed to load ROM!");
+        LOG_CRITICAL(Frontend, "Failed to load ROM!");
         return -1;
     case Core::System::ResultStatus::ErrorLoader_ErrorEncrypted:
-        NGLOG_CRITICAL(Frontend, "The game that you are trying to load must be decrypted before "
-                                 "being used with yuzu. \n\n For more information on dumping and "
-                                 "decrypting games, please refer to: "
-                                 "https://yuzu-emu.org/wiki/dumping-game-cartridges/");
+        LOG_CRITICAL(Frontend, "The game that you are trying to load must be decrypted before "
+                               "being used with yuzu. \n\n For more information on dumping and "
+                               "decrypting games, please refer to: "
+                               "https://yuzu-emu.org/wiki/dumping-game-cartridges/");
         return -1;
     case Core::System::ResultStatus::ErrorLoader_ErrorInvalidFormat:
-        NGLOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
+        LOG_CRITICAL(Frontend, "Error while loading ROM: The ROM format is not supported.");
         return -1;
     case Core::System::ResultStatus::ErrorNotInitialized:
-        NGLOG_CRITICAL(Frontend, "CPUCore not initialized");
+        LOG_CRITICAL(Frontend, "CPUCore not initialized");
         return -1;
     case Core::System::ResultStatus::ErrorSystemMode:
-        NGLOG_CRITICAL(Frontend, "Failed to determine system mode!");
+        LOG_CRITICAL(Frontend, "Failed to determine system mode!");
         return -1;
     case Core::System::ResultStatus::ErrorVideoCore:
-        NGLOG_CRITICAL(Frontend, "VideoCore not initialized");
+        LOG_CRITICAL(Frontend, "VideoCore not initialized");
         return -1;
     case Core::System::ResultStatus::Success:
         break; // Expected case

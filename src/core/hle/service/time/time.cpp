@@ -33,14 +33,14 @@ private:
         const s64 time_since_epoch{std::chrono::duration_cast<std::chrono::seconds>(
                                        std::chrono::system_clock::now().time_since_epoch())
                                        .count()};
-        NGLOG_DEBUG(Service_Time, "called");
+        LOG_DEBUG(Service_Time, "called");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(time_since_epoch);
     }
 
     void GetSystemClockContext(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Time, "(STUBBED) called");
+        LOG_WARNING(Service_Time, "(STUBBED) called");
         SystemClockContext system_clock_ontext{};
         IPC::ResponseBuilder rb{ctx, (sizeof(SystemClockContext) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
@@ -59,7 +59,7 @@ public:
 
 private:
     void GetCurrentTimePoint(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_Time, "called");
+        LOG_DEBUG(Service_Time, "called");
         SteadyClockTimePoint steady_clock_time_point{
             CoreTiming::cyclesToMs(CoreTiming::GetTicks()) / 1000};
         IPC::ResponseBuilder rb{ctx, (sizeof(SteadyClockTimePoint) / 4) + 2};
@@ -91,21 +91,21 @@ private:
     TimeZoneRule my_time_zone_rule{};
 
     void GetDeviceLocationName(Kernel::HLERequestContext& ctx) {
-        NGLOG_DEBUG(Service_Time, "called");
+        LOG_DEBUG(Service_Time, "called");
         IPC::ResponseBuilder rb{ctx, (sizeof(LocationName) / 4) + 2};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(location_name);
     }
 
     void GetTotalLocationNameCount(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Time, "(STUBBED) called");
+        LOG_WARNING(Service_Time, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }
 
     void LoadTimeZoneRule(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_Time, "(STUBBED) called");
+        LOG_WARNING(Service_Time, "(STUBBED) called");
 
         ctx.WriteBuffer(&my_time_zone_rule, sizeof(TimeZoneRule));
 
@@ -117,7 +117,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 posix_time = rp.Pop<u64>();
 
-        NGLOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
+        LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
 
         TimeZoneRule time_zone_rule{};
         auto buffer = ctx.ReadBuffer();
@@ -138,7 +138,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 posix_time = rp.Pop<u64>();
 
-        NGLOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
+        LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
 
         CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
         CalendarAdditionalInfo additional_info{};
@@ -176,35 +176,35 @@ void Module::Interface::GetStandardUserSystemClock(Kernel::HLERequestContext& ct
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
-    NGLOG_DEBUG(Service_Time, "called");
+    LOG_DEBUG(Service_Time, "called");
 }
 
 void Module::Interface::GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
-    NGLOG_DEBUG(Service_Time, "called");
+    LOG_DEBUG(Service_Time, "called");
 }
 
 void Module::Interface::GetStandardSteadyClock(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISteadyClock>();
-    NGLOG_DEBUG(Service_Time, "called");
+    LOG_DEBUG(Service_Time, "called");
 }
 
 void Module::Interface::GetTimeZoneService(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ITimeZoneService>();
-    NGLOG_DEBUG(Service_Time, "called");
+    LOG_DEBUG(Service_Time, "called");
 }
 
 void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
-    NGLOG_DEBUG(Service_Time, "called");
+    LOG_DEBUG(Service_Time, "called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> time, const char* name)

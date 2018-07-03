@@ -29,21 +29,21 @@ enum class BufferMethods {
 };
 
 void GPU::WriteReg(u32 method, u32 subchannel, u32 value, u32 remaining_params) {
-    NGLOG_WARNING(HW_GPU,
-                  "Processing method {:08X} on subchannel {} value "
-                  "{:08X} remaining params {}",
-                  method, subchannel, value, remaining_params);
+    LOG_WARNING(HW_GPU,
+                "Processing method {:08X} on subchannel {} value "
+                "{:08X} remaining params {}",
+                method, subchannel, value, remaining_params);
 
     if (method == static_cast<u32>(BufferMethods::BindObject)) {
         // Bind the current subchannel to the desired engine id.
-        NGLOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", subchannel, value);
+        LOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", subchannel, value);
         bound_engines[subchannel] = static_cast<EngineID>(value);
         return;
     }
 
     if (method < static_cast<u32>(BufferMethods::CountBufferMethods)) {
         // TODO(Subv): Research and implement these methods.
-        NGLOG_ERROR(HW_GPU, "Special buffer methods other than Bind are not implemented");
+        LOG_ERROR(HW_GPU, "Special buffer methods other than Bind are not implemented");
         return;
     }
 

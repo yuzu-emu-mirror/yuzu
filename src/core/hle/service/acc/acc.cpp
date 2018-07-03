@@ -47,7 +47,7 @@ public:
 
 private:
     void GetBase(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
         ProfileBase profile_base{};
         IPC::ResponseBuilder rb{ctx, 16};
         rb.Push(RESULT_SUCCESS);
@@ -72,14 +72,14 @@ public:
 
 private:
     void CheckAvailability(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(true); // TODO: Check when this is supposed to return true and when not
     }
 
     void GetAccountId(Kernel::HLERequestContext& ctx) {
-        NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(0x12345678ABCDEF);
@@ -87,14 +87,14 @@ private:
 };
 
 void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(true); // TODO: Check when this is supposed to return true and when not
 }
 
 void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
     ctx.WriteBuffer(user_ids.data(), user_ids.size());
     IPC::ResponseBuilder rb{ctx, 2};
@@ -102,7 +102,7 @@ void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
     ctx.WriteBuffer(user_ids.data(), user_ids.size());
     IPC::ResponseBuilder rb{ctx, 2};
@@ -113,11 +113,11 @@ void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IProfile>();
-    NGLOG_DEBUG(Service_ACC, "called");
+    LOG_DEBUG(Service_ACC, "called");
 }
 
 void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -126,11 +126,11 @@ void Module::Interface::GetBaasAccountManagerForApplication(Kernel::HLERequestCo
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IManagerForApplication>();
-    NGLOG_DEBUG(Service_ACC, "called");
+    LOG_DEBUG(Service_ACC, "called");
 }
 
 void Module::Interface::GetLastOpenedUser(Kernel::HLERequestContext& ctx) {
-    NGLOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 6};
     rb.Push(RESULT_SUCCESS);
     rb.PushRaw(DEFAULT_USER_ID);

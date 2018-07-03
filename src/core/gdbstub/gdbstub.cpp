@@ -232,7 +232,7 @@ static u8 HexCharToValue(u8 hex) {
         return hex - 'A' + 0xA;
     }
 
-    NGLOG_ERROR(Debug_GDBStub, "Invalid nibble: {} ({:02X})", hex, hex);
+    LOG_ERROR(Debug_GDBStub, "Invalid nibble: {} ({:02X})", hex, hex);
     return 0;
 }
 
@@ -372,7 +372,7 @@ static u8 ReadByte() {
     u8 c;
     size_t received_size = recv(gdbserver_socket, reinterpret_cast<char*>(&c), 1, MSG_WAITALL);
     if (received_size != 1) {
-        NGLOG_ERROR(Debug_GDBStub, "recv failed: {}", received_size);
+        LOG_ERROR(Debug_GDBStub, "recv failed: {}", received_size);
         Shutdown();
     }
 
@@ -413,8 +413,8 @@ static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
 
     auto bp = p.find(static_cast<u64>(addr));
     if (bp != p.end()) {
-        NGLOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
-                    bp->second.len, bp->second.addr, static_cast<int>(type));
+        LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
+                  bp->second.len, bp->second.addr, static_cast<int>(type));
         p.erase(static_cast<u64>(addr));
     }
 }
@@ -459,10 +459,10 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
         }
 
         if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
-            NGLOG_DEBUG(Debug_GDBStub,
-                        "Found breakpoint type {} @ {:016X}, range: {:016X}"
-                        " - {:016X} ({:X} bytes)",
-                        static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
+            LOG_DEBUG(Debug_GDBStub,
+                      "Found breakpoint type {} @ {:016X}, range: {:016X}"
+                      " - {:016X} ({:X} bytes)",
+                      static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
             return true;
         }
     }
@@ -478,7 +478,7 @@ bool CheckBreakpoint(PAddr addr, BreakpointType type) {
 static void SendPacket(const char packet) {
     size_t sent_size = send(gdbserver_socket, &packet, 1, 0);
     if (sent_size != 1) {
-        NGLOG_ERROR(Debug_GDBStub, "send failed");
+        LOG_ERROR(Debug_GDBStub, "send failed");
     }
 }
 
@@ -492,13 +492,13 @@ static void SendReply(const char* reply) {
         return;
     }
 
-    NGLOG_DEBUG(Debug_GDBStub, "Reply: {}", reply);
+    LOG_DEBUG(Debug_GDBStub, "Reply: {}", reply);
 
     memset(command_buffer, 0, sizeof(command_buffer));
 
     command_length = static_cast<u32>(strlen(reply));
     if (command_length + 4 > sizeof(command_buffer)) {
-        NGLOG_ERROR(Debug_GDBStub, "command_buffer overflow in SendReply");
+        LOG_ERROR(Debug_GDBStub, "command_buffer overflow in SendReply");
         return;
     }
 
@@ -515,7 +515,7 @@ static void SendReply(const char* reply) {
     while (left > 0) {
         int sent_size = send(gdbserver_socket, reinterpret_cast<char*>(ptr), left, 0);
         if (sent_size < 0) {
-            NGLOG_ERROR(Debug_GDBStub, "gdb: send failed");
+            LOG_ERROR(Debug_GDBStub, "gdb: send failed");
             return Shutdown();
         }
 
@@ -526,7 +526,7 @@ static void SendReply(const char* reply) {
 
 /// Handle query command from gdb client.
 static void HandleQuery() {
-    NGLOG_DEBUG(Debug_GDBStub, "gdb: query '{}'", command_buffer + 1);
+    LOG_DEBUG(Debug_GDBStub, "gdb: query '{}'", command_buffer + 1);
 
     const char* query = reinterpret_cast<const char*>(command_buffer + 1);
 
@@ -634,18 +634,18 @@ static void ReadCommand() {
         // ignore ack
         return;
     } else if (c == 0x03) {
-        NGLOG_INFO(Debug_GDBStub, "gdb: found break command");
+        LOG_INFO(Debug_GDBStub, "gdb: found break command");
         halt_loop = true;
         SendSignal(current_thread, SIGTRAP);
         return;
     } else if (c != GDB_STUB_START) {
-        NGLOG_DEBUG(Debug_GDBStub, "gdb: read invalid byte {:02X}", c);
+        LOG_DEBUG(Debug_GDBStub, "gdb: read invalid byte {:02X}", c);
         return;
     }
 
     while ((c = ReadByte()) != GDB_STUB_END) {
         if (command_length >= sizeof(command_buffer)) {
-            NGLOG_ERROR(Debug_GDBStub, "gdb: command_buffer overflow");
+            LOG_ERROR(Debug_GDBStub, "gdb: command_buffer overflow");
             SendPacket(GDB_STUB_NACK);
             return;
         }
@@ -658,10 +658,9 @@ static void ReadCommand() {
     u8 checksum_calculated = CalculateChecksum(command_buffer, command_length);
 
     if (checksum_received != checksum_calculated) {
-        NGLOG_ERROR(
-            Debug_GDBStub,
-            "gdb: invalid checksum: calculated {:02X} and read {:02X} for ${}# (length: {})",
-            checksum_calculated, checksum_received, command_buffer, command_length);
+        LOG_ERROR(Debug_GDBStub,
+                  "gdb: invalid checksum: calculated {:02X} and read {:02X} for ${}# (length: {})",
+                  checksum_calculated, checksum_received, command_buffer, command_length);
 
         command_length = 0;
 
@@ -688,7 +687,7 @@ static bool IsDataAvailable() {
     t.tv_usec = 0;
 
     if (select(gdbserver_socket + 1, &fd_socket, nullptr, nullptr, &t) < 0) {
-        NGLOG_ERROR(Debug_GDBStub, "select failed");
+        LOG_ERROR(Debug_GDBStub, "select failed");
         return false;
     }
 
@@ -801,7 +800,7 @@ static void ReadMemory() {
     u64 len =
         HexToLong(start_offset, static_cast<u64>((command_buffer + command_length) - start_offset));
 
-    NGLOG_DEBUG(Debug_GDBStub, "gdb: addr: {:016X} len: {:016X}", addr, len);
+    LOG_DEBUG(Debug_GDBStub, "gdb: addr: {:016X} len: {:016X}", addr, len);
 
     if (len * 2 > sizeof(reply)) {
         SendReply("E01");
@@ -888,8 +887,8 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     breakpoint.len = len;
     p.insert({addr, breakpoint});
 
-    NGLOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
-                static_cast<int>(type), breakpoint.len, breakpoint.addr);
+    LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
+              static_cast<int>(type), breakpoint.len, breakpoint.addr);
 
     return true;
 }
@@ -996,7 +995,7 @@ void HandlePacket() {
         return;
     }
 
-    NGLOG_DEBUG(Debug_GDBStub, "Packet: {}", command_buffer);
+    LOG_DEBUG(Debug_GDBStub, "Packet: {}", command_buffer);
 
     switch (command_buffer[0]) {
     case 'q':
@@ -1010,7 +1009,7 @@ void HandlePacket() {
         break;
     case 'k':
         Shutdown();
-        NGLOG_INFO(Debug_GDBStub, "killed by gdb");
+        LOG_INFO(Debug_GDBStub, "killed by gdb");
         return;
     case 'g':
         ReadRegisters();
@@ -1092,7 +1091,7 @@ static void Init(u16 port) {
     breakpoints_write.clear();
 
     // Start gdb server
-    NGLOG_INFO(Debug_GDBStub, "Starting GDB server on port {}...", port);
+    LOG_INFO(Debug_GDBStub, "Starting GDB server on port {}...", port);
 
     sockaddr_in saddr_server = {};
     saddr_server.sin_family = AF_INET;
@@ -1105,28 +1104,28 @@ static void Init(u16 port) {
 
     int tmpsock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (tmpsock == -1) {
-        NGLOG_ERROR(Debug_GDBStub, "Failed to create gdb socket");
+        LOG_ERROR(Debug_GDBStub, "Failed to create gdb socket");
     }
 
     // Set socket to SO_REUSEADDR so it can always bind on the same port
     int reuse_enabled = 1;
     if (setsockopt(tmpsock, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse_enabled,
                    sizeof(reuse_enabled)) < 0) {
-        NGLOG_ERROR(Debug_GDBStub, "Failed to set gdb socket option");
+        LOG_ERROR(Debug_GDBStub, "Failed to set gdb socket option");
     }
 
     const sockaddr* server_addr = reinterpret_cast<const sockaddr*>(&saddr_server);
     socklen_t server_addrlen = sizeof(saddr_server);
     if (bind(tmpsock, server_addr, server_addrlen) < 0) {
-        NGLOG_ERROR(Debug_GDBStub, "Failed to bind gdb socket");
+        LOG_ERROR(Debug_GDBStub, "Failed to bind gdb socket");
     }
 
     if (listen(tmpsock, 1) < 0) {
-        NGLOG_ERROR(Debug_GDBStub, "Failed to listen to gdb socket");
+        LOG_ERROR(Debug_GDBStub, "Failed to listen to gdb socket");
     }
 
     // Wait for gdb to connect
-    NGLOG_INFO(Debug_GDBStub, "Waiting for gdb to connect...");
+    LOG_INFO(Debug_GDBStub, "Waiting for gdb to connect...");
     sockaddr_in saddr_client;
     sockaddr* client_addr = reinterpret_cast<sockaddr*>(&saddr_client);
     socklen_t client_addrlen = sizeof(saddr_client);
@@ -1137,9 +1136,9 @@ static void Init(u16 port) {
         halt_loop = false;
         step_loop = false;
 
-        NGLOG_ERROR(Debug_GDBStub, "Failed to accept gdb client");
+        LOG_ERROR(Debug_GDBStub, "Failed to accept gdb client");
     } else {
-        NGLOG_INFO(Debug_GDBStub, "Client connected.");
+        LOG_INFO(Debug_GDBStub, "Client connected.");
         saddr_client.sin_addr.s_addr = ntohl(saddr_client.sin_addr.s_addr);
     }
 
@@ -1158,7 +1157,7 @@ void Shutdown() {
         return;
     }
 
-    NGLOG_INFO(Debug_GDBStub, "Stopping GDB ...");
+    LOG_INFO(Debug_GDBStub, "Stopping GDB ...");
     if (gdbserver_socket != -1) {
         shutdown(gdbserver_socket, SHUT_RDWR);
         gdbserver_socket = -1;
@@ -1168,7 +1167,7 @@ void Shutdown() {
     WSACleanup();
 #endif
 
-    NGLOG_INFO(Debug_GDBStub, "GDB stopped.");
+    LOG_INFO(Debug_GDBStub, "GDB stopped.");
 }
 
 bool IsServerEnabled() {

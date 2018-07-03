@@ -131,7 +131,7 @@ struct SurfaceParams {
         case Tegra::DepthFormat::Z24_S8_UNORM:
             return PixelFormat::Z24S8;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -150,7 +150,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA32_UINT:
             return PixelFormat::RGBA32UI;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -185,7 +185,7 @@ struct SurfaceParams {
         case Tegra::Texture::TextureFormat::ASTC_2D_4X4:
             return PixelFormat::ASTC_2D_4X4;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -239,7 +239,7 @@ struct SurfaceParams {
         case Tegra::Texture::ComponentType::UNORM:
             return ComponentType::UNorm;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented component type={}", static_cast<u32>(type));
+            LOG_CRITICAL(HW_GPU, "Unimplemented component type={}", static_cast<u32>(type));
             UNREACHABLE();
         }
     }
@@ -257,7 +257,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA32_UINT:
             return ComponentType::UInt;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -267,7 +267,7 @@ struct SurfaceParams {
         case Tegra::FramebufferConfig::PixelFormat::ABGR8:
             return PixelFormat::ABGR8;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -277,7 +277,7 @@ struct SurfaceParams {
         case Tegra::DepthFormat::Z24_S8_UNORM:
             return ComponentType::UNorm;
         default:
-            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
