@@ -94,7 +94,7 @@ private:
     struct IocFreeParams {
         u32_le handle;
         INSERT_PADDING_BYTES(4);
-        u64_le refcount;
+        u64_le address;
         u32_le size;
         u32_le flags;
     };

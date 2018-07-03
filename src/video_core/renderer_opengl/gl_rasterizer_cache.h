@@ -37,7 +37,14 @@ struct SurfaceParams {
         DXN1 = 11, // This is also known as BC4
         ASTC_2D_4X4 = 12,
 
-        Max,
+        MaxColorFormat,
+
+        // DepthStencil formats
+        Z24S8 = 13,
+
+        MaxDepthStencilFormat,
+
+        Max = MaxDepthStencilFormat,
         Invalid = 255,
     };
 
@@ -84,6 +91,7 @@ struct SurfaceParams {
             4, // DXT45
             4, // DXN1
             4, // ASTC_2D_4X4
+            1, // Z24S8
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -108,6 +116,7 @@ struct SurfaceParams {
             128, // DXT45
             64,  // DXN1
             32,  // ASTC_2D_4X4
+            32,  // Z24S8
         }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -115,6 +124,16 @@ struct SurfaceParams {
     }
     u32 GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
+    }
+
+    static PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
+        switch (format) {
+        case Tegra::DepthFormat::Z24_S8_UNORM:
+            return PixelFormat::Z24S8;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
     }
 
     static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
@@ -205,6 +224,15 @@ struct SurfaceParams {
         }
     }
 
+    static Tegra::DepthFormat DepthFormatFromPixelFormat(PixelFormat format) {
+        switch (format) {
+        case PixelFormat::Z24S8:
+            return Tegra::DepthFormat::Z24_S8_UNORM;
+        default:
+            UNREACHABLE();
+        }
+    }
+
     static ComponentType ComponentTypeFromTexture(Tegra::Texture::ComponentType type) {
         // TODO(Subv): Implement more component types
         switch (type) {
@@ -244,9 +272,24 @@ struct SurfaceParams {
         }
     }
 
+    static ComponentType ComponentTypeFromDepthFormat(Tegra::DepthFormat format) {
+        switch (format) {
+        case Tegra::DepthFormat::Z24_S8_UNORM:
+            return ComponentType::UNorm;
+        default:
+            NGLOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
+            UNREACHABLE();
+        }
+    }
+
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
-        if (static_cast<size_t>(pixel_format) < MaxPixelFormat) {
+        if (static_cast<size_t>(pixel_format) < static_cast<size_t>(PixelFormat::MaxColorFormat)) {
             return SurfaceType::ColorTexture;
+        }
+
+        if (static_cast<size_t>(pixel_format) <
+            static_cast<size_t>(PixelFormat::MaxDepthStencilFormat)) {
+            return SurfaceType::DepthStencil;
         }
 
         // TODO(Subv): Implement the other formats
