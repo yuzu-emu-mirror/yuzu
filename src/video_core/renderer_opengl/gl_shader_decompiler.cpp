@@ -1599,6 +1599,13 @@ private:
                 // can ignore this when generating GLSL code.
                 break;
             }
+            case OpCode::Id::DEPBAR:
+            case OpCode::Id::SYNC: {
+                // TODO(Subv): Find out if we actually have to care about these instructions or if
+                // the GLSL compiler takes care of that for us.
+                LOG_WARNING(HW_GPU, "DEPBAR/SYNC instruction is stubbed");
+                break;
+            }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode->GetName());
                 UNREACHABLE();
