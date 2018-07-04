@@ -641,7 +641,7 @@ private:
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
-            INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
+            INST("110000----111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
