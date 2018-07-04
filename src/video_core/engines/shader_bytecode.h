@@ -194,6 +194,13 @@ enum class UniformType : u64 {
     Double = 5,
 };
 
+enum class IMinMaxExchange : u64 {
+    None = 0,
+    XLo = 1,
+    XMed = 2,
+    XHi = 3,
+};
+
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
         value = instr.value;
@@ -277,6 +284,13 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
     } alu_integer;
+
+    union {
+        BitField<39, 3, u64> pred;
+        BitField<42, 1, u64> negate_pred;
+        BitField<43, 2, IMinMaxExchange> exchange;
+        BitField<48, 1, u64> is_signed;
+    } imnmx;
 
     union {
         BitField<54, 1, u64> saturate;
@@ -682,9 +696,9 @@ private:
             INST("0100110001100---", Id::FMNMX_C, Type::Arithmetic, "FMNMX_C"),
             INST("0101110001100---", Id::FMNMX_R, Type::Arithmetic, "FMNMX_R"),
             INST("0011100-01100---", Id::FMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
-            INST("0100110000100---", Id::IMNMX_C, Type::Arithmetic, "FMNMX_IMM"),
-            INST("0101110000100---", Id::IMNMX_R, Type::Arithmetic, "FMNMX_IMM"),
-            INST("0011100-00100---", Id::IMNMX_IMM, Type::Arithmetic, "FMNMX_IMM"),
+            INST("0100110000100---", Id::IMNMX_C, Type::ArithmeticInteger, "IMNMX_C"),
+            INST("0101110000100---", Id::IMNMX_R, Type::ArithmeticInteger, "IMNMX_R"),
+            INST("0011100-00100---", Id::IMNMX_IMM, Type::ArithmeticInteger, "IMNMX_IMM"),
             INST("0100110000000---", Id::BFE_C, Type::Bfe, "BFE_C"),
             INST("0101110000000---", Id::BFE_R, Type::Bfe, "BFE_R"),
             INST("0011100-00000---", Id::BFE_IMM, Type::Bfe, "BFE_IMM"),
