@@ -85,7 +85,7 @@ private:
 
     /// Configures the color and depth framebuffer states and returns the dirty <Color, Depth>
     /// surfaces if writing was enabled.
-    std::pair<Surface, Surface> ConfigureFramebuffers();
+    std::pair<Surface, Surface> ConfigureFramebuffers(bool using_color_fb, bool using_depth_fb);
 
     /// Binds the framebuffer color and depth surface
     void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
