@@ -297,7 +297,8 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     return true;
 }
 
-std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers() {
+std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers(bool using_color_fb,
+                                                                    bool using_depth_fb) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
     // Sync the depth test state before configuring the framebuffer surfaces.
@@ -305,9 +306,6 @@ std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers() {
 
     // TODO(bunnei): Implement this
     const bool has_stencil = false;
-
-    const bool using_color_fb = true;
-    const bool using_depth_fb = regs.zeta.Address() != 0;
 
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
@@ -358,18 +356,25 @@ std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers() {
 void RasterizerOpenGL::Clear() {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
+    bool use_color_fb = false;
+    bool use_depth_fb = false;
+
     GLbitfield clear_mask = 0;
     if (regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
         regs.clear_buffers.A) {
         clear_mask |= GL_COLOR_BUFFER_BIT;
+        use_color_fb = true;
     }
-    if (regs.clear_buffers.Z)
+    if (regs.clear_buffers.Z) {
         clear_mask |= GL_DEPTH_BUFFER_BIT;
+        use_depth_fb = true;
+    }
 
     if (clear_mask == 0)
         return;
 
-    auto [dirty_color_surface, dirty_depth_surface] = ConfigureFramebuffers();
+    auto [dirty_color_surface, dirty_depth_surface] =
+        ConfigureFramebuffers(use_color_fb, use_depth_fb);
 
     // TODO(Subv): Support clearing only partial colors.
     glClearColor(regs.clear_color[0], regs.clear_color[1], regs.clear_color[2],
@@ -394,7 +399,8 @@ void RasterizerOpenGL::DrawArrays() {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
-    auto [dirty_color_surface, dirty_depth_surface] = ConfigureFramebuffers();
+    auto [dirty_color_surface, dirty_depth_surface] =
+        ConfigureFramebuffers(true, regs.zeta.Address() != 0);
 
     SyncBlendState();
     SyncCullMode();

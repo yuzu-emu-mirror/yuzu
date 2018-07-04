@@ -326,12 +326,17 @@ struct SurfaceParams {
         return addr <= (region_addr + region_size) && region_addr <= (addr + size_in_bytes);
     }
 
-    /// Creates SurfaceParams from a texture configation
+    /// Creates SurfaceParams from a texture configuration
     static SurfaceParams CreateForTexture(const Tegra::Texture::FullTextureInfo& config);
 
-    /// Creates SurfaceParams from a framebuffer configation
+    /// Creates SurfaceParams from a framebuffer configuration
     static SurfaceParams CreateForFramebuffer(
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
+
+    /// Creates SurfaceParams for a depth buffer configuration
+    static SurfaceParams CreateForDepthBuffer(
+        const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config,
+        Tegra::GPUVAddr zeta_address, Tegra::DepthFormat format);
 
     Tegra::GPUVAddr addr;
     bool is_tiled;

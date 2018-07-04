@@ -65,6 +65,25 @@ struct FormatTuple {
     return params;
 }
 
+/*static*/ SurfaceParams SurfaceParams::CreateForDepthBuffer(
+    const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config, Tegra::GPUVAddr zeta_address,
+    Tegra::DepthFormat format) {
+
+    SurfaceParams params{};
+    params.addr = zeta_address;
+    params.is_tiled = true;
+    params.block_height = Tegra::Texture::TICEntry::DefaultBlockHeight;
+    params.pixel_format = PixelFormatFromDepthFormat(format);
+    params.component_type = ComponentTypeFromDepthFormat(format);
+    params.type = GetFormatType(params.pixel_format);
+    params.size_in_bytes = params.SizeInBytes();
+    params.width = config.width;
+    params.height = config.height;
+    params.unaligned_height = config.height;
+    params.size_in_bytes = params.SizeInBytes();
+    return params;
+}
+
 static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_format_tuples = {{
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, ComponentType::UNorm, false}, // ABGR8
     {GL_RGB, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, ComponentType::UNorm, false},    // B5G6R5
@@ -461,15 +480,16 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");
 
     // get color and depth surfaces
-    const SurfaceParams color_params{SurfaceParams::CreateForFramebuffer(regs.rt[0])};
-    SurfaceParams depth_params{color_params};
+    SurfaceParams color_params{};
+    SurfaceParams depth_params{};
+
+    if (using_color_fb) {
+        color_params = SurfaceParams::CreateForFramebuffer(regs.rt[0]);
+    }
 
     if (using_depth_fb) {
-        depth_params.addr = regs.zeta.Address();
-        depth_params.pixel_format = SurfaceParams::PixelFormatFromDepthFormat(regs.zeta.format);
-        depth_params.component_type = SurfaceParams::ComponentTypeFromDepthFormat(regs.zeta.format);
-        depth_params.type = SurfaceParams::GetFormatType(depth_params.pixel_format);
-        depth_params.size_in_bytes = depth_params.SizeInBytes();
+        depth_params =
+            SurfaceParams::CreateForDepthBuffer(regs.rt[0], regs.zeta.Address(), regs.zeta.format);
     }
 
     MathUtil::Rectangle<u32> color_rect{};
