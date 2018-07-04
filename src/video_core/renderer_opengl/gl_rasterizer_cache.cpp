@@ -102,6 +102,8 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm,
      true},                                                                                 // DXT45
     {GL_COMPRESSED_RED_RGTC1, GL_RED, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm, true}, // DXN1
+    {GL_COMPRESSED_RGBA_BPTC_UNORM_ARB, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm,
+     true},                                                             // BC7U
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, ComponentType::UNorm, false}, // ASTC_2D_4X4
 
     // DepthStencil formats
@@ -191,8 +193,9 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<true, PixelFormat::R11FG11FB10F>, MortonCopy<true, PixelFormat::RGBA32UI>,
         MortonCopy<true, PixelFormat::DXT1>,         MortonCopy<true, PixelFormat::DXT23>,
         MortonCopy<true, PixelFormat::DXT45>,        MortonCopy<true, PixelFormat::DXN1>,
-        MortonCopy<true, PixelFormat::ASTC_2D_4X4>,  MortonCopy<true, PixelFormat::Z24S8>,
-        MortonCopy<true, PixelFormat::S8Z24>,        MortonCopy<true, PixelFormat::Z32F>,
+        MortonCopy<true, PixelFormat::BC7U>,         MortonCopy<true, PixelFormat::ASTC_2D_4X4>,
+        MortonCopy<true, PixelFormat::Z24S8>,        MortonCopy<true, PixelFormat::S8Z24>,
+        MortonCopy<true, PixelFormat::Z32F>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
@@ -206,7 +209,8 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<false, PixelFormat::RGBA16F>,
         MortonCopy<false, PixelFormat::R11FG11FB10F>,
         MortonCopy<false, PixelFormat::RGBA32UI>,
-        // TODO(Subv): Swizzling the DXT1/DXT23/DXT45/DXN1 formats is not yet supported
+        // TODO(Subv): Swizzling the DXT1/DXT23/DXT45/DXN1/BC7U formats is not yet supported
+        nullptr,
         nullptr,
         nullptr,
         nullptr,
