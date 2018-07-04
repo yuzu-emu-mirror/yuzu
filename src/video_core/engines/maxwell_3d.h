@@ -436,7 +436,12 @@ public:
                     u32 count;
                 } vertex_buffer;
 
-                INSERT_PADDING_WORDS(0x99);
+                INSERT_PADDING_WORDS(1);
+
+                float clear_color[4];
+                float clear_depth;
+
+                INSERT_PADDING_WORDS(0x93);
 
                 struct {
                     u32 address_high;
@@ -473,7 +478,9 @@ public:
 
                 u32 depth_write_enabled;
 
-                INSERT_PADDING_WORDS(0x8);
+                INSERT_PADDING_WORDS(0x7);
+
+                u32 d3d_cull_mode;
 
                 BitField<0, 3, ComparisonOp> depth_test_func;
 
@@ -493,7 +500,13 @@ public:
                     u32 enable[NumRenderTargets];
                 } blend;
 
-                INSERT_PADDING_WORDS(0x2D);
+                INSERT_PADDING_WORDS(0xB);
+
+                union {
+                    BitField<4, 1, u32> triangle_rast_flip;
+                } screen_y_control;
+
+                INSERT_PADDING_WORDS(0x21);
 
                 u32 vb_element_base;
 
@@ -523,7 +536,12 @@ public:
                     }
                 } tic;
 
-                INSERT_PADDING_WORDS(0x22);
+                INSERT_PADDING_WORDS(0x21);
+
+                union {
+                    BitField<2, 1, u32> coord_origin;
+                    BitField<3, 10, u32> enable;
+                } point_coord_replace;
 
                 struct {
                     u32 code_address_high;
@@ -584,7 +602,21 @@ public:
 
                 Cull cull;
 
-                INSERT_PADDING_WORDS(0x77);
+                INSERT_PADDING_WORDS(0x2B);
+
+                union {
+                    u32 raw;
+                    BitField<0, 1, u32> Z;
+                    BitField<1, 1, u32> S;
+                    BitField<2, 1, u32> R;
+                    BitField<3, 1, u32> G;
+                    BitField<4, 1, u32> B;
+                    BitField<5, 1, u32> A;
+                    BitField<6, 4, u32> RT;
+                    BitField<10, 11, u32> layer;
+                } clear_buffers;
+
+                INSERT_PADDING_WORDS(0x4B);
 
                 struct {
                     u32 query_address_high;
@@ -766,6 +798,9 @@ private:
     /// Handles writes to the macro uploading registers.
     void ProcessMacroUpload(u32 data);
 
+    /// Handles a write to the CLEAR_BUFFERS register.
+    void ProcessClearBuffers();
+
     /// Handles a write to the QUERY_GET register.
     void ProcessQueryGet();
 
@@ -788,21 +823,27 @@ ASSERT_REG_POSITION(rt, 0x200);
 ASSERT_REG_POSITION(viewport_transform[0], 0x280);
 ASSERT_REG_POSITION(viewport, 0x300);
 ASSERT_REG_POSITION(vertex_buffer, 0x35D);
+ASSERT_REG_POSITION(clear_color[0], 0x360);
+ASSERT_REG_POSITION(clear_depth, 0x364);
 ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
 ASSERT_REG_POSITION(rt_control, 0x487);
 ASSERT_REG_POSITION(depth_test_enable, 0x4B3);
 ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
 ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);
+ASSERT_REG_POSITION(d3d_cull_mode, 0x4C2);
 ASSERT_REG_POSITION(depth_test_func, 0x4C3);
 ASSERT_REG_POSITION(blend, 0x4CF);
+ASSERT_REG_POSITION(screen_y_control, 0x4EB);
 ASSERT_REG_POSITION(vb_element_base, 0x50D);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
+ASSERT_REG_POSITION(point_coord_replace, 0x581);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(cull, 0x646);
+ASSERT_REG_POSITION(clear_buffers, 0x674);
 ASSERT_REG_POSITION(query, 0x6C0);
 ASSERT_REG_POSITION(vertex_array[0], 0x700);
 ASSERT_REG_POSITION(independent_blend, 0x780);

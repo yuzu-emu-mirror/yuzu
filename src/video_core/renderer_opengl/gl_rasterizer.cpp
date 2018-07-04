@@ -297,11 +297,8 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     return true;
 }
 
-void RasterizerOpenGL::DrawArrays() {
-    if (accelerate_draw == AccelDraw::Disabled)
-        return;
-
-    MICROPROFILE_SCOPE(OpenGL_Drawing);
+std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers(bool using_color_fb,
+                                                                    bool using_depth_fb) {
     const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
 
     // Sync the depth test state before configuring the framebuffer surfaces.
@@ -309,9 +306,6 @@ void RasterizerOpenGL::DrawArrays() {
 
     // TODO(bunnei): Implement this
     const bool has_stencil = false;
-
-    const bool using_color_fb = true;
-    const bool using_depth_fb = regs.zeta.Address() != 0;
 
     const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[0].GetRect()};
 
@@ -344,11 +338,6 @@ void RasterizerOpenGL::DrawArrays() {
     BindFramebufferSurfaces(color_surface, depth_surface, has_stencil);
 
     SyncViewport(surfaces_rect);
-    SyncBlendState();
-    SyncCullMode();
-
-    // TODO(bunnei): Sync framebuffer_scale uniform here
-    // TODO(bunnei): Sync scissorbox uniform(s) here
 
     // Viewport can have negative offsets or larger dimensions than our framebuffer sub-rect. Enable
     // scissor test to prevent drawing outside of the framebuffer region
@@ -358,6 +347,66 @@ void RasterizerOpenGL::DrawArrays() {
     state.scissor.width = draw_rect.GetWidth();
     state.scissor.height = draw_rect.GetHeight();
     state.Apply();
+
+    // Only return the surface to be marked as dirty if writing to it is enabled.
+    return std::make_pair(write_color_fb ? color_surface : nullptr,
+                          write_depth_fb ? depth_surface : nullptr);
+}
+
+void RasterizerOpenGL::Clear() {
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    bool use_color_fb = false;
+    bool use_depth_fb = false;
+
+    GLbitfield clear_mask = 0;
+    if (regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
+        regs.clear_buffers.A) {
+        clear_mask |= GL_COLOR_BUFFER_BIT;
+        use_color_fb = true;
+    }
+    if (regs.clear_buffers.Z) {
+        clear_mask |= GL_DEPTH_BUFFER_BIT;
+        use_depth_fb = true;
+    }
+
+    if (clear_mask == 0)
+        return;
+
+    auto [dirty_color_surface, dirty_depth_surface] =
+        ConfigureFramebuffers(use_color_fb, use_depth_fb);
+
+    // TODO(Subv): Support clearing only partial colors.
+    glClearColor(regs.clear_color[0], regs.clear_color[1], regs.clear_color[2],
+                 regs.clear_color[3]);
+    glClearDepth(regs.clear_depth);
+
+    glClear(clear_mask);
+
+    // Mark framebuffer surfaces as dirty
+    if (dirty_color_surface != nullptr) {
+        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
+    }
+    if (dirty_depth_surface != nullptr) {
+        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
+    }
+}
+
+void RasterizerOpenGL::DrawArrays() {
+    if (accelerate_draw == AccelDraw::Disabled)
+        return;
+
+    MICROPROFILE_SCOPE(OpenGL_Drawing);
+    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+
+    auto [dirty_color_surface, dirty_depth_surface] =
+        ConfigureFramebuffers(true, regs.zeta.Address() != 0);
+
+    SyncBlendState();
+    SyncCullMode();
+
+    // TODO(bunnei): Sync framebuffer_scale uniform here
+    // TODO(bunnei): Sync scissorbox uniform(s) here
 
     // Draw the vertex batch
     const bool is_indexed = accelerate_draw == AccelDraw::Indexed;
@@ -439,11 +488,11 @@ void RasterizerOpenGL::DrawArrays() {
     state.Apply();
 
     // Mark framebuffer surfaces as dirty
-    if (color_surface != nullptr && write_color_fb) {
-        res_cache.MarkSurfaceAsDirty(color_surface);
+    if (dirty_color_surface != nullptr) {
+        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
     }
-    if (depth_surface != nullptr && write_depth_fb) {
-        res_cache.MarkSurfaceAsDirty(depth_surface);
+    if (dirty_depth_surface != nullptr) {
+        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
     }
 }
 
@@ -722,6 +771,16 @@ void RasterizerOpenGL::SyncCullMode() {
     if (state.cull.enabled) {
         state.cull.front_face = MaxwellToGL::FrontFace(regs.cull.front_face);
         state.cull.mode = MaxwellToGL::CullFace(regs.cull.cull_face);
+
+        // If the GPU is configured to flip the rasterized triangles, then we need to flip the
+        // notion of front and back. Note: We flip the triangles when the value of the register is 0
+        // because OpenGL already does it for us.
+        if (regs.screen_y_control.triangle_rast_flip == 0) {
+            if (state.cull.front_face == GL_CCW)
+                state.cull.front_face = GL_CW;
+            else if (state.cull.front_face == GL_CW)
+                state.cull.front_face = GL_CCW;
+        }
     }
 }
 

@@ -41,6 +41,7 @@ struct SurfaceParams {
 
         // DepthStencil formats
         Z24S8 = 13,
+        S8Z24 = 14,
 
         MaxDepthStencilFormat,
 
@@ -92,6 +93,7 @@ struct SurfaceParams {
             4, // DXN1
             4, // ASTC_2D_4X4
             1, // Z24S8
+            1, // S8Z24
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -117,6 +119,7 @@ struct SurfaceParams {
             64,  // DXN1
             32,  // ASTC_2D_4X4
             32,  // Z24S8
+            32,  // S8Z24
         }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -128,6 +131,8 @@ struct SurfaceParams {
 
     static PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
         switch (format) {
+        case Tegra::DepthFormat::S8_Z24_UNORM:
+            return PixelFormat::S8Z24;
         case Tegra::DepthFormat::Z24_S8_UNORM:
             return PixelFormat::Z24S8;
         default:
@@ -226,6 +231,8 @@ struct SurfaceParams {
 
     static Tegra::DepthFormat DepthFormatFromPixelFormat(PixelFormat format) {
         switch (format) {
+        case PixelFormat::S8Z24:
+            return Tegra::DepthFormat::S8_Z24_UNORM;
         case PixelFormat::Z24S8:
             return Tegra::DepthFormat::Z24_S8_UNORM;
         default:
@@ -274,6 +281,7 @@ struct SurfaceParams {
 
     static ComponentType ComponentTypeFromDepthFormat(Tegra::DepthFormat format) {
         switch (format) {
+        case Tegra::DepthFormat::S8_Z24_UNORM:
         case Tegra::DepthFormat::Z24_S8_UNORM:
             return ComponentType::UNorm;
         default:
@@ -318,12 +326,17 @@ struct SurfaceParams {
         return addr <= (region_addr + region_size) && region_addr <= (addr + size_in_bytes);
     }
 
-    /// Creates SurfaceParams from a texture configation
+    /// Creates SurfaceParams from a texture configuration
     static SurfaceParams CreateForTexture(const Tegra::Texture::FullTextureInfo& config);
 
-    /// Creates SurfaceParams from a framebuffer configation
+    /// Creates SurfaceParams from a framebuffer configuration
     static SurfaceParams CreateForFramebuffer(
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
+
+    /// Creates SurfaceParams for a depth buffer configuration
+    static SurfaceParams CreateForDepthBuffer(
+        const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config,
+        Tegra::GPUVAddr zeta_address, Tegra::DepthFormat format);
 
     Tegra::GPUVAddr addr;
     bool is_tiled;
