@@ -47,6 +47,7 @@ public:
 
         // Start the audio event
         CoreTiming::ScheduleEvent(audio_ticks, audio_event);
+        voice_status_list.reserve(worker_params.voice_count);
     }
     ~IAudioRenderer() {
         CoreTiming::UnscheduleEvent(audio_event, 0);
@@ -68,6 +69,12 @@ private:
                     buf.data() + sizeof(UpdateDataHeader) + config.behavior_size,
                     memory_pool_count * sizeof(MemoryPoolInfo));
 
+        std::vector<VoiceInfo> voice_info(worker_params.voice_count);
+        std::memcpy(voice_info.data(),
+                    buf.data() + sizeof(UpdateDataHeader) + config.behavior_size +
+                        config.memory_pools_size + config.voice_resource_size,
+                    worker_params.voice_count * sizeof(VoiceInfo));
+
         UpdateDataHeader response_data{worker_params};
 
         ASSERT(ctx.GetWriteBufferSize() == response_data.total_size);
@@ -85,6 +92,23 @@ private:
         }
         std::memcpy(output.data() + sizeof(UpdateDataHeader), memory_pool.data(),
                     response_data.memory_pools_size);
+
+        for (unsigned i = 0; i < voice_info.size(); i++) {
+            if (voice_info[i].is_new) {
+                voice_status_list[i].played_sample_count = 0;
+                voice_status_list[i].wave_buffer_consumed = 0;
+            } else if (voice_info[i].play_state == (u8)PlayStates::Started) {
+                for (u32 buff_idx = 0; buff_idx < voice_info[i].wave_buffer_count; buff_idx++) {
+                    voice_status_list[i].played_sample_count +=
+                        (voice_info[i].wave_buffer[buff_idx].end_sample_offset -
+                         voice_info[i].wave_buffer[buff_idx].start_sample_offset) /
+                        2;
+                    voice_status_list[i].wave_buffer_consumed++;
+                }
+            }
+        }
+        std::memcpy(output.data() + sizeof(UpdateDataHeader) + response_data.memory_pools_size,
+                    voice_status_list.data(), response_data.voices_size);
 
         ctx.WriteBuffer(output);
 
@@ -128,6 +152,11 @@ private:
         RequestAttach = 0x4,
         Attached = 0x5,
         Released = 0x6,
+    };
+
+    enum class PlayStates : u8 {
+        Started = 0,
+        Stopped = 1,
     };
 
     struct MemoryPoolEntry {
@@ -175,11 +204,69 @@ private:
     };
     static_assert(sizeof(UpdateDataHeader) == 0x40, "UpdateDataHeader has wrong size");
 
+    struct BiquadFilter {
+        u8 enable;
+        INSERT_PADDING_BYTES(1);
+        s16_le numerator[3];
+        s16_le denominator[2];
+    };
+    static_assert(sizeof(BiquadFilter) == 0xc, "BiquadFilter has wrong size");
+
+    struct WaveBuffer {
+        u64_le buffer_addr;
+        u64_le buffer_sz;
+        s32_le start_sample_offset;
+        s32_le end_sample_offset;
+        u8 loop;
+        u8 end_of_stream;
+        u8 sent_to_server;
+        INSERT_PADDING_BYTES(5);
+        u64 context_addr;
+        u64 context_sz;
+        INSERT_PADDING_BYTES(8);
+    };
+    static_assert(sizeof(WaveBuffer) == 0x38, "WaveBuffer has wrong size");
+
+    struct VoiceInfo {
+        u32_le id;
+        u32_le node_id;
+        u8 is_new;
+        u8 is_in_use;
+        u8 play_state;
+        u8 sample_format;
+        u32_le sample_rate;
+        u32_le priority;
+        u32_le sorting_order;
+        u32_le channel_count;
+        float_le pitch;
+        float_le volume;
+        BiquadFilter biquad_filter[2];
+        u32_le wave_buffer_count;
+        u16_le wave_buffer_head;
+        INSERT_PADDING_BYTES(6);
+        u64_le additional_params_addr;
+        u64_le additional_params_sz;
+        u32_le mix_id;
+        u32_le splitter_info_id;
+        WaveBuffer wave_buffer[4];
+        u32_le voice_channel_resource_ids[6];
+        INSERT_PADDING_BYTES(24);
+    };
+    static_assert(sizeof(VoiceInfo) == 0x170, "VoiceInfo is wrong size");
+
+    struct VoiceOutStatus {
+        u64_le played_sample_count;
+        u32_le wave_buffer_consumed;
+        INSERT_PADDING_WORDS(1);
+    };
+    static_assert(sizeof(VoiceOutStatus) == 0x10, "VoiceOutStatus has wrong size");
+
     /// This is used to trigger the audio event callback.
     CoreTiming::EventType* audio_event;
 
     Kernel::SharedPtr<Kernel::Event> system_event;
     AudioRendererParameter worker_params;
+    std::vector<VoiceOutStatus> voice_status_list;
 };
 
 class IAudioDevice final : public ServiceFramework<IAudioDevice> {

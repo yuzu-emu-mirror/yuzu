@@ -76,6 +76,7 @@ u32 BytesPerPixel(TextureFormat format) {
 
 static u32 DepthBytesPerPixel(DepthFormat format) {
     switch (format) {
+    case DepthFormat::S8_Z24_UNORM:
     case DepthFormat::Z24_S8_UNORM:
         return 4;
     default:
@@ -129,6 +130,7 @@ std::vector<u8> UnswizzleDepthTexture(VAddr address, DepthFormat format, u32 wid
     std::vector<u8> unswizzled_data(width * height * bytes_per_pixel);
 
     switch (format) {
+    case DepthFormat::S8_Z24_UNORM:
     case DepthFormat::Z24_S8_UNORM:
         CopySwizzledData(width, height, bytes_per_pixel, bytes_per_pixel, data,
                          unswizzled_data.data(), true, block_height);
