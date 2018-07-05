@@ -686,7 +686,10 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
 
         // Bind the uniform to the sampler.
         GLint uniform = glGetUniformLocation(program, entry.GetName().c_str());
-        ASSERT(uniform != -1);
+        if (uniform == -1) {
+            continue;
+        }
+
         glProgramUniform1i(program, uniform, current_bindpoint);
 
         const auto texture = maxwell3d.GetStageTexture(entry.GetStage(), entry.GetOffset());

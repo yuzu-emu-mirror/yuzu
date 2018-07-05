@@ -329,6 +329,19 @@ union Instruction {
     } isetp;
 
     union {
+        BitField<0, 3, u64> pred0;
+        BitField<3, 3, u64> pred3;
+        BitField<12, 3, u64> pred12;
+        BitField<15, 1, u64> neg_pred12;
+        BitField<24, 2, PredOperation> cond;
+        BitField<29, 3, u64> pred29;
+        BitField<32, 1, u64> neg_pred29;
+        BitField<39, 3, u64> pred39;
+        BitField<42, 1, u64> neg_pred39;
+        BitField<45, 2, PredOperation> op;
+    } psetp;
+
+    union {
         BitField<39, 3, u64> pred39;
         BitField<42, 1, u64> neg_pred;
         BitField<43, 1, u64> neg_a;
@@ -438,6 +451,8 @@ public:
     enum class Id {
         KIL,
         SSY,
+        SYNC,
+        DEPBAR,
         BFE_C,
         BFE_R,
         BFE_IMM,
@@ -534,6 +549,7 @@ public:
         Shift,
         Ffma,
         Flow,
+        Synch,
         Memory,
         FloatSet,
         FloatSetPredicate,
@@ -638,10 +654,12 @@ private:
             INST("111000110011----", Id::KIL, Type::Flow, "KIL"),
             INST("111000101001----", Id::SSY, Type::Flow, "SSY"),
             INST("111000100100----", Id::BRA, Type::Flow, "BRA"),
+            INST("1111000011110---", Id::DEPBAR, Type::Synch, "DEPBAR"),
+            INST("1111000011111---", Id::SYNC, Type::Synch, "SYNC"),
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
-            INST("1100000000111---", Id::TEX, Type::Memory, "TEX"),
+            INST("110000----111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
