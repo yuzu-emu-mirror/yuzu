@@ -211,20 +211,28 @@ inline GLenum SwizzleSource(Tegra::Texture::SwizzleSource source) {
 inline GLenum ComparisonOp(Maxwell::ComparisonOp comparison) {
     switch (comparison) {
     case Maxwell::ComparisonOp::Never:
+    case Maxwell::ComparisonOp::NeverOld:
         return GL_NEVER;
     case Maxwell::ComparisonOp::Less:
+    case Maxwell::ComparisonOp::LessOld:
         return GL_LESS;
     case Maxwell::ComparisonOp::Equal:
+    case Maxwell::ComparisonOp::EqualOld:
         return GL_EQUAL;
     case Maxwell::ComparisonOp::LessEqual:
+    case Maxwell::ComparisonOp::LessEqualOld:
         return GL_LEQUAL;
     case Maxwell::ComparisonOp::Greater:
+    case Maxwell::ComparisonOp::GreaterOld:
         return GL_GREATER;
     case Maxwell::ComparisonOp::NotEqual:
+    case Maxwell::ComparisonOp::NotEqualOld:
         return GL_NOTEQUAL;
     case Maxwell::ComparisonOp::GreaterEqual:
+    case Maxwell::ComparisonOp::GreaterEqualOld:
         return GL_GEQUAL;
     case Maxwell::ComparisonOp::Always:
+    case Maxwell::ComparisonOp::AlwaysOld:
         return GL_ALWAYS;
     }
     LOG_CRITICAL(Render_OpenGL, "Unimplemented comparison op={}", static_cast<u32>(comparison));
