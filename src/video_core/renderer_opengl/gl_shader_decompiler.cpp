@@ -1213,6 +1213,9 @@ private:
                 switch (instr.conversion.f2f.rounding) {
                 case Tegra::Shader::F2fRoundingOp::None:
                     break;
+                case Tegra::Shader::F2fRoundingOp::Round:
+                    op_a = "roundEven(" + op_a + ')';
+                    break;
                 case Tegra::Shader::F2fRoundingOp::Floor:
                     op_a = "floor(" + op_a + ')';
                     break;
@@ -1477,6 +1480,36 @@ private:
             }
             break;
         }
+        case OpCode::Type::PredicateSetPredicate: {
+            std::string op_a =
+                GetPredicateCondition(instr.psetp.pred12, instr.psetp.neg_pred12 != 0);
+            std::string op_b =
+                GetPredicateCondition(instr.psetp.pred29, instr.psetp.neg_pred29 != 0);
+
+            using Tegra::Shader::Pred;
+            // We can't use the constant predicate as destination.
+            ASSERT(instr.psetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
+
+            std::string second_pred =
+                GetPredicateCondition(instr.psetp.pred39, instr.psetp.neg_pred39 != 0);
+
+            std::string combiner = GetPredicateCombiner(instr.psetp.op);
+
+            std::string predicate =
+                '(' + op_a + ") " + GetPredicateCombiner(instr.psetp.cond) + " (" + op_b + ')';
+
+            // Set the primary predicate to the result of Predicate OP SecondPredicate
+            SetPredicate(instr.psetp.pred3,
+                         '(' + predicate + ") " + combiner + " (" + second_pred + ')');
+
+            if (instr.psetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
+                // Set the secondary predicate to the result of !Predicate OP SecondPredicate,
+                // if enabled
+                SetPredicate(instr.psetp.pred0,
+                             "!(" + predicate + ") " + combiner + " (" + second_pred + ')');
+            }
+            break;
+        }
         case OpCode::Type::FloatSet: {
             std::string op_a = instr.fset.neg_a ? "-" : "";
             op_a += regs.GetRegisterAsFloat(instr.gpr8);
@@ -1597,6 +1630,13 @@ private:
             case OpCode::Id::SSY: {
                 // The SSY opcode tells the GPU where to re-converge divergent execution paths, we
                 // can ignore this when generating GLSL code.
+                break;
+            }
+            case OpCode::Id::DEPBAR:
+            case OpCode::Id::SYNC: {
+                // TODO(Subv): Find out if we actually have to care about these instructions or if
+                // the GLSL compiler takes care of that for us.
+                LOG_WARNING(HW_GPU, "DEPBAR/SYNC instruction is stubbed");
                 break;
             }
             default: {
