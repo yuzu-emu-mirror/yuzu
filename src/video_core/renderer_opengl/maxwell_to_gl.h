@@ -29,6 +29,10 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         switch (attrib.size) {
         case Maxwell::VertexAttribute::Size::Size_8_8_8_8:
             return GL_UNSIGNED_BYTE;
+        case Maxwell::VertexAttribute::Size::Size_16_16:
+            return GL_UNSIGNED_SHORT;
+        case Maxwell::VertexAttribute::Size::Size_10_10_10_2:
+            return GL_UNSIGNED_INT_2_10_10_10_REV;
         }
 
         LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
@@ -41,6 +45,10 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         switch (attrib.size) {
         case Maxwell::VertexAttribute::Size::Size_8_8_8_8:
             return GL_BYTE;
+        case Maxwell::VertexAttribute::Size::Size_16_16:
+            return GL_SHORT;
+        case Maxwell::VertexAttribute::Size::Size_10_10_10_2:
+            return GL_INT_2_10_10_10_REV;
         }
 
         LOG_CRITICAL(Render_OpenGL, "Unimplemented vertex size={}", attrib.SizeString());
