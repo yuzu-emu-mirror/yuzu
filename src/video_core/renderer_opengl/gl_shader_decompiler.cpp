@@ -1213,6 +1213,9 @@ private:
                 switch (instr.conversion.f2f.rounding) {
                 case Tegra::Shader::F2fRoundingOp::None:
                     break;
+                case Tegra::Shader::F2fRoundingOp::Round:
+                    op_a = "roundEven(" + op_a + ')';
+                    break;
                 case Tegra::Shader::F2fRoundingOp::Floor:
                     op_a = "floor(" + op_a + ')';
                     break;
