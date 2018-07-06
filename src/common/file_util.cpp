@@ -679,7 +679,7 @@ std::string GetSysDirectory() {
     return sysDir;
 }
 
-// Returns a string with a Citra data dir or file in the user's home
+// Returns a string with a yuzu data dir or file in the user's home
 // directory. To be used in "multi-user" mode (that is, installed).
 const std::string& GetUserPath(const unsigned int DirIDX, const std::string& newPath) {
     static std::string paths[NUM_PATH_INDICES];
