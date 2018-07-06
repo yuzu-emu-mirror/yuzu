@@ -166,7 +166,7 @@ use_virtual_sd =
 # 1 (default): Yes, 0: No
 use_docked_mode =
 
-# The system region that Citra will use during emulation
+# The system region that yuzu will use during emulation
 # -1: Auto-select (default), 0: Japan, 1: USA, 2: Europe, 3: Australia, 4: China, 5: Korea, 6: Taiwan
 region_value =
 
