@@ -22,10 +22,8 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
-#ifdef _MSC_VER
 #include <getopt.h>
-#else
-#include <getopt.h>
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 
