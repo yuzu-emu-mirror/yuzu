@@ -365,17 +365,20 @@ SectionID ElfReader::GetSectionByName(const char* name, int firstSection) const 
 
 namespace Loader {
 
-AppLoader_ELF::AppLoader_ELF(FileSys::VirtualFile file) : AppLoader(std::move(file)) {}
+AppLoader_ELF::AppLoader_ELF(FileUtil::IOFile&& file, std::string filename)
+    : AppLoader(std::move(file)), filename(std::move(filename)) {}
 
-FileType AppLoader_ELF::IdentifyType(const FileSys::VirtualFile& file) {
+FileType AppLoader_ELF::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     static constexpr u16 ELF_MACHINE_ARM{0x28};
 
     u32 magic = 0;
-    if (4 != file->ReadObject(&magic))
+    file.Seek(0, SEEK_SET);
+    if (1 != file.ReadArray<u32>(&magic, 1))
         return FileType::Error;
 
     u16 machine = 0;
-    if (2 != file->ReadObject(&machine, 18))
+    file.Seek(18, SEEK_SET);
+    if (1 != file.ReadArray<u16>(&machine, 1))
         return FileType::Error;
 
     if (Common::MakeMagic('\x7f', 'E', 'L', 'F') == magic && ELF_MACHINE_ARM == machine)
@@ -388,13 +391,20 @@ ResultStatus AppLoader_ELF::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     if (is_loaded)
         return ResultStatus::ErrorAlreadyLoaded;
 
-    std::vector<u8> buffer = file->ReadAllBytes();
-    if (buffer.size() != file->GetSize())
+    if (!file.IsOpen())
+        return ResultStatus::Error;
+
+    // Reset read pointer in case this file has been read before.
+    file.Seek(0, SEEK_SET);
+
+    size_t size = file.GetSize();
+    std::unique_ptr<u8[]> buffer(new u8[size]);
+    if (file.ReadBytes(&buffer[0], size) != size)
         return ResultStatus::Error;
 
     ElfReader elf_reader(&buffer[0]);
     SharedPtr<CodeSet> codeset = elf_reader.LoadInto(Memory::PROCESS_IMAGE_VADDR);
-    codeset->name = file->GetName();
+    codeset->name = filename;
 
     process->LoadModule(codeset, codeset->entrypoint);
     process->svc_access_mask.set();

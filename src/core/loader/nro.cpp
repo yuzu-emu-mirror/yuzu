@@ -47,12 +47,14 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {}
+AppLoader_NRO::AppLoader_NRO(FileUtil::IOFile&& file, std::string filepath)
+    : AppLoader(std::move(file)), filepath(std::move(filepath)) {}
 
-FileType AppLoader_NRO::IdentifyType(const FileSys::VirtualFile& file) {
+FileType AppLoader_NRO::IdentifyType(FileUtil::IOFile& file, const std::string&) {
     // Read NSO header
     NroHeader nro_header{};
-    if (sizeof(NroHeader) != file->ReadObject(&nro_header)) {
+    file.Seek(0, SEEK_SET);
+    if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
         return FileType::Error;
     }
     if (nro_header.magic == Common::MakeMagic('N', 'R', 'O', '0')) {
@@ -65,10 +67,16 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-bool AppLoader_NRO::LoadNro(FileSys::VirtualFile file, VAddr load_base) {
+bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
+    FileUtil::IOFile file(path, "rb");
+    if (!file.IsOpen()) {
+        return {};
+    }
+
     // Read NSO header
     NroHeader nro_header{};
-    if (sizeof(NroHeader) != file->ReadObject(&nro_header)) {
+    file.Seek(0, SEEK_SET);
+    if (sizeof(NroHeader) != file.ReadBytes(&nro_header, sizeof(NroHeader))) {
         return {};
     }
     if (nro_header.magic != Common::MakeMagic('N', 'R', 'O', '0')) {
@@ -77,9 +85,10 @@ bool AppLoader_NRO::LoadNro(FileSys::VirtualFile file, VAddr load_base) {
 
     // Build program image
     Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
-    std::vector<u8> program_image = file->ReadBytes(PageAlignSize(nro_header.file_size));
-    if (program_image.size() != PageAlignSize(nro_header.file_size))
-        return {};
+    std::vector<u8> program_image;
+    program_image.resize(PageAlignSize(nro_header.file_size));
+    file.Seek(0, SEEK_SET);
+    file.ReadBytes(program_image.data(), nro_header.file_size);
 
     for (int i = 0; i < nro_header.segments.size(); ++i) {
         codeset->segments[i].addr = nro_header.segments[i].offset;
@@ -102,7 +111,7 @@ bool AppLoader_NRO::LoadNro(FileSys::VirtualFile file, VAddr load_base) {
     program_image.resize(static_cast<u32>(program_image.size()) + bss_size);
 
     // Load codeset for current process
-    codeset->name = file->GetName();
+    codeset->name = path;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
     Core::CurrentProcess()->LoadModule(codeset, load_base);
 
@@ -113,11 +122,14 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     if (is_loaded) {
         return ResultStatus::ErrorAlreadyLoaded;
     }
+    if (!file.IsOpen()) {
+        return ResultStatus::Error;
+    }
 
     // Load NRO
     static constexpr VAddr base_addr{Memory::PROCESS_IMAGE_VADDR};
 
-    if (!LoadNro(file, base_addr)) {
+    if (!LoadNro(filepath, base_addr)) {
         return ResultStatus::ErrorInvalidFormat;
     }
 

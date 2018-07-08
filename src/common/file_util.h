@@ -150,31 +150,6 @@ size_t ReadFileToString(bool text_file, const char* filename, std::string& str);
 void SplitFilename83(const std::string& filename, std::array<char, 9>& short_name,
                      std::array<char, 4>& extension);
 
-// Splits the path on '/' or '\' and put the components into a vector
-// i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
-std::vector<std::string> SplitPathComponents(const std::string& filename);
-
-// Gets all of the text prior to the last '/' or '\' in the path.
-std::string GetParentPath(const std::string& path);
-
-// Gets the filename of the path
-std::string GetFilename(std::string path);
-
-// Gets the extension of the filename
-std::string GetExtensionFromFilename(const std::string& name);
-
-// Removes the final '/' or '\' if one exists
-std::string RemoveTrailingSlash(const std::string& path);
-
-// Creates a new vector containing indices [first, last) from the original.
-template <typename T>
-std::vector<T> SliceVector(const std::vector<T>& vector, size_t first, size_t last) {
-    if (first >= last)
-        return {};
-    last = std::min<size_t>(last, vector.size());
-    return std::vector<T>(vector.begin() + first, vector.begin() + first + last);
-}
-
 // simple wrapper for cstdlib file functions to
 // hopefully will make error checking easier
 // and make forgetting an fclose() harder
@@ -197,27 +172,41 @@ public:
     bool Close();
 
     template <typename T>
-    size_t ReadArray(T* data, size_t length) const {
+    size_t ReadArray(T* data, size_t length) {
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
 
-        if (!IsOpen())
+        if (!IsOpen()) {
+            m_good = false;
             return -1;
+        }
 
-        return std::fread(data, sizeof(T), length, m_file);
+        size_t items_read = std::fread(data, sizeof(T), length, m_file);
+        if (items_read != length)
+            m_good = false;
+
+        return items_read;
     }
 
     template <typename T>
     size_t WriteArray(const T* data, size_t length) {
         static_assert(std::is_trivially_copyable<T>(),
                       "Given array does not consist of trivially copyable objects");
-        if (!IsOpen())
+
+        if (!IsOpen()) {
+            m_good = false;
             return -1;
-        return std::fwrite(data, sizeof(T), length, m_file);
+        }
+
+        size_t items_written = std::fwrite(data, sizeof(T), length, m_file);
+        if (items_written != length)
+            m_good = false;
+
+        return items_written;
     }
 
     template <typename T>
-    size_t ReadBytes(T* data, size_t length) const {
+    size_t ReadBytes(T* data, size_t length) {
         static_assert(std::is_trivially_copyable<T>(), "T must be trivially copyable");
         return ReadArray(reinterpret_cast<char*>(data), length);
     }
@@ -242,7 +231,15 @@ public:
         return nullptr != m_file;
     }
 
-    bool Seek(s64 off, int origin) const;
+    // m_good is set to false when a read, write or other function fails
+    bool IsGood() const {
+        return m_good;
+    }
+    explicit operator bool() const {
+        return IsGood();
+    }
+
+    bool Seek(s64 off, int origin);
     u64 Tell() const;
     u64 GetSize() const;
     bool Resize(u64 size);
@@ -250,11 +247,13 @@ public:
 
     // clear error state
     void Clear() {
+        m_good = true;
         std::clearerr(m_file);
     }
 
 private:
     std::FILE* m_file = nullptr;
+    bool m_good = true;
 };
 
 } // namespace FileUtil

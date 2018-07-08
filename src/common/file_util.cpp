@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <sstream>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_paths.h"
@@ -387,7 +386,7 @@ u64 GetSize(FILE* f) {
 bool CreateEmptyFile(const std::string& filename) {
     LOG_TRACE(Common_Filesystem, "{}", filename);
 
-    if (!FileUtil::IOFile(filename, "wb").IsOpen()) {
+    if (!FileUtil::IOFile(filename, "wb")) {
         LOG_ERROR(Common_Filesystem, "failed {}: {}", filename, GetLastErrorMsg());
         return false;
     }
@@ -751,7 +750,7 @@ size_t WriteStringToFile(bool text_file, const std::string& str, const char* fil
 size_t ReadFileToString(bool text_file, const char* filename, std::string& str) {
     IOFile file(filename, text_file ? "r" : "rb");
 
-    if (!file.IsOpen())
+    if (!file)
         return false;
 
     str.resize(static_cast<u32>(file.GetSize()));
@@ -800,57 +799,6 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
     }
 }
 
-std::vector<std::string> SplitPathComponents(const std::string& filename) {
-    auto copy(filename);
-    std::replace(copy.begin(), copy.end(), '\\', '/');
-    std::vector<std::string> out;
-
-    std::stringstream stream(filename);
-    std::string item;
-    while (std::getline(stream, item, '/'))
-        out.push_back(std::move(item));
-
-    return out;
-}
-
-std::string GetParentPath(const std::string& path) {
-    auto out = path;
-    const auto name_bck_index = out.find_last_of('\\');
-    const auto name_fwd_index = out.find_last_of('/');
-    size_t name_index;
-    if (name_bck_index == std::string::npos || name_fwd_index == std::string::npos)
-        name_index = std::min<size_t>(name_bck_index, name_fwd_index);
-    else
-        name_index = std::max<size_t>(name_bck_index, name_fwd_index);
-
-    return out.erase(name_index);
-}
-
-std::string GetFilename(std::string path) {
-    std::replace(path.begin(), path.end(), '\\', '/');
-    auto name_index = path.find_last_of('/');
-    if (name_index == std::string::npos)
-        return "";
-    return path.substr(name_index + 1);
-}
-
-std::string GetExtensionFromFilename(const std::string& name) {
-    size_t index = name.find_last_of('.');
-    if (index == std::string::npos)
-        return "";
-
-    return name.substr(index + 1);
-}
-
-std::string RemoveTrailingSlash(const std::string& path) {
-    if (path.empty())
-        return path;
-    if (path.back() == '\\' || path.back() == '/')
-        return path.substr(0, path.size() - 1);
-
-    return path;
-}
-
 IOFile::IOFile() {}
 
 IOFile::IOFile(const std::string& filename, const char openmode[], int flags) {
@@ -872,6 +820,7 @@ IOFile& IOFile::operator=(IOFile&& other) noexcept {
 
 void IOFile::Swap(IOFile& other) noexcept {
     std::swap(m_file, other.m_file);
+    std::swap(m_good, other.m_good);
 }
 
 bool IOFile::Open(const std::string& filename, const char openmode[], int flags) {
@@ -888,15 +837,16 @@ bool IOFile::Open(const std::string& filename, const char openmode[], int flags)
     m_file = fopen(filename.c_str(), openmode);
 #endif
 
-    return IsOpen();
+    m_good = IsOpen();
+    return m_good;
 }
 
 bool IOFile::Close() {
     if (!IsOpen() || 0 != std::fclose(m_file))
-        return false;
+        m_good = false;
 
     m_file = nullptr;
-    return true;
+    return m_good;
 }
 
 u64 IOFile::GetSize() const {
@@ -906,8 +856,11 @@ u64 IOFile::GetSize() const {
     return 0;
 }
 
-bool IOFile::Seek(s64 off, int origin) const {
-    return IsOpen() && 0 == fseeko(m_file, off, origin);
+bool IOFile::Seek(s64 off, int origin) {
+    if (!IsOpen() || 0 != fseeko(m_file, off, origin))
+        m_good = false;
+
+    return m_good;
 }
 
 u64 IOFile::Tell() const {
@@ -918,20 +871,26 @@ u64 IOFile::Tell() const {
 }
 
 bool IOFile::Flush() {
-    return IsOpen() && 0 == std::fflush(m_file);
+    if (!IsOpen() || 0 != std::fflush(m_file))
+        m_good = false;
+
+    return m_good;
 }
 
 bool IOFile::Resize(u64 size) {
-    return IsOpen() && 0 ==
+    if (!IsOpen() || 0 !=
 #ifdef _WIN32
-                           // ector: _chsize sucks, not 64-bit safe
-                           // F|RES: changed to _chsize_s. i think it is 64-bit safe
-                           _chsize_s(_fileno(m_file), size)
+                         // ector: _chsize sucks, not 64-bit safe
+                         // F|RES: changed to _chsize_s. i think it is 64-bit safe
+                         _chsize_s(_fileno(m_file), size)
 #else
-                           // TODO: handle 64bit and growing
-                           ftruncate(fileno(m_file), size)
+                         // TODO: handle 64bit and growing
+                         ftruncate(fileno(m_file), size)
 #endif
-        ;
+    )
+        m_good = false;
+
+    return m_good;
 }
 
 } // namespace FileUtil
