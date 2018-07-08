@@ -1127,6 +1127,20 @@ private:
                 WriteLogicOperation(instr.gpr0, instr.alu.lop.operation, op_a, op_b);
                 break;
             }
+            case OpCode::Id::IMNMX_C:
+            case OpCode::Id::IMNMX_R:
+            case OpCode::Id::IMNMX_IMM: {
+                ASSERT_MSG(instr.imnmx.exchange == Tegra::Shader::IMinMaxExchange::None,
+                           "Unimplemented");
+                std::string condition =
+                    GetPredicateCondition(instr.imnmx.pred, instr.imnmx.negate_pred != 0);
+                std::string parameters = op_a + ',' + op_b;
+                regs.SetRegisterToInteger(instr.gpr0, instr.imnmx.is_signed, 0,
+                                          '(' + condition + ") ? min(" + parameters + ") : max(" +
+                                              parameters + ')',
+                                          1, 1);
+                break;
+            }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
                              opcode->GetName());
