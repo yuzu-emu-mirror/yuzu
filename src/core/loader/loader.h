@@ -13,7 +13,6 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "common/file_util.h"
-#include "core/file_sys/vfs.h"
 #include "core/hle/kernel/kernel.h"
 
 namespace Kernel {
@@ -37,9 +36,10 @@ enum class FileType {
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
  * @param file open file
+ * @param filepath Path of the file that we are opening.
  * @return FileType of file
  */
-FileType IdentifyFile(FileSys::VirtualFile file);
+FileType IdentifyFile(FileUtil::IOFile& file, const std::string& filepath);
 
 /**
  * Identifies the type of a bootable file based on the magic value in its header.
@@ -50,12 +50,12 @@ FileType IdentifyFile(FileSys::VirtualFile file);
 FileType IdentifyFile(const std::string& file_name);
 
 /**
- * Guess the type of a bootable file from its name
- * @param name String name of bootable file
+ * Guess the type of a bootable file from its extension
+ * @param extension String extension of bootable file
  * @return FileType of file. Note: this will return FileType::Unknown if it is unable to determine
  * a filetype, and will never return FileType::Error.
  */
-FileType GuessFromFilename(const std::string& name);
+FileType GuessFromExtension(const std::string& extension);
 
 /**
  * Convert a FileType into a string which can be displayed to the user.
@@ -79,7 +79,7 @@ enum class ResultStatus {
 /// Interface for loading an application
 class AppLoader : NonCopyable {
 public:
-    AppLoader(FileSys::VirtualFile file) : file(std::move(file)) {}
+    AppLoader(FileUtil::IOFile&& file) : file(std::move(file)) {}
     virtual ~AppLoader() {}
 
     /**
@@ -154,20 +154,26 @@ public:
     /**
      * Get the RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
-     * @param file The file containing the RomFS
+     * @param romfs_file The file containing the RomFS
+     * @param offset The offset the romfs begins on
+     * @param size The size of the romfs
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadRomFS(FileSys::VirtualFile& dir) {
+    virtual ResultStatus ReadRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                                   u64& size) {
         return ResultStatus::ErrorNotImplemented;
     }
 
     /**
      * Get the update RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
-     * @param file The file containing the RomFS
+     * @param romfs_file The file containing the RomFS
+     * @param offset The offset the romfs begins on
+     * @param size The size of the romfs
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadUpdateRomFS(FileSys::VirtualFile& file) {
+    virtual ResultStatus ReadUpdateRomFS(std::shared_ptr<FileUtil::IOFile>& romfs_file, u64& offset,
+                                         u64& size) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -181,7 +187,7 @@ public:
     }
 
 protected:
-    FileSys::VirtualFile file;
+    FileUtil::IOFile file;
     bool is_loaded = false;
 };
 
@@ -196,6 +202,6 @@ extern const std::initializer_list<Kernel::AddressMapping> default_address_mappi
  * @param filename String filename of bootable file
  * @return best loader for this file
  */
-std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file);
+std::unique_ptr<AppLoader> GetLoader(const std::string& filename);
 
 } // namespace Loader

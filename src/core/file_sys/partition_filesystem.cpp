@@ -6,30 +6,29 @@
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/file_sys/partition_filesystem.h"
-#include "core/file_sys/vfs_offset.h"
 #include "core/loader/loader.h"
 
 namespace FileSys {
 
-PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
-    // At least be as large as the header
-    if (file->GetSize() < sizeof(Header)) {
-        status = Loader::ResultStatus::Error;
-        return;
-    }
+Loader::ResultStatus PartitionFilesystem::Load(const std::string& file_path, size_t offset) {
+    FileUtil::IOFile file(file_path, "rb");
+    if (!file.IsOpen())
+        return Loader::ResultStatus::Error;
 
+    // At least be as large as the header
+    if (file.GetSize() < sizeof(Header))
+        return Loader::ResultStatus::Error;
+
+    file.Seek(offset, SEEK_SET);
     // For cartridges, HFSs can get very large, so we need to calculate the size up to
     // the actual content itself instead of just blindly reading in the entire file.
     Header pfs_header;
-    if (sizeof(Header) != file->ReadObject(&pfs_header)) {
-        status = Loader::ResultStatus::Error;
-        return;
-    }
+    if (!file.ReadBytes(&pfs_header, sizeof(Header)))
+        return Loader::ResultStatus::Error;
 
     if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
         pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
-        status = Loader::ResultStatus::ErrorInvalidFormat;
-        return;
+        return Loader::ResultStatus::ErrorInvalidFormat;
     }
 
     bool is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
@@ -39,86 +38,99 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
         sizeof(Header) + (pfs_header.num_entries * entry_size) + pfs_header.strtab_size;
 
     // Actually read in now...
-    std::vector<u8> file_data = file->ReadBytes(metadata_size);
+    file.Seek(offset, SEEK_SET);
+    std::vector<u8> file_data(metadata_size);
 
-    if (file_data.size() != metadata_size) {
-        status = Loader::ResultStatus::Error;
-        return;
-    }
+    if (!file.ReadBytes(file_data.data(), metadata_size))
+        return Loader::ResultStatus::Error;
 
-    size_t total_size = file_data.size();
-    if (total_size < sizeof(Header)) {
-        status = Loader::ResultStatus::Error;
-        return;
-    }
+    Loader::ResultStatus result = Load(file_data);
+    if (result != Loader::ResultStatus::Success)
+        LOG_ERROR(Service_FS, "Failed to load PFS from file {}!", file_path);
 
-    memcpy(&pfs_header, file_data.data(), sizeof(Header));
+    return result;
+}
+
+Loader::ResultStatus PartitionFilesystem::Load(const std::vector<u8>& file_data, size_t offset) {
+    size_t total_size = file_data.size() - offset;
+    if (total_size < sizeof(Header))
+        return Loader::ResultStatus::Error;
+
+    memcpy(&pfs_header, &file_data[offset], sizeof(Header));
     if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
         pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
-        status = Loader::ResultStatus::ErrorInvalidFormat;
-        return;
+        return Loader::ResultStatus::ErrorInvalidFormat;
     }
 
     is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
-    size_t entries_offset = sizeof(Header);
+    size_t entries_offset = offset + sizeof(Header);
+    size_t entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
     size_t strtab_offset = entries_offset + (pfs_header.num_entries * entry_size);
-    content_offset = strtab_offset + pfs_header.strtab_size;
     for (u16 i = 0; i < pfs_header.num_entries; i++) {
-        FSEntry entry;
+        FileEntry entry;
 
-        memcpy(&entry, &file_data[entries_offset + (i * entry_size)], sizeof(FSEntry));
-        std::string name(
-            reinterpret_cast<const char*>(&file_data[strtab_offset + entry.strtab_offset]));
-
-        pfs_files.emplace_back(
-            std::make_shared<OffsetVfsFile>(file, entry.size, content_offset + entry.offset, name));
+        memcpy(&entry.fs_entry, &file_data[entries_offset + (i * entry_size)], sizeof(FSEntry));
+        entry.name = std::string(reinterpret_cast<const char*>(
+            &file_data[strtab_offset + entry.fs_entry.strtab_offset]));
+        pfs_entries.push_back(std::move(entry));
     }
 
-    status = Loader::ResultStatus::Success;
+    content_offset = strtab_offset + pfs_header.strtab_size;
+
+    return Loader::ResultStatus::Success;
 }
 
-Loader::ResultStatus PartitionFilesystem::GetStatus() const {
-    return status;
+u32 PartitionFilesystem::GetNumEntries() const {
+    return pfs_header.num_entries;
 }
 
-std::vector<std::shared_ptr<VfsFile>> PartitionFilesystem::GetFiles() const {
-    return pfs_files;
+u64 PartitionFilesystem::GetEntryOffset(u32 index) const {
+    if (index > GetNumEntries())
+        return 0;
+
+    return content_offset + pfs_entries[index].fs_entry.offset;
 }
 
-std::vector<std::shared_ptr<VfsDirectory>> PartitionFilesystem::GetSubdirectories() const {
-    return {};
+u64 PartitionFilesystem::GetEntrySize(u32 index) const {
+    if (index > GetNumEntries())
+        return 0;
+
+    return pfs_entries[index].fs_entry.size;
 }
 
-std::string PartitionFilesystem::GetName() const {
-    return is_hfs ? "HFS0" : "PFS0";
+std::string PartitionFilesystem::GetEntryName(u32 index) const {
+    if (index > GetNumEntries())
+        return "";
+
+    return pfs_entries[index].name;
 }
 
-std::shared_ptr<VfsDirectory> PartitionFilesystem::GetParentDirectory() const {
-    // TODO(DarkLordZach): Add support for nested containers.
-    return nullptr;
+u64 PartitionFilesystem::GetFileOffset(const std::string& name) const {
+    for (u32 i = 0; i < pfs_header.num_entries; i++) {
+        if (pfs_entries[i].name == name)
+            return content_offset + pfs_entries[i].fs_entry.offset;
+    }
+
+    return 0;
 }
 
-void PartitionFilesystem::PrintDebugInfo() const {
-    LOG_DEBUG(Service_FS, "Magic:                  {:.4}", pfs_header.magic);
+u64 PartitionFilesystem::GetFileSize(const std::string& name) const {
+    for (u32 i = 0; i < pfs_header.num_entries; i++) {
+        if (pfs_entries[i].name == name)
+            return pfs_entries[i].fs_entry.size;
+    }
+
+    return 0;
+}
+
+void PartitionFilesystem::Print() const {
+    LOG_DEBUG(Service_FS, "Magic:                  {}", pfs_header.magic);
     LOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
     for (u32 i = 0; i < pfs_header.num_entries; i++) {
         LOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes, at 0x{:X})", i,
-                  pfs_files[i]->GetName(), pfs_files[i]->GetSize(),
-                  dynamic_cast<OffsetVfsFile*>(pfs_files[i].get())->GetOffset());
+                  pfs_entries[i].name.c_str(), pfs_entries[i].fs_entry.size,
+                  GetFileOffset(pfs_entries[i].name));
     }
-}
-
-bool PartitionFilesystem::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
-    auto iter = std::find(pfs_files.begin(), pfs_files.end(), file);
-    if (iter == pfs_files.end())
-        return false;
-
-    pfs_files[iter - pfs_files.begin()] = pfs_files.back();
-    pfs_files.pop_back();
-
-    pfs_dirs.emplace_back(dir);
-
-    return true;
 }
 } // namespace FileSys

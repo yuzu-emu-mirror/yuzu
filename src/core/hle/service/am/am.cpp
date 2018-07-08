@@ -621,7 +621,7 @@ void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
 
     FileSys::Path unused;
-    auto savedata = FileSystem::OpenFileSystem(FileSystem::Type::SaveData);
+    auto savedata = FileSystem::OpenFileSystem(FileSystem::Type::SaveData, unused);
     if (savedata.Failed()) {
         // Create the save data and return an error indicating that the operation was performed.
         FileSystem::FormatFileSystem(FileSystem::Type::SaveData);

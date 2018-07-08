@@ -29,7 +29,7 @@ private:
     void OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenRomStorage(Kernel::HLERequestContext& ctx);
 
-    FileSys::VirtualFile romfs;
+    std::unique_ptr<FileSys::FileSystemBackend> romfs;
 };
 
 } // namespace Service::FileSystem
