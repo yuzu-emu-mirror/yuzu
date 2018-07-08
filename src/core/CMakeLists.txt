@@ -8,9 +8,9 @@ add_library(core STATIC
     core_cpu.h
     core_timing.cpp
     core_timing.h
-    file_sys/content_archive.cpp
-    file_sys/content_archive.h
     file_sys/directory.h
+    file_sys/disk_filesystem.cpp
+    file_sys/disk_filesystem.h
     file_sys/errors.h
     file_sys/filesystem.cpp
     file_sys/filesystem.h
@@ -20,13 +20,15 @@ add_library(core STATIC
     file_sys/path_parser.h
     file_sys/program_metadata.cpp
     file_sys/program_metadata.h
+    file_sys/romfs_factory.cpp
+    file_sys/romfs_factory.h
+    file_sys/romfs_filesystem.cpp
+    file_sys/romfs_filesystem.h
+    file_sys/savedata_factory.cpp
+    file_sys/savedata_factory.h
+    file_sys/sdmc_factory.cpp
+    file_sys/sdmc_factory.h
     file_sys/storage.h
-    file_sys/vfs.cpp
-    file_sys/vfs.h
-    file_sys/vfs_offset.cpp
-    file_sys/vfs_offset.h
-    file_sys/vfs_real.cpp
-    file_sys/vfs_real.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
