@@ -134,7 +134,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
-            GDBStub::RegisterModule(module, load_addr, next_load_addr);
+            // Register module with GDBStub
+            GDBStub::RegisterModule(module, load_addr, next_load_addr - 1);
         } else {
             next_load_addr = load_addr;
         }
