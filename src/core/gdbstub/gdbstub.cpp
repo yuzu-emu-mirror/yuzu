@@ -252,7 +252,7 @@ static u64 RegRead(int id, Kernel::Thread* thread = nullptr) {
     } else if (id == CPSR_REGISTER) {
         return thread->context.cpsr;
     } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
-        return thread->context.fpu_registers[id-UC_ARM64_REG_Q0][0];
+        return thread->context.fpu_registers[id - UC_ARM64_REG_Q0][0];
     } else {
         return 0;
     }
@@ -272,7 +272,7 @@ static void RegWrite(int id, u64 val, Kernel::Thread* thread = nullptr) {
     } else if (id == CPSR_REGISTER) {
         thread->context.cpsr = val;
     } else if (id > CPSR_REGISTER && id < FPSCR_REGISTER) {
-        thread->context.fpu_registers[id-(CPSR_REGISTER+1)][0] = val;
+        thread->context.fpu_registers[id - (CPSR_REGISTER + 1)][0] = val;
     }
 }
 
@@ -838,7 +838,7 @@ static void ReadRegister() {
     } else if (id == FPSCR_REGISTER) {
         LongToGdbHex(reply, RegRead(998, current_thread));
     } else {
-        //return SendReply("E01");
+        // return SendReply("E01");
         LongToGdbHex(reply, RegRead(997, current_thread));
     }
 
@@ -901,7 +901,7 @@ static void WriteRegister() {
     } else if (id == FPSCR_REGISTER) {
         RegWrite(998, GdbHexToLong(buffer_ptr), current_thread);
     } else {
-        //return SendReply("E01");
+        // return SendReply("E01");
         RegWrite(997, GdbHexToLong(buffer_ptr), current_thread);
     }
 
@@ -956,7 +956,11 @@ static void ReadMemory() {
         SendReply("E01");
     }
 
-    if (!Memory::IsValidVirtualAddress(addr) && (addr < Memory::STACK_AREA_VADDR)) {
+    if ((addr < Memory::PROCESS_IMAGE_VADDR) || (addr >= Memory::MAP_REGION_VADDR_END)) {
+        return SendReply("E00");
+    }
+
+    if (!Memory::IsValidVirtualAddress(addr)) {
         return SendReply("E00");
     }
 

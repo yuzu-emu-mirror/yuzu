@@ -118,7 +118,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
 
     std::string filename;
     Common::SplitPath(codeset->name, nullptr, &filename, nullptr);
-    GDBStub::RegisterModule((filename+".elf").c_str(), load_base, load_base);
+    GDBStub::RegisterModule((filename + ".elf").c_str(), load_base, load_base);
 
     return true;
 }
