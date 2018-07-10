@@ -17,6 +17,15 @@ SaveData_Factory::SaveData_Factory(std::string nand_directory)
 
 ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path& path) {
     std::string save_directory = GetFullPath();
+
+    if (!FileUtil::Exists(save_directory)) {
+        // TODO(bunnei): This is a work-around to always create a save data directory if it does not
+        // already exist. This is a hack, as we do not understand yet how this works on hardware.
+        // Without a save data directory, many games will assert on boot. This should not have any
+        // bad side-effects.
+        FileUtil::CreateFullPath(save_directory);
+    }
+
     // Return an error if the save data doesn't actually exist.
     if (!FileUtil::IsDirectory(save_directory)) {
         // TODO(Subv): Find out correct error code.
