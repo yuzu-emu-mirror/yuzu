@@ -29,24 +29,9 @@ u32 nvhost_ctrl::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<
 u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>& output) {
     IocGetConfigParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
-    LOG_DEBUG(Service_NVDRV, "called, setting={}!{}", params.domain_str.data(),
+    LOG_TRACE(Service_NVDRV, "called, setting={}!{}", params.domain_str.data(),
               params.param_str.data());
-
-    if (!strcmp(params.domain_str.data(), "nv")) {
-        if (!strcmp(params.param_str.data(), "NV_MEMORY_PROFILER")) {
-            params.config_str[0] = '0';
-        } else if (!strcmp(params.param_str.data(), "NVN_THROUGH_OPENGL")) {
-            params.config_str[0] = '0';
-        } else if (!strcmp(params.param_str.data(), "NVRM_GPU_PREVENT_USE")) {
-            params.config_str[0] = '0';
-        } else {
-            params.config_str[0] = '0';
-        }
-    } else {
-        UNIMPLEMENTED(); // unknown domain? Only nv has been seen so far on hardware
-    }
-    std::memcpy(output.data(), &params, sizeof(params));
-    return 0;
+    return 0x30006; // Returns error on production mode
 }
 
 u32 nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output,
