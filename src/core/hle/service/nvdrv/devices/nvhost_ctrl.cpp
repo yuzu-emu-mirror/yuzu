@@ -40,7 +40,7 @@ u32 nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector<u8>&
         } else if (!strcmp(params.param_str.data(), "NVRM_GPU_PREVENT_USE")) {
             params.config_str[0] = '0';
         } else {
-            params.config_str[0] = '\0';
+            params.config_str[0] = '0';
         }
     } else {
         UNIMPLEMENTED(); // unknown domain? Only nv has been seen so far on hardware
