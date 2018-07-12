@@ -68,6 +68,10 @@ const u32 CPSR_REGISTER = 33;
 const u32 UC_ARM64_REG_Q0 = 34;
 const u32 FPSCR_REGISTER = 66;
 
+// TODO/WiP - Used while working on support for FPU
+const u32 TODO_DUMMY_REG_997 = 997;
+const u32 TODO_DUMMY_REG_998 = 998;
+
 // For sample XML files see the GDB source /gdb/features
 // GDB also wants the l character at the start
 // This XML defines what the registers are for this specific ARM device
@@ -774,9 +778,9 @@ static void ReadRegister() {
     } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
         LongToGdbHex(reply, RegRead(id, current_thread));
     } else if (id == FPSCR_REGISTER) {
-        LongToGdbHex(reply, RegRead(998, current_thread));
+        LongToGdbHex(reply, RegRead(TODO_DUMMY_REG_998, current_thread));
     } else {
-        LongToGdbHex(reply, RegRead(997, current_thread));
+        LongToGdbHex(reply, RegRead(TODO_DUMMY_REG_997, current_thread));
     }
 
     SendReply(reinterpret_cast<char*>(reply));
@@ -809,7 +813,7 @@ static void ReadRegisters() {
 
     bufptr += 32 * 32;
 
-    LongToGdbHex(bufptr, RegRead(998, current_thread));
+    LongToGdbHex(bufptr, RegRead(TODO_DUMMY_REG_998, current_thread));
 
     bufptr += 8;
 
@@ -836,9 +840,9 @@ static void WriteRegister() {
     } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
         RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
     } else if (id == FPSCR_REGISTER) {
-        RegWrite(998, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(TODO_DUMMY_REG_998, GdbHexToLong(buffer_ptr), current_thread);
     } else {
-        RegWrite(997, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(TODO_DUMMY_REG_997, GdbHexToLong(buffer_ptr), current_thread);
     }
 
     // Update Unicorn context skipping scheduler, no running threads at this point
@@ -864,7 +868,7 @@ static void WriteRegisters() {
         } else if (reg >= UC_ARM64_REG_Q0 && reg < FPSCR_REGISTER) {
             RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == FPSCR_REGISTER) {
-            RegWrite(998, GdbHexToLong(buffer_ptr + i * 16), current_thread);
+            RegWrite(TODO_DUMMY_REG_998, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else {
             UNIMPLEMENTED();
         }
