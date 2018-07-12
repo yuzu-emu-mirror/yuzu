@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <string>
 #include "common/common_types.h"
 #include "core/hle/kernel/thread.h"
 
@@ -52,7 +53,7 @@ bool IsServerEnabled();
 bool IsConnected();
 
 /// Register module.
-void RegisterModule(const char* name, PAddr beg, PAddr end);
+void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext = true);
 
 /**
  * Signal to the gdbstub server that it should halt CPU execution.

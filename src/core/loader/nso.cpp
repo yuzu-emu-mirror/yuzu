@@ -8,7 +8,6 @@
 #include "common/common_funcs.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
-#include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/gdbstub/gdbstub.h"
@@ -150,9 +149,7 @@ VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& 
     Core::CurrentProcess()->LoadModule(codeset, load_base);
 
     // Register module with GDBStub
-    std::string filename;
-    Common::SplitPath(codeset->name, nullptr, &filename, nullptr);
-    GDBStub::RegisterModule((filename + ".elf").c_str(), load_base, load_base);
+    GDBStub::RegisterModule(codeset->name, load_base, load_base);
 
     return load_base + image_size;
 }
