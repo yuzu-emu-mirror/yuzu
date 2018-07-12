@@ -148,6 +148,24 @@ private:
 
         LOG_DEBUG(Service_NIFM, "called");
     }
+    void IsWirelessCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u8>(0);
+    }
+    void IsEthernetCommunicationEnabled(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u8>(0);
+    }
+    void IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u8>(0);
+    }
 };
 
 IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
@@ -167,11 +185,11 @@ IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
         {14, &IGeneralService::CreateTemporaryNetworkProfile, "CreateTemporaryNetworkProfile"},
         {15, nullptr, "GetCurrentIpConfigInfo"},
         {16, nullptr, "SetWirelessCommunicationEnabled"},
-        {17, nullptr, "IsWirelessCommunicationEnabled"},
+        {17, &IGeneralService::IsWirelessCommunicationEnabled, "IsWirelessCommunicationEnabled"},
         {18, nullptr, "GetInternetConnectionStatus"},
         {19, nullptr, "SetEthernetCommunicationEnabled"},
-        {20, nullptr, "IsEthernetCommunicationEnabled"},
-        {21, nullptr, "IsAnyInternetRequestAccepted"},
+        {20, &IGeneralService::IsEthernetCommunicationEnabled, "IsEthernetCommunicationEnabled"},
+        {21, &IGeneralService::IsAnyInternetRequestAccepted, "IsAnyInternetRequestAccepted"},
         {22, nullptr, "IsAnyForegroundRequestAccepted"},
         {23, nullptr, "PutToSleep"},
         {24, nullptr, "WakeUp"},
