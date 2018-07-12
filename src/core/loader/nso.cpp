@@ -10,6 +10,7 @@
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/core.h"
+#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/loader/nso.h"
@@ -146,6 +147,9 @@ VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& 
     codeset->name = name;
     codeset->memory = std::make_shared<std::vector<u8>>(std::move(program_image));
     Core::CurrentProcess()->LoadModule(codeset, load_base);
+
+    // Register module with GDBStub
+    GDBStub::RegisterModule(codeset->name, load_base, load_base);
 
     return load_base + image_size;
 }

@@ -9,6 +9,7 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/file_sys/romfs_factory.h"
+#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -133,6 +134,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
         next_load_addr = AppLoader_NSO::LoadModule(path, load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
+            // Register module with GDBStub
+            GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
         } else {
             next_load_addr = load_addr;
         }
