@@ -127,6 +127,7 @@ int main(int argc, char** argv) {
 #endif
 
     Log::Filter log_filter(Log::Level::Debug);
+    log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
@@ -141,8 +142,6 @@ int main(int argc, char** argv) {
         LOG_CRITICAL(Frontend, "Failed to load ROM: No ROM specified");
         return -1;
     }
-
-    log_filter.ParseFilterString(Settings::values.log_filter);
 
     // Apply the command line arguments
     Settings::values.gdbstub_port = gdb_port;
