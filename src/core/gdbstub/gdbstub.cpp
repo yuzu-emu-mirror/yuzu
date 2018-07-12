@@ -200,7 +200,7 @@ void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext) {
 static Kernel::Thread* FindThreadById(int id) {
     for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
         const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-        for (auto thread : threads) {
+        for (const auto& thread : threads) {
             if (thread->GetThreadId() == id) {
                 current_core = core;
                 return thread.get();
@@ -579,7 +579,7 @@ static void HandleQuery() {
         std::string val = "m";
         for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
             const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-            for (auto thread : threads) {
+            for (const auto& thread : threads) {
                 val += fmt::format("{:x}", thread->GetThreadId());
                 val += ",";
             }
@@ -592,9 +592,9 @@ static void HandleQuery() {
         std::string buffer;
         buffer += "l<?xml version=\"1.0\"?>";
         buffer += "<threads>";
-        for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
+        for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
             const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-            for (auto thread : threads) {
+            for (const auto& thread : threads) {
                 buffer +=
                     fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread {:x}"></thread>)*",
                                 thread->GetThreadId(), core, thread->GetThreadId());
