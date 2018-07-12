@@ -679,7 +679,7 @@ private:
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
             INST("111000110000----", Id::EXIT, Type::Trivial, "EXIT"),
             INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
-            INST("001100101-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
+            INST("0011001-1-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
             INST("010010011-------", Id::FFMA_CR, Type::Ffma, "FFMA_CR"),
             INST("010100011-------", Id::FFMA_RC, Type::Ffma, "FFMA_RC"),
             INST("010110011-------", Id::FFMA_RR, Type::Ffma, "FFMA_RR"),
