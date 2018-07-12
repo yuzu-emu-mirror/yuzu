@@ -200,7 +200,7 @@ void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext) {
 static Kernel::Thread* FindThreadById(int id) {
     for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
         const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
-        for (const auto& thread : threads) {
+        for (auto& thread : threads) {
             if (thread->GetThreadId() == id) {
                 current_core = core;
                 return thread.get();
