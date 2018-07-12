@@ -284,6 +284,13 @@ union Instruction {
     } iadd32i;
 
     union {
+        BitField<53, 1, u64> negate_b;
+        BitField<54, 1, u64> abs_a;
+        BitField<56, 1, u64> negate_a;
+        BitField<57, 1, u64> abs_b;
+    } fadd32i;
+
+    union {
         BitField<20, 8, u64> shift_position;
         BitField<28, 8, u64> shift_length;
         BitField<48, 1, u64> negate_b;
@@ -473,6 +480,7 @@ public:
         FADD_C,
         FADD_R,
         FADD_IMM,
+        FADD32I,
         FMUL_C,
         FMUL_R,
         FMUL_IMM,
@@ -672,6 +680,7 @@ private:
             INST("0100110001011---", Id::FADD_C, Type::Arithmetic, "FADD_C"),
             INST("0101110001011---", Id::FADD_R, Type::Arithmetic, "FADD_R"),
             INST("0011100-01011---", Id::FADD_IMM, Type::Arithmetic, "FADD_IMM"),
+            INST("000010----------", Id::FADD32I, Type::ArithmeticImmediate, "FADD32I"),
             INST("0100110001101---", Id::FMUL_C, Type::Arithmetic, "FMUL_C"),
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),

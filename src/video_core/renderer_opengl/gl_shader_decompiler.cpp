@@ -968,6 +968,29 @@ private:
                     regs.GetRegisterAsFloat(instr.gpr8) + " * " + GetImmediate32(instr), 1, 1);
                 break;
             }
+            case OpCode::Id::FADD32I: {
+                std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
+                std::string op_b = GetImmediate32(instr);
+
+                if (instr.fadd32i.abs_a) {
+                    op_a = "abs(" + op_a + ')';
+                }
+
+                if (instr.fadd32i.negate_a) {
+                    op_a = "-(" + op_a + ')';
+                }
+
+                if (instr.fadd32i.abs_b) {
+                    op_b = "abs(" + op_b + ')';
+                }
+
+                if (instr.fadd32i.negate_b) {
+                    op_b = "-(" + op_b + ')';
+                }
+
+                regs.SetRegisterToFloat(instr.gpr0, 0, op_a + " + " + op_b, 1, 1);
+                break;
+            }
             }
             break;
         }
