@@ -133,39 +133,6 @@ static const char* target_xml =
     <reg name="cpsr" bitsize="32" type="cpsr_flags"/>
   </feature>
   <feature name="org.gnu.gdb.aarch64.fpu">
-  <reg name="d0" bitsize="64" type="ieee_double"/>
-  <reg name="d1" bitsize="64" type="ieee_double"/>
-  <reg name="d2" bitsize="64" type="ieee_double"/>
-  <reg name="d3" bitsize="64" type="ieee_double"/>
-  <reg name="d4" bitsize="64" type="ieee_double"/>
-  <reg name="d5" bitsize="64" type="ieee_double"/>
-  <reg name="d6" bitsize="64" type="ieee_double"/>
-  <reg name="d7" bitsize="64" type="ieee_double"/>
-  <reg name="d8" bitsize="64" type="ieee_double"/>
-  <reg name="d9" bitsize="64" type="ieee_double"/>
-  <reg name="d10" bitsize="64" type="ieee_double"/>
-  <reg name="d11" bitsize="64" type="ieee_double"/>
-  <reg name="d12" bitsize="64" type="ieee_double"/>
-  <reg name="d13" bitsize="64" type="ieee_double"/>
-  <reg name="d14" bitsize="64" type="ieee_double"/>
-  <reg name="d15" bitsize="64" type="ieee_double"/>
-  <reg name="d16" bitsize="64" type="ieee_double"/>
-  <reg name="d17" bitsize="64" type="ieee_double"/>
-  <reg name="d18" bitsize="64" type="ieee_double"/>
-  <reg name="d19" bitsize="64" type="ieee_double"/>
-  <reg name="d20" bitsize="64" type="ieee_double"/>
-  <reg name="d21" bitsize="64" type="ieee_double"/>
-  <reg name="d22" bitsize="64" type="ieee_double"/>
-  <reg name="d23" bitsize="64" type="ieee_double"/>
-  <reg name="d24" bitsize="64" type="ieee_double"/>
-  <reg name="d25" bitsize="64" type="ieee_double"/>
-  <reg name="d26" bitsize="64" type="ieee_double"/>
-  <reg name="d27" bitsize="64" type="ieee_double"/>
-  <reg name="d28" bitsize="64" type="ieee_double"/>
-  <reg name="d29" bitsize="64" type="ieee_double"/>
-  <reg name="d30" bitsize="64" type="ieee_double"/>
-  <reg name="d31" bitsize="64" type="ieee_double"/>
-  <reg name="fpscr" bitsize="32" type="int" group="float"/>
   </feature>
 </target>
 )";
@@ -181,7 +148,7 @@ static u32 latest_signal = 0;
 static bool memory_break = false;
 
 static Kernel::Thread* current_thread = nullptr;
-static unsigned current_core = 0;
+static u32 current_core = 0;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
@@ -210,23 +177,28 @@ static std::map<u64, Breakpoint> breakpoints_read;
 static std::map<u64, Breakpoint> breakpoints_write;
 
 struct Module {
-    char name[128];
+    std::string name;
     PAddr beg;
     PAddr end;
 };
 
 static std::vector<Module> modules;
 
-void RegisterModule(const char* name, PAddr beg, PAddr end) {
+void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext) {
     Module module;
-    strncpy(module.name, name, sizeof(module.name));
+    if (add_elf_ext) {
+        Common::SplitPath(name, nullptr, &module.name, nullptr);
+        module.name += ".elf";
+    } else {
+        module.name = std::move(name);
+    }
     module.beg = beg;
     module.end = end;
-    modules.push_back(module);
+    modules.push_back(std::move(module));
 }
 
 static Kernel::Thread* FindThreadById(int id) {
-    for (unsigned core = 0; core < Core::NUM_CPU_CORES; core++) {
+    for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
         auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
         for (auto thread : threads) {
             if (thread->GetThreadId() == id) {
@@ -394,21 +366,6 @@ static void LongToGdbHex(u8* dest, u64 v) {
 }
 
 /**
- * Convert a u128 into a gdb-formatted hex string.
- *
- * @param dest Pointer to buffer to store output hex string characters.
- * @param v    Value to convert.
- */
-// static void LongLongToGdbHex(u8* dest, u128 v)
-//{
-//    for(int i = 0; i < 32; i += 2)
-//    {
-//        dest[i + 1] = NibbleToHex(static_cast<u8>(v >> (4 * i)));
-//        dest[i] = NibbleToHex(static_cast<u8>(v >> (4 * (i + 1))));
-//    }
-//}
-
-/**
  * Convert a gdb-formatted hex string into a u32.
  *
  * @param src Pointer to hex string.
@@ -439,24 +396,6 @@ static u64 GdbHexToLong(const u8* src) {
 
     return output;
 }
-
-/**
- * Convert a gdb-formatted hex string into a u128.
- *
- * @param src Pointer to hex string.
- */
-// static u128 GdbHexToLong(const u8* src)
-//{
-//    u128 output = 0;
-//
-//    for(int i = 0; i < 32; i += 2)
-//    {
-//        output = (output << 4) | HexCharToValue(src[15 - i - 1]);
-//        output = (output << 4) | HexCharToValue(src[15 - i]);
-//    }
-//
-//    return output;
-//}
 
 /// Read a byte from the gdb client.
 static u8 ReadByte() {
@@ -634,8 +573,7 @@ static void HandleQuery() {
                        strlen("Xfer:features:read:target.xml:")) == 0) {
         SendReply(target_xml);
     } else if (strncmp(query, "Offsets", strlen("Offsets")) == 0) {
-        std::string buffer;
-        buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR);
+        std::string buffer = fmt::format("TextSeg={:0x}", Memory::PROCESS_IMAGE_VADDR);
         SendReply(buffer.c_str());
     } else if (strncmp(query, "fThreadInfo", strlen("fThreadInfo")) == 0) {
         std::string val = "m";
@@ -856,7 +794,7 @@ static void ReadRegisters() {
         LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
-    bufptr += (32 * 16);
+    bufptr += 32 * 16;
 
     LongToGdbHex(bufptr, RegRead(PC_REGISTER, current_thread));
 
@@ -870,7 +808,7 @@ static void ReadRegisters() {
         LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
-    bufptr += (32 * 32);
+    bufptr += 32 * 32;
 
     LongToGdbHex(bufptr, RegRead(998, current_thread));
 
@@ -956,7 +894,7 @@ static void ReadMemory() {
         SendReply("E01");
     }
 
-    if ((addr < Memory::PROCESS_IMAGE_VADDR) || (addr >= Memory::MAP_REGION_VADDR_END)) {
+    if (addr < Memory::PROCESS_IMAGE_VADDR || addr >= Memory::MAP_REGION_VADDR_END) {
         return SendReply("E00");
     }
 
@@ -1349,7 +1287,7 @@ void SetCpuStepFlag(bool is_step) {
 
 void SendTrap(Kernel::Thread* thread, int trap) {
     if (send_trap) {
-        if (!halt_loop || (current_thread == thread)) {
+        if (!halt_loop || current_thread == thread) {
             current_thread = thread;
             SendSignal(thread, trap);
         }

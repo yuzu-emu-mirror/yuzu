@@ -7,7 +7,6 @@
 #include "common/common_funcs.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
-#include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/gdbstub/gdbstub.h"
@@ -118,9 +117,7 @@ bool AppLoader_NRO::LoadNro(const std::string& path, VAddr load_base) {
     Core::CurrentProcess()->LoadModule(codeset, load_base);
 
     // Register module with GDBStub
-    std::string filename;
-    Common::SplitPath(codeset->name, nullptr, &filename, nullptr);
-    GDBStub::RegisterModule((filename + ".elf").c_str(), load_base, load_base);
+    GDBStub::RegisterModule(codeset->name, load_base, load_base);
 
     return true;
 }

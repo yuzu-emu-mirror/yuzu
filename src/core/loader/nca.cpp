@@ -262,7 +262,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
             // Register module with GDBStub
-            GDBStub::RegisterModule(module, load_addr, next_load_addr - 1);
+            GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
         } else {
             next_load_addr = load_addr;
         }
