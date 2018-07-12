@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <string>
 #include "common/common_types.h"
 #include "core/hle/kernel/thread.h"
 
@@ -51,6 +52,9 @@ bool IsServerEnabled();
 /// Returns true if there is an active socket connection.
 bool IsConnected();
 
+/// Register module.
+void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext = true);
+
 /**
  * Signal to the gdbstub server that it should halt CPU execution.
  *
@@ -80,10 +84,10 @@ BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, GDBStub::BreakpointTy
  */
 bool CheckBreakpoint(PAddr addr, GDBStub::BreakpointType type);
 
-// If set to true, the CPU will halt at the beginning of the next CPU loop.
+/// If set to true, the CPU will halt at the beginning of the next CPU loop.
 bool GetCpuHaltFlag();
 
-// If set to true and the CPU is halted, the CPU will step one instruction.
+/// If set to true and the CPU is halted, the CPU will step one instruction.
 bool GetCpuStepFlag();
 
 /**
