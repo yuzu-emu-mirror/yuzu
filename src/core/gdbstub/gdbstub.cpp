@@ -199,7 +199,7 @@ void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext) {
 
 static Kernel::Thread* FindThreadById(int id) {
     for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
-        auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+        const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
         for (auto thread : threads) {
             if (thread->GetThreadId() == id) {
                 current_core = core;
@@ -577,8 +577,8 @@ static void HandleQuery() {
         SendReply(buffer.c_str());
     } else if (strncmp(query, "fThreadInfo", strlen("fThreadInfo")) == 0) {
         std::string val = "m";
-        for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
-            auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+        for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
+            const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
             for (auto thread : threads) {
                 val += fmt::format("{:x}", thread->GetThreadId());
                 val += ",";
@@ -593,7 +593,7 @@ static void HandleQuery() {
         buffer += "l<?xml version=\"1.0\"?>";
         buffer += "<threads>";
         for (int core = 0; core < Core::NUM_CPU_CORES; core++) {
-            auto threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
+            const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
             for (auto thread : threads) {
                 buffer +=
                     fmt::format(R"*(<thread id="{:x}" core="{:d}" name="Thread {:x}"></thread>)*",
@@ -606,7 +606,7 @@ static void HandleQuery() {
         std::string buffer;
         buffer += "l<?xml version=\"1.0\"?>";
         buffer += "<library-list>";
-        for (auto module : modules) {
+        for (const auto& module : modules) {
             buffer +=
                 fmt::format(R"*("<library name = "{}"><segment address = "0x{:x}"/></library>)*",
                             module.name, module.beg);
