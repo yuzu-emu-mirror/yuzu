@@ -565,7 +565,7 @@ static void HandleQuery() {
     } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
         // PacketSize needs to be large enough for target xml
         std::string buffer = "PacketSize=2000;qXfer:features:read+;qXfer:threads:read+";
-        if (modules.size()) {
+        if (!modules.empty()) {
             buffer += ";qXfer:libraries:read+";
         }
         SendReply(buffer.c_str());
@@ -776,7 +776,6 @@ static void ReadRegister() {
     } else if (id == FPSCR_REGISTER) {
         LongToGdbHex(reply, RegRead(998, current_thread));
     } else {
-        // return SendReply("E01");
         LongToGdbHex(reply, RegRead(997, current_thread));
     }
 
@@ -839,10 +838,10 @@ static void WriteRegister() {
     } else if (id == FPSCR_REGISTER) {
         RegWrite(998, GdbHexToLong(buffer_ptr), current_thread);
     } else {
-        // return SendReply("E01");
         RegWrite(997, GdbHexToLong(buffer_ptr), current_thread);
     }
 
+    // Update Unicorn context skipping scheduler, no running threads at this point
     Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
 
     SendReply("OK");
@@ -871,6 +870,7 @@ static void WriteRegisters() {
         }
     }
 
+    // Update Unicorn context skipping scheduler, no running threads at this point
     Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
 
     SendReply("OK");
@@ -941,6 +941,7 @@ void Break(bool is_memory_break) {
 static void Step() {
     if (command_length > 1) {
         RegWrite(PC_REGISTER, GdbHexToLong(command_buffer + 1), current_thread);
+        // Update Unicorn context skipping scheduler, no running threads at this point
         Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
     }
     step_loop = true;
