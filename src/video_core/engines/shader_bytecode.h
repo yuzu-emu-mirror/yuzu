@@ -201,6 +201,11 @@ enum class IMinMaxExchange : u64 {
     XHi = 3,
 };
 
+enum class FlowCondition : u64 {
+    Always = 0xF,
+    Fcsm_Tr = 0x1C, // TODO(bunnei): What is this used for?
+};
+
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
         value = instr.value;
@@ -314,6 +319,10 @@ union Instruction {
             return 32 - (shift_position + shift_length);
         }
     } bfe;
+
+    union {
+        BitField<0, 5, FlowCondition> cond;
+    } flow;
 
     union {
         BitField<48, 1, u64> negate_b;

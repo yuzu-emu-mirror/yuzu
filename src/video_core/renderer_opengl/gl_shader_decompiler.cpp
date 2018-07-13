@@ -1639,16 +1639,32 @@ private:
                     shader.AddLine("color.a = " + regs.GetRegisterAsFloat(3) + ';');
                 }
 
-                shader.AddLine("return true;");
-                if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
-                    // If this is an unconditional exit then just end processing here, otherwise
-                    // we have to account for the possibility of the condition not being met, so
-                    // continue processing the next instruction.
-                    offset = PROGRAM_END - 1;
+                switch (instr.flow.cond) {
+                case Tegra::Shader::FlowCondition::Always:
+                    shader.AddLine("return true;");
+                    if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+                        // If this is an unconditional exit then just end processing here,
+                        // otherwise we have to account for the possibility of the condition
+                        // not being met, so continue processing the next instruction.
+                        offset = PROGRAM_END - 1;
+                    }
+                    break;
+
+                case Tegra::Shader::FlowCondition::Fcsm_Tr:
+                    // TODO(bunnei): What is this used for? If we assume this conditon is not
+                    // satisifed, dual vertex shaders in Farming Simulator make more sense
+                    LOG_CRITICAL(HW_GPU, "Skipping unknown FlowCondition::Fcsm_Tr");
+                    break;
+
+                default:
+                    LOG_CRITICAL(HW_GPU, "Unhandled flow condition: {}",
+                                 static_cast<u32>(instr.flow.cond.Value()));
+                    UNREACHABLE();
                 }
                 break;
             }
             case OpCode::Id::KIL: {
+                ASSERT(instr.flow.cond == Tegra::Shader::FlowCondition::Always);
                 shader.AddLine("discard;");
                 break;
             }
@@ -1669,8 +1685,9 @@ private:
                 // can ignore this when generating GLSL code.
                 break;
             }
-            case OpCode::Id::DEPBAR:
-            case OpCode::Id::SYNC: {
+            case OpCode::Id::SYNC:
+                ASSERT(instr.flow.cond == Tegra::Shader::FlowCondition::Always);
+            case OpCode::Id::DEPBAR: {
                 // TODO(Subv): Find out if we actually have to care about these instructions or if
                 // the GLSL compiler takes care of that for us.
                 LOG_WARNING(HW_GPU, "DEPBAR/SYNC instruction is stubbed");
