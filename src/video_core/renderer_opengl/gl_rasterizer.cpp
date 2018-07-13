@@ -216,14 +216,12 @@ void RasterizerOpenGL::SetupShaders(u8* buffer_ptr, GLintptr buffer_offset) {
         auto& shader_config = gpu.regs.shader_config[index];
         const Maxwell::ShaderProgram program{static_cast<Maxwell::ShaderProgram>(index)};
 
-        const size_t stage{index == 0 ? 0 : index - 1}; // Stage indices are 0 - 5
-
-        const bool is_enabled = gpu.IsShaderStageEnabled(static_cast<Maxwell::ShaderStage>(stage));
-
         // Skip stages that are not enabled
-        if (!is_enabled) {
+        if (!gpu.regs.IsShaderConfigEnabled(index)) {
             continue;
         }
+
+        const size_t stage{index == 0 ? 0 : index - 1}; // Stage indices are 0 - 5
 
         GLShader::MaxwellUniformData ubo{};
         ubo.SetFromRegs(gpu.state.shader_stages[stage]);
@@ -628,9 +626,6 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
     auto& gpu = Core::System::GetInstance().GPU();
     auto& maxwell3d = gpu.Get3DEngine();
 
-    ASSERT_MSG(maxwell3d.IsShaderStageEnabled(stage),
-               "Attempted to upload constbuffer of disabled shader stage");
-
     // Reset all buffer draw state for this stage.
     for (auto& buffer : state.draw.const_buffers[static_cast<size_t>(stage)]) {
         buffer.bindpoint = 0;
@@ -696,9 +691,6 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, 
                                     const std::vector<GLShader::SamplerEntry>& entries) {
     auto& gpu = Core::System::GetInstance().GPU();
     auto& maxwell3d = gpu.Get3DEngine();
-
-    ASSERT_MSG(maxwell3d.IsShaderStageEnabled(stage),
-               "Attempted to upload textures of disabled shader stage");
 
     ASSERT_MSG(current_unit + entries.size() <= std::size(state.texture_units),
                "Exceeded the number of active textures.");
