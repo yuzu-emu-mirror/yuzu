@@ -87,8 +87,6 @@ private:
                 memory_pool[i].state = MemoryPoolStates::Attached;
             else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetach)
                 memory_pool[i].state = MemoryPoolStates::Detached;
-            else
-                memory_pool[i].state = mem_pool_info[i].pool_state;
         }
         std::memcpy(output.data() + sizeof(UpdateDataHeader), memory_pool.data(),
                     response_data.memory_pools_size);
