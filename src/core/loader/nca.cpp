@@ -7,10 +7,12 @@
 #include "common/common_funcs.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
+#include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/file_sys/romfs_factory.h"
+#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -259,6 +261,8 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
         next_load_addr = AppLoader_NSO::LoadModule(module, nca->GetExeFsFile(module), load_addr);
         if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
+            // Register module with GDBStub
+            GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
         } else {
             next_load_addr = load_addr;
         }
