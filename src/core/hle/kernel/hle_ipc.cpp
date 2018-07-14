@@ -214,8 +214,8 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
             (sizeof(IPC::CommandHeader) + sizeof(IPC::HandleDescriptorHeader)) / sizeof(u32);
         ASSERT_MSG(!handle_descriptor_header->send_current_pid, "Sending PID is not implemented");
 
-        ASSERT_MSG(copy_objects.size() == handle_descriptor_header->num_handles_to_copy);
-        ASSERT_MSG(move_objects.size() == handle_descriptor_header->num_handles_to_move);
+        ASSERT(copy_objects.size() == handle_descriptor_header->num_handles_to_copy);
+        ASSERT(move_objects.size() == handle_descriptor_header->num_handles_to_move);
 
         // We don't make a distinction between copy and move handles when translating since HLE
         // services don't deal with handles directly. However, the guest applications might check
