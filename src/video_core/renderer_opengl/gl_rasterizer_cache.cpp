@@ -271,9 +271,10 @@ static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
 
     S8Z24 input_pixel{};
     Z24S8 output_pixel{};
+
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
-            const size_t offset{y * width + x};
+            const size_t offset{4 * (y * width + x)};
             std::memcpy(&input_pixel, &data[offset], sizeof(S8Z24));
             output_pixel.s8.Assign(input_pixel.s8);
             output_pixel.z24.Assign(input_pixel.z24);
