@@ -31,6 +31,13 @@ struct ScreenInfo {
     TextureInfo texture;
 };
 
+/// Helper class to acquire/release OpenGL context within a given scope
+class ScopeAcquireGLContext : NonCopyable {
+public:
+    ScopeAcquireGLContext();
+    ~ScopeAcquireGLContext();
+};
+
 class RendererOpenGL : public RendererBase {
 public:
     RendererOpenGL();

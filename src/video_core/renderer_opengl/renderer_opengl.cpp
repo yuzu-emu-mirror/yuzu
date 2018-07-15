@@ -92,11 +92,24 @@ static std::array<GLfloat, 3 * 2> MakeOrthographicMatrix(const float width, cons
     return matrix;
 }
 
+ScopeAcquireGLContext::ScopeAcquireGLContext() {
+    if (Settings::values.use_multi_core) {
+        VideoCore::g_emu_window->MakeCurrent();
+    }
+}
+ScopeAcquireGLContext::~ScopeAcquireGLContext() {
+    if (Settings::values.use_multi_core) {
+        VideoCore::g_emu_window->DoneCurrent();
+    }
+}
+
 RendererOpenGL::RendererOpenGL() = default;
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
 void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) {
+    ScopeAcquireGLContext acquire_context;
+
     Core::System::GetInstance().perf_stats.EndSystemFrame();
 
     // Maintain the rasterizer's state as a priority
@@ -418,7 +431,7 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 
 /// Initialize the renderer
 bool RendererOpenGL::Init() {
-    render_window->MakeCurrent();
+    ScopeAcquireGLContext acquire_context;
 
     if (GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);

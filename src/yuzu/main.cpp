@@ -374,6 +374,8 @@ bool GMainWindow::LoadROM(const QString& filename) {
 
     const Core::System::ResultStatus result{system.Load(render_window, filename.toStdString())};
 
+    render_window->DoneCurrent();
+
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
         case Core::System::ResultStatus::ErrorGetLoader:
@@ -916,6 +918,7 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName("yuzu");
 
     QApplication::setAttribute(Qt::AA_X11InitThreads);
+    QApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
     QApplication app(argc, argv);
 
     // Qt changes the locale and causes issues in float conversion using std::to_string() when
