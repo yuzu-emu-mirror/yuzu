@@ -68,7 +68,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSDMC() {
     LOG_TRACE(Service_FS, "Opening SDMC");
 
-    if (romfs == nullptr) {
+    if (sdmc == nullptr) {
         // TODO(bunnei): Find a better error code for this
         return ResultCode(-1);
     }

@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma optimize("", off)
+
 #include <cinttypes>
 #include "common/logging/log.h"
 #include "common/string_util.h"
@@ -508,7 +510,7 @@ void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
     FileSys::Path unused;
-    auto filesystem = OpenSDMC().Unwrap();
+    auto filesystem = IFileSystem(OpenSDMC().Unwrap());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -521,6 +523,7 @@ void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     auto save_struct = rp.PopRaw<std::array<u8, 0x40>>();
     auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
     u128 uid = rp.PopRaw<u128>();
+    FileSys::SaveStruct structs = *reinterpret_cast<FileSys::SaveStruct*>(save_struct.data());
 
     LOG_WARNING(Service_FS, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
@@ -533,8 +536,8 @@ void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
 
     auto space_id = rp.PopRaw<FileSys::SaveDataSpaceId>();
     auto save_struct = rp.PopRaw<FileSys::SaveStruct>();
-
-    auto filesystem = OpenSaveData(space_id, save_struct);
+    save_struct.type = FileSys::SaveDataType::SaveData;
+    auto filesystem = OpenSaveData(static_cast<FileSys::SaveDataSpaceId>(space_id), save_struct);
 
     if (filesystem.Failed()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};

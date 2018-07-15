@@ -624,10 +624,10 @@ void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
 
     FileSys::Path unused;
-    auto savedata = FileSystem::OpenSaveData(space, save_struct);
-    if (savedata.Failed()) {
+    // auto savedata = FileSystem::OpenSaveData(space, save_struct);
+    if (true) {
         // Create the save data and return an error indicating that the operation was performed.
-        FileSystem::FormatSaveData(space, save_struct);
+        // FileSystem::FormatSaveData(space, save_struct);
         // TODO(Subv): Find out the correct error code for this.
         rb.Push(ResultCode(ErrorModule::FS, 40));
     } else {

@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma optimize("", off)
+
 #include <memory>
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -22,8 +24,35 @@ SaveDataFactory::SaveDataFactory(std::string save_directory)
     : save_directory(std::move(save_directory)) {}
 
 ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpaceId space,
-
                                                                     SaveStruct meta) {
+    if ((meta.type == SaveDataType::SystemSaveData || meta.type == SaveDataType::SaveData)) {
+        if (meta.zero_1 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveStruct, type is "
+                        "SystemSaveData||SaveData but offset 0x28 is non-zero ({:016X}).",
+                        meta.zero_1);
+        }
+        if (meta.zero_2 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveStruct, type is "
+                        "SystemSaveData||SaveData but offset 0x30 is non-zero ({:016X}).",
+                        meta.zero_2);
+        }
+        if (meta.zero_3 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveStruct, type is "
+                        "SystemSaveData||SaveData but offset 0x38 is non-zero ({:016X}).",
+                        meta.zero_3);
+        }
+    }
+
+    if (meta.type == SaveDataType::SystemSaveData && meta.title_id != 0) {
+        LOG_WARNING(Service_FS,
+                    "Possibly incorrect SaveStruct, type is SystemSaveData but title_id is "
+                    "non-zero ({:016X}).",
+                    meta.title_id);
+    }
+
     std::string save_directory =
         GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
@@ -33,6 +62,10 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
         // Without a save data directory, many games will assert on boot. This should not have any
         // bad side-effects.
         FileUtil::CreateFullPath(save_directory);
+    }
+
+    if (!FileUtil::IsDirectory(save_directory)) {
+        FileUtil::CreateDir(save_directory);
     }
 
     // Return an error if the save data doesn't actually exist.

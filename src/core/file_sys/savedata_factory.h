@@ -24,11 +24,14 @@ enum class SaveDataType : u8 {
 };
 
 struct SaveStruct {
-    u64 title_id;
+    u64_le title_id;
     u128 user_id;
-    u64 save_id;
+    u64_le save_id;
     SaveDataType type;
-    INSERT_PADDING_BYTES(31);
+    INSERT_PADDING_BYTES(7);
+    u64_le zero_1;
+    u64_le zero_2;
+    u64_le zero_3;
 };
 static_assert(sizeof(SaveStruct) == 0x40, "SaveStruct has incorrect size.");
 
