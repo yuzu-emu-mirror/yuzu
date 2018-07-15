@@ -105,6 +105,7 @@ static constexpr std::array<FormatTuple, SurfaceParams::MaxPixelFormat> tex_form
     {GL_COMPRESSED_RGBA_BPTC_UNORM_ARB, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, ComponentType::UNorm,
      true},                                                             // BC7U
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, ComponentType::UNorm, false}, // ASTC_2D_4X4
+    {GL_RG8, GL_RG, GL_UNSIGNED_BYTE, ComponentType::UNorm, false},     // G8R8
 
     // DepthStencil formats
     {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, ComponentType::UNorm,
@@ -196,8 +197,9 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<true, PixelFormat::DXT1>,         MortonCopy<true, PixelFormat::DXT23>,
         MortonCopy<true, PixelFormat::DXT45>,        MortonCopy<true, PixelFormat::DXN1>,
         MortonCopy<true, PixelFormat::BC7U>,         MortonCopy<true, PixelFormat::ASTC_2D_4X4>,
-        MortonCopy<true, PixelFormat::Z24S8>,        MortonCopy<true, PixelFormat::S8Z24>,
-        MortonCopy<true, PixelFormat::Z32F>,         MortonCopy<true, PixelFormat::Z16>,
+        MortonCopy<true, PixelFormat::G8R8>,         MortonCopy<true, PixelFormat::Z24S8>,
+        MortonCopy<true, PixelFormat::S8Z24>,        MortonCopy<true, PixelFormat::Z32F>,
+        MortonCopy<true, PixelFormat::Z16>,
 };
 
 static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
@@ -217,7 +219,8 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         nullptr,
         nullptr,
         nullptr,
-        MortonCopy<false, PixelFormat::ABGR8>,
+        nullptr,
+        MortonCopy<false, PixelFormat::G8R8>,
         MortonCopy<false, PixelFormat::Z24S8>,
         MortonCopy<false, PixelFormat::S8Z24>,
         MortonCopy<false, PixelFormat::Z32F>,
@@ -274,10 +277,10 @@ static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
 
     S8Z24 input_pixel{};
     Z24S8 output_pixel{};
-
+    const auto bpp{CachedSurface::GetGLBytesPerPixel(PixelFormat::S8Z24)};
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
-            const size_t offset{4 * (y * width + x)};
+            const size_t offset{bpp * (y * width + x)};
             std::memcpy(&input_pixel, &data[offset], sizeof(S8Z24));
             output_pixel.s8.Assign(input_pixel.s8);
             output_pixel.z24.Assign(input_pixel.z24);
@@ -285,6 +288,19 @@ static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
         }
     }
 }
+
+static void ConvertG8R8ToR8G8(std::vector<u8>& data, u32 width, u32 height) {
+    const auto bpp{CachedSurface::GetGLBytesPerPixel(PixelFormat::G8R8)};
+    for (size_t y = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x) {
+            const size_t offset{bpp * (y * width + x)};
+            const u8 temp{data[offset]};
+            data[offset] = data[offset + 1];
+            data[offset + 1] = temp;
+        }
+    }
+}
+
 /**
  * Helper function to perform software conversion (as needed) when loading a buffer from Switch
  * memory. This is for Maxwell pixel formats that cannot be represented as-is in OpenGL or with
@@ -304,6 +320,11 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
     case PixelFormat::S8Z24:
         // Convert the S8Z24 depth format to Z24S8, as OpenGL does not support S8Z24.
         ConvertS8Z24ToZ24S8(data, width, height);
+        break;
+
+    case PixelFormat::G8R8:
+        // Convert the G8R8 color format to R8G8, as OpenGL does not support G8R8.
+        ConvertG8R8ToR8G8(data, width, height);
         break;
     }
 }
