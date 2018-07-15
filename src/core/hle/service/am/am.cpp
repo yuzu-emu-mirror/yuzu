@@ -616,15 +616,18 @@ void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     u128 uid = rp.PopRaw<u128>();
 
+    FileSys::SaveDataSpaceId space = FileSys::SaveDataSpaceId::NandUser;
+    FileSys::SaveStruct save_struct = {};
+
     LOG_WARNING(Service, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 4};
 
     FileSys::Path unused;
-    auto savedata = FileSystem::OpenFileSystem(FileSystem::Type::SaveData, unused);
+    auto savedata = FileSystem::OpenSaveData(space, save_struct);
     if (savedata.Failed()) {
         // Create the save data and return an error indicating that the operation was performed.
-        FileSystem::FormatFileSystem(FileSystem::Type::SaveData);
+        FileSystem::FormatSaveData(space, save_struct);
         // TODO(Subv): Find out the correct error code for this.
         rb.Push(ResultCode(ErrorModule::FS, 40));
     } else {

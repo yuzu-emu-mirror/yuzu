@@ -15,16 +15,11 @@
 namespace FileSys {
 
 /// File system interface to the RomFS archive
-class RomFS_Factory final : public FileSystemFactory {
+class RomFSFactory {
 public:
-    explicit RomFS_Factory(Loader::AppLoader& app_loader);
+    explicit RomFSFactory(Loader::AppLoader& app_loader);
 
-    std::string GetName() const override {
-        return "ArchiveFactory_RomFS";
-    }
-    ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) override;
-    ResultCode Format(const Path& path) override;
-    ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const override;
+    ResultVal<std::unique_ptr<FileSystemBackend>> Open(u64 title_id);
 
 private:
     std::shared_ptr<FileUtil::IOFile> romfs_file;

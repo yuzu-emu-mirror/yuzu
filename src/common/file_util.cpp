@@ -711,7 +711,7 @@ const std::string& GetUserPath(const unsigned int DirIDX, const std::string& new
         }
 #endif
         paths[D_SDMC_IDX] = paths[D_USER_IDX] + SDMC_DIR DIR_SEP;
-        paths[D_NAND_IDX] = paths[D_USER_IDX] + NAND_DIR DIR_SEP;
+        paths[D_SAVE_IDX] = paths[D_USER_IDX] + SAVE_DIR DIR_SEP;
         paths[D_SYSDATA_IDX] = paths[D_USER_IDX] + SYSDATA_DIR DIR_SEP;
         // TODO: Put the logs in a better location for each OS
         paths[D_LOGS_IDX] = paths[D_USER_IDX] + LOG_DIR DIR_SEP;
@@ -735,7 +735,7 @@ const std::string& GetUserPath(const unsigned int DirIDX, const std::string& new
             paths[D_CONFIG_IDX] = paths[D_USER_IDX] + CONFIG_DIR DIR_SEP;
             paths[D_CACHE_IDX] = paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
             paths[D_SDMC_IDX] = paths[D_USER_IDX] + SDMC_DIR DIR_SEP;
-            paths[D_NAND_IDX] = paths[D_USER_IDX] + NAND_DIR DIR_SEP;
+            paths[D_SAVE_IDX] = paths[D_USER_IDX] + SAVE_DIR DIR_SEP;
             break;
         }
     }

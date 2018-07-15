@@ -12,11 +12,20 @@
 
 namespace FileSys {
 
-SaveData_Factory::SaveData_Factory(std::string nand_directory)
-    : nand_directory(std::move(nand_directory)) {}
+std::string SaveStructDebugInfo(SaveStruct save_struct) {
+    return fmt::format("[type={:02X}, title_id={:016X}, user_id={:016X}{:016X}, save_id={:016X}]",
+                       static_cast<u8>(save_struct.type), save_struct.title_id,
+                       save_struct.user_id[1], save_struct.user_id[0], save_struct.save_id);
+}
 
-ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path& path) {
-    std::string save_directory = GetFullPath();
+SaveDataFactory::SaveDataFactory(std::string save_directory)
+    : save_directory(std::move(save_directory)) {}
+
+ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpaceId space,
+
+                                                                    SaveStruct meta) {
+    std::string save_directory =
+        GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
     if (!FileUtil::Exists(save_directory)) {
         // TODO(bunnei): This is a work-around to always create a save data directory if it does not
@@ -36,10 +45,12 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path&
     return MakeResult<std::unique_ptr<FileSystemBackend>>(std::move(archive));
 }
 
-ResultCode SaveData_Factory::Format(const Path& path) {
-    LOG_WARNING(Service_FS, "Format archive {}", GetName());
+ResultCode SaveDataFactory::Format(SaveDataSpaceId space, SaveStruct meta) {
+    LOG_WARNING(Service_FS, "Formatting save data of space={:01X}, meta={}", static_cast<u8>(space),
+                SaveStructDebugInfo(meta));
     // Create the save data directory.
-    if (!FileUtil::CreateFullPath(GetFullPath())) {
+    if (!FileUtil::CreateFullPath(
+            GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id))) {
         // TODO(Subv): Find the correct error code.
         return ResultCode(-1);
     }
@@ -47,17 +58,18 @@ ResultCode SaveData_Factory::Format(const Path& path) {
     return RESULT_SUCCESS;
 }
 
-ResultVal<ArchiveFormatInfo> SaveData_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
-    // TODO(bunnei): Find the right error code for this
-    return ResultCode(-1);
-}
+std::string SaveDataFactory::GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id,
+                                         u128 user_id, u64 save_id) const {
+    static std::vector<std::string> space_names = {"sysnand", "usrnand", "sd", "temp"};
+    static std::vector<std::string> type_names = {"system", "user", "bcat",
+                                                  "device", "temp", "cache"};
 
-std::string SaveData_Factory::GetFullPath() const {
-    u64 title_id = Core::CurrentProcess()->program_id;
-    // TODO(Subv): Somehow obtain this value.
-    u32 user = 0;
-    return fmt::format("{}save/{:016X}/{:08X}/", nand_directory, title_id, user);
+    if (type == SaveDataType::SaveData && title_id == 0)
+        title_id = Core::CurrentProcess()->program_id;
+
+    return fmt::format("{}{}/{}/{:016X}/{:016X}{:016X}/{:016X}", save_directory,
+                       space_names[static_cast<u8>(space)], type_names[static_cast<u8>(type)],
+                       title_id, user_id[1], user_id[0], save_id);
 }
 
 } // namespace FileSys
