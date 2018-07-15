@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma optimize("", off)
-
 #include <memory>
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -56,6 +54,9 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
     std::string save_directory =
         GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
+    // TODO(DarkLordZach): Try to not create when opening, there are dedicated create save methods.
+    // But, user_ids don't match so this works for now.
+
     if (!FileUtil::Exists(save_directory)) {
         // TODO(bunnei): This is a work-around to always create a save data directory if it does not
         // already exist. This is a hack, as we do not understand yet how this works on hardware.
@@ -64,6 +65,8 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
         FileUtil::CreateFullPath(save_directory);
     }
 
+    // TODO(DarkLordZach): For some reason, CreateFullPath dosen't create the last bit. Should be
+    // fixed with VFS.
     if (!FileUtil::IsDirectory(save_directory)) {
         FileUtil::CreateDir(save_directory);
     }
@@ -81,10 +84,27 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
 ResultCode SaveDataFactory::Format(SaveDataSpaceId space, SaveStruct meta) {
     LOG_WARNING(Service_FS, "Formatting save data of space={:01X}, meta={}", static_cast<u8>(space),
                 SaveStructDebugInfo(meta));
+    std::string save_directory =
+        GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
+
     // Create the save data directory.
-    if (!FileUtil::CreateFullPath(
-            GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id))) {
-        // TODO(Subv): Find the correct error code.
+    if (!FileUtil::Exists(save_directory)) {
+        // TODO(bunnei): This is a work-around to always create a save data directory if it does not
+        // already exist. This is a hack, as we do not understand yet how this works on hardware.
+        // Without a save data directory, many games will assert on boot. This should not have any
+        // bad side-effects.
+        FileUtil::CreateFullPath(save_directory);
+    }
+
+    // TODO(DarkLordZach): For some reason, CreateFullPath dosen't create the last bit. Should be
+    // fixed with VFS.
+    if (!FileUtil::IsDirectory(save_directory)) {
+        FileUtil::CreateDir(save_directory);
+    }
+
+    // Return an error if the save data doesn't actually exist.
+    if (!FileUtil::IsDirectory(save_directory)) {
+        // TODO(Subv): Find out correct error code.
         return ResultCode(-1);
     }
 

@@ -520,12 +520,12 @@ void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
-    auto save_struct = rp.PopRaw<std::array<u8, 0x40>>();
+    auto save_struct = rp.PopRaw<FileSys::SaveStruct>();
     auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
     u128 uid = rp.PopRaw<u128>();
-    FileSys::SaveStruct structs = *reinterpret_cast<FileSys::SaveStruct*>(save_struct.data());
 
-    LOG_WARNING(Service_FS, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
+    LOG_WARNING(Service_FS, "(STUBBED) called save_struct = {}, uid = {:016X}{:016X}",
+                FileSys::SaveStructDebugInfo(save_struct), uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

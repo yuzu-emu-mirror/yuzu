@@ -4,9 +4,11 @@
 
 #include <cinttypes>
 #include <stack>
+#include "core/core.h"
 #include "core/file_sys/filesystem.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
@@ -614,20 +616,37 @@ void IApplicationFunctions::CreateApplicationAndRequestToStartForQuest(
 
 void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    u128 uid = rp.PopRaw<u128>();
+    u128 uid = rp.PopRaw<u128>(); // What does this do?
 
-    FileSys::SaveDataSpaceId space = FileSys::SaveDataSpaceId::NandUser;
-    FileSys::SaveStruct save_struct = {};
+    // TODO(DarkLordZach): So the next bit is a huge assumption. I don't think this method is
+    // supposed to do this, as there is no savestruct provided.
+
+    FileSys::SaveDataSpaceId space = FileSys::SaveDataSpaceId::NandUser; // Default space
+    FileSys::SaveStruct save_struct = {
+        0,                               // Default title id (ends up as current process)
+        {0, 0},                          // Default user id
+        0,                               // Default save id
+        FileSys::SaveDataType::SaveData, // User save data
+        0,                               // Begin Padding
+        0,                               // |
+        0,                               // |
+        0,                               // |
+        0,                               // |
+        0,                               // |
+        0,                               // End Padding
+        0,                               // Unknown field - should be zero
+        0,                               // Unknown field - should be zero
+        0                                // Unknown field - should be zero
+    };
 
     LOG_WARNING(Service, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 4};
 
-    FileSys::Path unused;
-    // auto savedata = FileSystem::OpenSaveData(space, save_struct);
-    if (true) {
+    auto savedata = FileSystem::OpenSaveData(space, save_struct);
+    if (savedata.Failed()) {
         // Create the save data and return an error indicating that the operation was performed.
-        // FileSystem::FormatSaveData(space, save_struct);
+        FileSystem::FormatSaveData(space, save_struct);
         // TODO(Subv): Find out the correct error code for this.
         rb.Push(ResultCode(ErrorModule::FS, 40));
     } else {
@@ -635,7 +654,7 @@ void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     }
 
     rb.Push<u64>(0);
-}
+} // namespace Service::AM
 
 void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
     // Takes an input u32 Result, no output.
