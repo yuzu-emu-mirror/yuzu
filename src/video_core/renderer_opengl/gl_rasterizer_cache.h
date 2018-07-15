@@ -37,14 +37,15 @@ struct SurfaceParams {
         DXN1 = 11, // This is also known as BC4
         BC7U = 12,
         ASTC_2D_4X4 = 13,
+        G8R8 = 14,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 14,
-        S8Z24 = 15,
-        Z32F = 16,
-        Z16 = 17,
+        Z24S8 = 15,
+        S8Z24 = 16,
+        Z32F = 17,
+        Z16 = 18,
 
         MaxDepthStencilFormat,
 
@@ -96,6 +97,7 @@ struct SurfaceParams {
             4, // DXN1
             4, // BC7U
             4, // ASTC_2D_4X4
+            1, // G8R8
             1, // Z24S8
             1, // S8Z24
             1, // Z32F
@@ -125,6 +127,7 @@ struct SurfaceParams {
             64,  // DXN1
             128, // BC7U
             32,  // ASTC_2D_4X4
+            16,  // G8R8
             32,  // Z24S8
             32,  // S8Z24
             32,  // Z32F
@@ -186,6 +189,8 @@ struct SurfaceParams {
             return PixelFormat::A1B5G5R5;
         case Tegra::Texture::TextureFormat::R8:
             return PixelFormat::R8;
+        case Tegra::Texture::TextureFormat::G8R8:
+            return PixelFormat::G8R8;
         case Tegra::Texture::TextureFormat::R16_G16_B16_A16:
             return PixelFormat::RGBA16F;
         case Tegra::Texture::TextureFormat::BF10GF11RF11:
@@ -223,6 +228,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::A1B5G5R5;
         case PixelFormat::R8:
             return Tegra::Texture::TextureFormat::R8;
+        case PixelFormat::G8R8:
+            return Tegra::Texture::TextureFormat::G8R8;
         case PixelFormat::RGBA16F:
             return Tegra::Texture::TextureFormat::R16_G16_B16_A16;
         case PixelFormat::R11FG11FB10F:
