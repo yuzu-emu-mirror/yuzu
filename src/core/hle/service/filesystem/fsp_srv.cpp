@@ -522,7 +522,7 @@ void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     u128 uid = rp.PopRaw<u128>();
 
     LOG_WARNING(Service_FS, "(STUBBED) called save_struct = {}, uid = {:016X}{:016X}",
-                FileSys::SaveStructDebugInfo(save_struct), uid[1], uid[0]);
+                save_struct.DebugInfo(), uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

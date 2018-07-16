@@ -12,10 +12,9 @@
 
 namespace FileSys {
 
-std::string SaveStructDebugInfo(SaveDataDescriptor save_struct) {
+std::string SaveDataDescriptor::DebugInfo() {
     return fmt::format("[type={:02X}, title_id={:016X}, user_id={:016X}{:016X}, save_id={:016X}]",
-                       static_cast<u8>(save_struct.type), save_struct.title_id,
-                       save_struct.user_id[1], save_struct.user_id[0], save_struct.save_id);
+                       static_cast<u8>(type), title_id, user_id[1], user_id[0], save_id);
 }
 
 SaveDataFactory::SaveDataFactory(std::string nand_directory)
@@ -65,7 +64,7 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
         FileUtil::CreateFullPath(save_directory);
     }
 
-    // TODO(DarkLordZach): For some reason, CreateFullPath dosen't create the last bit. Should be
+    // TODO(DarkLordZach): For some reason, CreateFullPath doesn't create the last bit. Should be
     // fixed with VFS.
     if (!FileUtil::IsDirectory(save_directory)) {
         FileUtil::CreateDir(save_directory);
@@ -83,6 +82,8 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpac
 
 std::string SaveDataFactory::GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id,
                                          u128 user_id, u64 save_id) const {
+    // According to switchbrew, if a save is of type SaveData and the title id field is 0, it should
+    // be interpreted as the title id of the current process.
     if (type == SaveDataType::SaveData && title_id == 0)
         title_id = Core::CurrentProcess()->program_id;
 

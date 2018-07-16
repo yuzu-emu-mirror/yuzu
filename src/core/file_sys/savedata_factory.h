@@ -37,10 +37,10 @@ struct SaveDataDescriptor {
     u64_le zero_1;
     u64_le zero_2;
     u64_le zero_3;
+
+    std::string DebugInfo();
 };
 static_assert(sizeof(SaveDataDescriptor) == 0x40, "SaveDataDescriptor has incorrect size.");
-
-std::string SaveStructDebugInfo(SaveDataDescriptor save_struct);
 
 /// File system interface to the SaveData archive
 class SaveDataFactory {
