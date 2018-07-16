@@ -58,8 +58,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
               static_cast<u8>(space), SaveStructDebugInfo(save_struct));
 
     if (save_data == nullptr) {
-        // TODO(bunnei): Find a better error code for this
-        return ResultCode(-1);
+        return ResultCode(ErrorModule::FS, 1002);
     }
 
     return save_data->Open(space, save_struct);
@@ -69,8 +68,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSDMC() {
     LOG_TRACE(Service_FS, "Opening SDMC");
 
     if (sdmc == nullptr) {
-        // TODO(bunnei): Find a better error code for this
-        return ResultCode(-1);
+        return ResultCode(ErrorModule::FS, 2001);
     }
 
     return sdmc->Open();
@@ -81,8 +79,7 @@ ResultCode FormatSaveData(FileSys::SaveDataSpaceId space, FileSys::SaveStruct sa
               static_cast<u8>(space), SaveStructDebugInfo(save_struct));
 
     if (save_data == nullptr) {
-        // TODO(bunnei): Find a better error code for this
-        return ResultCode(-1);
+        return ResultCode(ErrorModule::FS, 1002);
     }
 
     return save_data->Format(space, save_struct);

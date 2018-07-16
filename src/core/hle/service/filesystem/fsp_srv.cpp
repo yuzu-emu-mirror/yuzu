@@ -595,10 +595,9 @@ void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
 
     auto romfs = OpenRomFS(title_id);
     if (romfs.Failed()) {
-        // TODO (bunnei): Find the right error code to use here
         LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode(-1));
+        rb.Push(ResultCode(ErrorModule::FS, 2520));
         return;
     }
 
