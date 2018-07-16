@@ -38,15 +38,17 @@ static_assert(sizeof(SaveStruct) == 0x40, "SaveStruct has incorrect size.");
 std::string SaveStructDebugInfo(SaveStruct save_struct);
 
 /// File system interface to the SaveData archive
+// nand_directory should be the root of nand, sd_directory should be the root of sd
 class SaveDataFactory {
 public:
-    explicit SaveDataFactory(std::string save_directory);
+    SaveDataFactory(std::string nand_directory);
 
     ResultVal<std::unique_ptr<FileSystemBackend>> Open(SaveDataSpaceId space, SaveStruct meta);
     ResultCode Format(SaveDataSpaceId space, SaveStruct meta);
 
 private:
-    std::string save_directory;
+    std::string nand_directory;
+    std::string sd_directory;
 
     std::string GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id, u128 user_id,
                             u64 save_id) const;

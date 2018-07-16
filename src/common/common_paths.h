@@ -30,7 +30,7 @@
 #define CONFIG_DIR "config"
 #define CACHE_DIR "cache"
 #define SDMC_DIR "sdmc"
-#define SAVE_DIR "save"
+#define NAND_DIR "nand"
 #define SYSDATA_DIR "sysdata"
 #define LOG_DIR "log"
 

@@ -18,8 +18,8 @@ std::string SaveStructDebugInfo(SaveStruct save_struct) {
                        save_struct.user_id[1], save_struct.user_id[0], save_struct.save_id);
 }
 
-SaveDataFactory::SaveDataFactory(std::string save_directory)
-    : save_directory(std::move(save_directory)) {}
+SaveDataFactory::SaveDataFactory(std::string nand_directory)
+    : nand_directory(std::move(nand_directory)) {}
 
 ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpaceId space,
                                                                     SaveStruct meta) {
@@ -113,16 +113,31 @@ ResultCode SaveDataFactory::Format(SaveDataSpaceId space, SaveStruct meta) {
 
 std::string SaveDataFactory::GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id,
                                          u128 user_id, u64 save_id) const {
-    static std::vector<std::string> space_names = {"sysnand", "usrnand", "sd", "temp"};
-    static std::vector<std::string> type_names = {"system", "user", "bcat",
-                                                  "device", "temp", "cache"};
-
     if (type == SaveDataType::SaveData && title_id == 0)
         title_id = Core::CurrentProcess()->program_id;
 
-    return fmt::format("{}{}/{}/{:016X}/{:016X}{:016X}/{:016X}", save_directory,
-                       space_names[static_cast<u8>(space)], type_names[static_cast<u8>(type)],
-                       title_id, user_id[1], user_id[0], save_id);
+    std::string prefix;
+
+    switch (space) {
+    case SaveDataSpaceId::NandSystem:
+        prefix = nand_directory + "system/save/";
+    case SaveDataSpaceId::NandUser:
+        prefix = nand_directory + "user/save/";
+    default:
+        ASSERT_MSG(true, "Unrecognized SaveDataSpaceId: {:02X}", static_cast<u8>(space));
+    }
+
+    switch (type) {
+    case SaveDataType::SystemSaveData:
+        return fmt::format("{}{:016X}/{:016X}{:016X}", prefix, save_id, user_id[1], user_id[0]);
+    case SaveDataType::SaveData:
+        return fmt::format("{}{:08X}/{:016X}{:016X}/{:016X}", prefix, 0, user_id[1], user_id[0],
+                           title_id);
+    default:
+        ASSERT_MSG(true, "Unrecognized SaveDataType: {:02X}", static_cast<u8>(type));
+    }
+
+    return "";
 }
 
 } // namespace FileSys

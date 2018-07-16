@@ -90,10 +90,10 @@ void RegisterFileSystems() {
     save_data = nullptr;
     sdmc = nullptr;
 
-    std::string save_directory = FileUtil::GetUserPath(D_SAVE_IDX);
+    std::string nand_directory = FileUtil::GetUserPath(D_NAND_IDX);
     std::string sd_directory = FileUtil::GetUserPath(D_SDMC_IDX);
 
-    auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(save_directory));
+    auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
     RegisterSaveData(std::move(savedata));
 
     auto sdcard = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
