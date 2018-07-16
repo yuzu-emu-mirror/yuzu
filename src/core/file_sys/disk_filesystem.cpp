@@ -58,11 +58,13 @@ ResultVal<std::unique_ptr<StorageBackend>> Disk_FileSystem::OpenFile(const std::
 }
 
 ResultCode Disk_FileSystem::DeleteFile(const std::string& path) const {
-    if (!FileUtil::Exists(path)) {
+    std::string full_path = base_directory + path;
+
+    if (!FileUtil::Exists(full_path)) {
         return ERROR_PATH_NOT_FOUND;
     }
 
-    FileUtil::Delete(path);
+    FileUtil::Delete(full_path);
 
     return RESULT_SUCCESS;
 }

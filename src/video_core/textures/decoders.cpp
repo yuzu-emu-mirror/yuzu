@@ -62,6 +62,7 @@ u32 BytesPerPixel(TextureFormat format) {
         return 4;
     case TextureFormat::A1B5G5R5:
     case TextureFormat::B5G6R5:
+    case TextureFormat::G8R8:
         return 2;
     case TextureFormat::R8:
         return 1;
@@ -77,6 +78,8 @@ u32 BytesPerPixel(TextureFormat format) {
 
 static u32 DepthBytesPerPixel(DepthFormat format) {
     switch (format) {
+    case DepthFormat::Z16_UNORM:
+        return 2;
     case DepthFormat::S8_Z24_UNORM:
     case DepthFormat::Z24_S8_UNORM:
     case DepthFormat::Z32_FLOAT:
@@ -110,6 +113,7 @@ std::vector<u8> UnswizzleTexture(VAddr address, TextureFormat format, u32 width,
     case TextureFormat::A1B5G5R5:
     case TextureFormat::B5G6R5:
     case TextureFormat::R8:
+    case TextureFormat::G8R8:
     case TextureFormat::R16_G16_B16_A16:
     case TextureFormat::R32_G32_B32_A32:
     case TextureFormat::BF10GF11RF11:
@@ -133,6 +137,7 @@ std::vector<u8> UnswizzleDepthTexture(VAddr address, DepthFormat format, u32 wid
     std::vector<u8> unswizzled_data(width * height * bytes_per_pixel);
 
     switch (format) {
+    case DepthFormat::Z16_UNORM:
     case DepthFormat::S8_Z24_UNORM:
     case DepthFormat::Z24_S8_UNORM:
     case DepthFormat::Z32_FLOAT:
@@ -164,6 +169,7 @@ std::vector<u8> DecodeTexture(const std::vector<u8>& texture_data, TextureFormat
     case TextureFormat::A1B5G5R5:
     case TextureFormat::B5G6R5:
     case TextureFormat::R8:
+    case TextureFormat::G8R8:
     case TextureFormat::BF10GF11RF11:
     case TextureFormat::R32_G32_B32_A32:
         // TODO(Subv): For the time being just forward the same data without any decoding.

@@ -18,9 +18,9 @@ namespace Service::HID {
 
 // Updating period for each HID device.
 // TODO(shinyquagsire23): These need better values.
-constexpr u64 pad_update_ticks = CoreTiming::BASE_CLOCK_RATE / 10000;
-constexpr u64 accelerometer_update_ticks = CoreTiming::BASE_CLOCK_RATE / 10000;
-constexpr u64 gyroscope_update_ticks = CoreTiming::BASE_CLOCK_RATE / 10000;
+constexpr u64 pad_update_ticks = CoreTiming::BASE_CLOCK_RATE / 100;
+constexpr u64 accelerometer_update_ticks = CoreTiming::BASE_CLOCK_RATE / 100;
+constexpr u64 gyroscope_update_ticks = CoreTiming::BASE_CLOCK_RATE / 100;
 
 class IAppletResource final : public ServiceFramework<IAppletResource> {
 public:

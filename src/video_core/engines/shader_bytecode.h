@@ -142,6 +142,7 @@ enum class PredCondition : u64 {
     GreaterThan = 4,
     NotEqual = 5,
     GreaterEqual = 6,
+    LessThanWithNan = 9,
     NotEqualWithNan = 13,
     // TODO(Subv): Other condition types
 };
@@ -199,6 +200,11 @@ enum class IMinMaxExchange : u64 {
     XLo = 1,
     XMed = 2,
     XHi = 3,
+};
+
+enum class FlowCondition : u64 {
+    Always = 0xF,
+    Fcsm_Tr = 0x1C, // TODO(bunnei): What is this used for?
 };
 
 union Instruction {
@@ -298,6 +304,13 @@ union Instruction {
     } iadd32i;
 
     union {
+        BitField<53, 1, u64> negate_b;
+        BitField<54, 1, u64> abs_a;
+        BitField<56, 1, u64> negate_a;
+        BitField<57, 1, u64> abs_b;
+    } fadd32i;
+
+    union {
         BitField<20, 8, u64> shift_position;
         BitField<28, 8, u64> shift_length;
         BitField<48, 1, u64> negate_b;
@@ -307,6 +320,10 @@ union Instruction {
             return 32 - (shift_position + shift_length);
         }
     } bfe;
+
+    union {
+        BitField<0, 5, FlowCondition> cond;
+    } flow;
 
     union {
         BitField<48, 1, u64> negate_b;
@@ -487,6 +504,7 @@ public:
         FADD_C,
         FADD_R,
         FADD_IMM,
+        FADD32I,
         FMUL_C,
         FMUL_R,
         FMUL_IMM,
@@ -679,13 +697,14 @@ private:
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
             INST("111000110000----", Id::EXIT, Type::Trivial, "EXIT"),
             INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
-            INST("001100101-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
+            INST("0011001-1-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
             INST("010010011-------", Id::FFMA_CR, Type::Ffma, "FFMA_CR"),
             INST("010100011-------", Id::FFMA_RC, Type::Ffma, "FFMA_RC"),
             INST("010110011-------", Id::FFMA_RR, Type::Ffma, "FFMA_RR"),
             INST("0100110001011---", Id::FADD_C, Type::Arithmetic, "FADD_C"),
             INST("0101110001011---", Id::FADD_R, Type::Arithmetic, "FADD_R"),
             INST("0011100-01011---", Id::FADD_IMM, Type::Arithmetic, "FADD_IMM"),
+            INST("000010----------", Id::FADD32I, Type::ArithmeticImmediate, "FADD32I"),
             INST("0100110001101---", Id::FMUL_C, Type::Arithmetic, "FMUL_C"),
             INST("0101110001101---", Id::FMUL_R, Type::Arithmetic, "FMUL_R"),
             INST("0011100-01101---", Id::FMUL_IMM, Type::Arithmetic, "FMUL_IMM"),

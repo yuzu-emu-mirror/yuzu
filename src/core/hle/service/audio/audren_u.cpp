@@ -47,7 +47,7 @@ public:
 
         // Start the audio event
         CoreTiming::ScheduleEvent(audio_ticks, audio_event);
-        voice_status_list.reserve(worker_params.voice_count);
+        voice_status_list.resize(worker_params.voice_count);
     }
     ~IAudioRenderer() {
         CoreTiming::UnscheduleEvent(audio_event, 0);
@@ -87,8 +87,6 @@ private:
                 memory_pool[i].state = MemoryPoolStates::Attached;
             else if (mem_pool_info[i].pool_state == MemoryPoolStates::RequestDetach)
                 memory_pool[i].state = MemoryPoolStates::Detached;
-            else
-                memory_pool[i].state = mem_pool_info[i].pool_state;
         }
         std::memcpy(output.data() + sizeof(UpdateDataHeader), memory_pool.data(),
                     response_data.memory_pools_size);
@@ -183,7 +181,9 @@ private:
             behavior_size = 0xb0;
             memory_pools_size = (config.effect_count + (config.voice_count * 4)) * 0x10;
             voices_size = config.voice_count * 0x10;
+            voice_resource_size = 0x0;
             effects_size = config.effect_count * 0x10;
+            mixes_size = 0x0;
             sinks_size = config.sink_count * 0x20;
             performance_manager_size = 0x10;
             total_size = sizeof(UpdateDataHeader) + behavior_size + memory_pools_size +
