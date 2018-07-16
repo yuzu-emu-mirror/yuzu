@@ -32,13 +32,11 @@ ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory);
 
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenRomFS(u64 title_id);
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
-    FileSys::SaveDataSpaceId space, FileSys::SaveStruct save_struct);
+    FileSys::SaveDataSpaceId space, FileSys::SaveDataDescriptor save_struct);
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSDMC();
 
 // TODO(DarkLordZach): BIS Filesystem
 // ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenBIS();
-
-ResultCode FormatSaveData(FileSys::SaveDataSpaceId space, FileSys::SaveStruct save_struct);
 
 /// Registers all Filesystem services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);

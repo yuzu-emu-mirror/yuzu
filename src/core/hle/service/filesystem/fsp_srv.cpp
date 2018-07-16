@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma optimize("", off)
-
 #include <cinttypes>
 #include "common/logging/log.h"
 #include "common/string_util.h"
@@ -509,8 +507,7 @@ void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    FileSys::Path unused;
-    auto filesystem = IFileSystem(OpenSDMC().Unwrap());
+    IFileSystem filesystem(OpenSDMC().Unwrap());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -520,7 +517,7 @@ void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
-    auto save_struct = rp.PopRaw<FileSys::SaveStruct>();
+    auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
     auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
     u128 uid = rp.PopRaw<u128>();
 
@@ -535,9 +532,12 @@ void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     auto space_id = rp.PopRaw<FileSys::SaveDataSpaceId>();
-    auto save_struct = rp.PopRaw<FileSys::SaveStruct>();
+    auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
+
+    // TODO(DarkLordZach): This is a hack. Without it saves don't work.
     save_struct.type = FileSys::SaveDataType::SaveData;
-    auto filesystem = OpenSaveData(static_cast<FileSys::SaveDataSpaceId>(space_id), save_struct);
+
+    auto filesystem = OpenSaveData(space_id, save_struct);
 
     if (filesystem.Failed()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};
@@ -592,6 +592,12 @@ void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called with storage_id={:02X}, title_id={:016X}",
               static_cast<u8>(storage_id), title_id);
+    if (title_id != Core::System::GetInstance().CurrentProcess()->program_id) {
+        LOG_CRITICAL(
+            Service_FS,
+            "Attempting to access RomFS of another title id (current={:016X}, requested={:016X}).",
+            Core::System::GetInstance().CurrentProcess()->program_id, title_id);
+    }
 
     auto romfs = OpenRomFS(title_id);
     if (romfs.Failed()) {
