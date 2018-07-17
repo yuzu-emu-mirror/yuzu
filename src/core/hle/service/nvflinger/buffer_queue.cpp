@@ -13,8 +13,8 @@ namespace Service {
 namespace NVFlinger {
 
 BufferQueue::BufferQueue(u32 id, u64 layer_id) : id(id), layer_id(layer_id) {
-    native_handle = Kernel::Event::Create(Kernel::ResetType::OneShot, "BufferQueue NativeHandle");
-    native_handle->Signal();
+    buffer_wait_event =
+        Kernel::Event::Create(Kernel::ResetType::Sticky, "BufferQueue NativeHandle");
 }
 
 void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
@@ -26,10 +26,7 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, IGBPBuffer& igbp_buffer) {
     LOG_WARNING(Service, "Adding graphics buffer {}", slot);
 
     queue.emplace_back(buffer);
-
-    if (buffer_wait_event) {
-        buffer_wait_event->Signal();
-    }
+    buffer_wait_event->Signal();
 }
 
 boost::optional<u32> BufferQueue::DequeueBuffer(u32 width, u32 height) {
@@ -47,8 +44,6 @@ boost::optional<u32> BufferQueue::DequeueBuffer(u32 width, u32 height) {
     if (itr == queue.end()) {
         return boost::none;
     }
-
-    buffer_wait_event = nullptr;
 
     itr->status = Buffer::Status::Dequeued;
     return itr->slot;
@@ -88,9 +83,7 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
     ASSERT(itr->status == Buffer::Status::Acquired);
     itr->status = Buffer::Status::Free;
 
-    if (buffer_wait_event) {
-        buffer_wait_event->Signal();
-    }
+    buffer_wait_event->Signal();
 }
 
 u32 BufferQueue::Query(QueryType type) {
@@ -104,11 +97,6 @@ u32 BufferQueue::Query(QueryType type) {
 
     UNIMPLEMENTED();
     return 0;
-}
-
-void BufferQueue::SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_event) {
-    ASSERT_MSG(!buffer_wait_event, "buffer_wait_event only supports a single waiting thread!");
-    buffer_wait_event = std::move(wait_event);
 }
 
 } // namespace NVFlinger

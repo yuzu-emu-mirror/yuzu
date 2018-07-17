@@ -495,7 +495,7 @@ private:
                 ctx.WriteBuffer(response.Serialize());
             } else {
                 // Wait the current thread until a buffer becomes available
-                auto wait_event = ctx.SleepClientThread(
+                ctx.SleepClientThread(
                     Kernel::GetCurrentThread(), "IHOSBinderDriver::DequeueBuffer", -1,
                     [=](Kernel::SharedPtr<Kernel::Thread> thread, Kernel::HLERequestContext& ctx,
                         ThreadWakeupReason reason) {
@@ -506,8 +506,8 @@ private:
                         ctx.WriteBuffer(response.Serialize());
                         IPC::ResponseBuilder rb{ctx, 2};
                         rb.Push(RESULT_SUCCESS);
-                    });
-                buffer_queue->SetBufferWaitEvent(std::move(wait_event));
+                    },
+                    buffer_queue->GetBufferWaitEvent());
             }
         } else if (transaction == TransactionId::RequestBuffer) {
             IGBPRequestBufferRequestParcel request{ctx.ReadBuffer()};
@@ -565,7 +565,7 @@ private:
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushCopyObjects(buffer_queue->GetNativeHandle());
+        rb.PushCopyObjects(buffer_queue->GetBufferWaitEvent());
     }
 
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger;

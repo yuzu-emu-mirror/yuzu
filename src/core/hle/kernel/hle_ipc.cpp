@@ -29,7 +29,8 @@ void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_s
 
 SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
                                                       const std::string& reason, u64 timeout,
-                                                      WakeupCallback&& callback) {
+                                                      WakeupCallback&& callback,
+                                                      Kernel::SharedPtr<Kernel::Event> event) {
 
     // Put the client thread to sleep until the wait event is signaled or the timeout expires.
     thread->wakeup_callback =
@@ -41,7 +42,12 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
         return true;
     };
 
-    auto event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    if (!event) {
+        // Create event if not provided
+        event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    }
+
+    event->Clear();
     thread->status = THREADSTATUS_WAIT_HLE_EVENT;
     thread->wait_objects = {event};
     event->AddWaitingThread(thread);

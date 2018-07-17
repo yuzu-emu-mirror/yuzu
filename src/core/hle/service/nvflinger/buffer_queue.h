@@ -77,14 +77,13 @@ public:
     boost::optional<const Buffer&> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
     u32 Query(QueryType type);
-    void SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_event);
 
     u32 GetId() const {
         return id;
     }
 
-    Kernel::SharedPtr<Kernel::Event> GetNativeHandle() const {
-        return native_handle;
+    Kernel::SharedPtr<Kernel::Event> GetBufferWaitEvent() const {
+        return buffer_wait_event;
     }
 
 private:
@@ -92,9 +91,6 @@ private:
     u64 layer_id;
 
     std::vector<Buffer> queue;
-    Kernel::SharedPtr<Kernel::Event> native_handle;
-
-    /// Used to signal waiting thread when no buffers are available
     Kernel::SharedPtr<Kernel::Event> buffer_wait_event;
 };
 

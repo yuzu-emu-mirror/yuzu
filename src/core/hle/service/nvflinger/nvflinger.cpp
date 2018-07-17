@@ -152,9 +152,6 @@ void NVFlinger::Compose() {
                      igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer->transform);
 
         buffer_queue->ReleaseBuffer(buffer->slot);
-
-        // TODO(Subv): Figure out when we should actually signal this event.
-        buffer_queue->GetNativeHandle()->Signal();
     }
 }
 
