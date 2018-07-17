@@ -520,7 +520,18 @@ public:
                     u32 enable[NumRenderTargets];
                 } blend;
 
-                INSERT_PADDING_WORDS(0xB);
+                struct {
+                    u32 enable;
+                    u32 front_op_fail;
+                    u32 front_op_zfail;
+                    u32 front_op_zpass;
+                    u32 front_func_func;
+                    u32 front_func_ref;
+                    u32 front_func_mask;
+                    u32 front_mask;
+                } stencil;
+
+                INSERT_PADDING_WORDS(0x3);
 
                 union {
                     BitField<4, 1, u32> triangle_rast_flip;
@@ -556,7 +567,17 @@ public:
                     }
                 } tic;
 
-                INSERT_PADDING_WORDS(0x21);
+                INSERT_PADDING_WORDS(0x5);
+
+                struct {
+                    u32 enable;
+                    u32 back_op_fail;
+                    u32 back_op_zfail;
+                    u32 back_op_zpass;
+                    u32 back_func_func;
+                } stencil_two_side;
+
+                INSERT_PADDING_WORDS(0x17);
 
                 union {
                     BitField<2, 1, u32> coord_origin;
@@ -851,10 +872,12 @@ ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);
 ASSERT_REG_POSITION(d3d_cull_mode, 0x4C2);
 ASSERT_REG_POSITION(depth_test_func, 0x4C3);
 ASSERT_REG_POSITION(blend, 0x4CF);
+ASSERT_REG_POSITION(stencil, 0x4E0);
 ASSERT_REG_POSITION(screen_y_control, 0x4EB);
 ASSERT_REG_POSITION(vb_element_base, 0x50D);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
+ASSERT_REG_POSITION(stencil_two_side, 0x565);
 ASSERT_REG_POSITION(point_coord_replace, 0x581);
 ASSERT_REG_POSITION(code_address, 0x582);
 ASSERT_REG_POSITION(draw, 0x585);
