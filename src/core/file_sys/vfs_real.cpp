@@ -76,6 +76,10 @@ bool RealVfsFile::Rename(const std::string& name) {
     return out;
 }
 
+bool RealVfsFile::Close() {
+    return backing.Close();
+}
+
 RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
     : path(FileUtil::RemoveTrailingSlash(path_)), parent_path(FileUtil::GetParentPath(path)),
       path_components(FileUtil::SplitPathComponents(path)),
@@ -146,6 +150,12 @@ bool RealVfsDirectory::DeleteSubdirectory(const std::string& name) {
 }
 
 bool RealVfsDirectory::DeleteFile(const std::string& name) {
+    auto file = GetFile(name);
+    if (file == nullptr)
+        return false;
+    files.erase(std::find(files.begin(), files.end(), file));
+    auto real_file = dynamic_cast<RealVfsFile*>(file.get());
+    real_file->Close();
     return FileUtil::Delete(path + DIR_SEP + name);
 }
 

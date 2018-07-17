@@ -173,9 +173,21 @@ struct VfsDirectory : NonCopyable {
     // operation failed.
     virtual std::shared_ptr<VfsFile> CreateFile(const std::string& name) = 0;
 
+    // Creates a new file at the path relative to this directory. Also creates directories if
+    // they do not exist and is supported by this implementation. Returns nullptr on any failure.
     virtual std::shared_ptr<VfsFile> CreateFileRelative(const std::string& path);
+
+    // Creates a new file at the path relative to root of this directory. Also creates directories
+    // if they do not exist and is supported by this implementation. Returns nullptr on any failure.
     virtual std::shared_ptr<VfsFile> CreateFileAbsolute(const std::string& path);
+
+    // Creates a new directory at the path relative to this directory. Also creates directories if
+    // they do not exist and is supported by this implementation. Returns nullptr on any failure.
     virtual std::shared_ptr<VfsDirectory> CreateDirectoryRelative(const std::string& path);
+
+    // Creates a new directory at the path relative to root of this directory. Also creates
+    // directories if they do not exist and is supported by this implementation. Returns nullptr on
+    // any failure.
     virtual std::shared_ptr<VfsDirectory> CreateDirectoryAbsolute(const std::string& path);
 
     // Deletes the subdirectory with name and returns true on success.

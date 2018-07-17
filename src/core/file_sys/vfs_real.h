@@ -12,6 +12,8 @@ namespace FileSys {
 
 // An implmentation of VfsFile that represents a file on the user's computer.
 struct RealVfsFile : public VfsFile {
+    friend struct RealVfsDirectory;
+
     RealVfsFile(const std::string& name, Mode perms = Mode::Read);
 
     std::string GetName() const override;
@@ -25,6 +27,8 @@ struct RealVfsFile : public VfsFile {
     bool Rename(const std::string& name) override;
 
 private:
+    bool Close();
+
     FileUtil::IOFile backing;
     std::string path;
     std::string parent_path;

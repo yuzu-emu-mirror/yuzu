@@ -2,16 +2,12 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma optimize("", 0)
-
 #include "common/assert.h"
 #include "common/file_util.h"
 #include "core/core.h"
 #include "core/file_sys/errors.h"
-#include "core/file_sys/filesystem.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/sdmc_factory.h"
-#include "core/file_sys/errors.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_offset.h"
 #include "core/file_sys/vfs_real.h"
@@ -53,9 +49,11 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 s
 ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const {
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (path == "/" || path == "\\") {
-        backing->DeleteSubdirectory("");
+        // TODO(DarkLordZach): Why do games call this and what should it do? Works as is but...
         return RESULT_SUCCESS;
     }
+    if (dir->GetFile(FileUtil::GetFilename(path)) == nullptr)
+        return FileSys::ERROR_PATH_NOT_FOUND;
     if (!backing->DeleteFile(FileUtil::GetFilename(path)))
         return ResultCode(-1);
     return RESULT_SUCCESS;
