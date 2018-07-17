@@ -602,7 +602,7 @@ void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
     if (romfs.Failed()) {
         LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode(ErrorModule::FS, 2520));
+        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::RomFSNotFound));
         return;
     }
 

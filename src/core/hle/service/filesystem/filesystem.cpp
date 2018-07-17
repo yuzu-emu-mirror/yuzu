@@ -4,6 +4,7 @@
 
 #include <boost/container/flat_map.hpp>
 #include "common/file_util.h"
+#include "core/file_sys/errors.h"
 #include "core/file_sys/filesystem.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/sdmc_factory.h"
@@ -58,7 +59,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
               static_cast<u8>(space), SaveStructDebugInfo(save_struct));
 
     if (save_data_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, 1002);
+        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SaveDataNotFound);
     }
 
     return save_data_factory->Open(space, save_struct);
@@ -68,7 +69,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSDMC() {
     LOG_TRACE(Service_FS, "Opening SDMC");
 
     if (sdmc_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, 2001);
+        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SdCardNotFound);
     }
 
     return sdmc_factory->Open();
