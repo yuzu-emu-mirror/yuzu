@@ -532,10 +532,9 @@ void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     auto space_id = rp.PopRaw<FileSys::SaveDataSpaceId>();
+    auto unk = rp.Pop<u32>();
+    LOG_INFO(Service_FS, "called with unknown={:08X}", unk);
     auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
-
-    // TODO(DarkLordZach): This is a hack. Without it saves don't work.
-    save_struct.type = FileSys::SaveDataType::SaveData;
 
     auto filesystem = OpenSaveData(space_id, save_struct);
 
