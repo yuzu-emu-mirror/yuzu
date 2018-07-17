@@ -154,8 +154,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
 
     // Register the RomFS if a ".romfs" file was found
     if (!filepath_romfs.empty()) {
-        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
-                                                Service::FileSystem::Type::RomFS);
+        Service::FileSystem::RegisterRomFS(std::make_unique<FileSys::RomFSFactory>(*this));
     }
 
     is_loaded = true;

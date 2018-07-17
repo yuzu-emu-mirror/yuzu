@@ -13,10 +13,20 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 
 namespace Service::FileSystem {
+
+enum class StorageId : u8 {
+    None = 0,
+    Host = 1,
+    GameCard = 2,
+    NandSystem = 3,
+    NandUser = 4,
+    SdCard = 5
+};
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
@@ -487,17 +497,6 @@ FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
     RegisterHandlers(functions);
 }
 
-void FSP_SRV::TryLoadRomFS() {
-    if (romfs) {
-        return;
-    }
-    FileSys::Path unused;
-    auto res = OpenFileSystem(Type::RomFS, unused);
-    if (res.Succeeded()) {
-        romfs = std::move(res.Unwrap());
-    }
-}
-
 void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_FS, "(STUBBED) called");
 
@@ -508,8 +507,7 @@ void FSP_SRV::Initialize(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    FileSys::Path unused;
-    auto filesystem = OpenFileSystem(Type::SDMC, unused).Unwrap();
+    IFileSystem filesystem(OpenSDMC().Unwrap());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
@@ -519,23 +517,26 @@ void FSP_SRV::MountSdCard(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::CreateSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
-    auto save_struct = rp.PopRaw<std::array<u8, 0x40>>();
+    auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
     auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
     u128 uid = rp.PopRaw<u128>();
 
-    LOG_WARNING(Service_FS, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
+    LOG_WARNING(Service_FS, "(STUBBED) called save_struct = {}, uid = {:016X}{:016X}",
+                save_struct.DebugInfo(), uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_FS, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
 
-    // TODO(Subv): Read the input parameters and mount the requested savedata instead of always
-    // mounting the current process' savedata.
-    FileSys::Path unused;
-    auto filesystem = OpenFileSystem(Type::SaveData, unused);
+    auto space_id = rp.PopRaw<FileSys::SaveDataSpaceId>();
+    auto unk = rp.Pop<u32>();
+    LOG_INFO(Service_FS, "called with unknown={:08X}", unk);
+    auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
+
+    auto filesystem = OpenSaveData(space_id, save_struct);
 
     if (filesystem.Failed()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};
@@ -559,8 +560,8 @@ void FSP_SRV::GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
 void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    TryLoadRomFS();
-    if (!romfs) {
+    auto romfs = OpenRomFS(Core::System::GetInstance().CurrentProcess()->program_id);
+    if (romfs.Failed()) {
         // TODO (bunnei): Find the right error code to use here
         LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
@@ -568,8 +569,8 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    // Attempt to open a StorageBackend interface to the RomFS
-    auto storage = romfs->OpenFile({}, {});
+    auto storage = romfs.Unwrap()->OpenFile({}, {});
+
     if (storage.Failed()) {
         LOG_CRITICAL(Service_FS, "no storage interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
@@ -583,8 +584,40 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_FS, "(STUBBED) called, using OpenDataStorageByCurrentProcess");
-    OpenDataStorageByCurrentProcess(ctx);
+    IPC::RequestParser rp{ctx};
+
+    auto storage_id = rp.PopRaw<StorageId>();
+    auto title_id = rp.PopRaw<u64>();
+
+    LOG_DEBUG(Service_FS, "called with storage_id={:02X}, title_id={:016X}",
+              static_cast<u8>(storage_id), title_id);
+    if (title_id != Core::System::GetInstance().CurrentProcess()->program_id) {
+        LOG_CRITICAL(
+            Service_FS,
+            "Attempting to access RomFS of another title id (current={:016X}, requested={:016X}).",
+            Core::System::GetInstance().CurrentProcess()->program_id, title_id);
+    }
+
+    auto romfs = OpenRomFS(title_id);
+    if (romfs.Failed()) {
+        LOG_CRITICAL(Service_FS, "no file system interface available!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::RomFSNotFound));
+        return;
+    }
+
+    auto storage = romfs.Unwrap()->OpenFile({}, {});
+
+    if (storage.Failed()) {
+        LOG_CRITICAL(Service_FS, "no storage interface available!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(storage.Code());
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IStorage>(std::move(storage.Unwrap()));
 }
 
 } // namespace Service::FileSystem

@@ -167,35 +167,4 @@ public:
     virtual ResultVal<EntryType> GetEntryType(const std::string& path) const = 0;
 };
 
-class FileSystemFactory : NonCopyable {
-public:
-    virtual ~FileSystemFactory() {}
-
-    /**
-     * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)
-     */
-    virtual std::string GetName() const = 0;
-
-    /**
-     * Tries to open the archive of this type with the specified path
-     * @param path Path to the archive
-     * @return An ArchiveBackend corresponding operating specified archive path.
-     */
-    virtual ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) = 0;
-
-    /**
-     * Deletes the archive contents and then re-creates the base folder
-     * @param path Path to the archive
-     * @return ResultCode of the operation, 0 on success
-     */
-    virtual ResultCode Format(const Path& path) = 0;
-
-    /**
-     * Retrieves the format info about the archive with the specified path
-     * @param path Path to the archive
-     * @return Format information about the archive or error code
-     */
-    virtual ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const = 0;
-};
-
 } // namespace FileSys

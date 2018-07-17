@@ -11,28 +11,17 @@
 
 namespace FileSys {
 
-RomFS_Factory::RomFS_Factory(Loader::AppLoader& app_loader) {
+RomFSFactory::RomFSFactory(Loader::AppLoader& app_loader) {
     // Load the RomFS from the app
     if (Loader::ResultStatus::Success != app_loader.ReadRomFS(romfs_file, data_offset, data_size)) {
         LOG_ERROR(Service_FS, "Unable to read RomFS!");
     }
 }
 
-ResultVal<std::unique_ptr<FileSystemBackend>> RomFS_Factory::Open(const Path& path) {
+ResultVal<std::unique_ptr<FileSystemBackend>> RomFSFactory::Open(u64 title_id) {
+    // TODO(DarkLordZach): Use title id.
     auto archive = std::make_unique<RomFS_FileSystem>(romfs_file, data_offset, data_size);
     return MakeResult<std::unique_ptr<FileSystemBackend>>(std::move(archive));
-}
-
-ResultCode RomFS_Factory::Format(const Path& path) {
-    LOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
-    // TODO(bunnei): Find the right error code for this
-    return ResultCode(-1);
-}
-
-ResultVal<ArchiveFormatInfo> RomFS_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
-    // TODO(bunnei): Find the right error code for this
-    return ResultCode(-1);
 }
 
 } // namespace FileSys

@@ -13,16 +13,11 @@
 namespace FileSys {
 
 /// File system interface to the SDCard archive
-class SDMC_Factory final : public FileSystemFactory {
+class SDMCFactory {
 public:
-    explicit SDMC_Factory(std::string sd_directory);
+    explicit SDMCFactory(std::string sd_directory);
 
-    std::string GetName() const override {
-        return "SDMC_Factory";
-    }
-    ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) override;
-    ResultCode Format(const Path& path) override;
-    ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const override;
+    ResultVal<std::unique_ptr<FileSystemBackend>> Open();
 
 private:
     std::string sd_directory;

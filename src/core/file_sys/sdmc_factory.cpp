@@ -12,9 +12,9 @@
 
 namespace FileSys {
 
-SDMC_Factory::SDMC_Factory(std::string sd_directory) : sd_directory(std::move(sd_directory)) {}
+SDMCFactory::SDMCFactory(std::string sd_directory) : sd_directory(std::move(sd_directory)) {}
 
-ResultVal<std::unique_ptr<FileSystemBackend>> SDMC_Factory::Open(const Path& path) {
+ResultVal<std::unique_ptr<FileSystemBackend>> SDMCFactory::Open() {
     // Create the SD Card directory if it doesn't already exist.
     if (!FileUtil::IsDirectory(sd_directory)) {
         FileUtil::CreateFullPath(sd_directory);
@@ -22,18 +22,6 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SDMC_Factory::Open(const Path& pat
 
     auto archive = std::make_unique<Disk_FileSystem>(sd_directory);
     return MakeResult<std::unique_ptr<FileSystemBackend>>(std::move(archive));
-}
-
-ResultCode SDMC_Factory::Format(const Path& path) {
-    LOG_ERROR(Service_FS, "Unimplemented Format archive {}", GetName());
-    // TODO(Subv): Find the right error code for this
-    return ResultCode(-1);
-}
-
-ResultVal<ArchiveFormatInfo> SDMC_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
-    // TODO(bunnei): Find the right error code for this
-    return ResultCode(-1);
 }
 
 } // namespace FileSys

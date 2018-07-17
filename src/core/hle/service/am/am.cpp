@@ -4,9 +4,11 @@
 
 #include <cinttypes>
 #include <stack>
+#include "core/core.h"
 #include "core/file_sys/filesystem.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
@@ -614,25 +616,14 @@ void IApplicationFunctions::CreateApplicationAndRequestToStartForQuest(
 
 void IApplicationFunctions::EnsureSaveData(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    u128 uid = rp.PopRaw<u128>();
+    u128 uid = rp.PopRaw<u128>(); // What does this do?
 
     LOG_WARNING(Service, "(STUBBED) called uid = {:016X}{:016X}", uid[1], uid[0]);
 
     IPC::ResponseBuilder rb{ctx, 4};
-
-    FileSys::Path unused;
-    auto savedata = FileSystem::OpenFileSystem(FileSystem::Type::SaveData, unused);
-    if (savedata.Failed()) {
-        // Create the save data and return an error indicating that the operation was performed.
-        FileSystem::FormatFileSystem(FileSystem::Type::SaveData);
-        // TODO(Subv): Find out the correct error code for this.
-        rb.Push(ResultCode(ErrorModule::FS, 40));
-    } else {
-        rb.Push(RESULT_SUCCESS);
-    }
-
+    rb.Push(RESULT_SUCCESS);
     rb.Push<u64>(0);
-}
+} // namespace Service::AM
 
 void IApplicationFunctions::SetTerminateResult(Kernel::HLERequestContext& ctx) {
     // Takes an input u32 Result, no output.

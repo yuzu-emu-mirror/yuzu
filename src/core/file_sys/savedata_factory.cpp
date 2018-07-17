@@ -12,11 +12,49 @@
 
 namespace FileSys {
 
-SaveData_Factory::SaveData_Factory(std::string nand_directory)
+std::string SaveDataDescriptor::DebugInfo() {
+    return fmt::format("[type={:02X}, title_id={:016X}, user_id={:016X}{:016X}, save_id={:016X}]",
+                       static_cast<u8>(type), title_id, user_id[1], user_id[0], save_id);
+}
+
+SaveDataFactory::SaveDataFactory(std::string nand_directory)
     : nand_directory(std::move(nand_directory)) {}
 
-ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path& path) {
-    std::string save_directory = GetFullPath();
+ResultVal<std::unique_ptr<FileSystemBackend>> SaveDataFactory::Open(SaveDataSpaceId space,
+                                                                    SaveDataDescriptor meta) {
+    if (meta.type == SaveDataType::SystemSaveData || meta.type == SaveDataType::SaveData) {
+        if (meta.zero_1 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveDataDescriptor, type is "
+                        "SystemSaveData||SaveData but offset 0x28 is non-zero ({:016X}).",
+                        meta.zero_1);
+        }
+        if (meta.zero_2 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveDataDescriptor, type is "
+                        "SystemSaveData||SaveData but offset 0x30 is non-zero ({:016X}).",
+                        meta.zero_2);
+        }
+        if (meta.zero_3 != 0) {
+            LOG_WARNING(Service_FS,
+                        "Possibly incorrect SaveDataDescriptor, type is "
+                        "SystemSaveData||SaveData but offset 0x38 is non-zero ({:016X}).",
+                        meta.zero_3);
+        }
+    }
+
+    if (meta.type == SaveDataType::SystemSaveData && meta.title_id != 0) {
+        LOG_WARNING(Service_FS,
+                    "Possibly incorrect SaveDataDescriptor, type is SystemSaveData but title_id is "
+                    "non-zero ({:016X}).",
+                    meta.title_id);
+    }
+
+    std::string save_directory =
+        GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
+
+    // TODO(DarkLordZach): Try to not create when opening, there are dedicated create save methods.
+    // But, user_ids don't match so this works for now.
 
     if (!FileUtil::Exists(save_directory)) {
         // TODO(bunnei): This is a work-around to always create a save data directory if it does not
@@ -24,6 +62,12 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path&
         // Without a save data directory, many games will assert on boot. This should not have any
         // bad side-effects.
         FileUtil::CreateFullPath(save_directory);
+    }
+
+    // TODO(DarkLordZach): For some reason, CreateFullPath doesn't create the last bit. Should be
+    // fixed with VFS.
+    if (!FileUtil::IsDirectory(save_directory)) {
+        FileUtil::CreateDir(save_directory);
     }
 
     // Return an error if the save data doesn't actually exist.
@@ -36,28 +80,35 @@ ResultVal<std::unique_ptr<FileSystemBackend>> SaveData_Factory::Open(const Path&
     return MakeResult<std::unique_ptr<FileSystemBackend>>(std::move(archive));
 }
 
-ResultCode SaveData_Factory::Format(const Path& path) {
-    LOG_WARNING(Service_FS, "Format archive {}", GetName());
-    // Create the save data directory.
-    if (!FileUtil::CreateFullPath(GetFullPath())) {
-        // TODO(Subv): Find the correct error code.
-        return ResultCode(-1);
+std::string SaveDataFactory::GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id,
+                                         u128 user_id, u64 save_id) const {
+    // According to switchbrew, if a save is of type SaveData and the title id field is 0, it should
+    // be interpreted as the title id of the current process.
+    if (type == SaveDataType::SaveData && title_id == 0)
+        title_id = Core::CurrentProcess()->program_id;
+
+    std::string prefix;
+
+    switch (space) {
+    case SaveDataSpaceId::NandSystem:
+        prefix = nand_directory + "system/save/";
+        break;
+    case SaveDataSpaceId::NandUser:
+        prefix = nand_directory + "user/save/";
+        break;
+    default:
+        ASSERT_MSG(false, "Unrecognized SaveDataSpaceId: {:02X}", static_cast<u8>(space));
     }
 
-    return RESULT_SUCCESS;
-}
-
-ResultVal<ArchiveFormatInfo> SaveData_Factory::GetFormatInfo(const Path& path) const {
-    LOG_ERROR(Service_FS, "Unimplemented GetFormatInfo archive {}", GetName());
-    // TODO(bunnei): Find the right error code for this
-    return ResultCode(-1);
-}
-
-std::string SaveData_Factory::GetFullPath() const {
-    u64 title_id = Core::CurrentProcess()->program_id;
-    // TODO(Subv): Somehow obtain this value.
-    u32 user = 0;
-    return fmt::format("{}save/{:016X}/{:08X}/", nand_directory, title_id, user);
+    switch (type) {
+    case SaveDataType::SystemSaveData:
+        return fmt::format("{}{:016X}/{:016X}{:016X}", prefix, save_id, user_id[1], user_id[0]);
+    case SaveDataType::SaveData:
+        return fmt::format("{}{:016X}/{:016X}{:016X}/{:016X}", prefix, 0, user_id[1], user_id[0],
+                           title_id);
+    default:
+        ASSERT_MSG(false, "Unrecognized SaveDataType: {:02X}", static_cast<u8>(type));
+    }
 }
 
 } // namespace FileSys
