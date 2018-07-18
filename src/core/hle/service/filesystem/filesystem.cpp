@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma optimize("", off)
+
 #include "common/assert.h"
 #include "common/file_util.h"
 #include "core/core.h"
@@ -39,10 +41,14 @@ std::string VfsDirectoryServiceWrapper::GetName() const {
 ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 size) const {
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     auto file = dir->CreateFile(FileUtil::GetFilename(path));
-    if (file == nullptr)
+    if (file == nullptr) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
-    if (!file->Resize(size))
+    }
+    if (!file->Resize(size)) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return RESULT_SUCCESS;
 }
 
@@ -54,8 +60,10 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const
     }
     if (dir->GetFile(FileUtil::GetFilename(path)) == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
-    if (!backing->DeleteFile(FileUtil::GetFilename(path)))
+    if (!backing->DeleteFile(FileUtil::GetFilename(path))) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return RESULT_SUCCESS;
 }
 
@@ -64,22 +72,28 @@ ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) 
     if (dir == nullptr && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
         dir = backing;
     auto new_dir = dir->CreateSubdirectory(FileUtil::GetFilename(path));
-    if (new_dir == nullptr)
+    if (new_dir == nullptr) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) const {
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
-    if (!dir->DeleteSubdirectory(FileUtil::GetFilename(path)))
+    if (!dir->DeleteSubdirectory(FileUtil::GetFilename(path))) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return RESULT_SUCCESS;
 }
 
 ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path) const {
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
-    if (!dir->DeleteSubdirectoryRecursive(FileUtil::GetFilename(path)))
+    if (!dir->DeleteSubdirectoryRecursive(FileUtil::GetFilename(path))) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return RESULT_SUCCESS;
 }
 
@@ -90,8 +104,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
         // Use more-optimized vfs implementation rename.
         if (src == nullptr)
             return FileSys::ERROR_PATH_NOT_FOUND;
-        if (!src->Rename(FileUtil::GetFilename(dest_path)))
+        if (!src->Rename(FileUtil::GetFilename(dest_path))) {
+            // TODO(DarkLordZach): Find a better error code for this
             return ResultCode(-1);
+        }
         return RESULT_SUCCESS;
     }
 
@@ -106,8 +122,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
     ASSERT_MSG(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
                "Could not write all of the bytes but everything else has succeded.");
 
-    if (!src->GetContainingDirectory()->DeleteFile(FileUtil::GetFilename(src_path)))
+    if (!src->GetContainingDirectory()->DeleteFile(FileUtil::GetFilename(src_path))) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
 
     return RESULT_SUCCESS;
 }
@@ -119,8 +137,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
         // Use more-optimized vfs implementation rename.
         if (src == nullptr)
             return FileSys::ERROR_PATH_NOT_FOUND;
-        if (!src->Rename(FileUtil::GetFilename(dest_path)))
+        if (!src->Rename(FileUtil::GetFilename(dest_path))) {
+            // TODO(DarkLordZach): Find a better error code for this
             return ResultCode(-1);
+        }
         return RESULT_SUCCESS;
     }
 
@@ -130,6 +150,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
                "don't match -- UNIMPLEMENTED",
                src_path, dest_path);
 
+    // TODO(DarkLordZach): Find a better error code for this
     return ResultCode(-1);
 }
 
@@ -152,8 +173,10 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
 
 ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
     auto dir = GetDirectoryRelativeWrapped(backing, path);
-    if (dir == nullptr)
+    if (dir == nullptr) {
+        // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
+    }
     return MakeResult(dir);
 }
 
@@ -220,10 +243,10 @@ ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id) {
 ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
                                             FileSys::SaveDataDescriptor save_struct) {
     LOG_TRACE(Service_FS, "Opening Save Data for space_id={:01X}, save_struct={}",
-              static_cast<u8>(space), SaveStructDebugInfo(save_struct));
+              static_cast<u8>(space), save_struct.DebugInfo());
 
     if (save_data_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SaveDataNotFound);
+        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound);
     }
 
     return save_data_factory->Open(space, save_struct);

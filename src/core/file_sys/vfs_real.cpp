@@ -88,20 +88,19 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
     if (!FileUtil::Exists(path) && (perms == Mode::Write || perms == Mode::Append))
         FileUtil::CreateDir(path);
     unsigned size;
-    if (perms != Mode::Append) {
-        FileUtil::ForeachDirectoryEntry(
-            &size, path,
-            [this](unsigned* entries_out, const std::string& directory,
-                   const std::string& filename) {
-                std::string full_path = directory + DIR_SEP + filename;
-                if (FileUtil::IsDirectory(full_path))
-                    subdirectories.emplace_back(
-                        std::make_shared<RealVfsDirectory>(full_path, perms));
-                else
-                    files.emplace_back(std::make_shared<RealVfsFile>(full_path, perms));
-                return true;
-            });
-    }
+    if (perms == Mode::Append)
+        return;
+
+    FileUtil::ForeachDirectoryEntry(
+        &size, path,
+        [this](unsigned* entries_out, const std::string& directory, const std::string& filename) {
+            std::string full_path = directory + DIR_SEP + filename;
+            if (FileUtil::IsDirectory(full_path))
+                subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(full_path, perms));
+            else
+                files.emplace_back(std::make_shared<RealVfsFile>(full_path, perms));
+            return true;
+        });
 }
 
 std::vector<std::shared_ptr<VfsFile>> RealVfsDirectory::GetFiles() const {
@@ -154,7 +153,7 @@ bool RealVfsDirectory::DeleteFile(const std::string& name) {
     if (file == nullptr)
         return false;
     files.erase(std::find(files.begin(), files.end(), file));
-    auto real_file = dynamic_cast<RealVfsFile*>(file.get());
+    auto real_file = std::static_pointer_cast<RealVfsFile>(file);
     real_file->Close();
     return FileUtil::Delete(path + DIR_SEP + name);
 }

@@ -55,10 +55,10 @@ std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::string& path) 
     if (vec.size() == 1)
         return GetFile(vec[0]);
     auto dir = GetSubdirectory(vec[0]);
-    for (size_t i = 1; i < vec.size() - 1; ++i) {
+    for (size_t component = 1; component < vec.size() - 1; ++component) {
         if (dir == nullptr)
             return nullptr;
-        dir = dir->GetSubdirectory(vec[i]);
+        dir = dir->GetSubdirectory(vec[component]);
     }
     if (dir == nullptr)
         return nullptr;
@@ -77,13 +77,14 @@ std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const std::stri
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
               vec.end());
     if (vec.empty())
-        // return std::shared_ptr<VfsDirectory>(this);
+        // TODO(DarkLordZach): Return this directory if path is '/' or similar. Can't currently
+        // because of const-ness
         return nullptr;
     auto dir = GetSubdirectory(vec[0]);
-    for (size_t i = 1; i < vec.size(); ++i) {
+    for (size_t component = 1; component < vec.size(); ++component) {
         if (dir == nullptr)
             return nullptr;
-        dir = dir->GetSubdirectory(vec[i]);
+        dir = dir->GetSubdirectory(vec[component]);
     }
     return dir;
 }

@@ -21,7 +21,7 @@ enum class StorageId : u8 {
     GameCard = 2,
     NandSystem = 3,
     NandUser = 4,
-    SdCard = 5
+    SdCard = 5,
 };
 
 class IStorage final : public ServiceFramework<IStorage> {
@@ -59,13 +59,6 @@ private:
 
         // Read the data from the Storage backend
         std::vector<u8> output = backend->ReadBytes(length, offset);
-        auto res = MakeResult<size_t>(output.size());
-        if (res.Failed()) {
-            IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(res.Code());
-            return;
-        }
-
         // Write the data to memory
         ctx.WriteBuffer(output);
 
@@ -111,19 +104,13 @@ private:
 
         // Read the data from the Storage backend
         std::vector<u8> output = backend->ReadBytes(length, offset);
-        auto res = MakeResult<size_t>(output.size());
-        if (res.Failed()) {
-            IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(res.Code());
-            return;
-        }
 
         // Write the data to memory
         ctx.WriteBuffer(output);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(static_cast<u64>(*res));
+        rb.Push(output.size());
     }
 
     void Write(Kernel::HLERequestContext& ctx) {
@@ -150,14 +137,9 @@ private:
         data.resize(length);
         // Write the data to the Storage backend
         auto res = MakeResult<size_t>(backend->WriteBytes(data, offset));
-        if (res.Failed()) {
-            IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(res.Code());
-            return;
-        }
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(RESULT_SUCCESS);
+        rb.Push(res.Code());
     }
 
     void Flush(Kernel::HLERequestContext& ctx) {
@@ -562,7 +544,7 @@ void FSP_SRV::MountSaveData(Kernel::HLERequestContext& ctx) {
 
     if (dir.Failed()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};
-        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::SaveDataNotFound));
+        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound));
         return;
     }
 
@@ -608,26 +590,9 @@ void FSP_SRV::OpenRomStorage(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called with storage_id={:02X}, title_id={:016X}",
               static_cast<u8>(storage_id), title_id);
-    if (title_id != Core::System::GetInstance().CurrentProcess()->program_id) {
-        LOG_CRITICAL(
-            Service_FS,
-            "Attempting to access RomFS of another title id (current={:016X}, requested={:016X}).",
-            Core::System::GetInstance().CurrentProcess()->program_id, title_id);
-    }
 
-    auto romfs = OpenRomFS(title_id);
-    if (romfs.Failed()) {
-        LOG_CRITICAL(Service_FS, "no file system interface available!");
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::RomFSNotFound));
-        return;
-    }
-
-    IStorage storage(std::move(romfs.Unwrap()));
-
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IStorage>(std::move(storage));
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound));
 }
 
 } // namespace Service::FileSystem

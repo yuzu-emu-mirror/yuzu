@@ -11,7 +11,13 @@
 
 namespace FileSys {
 
-enum class NCAContentType : u8 { Program = 0, Meta = 1, Control = 2, Manual = 3, Data = 4 };
+enum class NCAContentType : u8 {
+    Program = 0,
+    Meta = 1,
+    Control = 2,
+    Manual = 3,
+    Data = 4,
+};
 
 struct NCASectionTableEntry {
     u32_le media_offset;
@@ -42,12 +48,12 @@ struct NCAHeader {
 };
 static_assert(sizeof(NCAHeader) == 0x400, "NCAHeader has incorrect size.");
 
-static bool IsDirectoryExeFS(std::shared_ptr<FileSys::VfsDirectory> pfs) {
+inline bool IsDirectoryExeFS(std::shared_ptr<FileSys::VfsDirectory> pfs) {
     // According to switchbrew, an exefs must only contain these two files:
     return pfs->GetFile("main") != nullptr && pfs->GetFile("main.npdm") != nullptr;
 }
 
-static bool IsValidNCA(const NCAHeader& header) {
+inline bool IsValidNCA(const NCAHeader& header) {
     return header.magic == Common::MakeMagic('N', 'C', 'A', '2') ||
            header.magic == Common::MakeMagic('N', 'C', 'A', '3');
 }

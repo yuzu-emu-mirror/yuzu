@@ -17,7 +17,10 @@ constexpr u64 SECTION_HEADER_OFFSET = 0x400;
 
 constexpr u32 IVFC_MAX_LEVEL = 6;
 
-enum class NCASectionFilesystemType : u8 { PFS0 = 0x2, ROMFS = 0x3 };
+enum class NCASectionFilesystemType : u8 {
+    PFS0 = 0x2,
+    ROMFS = 0x3,
+};
 
 struct NCASectionHeaderBlock {
     INSERT_PADDING_BYTES(3);
