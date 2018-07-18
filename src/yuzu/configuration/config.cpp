@@ -97,7 +97,7 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
-    Settings::values.use_docked_mode = qt_config->value("use_docked_mode", true).toBool();
+    Settings::values.use_docked_mode = qt_config->value("use_docked_mode", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
