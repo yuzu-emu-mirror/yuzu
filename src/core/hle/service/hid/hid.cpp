@@ -166,13 +166,18 @@ private:
         touchscreen.entries[curr_entry].header.timestamp = sample_counter;
 
         TouchScreenEntryTouch touch_entry{};
-        float x;
-        float y;
-        bool pressed;
-        std::tie(x, y, pressed) = touch_device->GetStatus();
+        auto [x, y, pressed] = touch_device->GetStatus();
+        touch_entry.timestamp = timestamp;
         touch_entry.x = static_cast<u16>(x * Layout::ScreenUndocked::Width);
         touch_entry.y = static_cast<u16>(y * Layout::ScreenUndocked::Height);
+        touch_entry.touch_index = 0;
 
+        // TODO(DarkLordZach): Maybe try to derive these from EmuWindow?
+        touch_entry.diameter_x = 15;
+        touch_entry.diameter_y = 15;
+        touch_entry.angle = 0;
+
+        // TODO(DarkLordZach): Implement multi-touch support
         if (pressed) {
             touchscreen.entries[curr_entry].header.num_touches = 1;
             touchscreen.entries[curr_entry].touches[0] = touch_entry;
