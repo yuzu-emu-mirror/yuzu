@@ -65,7 +65,7 @@ static void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num
 
     // Signal the waiting threads.
     for (size_t i = 0; i < last; i++) {
-        ASSERT(waiting_threads[i]->status = THREADSTATUS_WAIT_ARB);
+        ASSERT(waiting_threads[i]->status == THREADSTATUS_WAIT_ARB);
         waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
         waiting_threads[i]->arb_wait_address = 0;
         waiting_threads[i]->ResumeFromWait();
