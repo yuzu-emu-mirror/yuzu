@@ -1600,8 +1600,7 @@ namespace Tegra::Texture::ASTC {
 std::vector<uint8_t> Decompress(std::vector<uint8_t>& data, uint32_t width, uint32_t height,
                                 uint32_t block_width, uint32_t block_height) {
     uint32_t blockIdx = 0;
-    std::vector<uint8_t> outData;
-    outData.resize(height * width * 4);
+    std::vector<uint8_t> outData(height * width * 4);
     for (uint32_t j = 0; j < height; j += block_height) {
         for (uint32_t i = 0; i < width; i += block_width) {
 
