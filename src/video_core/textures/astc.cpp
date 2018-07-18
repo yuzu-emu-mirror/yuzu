@@ -106,16 +106,16 @@ private:
 template <typename IntType>
 class Bits {
 public:
-    explicit Bits(IntType& v) : m_Bits(v) {}
+    explicit Bits(const IntType& v) : m_Bits(v) {}
 
     Bits(const Bits&) = delete;
     Bits& operator=(const Bits&) = delete;
 
-    uint8_t operator[](uint32_t bitPos) {
+    uint8_t operator[](uint32_t bitPos) const {
         return static_cast<uint8_t>((m_Bits >> bitPos) & 1);
     }
 
-    IntType operator()(uint32_t start, uint32_t end) {
+    IntType operator()(uint32_t start, uint32_t end) const {
         if (start == end) {
             return (*this)[start];
         } else if (start > end) {
@@ -183,12 +183,12 @@ public:
         m_QuintValue = val;
     }
 
-    bool MatchesEncoding(const IntegerEncodedValue& other) {
+    bool MatchesEncoding(const IntegerEncodedValue& other) const {
         return m_Encoding == other.m_Encoding && m_NumBits == other.m_NumBits;
     }
 
     // Returns the number of bits required to encode nVals values.
-    uint32_t GetBitLength(uint32_t nVals) {
+    uint32_t GetBitLength(uint32_t nVals) const {
         uint32_t totalBits = m_NumBits * nVals;
         if (m_Encoding == eIntegerEncoding_Trit) {
             totalBits += (nVals * 8 + 4) / 5;
@@ -387,7 +387,7 @@ struct TexelWeightParams {
     bool m_bVoidExtentLDR = false;
     bool m_bVoidExtentHDR = false;
 
-    uint32_t GetPackedBitSize() {
+    uint32_t GetPackedBitSize() const {
         // How many indices do we have?
         uint32_t nIdxs = m_Height * m_Width;
         if (m_bDualPlane) {
@@ -788,8 +788,8 @@ public:
     }
 };
 
-void DecodeColorValues(uint32_t* out, uint8_t* data, uint32_t* modes, const uint32_t nPartitions,
-                       const uint32_t nBitsForColorData) {
+void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* modes,
+                       const uint32_t nPartitions, const uint32_t nBitsForColorData) {
     // First figure out how many color values we have
     uint32_t nValues = 0;
     for (uint32_t i = 0; i < nPartitions; i++) {
@@ -825,8 +825,7 @@ void DecodeColorValues(uint32_t* out, uint8_t* data, uint32_t* modes, const uint
     // Once we have the decoded values, we need to dequantize them to the 0-255 range
     // This procedure is outlined in ASTC spec C.2.13
     uint32_t outIdx = 0;
-    std::vector<IntegerEncodedValue>::const_iterator itr;
-    for (itr = decodedColorValues.begin(); itr != decodedColorValues.end(); itr++) {
+    for (auto itr = decodedColorValues.begin(); itr != decodedColorValues.end(); ++itr) {
         // Have we already decoded all that we need?
         if (outIdx >= nValues) {
             break;
@@ -1048,17 +1047,17 @@ uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
     return result;
 }
 
-void UnquantizeTexelWeights(uint32_t out[2][144], std::vector<IntegerEncodedValue>& weights,
+void UnquantizeTexelWeights(uint32_t out[2][144], const std::vector<IntegerEncodedValue>& weights,
                             const TexelWeightParams& params, const uint32_t blockWidth,
                             const uint32_t blockHeight) {
     uint32_t weightIdx = 0;
     uint32_t unquantized[2][144];
-    std::vector<IntegerEncodedValue>::const_iterator itr;
-    for (itr = weights.begin(); itr != weights.end(); itr++) {
+
+    for (auto itr = weights.begin(); itr != weights.end(); ++itr) {
         unquantized[0][weightIdx] = UnquantizeTexelWeight(*itr);
 
         if (params.m_bDualPlane) {
-            itr++;
+            ++itr;
             unquantized[1][weightIdx] = UnquantizeTexelWeight(*itr);
             if (itr == weights.end()) {
                 break;
