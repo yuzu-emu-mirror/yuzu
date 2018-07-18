@@ -25,15 +25,14 @@
 
 class BitStream {
 public:
-    BitStream(unsigned char* ptr, int nBits = 0, int start_offset = 0)
-        : m_BitsWritten(0), m_BitsRead(0), m_NumBits(nBits), m_CurByte(ptr),
-          m_NextBit(start_offset % 8), done(false) {}
+    explicit BitStream(unsigned char* ptr, int nBits = 0, int start_offset = 0)
+        : m_NumBits(nBits), m_CurByte(ptr), m_NextBit(start_offset % 8) {}
+
+    ~BitStream() = default;
 
     int GetBitsWritten() const {
         return m_BitsWritten;
     }
-
-    ~BitStream() {}
 
     void WriteBitsR(unsigned int val, unsigned int nBits) {
         for (unsigned int i = 0; i < nBits; i++) {
@@ -95,13 +94,13 @@ private:
         done = done || ++m_BitsWritten >= m_NumBits;
     }
 
-    int m_BitsWritten;
+    int m_BitsWritten = 0;
     const int m_NumBits;
     unsigned char* m_CurByte;
-    int m_NextBit;
-    int m_BitsRead;
+    int m_NextBit = 0;
+    int m_BitsRead = 0;
 
-    bool done;
+    bool done = false;
 };
 
 template <typename IntType>
@@ -382,17 +381,13 @@ private:
 namespace ASTCC {
 
 struct TexelWeightParams {
-    uint32_t m_Width;
-    uint32_t m_Height;
-    bool m_bDualPlane;
-    uint32_t m_MaxWeight;
-    bool m_bError;
-    bool m_bVoidExtentLDR;
-    bool m_bVoidExtentHDR;
-
-    TexelWeightParams() {
-        memset(this, 0, sizeof(*this));
-    }
+    uint32_t m_Width = 0;
+    uint32_t m_Height = 0;
+    bool m_bDualPlane = false;
+    uint32_t m_MaxWeight = 0;
+    bool m_bError = false;
+    bool m_bVoidExtentLDR = false;
+    bool m_bVoidExtentHDR = false;
 
     uint32_t GetPackedBitSize() {
         // How many indices do we have?
@@ -668,27 +663,15 @@ IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
 
 class Pixel {
 protected:
-    typedef int16_t ChannelType;
-    uint8_t m_BitDepth[4];
-    int16_t color[4];
+    using ChannelType = int16_t;
+    uint8_t m_BitDepth[4] = {8, 8, 8, 8};
+    int16_t color[4] = {};
 
 public:
-    Pixel() {
-        for (int i = 0; i < 4; i++) {
-            m_BitDepth[i] = 8;
-            color[i] = 0;
-        }
-    }
-
-    Pixel(ChannelType a, ChannelType r, ChannelType g, ChannelType b, unsigned bitDepth = 8) {
-        for (int i = 0; i < 4; i++)
-            m_BitDepth[i] = bitDepth;
-
-        color[0] = a;
-        color[1] = r;
-        color[2] = g;
-        color[3] = b;
-    }
+    Pixel() = default;
+    Pixel(ChannelType a, ChannelType r, ChannelType g, ChannelType b, unsigned bitDepth = 8)
+        : m_BitDepth{uint8_t(bitDepth), uint8_t(bitDepth), uint8_t(bitDepth), uint8_t(bitDepth)},
+          color{a, r, g, b} {}
 
     // Changes the depth of each pixel. This scales the values to
     // the appropriate bit depth by either truncating the least
