@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cmath>
 #include <cstring>
 #include "common/assert.h"
 #include "core/memory.h"
@@ -17,7 +18,9 @@ namespace Texture {
  * Taken from the Tegra X1 TRM.
  */
 static u32 GetSwizzleOffset(u32 x, u32 y, u32 image_width, u32 bytes_per_pixel, u32 block_height) {
-    u32 image_width_in_gobs = image_width * bytes_per_pixel / 64;
+    // Round up to the next gob
+    const u32 image_width_in_gobs{(image_width * bytes_per_pixel + 63) / 64};
+
     u32 GOB_address = 0 + (y / (8 * block_height)) * 512 * block_height * image_width_in_gobs +
                       (x * bytes_per_pixel / 64) * 512 * block_height +
                       (y % (8 * block_height) / 8) * 512;
