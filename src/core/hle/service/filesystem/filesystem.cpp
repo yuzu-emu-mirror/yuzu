@@ -56,7 +56,7 @@ ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenRomFS(u64 title_id) {
 ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
     FileSys::SaveDataSpaceId space, FileSys::SaveDataDescriptor save_struct) {
     LOG_TRACE(Service_FS, "Opening Save Data for space_id={:01X}, save_struct={}",
-              static_cast<u8>(space), SaveStructDebugInfo(save_struct));
+              static_cast<u8>(space), save_struct.DebugInfo());
 
     if (save_data_factory == nullptr) {
         return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SaveDataNotFound);
