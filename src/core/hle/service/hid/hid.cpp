@@ -5,6 +5,7 @@
 #include <atomic>
 #include "common/logging/log.h"
 #include "core/core_timing.h"
+#include "core/frontend/emu_window.h"
 #include "core/frontend/input.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
@@ -63,7 +64,8 @@ private:
         std::transform(Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_BEGIN,
                        Settings::values.analogs.begin() + Settings::NativeAnalog::STICK_HID_END,
                        sticks.begin(), Input::CreateDevice<Input::AnalogDevice>);
-        // TODO(shinyquagsire23): gyro, touch, mouse, keyboard
+        touch_device = Input::CreateDevice<Input::TouchDevice>(Settings::values.touch_device);
+        // TODO(shinyquagsire23): gyro, mouse, keyboard
     }
 
     void UpdatePadCallback(u64 userdata, int cycles_late) {
@@ -151,8 +153,6 @@ private:
             }
         }
 
-        // TODO(bunnei): Properly implement the touch screen, the below will just write empty data
-
         TouchScreen& touchscreen = mem.touchscreen;
         const u64 last_entry = touchscreen.header.latest_entry;
         const u64 curr_entry = (last_entry + 1) % touchscreen.entries.size();
@@ -164,7 +164,26 @@ private:
         touchscreen.header.max_entry_index = touchscreen.entries.size();
         touchscreen.header.timestamp = timestamp;
         touchscreen.entries[curr_entry].header.timestamp = sample_counter;
-        touchscreen.entries[curr_entry].header.num_touches = 0;
+
+        TouchScreenEntryTouch touch_entry{};
+        auto [x, y, pressed] = touch_device->GetStatus();
+        touch_entry.timestamp = timestamp;
+        touch_entry.x = static_cast<u16>(x * Layout::ScreenUndocked::Width);
+        touch_entry.y = static_cast<u16>(y * Layout::ScreenUndocked::Height);
+        touch_entry.touch_index = 0;
+
+        // TODO(DarkLordZach): Maybe try to derive these from EmuWindow?
+        touch_entry.diameter_x = 15;
+        touch_entry.diameter_y = 15;
+        touch_entry.angle = 0;
+
+        // TODO(DarkLordZach): Implement multi-touch support
+        if (pressed) {
+            touchscreen.entries[curr_entry].header.num_touches = 1;
+            touchscreen.entries[curr_entry].touches[0] = touch_entry;
+        } else {
+            touchscreen.entries[curr_entry].header.num_touches = 0;
+        }
 
         // TODO(shinyquagsire23): Properly implement mouse
         Mouse& mouse = mem.mouse;
@@ -250,6 +269,7 @@ private:
     std::array<std::unique_ptr<Input::ButtonDevice>, Settings::NativeButton::NUM_BUTTONS_HID>
         buttons;
     std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID> sticks;
+    std::unique_ptr<Input::TouchDevice> touch_device;
 };
 
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
