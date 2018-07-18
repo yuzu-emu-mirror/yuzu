@@ -141,7 +141,7 @@ GameList::SearchField::SearchField(GameList* parent) : QWidget{parent} {
  * @param userinput String containing all words getting checked
  * @return true if the haystack contains all words of userinput
  */
-bool GameList::containsAllWords(const QString& haystack, const QString& userinput) const {
+bool GameList::ContainsAllWords(const QString& haystack, const QString& userinput) const {
     const QStringList userinput_split =
         userinput.split(' ', QString::SplitBehavior::SkipEmptyParts);
 
@@ -180,7 +180,7 @@ void GameList::onTextChanged(const QString& newText) {
             // The search is case insensitive because of toLower()
             // I decided not to use Qt::CaseInsensitive in containsAllWords to prevent
             // multiple conversions of edit_filter_text for each game in the gamelist
-            if (containsAllWords(file_name.append(" ").append(file_title), edit_filter_text) ||
+            if (ContainsAllWords(file_name.append(' ').append(file_title), edit_filter_text) ||
                 (file_programmid.count() == 16 && edit_filter_text.contains(file_programmid))) {
                 tree_view->setRowHidden(i, root_index, false);
                 ++result_count;
