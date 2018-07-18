@@ -25,6 +25,8 @@ namespace Core {
 
 /*static*/ System System::s_instance;
 
+System::System() = default;
+
 System::~System() = default;
 
 /// Runs a CPU core while the system is powered on
