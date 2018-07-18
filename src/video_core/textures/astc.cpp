@@ -406,7 +406,7 @@ struct TexelWeightParams {
     }
 };
 
-TexelWeightParams DecodeBlockInfo(BitStream& strm) {
+static TexelWeightParams DecodeBlockInfo(BitStream& strm) {
     TexelWeightParams params;
 
     // Read the entire block mode all at once
@@ -605,8 +605,8 @@ TexelWeightParams DecodeBlockInfo(BitStream& strm) {
     return params;
 }
 
-void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWidth,
-                       uint32_t blockHeight) {
+static void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWidth,
+                              uint32_t blockHeight) {
     // Don't actually care about the void extent, just read the bits...
     for (int i = 0; i < 4; ++i) {
         strm.ReadBits(13);
@@ -621,23 +621,25 @@ void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWi
     uint32_t rgba = (r >> 8) | (g & 0xFF00) | (static_cast<uint32_t>(b) & 0xFF00) << 8 |
                     (static_cast<uint32_t>(a) & 0xFF00) << 16;
 
-    for (uint32_t j = 0; j < blockHeight; j++)
+    for (uint32_t j = 0; j < blockHeight; j++) {
         for (uint32_t i = 0; i < blockWidth; i++) {
             outBuf[j * blockWidth + i] = rgba;
         }
+    }
 }
 
-void FillError(uint32_t* outBuf, uint32_t blockWidth, uint32_t blockHeight) {
-    for (uint32_t j = 0; j < blockHeight; j++)
+static void FillError(uint32_t* outBuf, uint32_t blockWidth, uint32_t blockHeight) {
+    for (uint32_t j = 0; j < blockHeight; j++) {
         for (uint32_t i = 0; i < blockWidth; i++) {
             outBuf[j * blockWidth + i] = 0xFFFF00FF;
         }
+    }
 }
 
 // Replicates low numBits such that [(toBit - 1):(toBit - 1 - fromBit)]
 // is the same as [(numBits - 1):0] and repeats all the way down.
 template <typename IntType>
-IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
+static IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
     if (numBits == 0)
         return 0;
     if (toBit == 0)
@@ -788,8 +790,8 @@ public:
     }
 };
 
-void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* modes,
-                       const uint32_t nPartitions, const uint32_t nBitsForColorData) {
+static void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* modes,
+                              const uint32_t nPartitions, const uint32_t nBitsForColorData) {
     // First figure out how many color values we have
     uint32_t nValues = 0;
     for (uint32_t i = 0; i < nPartitions; i++) {
@@ -958,7 +960,7 @@ void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* modes,
     }
 }
 
-uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
+static uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
     uint32_t bitval = val.GetBitValue();
     uint32_t bitlen = val.BaseBitLength();
 
@@ -1047,9 +1049,10 @@ uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
     return result;
 }
 
-void UnquantizeTexelWeights(uint32_t out[2][144], const std::vector<IntegerEncodedValue>& weights,
-                            const TexelWeightParams& params, const uint32_t blockWidth,
-                            const uint32_t blockHeight) {
+static void UnquantizeTexelWeights(uint32_t out[2][144],
+                                   const std::vector<IntegerEncodedValue>& weights,
+                                   const TexelWeightParams& params, const uint32_t blockWidth,
+                                   const uint32_t blockHeight) {
     uint32_t weightIdx = 0;
     uint32_t unquantized[2][144];
 
@@ -1241,8 +1244,8 @@ static inline uint32_t Select2DPartition(int32_t seed, int32_t x, int32_t y, int
 }
 
 // Section C.2.14
-void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
-                      uint32_t colorEndpointMode) {
+static void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
+                             uint32_t colorEndpointMode) {
 #define READ_UINT_VALUES(N)                                                                        \
     uint32_t v[N];                                                                                 \
     for (uint32_t i = 0; i < N; i++) {                                                             \
@@ -1362,8 +1365,8 @@ void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
 #undef READ_INT_VALUES
 }
 
-void DecompressBlock(uint8_t inBuf[16], const uint32_t blockWidth, const uint32_t blockHeight,
-                     uint32_t* outBuf) {
+static void DecompressBlock(uint8_t inBuf[16], const uint32_t blockWidth,
+                            const uint32_t blockHeight, uint32_t* outBuf) {
     BitStream strm(inBuf);
     TexelWeightParams weightParams = DecodeBlockInfo(strm);
 
