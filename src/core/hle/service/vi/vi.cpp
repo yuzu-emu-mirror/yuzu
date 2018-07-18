@@ -538,7 +538,7 @@ private:
             IGBPQueryResponseParcel response{value};
             ctx.WriteBuffer(response.Serialize());
         } else if (transaction == TransactionId::CancelBuffer) {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
+            LOG_CRITICAL(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }
