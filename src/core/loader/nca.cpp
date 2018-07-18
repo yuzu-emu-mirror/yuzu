@@ -277,8 +277,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::SharedPtr<Kernel::Process>& process) {
                  metadata.GetMainThreadStackSize());
 
     if (nca->GetRomFsSize() > 0)
-        Service::FileSystem::RegisterFileSystem(std::make_unique<FileSys::RomFS_Factory>(*this),
-                                                Service::FileSystem::Type::RomFS);
+        Service::FileSystem::RegisterRomFS(std::make_unique<FileSys::RomFSFactory>(*this));
 
     is_loaded = true;
     return ResultStatus::Success;

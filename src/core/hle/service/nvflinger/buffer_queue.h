@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <boost/optional.hpp>
+#include "common/math_util.h"
 #include "common/swap.h"
 #include "core/hle/kernel/event.h"
 
@@ -68,23 +69,24 @@ public:
         Status status = Status::Free;
         IGBPBuffer igbp_buffer;
         BufferTransformFlags transform;
+        MathUtil::Rectangle<int> crop_rect;
     };
 
     void SetPreallocatedBuffer(u32 slot, IGBPBuffer& buffer);
     boost::optional<u32> DequeueBuffer(u32 width, u32 height);
     const IGBPBuffer& RequestBuffer(u32 slot) const;
-    void QueueBuffer(u32 slot, BufferTransformFlags transform);
+    void QueueBuffer(u32 slot, BufferTransformFlags transform,
+                     const MathUtil::Rectangle<int>& crop_rect);
     boost::optional<const Buffer&> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
     u32 Query(QueryType type);
-    void SetBufferWaitEvent(Kernel::SharedPtr<Kernel::Event>&& wait_event);
 
     u32 GetId() const {
         return id;
     }
 
-    Kernel::SharedPtr<Kernel::Event> GetNativeHandle() const {
-        return native_handle;
+    Kernel::SharedPtr<Kernel::Event> GetBufferWaitEvent() const {
+        return buffer_wait_event;
     }
 
 private:
@@ -92,9 +94,6 @@ private:
     u64 layer_id;
 
     std::vector<Buffer> queue;
-    Kernel::SharedPtr<Kernel::Event> native_handle;
-
-    /// Used to signal waiting thread when no buffers are available
     Kernel::SharedPtr<Kernel::Event> buffer_wait_event;
 };
 

@@ -12,22 +12,50 @@
 
 namespace FileSys {
 
-/// File system interface to the SaveData archive
-class SaveData_Factory final : public FileSystemFactory {
-public:
-    explicit SaveData_Factory(std::string nand_directory);
+enum class SaveDataSpaceId : u8 {
+    NandSystem = 0,
+    NandUser = 1,
+    SdCard = 2,
+    TemporaryStorage = 3,
+};
 
-    std::string GetName() const override {
-        return "SaveData_Factory";
-    }
-    ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) override;
-    ResultCode Format(const Path& path) override;
-    ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const override;
+enum class SaveDataType : u8 {
+    SystemSaveData = 0,
+    SaveData = 1,
+    BcatDeliveryCacheStorage = 2,
+    DeviceSaveData = 3,
+    TemporaryStorage = 4,
+    CacheStorage = 5,
+};
+
+struct SaveDataDescriptor {
+    u64_le title_id;
+    u128 user_id;
+    u64_le save_id;
+    SaveDataType type;
+    INSERT_PADDING_BYTES(7);
+    u64_le zero_1;
+    u64_le zero_2;
+    u64_le zero_3;
+
+    std::string DebugInfo();
+};
+static_assert(sizeof(SaveDataDescriptor) == 0x40, "SaveDataDescriptor has incorrect size.");
+
+/// File system interface to the SaveData archive
+class SaveDataFactory {
+public:
+    explicit SaveDataFactory(std::string nand_directory);
+
+    ResultVal<std::unique_ptr<FileSystemBackend>> Open(SaveDataSpaceId space,
+                                                       SaveDataDescriptor meta);
 
 private:
     std::string nand_directory;
+    std::string sd_directory;
 
-    std::string GetFullPath() const;
+    std::string GetFullPath(SaveDataSpaceId space, SaveDataType type, u64 title_id, u128 user_id,
+                            u64 save_id) const;
 };
 
 } // namespace FileSys

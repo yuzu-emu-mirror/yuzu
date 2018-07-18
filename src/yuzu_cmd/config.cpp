@@ -110,7 +110,7 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
 
     // System
-    Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", true);
+    Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
 
     // Miscellaneous
     Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");

@@ -19,8 +19,6 @@ public:
     ~FSP_SRV() = default;
 
 private:
-    void TryLoadRomFS();
-
     void Initialize(Kernel::HLERequestContext& ctx);
     void MountSdCard(Kernel::HLERequestContext& ctx);
     void CreateSaveData(Kernel::HLERequestContext& ctx);

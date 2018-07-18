@@ -115,7 +115,7 @@ VAddr AppLoader_NSO::LoadModule(const std::string& name, const std::vector<u8>& 
     std::vector<u8> program_image;
     for (int i = 0; i < nso_header.segments.size(); ++i) {
         std::vector<u8> compressed_data(nso_header.segments_compressed_size[i]);
-        for (int j = 0; j < nso_header.segments_compressed_size[i]; ++j)
+        for (auto j = 0; j < nso_header.segments_compressed_size[i]; ++j)
             compressed_data[j] = file_data[nso_header.segments[i].offset + j];
         std::vector<u8> data = DecompressSegment(compressed_data, nso_header.segments[i]);
         program_image.resize(nso_header.segments[i].location);

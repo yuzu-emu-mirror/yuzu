@@ -6,12 +6,13 @@
 
 #include <memory>
 #include "common/common_types.h"
+#include "core/file_sys/romfs_factory.h"
+#include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/sdmc_factory.h"
 #include "core/hle/result.h"
 
 namespace FileSys {
 class FileSystemBackend;
-class FileSystemFactory;
-class Path;
 } // namespace FileSys
 
 namespace Service {
@@ -22,35 +23,20 @@ class ServiceManager;
 
 namespace FileSystem {
 
-/// Supported FileSystem types
-enum class Type {
-    RomFS = 1,
-    SaveData = 2,
-    SDMC = 3,
-};
+ResultCode RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory);
+ResultCode RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory);
+ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory);
 
-/**
- * Registers a FileSystem, instances of which can later be opened using its IdCode.
- * @param factory FileSystem backend interface to use
- * @param type Type used to access this type of FileSystem
- */
-ResultCode RegisterFileSystem(std::unique_ptr<FileSys::FileSystemFactory>&& factory, Type type);
+// TODO(DarkLordZach): BIS Filesystem
+// ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory);
 
-/**
- * Opens a file system
- * @param type Type of the file system to open
- * @param path Path to the file system, used with Binary paths
- * @return FileSys::FileSystemBackend interface to the file system
- */
-ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenFileSystem(Type type,
-                                                                      FileSys::Path& path);
+ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenRomFS(u64 title_id);
+ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSaveData(
+    FileSys::SaveDataSpaceId space, FileSys::SaveDataDescriptor save_struct);
+ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenSDMC();
 
-/**
- * Formats a file system
- * @param type Type of the file system to format
- * @return ResultCode of the operation
- */
-ResultCode FormatFileSystem(Type type);
+// TODO(DarkLordZach): BIS Filesystem
+// ResultVal<std::unique_ptr<FileSys::FileSystemBackend>> OpenBIS();
 
 /// Registers all Filesystem services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
