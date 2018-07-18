@@ -141,10 +141,12 @@ GameList::SearchField::SearchField(GameList* parent) : QWidget{parent} {
  * @param userinput String containing all words getting checked
  * @return true if the haystack contains all words of userinput
  */
-bool GameList::containsAllWords(QString haystack, QString userinput) {
-    QStringList userinput_split = userinput.split(" ", QString::SplitBehavior::SkipEmptyParts);
+bool GameList::containsAllWords(const QString& haystack, const QString& userinput) const {
+    const QStringList userinput_split =
+        userinput.split(' ', QString::SplitBehavior::SkipEmptyParts);
+
     return std::all_of(userinput_split.begin(), userinput_split.end(),
-                       [haystack](QString s) { return haystack.contains(s); });
+                       [&haystack](const QString& s) { return haystack.contains(s); });
 }
 
 // Event in order to filter the gamelist after editing the searchfield
