@@ -29,7 +29,7 @@ System::~System() = default;
 
 /// Runs a CPU core while the system is powered on
 static void RunCpuCore(std::shared_ptr<Cpu> cpu_state) {
-    while (Core::System().GetInstance().IsPoweredOn()) {
+    while (Core::System::GetInstance().IsPoweredOn()) {
         cpu_state->RunLoop(true);
     }
 }
