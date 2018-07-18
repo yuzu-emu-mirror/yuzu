@@ -110,7 +110,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(output.size());
+        rb.Push(static_cast<u64>(output.size()));
     }
 
     void Write(Kernel::HLERequestContext& ctx) {
@@ -134,12 +134,23 @@ private:
         }
 
         std::vector<u8> data = ctx.ReadBuffer();
-        data.resize(length);
+        std::vector<u8> actual_data(length);
+
+        ASSERT_MSG(
+            data.size() <= length,
+            "Attempting to write more data than requested (requested={:016X}, actual={:016X}).",
+            length, data.size());
+
+        std::copy(data.begin(), data.end(), actual_data.begin());
         // Write the data to the Storage backend
-        auto res = MakeResult<size_t>(backend->WriteBytes(data, offset));
+        auto written = backend->WriteBytes(data, offset);
+
+        ASSERT_MSG(written == length,
+                   "Could not write all bytes to file (requested={:016X}, actual={:016X}).", length,
+                   written);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(res.Code());
+        rb.Push(RESULT_SUCCESS);
     }
 
     void Flush(Kernel::HLERequestContext& ctx) {
@@ -194,6 +205,7 @@ public:
         };
         RegisterHandlers(functions);
 
+        // TODO(DarkLordZach): Verify that this is the correct behavior.
         // Build entry index now to save time later.
         BuildEntryIndex(entries, backend->GetFiles(), FileSys::File);
         BuildEntryIndex(entries, backend->GetSubdirectories(), FileSys::Directory);
