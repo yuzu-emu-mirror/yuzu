@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "common/assert.h"
 #include "core/hle/kernel/object_address_table.h"
 
@@ -11,7 +13,7 @@ ObjectAddressTable g_object_address_table;
 
 void ObjectAddressTable::Insert(VAddr addr, SharedPtr<Object> obj) {
     ASSERT_MSG(objects.find(addr) == objects.end(), "Object already exists with addr=0x{:X}", addr);
-    objects[addr] = obj;
+    objects[addr] = std::move(obj);
 }
 
 void ObjectAddressTable::Close(VAddr addr) {

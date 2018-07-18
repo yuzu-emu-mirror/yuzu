@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <iterator>
+#include <utility>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/arm/arm_interface.h"
@@ -117,7 +118,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     final_vma.type = VMAType::AllocatedMemoryBlock;
     final_vma.permissions = VMAPermission::ReadWrite;
     final_vma.meminfo_state = state;
-    final_vma.backing_block = block;
+    final_vma.backing_block = std::move(block);
     final_vma.offset = offset;
     UpdatePageTableForVMA(final_vma);
 
@@ -160,7 +161,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMMIO(VAddr target, PAddr paddr, u6
     final_vma.permissions = VMAPermission::ReadWrite;
     final_vma.meminfo_state = state;
     final_vma.paddr = paddr;
-    final_vma.mmio_handler = mmio_handler;
+    final_vma.mmio_handler = std::move(mmio_handler);
     UpdatePageTableForVMA(final_vma);
 
     return MakeResult<VMAHandle>(MergeAdjacent(vma_handle));

@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include <boost/range/algorithm_ext/erase.hpp>
 #include "common/assert.h"
 #include "common/common_funcs.h"
@@ -19,10 +21,10 @@ namespace Kernel {
 
 void SessionRequestHandler::ClientConnected(SharedPtr<ServerSession> server_session) {
     server_session->SetHleHandler(shared_from_this());
-    connected_sessions.push_back(server_session);
+    connected_sessions.push_back(std::move(server_session));
 }
 
-void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_session) {
+void SessionRequestHandler::ClientDisconnected(const SharedPtr<ServerSession>& server_session) {
     server_session->SetHleHandler(nullptr);
     boost::range::remove_erase(connected_sessions, server_session);
 }
