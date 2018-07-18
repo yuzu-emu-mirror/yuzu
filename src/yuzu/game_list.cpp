@@ -138,7 +138,7 @@ GameList::SearchField::SearchField(GameList* parent) : QWidget{parent} {
  * @param userinput String containing all words getting checked
  * @return true if the haystack contains all words of userinput
  */
-bool GameList::ContainsAllWords(const QString& haystack, const QString& userinput) const {
+static bool ContainsAllWords(const QString& haystack, const QString& userinput) {
     const QStringList userinput_split =
         userinput.split(' ', QString::SplitBehavior::SkipEmptyParts);
 

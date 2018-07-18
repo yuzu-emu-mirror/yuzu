@@ -89,7 +89,6 @@ private:
 
     void PopupContextMenu(const QPoint& menu_location);
     void RefreshGameDirectory();
-    bool ContainsAllWords(const QString& haystack, const QString& userinput) const;
 
     SearchField* search_field;
     GMainWindow* main_window = nullptr;
