@@ -38,7 +38,7 @@ enum class ProgramFilePermission : u64 {
 class ProgramMetadata {
 public:
     Loader::ResultStatus Load(const std::string& file_path);
-    Loader::ResultStatus Load(const std::vector<u8> file_data, size_t offset = 0);
+    Loader::ResultStatus Load(const std::vector<u8>& file_data, size_t offset = 0);
 
     bool Is64BitProgram() const;
     ProgramAddressSpaceType GetAddressSpaceType() const;

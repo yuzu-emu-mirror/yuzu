@@ -26,7 +26,7 @@ Loader::ResultStatus ProgramMetadata::Load(const std::string& file_path) {
     return result;
 }
 
-Loader::ResultStatus ProgramMetadata::Load(const std::vector<u8> file_data, size_t offset) {
+Loader::ResultStatus ProgramMetadata::Load(const std::vector<u8>& file_data, size_t offset) {
     size_t total_size = static_cast<size_t>(file_data.size() - offset);
     if (total_size < sizeof(Header))
         return Loader::ResultStatus::Error;
