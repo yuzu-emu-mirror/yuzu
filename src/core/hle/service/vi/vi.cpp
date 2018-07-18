@@ -28,8 +28,8 @@ struct DisplayInfo {
     char display_name[0x40]{"Default"};
     u64 unknown_1{1};
     u64 unknown_2{1};
-    u64 width{1920};
-    u64 height{1080};
+    u64 width{1280};
+    u64 height{720};
 };
 static_assert(sizeof(DisplayInfo) == 0x60, "DisplayInfo has wrong size");
 
