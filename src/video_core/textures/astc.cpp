@@ -105,16 +105,11 @@ private:
 
 template <typename IntType>
 class Bits {
-private:
-    const IntType& m_Bits;
-
-    // Don't copy
-    Bits() {}
-    Bits(const Bits&) {}
-    Bits& operator=(const Bits&) {}
-
 public:
     explicit Bits(IntType& v) : m_Bits(v) {}
+
+    Bits(const Bits&) = delete;
+    Bits& operator=(const Bits&) = delete;
 
     uint8_t operator[](uint32_t bitPos) {
         return static_cast<uint8_t>((m_Bits >> bitPos) & 1);
@@ -132,6 +127,9 @@ public:
         uint64_t mask = (1 << (end - start + 1)) - 1;
         return (m_Bits >> start) & mask;
     }
+
+private:
+    const IntType& m_Bits;
 };
 
 enum EIntegerEncoding { eIntegerEncoding_JustBits, eIntegerEncoding_Quint, eIntegerEncoding_Trit };
