@@ -97,4 +97,5 @@ private:
 
     /// Used for transforming the framebuffer orientation
     Tegra::FramebufferConfig::TransformFlags framebuffer_transform_flags;
+    MathUtil::Rectangle<int> framebuffer_crop_rect;
 };
