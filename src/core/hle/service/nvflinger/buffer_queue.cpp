@@ -57,13 +57,15 @@ const IGBPBuffer& BufferQueue::RequestBuffer(u32 slot) const {
     return itr->igbp_buffer;
 }
 
-void BufferQueue::QueueBuffer(u32 slot, BufferTransformFlags transform) {
+void BufferQueue::QueueBuffer(u32 slot, BufferTransformFlags transform,
+                              const MathUtil::Rectangle<int>& crop_rect) {
     auto itr = std::find_if(queue.begin(), queue.end(),
                             [&](const Buffer& buffer) { return buffer.slot == slot; });
     ASSERT(itr != queue.end());
     ASSERT(itr->status == Buffer::Status::Dequeued);
     itr->status = Buffer::Status::Queued;
     itr->transform = transform;
+    itr->crop_rect = crop_rect;
 }
 
 boost::optional<const BufferQueue::Buffer&> BufferQueue::AcquireBuffer() {

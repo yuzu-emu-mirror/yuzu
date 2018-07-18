@@ -7,6 +7,7 @@
 #include <memory>
 #include <boost/optional.hpp>
 #include "common/alignment.h"
+#include "common/math_util.h"
 #include "common/scope_exit.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
@@ -27,8 +28,8 @@ struct DisplayInfo {
     char display_name[0x40]{"Default"};
     u64 unknown_1{1};
     u64 unknown_2{1};
-    u64 width{1920};
-    u64 height{1080};
+    u64 width{1280};
+    u64 height{720};
 };
 static_assert(sizeof(DisplayInfo) == 0x60, "DisplayInfo has wrong size");
 
@@ -327,8 +328,8 @@ public:
 
 protected:
     void SerializeData() override {
-        // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx try
-        // to read an IGBPBuffer object from the parcel.
+        // TODO(Subv): Figure out what this value means, writing non-zero here will make libnx
+        // try to read an IGBPBuffer object from the parcel.
         Write<u32_le>(1);
         WriteObject(buffer);
         Write<u32_le>(0);
@@ -360,8 +361,8 @@ public:
         INSERT_PADDING_WORDS(3);
         u32_le timestamp;
         s32_le is_auto_timestamp;
-        s32_le crop_left;
         s32_le crop_top;
+        s32_le crop_left;
         s32_le crop_right;
         s32_le crop_bottom;
         s32_le scaling_mode;
@@ -370,6 +371,10 @@ public:
         INSERT_PADDING_WORDS(2);
         u32_le fence_is_valid;
         std::array<Fence, 2> fences;
+
+        MathUtil::Rectangle<int> GetCropRect() const {
+            return {crop_left, crop_top, crop_right, crop_bottom};
+        }
     };
     static_assert(sizeof(Data) == 80, "ParcelData has wrong size");
 
@@ -519,7 +524,8 @@ private:
         } else if (transaction == TransactionId::QueueBuffer) {
             IGBPQueueBufferRequestParcel request{ctx.ReadBuffer()};
 
-            buffer_queue->QueueBuffer(request.data.slot, request.data.transform);
+            buffer_queue->QueueBuffer(request.data.slot, request.data.transform,
+                                      request.data.GetCropRect());
 
             IGBPQueueBufferResponseParcel response{1280, 720};
             ctx.WriteBuffer(response.Serialize());
@@ -532,7 +538,7 @@ private:
             IGBPQueryResponseParcel response{value};
             ctx.WriteBuffer(response.Serialize());
         } else if (transaction == TransactionId::CancelBuffer) {
-            LOG_WARNING(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
+            LOG_CRITICAL(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
             ASSERT_MSG(false, "Unimplemented");
         }

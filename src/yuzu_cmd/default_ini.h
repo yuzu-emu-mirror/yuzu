@@ -163,7 +163,7 @@ use_virtual_sd =
 
 [System]
 # Whether the system is docked
-# 1 (default): Yes, 0: No
+# 1: Yes, 0 (default): No
 use_docked_mode =
 
 # The system region that yuzu will use during emulation
