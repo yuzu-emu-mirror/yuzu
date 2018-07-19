@@ -72,7 +72,7 @@ public:
 
 class ISelfController final : public ServiceFramework<ISelfController> {
 public:
-    ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
+    explicit ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
 
 private:
     void SetFocusHandlingMode(Kernel::HLERequestContext& ctx);

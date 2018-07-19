@@ -57,7 +57,7 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        Interface(std::shared_ptr<Module> time, const char* name);
+        explicit Interface(std::shared_ptr<Module> time, const char* name);
 
         void GetStandardUserSystemClock(Kernel::HLERequestContext& ctx);
         void GetStandardNetworkSystemClock(Kernel::HLERequestContext& ctx);

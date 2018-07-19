@@ -12,7 +12,7 @@ namespace Service::AM {
 
 class ILibraryAppletProxy final : public ServiceFramework<ILibraryAppletProxy> {
 public:
-    ILibraryAppletProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+    explicit ILibraryAppletProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
         : ServiceFramework("ILibraryAppletProxy"), nvflinger(std::move(nvflinger)) {
         static const FunctionInfo functions[] = {
             {0, &ILibraryAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},

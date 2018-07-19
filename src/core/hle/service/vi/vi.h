@@ -24,8 +24,8 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        Interface(std::shared_ptr<Module> module, const char* name,
-                  std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
+        explicit Interface(std::shared_ptr<Module> module, const char* name,
+                           std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
 
         void GetDisplayService(Kernel::HLERequestContext& ctx);
 
