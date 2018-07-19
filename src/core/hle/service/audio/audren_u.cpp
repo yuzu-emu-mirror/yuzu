@@ -299,7 +299,7 @@ private:
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioInterface";
-        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+        ctx.WriteBuffer(audio_interface);
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
         rb.Push(RESULT_SUCCESS);
@@ -324,7 +324,7 @@ private:
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioDevice";
-        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+        ctx.WriteBuffer(audio_interface);
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
         rb.Push(RESULT_SUCCESS);

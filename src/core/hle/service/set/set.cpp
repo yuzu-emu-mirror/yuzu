@@ -31,7 +31,7 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
         LanguageCode::ZH_HANS,
         LanguageCode::ZH_HANT,
     }};
-    ctx.WriteBuffer(available_language_codes.data(), available_language_codes.size());
+    ctx.WriteBuffer(available_language_codes);
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
