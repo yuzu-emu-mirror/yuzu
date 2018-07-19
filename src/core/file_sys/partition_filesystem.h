@@ -42,6 +42,8 @@ private:
         u32_le num_entries;
         u32_le strtab_size;
         INSERT_PADDING_BYTES(0x4);
+
+        bool HasValidMagicValue() const;
     };
 
     static_assert(sizeof(Header) == 0x10, "PFS/HFS header structure size is wrong");
@@ -73,11 +75,11 @@ private:
 
 #pragma pack(pop)
 
-    Loader::ResultStatus status;
+    Loader::ResultStatus status{};
 
-    Header pfs_header;
-    bool is_hfs;
-    size_t content_offset;
+    Header pfs_header{};
+    bool is_hfs = false;
+    size_t content_offset = 0;
 
     std::vector<VirtualFile> pfs_files;
     std::vector<VirtualDir> pfs_dirs;
