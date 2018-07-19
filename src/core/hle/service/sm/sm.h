@@ -22,7 +22,7 @@ namespace Service::SM {
 /// Interface to "sm:" service
 class SM final : public ServiceFramework<SM> {
 public:
-    SM(std::shared_ptr<ServiceManager> service_manager);
+    explicit SM(std::shared_ptr<ServiceManager> service_manager);
     ~SM() override;
 
 private:

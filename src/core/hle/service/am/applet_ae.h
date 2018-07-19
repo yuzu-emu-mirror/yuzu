@@ -17,7 +17,7 @@ namespace AM {
 
 class AppletAE final : public ServiceFramework<AppletAE> {
 public:
-    AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
+    explicit AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
     ~AppletAE() = default;
 
 private:

@@ -17,7 +17,7 @@ namespace AM {
 
 class AppletOE final : public ServiceFramework<AppletOE> {
 public:
-    AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
+    explicit AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
     ~AppletOE() = default;
 
 private:
