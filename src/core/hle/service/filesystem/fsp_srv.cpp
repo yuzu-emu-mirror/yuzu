@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <utility>
 #include <vector>
@@ -229,23 +230,20 @@ private:
         LOG_DEBUG(Service_FS, "called, unk=0x{:X}", unk);
 
         // Calculate how many entries we can fit in the output buffer
-        u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
+        const u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
 
         // Cap at total number of entries.
-        u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
+        const u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
 
-        // Read the data from the Directory backend
-        std::vector<FileSys::Entry> entry_data(entries.begin() + next_entry_index,
-                                               entries.begin() + next_entry_index + actual_entries);
+        // Determine data start and end
+        const auto* begin = reinterpret_cast<u8*>(entries.data() + next_entry_index);
+        const auto* end = reinterpret_cast<u8*>(entries.data() + next_entry_index + actual_entries);
+        const auto range_size = static_cast<std::size_t>(std::distance(begin, end));
 
         next_entry_index += actual_entries;
 
-        // Convert the data into a byte array
-        std::vector<u8> output(entry_data.size() * sizeof(FileSys::Entry));
-        std::memcpy(output.data(), entry_data.data(), output.size());
-
         // Write the data to memory
-        ctx.WriteBuffer(output);
+        ctx.WriteBuffer(begin, range_size);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
