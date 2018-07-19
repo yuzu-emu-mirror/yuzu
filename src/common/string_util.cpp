@@ -34,18 +34,6 @@ std::string ToUpper(std::string str) {
     return str;
 }
 
-// faster than sscanf
-bool AsciiToHex(const char* _szValue, u32& result) {
-    char* endptr = nullptr;
-    const u32 value = strtoul(_szValue, &endptr, 16);
-
-    if (!endptr || *endptr)
-        return false;
-
-    result = value;
-    return true;
-}
-
 // For Debugging. Read out an u8 array.
 std::string ArrayToString(const u8* data, size_t size, int line_len, bool spaces) {
     std::ostringstream oss;
