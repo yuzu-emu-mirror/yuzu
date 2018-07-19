@@ -3,6 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <utility>
+
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/core.h"
@@ -133,17 +135,16 @@ private:
             return;
         }
 
-        std::vector<u8> data = ctx.ReadBuffer();
-        std::vector<u8> actual_data(length);
+        const std::vector<u8> data = ctx.ReadBuffer();
 
         ASSERT_MSG(
             data.size() <= length,
             "Attempting to write more data than requested (requested={:016X}, actual={:016X}).",
             length, data.size());
 
-        std::copy(data.begin(), data.end(), actual_data.begin());
         // Write the data to the Storage backend
-        auto written = backend->WriteBytes(data, offset);
+        std::vector<u8> actual_data(data.begin(), data.begin() + length);
+        const auto written = backend->WriteBytes(std::move(actual_data), offset);
 
         ASSERT_MSG(written == length,
                    "Could not write all bytes to file (requested={:016X}, actual={:016X}).", length,
