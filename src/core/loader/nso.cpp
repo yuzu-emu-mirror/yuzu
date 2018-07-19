@@ -55,13 +55,15 @@ AppLoader_NSO::AppLoader_NSO(FileSys::VirtualFile file) : AppLoader(std::move(fi
 
 FileType AppLoader_NSO::IdentifyType(const FileSys::VirtualFile& file) {
     u32 magic = 0;
-    file->ReadObject(&magic);
-
-    if (Common::MakeMagic('N', 'S', 'O', '0') == magic) {
-        return FileType::NSO;
+    if (file->ReadObject(&magic) != sizeof(magic)) {
+        return FileType::Error;
     }
 
-    return FileType::Error;
+    if (Common::MakeMagic('N', 'S', 'O', '0') != magic) {
+        return FileType::Error;
+    }
+
+    return FileType::NSO;
 }
 
 static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
