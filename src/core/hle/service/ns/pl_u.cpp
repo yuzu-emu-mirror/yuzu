@@ -132,9 +132,9 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
         font_sizes.push_back(SHARED_FONT_REGIONS[i].size);
     }
 
-    ctx.WriteBuffer(font_codes.data(), font_codes.size(), 0);
-    ctx.WriteBuffer(font_offsets.data(), font_offsets.size(), 1);
-    ctx.WriteBuffer(font_sizes.data(), font_sizes.size(), 2);
+    ctx.WriteBuffer(font_codes.data(), font_codes.size() * sizeof(u32), 0);
+    ctx.WriteBuffer(font_offsets.data(), font_offsets.size() * sizeof(u32), 1);
+    ctx.WriteBuffer(font_sizes.data(), font_sizes.size() * sizeof(u32), 2);
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded
