@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma optimize("", off)
+#include <utility>
 
 #include "common/assert.h"
 #include "common/file_util.h"
@@ -25,14 +25,14 @@ constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
                                                        const std::string& dir_name) {
-    if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
+    if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
     return base->GetDirectoryRelative(dir_name);
 }
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
-    : backing(backing_) {}
+    : backing(std::move(backing_)) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
