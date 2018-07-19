@@ -193,6 +193,10 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     if (dir == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
     auto filename = FileUtil::GetFilename(path);
+    // TODO(Subv): Some games use the '/' path, find out what this means.
+    if (filename.empty())
+        return MakeResult(FileSys::EntryType::Directory);
+
     if (dir->GetFile(filename) != nullptr)
         return MakeResult(FileSys::EntryType::File);
     if (dir->GetSubdirectory(filename) != nullptr)
