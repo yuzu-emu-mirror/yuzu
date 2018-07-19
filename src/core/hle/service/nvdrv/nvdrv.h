@@ -30,7 +30,7 @@ public:
 
     /// Returns a pointer to one of the available devices, identified by its name.
     template <typename T>
-    std::shared_ptr<T> GetDevice(std::string name) {
+    std::shared_ptr<T> GetDevice(const std::string& name) {
         auto itr = devices.find(name);
         if (itr == devices.end())
             return nullptr;
