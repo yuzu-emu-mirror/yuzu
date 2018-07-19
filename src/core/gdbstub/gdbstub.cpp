@@ -205,7 +205,7 @@ static Kernel::Thread* FindThreadById(int id) {
     for (u32 core = 0; core < Core::NUM_CPU_CORES; core++) {
         const auto& threads = Core::System::GetInstance().Scheduler(core)->GetThreadList();
         for (auto& thread : threads) {
-            if (thread->GetThreadId() == id) {
+            if (thread->GetThreadId() == static_cast<u32>(id)) {
                 current_core = core;
                 return thread.get();
             }
@@ -214,7 +214,7 @@ static Kernel::Thread* FindThreadById(int id) {
     return nullptr;
 }
 
-static u64 RegRead(int id, Kernel::Thread* thread = nullptr) {
+static u64 RegRead(std::size_t id, Kernel::Thread* thread = nullptr) {
     if (!thread) {
         return 0;
     }
@@ -234,7 +234,7 @@ static u64 RegRead(int id, Kernel::Thread* thread = nullptr) {
     }
 }
 
-static void RegWrite(int id, u64 val, Kernel::Thread* thread = nullptr) {
+static void RegWrite(std::size_t id, u64 val, Kernel::Thread* thread = nullptr) {
     if (!thread) {
         return;
     }
@@ -744,7 +744,7 @@ static bool IsDataAvailable() {
     fd_set fd_socket;
 
     FD_ZERO(&fd_socket);
-    FD_SET(gdbserver_socket, &fd_socket);
+    FD_SET(static_cast<u32>(gdbserver_socket), &fd_socket);
 
     struct timeval t;
     t.tv_sec = 0;
@@ -793,7 +793,7 @@ static void ReadRegisters() {
 
     u8* bufptr = buffer;
 
-    for (int reg = 0; reg <= SP_REGISTER; reg++) {
+    for (u32 reg = 0; reg <= SP_REGISTER; reg++) {
         LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
@@ -807,7 +807,7 @@ static void ReadRegisters() {
 
     bufptr += 8;
 
-    for (int reg = UC_ARM64_REG_Q0; reg <= UC_ARM64_REG_Q0 + 31; reg++) {
+    for (u32 reg = UC_ARM64_REG_Q0; reg <= UC_ARM64_REG_Q0 + 31; reg++) {
         LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
@@ -858,7 +858,7 @@ static void WriteRegisters() {
     if (command_buffer[0] != 'G')
         return SendReply("E01");
 
-    for (int i = 0, reg = 0; reg <= FPSCR_REGISTER; i++, reg++) {
+    for (u32 i = 0, reg = 0; reg <= FPSCR_REGISTER; i++, reg++) {
         if (reg <= SP_REGISTER) {
             RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == PC_REGISTER) {
