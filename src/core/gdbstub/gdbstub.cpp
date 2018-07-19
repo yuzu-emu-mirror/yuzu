@@ -174,6 +174,7 @@ struct Breakpoint {
     bool active;
     PAddr addr;
     u64 len;
+    u8 old[4];
 };
 
 static std::map<u64, Breakpoint> breakpoints_execute;
@@ -449,6 +450,7 @@ static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
                   bp->second.len, bp->second.addr, static_cast<int>(type));
+        Memory::WriteBlock(bp->second.addr, bp->second.old, 4);
         p.erase(static_cast<u64>(addr));
     }
 }
@@ -983,6 +985,9 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     breakpoint.active = true;
     breakpoint.addr = addr;
     breakpoint.len = len;
+    Memory::ReadBlock(addr, breakpoint.old, 4);
+    static const u8 bkpt0[] = {0xd4, 0x20, 0x00, 0x00};
+    Memory::WriteBlock(addr, bkpt0, 4);
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
