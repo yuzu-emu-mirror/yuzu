@@ -2,6 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+#include <utility>
+
 #include "common/logging/log.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/vfs_offset.h"
@@ -61,7 +64,7 @@ struct RomFSSuperblock {
 };
 static_assert(sizeof(RomFSSuperblock) == 0xE8, "RomFSSuperblock has incorrect size.");
 
-NCA::NCA(VirtualFile file_) : file(file_) {
+NCA::NCA(VirtualFile file_) : file(std::move(file_)) {
     if (sizeof(NCAHeader) != file->ReadObject(&header))
         LOG_CRITICAL(Loader, "File reader errored out during header read.");
 
