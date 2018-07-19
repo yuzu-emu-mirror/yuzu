@@ -22,8 +22,8 @@ public:
 private:
     std::shared_ptr<IAudioOut> audio_out_interface;
 
-    void ListAudioOuts(Kernel::HLERequestContext& ctx);
-    void OpenAudioOut(Kernel::HLERequestContext& ctx);
+    void ListAudioOutsImpl(Kernel::HLERequestContext& ctx);
+    void OpenAudioOutImpl(Kernel::HLERequestContext& ctx);
 
     enum class PcmFormat : u32 {
         Invalid = 0,

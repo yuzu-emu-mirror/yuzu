@@ -19,10 +19,9 @@ void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
 void BSD::StartMonitoring(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service, "(STUBBED) called");
 
-    IPC::ResponseBuilder rb{ctx, 3};
+    IPC::ResponseBuilder rb{ctx, 2};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(0); // bsd errno
 }
 
 void BSD::Socket(Kernel::HLERequestContext& ctx) {

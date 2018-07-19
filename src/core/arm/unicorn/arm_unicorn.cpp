@@ -188,12 +188,18 @@ void ARM_Unicorn::ExecuteInstructions(int num_instructions) {
     CHECKED(uc_emu_start(uc, GetPC(), 1ULL << 63, 0, num_instructions));
     CoreTiming::AddTicks(num_instructions);
     if (GDBStub::IsServerEnabled()) {
+        //u64 pc = GetPC();
+        //GDBStub::BreakpointAddress bkpt = GDBStub::GetNextBreakpointFromAddress(pc, GDBStub::BreakpointType::Execute);
+        //if(bkpt.type != GDBStub::BreakpointType::None && bkpt.address == pc)
+        //{
+        //    RecordBreak(bkpt);
+        //}
         if (last_bkpt_hit) {
             uc_reg_write(uc, UC_ARM64_REG_PC, &last_bkpt.address);
         }
         Kernel::Thread* thread = Kernel::GetCurrentThread();
         SaveContext(thread->context);
-        if (last_bkpt_hit || (num_instructions == 1)) {
+        if (last_bkpt_hit || (num_instructions == 1 && GDBStub::GetCpuHaltFlag())) {
             last_bkpt_hit = false;
             GDBStub::Break();
             GDBStub::SendTrap(thread, 5);
@@ -262,6 +268,8 @@ void ARM_Unicorn::LoadContext(const ARM_Interface::ThreadContext& ctx) {
 void ARM_Unicorn::PrepareReschedule() {
     CHECKED(uc_emu_stop(uc));
 }
+
+void ARM_Unicorn::ClearExclusiveState() {}
 
 void ARM_Unicorn::ClearInstructionCache() {}
 

@@ -4,28 +4,19 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include "common/common_types.h"
-#include "core/file_sys/filesystem.h"
 #include "core/hle/result.h"
 
 namespace FileSys {
 
 /// File system interface to the SDCard archive
-class SDMC_Factory final : public FileSystemFactory {
+class SDMCFactory {
 public:
-    explicit SDMC_Factory(std::string sd_directory);
+    explicit SDMCFactory(VirtualDir dir);
 
-    std::string GetName() const override {
-        return "SDMC_Factory";
-    }
-    ResultVal<std::unique_ptr<FileSystemBackend>> Open(const Path& path) override;
-    ResultCode Format(const Path& path) override;
-    ResultVal<ArchiveFormatInfo> GetFormatInfo(const Path& path) const override;
+    ResultVal<VirtualDir> Open();
 
 private:
-    std::string sd_directory;
+    VirtualDir dir;
 };
 
 } // namespace FileSys

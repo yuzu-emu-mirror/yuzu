@@ -27,12 +27,12 @@ public:
             {0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
             {1, &IAudioOut::StartAudioOut, "StartAudioOut"},
             {2, &IAudioOut::StopAudioOut, "StopAudioOut"},
-            {3, &IAudioOut::AppendAudioOutBuffer, "AppendAudioOutBuffer"},
+            {3, &IAudioOut::AppendAudioOutBufferImpl, "AppendAudioOutBuffer"},
             {4, &IAudioOut::RegisterBufferEvent, "RegisterBufferEvent"},
-            {5, &IAudioOut::GetReleasedAudioOutBuffer, "GetReleasedAudioOutBuffer"},
+            {5, &IAudioOut::GetReleasedAudioOutBufferImpl, "GetReleasedAudioOutBuffer"},
             {6, nullptr, "ContainsAudioOutBuffer"},
-            {7, nullptr, "AppendAudioOutBufferAuto"},
-            {8, nullptr, "GetReleasedAudioOutBufferAuto"},
+            {7, &IAudioOut::AppendAudioOutBufferImpl, "AppendAudioOutBufferAuto"},
+            {8, &IAudioOut::GetReleasedAudioOutBufferImpl, "GetReleasedAudioOutBufferAuto"},
             {9, nullptr, "GetAudioOutBufferCount"},
             {10, nullptr, "GetAudioOutPlayedSampleCount"},
             {11, nullptr, "FlushAudioOutBuffers"},
@@ -96,7 +96,7 @@ private:
         rb.PushCopyObjects(buffer_event);
     }
 
-    void AppendAudioOutBuffer(Kernel::HLERequestContext& ctx) {
+    void AppendAudioOutBufferImpl(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
         IPC::RequestParser rp{ctx};
 
@@ -107,7 +107,7 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
-    void GetReleasedAudioOutBuffer(Kernel::HLERequestContext& ctx) {
+    void GetReleasedAudioOutBufferImpl(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         // TODO(st4rk): This is how libtransistor currently implements the
@@ -163,7 +163,7 @@ private:
     AudioState audio_out_state;
 };
 
-void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
+void AudOutU::ListAudioOutsImpl(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
 
@@ -179,7 +179,7 @@ void AudOutU::ListAudioOuts(Kernel::HLERequestContext& ctx) {
     rb.Push<u32>(1);
 }
 
-void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
+void AudOutU::OpenAudioOutImpl(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
 
     if (!audio_out_interface) {
@@ -196,10 +196,10 @@ void AudOutU::OpenAudioOut(Kernel::HLERequestContext& ctx) {
 }
 
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
-    static const FunctionInfo functions[] = {{0, &AudOutU::ListAudioOuts, "ListAudioOuts"},
-                                             {1, &AudOutU::OpenAudioOut, "OpenAudioOut"},
-                                             {2, nullptr, "ListAudioOutsAuto"},
-                                             {3, nullptr, "OpenAudioOutAuto"}};
+    static const FunctionInfo functions[] = {{0, &AudOutU::ListAudioOutsImpl, "ListAudioOuts"},
+                                             {1, &AudOutU::OpenAudioOutImpl, "OpenAudioOut"},
+                                             {2, &AudOutU::ListAudioOutsImpl, "ListAudioOutsAuto"},
+                                             {3, &AudOutU::OpenAudioOutImpl, "OpenAudioOutAuto"}};
     RegisterHandlers(functions);
 }
 

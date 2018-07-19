@@ -68,6 +68,10 @@ const u32 CPSR_REGISTER = 33;
 const u32 UC_ARM64_REG_Q0 = 34;
 const u32 FPSCR_REGISTER = 66;
 
+// TODO/WiP - Used while working on support for FPU
+const u32 TODO_DUMMY_REG_997 = 997;
+const u32 TODO_DUMMY_REG_998 = 998;
+
 // For sample XML files see the GDB source /gdb/features
 // GDB also wants the l character at the start
 // This XML defines what the registers are for this specific ARM device
@@ -170,6 +174,7 @@ struct Breakpoint {
     bool active;
     PAddr addr;
     u64 len;
+    u8 old[4];
 };
 
 static std::map<u64, Breakpoint> breakpoints_execute;
@@ -445,6 +450,7 @@ static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
     if (bp != p.end()) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
                   bp->second.len, bp->second.addr, static_cast<int>(type));
+        Memory::WriteBlock(bp->second.addr, bp->second.old, 4);
         p.erase(static_cast<u64>(addr));
     }
 }
@@ -565,7 +571,7 @@ static void HandleQuery() {
     } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
         // PacketSize needs to be large enough for target xml
         std::string buffer = "PacketSize=2000;qXfer:features:read+;qXfer:threads:read+";
-        if (modules.size()) {
+        if (!modules.empty()) {
             buffer += ";qXfer:libraries:read+";
         }
         SendReply(buffer.c_str());
@@ -774,10 +780,9 @@ static void ReadRegister() {
     } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
         LongToGdbHex(reply, RegRead(id, current_thread));
     } else if (id == FPSCR_REGISTER) {
-        LongToGdbHex(reply, RegRead(998, current_thread));
+        LongToGdbHex(reply, RegRead(TODO_DUMMY_REG_998, current_thread));
     } else {
-        // return SendReply("E01");
-        LongToGdbHex(reply, RegRead(997, current_thread));
+        LongToGdbHex(reply, RegRead(TODO_DUMMY_REG_997, current_thread));
     }
 
     SendReply(reinterpret_cast<char*>(reply));
@@ -810,7 +815,7 @@ static void ReadRegisters() {
 
     bufptr += 32 * 32;
 
-    LongToGdbHex(bufptr, RegRead(998, current_thread));
+    LongToGdbHex(bufptr, RegRead(TODO_DUMMY_REG_998, current_thread));
 
     bufptr += 8;
 
@@ -837,12 +842,12 @@ static void WriteRegister() {
     } else if (id >= UC_ARM64_REG_Q0 && id < FPSCR_REGISTER) {
         RegWrite(id, GdbHexToLong(buffer_ptr), current_thread);
     } else if (id == FPSCR_REGISTER) {
-        RegWrite(998, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(TODO_DUMMY_REG_998, GdbHexToLong(buffer_ptr), current_thread);
     } else {
-        // return SendReply("E01");
-        RegWrite(997, GdbHexToLong(buffer_ptr), current_thread);
+        RegWrite(TODO_DUMMY_REG_997, GdbHexToLong(buffer_ptr), current_thread);
     }
 
+    // Update Unicorn context skipping scheduler, no running threads at this point
     Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
 
     SendReply("OK");
@@ -865,12 +870,13 @@ static void WriteRegisters() {
         } else if (reg >= UC_ARM64_REG_Q0 && reg < FPSCR_REGISTER) {
             RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == FPSCR_REGISTER) {
-            RegWrite(998, GdbHexToLong(buffer_ptr + i * 16), current_thread);
+            RegWrite(TODO_DUMMY_REG_998, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else {
             UNIMPLEMENTED();
         }
     }
 
+    // Update Unicorn context skipping scheduler, no running threads at this point
     Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
 
     SendReply("OK");
@@ -941,6 +947,7 @@ void Break(bool is_memory_break) {
 static void Step() {
     if (command_length > 1) {
         RegWrite(PC_REGISTER, GdbHexToLong(command_buffer + 1), current_thread);
+        // Update Unicorn context skipping scheduler, no running threads at this point
         Core::System::GetInstance().ArmInterface(current_core).LoadContext(current_thread->context);
     }
     step_loop = true;
@@ -978,6 +985,9 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     breakpoint.active = true;
     breakpoint.addr = addr;
     breakpoint.len = len;
+    Memory::ReadBlock(addr, breakpoint.old, 4);
+    static const u8 bkpt0[] = {0xd4, 0x20, 0x00, 0x00};
+    Memory::WriteBlock(addr, bkpt0, 4);
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",

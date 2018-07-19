@@ -22,10 +22,8 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 
-#ifdef _MSC_VER
 #include <getopt.h>
-#else
-#include <getopt.h>
+#ifndef _MSC_VER
 #include <unistd.h>
 #endif
 
@@ -127,6 +125,7 @@ int main(int argc, char** argv) {
 #endif
 
     Log::Filter log_filter(Log::Level::Debug);
+    log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
@@ -142,14 +141,17 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    log_filter.ParseFilterString(Settings::values.log_filter);
-
     // Apply the command line arguments
     Settings::values.gdbstub_port = gdb_port;
     Settings::values.use_gdbstub = use_gdbstub;
     Settings::Apply();
 
     std::unique_ptr<EmuWindow_SDL2> emu_window{std::make_unique<EmuWindow_SDL2>(fullscreen)};
+
+    if (!Settings::values.use_multi_core) {
+        // Single core mode must acquire OpenGL context for entire emulation session
+        emu_window->MakeCurrent();
+    }
 
     Core::System& system{Core::System::GetInstance()};
 

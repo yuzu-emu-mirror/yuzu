@@ -14,6 +14,13 @@
 
 namespace Debugger {
 void ToggleConsole() {
+    static bool console_shown = false;
+    if (console_shown == UISettings::values.show_console) {
+        return;
+    } else {
+        console_shown = UISettings::values.show_console;
+    }
+
 #if defined(_WIN32) && !defined(_DEBUG)
     FILE* temp;
     if (UISettings::values.show_console) {

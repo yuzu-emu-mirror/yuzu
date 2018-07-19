@@ -149,12 +149,10 @@ void NVFlinger::Compose() {
         ASSERT(nvdisp);
 
         nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer->transform);
+                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer->transform,
+                     buffer->crop_rect);
 
         buffer_queue->ReleaseBuffer(buffer->slot);
-
-        // TODO(Subv): Figure out when we should actually signal this event.
-        buffer_queue->GetNativeHandle()->Signal();
     }
 }
 

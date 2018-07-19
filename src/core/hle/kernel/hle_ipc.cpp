@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include <boost/range/algorithm_ext/erase.hpp>
 #include "common/assert.h"
 #include "common/common_funcs.h"
@@ -19,17 +21,18 @@ namespace Kernel {
 
 void SessionRequestHandler::ClientConnected(SharedPtr<ServerSession> server_session) {
     server_session->SetHleHandler(shared_from_this());
-    connected_sessions.push_back(server_session);
+    connected_sessions.push_back(std::move(server_session));
 }
 
-void SessionRequestHandler::ClientDisconnected(SharedPtr<ServerSession> server_session) {
+void SessionRequestHandler::ClientDisconnected(const SharedPtr<ServerSession>& server_session) {
     server_session->SetHleHandler(nullptr);
     boost::range::remove_erase(connected_sessions, server_session);
 }
 
 SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
                                                       const std::string& reason, u64 timeout,
-                                                      WakeupCallback&& callback) {
+                                                      WakeupCallback&& callback,
+                                                      Kernel::SharedPtr<Kernel::Event> event) {
 
     // Put the client thread to sleep until the wait event is signaled or the timeout expires.
     thread->wakeup_callback =
@@ -41,7 +44,12 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
         return true;
     };
 
-    auto event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    if (!event) {
+        // Create event if not provided
+        event = Kernel::Event::Create(Kernel::ResetType::OneShot, "HLE Pause Event: " + reason);
+    }
+
+    event->Clear();
     thread->status = THREADSTATUS_WAIT_HLE_EVENT;
     thread->wait_objects = {event};
     event->AddWaitingThread(thread);
@@ -214,8 +222,8 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
             (sizeof(IPC::CommandHeader) + sizeof(IPC::HandleDescriptorHeader)) / sizeof(u32);
         ASSERT_MSG(!handle_descriptor_header->send_current_pid, "Sending PID is not implemented");
 
-        ASSERT_MSG(copy_objects.size() == handle_descriptor_header->num_handles_to_copy);
-        ASSERT_MSG(move_objects.size() == handle_descriptor_header->num_handles_to_move);
+        ASSERT(copy_objects.size() == handle_descriptor_header->num_handles_to_copy);
+        ASSERT(move_objects.size() == handle_descriptor_header->num_handles_to_move);
 
         // We don't make a distinction between copy and move handles when translating since HLE
         // services don't deal with handles directly. However, the guest applications might check

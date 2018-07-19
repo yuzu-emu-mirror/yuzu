@@ -25,15 +25,14 @@
 
 class BitStream {
 public:
-    BitStream(unsigned char* ptr, int nBits = 0, int start_offset = 0)
-        : m_BitsWritten(0), m_BitsRead(0), m_NumBits(nBits), m_CurByte(ptr),
-          m_NextBit(start_offset % 8), done(false) {}
+    explicit BitStream(unsigned char* ptr, int nBits = 0, int start_offset = 0)
+        : m_NumBits(nBits), m_CurByte(ptr), m_NextBit(start_offset % 8) {}
+
+    ~BitStream() = default;
 
     int GetBitsWritten() const {
         return m_BitsWritten;
     }
-
-    ~BitStream() {}
 
     void WriteBitsR(unsigned int val, unsigned int nBits) {
         for (unsigned int i = 0; i < nBits; i++) {
@@ -95,33 +94,28 @@ private:
         done = done || ++m_BitsWritten >= m_NumBits;
     }
 
-    int m_BitsWritten;
+    int m_BitsWritten = 0;
     const int m_NumBits;
     unsigned char* m_CurByte;
-    int m_NextBit;
-    int m_BitsRead;
+    int m_NextBit = 0;
+    int m_BitsRead = 0;
 
-    bool done;
+    bool done = false;
 };
 
 template <typename IntType>
 class Bits {
-private:
-    const IntType& m_Bits;
-
-    // Don't copy
-    Bits() {}
-    Bits(const Bits&) {}
-    Bits& operator=(const Bits&) {}
-
 public:
-    explicit Bits(IntType& v) : m_Bits(v) {}
+    explicit Bits(const IntType& v) : m_Bits(v) {}
 
-    uint8_t operator[](uint32_t bitPos) {
+    Bits(const Bits&) = delete;
+    Bits& operator=(const Bits&) = delete;
+
+    uint8_t operator[](uint32_t bitPos) const {
         return static_cast<uint8_t>((m_Bits >> bitPos) & 1);
     }
 
-    IntType operator()(uint32_t start, uint32_t end) {
+    IntType operator()(uint32_t start, uint32_t end) const {
         if (start == end) {
             return (*this)[start];
         } else if (start > end) {
@@ -133,6 +127,9 @@ public:
         uint64_t mask = (1 << (end - start + 1)) - 1;
         return (m_Bits >> start) & mask;
     }
+
+private:
+    const IntType& m_Bits;
 };
 
 enum EIntegerEncoding { eIntegerEncoding_JustBits, eIntegerEncoding_Quint, eIntegerEncoding_Trit };
@@ -186,12 +183,12 @@ public:
         m_QuintValue = val;
     }
 
-    bool MatchesEncoding(const IntegerEncodedValue& other) {
+    bool MatchesEncoding(const IntegerEncodedValue& other) const {
         return m_Encoding == other.m_Encoding && m_NumBits == other.m_NumBits;
     }
 
     // Returns the number of bits required to encode nVals values.
-    uint32_t GetBitLength(uint32_t nVals) {
+    uint32_t GetBitLength(uint32_t nVals) const {
         uint32_t totalBits = m_NumBits * nVals;
         if (m_Encoding == eIntegerEncoding_Trit) {
             totalBits += (nVals * 8 + 4) / 5;
@@ -382,19 +379,15 @@ private:
 namespace ASTCC {
 
 struct TexelWeightParams {
-    uint32_t m_Width;
-    uint32_t m_Height;
-    bool m_bDualPlane;
-    uint32_t m_MaxWeight;
-    bool m_bError;
-    bool m_bVoidExtentLDR;
-    bool m_bVoidExtentHDR;
+    uint32_t m_Width = 0;
+    uint32_t m_Height = 0;
+    bool m_bDualPlane = false;
+    uint32_t m_MaxWeight = 0;
+    bool m_bError = false;
+    bool m_bVoidExtentLDR = false;
+    bool m_bVoidExtentHDR = false;
 
-    TexelWeightParams() {
-        memset(this, 0, sizeof(*this));
-    }
-
-    uint32_t GetPackedBitSize() {
+    uint32_t GetPackedBitSize() const {
         // How many indices do we have?
         uint32_t nIdxs = m_Height * m_Width;
         if (m_bDualPlane) {
@@ -413,7 +406,7 @@ struct TexelWeightParams {
     }
 };
 
-TexelWeightParams DecodeBlockInfo(BitStream& strm) {
+static TexelWeightParams DecodeBlockInfo(BitStream& strm) {
     TexelWeightParams params;
 
     // Read the entire block mode all at once
@@ -612,8 +605,8 @@ TexelWeightParams DecodeBlockInfo(BitStream& strm) {
     return params;
 }
 
-void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWidth,
-                       uint32_t blockHeight) {
+static void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWidth,
+                              uint32_t blockHeight) {
     // Don't actually care about the void extent, just read the bits...
     for (int i = 0; i < 4; ++i) {
         strm.ReadBits(13);
@@ -628,23 +621,25 @@ void FillVoidExtentLDR(BitStream& strm, uint32_t* const outBuf, uint32_t blockWi
     uint32_t rgba = (r >> 8) | (g & 0xFF00) | (static_cast<uint32_t>(b) & 0xFF00) << 8 |
                     (static_cast<uint32_t>(a) & 0xFF00) << 16;
 
-    for (uint32_t j = 0; j < blockHeight; j++)
+    for (uint32_t j = 0; j < blockHeight; j++) {
         for (uint32_t i = 0; i < blockWidth; i++) {
             outBuf[j * blockWidth + i] = rgba;
         }
+    }
 }
 
-void FillError(uint32_t* outBuf, uint32_t blockWidth, uint32_t blockHeight) {
-    for (uint32_t j = 0; j < blockHeight; j++)
+static void FillError(uint32_t* outBuf, uint32_t blockWidth, uint32_t blockHeight) {
+    for (uint32_t j = 0; j < blockHeight; j++) {
         for (uint32_t i = 0; i < blockWidth; i++) {
             outBuf[j * blockWidth + i] = 0xFFFF00FF;
         }
+    }
 }
 
 // Replicates low numBits such that [(toBit - 1):(toBit - 1 - fromBit)]
 // is the same as [(numBits - 1):0] and repeats all the way down.
 template <typename IntType>
-IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
+static IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
     if (numBits == 0)
         return 0;
     if (toBit == 0)
@@ -668,27 +663,15 @@ IntType Replicate(const IntType& val, uint32_t numBits, uint32_t toBit) {
 
 class Pixel {
 protected:
-    typedef int16_t ChannelType;
-    uint8_t m_BitDepth[4];
-    int16_t color[4];
+    using ChannelType = int16_t;
+    uint8_t m_BitDepth[4] = {8, 8, 8, 8};
+    int16_t color[4] = {};
 
 public:
-    Pixel() {
-        for (int i = 0; i < 4; i++) {
-            m_BitDepth[i] = 8;
-            color[i] = 0;
-        }
-    }
-
-    Pixel(ChannelType a, ChannelType r, ChannelType g, ChannelType b, unsigned bitDepth = 8) {
-        for (int i = 0; i < 4; i++)
-            m_BitDepth[i] = bitDepth;
-
-        color[0] = a;
-        color[1] = r;
-        color[2] = g;
-        color[3] = b;
-    }
+    Pixel() = default;
+    Pixel(ChannelType a, ChannelType r, ChannelType g, ChannelType b, unsigned bitDepth = 8)
+        : m_BitDepth{uint8_t(bitDepth), uint8_t(bitDepth), uint8_t(bitDepth), uint8_t(bitDepth)},
+          color{a, r, g, b} {}
 
     // Changes the depth of each pixel. This scales the values to
     // the appropriate bit depth by either truncating the least
@@ -807,8 +790,8 @@ public:
     }
 };
 
-void DecodeColorValues(uint32_t* out, uint8_t* data, uint32_t* modes, const uint32_t nPartitions,
-                       const uint32_t nBitsForColorData) {
+static void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* modes,
+                              const uint32_t nPartitions, const uint32_t nBitsForColorData) {
     // First figure out how many color values we have
     uint32_t nValues = 0;
     for (uint32_t i = 0; i < nPartitions; i++) {
@@ -844,8 +827,7 @@ void DecodeColorValues(uint32_t* out, uint8_t* data, uint32_t* modes, const uint
     // Once we have the decoded values, we need to dequantize them to the 0-255 range
     // This procedure is outlined in ASTC spec C.2.13
     uint32_t outIdx = 0;
-    std::vector<IntegerEncodedValue>::const_iterator itr;
-    for (itr = decodedColorValues.begin(); itr != decodedColorValues.end(); itr++) {
+    for (auto itr = decodedColorValues.begin(); itr != decodedColorValues.end(); ++itr) {
         // Have we already decoded all that we need?
         if (outIdx >= nValues) {
             break;
@@ -978,7 +960,7 @@ void DecodeColorValues(uint32_t* out, uint8_t* data, uint32_t* modes, const uint
     }
 }
 
-uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
+static uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
     uint32_t bitval = val.GetBitValue();
     uint32_t bitlen = val.BaseBitLength();
 
@@ -1067,17 +1049,18 @@ uint32_t UnquantizeTexelWeight(const IntegerEncodedValue& val) {
     return result;
 }
 
-void UnquantizeTexelWeights(uint32_t out[2][144], std::vector<IntegerEncodedValue>& weights,
-                            const TexelWeightParams& params, const uint32_t blockWidth,
-                            const uint32_t blockHeight) {
+static void UnquantizeTexelWeights(uint32_t out[2][144],
+                                   const std::vector<IntegerEncodedValue>& weights,
+                                   const TexelWeightParams& params, const uint32_t blockWidth,
+                                   const uint32_t blockHeight) {
     uint32_t weightIdx = 0;
     uint32_t unquantized[2][144];
-    std::vector<IntegerEncodedValue>::const_iterator itr;
-    for (itr = weights.begin(); itr != weights.end(); itr++) {
+
+    for (auto itr = weights.begin(); itr != weights.end(); ++itr) {
         unquantized[0][weightIdx] = UnquantizeTexelWeight(*itr);
 
         if (params.m_bDualPlane) {
-            itr++;
+            ++itr;
             unquantized[1][weightIdx] = UnquantizeTexelWeight(*itr);
             if (itr == weights.end()) {
                 break;
@@ -1261,8 +1244,8 @@ static inline uint32_t Select2DPartition(int32_t seed, int32_t x, int32_t y, int
 }
 
 // Section C.2.14
-void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
-                      uint32_t colorEndpointMode) {
+static void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
+                             uint32_t colorEndpointMode) {
 #define READ_UINT_VALUES(N)                                                                        \
     uint32_t v[N];                                                                                 \
     for (uint32_t i = 0; i < N; i++) {                                                             \
@@ -1382,8 +1365,8 @@ void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValues,
 #undef READ_INT_VALUES
 }
 
-void DecompressBlock(uint8_t inBuf[16], const uint32_t blockWidth, const uint32_t blockHeight,
-                     uint32_t* outBuf) {
+static void DecompressBlock(uint8_t inBuf[16], const uint32_t blockWidth,
+                            const uint32_t blockHeight, uint32_t* outBuf) {
     BitStream strm(inBuf);
     TexelWeightParams weightParams = DecodeBlockInfo(strm);
 
@@ -1617,8 +1600,7 @@ namespace Tegra::Texture::ASTC {
 std::vector<uint8_t> Decompress(std::vector<uint8_t>& data, uint32_t width, uint32_t height,
                                 uint32_t block_width, uint32_t block_height) {
     uint32_t blockIdx = 0;
-    std::vector<uint8_t> outData;
-    outData.resize(height * width * 4);
+    std::vector<uint8_t> outData(height * width * 4);
     for (uint32_t j = 0; j < height; j += block_height) {
         for (uint32_t i = 0; i < width; i += block_width) {
 

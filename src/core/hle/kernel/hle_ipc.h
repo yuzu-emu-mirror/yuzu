@@ -59,12 +59,12 @@ public:
      * associated ServerSession.
      * @param server_session ServerSession associated with the connection.
      */
-    void ClientDisconnected(SharedPtr<ServerSession> server_session);
+    void ClientDisconnected(const SharedPtr<ServerSession>& server_session);
 
 protected:
     /// List of sessions that are connected to this handler.
     /// A ServerSession whose server endpoint is an HLE implementation is kept alive by this list
-    // for the duration of the connection.
+    /// for the duration of the connection.
     std::vector<SharedPtr<ServerSession>> connected_sessions;
 };
 
@@ -118,10 +118,12 @@ public:
      * @param callback Callback to be invoked when the thread is resumed. This callback must write
      * the entire command response once again, regardless of the state of it before this function
      * was called.
+     * @param event Event to use to wake up the thread. If unspecified, an event will be created.
      * @returns Event that when signaled will resume the thread and call the callback function.
      */
     SharedPtr<Event> SleepClientThread(SharedPtr<Thread> thread, const std::string& reason,
-                                       u64 timeout, WakeupCallback&& callback);
+                                       u64 timeout, WakeupCallback&& callback,
+                                       Kernel::SharedPtr<Kernel::Event> event = nullptr);
 
     void ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming);
 

@@ -20,7 +20,10 @@
 EmuThread::EmuThread(GRenderWindow* render_window) : render_window(render_window) {}
 
 void EmuThread::run() {
-    render_window->MakeCurrent();
+    if (!Settings::values.use_multi_core) {
+        // Single core mode must acquire OpenGL context for entire emulation session
+        render_window->MakeCurrent();
+    }
 
     MicroProfileOnThreadCreate("EmuThread");
 

@@ -92,11 +92,24 @@ static std::array<GLfloat, 3 * 2> MakeOrthographicMatrix(const float width, cons
     return matrix;
 }
 
+ScopeAcquireGLContext::ScopeAcquireGLContext() {
+    if (Settings::values.use_multi_core) {
+        VideoCore::g_emu_window->MakeCurrent();
+    }
+}
+ScopeAcquireGLContext::~ScopeAcquireGLContext() {
+    if (Settings::values.use_multi_core) {
+        VideoCore::g_emu_window->DoneCurrent();
+    }
+}
+
 RendererOpenGL::RendererOpenGL() = default;
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
 void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&> framebuffer) {
+    ScopeAcquireGLContext acquire_context;
+
     Core::System::GetInstance().perf_stats.EndSystemFrame();
 
     // Maintain the rasterizer's state as a priority
@@ -141,6 +154,7 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
 
     // Framebuffer orientation handling
     framebuffer_transform_flags = framebuffer.transform_flags;
+    framebuffer_crop_rect = framebuffer.crop_rect;
 
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT, which by default
     // only allows rows to have a memory alignement of 4.
@@ -307,11 +321,24 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
         }
     }
 
+    ASSERT_MSG(framebuffer_crop_rect.top == 0, "Unimplemented");
+    ASSERT_MSG(framebuffer_crop_rect.left == 0, "Unimplemented");
+
+    // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
+    // (e.g. handheld mode) on a 1920x1080 framebuffer.
+    f32 scale_u = 1.f, scale_v = 1.f;
+    if (framebuffer_crop_rect.GetWidth() > 0) {
+        scale_u = static_cast<f32>(framebuffer_crop_rect.GetWidth()) / screen_info.texture.width;
+    }
+    if (framebuffer_crop_rect.GetHeight() > 0) {
+        scale_v = static_cast<f32>(framebuffer_crop_rect.GetHeight()) / screen_info.texture.height;
+    }
+
     std::array<ScreenRectVertex, 4> vertices = {{
-        ScreenRectVertex(x, y, texcoords.top, left),
-        ScreenRectVertex(x + w, y, texcoords.bottom, left),
-        ScreenRectVertex(x, y + h, texcoords.top, right),
-        ScreenRectVertex(x + w, y + h, texcoords.bottom, right),
+        ScreenRectVertex(x, y, texcoords.top * scale_u, left * scale_v),
+        ScreenRectVertex(x + w, y, texcoords.bottom * scale_u, left * scale_v),
+        ScreenRectVertex(x, y + h, texcoords.top * scale_u, right * scale_v),
+        ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, right * scale_v),
     }};
 
     state.texture_units[0].texture_2d = screen_info.display_texture;
@@ -418,7 +445,7 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 
 /// Initialize the renderer
 bool RendererOpenGL::Init() {
-    render_window->MakeCurrent();
+    ScopeAcquireGLContext acquire_context;
 
     if (GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);

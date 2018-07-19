@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <tuple>
+#include <utility>
 
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
@@ -158,7 +159,7 @@ ServerSession::SessionPair ServerSession::CreateSessionPair(const std::string& n
     std::shared_ptr<Session> parent(new Session);
     parent->client = client_session.get();
     parent->server = server_session.get();
-    parent->port = port;
+    parent->port = std::move(port);
 
     client_session->parent = parent;
     server_session->parent = parent;

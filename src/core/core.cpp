@@ -19,17 +19,20 @@
 #include "core/loader/loader.h"
 #include "core/memory_setup.h"
 #include "core/settings.h"
+#include "file_sys/vfs_real.h"
 #include "video_core/video_core.h"
 
 namespace Core {
 
 /*static*/ System System::s_instance;
 
+System::System() = default;
+
 System::~System() = default;
 
 /// Runs a CPU core while the system is powered on
 static void RunCpuCore(std::shared_ptr<Cpu> cpu_state) {
-    while (Core::System().GetInstance().IsPoweredOn()) {
+    while (Core::System::GetInstance().IsPoweredOn()) {
         cpu_state->RunLoop(true);
     }
 }
@@ -84,7 +87,7 @@ System::ResultStatus System::SingleStep() {
 }
 
 System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& filepath) {
-    app_loader = Loader::GetLoader(filepath);
+    app_loader = Loader::GetLoader(std::make_shared<FileSys::RealVfsFile>(filepath));
 
     if (!app_loader) {
         LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);

@@ -65,7 +65,7 @@ static void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num
 
     // Signal the waiting threads.
     for (size_t i = 0; i < last; i++) {
-        ASSERT(waiting_threads[i]->status = THREADSTATUS_WAIT_ARB);
+        ASSERT(waiting_threads[i]->status == THREADSTATUS_WAIT_ARB);
         waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
         waiting_threads[i]->arb_wait_address = 0;
         waiting_threads[i]->ResumeFromWait();
@@ -115,7 +115,7 @@ ResultCode ModifyByWaitingCountAndSignalToAddressIfEqual(VAddr address, s32 valu
     s32 updated_value;
     if (waiting_threads.size() == 0) {
         updated_value = value - 1;
-    } else if (num_to_wake <= 0 || waiting_threads.size() <= num_to_wake) {
+    } else if (num_to_wake <= 0 || waiting_threads.size() <= static_cast<u32>(num_to_wake)) {
         updated_value = value + 1;
     } else {
         updated_value = value;
@@ -140,7 +140,9 @@ ResultCode WaitForAddressIfLessThan(VAddr address, s32 value, s64 timeout, bool 
 
     s32 cur_value = static_cast<s32>(Memory::Read32(address));
     if (cur_value < value) {
-        Memory::Write32(address, static_cast<u32>(cur_value - 1));
+        if (should_decrement) {
+            Memory::Write32(address, static_cast<u32>(cur_value - 1));
+        }
     } else {
         return ERR_INVALID_STATE;
     }
