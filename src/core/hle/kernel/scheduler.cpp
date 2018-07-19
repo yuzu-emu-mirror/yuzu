@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/process.h"
@@ -113,7 +115,7 @@ void Scheduler::Reschedule() {
 void Scheduler::AddThread(SharedPtr<Thread> thread, u32 priority) {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
 
-    thread_list.push_back(thread);
+    thread_list.push_back(std::move(thread));
     ready_queue.prepare(priority);
 }
 

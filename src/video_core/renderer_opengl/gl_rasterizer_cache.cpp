@@ -505,7 +505,7 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 
 SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     bool using_color_fb, bool using_depth_fb, const MathUtil::Rectangle<s32>& viewport) {
-    const auto& regs = Core::System().GetInstance().GPU().Maxwell3D().regs;
+    const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
 
     // TODO(bunnei): This is hard corded to use just the first render buffer
     LOG_WARNING(Render_OpenGL, "hard-coded for render target 0!");

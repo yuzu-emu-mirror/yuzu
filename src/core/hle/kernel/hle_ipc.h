@@ -59,12 +59,12 @@ public:
      * associated ServerSession.
      * @param server_session ServerSession associated with the connection.
      */
-    void ClientDisconnected(SharedPtr<ServerSession> server_session);
+    void ClientDisconnected(const SharedPtr<ServerSession>& server_session);
 
 protected:
     /// List of sessions that are connected to this handler.
     /// A ServerSession whose server endpoint is an HLE implementation is kept alive by this list
-    // for the duration of the connection.
+    /// for the duration of the connection.
     std::vector<SharedPtr<ServerSession>> connected_sessions;
 };
 

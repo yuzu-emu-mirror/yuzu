@@ -168,6 +168,8 @@ public:
     }
 
 private:
+    System();
+
     /// Returns the currently running CPU core
     Cpu& CurrentCpuCore();
 

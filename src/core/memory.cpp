@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <utility>
+
 #include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -74,7 +76,7 @@ void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer 
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::IODevice, mmio_handler};
+    SpecialRegion region{SpecialRegion::Type::IODevice, std::move(mmio_handler)};
     page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
@@ -89,13 +91,13 @@ void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
 
 void AddDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    SpecialRegion region{SpecialRegion::Type::DebugHook, std::move(hook)};
     page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
 void RemoveDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    SpecialRegion region{SpecialRegion::Type::DebugHook, std::move(hook)};
     page_table.special_regions.subtract(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
@@ -113,11 +115,6 @@ static std::set<MemoryHookPointer> GetSpecialHandlers(const PageTable& page_tabl
         }
     }
     return result;
-}
-
-static std::set<MemoryHookPointer> GetSpecialHandlers(VAddr vaddr, u64 size) {
-    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
-    return GetSpecialHandlers(page_table, vaddr, size);
 }
 
 /**
@@ -586,8 +583,6 @@ void ZeroBlock(const Kernel::Process& process, const VAddr dest_addr, const size
     size_t remaining_size = size;
     size_t page_index = dest_addr >> PAGE_BITS;
     size_t page_offset = dest_addr & PAGE_MASK;
-
-    static const std::array<u8, PAGE_SIZE> zeros = {};
 
     while (remaining_size > 0) {
         const size_t copy_amount =

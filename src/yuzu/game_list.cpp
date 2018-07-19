@@ -12,6 +12,7 @@
 #include "common/common_paths.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/file_sys/vfs_real.h"
 #include "core/loader/loader.h"
 #include "game_list.h"
 #include "game_list_p.h"
@@ -138,10 +139,12 @@ GameList::SearchField::SearchField(GameList* parent) : QWidget{parent} {
  * @param userinput String containing all words getting checked
  * @return true if the haystack contains all words of userinput
  */
-bool GameList::containsAllWords(QString haystack, QString userinput) {
-    QStringList userinput_split = userinput.split(" ", QString::SplitBehavior::SkipEmptyParts);
+static bool ContainsAllWords(const QString& haystack, const QString& userinput) {
+    const QStringList userinput_split =
+        userinput.split(' ', QString::SplitBehavior::SkipEmptyParts);
+
     return std::all_of(userinput_split.begin(), userinput_split.end(),
-                       [haystack](QString s) { return haystack.contains(s); });
+                       [&haystack](const QString& s) { return haystack.contains(s); });
 }
 
 // Event in order to filter the gamelist after editing the searchfield
@@ -175,7 +178,7 @@ void GameList::onTextChanged(const QString& newText) {
             // The search is case insensitive because of toLower()
             // I decided not to use Qt::CaseInsensitive in containsAllWords to prevent
             // multiple conversions of edit_filter_text for each game in the gamelist
-            if (containsAllWords(file_name.append(" ").append(file_title), edit_filter_text) ||
+            if (ContainsAllWords(file_name.append(' ').append(file_title), edit_filter_text) ||
                 (file_programmid.count() == 16 && edit_filter_text.contains(file_programmid))) {
                 tree_view->setRowHidden(i, root_index, false);
                 ++result_count;
@@ -401,7 +404,8 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
         bool is_dir = FileUtil::IsDirectory(physical_name);
         if (!is_dir &&
             (HasSupportedFileExtension(physical_name) || IsExtractedNCAMain(physical_name))) {
-            std::unique_ptr<Loader::AppLoader> loader = Loader::GetLoader(physical_name);
+            std::unique_ptr<Loader::AppLoader> loader =
+                Loader::GetLoader(std::make_shared<FileSys::RealVfsFile>(physical_name));
             if (!loader)
                 return true;
 
