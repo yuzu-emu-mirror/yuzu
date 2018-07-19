@@ -113,7 +113,7 @@ VAddr AppLoader_NSO::LoadModule(FileSys::VirtualFile file, VAddr load_base) {
     // Build program image
     Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
     std::vector<u8> program_image;
-    for (int i = 0; i < nso_header.segments.size(); ++i) {
+    for (std::size_t i = 0; i < nso_header.segments.size(); ++i) {
         const std::vector<u8> compressed_data =
             file->ReadBytes(nso_header.segments_compressed_size[i], nso_header.segments[i].offset);
         std::vector<u8> data = DecompressSegment(compressed_data, nso_header.segments[i]);
