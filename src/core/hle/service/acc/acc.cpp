@@ -30,8 +30,7 @@ struct ProfileBase {
 };
 static_assert(sizeof(ProfileBase) == 0x38, "ProfileBase structure has incorrect size");
 
-using Uid = std::array<u64, 2>;
-static constexpr Uid DEFAULT_USER_ID{0x10ull, 0x20ull};
+static constexpr u128 DEFAULT_USER_ID{1ull, 0ull};
 
 class IProfile final : public ServiceFramework<IProfile> {
 public:
