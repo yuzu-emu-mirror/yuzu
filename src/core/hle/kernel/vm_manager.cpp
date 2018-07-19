@@ -16,30 +16,20 @@
 namespace Kernel {
 
 static const char* GetMemoryStateName(MemoryState state) {
-    static const char* names[] = {
-        "Unmapped",
-        "Io",
-        "Normal",
-        "CodeStatic",
-        "CodeMutable",
-        "Heap",
-        "Shared",
-        "Unknown1"
-        "ModuleCodeStatic",
-        "ModuleCodeMutable",
-        "IpcBuffer0",
-        "Mapped",
-        "ThreadLocal",
-        "TransferMemoryIsolated",
-        "TransferMemory",
-        "ProcessMemory",
-        "Unknown2"
-        "IpcBuffer1",
-        "IpcBuffer3",
-        "KernelStack",
+    static constexpr const char* names[] = {
+        "Unmapped",         "Io",
+        "Normal",           "CodeStatic",
+        "CodeMutable",      "Heap",
+        "Shared",           "Unknown1",
+        "ModuleCodeStatic", "ModuleCodeMutable",
+        "IpcBuffer0",       "Mapped",
+        "ThreadLocal",      "TransferMemoryIsolated",
+        "TransferMemory",   "ProcessMemory",
+        "Unknown2",         "IpcBuffer1",
+        "IpcBuffer3",       "KernelStack",
     };
 
-    return names[(int)state];
+    return names[static_cast<int>(state)];
 }
 
 bool VirtualMemoryArea::CanBeMergedWith(const VirtualMemoryArea& next) const {
