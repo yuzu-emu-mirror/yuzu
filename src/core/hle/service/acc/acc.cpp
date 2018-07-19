@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/acc/acc.h"
@@ -24,18 +25,17 @@ struct UserData {
 static_assert(sizeof(UserData) == 0x80, "UserData structure has incorrect size");
 
 struct ProfileBase {
-    u8 user_id[0x10];
+    u128 user_id;
     u64 timestamp;
-    u8 username[0x20];
+    std::array<u8, 0x20> username;
 };
 static_assert(sizeof(ProfileBase) == 0x38, "ProfileBase structure has incorrect size");
 
-using Uid = std::array<u64, 2>;
-static constexpr Uid DEFAULT_USER_ID{0x10ull, 0x20ull};
+static constexpr u128 DEFAULT_USER_ID{1ull, 0ull};
 
 class IProfile final : public ServiceFramework<IProfile> {
 public:
-    IProfile() : ServiceFramework("IProfile") {
+    IProfile(u128 user_id) : ServiceFramework("IProfile"), user_id(user_id) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
@@ -48,11 +48,18 @@ public:
 private:
     void GetBase(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
+
+        // TODO(Subv): Retrieve this information from somewhere.
         ProfileBase profile_base{};
+        profile_base.user_id = user_id;
+        profile_base.username = {'y', 'u', 'z', 'u'};
+
         IPC::ResponseBuilder rb{ctx, 16};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(profile_base);
     }
+
+    u128 user_id; ///< The user id this profile refers to.
 };
 
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
@@ -112,10 +119,12 @@ void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u128 user_id = rp.PopRaw<u128>();
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IProfile>();
-    LOG_DEBUG(Service_ACC, "called");
+    rb.PushIpcInterface<IProfile>(user_id);
+    LOG_DEBUG(Service_ACC, "called user_id=0x{:016X}{:016X}", user_id[1], user_id[0]);
 }
 
 void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
