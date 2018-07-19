@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
