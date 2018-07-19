@@ -33,7 +33,7 @@ enum class StorageId : u8 {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    IStorage(FileSys::VirtualFile backend_)
+    explicit IStorage(FileSys::VirtualFile backend_)
         : ServiceFramework("IStorage"), backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
