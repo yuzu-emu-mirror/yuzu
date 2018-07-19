@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "common/assert.h"
 #include "common/file_util.h"
 #include "core/core.h"
@@ -30,7 +32,7 @@ static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
 }
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
-    : backing(backing_) {}
+    : backing(std::move(backing_)) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
