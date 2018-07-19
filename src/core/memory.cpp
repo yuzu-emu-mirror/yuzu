@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <utility>
+
 #include <boost/optional.hpp>
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -74,7 +76,7 @@ void MapIoRegion(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer 
     MapPages(page_table, base / PAGE_SIZE, size / PAGE_SIZE, nullptr, PageType::Special);
 
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::IODevice, mmio_handler};
+    SpecialRegion region{SpecialRegion::Type::IODevice, std::move(mmio_handler)};
     page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
@@ -89,13 +91,13 @@ void UnmapRegion(PageTable& page_table, VAddr base, u64 size) {
 
 void AddDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    SpecialRegion region{SpecialRegion::Type::DebugHook, std::move(hook)};
     page_table.special_regions.add(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 
 void RemoveDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPointer hook) {
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
-    SpecialRegion region{SpecialRegion::Type::DebugHook, hook};
+    SpecialRegion region{SpecialRegion::Type::DebugHook, std::move(hook)};
     page_table.special_regions.subtract(std::make_pair(interval, std::set<SpecialRegion>{region}));
 }
 

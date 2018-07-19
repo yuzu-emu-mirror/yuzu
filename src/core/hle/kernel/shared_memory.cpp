@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cstring>
+#include <utility>
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/kernel/errors.h"
@@ -21,7 +21,7 @@ SharedPtr<SharedMemory> SharedMemory::Create(SharedPtr<Process> owner_process, u
                                              MemoryRegion region, std::string name) {
     SharedPtr<SharedMemory> shared_memory(new SharedMemory);
 
-    shared_memory->owner_process = owner_process;
+    shared_memory->owner_process = std::move(owner_process);
     shared_memory->name = std::move(name);
     shared_memory->size = size;
     shared_memory->permissions = permissions;
@@ -87,7 +87,7 @@ SharedPtr<SharedMemory> SharedMemory::CreateForApplet(std::shared_ptr<std::vecto
     shared_memory->size = size;
     shared_memory->permissions = permissions;
     shared_memory->other_permissions = other_permissions;
-    shared_memory->backing_block = heap_block;
+    shared_memory->backing_block = std::move(heap_block);
     shared_memory->backing_block_offset = offset;
     shared_memory->base_address = Memory::HEAP_VADDR + offset;
 
