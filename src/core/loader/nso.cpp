@@ -66,8 +66,7 @@ FileType AppLoader_NSO::IdentifyType(const FileSys::VirtualFile& file) {
 
 static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
                                          const NsoSegmentHeader& header) {
-    std::vector<u8> uncompressed_data;
-    uncompressed_data.resize(header.size);
+    std::vector<u8> uncompressed_data(header.size);
     const int bytes_uncompressed = LZ4_decompress_safe(
         reinterpret_cast<const char*>(compressed_data.data()),
         reinterpret_cast<char*>(uncompressed_data.data()), compressed_data.size(), header.size);
@@ -80,8 +79,7 @@ static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
 
 static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeader& header,
                                    size_t compressed_size) {
-    std::vector<u8> compressed_data;
-    compressed_data.resize(compressed_size);
+    std::vector<u8> compressed_data(compressed_size);
 
     file.Seek(header.offset, SEEK_SET);
     if (compressed_size != file.ReadBytes(compressed_data.data(), compressed_size)) {
