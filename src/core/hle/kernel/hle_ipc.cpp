@@ -302,7 +302,7 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size, int buffe
 }
 
 size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer, int buffer_index) const {
-    return WriteBuffer(buffer.data(), buffer.size());
+    return WriteBuffer(buffer.data(), buffer.size(), buffer_index);
 }
 
 size_t HLERequestContext::GetReadBufferSize(int buffer_index) const {
