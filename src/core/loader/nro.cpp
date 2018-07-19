@@ -82,7 +82,7 @@ bool AppLoader_NRO::LoadNro(FileSys::VirtualFile file, VAddr load_base) {
     if (program_image.size() != PageAlignSize(nro_header.file_size))
         return {};
 
-    for (int i = 0; i < nro_header.segments.size(); ++i) {
+    for (std::size_t i = 0; i < nro_header.segments.size(); ++i) {
         codeset->segments[i].addr = nro_header.segments[i].offset;
         codeset->segments[i].offset = nro_header.segments[i].offset;
         codeset->segments[i].size = PageAlignSize(nro_header.segments[i].size);
