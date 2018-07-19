@@ -95,16 +95,18 @@ void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
 
 void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
-    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size());
+    // TODO(Subv): There is only one user for now.
+    const std::vector<u128> user_ids = {DEFAULT_USER_ID};
+    ctx.WriteBuffer(user_ids.data(), user_ids.size() * sizeof(u128));
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
-    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size());
+    // TODO(Subv): There is only one user for now.
+    const std::vector<u128> user_ids = {DEFAULT_USER_ID};
+    ctx.WriteBuffer(user_ids.data(), user_ids.size() * sizeof(u128));
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
