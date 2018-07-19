@@ -119,7 +119,7 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
 void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u64 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
-    LOG_DEBUG(Service_NS, "called, language_code=%lx", language_code);
+    LOG_DEBUG(Service_NS, "called, language_code={:X}", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
     std::vector<u32> font_codes;
     std::vector<u32> font_offsets;
