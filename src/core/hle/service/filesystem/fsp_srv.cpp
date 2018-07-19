@@ -3,8 +3,13 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <cstring>
+#include <string>
 #include <utility>
+#include <vector>
 
+#include "common/assert.h"
+#include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/core.h"
