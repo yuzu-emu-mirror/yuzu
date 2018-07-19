@@ -138,15 +138,15 @@ private:
         const std::vector<u8> data = ctx.ReadBuffer();
 
         ASSERT_MSG(
-            data.size() <= length,
+            static_cast<s64>(data.size()) <= length,
             "Attempting to write more data than requested (requested={:016X}, actual={:016X}).",
             length, data.size());
 
         // Write the data to the Storage backend
         std::vector<u8> actual_data(data.begin(), data.begin() + length);
-        const auto written = backend->WriteBytes(std::move(actual_data), offset);
+        const std::size_t written = backend->WriteBytes(std::move(actual_data), offset);
 
-        ASSERT_MSG(written == length,
+        ASSERT_MSG(static_cast<s64>(written) == length,
                    "Could not write all bytes to file (requested={:016X}, actual={:016X}).", length,
                    written);
 
