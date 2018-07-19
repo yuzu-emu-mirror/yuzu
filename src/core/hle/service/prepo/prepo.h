@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma once
+
 #include <memory>
 #include <string>
 #include "core/hle/kernel/event.h"
