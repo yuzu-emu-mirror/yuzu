@@ -115,11 +115,6 @@ static std::set<MemoryHookPointer> GetSpecialHandlers(const PageTable& page_tabl
     return result;
 }
 
-static std::set<MemoryHookPointer> GetSpecialHandlers(VAddr vaddr, u64 size) {
-    const PageTable& page_table = Core::CurrentProcess()->vm_manager.page_table;
-    return GetSpecialHandlers(page_table, vaddr, size);
-}
-
 /**
  * Gets a pointer to the exact memory at the virtual address (i.e. not page aligned)
  * using a VMA from the current process
@@ -586,8 +581,6 @@ void ZeroBlock(const Kernel::Process& process, const VAddr dest_addr, const size
     size_t remaining_size = size;
     size_t page_index = dest_addr >> PAGE_BITS;
     size_t page_offset = dest_addr & PAGE_MASK;
-
-    static const std::array<u8, PAGE_SIZE> zeros = {};
 
     while (remaining_size > 0) {
         const size_t copy_amount =
