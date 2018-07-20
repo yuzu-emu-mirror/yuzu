@@ -216,7 +216,7 @@ public:
     }
 
     /// Returns a GLSL string representing the current state of the register
-    const std::string GetActiveString() {
+    std::string GetActiveString() {
         declr_type.insert(active_type);
         return GetPrefixString(active_type) + std::to_string(index) + '_' + suffix;
     }
@@ -518,7 +518,7 @@ public:
 
 private:
     /// Build GLSL conversion function, e.g. floatBitsToInt, intBitsToFloat, etc.
-    const std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
+    std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
         const std::string src_type = GLSLRegister::GetTypeString(src);
         std::string dest_type = GLSLRegister::GetTypeString(dest);
         dest_type[0] = toupper(dest_type[0]);
