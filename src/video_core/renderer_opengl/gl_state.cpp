@@ -206,8 +206,9 @@ void OpenGLState::Apply() const {
     // Constbuffers
     for (std::size_t stage = 0; stage < draw.const_buffers.size(); ++stage) {
         for (std::size_t buffer_id = 0; buffer_id < draw.const_buffers[stage].size(); ++buffer_id) {
-            auto& current = cur_state.draw.const_buffers[stage][buffer_id];
-            auto& new_state = draw.const_buffers[stage][buffer_id];
+            const auto& current = cur_state.draw.const_buffers[stage][buffer_id];
+            const auto& new_state = draw.const_buffers[stage][buffer_id];
+
             if (current.enabled != new_state.enabled || current.bindpoint != new_state.bindpoint ||
                 current.ssbo != new_state.ssbo) {
                 if (new_state.enabled) {
