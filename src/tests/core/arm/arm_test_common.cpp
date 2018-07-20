@@ -65,10 +65,13 @@ boost::optional<bool> TestEnvironment::TestMemory::IsValidAddress(VAddr addr) {
 }
 
 boost::optional<u8> TestEnvironment::TestMemory::Read8(VAddr addr) {
-    auto iter = data.find(addr);
+    const auto iter = data.find(addr);
+
     if (iter == data.end()) {
-        return addr; // Some arbitrary data
+        // Some arbitrary data
+        return static_cast<u8>(addr);
     }
+
     return iter->second;
 }
 
