@@ -10,7 +10,7 @@ namespace Service::APM {
 
 class APM final : public ServiceFramework<APM> {
 public:
-    APM(std::shared_ptr<Module> apm, const char* name);
+    explicit APM(std::shared_ptr<Module> apm, const char* name);
     ~APM() = default;
 
 private:

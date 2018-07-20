@@ -579,7 +579,7 @@ private:
 
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
 public:
-    ISystemDisplayService() : ServiceFramework("ISystemDisplayService") {
+    explicit ISystemDisplayService() : ServiceFramework("ISystemDisplayService") {
         static const FunctionInfo functions[] = {
             {1200, nullptr, "GetZOrderCountMin"},
             {1202, nullptr, "GetZOrderCountMax"},
@@ -777,7 +777,7 @@ private:
 
 class IApplicationDisplayService final : public ServiceFramework<IApplicationDisplayService> {
 public:
-    IApplicationDisplayService(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
+    explicit IApplicationDisplayService(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger);
     ~IApplicationDisplayService() = default;
 
 private:

@@ -12,7 +12,7 @@ class Module final {
 public:
     class Interface : public ServiceFramework<Interface> {
     public:
-        Interface(std::shared_ptr<Module> module, const char* name);
+        explicit Interface(std::shared_ptr<Module> module, const char* name);
 
         void CreateUserInterface(Kernel::HLERequestContext& ctx);
 

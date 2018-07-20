@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
 #include <vector>
 #include "common/logging/log.h"
 #include "core/core_timing.h"
@@ -167,8 +168,8 @@ void AudOutU::ListAudioOutsImpl(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_Audio, "(STUBBED) called");
     IPC::RequestParser rp{ctx};
 
-    const std::string audio_interface = "AudioInterface";
-    ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+    constexpr std::array<char, 15> audio_interface{{"AudioInterface"}};
+    ctx.WriteBuffer(audio_interface);
 
     IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
 

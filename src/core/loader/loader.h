@@ -154,7 +154,7 @@ public:
     /**
      * Get the RomFS of the application
      * Since the RomFS can be huge, we return a file reference instead of copying to a buffer
-     * @param file The file containing the RomFS
+     * @param dir The directory containing the RomFS
      * @return ResultStatus result of function
      */
     virtual ResultStatus ReadRomFS(FileSys::VirtualFile& dir) {
@@ -193,8 +193,8 @@ extern const std::initializer_list<Kernel::AddressMapping> default_address_mappi
 
 /**
  * Identifies a bootable file and return a suitable loader
- * @param filename String filename of bootable file
- * @return best loader for this file
+ * @param file The bootable file
+ * @return the best loader for this file
  */
 std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file);
 

@@ -36,18 +36,18 @@ enum ThreadProcessorId : s32 {
                                      (1 << THREADPROCESSORID_2) | (1 << THREADPROCESSORID_3)
 };
 
-enum ThreadStatus {
-    THREADSTATUS_RUNNING,        ///< Currently running
-    THREADSTATUS_READY,          ///< Ready to run
-    THREADSTATUS_WAIT_HLE_EVENT, ///< Waiting for hle event to finish
-    THREADSTATUS_WAIT_SLEEP,     ///< Waiting due to a SleepThread SVC
-    THREADSTATUS_WAIT_IPC,       ///< Waiting for the reply from an IPC request
-    THREADSTATUS_WAIT_SYNCH_ANY, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
-    THREADSTATUS_WAIT_SYNCH_ALL, ///< Waiting due to WaitSynchronizationN with wait_all = true
-    THREADSTATUS_WAIT_MUTEX,     ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
-    THREADSTATUS_WAIT_ARB,       ///< Waiting due to a SignalToAddress/WaitForAddress svc
-    THREADSTATUS_DORMANT,        ///< Created but not yet made ready
-    THREADSTATUS_DEAD            ///< Run to completion, or forcefully terminated
+enum class ThreadStatus {
+    Running,      ///< Currently running
+    Ready,        ///< Ready to run
+    WaitHLEEvent, ///< Waiting for hle event to finish
+    WaitSleep,    ///< Waiting due to a SleepThread SVC
+    WaitIPC,      ///< Waiting for the reply from an IPC request
+    WaitSynchAny, ///< Waiting due to WaitSynch1 or WaitSynchN with wait_all = false
+    WaitSynchAll, ///< Waiting due to WaitSynchronizationN with wait_all = true
+    WaitMutex,    ///< Waiting due to an ArbitrateLock/WaitProcessWideKey svc
+    WaitArb,      ///< Waiting due to a SignalToAddress/WaitForAddress svc
+    Dormant,      ///< Created but not yet made ready
+    Dead          ///< Run to completion, or forcefully terminated
 };
 
 enum class ThreadWakeupReason {
@@ -194,14 +194,14 @@ public:
      * with wait_all = true.
      */
     bool IsSleepingOnWaitAll() const {
-        return status == THREADSTATUS_WAIT_SYNCH_ALL;
+        return status == ThreadStatus::WaitSynchAll;
     }
 
     ARM_Interface::ThreadContext context;
 
     u32 thread_id;
 
-    u32 status;
+    ThreadStatus status;
     VAddr entry_point;
     VAddr stack_top;
 

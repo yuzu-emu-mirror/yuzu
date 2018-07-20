@@ -119,7 +119,7 @@ void PL_U::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
 void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const u64 language_code{rp.Pop<u64>()}; // TODO(ogniK): Find out what this is used for
-    LOG_DEBUG(Service_NS, "called, language_code=%lx", language_code);
+    LOG_DEBUG(Service_NS, "called, language_code={:X}", language_code);
     IPC::ResponseBuilder rb{ctx, 4};
     std::vector<u32> font_codes;
     std::vector<u32> font_offsets;
@@ -132,9 +132,9 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
         font_sizes.push_back(SHARED_FONT_REGIONS[i].size);
     }
 
-    ctx.WriteBuffer(font_codes.data(), font_codes.size(), 0);
-    ctx.WriteBuffer(font_offsets.data(), font_offsets.size(), 1);
-    ctx.WriteBuffer(font_sizes.data(), font_sizes.size(), 2);
+    ctx.WriteBuffer(font_codes, 0);
+    ctx.WriteBuffer(font_offsets, 1);
+    ctx.WriteBuffer(font_sizes, 2);
 
     rb.Push(RESULT_SUCCESS);
     rb.Push<u8>(static_cast<u8>(LoadState::Done)); // Fonts Loaded

@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#pragma optimize("", off)
+#include <utility>
 
 #include "common/assert.h"
 #include "common/file_util.h"
@@ -25,14 +25,14 @@ constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
                                                        const std::string& dir_name) {
-    if (dir_name == "." || dir_name == "" || dir_name == "/" || dir_name == "\\")
+    if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
     return base->GetDirectoryRelative(dir_name);
 }
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
-    : backing(backing_) {}
+    : backing(std::move(backing_)) {}
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
@@ -193,6 +193,10 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     if (dir == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
     auto filename = FileUtil::GetFilename(path);
+    // TODO(Subv): Some games use the '/' path, find out what this means.
+    if (filename.empty())
+        return MakeResult(FileSys::EntryType::Directory);
+
     if (dir->GetFile(filename) != nullptr)
         return MakeResult(FileSys::EntryType::File);
     if (dir->GetSubdirectory(filename) != nullptr)

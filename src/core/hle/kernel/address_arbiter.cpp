@@ -20,7 +20,7 @@ namespace AddressArbiter {
 static ResultCode WaitForAddress(VAddr address, s64 timeout) {
     SharedPtr<Thread> current_thread = GetCurrentThread();
     current_thread->arb_wait_address = address;
-    current_thread->status = THREADSTATUS_WAIT_ARB;
+    current_thread->status = ThreadStatus::WaitArb;
     current_thread->wakeup_callback = nullptr;
 
     current_thread->WakeAfterDelay(timeout);
@@ -65,7 +65,7 @@ static void WakeThreads(std::vector<SharedPtr<Thread>>& waiting_threads, s32 num
 
     // Signal the waiting threads.
     for (size_t i = 0; i < last; i++) {
-        ASSERT(waiting_threads[i]->status == THREADSTATUS_WAIT_ARB);
+        ASSERT(waiting_threads[i]->status == ThreadStatus::WaitArb);
         waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
         waiting_threads[i]->arb_wait_address = 0;
         waiting_threads[i]->ResumeFromWait();

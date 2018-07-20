@@ -18,7 +18,7 @@ class nvmap;
 
 class nvhost_as_gpu final : public nvdevice {
 public:
-    nvhost_as_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvmap_dev(std::move(nvmap_dev)) {}
+    explicit nvhost_as_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvmap_dev(std::move(nvmap_dev)) {}
     ~nvhost_as_gpu() override = default;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;

@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/acc/acc.h"
@@ -24,18 +25,17 @@ struct UserData {
 static_assert(sizeof(UserData) == 0x80, "UserData structure has incorrect size");
 
 struct ProfileBase {
-    u8 user_id[0x10];
+    u128 user_id;
     u64 timestamp;
-    u8 username[0x20];
+    std::array<u8, 0x20> username;
 };
 static_assert(sizeof(ProfileBase) == 0x38, "ProfileBase structure has incorrect size");
 
-using Uid = std::array<u64, 2>;
-static constexpr Uid DEFAULT_USER_ID{0x10ull, 0x20ull};
+static constexpr u128 DEFAULT_USER_ID{1ull, 0ull};
 
 class IProfile final : public ServiceFramework<IProfile> {
 public:
-    IProfile() : ServiceFramework("IProfile") {
+    IProfile(u128 user_id) : ServiceFramework("IProfile"), user_id(user_id) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
@@ -48,11 +48,18 @@ public:
 private:
     void GetBase(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
+
+        // TODO(Subv): Retrieve this information from somewhere.
         ProfileBase profile_base{};
+        profile_base.user_id = user_id;
+        profile_base.username = {'y', 'u', 'z', 'u'};
+
         IPC::ResponseBuilder rb{ctx, 16};
         rb.Push(RESULT_SUCCESS);
         rb.PushRaw(profile_base);
     }
+
+    u128 user_id; ///< The user id this profile refers to.
 };
 
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
@@ -75,14 +82,16 @@ private:
         LOG_WARNING(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(true); // TODO: Check when this is supposed to return true and when not
+        rb.Push(false); // TODO: Check when this is supposed to return true and when not
     }
 
     void GetAccountId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 4};
-        rb.Push(RESULT_SUCCESS);
-        rb.Push<u64>(0x12345678ABCDEF);
+        // TODO(Subv): Find out what this actually does and implement it. Stub it as an error for
+        // now since we do not implement NNID. Returning a bogus id here will cause games to send
+        // invalid IPC requests after ListOpenUsers is called.
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultCode(-1));
     }
 };
 
@@ -95,25 +104,29 @@ void Module::Interface::GetUserExistence(Kernel::HLERequestContext& ctx) {
 
 void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
-    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size());
+    // TODO(Subv): There is only one user for now.
+    const std::vector<u128> user_ids = {DEFAULT_USER_ID};
+    ctx.WriteBuffer(user_ids);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
-    constexpr std::array<u128, 10> user_ids{DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size());
+    // TODO(Subv): There is only one user for now.
+    const std::vector<u128> user_ids = {DEFAULT_USER_ID};
+    ctx.WriteBuffer(user_ids);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    u128 user_id = rp.PopRaw<u128>();
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IProfile>();
-    LOG_DEBUG(Service_ACC, "called");
+    rb.PushIpcInterface<IProfile>(user_id);
+    LOG_DEBUG(Service_ACC, "called user_id=0x{:016X}{:016X}", user_id[1], user_id[0]);
 }
 
 void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {

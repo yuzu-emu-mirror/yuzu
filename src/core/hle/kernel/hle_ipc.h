@@ -5,8 +5,10 @@
 #pragma once
 
 #include <array>
+#include <iterator>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <boost/container/small_vector.hpp>
 #include "common/common_types.h"
@@ -171,8 +173,25 @@ public:
     /// Helper function to write a buffer using the appropriate buffer descriptor
     size_t WriteBuffer(const void* buffer, size_t size, int buffer_index = 0) const;
 
-    /// Helper function to write a buffer using the appropriate buffer descriptor
-    size_t WriteBuffer(const std::vector<u8>& buffer, int buffer_index = 0) const;
+    /* Helper function to write a buffer using the appropriate buffer descriptor
+     *
+     * @tparam ContiguousContainer an arbitrary container that satisfies the
+     *         ContiguousContainer concept in the C++ standard library.
+     *
+     * @param container    The container to write the data of into a buffer.
+     * @param buffer_index The buffer in particular to write to.
+     */
+    template <typename ContiguousContainer,
+              typename = std::enable_if_t<!std::is_pointer_v<ContiguousContainer>>>
+    size_t WriteBuffer(const ContiguousContainer& container, int buffer_index = 0) const {
+        using ContiguousType = typename ContiguousContainer::value_type;
+
+        static_assert(std::is_trivially_copyable_v<ContiguousType>,
+                      "Container to WriteBuffer must contain trivially copyable objects");
+
+        return WriteBuffer(std::data(container), std::size(container) * sizeof(ContiguousType),
+                           buffer_index);
+    }
 
     /// Helper function to get the size of the input buffer
     size_t GetReadBufferSize(int buffer_index = 0) const;

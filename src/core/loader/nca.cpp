@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
 #include <vector>
 
 #include "common/file_util.h"
@@ -21,7 +22,7 @@
 
 namespace Loader {
 
-AppLoader_NCA::AppLoader_NCA(FileSys::VirtualFile file) : AppLoader(file) {}
+AppLoader_NCA::AppLoader_NCA(FileSys::VirtualFile file) : AppLoader(std::move(file)) {}
 
 FileType AppLoader_NCA::IdentifyType(const FileSys::VirtualFile& file) {
     // TODO(DarkLordZach): Assuming everything is decrypted. Add crypto support.

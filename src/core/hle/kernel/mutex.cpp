@@ -28,7 +28,7 @@ static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(
         if (thread->mutex_wait_address != mutex_addr)
             continue;
 
-        ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+        ASSERT(thread->status == ThreadStatus::WaitMutex);
 
         ++num_waiters;
         if (highest_priority_thread == nullptr ||
@@ -83,7 +83,7 @@ ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
     GetCurrentThread()->mutex_wait_address = address;
     GetCurrentThread()->wait_handle = requesting_thread_handle;
 
-    GetCurrentThread()->status = THREADSTATUS_WAIT_MUTEX;
+    GetCurrentThread()->status = ThreadStatus::WaitMutex;
     GetCurrentThread()->wakeup_callback = nullptr;
 
     // Update the lock holder thread's priority to prevent priority inversion.
@@ -121,7 +121,7 @@ ResultCode Mutex::Release(VAddr address) {
     // Grant the mutex to the next waiting thread and resume it.
     Memory::Write32(address, mutex_value);
 
-    ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+    ASSERT(thread->status == ThreadStatus::WaitMutex);
     thread->ResumeFromWait();
 
     thread->lock_owner = nullptr;

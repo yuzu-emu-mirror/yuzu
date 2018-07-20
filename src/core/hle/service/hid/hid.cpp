@@ -85,8 +85,7 @@ private:
         controller_header.left_color_buttons = JOYCON_BUTTONS_NEON_BLUE;
 
         for (size_t controller = 0; controller < mem.controllers.size(); controller++) {
-            for (int index = 0; index < HID_NUM_LAYOUTS; index++) {
-                ControllerLayout& layout = mem.controllers[controller].layouts[index];
+            for (auto& layout : mem.controllers[controller].layouts) {
                 layout.header.num_entries = HID_NUM_ENTRIES;
                 layout.header.max_entry_index = HID_NUM_ENTRIES - 1;
 
@@ -213,8 +212,7 @@ private:
         keyboard.entries[curr_keyboard_entry].timestamp_2 = keyboard_sample_counter;
 
         // TODO(shinyquagsire23): Figure out what any of these are
-        for (size_t i = 0; i < mem.unk_input_1.size(); i++) {
-            UnkInput1& input = mem.unk_input_1[i];
+        for (auto& input : mem.unk_input_1) {
             const u64 last_input_entry = input.header.latest_entry;
             const u64 curr_input_entry = (input.header.latest_entry + 1) % input.entries.size();
             const u64 input_sample_counter = input.entries[last_input_entry].timestamp + 1;
@@ -228,9 +226,7 @@ private:
             input.entries[curr_input_entry].timestamp_2 = input_sample_counter;
         }
 
-        for (size_t i = 0; i < mem.unk_input_2.size(); i++) {
-            UnkInput2& input = mem.unk_input_2[i];
-
+        for (auto& input : mem.unk_input_2) {
             input.header.timestamp_ticks = timestamp;
             input.header.num_entries = 17;
             input.header.latest_entry = 0;

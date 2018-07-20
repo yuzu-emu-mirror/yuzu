@@ -37,7 +37,7 @@ struct SaveDataDescriptor {
     u64_le zero_2;
     u64_le zero_3;
 
-    std::string DebugInfo();
+    std::string DebugInfo() const;
 };
 static_assert(sizeof(SaveDataDescriptor) == 0x40, "SaveDataDescriptor has incorrect size.");
 

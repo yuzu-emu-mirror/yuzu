@@ -181,30 +181,34 @@ void OpenGLState::Apply() const {
     }
 
     // Textures
-    for (int i = 0; i < std::size(texture_units); ++i) {
-        if (texture_units[i].texture_2d != cur_state.texture_units[i].texture_2d) {
-            glActiveTexture(TextureUnits::MaxwellTexture(i).Enum());
-            glBindTexture(GL_TEXTURE_2D, texture_units[i].texture_2d);
+    for (std::size_t i = 0; i < std::size(texture_units); ++i) {
+        const auto& texture_unit = texture_units[i];
+        const auto& cur_state_texture_unit = cur_state.texture_units[i];
+
+        if (texture_unit.texture_2d != cur_state_texture_unit.texture_2d) {
+            glActiveTexture(TextureUnits::MaxwellTexture(static_cast<int>(i)).Enum());
+            glBindTexture(GL_TEXTURE_2D, texture_unit.texture_2d);
         }
-        if (texture_units[i].sampler != cur_state.texture_units[i].sampler) {
-            glBindSampler(static_cast<GLuint>(i), texture_units[i].sampler);
+        if (texture_unit.sampler != cur_state_texture_unit.sampler) {
+            glBindSampler(static_cast<GLuint>(i), texture_unit.sampler);
         }
         // Update the texture swizzle
-        if (texture_units[i].swizzle.r != cur_state.texture_units[i].swizzle.r ||
-            texture_units[i].swizzle.g != cur_state.texture_units[i].swizzle.g ||
-            texture_units[i].swizzle.b != cur_state.texture_units[i].swizzle.b ||
-            texture_units[i].swizzle.a != cur_state.texture_units[i].swizzle.a) {
-            std::array<GLint, 4> mask = {texture_units[i].swizzle.r, texture_units[i].swizzle.g,
-                                         texture_units[i].swizzle.b, texture_units[i].swizzle.a};
+        if (texture_unit.swizzle.r != cur_state_texture_unit.swizzle.r ||
+            texture_unit.swizzle.g != cur_state_texture_unit.swizzle.g ||
+            texture_unit.swizzle.b != cur_state_texture_unit.swizzle.b ||
+            texture_unit.swizzle.a != cur_state_texture_unit.swizzle.a) {
+            std::array<GLint, 4> mask = {texture_unit.swizzle.r, texture_unit.swizzle.g,
+                                         texture_unit.swizzle.b, texture_unit.swizzle.a};
             glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask.data());
         }
     }
 
     // Constbuffers
-    for (u32 stage = 0; stage < draw.const_buffers.size(); ++stage) {
-        for (u32 buffer_id = 0; buffer_id < draw.const_buffers[stage].size(); ++buffer_id) {
-            auto& current = cur_state.draw.const_buffers[stage][buffer_id];
-            auto& new_state = draw.const_buffers[stage][buffer_id];
+    for (std::size_t stage = 0; stage < draw.const_buffers.size(); ++stage) {
+        for (std::size_t buffer_id = 0; buffer_id < draw.const_buffers[stage].size(); ++buffer_id) {
+            const auto& current = cur_state.draw.const_buffers[stage][buffer_id];
+            const auto& new_state = draw.const_buffers[stage][buffer_id];
+
             if (current.enabled != new_state.enabled || current.bindpoint != new_state.bindpoint ||
                 current.ssbo != new_state.ssbo) {
                 if (new_state.enabled) {

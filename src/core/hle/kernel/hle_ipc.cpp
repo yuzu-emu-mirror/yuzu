@@ -38,7 +38,7 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
     thread->wakeup_callback =
         [context = *this, callback](ThreadWakeupReason reason, SharedPtr<Thread> thread,
                                     SharedPtr<WaitObject> object, size_t index) mutable -> bool {
-        ASSERT(thread->status == THREADSTATUS_WAIT_HLE_EVENT);
+        ASSERT(thread->status == ThreadStatus::WaitHLEEvent);
         callback(thread, context, reason);
         context.WriteToOutgoingCommandBuffer(*thread);
         return true;
@@ -50,7 +50,7 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
     }
 
     event->Clear();
-    thread->status = THREADSTATUS_WAIT_HLE_EVENT;
+    thread->status = ThreadStatus::WaitHLEEvent;
     thread->wait_objects = {event};
     event->AddWaitingThread(thread);
 
@@ -299,10 +299,6 @@ size_t HLERequestContext::WriteBuffer(const void* buffer, size_t size, int buffe
     }
 
     return size;
-}
-
-size_t HLERequestContext::WriteBuffer(const std::vector<u8>& buffer, int buffer_index) const {
-    return WriteBuffer(buffer.data(), buffer.size());
 }
 
 size_t HLERequestContext::GetReadBufferSize(int buffer_index) const {

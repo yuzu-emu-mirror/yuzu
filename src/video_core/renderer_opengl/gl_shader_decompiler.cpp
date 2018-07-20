@@ -216,7 +216,7 @@ public:
     }
 
     /// Returns a GLSL string representing the current state of the register
-    const std::string GetActiveString() {
+    std::string GetActiveString() {
         declr_type.insert(active_type);
         return GetPrefixString(active_type) + std::to_string(index) + '_' + suffix;
     }
@@ -518,7 +518,7 @@ public:
 
 private:
     /// Build GLSL conversion function, e.g. floatBitsToInt, intBitsToFloat, etc.
-    const std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
+    std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
         const std::string src_type = GLSLRegister::GetTypeString(src);
         std::string dest_type = GLSLRegister::GetTypeString(dest);
         dest_type[0] = toupper(dest_type[0]);
@@ -1405,7 +1405,7 @@ private:
 
                 // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
                 // goes into gpr28+0 and gpr28+1
-                size_t offset{};
+                size_t texs_offset{};
 
                 for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
                     for (unsigned elem = 0; elem < 2; ++elem) {
@@ -1413,7 +1413,8 @@ private:
                             // Skip disabled components
                             continue;
                         }
-                        regs.SetRegisterToFloat(dest, elem + offset, texture, 1, 4, false, elem);
+                        regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false,
+                                                elem);
                     }
 
                     if (!instr.texs.HasTwoDestinations()) {
@@ -1421,7 +1422,7 @@ private:
                         break;
                     }
 
-                    offset += 2;
+                    texs_offset += 2;
                 }
                 --shader.scope;
                 shader.AddLine("}");
@@ -1463,7 +1464,6 @@ private:
                 op_b = "abs(" + op_b + ')';
             }
 
-            using Tegra::Shader::Pred;
             // We can't use the constant predicate as destination.
             ASSERT(instr.fsetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
 
@@ -1500,7 +1500,6 @@ private:
                 }
             }
 
-            using Tegra::Shader::Pred;
             // We can't use the constant predicate as destination.
             ASSERT(instr.isetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
 
@@ -1528,7 +1527,6 @@ private:
             std::string op_b =
                 GetPredicateCondition(instr.psetp.pred29, instr.psetp.neg_pred29 != 0);
 
-            using Tegra::Shader::Pred;
             // We can't use the constant predicate as destination.
             ASSERT(instr.psetp.pred3 != static_cast<u64>(Pred::UnusedIndex));
 

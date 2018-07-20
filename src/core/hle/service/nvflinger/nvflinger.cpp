@@ -23,15 +23,10 @@ constexpr u64 frame_ticks = static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / SCREE
 
 NVFlinger::NVFlinger() {
     // Add the different displays to the list of displays.
-    Display default_{0, "Default"};
-    Display external{1, "External"};
-    Display edid{2, "Edid"};
-    Display internal{3, "Internal"};
-
-    displays.emplace_back(default_);
-    displays.emplace_back(external);
-    displays.emplace_back(edid);
-    displays.emplace_back(internal);
+    displays.emplace_back(0, "Default");
+    displays.emplace_back(1, "External");
+    displays.emplace_back(2, "Edid");
+    displays.emplace_back(3, "Internal");
 
     // Schedule the screen composition events
     composition_event =
