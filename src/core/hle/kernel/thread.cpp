@@ -30,7 +30,7 @@ namespace Kernel {
 static CoreTiming::EventType* ThreadWakeupEventType = nullptr;
 
 bool Thread::ShouldWait(Thread* thread) const {
-    return status != THREADSTATUS_DEAD;
+    return status != ThreadStatus::Dead;
 }
 
 void Thread::Acquire(Thread* thread) {
@@ -63,11 +63,11 @@ void Thread::Stop() {
 
     // Clean up thread from ready queue
     // This is only needed when the thread is termintated forcefully (SVC TerminateProcess)
-    if (status == THREADSTATUS_READY) {
+    if (status == ThreadStatus::Ready) {
         scheduler->UnscheduleThread(this, current_priority);
     }
 
-    status = THREADSTATUS_DEAD;
+    status = ThreadStatus::Dead;
 
     WakeupAllWaitingThreads();
 
@@ -86,7 +86,7 @@ void Thread::Stop() {
 
 void WaitCurrentThread_Sleep() {
     Thread* thread = GetCurrentThread();
-    thread->status = THREADSTATUS_WAIT_SLEEP;
+    thread->status = ThreadStatus::WaitSleep;
 }
 
 void ExitCurrentThread() {
@@ -110,10 +110,9 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
 
     bool resume = true;
 
-    if (thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
-        thread->status == THREADSTATUS_WAIT_SYNCH_ALL ||
-        thread->status == THREADSTATUS_WAIT_HLE_EVENT) {
-
+    if (thread->status == ThreadStatus::WaitSynchAny ||
+        thread->status == ThreadStatus::WaitSynchAll ||
+        thread->status == ThreadStatus::WaitHLEEvent) {
         // Remove the thread from each of its waiting objects' waitlists
         for (auto& object : thread->wait_objects)
             object->RemoveWaitingThread(thread.get());
@@ -126,7 +125,7 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
 
     if (thread->mutex_wait_address != 0 || thread->condvar_wait_address != 0 ||
         thread->wait_handle) {
-        ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+        ASSERT(thread->status == ThreadStatus::WaitMutex);
         thread->mutex_wait_address = 0;
         thread->condvar_wait_address = 0;
         thread->wait_handle = 0;
@@ -141,7 +140,7 @@ static void ThreadWakeupCallback(u64 thread_handle, int cycles_late) {
     }
 
     if (thread->arb_wait_address != 0) {
-        ASSERT(thread->status == THREADSTATUS_WAIT_ARB);
+        ASSERT(thread->status == ThreadStatus::WaitArb);
         thread->arb_wait_address = 0;
     }
 
@@ -178,28 +177,28 @@ void Thread::ResumeFromWait() {
     ASSERT_MSG(wait_objects.empty(), "Thread is waking up while waiting for objects");
 
     switch (status) {
-    case THREADSTATUS_WAIT_SYNCH_ALL:
-    case THREADSTATUS_WAIT_SYNCH_ANY:
-    case THREADSTATUS_WAIT_HLE_EVENT:
-    case THREADSTATUS_WAIT_SLEEP:
-    case THREADSTATUS_WAIT_IPC:
-    case THREADSTATUS_WAIT_MUTEX:
-    case THREADSTATUS_WAIT_ARB:
+    case ThreadStatus::WaitSynchAll:
+    case ThreadStatus::WaitSynchAny:
+    case ThreadStatus::WaitHLEEvent:
+    case ThreadStatus::WaitSleep:
+    case ThreadStatus::WaitIPC:
+    case ThreadStatus::WaitMutex:
+    case ThreadStatus::WaitArb:
         break;
 
-    case THREADSTATUS_READY:
+    case ThreadStatus::Ready:
         // The thread's wakeup callback must have already been cleared when the thread was first
         // awoken.
         ASSERT(wakeup_callback == nullptr);
         // If the thread is waiting on multiple wait objects, it might be awoken more than once
         // before actually resuming. We can ignore subsequent wakeups if the thread status has
-        // already been set to THREADSTATUS_READY.
+        // already been set to ThreadStatus::Ready.
         return;
 
-    case THREADSTATUS_RUNNING:
+    case ThreadStatus::Running:
         DEBUG_ASSERT_MSG(false, "Thread with object id {} has already resumed.", GetObjectId());
         return;
-    case THREADSTATUS_DEAD:
+    case ThreadStatus::Dead:
         // This should never happen, as threads must complete before being stopped.
         DEBUG_ASSERT_MSG(false, "Thread with object id {} cannot be resumed because it's DEAD.",
                          GetObjectId());
@@ -208,7 +207,7 @@ void Thread::ResumeFromWait() {
 
     wakeup_callback = nullptr;
 
-    status = THREADSTATUS_READY;
+    status = ThreadStatus::Ready;
 
     boost::optional<s32> new_processor_id = GetNextProcessorId(affinity_mask);
     if (!new_processor_id) {
@@ -310,7 +309,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     SharedPtr<Thread> thread(new Thread);
 
     thread->thread_id = NewThreadId();
-    thread->status = THREADSTATUS_DORMANT;
+    thread->status = ThreadStatus::Dormant;
     thread->entry_point = entry_point;
     thread->stack_top = stack_top;
     thread->nominal_priority = thread->current_priority = priority;
@@ -471,7 +470,7 @@ void Thread::ChangeCore(u32 core, u64 mask) {
     ideal_core = core;
     affinity_mask = mask;
 
-    if (status != THREADSTATUS_READY) {
+    if (status != ThreadStatus::Ready) {
         return;
     }
 
