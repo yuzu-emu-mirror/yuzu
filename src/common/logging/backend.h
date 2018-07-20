@@ -4,11 +4,9 @@
 #pragma once
 
 #include <chrono>
-#include <cstdarg>
 #include <memory>
 #include <string>
 #include <string_view>
-#include <utility>
 #include "common/file_util.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
