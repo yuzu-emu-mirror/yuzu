@@ -79,19 +79,6 @@ static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
     return uncompressed_data;
 }
 
-static std::vector<u8> ReadSegment(FileUtil::IOFile& file, const NsoSegmentHeader& header,
-                                   size_t compressed_size) {
-    std::vector<u8> compressed_data(compressed_size);
-
-    file.Seek(header.offset, SEEK_SET);
-    if (compressed_size != file.ReadBytes(compressed_data.data(), compressed_size)) {
-        LOG_CRITICAL(Loader, "Failed to read {} NSO LZ4 compressed bytes", compressed_size);
-        return {};
-    }
-
-    return DecompressSegment(compressed_data, header);
-}
-
 static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
