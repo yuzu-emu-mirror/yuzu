@@ -76,7 +76,7 @@ std::vector<std::shared_ptr<VfsFile>> PartitionFilesystem::GetFiles() const {
 }
 
 std::vector<std::shared_ptr<VfsDirectory>> PartitionFilesystem::GetSubdirectories() const {
-    return {};
+    return pfs_dirs;
 }
 
 std::string PartitionFilesystem::GetName() const {
