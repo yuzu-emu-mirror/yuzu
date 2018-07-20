@@ -380,7 +380,7 @@ static_assert(sizeof(ControllerLayout) == 0x350,
 
 struct Controller {
     ControllerHeader header;
-    std::array<ControllerLayout, 7> layouts;
+    std::array<ControllerLayout, HID_NUM_LAYOUTS> layouts;
     std::array<u8, 0x2a70> unk_1;
     ControllerMAC mac_left;
     ControllerMAC mac_right;

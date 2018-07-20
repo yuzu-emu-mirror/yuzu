@@ -3,6 +3,14 @@
 // Refer to the license.txt file included.
 
 #include <cinttypes>
+#include <cstring>
+#include <iterator>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "common/assert.h"
+#include "common/common_types.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/core.h"
@@ -26,7 +34,7 @@ enum class StorageId : u8 {
 
 class IStorage final : public ServiceFramework<IStorage> {
 public:
-    IStorage(FileSys::VirtualFile backend_)
+    explicit IStorage(FileSys::VirtualFile backend_)
         : ServiceFramework("IStorage"), backend(std::move(backend_)) {
         static const FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"}, {1, nullptr, "Write"},   {2, nullptr, "Flush"},
@@ -133,19 +141,19 @@ private:
             return;
         }
 
-        std::vector<u8> data = ctx.ReadBuffer();
-        std::vector<u8> actual_data(length);
+        const std::vector<u8> data = ctx.ReadBuffer();
 
         ASSERT_MSG(
-            data.size() <= length,
+            static_cast<s64>(data.size()) <= length,
             "Attempting to write more data than requested (requested={:016X}, actual={:016X}).",
             length, data.size());
 
-        std::copy(data.begin(), data.end(), actual_data.begin());
         // Write the data to the Storage backend
-        auto written = backend->WriteBytes(data, offset);
+        const auto write_size =
+            static_cast<std::size_t>(std::distance(data.begin(), data.begin() + length));
+        const std::size_t written = backend->Write(data.data(), write_size, offset);
 
-        ASSERT_MSG(written == length,
+        ASSERT_MSG(static_cast<s64>(written) == length,
                    "Could not write all bytes to file (requested={:016X}, actual={:016X}).", length,
                    written);
 
@@ -223,23 +231,20 @@ private:
         LOG_DEBUG(Service_FS, "called, unk=0x{:X}", unk);
 
         // Calculate how many entries we can fit in the output buffer
-        u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
+        const u64 count_entries = ctx.GetWriteBufferSize() / sizeof(FileSys::Entry);
 
         // Cap at total number of entries.
-        u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
+        const u64 actual_entries = std::min(count_entries, entries.size() - next_entry_index);
 
-        // Read the data from the Directory backend
-        std::vector<FileSys::Entry> entry_data(entries.begin() + next_entry_index,
-                                               entries.begin() + next_entry_index + actual_entries);
+        // Determine data start and end
+        const auto* begin = reinterpret_cast<u8*>(entries.data() + next_entry_index);
+        const auto* end = reinterpret_cast<u8*>(entries.data() + next_entry_index + actual_entries);
+        const auto range_size = static_cast<std::size_t>(std::distance(begin, end));
 
         next_entry_index += actual_entries;
 
-        // Convert the data into a byte array
-        std::vector<u8> output(entry_data.size() * sizeof(FileSys::Entry));
-        std::memcpy(output.data(), entry_data.data(), output.size());
-
         // Write the data to memory
-        ctx.WriteBuffer(output);
+        ctx.WriteBuffer(begin, range_size);
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);

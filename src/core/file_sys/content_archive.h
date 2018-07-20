@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
@@ -48,7 +53,7 @@ struct NCAHeader {
 };
 static_assert(sizeof(NCAHeader) == 0x400, "NCAHeader has incorrect size.");
 
-inline bool IsDirectoryExeFS(std::shared_ptr<FileSys::VfsDirectory> pfs) {
+inline bool IsDirectoryExeFS(const std::shared_ptr<VfsDirectory>& pfs) {
     // According to switchbrew, an exefs must only contain these two files:
     return pfs->GetFile("main") != nullptr && pfs->GetFile("main.npdm") != nullptr;
 }

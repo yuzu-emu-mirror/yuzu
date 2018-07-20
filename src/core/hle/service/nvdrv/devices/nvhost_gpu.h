@@ -18,7 +18,7 @@ constexpr u32 NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO(0x8);
 
 class nvhost_gpu final : public nvdevice {
 public:
-    nvhost_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvmap_dev(std::move(nvmap_dev)) {}
+    explicit nvhost_gpu(std::shared_ptr<nvmap> nvmap_dev) : nvmap_dev(std::move(nvmap_dev)) {}
     ~nvhost_gpu() override = default;
 
     u32 ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u8>& output) override;

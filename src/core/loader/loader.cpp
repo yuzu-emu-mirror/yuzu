@@ -87,8 +87,8 @@ const char* GetFileTypeString(FileType type) {
  * Get a loader for a file with a specific type
  * @param file The file to load
  * @param type The type of the file
- * @param filename the file name (without path)
- * @param filepath the file full path (with name)
+ * @param file the file to retrieve the loader for
+ * @param type the file type
  * @return std::unique_ptr<AppLoader> a pointer to a loader object;  nullptr for unsupported type
  */
 static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileType type) {

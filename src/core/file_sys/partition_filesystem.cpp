@@ -11,6 +11,11 @@
 
 namespace FileSys {
 
+bool PartitionFilesystem::Header::HasValidMagicValue() const {
+    return magic == Common::MakeMagic('H', 'F', 'S', '0') ||
+           magic == Common::MakeMagic('P', 'F', 'S', '0');
+}
+
 PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
     // At least be as large as the header
     if (file->GetSize() < sizeof(Header)) {
@@ -20,19 +25,17 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
 
     // For cartridges, HFSs can get very large, so we need to calculate the size up to
     // the actual content itself instead of just blindly reading in the entire file.
-    Header pfs_header;
     if (sizeof(Header) != file->ReadObject(&pfs_header)) {
         status = Loader::ResultStatus::Error;
         return;
     }
 
-    if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
-        pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
+    if (!pfs_header.HasValidMagicValue()) {
         status = Loader::ResultStatus::ErrorInvalidFormat;
         return;
     }
 
-    bool is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
+    is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
     size_t entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
     size_t metadata_size =
@@ -40,26 +43,12 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
 
     // Actually read in now...
     std::vector<u8> file_data = file->ReadBytes(metadata_size);
+    const size_t total_size = file_data.size();
 
-    if (file_data.size() != metadata_size) {
+    if (total_size != metadata_size) {
         status = Loader::ResultStatus::Error;
         return;
     }
-
-    size_t total_size = file_data.size();
-    if (total_size < sizeof(Header)) {
-        status = Loader::ResultStatus::Error;
-        return;
-    }
-
-    memcpy(&pfs_header, file_data.data(), sizeof(Header));
-    if (pfs_header.magic != Common::MakeMagic('H', 'F', 'S', '0') &&
-        pfs_header.magic != Common::MakeMagic('P', 'F', 'S', '0')) {
-        status = Loader::ResultStatus::ErrorInvalidFormat;
-        return;
-    }
-
-    is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
     size_t entries_offset = sizeof(Header);
     size_t strtab_offset = entries_offset + (pfs_header.num_entries * entry_size);

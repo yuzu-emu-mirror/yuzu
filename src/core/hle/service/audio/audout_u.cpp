@@ -168,7 +168,7 @@ void AudOutU::ListAudioOutsImpl(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const std::string audio_interface = "AudioInterface";
-    ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+    ctx.WriteBuffer(audio_interface);
 
     IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
 

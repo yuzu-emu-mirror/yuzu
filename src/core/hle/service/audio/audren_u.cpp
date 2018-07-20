@@ -17,7 +17,7 @@ constexpr u64 audio_ticks{static_cast<u64>(CoreTiming::BASE_CLOCK_RATE / 200)};
 
 class IAudioRenderer final : public ServiceFramework<IAudioRenderer> {
 public:
-    IAudioRenderer(AudioRendererParameter audren_params)
+    explicit IAudioRenderer(AudioRendererParameter audren_params)
         : ServiceFramework("IAudioRenderer"), worker_params(audren_params) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetAudioRendererSampleRate"},
@@ -176,7 +176,7 @@ private:
     struct UpdateDataHeader {
         UpdateDataHeader() {}
 
-        UpdateDataHeader(const AudioRendererParameter& config) {
+        explicit UpdateDataHeader(const AudioRendererParameter& config) {
             revision = Common::MakeMagic('R', 'E', 'V', '4'); // 5.1.0 Revision
             behavior_size = 0xb0;
             memory_pools_size = (config.effect_count + (config.voice_count * 4)) * 0x10;
@@ -299,7 +299,7 @@ private:
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioInterface";
-        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+        ctx.WriteBuffer(audio_interface);
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
         rb.Push(RESULT_SUCCESS);
@@ -324,7 +324,7 @@ private:
         IPC::RequestParser rp{ctx};
 
         const std::string audio_interface = "AudioDevice";
-        ctx.WriteBuffer(audio_interface.c_str(), audio_interface.size());
+        ctx.WriteBuffer(audio_interface);
 
         IPC::ResponseBuilder rb = rp.MakeBuilder(3, 0, 0);
         rb.Push(RESULT_SUCCESS);

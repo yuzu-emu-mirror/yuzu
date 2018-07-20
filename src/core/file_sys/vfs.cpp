@@ -116,14 +116,14 @@ bool VfsDirectory::IsRoot() const {
 
 size_t VfsDirectory::GetSize() const {
     const auto& files = GetFiles();
-    const auto file_total =
-        std::accumulate(files.begin(), files.end(), 0ull,
-                        [](const auto& f1, const auto& f2) { return f1 + f2->GetSize(); });
+    const auto sum_sizes = [](const auto& range) {
+        return std::accumulate(range.begin(), range.end(), 0ULL,
+                               [](const auto& f1, const auto& f2) { return f1 + f2->GetSize(); });
+    };
 
+    const auto file_total = sum_sizes(files);
     const auto& sub_dir = GetSubdirectories();
-    const auto subdir_total =
-        std::accumulate(sub_dir.begin(), sub_dir.end(), 0ull,
-                        [](const auto& f1, const auto& f2) { return f1 + f2->GetSize(); });
+    const auto subdir_total = sum_sizes(sub_dir);
 
     return file_total + subdir_total;
 }

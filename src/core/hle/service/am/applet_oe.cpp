@@ -12,7 +12,7 @@ namespace Service::AM {
 
 class IApplicationProxy final : public ServiceFramework<IApplicationProxy> {
 public:
-    IApplicationProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
+    explicit IApplicationProxy(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
         : ServiceFramework("IApplicationProxy"), nvflinger(std::move(nvflinger)) {
         static const FunctionInfo functions[] = {
             {0, &IApplicationProxy::GetCommonStateGetter, "GetCommonStateGetter"},
