@@ -317,8 +317,6 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
     auto& tex_info_buffer = fragment_shader.const_buffers[regs.tex_cb_index];
     ASSERT(tex_info_buffer.enabled && tex_info_buffer.address != 0);
 
-    GPUVAddr tic_base_address = regs.tic.TICAddress();
-
     GPUVAddr tex_info_buffer_end = tex_info_buffer.address + tex_info_buffer.size;
 
     // Offset into the texture constbuffer where the texture info begins.
