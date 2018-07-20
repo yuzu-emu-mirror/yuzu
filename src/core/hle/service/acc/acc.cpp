@@ -82,14 +82,16 @@ private:
         LOG_WARNING(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(true); // TODO: Check when this is supposed to return true and when not
+        rb.Push(false); // TODO: Check when this is supposed to return true and when not
     }
 
     void GetAccountId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
-        IPC::ResponseBuilder rb{ctx, 4};
-        rb.Push(RESULT_SUCCESS);
-        rb.Push<u64>(0x12345678ABCDEF);
+        // TODO(Subv): Find out what this actually does and implement it. Stub it as an error for
+        // now since we do not implement NNID. Returning a bogus id here will cause games to send
+        // invalid IPC requests after ListOpenUsers is called.
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultCode(-1));
     }
 };
 
@@ -104,7 +106,7 @@ void Module::Interface::ListAllUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
     // TODO(Subv): There is only one user for now.
     const std::vector<u128> user_ids = {DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size() * sizeof(u128));
+    ctx.WriteBuffer(user_ids);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -113,7 +115,7 @@ void Module::Interface::ListOpenUsers(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
     // TODO(Subv): There is only one user for now.
     const std::vector<u128> user_ids = {DEFAULT_USER_ID};
-    ctx.WriteBuffer(user_ids.data(), user_ids.size() * sizeof(u128));
+    ctx.WriteBuffer(user_ids);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
