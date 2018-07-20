@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
 #include <vector>
 
 #include "common/common_funcs.h"
@@ -48,7 +49,7 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {}
+AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(std::move(file)) {}
 
 FileType AppLoader_NRO::IdentifyType(const FileSys::VirtualFile& file) {
     // Read NSO header
