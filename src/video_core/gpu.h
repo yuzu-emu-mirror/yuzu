@@ -93,14 +93,13 @@ public:
     /// Processes a command list stored at the specified address in GPU memory.
     void ProcessCommandList(GPUVAddr address, u32 size);
 
+    /// Returns a const reference to the Maxwell3D GPU engine.
+    const Engines::Maxwell3D& Maxwell3D() const;
+
     /// Returns a reference to the Maxwell3D GPU engine.
-    const Engines::Maxwell3D& Get3DEngine() const;
+    Engines::Maxwell3D& Maxwell3D();
 
     std::unique_ptr<MemoryManager> memory_manager;
-
-    Engines::Maxwell3D& Maxwell3D() {
-        return *maxwell_3d;
-    }
 
 private:
     /// Writes a single register in the engine bound to the specified subchannel

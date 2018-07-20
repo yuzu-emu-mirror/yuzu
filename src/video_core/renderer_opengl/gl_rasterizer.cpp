@@ -634,8 +634,8 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
 u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint program,
                                         u32 current_bindpoint,
                                         const std::vector<GLShader::ConstBufferEntry>& entries) {
-    auto& gpu = Core::System::GetInstance().GPU();
-    auto& maxwell3d = gpu.Get3DEngine();
+    const auto& gpu = Core::System::GetInstance().GPU();
+    const auto& maxwell3d = gpu.Maxwell3D();
 
     // Reset all buffer draw state for this stage.
     for (auto& buffer : state.draw.const_buffers[static_cast<size_t>(stage)]) {
@@ -644,7 +644,7 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
     }
 
     // Upload only the enabled buffers from the 16 constbuffers of each shader stage
-    auto& shader_stage = maxwell3d.state.shader_stages[static_cast<size_t>(stage)];
+    const auto& shader_stage = maxwell3d.state.shader_stages[static_cast<size_t>(stage)];
 
     for (u32 bindpoint = 0; bindpoint < entries.size(); ++bindpoint) {
         const auto& used_buffer = entries[bindpoint];
@@ -700,8 +700,8 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
 
 u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, u32 current_unit,
                                     const std::vector<GLShader::SamplerEntry>& entries) {
-    auto& gpu = Core::System::GetInstance().GPU();
-    auto& maxwell3d = gpu.Get3DEngine();
+    const auto& gpu = Core::System::GetInstance().GPU();
+    const auto& maxwell3d = gpu.Maxwell3D();
 
     ASSERT_MSG(current_unit + entries.size() <= std::size(state.texture_units),
                "Exceeded the number of active textures.");
