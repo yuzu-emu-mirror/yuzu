@@ -69,11 +69,13 @@ FileType AppLoader_NSO::IdentifyType(const FileSys::VirtualFile& file) {
 static std::vector<u8> DecompressSegment(const std::vector<u8>& compressed_data,
                                          const NsoSegmentHeader& header) {
     std::vector<u8> uncompressed_data(header.size);
-    const int bytes_uncompressed = LZ4_decompress_safe(
-        reinterpret_cast<const char*>(compressed_data.data()),
-        reinterpret_cast<char*>(uncompressed_data.data()), compressed_data.size(), header.size);
+    const int bytes_uncompressed =
+        LZ4_decompress_safe(reinterpret_cast<const char*>(compressed_data.data()),
+                            reinterpret_cast<char*>(uncompressed_data.data()),
+                            static_cast<int>(compressed_data.size()), header.size);
 
-    ASSERT_MSG(bytes_uncompressed == header.size && bytes_uncompressed == uncompressed_data.size(),
+    ASSERT_MSG(bytes_uncompressed == static_cast<int>(header.size) &&
+                   bytes_uncompressed == static_cast<int>(uncompressed_data.size()),
                "{} != {} != {}", bytes_uncompressed, header.size, uncompressed_data.size());
 
     return uncompressed_data;
