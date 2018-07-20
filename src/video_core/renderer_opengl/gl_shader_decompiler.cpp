@@ -12,8 +12,7 @@
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_decompiler.h"
 
-namespace GLShader {
-namespace Decompiler {
+namespace GLShader::Decompiler {
 
 using Tegra::Shader::Attribute;
 using Tegra::Shader::Instruction;
@@ -1845,5 +1844,4 @@ boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code,
     return boost::none;
 }
 
-} // namespace Decompiler
-} // namespace GLShader
+} // namespace GLShader::Decompiler

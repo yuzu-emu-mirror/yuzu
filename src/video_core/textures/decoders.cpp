@@ -10,8 +10,7 @@
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 
-namespace Tegra {
-namespace Texture {
+namespace Tegra::Texture {
 
 /**
  * Calculates the offset of an (x, y) position within a swizzled texture.
@@ -186,5 +185,4 @@ std::vector<u8> DecodeTexture(const std::vector<u8>& texture_data, TextureFormat
     return rgba_data;
 }
 
-} // namespace Texture
-} // namespace Tegra
+} // namespace Tegra::Texture

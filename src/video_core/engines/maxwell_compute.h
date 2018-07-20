@@ -6,8 +6,7 @@
 
 #include "common/common_types.h"
 
-namespace Tegra {
-namespace Engines {
+namespace Tegra::Engines {
 
 class MaxwellCompute final {
 public:
@@ -18,5 +17,4 @@ public:
     void WriteReg(u32 method, u32 value);
 };
 
-} // namespace Engines
-} // namespace Tegra
+} // namespace Tegra::Engines
