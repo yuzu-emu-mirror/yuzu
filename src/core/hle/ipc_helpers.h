@@ -175,6 +175,25 @@ public:
     void Push(const First& first_value, const Other&... other_values);
 
     /**
+     * Helper function for pushing strongly-typed enumeration values.
+     *
+     * @tparam Enum The enumeration type to be pushed
+     *
+     * @param value The value to push.
+     *
+     * @note The underlying size of the enumeration type is the size of the
+     *       data that gets pushed. e.g. "enum class SomeEnum : u16" will
+     *       push a u16-sized amount of data.
+     */
+    template <typename Enum>
+    void PushEnum(Enum value) {
+        static_assert(std::is_enum_v<Enum>, "T must be an enum type within a PushEnum call.");
+        static_assert(!std::is_convertible_v<Enum, int>,
+                      "enum type in PushEnum must be a strongly typed enum.");
+        Push(static_cast<std::underlying_type_t<Enum>>(value));
+    }
+
+    /**
      * @brief Copies the content of the given trivially copyable class to the buffer as a normal
      * param
      * @note: The input class must be correctly packed/padded to fit hardware layout.
