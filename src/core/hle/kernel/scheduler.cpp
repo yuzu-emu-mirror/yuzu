@@ -34,7 +34,7 @@ Thread* Scheduler::PopNextReadyThread() {
     Thread* next = nullptr;
     Thread* thread = GetCurrentThread();
 
-    if (thread && thread->status == THREADSTATUS_RUNNING) {
+    if (thread && thread->status == ThreadStatus::Running) {
         // We have to do better than the current thread.
         // This call returns null when that's not possible.
         next = ready_queue.pop_first_better(thread->current_priority);
@@ -57,17 +57,17 @@ void Scheduler::SwitchContext(Thread* new_thread) {
         previous_thread->last_running_ticks = CoreTiming::GetTicks();
         cpu_core->SaveContext(previous_thread->context);
 
-        if (previous_thread->status == THREADSTATUS_RUNNING) {
+        if (previous_thread->status == ThreadStatus::Running) {
             // This is only the case when a reschedule is triggered without the current thread
             // yielding execution (i.e. an event triggered, system core time-sliced, etc)
             ready_queue.push_front(previous_thread->current_priority, previous_thread);
-            previous_thread->status = THREADSTATUS_READY;
+            previous_thread->status = ThreadStatus::Ready;
         }
     }
 
     // Load context of new thread
     if (new_thread) {
-        ASSERT_MSG(new_thread->status == THREADSTATUS_READY,
+        ASSERT_MSG(new_thread->status == ThreadStatus::Ready,
                    "Thread must be ready to become running.");
 
         // Cancel any outstanding wakeup events for this thread
@@ -78,7 +78,7 @@ void Scheduler::SwitchContext(Thread* new_thread) {
         current_thread = new_thread;
 
         ready_queue.remove(new_thread->current_priority, new_thread);
-        new_thread->status = THREADSTATUS_RUNNING;
+        new_thread->status = ThreadStatus::Running;
 
         if (previous_process != current_thread->owner_process) {
             Core::CurrentProcess() = current_thread->owner_process;
@@ -129,14 +129,14 @@ void Scheduler::RemoveThread(Thread* thread) {
 void Scheduler::ScheduleThread(Thread* thread, u32 priority) {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
 
-    ASSERT(thread->status == THREADSTATUS_READY);
+    ASSERT(thread->status == ThreadStatus::Ready);
     ready_queue.push_back(priority, thread);
 }
 
 void Scheduler::UnscheduleThread(Thread* thread, u32 priority) {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
 
-    ASSERT(thread->status == THREADSTATUS_READY);
+    ASSERT(thread->status == ThreadStatus::Ready);
     ready_queue.remove(priority, thread);
 }
 
@@ -144,7 +144,7 @@ void Scheduler::SetThreadPriority(Thread* thread, u32 priority) {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
 
     // If thread was ready, adjust queues
-    if (thread->status == THREADSTATUS_READY)
+    if (thread->status == ThreadStatus::Ready)
         ready_queue.move(thread, thread->current_priority, priority);
     else
         ready_queue.prepare(priority);
