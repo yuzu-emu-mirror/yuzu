@@ -2,13 +2,15 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "core/file_sys/vfs_offset.h"
 
 namespace FileSys {
 
 OffsetVfsFile::OffsetVfsFile(std::shared_ptr<VfsFile> file_, size_t size_, size_t offset_,
-                             const std::string& name_)
-    : file(file_), offset(offset_), size(size_), name(name_) {}
+                             std::string name_)
+    : file(std::move(file_)), offset(offset_), size(size_), name(std::move(name_)) {}
 
 std::string OffsetVfsFile::GetName() const {
     return name.empty() ? file->GetName() : name;
