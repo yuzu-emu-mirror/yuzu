@@ -11,6 +11,10 @@
 #include "common/common_types.h"
 #include "core/memory_hook.h"
 
+namespace Memory {
+struct PageTable;
+}
+
 namespace ArmTests {
 
 struct WriteRecord {
@@ -81,6 +85,7 @@ private:
     bool mutable_memory;
     std::shared_ptr<TestMemory> test_memory;
     std::vector<WriteRecord> write_records;
+    Memory::PageTable* page_table = nullptr;
 };
 
 } // namespace ArmTests
