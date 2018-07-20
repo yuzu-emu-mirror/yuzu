@@ -20,6 +20,21 @@ public:
     }
 
 private:
+    enum class PerformanceConfiguration : u32 {
+        Config1 = 0x00010000,
+        Config2 = 0x00010001,
+        Config3 = 0x00010002,
+        Config4 = 0x00020000,
+        Config5 = 0x00020001,
+        Config6 = 0x00020002,
+        Config7 = 0x00020003,
+        Config8 = 0x00020004,
+        Config9 = 0x00020005,
+        Config10 = 0x00020006,
+        Config11 = 0x92220007,
+        Config12 = 0x92220008,
+    };
+
     void SetPerformanceConfiguration(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
 
@@ -40,7 +55,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0); // Performance configuration
+        rb.Push<u32>(static_cast<u32>(PerformanceConfiguration::Config1));
 
         LOG_WARNING(Service_APM, "(STUBBED) called mode={}", static_cast<u32>(mode));
     }
