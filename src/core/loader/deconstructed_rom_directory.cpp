@@ -83,16 +83,13 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(
     VAddr next_load_addr{Memory::PROCESS_IMAGE_VADDR};
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
-        const VAddr load_addr = next_load_addr;
         const FileSys::VirtualFile module_file = dir->GetFile(module);
-        if (module_file != nullptr)
+        if (module_file != nullptr) {
+            const VAddr load_addr = next_load_addr;
             next_load_addr = AppLoader_NSO::LoadModule(module_file, load_addr);
-        if (next_load_addr) {
             LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
             // Register module with GDBStub
             GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
-        } else {
-            next_load_addr = load_addr;
         }
     }
 
