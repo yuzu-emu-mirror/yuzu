@@ -59,8 +59,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes (sizeof(T)*number_elements) read successfully.
     template <typename T>
     size_t ReadArray(T* data, size_t number_elements, size_t offset = 0) const {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
 
         return Read(reinterpret_cast<u8*>(data), number_elements * sizeof(T), offset);
     }
@@ -69,8 +68,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes read successfully.
     template <typename T>
     size_t ReadBytes(T* data, size_t size, size_t offset = 0) const {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
         return Read(reinterpret_cast<u8*>(data), size, offset);
     }
 
@@ -78,8 +76,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes read successfully (sizeof(T)).
     template <typename T>
     size_t ReadObject(T* data, size_t offset = 0) const {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
         return Read(reinterpret_cast<u8*>(data), sizeof(T), offset);
     }
 
@@ -94,9 +91,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes (sizeof(T)*number_elements) written successfully.
     template <typename T>
     size_t WriteArray(const T* data, size_t number_elements, size_t offset = 0) {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
-
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
         return Write(data, number_elements * sizeof(T), offset);
     }
 
@@ -104,8 +99,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes written successfully.
     template <typename T>
     size_t WriteBytes(const T* data, size_t size, size_t offset = 0) {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
         return Write(reinterpret_cast<const u8*>(data), size, offset);
     }
 
@@ -113,8 +107,7 @@ struct VfsFile : NonCopyable {
     // Returns the number of bytes written successfully (sizeof(T)).
     template <typename T>
     size_t WriteObject(const T& data, size_t offset = 0) {
-        static_assert(std::is_trivially_copyable<T>::value,
-                      "Data type must be trivially copyable.");
+        static_assert(std::is_trivially_copyable_v<T>, "Data type must be trivially copyable.");
         return Write(&data, sizeof(T), offset);
     }
 
