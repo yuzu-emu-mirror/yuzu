@@ -272,9 +272,9 @@ void RegisterFileSystems() {
     sdmc_factory = nullptr;
 
     auto nand_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(D_NAND_IDX), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::NANDDir), FileSys::Mode::Write);
     auto sd_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(D_SDMC_IDX), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir), FileSys::Mode::Write);
 
     auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
     save_data_factory = std::move(savedata);
