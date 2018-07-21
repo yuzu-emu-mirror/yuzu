@@ -56,6 +56,8 @@ void Scheduler::SwitchContext(Thread* new_thread) {
     if (previous_thread) {
         previous_thread->last_running_ticks = CoreTiming::GetTicks();
         cpu_core->SaveContext(previous_thread->context);
+        // Save the TPIDR_EL0 system register in case it was modified.
+        previous_thread->tpidr_el0 = cpu_core->GetTPIDR_EL0();
 
         if (previous_thread->status == ThreadStatus::Running) {
             // This is only the case when a reschedule is triggered without the current thread
@@ -87,6 +89,7 @@ void Scheduler::SwitchContext(Thread* new_thread) {
 
         cpu_core->LoadContext(new_thread->context);
         cpu_core->SetTlsAddress(new_thread->GetTLSAddress());
+        cpu_core->SetTPIDR_EL0(new_thread->GetTPIDR_EL0());
         cpu_core->ClearExclusiveState();
     } else {
         current_thread = nullptr;

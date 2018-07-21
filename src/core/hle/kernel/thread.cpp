@@ -312,6 +312,7 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
     thread->status = ThreadStatus::Dormant;
     thread->entry_point = entry_point;
     thread->stack_top = stack_top;
+    thread->tpidr_el0 = 0;
     thread->nominal_priority = thread->current_priority = priority;
     thread->last_running_ticks = CoreTiming::GetTicks();
     thread->processor_id = processor_id;

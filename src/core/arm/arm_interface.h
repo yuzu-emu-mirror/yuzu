@@ -104,6 +104,10 @@ public:
 
     virtual void SetTlsAddress(VAddr address) = 0;
 
+    virtual u64 GetTPIDR_EL0() const = 0;
+
+    virtual void SetTPIDR_EL0(u64 value) = 0;
+
     /**
      * Saves the current CPU context
      * @param ctx Thread context to save
