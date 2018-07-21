@@ -565,17 +565,9 @@ void RasterizerCacheOpenGL::LoadSurface(const Surface& surface) {
     surface->UploadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
 }
 
-void RasterizerCacheOpenGL::MarkSurfaceAsDirty(const Surface& surface) {
-    if (Settings::values.use_accurate_framebuffers) {
-        // If enabled, always flush dirty surfaces
-        surface->DownloadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
-        surface->FlushGLBuffer();
-    } else {
-        // Otherwise, don't mark surfaces that we write to as cached, because the resulting loads
-        // and flushes are very slow and do not seem to improve accuracy
-        const auto& params{surface->GetSurfaceParams()};
-        Memory::RasterizerMarkRegionCached(params.addr, params.size_in_bytes, false);
-    }
+void RasterizerCacheOpenGL::FlushSurface(const Surface& surface) {
+    surface->DownloadGLTexture(read_framebuffer.handle, draw_framebuffer.handle);
+    surface->FlushGLBuffer();
 }
 
 Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
@@ -589,20 +581,21 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
         return {};
 
     // Check for an exact match in existing surfaces
-    const auto& surface_key{SurfaceKey::Create(params)};
-    const auto& search{surface_cache.find(surface_key)};
+    const auto& search{surface_cache.find(params.addr)};
     Surface surface;
     if (search != surface_cache.end()) {
         surface = search->second;
-        if (Settings::values.use_accurate_framebuffers) {
-            // Reload the surface from Switch memory
-            LoadSurface(surface);
+        if (surface->GetSurfaceParams() != params || Settings::values.use_accurate_framebuffers) {
+            FlushSurface(surface);
+            UnregisterSurface(surface);
+        } else {
+            return surface;
         }
-    } else {
-        surface = std::make_shared<CachedSurface>(params);
-        RegisterSurface(surface);
-        LoadSurface(surface);
     }
+
+    surface = std::make_shared<CachedSurface>(params);
+    RegisterSurface(surface);
+    LoadSurface(surface);
 
     return surface;
 }
@@ -652,22 +645,20 @@ void RasterizerCacheOpenGL::InvalidateRegion(Tegra::GPUVAddr addr, size_t size) 
 
 void RasterizerCacheOpenGL::RegisterSurface(const Surface& surface) {
     const auto& params{surface->GetSurfaceParams()};
-    const auto& surface_key{SurfaceKey::Create(params)};
-    const auto& search{surface_cache.find(surface_key)};
+    const auto& search{surface_cache.find(params.addr)};
 
     if (search != surface_cache.end()) {
         // Registered already
         return;
     }
 
-    surface_cache[surface_key] = surface;
+    surface_cache[params.addr] = surface;
     UpdatePagesCachedCount(params.addr, params.size_in_bytes, 1);
 }
 
 void RasterizerCacheOpenGL::UnregisterSurface(const Surface& surface) {
     const auto& params{surface->GetSurfaceParams()};
-    const auto& surface_key{SurfaceKey::Create(params)};
-    const auto& search{surface_cache.find(surface_key)};
+    const auto& search{surface_cache.find(params.addr)};
 
     if (search == surface_cache.end()) {
         // Unregistered already

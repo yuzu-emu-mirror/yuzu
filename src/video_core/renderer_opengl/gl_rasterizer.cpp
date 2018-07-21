@@ -413,11 +413,13 @@ void RasterizerOpenGL::Clear() {
     glClear(clear_mask);
 
     // Mark framebuffer surfaces as dirty
-    if (dirty_color_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
-    }
-    if (dirty_depth_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
+    if (Settings::values.use_accurate_framebuffers) {
+        if (dirty_color_surface != nullptr) {
+            res_cache.FlushSurface(dirty_color_surface);
+        }
+        if (dirty_depth_surface != nullptr) {
+            res_cache.FlushSurface(dirty_depth_surface);
+        }
     }
 }
 
@@ -520,11 +522,13 @@ void RasterizerOpenGL::DrawArrays() {
     state.Apply();
 
     // Mark framebuffer surfaces as dirty
-    if (dirty_color_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
-    }
-    if (dirty_depth_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
+    if (Settings::values.use_accurate_framebuffers) {
+        if (dirty_color_surface != nullptr) {
+            res_cache.FlushSurface(dirty_color_surface);
+        }
+        if (dirty_depth_surface != nullptr) {
+            res_cache.FlushSurface(dirty_depth_surface);
+        }
     }
 }
 
