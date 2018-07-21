@@ -387,7 +387,7 @@ void RasterizerOpenGL::Clear() {
     }
     if (regs.clear_buffers.Z) {
         clear_mask |= GL_DEPTH_BUFFER_BIT;
-        use_depth_fb = true;
+        use_depth_fb = regs.zeta_enable != 0;
 
         // Always enable the depth write when clearing the depth buffer. The depth write mask is
         // ignored when clearing the buffer in the Switch, but OpenGL obeys it so we set it to true.
@@ -431,7 +431,7 @@ void RasterizerOpenGL::DrawArrays() {
     ScopeAcquireGLContext acquire_context;
 
     auto [dirty_color_surface, dirty_depth_surface] =
-        ConfigureFramebuffers(true, regs.zeta.Address() != 0);
+        ConfigureFramebuffers(true, regs.zeta.Address() != 0 && regs.zeta_enable != 0);
 
     SyncDepthTestState();
     SyncBlendState();
