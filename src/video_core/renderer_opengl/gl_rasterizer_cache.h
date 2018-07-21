@@ -365,9 +365,9 @@ struct SurfaceParams {
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
 
     /// Creates SurfaceParams for a depth buffer configuration
-    static SurfaceParams CreateForDepthBuffer(
-        const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config,
-        Tegra::GPUVAddr zeta_address, Tegra::DepthFormat format);
+    static SurfaceParams CreateForDepthBuffer(u32 zeta_width, u32 zeta_height,
+                                              Tegra::GPUVAddr zeta_address,
+                                              Tegra::DepthFormat format);
 
     Tegra::GPUVAddr addr;
     bool is_tiled;

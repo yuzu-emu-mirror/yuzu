@@ -65,9 +65,9 @@ struct FormatTuple {
     return params;
 }
 
-/*static*/ SurfaceParams SurfaceParams::CreateForDepthBuffer(
-    const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config, Tegra::GPUVAddr zeta_address,
-    Tegra::DepthFormat format) {
+/*static*/ SurfaceParams SurfaceParams::CreateForDepthBuffer(u32 zeta_width, u32 zeta_height,
+                                                             Tegra::GPUVAddr zeta_address,
+                                                             Tegra::DepthFormat format) {
 
     SurfaceParams params{};
     params.addr = zeta_address;
@@ -77,9 +77,9 @@ struct FormatTuple {
     params.component_type = ComponentTypeFromDepthFormat(format);
     params.type = GetFormatType(params.pixel_format);
     params.size_in_bytes = params.SizeInBytes();
-    params.width = config.width;
-    params.height = config.height;
-    params.unaligned_height = config.height;
+    params.width = zeta_width;
+    params.height = zeta_height;
+    params.unaligned_height = zeta_height;
     params.size_in_bytes = params.SizeInBytes();
     return params;
 }
@@ -519,8 +519,8 @@ SurfaceSurfaceRect_Tuple RasterizerCacheOpenGL::GetFramebufferSurfaces(
     }
 
     if (using_depth_fb) {
-        depth_params =
-            SurfaceParams::CreateForDepthBuffer(regs.rt[0], regs.zeta.Address(), regs.zeta.format);
+        depth_params = SurfaceParams::CreateForDepthBuffer(regs.zeta_width, regs.zeta_height,
+                                                           regs.zeta.Address(), regs.zeta.format);
     }
 
     MathUtil::Rectangle<u32> color_rect{};
