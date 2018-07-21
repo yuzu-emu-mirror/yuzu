@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
 #include <utility>
 
 #include "core/file_sys/vfs_offset.h"
@@ -88,7 +89,7 @@ size_t OffsetVfsFile::GetOffset() const {
 }
 
 size_t OffsetVfsFile::TrimToFit(size_t r_size, size_t r_offset) const {
-    return std::max<size_t>(std::min<size_t>(size - r_offset, r_size), 0);
+    return std::clamp(r_size, size_t{0}, size - r_offset);
 }
 
 } // namespace FileSys
