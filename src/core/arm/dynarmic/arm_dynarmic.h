@@ -34,6 +34,8 @@ public:
     void SetCPSR(u32 cpsr) override;
     VAddr GetTlsAddress() const override;
     void SetTlsAddress(VAddr address) override;
+    void SetTPIDR_EL0(u64 value) override;
+    u64 GetTPIDR_EL0() const override;
 
     void SaveContext(ThreadContext& ctx) override;
     void LoadContext(const ThreadContext& ctx) override;

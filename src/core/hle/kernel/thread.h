@@ -183,6 +183,14 @@ public:
     }
 
     /*
+     * Returns the value of the TPIDR_EL0 Read/Write system register for this thread.
+     * @returns The value of the TPIDR_EL0 register.
+     */
+    u64 GetTPIDR_EL0() const {
+        return tpidr_el0;
+    }
+
+    /*
      * Returns the address of the current thread's command buffer, located in the TLS.
      * @returns VAddr of the thread's command buffer.
      */
@@ -213,6 +221,7 @@ public:
     s32 processor_id;
 
     VAddr tls_address; ///< Virtual address of the Thread Local Storage of the thread
+    u64 tpidr_el0;     ///< TPIDR_EL0 read/write system register.
 
     SharedPtr<Process> owner_process; ///< Process that owns this thread
 

@@ -196,6 +196,14 @@ void ARM_Dynarmic::SetTlsAddress(u64 address) {
     cb->tpidrro_el0 = address;
 }
 
+u64 ARM_Dynarmic::GetTPIDR_EL0() const {
+    return cb->tpidr_el0;
+}
+
+void ARM_Dynarmic::SetTPIDR_EL0(u64 value) {
+    cb->tpidr_el0 = value;
+}
+
 void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     ctx.cpu_registers = jit->GetRegisters();
     ctx.sp = jit->GetSP();

@@ -169,6 +169,16 @@ void ARM_Unicorn::SetTlsAddress(VAddr base) {
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_TPIDRRO_EL0, &base));
 }
 
+u64 ARM_Unicorn::GetTPIDR_EL0() const {
+    u64 value{};
+    CHECKED(uc_reg_read(uc, UC_ARM64_REG_TPIDR_EL0, &value));
+    return value;
+}
+
+void ARM_Unicorn::SetTPIDR_EL0(u64 value) {
+    CHECKED(uc_reg_write(uc, UC_ARM64_REG_TPIDR_EL0, &value));
+}
+
 void ARM_Unicorn::Run() {
     if (GDBStub::IsServerEnabled()) {
         ExecuteInstructions(std::max(4000000, 0));
