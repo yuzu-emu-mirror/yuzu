@@ -837,7 +837,6 @@ std::string GetPathWithoutTop(std::string path) {
     const auto name_bck_index = path.find_first_of('\\');
     const auto name_fwd_index = path.find_first_of('/');
     return path.substr(std::min<size_t>(name_bck_index, name_fwd_index) + 1);
-    return path.substr(std::min<size_t>(name_bck_index, name_fwd_index) + 1);
 }
 
 std::string GetFilename(std::string path) {
