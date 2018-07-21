@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <iterator>
+
 #include "common/common_paths.h"
 #include "common/logging/log.h"
 #include "core/file_sys/vfs_real.h"
@@ -163,11 +165,12 @@ bool RealVfsDirectory::Rename(const std::string& name) {
 }
 
 bool RealVfsDirectory::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
-    auto iter = std::find(files.begin(), files.end(), file);
+    const auto iter = std::find(files.begin(), files.end(), file);
     if (iter == files.end())
         return false;
 
-    files[iter - files.begin()] = files.back();
+    const std::ptrdiff_t offset = std::distance(files.begin(), iter);
+    files[offset] = files.back();
     files.pop_back();
 
     subdirectories.emplace_back(dir);
