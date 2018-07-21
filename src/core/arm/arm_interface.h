@@ -20,9 +20,6 @@ public:
         u64 cpsr;
         std::array<u128, 32> fpu_registers;
         u64 fpscr;
-
-        // TODO(bunnei): Fix once we have proper support for tpidrro_el0, etc. in the JIT
-        VAddr tls_address;
     };
 
     /// Runs the CPU until an event happens

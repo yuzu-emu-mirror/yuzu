@@ -211,7 +211,6 @@ void ARM_Dynarmic::SaveContext(ARM_Interface::ThreadContext& ctx) {
     ctx.cpsr = jit->GetPstate();
     ctx.fpu_registers = jit->GetVectors();
     ctx.fpscr = jit->GetFpcr();
-    ctx.tls_address = cb->tpidrro_el0;
 }
 
 void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
@@ -221,7 +220,6 @@ void ARM_Dynarmic::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     jit->SetPstate(static_cast<u32>(ctx.cpsr));
     jit->SetVectors(ctx.fpu_registers);
     jit->SetFpcr(static_cast<u32>(ctx.fpscr));
-    cb->tpidrro_el0 = ctx.tls_address;
 }
 
 void ARM_Dynarmic::PrepareReschedule() {
