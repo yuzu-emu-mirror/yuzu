@@ -101,7 +101,7 @@ NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
         {8, &NVDRV::SetClientPID, "SetClientPID"},
         {9, nullptr, "DumpGraphicsMemoryInfo"},
         {10, nullptr, "InitializeDevtools"},
-        {11, nullptr, "Ioctl2"},
+        {11, &NVDRV::Ioctl, "Ioctl2"},
         {12, nullptr, "Ioctl3"},
         {13, &NVDRV::FinishInitialize, "FinishInitialize"},
     };
