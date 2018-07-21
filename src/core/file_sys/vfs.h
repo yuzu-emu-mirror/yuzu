@@ -93,7 +93,7 @@ struct VfsFile : NonCopyable {
     // Writes an array of type T, size number_elements to offset in file.
     // Returns the number of bytes (sizeof(T)*number_elements) written successfully.
     template <typename T>
-    size_t WriteArray(T* data, size_t number_elements, size_t offset = 0) {
+    size_t WriteArray(const T* data, size_t number_elements, size_t offset = 0) {
         static_assert(std::is_trivially_copyable<T>::value,
                       "Data type must be trivially copyable.");
 
@@ -103,10 +103,10 @@ struct VfsFile : NonCopyable {
     // Writes size bytes starting at memory location data to offset in file.
     // Returns the number of bytes written successfully.
     template <typename T>
-    size_t WriteBytes(T* data, size_t size, size_t offset = 0) {
+    size_t WriteBytes(const T* data, size_t size, size_t offset = 0) {
         static_assert(std::is_trivially_copyable<T>::value,
                       "Data type must be trivially copyable.");
-        return Write(reinterpret_cast<u8*>(data), size, offset);
+        return Write(reinterpret_cast<const u8*>(data), size, offset);
     }
 
     // Writes one object of type T to offset in file.
