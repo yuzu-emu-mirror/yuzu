@@ -42,7 +42,7 @@ bool VfsFile::WriteByte(u8 data, size_t offset) {
     return Write(&data, 1, offset) == 1;
 }
 
-size_t VfsFile::WriteBytes(std::vector<u8> data, size_t offset) {
+size_t VfsFile::WriteBytes(const std::vector<u8>& data, size_t offset) {
     return Write(data.data(), data.size(), offset);
 }
 
