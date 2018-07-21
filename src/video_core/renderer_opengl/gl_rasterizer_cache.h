@@ -454,6 +454,9 @@ private:
     void LoadSurface(const Surface& surface);
     Surface GetSurface(const SurfaceParams& params);
 
+    /// Recreates a surface with new parameters
+    Surface RecreateSurface(const Surface& surface, const SurfaceParams& new_params);
+
     /// Register surface into the cache
     void RegisterSurface(const Surface& surface);
 

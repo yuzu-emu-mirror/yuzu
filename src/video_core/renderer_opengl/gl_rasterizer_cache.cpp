@@ -254,6 +254,60 @@ static void AllocateSurfaceTexture(GLuint texture, const FormatTuple& format_tup
     cur_state.Apply();
 }
 
+static bool BlitTextures(GLuint src_tex, const MathUtil::Rectangle<u32>& src_rect, GLuint dst_tex,
+                         const MathUtil::Rectangle<u32>& dst_rect, SurfaceType type,
+                         GLuint read_fb_handle, GLuint draw_fb_handle) {
+    OpenGLState prev_state{OpenGLState::GetCurState()};
+    SCOPE_EXIT({ prev_state.Apply(); });
+
+    OpenGLState state;
+    state.draw.read_framebuffer = read_fb_handle;
+    state.draw.draw_framebuffer = draw_fb_handle;
+    state.Apply();
+
+    u32 buffers{};
+
+    if (type == SurfaceType::ColorTexture) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, src_tex,
+                               0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
+
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, dst_tex,
+                               0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0,
+                               0);
+
+        buffers = GL_COLOR_BUFFER_BIT;
+    } else if (type == SurfaceType::Depth) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, src_tex, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, dst_tex, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+
+        buffers = GL_DEPTH_BUFFER_BIT;
+    } else if (type == SurfaceType::DepthStencil) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                               src_tex, 0);
+
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                               dst_tex, 0);
+
+        buffers = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+    }
+
+    glBlitFramebuffer(src_rect.left, src_rect.bottom, src_rect.right, src_rect.top, dst_rect.left,
+                      dst_rect.bottom, dst_rect.right, dst_rect.top, buffers,
+                      buffers == GL_COLOR_BUFFER_BIT ? GL_LINEAR : GL_NEAREST);
+
+    return true;
+}
+
 CachedSurface::CachedSurface(const SurfaceParams& params) : params(params) {
     texture.Create();
     const auto& rect{params.GetRect()};
@@ -580,24 +634,51 @@ Surface RasterizerCacheOpenGL::GetSurface(const SurfaceParams& params) {
     if (gpu.memory_manager->GpuToCpuAddress(params.addr) == boost::none)
         return {};
 
-    // Check for an exact match in existing surfaces
+    // Look up surface in the cache based on address
     const auto& search{surface_cache.find(params.addr)};
     Surface surface;
     if (search != surface_cache.end()) {
         surface = search->second;
-        if (surface->GetSurfaceParams() != params || Settings::values.use_accurate_framebuffers) {
+        if (Settings::values.use_accurate_framebuffers) {
+            // If use_accurate_framebuffers is enabled, always load from memory
             FlushSurface(surface);
             UnregisterSurface(surface);
+        } else if (surface->GetSurfaceParams() != params) {
+            // If surface parameters changed, recreate the surface from the old one
+            return RecreateSurface(surface, params);
         } else {
+            // Use the cached surface as-is
             return surface;
         }
     }
 
+    // No surface found - create a new one
     surface = std::make_shared<CachedSurface>(params);
     RegisterSurface(surface);
     LoadSurface(surface);
 
     return surface;
+}
+
+Surface RasterizerCacheOpenGL::RecreateSurface(const Surface& surface,
+                                               const SurfaceParams& new_params) {
+    // Verify surface is compatible for blitting
+    const auto& params{surface->GetSurfaceParams()};
+    ASSERT(params.type == new_params.type);
+    ASSERT(params.pixel_format == new_params.pixel_format);
+    ASSERT(params.component_type == new_params.component_type);
+
+    // Create a new surface with the new parameters, and blit the previous surface to it
+    Surface new_surface{std::make_shared<CachedSurface>(new_params)};
+    BlitTextures(surface->Texture().handle, params.GetRect(), new_surface->Texture().handle,
+                 new_surface->GetSurfaceParams().GetRect(), params.type, read_framebuffer.handle,
+                 draw_framebuffer.handle);
+
+    // Update cache accordingly
+    UnregisterSurface(surface);
+    RegisterSurface(new_surface);
+
+    return new_surface;
 }
 
 Surface RasterizerCacheOpenGL::TryFindFramebufferSurface(VAddr cpu_addr) const {
