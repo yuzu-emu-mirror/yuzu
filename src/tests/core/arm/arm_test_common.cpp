@@ -10,8 +10,6 @@
 
 namespace ArmTests {
 
-static Memory::PageTable* page_table = nullptr;
-
 TestEnvironment::TestEnvironment(bool mutable_memory_)
     : mutable_memory(mutable_memory_), test_memory(std::make_shared<TestMemory>(this)) {
 
@@ -67,10 +65,13 @@ boost::optional<bool> TestEnvironment::TestMemory::IsValidAddress(VAddr addr) {
 }
 
 boost::optional<u8> TestEnvironment::TestMemory::Read8(VAddr addr) {
-    auto iter = data.find(addr);
+    const auto iter = data.find(addr);
+
     if (iter == data.end()) {
-        return addr; // Some arbitrary data
+        // Some arbitrary data
+        return static_cast<u8>(addr);
     }
+
     return iter->second;
 }
 
