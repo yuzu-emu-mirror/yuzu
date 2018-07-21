@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <utility>
 
@@ -108,11 +109,11 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
 }
 
 std::vector<std::shared_ptr<VfsFile>> RealVfsDirectory::GetFiles() const {
-    return std::vector<std::shared_ptr<VfsFile>>(files);
+    return files;
 }
 
 std::vector<std::shared_ptr<VfsDirectory>> RealVfsDirectory::GetSubdirectories() const {
-    return std::vector<std::shared_ptr<VfsDirectory>>(subdirectories);
+    return subdirectories;
 }
 
 bool RealVfsDirectory::IsWritable() const {
