@@ -133,7 +133,7 @@ static ResultCode GetProcessId(u32* process_id, Handle process_handle) {
 /// Default thread wakeup callback for WaitSynchronization
 static bool DefaultThreadWakeupCallback(ThreadWakeupReason reason, SharedPtr<Thread> thread,
                                         SharedPtr<WaitObject> object, size_t index) {
-    ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+    ASSERT(thread->status == ThreadStatus::WaitSynchAny);
 
     if (reason == ThreadWakeupReason::Timeout) {
         thread->SetWaitSynchronizationResult(RESULT_TIMEOUT);
@@ -197,7 +197,7 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
         object->AddWaitingThread(thread);
 
     thread->wait_objects = std::move(objects);
-    thread->status = THREADSTATUS_WAIT_SYNCH_ANY;
+    thread->status = ThreadStatus::WaitSynchAny;
 
     // Create an event to wake the thread up after the specified nanosecond delay has passed
     thread->WakeAfterDelay(nano_seconds);
@@ -217,7 +217,7 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
         return ERR_INVALID_HANDLE;
     }
 
-    ASSERT(thread->status == THREADSTATUS_WAIT_SYNCH_ANY);
+    ASSERT(thread->status == ThreadStatus::WaitSynchAny);
     thread->SetWaitSynchronizationResult(
         ResultCode(ErrorModule::Kernel, ErrCodes::SynchronizationCanceled));
     thread->ResumeFromWait();
@@ -468,8 +468,8 @@ static void ExitProcess() {
                 continue;
 
             // TODO(Subv): When are the other running/ready threads terminated?
-            ASSERT_MSG(thread->status == THREADSTATUS_WAIT_SYNCH_ANY ||
-                           thread->status == THREADSTATUS_WAIT_SYNCH_ALL,
+            ASSERT_MSG(thread->status == ThreadStatus::WaitSynchAny ||
+                           thread->status == ThreadStatus::WaitSynchAll,
                        "Exiting processes with non-waiting threads is currently unimplemented");
 
             thread->Stop();
@@ -545,7 +545,7 @@ static ResultCode StartThread(Handle thread_handle) {
         return ERR_INVALID_HANDLE;
     }
 
-    ASSERT(thread->status == THREADSTATUS_DORMANT);
+    ASSERT(thread->status == ThreadStatus::Dormant);
 
     thread->ResumeFromWait();
     Core::System::GetInstance().CpuCore(thread->processor_id).PrepareReschedule();
@@ -596,7 +596,7 @@ static ResultCode WaitProcessWideKeyAtomic(VAddr mutex_addr, VAddr condition_var
     current_thread->condvar_wait_address = condition_variable_addr;
     current_thread->mutex_wait_address = mutex_addr;
     current_thread->wait_handle = thread_handle;
-    current_thread->status = THREADSTATUS_WAIT_MUTEX;
+    current_thread->status = ThreadStatus::WaitMutex;
     current_thread->wakeup_callback = nullptr;
 
     current_thread->WakeAfterDelay(nano_seconds);
@@ -656,7 +656,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
         if (mutex_val == 0) {
             // We were able to acquire the mutex, resume this thread.
             Memory::Write32(thread->mutex_wait_address, thread->wait_handle);
-            ASSERT(thread->status == THREADSTATUS_WAIT_MUTEX);
+            ASSERT(thread->status == ThreadStatus::WaitMutex);
             thread->ResumeFromWait();
 
             auto lock_owner = thread->lock_owner;
@@ -672,8 +672,8 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
             Handle owner_handle = static_cast<Handle>(mutex_val & Mutex::MutexOwnerMask);
             auto owner = g_handle_table.Get<Thread>(owner_handle);
             ASSERT(owner);
-            ASSERT(thread->status != THREADSTATUS_RUNNING);
-            thread->status = THREADSTATUS_WAIT_MUTEX;
+            ASSERT(thread->status != ThreadStatus::Running);
+            thread->status = ThreadStatus::WaitMutex;
             thread->wakeup_callback = nullptr;
 
             // Signal that the mutex now has a waiting thread.

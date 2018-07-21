@@ -194,32 +194,32 @@ QString WaitTreeThread::GetText() const {
     const auto& thread = static_cast<const Kernel::Thread&>(object);
     QString status;
     switch (thread.status) {
-    case THREADSTATUS_RUNNING:
+    case ThreadStatus::Running:
         status = tr("running");
         break;
-    case THREADSTATUS_READY:
+    case ThreadStatus::Ready:
         status = tr("ready");
         break;
-    case THREADSTATUS_WAIT_HLE_EVENT:
+    case ThreadStatus::WaitHLEEvent:
         status = tr("waiting for HLE return");
         break;
-    case THREADSTATUS_WAIT_SLEEP:
+    case ThreadStatus::WaitSleep:
         status = tr("sleeping");
         break;
-    case THREADSTATUS_WAIT_SYNCH_ALL:
-    case THREADSTATUS_WAIT_SYNCH_ANY:
+    case ThreadStatus::WaitSynchAll:
+    case ThreadStatus::WaitSynchAny:
         status = tr("waiting for objects");
         break;
-    case THREADSTATUS_WAIT_MUTEX:
+    case ThreadStatus::WaitMutex:
         status = tr("waiting for mutex");
         break;
-    case THREADSTATUS_WAIT_ARB:
+    case ThreadStatus::WaitArb:
         status = tr("waiting for address arbiter");
         break;
-    case THREADSTATUS_DORMANT:
+    case ThreadStatus::Dormant:
         status = tr("dormant");
         break;
-    case THREADSTATUS_DEAD:
+    case ThreadStatus::Dead:
         status = tr("dead");
         break;
     }
@@ -232,22 +232,22 @@ QString WaitTreeThread::GetText() const {
 QColor WaitTreeThread::GetColor() const {
     const auto& thread = static_cast<const Kernel::Thread&>(object);
     switch (thread.status) {
-    case THREADSTATUS_RUNNING:
+    case ThreadStatus::Running:
         return QColor(Qt::GlobalColor::darkGreen);
-    case THREADSTATUS_READY:
+    case ThreadStatus::Ready:
         return QColor(Qt::GlobalColor::darkBlue);
-    case THREADSTATUS_WAIT_HLE_EVENT:
+    case ThreadStatus::WaitHLEEvent:
         return QColor(Qt::GlobalColor::darkRed);
-    case THREADSTATUS_WAIT_SLEEP:
+    case ThreadStatus::WaitSleep:
         return QColor(Qt::GlobalColor::darkYellow);
-    case THREADSTATUS_WAIT_SYNCH_ALL:
-    case THREADSTATUS_WAIT_SYNCH_ANY:
-    case THREADSTATUS_WAIT_MUTEX:
-    case THREADSTATUS_WAIT_ARB:
+    case ThreadStatus::WaitSynchAll:
+    case ThreadStatus::WaitSynchAny:
+    case ThreadStatus::WaitMutex:
+    case ThreadStatus::WaitArb:
         return QColor(Qt::GlobalColor::red);
-    case THREADSTATUS_DORMANT:
+    case ThreadStatus::Dormant:
         return QColor(Qt::GlobalColor::darkCyan);
-    case THREADSTATUS_DEAD:
+    case ThreadStatus::Dead:
         return QColor(Qt::GlobalColor::gray);
     default:
         return WaitTreeItem::GetColor();
@@ -291,8 +291,8 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeThread::GetChildren() const {
     else
         list.push_back(std::make_unique<WaitTreeText>(tr("not waiting for mutex")));
 
-    if (thread.status == THREADSTATUS_WAIT_SYNCH_ANY ||
-        thread.status == THREADSTATUS_WAIT_SYNCH_ALL) {
+    if (thread.status == ThreadStatus::WaitSynchAny ||
+        thread.status == ThreadStatus::WaitSynchAll) {
         list.push_back(std::make_unique<WaitTreeObjectList>(thread.wait_objects,
                                                             thread.IsSleepingOnWaitAll()));
     }

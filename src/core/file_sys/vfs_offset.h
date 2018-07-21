@@ -14,7 +14,7 @@ namespace FileSys {
 // the size of this wrapper.
 struct OffsetVfsFile : public VfsFile {
     OffsetVfsFile(std::shared_ptr<VfsFile> file, size_t size, size_t offset = 0,
-                  const std::string& new_name = "");
+                  std::string new_name = "");
 
     std::string GetName() const override;
     size_t GetSize() const override;

@@ -38,7 +38,7 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
     thread->wakeup_callback =
         [context = *this, callback](ThreadWakeupReason reason, SharedPtr<Thread> thread,
                                     SharedPtr<WaitObject> object, size_t index) mutable -> bool {
-        ASSERT(thread->status == THREADSTATUS_WAIT_HLE_EVENT);
+        ASSERT(thread->status == ThreadStatus::WaitHLEEvent);
         callback(thread, context, reason);
         context.WriteToOutgoingCommandBuffer(*thread);
         return true;
@@ -50,7 +50,7 @@ SharedPtr<Event> HLERequestContext::SleepClientThread(SharedPtr<Thread> thread,
     }
 
     event->Clear();
-    thread->status = THREADSTATUS_WAIT_HLE_EVENT;
+    thread->status = ThreadStatus::WaitHLEEvent;
     thread->wait_objects = {event};
     event->AddWaitingThread(thread);
 
