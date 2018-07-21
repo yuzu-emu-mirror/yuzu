@@ -109,7 +109,7 @@ bool PartitionFilesystem::ReplaceFileWithSubdirectory(VirtualFile file, VirtualD
     pfs_files[offset] = pfs_files.back();
     pfs_files.pop_back();
 
-    pfs_dirs.emplace_back(dir);
+    pfs_dirs.emplace_back(std::move(dir));
 
     return true;
 }

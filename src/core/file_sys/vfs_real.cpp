@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <iterator>
+#include <utility>
 
 #include "common/common_paths.h"
 #include "common/logging/log.h"
@@ -173,7 +174,7 @@ bool RealVfsDirectory::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir 
     files[offset] = files.back();
     files.pop_back();
 
-    subdirectories.emplace_back(dir);
+    subdirectories.emplace_back(std::move(dir));
 
     return true;
 }
