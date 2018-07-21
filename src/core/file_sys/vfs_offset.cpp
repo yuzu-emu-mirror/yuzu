@@ -75,7 +75,7 @@ bool OffsetVfsFile::WriteByte(u8 data, size_t r_offset) {
     return false;
 }
 
-size_t OffsetVfsFile::WriteBytes(std::vector<u8> data, size_t r_offset) {
+size_t OffsetVfsFile::WriteBytes(const std::vector<u8>& data, size_t r_offset) {
     return file->Write(data.data(), TrimToFit(data.size(), r_offset), offset + r_offset);
 }
 

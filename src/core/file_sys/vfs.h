@@ -85,7 +85,7 @@ struct VfsFile : NonCopyable {
     virtual bool WriteByte(u8 data, size_t offset = 0);
     // Writes a vector of bytes to offset in file and returns the number of bytes successfully
     // written.
-    virtual size_t WriteBytes(std::vector<u8> data, size_t offset = 0);
+    virtual size_t WriteBytes(const std::vector<u8>& data, size_t offset = 0);
 
     // Writes an array of type T, size number_elements to offset in file.
     // Returns the number of bytes (sizeof(T)*number_elements) written successfully.
