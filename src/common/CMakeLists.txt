@@ -63,7 +63,6 @@ add_library(common STATIC
     string_util.cpp
     string_util.h
     swap.h
-    synchronized_wrapper.h
     telemetry.cpp
     telemetry.h
     thread.cpp
