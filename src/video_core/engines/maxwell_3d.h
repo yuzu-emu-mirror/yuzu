@@ -487,7 +487,12 @@ public:
                     };
                 } rt_control;
 
-                INSERT_PADDING_WORDS(0x2B);
+                INSERT_PADDING_WORDS(0x2);
+
+                u32 zeta_width;
+                u32 zeta_height;
+
+                INSERT_PADDING_WORDS(0x27);
 
                 u32 depth_test_enable;
 
@@ -540,7 +545,11 @@ public:
 
                 u32 vb_element_base;
 
-                INSERT_PADDING_WORDS(0x49);
+                INSERT_PADDING_WORDS(0x40);
+
+                u32 zeta_enable;
+
+                INSERT_PADDING_WORDS(0x8);
 
                 struct {
                     u32 tsc_address_high;
@@ -865,6 +874,8 @@ ASSERT_REG_POSITION(clear_depth, 0x364);
 ASSERT_REG_POSITION(zeta, 0x3F8);
 ASSERT_REG_POSITION(vertex_attrib_format[0], 0x458);
 ASSERT_REG_POSITION(rt_control, 0x487);
+ASSERT_REG_POSITION(zeta_width, 0x48a);
+ASSERT_REG_POSITION(zeta_height, 0x48b);
 ASSERT_REG_POSITION(depth_test_enable, 0x4B3);
 ASSERT_REG_POSITION(independent_blend_enable, 0x4B9);
 ASSERT_REG_POSITION(depth_write_enabled, 0x4BA);
@@ -874,6 +885,7 @@ ASSERT_REG_POSITION(blend, 0x4CF);
 ASSERT_REG_POSITION(stencil, 0x4E0);
 ASSERT_REG_POSITION(screen_y_control, 0x4EB);
 ASSERT_REG_POSITION(vb_element_base, 0x50D);
+ASSERT_REG_POSITION(zeta_enable, 0x54E);
 ASSERT_REG_POSITION(tsc, 0x557);
 ASSERT_REG_POSITION(tic, 0x55D);
 ASSERT_REG_POSITION(stencil_two_side, 0x565);
