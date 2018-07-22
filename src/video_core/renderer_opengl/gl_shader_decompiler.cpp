@@ -78,14 +78,18 @@ private:
 
     /// Adds and analyzes a new subroutine if it is not added yet.
     const Subroutine& AddSubroutine(u32 begin, u32 end, const std::string& suffix) {
-        auto iter = subroutines.find(Subroutine{begin, end, suffix});
-        if (iter != subroutines.end())
-            return *iter;
+        Subroutine subroutine{begin, end, suffix, ExitMethod::Undetermined, {}};
 
-        Subroutine subroutine{begin, end, suffix};
+        const auto iter = subroutines.find(subroutine);
+        if (iter != subroutines.end()) {
+            return *iter;
+        }
+
         subroutine.exit_method = Scan(begin, end, subroutine.labels);
-        if (subroutine.exit_method == ExitMethod::Undetermined)
+        if (subroutine.exit_method == ExitMethod::Undetermined) {
             throw DecompileFail("Recursive function detected");
+        }
+
         return *subroutines.insert(std::move(subroutine)).first;
     }
 
