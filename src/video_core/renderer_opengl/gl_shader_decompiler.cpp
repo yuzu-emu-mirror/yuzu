@@ -191,48 +191,21 @@ public:
         UnsignedInteger,
     };
 
-    GLSLRegister(size_t index, ShaderWriter& shader, const std::string& suffix)
-        : index{index}, shader{shader}, suffix{suffix} {}
+    GLSLRegister(size_t index, const std::string& suffix) : index{index}, suffix{suffix} {}
 
     /// Gets the GLSL type string for a register
-    static std::string GetTypeString(Type type) {
-        switch (type) {
-        case Type::Float:
-            return "float";
-        case Type::Integer:
-            return "int";
-        case Type::UnsignedInteger:
-            return "uint";
-        }
-
-        UNREACHABLE();
-        return {};
+    static std::string GetTypeString() {
+        return "float";
     }
 
     /// Gets the GLSL register prefix string, used for declarations and referencing
-    static std::string GetPrefixString(Type type) {
-        return "reg_" + GetTypeString(type) + '_';
+    static std::string GetPrefixString() {
+        return "reg_";
     }
 
     /// Returns a GLSL string representing the current state of the register
-    std::string GetActiveString() {
-        declr_type.insert(active_type);
-        return GetPrefixString(active_type) + std::to_string(index) + '_' + suffix;
-    }
-
-    /// Returns true if the active type is a float
-    bool IsFloat() const {
-        return active_type == Type::Float;
-    }
-
-    /// Returns true if the active type is an integer
-    bool IsInteger() const {
-        return active_type == Type::Integer;
-    }
-
-    /// Returns the current active type of the register
-    Type GetActiveType() const {
-        return active_type;
+    std::string GetString() const {
+        return GetPrefixString() + std::to_string(index) + '_' + suffix;
     }
 
     /// Returns the index of the register
@@ -240,18 +213,8 @@ public:
         return index;
     }
 
-    /// Returns a set of the declared types of the register
-    const std::set<Type>& DeclaredTypes() const {
-        return declr_type;
-    }
-
 private:
     const size_t index;
-    const std::string float_str;
-    const std::string integer_str;
-    ShaderWriter& shader;
-    Type active_type{Type::Float};
-    std::set<Type> declr_type;
     const std::string& suffix;
 };
 
@@ -297,7 +260,6 @@ public:
      * @returns GLSL string corresponding to the register as a float.
      */
     std::string GetRegisterAsFloat(const Register& reg, unsigned elem = 0) {
-        ASSERT(regs[reg].IsFloat());
         return GetRegister(reg, elem);
     }
 
@@ -311,12 +273,8 @@ public:
      */
     std::string GetRegisterAsInteger(const Register& reg, unsigned elem = 0, bool is_signed = true,
                                      Register::Size size = Register::Size::Word) {
-        const std::string func = GetGLSLConversionFunc(
-            GLSLRegister::Type::Float,
-            is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger);
-
-        std::string value = func + '(' + GetRegister(reg, elem) + ')';
-
+        const std::string func{is_signed ? "floatBitsToInt" : "floatBitsToUint"};
+        const std::string value{func + '(' + GetRegister(reg, elem) + ')'};
         return ConvertIntegerSize(value, size);
     }
 
@@ -355,9 +313,7 @@ public:
                               u64 dest_elem = 0, Register::Size size = Register::Size::Word) {
         ASSERT_MSG(!is_saturated, "Unimplemented");
 
-        const std::string func = GetGLSLConversionFunc(
-            is_signed ? GLSLRegister::Type::Integer : GLSLRegister::Type::UnsignedInteger,
-            GLSLRegister::Type::Float);
+        const std::string func{is_signed ? "intBitsToFloat" : "uintBitsToFloat"};
 
         SetRegister(reg, elem, func + '(' + ConvertIntegerSize(value, size) + ')',
                     dest_num_components, value_num_components, dest_elem);
@@ -373,14 +329,7 @@ public:
     void SetRegisterToInputAttibute(const Register& reg, u64 elem, Attribute::Index attribute) {
         std::string dest = GetRegisterAsFloat(reg);
         std::string src = GetInputAttribute(attribute) + GetSwizzle(elem);
-
-        if (regs[reg].IsFloat()) {
-            shader.AddLine(dest + " = " + src + ';');
-        } else if (regs[reg].IsInteger()) {
-            shader.AddLine(dest + " = floatBitsToInt(" + src + ");");
-        } else {
-            UNREACHABLE();
-        }
+        shader.AddLine(dest + " = " + src + ';');
     }
 
     /**
@@ -393,7 +342,6 @@ public:
     void SetOutputAttributeToRegister(Attribute::Index attribute, u64 elem, const Register& reg) {
         std::string dest = GetOutputAttribute(attribute) + GetSwizzle(elem);
         std::string src = GetRegisterAsFloat(reg);
-        ASSERT_MSG(regs[reg].IsFloat(), "Output attributes must be set to a float");
         shader.AddLine(dest + " = " + src + ';');
     }
 
@@ -434,11 +382,8 @@ public:
     /// Add declarations for registers
     void GenerateDeclarations(const std::string& suffix) {
         for (const auto& reg : regs) {
-            for (const auto& type : reg.DeclaredTypes()) {
-                declarations.AddLine(GLSLRegister::GetTypeString(type) + ' ' +
-                                     reg.GetPrefixString(type) + std::to_string(reg.GetIndex()) +
-                                     '_' + suffix + " = 0;");
-            }
+            declarations.AddLine(GLSLRegister::GetTypeString() + ' ' + reg.GetPrefixString() +
+                                 std::to_string(reg.GetIndex()) + '_' + suffix + " = 0;");
         }
         declarations.AddNewLine();
 
@@ -516,21 +461,13 @@ public:
     }
 
 private:
-    /// Build GLSL conversion function, e.g. floatBitsToInt, intBitsToFloat, etc.
-    std::string GetGLSLConversionFunc(GLSLRegister::Type src, GLSLRegister::Type dest) const {
-        const std::string src_type = GLSLRegister::GetTypeString(src);
-        std::string dest_type = GLSLRegister::GetTypeString(dest);
-        dest_type[0] = toupper(dest_type[0]);
-        return src_type + "BitsTo" + dest_type;
-    }
-
     /// Generates code representing a temporary (GPR) register.
     std::string GetRegister(const Register& reg, unsigned elem) {
         if (reg == Register::ZeroIndex) {
             return "0";
         }
 
-        return regs[reg.GetSwizzledIndex(elem)].GetActiveString();
+        return regs[reg.GetSwizzledIndex(elem)].GetString();
     }
 
     /**
@@ -560,7 +497,7 @@ private:
     /// Build the GLSL register list.
     void BuildRegisterList() {
         for (size_t index = 0; index < Register::NumRegisters; ++index) {
-            regs.emplace_back(index, shader, suffix);
+            regs.emplace_back(index, suffix);
         }
     }
 
