@@ -15,6 +15,7 @@ namespace Service::Nvidia::Devices {
 class nvmap;
 constexpr u32 NVGPU_IOCTL_MAGIC('H');
 constexpr u32 NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO(0x8);
+constexpr u32 NVGPU_IOCTL_CHANNEL_KICKOFF_PB(0x1b);
 
 class nvhost_gpu final : public nvdevice {
 public:
@@ -158,14 +159,14 @@ private:
             BitField<31, 1, u32_le> unk2;
         };
 
-        VAddr Address() const {
-            return (static_cast<VAddr>(gpu_va_hi) << 32) | entry0;
+        Tegra::GPUVAddr Address() const {
+            return (static_cast<Tegra::GPUVAddr>(gpu_va_hi) << 32) | entry0;
         }
     };
     static_assert(sizeof(IoctlGpfifoEntry) == 8, "IoctlGpfifoEntry is incorrect size");
 
     struct IoctlSubmitGpfifo {
-        u64_le gpfifo;      // (ignored) pointer to gpfifo fence structs
+        u64_le address;     // pointer to gpfifo entry structs
         u32_le num_entries; // number of fence objects being submitted
         u32_le flags;
         IoctlFence fence_out; // returned new fence object for others to wait on
@@ -193,6 +194,7 @@ private:
     u32 AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output);
     u32 AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 KickoffPB(const std::vector<u8>& input, std::vector<u8>& output);
     u32 GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelSetTimeout(const std::vector<u8>& input, std::vector<u8>& output);
 

@@ -10,7 +10,6 @@
 #include <vector>
 #include <boost/icl/interval_map.hpp>
 #include "common/common_types.h"
-#include "common/hash.h"
 #include "common/math_util.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
@@ -137,6 +136,7 @@ struct SurfaceParams {
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
         return bpp_table[static_cast<size_t>(format)];
     }
+
     u32 GetFormatBpp() const {
         return GetFormatBpp(pixel_format);
     }
@@ -365,9 +365,21 @@ struct SurfaceParams {
         const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config);
 
     /// Creates SurfaceParams for a depth buffer configuration
-    static SurfaceParams CreateForDepthBuffer(
-        const Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig& config,
-        Tegra::GPUVAddr zeta_address, Tegra::DepthFormat format);
+    static SurfaceParams CreateForDepthBuffer(u32 zeta_width, u32 zeta_height,
+                                              Tegra::GPUVAddr zeta_address,
+                                              Tegra::DepthFormat format);
+
+    bool operator==(const SurfaceParams& other) const {
+        return std::tie(addr, is_tiled, block_height, pixel_format, component_type, type, width,
+                        height, unaligned_height, size_in_bytes) ==
+               std::tie(other.addr, other.is_tiled, other.block_height, other.pixel_format,
+                        other.component_type, other.type, other.width, other.height,
+                        other.unaligned_height, other.size_in_bytes);
+    }
+
+    bool operator!=(const SurfaceParams& other) const {
+        return !operator==(other);
+    }
 
     Tegra::GPUVAddr addr;
     bool is_tiled;
@@ -380,24 +392,6 @@ struct SurfaceParams {
     u32 unaligned_height;
     size_t size_in_bytes;
 };
-
-/// Hashable variation of SurfaceParams, used for a key in the surface cache
-struct SurfaceKey : Common::HashableStruct<SurfaceParams> {
-    static SurfaceKey Create(const SurfaceParams& params) {
-        SurfaceKey res;
-        res.state = params;
-        return res;
-    }
-};
-
-namespace std {
-template <>
-struct hash<SurfaceKey> {
-    size_t operator()(const SurfaceKey& k) const {
-        return k.Hash();
-    }
-};
-} // namespace std
 
 class CachedSurface final {
 public:
@@ -444,8 +438,8 @@ public:
     SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,
                                                     const MathUtil::Rectangle<s32>& viewport);
 
-    /// Marks the specified surface as "dirty", in that it is out of sync with Switch memory
-    void MarkSurfaceAsDirty(const Surface& surface);
+    /// Flushes the surface to Switch memory
+    void FlushSurface(const Surface& surface);
 
     /// Tries to find a framebuffer GPU address based on the provided CPU address
     Surface TryFindFramebufferSurface(VAddr cpu_addr) const;
@@ -460,6 +454,9 @@ private:
     void LoadSurface(const Surface& surface);
     Surface GetSurface(const SurfaceParams& params);
 
+    /// Recreates a surface with new parameters
+    Surface RecreateSurface(const Surface& surface, const SurfaceParams& new_params);
+
     /// Register surface into the cache
     void RegisterSurface(const Surface& surface);
 
@@ -469,7 +466,7 @@ private:
     /// Increase/decrease the number of surface in pages touching the specified region
     void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
 
-    std::unordered_map<SurfaceKey, Surface> surface_cache;
+    std::unordered_map<Tegra::GPUVAddr, Surface> surface_cache;
     PageMap cached_pages;
 
     OGLFramebuffer read_framebuffer;

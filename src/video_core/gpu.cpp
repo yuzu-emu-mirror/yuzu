@@ -20,7 +20,11 @@ GPU::GPU() {
 
 GPU::~GPU() = default;
 
-const Tegra::Engines::Maxwell3D& GPU::Get3DEngine() const {
+const Engines::Maxwell3D& GPU::Maxwell3D() const {
+    return *maxwell_3d;
+}
+
+Engines::Maxwell3D& GPU::Maxwell3D() {
     return *maxwell_3d;
 }
 

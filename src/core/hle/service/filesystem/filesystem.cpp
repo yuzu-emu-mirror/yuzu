@@ -24,7 +24,7 @@ namespace Service::FileSystem {
 constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
-                                                       const std::string& dir_name) {
+                                                       std::string_view dir_name) {
     if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
@@ -272,9 +272,9 @@ void RegisterFileSystems() {
     sdmc_factory = nullptr;
 
     auto nand_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(D_NAND_IDX), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::NANDDir), FileSys::Mode::Write);
     auto sd_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(D_SDMC_IDX), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir), FileSys::Mode::Write);
 
     auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
     save_data_factory = std::move(savedata);

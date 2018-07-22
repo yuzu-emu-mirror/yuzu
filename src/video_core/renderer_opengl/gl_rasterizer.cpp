@@ -387,7 +387,7 @@ void RasterizerOpenGL::Clear() {
     }
     if (regs.clear_buffers.Z) {
         clear_mask |= GL_DEPTH_BUFFER_BIT;
-        use_depth_fb = true;
+        use_depth_fb = regs.zeta_enable != 0;
 
         // Always enable the depth write when clearing the depth buffer. The depth write mask is
         // ignored when clearing the buffer in the Switch, but OpenGL obeys it so we set it to true.
@@ -413,11 +413,13 @@ void RasterizerOpenGL::Clear() {
     glClear(clear_mask);
 
     // Mark framebuffer surfaces as dirty
-    if (dirty_color_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
-    }
-    if (dirty_depth_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
+    if (Settings::values.use_accurate_framebuffers) {
+        if (dirty_color_surface != nullptr) {
+            res_cache.FlushSurface(dirty_color_surface);
+        }
+        if (dirty_depth_surface != nullptr) {
+            res_cache.FlushSurface(dirty_depth_surface);
+        }
     }
 }
 
@@ -431,7 +433,7 @@ void RasterizerOpenGL::DrawArrays() {
     ScopeAcquireGLContext acquire_context;
 
     auto [dirty_color_surface, dirty_depth_surface] =
-        ConfigureFramebuffers(true, regs.zeta.Address() != 0);
+        ConfigureFramebuffers(true, regs.zeta.Address() != 0 && regs.zeta_enable != 0);
 
     SyncDepthTestState();
     SyncBlendState();
@@ -520,11 +522,13 @@ void RasterizerOpenGL::DrawArrays() {
     state.Apply();
 
     // Mark framebuffer surfaces as dirty
-    if (dirty_color_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_color_surface);
-    }
-    if (dirty_depth_surface != nullptr) {
-        res_cache.MarkSurfaceAsDirty(dirty_depth_surface);
+    if (Settings::values.use_accurate_framebuffers) {
+        if (dirty_color_surface != nullptr) {
+            res_cache.FlushSurface(dirty_color_surface);
+        }
+        if (dirty_depth_surface != nullptr) {
+            res_cache.FlushSurface(dirty_depth_surface);
+        }
     }
 }
 
@@ -634,8 +638,8 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
 u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint program,
                                         u32 current_bindpoint,
                                         const std::vector<GLShader::ConstBufferEntry>& entries) {
-    auto& gpu = Core::System::GetInstance().GPU();
-    auto& maxwell3d = gpu.Get3DEngine();
+    const auto& gpu = Core::System::GetInstance().GPU();
+    const auto& maxwell3d = gpu.Maxwell3D();
 
     // Reset all buffer draw state for this stage.
     for (auto& buffer : state.draw.const_buffers[static_cast<size_t>(stage)]) {
@@ -644,7 +648,7 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
     }
 
     // Upload only the enabled buffers from the 16 constbuffers of each shader stage
-    auto& shader_stage = maxwell3d.state.shader_stages[static_cast<size_t>(stage)];
+    const auto& shader_stage = maxwell3d.state.shader_stages[static_cast<size_t>(stage)];
 
     for (u32 bindpoint = 0; bindpoint < entries.size(); ++bindpoint) {
         const auto& used_buffer = entries[bindpoint];
@@ -700,8 +704,8 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
 
 u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, GLuint program, u32 current_unit,
                                     const std::vector<GLShader::SamplerEntry>& entries) {
-    auto& gpu = Core::System::GetInstance().GPU();
-    auto& maxwell3d = gpu.Get3DEngine();
+    const auto& gpu = Core::System::GetInstance().GPU();
+    const auto& maxwell3d = gpu.Maxwell3D();
 
     ASSERT_MSG(current_unit + entries.size() <= std::size(state.texture_units),
                "Exceeded the number of active textures.");

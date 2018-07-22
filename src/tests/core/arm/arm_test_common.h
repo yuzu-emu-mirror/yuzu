@@ -2,12 +2,18 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma once
+
 #include <tuple>
 #include <unordered_map>
 #include <vector>
 
 #include "common/common_types.h"
 #include "core/memory_hook.h"
+
+namespace Memory {
+struct PageTable;
+}
 
 namespace ArmTests {
 
@@ -79,6 +85,7 @@ private:
     bool mutable_memory;
     std::shared_ptr<TestMemory> test_memory;
     std::vector<WriteRecord> write_records;
+    Memory::PageTable* page_table = nullptr;
 };
 
 } // namespace ArmTests

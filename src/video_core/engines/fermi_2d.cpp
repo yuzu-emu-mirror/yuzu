@@ -6,8 +6,7 @@
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/textures/decoders.h"
 
-namespace Tegra {
-namespace Engines {
+namespace Tegra::Engines {
 
 Fermi2D::Fermi2D(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
 
@@ -69,5 +68,4 @@ void Fermi2D::HandleSurfaceCopy() {
     }
 }
 
-} // namespace Engines
-} // namespace Tegra
+} // namespace Tegra::Engines

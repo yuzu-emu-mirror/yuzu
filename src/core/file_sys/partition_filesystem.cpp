@@ -2,7 +2,12 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <algorithm>
+#include <cstddef>
+#include <cstring>
+#include <iterator>
 #include <utility>
+
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/file_sys/partition_filesystem.h"
@@ -99,14 +104,15 @@ void PartitionFilesystem::PrintDebugInfo() const {
 }
 
 bool PartitionFilesystem::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
-    auto iter = std::find(pfs_files.begin(), pfs_files.end(), file);
+    const auto iter = std::find(pfs_files.begin(), pfs_files.end(), file);
     if (iter == pfs_files.end())
         return false;
 
-    pfs_files[iter - pfs_files.begin()] = pfs_files.back();
+    const std::ptrdiff_t offset = std::distance(pfs_files.begin(), iter);
+    pfs_files[offset] = pfs_files.back();
     pfs_files.pop_back();
 
-    pfs_dirs.emplace_back(dir);
+    pfs_dirs.emplace_back(std::move(dir));
 
     return true;
 }

@@ -9,6 +9,7 @@
 #include <fstream>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 #include "common/common_types.h"
@@ -16,20 +17,19 @@
 #include "common/string_util.h"
 #endif
 
-// User directory indices for GetUserPath
-enum {
-    D_USER_IDX,
-    D_ROOT_IDX,
-    D_CONFIG_IDX,
-    D_CACHE_IDX,
-    D_SDMC_IDX,
-    D_NAND_IDX,
-    D_SYSDATA_IDX,
-    D_LOGS_IDX,
-    NUM_PATH_INDICES
-};
-
 namespace FileUtil {
+
+// User paths for GetUserPath
+enum class UserPath {
+    CacheDir,
+    ConfigDir,
+    LogDir,
+    NANDDir,
+    RootDir,
+    SDMCDir,
+    SysDataDir,
+    UserDir,
+};
 
 // FileSystem tree node/
 struct FSTEntry {
@@ -85,7 +85,7 @@ bool CreateEmptyFile(const std::string& filename);
  * @return whether handling the entry succeeded
  */
 using DirectoryEntryCallable = std::function<bool(
-    unsigned* num_entries_out, const std::string& directory, const std::string& virtual_name)>;
+    u64* num_entries_out, const std::string& directory, const std::string& virtual_name)>;
 
 /**
  * Scans a directory, calling the callback for each file/directory contained within.
@@ -96,7 +96,7 @@ using DirectoryEntryCallable = std::function<bool(
  * @param callback The callback which will be called for each entry
  * @return whether scanning the directory succeeded
  */
-bool ForeachDirectoryEntry(unsigned* num_entries_out, const std::string& directory,
+bool ForeachDirectoryEntry(u64* num_entries_out, const std::string& directory,
                            DirectoryEntryCallable callback);
 
 /**
@@ -106,8 +106,8 @@ bool ForeachDirectoryEntry(unsigned* num_entries_out, const std::string& directo
  * @param recursion Number of children directories to read before giving up.
  * @return the total number of files/directories found
  */
-unsigned ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
-                           unsigned int recursion = 0);
+u64 ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
+                      unsigned int recursion = 0);
 
 // deletes the given directory and anything under it. Returns true on success.
 bool DeleteDirRecursively(const std::string& directory, unsigned int recursion = 256);
@@ -123,7 +123,7 @@ bool SetCurrentDir(const std::string& directory);
 
 // Returns a pointer to a string with a yuzu data dir in the user's home
 // directory. To be used in "multi-user" mode (that is, installed).
-const std::string& GetUserPath(const unsigned int DirIDX, const std::string& newPath = "");
+const std::string& GetUserPath(UserPath path, const std::string& new_path = "");
 
 // Returns the path to where the sys file are
 std::string GetSysDirectory();
@@ -152,22 +152,22 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
 
 // Splits the path on '/' or '\' and put the components into a vector
 // i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
-std::vector<std::string> SplitPathComponents(const std::string& filename);
+std::vector<std::string> SplitPathComponents(std::string_view filename);
 
 // Gets all of the text up to the last '/' or '\' in the path.
-std::string GetParentPath(const std::string& path);
+std::string_view GetParentPath(std::string_view path);
 
 // Gets all of the text after the first '/' or '\' in the path.
-std::string GetPathWithoutTop(std::string path);
+std::string_view GetPathWithoutTop(std::string_view path);
 
 // Gets the filename of the path
-std::string GetFilename(std::string path);
+std::string_view GetFilename(std::string_view path);
 
 // Gets the extension of the filename
-std::string GetExtensionFromFilename(const std::string& name);
+std::string_view GetExtensionFromFilename(std::string_view name);
 
 // Removes the final '/' or '\' if one exists
-std::string RemoveTrailingSlash(const std::string& path);
+std::string_view RemoveTrailingSlash(std::string_view path);
 
 // Creates a new vector containing indices [first, last) from the original.
 template <typename T>

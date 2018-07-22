@@ -2,7 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
+#include <memory>
 #include <sstream>
+#include <unordered_map>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_paths.h"
@@ -274,14 +277,10 @@ bool Copy(const std::string& srcFilename, const std::string& destFilename) {
               GetLastErrorMsg());
     return false;
 #else
-
-// buffer size
-#define BSIZE 1024
-
-    char buffer[BSIZE];
+    using CFilePointer = std::unique_ptr<FILE, decltype(&std::fclose)>;
 
     // Open input file
-    FILE* input = fopen(srcFilename.c_str(), "rb");
+    CFilePointer input{fopen(srcFilename.c_str(), "rb"), std::fclose};
     if (!input) {
         LOG_ERROR(Common_Filesystem, "opening input failed {} --> {}: {}", srcFilename,
                   destFilename, GetLastErrorMsg());
@@ -289,44 +288,36 @@ bool Copy(const std::string& srcFilename, const std::string& destFilename) {
     }
 
     // open output file
-    FILE* output = fopen(destFilename.c_str(), "wb");
+    CFilePointer output{fopen(destFilename.c_str(), "wb"), std::fclose};
     if (!output) {
-        fclose(input);
         LOG_ERROR(Common_Filesystem, "opening output failed {} --> {}: {}", srcFilename,
                   destFilename, GetLastErrorMsg());
         return false;
     }
 
     // copy loop
-    while (!feof(input)) {
+    std::array<char, 1024> buffer;
+    while (!feof(input.get())) {
         // read input
-        size_t rnum = fread(buffer, sizeof(char), BSIZE, input);
-        if (rnum != BSIZE) {
-            if (ferror(input) != 0) {
+        size_t rnum = fread(buffer.data(), sizeof(char), buffer.size(), input.get());
+        if (rnum != buffer.size()) {
+            if (ferror(input.get()) != 0) {
                 LOG_ERROR(Common_Filesystem, "failed reading from source, {} --> {}: {}",
                           srcFilename, destFilename, GetLastErrorMsg());
-                goto bail;
+                return false;
             }
         }
 
         // write output
-        size_t wnum = fwrite(buffer, sizeof(char), rnum, output);
+        size_t wnum = fwrite(buffer.data(), sizeof(char), rnum, output.get());
         if (wnum != rnum) {
             LOG_ERROR(Common_Filesystem, "failed writing to output, {} --> {}: {}", srcFilename,
                       destFilename, GetLastErrorMsg());
-            goto bail;
+            return false;
         }
     }
-    // close files
-    fclose(input);
-    fclose(output);
+
     return true;
-bail:
-    if (input)
-        fclose(input);
-    if (output)
-        fclose(output);
-    return false;
 #endif
 }
 
@@ -395,12 +386,12 @@ bool CreateEmptyFile(const std::string& filename) {
     return true;
 }
 
-bool ForeachDirectoryEntry(unsigned* num_entries_out, const std::string& directory,
+bool ForeachDirectoryEntry(u64* num_entries_out, const std::string& directory,
                            DirectoryEntryCallable callback) {
     LOG_TRACE(Common_Filesystem, "directory {}", directory);
 
     // How many files + directories we found
-    unsigned found_entries = 0;
+    u64 found_entries = 0;
 
     // Save the status of callback function
     bool callback_error = false;
@@ -430,7 +421,7 @@ bool ForeachDirectoryEntry(unsigned* num_entries_out, const std::string& directo
         if (virtual_name == "." || virtual_name == "..")
             continue;
 
-        unsigned ret_entries = 0;
+        u64 ret_entries = 0;
         if (!callback(&ret_entries, directory, virtual_name)) {
             callback_error = true;
             break;
@@ -454,9 +445,9 @@ bool ForeachDirectoryEntry(unsigned* num_entries_out, const std::string& directo
     return true;
 }
 
-unsigned ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
-                           unsigned int recursion) {
-    const auto callback = [recursion, &parent_entry](unsigned* num_entries_out,
+u64 ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
+                      unsigned int recursion) {
+    const auto callback = [recursion, &parent_entry](u64* num_entries_out,
                                                      const std::string& directory,
                                                      const std::string& virtual_name) -> bool {
         FSTEntry entry;
@@ -468,7 +459,7 @@ unsigned ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
             // is a directory, lets go inside if we didn't recurse to often
             if (recursion > 0) {
                 entry.size = ScanDirectoryTree(entry.physicalName, entry, recursion - 1);
-                *num_entries_out += (int)entry.size;
+                *num_entries_out += entry.size;
             } else {
                 entry.size = 0;
             }
@@ -479,16 +470,16 @@ unsigned ScanDirectoryTree(const std::string& directory, FSTEntry& parent_entry,
         (*num_entries_out)++;
 
         // Push into the tree
-        parent_entry.children.push_back(entry);
+        parent_entry.children.push_back(std::move(entry));
         return true;
     };
 
-    unsigned num_entries;
+    u64 num_entries;
     return ForeachDirectoryEntry(&num_entries, directory, callback) ? num_entries : 0;
 }
 
 bool DeleteDirRecursively(const std::string& directory, unsigned int recursion) {
-    const auto callback = [recursion](unsigned* num_entries_out, const std::string& directory,
+    const auto callback = [recursion](u64* num_entries_out, const std::string& directory,
                                       const std::string& virtual_name) -> bool {
         std::string new_path = directory + DIR_SEP_CHR + virtual_name;
 
@@ -681,67 +672,68 @@ std::string GetSysDirectory() {
 
 // Returns a string with a yuzu data dir or file in the user's home
 // directory. To be used in "multi-user" mode (that is, installed).
-const std::string& GetUserPath(const unsigned int DirIDX, const std::string& newPath) {
-    static std::string paths[NUM_PATH_INDICES];
+const std::string& GetUserPath(UserPath path, const std::string& new_path) {
+    static std::unordered_map<UserPath, std::string> paths;
+    auto& user_path = paths[UserPath::UserDir];
 
     // Set up all paths and files on the first run
-    if (paths[D_USER_IDX].empty()) {
+    if (user_path.empty()) {
 #ifdef _WIN32
-        paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
-        if (!FileUtil::IsDirectory(paths[D_USER_IDX])) {
-            paths[D_USER_IDX] = AppDataRoamingDirectory() + DIR_SEP EMU_DATA_DIR DIR_SEP;
+        user_path = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+        if (!FileUtil::IsDirectory(user_path)) {
+            user_path = AppDataRoamingDirectory() + DIR_SEP EMU_DATA_DIR DIR_SEP;
         } else {
             LOG_INFO(Common_Filesystem, "Using the local user directory");
         }
 
-        paths[D_CONFIG_IDX] = paths[D_USER_IDX] + CONFIG_DIR DIR_SEP;
-        paths[D_CACHE_IDX] = paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
+        paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+        paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
 #else
         if (FileUtil::Exists(ROOT_DIR DIR_SEP USERDATA_DIR)) {
-            paths[D_USER_IDX] = ROOT_DIR DIR_SEP USERDATA_DIR DIR_SEP;
-            paths[D_CONFIG_IDX] = paths[D_USER_IDX] + CONFIG_DIR DIR_SEP;
-            paths[D_CACHE_IDX] = paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
+            user_path = ROOT_DIR DIR_SEP USERDATA_DIR DIR_SEP;
+            paths.emplace(UserPath::ConfigDir, user_path + CONFIG_DIR DIR_SEP);
+            paths.emplace(UserPath::CacheDir, user_path + CACHE_DIR DIR_SEP);
         } else {
             std::string data_dir = GetUserDirectory("XDG_DATA_HOME");
             std::string config_dir = GetUserDirectory("XDG_CONFIG_HOME");
             std::string cache_dir = GetUserDirectory("XDG_CACHE_HOME");
 
-            paths[D_USER_IDX] = data_dir + DIR_SEP EMU_DATA_DIR DIR_SEP;
-            paths[D_CONFIG_IDX] = config_dir + DIR_SEP EMU_DATA_DIR DIR_SEP;
-            paths[D_CACHE_IDX] = cache_dir + DIR_SEP EMU_DATA_DIR DIR_SEP;
+            user_path = data_dir + DIR_SEP EMU_DATA_DIR DIR_SEP;
+            paths.emplace(UserPath::ConfigDir, config_dir + DIR_SEP EMU_DATA_DIR DIR_SEP);
+            paths.emplace(UserPath::CacheDir, cache_dir + DIR_SEP EMU_DATA_DIR DIR_SEP);
         }
 #endif
-        paths[D_SDMC_IDX] = paths[D_USER_IDX] + SDMC_DIR DIR_SEP;
-        paths[D_NAND_IDX] = paths[D_USER_IDX] + NAND_DIR DIR_SEP;
-        paths[D_SYSDATA_IDX] = paths[D_USER_IDX] + SYSDATA_DIR DIR_SEP;
+        paths.emplace(UserPath::SDMCDir, user_path + SDMC_DIR DIR_SEP);
+        paths.emplace(UserPath::NANDDir, user_path + NAND_DIR DIR_SEP);
+        paths.emplace(UserPath::SysDataDir, user_path + SYSDATA_DIR DIR_SEP);
         // TODO: Put the logs in a better location for each OS
-        paths[D_LOGS_IDX] = paths[D_USER_IDX] + LOG_DIR DIR_SEP;
+        paths.emplace(UserPath::LogDir, user_path + LOG_DIR DIR_SEP);
     }
 
-    if (!newPath.empty()) {
-        if (!FileUtil::IsDirectory(newPath)) {
-            LOG_ERROR(Common_Filesystem, "Invalid path specified {}", newPath);
-            return paths[DirIDX];
+    if (!new_path.empty()) {
+        if (!FileUtil::IsDirectory(new_path)) {
+            LOG_ERROR(Common_Filesystem, "Invalid path specified {}", new_path);
+            return paths[path];
         } else {
-            paths[DirIDX] = newPath;
+            paths[path] = new_path;
         }
 
-        switch (DirIDX) {
-        case D_ROOT_IDX:
-            paths[D_USER_IDX] = paths[D_ROOT_IDX] + DIR_SEP;
+        switch (path) {
+        case UserPath::RootDir:
+            user_path = paths[UserPath::RootDir] + DIR_SEP;
             break;
 
-        case D_USER_IDX:
-            paths[D_USER_IDX] = paths[D_ROOT_IDX] + DIR_SEP;
-            paths[D_CONFIG_IDX] = paths[D_USER_IDX] + CONFIG_DIR DIR_SEP;
-            paths[D_CACHE_IDX] = paths[D_USER_IDX] + CACHE_DIR DIR_SEP;
-            paths[D_SDMC_IDX] = paths[D_USER_IDX] + SDMC_DIR DIR_SEP;
-            paths[D_NAND_IDX] = paths[D_USER_IDX] + NAND_DIR DIR_SEP;
+        case UserPath::UserDir:
+            user_path = paths[UserPath::RootDir] + DIR_SEP;
+            paths[UserPath::ConfigDir] = user_path + CONFIG_DIR DIR_SEP;
+            paths[UserPath::CacheDir] = user_path + CACHE_DIR DIR_SEP;
+            paths[UserPath::SDMCDir] = user_path + SDMC_DIR DIR_SEP;
+            paths[UserPath::NANDDir] = user_path + NAND_DIR DIR_SEP;
             break;
         }
     }
 
-    return paths[DirIDX];
+    return paths[path];
 }
 
 size_t WriteStringToFile(bool text_file, const std::string& str, const char* filename) {
@@ -800,67 +792,80 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
     }
 }
 
-std::vector<std::string> SplitPathComponents(const std::string& filename) {
-    auto copy(filename);
+std::vector<std::string> SplitPathComponents(std::string_view filename) {
+    std::string copy(filename);
     std::replace(copy.begin(), copy.end(), '\\', '/');
     std::vector<std::string> out;
 
-    std::stringstream stream(filename);
+    std::stringstream stream(copy);
     std::string item;
-    while (std::getline(stream, item, '/'))
+    while (std::getline(stream, item, '/')) {
         out.push_back(std::move(item));
+    }
 
     return out;
 }
 
-std::string GetParentPath(const std::string& path) {
-    auto out = path;
-    const auto name_bck_index = out.find_last_of('\\');
-    const auto name_fwd_index = out.find_last_of('/');
+std::string_view GetParentPath(std::string_view path) {
+    const auto name_bck_index = path.rfind('\\');
+    const auto name_fwd_index = path.rfind('/');
     size_t name_index;
-    if (name_bck_index == std::string::npos || name_fwd_index == std::string::npos)
-        name_index = std::min<size_t>(name_bck_index, name_fwd_index);
-    else
-        name_index = std::max<size_t>(name_bck_index, name_fwd_index);
 
-    return out.erase(name_index);
-}
-
-std::string GetPathWithoutTop(std::string path) {
-    if (path.empty())
-        return "";
-    while (path[0] == '\\' || path[0] == '/') {
-        path = path.substr(1);
-        if (path.empty())
-            return "";
+    if (name_bck_index == std::string_view::npos || name_fwd_index == std::string_view::npos) {
+        name_index = std::min(name_bck_index, name_fwd_index);
+    } else {
+        name_index = std::max(name_bck_index, name_fwd_index);
     }
-    const auto name_bck_index = path.find_first_of('\\');
-    const auto name_fwd_index = path.find_first_of('/');
-    return path.substr(std::min<size_t>(name_bck_index, name_fwd_index) + 1);
-    return path.substr(std::min<size_t>(name_bck_index, name_fwd_index) + 1);
+
+    return path.substr(0, name_index);
 }
 
-std::string GetFilename(std::string path) {
-    std::replace(path.begin(), path.end(), '\\', '/');
-    auto name_index = path.find_last_of('/');
-    if (name_index == std::string::npos)
-        return "";
+std::string_view GetPathWithoutTop(std::string_view path) {
+    if (path.empty()) {
+        return path;
+    }
+
+    while (path[0] == '\\' || path[0] == '/') {
+        path.remove_suffix(1);
+        if (path.empty()) {
+            return path;
+        }
+    }
+
+    const auto name_bck_index = path.find('\\');
+    const auto name_fwd_index = path.find('/');
+    return path.substr(std::min(name_bck_index, name_fwd_index) + 1);
+}
+
+std::string_view GetFilename(std::string_view path) {
+    const auto name_index = path.find_last_of("\\/");
+
+    if (name_index == std::string_view::npos) {
+        return {};
+    }
+
     return path.substr(name_index + 1);
 }
 
-std::string GetExtensionFromFilename(const std::string& name) {
-    size_t index = name.find_last_of('.');
-    if (index == std::string::npos)
-        return "";
+std::string_view GetExtensionFromFilename(std::string_view name) {
+    const size_t index = name.rfind('.');
+
+    if (index == std::string_view::npos) {
+        return {};
+    }
 
     return name.substr(index + 1);
 }
 
-std::string RemoveTrailingSlash(const std::string& path) {
-    if (path.empty())
+std::string_view RemoveTrailingSlash(std::string_view path) {
+    if (path.empty()) {
         return path;
-    if (path.back() == '\\' || path.back() == '/')
-        return path.substr(0, path.size() - 1);
+    }
+
+    if (path.back() == '\\' || path.back() == '/') {
+        path.remove_suffix(1);
+        return path;
+    }
 
     return path;
 }

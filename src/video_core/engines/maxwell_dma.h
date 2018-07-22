@@ -12,8 +12,7 @@
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 
-namespace Tegra {
-namespace Engines {
+namespace Tegra::Engines {
 
 class MaxwellDMA final {
 public:
@@ -151,5 +150,4 @@ ASSERT_REG_POSITION(src_params, 0x1CA);
 
 #undef ASSERT_REG_POSITION
 
-} // namespace Engines
-} // namespace Tegra
+} // namespace Tegra::Engines
