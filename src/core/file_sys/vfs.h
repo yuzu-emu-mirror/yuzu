@@ -205,9 +205,12 @@ struct VfsDirectory : NonCopyable {
     template <typename Directory>
     bool InterpretAsDirectory(std::string_view file) {
         auto file_p = GetFile(file);
-        if (file_p == nullptr)
+
+        if (file_p == nullptr) {
             return false;
-        return ReplaceFileWithSubdirectory(file, std::make_shared<Directory>(file_p));
+        }
+
+        return ReplaceFileWithSubdirectory(file_p, std::make_shared<Directory>(file_p));
     }
 
 protected:
