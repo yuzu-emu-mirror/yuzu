@@ -338,6 +338,18 @@ bool GMainWindow::SupportsRequiredGLExtensions() {
         unsupported_ext.append("ARB_separate_shader_objects");
     if (!GLAD_GL_ARB_vertex_attrib_binding)
         unsupported_ext.append("ARB_vertex_attrib_binding");
+    if (!GLAD_GL_ARB_vertex_type_10f_11f_11f_rev)
+        unsupported_ext.append("ARB_vertex_type_10f_11f_11f_rev");
+
+    // Extensions required to support some texture formats.
+    if (!GLAD_GL_EXT_texture_compression_s3tc)
+        unsupported_ext.append("EXT_texture_compression_s3tc");
+    if (!GLAD_GL_ARB_texture_compression_rgtc)
+        unsupported_ext.append("ARB_texture_compression_rgtc");
+    if (!GLAD_GL_ARB_texture_compression_bptc)
+        unsupported_ext.append("ARB_texture_compression_bptc");
+    if (!GLAD_GL_ARB_depth_buffer_float)
+        unsupported_ext.append("ARB_depth_buffer_float");
 
     for (const QString& ext : unsupported_ext)
         LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
