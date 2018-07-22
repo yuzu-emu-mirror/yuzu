@@ -6,11 +6,11 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 #include "boost/optional.hpp"
 #include "common/common_types.h"
-#include "common/file_util.h"
 
 namespace FileSys {
 struct VfsFile;
@@ -112,7 +112,7 @@ struct VfsFile : NonCopyable {
     }
 
     // Renames the file to name. Returns whether or not the operation was successsful.
-    virtual bool Rename(const std::string& name) = 0;
+    virtual bool Rename(std::string_view name) = 0;
 };
 
 // A class representing a directory in an abstract filesystem.
@@ -121,27 +121,27 @@ struct VfsDirectory : NonCopyable {
 
     // Retrives the file located at path as if the current directory was root. Returns nullptr if
     // not found.
-    virtual std::shared_ptr<VfsFile> GetFileRelative(const std::string& path) const;
+    virtual std::shared_ptr<VfsFile> GetFileRelative(std::string_view path) const;
     // Calls GetFileRelative(path) on the root of the current directory.
-    virtual std::shared_ptr<VfsFile> GetFileAbsolute(const std::string& path) const;
+    virtual std::shared_ptr<VfsFile> GetFileAbsolute(std::string_view path) const;
 
     // Retrives the directory located at path as if the current directory was root. Returns nullptr
     // if not found.
-    virtual std::shared_ptr<VfsDirectory> GetDirectoryRelative(const std::string& path) const;
+    virtual std::shared_ptr<VfsDirectory> GetDirectoryRelative(std::string_view path) const;
     // Calls GetDirectoryRelative(path) on the root of the current directory.
-    virtual std::shared_ptr<VfsDirectory> GetDirectoryAbsolute(const std::string& path) const;
+    virtual std::shared_ptr<VfsDirectory> GetDirectoryAbsolute(std::string_view path) const;
 
     // Returns a vector containing all of the files in this directory.
     virtual std::vector<std::shared_ptr<VfsFile>> GetFiles() const = 0;
     // Returns the file with filename matching name. Returns nullptr if directory dosen't have a
     // file with name.
-    virtual std::shared_ptr<VfsFile> GetFile(const std::string& name) const;
+    virtual std::shared_ptr<VfsFile> GetFile(std::string_view name) const;
 
     // Returns a vector containing all of the subdirectories in this directory.
     virtual std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const = 0;
     // Returns the directory with name matching name. Returns nullptr if directory dosen't have a
     // directory with name.
-    virtual std::shared_ptr<VfsDirectory> GetSubdirectory(const std::string& name) const;
+    virtual std::shared_ptr<VfsDirectory> GetSubdirectory(std::string_view name) const;
 
     // Returns whether or not the directory can be written to.
     virtual bool IsWritable() const = 0;
@@ -161,49 +161,49 @@ struct VfsDirectory : NonCopyable {
 
     // Creates a new subdirectory with name name. Returns a pointer to the new directory or nullptr
     // if the operation failed.
-    virtual std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) = 0;
+    virtual std::shared_ptr<VfsDirectory> CreateSubdirectory(std::string_view name) = 0;
     // Creates a new file with name name. Returns a pointer to the new file or nullptr if the
     // operation failed.
-    virtual std::shared_ptr<VfsFile> CreateFile(const std::string& name) = 0;
+    virtual std::shared_ptr<VfsFile> CreateFile(std::string_view name) = 0;
 
     // Creates a new file at the path relative to this directory. Also creates directories if
     // they do not exist and is supported by this implementation. Returns nullptr on any failure.
-    virtual std::shared_ptr<VfsFile> CreateFileRelative(const std::string& path);
+    virtual std::shared_ptr<VfsFile> CreateFileRelative(std::string_view path);
 
     // Creates a new file at the path relative to root of this directory. Also creates directories
     // if they do not exist and is supported by this implementation. Returns nullptr on any failure.
-    virtual std::shared_ptr<VfsFile> CreateFileAbsolute(const std::string& path);
+    virtual std::shared_ptr<VfsFile> CreateFileAbsolute(std::string_view path);
 
     // Creates a new directory at the path relative to this directory. Also creates directories if
     // they do not exist and is supported by this implementation. Returns nullptr on any failure.
-    virtual std::shared_ptr<VfsDirectory> CreateDirectoryRelative(const std::string& path);
+    virtual std::shared_ptr<VfsDirectory> CreateDirectoryRelative(std::string_view path);
 
     // Creates a new directory at the path relative to root of this directory. Also creates
     // directories if they do not exist and is supported by this implementation. Returns nullptr on
     // any failure.
-    virtual std::shared_ptr<VfsDirectory> CreateDirectoryAbsolute(const std::string& path);
+    virtual std::shared_ptr<VfsDirectory> CreateDirectoryAbsolute(std::string_view path);
 
     // Deletes the subdirectory with name and returns true on success.
-    virtual bool DeleteSubdirectory(const std::string& name) = 0;
+    virtual bool DeleteSubdirectory(std::string_view name) = 0;
     // Deletes all subdirectories and files of subdirectory with name recirsively and then deletes
     // the subdirectory. Returns true on success.
-    virtual bool DeleteSubdirectoryRecursive(const std::string& name);
+    virtual bool DeleteSubdirectoryRecursive(std::string_view name);
     // Returnes whether or not the file with name name was deleted successfully.
-    virtual bool DeleteFile(const std::string& name) = 0;
+    virtual bool DeleteFile(std::string_view name) = 0;
 
     // Returns whether or not this directory was renamed to name.
-    virtual bool Rename(const std::string& name) = 0;
+    virtual bool Rename(std::string_view name) = 0;
 
     // Returns whether or not the file with name src was successfully copied to a new file with name
     // dest.
-    virtual bool Copy(const std::string& src, const std::string& dest);
+    virtual bool Copy(std::string_view src, std::string_view dest);
 
     // Interprets the file with name file instead as a directory of type directory.
     // The directory must have a constructor that takes a single argument of type
     // std::shared_ptr<VfsFile>. Allows to reinterpret container files (i.e NCA, zip, XCI, etc) as a
     // subdirectory in one call.
     template <typename Directory>
-    bool InterpretAsDirectory(const std::string& file) {
+    bool InterpretAsDirectory(std::string_view file) {
         auto file_p = GetFile(file);
         if (file_p == nullptr)
             return false;
@@ -221,10 +221,10 @@ protected:
 struct ReadOnlyVfsDirectory : public VfsDirectory {
     bool IsWritable() const override;
     bool IsReadable() const override;
-    std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
-    std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
-    bool DeleteSubdirectory(const std::string& name) override;
-    bool DeleteFile(const std::string& name) override;
-    bool Rename(const std::string& name) override;
+    std::shared_ptr<VfsDirectory> CreateSubdirectory(std::string_view name) override;
+    std::shared_ptr<VfsFile> CreateFile(std::string_view name) override;
+    bool DeleteSubdirectory(std::string_view name) override;
+    bool DeleteFile(std::string_view name) override;
+    bool Rename(std::string_view name) override;
 };
 } // namespace FileSys

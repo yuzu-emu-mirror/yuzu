@@ -49,7 +49,8 @@ FileType GuessFromFilename(const std::string& name) {
     if (name == "main")
         return FileType::DeconstructedRomDirectory;
 
-    const std::string extension = Common::ToLower(FileUtil::GetExtensionFromFilename(name));
+    const std::string extension =
+        Common::ToLower(std::string(FileUtil::GetExtensionFromFilename(name)));
 
     if (extension == "elf")
         return FileType::ELF;

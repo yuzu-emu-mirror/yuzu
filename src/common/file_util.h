@@ -9,6 +9,7 @@
 #include <fstream>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 #include "common/common_types.h"
@@ -151,22 +152,22 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
 
 // Splits the path on '/' or '\' and put the components into a vector
 // i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
-std::vector<std::string> SplitPathComponents(const std::string& filename);
+std::vector<std::string> SplitPathComponents(std::string_view filename);
 
 // Gets all of the text up to the last '/' or '\' in the path.
-std::string GetParentPath(const std::string& path);
+std::string_view GetParentPath(std::string_view path);
 
 // Gets all of the text after the first '/' or '\' in the path.
-std::string GetPathWithoutTop(std::string path);
+std::string_view GetPathWithoutTop(std::string_view path);
 
 // Gets the filename of the path
-std::string GetFilename(std::string path);
+std::string_view GetFilename(std::string_view path);
 
 // Gets the extension of the filename
-std::string GetExtensionFromFilename(const std::string& name);
+std::string_view GetExtensionFromFilename(std::string_view name);
 
 // Removes the final '/' or '\' if one exists
-std::string RemoveTrailingSlash(const std::string& path);
+std::string_view RemoveTrailingSlash(std::string_view path);
 
 // Creates a new vector containing indices [first, last) from the original.
 template <typename T>

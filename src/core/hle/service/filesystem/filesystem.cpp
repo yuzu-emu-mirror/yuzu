@@ -24,7 +24,7 @@ namespace Service::FileSystem {
 constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
-                                                       const std::string& dir_name) {
+                                                       std::string_view dir_name) {
     if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 

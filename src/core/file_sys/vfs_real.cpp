@@ -72,12 +72,15 @@ size_t RealVfsFile::Write(const u8* data, size_t length, size_t offset) {
     return backing.WriteBytes(data, length);
 }
 
-bool RealVfsFile::Rename(const std::string& name) {
-    const auto out = FileUtil::Rename(GetName(), name);
-    path = parent_path + DIR_SEP + name;
+bool RealVfsFile::Rename(std::string_view name) {
+    std::string name_str(name.begin(), name.end());
+    const auto out = FileUtil::Rename(GetName(), name_str);
+
+    path = (parent_path + DIR_SEP).append(name);
     path_components = parent_components;
-    path_components.push_back(name);
+    path_components.push_back(std::move(name_str));
     backing = FileUtil::IOFile(path, PermissionsToCharArray(perms).c_str());
+
     return out;
 }
 
@@ -135,36 +138,54 @@ std::shared_ptr<VfsDirectory> RealVfsDirectory::GetParentDirectory() const {
     return std::make_shared<RealVfsDirectory>(parent_path, perms);
 }
 
-std::shared_ptr<VfsDirectory> RealVfsDirectory::CreateSubdirectory(const std::string& name) {
-    if (!FileUtil::CreateDir(path + DIR_SEP + name))
+std::shared_ptr<VfsDirectory> RealVfsDirectory::CreateSubdirectory(std::string_view name) {
+    const std::string subdir_path = (path + DIR_SEP).append(name);
+
+    if (!FileUtil::CreateDir(subdir_path)) {
         return nullptr;
-    subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(path + DIR_SEP + name, perms));
+    }
+
+    subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(subdir_path, perms));
     return subdirectories.back();
 }
 
-std::shared_ptr<VfsFile> RealVfsDirectory::CreateFile(const std::string& name) {
-    if (!FileUtil::CreateEmptyFile(path + DIR_SEP + name))
+std::shared_ptr<VfsFile> RealVfsDirectory::CreateFile(std::string_view name) {
+    const std::string file_path = (path + DIR_SEP).append(name);
+
+    if (!FileUtil::CreateEmptyFile(file_path)) {
         return nullptr;
-    files.emplace_back(std::make_shared<RealVfsFile>(path + DIR_SEP + name, perms));
+    }
+
+    files.emplace_back(std::make_shared<RealVfsFile>(file_path, perms));
     return files.back();
 }
 
-bool RealVfsDirectory::DeleteSubdirectory(const std::string& name) {
-    return FileUtil::DeleteDirRecursively(path + DIR_SEP + name);
+bool RealVfsDirectory::DeleteSubdirectory(std::string_view name) {
+    const std::string subdir_path = (path + DIR_SEP).append(name);
+
+    return FileUtil::DeleteDirRecursively(subdir_path);
 }
 
-bool RealVfsDirectory::DeleteFile(const std::string& name) {
-    auto file = GetFile(name);
-    if (file == nullptr)
+bool RealVfsDirectory::DeleteFile(std::string_view name) {
+    const auto file = GetFile(name);
+
+    if (file == nullptr) {
         return false;
+    }
+
     files.erase(std::find(files.begin(), files.end(), file));
+
     auto real_file = std::static_pointer_cast<RealVfsFile>(file);
     real_file->Close();
-    return FileUtil::Delete(path + DIR_SEP + name);
+
+    const std::string file_path = (path + DIR_SEP).append(name);
+    return FileUtil::Delete(file_path);
 }
 
-bool RealVfsDirectory::Rename(const std::string& name) {
-    return FileUtil::Rename(path, parent_path + DIR_SEP + name);
+bool RealVfsDirectory::Rename(std::string_view name) {
+    const std::string new_name = (parent_path + DIR_SEP).append(name);
+
+    return FileUtil::Rename(path, new_name);
 }
 
 bool RealVfsDirectory::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
