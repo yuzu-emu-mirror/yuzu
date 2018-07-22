@@ -650,12 +650,27 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
 
         ASSERT(thread->condvar_wait_address == condition_variable_addr);
 
-        // If the mutex is not yet acquired, acquire it.
-        u32 mutex_val = Memory::Read32(thread->mutex_wait_address);
+        size_t current_core = Core::System::GetInstance().CurrentCoreIndex();
+
+        auto& monitor = Core::System::GetInstance().Monitor();
+
+        // Atomically read the value of the mutex.
+        u32 mutex_val = 0;
+        do {
+            monitor.SetExclusive(current_core, thread->mutex_wait_address);
+
+            // If the mutex is not yet acquired, acquire it.
+            mutex_val = Memory::Read32(thread->mutex_wait_address);
+
+            if (mutex_val != 0) {
+                monitor.ClearExclusive();
+                break;
+            }
+        } while (!monitor.ExclusiveWrite32(current_core, thread->mutex_wait_address,
+                                           thread->wait_handle));
 
         if (mutex_val == 0) {
             // We were able to acquire the mutex, resume this thread.
-            Memory::Write32(thread->mutex_wait_address, thread->wait_handle);
             ASSERT(thread->status == ThreadStatus::WaitMutex);
             thread->ResumeFromWait();
 
@@ -668,16 +683,25 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
             thread->condvar_wait_address = 0;
             thread->wait_handle = 0;
         } else {
-            // Couldn't acquire the mutex, block the thread.
+            // Atomically signal that the mutex now has a waiting thread.
+            do {
+                monitor.SetExclusive(current_core, thread->mutex_wait_address);
+
+                // Ensure that the mutex value is still what we expect.
+                u32 value = Memory::Read32(thread->mutex_wait_address);
+                // TODO(Subv): When this happens, the kernel just clears the exclusive state and
+                // retries the initial read for this thread.
+                ASSERT_MSG(mutex_val == value, "Unhandled synchronization primitive case");
+            } while (!monitor.ExclusiveWrite32(current_core, thread->mutex_wait_address,
+                                               mutex_val | Mutex::MutexHasWaitersFlag));
+
+            // The mutex is already owned by some other thread, make this thread wait on it.
             Handle owner_handle = static_cast<Handle>(mutex_val & Mutex::MutexOwnerMask);
             auto owner = g_handle_table.Get<Thread>(owner_handle);
             ASSERT(owner);
             ASSERT(thread->status != ThreadStatus::Running);
             thread->status = ThreadStatus::WaitMutex;
             thread->wakeup_callback = nullptr;
-
-            // Signal that the mutex now has a waiting thread.
-            Memory::Write32(thread->mutex_wait_address, mutex_val | Mutex::MutexHasWaitersFlag);
 
             owner->AddMutexWaiter(thread);
 
