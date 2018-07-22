@@ -425,6 +425,7 @@ union Instruction {
 
     union {
         BitField<50, 3, u64> component_mask_selector;
+        BitField<0, 8, Register> gpr0;
         BitField<28, 8, Register> gpr28;
 
         bool HasTwoDestinations() const {
@@ -432,13 +433,16 @@ union Instruction {
         }
 
         bool IsComponentEnabled(size_t component) const {
-            static constexpr std::array<size_t, 5> one_dest_mask{0x1, 0x2, 0x4, 0x8, 0x3};
-            static constexpr std::array<size_t, 5> two_dest_mask{0x7, 0xb, 0xd, 0xe, 0xf};
-            const auto& mask{HasTwoDestinations() ? two_dest_mask : one_dest_mask};
+            static constexpr std::array<std::array<u32, 8>, 4> mask_lut{
+                {{},
+                 {0x1, 0x2, 0x4, 0x8, 0x3},
+                 {0x1, 0x2, 0x4, 0x8, 0x3, 0x9, 0xa, 0xc},
+                 {0x7, 0xb, 0xd, 0xe, 0xf}}};
 
-            ASSERT(component_mask_selector < mask.size());
+            size_t index{gpr0.Value() != Register::ZeroIndex ? 1U : 0U};
+            index |= gpr28.Value() != Register::ZeroIndex ? 2 : 0;
 
-            return ((1ull << component) & mask[component_mask_selector]) != 0;
+            return ((1ull << component) & mask_lut[index][component_mask_selector]) != 0;
         }
     } texs;
 
