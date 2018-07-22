@@ -290,6 +290,11 @@ union Instruction {
 
     union {
         BitField<39, 3, u64> pred;
+        BitField<42, 1, u64> neg_pred;
+    } sel;
+
+    union {
+        BitField<39, 3, u64> pred;
         BitField<42, 1, u64> negate_pred;
         BitField<43, 2, IMinMaxExchange> exchange;
         BitField<48, 1, u64> is_signed;
@@ -513,6 +518,9 @@ public:
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
+        SEL_C,
+        SEL_R,
+        SEL_IMM,
         MUFU,  // Multi-Function Operator
         RRO_C, // Range Reduction Operator
         RRO_R,
@@ -713,6 +721,9 @@ private:
             INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
             INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
             INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
+            INST("0100110010100---", Id::SEL_C, Type::ArithmeticInteger, "SEL_C"),
+            INST("0101110010100---", Id::SEL_R, Type::ArithmeticInteger, "SEL_R"),
+            INST("0011100010100---", Id::SEL_IMM, Type::ArithmeticInteger, "SEL_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
