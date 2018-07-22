@@ -14,7 +14,7 @@ class ARM_Dynarmic_Callbacks;
 
 class ARM_Dynarmic final : public ARM_Interface {
 public:
-    ARM_Dynarmic();
+    ARM_Dynarmic(size_t core_index);
     ~ARM_Dynarmic();
 
     void MapBackingMemory(VAddr address, size_t size, u8* memory,
@@ -46,6 +46,10 @@ public:
     void ClearInstructionCache() override;
     void PageTableChanged() override;
 
+    const bool IsMainCore() const {
+        return core_index == 0;
+    }
+
 private:
     friend class ARM_Dynarmic_Callbacks;
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
@@ -53,4 +57,5 @@ private:
     ARM_Unicorn inner_unicorn;
 
     Memory::PageTable* current_page_table = nullptr;
+    size_t core_index;
 };

@@ -53,7 +53,7 @@ Cpu::Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index)
 
     if (Settings::values.use_cpu_jit) {
 #ifdef ARCHITECTURE_x86_64
-        arm_interface = std::make_shared<ARM_Dynarmic>();
+        arm_interface = std::make_shared<ARM_Dynarmic>(core_index);
 #else
         cpu_core = std::make_shared<ARM_Unicorn>();
         LOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
