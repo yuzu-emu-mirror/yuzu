@@ -92,13 +92,13 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
       perms(perms_) {
     if (!FileUtil::Exists(path) && (perms == Mode::Write || perms == Mode::Append))
         FileUtil::CreateDir(path);
-    unsigned size;
+
     if (perms == Mode::Append)
         return;
 
     FileUtil::ForeachDirectoryEntry(
-        &size, path,
-        [this](unsigned* entries_out, const std::string& directory, const std::string& filename) {
+        nullptr, path,
+        [this](u64* entries_out, const std::string& directory, const std::string& filename) {
             std::string full_path = directory + DIR_SEP + filename;
             if (FileUtil::IsDirectory(full_path))
                 subdirectories.emplace_back(std::make_shared<RealVfsDirectory>(full_path, perms));

@@ -394,7 +394,7 @@ void GameList::RefreshGameDirectory() {
 }
 
 void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsigned int recursion) {
-    const auto callback = [this, recursion](unsigned* num_entries_out, const std::string& directory,
+    const auto callback = [this, recursion](u64* num_entries_out, const std::string& directory,
                                             const std::string& virtual_name) -> bool {
         std::string physical_name = directory + DIR_SEP + virtual_name;
 
