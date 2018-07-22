@@ -12,8 +12,7 @@
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 
-namespace Tegra {
-namespace Engines {
+namespace Tegra::Engines {
 
 #define FERMI2D_REG_INDEX(field_name)                                                              \
     (offsetof(Tegra::Engines::Fermi2D::Regs, field_name) / sizeof(u32))
@@ -110,5 +109,4 @@ ASSERT_REG_POSITION(operation, 0xAB);
 ASSERT_REG_POSITION(trigger, 0xB5);
 #undef ASSERT_REG_POSITION
 
-} // namespace Engines
-} // namespace Tegra
+} // namespace Tegra::Engines

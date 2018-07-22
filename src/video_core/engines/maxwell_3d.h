@@ -17,8 +17,7 @@
 #include "video_core/memory_manager.h"
 #include "video_core/textures/texture.h"
 
-namespace Tegra {
-namespace Engines {
+namespace Tegra::Engines {
 
 #define MAXWELL3D_REG_INDEX(field_name)                                                            \
     (offsetof(Tegra::Engines::Maxwell3D::Regs, field_name) / sizeof(u32))
@@ -898,5 +897,4 @@ ASSERT_REG_POSITION(tex_info_buffers.size[0], 0xD2F);
 
 #undef ASSERT_REG_POSITION
 
-} // namespace Engines
-} // namespace Tegra
+} // namespace Tegra::Engines

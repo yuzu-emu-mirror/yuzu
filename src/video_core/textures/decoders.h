@@ -8,8 +8,7 @@
 #include "common/common_types.h"
 #include "video_core/textures/texture.h"
 
-namespace Tegra {
-namespace Texture {
+namespace Tegra::Texture {
 
 /**
  * Unswizzles a swizzled texture without changing its format.
@@ -33,5 +32,4 @@ void CopySwizzledData(u32 width, u32 height, u32 bytes_per_pixel, u32 out_bytes_
 std::vector<u8> DecodeTexture(const std::vector<u8>& texture_data, TextureFormat format, u32 width,
                               u32 height);
 
-} // namespace Texture
-} // namespace Tegra
+} // namespace Tegra::Texture

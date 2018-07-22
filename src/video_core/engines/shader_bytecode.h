@@ -15,8 +15,7 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 
-namespace Tegra {
-namespace Shader {
+namespace Tegra::Shader {
 
 struct Register {
     /// Number of registers
@@ -109,8 +108,7 @@ union Sampler {
     u64 value{};
 };
 
-} // namespace Shader
-} // namespace Tegra
+} // namespace Tegra::Shader
 
 namespace std {
 
@@ -127,8 +125,7 @@ struct make_unsigned<Tegra::Shader::Register> {
 
 } // namespace std
 
-namespace Tegra {
-namespace Shader {
+namespace Tegra::Shader {
 
 enum class Pred : u64 {
     UnusedIndex = 0x7,
@@ -784,5 +781,4 @@ private:
     }
 };
 
-} // namespace Shader
-} // namespace Tegra
+} // namespace Tegra::Shader
