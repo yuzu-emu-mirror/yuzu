@@ -1139,6 +1139,15 @@ private:
                                           "((" + op_a + " << " + shift + ") + " + op_b + ')', 1, 1);
                 break;
             }
+            case OpCode::Id::SEL_C:
+            case OpCode::Id::SEL_R:
+            case OpCode::Id::SEL_IMM: {
+                std::string condition =
+                    GetPredicateCondition(instr.sel.pred, instr.sel.neg_pred != 0);
+                regs.SetRegisterToInteger(instr.gpr0, true, 0,
+                                          '(' + condition + ") ? " + op_a + " : " + op_b, 1, 1);
+                break;
+            }
             case OpCode::Id::LOP_C:
             case OpCode::Id::LOP_R:
             case OpCode::Id::LOP_IMM: {
