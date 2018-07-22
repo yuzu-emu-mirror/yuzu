@@ -86,7 +86,9 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        CoreTiming::AddTicks(ticks - num_interpreted_instructions);
+        if (parent.IsMainCore()) {
+            CoreTiming::AddTicks(ticks - num_interpreted_instructions);
+        }
         num_interpreted_instructions = 0;
     }
     u64 GetTicksRemaining() override {
@@ -128,8 +130,9 @@ void ARM_Dynarmic::Step() {
     cb->InterpreterFallback(jit->GetPC(), 1);
 }
 
-ARM_Dynarmic::ARM_Dynarmic()
-    : cb(std::make_unique<ARM_Dynarmic_Callbacks>(*this)), jit(MakeJit(cb)) {
+ARM_Dynarmic::ARM_Dynarmic(size_t core_index)
+    : cb(std::make_unique<ARM_Dynarmic_Callbacks>(*this)), jit(MakeJit(cb)),
+      core_index(core_index) {
     ARM_Interface::ThreadContext ctx;
     inner_unicorn.SaveContext(ctx);
     LoadContext(ctx);
