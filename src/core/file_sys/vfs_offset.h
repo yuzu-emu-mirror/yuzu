@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <memory>
+#include <string_view>
+
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
@@ -30,7 +33,7 @@ struct OffsetVfsFile : public VfsFile {
     bool WriteByte(u8 data, size_t offset) override;
     size_t WriteBytes(const std::vector<u8>& data, size_t offset) override;
 
-    bool Rename(const std::string& name) override;
+    bool Rename(std::string_view name) override;
 
     size_t GetOffset() const;
 

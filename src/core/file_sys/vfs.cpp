@@ -13,7 +13,7 @@ namespace FileSys {
 VfsFile::~VfsFile() = default;
 
 std::string VfsFile::GetExtension() const {
-    return FileUtil::GetExtensionFromFilename(GetName());
+    return std::string(FileUtil::GetExtensionFromFilename(GetName()));
 }
 
 VfsDirectory::~VfsDirectory() = default;
@@ -46,64 +46,80 @@ size_t VfsFile::WriteBytes(const std::vector<u8>& data, size_t offset) {
     return Write(data.data(), data.size(), offset);
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(const std::string& path) const {
+std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(std::string_view path) const {
     auto vec = FileUtil::SplitPathComponents(path);
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
               vec.end());
-    if (vec.empty())
+    if (vec.empty()) {
         return nullptr;
-    if (vec.size() == 1)
+    }
+
+    if (vec.size() == 1) {
         return GetFile(vec[0]);
+    }
+
     auto dir = GetSubdirectory(vec[0]);
     for (size_t component = 1; component < vec.size() - 1; ++component) {
-        if (dir == nullptr)
+        if (dir == nullptr) {
             return nullptr;
+        }
+
         dir = dir->GetSubdirectory(vec[component]);
     }
-    if (dir == nullptr)
+
+    if (dir == nullptr) {
         return nullptr;
+    }
+
     return dir->GetFile(vec.back());
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(const std::string& path) const {
-    if (IsRoot())
+std::shared_ptr<VfsFile> VfsDirectory::GetFileAbsolute(std::string_view path) const {
+    if (IsRoot()) {
         return GetFileRelative(path);
+    }
 
     return GetParentDirectory()->GetFileAbsolute(path);
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(const std::string& path) const {
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryRelative(std::string_view path) const {
     auto vec = FileUtil::SplitPathComponents(path);
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
               vec.end());
-    if (vec.empty())
+    if (vec.empty()) {
         // TODO(DarkLordZach): Return this directory if path is '/' or similar. Can't currently
         // because of const-ness
         return nullptr;
+    }
+
     auto dir = GetSubdirectory(vec[0]);
     for (size_t component = 1; component < vec.size(); ++component) {
-        if (dir == nullptr)
+        if (dir == nullptr) {
             return nullptr;
+        }
+
         dir = dir->GetSubdirectory(vec[component]);
     }
+
     return dir;
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(const std::string& path) const {
-    if (IsRoot())
+std::shared_ptr<VfsDirectory> VfsDirectory::GetDirectoryAbsolute(std::string_view path) const {
+    if (IsRoot()) {
         return GetDirectoryRelative(path);
+    }
 
     return GetParentDirectory()->GetDirectoryAbsolute(path);
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::GetFile(const std::string& name) const {
+std::shared_ptr<VfsFile> VfsDirectory::GetFile(std::string_view name) const {
     const auto& files = GetFiles();
     const auto iter = std::find_if(files.begin(), files.end(),
                                    [&name](const auto& file1) { return name == file1->GetName(); });
     return iter == files.end() ? nullptr : *iter;
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(const std::string& name) const {
+std::shared_ptr<VfsDirectory> VfsDirectory::GetSubdirectory(std::string_view name) const {
     const auto& subs = GetSubdirectories();
     const auto iter = std::find_if(subs.begin(), subs.end(),
                                    [&name](const auto& file1) { return name == file1->GetName(); });
@@ -128,77 +144,96 @@ size_t VfsDirectory::GetSize() const {
     return file_total + subdir_total;
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::CreateFileRelative(const std::string& path) {
+std::shared_ptr<VfsFile> VfsDirectory::CreateFileRelative(std::string_view path) {
     auto vec = FileUtil::SplitPathComponents(path);
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
               vec.end());
-    if (vec.empty())
+    if (vec.empty()) {
         return nullptr;
-    if (vec.size() == 1)
+    }
+
+    if (vec.size() == 1) {
         return CreateFile(vec[0]);
+    }
+
     auto dir = GetSubdirectory(vec[0]);
     if (dir == nullptr) {
         dir = CreateSubdirectory(vec[0]);
-        if (dir == nullptr)
+        if (dir == nullptr) {
             return nullptr;
+        }
     }
 
     return dir->CreateFileRelative(FileUtil::GetPathWithoutTop(path));
 }
 
-std::shared_ptr<VfsFile> VfsDirectory::CreateFileAbsolute(const std::string& path) {
-    if (IsRoot())
+std::shared_ptr<VfsFile> VfsDirectory::CreateFileAbsolute(std::string_view path) {
+    if (IsRoot()) {
         return CreateFileRelative(path);
+    }
+
     return GetParentDirectory()->CreateFileAbsolute(path);
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::CreateDirectoryRelative(const std::string& path) {
+std::shared_ptr<VfsDirectory> VfsDirectory::CreateDirectoryRelative(std::string_view path) {
     auto vec = FileUtil::SplitPathComponents(path);
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
               vec.end());
-    if (vec.empty())
+    if (vec.empty()) {
         return nullptr;
-    if (vec.size() == 1)
+    }
+
+    if (vec.size() == 1) {
         return CreateSubdirectory(vec[0]);
+    }
+
     auto dir = GetSubdirectory(vec[0]);
     if (dir == nullptr) {
         dir = CreateSubdirectory(vec[0]);
-        if (dir == nullptr)
+        if (dir == nullptr) {
             return nullptr;
+        }
     }
+
     return dir->CreateDirectoryRelative(FileUtil::GetPathWithoutTop(path));
 }
 
-std::shared_ptr<VfsDirectory> VfsDirectory::CreateDirectoryAbsolute(const std::string& path) {
-    if (IsRoot())
+std::shared_ptr<VfsDirectory> VfsDirectory::CreateDirectoryAbsolute(std::string_view path) {
+    if (IsRoot()) {
         return CreateDirectoryRelative(path);
+    }
+
     return GetParentDirectory()->CreateDirectoryAbsolute(path);
 }
 
-bool VfsDirectory::DeleteSubdirectoryRecursive(const std::string& name) {
+bool VfsDirectory::DeleteSubdirectoryRecursive(std::string_view name) {
     auto dir = GetSubdirectory(name);
-    if (dir == nullptr)
+    if (dir == nullptr) {
         return false;
+    }
 
     bool success = true;
     for (const auto& file : dir->GetFiles()) {
-        if (!DeleteFile(file->GetName()))
+        if (!DeleteFile(file->GetName())) {
             success = false;
+        }
     }
 
     for (const auto& sdir : dir->GetSubdirectories()) {
-        if (!dir->DeleteSubdirectoryRecursive(sdir->GetName()))
+        if (!dir->DeleteSubdirectoryRecursive(sdir->GetName())) {
             success = false;
+        }
     }
 
     return success;
 }
 
-bool VfsDirectory::Copy(const std::string& src, const std::string& dest) {
+bool VfsDirectory::Copy(std::string_view src, std::string_view dest) {
     const auto f1 = GetFile(src);
     auto f2 = CreateFile(dest);
-    if (f1 == nullptr || f2 == nullptr)
+    if (f1 == nullptr || f2 == nullptr) {
         return false;
+    }
 
     if (!f2->Resize(f1->GetSize())) {
         DeleteFile(dest);
@@ -216,23 +251,23 @@ bool ReadOnlyVfsDirectory::IsReadable() const {
     return true;
 }
 
-std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectory::CreateSubdirectory(const std::string& name) {
+std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectory::CreateSubdirectory(std::string_view name) {
     return nullptr;
 }
 
-std::shared_ptr<VfsFile> ReadOnlyVfsDirectory::CreateFile(const std::string& name) {
+std::shared_ptr<VfsFile> ReadOnlyVfsDirectory::CreateFile(std::string_view name) {
     return nullptr;
 }
 
-bool ReadOnlyVfsDirectory::DeleteSubdirectory(const std::string& name) {
+bool ReadOnlyVfsDirectory::DeleteSubdirectory(std::string_view name) {
     return false;
 }
 
-bool ReadOnlyVfsDirectory::DeleteFile(const std::string& name) {
+bool ReadOnlyVfsDirectory::DeleteFile(std::string_view name) {
     return false;
 }
 
-bool ReadOnlyVfsDirectory::Rename(const std::string& name) {
+bool ReadOnlyVfsDirectory::Rename(std::string_view name) {
     return false;
 }
 } // namespace FileSys

@@ -792,66 +792,80 @@ void SplitFilename83(const std::string& filename, std::array<char, 9>& short_nam
     }
 }
 
-std::vector<std::string> SplitPathComponents(const std::string& filename) {
-    auto copy(filename);
+std::vector<std::string> SplitPathComponents(std::string_view filename) {
+    std::string copy(filename);
     std::replace(copy.begin(), copy.end(), '\\', '/');
     std::vector<std::string> out;
 
-    std::stringstream stream(filename);
+    std::stringstream stream(copy);
     std::string item;
-    while (std::getline(stream, item, '/'))
+    while (std::getline(stream, item, '/')) {
         out.push_back(std::move(item));
+    }
 
     return out;
 }
 
-std::string GetParentPath(const std::string& path) {
-    auto out = path;
-    const auto name_bck_index = out.find_last_of('\\');
-    const auto name_fwd_index = out.find_last_of('/');
+std::string_view GetParentPath(std::string_view path) {
+    const auto name_bck_index = path.rfind('\\');
+    const auto name_fwd_index = path.rfind('/');
     size_t name_index;
-    if (name_bck_index == std::string::npos || name_fwd_index == std::string::npos)
-        name_index = std::min<size_t>(name_bck_index, name_fwd_index);
-    else
-        name_index = std::max<size_t>(name_bck_index, name_fwd_index);
 
-    return out.erase(name_index);
+    if (name_bck_index == std::string_view::npos || name_fwd_index == std::string_view::npos) {
+        name_index = std::min(name_bck_index, name_fwd_index);
+    } else {
+        name_index = std::max(name_bck_index, name_fwd_index);
+    }
+
+    return path.substr(0, name_index);
 }
 
-std::string GetPathWithoutTop(std::string path) {
-    if (path.empty())
-        return "";
-    while (path[0] == '\\' || path[0] == '/') {
-        path = path.substr(1);
-        if (path.empty())
-            return "";
+std::string_view GetPathWithoutTop(std::string_view path) {
+    if (path.empty()) {
+        return path;
     }
-    const auto name_bck_index = path.find_first_of('\\');
-    const auto name_fwd_index = path.find_first_of('/');
+
+    while (path[0] == '\\' || path[0] == '/') {
+        path.remove_suffix(1);
+        if (path.empty()) {
+            return path;
+        }
+    }
+
+    const auto name_bck_index = path.find('\\');
+    const auto name_fwd_index = path.find('/');
     return path.substr(std::min(name_bck_index, name_fwd_index) + 1);
 }
 
-std::string GetFilename(std::string path) {
-    std::replace(path.begin(), path.end(), '\\', '/');
-    auto name_index = path.find_last_of('/');
-    if (name_index == std::string::npos)
-        return "";
+std::string_view GetFilename(std::string_view path) {
+    const auto name_index = path.find_last_of("\\/");
+
+    if (name_index == std::string_view::npos) {
+        return {};
+    }
+
     return path.substr(name_index + 1);
 }
 
-std::string GetExtensionFromFilename(const std::string& name) {
-    size_t index = name.find_last_of('.');
-    if (index == std::string::npos)
-        return "";
+std::string_view GetExtensionFromFilename(std::string_view name) {
+    const size_t index = name.rfind('.');
+
+    if (index == std::string_view::npos) {
+        return {};
+    }
 
     return name.substr(index + 1);
 }
 
-std::string RemoveTrailingSlash(const std::string& path) {
-    if (path.empty())
+std::string_view RemoveTrailingSlash(std::string_view path) {
+    if (path.empty()) {
         return path;
-    if (path.back() == '\\' || path.back() == '/')
-        return path.substr(0, path.size() - 1);
+    }
+
+    if (path.back() == '\\' || path.back() == '/') {
+        path.remove_suffix(1);
+        return path;
+    }
 
     return path;
 }
