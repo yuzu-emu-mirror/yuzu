@@ -10,6 +10,7 @@
 #include <mutex>
 #include <string>
 #include "common/common_types.h"
+#include "core/arm/exclusive_monitor.h"
 
 class ARM_Interface;
 
@@ -40,7 +41,8 @@ private:
 
 class Cpu {
 public:
-    Cpu(std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index);
+    Cpu(std::shared_ptr<ExclusiveMonitor> exclusive_monitor,
+        std::shared_ptr<CpuBarrier> cpu_barrier, size_t core_index);
 
     void RunLoop(bool tight_loop = true);
 
@@ -63,6 +65,12 @@ public:
     bool IsMainCore() const {
         return core_index == 0;
     }
+
+    size_t CoreIndex() const {
+        return core_index;
+    }
+
+    static std::shared_ptr<ExclusiveMonitor> MakeExclusiveMonitor(size_t num_cores);
 
 private:
     void Reschedule();

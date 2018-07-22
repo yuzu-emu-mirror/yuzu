@@ -171,8 +171,9 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
     current_process = Kernel::Process::Create("main");
 
     cpu_barrier = std::make_shared<CpuBarrier>();
+    cpu_exclusive_monitor = Cpu::MakeExclusiveMonitor(cpu_cores.size());
     for (size_t index = 0; index < cpu_cores.size(); ++index) {
-        cpu_cores[index] = std::make_shared<Cpu>(cpu_barrier, index);
+        cpu_cores[index] = std::make_shared<Cpu>(cpu_exclusive_monitor, cpu_barrier, index);
     }
 
     gpu_core = std::make_unique<Tegra::GPU>();
