@@ -67,7 +67,7 @@ private:
 };
 
 union Attribute {
-    Attribute() = default;
+    constexpr Attribute() = default;
 
     constexpr explicit Attribute(u64 value) : value(value) {}
 
@@ -96,7 +96,7 @@ union Attribute {
 };
 
 union Sampler {
-    Sampler() = default;
+    constexpr Sampler() = default;
 
     constexpr explicit Sampler(u64 value) : value(value) {}
 
