@@ -37,14 +37,15 @@ struct SurfaceParams {
         BC7U = 12,
         ASTC_2D_4X4 = 13,
         G8R8 = 14,
+        BGRA8 = 15,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 15,
-        S8Z24 = 16,
-        Z32F = 17,
-        Z16 = 18,
+        Z24S8 = 16,
+        S8Z24 = 17,
+        Z32F = 18,
+        Z16 = 19,
 
         MaxDepthStencilFormat,
 
@@ -97,6 +98,7 @@ struct SurfaceParams {
             4, // BC7U
             4, // ASTC_2D_4X4
             1, // G8R8
+            1, // BGRA8
             1, // Z24S8
             1, // S8Z24
             1, // Z32F
@@ -127,6 +129,7 @@ struct SurfaceParams {
             128, // BC7U
             32,  // ASTC_2D_4X4
             16,  // G8R8
+            32,  // BGRA8
             32,  // Z24S8
             32,  // S8Z24
             32,  // Z32F
@@ -162,6 +165,8 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
             return PixelFormat::ABGR8;
+        case Tegra::RenderTargetFormat::BGRA8_UNORM:
+            return PixelFormat::BGRA8;
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return PixelFormat::A2B10G10R10;
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
@@ -248,6 +253,10 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::BC7U;
         case PixelFormat::ASTC_2D_4X4:
             return Tegra::Texture::TextureFormat::ASTC_2D_4X4;
+        case PixelFormat::BGRA8:
+            // TODO(bunnei): This is fine for unswizzling (since we just need the right component
+            // sizes), but could be a bug if we used this function in different ways.
+            return Tegra::Texture::TextureFormat::A8R8G8B8;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -286,6 +295,7 @@ struct SurfaceParams {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
+        case Tegra::RenderTargetFormat::BGRA8_UNORM:
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
             return ComponentType::UNorm;
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
