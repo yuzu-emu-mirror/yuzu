@@ -249,6 +249,7 @@ struct SurfaceParams {
         case PixelFormat::ASTC_2D_4X4:
             return Tegra::Texture::TextureFormat::ASTC_2D_4X4;
         default:
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
@@ -264,6 +265,7 @@ struct SurfaceParams {
         case PixelFormat::Z16:
             return Tegra::DepthFormat::Z16_UNORM;
         default:
+            LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
         }
     }
