@@ -6,6 +6,9 @@
 #include <set>
 #include <string>
 #include <string_view>
+
+#include <fmt/format.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "video_core/engines/shader_bytecode.h"
@@ -1774,11 +1777,8 @@ private:
 }; // namespace Decompiler
 
 std::string GetCommonDeclarations() {
-    std::string declarations;
-    declarations += "#define MAX_CONSTBUFFER_ELEMENTS " +
-                    std::to_string(RasterizerOpenGL::MaxConstbufferSize / (sizeof(GLvec4)));
-    declarations += '\n';
-    return declarations;
+    return fmt::format("#define MAX_CONSTBUFFER_ELEMENTS {}\n",
+                       RasterizerOpenGL::MaxConstbufferSize / sizeof(GLvec4));
 }
 
 boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
