@@ -62,11 +62,11 @@ std::shared_ptr<VfsDirectory> RealVfsFile::GetContainingDirectory() const {
 }
 
 bool RealVfsFile::IsWritable() const {
-    return perms == Mode::Append || perms == Mode::Write;
+    return static_cast<u32>(perms) & static_cast<u32>(Mode::WriteAppend);
 }
 
 bool RealVfsFile::IsReadable() const {
-    return perms == Mode::Read || perms == Mode::Write;
+    return static_cast<u32>(perms) & static_cast<u32>(Mode::ReadWrite);
 }
 
 size_t RealVfsFile::Read(u8* data, size_t length, size_t offset) const {
@@ -102,8 +102,7 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
       path_components(FileUtil::SplitPathComponents(path)),
       parent_components(FileUtil::SliceVector(path_components, 0, path_components.size() - 1)),
       perms(perms_) {
-    // Write|Append
-    if (!FileUtil::Exists(path) && (static_cast<u32>(perms) & 0x6) > 0)
+    if (!FileUtil::Exists(path) && (static_cast<u32>(perms) & static_cast<u32>(Mode::WriteAppend)))
         FileUtil::CreateDir(path);
 
     if (perms == Mode::Append)
@@ -130,11 +129,11 @@ std::vector<std::shared_ptr<VfsDirectory>> RealVfsDirectory::GetSubdirectories()
 }
 
 bool RealVfsDirectory::IsWritable() const {
-    return perms == Mode::Write || perms == Mode::Append;
+    return static_cast<u32>(perms) & static_cast<u32>(Mode::WriteAppend);
 }
 
 bool RealVfsDirectory::IsReadable() const {
-    return perms == Mode::Read || perms == Mode::Write;
+    return static_cast<u32>(perms) & static_cast<u32>(Mode::ReadWrite);
 }
 
 std::string RealVfsDirectory::GetName() const {
