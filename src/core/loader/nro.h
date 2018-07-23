@@ -16,7 +16,7 @@ namespace Loader {
 /// Loads an NRO file
 class AppLoader_NRO final : public AppLoader, Linker {
 public:
-    AppLoader_NRO(FileSys::VirtualFile file);
+    explicit AppLoader_NRO(FileSys::VirtualFile file);
 
     /**
      * Returns the type of the file
