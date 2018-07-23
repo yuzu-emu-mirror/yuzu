@@ -15,8 +15,7 @@
 #include "common/bit_field.h"
 #include "common/common_types.h"
 
-namespace Tegra {
-namespace Shader {
+namespace Tegra::Shader {
 
 struct Register {
     /// Number of registers
@@ -109,8 +108,7 @@ union Sampler {
     u64 value{};
 };
 
-} // namespace Shader
-} // namespace Tegra
+} // namespace Tegra::Shader
 
 namespace std {
 
@@ -127,8 +125,7 @@ struct make_unsigned<Tegra::Shader::Register> {
 
 } // namespace std
 
-namespace Tegra {
-namespace Shader {
+namespace Tegra::Shader {
 
 enum class Pred : u64 {
     UnusedIndex = 0x7,
@@ -293,6 +290,11 @@ union Instruction {
 
     union {
         BitField<39, 3, u64> pred;
+        BitField<42, 1, u64> neg_pred;
+    } sel;
+
+    union {
+        BitField<39, 3, u64> pred;
         BitField<42, 1, u64> negate_pred;
         BitField<43, 2, IMinMaxExchange> exchange;
         BitField<48, 1, u64> is_signed;
@@ -423,6 +425,7 @@ union Instruction {
 
     union {
         BitField<50, 3, u64> component_mask_selector;
+        BitField<0, 8, Register> gpr0;
         BitField<28, 8, Register> gpr28;
 
         bool HasTwoDestinations() const {
@@ -430,13 +433,16 @@ union Instruction {
         }
 
         bool IsComponentEnabled(size_t component) const {
-            static constexpr std::array<size_t, 5> one_dest_mask{0x1, 0x2, 0x4, 0x8, 0x3};
-            static constexpr std::array<size_t, 5> two_dest_mask{0x7, 0xb, 0xd, 0xe, 0xf};
-            const auto& mask{HasTwoDestinations() ? two_dest_mask : one_dest_mask};
+            static constexpr std::array<std::array<u32, 8>, 4> mask_lut{
+                {{},
+                 {0x1, 0x2, 0x4, 0x8, 0x3},
+                 {0x1, 0x2, 0x4, 0x8, 0x3, 0x9, 0xa, 0xc},
+                 {0x7, 0xb, 0xd, 0xe, 0xf}}};
 
-            ASSERT(component_mask_selector < mask.size());
+            size_t index{gpr0.Value() != Register::ZeroIndex ? 1U : 0U};
+            index |= gpr28.Value() != Register::ZeroIndex ? 2 : 0;
 
-            return ((1ull << component) & mask[component_mask_selector]) != 0;
+            return ((1ull << component) & mask_lut[index][component_mask_selector]) != 0;
         }
     } texs;
 
@@ -516,6 +522,9 @@ public:
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
+        SEL_C,
+        SEL_R,
+        SEL_IMM,
         MUFU,  // Multi-Function Operator
         RRO_C, // Range Reduction Operator
         RRO_R,
@@ -716,6 +725,9 @@ private:
             INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
             INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
             INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
+            INST("0100110010100---", Id::SEL_C, Type::ArithmeticInteger, "SEL_C"),
+            INST("0101110010100---", Id::SEL_R, Type::ArithmeticInteger, "SEL_R"),
+            INST("0011100010100---", Id::SEL_IMM, Type::ArithmeticInteger, "SEL_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
@@ -784,5 +796,4 @@ private:
     }
 };
 
-} // namespace Shader
-} // namespace Tegra
+} // namespace Tegra::Shader

@@ -20,7 +20,7 @@ namespace Loader {
 
 static std::string FindRomFS(const std::string& directory) {
     std::string filepath_romfs;
-    const auto callback = [&filepath_romfs](unsigned*, const std::string& directory,
+    const auto callback = [&filepath_romfs](u64*, const std::string& directory,
                                             const std::string& virtual_name) -> bool {
         const std::string physical_name = directory + virtual_name;
         if (FileUtil::IsDirectory(physical_name)) {

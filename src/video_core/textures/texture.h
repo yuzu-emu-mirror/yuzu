@@ -10,8 +10,7 @@
 #include "common/common_types.h"
 #include "video_core/memory_manager.h"
 
-namespace Tegra {
-namespace Texture {
+namespace Tegra::Texture {
 
 enum class TextureFormat : u32 {
     R32_G32_B32_A32 = 0x01,
@@ -260,5 +259,4 @@ struct FullTextureInfo {
 /// Returns the number of bytes per pixel of the input texture format.
 u32 BytesPerPixel(TextureFormat format);
 
-} // namespace Texture
-} // namespace Tegra
+} // namespace Tegra::Texture

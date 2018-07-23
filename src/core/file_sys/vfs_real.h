@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "common/file_util.h"
 #include "core/file_sys/mode.h"
 #include "core/file_sys/vfs.h"
@@ -24,7 +26,7 @@ struct RealVfsFile : public VfsFile {
     bool IsReadable() const override;
     size_t Read(u8* data, size_t length, size_t offset) const override;
     size_t Write(const u8* data, size_t length, size_t offset) override;
-    bool Rename(const std::string& name) override;
+    bool Rename(std::string_view name) override;
 
 private:
     bool Close();
@@ -47,11 +49,11 @@ struct RealVfsDirectory : public VfsDirectory {
     bool IsReadable() const override;
     std::string GetName() const override;
     std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
-    std::shared_ptr<VfsDirectory> CreateSubdirectory(const std::string& name) override;
-    std::shared_ptr<VfsFile> CreateFile(const std::string& name) override;
-    bool DeleteSubdirectory(const std::string& name) override;
-    bool DeleteFile(const std::string& name) override;
-    bool Rename(const std::string& name) override;
+    std::shared_ptr<VfsDirectory> CreateSubdirectory(std::string_view name) override;
+    std::shared_ptr<VfsFile> CreateFile(std::string_view name) override;
+    bool DeleteSubdirectory(std::string_view name) override;
+    bool DeleteFile(std::string_view name) override;
+    bool Rename(std::string_view name) override;
 
 protected:
     bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;

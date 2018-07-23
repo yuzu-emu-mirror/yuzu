@@ -85,10 +85,20 @@ bool EmuWindow_SDL2::SupportsRequiredGLExtensions() {
         unsupported_ext.push_back("ARB_program_interface_query");
     if (!GLAD_GL_ARB_separate_shader_objects)
         unsupported_ext.push_back("ARB_separate_shader_objects");
-    if (!GLAD_GL_ARB_shader_storage_buffer_object)
-        unsupported_ext.push_back("ARB_shader_storage_buffer_object");
     if (!GLAD_GL_ARB_vertex_attrib_binding)
         unsupported_ext.push_back("ARB_vertex_attrib_binding");
+    if (!GLAD_GL_ARB_vertex_type_10f_11f_11f_rev)
+        unsupported_ext.push_back("ARB_vertex_type_10f_11f_11f_rev");
+
+    // Extensions required to support some texture formats.
+    if (!GLAD_GL_EXT_texture_compression_s3tc)
+        unsupported_ext.push_back("EXT_texture_compression_s3tc");
+    if (!GLAD_GL_ARB_texture_compression_rgtc)
+        unsupported_ext.push_back("ARB_texture_compression_rgtc");
+    if (!GLAD_GL_ARB_texture_compression_bptc)
+        unsupported_ext.push_back("ARB_texture_compression_bptc");
+    if (!GLAD_GL_ARB_depth_buffer_float)
+        unsupported_ext.push_back("ARB_depth_buffer_float");
 
     for (const std::string& ext : unsupported_ext)
         LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext);

@@ -169,6 +169,16 @@ void ARM_Unicorn::SetTlsAddress(VAddr base) {
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_TPIDRRO_EL0, &base));
 }
 
+u64 ARM_Unicorn::GetTPIDR_EL0() const {
+    u64 value{};
+    CHECKED(uc_reg_read(uc, UC_ARM64_REG_TPIDR_EL0, &value));
+    return value;
+}
+
+void ARM_Unicorn::SetTPIDR_EL0(u64 value) {
+    CHECKED(uc_reg_write(uc, UC_ARM64_REG_TPIDR_EL0, &value));
+}
+
 void ARM_Unicorn::Run() {
     if (GDBStub::IsServerEnabled()) {
         ExecuteInstructions(std::max(4000000, 0));
@@ -226,8 +236,6 @@ void ARM_Unicorn::SaveContext(ARM_Interface::ThreadContext& ctx) {
 
     CHECKED(uc_reg_read_batch(uc, uregs, tregs, 31));
 
-    ctx.tls_address = GetTlsAddress();
-
     for (int i = 0; i < 32; ++i) {
         uregs[i] = UC_ARM64_REG_Q0 + i;
         tregs[i] = &ctx.fpu_registers[i];
@@ -254,8 +262,6 @@ void ARM_Unicorn::LoadContext(const ARM_Interface::ThreadContext& ctx) {
     tregs[30] = (void*)&ctx.cpu_registers[30];
 
     CHECKED(uc_reg_write_batch(uc, uregs, tregs, 31));
-
-    SetTlsAddress(ctx.tls_address);
 
     for (auto i = 0; i < 32; ++i) {
         uregs[i] = UC_ARM64_REG_Q0 + i;

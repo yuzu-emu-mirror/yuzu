@@ -42,6 +42,9 @@ u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, std::vector<u
         if (command.cmd == NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO) {
             return SubmitGPFIFO(input, output);
         }
+        if (command.cmd == NVGPU_IOCTL_CHANNEL_KICKOFF_PB) {
+            return KickoffPB(input, output);
+        }
     }
 
     UNIMPLEMENTED_MSG("Unimplemented ioctl");
@@ -127,14 +130,37 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     IoctlSubmitGpfifo params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSubmitGpfifo));
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo={:X}, num_entries={:X}, flags={:X}",
-                params.gpfifo, params.num_entries, params.flags);
+                params.address, params.num_entries, params.flags);
 
     auto entries = std::vector<IoctlGpfifoEntry>();
     entries.resize(params.num_entries);
     std::memcpy(&entries[0], &input.data()[sizeof(IoctlSubmitGpfifo)],
                 params.num_entries * sizeof(IoctlGpfifoEntry));
     for (auto entry : entries) {
-        VAddr va_addr = entry.Address();
+        Tegra::GPUVAddr va_addr = entry.Address();
+        Core::System::GetInstance().GPU().ProcessCommandList(va_addr, entry.sz);
+    }
+    params.fence_out.id = 0;
+    params.fence_out.value = 0;
+    std::memcpy(output.data(), &params, output.size());
+    return 0;
+}
+
+u32 nvhost_gpu::KickoffPB(const std::vector<u8>& input, std::vector<u8>& output) {
+    if (input.size() < sizeof(IoctlSubmitGpfifo)) {
+        UNIMPLEMENTED();
+    }
+    IoctlSubmitGpfifo params{};
+    std::memcpy(&params, input.data(), sizeof(IoctlSubmitGpfifo));
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, gpfifo={:X}, num_entries={:X}, flags={:X}",
+                params.address, params.num_entries, params.flags);
+
+    std::vector<IoctlGpfifoEntry> entries(params.num_entries);
+    Memory::ReadBlock(params.address, entries.data(),
+                      params.num_entries * sizeof(IoctlGpfifoEntry));
+
+    for (auto entry : entries) {
+        Tegra::GPUVAddr va_addr = entry.Address();
         Core::System::GetInstance().GPU().ProcessCommandList(va_addr, entry.sz);
     }
     params.fence_out.id = 0;

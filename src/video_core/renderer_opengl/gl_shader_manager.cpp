@@ -10,8 +10,9 @@
 namespace GLShader {
 
 namespace Impl {
-void SetShaderUniformBlockBinding(GLuint shader, const char* name,
-                                  Maxwell3D::Regs::ShaderStage binding, size_t expected_size) {
+static void SetShaderUniformBlockBinding(GLuint shader, const char* name,
+                                         Maxwell3D::Regs::ShaderStage binding,
+                                         size_t expected_size) {
     GLuint ub_index = glGetUniformBlockIndex(shader, name);
     if (ub_index != GL_INVALID_INDEX) {
         GLint ub_size = 0;

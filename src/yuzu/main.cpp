@@ -338,6 +338,18 @@ bool GMainWindow::SupportsRequiredGLExtensions() {
         unsupported_ext.append("ARB_separate_shader_objects");
     if (!GLAD_GL_ARB_vertex_attrib_binding)
         unsupported_ext.append("ARB_vertex_attrib_binding");
+    if (!GLAD_GL_ARB_vertex_type_10f_11f_11f_rev)
+        unsupported_ext.append("ARB_vertex_type_10f_11f_11f_rev");
+
+    // Extensions required to support some texture formats.
+    if (!GLAD_GL_EXT_texture_compression_s3tc)
+        unsupported_ext.append("EXT_texture_compression_s3tc");
+    if (!GLAD_GL_ARB_texture_compression_rgtc)
+        unsupported_ext.append("ARB_texture_compression_rgtc");
+    if (!GLAD_GL_ARB_texture_compression_bptc)
+        unsupported_ext.append("ARB_texture_compression_bptc");
+    if (!GLAD_GL_ARB_depth_buffer_float)
+        unsupported_ext.append("ARB_depth_buffer_float");
 
     for (const QString& ext : unsupported_ext)
         LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
@@ -909,6 +921,16 @@ void GMainWindow::UpdateUITheme() {
 #undef main
 #endif
 
+static void InitializeLogging() {
+    Log::Filter log_filter;
+    log_filter.ParseFilterString(Settings::values.log_filter);
+    Log::SetGlobalFilter(log_filter);
+
+    const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
+    FileUtil::CreateFullPath(log_dir);
+    Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir + LOG_FILE));
+}
+
 int main(int argc, char* argv[]) {
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -927,13 +949,7 @@ int main(int argc, char* argv[]) {
 
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
-    Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values.log_filter);
-    Log::SetGlobalFilter(log_filter);
-    FileUtil::CreateFullPath(FileUtil::GetUserPath(D_LOGS_IDX));
-    Log::AddBackend(
-        std::make_unique<Log::FileBackend>(FileUtil::GetUserPath(D_LOGS_IDX) + LOG_FILE));
-
+    InitializeLogging();
     main_window.show();
     return app.exec();
 }

@@ -336,9 +336,9 @@ void GraphicsSurfaceWidget::OnUpdate() {
         // TODO: Store a reference to the registers in the debug context instead of accessing them
         // directly...
 
-        auto& registers = gpu.Get3DEngine().regs;
-        auto& rt = registers.rt[static_cast<size_t>(surface_source) -
-                                static_cast<size_t>(Source::RenderTarget0)];
+        const auto& registers = gpu.Maxwell3D().regs;
+        const auto& rt = registers.rt[static_cast<size_t>(surface_source) -
+                                      static_cast<size_t>(Source::RenderTarget0)];
 
         surface_address = rt.Address();
         surface_width = rt.width;

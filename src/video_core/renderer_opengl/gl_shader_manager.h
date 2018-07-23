@@ -21,7 +21,6 @@ using Tegra::Engines::Maxwell3D;
 
 namespace Impl {
 void SetShaderUniformBlockBindings(GLuint shader);
-void SetShaderSamplerBindings(GLuint shader);
 } // namespace Impl
 
 /// Uniform structure for the Uniform Buffer Object, all vectors must be 16-byte aligned

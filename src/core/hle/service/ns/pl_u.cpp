@@ -42,7 +42,7 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
     RegisterHandlers(functions);
 
     // Attempt to load shared font data from disk
-    const std::string filepath{FileUtil::GetUserPath(D_SYSDATA_IDX) + SHARED_FONT};
+    const std::string filepath{FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) + SHARED_FONT};
     FileUtil::CreateFullPath(filepath); // Create path if not already created
     FileUtil::IOFile file(filepath, "rb");
 
