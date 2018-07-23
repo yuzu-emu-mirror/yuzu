@@ -136,6 +136,7 @@ void ARM_Dynarmic::Run() {
 
 void ARM_Dynarmic::Step() {
     cb->InterpreterFallback(jit->GetPC(), 1);
+    ClearInstructionCache();
 }
 
 ARM_Dynarmic::ARM_Dynarmic(std::shared_ptr<ExclusiveMonitor> exclusive_monitor, size_t core_index)

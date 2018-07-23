@@ -31,6 +31,10 @@
 #endif
 
 #include "common/logging/log.h"
+#undef LOG_DEBUG
+#undef LOG_INFO
+#define LOG_DEBUG LOG_ERROR
+#define LOG_INFO LOG_ERROR
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/arm/arm_interface.h"
@@ -986,8 +990,8 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     breakpoint.addr = addr;
     breakpoint.len = len;
     Memory::ReadBlock(addr, breakpoint.old, 4);
-    static const u8 bkpt0[] = {0xd4, 0x20, 0x00, 0x00};
-    Memory::WriteBlock(addr, bkpt0, 4);
+    static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
+    Memory::WriteBlock(addr, btrap, 4);
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
