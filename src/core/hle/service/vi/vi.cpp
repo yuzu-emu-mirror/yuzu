@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <boost/optional.hpp>
 #include "common/alignment.h"
@@ -44,7 +45,9 @@ public:
 
     template <typename T>
     T Read() {
+        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
         ASSERT(read_index + sizeof(T) <= buffer.size());
+
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -54,7 +57,9 @@ public:
 
     template <typename T>
     T ReadUnaligned() {
+        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
         ASSERT(read_index + sizeof(T) <= buffer.size());
+
         T val;
         std::memcpy(&val, buffer.data() + read_index, sizeof(T));
         read_index += sizeof(T);
@@ -88,8 +93,12 @@ public:
 
     template <typename T>
     void Write(const T& val) {
-        if (buffer.size() < write_index + sizeof(T))
+        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
+
+        if (buffer.size() < write_index + sizeof(T)) {
             buffer.resize(buffer.size() + sizeof(T) + DefaultBufferSize);
+        }
+
         std::memcpy(buffer.data() + write_index, &val, sizeof(T));
         write_index += sizeof(T);
         write_index = Common::AlignUp(write_index, 4);
@@ -97,7 +106,9 @@ public:
 
     template <typename T>
     void WriteObject(const T& val) {
-        u32_le size = static_cast<u32>(sizeof(val));
+        static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable.");
+
+        const u32_le size = static_cast<u32>(sizeof(val));
         Write(size);
         // TODO(Subv): Support file descriptors.
         Write<u32_le>(0); // Fd count.
