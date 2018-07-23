@@ -13,24 +13,33 @@
 
 namespace FileSys {
 
-static std::string PermissionsToCharArray(Mode perms) {
-    std::string out;
-    switch (perms) {
-    case Mode::Read:
-        out += "r";
-        break;
-    case Mode::Write:
-        out += "r+";
-        break;
-    case Mode::Append:
-        out += "a";
-        break;
+static std::string ModeFlagsToString(Mode mode) {
+    std::string mode_str;
+    u32 mode_flags = static_cast<u32>(mode);
+
+    // Calculate the correct open mode for the file.
+    if ((mode_flags & static_cast<u32>(Mode::Read)) &&
+        (mode_flags & static_cast<u32>(Mode::Write))) {
+        if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a+";
+        else
+            mode_str = "r+";
+    } else {
+        if (mode_flags & static_cast<u32>(Mode::Read))
+            mode_str = "r";
+        else if (mode_flags & static_cast<u32>(Mode::Append))
+            mode_str = "a";
+        else if (mode_flags & static_cast<u32>(Mode::Write))
+            mode_str = "w";
     }
-    return out + "b";
+
+    mode_str += "b";
+
+    return mode_str;
 }
 
 RealVfsFile::RealVfsFile(const std::string& path_, Mode perms_)
-    : backing(path_, PermissionsToCharArray(perms_).c_str()), path(path_),
+    : backing(path_, ModeFlagsToString(perms_).c_str()), path(path_),
       parent_path(FileUtil::GetParentPath(path_)),
       path_components(FileUtil::SplitPathComponents(path_)),
       parent_components(FileUtil::SliceVector(path_components, 0, path_components.size() - 1)),
@@ -79,7 +88,7 @@ bool RealVfsFile::Rename(std::string_view name) {
     path = (parent_path + DIR_SEP).append(name);
     path_components = parent_components;
     path_components.push_back(std::move(name_str));
-    backing = FileUtil::IOFile(path, PermissionsToCharArray(perms).c_str());
+    backing = FileUtil::IOFile(path, ModeFlagsToString(perms).c_str());
 
     return out;
 }
@@ -93,7 +102,8 @@ RealVfsDirectory::RealVfsDirectory(const std::string& path_, Mode perms_)
       path_components(FileUtil::SplitPathComponents(path)),
       parent_components(FileUtil::SliceVector(path_components, 0, path_components.size() - 1)),
       perms(perms_) {
-    if (!FileUtil::Exists(path) && (perms == Mode::Write || perms == Mode::Append))
+    // Write|Append
+    if (!FileUtil::Exists(path) && (static_cast<u32>(perms) & 0x6) > 0)
         FileUtil::CreateDir(path);
 
     if (perms == Mode::Append)

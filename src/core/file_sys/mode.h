@@ -11,6 +11,7 @@ namespace FileSys {
 enum class Mode : u32 {
     Read = 1,
     Write = 2,
+    ReadWrite = 3,
     Append = 4,
 };
 
