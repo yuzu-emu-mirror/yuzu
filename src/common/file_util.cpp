@@ -876,7 +876,7 @@ std::string_view SanitizePath(std::string_view path_) {
     path.erase(std::unique(path.begin(), path.end(),
                            [](char c1, char c2) { return c1 == '/' && c2 == '/'; }),
                path.end());
-    return RemoveTrailingSlash(path);
+    return std::string(RemoveTrailingSlash(path));
 }
 
 IOFile::IOFile() {}
