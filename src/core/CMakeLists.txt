@@ -12,6 +12,8 @@ add_library(core STATIC
     core_timing.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
+    file_sys/control_metadata.cpp
+    file_sys/control_metadata.h
     file_sys/directory.h
     file_sys/errors.h
     file_sys/mode.h

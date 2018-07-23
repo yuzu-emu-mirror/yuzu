@@ -10,6 +10,8 @@
 #include "common/logging/log.h"
 #include "common/swap.h"
 #include "core/core.h"
+#include "core/file_sys/control_metadata.h"
+#include "core/file_sys/vfs_offset.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
@@ -49,7 +51,55 @@ struct ModHeader {
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
-AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(std::move(file)) {}
+struct AssetSection {
+    u64_le offset;
+    u64_le size;
+};
+static_assert(sizeof(AssetSection) == 0x10, "AssetSection has incorrect size.");
+
+struct AssetHeader {
+    u32_le magic;
+    u32_le format_version;
+    AssetSection icon;
+    AssetSection nacp;
+    AssetSection romfs;
+};
+static_assert(sizeof(AssetHeader) == 0x38, "AssetHeader has incorrect size.");
+
+AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {
+    NroHeader nro_header{};
+    if (file->ReadObject(&nro_header) != sizeof(NroHeader))
+        return;
+
+    if (file->GetSize() >= nro_header.file_size + sizeof(AssetHeader)) {
+        u64 offset = nro_header.file_size;
+        AssetHeader asset_header{};
+        if (file->ReadObject(&asset_header, offset) != sizeof(AssetHeader))
+            return;
+
+        if (asset_header.format_version != 0)
+            LOG_WARNING(Loader,
+                        "NRO Asset Header has format {}, currently supported format is 0. If "
+                        "strange glitches occur with metadata, check NRO assets.",
+                        asset_header.format_version);
+        if (asset_header.magic != Common::MakeMagic('A', 'S', 'E', 'T'))
+            return;
+
+        if (asset_header.nacp.size > 0) {
+            nacp = std::make_unique<FileSys::NACP>(std::make_shared<FileSys::OffsetVfsFile>(
+                file, asset_header.nacp.size, offset + asset_header.nacp.offset, "Control.nacp"));
+        }
+
+        if (asset_header.romfs.size > 0) {
+            romfs = std::make_shared<FileSys::OffsetVfsFile>(
+                file, asset_header.romfs.size, offset + asset_header.romfs.offset, "game.romfs");
+        }
+
+        if (asset_header.icon.size > 0) {
+            icon_data = file->ReadBytes(asset_header.icon.size, offset + asset_header.icon.offset);
+        }
+    }
+}
 
 FileType AppLoader_NRO::IdentifyType(const FileSys::VirtualFile& file) {
     // Read NSO header
@@ -136,4 +186,31 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
     return ResultStatus::Success;
 }
 
+ResultStatus AppLoader_NRO::ReadIcon(std::vector<u8>& buffer) {
+    if (icon_data.empty())
+        return ResultStatus::ErrorNotUsed;
+    buffer = icon_data;
+    return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_NRO::ReadProgramId(u64& out_program_id) {
+    if (nacp == nullptr)
+        return ResultStatus::ErrorNotUsed;
+    out_program_id = nacp->GetTitleId();
+    return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_NRO::ReadRomFS(FileSys::VirtualFile& dir) {
+    if (romfs == nullptr)
+        return ResultStatus::ErrorNotUsed;
+    dir = romfs;
+    return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_NRO::ReadTitle(std::string& title) {
+    if (nacp == nullptr)
+        return ResultStatus::ErrorNotUsed;
+    title = nacp->GetApplicationName();
+    return ResultStatus::Success;
+}
 } // namespace Loader
