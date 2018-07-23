@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <utility>
 #include <boost/optional.hpp>
 #include "common/alignment.h"
 #include "common/math_util.h"
@@ -176,7 +177,7 @@ private:
 
 class IGBPConnectRequestParcel : public Parcel {
 public:
-    explicit IGBPConnectRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPConnectRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPConnectRequestParcel() override = default;
@@ -223,8 +224,8 @@ private:
 
 class IGBPSetPreallocatedBufferRequestParcel : public Parcel {
 public:
-    explicit IGBPSetPreallocatedBufferRequestParcel(const std::vector<u8>& buffer)
-        : Parcel(buffer) {
+    explicit IGBPSetPreallocatedBufferRequestParcel(std::vector<u8> buffer)
+        : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPSetPreallocatedBufferRequestParcel() override = default;
@@ -256,7 +257,7 @@ protected:
 
 class IGBPDequeueBufferRequestParcel : public Parcel {
 public:
-    explicit IGBPDequeueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPDequeueBufferRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPDequeueBufferRequestParcel() override = default;
@@ -307,7 +308,7 @@ protected:
 
 class IGBPRequestBufferRequestParcel : public Parcel {
 public:
-    explicit IGBPRequestBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPRequestBufferRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPRequestBufferRequestParcel() override = default;
@@ -322,8 +323,7 @@ public:
 
 class IGBPRequestBufferResponseParcel : public Parcel {
 public:
-    explicit IGBPRequestBufferResponseParcel(NVFlinger::IGBPBuffer buffer)
-        : Parcel(), buffer(buffer) {}
+    explicit IGBPRequestBufferResponseParcel(NVFlinger::IGBPBuffer buffer) : buffer(buffer) {}
     ~IGBPRequestBufferResponseParcel() override = default;
 
 protected:
@@ -340,7 +340,7 @@ protected:
 
 class IGBPQueueBufferRequestParcel : public Parcel {
 public:
-    explicit IGBPQueueBufferRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPQueueBufferRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPQueueBufferRequestParcel() override = default;
@@ -409,7 +409,7 @@ private:
 
 class IGBPQueryRequestParcel : public Parcel {
 public:
-    explicit IGBPQueryRequestParcel(const std::vector<u8>& buffer) : Parcel(buffer) {
+    explicit IGBPQueryRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
         Deserialize();
     }
     ~IGBPQueryRequestParcel() override = default;
