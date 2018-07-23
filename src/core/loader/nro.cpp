@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "common/common_funcs.h"
+#include "common/common_types.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
@@ -105,6 +106,8 @@ AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {
         }
     }
 }
+
+AppLoader_NRO::~AppLoader_NRO() = default;
 
 FileType AppLoader_NRO::IdentifyType(const FileSys::VirtualFile& file) {
     // Read NSO header

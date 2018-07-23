@@ -6,10 +6,13 @@
 
 #include <string>
 #include "common/common_types.h"
-#include "core/file_sys/control_metadata.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/loader/linker.h"
 #include "core/loader/loader.h"
+
+namespace FileSys {
+class NACP;
+}
 
 namespace Loader {
 
@@ -17,6 +20,7 @@ namespace Loader {
 class AppLoader_NRO final : public AppLoader, Linker {
 public:
     explicit AppLoader_NRO(FileSys::VirtualFile file);
+    ~AppLoader_NRO() override;
 
     /**
      * Returns the type of the file
