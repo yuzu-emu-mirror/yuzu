@@ -15,7 +15,6 @@
 #include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/vm_manager.h"
 #include "core/hle/result.h"
-#include "core/hle/shared_page.h"
 #include "core/memory.h"
 #include "core/memory_setup.h"
 

@@ -11,7 +11,6 @@
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/timer.h"
-#include "core/hle/shared_page.h"
 
 namespace Kernel {
 
@@ -20,7 +19,6 @@ unsigned int Object::next_object_id;
 /// Initialize the kernel
 void Init(u32 system_mode) {
     ConfigMem::Init();
-    SharedPage::Init();
 
     Kernel::MemoryInit(system_mode);
 

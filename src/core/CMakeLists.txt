@@ -249,8 +249,6 @@ add_library(core STATIC
     hle/service/vi/vi_s.h
     hle/service/vi/vi_u.cpp
     hle/service/vi/vi_u.h
-    hle/shared_page.cpp
-    hle/shared_page.h
     hw/hw.cpp
     hw/hw.h
     hw/lcd.cpp
