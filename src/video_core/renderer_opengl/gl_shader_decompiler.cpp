@@ -769,7 +769,8 @@ private:
             return offset + 1;
         }
 
-        shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName());
+        shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName() + " (" +
+                       std::to_string(instr.value) + ')');
 
         using Tegra::Shader::Pred;
         ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
