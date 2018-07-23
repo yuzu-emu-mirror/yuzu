@@ -179,7 +179,7 @@ std::vector<T> SliceVector(const std::vector<T>& vector, size_t first, size_t la
 }
 
 // Removes trailing slash, makes all '\\' into '/', and removes duplicate '/'.
-std::string_view SanitizePath(std::string_view path);
+std::string SanitizePath(std::string_view path);
 
 // simple wrapper for cstdlib file functions to
 // hopefully will make error checking easier

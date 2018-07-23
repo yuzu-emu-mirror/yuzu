@@ -870,7 +870,7 @@ std::string_view RemoveTrailingSlash(std::string_view path) {
     return path;
 }
 
-std::string_view SanitizePath(std::string_view path_) {
+std::string SanitizePath(std::string_view path_) {
     std::string path(path_);
     std::replace(path.begin(), path.end(), '\\', '/');
     path.erase(std::unique(path.begin(), path.end(),
