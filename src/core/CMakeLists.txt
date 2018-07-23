@@ -38,8 +38,6 @@ add_library(core STATIC
     frontend/input.h
     gdbstub/gdbstub.cpp
     gdbstub/gdbstub.h
-    hle/config_mem.cpp
-    hle/config_mem.h
     hle/ipc.h
     hle/ipc_helpers.h
     hle/kernel/address_arbiter.cpp

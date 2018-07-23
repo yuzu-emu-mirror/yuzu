@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "core/hle/config_mem.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/memory.h"
@@ -18,8 +17,6 @@ unsigned int Object::next_object_id;
 
 /// Initialize the kernel
 void Init(u32 system_mode) {
-    ConfigMem::Init();
-
     Kernel::MemoryInit(system_mode);
 
     Kernel::ResourceLimitsInit();
