@@ -45,6 +45,8 @@ void SET::GetAvailableLanguageCodeCount(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u32>(available_language_codes.size()));
+
+    LOG_DEBUG(Service_SET, "called");
 }
 
 SET::SET() : ServiceFramework("set") {
