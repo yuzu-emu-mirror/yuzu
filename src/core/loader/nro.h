@@ -13,8 +13,6 @@
 
 namespace Loader {
 
-struct AssetHeader;
-
 /// Loads an NRO file
 class AppLoader_NRO final : public AppLoader, Linker {
 public:
