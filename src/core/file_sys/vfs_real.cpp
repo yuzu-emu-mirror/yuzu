@@ -60,11 +60,11 @@ std::shared_ptr<VfsDirectory> RealVfsFile::GetContainingDirectory() const {
 }
 
 bool RealVfsFile::IsWritable() const {
-    return perms & Mode::WriteAppend;
+    return (perms & Mode::WriteAppend) != 0;
 }
 
 bool RealVfsFile::IsReadable() const {
-    return perms & Mode::ReadWrite;
+    return (perms & Mode::ReadWrite) != 0;
 }
 
 size_t RealVfsFile::Read(u8* data, size_t length, size_t offset) const {
@@ -127,11 +127,11 @@ std::vector<std::shared_ptr<VfsDirectory>> RealVfsDirectory::GetSubdirectories()
 }
 
 bool RealVfsDirectory::IsWritable() const {
-    return perms & Mode::WriteAppend;
+    return (perms & Mode::WriteAppend) != 0;
 }
 
 bool RealVfsDirectory::IsReadable() const {
-    return perms & Mode::ReadWrite;
+    return (perms & Mode::ReadWrite) != 0;
 }
 
 std::string RealVfsDirectory::GetName() const {
