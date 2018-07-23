@@ -63,7 +63,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
     }
     if (dir->GetFile(FileUtil::GetFilename(path)) == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
-    if (!backing->DeleteFile(FileUtil::GetFilename(path))) {
+    if (!dir->DeleteFile(FileUtil::GetFilename(path))) {
         // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
     }
