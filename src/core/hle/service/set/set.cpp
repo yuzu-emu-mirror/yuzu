@@ -33,9 +33,9 @@ void SET::GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx) {
     }};
     ctx.WriteBuffer(available_language_codes);
 
-    IPC::ResponseBuilder rb{ctx, 4};
+    IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u64>(available_language_codes.size()));
+    rb.Push(static_cast<u32>(available_language_codes.size()));
 
     LOG_DEBUG(Service_SET, "called");
 }
