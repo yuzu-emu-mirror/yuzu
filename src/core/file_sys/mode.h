@@ -16,4 +16,8 @@ enum class Mode : u32 {
     WriteAppend = 6,
 };
 
+inline u32 operator&(Mode lhs, Mode rhs) {
+    return static_cast<u32>(lhs) & static_cast<u32>(rhs);
+}
+
 } // namespace FileSys
