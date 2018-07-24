@@ -601,7 +601,6 @@ void RasterizerOpenGL::SamplerInfo::Create() {
     sampler.Create();
     mag_filter = min_filter = Tegra::Texture::TextureFilter::Linear;
     wrap_u = wrap_v = Tegra::Texture::WrapMode::Wrap;
-    border_color_r = border_color_g = border_color_b = border_color_a = 0;
 
     // default is GL_LINEAR_MIPMAP_LINEAR
     glSamplerParameteri(sampler.handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -630,8 +629,12 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
     }
 
     if (wrap_u == Tegra::Texture::WrapMode::Border || wrap_v == Tegra::Texture::WrapMode::Border) {
-        // TODO(Subv): Implement border color
-        ASSERT(false);
+        const GLvec4 new_border_color = {{config.border_color_r, config.border_color_g,
+                                          config.border_color_b, config.border_color_a}};
+        if (border_color != new_border_color) {
+            border_color = new_border_color;
+            glSamplerParameterfv(s, GL_TEXTURE_BORDER_COLOR, border_color.data());
+        }
     }
 }
 

@@ -77,10 +77,7 @@ private:
         Tegra::Texture::TextureFilter min_filter;
         Tegra::Texture::WrapMode wrap_u;
         Tegra::Texture::WrapMode wrap_v;
-        u32 border_color_r;
-        u32 border_color_g;
-        u32 border_color_b;
-        u32 border_color_a;
+        GLvec4 border_color;
     };
 
     /// Configures the color and depth framebuffer states and returns the dirty <Color, Depth>
