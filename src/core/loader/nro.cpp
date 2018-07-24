@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "common/common_funcs.h"
+#include "common/common_types.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/swap.h"
@@ -68,22 +69,27 @@ static_assert(sizeof(AssetHeader) == 0x38, "AssetHeader has incorrect size.");
 
 AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {
     NroHeader nro_header{};
-    if (file->ReadObject(&nro_header) != sizeof(NroHeader))
+    if (file->ReadObject(&nro_header) != sizeof(NroHeader)) {
         return;
+    }
 
     if (file->GetSize() >= nro_header.file_size + sizeof(AssetHeader)) {
-        u64 offset = nro_header.file_size;
+        const u64 offset = nro_header.file_size;
         AssetHeader asset_header{};
-        if (file->ReadObject(&asset_header, offset) != sizeof(AssetHeader))
+        if (file->ReadObject(&asset_header, offset) != sizeof(AssetHeader)) {
             return;
+        }
 
-        if (asset_header.format_version != 0)
+        if (asset_header.format_version != 0) {
             LOG_WARNING(Loader,
                         "NRO Asset Header has format {}, currently supported format is 0. If "
                         "strange glitches occur with metadata, check NRO assets.",
                         asset_header.format_version);
-        if (asset_header.magic != Common::MakeMagic('A', 'S', 'E', 'T'))
+        }
+
+        if (asset_header.magic != Common::MakeMagic('A', 'S', 'E', 'T')) {
             return;
+        }
 
         if (asset_header.nacp.size > 0) {
             nacp = std::make_unique<FileSys::NACP>(std::make_shared<FileSys::OffsetVfsFile>(
@@ -100,6 +106,8 @@ AppLoader_NRO::AppLoader_NRO(FileSys::VirtualFile file) : AppLoader(file) {
         }
     }
 }
+
+AppLoader_NRO::~AppLoader_NRO() = default;
 
 FileType AppLoader_NRO::IdentifyType(const FileSys::VirtualFile& file) {
     // Read NSO header
@@ -130,8 +138,9 @@ bool AppLoader_NRO::LoadNro(FileSys::VirtualFile file, VAddr load_base) {
     // Build program image
     Kernel::SharedPtr<Kernel::CodeSet> codeset = Kernel::CodeSet::Create("");
     std::vector<u8> program_image = file->ReadBytes(PageAlignSize(nro_header.file_size));
-    if (program_image.size() != PageAlignSize(nro_header.file_size))
+    if (program_image.size() != PageAlignSize(nro_header.file_size)) {
         return {};
+    }
 
     for (std::size_t i = 0; i < nro_header.segments.size(); ++i) {
         codeset->segments[i].addr = nro_header.segments[i].offset;
@@ -187,29 +196,37 @@ ResultStatus AppLoader_NRO::Load(Kernel::SharedPtr<Kernel::Process>& process) {
 }
 
 ResultStatus AppLoader_NRO::ReadIcon(std::vector<u8>& buffer) {
-    if (icon_data.empty())
+    if (icon_data.empty()) {
         return ResultStatus::ErrorNotUsed;
+    }
+
     buffer = icon_data;
     return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NRO::ReadProgramId(u64& out_program_id) {
-    if (nacp == nullptr)
+    if (nacp == nullptr) {
         return ResultStatus::ErrorNotUsed;
+    }
+
     out_program_id = nacp->GetTitleId();
     return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NRO::ReadRomFS(FileSys::VirtualFile& dir) {
-    if (romfs == nullptr)
+    if (romfs == nullptr) {
         return ResultStatus::ErrorNotUsed;
+    }
+
     dir = romfs;
     return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NRO::ReadTitle(std::string& title) {
-    if (nacp == nullptr)
+    if (nacp == nullptr) {
         return ResultStatus::ErrorNotUsed;
+    }
+
     title = nacp->GetApplicationName();
     return ResultStatus::Success;
 }
