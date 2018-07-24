@@ -8,9 +8,9 @@
 
 namespace Service::Time {
 
-class TIME_U final : public Module::Interface {
+class TIME final : public Module::Interface {
 public:
-    explicit TIME_U(std::shared_ptr<Module> time);
+    explicit TIME(std::shared_ptr<Module> time, const char* name);
 };
 
 } // namespace Service::Time

@@ -2,17 +2,18 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "core/hle/service/time/time_s.h"
+#include "core/hle/service/time/interface.h"
 
 namespace Service::Time {
 
-TIME_S::TIME_S(std::shared_ptr<Module> time) : Module::Interface(std::move(time), "time:s") {
+TIME::TIME(std::shared_ptr<Module> time, const char* name)
+    : Module::Interface(std::move(time), name) {
     static const FunctionInfo functions[] = {
-        {0, &TIME_S::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
-        {1, &TIME_S::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
-        {2, &TIME_S::GetStandardSteadyClock, "GetStandardSteadyClock"},
-        {3, &TIME_S::GetTimeZoneService, "GetTimeZoneService"},
-        {4, &TIME_S::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
+        {0, &TIME::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
+        {1, &TIME::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
+        {2, &TIME::GetStandardSteadyClock, "GetStandardSteadyClock"},
+        {3, &TIME::GetTimeZoneService, "GetTimeZoneService"},
+        {4, &TIME::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
         {5, nullptr, "GetEphemeralNetworkSystemClock"},
         {50, nullptr, "SetStandardSteadyClockInternalOffset"},
         {100, nullptr, "IsStandardUserSystemClockAutomaticCorrectionEnabled"},
