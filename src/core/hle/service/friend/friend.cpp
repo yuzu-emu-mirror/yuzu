@@ -21,7 +21,10 @@ Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto module = std::make_shared<Module>();
     std::make_shared<Friend>(module, "friend:a")->InstallAsService(service_manager);
+    std::make_shared<Friend>(module, "friend:m")->InstallAsService(service_manager);
+    std::make_shared<Friend>(module, "friend:s")->InstallAsService(service_manager);
     std::make_shared<Friend>(module, "friend:u")->InstallAsService(service_manager);
+    std::make_shared<Friend>(module, "friend:v")->InstallAsService(service_manager);
 }
 
 } // namespace Service::Friend
