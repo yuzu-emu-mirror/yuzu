@@ -689,10 +689,12 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // Now configure the bindpoint of the buffer inside the shader
-        std::string buffer_name = used_buffer.GetName();
-        GLuint index = glGetProgramResourceIndex(program, GL_UNIFORM_BLOCK, buffer_name.c_str());
-        if (index != -1)
+        const std::string buffer_name = used_buffer.GetName();
+        const GLuint index =
+            glGetProgramResourceIndex(program, GL_UNIFORM_BLOCK, buffer_name.c_str());
+        if (index != GL_INVALID_INDEX) {
             glUniformBlockBinding(program, index, buffer_draw_state.bindpoint);
+        }
     }
 
     state.Apply();
