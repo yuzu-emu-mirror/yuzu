@@ -750,6 +750,38 @@ private:
         }
     }
 
+    std::string WriteTexsInstruction(const Instruction& instr, const std::string& coord,
+                                     const std::string& texture) {
+        // Add an extra scope and declare the texture coords inside to prevent
+        // overwriting them in case they are used as outputs of the texs instruction.
+        shader.AddLine('{');
+        ++shader.scope;
+        shader.AddLine(coord);
+
+        // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
+        // goes into gpr28+0 and gpr28+1
+        size_t texs_offset{};
+
+        for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
+            for (unsigned elem = 0; elem < 2; ++elem) {
+                if (!instr.texs.IsComponentEnabled(elem)) {
+                    // Skip disabled components
+                    continue;
+                }
+                regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false, elem);
+            }
+
+            if (!instr.texs.HasTwoDestinations()) {
+                // Skip the second destination
+                break;
+            }
+
+            texs_offset += 2;
+        }
+        --shader.scope;
+        shader.AddLine('}');
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -1348,36 +1380,18 @@ private:
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
-                // Add an extra scope and declare the texture coords inside to prevent
-                // overwriting them in case they are used as outputs of the texs instruction.
-                shader.AddLine("{");
-                ++shader.scope;
-                shader.AddLine(coord);
+
                 const std::string texture = "texture(" + sampler + ", coords)";
-
-                // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
-                // goes into gpr28+0 and gpr28+1
-                size_t texs_offset{};
-
-                for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
-                    for (unsigned elem = 0; elem < 2; ++elem) {
-                        if (!instr.texs.IsComponentEnabled(elem)) {
-                            // Skip disabled components
-                            continue;
-                        }
-                        regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false,
-                                                elem);
-                    }
-
-                    if (!instr.texs.HasTwoDestinations()) {
-                        // Skip the second destination
-                        break;
-                    }
-
-                    texs_offset += 2;
-                }
-                --shader.scope;
-                shader.AddLine("}");
+                WriteTexsInstruction(instr, coord, texture);
+                break;
+            }
+            case OpCode::Id::TLDS: {
+                const std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+                const std::string op_b = regs.GetRegisterAsInteger(instr.gpr20);
+                const std::string sampler = GetSampler(instr.sampler);
+                const std::string coord = "ivec2 coords = ivec2(" + op_a + ", " + op_b + ");";
+                const std::string texture = "texelFetch(" + sampler + ", coords, 0)";
+                WriteTexsInstruction(instr, coord, texture);
                 break;
             }
             default: {
