@@ -756,8 +756,8 @@ private:
         }
     }
 
-    std::string WriteTexsInstruction(const Instruction& instr, const std::string& coord,
-                                     const std::string& texture) {
+    void WriteTexsInstruction(const Instruction& instr, const std::string& coord,
+                              const std::string& texture) {
         // Add an extra scope and declare the texture coords inside to prevent
         // overwriting them in case they are used as outputs of the texs instruction.
         shader.AddLine('{');
