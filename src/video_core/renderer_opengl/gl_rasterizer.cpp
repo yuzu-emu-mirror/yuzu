@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <glad/glad.h>
@@ -54,7 +55,8 @@ RasterizerOpenGL::RasterizerOpenGL() {
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
-        std::string extension{reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))};
+        const std::string_view extension{
+            reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))};
 
         if (extension == "GL_ARB_buffer_storage") {
             has_ARB_buffer_storage = true;
