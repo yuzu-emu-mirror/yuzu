@@ -6,7 +6,6 @@
 #include "common/common_funcs.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
-#include "common/string_util.h"
 #include "core/file_sys/content_archive.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
@@ -17,34 +16,6 @@
 #include "core/memory.h"
 
 namespace Loader {
-
-static std::string FindRomFS(const std::string& directory) {
-    std::string filepath_romfs;
-    const auto callback = [&filepath_romfs](u64*, const std::string& directory,
-                                            const std::string& virtual_name) -> bool {
-        const std::string physical_name = directory + virtual_name;
-        if (FileUtil::IsDirectory(physical_name)) {
-            // Skip directories
-            return true;
-        }
-
-        // Verify extension
-        const std::string extension = physical_name.substr(physical_name.find_last_of(".") + 1);
-        if (Common::ToLower(extension) != "romfs") {
-            return true;
-        }
-
-        // Found it - we are done
-        filepath_romfs = std::move(physical_name);
-        return false;
-    };
-
-    // Search the specified directory recursively, looking for the first .romfs file, which will
-    // be used for the RomFS
-    FileUtil::ForeachDirectoryEntry(nullptr, directory, callback);
-
-    return filepath_romfs;
-}
 
 AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys::VirtualFile file)
     : AppLoader(std::move(file)) {}
