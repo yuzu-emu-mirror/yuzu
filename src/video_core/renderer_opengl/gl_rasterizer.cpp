@@ -37,11 +37,6 @@ MICROPROFILE_DEFINE(OpenGL_Blits, "OpenGL", "Blits", MP_RGB(100, 100, 255));
 MICROPROFILE_DEFINE(OpenGL_CacheManagement, "OpenGL", "Cache Mgmt", MP_RGB(100, 255, 100));
 
 RasterizerOpenGL::RasterizerOpenGL() {
-    has_ARB_buffer_storage = false;
-    has_ARB_direct_state_access = false;
-    has_ARB_separate_shader_objects = false;
-    has_ARB_vertex_attrib_binding = false;
-
     // Create sampler objects
     for (size_t i = 0; i < texture_samplers.size(); ++i) {
         texture_samplers[i].Create();
@@ -109,8 +104,6 @@ RasterizerOpenGL::RasterizerOpenGL() {
                      GL_STREAM_COPY);
         glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer.handle);
     }
-
-    accelerate_draw = AccelDraw::Disabled;
 
     glEnable(GL_BLEND);
 
