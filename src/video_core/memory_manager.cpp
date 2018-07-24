@@ -138,9 +138,7 @@ VAddr& MemoryManager::PageSlot(GPUVAddr gpu_addr) {
     auto& block = page_table[(gpu_addr >> (PAGE_BITS + PAGE_TABLE_BITS)) & PAGE_TABLE_MASK];
     if (!block) {
         block = std::make_unique<PageBlock>();
-        for (unsigned index = 0; index < PAGE_BLOCK_SIZE; index++) {
-            (*block)[index] = static_cast<u64>(PageStatus::Unmapped);
-        }
+        block->fill(static_cast<VAddr>(PageStatus::Unmapped));
     }
     return (*block)[(gpu_addr >> PAGE_BITS) & PAGE_BLOCK_MASK];
 }
