@@ -68,15 +68,14 @@ public:
     explicit DynarmicExclusiveMonitor(size_t core_count);
     ~DynarmicExclusiveMonitor();
 
-    void SetExclusive(size_t core_index, u64 addr) override;
+    void SetExclusive(size_t core_index, VAddr addr) override;
     void ClearExclusive() override;
 
-    bool ExclusiveWrite8(size_t core_index, u64 vaddr, u8 value) override;
-    bool ExclusiveWrite16(size_t core_index, u64 vaddr, u16 value) override;
-    bool ExclusiveWrite32(size_t core_index, u64 vaddr, u32 value) override;
-    bool ExclusiveWrite64(size_t core_index, u64 vaddr, u64 value) override;
-    bool ExclusiveWrite128(size_t core_index, u64 vaddr,
-                           std::array<std::uint64_t, 2> value) override;
+    bool ExclusiveWrite8(size_t core_index, VAddr vaddr, u8 value) override;
+    bool ExclusiveWrite16(size_t core_index, VAddr vaddr, u16 value) override;
+    bool ExclusiveWrite32(size_t core_index, VAddr vaddr, u32 value) override;
+    bool ExclusiveWrite64(size_t core_index, VAddr vaddr, u64 value) override;
+    bool ExclusiveWrite128(size_t core_index, VAddr vaddr, u128 value) override;
 
 private:
     friend class ARM_Dynarmic;

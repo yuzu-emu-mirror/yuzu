@@ -257,7 +257,7 @@ void ARM_Dynarmic::PageTableChanged() {
 DynarmicExclusiveMonitor::DynarmicExclusiveMonitor(size_t core_count) : monitor(core_count) {}
 DynarmicExclusiveMonitor::~DynarmicExclusiveMonitor() = default;
 
-void DynarmicExclusiveMonitor::SetExclusive(size_t core_index, u64 addr) {
+void DynarmicExclusiveMonitor::SetExclusive(size_t core_index, VAddr addr) {
     // Size doesn't actually matter.
     monitor.Mark(core_index, addr, 16);
 }
@@ -266,28 +266,27 @@ void DynarmicExclusiveMonitor::ClearExclusive() {
     monitor.Clear();
 }
 
-bool DynarmicExclusiveMonitor::ExclusiveWrite8(size_t core_index, u64 vaddr, u8 value) {
+bool DynarmicExclusiveMonitor::ExclusiveWrite8(size_t core_index, VAddr vaddr, u8 value) {
     return monitor.DoExclusiveOperation(core_index, vaddr, 1,
                                         [&] { Memory::Write8(vaddr, value); });
 }
 
-bool DynarmicExclusiveMonitor::ExclusiveWrite16(size_t core_index, u64 vaddr, u16 value) {
+bool DynarmicExclusiveMonitor::ExclusiveWrite16(size_t core_index, VAddr vaddr, u16 value) {
     return monitor.DoExclusiveOperation(core_index, vaddr, 2,
                                         [&] { Memory::Write16(vaddr, value); });
 }
 
-bool DynarmicExclusiveMonitor::ExclusiveWrite32(size_t core_index, u64 vaddr, u32 value) {
+bool DynarmicExclusiveMonitor::ExclusiveWrite32(size_t core_index, VAddr vaddr, u32 value) {
     return monitor.DoExclusiveOperation(core_index, vaddr, 4,
                                         [&] { Memory::Write32(vaddr, value); });
 }
 
-bool DynarmicExclusiveMonitor::ExclusiveWrite64(size_t core_index, u64 vaddr, u64 value) {
+bool DynarmicExclusiveMonitor::ExclusiveWrite64(size_t core_index, VAddr vaddr, u64 value) {
     return monitor.DoExclusiveOperation(core_index, vaddr, 8,
                                         [&] { Memory::Write64(vaddr, value); });
 }
 
-bool DynarmicExclusiveMonitor::ExclusiveWrite128(size_t core_index, u64 vaddr,
-                                                 std::array<std::uint64_t, 2> value) {
+bool DynarmicExclusiveMonitor::ExclusiveWrite128(size_t core_index, VAddr vaddr, u128 value) {
     return monitor.DoExclusiveOperation(core_index, vaddr, 16, [&] {
         Memory::Write64(vaddr, value[0]);
         Memory::Write64(vaddr, value[1]);
