@@ -102,6 +102,26 @@ void Maxwell3D::WriteReg(u32 method, u32 value, u32 remaining_params) {
         ProcessCBData(value);
         break;
     }
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[0]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[1]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[2]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[3]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[4]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[5]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[6]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[7]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[8]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[9]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[10]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[11]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[12]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[13]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[14]):
+    case MAXWELL3D_REG_INDEX(vertex_attrib_format[15]): {
+        state.MaxAttribs =
+            std::max(state.MaxAttribs, method - MAXWELL3D_REG_INDEX(vertex_attrib_format[0]) + 1);
+        break;
+    }
     case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
         ProcessCBBind(Regs::ShaderStage::Vertex);
         break;

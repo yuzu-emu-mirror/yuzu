@@ -128,6 +128,7 @@ RasterizerOpenGL::~RasterizerOpenGL() {
 std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
                                                              GLintptr buffer_offset) {
     MICROPROFILE_SCOPE(OpenGL_VAO);
+
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
     const auto& memory_manager = Core::System::GetInstance().GPU().memory_manager;
 
@@ -160,12 +161,12 @@ std::pair<u8*, GLintptr> RasterizerOpenGL::SetupVertexArrays(u8* array_ptr,
     }
 
     // Use the vertex array as-is, assumes that the data is formatted correctly for OpenGL.
-    // Enables the first 16 vertex attributes always, as we don't know which ones are actually used
-    // until shader time. Note, Tegra technically supports 32, but we're capping this to 16 for now
-    // to avoid OpenGL errors.
+    // Enables the all vertex attributes that have been written to, as we don't know which ones are
+    // actually used until shader time. Note: Tegra technically supports 32.
     // TODO(Subv): Analyze the shader to identify which attributes are actually used and don't
     // assume every shader uses them all.
-    for (unsigned index = 0; index < 16; ++index) {
+    const auto& max_attribs = Core::System::GetInstance().GPU().Maxwell3D().state.MaxAttribs;
+    for (unsigned index = 0; index < max_attribs; ++index) {
         auto& attrib = regs.vertex_attrib_format[index];
         LOG_DEBUG(HW_GPU, "vertex attrib {}, count={}, size={}, type={}, offset={}, normalize={}",
                   index, attrib.ComponentCount(), attrib.SizeString(), attrib.TypeString(),
