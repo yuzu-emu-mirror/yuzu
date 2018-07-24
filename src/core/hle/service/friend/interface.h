@@ -8,9 +8,9 @@
 
 namespace Service::Friend {
 
-class Friend_U final : public Module::Interface {
+class Friend final : public Module::Interface {
 public:
-    explicit Friend_U(std::shared_ptr<Module> module);
+    explicit Friend(std::shared_ptr<Module> module, const char* name);
 };
 
 } // namespace Service::Friend
