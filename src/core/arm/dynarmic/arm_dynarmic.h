@@ -50,7 +50,7 @@ public:
     void PageTableChanged() override;
 
 private:
-    std::unique_ptr<Dynarmic::A64::Jit> MakeJit();
+    std::unique_ptr<Dynarmic::A64::Jit> MakeJit() const;
 
     friend class ARM_Dynarmic_Callbacks;
     std::unique_ptr<ARM_Dynarmic_Callbacks> cb;
