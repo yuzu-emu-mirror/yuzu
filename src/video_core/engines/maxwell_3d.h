@@ -800,6 +800,7 @@ public:
         };
 
         std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
+        size_t MaxAttribs;
     };
 
     State state{};
