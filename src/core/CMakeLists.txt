@@ -114,26 +114,26 @@ add_library(core STATIC
     hle/service/apm/apm.h
     hle/service/apm/interface.cpp
     hle/service/apm/interface.h
-    hle/service/audio/audio.cpp
-    hle/service/audio/audio.h
     hle/service/audio/audin_u.cpp
     hle/service/audio/audin_u.h
+    hle/service/audio/audio.cpp
+    hle/service/audio/audio.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
     hle/service/audio/audrec_u.cpp
     hle/service/audio/audrec_u.h
     hle/service/audio/audren_u.cpp
-    hle/service/audio/audren_u.h
     hle/service/audio/audren_u.cpp
+    hle/service/audio/audren_u.h
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
     hle/service/audio/hwopus.cpp
     hle/service/audio/hwopus.h
-    hle/service/bcat/module.cpp
-    hle/service/bcat/module.h
     hle/service/bcat/bcat.cpp
     hle/service/bcat/bcat.h
+    hle/service/bcat/module.cpp
+    hle/service/bcat/module.h
     hle/service/fatal/fatal.cpp
     hle/service/fatal/fatal.h
     hle/service/fatal/fatal_p.cpp
@@ -156,6 +156,10 @@ add_library(core STATIC
     hle/service/lm/lm.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
+    hle/service/nfp/nfp.cpp
+    hle/service/nfp/nfp.h
+    hle/service/nfp/nfp_user.cpp
+    hle/service/nfp/nfp_user.h
     hle/service/nifm/nifm.cpp
     hle/service/nifm/nifm.h
     hle/service/nifm/nifm_a.cpp
@@ -164,10 +168,6 @@ add_library(core STATIC
     hle/service/nifm/nifm_s.h
     hle/service/nifm/nifm_u.cpp
     hle/service/nifm/nifm_u.h
-    hle/service/nfp/nfp.cpp
-    hle/service/nfp/nfp.h
-    hle/service/nfp/nfp_user.cpp
-    hle/service/nfp/nfp_user.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
     hle/service/ns/pl_u.cpp
