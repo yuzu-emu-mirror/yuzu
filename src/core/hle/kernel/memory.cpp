@@ -11,11 +11,9 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
-#include "core/hle/config_mem.h"
 #include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/vm_manager.h"
 #include "core/hle/result.h"
-#include "core/hle/shared_page.h"
 #include "core/memory.h"
 #include "core/memory_setup.h"
 
@@ -63,14 +61,6 @@ void MemoryInit(u32 mem_type) {
 
     // We must've allocated the entire FCRAM by the end
     ASSERT(base == Memory::FCRAM_SIZE);
-
-    using ConfigMem::config_mem;
-    config_mem.app_mem_type = mem_type;
-    // app_mem_malloc does not always match the configured size for memory_region[0]: in case the
-    // n3DS type override is in effect it reports the size the game expects, not the real one.
-    config_mem.app_mem_alloc = memory_region_sizes[mem_type][0];
-    config_mem.sys_mem_alloc = static_cast<u32_le>(memory_regions[1].size);
-    config_mem.base_mem_alloc = static_cast<u32_le>(memory_regions[2].size);
 }
 
 void MemoryShutdown() {
