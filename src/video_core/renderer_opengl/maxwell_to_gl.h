@@ -56,6 +56,9 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         return {};
     }
 
+    case Maxwell::VertexAttribute::Type::UnsignedInt:
+        return GL_UNSIGNED_INT;
+
     case Maxwell::VertexAttribute::Type::Float:
         return GL_FLOAT;
     }
