@@ -25,9 +25,9 @@ protected:
     ptrdiff_t index = 0;
 
 public:
-    RequestHelperBase(u32* command_buffer) : cmdbuf(command_buffer) {}
+    explicit RequestHelperBase(u32* command_buffer) : cmdbuf(command_buffer) {}
 
-    RequestHelperBase(Kernel::HLERequestContext& context)
+    explicit RequestHelperBase(Kernel::HLERequestContext& context)
         : context(&context), cmdbuf(context.CommandBuffer()) {}
 
     void Skip(unsigned size_in_words, bool set_to_null) {
@@ -56,8 +56,6 @@ public:
 
 class ResponseBuilder : public RequestHelperBase {
 public:
-    ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
-
     /// Flags used for customizing the behavior of ResponseBuilder
     enum class Flags : u32 {
         None = 0,
@@ -66,9 +64,11 @@ public:
         AlwaysMoveHandles = 1,
     };
 
-    ResponseBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
-                    u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
-                    Flags flags = Flags::None)
+    explicit ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+
+    explicit ResponseBuilder(Kernel::HLERequestContext& context, u32 normal_params_size,
+                             u32 num_handles_to_copy = 0, u32 num_objects_to_move = 0,
+                             Flags flags = Flags::None)
 
         : RequestHelperBase(context), normal_params_size(normal_params_size),
           num_handles_to_copy(num_handles_to_copy), num_objects_to_move(num_objects_to_move) {
@@ -274,9 +274,9 @@ inline void ResponseBuilder::PushMoveObjects(Kernel::SharedPtr<O>... pointers) {
 
 class RequestParser : public RequestHelperBase {
 public:
-    RequestParser(u32* command_buffer) : RequestHelperBase(command_buffer) {}
+    explicit RequestParser(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    RequestParser(Kernel::HLERequestContext& context) : RequestHelperBase(context) {
+    explicit RequestParser(Kernel::HLERequestContext& context) : RequestHelperBase(context) {
         ASSERT_MSG(context.GetDataPayloadOffset(), "context is incomplete");
         Skip(context.GetDataPayloadOffset(), false);
         // Skip the u64 command id, it's already stored in the context
@@ -286,8 +286,9 @@ public:
 
     ResponseBuilder MakeBuilder(u32 normal_params_size, u32 num_handles_to_copy,
                                 u32 num_handles_to_move,
-                                ResponseBuilder::Flags flags = ResponseBuilder::Flags::None) {
-        return {*context, normal_params_size, num_handles_to_copy, num_handles_to_move, flags};
+                                ResponseBuilder::Flags flags = ResponseBuilder::Flags::None) const {
+        return ResponseBuilder{*context, normal_params_size, num_handles_to_copy,
+                               num_handles_to_move, flags};
     }
 
     template <typename T>
