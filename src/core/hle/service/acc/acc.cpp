@@ -35,7 +35,7 @@ static constexpr u128 DEFAULT_USER_ID{1ull, 0ull};
 
 class IProfile final : public ServiceFramework<IProfile> {
 public:
-    IProfile(u128 user_id) : ServiceFramework("IProfile"), user_id(user_id) {
+    explicit IProfile(u128 user_id) : ServiceFramework("IProfile"), user_id(user_id) {
         static const FunctionInfo functions[] = {
             {0, nullptr, "Get"},
             {1, &IProfile::GetBase, "GetBase"},

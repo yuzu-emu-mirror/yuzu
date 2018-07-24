@@ -79,7 +79,7 @@ enum class ResultStatus {
 /// Interface for loading an application
 class AppLoader : NonCopyable {
 public:
-    AppLoader(FileSys::VirtualFile file) : file(std::move(file)) {}
+    explicit AppLoader(FileSys::VirtualFile file) : file(std::move(file)) {}
     virtual ~AppLoader() {}
 
     /**
