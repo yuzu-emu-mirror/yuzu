@@ -42,7 +42,7 @@ FileType IdentifyFile(FileSys::VirtualFile file) {
 }
 
 FileType IdentifyFile(const std::string& file_name) {
-    return IdentifyFile(FileSys::VirtualFile(std::make_shared<FileSys::RealVfsFile>(file_name)));
+    return IdentifyFile(std::make_shared<FileSys::RealVfsFile>(file_name));
 }
 
 FileType GuessFromFilename(const std::string& name) {
