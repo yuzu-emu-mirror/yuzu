@@ -242,10 +242,10 @@ struct TSCEntry {
         BitField<6, 2, TextureMipmapFilter> mip_filter;
     };
     INSERT_PADDING_BYTES(8);
-    u32 border_color_r;
-    u32 border_color_g;
-    u32 border_color_b;
-    u32 border_color_a;
+    float border_color_r;
+    float border_color_g;
+    float border_color_b;
+    float border_color_a;
 };
 static_assert(sizeof(TSCEntry) == 0x20, "TSCEntry has wrong size");
 
