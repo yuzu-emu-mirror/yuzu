@@ -244,6 +244,8 @@ struct SurfaceParams {
             UNREACHABLE();
         case Tegra::Texture::TextureFormat::R32:
             return PixelFormat::R32F;
+        case Tegra::Texture::TextureFormat::ZF32:
+            return PixelFormat::Z32F;
         case Tegra::Texture::TextureFormat::DXT1:
             return PixelFormat::DXT1;
         case Tegra::Texture::TextureFormat::DXT23:
@@ -309,6 +311,8 @@ struct SurfaceParams {
         case PixelFormat::R16F:
         case PixelFormat::R16UNORM:
             return Tegra::Texture::TextureFormat::R16;
+        case PixelFormat::Z32F:
+            return Tegra::Texture::TextureFormat::ZF32;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
