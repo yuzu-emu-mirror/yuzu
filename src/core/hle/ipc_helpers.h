@@ -58,11 +58,6 @@ class ResponseBuilder : public RequestHelperBase {
 public:
     ResponseBuilder(u32* command_buffer) : RequestHelperBase(command_buffer) {}
 
-    u32 normal_params_size{};
-    u32 num_handles_to_copy{};
-    u32 num_objects_to_move{}; ///< Domain objects or move handles, context dependent
-    std::ptrdiff_t datapayload_index{};
-
     /// Flags used for customizing the behavior of ResponseBuilder
     enum class Flags : u32 {
         None = 0,
@@ -206,6 +201,12 @@ public:
 
     template <typename... O>
     void PushCopyObjects(Kernel::SharedPtr<O>... pointers);
+
+private:
+    u32 normal_params_size{};
+    u32 num_handles_to_copy{};
+    u32 num_objects_to_move{}; ///< Domain objects or move handles, context dependent
+    std::ptrdiff_t datapayload_index{};
 };
 
 /// Push ///
