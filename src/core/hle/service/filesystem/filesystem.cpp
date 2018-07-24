@@ -24,7 +24,8 @@ namespace Service::FileSystem {
 constexpr u64 EMULATED_SD_REPORTED_SIZE = 32000000000;
 
 static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
-                                                       std::string_view dir_name) {
+                                                       std::string_view dir_name_) {
+    std::string dir_name(FileUtil::SanitizePath(dir_name_));
     if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
@@ -38,7 +39,8 @@ std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();
 }
 
-ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 size) const {
+ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path_, u64 size) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     auto file = dir->CreateFile(FileUtil::GetFilename(path));
     if (file == nullptr) {
@@ -52,7 +54,8 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path, u64 s
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const {
+ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (path == "/" || path == "\\") {
         // TODO(DarkLordZach): Why do games call this and what should it do? Works as is but...
@@ -60,14 +63,15 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path) const
     }
     if (dir->GetFile(FileUtil::GetFilename(path)) == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
-    if (!backing->DeleteFile(FileUtil::GetFilename(path))) {
+    if (!dir->DeleteFile(FileUtil::GetFilename(path))) {
         // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
     }
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) const {
+ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (dir == nullptr && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
         dir = backing;
@@ -79,7 +83,8 @@ ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path) 
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) const {
+ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (!dir->DeleteSubdirectory(FileUtil::GetFilename(path))) {
         // TODO(DarkLordZach): Find a better error code for this
@@ -88,7 +93,8 @@ ResultCode VfsDirectoryServiceWrapper::DeleteDirectory(const std::string& path) 
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path) const {
+ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (!dir->DeleteSubdirectoryRecursive(FileUtil::GetFilename(path))) {
         // TODO(DarkLordZach): Find a better error code for this
@@ -97,8 +103,10 @@ ResultCode VfsDirectoryServiceWrapper::DeleteDirectoryRecursively(const std::str
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
-                                                  const std::string& dest_path) const {
+ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
+                                                  const std::string& dest_path_) const {
+    std::string src_path(FileUtil::SanitizePath(src_path_));
+    std::string dest_path(FileUtil::SanitizePath(dest_path_));
     auto src = backing->GetFileRelative(src_path);
     if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
         // Use more-optimized vfs implementation rename.
@@ -130,8 +138,10 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path,
     return RESULT_SUCCESS;
 }
 
-ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path,
-                                                       const std::string& dest_path) const {
+ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_path_,
+                                                       const std::string& dest_path_) const {
+    std::string src_path(FileUtil::SanitizePath(src_path_));
+    std::string dest_path(FileUtil::SanitizePath(dest_path_));
     auto src = GetDirectoryRelativeWrapped(backing, src_path);
     if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
         // Use more-optimized vfs implementation rename.
@@ -154,8 +164,9 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
     return ResultCode(-1);
 }
 
-ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path,
+ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::string& path_,
                                                                      FileSys::Mode mode) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto npath = path;
     while (npath.size() > 0 && (npath[0] == '/' || npath[0] == '\\'))
         npath = npath.substr(1);
@@ -171,7 +182,8 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
     return MakeResult<FileSys::VirtualFile>(file);
 }
 
-ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path) {
+ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path_) {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, path);
     if (dir == nullptr) {
         // TODO(DarkLordZach): Find a better error code for this
@@ -188,7 +200,8 @@ u64 VfsDirectoryServiceWrapper::GetFreeSpaceSize() const {
 }
 
 ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
-    const std::string& path) const {
+    const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     if (dir == nullptr)
         return FileSys::ERROR_PATH_NOT_FOUND;
@@ -272,9 +285,9 @@ void RegisterFileSystems() {
     sdmc_factory = nullptr;
 
     auto nand_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(FileUtil::UserPath::NANDDir), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::NANDDir), FileSys::Mode::ReadWrite);
     auto sd_directory = std::make_shared<FileSys::RealVfsDirectory>(
-        FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir), FileSys::Mode::Write);
+        FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir), FileSys::Mode::ReadWrite);
 
     auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
     save_data_factory = std::move(savedata);

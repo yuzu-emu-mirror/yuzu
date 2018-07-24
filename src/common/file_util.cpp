@@ -826,7 +826,7 @@ std::string_view GetPathWithoutTop(std::string_view path) {
     }
 
     while (path[0] == '\\' || path[0] == '/') {
-        path.remove_suffix(1);
+        path.remove_prefix(1);
         if (path.empty()) {
             return path;
         }
@@ -868,6 +868,15 @@ std::string_view RemoveTrailingSlash(std::string_view path) {
     }
 
     return path;
+}
+
+std::string SanitizePath(std::string_view path_) {
+    std::string path(path_);
+    std::replace(path.begin(), path.end(), '\\', '/');
+    path.erase(std::unique(path.begin(), path.end(),
+                           [](char c1, char c2) { return c1 == '/' && c2 == '/'; }),
+               path.end());
+    return std::string(RemoveTrailingSlash(path));
 }
 
 IOFile::IOFile() {}
