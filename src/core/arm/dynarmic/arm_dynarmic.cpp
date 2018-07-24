@@ -102,8 +102,8 @@ public:
     u64 tpidr_el0 = 0;
 };
 
-std::unique_ptr<Dynarmic::A64::Jit> ARM_Dynarmic::MakeJit() {
-    const auto page_table = Core::CurrentProcess()->vm_manager.page_table.pointers.data();
+std::unique_ptr<Dynarmic::A64::Jit> ARM_Dynarmic::MakeJit() const {
+    auto** const page_table = Core::CurrentProcess()->vm_manager.page_table.pointers.data();
 
     Dynarmic::A64::UserConfig config;
 
