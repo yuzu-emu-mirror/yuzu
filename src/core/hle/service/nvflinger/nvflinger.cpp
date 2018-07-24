@@ -9,6 +9,7 @@
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/core_timing_util.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"

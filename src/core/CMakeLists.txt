@@ -10,6 +10,8 @@ add_library(core STATIC
     core_cpu.h
     core_timing.cpp
     core_timing.h
+    core_timing_util.cpp
+    core_timing_util.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
     file_sys/control_metadata.cpp

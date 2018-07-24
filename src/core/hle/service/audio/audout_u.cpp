@@ -6,6 +6,7 @@
 #include <vector>
 #include "common/logging/log.h"
 #include "core/core_timing.h"
+#include "core/core_timing_util.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/hle_ipc.h"
