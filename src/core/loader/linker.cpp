@@ -49,8 +49,7 @@ struct Elf64_Sym {
 static_assert(sizeof(Elf64_Sym) == 0x18, "Elf64_Sym has incorrect size.");
 
 void Linker::WriteRelocations(std::vector<u8>& program_image, const std::vector<Symbol>& symbols,
-                              u64 relocation_offset, u64 size, bool is_jump_relocation,
-                              VAddr load_base) {
+                              u64 relocation_offset, u64 size, VAddr load_base) {
     for (u64 i = 0; i < size; i += sizeof(Elf64_Rela)) {
         Elf64_Rela rela;
         std::memcpy(&rela, &program_image[relocation_offset + i], sizeof(Elf64_Rela));
@@ -124,12 +123,11 @@ void Linker::Relocate(std::vector<u8>& program_image, u32 dynamic_section_offset
     }
 
     if (dynamic.find(DT_RELA) != dynamic.end()) {
-        WriteRelocations(program_image, symbols, dynamic[DT_RELA], dynamic[DT_RELASZ], false,
-                         load_base);
+        WriteRelocations(program_image, symbols, dynamic[DT_RELA], dynamic[DT_RELASZ], load_base);
     }
 
     if (dynamic.find(DT_JMPREL) != dynamic.end()) {
-        WriteRelocations(program_image, symbols, dynamic[DT_JMPREL], dynamic[DT_PLTRELSZ], true,
+        WriteRelocations(program_image, symbols, dynamic[DT_JMPREL], dynamic[DT_PLTRELSZ],
                          load_base);
     }
 }
