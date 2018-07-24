@@ -6,14 +6,14 @@
 
 namespace Service::Time {
 
-TIME::TIME(std::shared_ptr<Module> time, const char* name)
+Time::Time(std::shared_ptr<Module> time, const char* name)
     : Module::Interface(std::move(time), name) {
     static const FunctionInfo functions[] = {
-        {0, &TIME::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
-        {1, &TIME::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
-        {2, &TIME::GetStandardSteadyClock, "GetStandardSteadyClock"},
-        {3, &TIME::GetTimeZoneService, "GetTimeZoneService"},
-        {4, &TIME::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
+        {0, &Time::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
+        {1, &Time::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
+        {2, &Time::GetStandardSteadyClock, "GetStandardSteadyClock"},
+        {3, &Time::GetTimeZoneService, "GetTimeZoneService"},
+        {4, &Time::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
         {5, nullptr, "GetEphemeralNetworkSystemClock"},
         {50, nullptr, "SetStandardSteadyClockInternalOffset"},
         {100, nullptr, "IsStandardUserSystemClockAutomaticCorrectionEnabled"},
