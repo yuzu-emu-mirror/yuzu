@@ -6,6 +6,9 @@
 #include <set>
 #include <string>
 #include <string_view>
+
+#include <fmt/format.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "video_core/engines/shader_bytecode.h"
@@ -485,6 +488,12 @@ private:
      */
     void SetRegister(const Register& reg, u64 elem, const std::string& value,
                      u64 dest_num_components, u64 value_num_components, u64 dest_elem) {
+        if (reg == Register::ZeroIndex) {
+            LOG_CRITICAL(HW_GPU, "Cannot set Register::ZeroIndex");
+            UNREACHABLE();
+            return;
+        }
+
         std::string dest = GetRegister(reg, static_cast<u32>(dest_elem));
         if (dest_num_components > 1) {
             dest += GetSwizzle(elem);
@@ -747,6 +756,38 @@ private:
         }
     }
 
+    void WriteTexsInstruction(const Instruction& instr, const std::string& coord,
+                              const std::string& texture) {
+        // Add an extra scope and declare the texture coords inside to prevent
+        // overwriting them in case they are used as outputs of the texs instruction.
+        shader.AddLine('{');
+        ++shader.scope;
+        shader.AddLine(coord);
+
+        // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
+        // goes into gpr28+0 and gpr28+1
+        size_t texs_offset{};
+
+        for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
+            for (unsigned elem = 0; elem < 2; ++elem) {
+                if (!instr.texs.IsComponentEnabled(elem)) {
+                    // Skip disabled components
+                    continue;
+                }
+                regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false, elem);
+            }
+
+            if (!instr.texs.HasTwoDestinations()) {
+                // Skip the second destination
+                break;
+            }
+
+            texs_offset += 2;
+        }
+        --shader.scope;
+        shader.AddLine('}');
+    }
+
     /**
      * Compiles a single instruction from Tegra to GLSL.
      * @param offset the offset of the Tegra shader instruction.
@@ -769,7 +810,8 @@ private:
             return offset + 1;
         }
 
-        shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName());
+        shader.AddLine("// " + std::to_string(offset) + ": " + opcode->GetName() + " (" +
+                       std::to_string(instr.value) + ')');
 
         using Tegra::Shader::Pred;
         ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
@@ -1345,36 +1387,18 @@ private:
                 const std::string op_b = regs.GetRegisterAsFloat(instr.gpr20);
                 const std::string sampler = GetSampler(instr.sampler);
                 const std::string coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
-                // Add an extra scope and declare the texture coords inside to prevent
-                // overwriting them in case they are used as outputs of the texs instruction.
-                shader.AddLine("{");
-                ++shader.scope;
-                shader.AddLine(coord);
+
                 const std::string texture = "texture(" + sampler + ", coords)";
-
-                // TEXS has two destination registers. RG goes into gpr0+0 and gpr0+1, and BA
-                // goes into gpr28+0 and gpr28+1
-                size_t texs_offset{};
-
-                for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
-                    for (unsigned elem = 0; elem < 2; ++elem) {
-                        if (!instr.texs.IsComponentEnabled(elem)) {
-                            // Skip disabled components
-                            continue;
-                        }
-                        regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false,
-                                                elem);
-                    }
-
-                    if (!instr.texs.HasTwoDestinations()) {
-                        // Skip the second destination
-                        break;
-                    }
-
-                    texs_offset += 2;
-                }
-                --shader.scope;
-                shader.AddLine("}");
+                WriteTexsInstruction(instr, coord, texture);
+                break;
+            }
+            case OpCode::Id::TLDS: {
+                const std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
+                const std::string op_b = regs.GetRegisterAsInteger(instr.gpr20);
+                const std::string sampler = GetSampler(instr.sampler);
+                const std::string coord = "ivec2 coords = ivec2(" + op_a + ", " + op_b + ");";
+                const std::string texture = "texelFetch(" + sampler + ", coords, 0)";
+                WriteTexsInstruction(instr, coord, texture);
                 break;
             }
             default: {
@@ -1774,11 +1798,8 @@ private:
 }; // namespace Decompiler
 
 std::string GetCommonDeclarations() {
-    std::string declarations;
-    declarations += "#define MAX_CONSTBUFFER_ELEMENTS " +
-                    std::to_string(RasterizerOpenGL::MaxConstbufferSize / (sizeof(GLvec4)));
-    declarations += '\n';
-    return declarations;
+    return fmt::format("#define MAX_CONSTBUFFER_ELEMENTS {}\n",
+                       RasterizerOpenGL::MaxConstbufferSize / sizeof(GLvec4));
 }
 
 boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,

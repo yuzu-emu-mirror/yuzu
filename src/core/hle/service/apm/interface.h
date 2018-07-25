@@ -19,7 +19,4 @@ private:
     std::shared_ptr<Module> apm;
 };
 
-/// Registers all AM services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager);
-
 } // namespace Service::APM

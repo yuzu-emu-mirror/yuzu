@@ -91,7 +91,7 @@ protected:
  */
 class HLERequestContext {
 public:
-    HLERequestContext(SharedPtr<Kernel::ServerSession> session);
+    explicit HLERequestContext(SharedPtr<ServerSession> session);
     ~HLERequestContext();
 
     /// Returns a pointer to the IPC command buffer for this request.

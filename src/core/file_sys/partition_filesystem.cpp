@@ -65,8 +65,8 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
         std::string name(
             reinterpret_cast<const char*>(&file_data[strtab_offset + entry.strtab_offset]));
 
-        pfs_files.emplace_back(
-            std::make_shared<OffsetVfsFile>(file, entry.size, content_offset + entry.offset, name));
+        pfs_files.emplace_back(std::make_shared<OffsetVfsFile>(
+            file, entry.size, content_offset + entry.offset, std::move(name)));
     }
 
     status = Loader::ResultStatus::Success;
@@ -109,7 +109,7 @@ bool PartitionFilesystem::ReplaceFileWithSubdirectory(VirtualFile file, VirtualD
         return false;
 
     const std::ptrdiff_t offset = std::distance(pfs_files.begin(), iter);
-    pfs_files[offset] = pfs_files.back();
+    pfs_files[offset] = std::move(pfs_files.back());
     pfs_files.pop_back();
 
     pfs_dirs.emplace_back(std::move(dir));

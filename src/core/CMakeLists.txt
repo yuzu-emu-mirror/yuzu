@@ -12,6 +12,8 @@ add_library(core STATIC
     core_timing.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
+    file_sys/control_metadata.cpp
+    file_sys/control_metadata.h
     file_sys/directory.h
     file_sys/errors.h
     file_sys/mode.h
@@ -38,8 +40,6 @@ add_library(core STATIC
     frontend/input.h
     gdbstub/gdbstub.cpp
     gdbstub/gdbstub.h
-    hle/config_mem.cpp
-    hle/config_mem.h
     hle/ipc.h
     hle/ipc_helpers.h
     hle/kernel/address_arbiter.cpp
@@ -146,10 +146,8 @@ add_library(core STATIC
     hle/service/filesystem/fsp_srv.h
     hle/service/friend/friend.cpp
     hle/service/friend/friend.h
-    hle/service/friend/friend_a.cpp
-    hle/service/friend/friend_a.h
-    hle/service/friend/friend_u.cpp
-    hle/service/friend/friend_u.h
+    hle/service/friend/interface.cpp
+    hle/service/friend/interface.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
     hle/service/lm/lm.cpp
@@ -249,8 +247,6 @@ add_library(core STATIC
     hle/service/vi/vi_s.h
     hle/service/vi/vi_u.cpp
     hle/service/vi/vi_u.h
-    hle/shared_page.cpp
-    hle/shared_page.h
     hw/hw.cpp
     hw/hw.h
     hw/lcd.cpp

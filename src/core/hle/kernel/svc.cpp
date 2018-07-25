@@ -165,11 +165,14 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
     using ObjectPtr = SharedPtr<WaitObject>;
     std::vector<ObjectPtr> objects(handle_count);
 
-    for (int i = 0; i < handle_count; ++i) {
-        Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
-        auto object = g_handle_table.Get<WaitObject>(handle);
-        if (object == nullptr)
+    for (u64 i = 0; i < handle_count; ++i) {
+        const Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
+        const auto object = g_handle_table.Get<WaitObject>(handle);
+
+        if (object == nullptr) {
             return ERR_INVALID_HANDLE;
+        }
+
         objects[i] = object;
     }
 

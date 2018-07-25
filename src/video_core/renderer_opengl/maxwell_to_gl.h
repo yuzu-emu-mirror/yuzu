@@ -56,6 +56,9 @@ inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
         return {};
     }
 
+    case Maxwell::VertexAttribute::Type::UnsignedInt:
+        return GL_UNSIGNED_INT;
+
     case Maxwell::VertexAttribute::Type::Float:
         return GL_FLOAT;
     }
@@ -112,6 +115,8 @@ inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
         return GL_MIRRORED_REPEAT;
     case Tegra::Texture::WrapMode::ClampToEdge:
         return GL_CLAMP_TO_EDGE;
+    case Tegra::Texture::WrapMode::Border:
+        return GL_CLAMP_TO_BORDER;
     case Tegra::Texture::WrapMode::ClampOGL:
         // TODO(Subv): GL_CLAMP was removed as of OpenGL 3.1, to implement GL_CLAMP, we can use
         // GL_CLAMP_TO_BORDER to get the border color of the texture, and then sample the edge to

@@ -19,7 +19,7 @@ namespace Kernel {
 /// Returns the number of threads that are waiting for a mutex, and the highest priority one among
 /// those.
 static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(
-    SharedPtr<Thread> current_thread, VAddr mutex_addr) {
+    const SharedPtr<Thread>& current_thread, VAddr mutex_addr) {
 
     SharedPtr<Thread> highest_priority_thread;
     u32 num_waiters = 0;
