@@ -32,6 +32,7 @@
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
+#include "core/hle/service/pm/pm.h"
 #include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
@@ -199,6 +200,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     Nvidia::InstallInterfaces(*sm);
     PCTL::InstallInterfaces(*sm);
     PlayReport::InstallInterfaces(*sm);
+    PM::InstallInterfaces(*sm);
     Sockets::InstallInterfaces(*sm);
     SPL::InstallInterfaces(*sm);
     SSL::InstallInterfaces(*sm);
