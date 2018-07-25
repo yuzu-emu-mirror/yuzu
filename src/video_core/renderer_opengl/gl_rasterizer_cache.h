@@ -194,6 +194,8 @@ struct SurfaceParams {
             return PixelFormat::R11FG11FB10F;
         case Tegra::RenderTargetFormat::RGBA32_UINT:
             return PixelFormat::RGBA32UI;
+        case Tegra::RenderTargetFormat::R8_UNORM:
+            return PixelFormat::R8;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -351,6 +353,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
         case Tegra::RenderTargetFormat::BGRA8_UNORM:
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
+        case Tegra::RenderTargetFormat::R8_UNORM:
             return ComponentType::UNorm;
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
         case Tegra::RenderTargetFormat::R11G11B10_FLOAT:
