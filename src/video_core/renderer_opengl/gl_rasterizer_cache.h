@@ -51,6 +51,7 @@ struct SurfaceParams {
         S8Z24 = 22,
         Z32F = 23,
         Z16 = 24,
+        Z32FS8 = 25,
 
         MaxDepthStencilFormat,
 
@@ -113,6 +114,7 @@ struct SurfaceParams {
             1, // S8Z24
             1, // Z32F
             1, // Z16
+            1, // Z32FS8
         }};
 
         ASSERT(static_cast<size_t>(format) < compression_factor_table.size());
@@ -149,6 +151,7 @@ struct SurfaceParams {
             32,  // S8Z24
             32,  // Z32F
             16,  // Z16
+            64,  // Z32FS8
         }};
 
         ASSERT(static_cast<size_t>(format) < bpp_table.size());
@@ -169,6 +172,8 @@ struct SurfaceParams {
             return PixelFormat::Z32F;
         case Tegra::DepthFormat::Z16_UNORM:
             return PixelFormat::Z16;
+        case Tegra::DepthFormat::Z32_S8_X24_FLOAT:
+            return PixelFormat::Z32FS8;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -325,6 +330,8 @@ struct SurfaceParams {
             return Tegra::DepthFormat::Z32_FLOAT;
         case PixelFormat::Z16:
             return Tegra::DepthFormat::Z16_UNORM;
+        case PixelFormat::Z32FS8:
+            return Tegra::DepthFormat::Z32_S8_X24_FLOAT;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -382,6 +389,7 @@ struct SurfaceParams {
         case Tegra::DepthFormat::Z24_S8_UNORM:
             return ComponentType::UNorm;
         case Tegra::DepthFormat::Z32_FLOAT:
+        case Tegra::DepthFormat::Z32_S8_X24_FLOAT:
             return ComponentType::Float;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
