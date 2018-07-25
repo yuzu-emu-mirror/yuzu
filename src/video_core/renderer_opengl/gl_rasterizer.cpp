@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <glad/glad.h>
@@ -37,11 +38,6 @@ MICROPROFILE_DEFINE(OpenGL_Blits, "OpenGL", "Blits", MP_RGB(100, 100, 255));
 MICROPROFILE_DEFINE(OpenGL_CacheManagement, "OpenGL", "Cache Mgmt", MP_RGB(100, 255, 100));
 
 RasterizerOpenGL::RasterizerOpenGL() {
-    has_ARB_buffer_storage = false;
-    has_ARB_direct_state_access = false;
-    has_ARB_separate_shader_objects = false;
-    has_ARB_vertex_attrib_binding = false;
-
     // Create sampler objects
     for (size_t i = 0; i < texture_samplers.size(); ++i) {
         texture_samplers[i].Create();
@@ -59,7 +55,8 @@ RasterizerOpenGL::RasterizerOpenGL() {
     GLint ext_num;
     glGetIntegerv(GL_NUM_EXTENSIONS, &ext_num);
     for (GLint i = 0; i < ext_num; i++) {
-        std::string extension{reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))};
+        const std::string_view extension{
+            reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i))};
 
         if (extension == "GL_ARB_buffer_storage") {
             has_ARB_buffer_storage = true;
@@ -109,8 +106,6 @@ RasterizerOpenGL::RasterizerOpenGL() {
                      GL_STREAM_COPY);
         glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer.handle);
     }
-
-    accelerate_draw = AccelDraw::Disabled;
 
     glEnable(GL_BLEND);
 
@@ -694,10 +689,12 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, GLuint progr
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         // Now configure the bindpoint of the buffer inside the shader
-        std::string buffer_name = used_buffer.GetName();
-        GLuint index = glGetProgramResourceIndex(program, GL_UNIFORM_BLOCK, buffer_name.c_str());
-        if (index != -1)
+        const std::string buffer_name = used_buffer.GetName();
+        const GLuint index =
+            glGetProgramResourceIndex(program, GL_UNIFORM_BLOCK, buffer_name.c_str());
+        if (index != GL_INVALID_INDEX) {
             glUniformBlockBinding(program, index, buffer_draw_state.bindpoint);
+        }
     }
 
     state.Apply();

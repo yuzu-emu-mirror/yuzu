@@ -135,10 +135,10 @@ private:
     /// Syncs the blend state to match the guest state
     void SyncBlendState();
 
-    bool has_ARB_buffer_storage;
-    bool has_ARB_direct_state_access;
-    bool has_ARB_separate_shader_objects;
-    bool has_ARB_vertex_attrib_binding;
+    bool has_ARB_buffer_storage = false;
+    bool has_ARB_direct_state_access = false;
+    bool has_ARB_separate_shader_objects = false;
+    bool has_ARB_vertex_attrib_binding = false;
 
     OpenGLState state;
 
@@ -167,5 +167,5 @@ private:
     void SetupShaders(u8* buffer_ptr, GLintptr buffer_offset);
 
     enum class AccelDraw { Disabled, Arrays, Indexed };
-    AccelDraw accelerate_draw;
+    AccelDraw accelerate_draw = AccelDraw::Disabled;
 };
