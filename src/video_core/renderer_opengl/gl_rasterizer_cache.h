@@ -41,14 +41,16 @@ struct SurfaceParams {
         RGBA32F = 16,
         RG32F = 17,
         R32F = 18,
+        R16F = 19,
+        R16UNORM = 20,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 19,
-        S8Z24 = 20,
-        Z32F = 21,
-        Z16 = 22,
+        Z24S8 = 21,
+        S8Z24 = 22,
+        Z32F = 23,
+        Z16 = 24,
 
         MaxDepthStencilFormat,
 
@@ -105,6 +107,8 @@ struct SurfaceParams {
             1, // RGBA32F
             1, // RG32F
             1, // R32F
+            1, // R16F
+            1, // R16UNORM
             1, // Z24S8
             1, // S8Z24
             1, // Z32F
@@ -139,6 +143,8 @@ struct SurfaceParams {
             128, // RGBA32F
             64,  // RG32F
             32,  // R32F
+            16,  // R16F
+            16,  // R16UNORM
             32,  // Z24S8
             32,  // S8Z24
             32,  // Z32F
@@ -226,6 +232,16 @@ struct SurfaceParams {
             UNREACHABLE();
         case Tegra::Texture::TextureFormat::R32_G32:
             return PixelFormat::RG32F;
+        case Tegra::Texture::TextureFormat::R16:
+            switch (component_type) {
+            case Tegra::Texture::ComponentType::FLOAT:
+                return PixelFormat::R16F;
+            case Tegra::Texture::ComponentType::UNORM:
+                return PixelFormat::R16UNORM;
+            }
+            LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}",
+                         static_cast<u32>(component_type));
+            UNREACHABLE();
         case Tegra::Texture::TextureFormat::R32:
             return PixelFormat::R32F;
         case Tegra::Texture::TextureFormat::DXT1:
@@ -290,6 +306,9 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::R32_G32;
         case PixelFormat::R32F:
             return Tegra::Texture::TextureFormat::R32;
+        case PixelFormat::R16F:
+        case PixelFormat::R16UNORM:
+            return Tegra::Texture::TextureFormat::R16;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
