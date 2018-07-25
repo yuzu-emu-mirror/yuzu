@@ -10,9 +10,8 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/service/time/interface.h"
 #include "core/hle/service/time/time.h"
-#include "core/hle/service/time/time_s.h"
-#include "core/hle/service/time/time_u.h"
 
 namespace Service::Time {
 
@@ -213,8 +212,9 @@ Module::Interface::Interface(std::shared_ptr<Module> time, const char* name)
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     auto time = std::make_shared<Module>();
-    std::make_shared<TIME_S>(time)->InstallAsService(service_manager);
-    std::make_shared<TIME_U>(time)->InstallAsService(service_manager);
+    std::make_shared<Time>(time, "time:a")->InstallAsService(service_manager);
+    std::make_shared<Time>(time, "time:s")->InstallAsService(service_manager);
+    std::make_shared<Time>(time, "time:u")->InstallAsService(service_manager);
 }
 
 } // namespace Service::Time
