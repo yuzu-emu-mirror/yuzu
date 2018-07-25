@@ -209,6 +209,9 @@ QString WaitTreeThread::GetText() const {
     case ThreadStatus::WaitSleep:
         status = tr("sleeping");
         break;
+    case ThreadStatus::WaitIPC:
+        status = tr("waiting for IPC reply");
+        break;
     case ThreadStatus::WaitSynchAll:
     case ThreadStatus::WaitSynchAny:
         status = tr("waiting for objects");
@@ -240,6 +243,7 @@ QColor WaitTreeThread::GetColor() const {
     case ThreadStatus::Ready:
         return QColor(Qt::GlobalColor::darkBlue);
     case ThreadStatus::WaitHLEEvent:
+    case ThreadStatus::WaitIPC:
         return QColor(Qt::GlobalColor::darkRed);
     case ThreadStatus::WaitSleep:
         return QColor(Qt::GlobalColor::darkYellow);
