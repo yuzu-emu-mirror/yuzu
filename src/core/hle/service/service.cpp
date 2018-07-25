@@ -23,6 +23,7 @@
 #include "core/hle/service/bcat/bcat.h"
 #include "core/hle/service/erpt/erpt.h"
 #include "core/hle/service/es/es.h"
+#include "core/hle/service/eupld/eupld.h"
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/friend/friend.h"
@@ -191,6 +192,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     Audio::InstallInterfaces(*sm);
     ERPT::InstallInterfaces(*sm);
     ES::InstallInterfaces(*sm);
+    EUPLD::InstallInterfaces(*sm);
     Fatal::InstallInterfaces(*sm);
     FileSystem::InstallInterfaces(*sm);
     Friend::InstallInterfaces(*sm);

@@ -140,6 +140,8 @@ add_library(core STATIC
     hle/service/erpt/erpt.h
     hle/service/es/es.cpp
     hle/service/es/es.h
+    hle/service/eupld/eupld.cpp
+    hle/service/eupld/eupld.h
     hle/service/fatal/fatal.cpp
     hle/service/fatal/fatal.h
     hle/service/fatal/fatal_p.cpp
