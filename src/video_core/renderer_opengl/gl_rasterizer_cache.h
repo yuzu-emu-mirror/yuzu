@@ -43,15 +43,16 @@ struct SurfaceParams {
         R32F = 18,
         R16F = 19,
         R16UNORM = 20,
+        SRGBA8 = 21,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 21,
-        S8Z24 = 22,
-        Z32F = 23,
-        Z16 = 24,
-        Z32FS8 = 25,
+        Z24S8 = 22,
+        S8Z24 = 23,
+        Z32F = 24,
+        Z16 = 25,
+        Z32FS8 = 26,
 
         MaxDepthStencilFormat,
 
@@ -110,6 +111,7 @@ struct SurfaceParams {
             1, // R32F
             1, // R16F
             1, // R16UNORM
+            1, // SRGBA8
             1, // Z24S8
             1, // S8Z24
             1, // Z32F
@@ -147,6 +149,7 @@ struct SurfaceParams {
             32,  // R32F
             16,  // R16F
             16,  // R16UNORM
+            32,  // SRGBA8
             32,  // Z24S8
             32,  // S8Z24
             32,  // Z32F
@@ -182,8 +185,9 @@ struct SurfaceParams {
 
     static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
         switch (format) {
-        case Tegra::RenderTargetFormat::RGBA8_UNORM:
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
+            return PixelFormat::SRGBA8;
+        case Tegra::RenderTargetFormat::RGBA8_UNORM:
             return PixelFormat::ABGR8;
         case Tegra::RenderTargetFormat::BGRA8_UNORM:
             return PixelFormat::BGRA8;
@@ -278,6 +282,7 @@ struct SurfaceParams {
         // TODO(Subv): Properly implement this
         switch (format) {
         case PixelFormat::ABGR8:
+        case PixelFormat::SRGBA8:
             return Tegra::Texture::TextureFormat::A8R8G8B8;
         case PixelFormat::B5G6R5:
             return Tegra::Texture::TextureFormat::B5G6R5;
