@@ -34,6 +34,7 @@ enum class DepthFormat : u32 {
     Z24_X8_UNORM = 0x15,
     Z24_S8_UNORM = 0x16,
     Z24_C8_UNORM = 0x18,
+    Z32_S8_X24_FLOAT = 0x19,
 };
 
 /// Returns the number of bytes per pixel of each rendertarget format.

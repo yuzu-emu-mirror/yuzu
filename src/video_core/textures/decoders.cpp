@@ -90,6 +90,8 @@ static u32 DepthBytesPerPixel(DepthFormat format) {
     case DepthFormat::Z24_S8_UNORM:
     case DepthFormat::Z32_FLOAT:
         return 4;
+    case DepthFormat::Z32_S8_X24_FLOAT:
+        return 8;
     default:
         UNIMPLEMENTED_MSG("Format not implemented");
         break;
@@ -150,6 +152,7 @@ std::vector<u8> UnswizzleDepthTexture(VAddr address, DepthFormat format, u32 wid
     case DepthFormat::S8_Z24_UNORM:
     case DepthFormat::Z24_S8_UNORM:
     case DepthFormat::Z32_FLOAT:
+    case DepthFormat::Z32_S8_X24_FLOAT:
         CopySwizzledData(width, height, bytes_per_pixel, bytes_per_pixel, data,
                          unswizzled_data.data(), true, block_height);
         break;
