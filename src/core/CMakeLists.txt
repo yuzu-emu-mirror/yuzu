@@ -136,6 +136,8 @@ add_library(core STATIC
     hle/service/bcat/bcat.h
     hle/service/bcat/module.cpp
     hle/service/bcat/module.h
+    hle/service/erpt/erpt.cpp
+    hle/service/erpt/erpt.h
     hle/service/es/es.cpp
     hle/service/es/es.h
     hle/service/fatal/fatal.cpp
