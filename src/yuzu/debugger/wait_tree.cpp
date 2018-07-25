@@ -5,6 +5,7 @@
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/util/util.h"
 
+#include "common/assert.h"
 #include "core/core.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
@@ -169,6 +170,8 @@ QString WaitTreeWaitObject::GetResetTypeQString(Kernel::ResetType reset_type) {
     case Kernel::ResetType::Pulse:
         return tr("pulse");
     }
+    UNREACHABLE();
+    return {};
 }
 
 WaitTreeObjectList::WaitTreeObjectList(
