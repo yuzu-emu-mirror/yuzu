@@ -11,10 +11,19 @@ namespace Service::Set {
 class SET_SYS final : public ServiceFramework<SET_SYS> {
 public:
     explicit SET_SYS();
-    ~SET_SYS() = default;
+    ~SET_SYS() override;
 
 private:
+    /// Indicates the current theme set by the system settings
+    enum class ColorSet : u32 {
+        BasicWhite = 0,
+        BasicBlack = 1,
+    };
+
     void GetColorSetId(Kernel::HLERequestContext& ctx);
+    void SetColorSetId(Kernel::HLERequestContext& ctx);
+
+    ColorSet color_set = ColorSet::BasicWhite;
 };
 
 } // namespace Service::Set

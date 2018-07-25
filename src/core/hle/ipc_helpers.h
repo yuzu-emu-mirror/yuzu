@@ -300,6 +300,14 @@ public:
     template <typename First, typename... Other>
     void Pop(First& first_value, Other&... other_values);
 
+    template <typename T>
+    T PopEnum() {
+        static_assert(std::is_enum_v<T>, "T must be an enum type within a PopEnum call.");
+        static_assert(!std::is_convertible_v<T, int>,
+                      "enum type in PopEnum must be a strongly typed enum.");
+        return static_cast<T>(Pop<std::underlying_type_t<T>>());
+    }
+
     /**
      * @brief Reads the next normal parameters as a struct, by copying it
      * @note: The output class must be correctly packed/padded to fit hardware layout.
