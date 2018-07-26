@@ -5,6 +5,7 @@
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/util/util.h"
 
+#include "common/assert.h"
 #include "core/core.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
@@ -169,6 +170,8 @@ QString WaitTreeWaitObject::GetResetTypeQString(Kernel::ResetType reset_type) {
     case Kernel::ResetType::Pulse:
         return tr("pulse");
     }
+    UNREACHABLE();
+    return {};
 }
 
 WaitTreeObjectList::WaitTreeObjectList(
@@ -206,6 +209,9 @@ QString WaitTreeThread::GetText() const {
     case ThreadStatus::WaitSleep:
         status = tr("sleeping");
         break;
+    case ThreadStatus::WaitIPC:
+        status = tr("waiting for IPC reply");
+        break;
     case ThreadStatus::WaitSynchAll:
     case ThreadStatus::WaitSynchAny:
         status = tr("waiting for objects");
@@ -237,6 +243,7 @@ QColor WaitTreeThread::GetColor() const {
     case ThreadStatus::Ready:
         return QColor(Qt::GlobalColor::darkBlue);
     case ThreadStatus::WaitHLEEvent:
+    case ThreadStatus::WaitIPC:
         return QColor(Qt::GlobalColor::darkRed);
     case ThreadStatus::WaitSleep:
         return QColor(Qt::GlobalColor::darkYellow);

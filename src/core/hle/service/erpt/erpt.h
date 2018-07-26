@@ -8,9 +8,9 @@ namespace Service::SM {
 class ServiceManager;
 }
 
-namespace Service::NIFM {
+namespace Service::ERPT {
 
-/// Registers all NIFM services with the specified service manager.
-void InstallInterfaces(SM::ServiceManager& service_manager);
+/// Registers all ERPT services with the specified service manager.
+void InstallInterfaces(SM::ServiceManager& sm);
 
-} // namespace Service::NIFM
+} // namespace Service::ERPT

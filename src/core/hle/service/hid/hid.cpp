@@ -5,6 +5,7 @@
 #include <atomic>
 #include "common/logging/log.h"
 #include "core/core_timing.h"
+#include "core/core_timing_util.h"
 #include "core/frontend/emu_window.h"
 #include "core/frontend/input.h"
 #include "core/hle/ipc_helpers.h"

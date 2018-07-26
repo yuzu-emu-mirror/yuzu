@@ -10,6 +10,8 @@ add_library(core STATIC
     core_cpu.h
     core_timing.cpp
     core_timing.h
+    core_timing_util.cpp
+    core_timing_util.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
     file_sys/control_metadata.cpp
@@ -114,26 +116,32 @@ add_library(core STATIC
     hle/service/apm/apm.h
     hle/service/apm/interface.cpp
     hle/service/apm/interface.h
-    hle/service/audio/audio.cpp
-    hle/service/audio/audio.h
     hle/service/audio/audin_u.cpp
     hle/service/audio/audin_u.h
+    hle/service/audio/audio.cpp
+    hle/service/audio/audio.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
     hle/service/audio/audrec_u.cpp
     hle/service/audio/audrec_u.h
     hle/service/audio/audren_u.cpp
-    hle/service/audio/audren_u.h
     hle/service/audio/audren_u.cpp
+    hle/service/audio/audren_u.h
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
     hle/service/audio/hwopus.cpp
     hle/service/audio/hwopus.h
-    hle/service/bcat/module.cpp
-    hle/service/bcat/module.h
     hle/service/bcat/bcat.cpp
     hle/service/bcat/bcat.h
+    hle/service/bcat/module.cpp
+    hle/service/bcat/module.h
+    hle/service/erpt/erpt.cpp
+    hle/service/erpt/erpt.h
+    hle/service/es/es.cpp
+    hle/service/es/es.h
+    hle/service/eupld/eupld.cpp
+    hle/service/eupld/eupld.h
     hle/service/fatal/fatal.cpp
     hle/service/fatal/fatal.h
     hle/service/fatal/fatal_p.cpp
@@ -150,22 +158,18 @@ add_library(core STATIC
     hle/service/friend/interface.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
+    hle/service/ldr/ldr.cpp
+    hle/service/ldr/ldr.h
     hle/service/lm/lm.cpp
     hle/service/lm/lm.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
-    hle/service/nifm/nifm.cpp
-    hle/service/nifm/nifm.h
-    hle/service/nifm/nifm_a.cpp
-    hle/service/nifm/nifm_a.h
-    hle/service/nifm/nifm_s.cpp
-    hle/service/nifm/nifm_s.h
-    hle/service/nifm/nifm_u.cpp
-    hle/service/nifm/nifm_u.h
     hle/service/nfp/nfp.cpp
     hle/service/nfp/nfp.h
     hle/service/nfp/nfp_user.cpp
     hle/service/nfp/nfp_user.h
+    hle/service/nifm/nifm.cpp
+    hle/service/nifm/nifm.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
     hle/service/ns/pl_u.cpp
@@ -199,6 +203,8 @@ add_library(core STATIC
     hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
+    hle/service/pm/pm.cpp
+    hle/service/pm/pm.h
     hle/service/prepo/prepo.cpp
     hle/service/prepo/prepo.h
     hle/service/service.cpp
@@ -233,12 +239,10 @@ add_library(core STATIC
     hle/service/spl/spl.h
     hle/service/ssl/ssl.cpp
     hle/service/ssl/ssl.h
+    hle/service/time/interface.cpp
+    hle/service/time/interface.h
     hle/service/time/time.cpp
     hle/service/time/time.h
-    hle/service/time/time_s.cpp
-    hle/service/time/time_s.h
-    hle/service/time/time_u.cpp
-    hle/service/time/time_u.h
     hle/service/vi/vi.cpp
     hle/service/vi/vi.h
     hle/service/vi/vi_m.cpp

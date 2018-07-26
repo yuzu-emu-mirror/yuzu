@@ -5,9 +5,7 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/nifm/nifm.h"
-#include "core/hle/service/nifm/nifm_a.h"
-#include "core/hle/service/nifm/nifm_s.h"
-#include "core/hle/service/nifm/nifm_u.h"
+#include "core/hle/service/service.h"
 
 namespace Service::NIFM {
 
@@ -210,28 +208,35 @@ IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
     RegisterHandlers(functions);
 }
 
-void Module::Interface::CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IGeneralService>();
-    LOG_DEBUG(Service_NIFM, "called");
-}
+class NetworkInterface final : public ServiceFramework<NetworkInterface> {
+public:
+    explicit NetworkInterface(const char* name) : ServiceFramework{name} {
+        static const FunctionInfo functions[] = {
+            {4, &NetworkInterface::CreateGeneralServiceOld, "CreateGeneralServiceOld"},
+            {5, &NetworkInterface::CreateGeneralService, "CreateGeneralService"},
+        };
+        RegisterHandlers(functions);
+    }
 
-void Module::Interface::CreateGeneralService(Kernel::HLERequestContext& ctx) {
-    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
-    rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IGeneralService>();
-    LOG_DEBUG(Service_NIFM, "called");
-}
+    void CreateGeneralServiceOld(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IGeneralService>();
+        LOG_DEBUG(Service_NIFM, "called");
+    }
 
-Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
-    : ServiceFramework(name), module(std::move(module)) {}
+    void CreateGeneralService(Kernel::HLERequestContext& ctx) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushIpcInterface<IGeneralService>();
+        LOG_DEBUG(Service_NIFM, "called");
+    }
+};
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
-    auto module = std::make_shared<Module>();
-    std::make_shared<NIFM_A>(module)->InstallAsService(service_manager);
-    std::make_shared<NIFM_S>(module)->InstallAsService(service_manager);
-    std::make_shared<NIFM_U>(module)->InstallAsService(service_manager);
+    std::make_shared<NetworkInterface>("nifm:a")->InstallAsService(service_manager);
+    std::make_shared<NetworkInterface>("nifm:s")->InstallAsService(service_manager);
+    std::make_shared<NetworkInterface>("nifm:u")->InstallAsService(service_manager);
 }
 
 } // namespace Service::NIFM

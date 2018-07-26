@@ -8,9 +8,9 @@ namespace Service::SM {
 class ServiceManager;
 }
 
-namespace Service::NIFM {
+namespace Service::PM {
 
-/// Registers all NIFM services with the specified service manager.
+/// Registers all PM services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& service_manager);
 
-} // namespace Service::NIFM
+} // namespace Service::PM

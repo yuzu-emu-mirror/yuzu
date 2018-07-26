@@ -21,10 +21,14 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/audio/audio.h"
 #include "core/hle/service/bcat/bcat.h"
+#include "core/hle/service/erpt/erpt.h"
+#include "core/hle/service/es/es.h"
+#include "core/hle/service/eupld/eupld.h"
 #include "core/hle/service/fatal/fatal.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/ldr/ldr.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/mm/mm_u.h"
 #include "core/hle/service/nfp/nfp.h"
@@ -32,6 +36,7 @@
 #include "core/hle/service/ns/ns.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/pctl/pctl.h"
+#include "core/hle/service/pm/pm.h"
 #include "core/hle/service/prepo/prepo.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/set/settings.h"
@@ -187,10 +192,14 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     APM::InstallInterfaces(*sm);
     BCAT::InstallInterfaces(*sm);
     Audio::InstallInterfaces(*sm);
+    ERPT::InstallInterfaces(*sm);
+    ES::InstallInterfaces(*sm);
+    EUPLD::InstallInterfaces(*sm);
     Fatal::InstallInterfaces(*sm);
     FileSystem::InstallInterfaces(*sm);
     Friend::InstallInterfaces(*sm);
     HID::InstallInterfaces(*sm);
+    LDR::InstallInterfaces(*sm);
     LM::InstallInterfaces(*sm);
     MM::InstallInterfaces(*sm);
     NFP::InstallInterfaces(*sm);
@@ -199,6 +208,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     Nvidia::InstallInterfaces(*sm);
     PCTL::InstallInterfaces(*sm);
     PlayReport::InstallInterfaces(*sm);
+    PM::InstallInterfaces(*sm);
     Sockets::InstallInterfaces(*sm);
     SPL::InstallInterfaces(*sm);
     SSL::InstallInterfaces(*sm);

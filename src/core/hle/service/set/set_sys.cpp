@@ -10,13 +10,22 @@
 namespace Service::Set {
 
 void SET_SYS::GetColorSetId(Kernel::HLERequestContext& ctx) {
-
     IPC::ResponseBuilder rb{ctx, 3};
 
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(0);
+    rb.PushEnum(color_set);
 
-    LOG_WARNING(Service_SET, "(STUBBED) called");
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    color_set = rp.PopEnum<ColorSet>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_DEBUG(Service_SET, "called");
 }
 
 SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
@@ -44,7 +53,7 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
         {21, nullptr, "GetEulaVersions"},
         {22, nullptr, "SetEulaVersions"},
         {23, &SET_SYS::GetColorSetId, "GetColorSetId"},
-        {24, nullptr, "SetColorSetId"},
+        {24, &SET_SYS::SetColorSetId, "SetColorSetId"},
         {25, nullptr, "GetConsoleInformationUploadFlag"},
         {26, nullptr, "SetConsoleInformationUploadFlag"},
         {27, nullptr, "GetAutomaticApplicationDownloadFlag"},
@@ -171,5 +180,7 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
     };
     RegisterHandlers(functions);
 }
+
+SET_SYS::~SET_SYS() = default;
 
 } // namespace Service::Set
