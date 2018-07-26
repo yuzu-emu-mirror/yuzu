@@ -16,7 +16,7 @@ public:
     ~LM() = default;
 
 private:
-    void Initialize(Kernel::HLERequestContext& ctx);
+    void OpenLogger(Kernel::HLERequestContext& ctx);
 };
 
 /// Registers all LM services with the specified service manager.
