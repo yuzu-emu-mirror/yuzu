@@ -16,6 +16,7 @@ public:
     Logger() : ServiceFramework("Logger") {
         static const FunctionInfo functions[] = {
             {0x00000000, &Logger::Log, "Log"},
+            {0x00000001, nullptr, "SetDestination"},
         };
         RegisterHandlers(functions);
     }
