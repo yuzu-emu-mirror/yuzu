@@ -12,6 +12,8 @@ namespace Service::Sockets {
 void InstallInterfaces(SM::ServiceManager& service_manager) {
     std::make_shared<BSD>("bsd:s")->InstallAsService(service_manager);
     std::make_shared<BSD>("bsd:u")->InstallAsService(service_manager);
+    std::make_shared<BSDCFG>()->InstallAsService(service_manager);
+
     std::make_shared<NSD>("nsd:a")->InstallAsService(service_manager);
     std::make_shared<NSD>("nsd:u")->InstallAsService(service_manager);
     std::make_shared<SFDNSRES>()->InstallAsService(service_manager);
