@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <utility>
+
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
@@ -40,14 +42,14 @@ Module::Module() {
     devices["/dev/nvhost-nvdec"] = std::make_shared<Devices::nvhost_nvdec>();
 }
 
-u32 Module::Open(std::string device_name) {
+u32 Module::Open(const std::string& device_name) {
     ASSERT_MSG(devices.find(device_name) != devices.end(), "Trying to open unknown device {}",
                device_name);
 
     auto device = devices[device_name];
-    u32 fd = next_fd++;
+    const u32 fd = next_fd++;
 
-    open_files[fd] = device;
+    open_files[fd] = std::move(device);
 
     return fd;
 }
@@ -56,7 +58,7 @@ u32 Module::Ioctl(u32 fd, u32_le command, const std::vector<u8>& input, std::vec
     auto itr = open_files.find(fd);
     ASSERT_MSG(itr != open_files.end(), "Tried to talk to an invalid device");
 
-    auto device = itr->second;
+    auto& device = itr->second;
     return device->ioctl({command}, input, output);
 }
 
