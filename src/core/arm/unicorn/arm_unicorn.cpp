@@ -195,7 +195,7 @@ MICROPROFILE_DEFINE(ARM_Jit, "ARM JIT", "ARM JIT", MP_RGB(255, 64, 64));
 
 void ARM_Unicorn::ExecuteInstructions(int num_instructions) {
     MICROPROFILE_SCOPE(ARM_Jit);
-    //if (GDBStub::IsServerEnabled()) {
+    // if (GDBStub::IsServerEnabled()) {
     //    GDBStub::BreakpointAddress bkpt;
     //    bkpt.address = GetPC();
     //    bkpt.type = GDBStub::BreakpointType::Execute;
@@ -217,7 +217,7 @@ void ARM_Unicorn::ExecuteInstructions(int num_instructions) {
         if (last_bkpt_hit) {
             uc_reg_write(uc, UC_ARM64_REG_PC, &last_bkpt.address);
         }
-        //else
+        // else
         //{
         //    GDBStub::BreakpointAddress bkpt;
         //    bkpt.address = GetPC();

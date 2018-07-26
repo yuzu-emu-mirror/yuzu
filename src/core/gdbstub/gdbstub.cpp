@@ -31,10 +31,10 @@
 #endif
 
 #include "common/logging/log.h"
-#undef LOG_DEBUG
-#undef LOG_INFO
-#define LOG_DEBUG LOG_ERROR
-#define LOG_INFO LOG_ERROR
+//#undef LOG_DEBUG
+//#undef LOG_INFO
+//#define LOG_DEBUG LOG_ERROR
+//#define LOG_INFO LOG_ERROR
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/arm/arm_interface.h"
@@ -165,6 +165,7 @@ static u16 gdbstub_port = 24689;
 static bool halt_loop = true;
 static bool step_loop = false;
 static bool send_trap = false;
+static bool inst_cache_valid = true;
 
 // If set to false, the server will never be started and no
 // gdbstub-related functions will be executed.
@@ -455,6 +456,7 @@ static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
                   bp->second.len, bp->second.addr, static_cast<int>(type));
         Memory::WriteBlock(bp->second.addr, bp->second.old, 4);
+        GDBStub::SetInstCacheValidity(false);
         p.erase(static_cast<u64>(addr));
     }
 }
@@ -938,6 +940,7 @@ static void WriteMemory() {
 
     GdbHexToMem(data.data(), len_pos + 1, len);
     Memory::WriteBlock(addr, data.data(), len);
+    GDBStub::SetInstCacheValidity(false);
     SendReply("OK");
 }
 
@@ -957,6 +960,7 @@ static void Step() {
     step_loop = true;
     halt_loop = true;
     send_trap = true;
+    GDBStub::SetInstCacheValidity(false);
 }
 
 /// Tell the CPU if we hit a memory breakpoint.
@@ -973,6 +977,7 @@ static void Continue() {
     memory_break = false;
     step_loop = false;
     halt_loop = false;
+    GDBStub::SetInstCacheValidity(false);
 }
 
 /**
@@ -992,6 +997,7 @@ static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
     Memory::ReadBlock(addr, breakpoint.old, 4);
     static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
     Memory::WriteBlock(addr, btrap, 4);
+    GDBStub::SetInstCacheValidity(false);
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
@@ -1308,5 +1314,13 @@ void SendTrap(Kernel::Thread* thread, int trap) {
         halt_loop = true;
         send_trap = false;
     }
+}
+
+void SetInstCacheValidity(bool validity) {
+    inst_cache_valid = validity;
+}
+
+bool GetInstCacheValidity() {
+    return inst_cache_valid;
 }
 }; // namespace GDBStub

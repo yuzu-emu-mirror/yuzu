@@ -79,6 +79,11 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
+    if(GDBStub::IsServerEnabled())
+    {
+        GDBStub::SetInstCacheValidity(true);
+    }
+
     return status;
 }
 

@@ -104,4 +104,10 @@ void SetCpuStepFlag(bool is_step);
  * @param trap Trap no.
  */
 void SendTrap(Kernel::Thread* thread, int trap);
+
+/// Set instruction cache validity.
+void SetInstCacheValidity(bool validity);
+
+/// Get instruction cache validity.
+bool GetInstCacheValidity();
 } // namespace GDBStub
