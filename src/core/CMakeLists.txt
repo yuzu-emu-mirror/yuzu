@@ -203,6 +203,8 @@ add_library(core STATIC
     hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
+    hle/service/pm/pm.cpp
+    hle/service/pm/pm.h
     hle/service/prepo/prepo.cpp
     hle/service/prepo/prepo.h
     hle/service/service.cpp
