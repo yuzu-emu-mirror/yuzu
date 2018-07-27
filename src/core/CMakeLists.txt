@@ -156,8 +156,12 @@ add_library(core STATIC
     hle/service/friend/friend.h
     hle/service/friend/interface.cpp
     hle/service/friend/interface.h
+    hle/service/grc/grc.cpp
+    hle/service/grc/grc.h
     hle/service/hid/hid.cpp
     hle/service/hid/hid.h
+    hle/service/ldn/ldn.cpp
+    hle/service/ldn/ldn.h
     hle/service/ldr/ldr.cpp
     hle/service/ldr/ldr.h
     hle/service/lm/lm.cpp
@@ -170,6 +174,8 @@ add_library(core STATIC
     hle/service/nfp/nfp_user.h
     hle/service/nifm/nifm.cpp
     hle/service/nifm/nifm.h
+    hle/service/nim/nim.cpp
+    hle/service/nim/nim.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
     hle/service/ns/pl_u.cpp
@@ -225,6 +231,8 @@ add_library(core STATIC
     hle/service/sm/sm.h
     hle/service/sockets/bsd.cpp
     hle/service/sockets/bsd.h
+    hle/service/sockets/ethc.cpp
+    hle/service/sockets/ethc.h
     hle/service/sockets/nsd.cpp
     hle/service/sockets/nsd.h
     hle/service/sockets/sfdnsres.cpp
