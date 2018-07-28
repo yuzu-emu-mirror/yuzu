@@ -29,6 +29,26 @@ enum class LanguageCode : u64 {
     ZH_HANT = 0x00746E61482D687A,
 };
 
+constexpr std::array<LanguageCode, 17> available_language_codes = {{
+    LanguageCode::JA,
+    LanguageCode::EN_US,
+    LanguageCode::FR,
+    LanguageCode::DE,
+    LanguageCode::IT,
+    LanguageCode::ES,
+    LanguageCode::ZH_CN,
+    LanguageCode::KO,
+    LanguageCode::NL,
+    LanguageCode::PT,
+    LanguageCode::RU,
+    LanguageCode::ZH_TW,
+    LanguageCode::EN_GB,
+    LanguageCode::FR_CA,
+    LanguageCode::ES_419,
+    LanguageCode::ZH_HANS,
+    LanguageCode::ZH_HANT,
+}};
+
 class SET final : public ServiceFramework<SET> {
 public:
     explicit SET();

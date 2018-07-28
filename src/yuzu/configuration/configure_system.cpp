@@ -40,6 +40,7 @@ ConfigureSystem::~ConfigureSystem() {}
 void ConfigureSystem::setConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
     ui->edit_username->setText(QString::fromStdString(Settings::values.username));
+    ui->combo_language->setCurrentIndex(Settings::values.language_index);
 }
 
 void ConfigureSystem::ReadSystemSettings() {}
@@ -48,6 +49,7 @@ void ConfigureSystem::applyConfiguration() {
     if (!enabled)
         return;
     Settings::values.username = ui->edit_username->text().toStdString();
+    Settings::values.language_index = ui->combo_language->currentIndex();
     Settings::Apply();
 }
 
