@@ -112,6 +112,7 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 struct Values {
     // System
     bool use_docked_mode;
+    std::string username;
 
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;

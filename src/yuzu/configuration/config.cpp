@@ -98,6 +98,7 @@ void Config::ReadValues() {
 
     qt_config->beginGroup("System");
     Settings::values.use_docked_mode = qt_config->value("use_docked_mode", false).toBool();
+    Settings::values.username = qt_config->value("username", "yuzu").toString().toStdString();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -201,6 +202,7 @@ void Config::SaveValues() {
 
     qt_config->beginGroup("System");
     qt_config->setValue("use_docked_mode", Settings::values.use_docked_mode);
+    qt_config->setValue("username", QString::fromStdString(Settings::values.username));
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
