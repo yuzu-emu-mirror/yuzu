@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <string>
 #include <opus.h>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -12,7 +13,8 @@ namespace Service::Audio {
 
 class IHardwareOpusDecoderManager final : public ServiceFramework<IHardwareOpusDecoderManager> {
 public:
-    IHardwareOpusDecoderManager(std::unique_ptr<void*> decoder, u32 sample_rate, u32 channel_count)
+    IHardwareOpusDecoderManager(std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder,
+                                u32 sample_rate, u32 channel_count)
         : ServiceFramework("IHardwareOpusDecoderManager"), decoder(std::move(decoder)),
           sample_rate(sample_rate), channel_count(channel_count) {
         static const FunctionInfo functions[] = {
@@ -62,7 +64,7 @@ private:
         if (decoded_sample_count * channel_count * sizeof(u16) > output.size())
             return false;
         auto out_sample_count =
-            opus_decode(static_cast<OpusDecoder*>(*decoder), frame, hdr.sz, output.data(),
+            opus_decode(decoder.get(), frame, hdr.sz, output.data(),
                         (static_cast<int>(output.size() / sizeof(s16) / channel_count)), 0);
         if (out_sample_count < 0)
             return false;
@@ -77,7 +79,7 @@ private:
     };
     static_assert(sizeof(OpusHeader) == 0x8, "OpusHeader is an invalid size");
 
-    std::unique_ptr<void*> decoder;
+    std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder;
     u32 sample_rate;
     u32 channel_count;
 };
@@ -112,9 +114,9 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
 
     size_t worker_sz = WorkerBufferSize(channel_count);
     ASSERT_MSG(buffer_sz < worker_sz, "Worker buffer too large");
-    std::unique_ptr<void*> decoder;
-    decoder = std::make_unique<void*>(std::malloc(worker_sz));
-    if (opus_decoder_init(static_cast<OpusDecoder*>(*decoder), sample_rate, channel_count)) {
+    std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder{
+        static_cast<OpusDecoder*>(std::malloc(worker_sz)), std::free};
+    if (opus_decoder_init(decoder.get(), sample_rate, channel_count)) {
         IPC::ResponseBuilder rb{ctx, 2};
         // TODO(ogniK): Use correct error code
         rb.Push(ResultCode(-1));
