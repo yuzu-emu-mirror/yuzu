@@ -132,16 +132,14 @@ std::unique_ptr<Dynarmic::A64::Jit> ARM_Dynarmic::MakeJit() const {
 void ARM_Dynarmic::Run() {
     ASSERT(Memory::GetCurrentPageTable() == current_page_table);
 
-    if(!GDBStub::GetInstCacheValidity())
-    {
+    if (!GDBStub::GetInstCacheValidity()) {
         ClearInstructionCache();
     }
     jit->Run();
 }
 
 void ARM_Dynarmic::Step() {
-    if(!GDBStub::GetInstCacheValidity())
-    {
+    if (!GDBStub::GetInstCacheValidity()) {
         ClearInstructionCache();
     }
     cb->InterpreterFallback(jit->GetPC(), 1);

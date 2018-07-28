@@ -294,6 +294,10 @@ void RegisterFileSystems() {
 
     auto sdcard = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
     sdmc_factory = std::move(sdcard);
+
+    auto romfs =
+        std::make_unique<FileSys::RomFSFactory>(Core::System::GetInstance().GetAppLoader());
+    romfs_factory = std::move(romfs);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

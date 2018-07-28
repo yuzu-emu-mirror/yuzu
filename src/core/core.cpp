@@ -78,8 +78,7 @@ System::ResultStatus System::RunLoop(bool tight_loop) {
         }
     }
 
-    if(GDBStub::IsServerEnabled())
-    {
+    if (GDBStub::IsServerEnabled()) {
         GDBStub::SetCpuStepFlag(false);
         GDBStub::SetInstCacheValidity(true);
     }
