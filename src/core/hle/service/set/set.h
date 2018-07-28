@@ -35,6 +35,7 @@ public:
     ~SET() = default;
 
 private:
+    void GetLanguageCode(Kernel::HLERequestContext& ctx);
     void GetAvailableLanguageCodes(Kernel::HLERequestContext& ctx);
     void GetAvailableLanguageCodeCount(Kernel::HLERequestContext& ctx);
 };

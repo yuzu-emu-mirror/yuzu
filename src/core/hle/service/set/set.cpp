@@ -49,9 +49,17 @@ void SET::GetAvailableLanguageCodeCount(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 }
 
+void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(static_cast<u64>(LanguageCode::EN_US));
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
 SET::SET() : ServiceFramework("set") {
     static const FunctionInfo functions[] = {
-        {0, nullptr, "GetLanguageCode"},
+        {0, &SET::GetLanguageCode, "GetLanguageCode"},
         {1, &SET::GetAvailableLanguageCodes, "GetAvailableLanguageCodes"},
         {2, nullptr, "MakeLanguageCode"},
         {3, &SET::GetAvailableLanguageCodeCount, "GetAvailableLanguageCodeCount"},
