@@ -23,6 +23,8 @@ add_library(core STATIC
     file_sys/partition_filesystem.h
     file_sys/program_metadata.cpp
     file_sys/program_metadata.h
+    file_sys/romfs.cpp
+    file_sys/romfs.h
     file_sys/romfs_factory.cpp
     file_sys/romfs_factory.h
     file_sys/savedata_factory.cpp
@@ -35,6 +37,8 @@ add_library(core STATIC
     file_sys/vfs_offset.h
     file_sys/vfs_real.cpp
     file_sys/vfs_real.h
+    file_sys/vfs_vector.cpp
+    file_sys/vfs_vector.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
@@ -136,6 +140,8 @@ add_library(core STATIC
     hle/service/bcat/bcat.h
     hle/service/bcat/module.cpp
     hle/service/bcat/module.h
+    hle/service/btdrv/btdrv.cpp
+    hle/service/btdrv/btdrv.h
     hle/service/erpt/erpt.cpp
     hle/service/erpt/erpt.h
     hle/service/es/es.cpp
@@ -164,6 +170,8 @@ add_library(core STATIC
     hle/service/hid/irs.h
     hle/service/hid/xcd.cpp
     hle/service/hid/xcd.h
+    hle/service/lbl/lbl.cpp
+    hle/service/lbl/lbl.h
     hle/service/ldn/ldn.cpp
     hle/service/ldn/ldn.h
     hle/service/ldr/ldr.cpp
@@ -172,6 +180,8 @@ add_library(core STATIC
     hle/service/lm/lm.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
+    hle/service/nfc/nfc.cpp
+    hle/service/nfc/nfc.h
     hle/service/nfp/nfp.cpp
     hle/service/nfp/nfp.h
     hle/service/nfp/nfp_user.cpp
@@ -299,7 +309,7 @@ add_library(core STATIC
 
 create_target_directory_groups(core)
 
-target_link_libraries(core PUBLIC common PRIVATE video_core)
+target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt lz4_static unicorn)
 
 if (ARCHITECTURE_x86_64)

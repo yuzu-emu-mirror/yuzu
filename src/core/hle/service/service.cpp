@@ -21,6 +21,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/audio/audio.h"
 #include "core/hle/service/bcat/bcat.h"
+#include "core/hle/service/btdrv/btdrv.h"
 #include "core/hle/service/erpt/erpt.h"
 #include "core/hle/service/es/es.h"
 #include "core/hle/service/eupld/eupld.h"
@@ -29,10 +30,12 @@
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/grc/grc.h"
 #include "core/hle/service/hid/hid.h"
+#include "core/hle/service/lbl/lbl.h"
 #include "core/hle/service/ldn/ldn.h"
 #include "core/hle/service/ldr/ldr.h"
 #include "core/hle/service/lm/lm.h"
 #include "core/hle/service/mm/mm_u.h"
+#include "core/hle/service/nfc/nfc.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/nim/nim.h"
@@ -193,8 +196,9 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     AM::InstallInterfaces(*sm, nv_flinger);
     AOC::InstallInterfaces(*sm);
     APM::InstallInterfaces(*sm);
-    BCAT::InstallInterfaces(*sm);
     Audio::InstallInterfaces(*sm);
+    BCAT::InstallInterfaces(*sm);
+    BtDrv::InstallInterfaces(*sm);
     ERPT::InstallInterfaces(*sm);
     ES::InstallInterfaces(*sm);
     EUPLD::InstallInterfaces(*sm);
@@ -203,10 +207,12 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     Friend::InstallInterfaces(*sm);
     GRC::InstallInterfaces(*sm);
     HID::InstallInterfaces(*sm);
+    LBL::InstallInterfaces(*sm);
     LDN::InstallInterfaces(*sm);
     LDR::InstallInterfaces(*sm);
     LM::InstallInterfaces(*sm);
     MM::InstallInterfaces(*sm);
+    NFC::InstallInterfaces(*sm);
     NFP::InstallInterfaces(*sm);
     NIFM::InstallInterfaces(*sm);
     NIM::InstallInterfaces(*sm);
