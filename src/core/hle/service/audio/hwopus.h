@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <opus.h>
 #include "core/hle/service/service.h"
 
 namespace Service::Audio {
@@ -14,7 +15,9 @@ public:
     ~HwOpus() = default;
 
 private:
+    void OpenOpusDecoder(Kernel::HLERequestContext& ctx);
     void GetWorkBufferSize(Kernel::HLERequestContext& ctx);
+    size_t WorkerBufferSize(u32 channel_count);
 };
 
 } // namespace Service::Audio
