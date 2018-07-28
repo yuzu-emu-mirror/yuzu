@@ -551,7 +551,7 @@ private:
         } else if (transaction == TransactionId::CancelBuffer) {
             LOG_CRITICAL(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else {
-            ASSERT_MSG(false, "Unimplemented");
+            UNIMPLEMENTED();
         }
 
         IPC::ResponseBuilder rb{ctx, 2};
