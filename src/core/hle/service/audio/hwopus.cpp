@@ -1,6 +1,7 @@
 // Copyright 2018 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
+
 #include <opus.h>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -11,8 +12,8 @@ namespace Service::Audio {
 
 class IHardwareOpusDecoderManager final : public ServiceFramework<IHardwareOpusDecoderManager> {
 public:
-    IHardwareOpusDecoderManager(OpusDecoder* decoder, u32 sample_rate, u32 channel_count)
-        : ServiceFramework("IHardwareOpusDecoderManager"), decoder(decoder),
+    IHardwareOpusDecoderManager(std::unique_ptr<void*> decoder, u32 sample_rate, u32 channel_count)
+        : ServiceFramework("IHardwareOpusDecoderManager"), decoder(std::move(decoder)),
           sample_rate(sample_rate), channel_count(channel_count) {
         static const FunctionInfo functions[] = {
             {0, &IHardwareOpusDecoderManager::DecodeInterleaved, "DecodeInterleaved"},
@@ -27,17 +28,12 @@ public:
         RegisterHandlers(functions);
     }
 
-    ~IHardwareOpusDecoderManager() {
-        std::free(decoder);
-    }
-
 private:
     void DecodeInterleaved(Kernel::HLERequestContext& ctx) {
         u32 consumed = 0;
         u32 sample_count = 0;
-        std::vector<s16> samples(ctx.GetWriteBufferSize() / sizeof(s16));
-        if (!Decoder_DecodeInterleaved(&consumed, &sample_count, samples.data(),
-                                       samples.size() * sizeof(s16), ctx.ReadBuffer())) {
+        std::vector<opus_int16> samples(ctx.GetWriteBufferSize() / sizeof(opus_int16));
+        if (!Decoder_DecodeInterleaved(consumed, sample_count, ctx.ReadBuffer(), samples)) {
             IPC::ResponseBuilder rb{ctx, 2};
             // TODO(ogniK): Use correct error code
             rb.Push(ResultCode(-1));
@@ -50,8 +46,8 @@ private:
         ctx.WriteBuffer(samples.data(), samples.size() * sizeof(s16));
     }
 
-    bool Decoder_DecodeInterleaved(u32* consumed, u32* sample_count, s16* output, size_t output_sz,
-                                   std::vector<u8> input) {
+    bool Decoder_DecodeInterleaved(u32& consumed, u32& sample_count, const std::vector<u8>& input,
+                                   std::vector<opus_int16>& output) {
         if (sizeof(OpusHeader) > input.size())
             return false;
         OpusHeader hdr{};
@@ -63,15 +59,15 @@ private:
         auto decoded_sample_count = opus_packet_get_nb_samples(
             frame, static_cast<opus_int32>(input.size() - sizeof(OpusHeader)),
             static_cast<opus_int32>(sample_rate));
-        if (decoded_sample_count * channel_count * sizeof(u16) > output_sz)
+        if (decoded_sample_count * channel_count * sizeof(u16) > output.size())
             return false;
         auto out_sample_count =
-            opus_decode(decoder, frame, hdr.sz, output,
-                        (static_cast<int>(output_sz / sizeof(s16) / channel_count)), 0);
+            opus_decode(static_cast<OpusDecoder*>(*decoder), frame, hdr.sz, output.data(),
+                        (static_cast<int>(output.size() / sizeof(s16) / channel_count)), 0);
         if (out_sample_count < 0)
             return false;
-        *sample_count = out_sample_count;
-        *consumed = static_cast<u32>(sizeof(OpusHeader) + hdr.sz);
+        sample_count = out_sample_count;
+        consumed = static_cast<u32>(sizeof(OpusHeader) + hdr.sz);
         return true;
     }
 
@@ -81,7 +77,7 @@ private:
     };
     static_assert(sizeof(OpusHeader) == 0x8, "OpusHeader is an invalid size");
 
-    OpusDecoder* decoder;
+    std::unique_ptr<void*> decoder;
     u32 sample_rate;
     u32 channel_count;
 };
@@ -116,10 +112,9 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
 
     size_t worker_sz = WorkerBufferSize(channel_count);
     ASSERT_MSG(buffer_sz < worker_sz, "Worker buffer too large");
-
-    OpusDecoder* decoder = (OpusDecoder*)std::malloc(worker_sz);
-    if (opus_decoder_init(decoder, sample_rate, channel_count)) {
-        std::free(decoder);
+    std::unique_ptr<void*> decoder;
+    decoder = std::make_unique<void*>(std::malloc(worker_sz));
+    if (opus_decoder_init(static_cast<OpusDecoder*>(*decoder), sample_rate, channel_count)) {
         IPC::ResponseBuilder rb{ctx, 2};
         // TODO(ogniK): Use correct error code
         rb.Push(ResultCode(-1));
