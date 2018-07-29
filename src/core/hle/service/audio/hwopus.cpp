@@ -56,6 +56,7 @@ private:
 
     bool Decoder_DecodeInterleaved(u32& consumed, u32& sample_count, const std::vector<u8>& input,
                                    std::vector<opus_int16>& output) {
+        size_t raw_output_sz = output.size() * sizeof(opus_int16);
         if (sizeof(OpusHeader) > input.size())
             return false;
         OpusHeader hdr{};
@@ -67,11 +68,11 @@ private:
         auto decoded_sample_count = opus_packet_get_nb_samples(
             frame, static_cast<opus_int32>(input.size() - sizeof(OpusHeader)),
             static_cast<opus_int32>(sample_rate));
-        if (decoded_sample_count * channel_count * sizeof(u16) > output.size())
+        if (decoded_sample_count * channel_count * sizeof(u16) > raw_output_sz)
             return false;
         auto out_sample_count =
             opus_decode(decoder.get(), frame, hdr.sz, output.data(),
-                        (static_cast<int>(output.size() / sizeof(s16) / channel_count)), 0);
+                        (static_cast<int>(raw_output_sz / sizeof(s16) / channel_count)), 0);
         if (out_sample_count < 0)
             return false;
         sample_count = out_sample_count;
