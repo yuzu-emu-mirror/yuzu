@@ -22,6 +22,6 @@
 [submodule "unicorn"]
     path = externals/unicorn
     url = https://github.com/yuzu-emu/unicorn
-[submodule "externals/opus"]
+[submodule "opus"]
 	path = externals/opus
 	url = https://github.com/ogniK5377/opus.git
