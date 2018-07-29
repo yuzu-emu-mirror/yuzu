@@ -11,10 +11,16 @@
 
 namespace Service::Audio {
 
+struct OpusDeleter {
+    void operator()(void* ptr) {
+        operator delete(ptr);
+    }
+};
+
 class IHardwareOpusDecoderManager final : public ServiceFramework<IHardwareOpusDecoderManager> {
 public:
-    IHardwareOpusDecoderManager(std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder,
-                                u32 sample_rate, u32 channel_count)
+    IHardwareOpusDecoderManager(std::unique_ptr<OpusDecoder, OpusDeleter> decoder, u32 sample_rate,
+                                u32 channel_count)
         : ServiceFramework("IHardwareOpusDecoderManager"), decoder(std::move(decoder)),
           sample_rate(sample_rate), channel_count(channel_count) {
         static const FunctionInfo functions[] = {
@@ -79,7 +85,7 @@ private:
     };
     static_assert(sizeof(OpusHeader) == 0x8, "OpusHeader is an invalid size");
 
-    std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder;
+    std::unique_ptr<OpusDecoder, OpusDeleter> decoder;
     u32 sample_rate;
     u32 channel_count;
 };
@@ -114,8 +120,8 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
 
     size_t worker_sz = WorkerBufferSize(channel_count);
     ASSERT_MSG(buffer_sz < worker_sz, "Worker buffer too large");
-    std::unique_ptr<OpusDecoder, decltype(&std::free)> decoder{
-        static_cast<OpusDecoder*>(std::malloc(worker_sz)), std::free};
+    std::unique_ptr<OpusDecoder, OpusDeleter> decoder{
+        static_cast<OpusDecoder*>(operator new(worker_sz))};
     if (opus_decoder_init(decoder.get(), sample_rate, channel_count)) {
         IPC::ResponseBuilder rb{ctx, 2};
         // TODO(ogniK): Use correct error code
