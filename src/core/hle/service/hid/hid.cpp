@@ -458,6 +458,8 @@ private:
     void IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+        // TODO (Hexagon12): Properly implement reading gyroscope values from controllers.
+        rb.Push(true);
         LOG_WARNING(Service_HID, "(STUBBED) called");
     }
 
