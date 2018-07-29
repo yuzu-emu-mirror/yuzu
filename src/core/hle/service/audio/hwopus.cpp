@@ -12,7 +12,7 @@
 namespace Service::Audio {
 
 struct OpusDeleter {
-    void operator()(void* ptr) {
+    void operator()(void* ptr) const {
         operator delete(ptr);
     }
 };
