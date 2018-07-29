@@ -16,7 +16,6 @@ public:
 private:
     void OpenOpusDecoder(Kernel::HLERequestContext& ctx);
     void GetWorkBufferSize(Kernel::HLERequestContext& ctx);
-    size_t WorkerBufferSize(u32 channel_count);
 };
 
 } // namespace Service::Audio

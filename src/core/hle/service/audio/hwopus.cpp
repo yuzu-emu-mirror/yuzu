@@ -2,7 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <string>
+#include <cstring>
 #include <opus.h>
 #include "common/logging/log.h"
 #include "core/hle/ipc_helpers.h"
@@ -90,6 +90,11 @@ private:
     u32 channel_count;
 };
 
+static size_t WorkerBufferSize(u32 channel_count) {
+    ASSERT_MSG(channel_count == 1 || channel_count == 2, "Invalid channel count");
+    return opus_decoder_get_size(static_cast<int>(channel_count));
+}
+
 void HwOpus::GetWorkBufferSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     auto sample_rate = rp.Pop<u32>();
@@ -133,11 +138,6 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IHardwareOpusDecoderManager>(std::move(decoder), sample_rate,
                                                      channel_count);
-}
-
-size_t HwOpus::WorkerBufferSize(u32 channel_count) {
-    ASSERT_MSG(channel_count == 1 || channel_count == 2, "Invalid channel count");
-    return opus_decoder_get_size(static_cast<int>(channel_count));
 }
 
 HwOpus::HwOpus() : ServiceFramework("hwopus") {
