@@ -650,7 +650,7 @@ void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
     rb.Push(
-        static_cast<u64>(Service::Set::available_language_codes[Settings::values.language_index]));
+        static_cast<u64>(Service::Set::GetLanguageCodeFromIndex(Settings::values.language_index)));
     LOG_DEBUG(Service_AM, "called");
 }
 
