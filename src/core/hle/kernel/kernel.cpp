@@ -4,6 +4,7 @@
 
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/thread.h"
@@ -14,7 +15,9 @@ namespace Kernel {
 unsigned int Object::next_object_id;
 
 /// Initialize the kernel
-void Init() {
+void Init(u32 system_mode) {
+    Kernel::MemoryInit(system_mode);
+
     Kernel::ResourceLimitsInit();
     Kernel::ThreadingInit();
     Kernel::TimersInit();
@@ -34,6 +37,7 @@ void Shutdown() {
 
     Kernel::TimersShutdown();
     Kernel::ResourceLimitsShutdown();
+    Kernel::MemoryShutdown();
 }
 
 } // namespace Kernel
