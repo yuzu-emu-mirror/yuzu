@@ -46,6 +46,13 @@ size_t VfsFile::WriteBytes(const std::vector<u8>& data, size_t offset) {
     return Write(data.data(), data.size(), offset);
 }
 
+std::string VfsFile::GetFullPath() const {
+    if (GetContainingDirectory() == nullptr)
+        return "/" + GetName();
+
+    return GetContainingDirectory()->GetFullPath() + "/" + GetName();
+}
+
 std::shared_ptr<VfsFile> VfsDirectory::GetFileRelative(std::string_view path) const {
     auto vec = FileUtil::SplitPathComponents(path);
     vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
@@ -243,6 +250,13 @@ bool VfsDirectory::Copy(std::string_view src, std::string_view dest) {
     return f2->WriteBytes(f1->ReadAllBytes()) == f1->GetSize();
 }
 
+std::string VfsDirectory::GetFullPath() const {
+    if (IsRoot())
+        return GetName();
+
+    return GetParentDirectory()->GetFullPath() + "/" + GetName();
+}
+
 bool ReadOnlyVfsDirectory::IsWritable() const {
     return false;
 }
@@ -269,5 +283,34 @@ bool ReadOnlyVfsDirectory::DeleteFile(std::string_view name) {
 
 bool ReadOnlyVfsDirectory::Rename(std::string_view name) {
     return false;
+}
+
+bool DeepEquals(const VirtualFile& file1, const VirtualFile& file2, size_t block_size) {
+    if (file1->GetSize() != file2->GetSize())
+        return false;
+
+    std::vector<u8> f1_v(block_size);
+    std::vector<u8> f2_v(block_size);
+    for (size_t i = 0; i < file1->GetSize(); i += block_size) {
+        auto f1_vs = file1->Read(f1_v.data(), block_size, i);
+        auto f2_vs = file2->Read(f2_v.data(), block_size, i);
+
+        if (f1_vs != f2_vs)
+            return false;
+        auto iters = std::mismatch(f1_v.begin(), f1_v.end(), f2_v.begin(), f2_v.end());
+        if (iters.first != f1_v.end() && iters.second != f2_v.end())
+            return false;
+    }
+
+    return true;
+}
+
+bool VfsRawCopy(VirtualFile src, VirtualFile dest) {
+    if (src == nullptr || dest == nullptr)
+        return false;
+    if (!dest->Resize(src->GetSize()))
+        return false;
+    std::vector<u8> data = src->ReadAllBytes();
+    return dest->WriteBytes(data, 0) == data.size();
 }
 } // namespace FileSys

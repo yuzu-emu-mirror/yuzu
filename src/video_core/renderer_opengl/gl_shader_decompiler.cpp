@@ -412,7 +412,6 @@ public:
         }
         declarations.AddNewLine();
 
-        unsigned const_buffer_layout = 0;
         for (const auto& entry : GetConstBuffersDeclarations()) {
             declarations.AddLine("layout(std140) uniform " + entry.GetName());
             declarations.AddLine('{');
@@ -420,7 +419,6 @@ public:
                                  "[MAX_CONSTBUFFER_ELEMENTS];");
             declarations.AddLine("};");
             declarations.AddNewLine();
-            ++const_buffer_layout;
         }
         declarations.AddNewLine();
 
@@ -768,13 +766,16 @@ private:
         // goes into gpr28+0 and gpr28+1
         size_t texs_offset{};
 
+        size_t src_elem{};
         for (const auto& dest : {instr.gpr0.Value(), instr.gpr28.Value()}) {
+            size_t dest_elem{};
             for (unsigned elem = 0; elem < 2; ++elem) {
-                if (!instr.texs.IsComponentEnabled(elem)) {
+                if (!instr.texs.IsComponentEnabled(src_elem++)) {
                     // Skip disabled components
                     continue;
                 }
-                regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false, elem);
+                regs.SetRegisterToFloat(dest, elem + texs_offset, texture, 1, 4, false,
+                                        dest_elem++);
             }
 
             if (!instr.texs.HasTwoDestinations()) {

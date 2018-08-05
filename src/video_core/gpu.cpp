@@ -7,12 +7,13 @@
 #include "video_core/engines/maxwell_compute.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
+#include "video_core/rasterizer_interface.h"
 
 namespace Tegra {
 
-GPU::GPU() {
+GPU::GPU(VideoCore::RasterizerInterface& rasterizer) {
     memory_manager = std::make_unique<MemoryManager>();
-    maxwell_3d = std::make_unique<Engines::Maxwell3D>(*memory_manager);
+    maxwell_3d = std::make_unique<Engines::Maxwell3D>(rasterizer, *memory_manager);
     fermi_2d = std::make_unique<Engines::Fermi2D>(*memory_manager);
     maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
     maxwell_dma = std::make_unique<Engines::MaxwellDMA>(*memory_manager);
@@ -48,6 +49,7 @@ u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
     case RenderTargetFormat::RG16_UINT:
     case RenderTargetFormat::RG16_SINT:
     case RenderTargetFormat::RG16_FLOAT:
+    case RenderTargetFormat::R32_FLOAT:
         return 4;
     case RenderTargetFormat::R16_UNORM:
     case RenderTargetFormat::R16_SNORM:

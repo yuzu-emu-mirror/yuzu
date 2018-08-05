@@ -7,8 +7,9 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <vector>
 #include "common/common_types.h"
-#include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/object.h"
 #include "core/hle/kernel/wait_object.h"
 
 namespace Kernel {

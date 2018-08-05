@@ -92,16 +92,26 @@ void Config::ReadValues() {
     Settings::values.bg_blue = qt_config->value("bg_blue", 0.0).toFloat();
     qt_config->endGroup();
 
+    qt_config->beginGroup("Audio");
+    Settings::values.sink_id = qt_config->value("output_engine", "auto").toString().toStdString();
+    Settings::values.audio_device_id =
+        qt_config->value("output_device", "auto").toString().toStdString();
+    Settings::values.volume = qt_config->value("volume", 1).toFloat();
+    qt_config->endGroup();
+
     qt_config->beginGroup("Data Storage");
     Settings::values.use_virtual_sd = qt_config->value("use_virtual_sd", true).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
     Settings::values.use_docked_mode = qt_config->value("use_docked_mode", false).toBool();
+    Settings::values.username = qt_config->value("username", "yuzu").toString().toStdString();
+    Settings::values.language_index = qt_config->value("language_index", 1).toInt();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
     Settings::values.log_filter = qt_config->value("log_filter", "*:Info").toString().toStdString();
+    Settings::values.use_dev_keys = qt_config->value("use_dev_keys", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Debugging");
@@ -195,16 +205,25 @@ void Config::SaveValues() {
     qt_config->setValue("bg_blue", (double)Settings::values.bg_blue);
     qt_config->endGroup();
 
+    qt_config->beginGroup("Audio");
+    qt_config->setValue("output_engine", QString::fromStdString(Settings::values.sink_id));
+    qt_config->setValue("output_device", QString::fromStdString(Settings::values.audio_device_id));
+    qt_config->setValue("volume", Settings::values.volume);
+    qt_config->endGroup();
+
     qt_config->beginGroup("Data Storage");
     qt_config->setValue("use_virtual_sd", Settings::values.use_virtual_sd);
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
     qt_config->setValue("use_docked_mode", Settings::values.use_docked_mode);
+    qt_config->setValue("username", QString::fromStdString(Settings::values.username));
+    qt_config->setValue("language_index", Settings::values.language_index);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
     qt_config->setValue("log_filter", QString::fromStdString(Settings::values.log_filter));
+    qt_config->setValue("use_dev_keys", Settings::values.use_dev_keys);
     qt_config->endGroup();
 
     qt_config->beginGroup("Debugging");

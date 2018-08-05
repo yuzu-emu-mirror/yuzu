@@ -12,6 +12,16 @@ add_library(core STATIC
     core_timing.h
     core_timing_util.cpp
     core_timing_util.h
+    crypto/aes_util.cpp
+    crypto/aes_util.h
+    crypto/encryption_layer.cpp
+    crypto/encryption_layer.h
+    crypto/key_manager.cpp
+    crypto/key_manager.h
+    crypto/ctr_encryption_layer.cpp
+    crypto/ctr_encryption_layer.h
+    file_sys/card_image.cpp
+    file_sys/card_image.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
     file_sys/control_metadata.cpp
@@ -23,6 +33,8 @@ add_library(core STATIC
     file_sys/partition_filesystem.h
     file_sys/program_metadata.cpp
     file_sys/program_metadata.h
+    file_sys/romfs.cpp
+    file_sys/romfs.h
     file_sys/romfs_factory.cpp
     file_sys/romfs_factory.h
     file_sys/savedata_factory.cpp
@@ -35,6 +47,8 @@ add_library(core STATIC
     file_sys/vfs_offset.h
     file_sys/vfs_real.cpp
     file_sys/vfs_real.h
+    file_sys/vfs_vector.cpp
+    file_sys/vfs_vector.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
@@ -59,12 +73,10 @@ add_library(core STATIC
     hle/kernel/hle_ipc.h
     hle/kernel/kernel.cpp
     hle/kernel/kernel.h
-    hle/kernel/memory.cpp
-    hle/kernel/memory.h
     hle/kernel/mutex.cpp
     hle/kernel/mutex.h
-    hle/kernel/object_address_table.cpp
-    hle/kernel/object_address_table.h
+    hle/kernel/object.cpp
+    hle/kernel/object.h
     hle/kernel/process.cpp
     hle/kernel/process.h
     hle/kernel/resource_limit.cpp
@@ -110,23 +122,41 @@ add_library(core STATIC
     hle/service/am/applet_ae.h
     hle/service/am/applet_oe.cpp
     hle/service/am/applet_oe.h
+    hle/service/am/idle.cpp
+    hle/service/am/idle.h
+    hle/service/am/omm.cpp
+    hle/service/am/omm.h
+    hle/service/am/spsm.cpp
+    hle/service/am/spsm.h
     hle/service/aoc/aoc_u.cpp
     hle/service/aoc/aoc_u.h
     hle/service/apm/apm.cpp
     hle/service/apm/apm.h
     hle/service/apm/interface.cpp
     hle/service/apm/interface.h
+    hle/service/arp/arp.cpp
+    hle/service/arp/arp.h
+    hle/service/audio/audctl.cpp
+    hle/service/audio/audctl.h
+    hle/service/audio/auddbg.cpp
+    hle/service/audio/auddbg.h
+    hle/service/audio/audin_a.cpp
+    hle/service/audio/audin_a.h
     hle/service/audio/audin_u.cpp
     hle/service/audio/audin_u.h
     hle/service/audio/audio.cpp
     hle/service/audio/audio.h
+    hle/service/audio/audout_a.cpp
+    hle/service/audio/audout_a.h
     hle/service/audio/audout_u.cpp
     hle/service/audio/audout_u.h
+    hle/service/audio/audrec_a.cpp
+    hle/service/audio/audrec_a.h
     hle/service/audio/audrec_u.cpp
     hle/service/audio/audrec_u.h
+    hle/service/audio/audren_a.cpp
+    hle/service/audio/audren_a.h
     hle/service/audio/audren_u.cpp
-    hle/service/audio/audren_u.cpp
-    hle/service/audio/audren_u.h
     hle/service/audio/audren_u.h
     hle/service/audio/codecctl.cpp
     hle/service/audio/codecctl.h
@@ -136,8 +166,14 @@ add_library(core STATIC
     hle/service/bcat/bcat.h
     hle/service/bcat/module.cpp
     hle/service/bcat/module.h
+    hle/service/bpc/bpc.cpp
+    hle/service/bpc/bpc.h
     hle/service/btdrv/btdrv.cpp
     hle/service/btdrv/btdrv.h
+    hle/service/btm/btm.cpp
+    hle/service/btm/btm.h
+    hle/service/caps/caps.cpp
+    hle/service/caps/caps.h
     hle/service/erpt/erpt.cpp
     hle/service/erpt/erpt.h
     hle/service/es/es.cpp
@@ -152,8 +188,14 @@ add_library(core STATIC
     hle/service/fatal/fatal_u.h
     hle/service/filesystem/filesystem.cpp
     hle/service/filesystem/filesystem.h
+    hle/service/filesystem/fsp_ldr.cpp
+    hle/service/filesystem/fsp_ldr.h
+    hle/service/filesystem/fsp_pr.cpp
+    hle/service/filesystem/fsp_pr.h
     hle/service/filesystem/fsp_srv.cpp
     hle/service/filesystem/fsp_srv.h
+    hle/service/fgm/fgm.cpp
+    hle/service/fgm/fgm.h
     hle/service/friend/friend.cpp
     hle/service/friend/friend.h
     hle/service/friend/interface.cpp
@@ -174,8 +216,14 @@ add_library(core STATIC
     hle/service/ldr/ldr.h
     hle/service/lm/lm.cpp
     hle/service/lm/lm.h
+    hle/service/mig/mig.cpp
+    hle/service/mig/mig.h
+    hle/service/mii/mii.cpp
+    hle/service/mii/mii.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
+    hle/service/ncm/ncm.cpp
+    hle/service/ncm/ncm.h
     hle/service/nfc/nfc.cpp
     hle/service/nfc/nfc.h
     hle/service/nfp/nfp.cpp
@@ -215,14 +263,20 @@ add_library(core STATIC
     hle/service/nvflinger/buffer_queue.h
     hle/service/nvflinger/nvflinger.cpp
     hle/service/nvflinger/nvflinger.h
+    hle/service/pcie/pcie.cpp
+    hle/service/pcie/pcie.h
     hle/service/pctl/module.cpp
     hle/service/pctl/module.h
     hle/service/pctl/pctl.cpp
     hle/service/pctl/pctl.h
+    hle/service/pcv/pcv.cpp
+    hle/service/pcv/pcv.h
     hle/service/pm/pm.cpp
     hle/service/pm/pm.h
     hle/service/prepo/prepo.cpp
     hle/service/prepo/prepo.h
+    hle/service/psc/psc.cpp
+    hle/service/psc/psc.h
     hle/service/service.cpp
     hle/service/service.h
     hle/service/set/set.cpp
@@ -269,10 +323,8 @@ add_library(core STATIC
     hle/service/vi/vi_s.h
     hle/service/vi/vi_u.cpp
     hle/service/vi/vi_u.h
-    hw/hw.cpp
-    hw/hw.h
-    hw/lcd.cpp
-    hw/lcd.h
+    hle/service/wlan/wlan.cpp
+    hle/service/wlan/wlan.h
     loader/deconstructed_rom_directory.cpp
     loader/deconstructed_rom_directory.h
     loader/elf.cpp
@@ -287,6 +339,8 @@ add_library(core STATIC
     loader/nro.h
     loader/nso.cpp
     loader/nso.h
+    loader/xci.cpp
+    loader/xci.h
     memory.cpp
     memory.h
     memory_hook.cpp
@@ -305,8 +359,8 @@ add_library(core STATIC
 
 create_target_directory_groups(core)
 
-target_link_libraries(core PUBLIC common PRIVATE video_core)
-target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt lz4_static unicorn)
+target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
+target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt lz4_static mbedtls opus unicorn)
 
 if (ARCHITECTURE_x86_64)
     target_sources(core PRIVATE

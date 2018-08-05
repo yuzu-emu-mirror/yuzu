@@ -112,6 +112,8 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 struct Values {
     // System
     bool use_docked_mode;
+    std::string username;
+    int language_index;
 
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
@@ -136,6 +138,13 @@ struct Values {
     float bg_blue;
 
     std::string log_filter;
+
+    bool use_dev_keys;
+
+    // Audio
+    std::string sink_id;
+    std::string audio_device_id;
+    float volume;
 
     // Debugging
     bool use_gdbstub;

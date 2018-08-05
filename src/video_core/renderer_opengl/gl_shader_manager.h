@@ -105,20 +105,20 @@ public:
     }
 
     ShaderEntries UseProgrammableVertexShader(const MaxwellVSConfig& config,
-                                              const ShaderSetup setup) {
+                                              const ShaderSetup& setup) {
         ShaderEntries result;
         std::tie(current.vs, result) = vertex_shaders.Get(config, setup);
         return result;
     }
 
     ShaderEntries UseProgrammableFragmentShader(const MaxwellFSConfig& config,
-                                                const ShaderSetup setup) {
+                                                const ShaderSetup& setup) {
         ShaderEntries result;
         std::tie(current.fs, result) = fragment_shaders.Get(config, setup);
         return result;
     }
 
-    GLuint GetCurrentProgramStage(Maxwell3D::Regs::ShaderStage stage) {
+    GLuint GetCurrentProgramStage(Maxwell3D::Regs::ShaderStage stage) const {
         switch (stage) {
         case Maxwell3D::Regs::ShaderStage::Vertex:
             return current.vs;

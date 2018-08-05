@@ -14,7 +14,6 @@
 #include "common/swap.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
-#include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/lock.h"
 #include "core/memory.h"
@@ -23,8 +22,6 @@
 #include "video_core/video_core.h"
 
 namespace Memory {
-
-static std::array<u8, Memory::VRAM_SIZE> vram;
 
 static PageTable* current_page_table = nullptr;
 
@@ -99,22 +96,6 @@ void RemoveDebugHook(PageTable& page_table, VAddr base, u64 size, MemoryHookPoin
     auto interval = boost::icl::discrete_interval<VAddr>::closed(base, base + size - 1);
     SpecialRegion region{SpecialRegion::Type::DebugHook, std::move(hook)};
     page_table.special_regions.subtract(std::make_pair(interval, std::set<SpecialRegion>{region}));
-}
-
-/**
- * This function should only be called for virtual addreses with attribute `PageType::Special`.
- */
-static std::set<MemoryHookPointer> GetSpecialHandlers(const PageTable& page_table, VAddr vaddr,
-                                                      u64 size) {
-    std::set<MemoryHookPointer> result;
-    auto interval = boost::icl::discrete_interval<VAddr>::closed(vaddr, vaddr + size - 1);
-    auto interval_list = page_table.special_regions.equal_range(interval);
-    for (auto it = interval_list.first; it != interval_list.second; ++it) {
-        for (const auto& region : it->second) {
-            result.insert(region.handler);
-        }
-    }
-    return result;
 }
 
 /**
@@ -242,10 +223,6 @@ bool IsKernelVirtualAddress(const VAddr vaddr) {
     return KERNEL_REGION_VADDR <= vaddr && vaddr < KERNEL_REGION_END;
 }
 
-bool IsValidPhysicalAddress(const PAddr paddr) {
-    return GetPhysicalPointer(paddr) != nullptr;
-}
-
 u8* GetPointer(const VAddr vaddr) {
     u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
     if (page_pointer) {
@@ -272,61 +249,6 @@ std::string ReadCString(VAddr vaddr, std::size_t max_length) {
     }
     string.shrink_to_fit();
     return string;
-}
-
-u8* GetPhysicalPointer(PAddr address) {
-    struct MemoryArea {
-        PAddr paddr_base;
-        u32 size;
-    };
-
-    static constexpr MemoryArea memory_areas[] = {
-        {VRAM_PADDR, VRAM_SIZE},
-        {IO_AREA_PADDR, IO_AREA_SIZE},
-        {DSP_RAM_PADDR, DSP_RAM_SIZE},
-        {FCRAM_PADDR, FCRAM_N3DS_SIZE},
-    };
-
-    const auto area =
-        std::find_if(std::begin(memory_areas), std::end(memory_areas), [&](const auto& area) {
-            return address >= area.paddr_base && address < area.paddr_base + area.size;
-        });
-
-    if (area == std::end(memory_areas)) {
-        LOG_ERROR(HW_Memory, "Unknown GetPhysicalPointer @ 0x{:016X}", address);
-        return nullptr;
-    }
-
-    if (area->paddr_base == IO_AREA_PADDR) {
-        LOG_ERROR(HW_Memory, "MMIO mappings are not supported yet. phys_addr={:016X}", address);
-        return nullptr;
-    }
-
-    u64 offset_into_region = address - area->paddr_base;
-
-    u8* target_pointer = nullptr;
-    switch (area->paddr_base) {
-    case VRAM_PADDR:
-        target_pointer = vram.data() + offset_into_region;
-        break;
-    case DSP_RAM_PADDR:
-        break;
-    case FCRAM_PADDR:
-        for (const auto& region : Kernel::memory_regions) {
-            if (offset_into_region >= region.base &&
-                offset_into_region < region.base + region.size) {
-                target_pointer =
-                    region.linear_heap_memory->data() + offset_into_region - region.base;
-                break;
-            }
-        }
-        ASSERT_MSG(target_pointer != nullptr, "Invalid FCRAM address");
-        break;
-    default:
-        UNREACHABLE();
-    }
-
-    return target_pointer;
 }
 
 void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached) {
@@ -404,43 +326,45 @@ void RasterizerMarkRegionCached(Tegra::GPUVAddr gpu_addr, u64 size, bool cached)
 }
 
 void RasterizerFlushVirtualRegion(VAddr start, u64 size, FlushMode mode) {
+    auto& system_instance = Core::System::GetInstance();
+
     // Since pages are unmapped on shutdown after video core is shutdown, the renderer may be
     // null here
-    if (VideoCore::g_renderer == nullptr) {
+    if (!system_instance.IsPoweredOn()) {
         return;
     }
 
     VAddr end = start + size;
 
-    auto CheckRegion = [&](VAddr region_start, VAddr region_end) {
+    const auto CheckRegion = [&](VAddr region_start, VAddr region_end) {
         if (start >= region_end || end <= region_start) {
             // No overlap with region
             return;
         }
 
-        VAddr overlap_start = std::max(start, region_start);
-        VAddr overlap_end = std::min(end, region_end);
+        const VAddr overlap_start = std::max(start, region_start);
+        const VAddr overlap_end = std::min(end, region_end);
 
-        std::vector<Tegra::GPUVAddr> gpu_addresses =
-            Core::System::GetInstance().GPU().memory_manager->CpuToGpuAddress(overlap_start);
+        const std::vector<Tegra::GPUVAddr> gpu_addresses =
+            system_instance.GPU().memory_manager->CpuToGpuAddress(overlap_start);
 
         if (gpu_addresses.empty()) {
             return;
         }
 
-        u64 overlap_size = overlap_end - overlap_start;
+        const u64 overlap_size = overlap_end - overlap_start;
 
         for (const auto& gpu_address : gpu_addresses) {
-            auto* rasterizer = VideoCore::g_renderer->Rasterizer();
+            auto& rasterizer = system_instance.Renderer().Rasterizer();
             switch (mode) {
             case FlushMode::Flush:
-                rasterizer->FlushRegion(gpu_address, overlap_size);
+                rasterizer.FlushRegion(gpu_address, overlap_size);
                 break;
             case FlushMode::Invalidate:
-                rasterizer->InvalidateRegion(gpu_address, overlap_size);
+                rasterizer.InvalidateRegion(gpu_address, overlap_size);
                 break;
             case FlushMode::FlushAndInvalidate:
-                rasterizer->FlushAndInvalidateRegion(gpu_address, overlap_size);
+                rasterizer.FlushAndInvalidateRegion(gpu_address, overlap_size);
                 break;
             }
         }
@@ -664,50 +588,6 @@ void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr, 
 
 void CopyBlock(VAddr dest_addr, VAddr src_addr, size_t size) {
     CopyBlock(*Core::CurrentProcess(), dest_addr, src_addr, size);
-}
-
-boost::optional<PAddr> TryVirtualToPhysicalAddress(const VAddr addr) {
-    if (addr == 0) {
-        return 0;
-    } else if (addr >= VRAM_VADDR && addr < VRAM_VADDR_END) {
-        return addr - VRAM_VADDR + VRAM_PADDR;
-    } else if (addr >= LINEAR_HEAP_VADDR && addr < LINEAR_HEAP_VADDR_END) {
-        return addr - LINEAR_HEAP_VADDR + FCRAM_PADDR;
-    } else if (addr >= NEW_LINEAR_HEAP_VADDR && addr < NEW_LINEAR_HEAP_VADDR_END) {
-        return addr - NEW_LINEAR_HEAP_VADDR + FCRAM_PADDR;
-    } else if (addr >= DSP_RAM_VADDR && addr < DSP_RAM_VADDR_END) {
-        return addr - DSP_RAM_VADDR + DSP_RAM_PADDR;
-    } else if (addr >= IO_AREA_VADDR && addr < IO_AREA_VADDR_END) {
-        return addr - IO_AREA_VADDR + IO_AREA_PADDR;
-    }
-
-    return boost::none;
-}
-
-PAddr VirtualToPhysicalAddress(const VAddr addr) {
-    auto paddr = TryVirtualToPhysicalAddress(addr);
-    if (!paddr) {
-        LOG_ERROR(HW_Memory, "Unknown virtual address @ 0x{:016X}", addr);
-        // To help with debugging, set bit on address so that it's obviously invalid.
-        return addr | 0x80000000;
-    }
-    return *paddr;
-}
-
-boost::optional<VAddr> PhysicalToVirtualAddress(const PAddr addr) {
-    if (addr == 0) {
-        return 0;
-    } else if (addr >= VRAM_PADDR && addr < VRAM_PADDR_END) {
-        return addr - VRAM_PADDR + VRAM_VADDR;
-    } else if (addr >= FCRAM_PADDR && addr < FCRAM_PADDR_END) {
-        return addr - FCRAM_PADDR + Core::CurrentProcess()->GetLinearHeapAreaAddress();
-    } else if (addr >= DSP_RAM_PADDR && addr < DSP_RAM_PADDR_END) {
-        return addr - DSP_RAM_PADDR + DSP_RAM_VADDR;
-    } else if (addr >= IO_AREA_PADDR && addr < IO_AREA_PADDR_END) {
-        return addr - IO_AREA_PADDR + IO_AREA_VADDR;
-    }
-
-    return boost::none;
 }
 
 } // namespace Memory

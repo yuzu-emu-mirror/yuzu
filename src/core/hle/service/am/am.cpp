@@ -11,6 +11,9 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
+#include "core/hle/service/am/idle.h"
+#include "core/hle/service/am/omm.h"
+#include "core/hle/service/am/spsm.h"
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
@@ -649,7 +652,8 @@ void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
     // TODO(bunnei): This should be configurable
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u64>(Service::Set::LanguageCode::EN_US));
+    rb.Push(
+        static_cast<u64>(Service::Set::GetLanguageCodeFromIndex(Settings::values.language_index)));
     LOG_DEBUG(Service_AM, "called");
 }
 
@@ -689,6 +693,9 @@ void InstallInterfaces(SM::ServiceManager& service_manager,
                        std::shared_ptr<NVFlinger::NVFlinger> nvflinger) {
     std::make_shared<AppletAE>(nvflinger)->InstallAsService(service_manager);
     std::make_shared<AppletOE>(nvflinger)->InstallAsService(service_manager);
+    std::make_shared<IdleSys>()->InstallAsService(service_manager);
+    std::make_shared<OMM>()->InstallAsService(service_manager);
+    std::make_shared<SPSM>()->InstallAsService(service_manager);
 }
 
 IHomeMenuFunctions::IHomeMenuFunctions() : ServiceFramework("IHomeMenuFunctions") {

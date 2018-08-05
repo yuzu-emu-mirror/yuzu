@@ -15,11 +15,10 @@
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/controller.h"
 #include "core/hle/service/sm/sm.h"
-#include "core/hw/hw.h"
 #include "core/loader/loader.h"
-#include "core/memory_setup.h"
 #include "core/settings.h"
 #include "file_sys/vfs_real.h"
+#include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
 namespace Core {
@@ -86,7 +85,7 @@ System::ResultStatus System::SingleStep() {
     return RunLoop(false);
 }
 
-System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& filepath) {
+System::ResultStatus System::Load(EmuWindow& emu_window, const std::string& filepath) {
     app_loader = Loader::GetLoader(std::make_shared<FileSys::RealVfsFile>(filepath));
 
     if (!app_loader) {
@@ -101,8 +100,10 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
                      static_cast<int>(system_mode.second));
 
         switch (system_mode.second) {
-        case Loader::ResultStatus::ErrorEncrypted:
-            return ResultStatus::ErrorLoader_ErrorEncrypted;
+        case Loader::ResultStatus::ErrorMissingKeys:
+            return ResultStatus::ErrorLoader_ErrorMissingKeys;
+        case Loader::ResultStatus::ErrorDecrypting:
+            return ResultStatus::ErrorLoader_ErrorDecrypting;
         case Loader::ResultStatus::ErrorInvalidFormat:
             return ResultStatus::ErrorLoader_ErrorInvalidFormat;
         case Loader::ResultStatus::ErrorUnsupportedArch:
@@ -112,7 +113,7 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
         }
     }
 
-    ResultStatus init_result{Init(emu_window, system_mode.first.get())};
+    ResultStatus init_result{Init(emu_window)};
     if (init_result != ResultStatus::Success) {
         LOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
                      static_cast<int>(init_result));
@@ -126,8 +127,10 @@ System::ResultStatus System::Load(EmuWindow* emu_window, const std::string& file
         System::Shutdown();
 
         switch (load_result) {
-        case Loader::ResultStatus::ErrorEncrypted:
-            return ResultStatus::ErrorLoader_ErrorEncrypted;
+        case Loader::ResultStatus::ErrorMissingKeys:
+            return ResultStatus::ErrorLoader_ErrorMissingKeys;
+        case Loader::ResultStatus::ErrorDecrypting:
+            return ResultStatus::ErrorLoader_ErrorDecrypting;
         case Loader::ResultStatus::ErrorInvalidFormat:
             return ResultStatus::ErrorLoader_ErrorInvalidFormat;
         case Loader::ResultStatus::ErrorUnsupportedArch:
@@ -163,7 +166,7 @@ Cpu& System::CpuCore(size_t core_index) {
     return *cpu_cores[core_index];
 }
 
-System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
+System::ResultStatus System::Init(EmuWindow& emu_window) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
     CoreTiming::Init();
@@ -176,18 +179,19 @@ System::ResultStatus System::Init(EmuWindow* emu_window, u32 system_mode) {
         cpu_cores[index] = std::make_shared<Cpu>(cpu_exclusive_monitor, cpu_barrier, index);
     }
 
-    gpu_core = std::make_unique<Tegra::GPU>();
     telemetry_session = std::make_unique<Core::TelemetrySession>();
     service_manager = std::make_shared<Service::SM::ServiceManager>();
 
-    HW::Init();
-    Kernel::Init(system_mode);
+    Kernel::Init();
     Service::Init(service_manager);
     GDBStub::Init();
 
-    if (!VideoCore::Init(emu_window)) {
+    renderer = VideoCore::CreateRenderer(emu_window);
+    if (!renderer->Init()) {
         return ResultStatus::ErrorVideoCore;
     }
+
+    gpu_core = std::make_unique<Tegra::GPU>(renderer->Rasterizer());
 
     // Create threads for CPU cores 1-3, and build thread_to_cpu map
     // CPU core 0 is run on the main thread
@@ -220,11 +224,10 @@ void System::Shutdown() {
                          perf_results.frametime * 1000.0);
 
     // Shutdown emulation session
-    VideoCore::Shutdown();
+    renderer.reset();
     GDBStub::Shutdown();
     Service::Shutdown();
     Kernel::Shutdown();
-    HW::Shutdown();
     service_manager.reset();
     telemetry_session.reset();
     gpu_core.reset();

@@ -168,28 +168,40 @@ void FileBackend::Write(const Entry& entry) {
     SUB(Service, AM)                                                                               \
     SUB(Service, AOC)                                                                              \
     SUB(Service, APM)                                                                              \
+    SUB(Service, ARP)                                                                              \
     SUB(Service, BCAT)                                                                             \
+    SUB(Service, BPC)                                                                              \
+    SUB(Service, BTM)                                                                              \
+    SUB(Service, Capture)                                                                          \
     SUB(Service, Fatal)                                                                            \
+    SUB(Service, FGM)                                                                              \
     SUB(Service, Friend)                                                                           \
     SUB(Service, FS)                                                                               \
     SUB(Service, HID)                                                                              \
     SUB(Service, LBL)                                                                              \
     SUB(Service, LDN)                                                                              \
     SUB(Service, LM)                                                                               \
+    SUB(Service, Migration)                                                                        \
+    SUB(Service, Mii)                                                                              \
     SUB(Service, MM)                                                                               \
+    SUB(Service, NCM)                                                                              \
     SUB(Service, NFC)                                                                              \
     SUB(Service, NFP)                                                                              \
     SUB(Service, NIFM)                                                                             \
     SUB(Service, NS)                                                                               \
     SUB(Service, NVDRV)                                                                            \
+    SUB(Service, PCIE)                                                                             \
     SUB(Service, PCTL)                                                                             \
+    SUB(Service, PCV)                                                                              \
     SUB(Service, PREPO)                                                                            \
+    SUB(Service, PSC)                                                                              \
     SUB(Service, SET)                                                                              \
     SUB(Service, SM)                                                                               \
     SUB(Service, SPL)                                                                              \
     SUB(Service, SSL)                                                                              \
     SUB(Service, Time)                                                                             \
     SUB(Service, VI)                                                                               \
+    SUB(Service, WLAN)                                                                             \
     CLS(HW)                                                                                        \
     SUB(HW, Memory)                                                                                \
     SUB(HW, LCD)                                                                                   \
@@ -206,6 +218,7 @@ void FileBackend::Write(const Entry& entry) {
     CLS(Input)                                                                                     \
     CLS(Network)                                                                                   \
     CLS(Loader)                                                                                    \
+    CLS(Crypto)                                                                                    \
     CLS(WebService)
 
 // GetClassName is a macro defined by Windows.h, grrr...

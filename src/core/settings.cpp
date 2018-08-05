@@ -2,12 +2,12 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "core/core.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/settings.h"
+#include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
-
-#include "core/frontend/emu_window.h"
 
 namespace Settings {
 
@@ -20,9 +20,9 @@ void Apply() {
 
     VideoCore::g_toggle_framelimit_enabled = values.toggle_framelimit;
 
-    if (VideoCore::g_emu_window) {
-        auto layout = VideoCore::g_emu_window->GetFramebufferLayout();
-        VideoCore::g_emu_window->UpdateCurrentFramebufferLayout(layout.width, layout.height);
+    auto& system_instance = Core::System::GetInstance();
+    if (system_instance.IsPoweredOn()) {
+        system_instance.Renderer().UpdateCurrentFramebufferLayout();
     }
 
     Service::HID::ReloadInputDevices();

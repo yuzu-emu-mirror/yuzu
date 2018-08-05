@@ -35,6 +35,10 @@ set(LZ4_BUNDLED_MODE ON)
 add_subdirectory(lz4/contrib/cmake_unofficial)
 target_include_directories(lz4_static INTERFACE ./lz4/lib)
 
+# mbedtls
+add_subdirectory(mbedtls)
+target_include_directories(mbedtls PUBLIC ./mbedtls/include)
+
 # MicroProfile
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
@@ -49,4 +53,14 @@ if (ARCHITECTURE_x86_64)
     # add_library(xbyak INTERFACE)
     target_include_directories(xbyak INTERFACE ./xbyak/xbyak)
     target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
+endif()
+
+# Opus
+add_subdirectory(opus)
+target_include_directories(opus INTERFACE ./opus/include)
+
+# Cubeb
+if(ENABLE_CUBEB)
+    set(BUILD_TESTS OFF CACHE BOOL "")
+    add_subdirectory(cubeb)
 endif()
