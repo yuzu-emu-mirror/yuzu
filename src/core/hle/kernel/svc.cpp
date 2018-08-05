@@ -5,7 +5,10 @@
 #include <algorithm>
 #include <cinttypes>
 #include <iterator>
+#include <mutex>
+#include <vector>
 
+#include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/string_util.h"
@@ -17,7 +20,6 @@
 #include "core/hle/kernel/event.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/mutex.h"
-#include "core/hle/kernel/object_address_table.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/resource_limit.h"
 #include "core/hle/kernel/shared_memory.h"
@@ -265,7 +267,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     LOG_TRACE(Kernel_SVC, "called info_id=0x{:X}, info_sub_id=0x{:X}, handle=0x{:08X}", info_id,
               info_sub_id, handle);
 
-    auto& vm_manager = Core::CurrentProcess()->vm_manager;
+    const auto& vm_manager = Core::CurrentProcess()->vm_manager;
 
     switch (static_cast<GetInfoType>(info_id)) {
     case GetInfoType::AllowedCpuIdBitmask:

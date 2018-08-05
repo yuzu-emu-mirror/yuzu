@@ -8,11 +8,10 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include "audio_core/audio_out.h"
 #include "common/common_types.h"
 #include "core/arm/exclusive_monitor.h"
 #include "core/core_cpu.h"
-#include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/object.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
 #include "core/memory.h"
@@ -44,12 +43,14 @@ public:
 
     /// Enumeration representing the return values of the System Initialize and Load process.
     enum class ResultStatus : u32 {
-        Success,                    ///< Succeeded
-        ErrorNotInitialized,        ///< Error trying to use core prior to initialization
-        ErrorGetLoader,             ///< Error finding the correct application loader
-        ErrorSystemMode,            ///< Error determining the system mode
-        ErrorLoader,                ///< Error loading the specified application
-        ErrorLoader_ErrorEncrypted, ///< Error loading the specified application due to encryption
+        Success,                      ///< Succeeded
+        ErrorNotInitialized,          ///< Error trying to use core prior to initialization
+        ErrorGetLoader,               ///< Error finding the correct application loader
+        ErrorSystemMode,              ///< Error determining the system mode
+        ErrorLoader,                  ///< Error loading the specified application
+        ErrorLoader_ErrorMissingKeys, ///< Error because the key/keys needed to run could not be
+                                      ///< found.
+        ErrorLoader_ErrorDecrypting,  ///< Error loading the specified application due to encryption
         ErrorLoader_ErrorInvalidFormat, ///< Error loading the specified application due to an
                                         /// invalid format
         ErrorSystemFiles,               ///< Error in finding system files
@@ -82,11 +83,12 @@ public:
 
     /**
      * Load an executable application.
-     * @param emu_window Pointer to the host-system window used for video output and keyboard input.
+     * @param emu_window Reference to the host-system window used for video output and keyboard
+     *                   input.
      * @param filepath String path to the executable application to load on the host file system.
      * @returns ResultStatus code, indicating if the operation succeeded.
      */
-    ResultStatus Load(EmuWindow* emu_window, const std::string& filepath);
+    ResultStatus Load(EmuWindow& emu_window, const std::string& filepath);
 
     /**
      * Indicates if the emulated system is powered on (all subsystems initialized and able to run an
@@ -130,11 +132,6 @@ public:
     /// Gets the GPU interface
     Tegra::GPU& GPU() {
         return *gpu_core;
-    }
-
-    /// Gets the AudioCore interface
-    AudioCore::AudioOut& AudioCore() {
-        return *audio_core;
     }
 
     /// Gets the scheduler for the CPU core that is currently running
@@ -192,16 +189,15 @@ private:
 
     /**
      * Initialize the emulated system.
-     * @param emu_window Pointer to the host-system window used for video output and keyboard input.
-     * @param system_mode The system mode.
+     * @param emu_window Reference to the host-system window used for video output and keyboard
+     *                   input.
      * @return ResultStatus code, indicating if the operation succeeded.
      */
-    ResultStatus Init(EmuWindow* emu_window, u32 system_mode);
+    ResultStatus Init(EmuWindow& emu_window);
 
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
     std::unique_ptr<Tegra::GPU> gpu_core;
-    std::unique_ptr<AudioCore::AudioOut> audio_core;
     std::shared_ptr<Tegra::DebugContext> debug_context;
     Kernel::SharedPtr<Kernel::Process> current_process;
     std::shared_ptr<ExclusiveMonitor> cpu_exclusive_monitor;

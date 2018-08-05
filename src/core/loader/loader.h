@@ -14,7 +14,7 @@
 #include "common/common_types.h"
 #include "common/file_util.h"
 #include "core/file_sys/vfs.h"
-#include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/object.h"
 
 namespace Kernel {
 struct AddressMapping;
@@ -31,6 +31,7 @@ enum class FileType {
     NSO,
     NRO,
     NCA,
+    XCI,
     DeconstructedRomDirectory,
 };
 
@@ -72,7 +73,8 @@ enum class ResultStatus {
     ErrorNotUsed,
     ErrorAlreadyLoaded,
     ErrorMemoryAllocationFailed,
-    ErrorEncrypted,
+    ErrorMissingKeys,
+    ErrorDecrypting,
     ErrorUnsupportedArch,
 };
 

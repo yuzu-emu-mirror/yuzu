@@ -3,10 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <utility>
+
+#include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/kernel/errors.h"
-#include "core/hle/kernel/memory.h"
 #include "core/hle/kernel/shared_memory.h"
 #include "core/memory.h"
 
@@ -28,35 +29,17 @@ SharedPtr<SharedMemory> SharedMemory::Create(SharedPtr<Process> owner_process, u
     shared_memory->other_permissions = other_permissions;
 
     if (address == 0) {
-        // We need to allocate a block from the Linear Heap ourselves.
-        // We'll manually allocate some memory from the linear heap in the specified region.
-        MemoryRegionInfo* memory_region = GetMemoryRegion(region);
-        auto& linheap_memory = memory_region->linear_heap_memory;
-
-        ASSERT_MSG(linheap_memory->size() + size <= memory_region->size,
-                   "Not enough space in region to allocate shared memory!");
-
-        shared_memory->backing_block = linheap_memory;
-        shared_memory->backing_block_offset = linheap_memory->size();
-        // Allocate some memory from the end of the linear heap for this region.
-        linheap_memory->insert(linheap_memory->end(), size, 0);
-        memory_region->used += size;
-
-        shared_memory->linear_heap_phys_address =
-            Memory::FCRAM_PADDR + memory_region->base +
-            static_cast<PAddr>(shared_memory->backing_block_offset);
-
-        // Increase the amount of used linear heap memory for the owner process.
-        if (shared_memory->owner_process != nullptr) {
-            shared_memory->owner_process->linear_heap_used += size;
-        }
+        shared_memory->backing_block = std::make_shared<std::vector<u8>>(size);
+        shared_memory->backing_block_offset = 0;
 
         // Refresh the address mappings for the current process.
         if (Core::CurrentProcess() != nullptr) {
-            Core::CurrentProcess()->vm_manager.RefreshMemoryBlockMappings(linheap_memory.get());
+            Core::CurrentProcess()->vm_manager.RefreshMemoryBlockMappings(
+                shared_memory->backing_block.get());
         }
     } else {
         auto& vm_manager = shared_memory->owner_process->vm_manager;
+
         // The memory is already available and mapped in the owner process.
         auto vma = vm_manager.FindVMA(address);
         ASSERT_MSG(vma != vm_manager.vma_map.end(), "Invalid memory address");
@@ -72,6 +55,7 @@ SharedPtr<SharedMemory> SharedMemory::Create(SharedPtr<Process> owner_process, u
     }
 
     shared_memory->base_address = address;
+
     return shared_memory;
 }
 
@@ -121,11 +105,6 @@ ResultCode SharedMemory::Map(Process* target_process, VAddr address, MemoryPermi
     }
 
     VAddr target_address = address;
-
-    if (base_address == 0 && target_address == 0) {
-        // Calculate the address at which to map the memory block.
-        target_address = Memory::PhysicalToVirtualAddress(linear_heap_phys_address).value();
-    }
 
     // Map the memory block into the target process
     auto result = target_process->vm_manager.MapMemoryBlock(

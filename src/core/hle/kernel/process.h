@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <bitset>
 #include <cstddef>
 #include <memory>
@@ -12,7 +13,7 @@
 #include <boost/container/static_vector.hpp>
 #include "common/bit_field.h"
 #include "common/common_types.h"
-#include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/object.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/kernel/vm_manager.h"
 
@@ -53,9 +54,14 @@ union ProcessFlags {
 enum class ProcessStatus { Created, Running, Exited };
 
 class ResourceLimit;
-struct MemoryRegionInfo;
 
 struct CodeSet final : public Object {
+    struct Segment {
+        size_t offset = 0;
+        VAddr addr = 0;
+        u32 size = 0;
+    };
+
     static SharedPtr<CodeSet> Create(std::string name);
 
     std::string GetTypeName() const override {
@@ -70,23 +76,37 @@ struct CodeSet final : public Object {
         return HANDLE_TYPE;
     }
 
-    /// Name of the process
-    std::string name;
+    Segment& CodeSegment() {
+        return segments[0];
+    }
+
+    const Segment& CodeSegment() const {
+        return segments[0];
+    }
+
+    Segment& RODataSegment() {
+        return segments[1];
+    }
+
+    const Segment& RODataSegment() const {
+        return segments[1];
+    }
+
+    Segment& DataSegment() {
+        return segments[2];
+    }
+
+    const Segment& DataSegment() const {
+        return segments[2];
+    }
 
     std::shared_ptr<std::vector<u8>> memory;
 
-    struct Segment {
-        size_t offset = 0;
-        VAddr addr = 0;
-        u32 size = 0;
-    };
-
-    Segment segments[3];
-    Segment& code = segments[0];
-    Segment& rodata = segments[1];
-    Segment& data = segments[2];
-
+    std::array<Segment, 3> segments;
     VAddr entrypoint;
+
+    /// Name of the process
+    std::string name;
 
 private:
     CodeSet();
@@ -163,12 +183,11 @@ public:
     // This makes deallocation and reallocation of holes fast and keeps process memory contiguous
     // in the emulator address space, allowing Memory::GetPointer to be reasonably safe.
     std::shared_ptr<std::vector<u8>> heap_memory;
+
     // The left/right bounds of the address space covered by heap_memory.
-    VAddr heap_start = 0, heap_end = 0;
-
-    u64 heap_used = 0, linear_heap_used = 0, misc_memory_used = 0;
-
-    MemoryRegionInfo* memory_region = nullptr;
+    VAddr heap_start = 0;
+    VAddr heap_end = 0;
+    u64 heap_used = 0;
 
     /// The Thread Local Storage area is allocated as processes create threads,
     /// each TLS area is 0x200 bytes, so one page (0x1000) is split up in 8 parts, and each part
@@ -179,15 +198,8 @@ public:
 
     std::string name;
 
-    VAddr GetLinearHeapAreaAddress() const;
-    VAddr GetLinearHeapBase() const;
-    VAddr GetLinearHeapLimit() const;
-
     ResultVal<VAddr> HeapAllocate(VAddr target, u64 size, VMAPermission perms);
     ResultCode HeapFree(VAddr target, u32 size);
-
-    ResultVal<VAddr> LinearAllocate(VAddr target, u32 size, VMAPermission perms);
-    ResultCode LinearFree(VAddr target, u32 size);
 
     ResultCode MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size);
 

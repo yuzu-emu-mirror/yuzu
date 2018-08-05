@@ -4,8 +4,11 @@
 
 #include <algorithm>
 #include <cinttypes>
-#include <list>
 #include <vector>
+
+#include <boost/optional.hpp>
+#include <boost/range/algorithm_ext/erase.hpp>
+
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -17,9 +20,7 @@
 #include "core/core_timing_util.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
-#include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/memory.h"
-#include "core/hle/kernel/mutex.h"
+#include "core/hle/kernel/object.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/result.h"
@@ -79,8 +80,8 @@ void Thread::Stop() {
     wait_objects.clear();
 
     // Mark the TLS slot in the thread's page as free.
-    u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
-    u64 tls_slot =
+    const u64 tls_page = (tls_address - Memory::TLS_AREA_VADDR) / Memory::PAGE_SIZE;
+    const u64 tls_slot =
         ((tls_address - Memory::TLS_AREA_VADDR) % Memory::PAGE_SIZE) / Memory::TLS_ENTRY_SIZE;
     Core::CurrentProcess()->tls_slots[tls_page].reset(tls_slot);
 }
@@ -250,13 +251,14 @@ void Thread::ResumeFromWait() {
  * slot: The index of the first free slot in the indicated page.
  * alloc_needed: Whether there's a need to allocate a new TLS page (All pages are full).
  */
-std::tuple<u32, u32, bool> GetFreeThreadLocalSlot(std::vector<std::bitset<8>>& tls_slots) {
+static std::tuple<std::size_t, std::size_t, bool> GetFreeThreadLocalSlot(
+    const std::vector<std::bitset<8>>& tls_slots) {
     // Iterate over all the allocated pages, and try to find one where not all slots are used.
-    for (unsigned page = 0; page < tls_slots.size(); ++page) {
+    for (std::size_t page = 0; page < tls_slots.size(); ++page) {
         const auto& page_tls_slots = tls_slots[page];
         if (!page_tls_slots.all()) {
             // We found a page with at least one free slot, find which slot it is
-            for (unsigned slot = 0; slot < page_tls_slots.size(); ++slot) {
+            for (std::size_t slot = 0; slot < page_tls_slots.size(); ++slot) {
                 if (!page_tls_slots.test(slot)) {
                     return std::make_tuple(page, slot, false);
                 }
@@ -331,42 +333,22 @@ ResultVal<SharedPtr<Thread>> Thread::Create(std::string name, VAddr entry_point,
 
     // Find the next available TLS index, and mark it as used
     auto& tls_slots = owner_process->tls_slots;
-    bool needs_allocation = true;
-    u32 available_page; // Which allocated page has free space
-    u32 available_slot; // Which slot within the page is free
 
-    std::tie(available_page, available_slot, needs_allocation) = GetFreeThreadLocalSlot(tls_slots);
-
+    auto [available_page, available_slot, needs_allocation] = GetFreeThreadLocalSlot(tls_slots);
     if (needs_allocation) {
-        // There are no already-allocated pages with free slots, lets allocate a new one.
-        // TLS pages are allocated from the BASE region in the linear heap.
-        MemoryRegionInfo* memory_region = GetMemoryRegion(MemoryRegion::BASE);
-        auto& linheap_memory = memory_region->linear_heap_memory;
-
-        if (linheap_memory->size() + Memory::PAGE_SIZE > memory_region->size) {
-            LOG_ERROR(Kernel_SVC,
-                      "Not enough space in region to allocate a new TLS page for thread");
-            return ERR_OUT_OF_MEMORY;
-        }
-
-        size_t offset = linheap_memory->size();
-
-        // Allocate some memory from the end of the linear heap for this region.
-        linheap_memory->insert(linheap_memory->end(), Memory::PAGE_SIZE, 0);
-        memory_region->used += Memory::PAGE_SIZE;
-        owner_process->linear_heap_used += Memory::PAGE_SIZE;
-
         tls_slots.emplace_back(0); // The page is completely available at the start
-        available_page = static_cast<u32>(tls_slots.size() - 1);
+        available_page = tls_slots.size() - 1;
         available_slot = 0; // Use the first slot in the new page
 
-        auto& vm_manager = owner_process->vm_manager;
-        vm_manager.RefreshMemoryBlockMappings(linheap_memory.get());
+        // Allocate some memory from the end of the linear heap for this region.
+        const size_t offset = thread->tls_memory->size();
+        thread->tls_memory->insert(thread->tls_memory->end(), Memory::PAGE_SIZE, 0);
 
-        // Map the page to the current process' address space.
-        // TODO(Subv): Find the correct MemoryState for this region.
+        auto& vm_manager = owner_process->vm_manager;
+        vm_manager.RefreshMemoryBlockMappings(thread->tls_memory.get());
+
         vm_manager.MapMemoryBlock(Memory::TLS_AREA_VADDR + available_page * Memory::PAGE_SIZE,
-                                  linheap_memory, offset, Memory::PAGE_SIZE,
+                                  thread->tls_memory, 0, Memory::PAGE_SIZE,
                                   MemoryState::ThreadLocal);
     }
 

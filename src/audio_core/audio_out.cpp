@@ -3,13 +3,16 @@
 // Refer to the license.txt file included.
 
 #include "audio_core/audio_out.h"
+#include "audio_core/sink.h"
+#include "audio_core/sink_details.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/settings.h"
 
 namespace AudioCore {
 
 /// Returns the stream format from the specified number of channels
-static Stream::Format ChannelsToStreamFormat(int num_channels) {
+static Stream::Format ChannelsToStreamFormat(u32 num_channels) {
     switch (num_channels) {
     case 1:
         return Stream::Format::Mono16;
@@ -24,14 +27,19 @@ static Stream::Format ChannelsToStreamFormat(int num_channels) {
     return {};
 }
 
-StreamPtr AudioOut::OpenStream(int sample_rate, int num_channels,
+StreamPtr AudioOut::OpenStream(u32 sample_rate, u32 num_channels,
                                Stream::ReleaseCallback&& release_callback) {
-    streams.push_back(std::make_shared<Stream>(sample_rate, ChannelsToStreamFormat(num_channels),
-                                               std::move(release_callback)));
-    return streams.back();
+    if (!sink) {
+        const SinkDetails& sink_details = GetSinkDetails(Settings::values.sink_id);
+        sink = sink_details.factory(Settings::values.audio_device_id);
+    }
+
+    return std::make_shared<Stream>(sample_rate, ChannelsToStreamFormat(num_channels),
+                                    std::move(release_callback),
+                                    sink->AcquireSinkStream(sample_rate, num_channels));
 }
 
-std::vector<u64> AudioOut::GetTagsAndReleaseBuffers(StreamPtr stream, size_t max_count) {
+std::vector<Buffer::Tag> AudioOut::GetTagsAndReleaseBuffers(StreamPtr stream, size_t max_count) {
     return stream->GetTagsAndReleaseBuffers(max_count);
 }
 

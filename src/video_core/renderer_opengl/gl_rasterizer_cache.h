@@ -48,16 +48,17 @@ struct SurfaceParams {
         RG16UI = 23,
         RG16I = 24,
         RG16S = 25,
-        SRGBA8 = 26,
+        RGB32F = 26,
+        SRGBA8 = 27,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 27,
-        S8Z24 = 28,
-        Z32F = 29,
-        Z16 = 30,
-        Z32FS8 = 31,
+        Z24S8 = 28,
+        S8Z24 = 29,
+        Z32F = 30,
+        Z16 = 31,
+        Z32FS8 = 32,
 
         MaxDepthStencilFormat,
 
@@ -121,6 +122,7 @@ struct SurfaceParams {
             1, // RG16UI
             1, // RG16I
             1, // RG16S
+            1, // RGB32F
             1, // SRGBA8
             1, // Z24S8
             1, // S8Z24
@@ -164,6 +166,7 @@ struct SurfaceParams {
             32,  // RG16UI
             32,  // RG16I
             32,  // RG16S
+            96,  // RGB32F
             32,  // SRGBA8
             32,  // Z24S8
             32,  // S8Z24
@@ -232,6 +235,8 @@ struct SurfaceParams {
             return PixelFormat::RG16S;
         case Tegra::RenderTargetFormat::R16_FLOAT:
             return PixelFormat::R16F;
+        case Tegra::RenderTargetFormat::R32_FLOAT:
+            return PixelFormat::R32F;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
@@ -270,6 +275,8 @@ struct SurfaceParams {
             UNREACHABLE();
         case Tegra::Texture::TextureFormat::R32_G32:
             return PixelFormat::RG32F;
+        case Tegra::Texture::TextureFormat::R32_G32_B32:
+            return PixelFormat::RGB32F;
         case Tegra::Texture::TextureFormat::R16:
             switch (component_type) {
             case Tegra::Texture::ComponentType::FLOAT:
@@ -361,6 +368,8 @@ struct SurfaceParams {
             return Tegra::Texture::TextureFormat::A8R8G8B8;
         case PixelFormat::RGBA32F:
             return Tegra::Texture::TextureFormat::R32_G32_B32_A32;
+        case PixelFormat::RGB32F:
+            return Tegra::Texture::TextureFormat::R32_G32_B32;
         case PixelFormat::RG32F:
             return Tegra::Texture::TextureFormat::R32_G32;
         case PixelFormat::R32F:
@@ -439,6 +448,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RG32_FLOAT:
         case Tegra::RenderTargetFormat::RG16_FLOAT:
         case Tegra::RenderTargetFormat::R16_FLOAT:
+        case Tegra::RenderTargetFormat::R32_FLOAT:
             return ComponentType::Float;
         case Tegra::RenderTargetFormat::RGBA32_UINT:
         case Tegra::RenderTargetFormat::RG16_UINT:

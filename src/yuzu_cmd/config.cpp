@@ -105,6 +105,11 @@ void Config::ReadValues() {
     Settings::values.bg_green = (float)sdl2_config->GetReal("Renderer", "bg_green", 0.0);
     Settings::values.bg_blue = (float)sdl2_config->GetReal("Renderer", "bg_blue", 0.0);
 
+    // Audio
+    Settings::values.sink_id = sdl2_config->Get("Audio", "output_engine", "auto");
+    Settings::values.audio_device_id = sdl2_config->Get("Audio", "output_device", "auto");
+    Settings::values.volume = sdl2_config->GetReal("Audio", "volume", 1);
+
     // Data Storage
     Settings::values.use_virtual_sd =
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
@@ -114,6 +119,7 @@ void Config::ReadValues() {
 
     // Miscellaneous
     Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
+    Settings::values.use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
 
     // Debugging
     Settings::values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
