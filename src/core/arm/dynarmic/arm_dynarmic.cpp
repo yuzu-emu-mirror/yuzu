@@ -10,6 +10,7 @@
 #include "core/arm/dynarmic/arm_dynarmic.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
@@ -131,10 +132,22 @@ std::unique_ptr<Dynarmic::A64::Jit> ARM_Dynarmic::MakeJit() const {
 void ARM_Dynarmic::Run() {
     ASSERT(Memory::GetCurrentPageTable() == current_page_table);
 
+    if (GDBStub::IsServerEnabled()) {
+        if (!GDBStub::GetInstCacheValidity()) {
+            ClearInstructionCache();
+        }
+    }
+
     jit->Run();
 }
 
 void ARM_Dynarmic::Step() {
+    if (GDBStub::IsServerEnabled()) {
+        if (!GDBStub::GetInstCacheValidity()) {
+            ClearInstructionCache();
+        }
+    }
+
     cb->InterpreterFallback(jit->GetPC(), 1);
 }
 
