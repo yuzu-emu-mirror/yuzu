@@ -31,10 +31,6 @@
 #endif
 
 #include "common/logging/log.h"
-//#undef LOG_DEBUG
-//#undef LOG_INFO
-//#define LOG_DEBUG LOG_ERROR
-//#define LOG_INFO LOG_ERROR
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/arm/arm_interface.h"
@@ -178,7 +174,7 @@ struct Breakpoint {
     bool active;
     VAddr addr;
     u64 len;
-    u8 old[4];
+    u8 instr[4];
 };
 
 using BreakpointMap = std::map<VAddr, Breakpoint>;
@@ -459,7 +455,7 @@ static void RemoveBreakpoint(BreakpointType type, VAddr addr) {
 
         LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
                   bp->second.len, bp->second.addr, static_cast<int>(type));
-        Memory::WriteBlock(bp->second.addr, bp->second.old, 4);
+        Memory::WriteBlock(bp->second.addr, bp->second.instr, 4);
         GDBStub::SetInstCacheValidity(false);
         p.erase(addr);
     }
@@ -999,7 +995,7 @@ static bool CommitBreakpoint(BreakpointType type, VAddr addr, u64 len) {
     breakpoint.active = true;
     breakpoint.addr = addr;
     breakpoint.len = len;
-    Memory::ReadBlock(addr, breakpoint.old, 4);
+    Memory::ReadBlock(addr, breakpoint.instr, 4);
     static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
     Memory::WriteBlock(addr, btrap, 4);
     GDBStub::SetInstCacheValidity(false);
