@@ -160,7 +160,7 @@ u16 gdbstub_port = 24689;
 bool halt_loop = true;
 bool step_loop = false;
 bool send_trap = false;
-static bool inst_cache_valid = true;
+bool inst_cache_valid = true;
 
 // If set to false, the server will never be started and no
 // gdbstub-related functions will be executed.
@@ -174,7 +174,7 @@ struct Breakpoint {
     bool active;
     VAddr addr;
     u64 len;
-    u8 instr[4];
+    u8 inst[4];
 };
 
 using BreakpointMap = std::map<VAddr, Breakpoint>;
@@ -453,12 +453,12 @@ static void RemoveBreakpoint(BreakpointType type, VAddr addr) {
         return;
     }
 
-        LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
-                  bp->second.len, bp->second.addr, static_cast<int>(type));
-        Memory::WriteBlock(bp->second.addr, bp->second.instr, 4);
-        GDBStub::SetInstCacheValidity(false);
-        p.erase(addr);
-    }
+    LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
+              bp->second.len, bp->second.addr, static_cast<int>(type));
+    Memory::WriteBlock(bp->second.addr, bp->second.inst, 4);
+    GDBStub::SetInstCacheValidity(false);
+    p.erase(addr);
+}
 
 BreakpointAddress GetNextBreakpointFromAddress(VAddr addr, BreakpointType type) {
     const BreakpointMap& p = GetBreakpointMap(type);
@@ -488,27 +488,27 @@ bool CheckBreakpoint(VAddr addr, BreakpointType type) {
         return false;
     }
 
-        u64 len = bp->second.len;
+    u64 len = bp->second.len;
 
-        // IDA Pro defaults to 4-byte breakpoints for all non-hardware breakpoints
-        // no matter if it's a 4-byte or 2-byte instruction. When you execute a
-        // Thumb instruction with a 4-byte breakpoint set, it will set a breakpoint on
-        // two instructions instead of the single instruction you placed the breakpoint
-        // on. So, as a way to make sure that execution breakpoints are only breaking
-        // on the instruction that was specified, set the length of an execution
-        // breakpoint to 1. This should be fine since the CPU should never begin executing
-        // an instruction anywhere except the beginning of the instruction.
-        if (type == BreakpointType::Execute) {
-            len = 1;
-        }
+    // IDA Pro defaults to 4-byte breakpoints for all non-hardware breakpoints
+    // no matter if it's a 4-byte or 2-byte instruction. When you execute a
+    // Thumb instruction with a 4-byte breakpoint set, it will set a breakpoint on
+    // two instructions instead of the single instruction you placed the breakpoint
+    // on. So, as a way to make sure that execution breakpoints are only breaking
+    // on the instruction that was specified, set the length of an execution
+    // breakpoint to 1. This should be fine since the CPU should never begin executing
+    // an instruction anywhere except the beginning of the instruction.
+    if (type == BreakpointType::Execute) {
+        len = 1;
+    }
 
-        if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
-            LOG_DEBUG(Debug_GDBStub,
-                      "Found breakpoint type {} @ {:016X}, range: {:016X}"
-                      " - {:016X} ({:X} bytes)",
-                      static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
-            return true;
-        }
+    if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
+        LOG_DEBUG(Debug_GDBStub,
+                  "Found breakpoint type {} @ {:016X}, range: {:016X}"
+                  " - {:016X} ({:X} bytes)",
+                  static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
+        return true;
+    }
 
     return false;
 }
@@ -995,7 +995,7 @@ static bool CommitBreakpoint(BreakpointType type, VAddr addr, u64 len) {
     breakpoint.active = true;
     breakpoint.addr = addr;
     breakpoint.len = len;
-    Memory::ReadBlock(addr, breakpoint.instr, 4);
+    Memory::ReadBlock(addr, breakpoint.inst, 4);
     static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
     Memory::WriteBlock(addr, btrap, 4);
     GDBStub::SetInstCacheValidity(false);
