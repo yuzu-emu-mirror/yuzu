@@ -160,7 +160,7 @@ u16 gdbstub_port = 24689;
 bool halt_loop = true;
 bool step_loop = false;
 bool send_trap = false;
-static bool inst_cache_valid = true;
+bool inst_cache_valid = true;
 
 // If set to false, the server will never be started and no
 // gdbstub-related functions will be executed.
