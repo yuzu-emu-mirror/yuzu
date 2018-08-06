@@ -82,6 +82,17 @@ public:
      */
     ResultStatus SingleStep();
 
+    /**
+     * Invalidate the CPU instruction caches
+     * This function should only be used by GDBStub which is supposed to keep things
+     * synch'ed to its internal instruction cache validity flag.
+     */
+    void InvalidateCpuInstructionCaches() {
+        for (auto& cpu : cpu_cores) {
+            cpu->ArmInterface().ClearInstructionCache();
+        }
+    }
+
     /// Shutdown the emulated system.
     void Shutdown();
 
