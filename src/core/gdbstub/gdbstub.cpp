@@ -1317,8 +1317,11 @@ void SendTrap(Kernel::Thread* thread, int trap) {
     }
 }
 
-void SetInstCacheValidity(bool validity) {
-    inst_cache_valid = validity;
+void SetInstCacheValidity(bool is_valid) {
+    inst_cache_valid = is_valid;
+    if (!inst_cache_valid) {
+        Core::System::GetInstance().InvalidateCpuInstructionCaches();
+    }
 }
 
 bool GetInstCacheValidity() {

@@ -106,7 +106,7 @@ void SetCpuStepFlag(bool is_step);
 void SendTrap(Kernel::Thread* thread, int trap);
 
 /// Set instruction cache validity.
-void SetInstCacheValidity(bool validity);
+void SetInstCacheValidity(bool is_valid);
 
 /// Get instruction cache validity.
 bool GetInstCacheValidity();

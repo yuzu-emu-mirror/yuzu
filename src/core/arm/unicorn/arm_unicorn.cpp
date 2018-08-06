@@ -195,46 +195,12 @@ MICROPROFILE_DEFINE(ARM_Jit, "ARM JIT", "ARM JIT", MP_RGB(255, 64, 64));
 
 void ARM_Unicorn::ExecuteInstructions(int num_instructions) {
     MICROPROFILE_SCOPE(ARM_Jit);
-    // if (GDBStub::IsServerEnabled()) {
-    //    GDBStub::BreakpointAddress bkpt;
-    //    bkpt.address = GetPC();
-    //    bkpt.type = GDBStub::BreakpointType::Execute;
-    //    u8 opcode[4];
-    //    Memory::ReadBlock(bkpt.address, opcode, 4);
-    //    static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
-    //    if (memcmp(opcode, btrap, 4) == 0) {
-    //        if(!last_bkpt_hit)
-    //        {
-    //            LOG_ERROR(Debug_GDBStub, "btrap detected at {:16x}!", bkpt.address);
-    //            RecordBreak(bkpt);
-    //            uc_emu_stop(uc);
-    //        }
-    //    }
-    //}
     CHECKED(uc_emu_start(uc, GetPC(), 1ULL << 63, 0, num_instructions));
     CoreTiming::AddTicks(num_instructions);
     if (GDBStub::IsServerEnabled()) {
         if (last_bkpt_hit) {
             uc_reg_write(uc, UC_ARM64_REG_PC, &last_bkpt.address);
         }
-        // else
-        //{
-        //    GDBStub::BreakpointAddress bkpt;
-        //    bkpt.address = GetPC();
-        //    bkpt.type = GDBStub::BreakpointType::Execute;
-        //    u8 opcode[4];
-        //    Memory::ReadBlock(bkpt.address, opcode, 4);
-        //    static const u8 btrap[] = {0xd4, 0x20, 0x7d, 0x00};
-        //    if(memcmp(opcode, btrap, 4) == 0)
-        //    {
-        //        if(!last_bkpt_hit)
-        //        {
-        //            LOG_ERROR(Debug_GDBStub, "btrap detected at {:16x}!", bkpt.address);
-        //            RecordBreak(bkpt);
-        //            uc_emu_stop(uc);
-        //        }
-        //    }
-        //}
         Kernel::Thread* thread = Kernel::GetCurrentThread();
         SaveContext(thread->context);
         if (last_bkpt_hit || GDBStub::GetCpuStepFlag()) {
