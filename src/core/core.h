@@ -83,7 +83,7 @@ public:
     ResultStatus SingleStep();
 
     /**
-     * Invalidate CPU instruction caches
+     * Invalidate the CPU instruction caches
      * This function should only be used by GDBStub which is supposed to keep things
      * synch'ed to its internal instruction cache validity flag.
      */
