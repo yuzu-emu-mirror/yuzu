@@ -201,7 +201,6 @@ struct SurfaceParams {
     static PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) {
         switch (format) {
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
-            return PixelFormat::SRGBA8;
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
             return PixelFormat::ABGR8;
         case Tegra::RenderTargetFormat::BGRA8_UNORM:
