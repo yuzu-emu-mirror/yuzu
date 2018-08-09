@@ -155,7 +155,7 @@ struct SurfaceParams {
             128, // DXT23
             128, // DXT45
             64,  // DXN1
-            128,  // DXN2
+            128, // DXN2
             128, // BC7U
             32,  // ASTC_2D_4X4
             16,  // G8R8

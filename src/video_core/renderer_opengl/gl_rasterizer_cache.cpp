@@ -243,7 +243,8 @@ static constexpr std::array<void (*)(u32, u32, u32, u8*, Tegra::GPUVAddr),
         MortonCopy<false, PixelFormat::RGBA16F>,
         MortonCopy<false, PixelFormat::R11FG11FB10F>,
         MortonCopy<false, PixelFormat::RGBA32UI>,
-        // TODO(Subv): Swizzling DXT1/DXT23/DXT45/DXN1/DXN2/BC7U/ASTC_2D_4X4 formats is not supported
+        // TODO(Subv): Swizzling DXT1/DXT23/DXT45/DXN1/DXN2/BC7U/ASTC_2D_4X4 formats is not
+        // supported
         nullptr,
         nullptr,
         nullptr,
