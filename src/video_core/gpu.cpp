@@ -44,6 +44,9 @@ u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
     case RenderTargetFormat::R32_FLOAT:
     case RenderTargetFormat::R11G11B10_FLOAT:
         return 4;
+    case RenderTargetFormat::R8_UNORM:
+    case RenderTargetFormat::R8_UINT:
+        return 1;
     default:
         UNIMPLEMENTED_MSG("Unimplemented render target format {}", static_cast<u32>(format));
     }
