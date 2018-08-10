@@ -250,6 +250,7 @@ struct SurfaceParams {
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
+            return PixelFormat::ABGR8U;
         }
     }
 
