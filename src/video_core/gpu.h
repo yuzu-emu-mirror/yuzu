@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <unordered_map>
-#include <vector>
 #include "common/common_types.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
 #include "video_core/memory_manager.h"
@@ -35,6 +34,10 @@ enum class RenderTargetFormat : u32 {
     R11G11B10_FLOAT = 0xE0,
     R32_FLOAT = 0xE5,
     B5G6R5_UNORM = 0xE8,
+    R16_UNORM = 0xEE,
+    R16_SNORM = 0xEF,
+    R16_SINT = 0xF0,
+    R16_UINT = 0xF1,
     R16_FLOAT = 0xF2,
     R8_UNORM = 0xF3,
     R8_UINT = 0xF6,
@@ -53,6 +56,9 @@ enum class DepthFormat : u32 {
 /// Returns the number of bytes per pixel of each rendertarget format.
 u32 RenderTargetBytesPerPixel(RenderTargetFormat format);
 
+/// Returns the number of bytes per pixel of each depth format.
+u32 DepthFormatBytesPerPixel(DepthFormat format);
+
 class DebugContext;
 
 /**
@@ -66,14 +72,7 @@ struct FramebufferConfig {
     /**
      * Returns the number of bytes per pixel.
      */
-    static u32 BytesPerPixel(PixelFormat format) {
-        switch (format) {
-        case PixelFormat::ABGR8:
-            return 4;
-        }
-
-        UNREACHABLE();
-    }
+    static u32 BytesPerPixel(PixelFormat format);
 
     VAddr address;
     u32 offset;

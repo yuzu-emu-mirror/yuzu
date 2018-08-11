@@ -47,22 +47,25 @@ struct SurfaceParams {
         R32F = 21,
         R16F = 22,
         R16UNORM = 23,
-        RG16 = 24,
-        RG16F = 25,
-        RG16UI = 26,
-        RG16I = 27,
-        RG16S = 28,
-        RGB32F = 29,
-        SRGBA8 = 30,
+        R16S = 24,
+        R16UI = 25,
+        R16I = 26,
+        RG16 = 27,
+        RG16F = 28,
+        RG16UI = 29,
+        RG16I = 30,
+        RG16S = 31,
+        RGB32F = 32,
+        SRGBA8 = 33,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 31,
-        S8Z24 = 32,
-        Z32F = 33,
-        Z16 = 34,
-        Z32FS8 = 35,
+        Z24S8 = 34,
+        S8Z24 = 35,
+        Z32F = 36,
+        Z16 = 37,
+        Z32FS8 = 38,
 
         MaxDepthStencilFormat,
 
@@ -124,6 +127,9 @@ struct SurfaceParams {
             1, // R32F
             1, // R16F
             1, // R16UNORM
+            1, // R16S
+            1, // R16UI
+            1, // R16I
             1, // RG16
             1, // RG16F
             1, // RG16UI
@@ -171,6 +177,9 @@ struct SurfaceParams {
             32,  // R32F
             16,  // R16F
             16,  // R16UNORM
+            16,  // R16S
+            16,  // R16UI
+            16,  // R16I
             32,  // RG16
             32,  // RG16F
             32,  // RG16UI
@@ -250,6 +259,14 @@ struct SurfaceParams {
             return PixelFormat::RG16S;
         case Tegra::RenderTargetFormat::R16_FLOAT:
             return PixelFormat::R16F;
+        case Tegra::RenderTargetFormat::R16_UNORM:
+            return PixelFormat::R16UNORM;
+        case Tegra::RenderTargetFormat::R16_SNORM:
+            return PixelFormat::R16S;
+        case Tegra::RenderTargetFormat::R16_UINT:
+            return PixelFormat::R16UI;
+        case Tegra::RenderTargetFormat::R16_SINT:
+            return PixelFormat::R16I;
         case Tegra::RenderTargetFormat::R32_FLOAT:
             return PixelFormat::R32F;
         default:
@@ -306,6 +323,12 @@ struct SurfaceParams {
                 return PixelFormat::R16F;
             case Tegra::Texture::ComponentType::UNORM:
                 return PixelFormat::R16UNORM;
+            case Tegra::Texture::ComponentType::SNORM:
+                return PixelFormat::R16S;
+            case Tegra::Texture::ComponentType::UINT:
+                return PixelFormat::R16UI;
+            case Tegra::Texture::ComponentType::SINT:
+                return PixelFormat::R16I;
             }
             LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}",
                          static_cast<u32>(component_type));
@@ -389,9 +412,11 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
         case Tegra::RenderTargetFormat::R8_UNORM:
         case Tegra::RenderTargetFormat::RG16_UNORM:
+        case Tegra::RenderTargetFormat::R16_UNORM:
         case Tegra::RenderTargetFormat::B5G6R5_UNORM:
             return ComponentType::UNorm;
         case Tegra::RenderTargetFormat::RG16_SNORM:
+        case Tegra::RenderTargetFormat::R16_SNORM:
             return ComponentType::SNorm;
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
         case Tegra::RenderTargetFormat::R11G11B10_FLOAT:
@@ -404,8 +429,10 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::RGBA32_UINT:
         case Tegra::RenderTargetFormat::RG16_UINT:
         case Tegra::RenderTargetFormat::R8_UINT:
+        case Tegra::RenderTargetFormat::R16_UINT:
             return ComponentType::UInt;
         case Tegra::RenderTargetFormat::RG16_SINT:
+        case Tegra::RenderTargetFormat::R16_SINT:
             return ComponentType::SInt;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
