@@ -14,7 +14,7 @@
 #include "core/hle/kernel/timer.h"
 #include "core/hle/kernel/wait_object.h"
 
-WaitTreeItem::~WaitTreeItem() {}
+WaitTreeItem::~WaitTreeItem() = default;
 
 QColor WaitTreeItem::GetColor() const {
     return QColor(Qt::GlobalColor::black);
@@ -316,7 +316,7 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeEvent::GetChildren() const {
 
     list.push_back(std::make_unique<WaitTreeText>(
         tr("reset type = %1")
-            .arg(GetResetTypeQString(static_cast<const Kernel::Event&>(object).reset_type))));
+            .arg(GetResetTypeQString(static_cast<const Kernel::Event&>(object).GetResetType()))));
     return list;
 }
 

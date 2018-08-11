@@ -337,6 +337,7 @@ public:
              "AcquireNpadStyleSetUpdateEventHandle"},
             {107, nullptr, "DisconnectNpad"},
             {108, &Hid::GetPlayerLedPattern, "GetPlayerLedPattern"},
+            {109, nullptr, "ActivateNpadWithRevision"},
             {120, &Hid::SetNpadJoyHoldType, "SetNpadJoyHoldType"},
             {121, &Hid::GetNpadJoyHoldType, "GetNpadJoyHoldType"},
             {122, &Hid::SetNpadJoyAssignmentModeSingleByDefault,
@@ -456,7 +457,7 @@ private:
     }
 
     void IsSixAxisSensorAtRest(Kernel::HLERequestContext& ctx) {
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         // TODO (Hexagon12): Properly implement reading gyroscope values from controllers.
         rb.Push(true);

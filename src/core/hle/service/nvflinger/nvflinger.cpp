@@ -3,8 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <boost/optional.hpp>
 
 #include "common/alignment.h"
+#include "common/assert.h"
+#include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
@@ -31,7 +34,7 @@ NVFlinger::NVFlinger() {
 
     // Schedule the screen composition events
     composition_event =
-        CoreTiming::RegisterEvent("ScreenCompositioin", [this](u64 userdata, int cycles_late) {
+        CoreTiming::RegisterEvent("ScreenComposition", [this](u64 userdata, int cycles_late) {
             Compose();
             CoreTiming::ScheduleEvent(frame_ticks - cycles_late, composition_event);
         });
@@ -43,7 +46,11 @@ NVFlinger::~NVFlinger() {
     CoreTiming::UnscheduleEvent(composition_event, 0);
 }
 
-u64 NVFlinger::OpenDisplay(const std::string& name) {
+void NVFlinger::SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance) {
+    nvdrv = std::move(instance);
+}
+
+u64 NVFlinger::OpenDisplay(std::string_view name) {
     LOG_WARNING(Service, "Opening display {}", name);
 
     // TODO(Subv): Currently we only support the Default display.
@@ -138,9 +145,6 @@ void NVFlinger::Compose() {
         auto& igbp_buffer = buffer->igbp_buffer;
 
         // Now send the buffer to the GPU for drawing.
-        auto nvdrv = Nvidia::nvdrv.lock();
-        ASSERT(nvdrv);
-
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
         // on which display we're drawing (Default, Internal, External, etc)
         auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");

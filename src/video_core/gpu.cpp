@@ -50,6 +50,7 @@ u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
     case RenderTargetFormat::RG16_SINT:
     case RenderTargetFormat::RG16_FLOAT:
     case RenderTargetFormat::R32_FLOAT:
+    case RenderTargetFormat::R11G11B10_FLOAT:
         return 4;
     case RenderTargetFormat::R16_UNORM:
     case RenderTargetFormat::R16_SNORM:

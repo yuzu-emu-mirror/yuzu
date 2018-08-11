@@ -6,18 +6,22 @@
 #include "ui_configure.h"
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_dialog.h"
+#include "yuzu/hotkeys.h"
 
-ConfigureDialog::ConfigureDialog(QWidget* parent) : QDialog(parent), ui(new Ui::ConfigureDialog) {
+ConfigureDialog::ConfigureDialog(QWidget* parent, const HotkeyRegistry& registry)
+    : QDialog(parent), ui(new Ui::ConfigureDialog) {
     ui->setupUi(this);
+    ui->generalTab->PopulateHotkeyList(registry);
     this->setConfiguration();
 }
 
-ConfigureDialog::~ConfigureDialog() {}
+ConfigureDialog::~ConfigureDialog() = default;
 
 void ConfigureDialog::setConfiguration() {}
 
 void ConfigureDialog::applyConfiguration() {
     ui->generalTab->applyConfiguration();
+    ui->gameListTab->applyConfiguration();
     ui->systemTab->applyConfiguration();
     ui->inputTab->applyConfiguration();
     ui->graphicsTab->applyConfiguration();

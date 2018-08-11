@@ -17,11 +17,16 @@
  *   ScheduleEvent(periodInCycles - cyclesLate, callback, "whatever")
  */
 
+#include <chrono>
 #include <functional>
 #include <string>
 #include "common/common_types.h"
 
 namespace CoreTiming {
+
+struct EventType;
+
+using TimedCallback = std::function<void(u64 userdata, int cycles_late)>;
 
 /**
  * CoreTiming begins at the boundary of timing slice -1. An initial call to Advance() is
@@ -30,8 +35,6 @@ namespace CoreTiming {
 void Init();
 void Shutdown();
 
-typedef std::function<void(u64 userdata, int cycles_late)> TimedCallback;
-
 /**
  * This should only be called from the emu thread, if you are calling it any other thread, you are
  * doing something evil
@@ -39,8 +42,6 @@ typedef std::function<void(u64 userdata, int cycles_late)> TimedCallback;
 u64 GetTicks();
 u64 GetIdleTicks();
 void AddTicks(u64 ticks);
-
-struct EventType;
 
 /**
  * Returns the event_type identifier. if name is not unique, it will assert.
@@ -86,7 +87,7 @@ void ClearPendingEvents();
 
 void ForceExceptionCheck(s64 cycles);
 
-u64 GetGlobalTimeUs();
+std::chrono::microseconds GetGlobalTimeUs();
 
 int GetDowncount();
 

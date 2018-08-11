@@ -12,6 +12,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "control_metadata.h"
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/partition_filesystem.h"
 #include "core/loader/loader.h"
@@ -95,7 +96,9 @@ protected:
     bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
 
 private:
+    u8 GetCryptoRevision() const;
     boost::optional<Core::Crypto::Key128> GetKeyAreaKey(NCASectionCryptoType type) const;
+    boost::optional<Core::Crypto::Key128> GetTitlekey() const;
     VirtualFile Decrypt(NCASectionHeader header, VirtualFile in, u64 starting_offset) const;
 
     std::vector<VirtualDir> dirs;

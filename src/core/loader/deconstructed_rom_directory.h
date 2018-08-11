@@ -22,6 +22,9 @@ class AppLoader_DeconstructedRomDirectory final : public AppLoader {
 public:
     explicit AppLoader_DeconstructedRomDirectory(FileSys::VirtualFile main_file);
 
+    // Overload to accept exefs directory. Must contain 'main' and 'main.npdm'
+    explicit AppLoader_DeconstructedRomDirectory(FileSys::VirtualDir directory);
+
     /**
      * Returns the type of the file
      * @param file std::shared_ptr<VfsFile> open file
@@ -36,10 +39,18 @@ public:
     ResultStatus Load(Kernel::SharedPtr<Kernel::Process>& process) override;
 
     ResultStatus ReadRomFS(FileSys::VirtualFile& dir) override;
+    ResultStatus ReadIcon(std::vector<u8>& buffer) override;
+    ResultStatus ReadProgramId(u64& out_program_id) override;
+    ResultStatus ReadTitle(std::string& title) override;
 
 private:
     FileSys::ProgramMetadata metadata;
     FileSys::VirtualFile romfs;
+    FileSys::VirtualDir dir;
+
+    std::vector<u8> icon_data;
+    std::string name;
+    u64 title_id{};
 };
 
 } // namespace Loader

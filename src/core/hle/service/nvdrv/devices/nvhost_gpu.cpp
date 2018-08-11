@@ -2,12 +2,14 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cinttypes>
-#include <map>
+#include <cstring>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
+#include "core/memory.h"
+#include "video_core/gpu.h"
+#include "video_core/memory_manager.h"
 
 namespace Service::Nvidia::Devices {
 
@@ -145,7 +147,7 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     }
     params.fence_out.id = 0;
     params.fence_out.value = 0;
-    std::memcpy(output.data(), &params, output.size());
+    std::memcpy(output.data(), &params, sizeof(IoctlSubmitGpfifo));
     return 0;
 }
 

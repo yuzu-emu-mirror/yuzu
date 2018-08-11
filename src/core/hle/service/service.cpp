@@ -63,6 +63,7 @@
 #include "core/hle/service/spl/module.h"
 #include "core/hle/service/ssl/ssl.h"
 #include "core/hle/service/time/time.h"
+#include "core/hle/service/usb/usb.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/wlan/wlan.h"
 
@@ -197,7 +198,7 @@ void AddNamedPort(std::string name, SharedPtr<ClientPort> port) {
 }
 
 /// Initialize ServiceManager
-void Init(std::shared_ptr<SM::ServiceManager>& sm) {
+void Init(std::shared_ptr<SM::ServiceManager>& sm, const FileSys::VirtualFilesystem& rfs) {
     // NVFlinger needs to be accessed by several services like Vi and AppletOE so we instantiate it
     // here and pass it into the respective InstallInterfaces functions.
     auto nv_flinger = std::make_shared<NVFlinger::NVFlinger>();
@@ -220,7 +221,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     EUPLD::InstallInterfaces(*sm);
     Fatal::InstallInterfaces(*sm);
     FGM::InstallInterfaces(*sm);
-    FileSystem::InstallInterfaces(*sm);
+    FileSystem::InstallInterfaces(*sm, rfs);
     Friend::InstallInterfaces(*sm);
     GRC::InstallInterfaces(*sm);
     HID::InstallInterfaces(*sm);
@@ -237,7 +238,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     NIFM::InstallInterfaces(*sm);
     NIM::InstallInterfaces(*sm);
     NS::InstallInterfaces(*sm);
-    Nvidia::InstallInterfaces(*sm);
+    Nvidia::InstallInterfaces(*sm, *nv_flinger);
     PCIe::InstallInterfaces(*sm);
     PCTL::InstallInterfaces(*sm);
     PCV::InstallInterfaces(*sm);
@@ -249,6 +250,7 @@ void Init(std::shared_ptr<SM::ServiceManager>& sm) {
     SPL::InstallInterfaces(*sm);
     SSL::InstallInterfaces(*sm);
     Time::InstallInterfaces(*sm);
+    USB::InstallInterfaces(*sm);
     VI::InstallInterfaces(*sm, nv_flinger);
     WLAN::InstallInterfaces(*sm);
 

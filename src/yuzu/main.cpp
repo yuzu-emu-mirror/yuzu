@@ -24,6 +24,7 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/crypto/key_manager.h"
+#include "core/file_sys/vfs_real.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
@@ -81,7 +82,11 @@ static void ShowCalloutMessage(const QString& message, CalloutFlag flag) {
 
 void GMainWindow::ShowCallouts() {}
 
-GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
+const int GMainWindow::max_recent_files_item;
+
+GMainWindow::GMainWindow()
+    : config(new Config()), emu_thread(nullptr),
+      vfs(std::make_shared<FileSys::RealVfsFilesystem>()) {
 
     debug_context = Tegra::DebugContext::Construct();
 
@@ -130,7 +135,7 @@ void GMainWindow::InitializeWidgets() {
     render_window = new GRenderWindow(this, emu_thread.get());
     render_window->hide();
 
-    game_list = new GameList(this);
+    game_list = new GameList(vfs, this);
     ui.horizontalLayout->addWidget(game_list);
 
     // Create status bar
@@ -206,43 +211,46 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 }
 
 void GMainWindow::InitializeHotkeys() {
-    RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
-    RegisterHotkey("Main Window", "Start Emulation");
-    RegisterHotkey("Main Window", "Continue/Pause", QKeySequence(Qt::Key_F4));
-    RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
-    RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
-                   Qt::ApplicationShortcut);
-    RegisterHotkey("Main Window", "Toggle Speed Limit", QKeySequence("CTRL+Z"),
-                   Qt::ApplicationShortcut);
-    LoadHotkeys();
+    hotkey_registry.RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
+    hotkey_registry.RegisterHotkey("Main Window", "Start Emulation");
+    hotkey_registry.RegisterHotkey("Main Window", "Continue/Pause", QKeySequence(Qt::Key_F4));
+    hotkey_registry.RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
+    hotkey_registry.RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
+                                   Qt::ApplicationShortcut);
+    hotkey_registry.RegisterHotkey("Main Window", "Toggle Speed Limit", QKeySequence("CTRL+Z"),
+                                   Qt::ApplicationShortcut);
+    hotkey_registry.LoadHotkeys();
 
-    connect(GetHotkey("Main Window", "Load File", this), &QShortcut::activated, this,
-            &GMainWindow::OnMenuLoadFile);
-    connect(GetHotkey("Main Window", "Start Emulation", this), &QShortcut::activated, this,
-            &GMainWindow::OnStartGame);
-    connect(GetHotkey("Main Window", "Continue/Pause", this), &QShortcut::activated, this, [&] {
-        if (emulation_running) {
-            if (emu_thread->IsRunning()) {
-                OnPauseGame();
-            } else {
-                OnStartGame();
-            }
-        }
-    });
-    connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activated,
-            ui.action_Fullscreen, &QAction::trigger);
-    connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activatedAmbiguously,
-            ui.action_Fullscreen, &QAction::trigger);
-    connect(GetHotkey("Main Window", "Exit Fullscreen", this), &QShortcut::activated, this, [&] {
-        if (emulation_running) {
-            ui.action_Fullscreen->setChecked(false);
-            ToggleFullscreen();
-        }
-    });
-    connect(GetHotkey("Main Window", "Toggle Speed Limit", this), &QShortcut::activated, this, [&] {
-        Settings::values.toggle_framelimit = !Settings::values.toggle_framelimit;
-        UpdateStatusBar();
-    });
+    connect(hotkey_registry.GetHotkey("Main Window", "Load File", this), &QShortcut::activated,
+            this, &GMainWindow::OnMenuLoadFile);
+    connect(hotkey_registry.GetHotkey("Main Window", "Start Emulation", this),
+            &QShortcut::activated, this, &GMainWindow::OnStartGame);
+    connect(hotkey_registry.GetHotkey("Main Window", "Continue/Pause", this), &QShortcut::activated,
+            this, [&] {
+                if (emulation_running) {
+                    if (emu_thread->IsRunning()) {
+                        OnPauseGame();
+                    } else {
+                        OnStartGame();
+                    }
+                }
+            });
+    connect(hotkey_registry.GetHotkey("Main Window", "Fullscreen", render_window),
+            &QShortcut::activated, ui.action_Fullscreen, &QAction::trigger);
+    connect(hotkey_registry.GetHotkey("Main Window", "Fullscreen", render_window),
+            &QShortcut::activatedAmbiguously, ui.action_Fullscreen, &QAction::trigger);
+    connect(hotkey_registry.GetHotkey("Main Window", "Exit Fullscreen", this),
+            &QShortcut::activated, this, [&] {
+                if (emulation_running) {
+                    ui.action_Fullscreen->setChecked(false);
+                    ToggleFullscreen();
+                }
+            });
+    connect(hotkey_registry.GetHotkey("Main Window", "Toggle Speed Limit", this),
+            &QShortcut::activated, this, [&] {
+                Settings::values.toggle_framelimit = !Settings::values.toggle_framelimit;
+                UpdateStatusBar();
+            });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -321,7 +329,8 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
 
     // Fullscreen
-    ui.action_Fullscreen->setShortcut(GetHotkey("Main Window", "Fullscreen", this)->key());
+    ui.action_Fullscreen->setShortcut(
+        hotkey_registry.GetHotkey("Main Window", "Fullscreen", this)->key());
     connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
 
     // Help
@@ -400,6 +409,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
     }
 
     Core::System& system{Core::System::GetInstance()};
+    system.SetFilesystem(vfs);
 
     system.SetGPUDebugContext(debug_context);
 
@@ -579,11 +589,11 @@ void GMainWindow::StoreRecentFile(const QString& filename) {
 }
 
 void GMainWindow::UpdateRecentFiles() {
-    unsigned int num_recent_files =
-        std::min(UISettings::values.recent_files.size(), static_cast<int>(max_recent_files_item));
+    const int num_recent_files =
+        std::min(UISettings::values.recent_files.size(), max_recent_files_item);
 
-    for (unsigned int i = 0; i < num_recent_files; i++) {
-        QString text = QString("&%1. %2").arg(i + 1).arg(
+    for (int i = 0; i < num_recent_files; i++) {
+        const QString text = QString("&%1. %2").arg(i + 1).arg(
             QFileInfo(UISettings::values.recent_files[i]).fileName());
         actions_recent_files[i]->setText(text);
         actions_recent_files[i]->setData(UISettings::values.recent_files[i]);
@@ -595,12 +605,8 @@ void GMainWindow::UpdateRecentFiles() {
         actions_recent_files[j]->setVisible(false);
     }
 
-    // Grey out the recent files menu if the list is empty
-    if (num_recent_files == 0) {
-        ui.menu_recent_files->setEnabled(false);
-    } else {
-        ui.menu_recent_files->setEnabled(true);
-    }
+    // Enable the recent files menu if the list isn't empty
+    ui.menu_recent_files->setEnabled(num_recent_files != 0);
 }
 
 void GMainWindow::OnGameListLoadFile(QString game_path) {
@@ -631,9 +637,15 @@ void GMainWindow::OnMenuLoadFile() {
 }
 
 void GMainWindow::OnMenuLoadFolder() {
-    QDir dir = QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
+    const QString dir_path =
+        QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
 
-    QStringList matching_main = dir.entryList(QStringList("main"), QDir::Files);
+    if (dir_path.isNull()) {
+        return;
+    }
+
+    const QDir dir{dir_path};
+    const QStringList matching_main = dir.entryList(QStringList("main"), QDir::Files);
     if (matching_main.size() == 1) {
         BootGame(dir.path() + DIR_SEP + matching_main[0]);
     } else {
@@ -654,9 +666,8 @@ void GMainWindow::OnMenuRecentFile() {
     QAction* action = qobject_cast<QAction*>(sender());
     assert(action);
 
-    QString filename = action->data().toString();
-    QFileInfo file_info(filename);
-    if (file_info.exists()) {
+    const QString filename = action->data().toString();
+    if (QFileInfo::exists(filename)) {
         BootGame(filename);
     } else {
         // Display an error message and remove the file from the list.
@@ -754,13 +765,14 @@ void GMainWindow::ToggleWindowMode() {
 }
 
 void GMainWindow::OnConfigure() {
-    ConfigureDialog configureDialog(this);
+    ConfigureDialog configureDialog(this, hotkey_registry);
     auto old_theme = UISettings::values.theme;
     auto result = configureDialog.exec();
     if (result == QDialog::Accepted) {
         configureDialog.applyConfiguration();
         if (UISettings::values.theme != old_theme)
             UpdateUITheme();
+        game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
         config->Save();
     }
 }
@@ -893,7 +905,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     UISettings::values.first_start = false;
 
     game_list->SaveInterfaceLayout();
-    SaveHotkeys();
+    hotkey_registry.SaveHotkeys();
 
     // Shutdown session if the emu thread is active...
     if (emu_thread != nullptr)
@@ -947,15 +959,14 @@ void GMainWindow::UpdateUITheme() {
     QStringList theme_paths(default_theme_paths);
     if (UISettings::values.theme != UISettings::themes[0].second &&
         !UISettings::values.theme.isEmpty()) {
-        QString theme_uri(":" + UISettings::values.theme + "/style.qss");
+        const QString theme_uri(":" + UISettings::values.theme + "/style.qss");
         QFile f(theme_uri);
-        if (!f.exists()) {
-            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
-        } else {
-            f.open(QFile::ReadOnly | QFile::Text);
+        if (f.open(QFile::ReadOnly | QFile::Text)) {
             QTextStream ts(&f);
             qApp->setStyleSheet(ts.readAll());
             GMainWindow::setStyleSheet(ts.readAll());
+        } else {
+            LOG_ERROR(Frontend, "Unable to set style, stylesheet file not found");
         }
         theme_paths.append(QStringList{":/icons/default", ":/icons/" + UISettings::values.theme});
         QIcon::setThemeName(":/icons/" + UISettings::values.theme);

@@ -41,40 +41,42 @@
 #include "core/loader/loader.h"
 #include "core/memory.h"
 
-const int GDB_BUFFER_SIZE = 10000;
+namespace GDBStub {
+namespace {
+constexpr int GDB_BUFFER_SIZE = 10000;
 
-const char GDB_STUB_START = '$';
-const char GDB_STUB_END = '#';
-const char GDB_STUB_ACK = '+';
-const char GDB_STUB_NACK = '-';
+constexpr char GDB_STUB_START = '$';
+constexpr char GDB_STUB_END = '#';
+constexpr char GDB_STUB_ACK = '+';
+constexpr char GDB_STUB_NACK = '-';
 
 #ifndef SIGTRAP
-const u32 SIGTRAP = 5;
+constexpr u32 SIGTRAP = 5;
 #endif
 
 #ifndef SIGTERM
-const u32 SIGTERM = 15;
+constexpr u32 SIGTERM = 15;
 #endif
 
 #ifndef MSG_WAITALL
-const u32 MSG_WAITALL = 8;
+constexpr u32 MSG_WAITALL = 8;
 #endif
 
-const u32 LR_REGISTER = 30;
-const u32 SP_REGISTER = 31;
-const u32 PC_REGISTER = 32;
-const u32 CPSR_REGISTER = 33;
-const u32 UC_ARM64_REG_Q0 = 34;
-const u32 FPSCR_REGISTER = 66;
+constexpr u32 LR_REGISTER = 30;
+constexpr u32 SP_REGISTER = 31;
+constexpr u32 PC_REGISTER = 32;
+constexpr u32 CPSR_REGISTER = 33;
+constexpr u32 UC_ARM64_REG_Q0 = 34;
+constexpr u32 FPSCR_REGISTER = 66;
 
 // TODO/WiP - Used while working on support for FPU
-const u32 TODO_DUMMY_REG_997 = 997;
-const u32 TODO_DUMMY_REG_998 = 998;
+constexpr u32 TODO_DUMMY_REG_997 = 997;
+constexpr u32 TODO_DUMMY_REG_998 = 998;
 
 // For sample XML files see the GDB source /gdb/features
 // GDB also wants the l character at the start
 // This XML defines what the registers are for this specific ARM device
-static const char* target_xml =
+constexpr char target_xml[] =
     R"(l<?xml version="1.0"?>
 <!DOCTYPE target SYSTEM "gdb-target.dtd">
 <target version="1.0">
@@ -140,30 +142,28 @@ static const char* target_xml =
 </target>
 )";
 
-namespace GDBStub {
+int gdbserver_socket = -1;
 
-static int gdbserver_socket = -1;
+u8 command_buffer[GDB_BUFFER_SIZE];
+u32 command_length;
 
-static u8 command_buffer[GDB_BUFFER_SIZE];
-static u32 command_length;
+u32 latest_signal = 0;
+bool memory_break = false;
 
-static u32 latest_signal = 0;
-static bool memory_break = false;
-
-static Kernel::Thread* current_thread = nullptr;
-static u32 current_core = 0;
+Kernel::Thread* current_thread = nullptr;
+u32 current_core = 0;
 
 // Binding to a port within the reserved ports range (0-1023) requires root permissions,
 // so default to a port outside of that range.
-static u16 gdbstub_port = 24689;
+u16 gdbstub_port = 24689;
 
-static bool halt_loop = true;
-static bool step_loop = false;
-static bool send_trap = false;
+bool halt_loop = true;
+bool step_loop = false;
+bool send_trap = false;
 
 // If set to false, the server will never be started and no
 // gdbstub-related functions will be executed.
-static std::atomic<bool> server_enabled(false);
+std::atomic<bool> server_enabled(false);
 
 #ifdef _WIN32
 WSADATA InitData;
@@ -171,23 +171,26 @@ WSADATA InitData;
 
 struct Breakpoint {
     bool active;
-    PAddr addr;
+    VAddr addr;
     u64 len;
+    std::array<u8, 4> inst;
 };
 
-static std::map<u64, Breakpoint> breakpoints_execute;
-static std::map<u64, Breakpoint> breakpoints_read;
-static std::map<u64, Breakpoint> breakpoints_write;
+using BreakpointMap = std::map<VAddr, Breakpoint>;
+BreakpointMap breakpoints_execute;
+BreakpointMap breakpoints_read;
+BreakpointMap breakpoints_write;
 
 struct Module {
     std::string name;
-    PAddr beg;
-    PAddr end;
+    VAddr beg;
+    VAddr end;
 };
 
-static std::vector<Module> modules;
+std::vector<Module> modules;
+} // Anonymous namespace
 
-void RegisterModule(std::string name, PAddr beg, PAddr end, bool add_elf_ext) {
+void RegisterModule(std::string name, VAddr beg, VAddr end, bool add_elf_ext) {
     Module module;
     if (add_elf_ext) {
         Common::SplitPath(name, nullptr, &module.name, nullptr);
@@ -418,11 +421,11 @@ static u8 CalculateChecksum(const u8* buffer, size_t length) {
 }
 
 /**
- * Get the list of breakpoints for a given breakpoint type.
+ * Get the map of breakpoints for a given breakpoint type.
  *
- * @param type Type of breakpoint list.
+ * @param type Type of breakpoint map.
  */
-static std::map<u64, Breakpoint>& GetBreakpointList(BreakpointType type) {
+static BreakpointMap& GetBreakpointMap(BreakpointType type) {
     switch (type) {
     case BreakpointType::Execute:
         return breakpoints_execute;
@@ -441,20 +444,24 @@ static std::map<u64, Breakpoint>& GetBreakpointList(BreakpointType type) {
  * @param type Type of breakpoint.
  * @param addr Address of breakpoint.
  */
-static void RemoveBreakpoint(BreakpointType type, PAddr addr) {
-    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
+static void RemoveBreakpoint(BreakpointType type, VAddr addr) {
+    BreakpointMap& p = GetBreakpointMap(type);
 
-    auto bp = p.find(static_cast<u64>(addr));
-    if (bp != p.end()) {
-        LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
-                  bp->second.len, bp->second.addr, static_cast<int>(type));
-        p.erase(static_cast<u64>(addr));
+    const auto bp = p.find(addr);
+    if (bp == p.end()) {
+        return;
     }
+
+    LOG_DEBUG(Debug_GDBStub, "gdb: removed a breakpoint: {:016X} bytes at {:016X} of type {}",
+              bp->second.len, bp->second.addr, static_cast<int>(type));
+    Memory::WriteBlock(bp->second.addr, bp->second.inst.data(), bp->second.inst.size());
+    Core::System::GetInstance().InvalidateCpuInstructionCaches();
+    p.erase(addr);
 }
 
-BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, BreakpointType type) {
-    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
-    auto next_breakpoint = p.lower_bound(static_cast<u64>(addr));
+BreakpointAddress GetNextBreakpointFromAddress(VAddr addr, BreakpointType type) {
+    const BreakpointMap& p = GetBreakpointMap(type);
+    const auto next_breakpoint = p.lower_bound(addr);
     BreakpointAddress breakpoint;
 
     if (next_breakpoint != p.end()) {
@@ -468,36 +475,38 @@ BreakpointAddress GetNextBreakpointFromAddress(PAddr addr, BreakpointType type) 
     return breakpoint;
 }
 
-bool CheckBreakpoint(PAddr addr, BreakpointType type) {
+bool CheckBreakpoint(VAddr addr, BreakpointType type) {
     if (!IsConnected()) {
         return false;
     }
 
-    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
+    const BreakpointMap& p = GetBreakpointMap(type);
+    const auto bp = p.find(addr);
 
-    auto bp = p.find(static_cast<u64>(addr));
-    if (bp != p.end()) {
-        u64 len = bp->second.len;
+    if (bp == p.end()) {
+        return false;
+    }
 
-        // IDA Pro defaults to 4-byte breakpoints for all non-hardware breakpoints
-        // no matter if it's a 4-byte or 2-byte instruction. When you execute a
-        // Thumb instruction with a 4-byte breakpoint set, it will set a breakpoint on
-        // two instructions instead of the single instruction you placed the breakpoint
-        // on. So, as a way to make sure that execution breakpoints are only breaking
-        // on the instruction that was specified, set the length of an execution
-        // breakpoint to 1. This should be fine since the CPU should never begin executing
-        // an instruction anywhere except the beginning of the instruction.
-        if (type == BreakpointType::Execute) {
-            len = 1;
-        }
+    u64 len = bp->second.len;
 
-        if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
-            LOG_DEBUG(Debug_GDBStub,
-                      "Found breakpoint type {} @ {:016X}, range: {:016X}"
-                      " - {:016X} ({:X} bytes)",
-                      static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
-            return true;
-        }
+    // IDA Pro defaults to 4-byte breakpoints for all non-hardware breakpoints
+    // no matter if it's a 4-byte or 2-byte instruction. When you execute a
+    // Thumb instruction with a 4-byte breakpoint set, it will set a breakpoint on
+    // two instructions instead of the single instruction you placed the breakpoint
+    // on. So, as a way to make sure that execution breakpoints are only breaking
+    // on the instruction that was specified, set the length of an execution
+    // breakpoint to 1. This should be fine since the CPU should never begin executing
+    // an instruction anywhere except the beginning of the instruction.
+    if (type == BreakpointType::Execute) {
+        len = 1;
+    }
+
+    if (bp->second.active && (addr >= bp->second.addr && addr < bp->second.addr + len)) {
+        LOG_DEBUG(Debug_GDBStub,
+                  "Found breakpoint type {} @ {:016X}, range: {:016X}"
+                  " - {:016X} ({:X} bytes)",
+                  static_cast<int>(type), addr, bp->second.addr, bp->second.addr + len, len);
+        return true;
     }
 
     return false;
@@ -931,6 +940,7 @@ static void WriteMemory() {
 
     GdbHexToMem(data.data(), len_pos + 1, len);
     Memory::WriteBlock(addr, data.data(), len);
+    Core::System::GetInstance().InvalidateCpuInstructionCaches();
     SendReply("OK");
 }
 
@@ -950,6 +960,7 @@ static void Step() {
     step_loop = true;
     halt_loop = true;
     send_trap = true;
+    Core::System::GetInstance().InvalidateCpuInstructionCaches();
 }
 
 /// Tell the CPU if we hit a memory breakpoint.
@@ -966,6 +977,7 @@ static void Continue() {
     memory_break = false;
     step_loop = false;
     halt_loop = false;
+    Core::System::GetInstance().InvalidateCpuInstructionCaches();
 }
 
 /**
@@ -975,13 +987,17 @@ static void Continue() {
  * @param addr Address of breakpoint.
  * @param len Length of breakpoint.
  */
-static bool CommitBreakpoint(BreakpointType type, PAddr addr, u64 len) {
-    std::map<u64, Breakpoint>& p = GetBreakpointList(type);
+static bool CommitBreakpoint(BreakpointType type, VAddr addr, u64 len) {
+    BreakpointMap& p = GetBreakpointMap(type);
 
     Breakpoint breakpoint;
     breakpoint.active = true;
     breakpoint.addr = addr;
     breakpoint.len = len;
+    Memory::ReadBlock(addr, breakpoint.inst.data(), breakpoint.inst.size());
+    static constexpr std::array<u8, 4> btrap{{0xd4, 0x20, 0x7d, 0x0}};
+    Memory::WriteBlock(addr, btrap.data(), btrap.size());
+    Core::System::GetInstance().InvalidateCpuInstructionCaches();
     p.insert({addr, breakpoint});
 
     LOG_DEBUG(Debug_GDBStub, "gdb: added {} breakpoint: {:016X} bytes at {:016X}",
@@ -1015,7 +1031,7 @@ static void AddBreakpoint() {
 
     auto start_offset = command_buffer + 3;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
+    VAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     start_offset = addr_pos + 1;
     u64 len =
@@ -1064,7 +1080,7 @@ static void RemoveBreakpoint() {
 
     auto start_offset = command_buffer + 3;
     auto addr_pos = std::find(start_offset, command_buffer + command_length, ',');
-    PAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
+    VAddr addr = HexToLong(start_offset, static_cast<u64>(addr_pos - start_offset));
 
     if (type == BreakpointType::Access) {
         // Access is made up of Read and Write types, so add both breakpoints

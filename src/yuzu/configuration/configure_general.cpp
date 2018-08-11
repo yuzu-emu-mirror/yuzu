@@ -24,7 +24,7 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
     ui->use_docked_mode->setEnabled(!Core::System::GetInstance().IsPoweredOn());
 }
 
-ConfigureGeneral::~ConfigureGeneral() {}
+ConfigureGeneral::~ConfigureGeneral() = default;
 
 void ConfigureGeneral::setConfiguration() {
     ui->toggle_deepscan->setChecked(UISettings::values.gamedir_deepscan);
@@ -33,6 +33,10 @@ void ConfigureGeneral::setConfiguration() {
     ui->use_cpu_jit->setChecked(Settings::values.use_cpu_jit);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core);
     ui->use_docked_mode->setChecked(Settings::values.use_docked_mode);
+}
+
+void ConfigureGeneral::PopulateHotkeyList(const HotkeyRegistry& registry) {
+    ui->widget->Populate(registry);
 }
 
 void ConfigureGeneral::applyConfiguration() {

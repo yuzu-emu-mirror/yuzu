@@ -9,6 +9,7 @@
 #include <QTimer>
 #include "core/core.h"
 #include "ui_main.h"
+#include "yuzu/hotkeys.h"
 
 class Config;
 class EmuThread;
@@ -43,7 +44,7 @@ public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
     GMainWindow();
-    ~GMainWindow();
+    ~GMainWindow() override;
 
 signals:
 
@@ -160,6 +161,9 @@ private:
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
 
+    // FS
+    FileSys::VirtualFilesystem vfs;
+
     // Debugger panes
     ProfilerWidget* profilerWidget;
     MicroProfileDialog* microProfileDialog;
@@ -171,6 +175,8 @@ private:
 
     // stores default icon theme search paths for the platform
     QStringList default_theme_paths;
+
+    HotkeyRegistry hotkey_registry;
 
 protected:
     void dropEvent(QDropEvent* event) override;

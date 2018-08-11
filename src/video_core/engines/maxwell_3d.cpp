@@ -23,12 +23,17 @@ Maxwell3D::Maxwell3D(VideoCore::RasterizerInterface& rasterizer, MemoryManager& 
     : memory_manager(memory_manager), rasterizer{rasterizer}, macro_interpreter(*this) {}
 
 void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
-    auto macro_code = uploaded_macros.find(method);
-    // The requested macro must have been uploaded already.
-    ASSERT_MSG(macro_code != uploaded_macros.end(), "Macro %08X was not uploaded", method);
-
-    // Reset the current macro and execute it.
+    // Reset the current macro.
     executing_macro = 0;
+
+    // The requested macro must have been uploaded already.
+    auto macro_code = uploaded_macros.find(method);
+    if (macro_code == uploaded_macros.end()) {
+        LOG_ERROR(HW_GPU, "Macro {:04X} was not uploaded", method);
+        return;
+    }
+
+    // Execute the current macro.
     macro_interpreter.Execute(macro_code->second, std::move(parameters));
 }
 
@@ -238,6 +243,8 @@ void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
 
     auto& buffer = shader.const_buffers[bind_data.index];
 
+    ASSERT(bind_data.index < Regs::MaxConstBuffers);
+
     buffer.enabled = bind_data.valid.Value() != 0;
     buffer.index = bind_data.index;
     buffer.address = regs.const_buffer.BufferAddress();
@@ -285,8 +292,6 @@ Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
 
     // TODO(Subv): Different data types for separate components are not supported
     ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
-    // TODO(Subv): Only UNORM formats are supported for now.
-    ASSERT(r_type == Texture::ComponentType::UNORM);
 
     return tic_entry;
 }
