@@ -141,6 +141,15 @@ private:
                     ExitMethod jmp = Scan(target, end, labels);
                     return exit_method = ParallelExit(no_jmp, jmp);
                 }
+                case OpCode::Id::SSY: {
+                    // The SSY instruction uses a similar encoding as the BRA instruction.
+                    ASSERT_MSG(instr.bra.constant_buffer == 0,
+                               "Constant buffer SSY is not supported");
+                    u32 target = offset + instr.bra.GetBranchTarget();
+                    labels.insert(target);
+                    // Continue scanning for an exit method.
+                    break;
+                }
                 }
             }
         }
@@ -349,7 +358,12 @@ public:
     void SetOutputAttributeToRegister(Attribute::Index attribute, u64 elem, const Register& reg) {
         std::string dest = GetOutputAttribute(attribute) + GetSwizzle(elem);
         std::string src = GetRegisterAsFloat(reg);
-        shader.AddLine(dest + " = " + src + ';');
+
+        if (!dest.empty()) {
+            // Can happen with unknown/unimplemented output attributes, in which case we ignore the
+            // instruction for now.
+            shader.AddLine(dest + " = " + src + ';');
+        }
     }
 
     /// Generates code representing a uniform (C buffer) register, interpreted as the input type.
@@ -525,20 +539,16 @@ private:
             // shader.
             ASSERT(stage == Maxwell3D::Regs::ShaderStage::Vertex);
             return "vec4(0, 0, uintBitsToFloat(gl_InstanceID), uintBitsToFloat(gl_VertexID))";
-        case Attribute::Index::Unknown_63:
-            // TODO(bunnei): Figure out what this is used for. Super Mario Odyssey uses this.
-            LOG_CRITICAL(HW_GPU, "Unhandled input attribute Unknown_63");
-            UNREACHABLE();
-            break;
         default:
             const u32 index{static_cast<u32>(attribute) -
                             static_cast<u32>(Attribute::Index::Attribute_0)};
-            if (attribute >= Attribute::Index::Attribute_0) {
+            if (attribute >= Attribute::Index::Attribute_0 &&
+                attribute <= Attribute::Index::Attribute_31) {
                 declr_input_attribute.insert(attribute);
                 return "input_attribute_" + std::to_string(index);
             }
 
-            LOG_CRITICAL(HW_GPU, "Unhandled input attribute: {}", index);
+            LOG_CRITICAL(HW_GPU, "Unhandled input attribute: {}", static_cast<u32>(attribute));
             UNREACHABLE();
         }
 
@@ -560,6 +570,7 @@ private:
 
             LOG_CRITICAL(HW_GPU, "Unhandled output attribute: {}", index);
             UNREACHABLE();
+            return {};
         }
     }
 
@@ -828,7 +839,11 @@ private:
         ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
                    "NeverExecute predicate not implemented");
 
-        if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
+        // Some instructions (like SSY) don't have a predicate field, they are always
+        // unconditionally executed.
+        bool can_be_predicated = OpCode::IsPredicatedInstruction(opcode->GetId());
+
+        if (can_be_predicated && instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
             shader.AddLine("if (" +
                            GetPredicateCondition(instr.pred.pred_index, instr.negate_pred != 0) +
                            ')');
@@ -1668,16 +1683,25 @@ private:
                 break;
             }
             case OpCode::Id::SSY: {
-                // The SSY opcode tells the GPU where to re-converge divergent execution paths, we
-                // can ignore this when generating GLSL code.
+                // The SSY opcode tells the GPU where to re-converge divergent execution paths, it
+                // sets the target of the jump that the SYNC instruction will make. The SSY opcode
+                // has a similar structure to the BRA opcode.
+                ASSERT_MSG(instr.bra.constant_buffer == 0, "Constant buffer SSY is not supported");
+
+                u32 target = offset + instr.bra.GetBranchTarget();
+                shader.AddLine("ssy_target = " + std::to_string(target) + "u;");
                 break;
             }
-            case OpCode::Id::SYNC:
+            case OpCode::Id::SYNC: {
+                // The SYNC opcode jumps to the address previously set by the SSY opcode
                 ASSERT(instr.flow.cond == Tegra::Shader::FlowCondition::Always);
+                shader.AddLine("{ jmp_to = ssy_target; break; }");
+                break;
+            }
             case OpCode::Id::DEPBAR: {
-                // TODO(Subv): Find out if we actually have to care about these instructions or if
+                // TODO(Subv): Find out if we actually have to care about this instruction or if
                 // the GLSL compiler takes care of that for us.
-                LOG_WARNING(HW_GPU, "DEPBAR/SYNC instruction is stubbed");
+                LOG_WARNING(HW_GPU, "DEPBAR instruction is stubbed");
                 break;
             }
             default: {
@@ -1691,7 +1715,7 @@ private:
         }
 
         // Close the predicate condition scope.
-        if (instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
+        if (can_be_predicated && instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
             --shader.scope;
             shader.AddLine('}');
         }
@@ -1742,6 +1766,7 @@ private:
             } else {
                 labels.insert(subroutine.begin);
                 shader.AddLine("uint jmp_to = " + std::to_string(subroutine.begin) + "u;");
+                shader.AddLine("uint ssy_target = 0u;");
                 shader.AddLine("while (true) {");
                 ++shader.scope;
 
@@ -1757,7 +1782,7 @@ private:
                     u32 compile_end = CompileRange(label, next_label);
                     if (compile_end > next_label && compile_end != PROGRAM_END) {
                         // This happens only when there is a label inside a IF/LOOP block
-                        shader.AddLine("{ jmp_to = " + std::to_string(compile_end) + "u; break; }");
+                        shader.AddLine(" jmp_to = " + std::to_string(compile_end) + "u; break; }");
                         labels.emplace(compile_end);
                     }
 

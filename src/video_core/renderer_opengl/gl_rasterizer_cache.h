@@ -23,49 +23,51 @@ using PageMap = boost::icl::interval_map<u64, int>;
 
 struct SurfaceParams {
     enum class PixelFormat {
-        ABGR8 = 0,
-        B5G6R5 = 1,
-        A2B10G10R10 = 2,
-        A1B5G5R5 = 3,
-        R8 = 4,
-        R8UI = 5,
-        RGBA16F = 6,
-        R11FG11FB10F = 7,
-        RGBA32UI = 8,
-        DXT1 = 9,
-        DXT23 = 10,
-        DXT45 = 11,
-        DXN1 = 12, // This is also known as BC4
-        DXN2UNORM = 13,
-        DXN2SNORM = 14,
-        BC7U = 15,
-        ASTC_2D_4X4 = 16,
-        G8R8 = 17,
-        BGRA8 = 18,
-        RGBA32F = 19,
-        RG32F = 20,
-        R32F = 21,
-        R16F = 22,
-        R16UNORM = 23,
-        R16S = 24,
-        R16UI = 25,
-        R16I = 26,
-        RG16 = 27,
-        RG16F = 28,
-        RG16UI = 29,
-        RG16I = 30,
-        RG16S = 31,
-        RGB32F = 32,
-        SRGBA8 = 33,
+        ABGR8U = 0,
+        ABGR8S = 1,
+        B5G6R5 = 2,
+        A2B10G10R10 = 3,
+        A1B5G5R5 = 4,
+        R8 = 5,
+        R8UI = 6,
+        RGBA16F = 7,
+        R11FG11FB10F = 8,
+        RGBA32UI = 9,
+        DXT1 = 10,
+        DXT23 = 11,
+        DXT45 = 12,
+        DXN1 = 13, // This is also known as BC4
+        DXN2UNORM = 14,
+        DXN2SNORM = 15,
+        BC7U = 16,
+        ASTC_2D_4X4 = 17,
+        G8R8 = 18,
+        BGRA8 = 19,
+        RGBA32F = 20,
+        RG32F = 21,
+        R32F = 22,
+        R16F = 23,
+        R16UNORM = 24,
+        R16S = 25,
+        R16UI = 26,
+        R16I = 27,
+        RG16 = 28,
+        RG16F = 29,
+        RG16UI = 30,
+        RG16I = 31,
+        RG16S = 32,
+        RGB32F = 33,
+        SRGBA8 = 34,
+        RG8S = 35,
 
         MaxColorFormat,
 
         // DepthStencil formats
-        Z24S8 = 34,
-        S8Z24 = 35,
-        Z32F = 36,
-        Z16 = 37,
-        Z32FS8 = 38,
+        Z24S8 = 36,
+        S8Z24 = 37,
+        Z32F = 38,
+        Z16 = 39,
+        Z32FS8 = 40,
 
         MaxDepthStencilFormat,
 
@@ -103,7 +105,8 @@ struct SurfaceParams {
             return 0;
 
         constexpr std::array<u32, MaxPixelFormat> compression_factor_table = {{
-            1, // ABGR8
+            1, // ABGR8U
+            1, // ABGR8S
             1, // B5G6R5
             1, // A2B10G10R10
             1, // A1B5G5R5
@@ -137,6 +140,7 @@ struct SurfaceParams {
             1, // RG16S
             1, // RGB32F
             1, // SRGBA8
+            1, // RG8S
             1, // Z24S8
             1, // S8Z24
             1, // Z32F
@@ -153,7 +157,8 @@ struct SurfaceParams {
             return 0;
 
         constexpr std::array<u32, MaxPixelFormat> bpp_table = {{
-            32,  // ABGR8
+            32,  // ABGR8U
+            32,  // ABGR8S
             16,  // B5G6R5
             32,  // A2B10G10R10
             16,  // A1B5G5R5
@@ -187,6 +192,7 @@ struct SurfaceParams {
             32,  // RG16S
             96,  // RGB32F
             32,  // SRGBA8
+            16,  // RG8S
             32,  // Z24S8
             32,  // S8Z24
             32,  // Z32F
@@ -226,7 +232,9 @@ struct SurfaceParams {
         // gamma.
         case Tegra::RenderTargetFormat::RGBA8_SRGB:
         case Tegra::RenderTargetFormat::RGBA8_UNORM:
-            return PixelFormat::ABGR8;
+            return PixelFormat::ABGR8U;
+        case Tegra::RenderTargetFormat::RGBA8_SNORM:
+            return PixelFormat::ABGR8S;
         case Tegra::RenderTargetFormat::BGRA8_UNORM:
             return PixelFormat::BGRA8;
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
@@ -257,6 +265,8 @@ struct SurfaceParams {
             return PixelFormat::RG16;
         case Tegra::RenderTargetFormat::RG16_SNORM:
             return PixelFormat::RG16S;
+        case Tegra::RenderTargetFormat::RG8_SNORM:
+            return PixelFormat::RG8S;
         case Tegra::RenderTargetFormat::R16_FLOAT:
             return PixelFormat::R16F;
         case Tegra::RenderTargetFormat::R16_UNORM:
@@ -280,7 +290,15 @@ struct SurfaceParams {
         // TODO(Subv): Properly implement this
         switch (format) {
         case Tegra::Texture::TextureFormat::A8R8G8B8:
-            return PixelFormat::ABGR8;
+            switch (component_type) {
+            case Tegra::Texture::ComponentType::UNORM:
+                return PixelFormat::ABGR8U;
+            case Tegra::Texture::ComponentType::SNORM:
+                return PixelFormat::ABGR8S;
+            }
+            LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}",
+                         static_cast<u32>(component_type));
+            UNREACHABLE();
         case Tegra::Texture::TextureFormat::B5G6R5:
             return PixelFormat::B5G6R5;
         case Tegra::Texture::TextureFormat::A2B10G10R10:
@@ -415,8 +433,10 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::R16_UNORM:
         case Tegra::RenderTargetFormat::B5G6R5_UNORM:
             return ComponentType::UNorm;
+        case Tegra::RenderTargetFormat::RGBA8_SNORM:
         case Tegra::RenderTargetFormat::RG16_SNORM:
         case Tegra::RenderTargetFormat::R16_SNORM:
+        case Tegra::RenderTargetFormat::RG8_SNORM:
             return ComponentType::SNorm;
         case Tegra::RenderTargetFormat::RGBA16_FLOAT:
         case Tegra::RenderTargetFormat::R11G11B10_FLOAT:
@@ -443,7 +463,7 @@ struct SurfaceParams {
     static PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat format) {
         switch (format) {
         case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-            return PixelFormat::ABGR8;
+            return PixelFormat::ABGR8U;
         default:
             LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
             UNREACHABLE();
