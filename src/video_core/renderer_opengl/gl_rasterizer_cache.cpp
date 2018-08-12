@@ -234,7 +234,7 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, std::vector<u8>& gl_bu
 static constexpr std::array<void (*)(u32, u32, u32, std::vector<u8>&, Tegra::GPUVAddr),
                             SurfaceParams::MaxPixelFormat>
     morton_to_gl_fns = {
-        MortonCopy<true, PixelFormat::ABGR8U>,        MortonCopy<true, PixelFormat::ABGR8S>,
+        MortonCopy<true, PixelFormat::ABGR8U>,       MortonCopy<true, PixelFormat::ABGR8S>,
         MortonCopy<true, PixelFormat::B5G6R5>,       MortonCopy<true, PixelFormat::A2B10G10R10>,
         MortonCopy<true, PixelFormat::A1B5G5R5>,     MortonCopy<true, PixelFormat::R8>,
         MortonCopy<true, PixelFormat::R8UI>,         MortonCopy<true, PixelFormat::RGBA16F>,
