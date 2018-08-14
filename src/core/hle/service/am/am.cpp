@@ -146,7 +146,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
         {61, nullptr, "SetMediaPlaybackState"},
         {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
-        {63, nullptr, "GetIdleTimeDetectionExtension"},
+        {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
         {65, nullptr, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
@@ -284,10 +284,16 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
 void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     IPC::ResponseBuilder rb{ctx, 2};
-    auto IdleTimeDetectionExtension = rp.Pop<u32>();
+    IdleTimeDetectionExtension = rp.Pop<u32>();
     rb.Push(RESULT_SUCCESS);
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(IdleTimeDetectionExtension);
 }
 
 ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter") {
