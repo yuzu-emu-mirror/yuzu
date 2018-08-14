@@ -283,7 +283,7 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
 
 void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto Idle_Time_Detection_Extension = rp.Pop<u32>();
+    idle_time_detection_extension = rp.Pop<u32>();
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
@@ -293,7 +293,7 @@ void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
 void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(Idle_Time_Detection_Extension);
+    rb.Push<u32>(idle_time_detection_extension);
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
