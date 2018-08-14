@@ -92,7 +92,7 @@ private:
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
     Kernel::SharedPtr<Kernel::Event> launchable_event;
-    u32 IdleTimeDetectionExtension;
+    u32 Idle_Time_Detection_Extension;
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {

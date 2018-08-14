@@ -283,8 +283,8 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
 
 void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
+    auto Idle_Time_Detection_Extension = rp.Pop<u32>();
     IPC::ResponseBuilder rb{ctx, 2};
-    IdleTimeDetectionExtension = rp.Pop<u32>();
     rb.Push(RESULT_SUCCESS);
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
@@ -293,7 +293,9 @@ void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
 void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u32>(IdleTimeDetectionExtension);
+    rb.Push<u32>(Idle_Time_Detection_Extension);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
 ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter") {
