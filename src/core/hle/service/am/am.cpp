@@ -145,7 +145,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {51, nullptr, "ApproveToDisplay"},
         {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
         {61, nullptr, "SetMediaPlaybackState"},
-        {62, nullptr, "SetIdleTimeDetectionExtension"},
+        {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
         {63, nullptr, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
         {65, nullptr, "ReportUserIsActive"},
@@ -275,6 +275,13 @@ void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) 
 }
 
 void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 
