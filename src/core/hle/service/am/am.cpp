@@ -282,7 +282,9 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
 }
 
 void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
     IPC::ResponseBuilder rb{ctx, 2};
+    auto IdleTimeDetectionExtension = rp.Pop<u32>()
     rb.Push(RESULT_SUCCESS);
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
