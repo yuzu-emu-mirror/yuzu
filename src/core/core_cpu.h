@@ -30,7 +30,7 @@ public:
 
     void NotifyEnd();
 
-    bool Rendezvous();
+    bool Rendezvous(bool main_core);
 
 private:
     unsigned cores_waiting{NUM_CPU_CORES};

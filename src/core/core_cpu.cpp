@@ -25,7 +25,7 @@ void CpuBarrier::NotifyEnd() {
     condition.notify_all();
 }
 
-bool CpuBarrier::Rendezvous() {
+bool CpuBarrier::Rendezvous(bool main_core) {
     if (!Settings::values.use_multi_core) {
         // Meaningless when running in single-core mode
         return true;
@@ -36,7 +36,7 @@ bool CpuBarrier::Rendezvous() {
 
         --cores_waiting;
         if (!cores_waiting) {
-            if (CoreTiming::MainSliceWasCropped() && IsMainCore()) {
+            if (CoreTiming::MainSliceWasCropped() && main_core) {
                 // This is the main thread but we were cropped, so just continue;
                 ++cores_waiting;
                 return true;
@@ -46,7 +46,7 @@ bool CpuBarrier::Rendezvous() {
             return true;
         }
 
-        if (CoreTiming::MainSliceWasCropped() && IsMainCore()) {
+        if (CoreTiming::MainSliceWasCropped() && main_core) {
             // This is the main thread but we were cropped, so just continue;
             ++cores_waiting;
             return true;
@@ -90,7 +90,7 @@ std::shared_ptr<ExclusiveMonitor> Cpu::MakeExclusiveMonitor(size_t num_cores) {
 
 void Cpu::RunLoop(bool tight_loop) {
     // Wait for all other CPU cores to complete the previous slice, such that they run in lock-step
-    if (!cpu_barrier->Rendezvous()) {
+    if (!cpu_barrier->Rendezvous(IsMainCore())) {
         // If rendezvous failed, session has been killed
         return;
     }

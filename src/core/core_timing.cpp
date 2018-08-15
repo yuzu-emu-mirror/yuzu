@@ -93,7 +93,7 @@ void UnregisterAllEvents() {
 
 void Init() {
     std::unique_lock<std::mutex> lock(mutex);
-    std::fill(downcount.begin(), downcount.end(), MAX_SLICE_LENGTH);
+    downcount.fill(MAX_SLICE_LENGTH);
     slice_length = MAX_SLICE_LENGTH;
     next_slice_length = MAX_SLICE_LENGTH;
     global_timer = 0;
@@ -183,8 +183,7 @@ void ForceExceptionCheck(s64 cycles) {
     if (downcount[0] > cycles) {
         // downcount is always (much) smaller than MAX_INT so we can safely cast cycles to an int
         // here. Account for cycles already executed by adjusting the g.slice_length
-        s64 crop_time = downcount[0] - static_cast<int>(cycles);
-        slice_length -= crop_time;
+        slice_length -= downcount[0] - static_cast<int>(cycles);
         downcount[0] = static_cast<int>(cycles);
         if (next_slice_length <= 0)
             next_slice_length = MAX_SLICE_LENGTH;
@@ -201,7 +200,7 @@ void MoveEvents() {
 
 void Advance() {
     std::unique_lock<std::mutex> lock(mutex);
-    size_t current_core = Core::System::GetInstance().CurrentCoreIndex();
+    const size_t current_core = Core::System::GetInstance().CurrentCoreIndex();
     if (current_core != 0) {
         downcount[current_core] = MAX_SLICE_LENGTH;
         return;

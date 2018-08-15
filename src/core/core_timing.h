@@ -81,6 +81,7 @@ void MoveEvents();
 /// Pretend that the main CPU has executed enough cycles to reach the next event.
 void Idle();
 
+/// Checks if the Main Core executed less then MAX_SLICE_LENGTH
 bool MainSliceWasCropped();
 
 /// Clear all pending events. This should ONLY be done on exit.
