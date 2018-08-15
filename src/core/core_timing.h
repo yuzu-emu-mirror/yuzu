@@ -40,7 +40,6 @@ void Shutdown();
  * doing something evil
  */
 u64 GetTicks();
-u64 GetIdleTicks();
 void AddTicks(u64 ticks);
 
 /**
@@ -81,6 +80,8 @@ void MoveEvents();
 
 /// Pretend that the main CPU has executed enough cycles to reach the next event.
 void Idle();
+
+bool MainSliceWasCropped();
 
 /// Clear all pending events. This should ONLY be done on exit.
 void ClearPendingEvents();

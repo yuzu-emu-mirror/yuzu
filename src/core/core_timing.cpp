@@ -13,13 +13,16 @@
 #include "common/assert.h"
 #include "common/thread.h"
 #include "common/threadsafe_queue.h"
+#include "core/core.h"
+#include "core/core_cpu.h"
 #include "core/core_timing_util.h"
 
 namespace CoreTiming {
 
 static s64 global_timer;
 static int slice_length;
-static int downcount;
+static int next_slice_length;
+static std::array<int, Core::NUM_CPU_CORES> downcount;
 
 struct EventType {
     TimedCallback callback;
@@ -58,7 +61,7 @@ static Common::MPSCQueue<Event, false> ts_queue;
 
 constexpr int MAX_SLICE_LENGTH = 20000;
 
-static s64 idled_cycles;
+static std::mutex mutex;
 
 // Are we in a function that has been called from Advance()
 // If events are sheduled from a function that gets called from Advance(),
@@ -89,10 +92,11 @@ void UnregisterAllEvents() {
 }
 
 void Init() {
-    downcount = MAX_SLICE_LENGTH;
+    std::unique_lock<std::mutex> lock(mutex);
+    std::fill(downcount.begin(), downcount.end(), MAX_SLICE_LENGTH);
     slice_length = MAX_SLICE_LENGTH;
+    next_slice_length = MAX_SLICE_LENGTH;
     global_timer = 0;
-    idled_cycles = 0;
 
     // The time between CoreTiming being intialized and the first call to Advance() is considered
     // the slice boundary between slice -1 and slice 0. Dispatcher loops must call Advance() before
@@ -113,19 +117,17 @@ void Shutdown() {
 // This should only be called from the CPU thread. If you are calling
 // it from any other thread, you are doing something evil
 u64 GetTicks() {
+    std::unique_lock<std::mutex> lock(mutex);
     u64 ticks = static_cast<u64>(global_timer);
     if (!is_global_timer_sane) {
-        ticks += slice_length - downcount;
+        ticks += slice_length - downcount[0];
     }
     return ticks;
 }
 
 void AddTicks(u64 ticks) {
-    downcount -= static_cast<int>(ticks);
-}
-
-u64 GetIdleTicks() {
-    return static_cast<u64>(idled_cycles);
+    std::unique_lock<std::mutex> lock(mutex);
+    downcount[Core::System::GetInstance().CurrentCoreIndex()] -= static_cast<int>(ticks);
 }
 
 void ClearPendingEvents() {
@@ -143,6 +145,7 @@ void ScheduleEvent(s64 cycles_into_future, const EventType* event_type, u64 user
 }
 
 void ScheduleEventThreadsafe(s64 cycles_into_future, const EventType* event_type, u64 userdata) {
+    std::unique_lock<std::mutex> lock(mutex);
     ts_queue.Push(Event{global_timer + cycles_into_future, 0, userdata, event_type});
 }
 
@@ -176,11 +179,15 @@ void RemoveNormalAndThreadsafeEvent(const EventType* event_type) {
 
 void ForceExceptionCheck(s64 cycles) {
     cycles = std::max<s64>(0, cycles);
-    if (downcount > cycles) {
+    std::unique_lock<std::mutex> lock(mutex);
+    if (downcount[0] > cycles) {
         // downcount is always (much) smaller than MAX_INT so we can safely cast cycles to an int
         // here. Account for cycles already executed by adjusting the g.slice_length
-        slice_length -= downcount - static_cast<int>(cycles);
-        downcount = static_cast<int>(cycles);
+        s64 crop_time = downcount[0] - static_cast<int>(cycles);
+        slice_length -= crop_time;
+        downcount[0] = static_cast<int>(cycles);
+        if (next_slice_length <= 0)
+            next_slice_length = MAX_SLICE_LENGTH;
     }
 }
 
@@ -193,11 +200,19 @@ void MoveEvents() {
 }
 
 void Advance() {
+    std::unique_lock<std::mutex> lock(mutex);
+    size_t current_core = Core::System::GetInstance().CurrentCoreIndex();
+    if (current_core != 0) {
+        downcount[current_core] = MAX_SLICE_LENGTH;
+        return;
+    }
+
     MoveEvents();
 
-    int cycles_executed = slice_length - downcount;
+    int cycles_executed = slice_length - downcount[0];
     global_timer += cycles_executed;
-    slice_length = MAX_SLICE_LENGTH;
+    slice_length = next_slice_length;
+    next_slice_length = MAX_SLICE_LENGTH;
 
     is_global_timer_sane = true;
 
@@ -216,12 +231,18 @@ void Advance() {
             std::min<s64>(event_queue.front().time - global_timer, MAX_SLICE_LENGTH));
     }
 
-    downcount = slice_length;
+    downcount[0] = slice_length;
+    next_slice_length = MAX_SLICE_LENGTH - slice_length;
 }
 
 void Idle() {
-    idled_cycles += downcount;
-    downcount = 0;
+    std::unique_lock<std::mutex> lock(mutex);
+    downcount[Core::System::GetInstance().CurrentCoreIndex()] = 0;
+}
+
+bool MainSliceWasCropped() {
+    std::unique_lock<std::mutex> lock(mutex);
+    return next_slice_length != MAX_SLICE_LENGTH;
 }
 
 std::chrono::microseconds GetGlobalTimeUs() {
@@ -229,7 +250,8 @@ std::chrono::microseconds GetGlobalTimeUs() {
 }
 
 int GetDowncount() {
-    return downcount;
+    std::unique_lock<std::mutex> lock(mutex);
+    return downcount[Core::System::GetInstance().CurrentCoreIndex()];
 }
 
 } // namespace CoreTiming

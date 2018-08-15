@@ -36,11 +36,21 @@ bool CpuBarrier::Rendezvous() {
 
         --cores_waiting;
         if (!cores_waiting) {
+            if (CoreTiming::MainSliceWasCropped() && IsMainCore()) {
+                // This is the main thread but we were cropped, so just continue;
+                ++cores_waiting;
+                return true;
+            }
             cores_waiting = NUM_CPU_CORES;
             condition.notify_all();
             return true;
         }
 
+        if (CoreTiming::MainSliceWasCropped() && IsMainCore()) {
+            // This is the main thread but we were cropped, so just continue;
+            ++cores_waiting;
+            return true;
+        }
         condition.wait(lock);
         return true;
     }
@@ -89,18 +99,11 @@ void Cpu::RunLoop(bool tight_loop) {
     // instead advance to the next event and try to yield to the next thread
     if (Kernel::GetCurrentThread() == nullptr) {
         LOG_TRACE(Core, "Core-{} idling", core_index);
-
-        if (IsMainCore()) {
-            // TODO(Subv): Only let CoreTiming idle if all 4 cores are idling.
-            CoreTiming::Idle();
-            CoreTiming::Advance();
-        }
-
+        CoreTiming::Idle();
+        CoreTiming::Advance();
         PrepareReschedule();
     } else {
-        if (IsMainCore()) {
-            CoreTiming::Advance();
-        }
+        CoreTiming::Advance();
 
         if (tight_loop) {
             arm_interface->Run();
