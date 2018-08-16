@@ -47,7 +47,7 @@ std::vector<FontRegion>
     SHARED_FONT_REGIONS{}; // Automatically populated based on shared_fonts dump or system archives
 
 const FontRegion& GetSharedFontRegion(size_t index) {
-    if (index < SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.empty()) {
+    if (index >= SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.empty()) {
         // No font fallback
         return EMPTY_REGION;
     }
@@ -121,27 +121,32 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
                           static_cast<u64>(font.first));
                 continue;
             }
-            const auto romfs = FileSys::ExtractRomFS(nca->GetRomFS());
+            const auto romfs = nca->GetRomFS();
             if (!romfs) {
                 LOG_ERROR(Service_NS, "{:016X} has no RomFS! Skipping",
                           static_cast<u64>(font.first));
                 continue;
             }
-            const auto font_fp = romfs->GetFile(font.second);
-            if (!romfs) {
+            const auto extracted_romfs = FileSys::ExtractRomFS(romfs);
+            if (!extracted_romfs) {
+                LOG_ERROR(Service_NS, "Failed to extract RomFS for {:016X}! Skipping",
+                          static_cast<u64>(font.first));
+                continue;
+            }
+            const auto font_fp = extracted_romfs->GetFile(font.second);
+            if (!font_fp) {
                 LOG_ERROR(Service_NS, "{:016X} has no file \"{}\"! Skipping",
                           static_cast<u64>(font.first), font.second);
                 continue;
             }
-            const auto font_data = font_fp->ReadAllBytes();
-            std::vector<u32> font_data_u32(font_data.size() / sizeof(u32));
-            std::memcpy(font_data_u32.data(), font_data.data(), font_data.size());
+            std::vector<u32> font_data_u32(font_fp->GetSize() / sizeof(u32));
+            font_fp->ReadBytes<u32>(font_data_u32.data(), font_fp->GetSize());
             // We need to be BigEndian as u32s for the xor encryption
             std::transform(font_data_u32.begin(), font_data_u32.end(), font_data_u32.begin(),
                            Common::swap32);
             FontRegion region{
                 static_cast<u32>(offset + 8),
-                static_cast<u32>(font_data.size() -
+                static_cast<u32>((font_data_u32.size() * sizeof(u32)) -
                                  8)}; // Font offset and size do not account for the header
             DecryptSharedFont(font_data_u32, *shared_font, offset);
             SHARED_FONT_REGIONS.push_back(region);
