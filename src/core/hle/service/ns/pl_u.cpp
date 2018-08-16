@@ -47,8 +47,10 @@ std::vector<FontRegion>
     SHARED_FONT_REGIONS{}; // Automatically populated based on shared_fonts dump or system archives
 
 const FontRegion& GetSharedFontRegion(size_t index) {
-    if (index < SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.empty())
-        return EMPTY_REGION; // No font fallback
+    if (index < SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.empty()) {
+        // No font fallback
+        return EMPTY_REGION;
+    }
     return SHARED_FONT_REGIONS.at(index);
 }
 
@@ -83,8 +85,9 @@ void BuildSharedFontsRawRegions(const std::vector<u8>& input) {
     unsigned cur_offset = 0; // As we can derive the xor key we can just populate the offsets based
                              // on the shared memory dump
     for (size_t i = 0; i < SHARED_FONTS.size(); i++) {
+        // Out of shared fonts/Invalid font
         if (GetU32Swapped(input.data() + cur_offset) != EXPECTED_RESULT)
-            break; // Out of shared fonts/Invalid font
+            break;
         const u32 KEY = GetU32Swapped(input.data() + cur_offset) ^
                         EXPECTED_MAGIC; // Derive key withing inverse xor
         const u32 SIZE = GetU32Swapped(input.data() + cur_offset + 4) ^ KEY;
@@ -105,9 +108,9 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
     RegisterHandlers(functions);
     // Attempt to load shared font data from disk
     const auto nand = FileSystem::GetSystemNANDContents();
-    if (nand->HasEntry(
-            static_cast<u64>(FontArchives::Standard), // Rebuild shared fonts from data ncas
-            FileSys::ContentRecordType::Data)) {
+    // Rebuild shared fonts from data ncas
+    if (nand->HasEntry(static_cast<u64>(FontArchives::Standard),
+                       FileSys::ContentRecordType::Data)) {
         size_t offset = 0;
         shared_font = std::make_shared<std::vector<u8>>(SHARED_FONT_MEM_SIZE);
         for (auto font : SHARED_FONTS) {
@@ -133,9 +136,9 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
             const auto font_data = font_fp->ReadAllBytes();
             std::vector<u32> font_data_u32(font_data.size() / sizeof(u32));
             std::memcpy(font_data_u32.data(), font_data.data(), font_data.size());
-            std::transform(
-                font_data_u32.begin(), font_data_u32.end(), font_data_u32.begin(),
-                Common::swap32); // We need to be BigEndian as u32s for the xor encryption
+            // We need to be BigEndian as u32s for the xor encryption
+            std::transform(font_data_u32.begin(), font_data_u32.end(), font_data_u32.begin(),
+                           Common::swap32);
             FontRegion region{
                 static_cast<u32>(offset + 8),
                 static_cast<u32>(font_data.size() -
@@ -146,7 +149,8 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
     } else {
         const std::string filepath{FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) +
                                    SHARED_FONT};
-        if (!FileUtil::CreateFullPath(filepath)) { // Create path if not already created
+        // Create path if not already created
+        if (!FileUtil::CreateFullPath(filepath)) {
             LOG_ERROR(Service_NS, "Failed to create sharedfonts path \"{}\"!", filepath);
             return;
         }
