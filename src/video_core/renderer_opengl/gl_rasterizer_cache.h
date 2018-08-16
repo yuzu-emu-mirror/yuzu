@@ -70,11 +70,15 @@ struct SurfaceParams {
 
         MaxColorFormat,
 
+        // Depth formats
+        Z32F = 44,
+        Z16 = 45,
+
+        MaxDepthFormat,
+
         // DepthStencil formats
-        Z24S8 = 44,
-        S8Z24 = 45,
-        Z32F = 46,
-        Z16 = 47,
+        Z24S8 = 46,
+        S8Z24 = 47,
         Z32FS8 = 48,
 
         MaxDepthStencilFormat,
@@ -157,10 +161,10 @@ struct SurfaceParams {
             1, // RG8S
             1, // RG32UI
             1, // R32UI
-            1, // Z24S8
-            1, // S8Z24
             1, // Z32F
             1, // Z16
+            1, // Z24S8
+            1, // S8Z24
             1, // Z32FS8
         }};
 
@@ -217,10 +221,10 @@ struct SurfaceParams {
             16,  // RG8S
             64,  // RG32UI
             32,  // R32UI
-            32,  // Z24S8
-            32,  // S8Z24
             32,  // Z32F
             16,  // Z16
+            32,  // Z24S8
+            32,  // S8Z24
             64,  // Z32FS8
         }};
 
@@ -595,6 +599,10 @@ struct SurfaceParams {
     static SurfaceType GetFormatType(PixelFormat pixel_format) {
         if (static_cast<size_t>(pixel_format) < static_cast<size_t>(PixelFormat::MaxColorFormat)) {
             return SurfaceType::ColorTexture;
+        }
+
+        if (static_cast<size_t>(pixel_format) < static_cast<size_t>(PixelFormat::MaxDepthFormat)) {
+            return SurfaceType::Depth;
         }
 
         if (static_cast<size_t>(pixel_format) <
