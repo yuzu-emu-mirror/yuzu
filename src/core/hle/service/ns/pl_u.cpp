@@ -47,7 +47,7 @@ std::vector<FontRegion>
     SHARED_FONT_REGIONS{}; // Automatically populated based on shared_fonts dump or system archives
 
 const FontRegion& GetSharedFontRegion(size_t index) {
-    if (index < SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.size() == 0)
+    if (index < SHARED_FONT_REGIONS.size() || SHARED_FONT_REGIONS.empty())
         return EMPTY_REGION; // No font fallback
     return SHARED_FONT_REGIONS.at(index);
 }
@@ -73,7 +73,7 @@ void DecryptSharedFont(const std::vector<u32>& input, std::vector<u8>& output, s
     offset += transformed_font.size() * sizeof(u32);
 }
 
-u32 getu32_Swapped(const u8* data) {
+static u32 GetU32Swapped(const u8* data) {
     u32 value;
     std::memcpy(&value, data, sizeof(value));
     return Common::swap32(value); // Helper function to make BuildSharedFontsRawRegions a bit nicer
@@ -82,12 +82,12 @@ u32 getu32_Swapped(const u8* data) {
 void BuildSharedFontsRawRegions(const std::vector<u8>& input) {
     unsigned cur_offset = 0; // As we can derive the xor key we can just populate the offsets based
                              // on the shared memory dump
-    for (unsigned i = 0; i < SHARED_FONTS.size(); i++) {
-        if (getu32_Swapped(input.data() + cur_offset) != EXPECTED_RESULT)
+    for (size_t i = 0; i < SHARED_FONTS.size(); i++) {
+        if (GetU32Swapped(input.data() + cur_offset) != EXPECTED_RESULT)
             break; // Out of shared fonts/Invalid font
-        const u32 KEY = getu32_Swapped(input.data() + cur_offset) ^
+        const u32 KEY = GetU32Swapped(input.data() + cur_offset) ^
                         EXPECTED_MAGIC; // Derive key withing inverse xor
-        const u32 SIZE = getu32_Swapped(input.data() + cur_offset + 4) ^ KEY;
+        const u32 SIZE = GetU32Swapped(input.data() + cur_offset + 4) ^ KEY;
         SHARED_FONT_REGIONS.push_back(FontRegion{cur_offset + 8, SIZE});
         cur_offset += SIZE + 8;
     }
@@ -103,7 +103,7 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
         {5, &PL_U::GetSharedFontInOrderOfPriority, "GetSharedFontInOrderOfPriority"},
     };
     RegisterHandlers(functions);
-
+    // Attempt to load shared font data from disk
     const auto nand = FileSystem::GetSystemNANDContents();
     if (nand->HasEntry(
             static_cast<u64>(FontArchives::Standard), // Rebuild shared fonts from data ncas
@@ -114,20 +114,20 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
             const auto nca =
                 nand->GetEntry(static_cast<u64>(font.first), FileSys::ContentRecordType::Data);
             if (!nca) {
-                LOG_CRITICAL(Service_NS, "Failed to find {:016X}! Skipping",
-                             static_cast<u64>(font.first));
+                LOG_ERROR(Service_NS, "Failed to find {:016X}! Skipping",
+                          static_cast<u64>(font.first));
                 continue;
             }
             const auto romfs = FileSys::ExtractRomFS(nca->GetRomFS());
             if (!romfs) {
-                LOG_CRITICAL(Service_NS, "{:016X} has no RomFS! Skipping",
-                             static_cast<u64>(font.first));
+                LOG_ERROR(Service_NS, "{:016X} has no RomFS! Skipping",
+                          static_cast<u64>(font.first));
                 continue;
             }
             const auto font_fp = romfs->GetFile(font.second);
             if (!romfs) {
-                LOG_CRITICAL(Service_NS, "{:016X} has no file \"{}\"! Skipping",
-                             static_cast<u64>(font.first), font.second);
+                LOG_ERROR(Service_NS, "{:016X} has no file \"{}\"! Skipping",
+                          static_cast<u64>(font.first), font.second);
                 continue;
             }
             const auto font_data = font_fp->ReadAllBytes();
@@ -144,13 +144,16 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
             SHARED_FONT_REGIONS.push_back(region);
         }
     } else {
-        // Attempt to load shared font data from disk
         const std::string filepath{FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) +
                                    SHARED_FONT};
-        FileUtil::CreateFullPath(filepath); // Create path if not already created
+        if (!FileUtil::CreateFullPath(filepath)) { // Create path if not already created
+            LOG_ERROR(Service_NS, "Failed to create sharedfonts path \"{}\"!", filepath);
+            return;
+        }
         FileUtil::IOFile file(filepath, "rb");
 
-        shared_font = std::make_shared<std::vector<u8>>(SHARED_FONT_MEM_SIZE);
+        shared_font = std::make_shared<std::vector<u8>>(
+            SHARED_FONT_MEM_SIZE); // Shared memory needs to always be allocated and a fixed size
         if (file.IsOpen()) {
             // Read shared font data
             ASSERT(file.GetSize() == SHARED_FONT_MEM_SIZE);
