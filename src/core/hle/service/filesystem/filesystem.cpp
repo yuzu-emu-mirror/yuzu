@@ -7,7 +7,10 @@
 #include "common/assert.h"
 #include "common/file_util.h"
 #include "core/core.h"
+#include "core/file_sys/bis_factory.h"
 #include "core/file_sys/errors.h"
+#include "core/file_sys/registered_cache.h"
+#include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/sdmc_factory.h"
 #include "core/file_sys/vfs.h"
@@ -36,6 +39,8 @@ static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
     : backing(std::move(backing_)) {}
+
+VfsDirectoryServiceWrapper::~VfsDirectoryServiceWrapper() = default;
 
 std::string VfsDirectoryServiceWrapper::GetName() const {
     return backing->GetName();

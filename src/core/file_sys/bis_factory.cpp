@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "core/file_sys/bis_factory.h"
+#include "core/file_sys/registered_cache.h"
 
 namespace FileSys {
 

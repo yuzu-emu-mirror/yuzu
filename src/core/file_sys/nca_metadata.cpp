@@ -3,9 +3,9 @@
 // Refer to the license.txt file included.
 
 #include <cstring>
+#include <utility>
 #include "common/common_funcs.h"
 #include "common/logging/log.h"
-#include "common/swap.h"
 #include "content_archive.h"
 #include "core/file_sys/nca_metadata.h"
 

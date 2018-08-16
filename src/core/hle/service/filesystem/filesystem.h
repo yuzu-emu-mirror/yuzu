@@ -6,13 +6,21 @@
 
 #include <memory>
 #include "common/common_types.h"
-#include "core/file_sys/bis_factory.h"
 #include "core/file_sys/directory.h"
 #include "core/file_sys/mode.h"
-#include "core/file_sys/romfs_factory.h"
-#include "core/file_sys/savedata_factory.h"
-#include "core/file_sys/sdmc_factory.h"
 #include "core/hle/result.h"
+
+namespace FileSys {
+class BISFactory;
+class RegisteredCache;
+class RomFSFactory;
+class SaveDataFactory;
+class SDMCFactory;
+
+enum class SaveDataSpaceId : u8;
+
+struct SaveDataDescriptor;
+} // namespace FileSys
 
 namespace Service {
 
@@ -44,6 +52,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager, const FileSys::Virtu
 class VfsDirectoryServiceWrapper {
 public:
     explicit VfsDirectoryServiceWrapper(FileSys::VirtualDir backing);
+    ~VfsDirectoryServiceWrapper();
 
     /**
      * Get a descriptive name for the archive (e.g. "RomFS", "SaveData", etc.)

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <cstring>
+#include <array>
 #include <memory>
 #include <vector>
 #include "common/common_types.h"
