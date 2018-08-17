@@ -363,9 +363,14 @@ std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers(bool using_c
 
 void RasterizerOpenGL::Clear() {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
-
+    const auto previous_state{state};
     bool use_color_fb = false;
     bool use_depth_fb = false;
+
+    state.color_mask.red_enabled = regs.clear_buffers.R ? GL_TRUE : GL_FALSE;
+    state.color_mask.green_enabled = regs.clear_buffers.G ? GL_TRUE : GL_FALSE;
+    state.color_mask.blue_enabled = regs.clear_buffers.B ? GL_TRUE : GL_FALSE;
+    state.color_mask.alpha_enabled = regs.clear_buffers.A ? GL_TRUE : GL_FALSE;
 
     GLbitfield clear_mask = 0;
     if (regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
@@ -382,8 +387,9 @@ void RasterizerOpenGL::Clear() {
         state.depth.test_enabled = true;
         state.depth.write_mask = GL_TRUE;
         state.depth.test_func = GL_ALWAYS;
-        state.Apply();
     }
+
+    state.Apply();
 
     if (clear_mask == 0)
         return;
@@ -393,7 +399,6 @@ void RasterizerOpenGL::Clear() {
     auto [dirty_color_surface, dirty_depth_surface] =
         ConfigureFramebuffers(use_color_fb, use_depth_fb, false);
 
-    // TODO(Subv): Support clearing only partial colors.
     glClearColor(regs.clear_color[0], regs.clear_color[1], regs.clear_color[2],
                  regs.clear_color[3]);
     glClearDepth(regs.clear_depth);
@@ -409,6 +414,9 @@ void RasterizerOpenGL::Clear() {
             res_cache.FlushSurface(dirty_depth_surface);
         }
     }
+
+    state = previous_state;
+    state.Apply();
 }
 
 std::pair<u8*, GLintptr> RasterizerOpenGL::AlignBuffer(u8* buffer_ptr, GLintptr buffer_offset,
