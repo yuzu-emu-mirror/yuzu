@@ -367,6 +367,10 @@ void RasterizerOpenGL::Clear() {
     bool use_color_fb = false;
     bool use_depth_fb = false;
 
+    if (regs.clear_buffers.RT != 0) {
+        return;
+    }
+
     state.color_mask.red_enabled = regs.clear_buffers.R ? GL_TRUE : GL_FALSE;
     state.color_mask.green_enabled = regs.clear_buffers.G ? GL_TRUE : GL_FALSE;
     state.color_mask.blue_enabled = regs.clear_buffers.B ? GL_TRUE : GL_FALSE;
