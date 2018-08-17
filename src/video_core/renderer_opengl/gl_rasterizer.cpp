@@ -388,6 +388,12 @@ void RasterizerOpenGL::Clear() {
         state.depth.write_mask = GL_TRUE;
         state.depth.test_func = GL_ALWAYS;
     }
+    if (regs.clear_buffers.S) {
+        clear_mask |= GL_STENCIL_BUFFER_BIT;
+        state.stencil.test_enabled = true;
+        state.stencil.write_mask = GL_TRUE;
+        state.stencil.test_func = GL_ALWAYS;
+    }
 
     state.Apply();
 
@@ -402,6 +408,7 @@ void RasterizerOpenGL::Clear() {
     glClearColor(regs.clear_color[0], regs.clear_color[1], regs.clear_color[2],
                  regs.clear_color[3]);
     glClearDepth(regs.clear_depth);
+    glClearStencil(regs.clear_stencil);
 
     glClear(clear_mask);
 
