@@ -308,7 +308,7 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
         {5, &ICommonStateGetter::GetOperationMode, "GetOperationMode"},
         {6, &ICommonStateGetter::GetPerformanceMode, "GetPerformanceMode"},
         {7, nullptr, "GetCradleStatus"},
-        {8, nullptr, "GetBootMode"},
+        {8, &ICommonStateGetter::GetBootMode, "GetBootMode"},
         {9, &ICommonStateGetter::GetCurrentFocusState, "GetCurrentFocusState"},
         {10, nullptr, "RequestToAcquireSleepLock"},
         {11, nullptr, "ReleaseSleepLock"},
@@ -331,6 +331,14 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
     RegisterHandlers(functions);
 
     event = Kernel::Event::Create(Kernel::ResetType::OneShot, "ICommonStateGetter:Event");
+}
+
+void ICommonStateGetter::GetBootMode(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u8>(0); // Normal boot mode
+
+    LOG_DEBUG(Service_AM, "called");
 }
 
 void ICommonStateGetter::GetEventHandle(Kernel::HLERequestContext& ctx) {
