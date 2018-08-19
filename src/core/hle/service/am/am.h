@@ -139,6 +139,7 @@ private:
     void EnsureSaveData(Kernel::HLERequestContext& ctx);
     void SetTerminateResult(Kernel::HLERequestContext& ctx);
     void GetDisplayVersion(Kernel::HLERequestContext& ctx);
+    void GetSaveDataSize(Kernel::HLERequestContext& ctx);
     void GetDesiredLanguage(Kernel::HLERequestContext& ctx);
     void InitializeGamePlayRecording(Kernel::HLERequestContext& ctx);
     void SetGamePlayRecordingState(Kernel::HLERequestContext& ctx);

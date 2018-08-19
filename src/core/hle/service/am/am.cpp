@@ -594,7 +594,7 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {23, &IApplicationFunctions::GetDisplayVersion, "GetDisplayVersion"},
         {24, nullptr, "GetLaunchStorageInfoForDebug"},
         {25, nullptr, "ExtendSaveData"},
-        {26, nullptr, "GetSaveDataSize"},
+        {26, &IApplicationFunctions::GetSaveDataSize, "GetSaveDataSize"},
         {30, nullptr, "BeginBlockingHomeButtonShortAndLongPressed"},
         {31, nullptr, "EndBlockingHomeButtonShortAndLongPressed"},
         {32, nullptr, "BeginBlockingHomeButton"},
@@ -681,6 +681,31 @@ void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
     rb.Push<u64>(1);
     rb.Push<u64>(0);
     LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void IApplicationFunctions::GetSaveDataSize(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const auto type = rp.PopRaw<FileSys::SaveDataType>();
+    const auto uid = rp.PopRaw<u128>();
+
+    auto save =
+        FileSystem::OpenSaveData(FileSys::SaveDataSpaceId::NandUser,
+                                 {Core::CurrentProcess()->program_id, uid, 0, type, 0, 0, 0, 0});
+
+    if (save.Failed()) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        // TODO(DarkLordZach): Find a better error code for this.
+        rb.Push(ResultCode(-1));
+    }
+
+    const auto dir = save.Unwrap();
+
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(dir->GetSize());
+    // TODO(DarkLordZach): Find out what this second value is (journal size?)
+    rb.Push<u64>(dir->GetSize());
 }
 
 void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
