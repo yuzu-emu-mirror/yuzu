@@ -2,11 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <algorithm>
-#include <memory>
 #include "common/common_types.h"
 #include "common/logging/log.h"
 #include "core/file_sys/romfs_factory.h"
+#include "core/loader/loader.h"
 
 namespace FileSys {
 

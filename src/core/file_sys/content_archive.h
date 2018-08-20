@@ -14,7 +14,6 @@
 #include "common/swap.h"
 #include "control_metadata.h"
 #include "core/crypto/key_manager.h"
-#include "core/file_sys/partition_filesystem.h"
 #include "core/loader/loader.h"
 
 namespace FileSys {

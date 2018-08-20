@@ -16,6 +16,7 @@
 #include "core/core.h"
 #include "core/file_sys/directory.h"
 #include "core/file_sys/errors.h"
+#include "core/file_sys/savedata_factory.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/filesystem/filesystem.h"
