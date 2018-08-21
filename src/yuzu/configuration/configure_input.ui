@@ -31,9 +31,9 @@
         <item row="0" column="0">
          <layout class="QVBoxLayout" name="buttonMiscPlusVerticalLayout">
           <item>
-           <widget class="QLabel" name="labelPlus">
+           <widget class="QLabel" name="labelMinus">
             <property name="text">
-             <string>Plus:</string>
+             <string>Minus:</string>
             </property>
            </widget>
           </item>
@@ -49,9 +49,9 @@
         <item row="0" column="1">
          <layout class="QVBoxLayout" name="buttonMiscMinusVerticalLayout">
           <item>
-           <widget class="QLabel" name="labelMinus">
+           <widget class="QLabel" name="labelPlus">
             <property name="text">
-             <string>Minus:</string>
+             <string>Plus:</string>
             </property>
            </widget>
           </item>
