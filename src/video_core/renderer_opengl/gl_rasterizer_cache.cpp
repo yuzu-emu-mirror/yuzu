@@ -783,8 +783,6 @@ Surface RasterizerCacheOpenGL::RecreateSurface(const Surface& surface,
     // Verify surface is compatible for blitting
     const auto& params{surface->GetSurfaceParams()};
     ASSERT(params.type == new_params.type);
-    ASSERT_MSG(params.GetCompressionFactor(params.pixel_format) == 1,
-               "Compressed texture reinterpretation is not supported");
 
     // Create a new surface with the new parameters, and blit the previous surface to it
     Surface new_surface{std::make_shared<CachedSurface>(new_params)};
@@ -801,9 +799,12 @@ Surface RasterizerCacheOpenGL::RecreateSurface(const Surface& surface,
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo.handle);
     glBufferData(GL_PIXEL_PACK_BUFFER, buffer_size, nullptr, GL_STREAM_DRAW_ARB);
-    glGetTextureImage(surface->Texture().handle, 0, source_format.format, source_format.type,
-                      params.SizeInBytes(), nullptr);
-
+    if (source_format.compressed) {
+        glGetCompressedTextureImage(surface->Texture().handle, 0, params.SizeInBytes(), nullptr);
+    } else {
+        glGetTextureImage(surface->Texture().handle, 0, source_format.format, source_format.type,
+                          params.SizeInBytes(), nullptr);
+    }
     // If the new texture is bigger than the previous one, we need to fill in the rest with data
     // from the CPU.
     if (params.SizeInBytes() < new_params.SizeInBytes()) {
@@ -827,9 +828,32 @@ Surface RasterizerCacheOpenGL::RecreateSurface(const Surface& surface,
     const auto& dest_rect{new_params.GetRect()};
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo.handle);
-    glTextureSubImage2D(
-        new_surface->Texture().handle, 0, 0, 0, static_cast<GLsizei>(dest_rect.GetWidth()),
-        static_cast<GLsizei>(dest_rect.GetHeight()), dest_format.format, dest_format.type, nullptr);
+    if (dest_format.compressed) {
+        OpenGLState cur_state = OpenGLState::GetCurState();
+
+        GLuint old_tex = cur_state.texture_units[0].texture_2d;
+        cur_state.texture_units[0].texture_2d = new_surface->Texture().handle;
+        cur_state.Apply();
+
+        // Ensure no bad interactions with GL_UNPACK_ALIGNMENT
+        ASSERT(new_params.width * CachedSurface::GetGLBytesPerPixel(new_params.pixel_format) % 4 ==
+               0);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(params.width));
+        glActiveTexture(GL_TEXTURE0);
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, dest_format.internal_format,
+                               static_cast<GLsizei>(dest_rect.GetWidth()),
+                               static_cast<GLsizei>(dest_rect.GetHeight()), 0,
+                               static_cast<GLsizei>(new_params.SizeInBytes()), nullptr);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+        cur_state.texture_units[0].texture_2d = old_tex;
+        cur_state.Apply();
+    } else {
+        glTextureSubImage2D(new_surface->Texture().handle, 0, 0, 0,
+                            static_cast<GLsizei>(dest_rect.GetWidth()),
+                            static_cast<GLsizei>(dest_rect.GetHeight()), dest_format.format,
+                            dest_format.type, nullptr);
+    }
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
     pbo.Release();
