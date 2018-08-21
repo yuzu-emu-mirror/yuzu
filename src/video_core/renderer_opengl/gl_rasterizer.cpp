@@ -406,7 +406,13 @@ void RasterizerOpenGL::Clear() {
         state.stencil.test_func = GL_ALWAYS;
     }
 
+    if (!use_color_fb && !use_depth_fb) {
+        // No color surface or depth/stencil enabled
+        return;
+    }
+
     if (clear_mask == 0) {
+        // No clear mask is enabled
         return;
     }
 
