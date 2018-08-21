@@ -93,6 +93,7 @@ const int GMainWindow::max_recent_files_item;
 GMainWindow::GMainWindow()
     : config(new Config()), emu_thread(nullptr),
       vfs(std::make_shared<FileSys::RealVfsFilesystem>()) {
+    InitializeLogging();
 
     debug_context = Tegra::DebugContext::Construct();
 
@@ -1124,7 +1125,6 @@ int main(int argc, char* argv[]) {
 
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
-    InitializeLogging();
     main_window.show();
     return app.exec();
 }
