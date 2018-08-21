@@ -14,6 +14,7 @@
 #include "common/logging/log.h"
 #include "common/math_util.h"
 #include "common/microprofile.h"
+#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
 #include "core/hle/kernel/process.h"
@@ -363,24 +364,30 @@ std::pair<Surface, Surface> RasterizerOpenGL::ConfigureFramebuffers(bool using_c
 
 void RasterizerOpenGL::Clear() {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
-    const auto previous_state{state};
+    const auto prev_state{state};
+    SCOPE_EXIT({
+        state = prev_state;
+        state.Apply();
+    });
     bool use_color_fb = false;
     bool use_depth_fb = false;
-
-    if (regs.clear_buffers.RT != 0) {
-        return;
-    }
 
     state.color_mask.red_enabled = regs.clear_buffers.R ? GL_TRUE : GL_FALSE;
     state.color_mask.green_enabled = regs.clear_buffers.G ? GL_TRUE : GL_FALSE;
     state.color_mask.blue_enabled = regs.clear_buffers.B ? GL_TRUE : GL_FALSE;
     state.color_mask.alpha_enabled = regs.clear_buffers.A ? GL_TRUE : GL_FALSE;
 
-    GLbitfield clear_mask = 0;
-    if (regs.clear_buffers.R && regs.clear_buffers.G && regs.clear_buffers.B &&
+    GLbitfield clear_mask{};
+    if (regs.clear_buffers.R || regs.clear_buffers.G || regs.clear_buffers.B ||
         regs.clear_buffers.A) {
         clear_mask |= GL_COLOR_BUFFER_BIT;
         use_color_fb = true;
+
+        if (regs.clear_buffers.RT != 0) {
+            LOG_CRITICAL(HW_GPU, "Clear unimplemented for RT {}", regs.clear_buffers.RT);
+            UNREACHABLE();
+            return;
+        }
     }
     if (regs.clear_buffers.Z) {
         clear_mask |= GL_DEPTH_BUFFER_BIT;
@@ -399,10 +406,11 @@ void RasterizerOpenGL::Clear() {
         state.stencil.test_func = GL_ALWAYS;
     }
 
-    state.Apply();
-
-    if (clear_mask == 0)
+    if (clear_mask == 0) {
         return;
+    }
+
+    state.Apply();
 
     ScopeAcquireGLContext acquire_context{emu_window};
 
@@ -425,9 +433,6 @@ void RasterizerOpenGL::Clear() {
             res_cache.FlushSurface(dirty_depth_surface);
         }
     }
-
-    state = previous_state;
-    state.Apply();
 }
 
 std::pair<u8*, GLintptr> RasterizerOpenGL::AlignBuffer(u8* buffer_ptr, GLintptr buffer_offset,
