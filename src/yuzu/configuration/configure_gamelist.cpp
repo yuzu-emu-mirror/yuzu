@@ -56,7 +56,6 @@ void ConfigureGameList::setConfiguration() {
 
 void ConfigureGameList::applyConfiguration() {
     UISettings::values.show_unknown = ui->show_unknown->isChecked();
-    UISettings::values.icon_size = ui->icon_size_combobox->currentData().toUInt();
     UISettings::values.row_1_text_id = ui->row_1_text_combobox->currentData().toUInt();
     UISettings::values.row_2_text_id = ui->row_2_text_combobox->currentData().toUInt();
     Settings::Apply();
