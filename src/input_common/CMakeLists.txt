@@ -1,3 +1,6 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
+
 add_library(input_common STATIC
     analog_from_button.cpp
     analog_from_button.h
@@ -19,3 +22,6 @@ if(SDL2_FOUND)
     target_link_libraries(input_common PRIVATE SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)
 endif()
+
+set_target_properties(input_common PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(input_common)

@@ -1,3 +1,6 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
+
 add_library(video_core STATIC
     command_processor.cpp
     command_processor.h
@@ -55,3 +58,6 @@ create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
 target_link_libraries(video_core PRIVATE glad)
+
+set_target_properties(video_core PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(video_core)

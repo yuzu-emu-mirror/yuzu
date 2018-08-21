@@ -1,3 +1,6 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
+
 add_library(core STATIC
     arm/arm_interface.h
     arm/exclusive_monitor.cpp
@@ -383,3 +386,6 @@ if (ARCHITECTURE_x86_64)
     )
     target_link_libraries(core PRIVATE dynarmic)
 endif()
+
+set_target_properties(core PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(core)

@@ -1,4 +1,5 @@
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
 
 add_executable(yuzu-cmd
     config.cpp
@@ -19,6 +20,9 @@ if (MSVC)
     target_link_libraries(yuzu-cmd PRIVATE getopt)
 endif()
 target_link_libraries(yuzu-cmd PRIVATE ${PLATFORM_LIBRARIES} SDL2 Threads::Threads)
+
+set_target_properties(yuzu-cmd PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(yuzu-cmd)
 
 if(UNIX AND NOT APPLE)
     install(TARGETS yuzu-cmd RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")

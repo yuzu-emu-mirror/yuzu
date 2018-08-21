@@ -1,3 +1,6 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
+
 # Generate cpp with Git revision from template
 # Also if this is a CI build, add the build name (ie: Nightly, Bleeding Edge) to the scm_rev file as well
 set(REPO_NAME "")
@@ -90,3 +93,6 @@ target_link_libraries(common PUBLIC Boost::boost fmt microprofile)
 if (ARCHITECTURE_x86_64)
     target_link_libraries(common PRIVATE xbyak)
 endif()
+
+set_target_properties(common PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(common)

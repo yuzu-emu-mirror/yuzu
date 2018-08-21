@@ -1,3 +1,6 @@
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+include(cotire)
+
 add_library(audio_core STATIC
     algorithm/filter.cpp
     algorithm/filter.h
@@ -29,3 +32,6 @@ if(ENABLE_CUBEB)
     target_link_libraries(audio_core PRIVATE cubeb)
     target_compile_definitions(audio_core PRIVATE -DHAVE_CUBEB=1)
 endif()
+
+set_target_properties(audio_core PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+cotire(audio_core)
