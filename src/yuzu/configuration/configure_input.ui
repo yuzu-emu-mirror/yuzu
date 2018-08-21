@@ -29,7 +29,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout_6">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="buttonMiscPlusVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonMiscMinusVerticalLayout_2">
           <item>
            <widget class="QLabel" name="labelMinus">
             <property name="text">
@@ -47,7 +47,7 @@
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="buttonMiscMinusVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonMiscPlusVerticalLayout">
           <item>
            <widget class="QLabel" name="labelPlus">
             <property name="text">
