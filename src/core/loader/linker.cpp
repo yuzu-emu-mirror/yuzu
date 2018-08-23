@@ -12,6 +12,11 @@
 
 namespace Loader {
 
+// When using mingw precompiled headers, it pulls in some dark corners of the stdlib that defines
+// RELATIVE as a macro
+#ifdef RELATIVE
+#undef RELATIVE
+#endif
 enum class RelocationType : u32 { ABS64 = 257, GLOB_DAT = 1025, JUMP_SLOT = 1026, RELATIVE = 1027 };
 
 enum DynamicType : u32 {

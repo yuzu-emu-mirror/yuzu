@@ -13,6 +13,12 @@
 #include "core/hle/service/time/interface.h"
 #include "core/hle/service/time/time.h"
 
+// When using mingw precompiled headers, it pulls in some dark corners of the stdlib that defines
+// GetCurrentTime as a macro
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 namespace Service::Time {
 
 class ISystemClock final : public ServiceFramework<ISystemClock> {

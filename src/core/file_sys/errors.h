@@ -17,6 +17,15 @@ enum {
 };
 }
 
+// When using mingw precompiled headers, it pulls in some dark corners of the stdlib that defines
+// these as macros
+#ifdef ERROR_PATH_NOT_FOUND
+#undef ERROR_PATH_NOT_FOUND
+#endif
+#ifdef ERROR_FILE_NOT_FOUND
+#undef ERROR_FILE_NOT_FOUND
+#endif
+
 constexpr ResultCode ERROR_PATH_NOT_FOUND(ErrorModule::FS, ErrCodes::NotFound);
 
 // TODO(bunnei): Replace these with correct errors for Switch OS
