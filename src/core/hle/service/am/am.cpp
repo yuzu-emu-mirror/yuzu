@@ -17,6 +17,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/pm/pm.h"
 #include "core/hle/service/set/set.h"
 #include "core/settings.h"
 
@@ -336,7 +337,8 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
 void ICommonStateGetter::GetBootMode(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u8>(0); // Normal boot mode
+
+    rb.Push<u8>(static_cast<u8>(Service::PM::SystemBootMode::Normal)); // Normal boot mode
 
     LOG_DEBUG(Service_AM, "called");
 }

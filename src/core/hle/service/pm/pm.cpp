@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/ipc_helpers.h"
+#include "core/hle/service/pm/pm.h"
 #include "core/hle/service/service.h"
 
 namespace Service::PM {
@@ -21,7 +22,7 @@ private:
     void GetBootMode(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0); // Normal boot mode
+        rb.Push<u32>(static_cast<u32>(SystemBootMode::Normal)); // Normal boot mode
 
         LOG_DEBUG(Service_PM, "called");
     }
