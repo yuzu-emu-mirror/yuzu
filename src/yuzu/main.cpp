@@ -90,6 +90,16 @@ void GMainWindow::ShowCallouts() {}
 
 const int GMainWindow::max_recent_files_item;
 
+static void InitializeLogging() {
+    Log::Filter log_filter;
+    log_filter.ParseFilterString(Settings::values.log_filter);
+    Log::SetGlobalFilter(log_filter);
+
+    const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
+    FileUtil::CreateFullPath(log_dir);
+    Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir + LOG_FILE));
+}
+
 GMainWindow::GMainWindow()
     : config(new Config()), emu_thread(nullptr),
       vfs(std::make_shared<FileSys::RealVfsFilesystem>()) {
@@ -1097,16 +1107,6 @@ void GMainWindow::UpdateUITheme() {
 #ifdef main
 #undef main
 #endif
-
-static void InitializeLogging() {
-    Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values.log_filter);
-    Log::SetGlobalFilter(log_filter);
-
-    const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
-    FileUtil::CreateFullPath(log_dir);
-    Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir + LOG_FILE));
-}
 
 int main(int argc, char* argv[]) {
     MicroProfileOnThreadCreate("Frontend");
