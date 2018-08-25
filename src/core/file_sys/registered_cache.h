@@ -13,8 +13,9 @@
 #include <boost/container/flat_map.hpp>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
-#include "content_archive.h"
+#include "core/file_sys/content_archive.h"
 #include "core/file_sys/nca_metadata.h"
+#include "core/file_sys/submission_package.h"
 #include "core/file_sys/vfs.h"
 
 namespace FileSys {
@@ -86,9 +87,11 @@ public:
         boost::optional<ContentRecordType> record_type = boost::none,
         boost::optional<u64> title_id = boost::none) const;
 
-    // Raw copies all the ncas from the xci to the csache. Does some quick checks to make sure there
-    // is a meta NCA and all of them are accessible.
+    // Raw copies all the ncas from the xci/nsp to the csache. Does some quick checks to make sure
+    // there is a meta NCA and all of them are accessible.
     InstallResult InstallEntry(std::shared_ptr<XCI> xci, bool overwrite_if_exists = false,
+                               const VfsCopyFunction& copy = &VfsRawCopy);
+    InstallResult InstallEntry(std::shared_ptr<NSP> nsp, bool overwrite_if_exists = false,
                                const VfsCopyFunction& copy = &VfsRawCopy);
 
     // Due to the fact that we must use Meta-type NCAs to determine the existance of files, this
