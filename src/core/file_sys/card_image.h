@@ -11,9 +11,10 @@
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/vfs.h"
 #include "core/loader/loader.h"
-#include "submission_package.h"
 
 namespace FileSys {
+
+class NSP;
 
 enum class GamecardSize : u8 {
     S_1GB = 0xFA,
@@ -58,6 +59,7 @@ enum class XCIPartition : u8 { Update, Normal, Secure, Logo };
 class XCI : public ReadOnlyVfsDirectory {
 public:
     explicit XCI(VirtualFile file);
+    ~XCI() override;
 
     Loader::ResultStatus GetStatus() const;
     Loader::ResultStatus GetProgramNCAStatus() const;
