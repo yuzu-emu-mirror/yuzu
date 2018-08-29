@@ -5,6 +5,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 
 #include "common/common_types.h"
 #include "core/core.h"
@@ -16,63 +17,87 @@
 template <class T>
 class RasterizerCache : NonCopyable {
 public:
-    /// Mark the specified region as being invalidated
-    void InvalidateRegion(VAddr region_addr, size_t region_size) {
-        for (auto iter = cached_objects.cbegin(); iter != cached_objects.cend();) {
-            const auto& object{iter->second};
-
-            ++iter;
-
-            if (object->GetAddr() <= (region_addr + region_size) &&
-                region_addr <= (object->GetAddr() + object->GetSizeInBytes())) {
-                // Regions overlap, so invalidate
-                Unregister(object);
-            }
+    /// Mark the specified page as being invalidated
+    void InvalidatePage(u64 page) {
+        const auto& search_by_page{cached_pages.find(page)};
+        if (search_by_page == cached_pages.end()) {
+            return;
         }
+
+        for (const auto& object : search_by_page->second) {
+            Unregister(object.second, false);
+        }
+
+        cached_pages.erase(search_by_page);
     }
 
 protected:
     /// Tries to get an object from the cache with the specified address
     T TryGet(VAddr addr) const {
-        const auto& search{cached_objects.find(addr)};
-        if (search != cached_objects.end()) {
-            return search->second;
+        const u64 page{addr >> Memory::PAGE_BITS};
+        const auto& search_by_page{cached_pages.find(page)};
+        if (search_by_page == cached_pages.end()) {
+            return nullptr;
         }
 
-        return nullptr;
-    }
+        const auto& search_by_addr{search_by_page->second.find(addr)};
+        if (search_by_addr == search_by_page->second.end()) {
+            return nullptr;
+        }
 
-    /// Gets a reference to the cache
-    const std::unordered_map<VAddr, T>& GetCache() const {
-        return cached_objects;
+        return search_by_addr->second;
     }
 
     /// Register an object into the cache
     void Register(const T& object) {
-        const auto& search{cached_objects.find(object->GetAddr())};
-        if (search != cached_objects.end()) {
-            // Registered already
-            return;
+        const u64 page{object->GetAddr() >> Memory::PAGE_BITS};
+        const auto& search_by_page{cached_pages.find(page)};
+        if (search_by_page != cached_pages.end()) {
+            search_by_page->second[object->GetAddr()] = object;
+        } else {
+            CacheMap new_cache_map;
+            new_cache_map[object->GetAddr()] = object;
+            cached_pages[page] = std::move(new_cache_map);
         }
 
         auto& rasterizer = Core::System::GetInstance().Renderer().Rasterizer();
         rasterizer.UpdatePagesCachedCount(object->GetAddr(), object->GetSizeInBytes(), 1);
-        cached_objects[object->GetAddr()] = std::move(object);
     }
 
     /// Unregisters an object from the cache
-    void Unregister(const T& object) {
-        const auto& search{cached_objects.find(object->GetAddr())};
-        if (search == cached_objects.end()) {
+    void Unregister(const T& object, bool remove_from_cache = true) {
+        const u64 page{object->GetAddr() >> Memory::PAGE_BITS};
+        const auto& search_by_page{cached_pages.find(page)};
+        if (search_by_page == cached_pages.end()) {
+            // Unregistered already
+            return;
+        }
+
+        const auto& search_by_addr{search_by_page->second.find(object->GetAddr())};
+        if (search_by_addr == search_by_page->second.end()) {
             // Unregistered already
             return;
         }
 
         auto& rasterizer = Core::System::GetInstance().Renderer().Rasterizer();
         rasterizer.UpdatePagesCachedCount(object->GetAddr(), object->GetSizeInBytes(), -1);
-        cached_objects.erase(search);
+
+        // Remove from the cache if specified
+        if (remove_from_cache) {
+            if (search_by_page->second.size() == 1) {
+                // Only one item at the page, remove the cached page
+                cached_pages.erase(search_by_page);
+            } else {
+                // Remove just the item at the cached page
+                search_by_page->second.erase(search_by_addr);
+            }
+        }
     }
 
 private:
-    std::unordered_map<VAddr, T> cached_objects;
+    using CacheMap = std::unordered_map<VAddr, T>;
+
+    /// Two-level cache of objects, where first level is keyed on starting CPU address page, and
+    /// second level is keyed on exact CPU address
+    std::unordered_map<u64, CacheMap> cached_pages;
 };

@@ -581,8 +581,11 @@ void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {
 
 void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
-    res_cache.InvalidateRegion(addr, size);
-    shader_cache.InvalidateRegion(addr, size);
+    const u64 page_end{(addr + size + Memory::PAGE_SIZE - 1) >> Memory::PAGE_BITS};
+    for (u64 page{addr >> Memory::PAGE_BITS}; page <= page_end; ++page) {
+        res_cache.InvalidatePage(page);
+        shader_cache.InvalidatePage(page);
+    }
 }
 
 void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
