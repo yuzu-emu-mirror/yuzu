@@ -805,7 +805,7 @@ void GMainWindow::OnMenuInstallToNAND() {
         if (filename.endsWith("nsp", Qt::CaseInsensitive)) {
             nsp = std::make_shared<FileSys::NSP>(
                 vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
-            if (!nsp->IsExtractedType())
+            if (nsp->IsExtractedType())
                 failed();
         } else {
             const auto xci = std::make_shared<FileSys::XCI>(
