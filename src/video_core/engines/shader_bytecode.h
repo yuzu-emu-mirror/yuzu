@@ -327,6 +327,10 @@ union Instruction {
     } alu_integer;
 
     union {
+        BitField<40, 1, u64> invert;
+    } popc;
+
+    union {
         BitField<39, 3, u64> pred;
         BitField<42, 1, u64> neg_pred;
     } sel;
