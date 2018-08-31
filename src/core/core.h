@@ -5,12 +5,14 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
 #include "common/common_types.h"
 #include "core/arm/exclusive_monitor.h"
 #include "core/core_cpu.h"
+#include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/object.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/loader/loader.h"
@@ -21,8 +23,6 @@
 #include "hle/service/filesystem/filesystem.h"
 #include "video_core/debug_utils/debug_utils.h"
 #include "video_core/gpu.h"
-
-class ARM_Interface;
 
 namespace Core::Frontend {
 class EmuWindow;
@@ -38,8 +38,16 @@ class RendererBase;
 
 namespace Core {
 
+class ARM_Interface;
+
 class System {
 public:
+    System(const System&) = delete;
+    System& operator=(const System&) = delete;
+
+    System(System&&) = delete;
+    System& operator=(System&&) = delete;
+
     ~System();
 
     /**
@@ -181,6 +189,19 @@ public:
         return current_process;
     }
 
+    /// Provides a reference to the kernel instance.
+    Kernel::KernelCore& Kernel();
+
+    /// Provides a constant reference to the kernel instance.
+    const Kernel::KernelCore& Kernel() const;
+
+    /// Gets the name of the current game
+    Loader::ResultStatus GetGameName(std::string& out) const {
+        if (app_loader == nullptr)
+            return Loader::ResultStatus::ErrorNotInitialized;
+        return app_loader->ReadTitle(out);
+    }
+
     PerfStats perf_stats;
     FrameLimiter frame_limiter;
 
@@ -232,6 +253,7 @@ private:
      */
     ResultStatus Init(Frontend::EmuWindow& emu_window);
 
+    Kernel::KernelCore kernel;
     /// RealVfsFilesystem instance
     FileSys::VirtualFilesystem virtual_filesystem;
     /// AppLoader used to load the current executing application

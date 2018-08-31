@@ -21,6 +21,7 @@ class GRenderWindow;
 class MicroProfileDialog;
 class ProfilerWidget;
 class WaitTreeWidget;
+enum class GameListOpenTarget;
 
 namespace Tegra {
 class DebugContext;
@@ -122,7 +123,10 @@ private slots:
     void OnStopGame();
     /// Called whenever a user selects a game in the game list widget.
     void OnGameListLoadFile(QString game_path);
-    void OnGameListOpenSaveFolder(u64 program_id);
+    void OnGameListOpenFolder(u64 program_id, GameListOpenTarget target);
+    void OnGameListNavigateToGamedbEntry(
+        u64 program_id,
+        std::unordered_map<std::string, std::pair<QString, QString>>& compatibility_list);
     void OnMenuLoadFile();
     void OnMenuLoadFolder();
     void OnMenuInstallToNAND();
@@ -161,6 +165,8 @@ private:
     // Whether emulation is currently running in yuzu.
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
+    // The path to the game currently running
+    QString game_path;
 
     // FS
     FileSys::VirtualFilesystem vfs;

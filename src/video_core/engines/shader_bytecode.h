@@ -12,6 +12,7 @@
 
 #include <boost/optional.hpp>
 
+#include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/common_types.h"
 
@@ -79,6 +80,9 @@ union Attribute {
         // shader, and a tuple of (TessCoord.x, TessCoord.y, TessCoord.z, ~) when inside a Tess Eval
         // shader.
         TessCoordInstanceIDVertexID = 47,
+        // This attribute contains a tuple of (Unk, Unk, Unk, gl_FrontFacing) when inside a fragment
+        // shader. It is unknown what the other values contain.
+        FrontFacing = 63,
     };
 
     union {
@@ -141,6 +145,7 @@ enum class PredCondition : u64 {
     NotEqual = 5,
     GreaterEqual = 6,
     LessThanWithNan = 9,
+    GreaterThanWithNan = 12,
     NotEqualWithNan = 13,
     // TODO(Subv): Other condition types
 };
@@ -208,10 +213,36 @@ enum class XmadMode : u64 {
     CBcc = 4,
 };
 
+enum class IAdd3Mode : u64 {
+    None = 0,
+    RightShift = 1,
+    LeftShift = 2,
+};
+
+enum class IAdd3Height : u64 {
+    None = 0,
+    LowerHalfWord = 1,
+    UpperHalfWord = 2,
+};
+
 enum class FlowCondition : u64 {
     Always = 0xF,
     Fcsm_Tr = 0x1C, // TODO(bunnei): What is this used for?
 };
+
+enum class PredicateResultMode : u64 {
+    None = 0x0,
+    NotZero = 0x3,
+};
+
+enum class TextureType : u64 {
+    Texture1D = 0,
+    Texture2D = 1,
+    Texture3D = 2,
+    TextureCube = 3,
+};
+
+enum class IpaMode : u64 { Pass = 0, None = 1, Constant = 2, Sc = 3 };
 
 union Instruction {
     Instruction& operator=(const Instruction& instr) {
@@ -253,7 +284,7 @@ union Instruction {
             BitField<39, 1, u64> invert_a;
             BitField<40, 1, u64> invert_b;
             BitField<41, 2, LogicOperation> operation;
-            BitField<44, 2, u64> unk44;
+            BitField<44, 2, PredicateResultMode> pred_result_mode;
             BitField<48, 3, Pred> pred48;
         } lop;
 
@@ -262,6 +293,19 @@ union Instruction {
             BitField<55, 1, u64> invert_a;
             BitField<56, 1, u64> invert_b;
         } lop32i;
+
+        union {
+            BitField<28, 8, u64> imm_lut28;
+            BitField<48, 8, u64> imm_lut48;
+
+            u32 GetImmLut28() const {
+                return static_cast<u32>(imm_lut28);
+            }
+
+            u32 GetImmLut48() const {
+                return static_cast<u32>(imm_lut48);
+            }
+        } lop3;
 
         u32 GetImm20_19() const {
             u32 imm{static_cast<u32>(imm20_19)};
@@ -283,6 +327,14 @@ union Instruction {
     } alu;
 
     union {
+        BitField<54, 3, IpaMode> mode;
+    } ipa;
+
+    union {
+        BitField<48, 1, u64> negate_b;
+    } fmul;
+
+    union {
         BitField<48, 1, u64> is_signed;
     } shift;
 
@@ -291,6 +343,10 @@ union Instruction {
         BitField<48, 1, u64> negate_b;
         BitField<49, 1, u64> negate_a;
     } alu_integer;
+
+    union {
+        BitField<40, 1, u64> invert;
+    } popc;
 
     union {
         BitField<39, 3, u64> pred;
@@ -303,6 +359,16 @@ union Instruction {
         BitField<43, 2, IMinMaxExchange> exchange;
         BitField<48, 1, u64> is_signed;
     } imnmx;
+
+    union {
+        BitField<31, 2, IAdd3Height> height_c;
+        BitField<33, 2, IAdd3Height> height_b;
+        BitField<35, 2, IAdd3Height> height_a;
+        BitField<37, 2, IAdd3Mode> mode;
+        BitField<49, 1, u64> neg_c;
+        BitField<50, 1, u64> neg_b;
+        BitField<51, 1, u64> neg_a;
+    } iadd3;
 
     union {
         BitField<54, 1, u64> saturate;
@@ -420,6 +486,8 @@ union Instruction {
     } conversion;
 
     union {
+        BitField<28, 1, u64> array;
+        BitField<29, 2, TextureType> texture_type;
         BitField<31, 4, u64> component_mask;
 
         bool IsComponentEnabled(size_t component) const {
@@ -428,27 +496,90 @@ union Instruction {
     } tex;
 
     union {
-        BitField<50, 3, u64> component_mask_selector;
+        BitField<28, 1, u64> array;
+        BitField<29, 2, TextureType> texture_type;
+        BitField<56, 2, u64> component;
+    } tld4;
+
+    union {
+        BitField<52, 2, u64> component;
+    } tld4s;
+
+    union {
         BitField<0, 8, Register> gpr0;
         BitField<28, 8, Register> gpr28;
+        BitField<50, 3, u64> component_mask_selector;
+        BitField<53, 4, u64> texture_info;
+
+        TextureType GetTextureType() const {
+            // The TEXS instruction has a weird encoding for the texture type.
+            if (texture_info == 0)
+                return TextureType::Texture1D;
+            if (texture_info >= 1 && texture_info <= 9)
+                return TextureType::Texture2D;
+            if (texture_info >= 10 && texture_info <= 11)
+                return TextureType::Texture3D;
+            if (texture_info >= 12 && texture_info <= 13)
+                return TextureType::TextureCube;
+
+            LOG_CRITICAL(HW_GPU, "Unhandled texture_info: {}",
+                         static_cast<u32>(texture_info.Value()));
+            UNREACHABLE();
+        }
+
+        bool IsArrayTexture() const {
+            // TEXS only supports Texture2D arrays.
+            return texture_info >= 7 && texture_info <= 9;
+        }
 
         bool HasTwoDestinations() const {
             return gpr28.Value() != Register::ZeroIndex;
         }
 
         bool IsComponentEnabled(size_t component) const {
-            static constexpr std::array<std::array<u32, 8>, 4> mask_lut{
-                {{},
-                 {0x1, 0x2, 0x4, 0x8, 0x3},
-                 {0x1, 0x2, 0x4, 0x8, 0x3, 0x9, 0xa, 0xc},
-                 {0x7, 0xb, 0xd, 0xe, 0xf}}};
+            static constexpr std::array<std::array<u32, 8>, 4> mask_lut{{
+                {},
+                {0x1, 0x2, 0x4, 0x8, 0x3, 0x9, 0xa, 0xc},
+                {0x1, 0x2, 0x4, 0x8, 0x3, 0x9, 0xa, 0xc},
+                {0x7, 0xb, 0xd, 0xe, 0xf},
+            }};
 
             size_t index{gpr0.Value() != Register::ZeroIndex ? 1U : 0U};
             index |= gpr28.Value() != Register::ZeroIndex ? 2 : 0;
 
-            return ((1ull << component) & mask_lut[index][component_mask_selector]) != 0;
+            u32 mask = mask_lut[index][component_mask_selector];
+            // A mask of 0 means this instruction uses an unimplemented mask.
+            ASSERT(mask != 0);
+            return ((1ull << component) & mask) != 0;
         }
     } texs;
+
+    union {
+        BitField<53, 4, u64> texture_info;
+
+        TextureType GetTextureType() const {
+            // The TLDS instruction has a weird encoding for the texture type.
+            if (texture_info >= 0 && texture_info <= 1) {
+                return TextureType::Texture1D;
+            }
+            if (texture_info == 2 || texture_info == 8 || texture_info == 12 ||
+                (texture_info >= 4 && texture_info <= 6)) {
+                return TextureType::Texture2D;
+            }
+            if (texture_info == 7) {
+                return TextureType::Texture3D;
+            }
+
+            LOG_CRITICAL(HW_GPU, "Unhandled texture_info: {}",
+                         static_cast<u32>(texture_info.Value()));
+            UNREACHABLE();
+        }
+
+        bool IsArrayTexture() const {
+            // TEXS only supports Texture2D arrays.
+            return texture_info == 8;
+        }
+    } tlds;
 
     union {
         BitField<20, 24, u64> target;
@@ -512,10 +643,14 @@ public:
         LD_A,
         LD_C,
         ST_A,
+        LDG, // Load from global memory
+        STG, // Store in global memory
         TEX,
-        TEXQ, // Texture Query
-        TEXS, // Texture Fetch with scalar/non-vec4 source/destinations
-        TLDS, // Texture Load with scalar/non-vec4 source/destinations
+        TEXQ,  // Texture Query
+        TEXS,  // Texture Fetch with scalar/non-vec4 source/destinations
+        TLDS,  // Texture Load with scalar/non-vec4 source/destinations
+        TLD4,  // Texture Load 4
+        TLD4S, // Texture Load 4 with scalar / non - vec4 source / destinations
         EXIT,
         IPA,
         FFMA_IMM, // Fused Multiply and Add
@@ -533,10 +668,16 @@ public:
         IADD_C,
         IADD_R,
         IADD_IMM,
+        IADD3_C, // Add 3 Integers
+        IADD3_R,
+        IADD3_IMM,
         IADD32I,
         ISCADD_C, // Scale and Add
         ISCADD_R,
         ISCADD_IMM,
+        POPC_C,
+        POPC_R,
+        POPC_IMM,
         SEL_C,
         SEL_R,
         SEL_IMM,
@@ -560,6 +701,9 @@ public:
         LOP_R,
         LOP_IMM,
         LOP32I,
+        LOP3_C,
+        LOP3_R,
+        LOP3_IMM,
         MOV_C,
         MOV_R,
         MOV_IMM,
@@ -723,10 +867,14 @@ private:
             INST("1110111111011---", Id::LD_A, Type::Memory, "LD_A"),
             INST("1110111110010---", Id::LD_C, Type::Memory, "LD_C"),
             INST("1110111111110---", Id::ST_A, Type::Memory, "ST_A"),
+            INST("1110111011010---", Id::LDG, Type::Memory, "LDG"),
+            INST("1110111011011---", Id::STG, Type::Memory, "STG"),
             INST("110000----111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TEXQ, Type::Memory, "TEXQ"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
+            INST("110010----111---", Id::TLD4, Type::Memory, "TLD4"),
+            INST("1101111100------", Id::TLD4S, Type::Memory, "TLD4S"),
             INST("111000110000----", Id::EXIT, Type::Trivial, "EXIT"),
             INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
             INST("0011001-1-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
@@ -744,13 +892,19 @@ private:
             INST("0100110000010---", Id::IADD_C, Type::ArithmeticInteger, "IADD_C"),
             INST("0101110000010---", Id::IADD_R, Type::ArithmeticInteger, "IADD_R"),
             INST("0011100-00010---", Id::IADD_IMM, Type::ArithmeticInteger, "IADD_IMM"),
+            INST("010011001100----", Id::IADD3_C, Type::ArithmeticInteger, "IADD3_C"),
+            INST("010111001100----", Id::IADD3_R, Type::ArithmeticInteger, "IADD3_R"),
+            INST("0011100-1100----", Id::IADD3_IMM, Type::ArithmeticInteger, "IADD3_IMM"),
             INST("0001110---------", Id::IADD32I, Type::ArithmeticIntegerImmediate, "IADD32I"),
             INST("0100110000011---", Id::ISCADD_C, Type::ArithmeticInteger, "ISCADD_C"),
             INST("0101110000011---", Id::ISCADD_R, Type::ArithmeticInteger, "ISCADD_R"),
             INST("0011100-00011---", Id::ISCADD_IMM, Type::ArithmeticInteger, "ISCADD_IMM"),
+            INST("0100110000001---", Id::POPC_C, Type::ArithmeticInteger, "POPC_C"),
+            INST("0101110000001---", Id::POPC_R, Type::ArithmeticInteger, "POPC_R"),
+            INST("0011100-00001---", Id::POPC_IMM, Type::ArithmeticInteger, "POPC_IMM"),
             INST("0100110010100---", Id::SEL_C, Type::ArithmeticInteger, "SEL_C"),
             INST("0101110010100---", Id::SEL_R, Type::ArithmeticInteger, "SEL_R"),
-            INST("0011100010100---", Id::SEL_IMM, Type::ArithmeticInteger, "SEL_IMM"),
+            INST("0011100-10100---", Id::SEL_IMM, Type::ArithmeticInteger, "SEL_IMM"),
             INST("0101000010000---", Id::MUFU, Type::Arithmetic, "MUFU"),
             INST("0100110010010---", Id::RRO_C, Type::Arithmetic, "RRO_C"),
             INST("0101110010010---", Id::RRO_R, Type::Arithmetic, "RRO_R"),
@@ -778,6 +932,9 @@ private:
             INST("0101110001000---", Id::LOP_R, Type::ArithmeticInteger, "LOP_R"),
             INST("0011100001000---", Id::LOP_IMM, Type::ArithmeticInteger, "LOP_IMM"),
             INST("000001----------", Id::LOP32I, Type::ArithmeticIntegerImmediate, "LOP32I"),
+            INST("0000001---------", Id::LOP3_C, Type::ArithmeticInteger, "LOP3_C"),
+            INST("0101101111100---", Id::LOP3_R, Type::ArithmeticInteger, "LOP3_R"),
+            INST("0011110---------", Id::LOP3_IMM, Type::ArithmeticInteger, "LOP3_IMM"),
             INST("0100110001001---", Id::SHL_C, Type::Shift, "SHL_C"),
             INST("0101110001001---", Id::SHL_R, Type::Shift, "SHL_R"),
             INST("0011100-01001---", Id::SHL_IMM, Type::Shift, "SHL_IMM"),

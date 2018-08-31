@@ -10,6 +10,8 @@
 #include "common/logging/log.h"
 #include "video_core/engines/maxwell_3d.h"
 
+namespace OpenGL {
+
 using GLvec2 = std::array<GLfloat, 2>;
 using GLvec3 = std::array<GLfloat, 3>;
 using GLvec4 = std::array<GLfloat, 4>;
@@ -107,6 +109,8 @@ inline GLenum PrimitiveTopology(Maxwell::PrimitiveTopology topology) {
     switch (topology) {
     case Maxwell::PrimitiveTopology::Points:
         return GL_POINTS;
+    case Maxwell::PrimitiveTopology::Lines:
+        return GL_LINES;
     case Maxwell::PrimitiveTopology::LineStrip:
         return GL_LINE_STRIP;
     case Maxwell::PrimitiveTopology::Triangles:
@@ -147,6 +151,8 @@ inline GLenum WrapMode(Tegra::Texture::WrapMode wrap_mode) {
         // GL_CLAMP_TO_BORDER to get the border color of the texture, and then sample the edge to
         // manually mix them. However the shader part of this is not yet implemented.
         return GL_CLAMP_TO_BORDER;
+    case Tegra::Texture::WrapMode::MirrorOnceClampToEdge:
+        return GL_MIRROR_CLAMP_TO_EDGE;
     }
     LOG_CRITICAL(Render_OpenGL, "Unimplemented texture wrap mode={}", static_cast<u32>(wrap_mode));
     UNREACHABLE();
@@ -289,6 +295,30 @@ inline GLenum ComparisonOp(Maxwell::ComparisonOp comparison) {
     return {};
 }
 
+inline GLenum StencilOp(Maxwell::StencilOp stencil) {
+    switch (stencil) {
+    case Maxwell::StencilOp::Keep:
+        return GL_KEEP;
+    case Maxwell::StencilOp::Zero:
+        return GL_ZERO;
+    case Maxwell::StencilOp::Replace:
+        return GL_REPLACE;
+    case Maxwell::StencilOp::Incr:
+        return GL_INCR;
+    case Maxwell::StencilOp::Decr:
+        return GL_DECR;
+    case Maxwell::StencilOp::Invert:
+        return GL_INVERT;
+    case Maxwell::StencilOp::IncrWrap:
+        return GL_INCR_WRAP;
+    case Maxwell::StencilOp::DecrWrap:
+        return GL_DECR_WRAP;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented stencil op={}", static_cast<u32>(stencil));
+    UNREACHABLE();
+    return {};
+}
+
 inline GLenum FrontFace(Maxwell::Cull::FrontFace front_face) {
     switch (front_face) {
     case Maxwell::Cull::FrontFace::ClockWise:
@@ -315,4 +345,45 @@ inline GLenum CullFace(Maxwell::Cull::CullFace cull_face) {
     return {};
 }
 
+inline GLenum LogicOp(Maxwell::LogicOperation operation) {
+    switch (operation) {
+    case Maxwell::LogicOperation::Clear:
+        return GL_CLEAR;
+    case Maxwell::LogicOperation::And:
+        return GL_AND;
+    case Maxwell::LogicOperation::AndReverse:
+        return GL_AND_REVERSE;
+    case Maxwell::LogicOperation::Copy:
+        return GL_COPY;
+    case Maxwell::LogicOperation::AndInverted:
+        return GL_AND_INVERTED;
+    case Maxwell::LogicOperation::NoOp:
+        return GL_NOOP;
+    case Maxwell::LogicOperation::Xor:
+        return GL_XOR;
+    case Maxwell::LogicOperation::Or:
+        return GL_OR;
+    case Maxwell::LogicOperation::Nor:
+        return GL_NOR;
+    case Maxwell::LogicOperation::Equiv:
+        return GL_EQUIV;
+    case Maxwell::LogicOperation::Invert:
+        return GL_INVERT;
+    case Maxwell::LogicOperation::OrReverse:
+        return GL_OR_REVERSE;
+    case Maxwell::LogicOperation::CopyInverted:
+        return GL_COPY_INVERTED;
+    case Maxwell::LogicOperation::OrInverted:
+        return GL_OR_INVERTED;
+    case Maxwell::LogicOperation::Nand:
+        return GL_NAND;
+    case Maxwell::LogicOperation::Set:
+        return GL_SET;
+    }
+    LOG_CRITICAL(Render_OpenGL, "Unimplemented logic operation={}", static_cast<u32>(operation));
+    UNREACHABLE();
+    return {};
+}
+
 } // namespace MaxwellToGL
+} // namespace OpenGL

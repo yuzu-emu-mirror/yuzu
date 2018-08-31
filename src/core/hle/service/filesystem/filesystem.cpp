@@ -7,12 +7,14 @@
 #include "common/assert.h"
 #include "common/file_util.h"
 #include "core/core.h"
+#include "core/file_sys/bis_factory.h"
 #include "core/file_sys/errors.h"
+#include "core/file_sys/mode.h"
+#include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/sdmc_factory.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_offset.h"
-#include "core/file_sys/vfs_real.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_ldr.h"
 #include "core/hle/service/filesystem/fsp_pr.h"
@@ -252,19 +254,32 @@ ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory) {
 ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory) {
     ASSERT_MSG(bis_factory == nullptr, "Tried to register a second BIS");
     bis_factory = std::move(factory);
-    LOG_DEBUG(Service_FS, "Registred BIS");
+    LOG_DEBUG(Service_FS, "Registered BIS");
     return RESULT_SUCCESS;
 }
 
-ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id) {
-    LOG_TRACE(Service_FS, "Opening RomFS for title_id={:016X}", title_id);
+ResultVal<FileSys::VirtualFile> OpenRomFSCurrentProcess() {
+    LOG_TRACE(Service_FS, "Opening RomFS for current process");
 
     if (romfs_factory == nullptr) {
         // TODO(bunnei): Find a better error code for this
         return ResultCode(-1);
     }
 
-    return romfs_factory->Open(title_id);
+    return romfs_factory->OpenCurrentProcess();
+}
+
+ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id, FileSys::StorageId storage_id,
+                                          FileSys::ContentRecordType type) {
+    LOG_TRACE(Service_FS, "Opening RomFS for title_id={:016X}, storage_id={:02X}, type={:02X}",
+              title_id, static_cast<u8>(storage_id), static_cast<u8>(type));
+
+    if (romfs_factory == nullptr) {
+        // TODO(bunnei): Find a better error code for this
+        return ResultCode(-1);
+    }
+
+    return romfs_factory->Open(title_id, storage_id, type);
 }
 
 ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
@@ -290,17 +305,38 @@ ResultVal<FileSys::VirtualDir> OpenSDMC() {
 }
 
 std::shared_ptr<FileSys::RegisteredCache> GetSystemNANDContents() {
+    LOG_TRACE(Service_FS, "Opening System NAND Contents");
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
     return bis_factory->GetSystemNANDContents();
 }
 
 std::shared_ptr<FileSys::RegisteredCache> GetUserNANDContents() {
+    LOG_TRACE(Service_FS, "Opening User NAND Contents");
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
     return bis_factory->GetUserNANDContents();
 }
 
-void RegisterFileSystems(const FileSys::VirtualFilesystem& vfs) {
-    romfs_factory = nullptr;
-    save_data_factory = nullptr;
-    sdmc_factory = nullptr;
+std::shared_ptr<FileSys::RegisteredCache> GetSDMCContents() {
+    LOG_TRACE(Service_FS, "Opening SDMC Contents");
+
+    if (sdmc_factory == nullptr)
+        return nullptr;
+
+    return sdmc_factory->GetSDMCContents();
+}
+
+void CreateFactories(const FileSys::VirtualFilesystem& vfs, bool overwrite) {
+    if (overwrite) {
+        bis_factory = nullptr;
+        save_data_factory = nullptr;
+        sdmc_factory = nullptr;
+    }
 
     auto nand_directory = vfs->OpenDirectory(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir),
                                              FileSys::Mode::ReadWrite);
@@ -309,16 +345,15 @@ void RegisterFileSystems(const FileSys::VirtualFilesystem& vfs) {
 
     if (bis_factory == nullptr)
         bis_factory = std::make_unique<FileSys::BISFactory>(nand_directory);
-
-    auto savedata = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
-    save_data_factory = std::move(savedata);
-
-    auto sdcard = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
-    sdmc_factory = std::move(sdcard);
+    if (save_data_factory == nullptr)
+        save_data_factory = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
+    if (sdmc_factory == nullptr)
+        sdmc_factory = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, const FileSys::VirtualFilesystem& vfs) {
-    RegisterFileSystems(vfs);
+    romfs_factory = nullptr;
+    CreateFactories(vfs, false);
     std::make_shared<FSP_LDR>()->InstallAsService(service_manager);
     std::make_shared<FSP_PR>()->InstallAsService(service_manager);
     std::make_shared<FSP_SRV>()->InstallAsService(service_manager);

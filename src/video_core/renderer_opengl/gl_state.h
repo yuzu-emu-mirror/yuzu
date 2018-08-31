@@ -9,6 +9,8 @@
 
 #include "video_core/engines/maxwell_3d.h"
 
+namespace OpenGL {
+
 using Regs = Tegra::Engines::Maxwell3D::Regs;
 
 namespace TextureUnits {
@@ -56,14 +58,16 @@ public:
     } color_mask; // GL_COLOR_WRITEMASK
 
     struct {
-        bool test_enabled;          // GL_STENCIL_TEST
-        GLenum test_func;           // GL_STENCIL_FUNC
-        GLint test_ref;             // GL_STENCIL_REF
-        GLuint test_mask;           // GL_STENCIL_VALUE_MASK
-        GLuint write_mask;          // GL_STENCIL_WRITEMASK
-        GLenum action_stencil_fail; // GL_STENCIL_FAIL
-        GLenum action_depth_fail;   // GL_STENCIL_PASS_DEPTH_FAIL
-        GLenum action_depth_pass;   // GL_STENCIL_PASS_DEPTH_PASS
+        bool test_enabled; // GL_STENCIL_TEST
+        struct {
+            GLenum test_func;           // GL_STENCIL_FUNC
+            GLint test_ref;             // GL_STENCIL_REF
+            GLuint test_mask;           // GL_STENCIL_VALUE_MASK
+            GLuint write_mask;          // GL_STENCIL_WRITEMASK
+            GLenum action_stencil_fail; // GL_STENCIL_FAIL
+            GLenum action_depth_fail;   // GL_STENCIL_PASS_DEPTH_FAIL
+            GLenum action_depth_pass;   // GL_STENCIL_PASS_DEPTH_PASS
+        } front, back;
     } stencil;
 
     struct {
@@ -83,7 +87,10 @@ public:
         } color; // GL_BLEND_COLOR
     } blend;
 
-    GLenum logic_op; // GL_LOGIC_OP_MODE
+    struct {
+        bool enabled; // GL_LOGIC_OP_MODE
+        GLenum operation;
+    } logic_op;
 
     // 3 texture units - one for each that is used in PICA fragment shader emulation
     struct TextureUnit {
@@ -160,3 +167,5 @@ public:
 private:
     static OpenGLState cur_state;
 };
+
+} // namespace OpenGL

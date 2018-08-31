@@ -11,12 +11,13 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSpinBox>
+#include "common/vector_math.h"
 #include "core/core.h"
+#include "core/memory.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
-#include "video_core/utils.h"
 #include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/util/spinbox.h"
 
@@ -381,7 +382,7 @@ void GraphicsSurfaceWidget::OnUpdate() {
     // TODO: Implement a good way to visualize alpha components!
 
     QImage decoded_image(surface_width, surface_height, QImage::Format_ARGB32);
-    boost::optional<VAddr> address = gpu.memory_manager->GpuToCpuAddress(surface_address);
+    boost::optional<VAddr> address = gpu.MemoryManager().GpuToCpuAddress(surface_address);
 
     // TODO(bunnei): Will not work with BCn formats that swizzle 4x4 tiles.
     // Needs to be fixed if we plan to use this feature more, otherwise we may remove it.
@@ -442,7 +443,7 @@ void GraphicsSurfaceWidget::SaveSurface() {
             pixmap->save(&file, "PNG");
     } else if (selectedFilter == bin_filter) {
         auto& gpu = Core::System::GetInstance().GPU();
-        boost::optional<VAddr> address = gpu.memory_manager->GpuToCpuAddress(surface_address);
+        boost::optional<VAddr> address = gpu.MemoryManager().GpuToCpuAddress(surface_address);
 
         const u8* buffer = Memory::GetPointer(*address);
         ASSERT_MSG(buffer != nullptr, "Memory not accessible");

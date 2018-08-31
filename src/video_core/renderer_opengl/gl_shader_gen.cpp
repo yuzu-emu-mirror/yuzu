@@ -7,13 +7,13 @@
 #include "video_core/renderer_opengl/gl_shader_decompiler.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 
-namespace GLShader {
+namespace OpenGL::GLShader {
 
 using Tegra::Engines::Maxwell3D;
 
 static constexpr u32 PROGRAM_OFFSET{10};
 
-ProgramResult GenerateVertexShader(const ShaderSetup& setup, const MaxwellVSConfig& config) {
+ProgramResult GenerateVertexShader(const ShaderSetup& setup) {
     std::string out = "#version 430 core\n";
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
@@ -38,6 +38,7 @@ out vec4 position;
 
 layout (std140) uniform vs_config {
     vec4 viewport_flip;
+    uvec4 instance_id;
 };
 
 void main() {
@@ -74,7 +75,7 @@ void main() {
     return {out, program.second};
 }
 
-ProgramResult GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSConfig& config) {
+ProgramResult GenerateFragmentShader(const ShaderSetup& setup) {
     std::string out = "#version 430 core\n";
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
@@ -86,10 +87,11 @@ ProgramResult GenerateFragmentShader(const ShaderSetup& setup, const MaxwellFSCo
             .get_value_or({});
     out += R"(
 in vec4 position;
-out vec4 color;
+layout(location = 0) out vec4 color[8];
 
 layout (std140) uniform fs_config {
     vec4 viewport_flip;
+    uvec4 instance_id;
 };
 
 void main() {
@@ -101,4 +103,4 @@ void main() {
     return {out, program.second};
 }
 
-} // namespace GLShader
+} // namespace OpenGL::GLShader

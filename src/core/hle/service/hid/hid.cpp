@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
 #include "core/frontend/emu_window.h"
@@ -17,6 +18,7 @@
 #include "core/hle/service/hid/irs.h"
 #include "core/hle/service/hid/xcd.h"
 #include "core/hle/service/service.h"
+#include "core/settings.h"
 
 namespace Service::HID {
 
@@ -34,9 +36,10 @@ public:
         };
         RegisterHandlers(functions);
 
+        auto& kernel = Core::System::GetInstance().Kernel();
         shared_mem = Kernel::SharedMemory::Create(
-            nullptr, 0x40000, Kernel::MemoryPermission::ReadWrite, Kernel::MemoryPermission::Read,
-            0, Kernel::MemoryRegion::BASE, "HID:SharedMemory");
+            kernel, nullptr, 0x40000, Kernel::MemoryPermission::ReadWrite,
+            Kernel::MemoryPermission::Read, 0, Kernel::MemoryRegion::BASE, "HID:SharedMemory");
 
         // Register update callbacks
         pad_update_event = CoreTiming::RegisterEvent(
@@ -401,7 +404,8 @@ public:
 
         RegisterHandlers(functions);
 
-        event = Kernel::Event::Create(Kernel::ResetType::OneShot, "hid:EventHandle");
+        auto& kernel = Core::System::GetInstance().Kernel();
+        event = Kernel::Event::Create(kernel, Kernel::ResetType::OneShot, "hid:EventHandle");
     }
     ~Hid() = default;
 

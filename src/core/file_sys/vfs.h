@@ -9,15 +9,16 @@
 #include <string_view>
 #include <type_traits>
 #include <vector>
-#include "boost/optional.hpp"
+#include <boost/optional.hpp>
 #include "common/common_types.h"
-#include "core/file_sys/mode.h"
 
 namespace FileSys {
 
 class VfsDirectory;
 class VfsFile;
 class VfsFilesystem;
+
+enum class Mode : u32;
 
 // Convenience typedefs to use Vfs* interfaces
 using VirtualFilesystem = std::shared_ptr<VfsFilesystem>;
@@ -316,5 +317,9 @@ bool DeepEquals(const VirtualFile& file1, const VirtualFile& file2, size_t block
 // are using the same implementation, it is probably better to use the Copy method in the parent
 // directory of src/dest.
 bool VfsRawCopy(VirtualFile src, VirtualFile dest);
+
+// Checks if the directory at path relative to rel exists. If it does, returns that. If it does not
+// it attempts to create it and returns the new dir or nullptr on failure.
+VirtualDir GetOrCreateDirectoryRelative(const VirtualDir& rel, std::string_view path);
 
 } // namespace FileSys

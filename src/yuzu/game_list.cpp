@@ -7,15 +7,20 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QThreadPool>
 #include <boost/container/flat_map.hpp>
+#include <fmt/format.h>
 #include "common/common_paths.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/control_metadata.h"
+#include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/loader/loader.h"
@@ -223,6 +228,7 @@ GameList::GameList(FileSys::VirtualFilesystem vfs, GMainWindow* parent)
 
     item_model->insertColumns(0, COLUMN_COUNT);
     item_model->setHeaderData(COLUMN_NAME, Qt::Horizontal, "Name");
+    item_model->setHeaderData(COLUMN_COMPATIBILITY, Qt::Horizontal, "Compatibility");
     item_model->setHeaderData(COLUMN_FILE_TYPE, Qt::Horizontal, "File type");
     item_model->setHeaderData(COLUMN_SIZE, Qt::Horizontal, "Size");
 
@@ -324,10 +330,60 @@ void GameList::PopupContextMenu(const QPoint& menu_location) {
 
     QMenu context_menu;
     QAction* open_save_location = context_menu.addAction(tr("Open Save Data Location"));
+    QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("Navigate to GameDB entry"));
+
     open_save_location->setEnabled(program_id != 0);
+    auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
+    navigate_to_gamedb_entry->setVisible(it != compatibility_list.end() && program_id != 0);
+
     connect(open_save_location, &QAction::triggered,
-            [&]() { emit OpenSaveFolderRequested(program_id); });
+            [&]() { emit OpenFolderRequested(program_id, GameListOpenTarget::SaveData); });
+    connect(navigate_to_gamedb_entry, &QAction::triggered,
+            [&]() { emit NavigateToGamedbEntryRequested(program_id, compatibility_list); });
+
     context_menu.exec(tree_view->viewport()->mapToGlobal(menu_location));
+}
+
+void GameList::LoadCompatibilityList() {
+    QFile compat_list{":compatibility_list/compatibility_list.json"};
+
+    if (!compat_list.open(QFile::ReadOnly | QFile::Text)) {
+        LOG_ERROR(Frontend, "Unable to open game compatibility list");
+        return;
+    }
+
+    if (compat_list.size() == 0) {
+        LOG_WARNING(Frontend, "Game compatibility list is empty");
+        return;
+    }
+
+    const QByteArray content = compat_list.readAll();
+    if (content.isEmpty()) {
+        LOG_ERROR(Frontend, "Unable to completely read game compatibility list");
+        return;
+    }
+
+    const QString string_content = content;
+    QJsonDocument json = QJsonDocument::fromJson(string_content.toUtf8());
+    QJsonArray arr = json.array();
+
+    for (const QJsonValue& value : arr) {
+        QJsonObject game = value.toObject();
+
+        if (game.contains("compatibility") && game["compatibility"].isDouble()) {
+            int compatibility = game["compatibility"].toInt();
+            QString directory = game["directory"].toString();
+            QJsonArray ids = game["releases"].toArray();
+
+            for (const QJsonValue& value : ids) {
+                QJsonObject object = value.toObject();
+                QString id = object["id"].toString();
+                compatibility_list.emplace(
+                    id.toUpper().toStdString(),
+                    std::make_pair(QString::number(compatibility), directory));
+            }
+        }
+    }
 }
 
 void GameList::PopulateAsync(const QString& dir_path, bool deep_scan) {
@@ -344,7 +400,7 @@ void GameList::PopulateAsync(const QString& dir_path, bool deep_scan) {
 
     emit ShouldCancelWorker();
 
-    GameListWorker* worker = new GameListWorker(vfs, dir_path, deep_scan);
+    GameListWorker* worker = new GameListWorker(vfs, dir_path, deep_scan, compatibility_list);
 
     connect(worker, &GameListWorker::EntryReady, this, &GameList::AddEntry, Qt::QueuedConnection);
     connect(worker, &GameListWorker::Finished, this, &GameList::DonePopulating,
@@ -425,24 +481,22 @@ static void GetMetadataFromControlNCA(const std::shared_ptr<FileSys::NCA>& nca,
     }
 }
 
-void GameListWorker::AddInstalledTitlesToGameList() {
-    const auto usernand = Service::FileSystem::GetUserNANDContents();
-    const auto installed_games = usernand->ListEntriesFilter(FileSys::TitleType::Application,
-                                                             FileSys::ContentRecordType::Program);
+void GameListWorker::AddInstalledTitlesToGameList(std::shared_ptr<FileSys::RegisteredCache> cache) {
+    const auto installed_games = cache->ListEntriesFilter(FileSys::TitleType::Application,
+                                                          FileSys::ContentRecordType::Program);
 
     for (const auto& game : installed_games) {
-        const auto& file = usernand->GetEntryRaw(game);
+        const auto& file = cache->GetEntryUnparsed(game);
         std::unique_ptr<Loader::AppLoader> loader = Loader::GetLoader(file);
         if (!loader)
             continue;
 
         std::vector<u8> icon;
         std::string name;
-        u64 program_id;
+        u64 program_id = 0;
         loader->ReadProgramId(program_id);
 
-        const auto& control =
-            usernand->GetEntry(game.title_id, FileSys::ContentRecordType::Control);
+        const auto& control = cache->GetEntry(game.title_id, FileSys::ContentRecordType::Control);
         if (control != nullptr)
             GetMetadataFromControlNCA(control, icon, name);
         emit EntryReady({
@@ -456,11 +510,11 @@ void GameListWorker::AddInstalledTitlesToGameList() {
         });
     }
 
-    const auto control_data = usernand->ListEntriesFilter(FileSys::TitleType::Application,
-                                                          FileSys::ContentRecordType::Control);
+    const auto control_data = cache->ListEntriesFilter(FileSys::TitleType::Application,
+                                                       FileSys::ContentRecordType::Control);
 
     for (const auto& entry : control_data) {
-        const auto nca = usernand->GetEntry(entry);
+        const auto nca = cache->GetEntry(entry);
         if (nca != nullptr)
             nca_control_map.insert_or_assign(entry.title_id, nca);
     }
@@ -509,7 +563,7 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
             std::vector<u8> icon;
             const auto res1 = loader->ReadIcon(icon);
 
-            u64 program_id;
+            u64 program_id = 0;
             const auto res2 = loader->ReadProgramId(program_id);
 
             std::string name = " ";
@@ -524,11 +578,19 @@ void GameListWorker::AddFstEntriesToGameList(const std::string& dir_path, unsign
                 }
             }
 
+            auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
+
+            // The game list uses this as compatibility number for untested games
+            QString compatibility("99");
+            if (it != compatibility_list.end())
+                compatibility = it->second.first;
+
             emit EntryReady({
                 new GameListItemPath(
                     FormatGameName(physical_name), icon, QString::fromStdString(name),
                     QString::fromStdString(Loader::GetFileTypeString(loader->GetFileType())),
                     program_id),
+                new GameListItemCompat(compatibility),
                 new GameListItem(
                     QString::fromStdString(Loader::GetFileTypeString(loader->GetFileType()))),
                 new GameListItemSize(FileUtil::GetSize(physical_name)),
@@ -548,7 +610,9 @@ void GameListWorker::run() {
     stop_processing = false;
     watch_list.append(dir_path);
     FillControlMap(dir_path.toStdString());
-    AddInstalledTitlesToGameList();
+    AddInstalledTitlesToGameList(Service::FileSystem::GetUserNANDContents());
+    AddInstalledTitlesToGameList(Service::FileSystem::GetSystemNANDContents());
+    AddInstalledTitlesToGameList(Service::FileSystem::GetSDMCContents());
     AddFstEntriesToGameList(dir_path.toStdString(), deep_scan ? 256 : 0);
     nca_control_map.clear();
     emit Finished(watch_list);

@@ -8,78 +8,81 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <boost/icl/interval_map.hpp>
 
 #include "common/common_types.h"
+#include "common/hash.h"
 #include "common/math_util.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/textures/texture.h"
+
+namespace OpenGL {
 
 class CachedSurface;
 using Surface = std::shared_ptr<CachedSurface>;
 using SurfaceSurfaceRect_Tuple = std::tuple<Surface, Surface, MathUtil::Rectangle<u32>>;
-using PageMap = boost::icl::interval_map<u64, int>;
 
 struct SurfaceParams {
     enum class PixelFormat {
         ABGR8U = 0,
         ABGR8S = 1,
-        B5G6R5U = 2,
-        A2B10G10R10U = 3,
-        A1B5G5R5U = 4,
-        R8U = 5,
-        R8UI = 6,
-        RGBA16F = 7,
-        RGBA16U = 8,
-        RGBA16UI = 9,
-        R11FG11FB10F = 10,
-        RGBA32UI = 11,
-        DXT1 = 12,
-        DXT23 = 13,
-        DXT45 = 14,
-        DXN1 = 15, // This is also known as BC4
-        DXN2UNORM = 16,
-        DXN2SNORM = 17,
-        BC7U = 18,
-        BC6H_UF16 = 19,
-        BC6H_SF16 = 20,
-        ASTC_2D_4X4 = 21,
-        G8R8U = 22,
-        G8R8S = 23,
-        BGRA8 = 24,
-        RGBA32F = 25,
-        RG32F = 26,
-        R32F = 27,
-        R16F = 28,
-        R16U = 29,
-        R16S = 30,
-        R16UI = 31,
-        R16I = 32,
-        RG16 = 33,
-        RG16F = 34,
-        RG16UI = 35,
-        RG16I = 36,
-        RG16S = 37,
-        RGB32F = 38,
-        SRGBA8 = 39,
-        RG8U = 40,
-        RG8S = 41,
-        RG32UI = 42,
-        R32UI = 43,
+        ABGR8UI = 2,
+        B5G6R5U = 3,
+        A2B10G10R10U = 4,
+        A1B5G5R5U = 5,
+        R8U = 6,
+        R8UI = 7,
+        RGBA16F = 8,
+        RGBA16U = 9,
+        RGBA16UI = 10,
+        R11FG11FB10F = 11,
+        RGBA32UI = 12,
+        DXT1 = 13,
+        DXT23 = 14,
+        DXT45 = 15,
+        DXN1 = 16, // This is also known as BC4
+        DXN2UNORM = 17,
+        DXN2SNORM = 18,
+        BC7U = 19,
+        BC6H_UF16 = 20,
+        BC6H_SF16 = 21,
+        ASTC_2D_4X4 = 22,
+        G8R8U = 23,
+        G8R8S = 24,
+        BGRA8 = 25,
+        RGBA32F = 26,
+        RG32F = 27,
+        R32F = 28,
+        R16F = 29,
+        R16U = 30,
+        R16S = 31,
+        R16UI = 32,
+        R16I = 33,
+        RG16 = 34,
+        RG16F = 35,
+        RG16UI = 36,
+        RG16I = 37,
+        RG16S = 38,
+        RGB32F = 39,
+        SRGBA8 = 40,
+        RG8U = 41,
+        RG8S = 42,
+        RG32UI = 43,
+        R32UI = 44,
 
         MaxColorFormat,
 
         // Depth formats
-        Z32F = 44,
-        Z16 = 45,
+        Z32F = 45,
+        Z16 = 46,
 
         MaxDepthFormat,
 
         // DepthStencil formats
-        Z24S8 = 46,
-        S8Z24 = 47,
-        Z32FS8 = 48,
+        Z24S8 = 47,
+        S8Z24 = 48,
+        Z32FS8 = 49,
 
         MaxDepthStencilFormat,
 
@@ -119,6 +122,7 @@ struct SurfaceParams {
         constexpr std::array<u32, MaxPixelFormat> compression_factor_table = {{
             1, // ABGR8U
             1, // ABGR8S
+            1, // ABGR8UI
             1, // B5G6R5U
             1, // A2B10G10R10U
             1, // A1B5G5R5U
@@ -179,6 +183,7 @@ struct SurfaceParams {
         constexpr std::array<u32, MaxPixelFormat> bpp_table = {{
             32,  // ABGR8U
             32,  // ABGR8S
+            32,  // ABGR8UI
             16,  // B5G6R5U
             32,  // A2B10G10R10U
             16,  // A1B5G5R5U
@@ -263,6 +268,8 @@ struct SurfaceParams {
             return PixelFormat::ABGR8U;
         case Tegra::RenderTargetFormat::RGBA8_SNORM:
             return PixelFormat::ABGR8S;
+        case Tegra::RenderTargetFormat::RGBA8_UINT:
+            return PixelFormat::ABGR8UI;
         case Tegra::RenderTargetFormat::BGRA8_UNORM:
             return PixelFormat::BGRA8;
         case Tegra::RenderTargetFormat::RGB10_A2_UNORM:
@@ -333,6 +340,8 @@ struct SurfaceParams {
                 return PixelFormat::ABGR8U;
             case Tegra::Texture::ComponentType::SNORM:
                 return PixelFormat::ABGR8S;
+            case Tegra::Texture::ComponentType::UINT:
+                return PixelFormat::ABGR8UI;
             }
             LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}",
                          static_cast<u32>(component_type));
@@ -561,6 +570,7 @@ struct SurfaceParams {
         case Tegra::RenderTargetFormat::R16_UINT:
         case Tegra::RenderTargetFormat::RG32_UINT:
         case Tegra::RenderTargetFormat::R32_UINT:
+        case Tegra::RenderTargetFormat::RGBA8_UINT:
             return ComponentType::UInt;
         case Tegra::RenderTargetFormat::RG16_SINT:
         case Tegra::RenderTargetFormat::R16_SINT:
@@ -631,11 +641,6 @@ struct SurfaceParams {
     /// Returns the CPU virtual address for this surface
     VAddr GetCpuAddr() const;
 
-    /// Returns true if the specified region overlaps with this surface's region in Switch memory
-    bool IsOverlappingRegion(Tegra::GPUVAddr region_addr, size_t region_size) const {
-        return addr <= (region_addr + region_size) && region_addr <= (addr + size_in_bytes);
-    }
-
     /// Creates SurfaceParams from a texture configuration
     static SurfaceParams CreateForTexture(const Tegra::Texture::FullTextureInfo& config);
 
@@ -682,9 +687,38 @@ struct SurfaceParams {
     u32 cache_height;
 };
 
+}; // namespace OpenGL
+
+/// Hashable variation of SurfaceParams, used for a key in the surface cache
+struct SurfaceReserveKey : Common::HashableStruct<OpenGL::SurfaceParams> {
+    static SurfaceReserveKey Create(const OpenGL::SurfaceParams& params) {
+        SurfaceReserveKey res;
+        res.state = params;
+        return res;
+    }
+};
+namespace std {
+template <>
+struct hash<SurfaceReserveKey> {
+    size_t operator()(const SurfaceReserveKey& k) const {
+        return k.Hash();
+    }
+};
+} // namespace std
+
+namespace OpenGL {
+
 class CachedSurface final {
 public:
     CachedSurface(const SurfaceParams& params);
+
+    Tegra::GPUVAddr GetAddr() const {
+        return params.addr;
+    }
+
+    size_t GetSizeInBytes() const {
+        return params.size_in_bytes;
+    }
 
     const OGLTexture& Texture() const {
         return texture;
@@ -715,16 +749,16 @@ private:
     SurfaceParams params;
 };
 
-class RasterizerCacheOpenGL final : NonCopyable {
+class RasterizerCacheOpenGL final : public RasterizerCache<Surface> {
 public:
     RasterizerCacheOpenGL();
-    ~RasterizerCacheOpenGL();
 
     /// Get a surface based on the texture configuration
     Surface GetTextureSurface(const Tegra::Texture::FullTextureInfo& config);
 
     /// Get the color and depth surfaces based on the framebuffer configuration
-    SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb);
+    SurfaceSurfaceRect_Tuple GetFramebufferSurfaces(bool using_color_fb, bool using_depth_fb,
+                                                    bool preserve_contents);
 
     /// Flushes the surface to Switch memory
     void FlushSurface(const Surface& surface);
@@ -732,31 +766,26 @@ public:
     /// Tries to find a framebuffer GPU address based on the provided CPU address
     Surface TryFindFramebufferSurface(VAddr cpu_addr) const;
 
-    /// Write any cached resources overlapping the region back to memory (if dirty)
-    void FlushRegion(Tegra::GPUVAddr addr, size_t size);
-
-    /// Mark the specified region as being invalidated
-    void InvalidateRegion(Tegra::GPUVAddr addr, size_t size);
-
 private:
     void LoadSurface(const Surface& surface);
-    Surface GetSurface(const SurfaceParams& params);
+    Surface GetSurface(const SurfaceParams& params, bool preserve_contents = true);
 
     /// Recreates a surface with new parameters
     Surface RecreateSurface(const Surface& surface, const SurfaceParams& new_params);
 
-    /// Register surface into the cache
-    void RegisterSurface(const Surface& surface);
+    /// Reserves a unique surface that can be reused later
+    void ReserveSurface(const Surface& surface);
 
-    /// Remove surface from the cache
-    void UnregisterSurface(const Surface& surface);
+    /// Tries to get a reserved surface for the specified parameters
+    Surface TryGetReservedSurface(const SurfaceParams& params);
 
-    /// Increase/decrease the number of surface in pages touching the specified region
-    void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta);
-
-    std::unordered_map<Tegra::GPUVAddr, Surface> surface_cache;
-    PageMap cached_pages;
+    /// The surface reserve is a "backup" cache, this is where we put unique surfaces that have
+    /// previously been used. This is to prevent surfaces from being constantly created and
+    /// destroyed when used with different surface parameters.
+    std::unordered_map<SurfaceReserveKey, Surface> surface_reserve;
 
     OGLFramebuffer read_framebuffer;
     OGLFramebuffer draw_framebuffer;
 };
+
+} // namespace OpenGL

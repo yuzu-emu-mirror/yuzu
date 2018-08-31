@@ -13,8 +13,6 @@
 
 namespace Kernel {
 
-HandleTable g_handle_table;
-
 HandleTable::HandleTable() {
     next_generation = 1;
     Clear();
@@ -26,7 +24,7 @@ ResultVal<Handle> HandleTable::Create(SharedPtr<Object> obj) {
     u16 slot = next_free_slot;
     if (slot >= generations.size()) {
         LOG_ERROR(Kernel, "Unable to allocate Handle, too many slots in use.");
-        return ERR_OUT_OF_HANDLES;
+        return ERR_HANDLE_TABLE_FULL;
     }
     next_free_slot = generations[slot];
 

@@ -2,10 +2,14 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#pragma once
+
 #include <tuple>
 #include <glad/glad.h>
 #include "common/common_types.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+
+namespace OpenGL {
 
 class OGLStreamBuffer : private NonCopyable {
 public:
@@ -40,3 +44,5 @@ private:
     GLsizeiptr mapped_size = 0;
     u8* mapped_ptr = nullptr;
 };
+
+} // namespace OpenGL

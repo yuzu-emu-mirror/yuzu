@@ -135,8 +135,7 @@ System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::st
         LOG_CRITICAL(Core, "Failed to determine system mode (Error {})!",
                      static_cast<int>(system_mode.second));
 
-        if (system_mode.second != Loader::ResultStatus::Success)
-            return ResultStatus::ErrorSystemMode;
+        return ResultStatus::ErrorSystemMode;
     }
 
     ResultStatus init_result{Init(emu_window)};
@@ -148,14 +147,12 @@ System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::st
     }
 
     const Loader::ResultStatus load_result{app_loader->Load(current_process)};
-    if (Loader::ResultStatus::Success != load_result) {
+    if (load_result != Loader::ResultStatus::Success) {
         LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", static_cast<int>(load_result));
         System::Shutdown();
 
-        if (load_result != Loader::ResultStatus::Success) {
-            return static_cast<ResultStatus>(static_cast<u32>(ResultStatus::ErrorLoader) +
-                                             static_cast<u32>(load_result));
-        }
+        return static_cast<ResultStatus>(static_cast<u32>(ResultStatus::ErrorLoader) +
+                                         static_cast<u32>(load_result));
     }
     status = ResultStatus::Success;
     return status;
@@ -174,6 +171,14 @@ const std::shared_ptr<Kernel::Scheduler>& System::Scheduler(size_t core_index) {
     return cpu_cores[core_index]->Scheduler();
 }
 
+Kernel::KernelCore& System::Kernel() {
+    return kernel;
+}
+
+const Kernel::KernelCore& System::Kernel() const {
+    return kernel;
+}
+
 ARM_Interface& System::ArmInterface(size_t core_index) {
     ASSERT(core_index < NUM_CPU_CORES);
     return cpu_cores[core_index]->ArmInterface();
@@ -188,12 +193,13 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {
     LOG_DEBUG(HW_Memory, "initialized OK");
 
     CoreTiming::Init();
+    kernel.Initialize();
 
     // Create a default fs if one doesn't already exist.
     if (virtual_filesystem == nullptr)
         virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
 
-    current_process = Kernel::Process::Create("main");
+    current_process = Kernel::Process::Create(kernel, "main");
 
     cpu_barrier = std::make_shared<CpuBarrier>();
     cpu_exclusive_monitor = Cpu::MakeExclusiveMonitor(cpu_cores.size());
@@ -204,7 +210,6 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {
     telemetry_session = std::make_unique<Core::TelemetrySession>();
     service_manager = std::make_shared<Service::SM::ServiceManager>();
 
-    Kernel::Init();
     Service::Init(service_manager, virtual_filesystem);
     GDBStub::Init();
 
@@ -249,7 +254,6 @@ void System::Shutdown() {
     renderer.reset();
     GDBStub::Shutdown();
     Service::Shutdown();
-    Kernel::Shutdown();
     service_manager.reset();
     telemetry_session.reset();
     gpu_core.reset();
@@ -268,7 +272,8 @@ void System::Shutdown() {
     }
     cpu_barrier.reset();
 
-    // Close core timing
+    // Shutdown kernel and core timing
+    kernel.Shutdown();
     CoreTiming::Shutdown();
 
     // Close app loader

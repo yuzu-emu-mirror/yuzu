@@ -74,6 +74,7 @@
     <addaction name="action_Start"/>
     <addaction name="action_Pause"/>
     <addaction name="action_Stop"/>
+    <addaction name="action_Restart"/>
     <addaction name="separator"/>
     <addaction name="action_Configure"/>
    </widget>
@@ -211,6 +212,14 @@
     <string>Fullscreen</string>
    </property>
   </action>
+   <action name="action_Restart">
+     <property name="enabled">
+       <bool>false</bool>
+     </property>
+     <property name="text">
+       <string>Restart</string>
+     </property>
+   </action>
   </widget>
  <resources/>
 </ui>

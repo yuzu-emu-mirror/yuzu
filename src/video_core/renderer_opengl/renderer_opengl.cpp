@@ -16,8 +16,11 @@
 #include "core/memory.h"
 #include "core/settings.h"
 #include "core/tracer/recorder.h"
+#include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/utils.h"
+
+namespace OpenGL {
 
 static const char vertex_shader[] = R"(
 #version 150 core
@@ -130,7 +133,7 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
         }
 
         // Load the framebuffer from memory, draw it to the screen, and swap buffers
-        LoadFBToScreenInfo(*framebuffer, screen_info);
+        LoadFBToScreenInfo(*framebuffer);
         DrawScreen();
         render_window.SwapBuffers();
     }
@@ -142,14 +145,12 @@ void RendererOpenGL::SwapBuffers(boost::optional<const Tegra::FramebufferConfig&
 
     // Restore the rasterizer state
     prev_state.Apply();
-    RefreshRasterizerSetting();
 }
 
 /**
  * Loads framebuffer from emulated memory into the active OpenGL texture.
  */
-void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuffer,
-                                        ScreenInfo& screen_info) {
+void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuffer) {
     const u32 bytes_per_pixel{Tegra::FramebufferConfig::BytesPerPixel(framebuffer.pixel_format)};
     const u64 size_in_bytes{framebuffer.stride * framebuffer.height * bytes_per_pixel};
     const VAddr framebuffer_addr{framebuffer.address + framebuffer.offset};
@@ -162,8 +163,7 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
     // only allows rows to have a memory alignement of 4.
     ASSERT(framebuffer.stride % 4 == 0);
 
-    if (!rasterizer->AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride,
-                                       screen_info)) {
+    if (!rasterizer->AccelerateDisplay(framebuffer, framebuffer_addr, framebuffer.stride)) {
         // Reset the screen info's display texture to its own permanent texture
         screen_info.display_texture = screen_info.texture.resource.handle;
 
@@ -274,6 +274,14 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
+}
+
+void RendererOpenGL::CreateRasterizer() {
+    if (rasterizer) {
+        return;
+    }
+
+    rasterizer = std::make_unique<RasterizerOpenGL>(render_window, screen_info);
 }
 
 void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
@@ -425,14 +433,14 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
-        LOG_ERROR(Render_OpenGL, format, str_source, str_type, id, message);
+        LOG_CRITICAL(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
         LOG_WARNING(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
     case GL_DEBUG_SEVERITY_LOW:
-        LOG_TRACE(Render_OpenGL, format, str_source, str_type, id, message);
+        LOG_DEBUG(Render_OpenGL, format, str_source, str_type, id, message);
         break;
     }
 }
@@ -463,11 +471,12 @@ bool RendererOpenGL::Init() {
     }
 
     InitOpenGLObjects();
-
-    RefreshRasterizerSetting();
+    CreateRasterizer();
 
     return true;
 }
 
 /// Shutdown the renderer
 void RendererOpenGL::ShutDown() {}
+
+} // namespace OpenGL

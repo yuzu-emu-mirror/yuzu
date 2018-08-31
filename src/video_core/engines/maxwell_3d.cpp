@@ -218,12 +218,24 @@ void Maxwell3D::DrawArrays() {
         debug_context->OnEvent(Tegra::DebugContext::Event::IncomingPrimitiveBatch, nullptr);
     }
 
-    if (debug_context) {
-        debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
+    // Both instance configuration registers can not be set at the same time.
+    ASSERT_MSG(!regs.draw.instance_next || !regs.draw.instance_cont,
+               "Illegal combination of instancing parameters");
+
+    if (regs.draw.instance_next) {
+        // Increment the current instance *before* drawing.
+        state.current_instance += 1;
+    } else if (!regs.draw.instance_cont) {
+        // Reset the current instance to 0.
+        state.current_instance = 0;
     }
 
     const bool is_indexed{regs.index_array.count && !regs.vertex_buffer.count};
     rasterizer.AccelerateDrawBatch(is_indexed);
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::FinishedPrimitiveBatch, nullptr);
+    }
 
     // TODO(bunnei): Below, we reset vertex count so that we can use these registers to determine if
     // the game is trying to draw indexed or direct mode. This needs to be verified on HW still -

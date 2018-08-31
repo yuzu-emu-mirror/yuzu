@@ -6,13 +6,23 @@
 
 #include <memory>
 #include "common/common_types.h"
-#include "core/file_sys/bis_factory.h"
 #include "core/file_sys/directory.h"
-#include "core/file_sys/mode.h"
-#include "core/file_sys/romfs_factory.h"
-#include "core/file_sys/savedata_factory.h"
-#include "core/file_sys/sdmc_factory.h"
 #include "core/hle/result.h"
+
+namespace FileSys {
+class BISFactory;
+class RegisteredCache;
+class RomFSFactory;
+class SaveDataFactory;
+class SDMCFactory;
+
+enum class ContentRecordType : u8;
+enum class Mode : u32;
+enum class SaveDataSpaceId : u8;
+enum class StorageId : u8;
+
+struct SaveDataDescriptor;
+} // namespace FileSys
 
 namespace Service {
 
@@ -27,15 +37,21 @@ ResultCode RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory)
 ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory);
 ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory);
 
-ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id);
+ResultVal<FileSys::VirtualFile> OpenRomFSCurrentProcess();
+ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id, FileSys::StorageId storage_id,
+                                          FileSys::ContentRecordType type);
 ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
                                             FileSys::SaveDataDescriptor save_struct);
 ResultVal<FileSys::VirtualDir> OpenSDMC();
 
 std::shared_ptr<FileSys::RegisteredCache> GetSystemNANDContents();
 std::shared_ptr<FileSys::RegisteredCache> GetUserNANDContents();
+std::shared_ptr<FileSys::RegisteredCache> GetSDMCContents();
 
-/// Registers all Filesystem services with the specified service manager.
+// Creates the SaveData, SDMC, and BIS Factories. Should be called once and before any function
+// above is called.
+void CreateFactories(const FileSys::VirtualFilesystem& vfs, bool overwrite = true);
+
 void InstallInterfaces(SM::ServiceManager& service_manager, const FileSys::VirtualFilesystem& vfs);
 
 // A class that wraps a VfsDirectory with methods that return ResultVal and ResultCode instead of

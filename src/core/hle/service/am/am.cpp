@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
 #include <cinttypes>
 #include <stack>
 #include "core/core.h"
@@ -17,6 +18,7 @@
 #include "core/hle/service/apm/apm.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/nvflinger/nvflinger.h"
+#include "core/hle/service/pm/pm.h"
 #include "core/hle/service/set/set.h"
 #include "core/settings.h"
 
@@ -145,8 +147,8 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {51, nullptr, "ApproveToDisplay"},
         {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
         {61, nullptr, "SetMediaPlaybackState"},
-        {62, nullptr, "SetIdleTimeDetectionExtension"},
-        {63, nullptr, "GetIdleTimeDetectionExtension"},
+        {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
+        {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
         {65, nullptr, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
@@ -158,8 +160,9 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
     };
     RegisterHandlers(functions);
 
+    auto& kernel = Core::System::GetInstance().Kernel();
     launchable_event =
-        Kernel::Event::Create(Kernel::ResetType::Sticky, "ISelfController:LaunchableEvent");
+        Kernel::Event::Create(kernel, Kernel::ResetType::Sticky, "ISelfController:LaunchableEvent");
 }
 
 void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
@@ -281,6 +284,23 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
+void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    idle_time_detection_extension = rp.Pop<u32>();
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(idle_time_detection_extension);
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
 ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter") {
     static const FunctionInfo functions[] = {
         {0, &ICommonStateGetter::GetEventHandle, "GetEventHandle"},
@@ -291,7 +311,7 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
         {5, &ICommonStateGetter::GetOperationMode, "GetOperationMode"},
         {6, &ICommonStateGetter::GetPerformanceMode, "GetPerformanceMode"},
         {7, nullptr, "GetCradleStatus"},
-        {8, nullptr, "GetBootMode"},
+        {8, &ICommonStateGetter::GetBootMode, "GetBootMode"},
         {9, &ICommonStateGetter::GetCurrentFocusState, "GetCurrentFocusState"},
         {10, nullptr, "RequestToAcquireSleepLock"},
         {11, nullptr, "ReleaseSleepLock"},
@@ -306,13 +326,24 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
         {52, nullptr, "SwitchLcdBacklight"},
         {55, nullptr, "IsInControllerFirmwareUpdateSection"},
         {60, nullptr, "GetDefaultDisplayResolution"},
-        {61, nullptr, "GetDefaultDisplayResolutionChangeEvent"},
+        {61, &ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent,
+         "GetDefaultDisplayResolutionChangeEvent"},
         {62, nullptr, "GetHdcpAuthenticationState"},
         {63, nullptr, "GetHdcpAuthenticationStateChangeEvent"},
     };
     RegisterHandlers(functions);
 
-    event = Kernel::Event::Create(Kernel::ResetType::OneShot, "ICommonStateGetter:Event");
+    auto& kernel = Core::System::GetInstance().Kernel();
+    event = Kernel::Event::Create(kernel, Kernel::ResetType::OneShot, "ICommonStateGetter:Event");
+}
+
+void ICommonStateGetter::GetBootMode(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+
+    rb.Push<u8>(static_cast<u8>(Service::PM::SystemBootMode::Normal)); // Normal boot mode
+
+    LOG_DEBUG(Service_AM, "called");
 }
 
 void ICommonStateGetter::GetEventHandle(Kernel::HLERequestContext& ctx) {
@@ -337,6 +368,16 @@ void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(static_cast<u8>(FocusState::InFocus));
+
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
+
+void ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent(Kernel::HLERequestContext& ctx) {
+    event->Signal();
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushCopyObjects(event);
 
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
@@ -466,7 +507,8 @@ public:
         };
         RegisterHandlers(functions);
 
-        state_changed_event = Kernel::Event::Create(Kernel::ResetType::OneShot,
+        auto& kernel = Core::System::GetInstance().Kernel();
+        state_changed_event = Kernel::Event::Create(kernel, Kernel::ResetType::OneShot,
                                                     "ILibraryAppletAccessor:StateChangedEvent");
     }
 
@@ -597,16 +639,16 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
 }
 
 void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
-    constexpr u8 data[0x88] = {
+    constexpr std::array<u8, 0x88> data{{
         0xca, 0x97, 0x94, 0xc7, // Magic
         1,    0,    0,    0,    // IsAccountSelected (bool)
         1,    0,    0,    0,    // User Id (word 0)
         0,    0,    0,    0,    // User Id (word 1)
         0,    0,    0,    0,    // User Id (word 2)
         0,    0,    0,    0     // User Id (word 3)
-    };
+    }};
 
-    std::vector<u8> buffer(data, data + sizeof(data));
+    std::vector<u8> buffer(data.begin(), data.end());
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
 

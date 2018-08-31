@@ -17,20 +17,23 @@
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
+#include "video_core/renderer_opengl/gl_shader_cache.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/gl_state.h"
 #include "video_core/renderer_opengl/gl_stream_buffer.h"
 
-struct ScreenInfo;
-
 namespace Core::Frontend {
 class EmuWindow;
 }
 
+namespace OpenGL {
+
+struct ScreenInfo;
+
 class RasterizerOpenGL : public VideoCore::RasterizerInterface {
 public:
-    explicit RasterizerOpenGL(Core::Frontend::EmuWindow& renderer);
+    explicit RasterizerOpenGL(Core::Frontend::EmuWindow& renderer, ScreenInfo& info);
     ~RasterizerOpenGL() override;
 
     void DrawArrays() override;
@@ -43,8 +46,8 @@ public:
     bool AccelerateDisplayTransfer(const void* config) override;
     bool AccelerateTextureCopy(const void* config) override;
     bool AccelerateFill(const void* config) override;
-    bool AccelerateDisplay(const Tegra::FramebufferConfig& framebuffer, VAddr framebuffer_addr,
-                           u32 pixel_stride, ScreenInfo& screen_info) override;
+    bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
+                           u32 pixel_stride) override;
     bool AccelerateDrawBatch(bool is_indexed) override;
 
     /// OpenGL shader generated for a given Maxwell register state
@@ -87,7 +90,8 @@ private:
 
     /// Configures the color and depth framebuffer states and returns the dirty <Color, Depth>
     /// surfaces if writing was enabled.
-    std::pair<Surface, Surface> ConfigureFramebuffers(bool using_color_fb, bool using_depth_fb);
+    std::pair<Surface, Surface> ConfigureFramebuffers(bool using_color_fb, bool using_depth_fb,
+                                                      bool preserve_contents);
 
     /// Binds the framebuffer color and depth surface
     void BindFramebufferSurfaces(const Surface& color_surface, const Surface& depth_surface,
@@ -96,26 +100,23 @@ private:
     /*
      * Configures the current constbuffers to use for the draw command.
      * @param stage The shader stage to configure buffers for.
-     * @param program The OpenGL program object that contains the specified stage.
+     * @param shader The shader object that contains the specified stage.
      * @param current_bindpoint The offset at which to start counting new buffer bindpoints.
-     * @param entries Vector describing the buffers that are actually used in the guest shader.
      * @returns The next available bindpoint for use in the next shader stage.
      */
     std::tuple<u8*, GLintptr, u32> SetupConstBuffers(
         u8* buffer_ptr, GLintptr buffer_offset, Tegra::Engines::Maxwell3D::Regs::ShaderStage stage,
-        GLuint program, u32 current_bindpoint,
-        const std::vector<GLShader::ConstBufferEntry>& entries);
+        Shader& shader, u32 current_bindpoint);
 
     /*
      * Configures the current textures to use for the draw command.
      * @param stage The shader stage to configure textures for.
-     * @param program The OpenGL program object that contains the specified stage.
+     * @param shader The shader object that contains the specified stage.
      * @param current_unit The offset at which to start counting unused texture units.
-     * @param entries Vector describing the textures that are actually used in the guest shader.
      * @returns The next available bindpoint for use in the next shader stage.
      */
-    u32 SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, GLuint program,
-                      u32 current_unit, const std::vector<GLShader::SamplerEntry>& entries);
+    u32 SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, Shader& shader,
+                      u32 current_unit);
 
     /// Syncs the viewport to match the guest state
     void SyncViewport(const MathUtil::Rectangle<u32>& surfaces_rect);
@@ -138,8 +139,14 @@ private:
     /// Syncs the depth test state to match the guest state
     void SyncDepthTestState();
 
+    /// Syncs the stencil test state to match the guest state
+    void SyncStencilTestState();
+
     /// Syncs the blend state to match the guest state
     void SyncBlendState();
+
+    /// Syncs the LogicOp state to match the guest state
+    void SyncLogicOpState();
 
     bool has_ARB_direct_state_access = false;
     bool has_ARB_separate_shader_objects = false;
@@ -148,8 +155,11 @@ private:
     OpenGLState state;
 
     RasterizerCacheOpenGL res_cache;
+    ShaderCacheOpenGL shader_cache;
 
     Core::Frontend::EmuWindow& emu_window;
+
+    ScreenInfo& screen_info;
 
     std::unique_ptr<GLShader::ProgramManager> shader_program_manager;
     OGLVertexArray sw_vao;
@@ -178,3 +188,5 @@ private:
     enum class AccelDraw { Disabled, Arrays, Indexed };
     AccelDraw accelerate_draw = AccelDraw::Disabled;
 };
+
+} // namespace OpenGL

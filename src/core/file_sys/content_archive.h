@@ -27,6 +27,7 @@ enum class NCAContentType : u8 {
     Control = 2,
     Manual = 3,
     Data = 4,
+    Data_Unknown5 = 5, ///< Seems to be used on some system archives
 };
 
 enum class NCASectionCryptoType : u8 {
@@ -92,6 +93,8 @@ public:
 
     VirtualFile GetBaseFile() const;
 
+    bool IsUpdate() const;
+
 protected:
     bool ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) override;
 
@@ -110,6 +113,7 @@ private:
 
     NCAHeader header{};
     bool has_rights_id{};
+    bool is_update{};
 
     Loader::ResultStatus status{};
 

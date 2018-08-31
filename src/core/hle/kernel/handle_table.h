@@ -47,7 +47,7 @@ public:
     /**
      * Allocates a handle for the given object.
      * @return The created Handle or one of the following errors:
-     *           - `ERR_OUT_OF_HANDLES`: the maximum number of handles has been exceeded.
+     *           - `ERR_HANDLE_TABLE_FULL`: the maximum number of handles has been exceeded.
      */
     ResultVal<Handle> Create(SharedPtr<Object> obj);
 
@@ -120,7 +120,5 @@ private:
     /// Head of the free slots linked list.
     u16 next_free_slot;
 };
-
-extern HandleTable g_handle_table;
 
 } // namespace Kernel

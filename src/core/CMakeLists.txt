@@ -20,6 +20,8 @@ add_library(core STATIC
     crypto/key_manager.h
     crypto/ctr_encryption_layer.cpp
     crypto/ctr_encryption_layer.h
+    crypto/xts_encryption_layer.cpp
+    crypto/xts_encryption_layer.h
     file_sys/bis_factory.cpp
     file_sys/bis_factory.h
     file_sys/card_image.cpp
@@ -57,6 +59,8 @@ add_library(core STATIC
     file_sys/vfs_real.h
     file_sys/vfs_vector.cpp
     file_sys/vfs_vector.h
+    file_sys/xts_archive.cpp
+    file_sys/xts_archive.h
     frontend/emu_window.cpp
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
@@ -122,6 +126,8 @@ add_library(core STATIC
     hle/service/acc/acc_u0.h
     hle/service/acc/acc_u1.cpp
     hle/service/acc/acc_u1.h
+    hle/service/acc/profile_manager.cpp
+    hle/service/acc/profile_manager.h
     hle/service/am/am.cpp
     hle/service/am/am.h
     hle/service/am/applet_ae.cpp
@@ -345,6 +351,8 @@ add_library(core STATIC
     loader/linker.h
     loader/loader.cpp
     loader/loader.h
+    loader/nax.cpp
+    loader/nax.h
     loader/nca.cpp
     loader/nca.h
     loader/nro.cpp
