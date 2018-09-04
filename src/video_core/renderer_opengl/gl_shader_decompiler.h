@@ -20,6 +20,6 @@ std::string GetCommonDeclarations();
 
 boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
                                                 Maxwell3D::Regs::ShaderStage stage,
-                                                const std::string& suffix);
+                                                const std::string& suffix, bool& faulty_shader);
 
 } // namespace OpenGL::GLShader::Decompiler

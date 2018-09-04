@@ -30,11 +30,7 @@ using Tegra::Shader::SubOp;
 constexpr u32 PROGRAM_END = MAX_PROGRAM_CODE_LENGTH;
 constexpr u32 PROGRAM_HEADER_SIZE = sizeof(Tegra::Shader::Header);
 
-<<<<<<< HEAD
 enum : u32 { POSITION_VARYING_LOCATION = 0, GENERIC_VARYING_START_LOCATION = 1 };
-=======
-constexpr u32 POSITION_VARYING_LOCATION = 15;
->>>>>>> glsl_decompiler: Implement geometry shaders
 
 constexpr u32 MAX_GEOMETRY_BUFFERS = 6;
 constexpr u32 MAX_ATTRIBUTES = 0x100; // Size in vec4s, this value is untested
@@ -510,11 +506,7 @@ public:
     /// Returns the GLSL sampler used for the input shader sampler, and creates a new one if
     /// necessary.
     std::string AccessSampler(const Sampler& sampler, Tegra::Shader::TextureType type,
-<<<<<<< HEAD
                               bool is_array, bool is_shadow) {
-=======
-                              bool is_array) {
->>>>>>> glsl_decompiler: Implement geometry shaders
         const auto offset = static_cast<std::size_t>(sampler.index.Value());
 
         // If this sampler has already been used, return the existing mapping.
@@ -523,22 +515,14 @@ public:
                          [&](const SamplerEntry& entry) { return entry.GetOffset() == offset; });
 
         if (itr != used_samplers.end()) {
-<<<<<<< HEAD
             ASSERT(itr->GetType() == type && itr->IsArray() == is_array &&
                    itr->IsShadow() == is_shadow);
-=======
-            ASSERT(itr->GetType() == type && itr->IsArray() == is_array);
->>>>>>> glsl_decompiler: Implement geometry shaders
             return itr->GetName();
         }
 
         // Otherwise create a new mapping for this sampler
         const std::size_t next_index = used_samplers.size();
-<<<<<<< HEAD
         const SamplerEntry entry{stage, offset, next_index, type, is_array, is_shadow};
-=======
-        const SamplerEntry entry{stage, offset, next_index, type, is_array};
->>>>>>> glsl_decompiler: Implement geometry shaders
         used_samplers.emplace_back(entry);
         return entry.GetName();
     }
@@ -575,14 +559,10 @@ private:
             // TODO(bunnei): Use proper number of elements for these
             u32 idx =
                 static_cast<u32>(element.first) - static_cast<u32>(Attribute::Index::Attribute_0);
-<<<<<<< HEAD
             if (stage != Maxwell3D::Regs::ShaderStage::Vertex) {
                 // If inputs are varyings, add an offset
                 idx += GENERIC_VARYING_START_LOCATION;
             }
-=======
-            ASSERT(idx != POSITION_VARYING_LOCATION);
->>>>>>> glsl_decompiler: Implement geometry shaders
 
             std::string attr{GetInputAttribute(element.first, element.second)};
             if (stage == Maxwell3D::Regs::ShaderStage::Geometry) {
@@ -603,18 +583,11 @@ private:
         }
         for (const auto& index : declr_output_attribute) {
             // TODO(bunnei): Use proper number of elements for these
-<<<<<<< HEAD
             const u32 idx = static_cast<u32>(index) -
                             static_cast<u32>(Attribute::Index::Attribute_0) +
                             GENERIC_VARYING_START_LOCATION;
             declarations.AddLine("layout (location = " + std::to_string(idx) + ") out vec4 " +
                                  GetOutputAttribute(index) + ';');
-=======
-            declarations.AddLine("layout (location = " +
-                                 std::to_string(static_cast<u32>(index) -
-                                                static_cast<u32>(Attribute::Index::Attribute_0)) +
-                                 ") out vec4 " + GetOutputAttribute(index) + ';');
->>>>>>> glsl_decompiler: Implement geometry shaders
         }
         declarations.AddNewLine();
     }
@@ -737,11 +710,7 @@ private:
                                   const Tegra::Shader::IpaMode& input_mode,
                                   boost::optional<Register> vertex = {}) {
         auto GeometryPass = [&](const std::string& name) {
-<<<<<<< HEAD
             if (stage == Maxwell3D::Regs::ShaderStage::Geometry && vertex) {
-=======
-            if (stage == Maxwell3D::Regs::ShaderStage::Geometry && vertex.has_value()) {
->>>>>>> glsl_decompiler: Implement geometry shaders
                 return "gs_" + name + '[' + GetRegisterAsInteger(vertex.value(), 0, false) + ']';
             }
             return name;
@@ -878,7 +847,12 @@ public:
         : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
           stage(stage), suffix(suffix) {
         std::memcpy(&header, program_code.data(), sizeof(Tegra::Shader::Header));
+        faulty = false;
         Generate(suffix);
+    }
+
+    bool IsFaulty() {
+        return faulty;
     }
 
     std::string GetShaderCode() {
@@ -1260,6 +1234,7 @@ private:
 
         // Decoding failure
         if (!opcode) {
+            faulty = true;
             LOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
             UNREACHABLE();
             return offset + 1;
@@ -3237,6 +3212,7 @@ private:
     const u32 main_offset;
     Maxwell3D::Regs::ShaderStage stage;
     const std::string& suffix;
+    bool faulty;
 
     ShaderWriter shader;
     ShaderWriter declarations;
@@ -3253,11 +3229,12 @@ std::string GetCommonDeclarations() {
 
 boost::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
                                                 Maxwell3D::Regs::ShaderStage stage,
-                                                const std::string& suffix) {
+                                                const std::string& suffix, bool& faulty_shader) {
     try {
         const auto subroutines =
             ControlFlowAnalyzer(program_code, main_offset, suffix).GetSubroutines();
         GLSLGenerator generator(subroutines, program_code, main_offset, stage, suffix);
+        faulty_shader = generator.IsFaulty();
         return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
         LOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());
