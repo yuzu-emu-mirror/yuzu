@@ -152,7 +152,7 @@ void RasterizerOpenGL::SetupVertexArrays() {
         const Tegra::GPUVAddr end = regs.vertex_array_limit[index].LimitAddress();
 
         if (regs.instanced_arrays.IsInstancingEnabled(index) && vertex_array.divisor != 0) {
-            start += (Tegra::GPUVAddr)vertex_array.stride *
+            start += static_cast<Tegra::GPUVAddr>(vertex_array.stride) *
                      (gpu.state.current_instance / vertex_array.divisor);
         }
 
@@ -450,7 +450,8 @@ void RasterizerOpenGL::DrawArrays() {
 
     // Draw the vertex batch
     const bool is_indexed = accelerate_draw == AccelDraw::Indexed;
-    const u64 index_buffer_size{(u64)regs.index_array.count * regs.index_array.FormatSizeInBytes()};
+    const u64 index_buffer_size{static_cast<u64>(regs.index_array.count) *
+                                static_cast<u64>(regs.index_array.FormatSizeInBytes())};
 
     state.draw.vertex_buffer = buffer_cache.GetHandle();
     state.Apply();
@@ -493,8 +494,8 @@ void RasterizerOpenGL::DrawArrays() {
         const GLint base_vertex{static_cast<GLint>(regs.vb_element_base)};
 
         // Adjust the index buffer offset so it points to the first desired index.
-        index_buffer_offset +=
-            (GLintptr)regs.index_array.first * regs.index_array.FormatSizeInBytes();
+        index_buffer_offset += static_cast<GLintptr>(regs.index_array.first) *
+                               static_cast<GLintptr>(regs.index_array.FormatSizeInBytes());
 
         glDrawElementsBaseVertex(primitive_mode, regs.index_array.count,
                                  MaxwellToGL::IndexFormat(regs.index_array.format),
