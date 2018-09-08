@@ -13,6 +13,13 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ns/pl_u.h"
 
+#include "FontChineseSimplified.ttf.h"
+#include "FontChineseTraditional.ttf.h"
+#include "FontExtendedChineseSimplified.ttf.h"
+#include "FontKorean.ttf.h"
+#include "FontNintendoExtended.ttf.h"
+#include "FontStandard.ttf.h"
+
 namespace Service::NS {
 
 enum class FontArchives : u64 {
@@ -218,7 +225,24 @@ PL_U::PL_U() : ServiceFramework("pl:u") {
             file.ReadBytes(shared_font->data(), shared_font->size());
             BuildSharedFontsRawRegions(*shared_font);
         } else {
-            LOG_WARNING(Service_NS, "Unable to load shared font: {}", filepath);
+            LOG_WARNING(Service_NS,
+                        "Shared Font file missing. Loading open source replacement from memory");
+
+            std::vector<std::vector<u8>> open_source_shared_fonts_ttf;
+            // clang-format off
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontChineseSimplified), std::end(FontChineseSimplified)));
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontChineseTraditional), std::end(FontChineseTraditional)));
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontExtendedChineseSimplified),std::end(FontExtendedChineseSimplified)));
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontKorean), std::end(FontKorean)));
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontNintendoExtended), std::end(FontNintendoExtended)));
+            open_source_shared_fonts_ttf.push_back(std::vector<u8>(std::begin(FontStandard), std::end(FontStandard)));
+            // clang-format on
+
+            for (std::vector<u8> font_ttf : open_source_shared_fonts_ttf) {
+                FontRegion region{static_cast<u32>(offset + 8), static_cast<u32>(font_ttf.size())};
+                EncryptSharedFont(font_ttf, *shared_font, offset);
+                SHARED_FONT_REGIONS.push_back(region);
+            }
         }
     }
 }
