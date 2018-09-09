@@ -205,7 +205,7 @@ void InitJoystick(int joystick_index) {
     std::string guid = GetGUID(sdl_joystick);
     if (joystick_map.find(guid) == joystick_map.end()) {
         auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick);
-        joystick_map[guid].emplace_back(joystick);
+        joystick_map[guid].emplace_back(std::move(joystick));
         return;
     }
     auto& joystick_guid_list = joystick_map[guid];
