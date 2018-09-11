@@ -642,15 +642,17 @@ void RasterizerOpenGL::SamplerInfo::SyncWithConfig(const Tegra::Texture::TSCEntr
 u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, Shader& shader,
                                         u32 current_bindpoint) {
     MICROPROFILE_SCOPE(OpenGL_UBO);
-    const u64 max_binds = Tegra::Engines::Maxwell3D::Regs::MaxConstBuffers;
     const auto& gpu = Core::System::GetInstance().GPU();
     const auto& maxwell3d = gpu.Maxwell3D();
     const auto& shader_stage = maxwell3d.state.shader_stages[static_cast<size_t>(stage)];
     const auto& entries = shader->GetShaderEntries().const_buffer_entries;
 
-    std::array<GLuint, max_binds> bind_buffers = {};
-    std::array<GLintptr, max_binds> bind_offsets = {};
-    std::array<GLsizeiptr, max_binds> bind_sizes = {};
+    constexpr u64 max_binds = Tegra::Engines::Maxwell3D::Regs::MaxConstBuffers;
+    std::array<GLuint, max_binds> bind_buffers;
+    std::array<GLintptr, max_binds> bind_offsets;
+    std::array<GLsizeiptr, max_binds> bind_sizes;
+
+    ASSERT_MSG(entries.size() <= max_binds, "Exceeded expected number of binding points.");
 
     // Upload only the enabled buffers from the 16 constbuffers of each shader stage
     for (u32 bindpoint = 0; bindpoint < entries.size(); ++bindpoint) {
@@ -658,7 +660,10 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, Shader& shad
         const auto& buffer = shader_stage.const_buffers[used_buffer.GetIndex()];
 
         if (!buffer.enabled) {
-            // Disabled buffers leave the multibind index as zero, unbinding it
+            // With disabled buffers set values as zero to unbind them
+            bind_buffers[bindpoint] = 0;
+            bind_offsets[bindpoint] = 0;
+            bind_sizes[bindpoint] = 0;
             continue;
         }
 
@@ -692,7 +697,6 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, Shader& shad
                               current_bindpoint + bindpoint);
 
         // Prepare values for multibind
-        ASSERT_MSG(bindpoint < max_binds, "Exceeded expected number of binding points.");
         bind_buffers[bindpoint] = buffer_cache.GetHandle();
         bind_offsets[bindpoint] = const_buffer_offset;
         bind_sizes[bindpoint] = size;
