@@ -51,7 +51,8 @@ void Thread::Stop() {
     // Clean up thread from ready queue
     // This is only needed when the thread is terminated forcefully (SVC TerminateProcess)
     if (status == ThreadStatus::Ready) {
-        scheduler->UnscheduleThread(this, current_priority);
+        if (auto schlr = scheduler.lock())
+            schlr->UnscheduleThread(this, current_priority);
     }
 
     status = ThreadStatus::Dead;
@@ -161,14 +162,16 @@ void Thread::ResumeFromWait() {
 
     if (*new_processor_id != processor_id) {
         // Remove thread from previous core's scheduler
-        scheduler->RemoveThread(this);
+        if (auto schlr = scheduler.lock())
+            schlr->RemoveThread(this);
         next_scheduler->AddThread(this, current_priority);
     }
 
     processor_id = *new_processor_id;
 
     // If the thread was ready, unschedule from the previous core and schedule on the new core
-    scheduler->UnscheduleThread(this, current_priority);
+    if (auto schlr = scheduler.lock())
+        schlr->UnscheduleThread(this, current_priority);
     next_scheduler->ScheduleThread(this, current_priority);
 
     // Change thread's scheduler
@@ -263,7 +266,8 @@ ResultVal<SharedPtr<Thread>> Thread::Create(KernelCore& kernel, std::string name
     thread->callback_handle = kernel.ThreadWakeupCallbackHandleTable().Create(thread).Unwrap();
     thread->owner_process = owner_process;
     thread->scheduler = Core::System::GetInstance().Scheduler(processor_id);
-    thread->scheduler->AddThread(thread, priority);
+    if (auto s = thread->scheduler.lock())
+        s->AddThread(thread, priority);
 
     // Find the next available TLS index, and mark it as used
     auto& tls_slots = owner_process->tls_slots;
@@ -306,7 +310,8 @@ void Thread::SetPriority(u32 priority) {
 }
 
 void Thread::BoostPriority(u32 priority) {
-    scheduler->SetThreadPriority(this, priority);
+    if (auto schlr = scheduler.lock())
+        schlr->SetThreadPriority(this, priority);
     current_priority = priority;
 }
 
@@ -396,7 +401,8 @@ void Thread::UpdatePriority() {
     if (new_priority == current_priority)
         return;
 
-    scheduler->SetThreadPriority(this, new_priority);
+    if (auto schlr = scheduler.lock())
+        schlr->SetThreadPriority(this, new_priority);
 
     current_priority = new_priority;
 
@@ -430,14 +436,16 @@ void Thread::ChangeCore(u32 core, u64 mask) {
 
     if (*new_processor_id != processor_id) {
         // Remove thread from previous core's scheduler
-        scheduler->RemoveThread(this);
+        if (auto schlr = scheduler.lock())
+            schlr->RemoveThread(this);
         next_scheduler->AddThread(this, current_priority);
     }
 
     processor_id = *new_processor_id;
 
     // If the thread was ready, unschedule from the previous core and schedule on the new core
-    scheduler->UnscheduleThread(this, current_priority);
+    if (auto schlr = scheduler.lock())
+        schlr->UnscheduleThread(this, current_priority);
     next_scheduler->ScheduleThread(this, current_priority);
 
     // Change thread's scheduler
