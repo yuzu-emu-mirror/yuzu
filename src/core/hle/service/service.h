@@ -60,8 +60,6 @@ public:
     void InstallAsService(SM::ServiceManager& service_manager);
     /// Creates a port pair and registers it on the kernel's global port registry.
     void InstallAsNamedPort();
-    /// Creates and returns an unregistered port for the service.
-    Kernel::SharedPtr<Kernel::ClientPort> CreatePort();
 
     void InvokeRequest(Kernel::HLERequestContext& ctx);
 
@@ -95,12 +93,6 @@ private:
     std::string service_name;
     /// Maximum number of concurrent sessions that this service can handle.
     u32 max_sessions;
-
-    /**
-     * Port where incoming connections will be received. Only created when InstallAsService() or
-     * InstallAsNamedPort() are called.
-     */
-    Kernel::SharedPtr<Kernel::ServerPort> port;
 
     /// Function used to safely up-cast pointers to the derived class before invoking a handler.
     InvokerFn* handler_invoker;

@@ -33,11 +33,8 @@ static ResultCode ValidateServiceName(const std::string& name) {
 }
 
 void ServiceManager::InstallInterfaces(std::shared_ptr<ServiceManager> self) {
-    ASSERT(self->sm_interface.expired());
-
     auto sm = std::make_shared<SM>(self);
     sm->InstallAsNamedPort();
-    self->sm_interface = sm;
     self->controller_interface = std::make_unique<Controller>();
 }
 

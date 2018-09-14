@@ -57,7 +57,6 @@ public:
     void InvokeControlRequest(Kernel::HLERequestContext& context);
 
 private:
-    std::weak_ptr<SM> sm_interface;
     std::unique_ptr<Controller> controller_interface;
 
     /// Map of registered services, retrieved using GetServicePort or ConnectToService.
