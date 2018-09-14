@@ -292,6 +292,8 @@ private:
 class Hid final : public ServiceFramework<Hid> {
 public:
     Hid() : ServiceFramework("hid") {
+        ReloadInputDevices();
+
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &Hid::CreateAppletResource, "CreateAppletResource"},
