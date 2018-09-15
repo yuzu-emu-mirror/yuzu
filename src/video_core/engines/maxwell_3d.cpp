@@ -395,6 +395,15 @@ Texture::FullTextureInfo Maxwell3D::GetStageTexture(Regs::ShaderStage stage,
     return tex_info;
 }
 
+std::string Maxwell3D::CreateGlobalMemoryRegion(std::tuple<u64, u64, u64> iadd_data) {
+    state.global_memory_uniforms.emplace(std::get<1>(iadd_data), std::get<2>(iadd_data));
+    return fmt::format("global_memory_region_{}", state.global_memory_uniforms.size() - 1);
+}
+
+std::set<std::pair<u64, u64>> Maxwell3D::ListGlobalMemoryRegions() const {
+    return state.global_memory_uniforms;
+}
+
 u32 Maxwell3D::GetRegisterValue(u32 method) const {
     ASSERT_MSG(method < Regs::NUM_REGS, "Invalid Maxwell3D register");
     return regs.reg_array[method];
