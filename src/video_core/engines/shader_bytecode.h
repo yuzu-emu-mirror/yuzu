@@ -757,6 +757,7 @@ public:
         STG, // Store in global memory
         TEX,
         TXQ,    // Texture Query
+        TXB,    // Texture Bias
         TEXS,   // Texture Fetch with scalar/non-vec4 source/destinations
         TLDS,   // Texture Load with scalar/non-vec4 source/destinations
         TLD4,   // Texture Load 4
@@ -990,6 +991,7 @@ private:
             INST("1110111011011---", Id::STG, Type::Memory, "STG"),
             INST("110000----111---", Id::TEX, Type::Memory, "TEX"),
             INST("1101111101001---", Id::TXQ, Type::Memory, "TXQ"),
+            INST("1101111010111---", Id::TXB, Type::Memory, "TXB"),
             INST("1101100---------", Id::TEXS, Type::Memory, "TEXS"),
             INST("1101101---------", Id::TLDS, Type::Memory, "TLDS"),
             INST("110010----111---", Id::TLD4, Type::Memory, "TLD4"),
