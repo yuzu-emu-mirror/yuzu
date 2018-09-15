@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <set>
 #include <unordered_map>
 #include <vector>
 #include "common/assert.h"
@@ -1037,6 +1038,8 @@ public:
 
         std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
         u32 current_instance = 0; ///< Current instance to be used to simulate instanced rendering.
+
+        std::set<std::pair<u64, u64>> global_memory_uniforms;
     };
 
     State state{};
@@ -1068,6 +1071,9 @@ public:
     const MacroMemory& GetMacroMemory() const {
         return macro_memory;
     }
+
+    std::string CreateGlobalMemoryRegion(std::tuple<u64, u64, u64> iadd_data);
+    std::set<std::pair<u64, u64>> ListGlobalMemoryRegions() const;
 
 private:
     void InitializeRegisterDefaults();
