@@ -555,9 +555,11 @@ VirtualFile RegisteredCacheUnion::GetEntryUnparsed(RegisteredCacheEntry entry) c
 
 VirtualFile RegisteredCacheUnion::GetEntryRaw(u64 title_id, ContentRecordType type) const {
     for (const auto& c : caches) {
-        const auto res = c->GetEntryRaw(title_id, type);
-        if (res != nullptr)
-            return res;
+        if (c != nullptr) {
+            const auto res = c->GetEntryRaw(title_id, type);
+            if (res != nullptr)
+                return res;
+        }
     }
 
     return nullptr;

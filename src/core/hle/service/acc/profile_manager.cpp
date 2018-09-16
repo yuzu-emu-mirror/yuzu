@@ -92,6 +92,8 @@ ResultCode ProfileManager::CreateNewUser(UUID uuid, const ProfileUsername& usern
 /// we're loading a string straight from the config
 ResultCode ProfileManager::CreateNewUser(UUID uuid, const std::string& username) {
     ProfileUsername username_output;
+
+    ASSERT(username != "");
     if (username.size() > username_output.size()) {
         std::copy_n(username.begin(), username_output.size(), username_output.begin());
     } else {
