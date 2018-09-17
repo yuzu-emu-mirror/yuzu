@@ -501,7 +501,7 @@ CachedSurface::CachedSurface(const SurfaceParams& params)
     glTexParameteri(SurfaceTargetToGL(params.target), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
+static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height, bool reverse) {
     union S8Z24 {
         BitField<0, 24, u32> z24;
         BitField<24, 8, u32> s8;
@@ -514,16 +514,23 @@ static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height) {
     };
     static_assert(sizeof(Z24S8) == 4, "Z24S8 is incorrect size");
 
-    S8Z24 input_pixel{};
-    Z24S8 output_pixel{};
+    S8Z24 s8z24_pixel{};
+    Z24S8 z24s8_pixel{};
     constexpr auto bpp{CachedSurface::GetGLBytesPerPixel(PixelFormat::S8Z24)};
     for (std::size_t y = 0; y < height; ++y) {
         for (std::size_t x = 0; x < width; ++x) {
             const std::size_t offset{bpp * (y * width + x)};
-            std::memcpy(&input_pixel, &data[offset], sizeof(S8Z24));
-            output_pixel.s8.Assign(input_pixel.s8);
-            output_pixel.z24.Assign(input_pixel.z24);
-            std::memcpy(&data[offset], &output_pixel, sizeof(Z24S8));
+            if (reverse) {
+                std::memcpy(&z24s8_pixel, &data[offset], sizeof(Z24S8));
+                s8z24_pixel.s8.Assign(z24s8_pixel.s8);
+                s8z24_pixel.z24.Assign(z24s8_pixel.z24);
+                std::memcpy(&data[offset], &s8z24_pixel, sizeof(S8Z24));
+            } else {
+                std::memcpy(&s8z24_pixel, &data[offset], sizeof(S8Z24));
+                z24s8_pixel.s8.Assign(s8z24_pixel.s8);
+                z24s8_pixel.z24.Assign(s8z24_pixel.z24);
+                std::memcpy(&data[offset], &z24s8_pixel, sizeof(Z24S8));
+            }
         }
     }
 }
@@ -559,7 +566,7 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
     }
     case PixelFormat::S8Z24:
         // Convert the S8Z24 depth format to Z24S8, as OpenGL does not support S8Z24.
-        ConvertS8Z24ToZ24S8(data, width, height);
+        ConvertS8Z24ToZ24S8(data, width, height, false);
         break;
 
     case PixelFormat::G8R8U:
@@ -578,7 +585,6 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
 static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& data, PixelFormat pixel_format,
                                                 u32 width, u32 height) {
     switch (pixel_format) {
-    case PixelFormat::S8Z24:
     case PixelFormat::G8R8U:
     case PixelFormat::G8R8S:
     case PixelFormat::ASTC_2D_4X4:
@@ -588,6 +594,10 @@ static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& data, PixelForm
         UNREACHABLE();
         break;
     }
+    case PixelFormat::S8Z24:
+        // Convert the Z24S8 depth format to S8Z24, as OpenGL does not support S8Z24.
+        ConvertS8Z24ToZ24S8(data, width, height, true);
+        break;
     }
 }
 
