@@ -265,20 +265,19 @@ void MortonCopy(u32 stride, u32 block_height, u32 height, u8* gl_buffer, std::si
     constexpr u32 bytes_per_pixel = SurfaceParams::GetFormatBpp(format) / CHAR_BIT;
     constexpr u32 gl_bytes_per_pixel = CachedSurface::GetGLBytesPerPixel(format);
 
+    // With the BCn formats (DXT and DXN), each 4x4 tile is swizzled instead of just individual
+    // pixel values.
+    const u32 tile_size{IsFormatBCn(format) ? 4U : 1U};
+
     if (morton_to_gl) {
-        // With the BCn formats (DXT and DXN), each 4x4 tile is swizzled instead of just individual
-        // pixel values.
-        const u32 tile_size{IsFormatBCn(format) ? 4U : 1U};
         const std::vector<u8> data = Tegra::Texture::UnswizzleTexture(
             addr, tile_size, bytes_per_pixel, stride, height, block_height);
         const std::size_t size_to_copy{std::min(gl_buffer_size, data.size())};
         memcpy(gl_buffer, data.data(), size_to_copy);
     } else {
-        // TODO(bunnei): Assumes the default rendering GOB size of 16 (128 lines). We should
-        // check the configuration for this and perform more generic un/swizzle
-        LOG_WARNING(Render_OpenGL, "need to use correct swizzle/GOB parameters!");
-        VideoCore::MortonCopyPixels128(stride, height, bytes_per_pixel, gl_bytes_per_pixel,
-                                       Memory::GetPointer(addr), gl_buffer, morton_to_gl);
+        Tegra::Texture::CopySwizzledData(stride / tile_size, height / tile_size, bytes_per_pixel,
+                                         bytes_per_pixel, Memory::GetPointer(addr), gl_buffer,
+                                         false, block_height);
     }
 }
 
@@ -572,6 +571,26 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
     }
 }
 
+/**
+ * Helper function to perform software conversion (as needed) when flushing a buffer from OpenGL to
+ * Switch memory. This is for Maxwell pixel formats that cannot be represented as-is in OpenGL or
+ * with typical desktop GPUs.
+ */
+static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& data, PixelFormat pixel_format,
+                                                u32 width, u32 height) {
+    switch (pixel_format) {
+    case PixelFormat::S8Z24:
+    case PixelFormat::G8R8U:
+    case PixelFormat::G8R8S:
+    case PixelFormat::ASTC_2D_4X4:
+    case PixelFormat::ASTC_2D_8X8: {
+        LOG_CRITICAL(HW_GPU, "Conversion of formats after texture flushing is not implemented");
+        UNREACHABLE();
+        break;
+    }
+    }
+}
+
 MICROPROFILE_DEFINE(OpenGL_SurfaceLoad, "OpenGL", "Surface Load", MP_RGB(128, 64, 192));
 void CachedSurface::LoadGLBuffer() {
     ASSERT(params.type != SurfaceType::Fill);
@@ -613,7 +632,66 @@ void CachedSurface::LoadGLBuffer() {
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
 void CachedSurface::FlushGLBuffer() {
-    ASSERT_MSG(false, "Unimplemented");
+    MICROPROFILE_SCOPE(OpenGL_SurfaceFlush);
+
+    const auto& rect{params.GetRect()};
+
+    // Load data from memory to the surface
+    const GLint x0 = static_cast<GLint>(rect.left);
+    const GLint y0 = static_cast<GLint>(rect.bottom);
+    const size_t buffer_offset =
+        static_cast<size_t>(static_cast<size_t>(y0) * params.width + static_cast<size_t>(x0)) *
+        GetGLBytesPerPixel(params.pixel_format);
+
+    const u32 bytes_per_pixel = GetGLBytesPerPixel(params.pixel_format);
+    const u32 copy_size = params.width * params.height * bytes_per_pixel;
+    gl_buffer.resize(static_cast<size_t>(params.depth) * copy_size);
+
+    const FormatTuple& tuple = GetFormatTuple(params.pixel_format, params.component_type);
+
+    // Ensure no bad interactions with GL_UNPACK_ALIGNMENT
+    ASSERT(params.width * GetGLBytesPerPixel(params.pixel_format) % 4 == 0);
+    glPixelStorei(GL_PACK_ROW_LENGTH, static_cast<GLint>(params.width));
+
+    ASSERT(!tuple.compressed);
+    ASSERT(x0 == 0 && y0 == 0);
+
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    glGetTextureImage(texture.handle, 0, tuple.format, tuple.type, gl_buffer.size(),
+                      gl_buffer.data());
+    ASSERT(glGetError() == GL_NO_ERROR);
+
+    glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+
+    ConvertFormatAsNeeded_FlushGLBuffer(gl_buffer, params.pixel_format, params.width,
+                                        params.height);
+
+    ASSERT(params.type != SurfaceType::Fill);
+
+    const u8* const texture_src_data = Memory::GetPointer(params.addr);
+
+    ASSERT(texture_src_data);
+
+    if (params.is_tiled) {
+        // TODO(bunnei): This only swizzles and copies a 2D texture - we do not yet know how to do
+        // this for 3D textures, etc.
+        switch (params.target) {
+        case SurfaceParams::SurfaceTarget::Texture2D:
+            // Pass impl. to the fallback code below
+            break;
+        default:
+            LOG_CRITICAL(HW_GPU, "Unimplemented tiled unload for target={}",
+                         static_cast<u32>(params.target));
+            UNREACHABLE();
+        }
+
+        gl_to_morton_fns[static_cast<size_t>(params.pixel_format)](
+            params.width, params.block_height, params.height, &gl_buffer[buffer_offset], copy_size,
+            params.addr + buffer_offset);
+    } else {
+        Memory::WriteBlock(params.addr + buffer_offset, &gl_buffer[buffer_offset],
+                           gl_buffer.size() - buffer_offset);
+    }
 }
 
 MICROPROFILE_DEFINE(OpenGL_TextureUL, "OpenGL", "Texture Upload", MP_RGB(128, 64, 192));
