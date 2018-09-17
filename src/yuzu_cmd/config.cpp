@@ -126,7 +126,8 @@ void Config::ReadValues() {
     // System
     Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
     Settings::values.username = sdl2_config->Get("System", "username", "yuzu");
-    Settings::values.username = Settings::values.username == "" ? "yuzu" : Settings::values.username;
+    Settings::values.username =
+        Settings::values.username == "" ? "yuzu" : Settings::values.username;
 
     // Miscellaneous
     Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
