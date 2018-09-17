@@ -4,12 +4,14 @@
 
 #include "core/memory.h"
 #include "video_core/engines/maxwell_dma.h"
+#include "video_core/rasterizer_interface.h"
 #include "video_core/textures/decoders.h"
 
 namespace Tegra {
 namespace Engines {
 
-MaxwellDMA::MaxwellDMA(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
+MaxwellDMA::MaxwellDMA(VideoCore::RasterizerInterface& rasterizer, MemoryManager& memory_manager)
+    : memory_manager(memory_manager), rasterizer{rasterizer} {}
 
 void MaxwellDMA::WriteReg(u32 method, u32 value) {
     ASSERT_MSG(method < Regs::NUM_REGS,
