@@ -65,6 +65,10 @@ void MaxwellDMA::HandleCopy() {
     }
 
     ASSERT(regs.exec.enable_2d == 1);
+
+    // TODO(Subv): For now, manually flush the regions until we implement GPU-accelerated copying.
+    rasterizer.FlushRegion(source_cpu, copy_size);
+
     u8* src_buffer = Memory::GetPointer(source_cpu);
     u8* dst_buffer = Memory::GetPointer(dest_cpu);
 
@@ -77,6 +81,9 @@ void MaxwellDMA::HandleCopy() {
         Texture::CopySwizzledData(regs.dst_params.size_x, regs.dst_params.size_y, 1, 1, dst_buffer,
                                   src_buffer, false, regs.dst_params.BlockHeight());
     }
+
+    // We have to invalidate the destination region to evict any outdated surfaces from the cache.
+    rasterizer.InvalidateRegion(dest_cpu, copy_size);
 }
 
 } // namespace Engines
