@@ -584,7 +584,8 @@ static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& data, PixelForm
     case PixelFormat::G8R8S:
     case PixelFormat::ASTC_2D_4X4:
     case PixelFormat::ASTC_2D_8X8: {
-        LOG_CRITICAL(HW_GPU, "Conversion of formats after texture flushing is not implemented");
+        LOG_CRITICAL(HW_GPU, "Conversion of format {} after texture flushing is not implemented",
+                     static_cast<u32>(pixel_format));
         UNREACHABLE();
         break;
     }
