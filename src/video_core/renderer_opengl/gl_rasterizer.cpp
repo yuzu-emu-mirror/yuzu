@@ -538,9 +538,19 @@ void RasterizerOpenGL::DrawArrays() {
     state.Apply();
 }
 
-void RasterizerOpenGL::FlushAll() {}
+void RasterizerOpenGL::FlushAll() {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
+    shader_cache.FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
+    buffer_cache.FlushRegion(0, Kernel::VMManager::MAX_ADDRESS);
+}
 
-void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {}
+void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {
+    MICROPROFILE_SCOPE(OpenGL_CacheManagement);
+    res_cache.FlushRegion(addr, size);
+    shader_cache.FlushRegion(addr, size);
+    buffer_cache.FlushRegion(addr, size);
+}
 
 void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
@@ -550,6 +560,7 @@ void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size) {
 }
 
 void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
+    FlushRegion(addr, size);
     InvalidateRegion(addr, size);
 }
 

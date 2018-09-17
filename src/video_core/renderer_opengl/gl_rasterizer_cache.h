@@ -741,6 +741,10 @@ public:
         return params.size_in_bytes;
     }
 
+    void Flush() {
+        FlushGLBuffer();
+    }
+
     const OGLTexture& Texture() const {
         return texture;
     }
