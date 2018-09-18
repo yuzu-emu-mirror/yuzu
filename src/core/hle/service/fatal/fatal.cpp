@@ -117,7 +117,8 @@ void ThrowFatalError(ResultCode error_code, FatalType fatal_type, const FatalInf
         GenerateErrorReport(error_code, info);
         [[fallthrough]];
     case FatalType::ErrorScreen:
-        UNREACHABLE();
+        // Since we have no fatal:u error screen. We should just kill execution instead
+        ASSERT(false);
         break;
         // Should not throw a fatal screen but should generate an error report
     case FatalType::ErrorReport:
