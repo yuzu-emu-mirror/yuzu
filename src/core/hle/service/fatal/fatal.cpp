@@ -2,11 +2,15 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <array>
+#include <cstring>
+#include <ctime>
 #include <fmt/time.h>
 #include "common/common_paths.h"
 #include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
+#include "common/swap.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/fatal/fatal.h"
@@ -46,20 +50,8 @@ enum class FatalType : u32_le {
     ErrorScreen = 2,
 };
 
-void GenerateErrorReport(ResultCode error_code, const FatalInfo& info) {
-    auto title_id = Core::CurrentProcess()->program_id;
-
-    const std::string crashreport_dir =
-        FileUtil::GetUserPath(FileUtil::UserPath::LogDir) + "crash_logs";
-
-    FileUtil::CreateFullPath(crashreport_dir);
-
-    const std::time_t t = std::time(nullptr);
-
-    const std::string crashreport_filename =
-        fmt::format("{}/{:016x}-{:%F-%H%M%S}.log", crashreport_dir, title_id, *std::localtime(&t));
-
-    auto file = FileUtil::IOFile(crashreport_filename, "wb");
+static void GenerateErrorReport(ResultCode error_code, const FatalInfo& info) {
+    const auto title_id = Core::CurrentProcess()->program_id;
     std::string crash_report =
         fmt::format("Yuzu {}-{} crash report\n"
                     "Title ID:                        {:016x}\n"
@@ -95,12 +87,26 @@ void GenerateErrorReport(ResultCode error_code, const FatalInfo& info) {
 
     LOG_ERROR(Service_Fatal, "{}", crash_report);
 
-    if (!file.IsOpen()) {
-        LOG_ERROR(Service_Fatal, "Failed to save error report to {}", crashreport_filename);
-    } else {
+    const std::string crashreport_dir =
+        FileUtil::GetUserPath(FileUtil::UserPath::LogDir) + "crash_logs";
+
+    if (!FileUtil::CreateFullPath(crashreport_dir)) {
+        LOG_ERROR(
+            Service_Fatal,
+            "Unable to create crash report directory. Possible log directory permissions issue.");
+        return;
+    }
+
+    const std::time_t t = std::time(nullptr);
+    const std::string crashreport_filename =
+        fmt::format("{}/{:016x}-{:%F-%H%M%S}.log", crashreport_dir, title_id, *std::localtime(&t));
+
+    auto file = FileUtil::IOFile(crashreport_filename, "wb");
+    if (file.IsOpen()) {
         file.WriteString(crash_report);
-        file.Close();
         LOG_ERROR(Service_Fatal, "Saving error report to {}", crashreport_filename);
+    } else {
+        LOG_ERROR(Service_Fatal, "Failed to save error report to {}", crashreport_filename);
     }
 }
 
@@ -113,8 +119,8 @@ void ThrowFatalError(ResultCode error_code, FatalType fatal_type, const FatalInf
     case FatalType::ErrorScreen:
         UNREACHABLE();
         break;
-    case FatalType::ErrorReport: // Should not throw a fatal screen but should generate an error
-                                 // report
+        // Should not throw a fatal screen but should generate an error report
+    case FatalType::ErrorReport:
         GenerateErrorReport(error_code, info);
         break;
     };
