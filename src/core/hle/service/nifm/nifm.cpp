@@ -65,7 +65,7 @@ private:
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0);
+        rb.Push<u32>(3);
     }
 
     void GetResult(Kernel::HLERequestContext& ctx) {
@@ -113,11 +113,12 @@ public:
     IGeneralService();
 
 private:
+    const u32 client_id = 1;
     void GetClientId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u64>(0);
+        rb.Push<u64>(client_id); // Client ID needs to be non zero otherwise it's considered invalid
     }
     void CreateScanRequest(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -145,6 +146,7 @@ private:
 
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<INetworkProfile>();
+        rb.PushRaw<u128>(uuid);
 
         LOG_DEBUG(Service_NIFM, "called");
     }
