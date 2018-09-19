@@ -4,8 +4,12 @@
 
 #pragma once
 
-#include "core/hle/kernel/shared_memory.h"
+#include "core/hle/kernel/object.h"
 #include "core/hle/service/service.h"
+
+namespace Kernel {
+class SharedMemory;
+}
 
 namespace Service::HID {
 
