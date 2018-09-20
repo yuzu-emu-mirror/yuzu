@@ -41,9 +41,12 @@ void KeplerMemory::ProcessData(u32 data) {
     VAddr dest_address =
         *memory_manager.GpuToCpuAddress(address + state.write_offset * sizeof(u32));
 
-    Memory::Write32(dest_address, data);
-
+    // We have to invalidate the destination region to evict any outdated surfaces from the cache.
+    // We do this before actually writing the new data because the destination address might contain
+    // a dirty surface that will have to be written back to memory.
     rasterizer.InvalidateRegion(dest_address, sizeof(u32));
+
+    Memory::Write32(dest_address, data);
 
     state.write_offset++;
 }

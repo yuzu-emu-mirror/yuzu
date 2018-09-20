@@ -363,11 +363,9 @@ void RasterizerOpenGL::ConfigureFramebuffers(bool using_color_fb, bool using_dep
     }
 
     if (depth_surface) {
-        if (depth_surface) {
-            // Assume that a surface will be written to if it is used as a framebuffer, even if
-            // the shader doesn't actually write to it.
-            depth_surface->MarkAsDirty();
-        }
+        // Assume that a surface will be written to if it is used as a framebuffer, even if
+        // the shader doesn't actually write to it.
+        depth_surface->MarkAsDirty();
 
         if (regs.stencil_enable) {
             // Attach both depth and stencil

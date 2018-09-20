@@ -742,7 +742,12 @@ public:
     }
 
     void Flush() {
+        // There is no need to flush the surface if it hasn't been modified by us.
+        if (!dirty)
+            return;
+
         FlushGLBuffer();
+        dirty = false;
     }
 
     void MarkAsDirty() {

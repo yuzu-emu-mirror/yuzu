@@ -55,6 +55,10 @@ void Fermi2D::HandleSurfaceCopy() {
     }
 
     rasterizer.FlushRegion(source_cpu, src_bytes_per_pixel * regs.src.width * regs.src.height);
+    // We have to invalidate the destination region to evict any outdated surfaces from the cache.
+    // We do this before actually writing the new data because the destination address might contain
+    // a dirty surface that will have to be written back to memory.
+    rasterizer.InvalidateRegion(dest_cpu, dst_bytes_per_pixel * regs.dst.width * regs.dst.height);
 
     u8* src_buffer = Memory::GetPointer(source_cpu);
     u8* dst_buffer = Memory::GetPointer(dest_cpu);
@@ -70,8 +74,6 @@ void Fermi2D::HandleSurfaceCopy() {
                                   dst_bytes_per_pixel, dst_buffer, src_buffer, false,
                                   regs.dst.BlockHeight());
     }
-
-    rasterizer.InvalidateRegion(dest_cpu, dst_bytes_per_pixel * regs.dst.width * regs.dst.height);
 }
 
 } // namespace Tegra::Engines

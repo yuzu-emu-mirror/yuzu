@@ -87,6 +87,7 @@ protected:
     void Unregister(const T& object) {
         auto& rasterizer = Core::System::GetInstance().Renderer().Rasterizer();
         rasterizer.UpdatePagesCachedCount(object->GetAddr(), object->GetSizeInBytes(), -1);
+        object->Flush();
         object_cache.subtract({GetInterval(object), ObjectSet{object}});
     }
 
