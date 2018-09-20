@@ -20,6 +20,7 @@
 #include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/pm/pm.h"
 #include "core/hle/service/set/set.h"
+#include "core/hle/service/vi/vi.h"
 #include "core/settings.h"
 
 namespace Service::AM {
@@ -334,7 +335,7 @@ ICommonStateGetter::ICommonStateGetter() : ServiceFramework("ICommonStateGetter"
         {51, nullptr, "SetVrModeEnabled"},
         {52, nullptr, "SwitchLcdBacklight"},
         {55, nullptr, "IsInControllerFirmwareUpdateSection"},
-        {60, nullptr, "GetDefaultDisplayResolution"},
+        {60, &ICommonStateGetter::GetDefaultDisplayResolution, "GetDefaultDisplayResolution"},
         {61, &ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent,
          "GetDefaultDisplayResolutionChangeEvent"},
         {62, nullptr, "GetHdcpAuthenticationState"},
@@ -393,6 +394,21 @@ void ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent(Kernel::HLEReque
     LOG_WARNING(Service_AM, "(STUBBED) called");
 }
 
+void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+
+    if (Settings::values.use_docked_mode) {
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight));
+    } else {
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight));
+    }
+
+    LOG_DEBUG(Service_AM, "called");
+}
+
 void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
     const bool use_docked_mode{Settings::values.use_docked_mode};
     IPC::ResponseBuilder rb{ctx, 3};
@@ -446,7 +462,7 @@ private:
 
         std::memcpy(&buffer[offset], data.data(), data.size());
 
-        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_DEBUG(Service_AM, "called, offset={}", offset);
@@ -456,13 +472,13 @@ private:
         IPC::RequestParser rp{ctx};
 
         const u64 offset{rp.Pop<u64>()};
-        const size_t size{ctx.GetWriteBufferSize()};
+        const std::size_t size{ctx.GetWriteBufferSize()};
 
         ASSERT(offset + size <= buffer.size());
 
         ctx.WriteBuffer(buffer.data() + offset, size);
 
-        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_DEBUG(Service_AM, "called, offset={}", offset);
@@ -552,7 +568,7 @@ private:
         IPC::RequestParser rp{ctx};
         storage_stack.push(rp.PopIpcInterface<AM::IStorage>());
 
-        IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 0)};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
 
         LOG_DEBUG(Service_AM, "called");
@@ -600,7 +616,7 @@ void ILibraryAppletCreator::CreateStorage(Kernel::HLERequestContext& ctx) {
     const u64 size{rp.Pop<u64>()};
     std::vector<u8> buffer(size);
 
-    IPC::ResponseBuilder rb{rp.MakeBuilder(2, 0, 1)};
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<AM::IStorage>(std::move(buffer));
 

@@ -34,7 +34,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &IProfile::Get, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
-            {10, nullptr, "GetImageSize"},
+            {10, &IProfile::GetImageSize, "GetImageSize"},
             {11, &IProfile::LoadImage, "LoadImage"},
         };
         RegisterHandlers(functions);
@@ -93,6 +93,14 @@ private:
         rb.Push<u32>(jpeg_size);
     }
 
+    void GetImageSize(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        constexpr u32 jpeg_size = 107;
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(jpeg_size);
+    }
+
     const ProfileManager& profile_manager;
     UUID user_id; ///< The user id this profile refers to.
 };
@@ -122,11 +130,10 @@ private:
 
     void GetAccountId(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_ACC, "(STUBBED) called");
-        // TODO(Subv): Find out what this actually does and implement it. Stub it as an error for
-        // now since we do not implement NNID. Returning a bogus id here will cause games to send
-        // invalid IPC requests after ListOpenUsers is called.
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode(-1));
+        // Should return a nintendo account ID
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw<u64>(1);
     }
 };
 

@@ -42,6 +42,7 @@ enum class RenderTargetFormat : u32 {
     R32_UINT = 0xE4,
     R32_FLOAT = 0xE5,
     B5G6R5_UNORM = 0xE8,
+    BGR5A1_UNORM = 0xE9,
     RG8_UNORM = 0xEA,
     RG8_SNORM = 0xEB,
     R16_UNORM = 0xEE,
@@ -102,6 +103,7 @@ class Fermi2D;
 class Maxwell3D;
 class MaxwellCompute;
 class MaxwellDMA;
+class KeplerMemory;
 } // namespace Engines
 
 enum class EngineID {
@@ -146,6 +148,8 @@ private:
     std::unique_ptr<Engines::MaxwellCompute> maxwell_compute;
     /// DMA engine
     std::unique_ptr<Engines::MaxwellDMA> maxwell_dma;
+    /// Inline memory engine
+    std::unique_ptr<Engines::KeplerMemory> kepler_memory;
 };
 
 } // namespace Tegra

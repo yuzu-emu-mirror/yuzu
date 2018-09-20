@@ -4,25 +4,28 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <memory>
 #include <type_traits>
 #include <utility>
 #include <boost/optional.hpp>
 #include "common/alignment.h"
+#include "common/assert.h"
+#include "common/common_funcs.h"
+#include "common/logging/log.h"
 #include "common/math_util.h"
-#include "common/scope_exit.h"
+#include "common/swap.h"
 #include "core/core_timing.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_queue.h"
+#include "core/hle/service/nvflinger/nvflinger.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/hle/service/vi/vi_m.h"
 #include "core/hle/service/vi/vi_s.h"
 #include "core/hle/service/vi/vi_u.h"
 #include "core/settings.h"
-#include "video_core/renderer_base.h"
-#include "video_core/video_core.h"
 
 namespace Service::VI {
 
@@ -38,7 +41,7 @@ static_assert(sizeof(DisplayInfo) == 0x60, "DisplayInfo has wrong size");
 class Parcel {
 public:
     // This default size was chosen arbitrarily.
-    static constexpr size_t DefaultBufferSize = 0x40;
+    static constexpr std::size_t DefaultBufferSize = 0x40;
     Parcel() : buffer(DefaultBufferSize) {}
     explicit Parcel(std::vector<u8> data) : buffer(std::move(data)) {}
     virtual ~Parcel() = default;
@@ -66,7 +69,7 @@ public:
         return val;
     }
 
-    std::vector<u8> ReadBlock(size_t length) {
+    std::vector<u8> ReadBlock(std::size_t length) {
         ASSERT(read_index + length <= buffer.size());
         const u8* const begin = buffer.data() + read_index;
         const u8* const end = begin + length;
@@ -156,8 +159,8 @@ private:
     static_assert(sizeof(Header) == 16, "ParcelHeader has wrong size");
 
     std::vector<u8> buffer;
-    size_t read_index = 0;
-    size_t write_index = 0;
+    std::size_t read_index = 0;
+    std::size_t write_index = 0;
 };
 
 class NativeWindow : public Parcel {
@@ -514,7 +517,7 @@ private:
                 ctx.SleepClientThread(
                     Kernel::GetCurrentThread(), "IHOSBinderDriver::DequeueBuffer", -1,
                     [=](Kernel::SharedPtr<Kernel::Thread> thread, Kernel::HLERequestContext& ctx,
-                        ThreadWakeupReason reason) {
+                        Kernel::ThreadWakeupReason reason) {
                         // Repeat TransactParcel DequeueBuffer when a buffer is available
                         auto buffer_queue = nv_flinger->GetBufferQueue(id);
                         boost::optional<u32> slot = buffer_queue->DequeueBuffer(width, height);
@@ -647,7 +650,7 @@ private:
         u64 layer_id = rp.Pop<u64>();
         u64 z_value = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -655,7 +658,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
         bool visibility = rp.Pop<bool>();
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:08X}, visibility={}", layer_id,
                     visibility);
@@ -744,7 +747,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -758,7 +761,7 @@ private:
 
         u64 layer_id = nv_flinger->CreateLayer(display);
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push(layer_id);
     }
@@ -769,7 +772,7 @@ private:
         u32 stack = rp.Pop<u32>();
         u64 layer_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -777,7 +780,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
         bool visibility = rp.Pop<bool>();
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
                     visibility);
@@ -834,7 +837,7 @@ private:
 
         ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(nv_flinger->OpenDisplay(name));
     }
@@ -844,7 +847,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -853,7 +856,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 display_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 6};
         rb.Push(RESULT_SUCCESS);
 
         if (Settings::values.use_docked_mode) {
@@ -871,7 +874,7 @@ private:
         u32 scaling_mode = rp.Pop<u32>();
         u64 unknown = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -879,7 +882,7 @@ private:
         IPC::RequestParser rp{ctx};
         DisplayInfo display_info;
         ctx.WriteBuffer(&display_info, sizeof(DisplayInfo));
-        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(1);
         LOG_WARNING(Service_VI, "(STUBBED) called");
@@ -900,7 +903,7 @@ private:
         u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
         NativeWindow native_window{buffer_queue_id};
-        IPC::ResponseBuilder rb = rp.MakeBuilder(4, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
     }
@@ -919,7 +922,7 @@ private:
         u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
 
         NativeWindow native_window{buffer_queue_id};
-        IPC::ResponseBuilder rb = rp.MakeBuilder(6, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 6};
         rb.Push(RESULT_SUCCESS);
         rb.Push(layer_id);
         rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
@@ -931,7 +934,7 @@ private:
         IPC::RequestParser rp{ctx};
         u64 layer_id = rp.Pop<u64>();
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 0, 0);
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -942,7 +945,7 @@ private:
 
         auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
 
-        IPC::ResponseBuilder rb = rp.MakeBuilder(2, 1, 0);
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(vsync_event);
     }
