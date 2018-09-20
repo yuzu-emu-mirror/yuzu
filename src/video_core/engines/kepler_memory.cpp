@@ -5,10 +5,14 @@
 #include "common/logging/log.h"
 #include "core/memory.h"
 #include "video_core/engines/kepler_memory.h"
+#include "video_core/rasterizer_interface.h"
 
 namespace Tegra::Engines {
 
-KeplerMemory::KeplerMemory(MemoryManager& memory_manager) : memory_manager(memory_manager) {}
+KeplerMemory::KeplerMemory(VideoCore::RasterizerInterface& rasterizer,
+                           MemoryManager& memory_manager)
+    : memory_manager(memory_manager), rasterizer{rasterizer} {}
+
 KeplerMemory::~KeplerMemory() = default;
 
 void KeplerMemory::WriteReg(u32 method, u32 value) {
@@ -38,6 +42,8 @@ void KeplerMemory::ProcessData(u32 data) {
         *memory_manager.GpuToCpuAddress(address + state.write_offset * sizeof(u32));
 
     Memory::Write32(dest_address, data);
+
+    rasterizer.InvalidateRegion(dest_address, sizeof(u32));
 
     state.write_offset++;
 }
