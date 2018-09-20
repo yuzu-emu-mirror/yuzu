@@ -745,6 +745,10 @@ public:
         FlushGLBuffer();
     }
 
+    void MarkAsDirty() {
+        dirty = true;
+    }
+
     const OGLTexture& Texture() const {
         return texture;
     }
@@ -776,6 +780,7 @@ private:
     std::vector<u8> gl_buffer;
     SurfaceParams params;
     GLenum gl_target;
+    bool dirty = false;
 };
 
 class RasterizerCacheOpenGL final : public RasterizerCache<Surface> {

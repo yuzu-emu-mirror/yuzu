@@ -638,11 +638,17 @@ void CachedSurface::LoadGLBuffer() {
     }
 
     ConvertFormatAsNeeded_LoadGLBuffer(gl_buffer, params.pixel_format, params.width, params.height);
+
+    dirty = false;
 }
 
 MICROPROFILE_DEFINE(OpenGL_SurfaceFlush, "OpenGL", "Surface Flush", MP_RGB(128, 192, 64));
 void CachedSurface::FlushGLBuffer() {
     MICROPROFILE_SCOPE(OpenGL_SurfaceFlush);
+
+    // There is no need to flush the surface if it hasn't been modified by us.
+    if (!dirty)
+        return;
 
     const auto& rect{params.GetRect()};
 
@@ -700,6 +706,8 @@ void CachedSurface::FlushGLBuffer() {
         Memory::WriteBlock(params.addr + buffer_offset, &gl_buffer[buffer_offset],
                            gl_buffer.size() - buffer_offset);
     }
+
+    dirty = false;
 }
 
 MICROPROFILE_DEFINE(OpenGL_TextureUL, "OpenGL", "Texture Upload", MP_RGB(128, 64, 192));
