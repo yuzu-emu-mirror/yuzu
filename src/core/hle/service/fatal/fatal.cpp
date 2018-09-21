@@ -44,7 +44,7 @@ struct FatalInfo {
 };
 static_assert(sizeof(FatalInfo) == 0x250, "FatalInfo is an invalid size");
 
-enum class FatalType : u32_le {
+enum class FatalType : u32 {
     ErrorReportAndScreen = 0,
     ErrorReport = 1,
     ErrorScreen = 2,
@@ -110,7 +110,7 @@ static void GenerateErrorReport(ResultCode error_code, const FatalInfo& info) {
     }
 }
 
-void ThrowFatalError(ResultCode error_code, FatalType fatal_type, const FatalInfo& info) {
+static void ThrowFatalError(ResultCode error_code, FatalType fatal_type, const FatalInfo& info) {
     LOG_ERROR(Service_Fatal, "Threw fatal error type {}", static_cast<u32>(fatal_type));
     switch (fatal_type) {
     case FatalType::ErrorReportAndScreen:
@@ -141,7 +141,7 @@ void Module::Interface::ThrowFatalWithPolicy(Kernel::HLERequestContext& ctx) {
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
     auto error_code = rp.Pop<ResultCode>();
-    auto fatal_type = rp.PopRaw<FatalType>();
+    auto fatal_type = rp.PopEnum<FatalType>();
 
     ThrowFatalError(error_code, fatal_type, {}); // No info is passed with ThrowFatalWithPolicy
     IPC::ResponseBuilder rb{ctx, 2};
@@ -152,7 +152,7 @@ void Module::Interface::ThrowFatalWithCpuContext(Kernel::HLERequestContext& ctx)
     LOG_ERROR(Service_Fatal, "called");
     IPC::RequestParser rp(ctx);
     auto error_code = rp.Pop<ResultCode>();
-    auto fatal_type = rp.PopRaw<FatalType>();
+    auto fatal_type = rp.PopEnum<FatalType>();
     auto fatal_info = ctx.ReadBuffer();
     FatalInfo info{};
 
