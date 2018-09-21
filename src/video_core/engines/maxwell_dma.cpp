@@ -49,40 +49,58 @@ void MaxwellDMA::HandleCopy() {
     ASSERT(regs.dst_params.pos_x == 0);
     ASSERT(regs.dst_params.pos_y == 0);
 
-    size_t copy_size = regs.x_count;
-
-    // When the enable_2d bit is disabled, the copy is performed as if we were copying a 1D
-    // buffer of length `x_count`, otherwise we copy a 2D buffer of size (x_count, y_count).
-    if (regs.exec.enable_2d) {
-        copy_size = copy_size * regs.y_count;
+    if (!regs.exec.is_dst_linear && !regs.exec.is_src_linear) {
+        // If both the source and the destination are in block layout, assert.
+        UNREACHABLE_MSG("Tiled->Tiled DMA transfers are not yet implemented");
+        return;
     }
 
-    if (regs.exec.is_dst_linear == regs.exec.is_src_linear) {
-        ASSERT(regs.src_params.pos_x == 0);
-        ASSERT(regs.src_params.pos_y == 0);
-        ASSERT(regs.dst_pitch == 1);
-        ASSERT(regs.src_pitch == 1);
+    if (regs.exec.is_dst_linear && regs.exec.is_src_linear) {
+        // TODO(Subv): For now assume that the size of the destination rectangle matches exactly the
+        // destination pitch.
+        ASSERT(regs.dst_pitch == regs.x_count);
 
-        // CopyBlock already takes care of flushing and invalidating the cache at the affected
-        // addresses.
-        Memory::CopyBlock(dest_cpu, source_cpu, copy_size);
+        // When the enable_2d bit is disabled, the copy is performed as if we were copying a 1D
+        // buffer of length `x_count`, otherwise we copy a 2D image of dimensions (x_count,
+        // y_count).
+        if (!regs.exec.enable_2d) {
+            Memory::CopyBlock(dest_cpu, source_cpu, regs.x_count);
+            return;
+        }
+
+        // If both the source and the destination are in linear layout, perform a line-by-line
+        // copy. We're going to take a subrect of size (x_count, y_count) from the source
+        // rectangle. There is no need to manually flush/invalidate the regions because
+        // CopyBlock does that for us.
+        for (u32 line = 0; line < regs.y_count; ++line) {
+            const VAddr source_line = source_cpu + line * regs.src_pitch;
+            const VAddr dest_line = dest_cpu + line * regs.dst_pitch;
+            Memory::CopyBlock(dest_line, source_line, regs.dst_pitch);
+        }
         return;
     }
 
     ASSERT(regs.exec.enable_2d == 1);
 
-    // TODO(Subv): For now, manually flush the regions until we implement GPU-accelerated copying.
-    rasterizer.FlushRegion(source_cpu, copy_size);
+    size_t copy_size = regs.x_count * regs.y_count;
 
-    // We have to invalidate the destination region to evict any outdated surfaces from the cache.
-    // We do this before actually writing the new data because the destination address might contain
-    // a dirty surface that will have to be written back to memory.
-    rasterizer.InvalidateRegion(dest_cpu, copy_size);
+    const auto FlushAndInvalidate = [&](u32 src_size, u32 dst_size) {
+        // TODO(Subv): For now, manually flush the regions until we implement GPU-accelerated
+        // copying.
+        rasterizer.FlushRegion(source_cpu, src_size);
+
+        // We have to invalidate the destination region to evict any outdated surfaces from the
+        // cache. We do this before actually writing the new data because the destination address
+        // might contain a dirty surface that will have to be written back to memory.
+        rasterizer.InvalidateRegion(dest_cpu, dst_size);
+    };
 
     u8* src_buffer = Memory::GetPointer(source_cpu);
     u8* dst_buffer = Memory::GetPointer(dest_cpu);
 
     if (regs.exec.is_dst_linear && !regs.exec.is_src_linear) {
+        ASSERT(regs.src_params.size_z == 1);
+
         // If the input is tiled and the output is linear, deswizzle the input and copy it over.
 
         // Copy the data to a staging buffer first to make applying the src and dst offsets easier
@@ -93,6 +111,8 @@ void MaxwellDMA::HandleCopy() {
         u32 src_bytes_per_pixel = regs.src_pitch / regs.src_params.size_x;
         u32 dst_bytes_per_pixel = regs.dst_pitch;
 
+        FlushAndInvalidate(staging_buffer.size(), copy_size * dst_bytes_per_pixel);
+
         Texture::CopySwizzledData(regs.src_params.size_x, regs.src_params.size_y,
                                   src_bytes_per_pixel, dst_bytes_per_pixel, src_buffer,
                                   staging_buffer.data(), true, regs.src_params.BlockHeight());
@@ -101,13 +121,17 @@ void MaxwellDMA::HandleCopy() {
                          regs.dst_pitch;
         std::memcpy(dst_buffer, staging_buffer.data() + src_offset, copy_size * regs.dst_pitch);
     } else {
-        // TODO(Subv): Source offsets are not yet implemented for this mode.
-        ASSERT(regs.src_params.pos_x == 0);
-        ASSERT(regs.src_params.pos_y == 0);
+        ASSERT(regs.dst_params.size_z == 1);
+        ASSERT(regs.src_pitch == regs.x_count);
+
+        u32 src_bpp = regs.src_pitch / regs.x_count;
+
+        FlushAndInvalidate(regs.src_pitch * regs.y_count,
+                           regs.dst_params.size_x * regs.dst_params.size_y * src_bpp);
 
         // If the input is linear and the output is tiled, swizzle the input and copy it over.
-        Texture::CopySwizzledData(regs.dst_params.size_x, regs.dst_params.size_y, 1, 1, dst_buffer,
-                                  src_buffer, false, regs.dst_params.BlockHeight());
+        Texture::SwizzleSubrect(regs.x_count, regs.y_count, regs.src_pitch, regs.dst_params.size_x,
+                                src_bpp, dest_cpu, source_cpu, regs.dst_params.BlockHeight());
     }
 }
 
