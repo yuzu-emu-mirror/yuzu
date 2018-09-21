@@ -96,26 +96,17 @@ void MaxwellDMA::HandleCopy() {
 
     if (regs.exec.is_dst_linear && !regs.exec.is_src_linear) {
         ASSERT(regs.src_params.size_z == 1);
-
         // If the input is tiled and the output is linear, deswizzle the input and copy it over.
 
-        // Copy the data to a staging buffer first to make applying the src and dst offsets easier
-        std::vector<u8> staging_buffer(regs.src_pitch * regs.src_params.size_y);
-
-        // In this mode, the src_pitch register contains the source stride, and the dst_pitch
-        // contains the bytes per pixel.
         u32 src_bytes_per_pixel = regs.src_pitch / regs.src_params.size_x;
-        u32 dst_bytes_per_pixel = regs.dst_pitch;
 
-        FlushAndInvalidate(staging_buffer.size(), copy_size * dst_bytes_per_pixel);
+        FlushAndInvalidate(regs.src_pitch * regs.src_params.size_y,
+                           copy_size * src_bytes_per_pixel);
 
-        Texture::CopySwizzledData(regs.src_params.size_x, regs.src_params.size_y,
-                                  src_bytes_per_pixel, dst_bytes_per_pixel, src_buffer,
-                                  staging_buffer.data(), true, regs.src_params.BlockHeight());
-
-        u32 src_offset = (regs.src_params.pos_y * regs.src_params.size_x + regs.src_params.pos_x) *
-                         regs.dst_pitch;
-        std::memcpy(dst_buffer, staging_buffer.data() + src_offset, copy_size * regs.dst_pitch);
+        Texture::UnswizzleSubrect(regs.x_count, regs.y_count, regs.dst_pitch,
+                                  regs.src_params.size_x, src_bytes_per_pixel, source_cpu, dest_cpu,
+                                  regs.src_params.BlockHeight(), regs.src_params.pos_x,
+                                  regs.src_params.pos_y);
     } else {
         ASSERT(regs.dst_params.size_z == 1);
         ASSERT(regs.src_pitch == regs.x_count);
