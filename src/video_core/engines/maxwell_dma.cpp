@@ -56,10 +56,6 @@ void MaxwellDMA::HandleCopy() {
     }
 
     if (regs.exec.is_dst_linear && regs.exec.is_src_linear) {
-        // TODO(Subv): For now assume that the size of the destination rectangle matches exactly the
-        // destination pitch.
-        ASSERT(regs.dst_pitch == regs.x_count);
-
         // When the enable_2d bit is disabled, the copy is performed as if we were copying a 1D
         // buffer of length `x_count`, otherwise we copy a 2D image of dimensions (x_count,
         // y_count).
@@ -75,7 +71,7 @@ void MaxwellDMA::HandleCopy() {
         for (u32 line = 0; line < regs.y_count; ++line) {
             const VAddr source_line = source_cpu + line * regs.src_pitch;
             const VAddr dest_line = dest_cpu + line * regs.dst_pitch;
-            Memory::CopyBlock(dest_line, source_line, regs.dst_pitch);
+            Memory::CopyBlock(dest_line, source_line, regs.x_count);
         }
         return;
     }
