@@ -161,7 +161,8 @@ static inline void MortonCopyPixels128(u32 width, u32 height, u32 bytes_per_pixe
     }
 }
 
-static void LabelGLObject(GLenum identifier, GLuint handle, VAddr addr) {
+static void LabelGLObject(GLenum identifier, GLuint handle, VAddr addr,
+                          std::string extra_info = "") {
     if (!GLAD_GL_KHR_debug) {
         return; // We don't need to throw an error as this is just for debugging
     }
@@ -170,7 +171,7 @@ static void LabelGLObject(GLenum identifier, GLuint handle, VAddr addr) {
 
     switch (identifier) {
     case GL_TEXTURE:
-        object_label = "Texture@" + nice_addr;
+        object_label = extra_info + "@" + nice_addr;
         break;
     case GL_PROGRAM:
         object_label = "ShaderProgram@" + nice_addr;
