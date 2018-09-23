@@ -476,11 +476,11 @@ void System::LoadAmiibo(const std::string& filename) {
     impl->nfc_activate->Signal();
 }
 
-Kernel::SharedPtr<Kernel::Event>& System::GetNFCEvent() const {
+const Kernel::SharedPtr<Kernel::Event>& System::GetNFCEvent() const {
     return impl->nfc_activate;
 }
 
-std::string& System::GetNFCFilename() const {
+const std::string& System::GetNFCFilename() const {
     return impl->nfc_filename;
 }
 

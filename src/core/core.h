@@ -225,11 +225,11 @@ public:
 
     std::shared_ptr<FileSys::VfsFilesystem> GetFilesystem() const;
 
-    std::string& GetNFCFilename() const;
+    const std::string& GetNFCFilename() const;
 
     void LoadAmiibo(const std::string& path);
 
-    Kernel::SharedPtr<Kernel::Event>& GetNFCEvent() const;
+    const Kernel::SharedPtr<Kernel::Event>& GetNFCEvent() const;
 
 private:
     System();

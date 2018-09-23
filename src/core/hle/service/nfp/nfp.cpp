@@ -157,7 +157,8 @@ private:
         case DeviceState::TagFound:
         case DeviceState::TagNearby:
             deactivate_event->Signal();
-            [[fallthrough]];
+            device_state = DeviceState::Initialized;
+            break;
         case DeviceState::SearchingForTag:
         case DeviceState::TagRemoved:
             device_state = DeviceState::Initialized;
