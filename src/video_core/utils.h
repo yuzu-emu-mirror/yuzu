@@ -167,7 +167,7 @@ static void LabelGLObject(GLenum identifier, GLuint handle, VAddr addr,
         return; // We don't need to throw an error as this is just for debugging
     }
     const std::string nice_addr = fmt::format("0x{:016x}", addr);
-    std::string object_label{};
+    std::string object_label;
 
     switch (identifier) {
     case GL_TEXTURE:
