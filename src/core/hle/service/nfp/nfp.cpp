@@ -258,7 +258,7 @@ private:
     void AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NFP, "(STUBBED) called");
 
-        IPC::ResponseBuilder rb{ctx, 2};
+        IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
         rb.PushCopyObjects(availability_change_event);
     }
