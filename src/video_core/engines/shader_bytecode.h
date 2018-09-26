@@ -309,7 +309,7 @@ enum class TextureMiscMode : u64 {
     DC,
     AOFFI, // Uses Offset
     NDV,
-    NODEP,
+    NODEP, // Optimization Hint
     MZ,
     PTP,
 };
