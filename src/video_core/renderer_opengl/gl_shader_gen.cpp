@@ -18,6 +18,7 @@ ProgramResult GenerateVertexShader(const ShaderSetup& setup) {
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
 
+<<<<<<< HEAD
     out += R"(
 out gl_PerVertex {
     vec4 gl_Position;
@@ -28,6 +29,17 @@ layout(std140) uniform vs_config {
     uvec4 instance_id;
     uvec4 flip_stage;
 };
+=======
+    out += R"(out gl_PerVertex {
+        vec4 gl_Position;
+    };
+
+    layout(std140) uniform vs_config {
+        vec4 viewport_flip;
+        uvec4 instance_id;
+        uvec4 flip_stage;
+    };
+>>>>>>> glsl_decompiler: Implement geometry shaders
 )";
 
     if (setup.IsDualProgram()) {
@@ -95,6 +107,7 @@ ProgramResult GenerateGeometryShader(const ShaderSetup& setup) {
 out gl_PerVertex {
     vec4 gl_Position;
 };
+<<<<<<< HEAD
 
 layout (std140) uniform gs_config {
     vec4 viewport_flip;
@@ -102,6 +115,15 @@ layout (std140) uniform gs_config {
     uvec4 flip_stage;
 };
 
+=======
+
+layout (std140) uniform gs_config {
+    vec4 viewport_flip;
+    uvec4 instance_id;
+    uvec4 flip_stage;
+};
+
+>>>>>>> glsl_decompiler: Implement geometry shaders
 void main() {
     exec_geometry();
 }
