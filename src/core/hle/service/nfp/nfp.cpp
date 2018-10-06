@@ -102,7 +102,7 @@ private:
         u16_be write_counter;
         u16_be version;
         u32_be application_area_size;
-        INSERT_PADDING_BYTES(52);
+        INSERT_PADDING_BYTES(0x34);
     };
     static_assert(sizeof(CommonInfo) == 0x40, "CommonInfo is an invalid size");
 
