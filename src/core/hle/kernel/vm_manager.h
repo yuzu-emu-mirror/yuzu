@@ -148,6 +148,14 @@ public:
                                         std::size_t offset, u64 size, MemoryState state);
 
     /**
+     * Finds the first free address that can hold a region of the desired size.
+     *
+     * @param size Size of the desired region.
+     * @returns The found free address.
+     */
+    ResultVal<VAddr> FindFreeRegion(u32 size);
+
+    /**
      * Maps an unmanaged host memory pointer at a given address.
      *
      * @param target The guest address to start the mapping at.

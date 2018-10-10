@@ -119,6 +119,28 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
     return MakeResult<VMAHandle>(MergeAdjacent(vma_handle));
 }
 
+ResultVal<VAddr> VMManager::FindFreeRegion(u32 size) {
+    VAddr base = GetAddressSpaceBaseAddress();
+
+    // Find the first Free VMA.
+    VMAHandle vma_handle = std::find_if(vma_map.begin(), vma_map.end(), [&](const auto& vma) {
+        if (vma.second.type != VMAType::Free)
+            return false;
+
+        VAddr vma_end = vma.second.base + vma.second.size;
+        return vma_end > base && vma_end >= base + size;
+    });
+
+    if (vma_handle == vma_map.end()) {
+        // TODO(Subv): Find the correct error code here.
+        return ResultCode(-1);
+    }
+
+    VAddr target = std::max(base, vma_handle->second.base);
+
+    return MakeResult<VAddr>(target);
+}
+
 ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* memory, u64 size,
                                                             MemoryState state) {
     ASSERT(memory != nullptr);
