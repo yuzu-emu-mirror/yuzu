@@ -295,7 +295,7 @@ ResultCode Process::HeapFree(VAddr target, u32 size) {
     return RESULT_SUCCESS;
 }
 
-ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
+ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size, MemoryState state) {
     auto vma = vm_manager.FindVMA(src_addr);
 
     ASSERT_MSG(vma != vm_manager.vma_map.end(), "Invalid memory address");
@@ -311,7 +311,7 @@ ResultCode Process::MirrorMemory(VAddr dst_addr, VAddr src_addr, u64 size) {
 
     CASCADE_RESULT(auto new_vma,
                    vm_manager.MapMemoryBlock(dst_addr, backing_block, backing_block_offset, size,
-                                             MemoryState::Mapped));
+                                             state));
     // Protect mirror with permissions from old region
     vm_manager.Reprotect(new_vma, vma->second.permissions);
     // Remove permissions from old region
