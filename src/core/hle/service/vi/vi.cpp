@@ -986,23 +986,23 @@ private:
         rb.Push(RESULT_SUCCESS);
         switch (mode) {
         case 0:
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::None);
+            rb.PushEnum(ConvertedScaleMode::None);
             break;
         case 1:
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::Freeze);
+            rb.PushEnum(ConvertedScaleMode::Freeze);
             break;
         case 2:
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::ScaleToWindow);
+            rb.PushEnum(ConvertedScaleMode::ScaleToWindow);
             break;
         case 3:
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::Crop);
+            rb.PushEnum(ConvertedScaleMode::Crop);
             break;
         case 4:
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::NoCrop);
+            rb.PushEnum(ConvertedScaleMode::NoCrop);
             break;
         default:
             UNIMPLEMENTED_MSG("Unknown scaling mode {}", mode);
-            rb.PushEnum<ConvertedScaleMode>(ConvertedScaleMode::None);
+            rb.PushEnum(ConvertedScaleMode::None);
             break;
         }
     }
