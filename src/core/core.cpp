@@ -471,19 +471,6 @@ std::shared_ptr<FileSys::VfsFilesystem> System::GetFilesystem() const {
     return impl->virtual_filesystem;
 }
 
-void System::LoadAmiibo(const std::string& filename) {
-    impl->nfc_filename = filename;
-    impl->nfc_activate->Signal();
-}
-
-const Kernel::SharedPtr<Kernel::Event>& System::GetNFCEvent() const {
-    return impl->nfc_activate;
-}
-
-const std::string& System::GetNFCFilename() const {
-    return impl->nfc_filename;
-}
-
 System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {
     return impl->Init(emu_window);
 }

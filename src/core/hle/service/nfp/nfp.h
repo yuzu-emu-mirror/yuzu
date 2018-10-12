@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <vector>
+#include "core/hle/kernel/event.h"
 #include "core/hle/service/service.h"
 
 namespace Service::NFP {
@@ -16,6 +18,13 @@ public:
         ~Interface() override;
 
         void CreateUserInterface(Kernel::HLERequestContext& ctx);
+        void LoadAmiibo(const std::string& path);
+        const Kernel::SharedPtr<Kernel::Event>& GetNFCEvent() const;
+        const std::vector<u8>& GetAmiiboBuffer() const;
+
+    private:
+        Kernel::SharedPtr<Kernel::Event> nfc_tag_load{};
+        std::vector<u8> amiibo_buffer{};
 
     protected:
         std::shared_ptr<Module> module;

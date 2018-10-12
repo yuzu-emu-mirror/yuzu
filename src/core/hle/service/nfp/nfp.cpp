@@ -19,13 +19,18 @@ constexpr ResultCode ERR_TAG_FAILED(ErrorModule::NFP,
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
-    : ServiceFramework(name), module(std::move(module)) {}
+    : ServiceFramework(name), module(std::move(module)) {
+    auto& kernel = Core::System::GetInstance().Kernel();
+    nfc_tag_load =
+        Kernel::Event::Create(kernel, Kernel::ResetType::OneShot, "IUser:NFCTagDetected");
+}
 
 Module::Interface::~Interface() = default;
 
 class IUser final : public ServiceFramework<IUser> {
 public:
-    IUser() : ServiceFramework("NFP::IUser") {
+    IUser(Module::Interface& nfp_interface)
+        : ServiceFramework("NFP::IUser"), nfp_interface(nfp_interface) {
         static const FunctionInfo functions[] = {
             {0, &IUser::Initialize, "Initialize"},
             {1, &IUser::Finalize, "Finalize"},
@@ -63,6 +68,7 @@ public:
     }
 
 private:
+    const Module::Interface& nfp_interface;
     enum class State : u32 {
         NonInitialized = 0,
         Initialized = 1,
@@ -149,12 +155,9 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 dev_handle = rp.Pop<u64>();
         LOG_DEBUG(Service_NFP, "called, dev_handle=0x{:X}", dev_handle);
-
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-
-        Core::System& system{Core::System::GetInstance()};
-        rb.PushCopyObjects(system.GetNFCEvent());
+        rb.PushCopyObjects(nfp_interface.GetNFCEvent());
         has_attached_handle = true;
     }
 
@@ -189,7 +192,7 @@ private:
         LOG_DEBUG(Service_NFP, "called");
 
         Core::System& system{Core::System::GetInstance()};
-        const auto event = system.GetNFCEvent();
+        const auto event = nfp_interface.GetNFCEvent();
 
         if (!event->ShouldWait(Kernel::GetCurrentThread()) && !has_attached_handle) {
             device_state = DeviceState::TagFound;
@@ -214,22 +217,19 @@ private:
     void GetTagInfo(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
         IPC::ResponseBuilder rb{ctx, 2};
+        const auto& amiibo_buf = nfp_interface.GetAmiiboBuffer();
+        if (amiibo_buf.size() >= sizeof(TagInfo)) {
+            TagInfo tag_info{};
+            std::memcpy(tag_info.uuid.data(), amiibo_buf.data(), sizeof(tag_info.uuid.size()));
+            tag_info.uuid_length = static_cast<u8>(tag_info.uuid.size());
 
-        Core::System& system{Core::System::GetInstance()};
-        auto nfc_file = FileUtil::IOFile(system.GetNFCFilename(), "rb");
-        if (!nfc_file.IsOpen()) {
+            tag_info.protocol = 1; // TODO(ogniK): Figure out actual values
+            tag_info.tag_type = 2;
+            ctx.WriteBuffer(&tag_info, sizeof(TagInfo));
+            rb.Push(RESULT_SUCCESS);
+        } else {
             rb.Push(ErrCodes::ERR_TAG_FAILED);
-            return;
         }
-        TagInfo tag_info{};
-        size_t read_length = nfc_file.ReadBytes(tag_info.uuid.data(), sizeof(tag_info.uuid.size()));
-        tag_info.uuid_length = static_cast<u8>(read_length);
-
-        tag_info.protocol = 1; // TODO(ogniK): Figure out actual values
-        tag_info.tag_type = 2;
-
-        ctx.WriteBuffer(&tag_info, sizeof(TagInfo));
-        rb.Push(RESULT_SUCCESS);
     }
 
     void Mount(Kernel::HLERequestContext& ctx) {
@@ -242,20 +242,19 @@ private:
 
     void GetModelInfo(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-
-        Core::System& system{Core::System::GetInstance()};
-        auto nfc_file = FileUtil::IOFile(system.GetNFCFilename(), "rb");
+        const size_t amiibo_identification_offset = 0x54;
+        const auto& amiibo_buf = nfp_interface.GetAmiiboBuffer();
         IPC::ResponseBuilder rb{ctx, 2};
-        if (!nfc_file.IsOpen()) {
+        if (amiibo_buf.size() >= amiibo_identification_offset + sizeof(ModelInfo)) {
+            ModelInfo model_info{};
+            std::memcpy(model_info.amiibo_identification_block.data(),
+                        amiibo_buf.data() + amiibo_identification_offset,
+                        model_info.amiibo_identification_block.size());
+            ctx.WriteBuffer(&model_info, sizeof(ModelInfo));
+            rb.Push(RESULT_SUCCESS);
+        } else {
             rb.Push(ErrCodes::ERR_TAG_FAILED);
-            return;
         }
-        nfc_file.Seek(0x54, SEEK_SET);
-        ModelInfo model_info{};
-        nfc_file.ReadBytes(model_info.amiibo_identification_block.data(),
-                           model_info.amiibo_identification_block.size());
-        ctx.WriteBuffer(&model_info, sizeof(ModelInfo));
-        rb.Push(RESULT_SUCCESS);
     }
 
     void Unmount(Kernel::HLERequestContext& ctx) {
@@ -344,7 +343,27 @@ void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_NFP, "called");
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IUser>();
+    rb.PushIpcInterface<IUser>(*this);
+}
+
+void Module::Interface::LoadAmiibo(const std::string& filename) {
+    amiibo_buffer.clear();
+    auto nfc_file = FileUtil::IOFile(filename, "rb");
+    if (!nfc_file.IsOpen()) {
+        return;
+    }
+    amiibo_buffer.resize(nfc_file.GetSize());
+    nfc_file.ReadBytes(amiibo_buffer.data(), amiibo_buffer.size());
+    nfc_file.Close();
+    nfc_tag_load->Signal();
+}
+
+const Kernel::SharedPtr<Kernel::Event>& Module::Interface::GetNFCEvent() const {
+    return nfc_tag_load;
+}
+
+const std::vector<u8>& Module::Interface::GetAmiiboBuffer() const {
+    return amiibo_buffer;
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {

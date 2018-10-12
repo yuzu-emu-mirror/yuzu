@@ -60,6 +60,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_ldr.h"
+#include "core/hle/service/nfp/nfp.h"
+#include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
 #include "core/settings.h"
@@ -1289,7 +1291,11 @@ void GMainWindow::OnLoadAmiibo() {
         this, tr("Load Amiibo"), UISettings::values.amiibo_path, file_filter);
     if (!filename.isEmpty()) {
         Core::System& system{Core::System::GetInstance()};
-        system.LoadAmiibo(filename.toStdString());
+        Service::SM::ServiceManager& sm = system.ServiceManager();
+        auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
+        if (nfc != nullptr) {
+            nfc->LoadAmiibo(filename.toStdString());
+        }
     }
 }
 
