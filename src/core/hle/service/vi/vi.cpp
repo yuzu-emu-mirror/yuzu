@@ -977,31 +977,40 @@ private:
         NoCrop = 4,
     };
 
+    // This struct is different, currently it's 1:1 but this might change in the future.
+    enum class NintendoScaleMode : u32 {
+        None = 0,
+        Freeze = 1,
+        ScaleToWindow = 2,
+        Crop = 3,
+        NoCrop = 4,
+    };
+
     void ConvertScalingMode(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        auto mode = rp.PopRaw<u32>();
-        LOG_DEBUG(Service_VI, "called mode={}", mode);
+        auto mode = rp.PopEnum<NintendoScaleMode>();
+        LOG_DEBUG(Service_VI, "called mode={}", static_cast<u32>(mode));
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         switch (mode) {
-        case 0:
+        case NintendoScaleMode::None:
             rb.PushEnum(ConvertedScaleMode::None);
             break;
-        case 1:
+        case NintendoScaleMode::Freeze:
             rb.PushEnum(ConvertedScaleMode::Freeze);
             break;
-        case 2:
+        case NintendoScaleMode::ScaleToWindow:
             rb.PushEnum(ConvertedScaleMode::ScaleToWindow);
             break;
-        case 3:
+        case NintendoScaleMode::Crop:
             rb.PushEnum(ConvertedScaleMode::Crop);
             break;
-        case 4:
+        case NintendoScaleMode::NoCrop:
             rb.PushEnum(ConvertedScaleMode::NoCrop);
             break;
         default:
-            UNIMPLEMENTED_MSG("Unknown scaling mode {}", mode);
+            UNIMPLEMENTED_MSG("Unknown scaling mode {}", static_cast<u32>(mode));
             rb.PushEnum(ConvertedScaleMode::None);
             break;
         }
