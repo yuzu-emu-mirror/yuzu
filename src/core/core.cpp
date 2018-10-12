@@ -175,8 +175,6 @@ struct System::Impl {
         GetAndResetPerfStats();
         perf_stats.BeginSystemFrame();
 
-        nfc_activate = Kernel::Event::Create(kernel, Kernel::ResetType::OneShot, "Nfc:ActivateTag");
-
         return ResultStatus::Success;
     }
 
@@ -290,10 +288,6 @@ struct System::Impl {
     std::array<std::unique_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
     std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;
     std::size_t active_core{}; ///< Active core, only used in single thread mode
-
-    /// NFC Loading
-    Kernel::SharedPtr<Kernel::Event> nfc_activate;
-    std::string nfc_filename;
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;

@@ -23,7 +23,6 @@ namespace Kernel {
 class KernelCore;
 class Process;
 class Scheduler;
-class Event;
 } // namespace Kernel
 
 namespace Loader {
