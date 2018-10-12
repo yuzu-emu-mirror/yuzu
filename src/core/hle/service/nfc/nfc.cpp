@@ -133,6 +133,9 @@ public:
     }
 
 private:
+    enum class NfcStates : u32 {
+        Finalized = 6,
+    };
     void InitializeOld(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0};
         rb.Push(RESULT_SUCCESS);
@@ -154,7 +157,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.PushRaw<u32>(6); // TODO(ogniK): Figure out if this matches nfp
+        rb.PushEnum(NfcStates::Finalized); // TODO(ogniK): Figure out if this matches nfp
     }
 
     void FinalizeOld(Kernel::HLERequestContext& ctx) {

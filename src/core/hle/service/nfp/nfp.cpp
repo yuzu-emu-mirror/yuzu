@@ -190,8 +190,6 @@ private:
 
     void GetDeviceState(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-
-        Core::System& system{Core::System::GetInstance()};
         const auto event = nfp_interface.GetNFCEvent();
 
         if (!event->ShouldWait(Kernel::GetCurrentThread()) && !has_attached_handle) {
