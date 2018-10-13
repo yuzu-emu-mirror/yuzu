@@ -136,6 +136,7 @@ private:
     enum class NfcStates : u32 {
         Finalized = 6,
     };
+
     void InitializeOld(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0};
         rb.Push(RESULT_SUCCESS);
