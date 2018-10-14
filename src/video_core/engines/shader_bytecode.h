@@ -773,13 +773,11 @@ union Instruction {
     union {
         BitField<44, 2, u64> unknown;
     } st_l;
-    
+
     union {
         BitField<48, 3, UniformType> type;
         BitField<46, 2, u64> cache_mode;
         BitField<20, 24, s64> offset_immediate;
-        BitField<8, 8, Register> offset_register;
-        BitField<0, 8, Register> output;
     } ld_g;
 
     union {
