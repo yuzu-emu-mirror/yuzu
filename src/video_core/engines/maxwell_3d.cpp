@@ -246,6 +246,11 @@ void Maxwell3D::DrawArrays() {
     }
 }
 
+bool operator<(const Maxwell3D::GlobalMemoryDescriptor& lhs,
+               const Maxwell3D::GlobalMemoryDescriptor& rhs) {
+    return std::tie(lhs.cbuf_index, lhs.cbuf_offset) < std::tie(rhs.cbuf_index, rhs.cbuf_offset);
+}
+
 void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
     // Bind the buffer currently in CB_ADDRESS to the specified index in the desired shader stage.
     auto& shader = state.shader_stages[static_cast<std::size_t>(stage)];
@@ -393,15 +398,6 @@ Texture::FullTextureInfo Maxwell3D::GetStageTexture(Regs::ShaderStage stage,
     }
 
     return tex_info;
-}
-
-std::string Maxwell3D::CreateGlobalMemoryRegion(std::tuple<u64, u64, u64> iadd_data) {
-    state.global_memory_uniforms.emplace(std::get<1>(iadd_data), std::get<2>(iadd_data));
-    return fmt::format("global_memory_region_{}", state.global_memory_uniforms.size() - 1);
-}
-
-std::set<std::pair<u64, u64>> Maxwell3D::ListGlobalMemoryRegions() const {
-    return state.global_memory_uniforms;
 }
 
 u32 Maxwell3D::GetRegisterValue(u32 method) const {

@@ -23,6 +23,7 @@
 #include "video_core/rasterizer_cache.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
+#include "video_core/renderer_opengl/gl_global_cache.h"
 #include "video_core/renderer_opengl/gl_primitive_assembler.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
@@ -183,6 +184,7 @@ private:
 
     RasterizerCacheOpenGL res_cache;
     ShaderCacheOpenGL shader_cache;
+    GlobalRegionCacheOpenGL global_cache;
 
     Core::Frontend::EmuWindow& emu_window;
 
