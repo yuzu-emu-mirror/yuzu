@@ -32,6 +32,12 @@ public:
     explicit Maxwell3D(VideoCore::RasterizerInterface& rasterizer, MemoryManager& memory_manager);
     ~Maxwell3D() = default;
 
+    /// Structure representing a global memory region
+    struct GlobalMemoryDescriptor {
+        u64 cbuf_index;
+        u64 cbuf_offset;
+    };
+
     /// Register structure of the Maxwell3D engine.
     /// TODO(Subv): This structure will need to be made bigger as more registers are discovered.
     struct Regs {
@@ -1039,7 +1045,7 @@ public:
         std::array<ShaderStageInfo, Regs::MaxShaderStage> shader_stages;
         u32 current_instance = 0; ///< Current instance to be used to simulate instanced rendering.
 
-        std::set<std::pair<u64, u64>> global_memory_uniforms;
+        std::set<GlobalMemoryDescriptor> global_memory_uniforms;
     };
 
     State state{};
@@ -1128,6 +1134,9 @@ private:
     /// Handles a write to the VERTEX_END_GL register, triggering a draw.
     void DrawArrays();
 };
+
+bool operator<(const Maxwell3D::GlobalMemoryDescriptor& lhs,
+               const Maxwell3D::GlobalMemoryDescriptor& rhs);
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
     static_assert(offsetof(Maxwell3D::Regs, field_name) == position * 4,                           \

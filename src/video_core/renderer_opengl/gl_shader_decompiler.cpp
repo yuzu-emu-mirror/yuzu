@@ -586,6 +586,7 @@ public:
         GenerateInputAttrs();
         GenerateOutputAttrs();
         GenerateConstBuffers();
+        GenerateGlobalRegions();
         GenerateSamplers();
         GenerateGeometry();
     }
@@ -707,9 +708,11 @@ private:
         declarations.AddNewLine();
     }
 
+    /// Generates declarations for global memory regions.
+    void GenerateGlobalRegions() {
         const auto& regions{
-            Core::System::GetInstance().GPU().Maxwell3D().ListGlobalMemoryRegions()};
-        for (size_t i = 0; i < regions.size(); ++i) {
+            Core::System::GetInstance().GPU().Maxwell3D().state.global_memory_uniforms};
+        for (std::size_t i = 0; i < regions.size(); ++i) {
             declarations.AddLine("layout(std140) uniform " +
                                  fmt::format("global_memory_region_declblock_{}", i));
             declarations.AddLine('{');
@@ -718,6 +721,7 @@ private:
             declarations.AddNewLine();
         }
         declarations.AddNewLine();
+    }
 
     /// Generates declarations for samplers.
     void GenerateSamplers() {
@@ -1847,10 +1851,10 @@ private:
                 } else {
                     op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
                                             GLSLRegister::Type::Integer);
-                    if (opcode->GetId() == OpCode::Id::IADD_C) {
+                    if (opcode->get().GetId() == OpCode::Id::IADD_C) {
                         s_last_iadd = last_iadd;
-                        last_iadd = std::make_tuple<Register, u64, u64>(
-                            instr.gpr8.Value(), instr.cbuf34.index, instr.cbuf34.offset);
+                        last_iadd = IADDReference{instr.gpr8.Value(), instr.cbuf34.index,
+                                                  instr.cbuf34.offset};
                     }
                 }
             }
@@ -3167,29 +3171,37 @@ private:
 
                 // The last IADD might be the upper u32 of address, so instead take the one before
                 // that.
-                if (gpr_index == 0xFF)
-                    std::tie(gpr_index, index, offset) = s_last_iadd;
+                if (gpr_index == Register::ZeroIndex) {
+                    gpr_index = s_last_iadd.out;
+                    index = s_last_iadd.cbuf_index;
+                    offset = s_last_iadd.cbuf_offset;
+                }
 
                 const auto gpr = regs.GetRegisterAsInteger(gpr_index);
                 const auto constbuffer =
                     regs.GetUniform(index, offset, GLSLRegister::Type::UnsignedInteger);
-                const auto memory =
-                    Core::System::GetInstance().GPU().Maxwell3D().CreateGlobalMemoryRegion(
-                        {0, index, offset * 4});
+
+                Core::System::GetInstance().GPU().Maxwell3D().state.global_memory_uniforms.insert(
+                    {index, offset * 4});
+                const auto memory = fmt::format("global_memory_region_{}",
+                                                Core::System::GetInstance()
+                                                        .GPU()
+                                                        .Maxwell3D()
+                                                        .state.global_memory_uniforms.size() -
+                                                    1);
 
                 const auto immediate = std::to_string(instr.ld_g.offset_immediate.Value());
-                const auto o_register =
-                    regs.GetRegisterAsInteger(instr.ld_g.offset_register, 0, false);
+                const auto o_register = regs.GetRegisterAsInteger(instr.gpr8, 0, false);
                 const auto address = "( " + immediate + " + " + o_register + " )";
                 const auto base_sub = address + " - " + constbuffer;
 
                 // New scope to prevent potential conflicts
-                shader.AddLine("{");
+                shader.AddLine('{');
                 ++shader.scope;
 
                 shader.AddLine("uint final_offset = " + base_sub + ";");
                 for (std::size_t out = 0; out < count; ++out) {
-                    const u64 reg_id = instr.ld_g.output.Value() + out;
+                    const u64 reg_id = instr.gpr0.Value() + out;
                     const auto this_memory =
                         fmt::format("{}[(final_offset + {}) / 16][((final_offset + {}) / 4) % 4]",
                                     memory, out * 4, out * 4);
@@ -3198,7 +3210,7 @@ private:
                 }
 
                 --shader.scope;
-                shader.AddLine("}");
+                shader.AddLine('}');
 
                 break;
             }
@@ -3999,8 +4011,14 @@ private:
     ShaderWriter declarations;
     GLSLRegisterManager regs{shader, declarations, stage, suffix, header};
 
-    std::tuple<Register, u64, u64> last_iadd{};
-    std::tuple<Register, u64, u64> s_last_iadd{};
+    struct IADDReference {
+        Register out;
+        u64 cbuf_index;
+        u64 cbuf_offset;
+    };
+
+    IADDReference last_iadd{};
+    IADDReference s_last_iadd{};
 
     // Declarations
     std::set<std::string> declr_predicates;
