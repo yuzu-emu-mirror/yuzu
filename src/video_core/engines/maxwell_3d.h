@@ -15,6 +15,7 @@
 #include "video_core/gpu.h"
 #include "video_core/macro_interpreter.h"
 #include "video_core/memory_manager.h"
+#include "video_core/shader_info.h"
 #include "video_core/textures/texture.h"
 
 namespace VideoCore {
@@ -1043,6 +1044,17 @@ public:
 
     /// Returns the texture information for a specific texture in a specific shader stage.
     Texture::FullTextureInfo GetStageTexture(Regs::ShaderStage stage, std::size_t offset) const;
+
+    /// Returns a list including all shaders. Use for debugging purposes.
+    std::vector<VideoCore::ShaderInfo> GetShaderList() const;
+
+    /**
+     * Injects a new shader source. Use for debugging purposes
+     * @param addr GPU address where the shader is
+     * @param size Size of the injected code
+     * @param code Injected code compatible with rasterizer shading language
+     */
+    void InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code);
 
     /// Memory for macro code - it's undetermined how big this is, however 1MB is much larger than
     /// we've seen used.

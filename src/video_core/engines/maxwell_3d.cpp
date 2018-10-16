@@ -459,6 +459,14 @@ Texture::FullTextureInfo Maxwell3D::GetStageTexture(Regs::ShaderStage stage,
     return tex_info;
 }
 
+std::vector<VideoCore::ShaderInfo> Maxwell3D::GetShaderList() const {
+    return rasterizer.GetShaderList();
+}
+
+void Maxwell3D::InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code) {
+    rasterizer.InjectShader(addr, code_size, code);
+}
+
 u32 Maxwell3D::GetRegisterValue(u32 method) const {
     ASSERT_MSG(method < Regs::NUM_REGS, "Invalid Maxwell3D register");
     return regs.reg_array[method];

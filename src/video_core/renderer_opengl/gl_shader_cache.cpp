@@ -10,6 +10,8 @@
 #include "video_core/renderer_opengl/gl_shader_cache.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 #include "video_core/renderer_opengl/utils.h"
+#include "video_core/shader_info.h"
+#include "video_core/utils.h"
 
 namespace OpenGL {
 
@@ -57,7 +59,6 @@ CachedShader::CachedShader(VAddr addr, Maxwell::ShaderProgram program_type)
     : addr{addr}, program_type{program_type}, setup{GetShaderCode(addr)} {
 
     GLShader::ProgramResult program_result;
-    GLenum gl_type{};
 
     switch (program_type) {
     case Maxwell::ShaderProgram::VertexA:
@@ -83,18 +84,10 @@ CachedShader::CachedShader(VAddr addr, Maxwell::ShaderProgram program_type)
         return;
     }
 
+    code = program_result.first;
     entries = program_result.second;
 
-    if (program_type != Maxwell::ShaderProgram::Geometry) {
-        OGLShader shader;
-        shader.Create(program_result.first.c_str(), gl_type);
-        program.Create(true, shader.handle);
-        SetShaderUniformBlockBindings(program.handle);
-        LabelGLObject(GL_PROGRAM, program.handle, addr);
-    } else {
-        // Store shader's code to lazily build it on draw
-        geometry_programs.code = program_result.first;
-    }
+    BuildProgram();
 }
 
 GLuint CachedShader::GetProgramResourceIndex(const GLShader::ConstBufferEntry& buffer) {
@@ -120,6 +113,26 @@ GLint CachedShader::GetUniformLocation(const GLShader::SamplerEntry& sampler) {
     return search->second;
 }
 
+void CachedShader::BuildProgram() {
+    resource_cache.clear();
+    uniform_cache.clear();
+    rebuild = false;
+
+    // Geometry shaders just have to be invalidated, they'll get lazily built later
+    if (program_type == Maxwell::ShaderProgram::Geometry) {
+        geometry_programs.Release();
+        return;
+    }
+
+    program.Release();
+
+    OGLShader shader;
+    shader.Create(code.c_str(), gl_type);
+    program.Create(true, shader.handle);
+    SetShaderUniformBlockBindings(program.handle);
+    LabelGLObject(GL_PROGRAM, program.handle, addr);
+}
+
 GLuint CachedShader::LazyGeometryProgram(OGLProgram& target_program,
                                          const std::string& glsl_topology, u32 max_vertices,
                                          const std::string& debug_name) {
@@ -129,7 +142,7 @@ GLuint CachedShader::LazyGeometryProgram(OGLProgram& target_program,
     std::string source = "#version 430 core\n";
     source += "layout (" + glsl_topology + ") in;\n";
     source += "#define MAX_VERTEX_INPUT " + std::to_string(max_vertices) + '\n';
-    source += geometry_programs.code;
+    source += code;
 
     OGLShader shader;
     shader.Create(source.c_str(), GL_GEOMETRY_SHADER);
@@ -138,6 +151,37 @@ GLuint CachedShader::LazyGeometryProgram(OGLProgram& target_program,
     LabelGLObject(GL_PROGRAM, target_program.handle, addr, debug_name);
     return target_program.handle;
 };
+
+VideoCore::ShaderInfo CachedShader::GetShaderInfo() const {
+    VideoCore::ShaderInfo shader_info;
+    shader_info.addr = static_cast<u64>(addr);
+    shader_info.stage = [=]() {
+        switch (program_type) {
+        case Maxwell::ShaderProgram::VertexA:
+        case Maxwell::ShaderProgram::VertexB:
+            return VideoCore::ShaderStage::Vertex;
+        case Maxwell::ShaderProgram::TesselationControl:
+            return VideoCore::ShaderStage::TesselationControl;
+        case Maxwell::ShaderProgram::TesselationEval:
+            return VideoCore::ShaderStage::TesselationEval;
+        case Maxwell::ShaderProgram::Geometry:
+            return VideoCore::ShaderStage::Geometry;
+        case Maxwell::ShaderProgram::Fragment:
+            return VideoCore::ShaderStage::Fragment;
+        default:
+            return VideoCore::ShaderStage::Invalid;
+        }
+    }();
+    shader_info.code = code;
+    return shader_info;
+}
+
+void CachedShader::InjectGLSL(std::size_t code_size, const GLchar* inject_code) {
+    LOG_INFO(Render_OpenGL, "Injecting GLSL");
+
+    code = std::string(inject_code, code_size);
+    rebuild = true;
+}
 
 ShaderCacheOpenGL::ShaderCacheOpenGL(RasterizerOpenGL& rasterizer) : RasterizerCache{rasterizer} {}
 
@@ -156,4 +200,17 @@ Shader ShaderCacheOpenGL::GetStageProgram(Maxwell::ShaderProgram program) {
     return shader;
 }
 
+std::vector<VideoCore::ShaderInfo> ShaderCacheOpenGL::GetShaderInfo() const {
+    std::vector<VideoCore::ShaderInfo> info;
+    for (const auto& shader : GetObjects()) {
+        info.push_back(shader->GetShaderInfo());
+    }
+    return info;
+}
+
+void ShaderCacheOpenGL::InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code) {
+    if (Shader shader{TryGet(addr)}; shader) {
+        shader->InjectGLSL(code_size, reinterpret_cast<const GLchar*>(code));
+    }
+}
 } // namespace OpenGL

@@ -373,6 +373,14 @@ bool RasterizerOpenGL::AccelerateDrawBatch(bool is_indexed) {
     return true;
 }
 
+std::vector<VideoCore::ShaderInfo> RasterizerOpenGL::GetShaderList() const {
+    return shader_cache.GetShaderInfo();
+}
+
+void RasterizerOpenGL::InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code) {
+    shader_cache.InjectShader(addr, code_size, code);
+}
+
 template <typename Map, typename Interval>
 static constexpr auto RangeFromInterval(Map& map, const Interval& interval) {
     return boost::make_iterator_range(map.equal_range(interval));

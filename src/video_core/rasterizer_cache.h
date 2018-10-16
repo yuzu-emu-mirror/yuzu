@@ -129,6 +129,17 @@ protected:
         return ++modified_ticks;
     }
 
+    /// Returns a list of current objects
+    std::set<T> GetObjects() const {
+        std::set<T> objects;
+        for (const auto& pair : interval_cache) {
+            for (const auto& cached_object : pair.second) {
+                objects.insert(cached_object);
+            }
+        }
+        return objects;
+    }
+
 private:
     /// Returns a list of cached objects from the specified memory region, ordered by access time
     std::vector<T> GetSortedObjectsFromRegion(VAddr addr, u64 size) {

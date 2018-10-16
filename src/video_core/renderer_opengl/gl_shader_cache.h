@@ -6,12 +6,15 @@
 
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "video_core/rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
+#include "video_core/shader_info.h"
 
 namespace OpenGL {
 
@@ -43,6 +46,9 @@ public:
 
     /// Gets the GL program handle for the shader
     GLuint GetProgramHandle(GLenum primitive_mode) {
+        if (rebuild) {
+            BuildProgram();
+        }
         if (program_type != Maxwell::ShaderProgram::Geometry) {
             return program.handle;
         }
@@ -76,7 +82,16 @@ public:
     /// Gets the GL uniform location for the specified resource, caching as needed
     GLint GetUniformLocation(const GLShader::SamplerEntry& sampler);
 
+    /// Gets shader info for debugging purposes
+    VideoCore::ShaderInfo GetShaderInfo() const;
+
+    /// Inject GLSL for debugging purposes
+    void InjectGLSL(std::size_t code_size, const GLchar* inject_code);
+
 private:
+    /// Builds programs from current set code.
+    void BuildProgram();
+
     /// Generates a geometry shader or returns one that already exists.
     GLuint LazyGeometryProgram(OGLProgram& target_program, const std::string& glsl_topology,
                                u32 max_vertices, const std::string& debug_name);
@@ -86,6 +101,10 @@ private:
     GLShader::ShaderSetup setup;
     GLShader::ShaderEntries entries;
 
+    GLenum gl_type{};
+    std::string code;
+    bool rebuild{};
+
     // Non-geometry program.
     OGLProgram program;
 
@@ -93,12 +112,19 @@ private:
     // declared by the hardware. Workaround this issue by generating a different shader per input
     // topology class.
     struct {
-        std::string code;
         OGLProgram points;
         OGLProgram lines;
         OGLProgram lines_adjacency;
         OGLProgram triangles;
         OGLProgram triangles_adjacency;
+
+        void Release() {
+            points.Release();
+            lines.Release();
+            lines_adjacency.Release();
+            triangles.Release();
+            triangles_adjacency.Release();
+        }
     } geometry_programs;
 
     std::map<u32, GLuint> resource_cache;
@@ -111,6 +137,12 @@ public:
 
     /// Gets the current specified shader stage program
     Shader GetStageProgram(Maxwell::ShaderProgram program);
+
+    /// Gets shader info for debugging purposes
+    std::vector<VideoCore::ShaderInfo> GetShaderInfo() const;
+
+    /// Injects shader code for debugging purposes
+    void InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code);
 };
 
 } // namespace OpenGL

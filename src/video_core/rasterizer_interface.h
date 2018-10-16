@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include <vector>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
+#include "video_core/shader_info.h"
 
 namespace VideoCore {
 
@@ -57,5 +59,13 @@ public:
 
     /// Increase/decrease the number of object in pages touching the specified region
     virtual void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) {}
+
+    /// Returns a list including all shaders
+    virtual std::vector<VideoCore::ShaderInfo> GetShaderList() const {
+        return {};
+    }
+
+    /// Injects a new shader source
+    virtual void InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code) {}
 };
 } // namespace VideoCore

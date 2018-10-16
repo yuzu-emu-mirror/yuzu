@@ -59,6 +59,8 @@ public:
                            u32 pixel_stride) override;
     bool AccelerateDrawBatch(bool is_indexed) override;
     void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) override;
+    std::vector<VideoCore::ShaderInfo> GetShaderList() const override;
+    void InjectShader(Tegra::GPUVAddr addr, std::size_t code_size, const u8* code);
 
     /// OpenGL shader generated for a given Maxwell register state
     struct MaxwellShader {

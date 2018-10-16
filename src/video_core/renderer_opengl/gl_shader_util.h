@@ -63,7 +63,7 @@ GLuint LoadProgram(bool separable_program, T... shaders) {
 
     // Check the program
     GLint result = GL_FALSE;
-    GLint info_log_length;
+    GLint info_log_length{};
     glGetProgramiv(program_id, GL_LINK_STATUS, &result);
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
 
