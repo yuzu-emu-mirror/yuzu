@@ -30,6 +30,9 @@ struct Values {
     QByteArray microprofile_geometry;
     bool microprofile_visible;
 
+    QByteArray shader_tools_geometry;
+    bool shader_tools_visible;
+
     bool single_window_mode;
     bool fullscreen;
     bool display_titlebar;

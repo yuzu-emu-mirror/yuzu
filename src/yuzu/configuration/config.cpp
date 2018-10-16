@@ -467,6 +467,9 @@ void Config::ReadValues() {
         qt_config->value("microProfileDialogGeometry").toByteArray();
     UISettings::values.microprofile_visible =
         qt_config->value("microProfileDialogVisible", false).toBool();
+    UISettings::values.shader_tools_geometry =
+        qt_config->value("shaderToolsDialogGeometry").toByteArray();
+    UISettings::values.shader_tools_visible = qt_config->value("shaderToolsDialogVisible").toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Paths");
@@ -667,6 +670,8 @@ void Config::SaveValues() {
     qt_config->setValue("gameListHeaderState", UISettings::values.gamelist_header_state);
     qt_config->setValue("microProfileDialogGeometry", UISettings::values.microprofile_geometry);
     qt_config->setValue("microProfileDialogVisible", UISettings::values.microprofile_visible);
+    qt_config->setValue("shaderToolsDialogGeometry", UISettings::values.shader_tools_geometry);
+    qt_config->setValue("shaderToolsDialogVisible", UISettings::values.shader_tools_visible);
     qt_config->endGroup();
 
     qt_config->beginGroup("Paths");

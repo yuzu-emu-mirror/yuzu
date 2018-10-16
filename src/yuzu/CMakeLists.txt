@@ -48,6 +48,8 @@ add_executable(yuzu
     debugger/console.h
     debugger/profiler.cpp
     debugger/profiler.h
+    debugger/shader_tools.cpp
+    debugger/shader_tools.h
     debugger/wait_tree.cpp
     debugger/wait_tree.h
     discord.h

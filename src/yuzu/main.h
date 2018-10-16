@@ -26,6 +26,7 @@ class GraphicsSurfaceWidget;
 class GRenderWindow;
 class MicroProfileDialog;
 class ProfilerWidget;
+class ShaderToolsDialog;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 
@@ -212,6 +213,7 @@ private:
     MicroProfileDialog* microProfileDialog;
     GraphicsBreakPointsWidget* graphicsBreakpointsWidget;
     GraphicsSurfaceWidget* graphicsSurfaceWidget;
+    ShaderToolsDialog* shaderToolsDialog;
     WaitTreeWidget* waitTreeWidget;
 
     QAction* actions_recent_files[max_recent_files_item];

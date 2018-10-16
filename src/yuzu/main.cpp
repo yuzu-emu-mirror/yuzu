@@ -79,6 +79,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/debugger/graphics/graphics_breakpoints.h"
 #include "yuzu/debugger/graphics/graphics_surface.h"
 #include "yuzu/debugger/profiler.h"
+#include "yuzu/debugger/shader_tools.h"
 #include "yuzu/debugger/wait_tree.h"
 #include "yuzu/discord.h"
 #include "yuzu/game_list.h"
@@ -254,6 +255,10 @@ void GMainWindow::InitializeDebugWidgets() {
     debug_menu->addAction(microProfileDialog->toggleViewAction());
 #endif
 
+    shaderToolsDialog = new ShaderToolsDialog(debug_context, this);
+    shaderToolsDialog->hide();
+    debug_menu->addAction(shaderToolsDialog->toggleViewAction());
+
     graphicsBreakpointsWidget = new GraphicsBreakPointsWidget(debug_context, this);
     addDockWidget(Qt::RightDockWidgetArea, graphicsBreakpointsWidget);
     graphicsBreakpointsWidget->hide();
@@ -391,6 +396,9 @@ void GMainWindow::RestoreUIState() {
     microProfileDialog->restoreGeometry(UISettings::values.microprofile_geometry);
     microProfileDialog->setVisible(UISettings::values.microprofile_visible);
 #endif
+
+    shaderToolsDialog->restoreGeometry(UISettings::values.shader_tools_geometry);
+    shaderToolsDialog->setVisible(UISettings::values.shader_tools_visible);
 
     game_list->LoadInterfaceLayout();
 
@@ -1645,6 +1653,8 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     UISettings::values.microprofile_geometry = microProfileDialog->saveGeometry();
     UISettings::values.microprofile_visible = microProfileDialog->isVisible();
 #endif
+    UISettings::values.shader_tools_geometry = shaderToolsDialog->saveGeometry();
+    UISettings::values.shader_tools_visible = shaderToolsDialog->isVisible();
     UISettings::values.single_window_mode = ui.action_Single_Window_Mode->isChecked();
     UISettings::values.fullscreen = ui.action_Fullscreen->isChecked();
     UISettings::values.display_titlebar = ui.action_Display_Dock_Widget_Headers->isChecked();
