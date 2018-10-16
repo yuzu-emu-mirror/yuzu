@@ -896,9 +896,26 @@ void CachedSurface::LoadGLBuffer() {
             block_depth = 1U;
         }
 
-        morton_to_gl_fns[static_cast<std::size_t>(params.pixel_format)](
-            params.width, params.block_height, params.height, block_depth, depth, gl_buffer.data(),
-            gl_buffer.size(), params.addr);
+        if (params.target == SurfaceParams::SurfaceTarget::TextureCubemap) {
+            // TODO(Blinkhawk): Figure where this number comes from and if it's constant or depends
+            // on the objects size and/or address.
+            u64 magic_number = 0x6000;
+            u64 offset = 0;
+            u64 offset_gl = 0;
+            u64 size = params.SizeInBytesCubeFace();
+            u64 gl_size = params.SizeInBytesCubeFaceGL();
+            for (u32 i = 0; i < depth; i++) {
+                morton_to_gl_fns[static_cast<std::size_t>(params.pixel_format)](
+                    params.width, params.block_height, params.height, block_depth, 1,
+                    gl_buffer.data() + offset_gl, gl_size, params.addr + offset);
+                offset += size + magic_number;
+                offset_gl += gl_size;
+            }
+        } else {
+            morton_to_gl_fns[static_cast<std::size_t>(params.pixel_format)](
+                params.width, params.block_height, params.height, block_depth, depth,
+                gl_buffer.data(), gl_buffer.size(), params.addr);
+        }
     } else {
         const auto texture_src_data{Memory::GetPointer(params.addr)};
         const auto texture_src_data_end{texture_src_data + params.size_in_bytes_gl};
@@ -1225,44 +1242,10 @@ Surface RasterizerCacheOpenGL::RecreateSurface(const Surface& old_surface,
             CopySurface(old_surface, new_surface, copy_pbo.handle);
         }
         break;
+    case SurfaceParams::SurfaceTarget::TextureCubemap:
     case SurfaceParams::SurfaceTarget::Texture3D:
         AccurateCopySurface(old_surface, new_surface);
         break;
-    case SurfaceParams::SurfaceTarget::TextureCubemap: {
-        if (old_params.rt.array_mode != 1) {
-            // TODO(bunnei): This is used by Breath of the Wild, I'm not sure how to implement this
-            // yet (array rendering used as a cubemap texture).
-            LOG_CRITICAL(HW_GPU, "Unhandled rendertarget array_mode {}", old_params.rt.array_mode);
-            UNREACHABLE();
-            return new_surface;
-        }
-
-        // This seems to be used for render-to-cubemap texture
-        ASSERT_MSG(old_params.target == SurfaceParams::SurfaceTarget::Texture2D, "Unexpected");
-        ASSERT_MSG(old_params.pixel_format == new_params.pixel_format, "Unexpected");
-        ASSERT_MSG(old_params.rt.base_layer == 0, "Unimplemented");
-
-        // TODO(bunnei): Verify the below - this stride seems to be in 32-bit words, not pixels.
-        // Tested with Splatoon 2, Super Mario Odyssey, and Breath of the Wild.
-        const std::size_t byte_stride{old_params.rt.layer_stride * sizeof(u32)};
-
-        for (std::size_t index = 0; index < new_params.depth; ++index) {
-            Surface face_surface{TryGetReservedSurface(old_params)};
-            ASSERT_MSG(face_surface, "Unexpected");
-
-            if (is_blit) {
-                BlitSurface(face_surface, new_surface, read_framebuffer.handle,
-                            draw_framebuffer.handle, face_surface->GetSurfaceParams().rt.index,
-                            new_params.rt.index, index);
-            } else {
-                CopySurface(face_surface, new_surface, copy_pbo.handle,
-                            face_surface->GetSurfaceParams().rt.index, new_params.rt.index, index);
-            }
-
-            old_params.addr += byte_stride;
-        }
-        break;
-    }
     default:
         LOG_CRITICAL(Render_OpenGL, "Unimplemented surface target={}",
                      static_cast<u32>(new_params.target));
