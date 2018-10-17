@@ -1294,7 +1294,14 @@ void GMainWindow::OnLoadAmiibo() {
         Service::SM::ServiceManager& sm = system.ServiceManager();
         auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
         if (nfc != nullptr) {
-            nfc->LoadAmiibo(filename.toStdString());
+            auto nfc_file = FileUtil::IOFile(filename.toStdString(), "rb");
+            if (!nfc_file.IsOpen()) {
+                return;
+            }
+            std::vector<u8> amiibo_buffer(nfc_file.GetSize());
+            nfc_file.ReadBytes(amiibo_buffer.data(), amiibo_buffer.size());
+            nfc_file.Close();
+            nfc->LoadAmiibo(amiibo_buffer);
         }
     }
 }

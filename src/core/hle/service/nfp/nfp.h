@@ -18,7 +18,7 @@ public:
         ~Interface() override;
 
         void CreateUserInterface(Kernel::HLERequestContext& ctx);
-        void LoadAmiibo(const std::string& path);
+        void LoadAmiibo(const std::vector<u8> amiibo);
         const Kernel::SharedPtr<Kernel::Event>& GetNFCEvent() const;
         const std::vector<u8>& GetAmiiboBuffer() const;
 

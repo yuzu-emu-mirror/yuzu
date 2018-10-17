@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
@@ -344,15 +343,8 @@ void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IUser>(*this);
 }
 
-void Module::Interface::LoadAmiibo(const std::string& filename) {
-    amiibo_buffer.clear();
-    auto nfc_file = FileUtil::IOFile(filename, "rb");
-    if (!nfc_file.IsOpen()) {
-        return;
-    }
-    amiibo_buffer.resize(nfc_file.GetSize());
-    nfc_file.ReadBytes(amiibo_buffer.data(), amiibo_buffer.size());
-    nfc_file.Close();
+void Module::Interface::LoadAmiibo(const std::vector<u8> amiibo) {
+    amiibo_buffer = amiibo;
     nfc_tag_load->Signal();
 }
 
