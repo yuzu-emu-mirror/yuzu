@@ -13,6 +13,11 @@
 
 namespace Service::NFP {
 
+namespace ErrCodes {
+constexpr ResultCode ERR_TAG_FAILED(ErrorModule::NFP,
+                                    -1); // TODO(ogniK): Find the actual error code
+}
+
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
     : ServiceFramework(name), module(std::move(module)) {}
 
@@ -187,15 +192,22 @@ private:
 
     void GetTagInfo(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-        TagInfo tag_info{};
+        IPC::ResponseBuilder rb{ctx, 2};
+
         Core::System& system{Core::System::GetInstance()};
         auto nfc_file = FileUtil::IOFile(system.GetNFCFilename(), "rb");
+        if (!nfc_file.IsOpen()) {
+            rb.Push(ErrCodes::ERR_TAG_FAILED);
+            return;
+        }
+        TagInfo tag_info{};
         size_t read_length = nfc_file.ReadBytes(tag_info.uuid.data(), sizeof(tag_info.uuid.size()));
         tag_info.uuid_length = static_cast<u8>(read_length);
+
         tag_info.protocol = 1; // TODO(ogniK): Figure out actual values
         tag_info.tag_type = 2;
+
         ctx.WriteBuffer(&tag_info, sizeof(TagInfo));
-        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
@@ -212,13 +224,16 @@ private:
 
         Core::System& system{Core::System::GetInstance()};
         auto nfc_file = FileUtil::IOFile(system.GetNFCFilename(), "rb");
+        IPC::ResponseBuilder rb{ctx, 2};
+        if (!nfc_file.IsOpen()) {
+            rb.Push(ErrCodes::ERR_TAG_FAILED);
+            return;
+        }
         nfc_file.Seek(0x54, SEEK_SET);
         ModelInfo model_info{};
         nfc_file.ReadBytes(model_info.amiibo_identification_block.data(),
                            model_info.amiibo_identification_block.size());
         ctx.WriteBuffer(&model_info, sizeof(ModelInfo));
-
-        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
