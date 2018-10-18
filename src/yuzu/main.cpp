@@ -422,6 +422,7 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Select_SDMC_Directory, &QAction::triggered, this,
             [this] { OnMenuSelectEmulatedDirectory(EmulatedDirectoryTarget::SDMC); });
     connect(ui.action_Exit, &QAction::triggered, this, &QMainWindow::close);
+    connect(ui.action_Load_Amiibo, &QAction::triggered, this, &GMainWindow::OnLoadAmiibo);
 
     // Emulation
     connect(ui.action_Start, &QAction::triggered, this, &GMainWindow::OnStartGame);
@@ -690,6 +691,7 @@ void GMainWindow::ShutdownGame() {
     ui.action_Stop->setEnabled(false);
     ui.action_Restart->setEnabled(false);
     ui.action_Report_Compatibility->setEnabled(false);
+    ui.action_Load_Amiibo->setEnabled(false);
     render_window->hide();
     game_list->show();
     game_list->setFilterFocus();
@@ -1174,6 +1176,7 @@ void GMainWindow::OnStartGame() {
     ui.action_Report_Compatibility->setEnabled(true);
 
     discord_rpc->Update();
+    ui.action_Load_Amiibo->setEnabled(true);
 }
 
 void GMainWindow::OnPauseGame() {
@@ -1278,6 +1281,18 @@ void GMainWindow::OnConfigure() {
     }
 }
 
+void GMainWindow::OnLoadAmiibo() {
+    const QString extensions{"*.bin"};
+    const QString file_filter =
+        tr("Amiibo File") + " (" + extensions + ");;" + tr("All Files (*.*)");
+    const QString filename = QFileDialog::getOpenFileName(
+        this, tr("Load Amiibo"), UISettings::values.amiibo_path, file_filter);
+    if (!filename.isEmpty()) {
+        Core::System& system{Core::System::GetInstance()};
+        system.LoadAmiibo(filename.toStdString());
+    }
+}
+
 void GMainWindow::OnAbout() {
     AboutDialog aboutDialog(this);
     aboutDialog.exec();
@@ -1318,15 +1333,17 @@ void GMainWindow::UpdateStatusBar() {
 void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string details) {
     QMessageBox::StandardButton answer;
     QString status_message;
-    const QString common_message = tr(
-        "The game you are trying to load requires additional files from your Switch to be dumped "
-        "before playing.<br/><br/>For more information on dumping these files, please see the "
-        "following wiki page: <a "
-        "href='https://yuzu-emu.org/wiki/"
-        "dumping-system-archives-and-the-shared-fonts-from-a-switch-console/'>Dumping System "
-        "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to quit "
-        "back to the game list? Continuing emulation may result in crashes, corrupted save "
-        "data, or other bugs.");
+    const QString common_message =
+        tr("The game you are trying to load requires additional files from your Switch to be "
+           "dumped "
+           "before playing.<br/><br/>For more information on dumping these files, please see the "
+           "following wiki page: <a "
+           "href='https://yuzu-emu.org/wiki/"
+           "dumping-system-archives-and-the-shared-fonts-from-a-switch-console/'>Dumping System "
+           "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to "
+           "quit "
+           "back to the game list? Continuing emulation may result in crashes, corrupted save "
+           "data, or other bugs.");
     switch (result) {
     case Core::System::ResultStatus::ErrorSystemFiles: {
         QString message = "yuzu was unable to locate a Switch system archive";
@@ -1357,9 +1374,12 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
             this, tr("Fatal Error"),
             tr("yuzu has encountered a fatal error, please see the log for more details. "
                "For more information on accessing the log, please see the following page: "
-               "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How to "
-               "Upload the Log File</a>.<br/><br/>Would you like to quit back to the game list? "
-               "Continuing emulation may result in crashes, corrupted save data, or other bugs."),
+               "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
+               "to "
+               "Upload the Log File</a>.<br/><br/>Would you like to quit back to the game "
+               "list? "
+               "Continuing emulation may result in crashes, corrupted save data, or other "
+               "bugs."),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         status_message = "Fatal Error encountered";
         break;

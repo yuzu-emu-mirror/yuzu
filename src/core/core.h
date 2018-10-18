@@ -23,6 +23,7 @@ namespace Kernel {
 class KernelCore;
 class Process;
 class Scheduler;
+class Event;
 } // namespace Kernel
 
 namespace Loader {
@@ -223,6 +224,12 @@ public:
     void SetFilesystem(std::shared_ptr<FileSys::VfsFilesystem> vfs);
 
     std::shared_ptr<FileSys::VfsFilesystem> GetFilesystem() const;
+
+    std::string& GetNFCFilename() const;
+
+    void LoadAmiibo(const std::string& path);
+
+    Kernel::SharedPtr<Kernel::Event>& GetNFCEvent() const;
 
 private:
     System();
