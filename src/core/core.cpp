@@ -136,6 +136,11 @@ struct System::Impl {
         if (virtual_filesystem == nullptr)
             virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
 
+        // Force update title ID for per game settings in case any services use them
+        u64 title_id;
+        if (app_loader->ReadProgramId(title_id) == Loader::ResultStatus::Success)
+            Settings::values.SetCurrentTitleID(title_id);
+
         auto main_process = Kernel::Process::Create(kernel, "main");
         kernel.MakeCurrentProcess(main_process.get());
 
