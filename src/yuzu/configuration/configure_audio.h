@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <QWidget>
+#include "yuzu/configuration/config.h"
 
 namespace Ui {
 class ConfigureAudio;
@@ -17,6 +18,10 @@ class ConfigureAudio : public QWidget {
 public:
     explicit ConfigureAudio(QWidget* parent = nullptr);
     ~ConfigureAudio();
+
+    void setPerGame(bool per_game);
+    void loadValuesChange(const PerGameValuesChange& change);
+    void mergeValuesChange(PerGameValuesChange& change);
 
     void applyConfiguration();
     void retranslateUi();
