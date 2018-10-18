@@ -329,7 +329,7 @@ private:
 
     bool has_attached_handle{};
     const u64 device_handle{Common::MakeMagic('Y', 'U', 'Z', 'U')};
-    const u32 npad_id{0}; // Player 1
+    const u32 npad_id{0}; // Player 1 controller
     State state{State::NonInitialized};
     DeviceState device_state{DeviceState::Initialized};
     Kernel::SharedPtr<Kernel::Event> deactivate_event;
