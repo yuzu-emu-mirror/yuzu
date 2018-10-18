@@ -1285,10 +1285,8 @@ void GMainWindow::OnConfigure() {
 
 void GMainWindow::OnLoadAmiibo() {
     const QString extensions{"*.bin"};
-    const QString file_filter =
-        tr("Amiibo File") + " (" + extensions + ");;" + tr("All Files (*.*)");
-    const QString filename = QFileDialog::getOpenFileName(
-        this, tr("Load Amiibo"), UISettings::values.amiibo_path, file_filter);
+    const QString file_filter = tr("Amiibo File (%1);; All Files (*.*)").arg(extensions);
+    const QString filename = QFileDialog::getOpenFileName(this, tr("Load Amiibo"), "", file_filter);
     if (!filename.isEmpty()) {
         Core::System& system{Core::System::GetInstance()};
         Service::SM::ServiceManager& sm = system.ServiceManager();

@@ -2,10 +2,13 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <atomic>
+
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/event.h"
+#include "core/hle/lock.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/nfp/nfp_user.h"
@@ -67,7 +70,17 @@ public:
     }
 
 private:
-    const Module::Interface& nfp_interface;
+    struct TagInfo {
+        std::array<u8, 10> uuid;
+        u8 uuid_length; // TODO(ogniK): Figure out if this is actual the uuid length or does it
+                        // mean something else
+        INSERT_PADDING_BYTES(0x15);
+        u32_le protocol;
+        u32_le tag_type;
+        INSERT_PADDING_BYTES(0x2c);
+    };
+    static_assert(sizeof(TagInfo) == 0x54, "TagInfo is an invalid size");
+
     enum class State : u32 {
         NonInitialized = 0,
         Initialized = 1,
@@ -82,23 +95,6 @@ private:
         Unknown5 = 5,
         Finalized = 6
     };
-
-    struct TagInfo {
-        std::array<u8, 10> uuid;
-        u8 uuid_length; // TODO(ogniK): Figure out if this is actual the uuid length or does it mean
-                        // something else
-        INSERT_PADDING_BYTES(0x15);
-        u32_le protocol;
-        u32_le tag_type;
-        INSERT_PADDING_BYTES(0x30);
-    };
-    static_assert(sizeof(TagInfo) == 0x58, "TagInfo is an invalid size");
-
-    struct ModelInfo {
-        std::array<u8, 0x8> amiibo_identification_block;
-        INSERT_PADDING_BYTES(0x38);
-    };
-    static_assert(sizeof(ModelInfo) == 0x40, "ModelInfo is an invalid size");
 
     struct CommonInfo {
         u16_be last_write_year;
@@ -189,11 +185,10 @@ private:
 
     void GetDeviceState(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-        const auto event = nfp_interface.GetNFCEvent();
-
-        if (!event->ShouldWait(Kernel::GetCurrentThread()) && !has_attached_handle) {
+        auto nfc_event = nfp_interface.GetNFCEvent();
+        if (!nfc_event->ShouldWait(Kernel::GetCurrentThread()) && !has_attached_handle) {
             device_state = DeviceState::TagFound;
-            event->Clear();
+            nfc_event->Clear();
         }
 
         IPC::ResponseBuilder rb{ctx, 3};
@@ -213,20 +208,17 @@ private:
 
     void GetTagInfo(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-        IPC::ResponseBuilder rb{ctx, 2};
-        const auto& amiibo_buf = nfp_interface.GetAmiiboBuffer();
-        if (amiibo_buf.size() >= sizeof(TagInfo)) {
-            TagInfo tag_info{};
-            std::memcpy(tag_info.uuid.data(), amiibo_buf.data(), sizeof(tag_info.uuid.size()));
-            tag_info.uuid_length = static_cast<u8>(tag_info.uuid.size());
 
-            tag_info.protocol = 1; // TODO(ogniK): Figure out actual values
-            tag_info.tag_type = 2;
-            ctx.WriteBuffer(&tag_info, sizeof(TagInfo));
-            rb.Push(RESULT_SUCCESS);
-        } else {
-            rb.Push(ErrCodes::ERR_TAG_FAILED);
-        }
+        IPC::ResponseBuilder rb{ctx, 2};
+        auto amiibo = nfp_interface.GetAmiiboBuffer();
+        TagInfo tag_info{};
+        std::memcpy(tag_info.uuid.data(), amiibo.uuid.data(), sizeof(tag_info.uuid.size()));
+        tag_info.uuid_length = static_cast<u8>(tag_info.uuid.size());
+
+        tag_info.protocol = 1; // TODO(ogniK): Figure out actual values
+        tag_info.tag_type = 2;
+        ctx.WriteBuffer(&tag_info, sizeof(TagInfo));
+        rb.Push(RESULT_SUCCESS);
     }
 
     void Mount(Kernel::HLERequestContext& ctx) {
@@ -239,19 +231,11 @@ private:
 
     void GetModelInfo(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
-        const size_t amiibo_identification_offset = 0x54;
-        const auto& amiibo_buf = nfp_interface.GetAmiiboBuffer();
+
         IPC::ResponseBuilder rb{ctx, 2};
-        if (amiibo_buf.size() >= amiibo_identification_offset + sizeof(ModelInfo)) {
-            ModelInfo model_info{};
-            std::memcpy(model_info.amiibo_identification_block.data(),
-                        amiibo_buf.data() + amiibo_identification_offset,
-                        model_info.amiibo_identification_block.size());
-            ctx.WriteBuffer(&model_info, sizeof(ModelInfo));
-            rb.Push(RESULT_SUCCESS);
-        } else {
-            rb.Push(ErrCodes::ERR_TAG_FAILED);
-        }
+        auto amiibo = nfp_interface.GetAmiiboBuffer();
+        ctx.WriteBuffer(&amiibo.model_info, sizeof(amiibo.model_info));
+        rb.Push(RESULT_SUCCESS);
     }
 
     void Unmount(Kernel::HLERequestContext& ctx) {
@@ -334,6 +318,7 @@ private:
     DeviceState device_state{DeviceState::Initialized};
     Kernel::SharedPtr<Kernel::Event> deactivate_event;
     Kernel::SharedPtr<Kernel::Event> availability_change_event;
+    const Module::Interface& nfp_interface;
 };
 
 void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
@@ -343,17 +328,19 @@ void Module::Interface::CreateUserInterface(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IUser>(*this);
 }
 
-void Module::Interface::LoadAmiibo(const std::vector<u8> amiibo) {
-    amiibo_buffer = amiibo;
+void Module::Interface::LoadAmiibo(const std::vector<u8>& buffer) {
+    std::lock_guard<std::recursive_mutex> lock(HLE::g_hle_lock);
+    if (buffer.size() < sizeof(AmiiboFile)) {
+        return; // Failed to load file
+    }
+    std::memcpy(&amiibo, buffer.data(), sizeof(amiibo));
     nfc_tag_load->Signal();
 }
-
 const Kernel::SharedPtr<Kernel::Event>& Module::Interface::GetNFCEvent() const {
     return nfc_tag_load;
 }
-
-const std::vector<u8>& Module::Interface::GetAmiiboBuffer() const {
-    return amiibo_buffer;
+const Module::Interface::AmiiboFile& Module::Interface::GetAmiiboBuffer() const {
+    return amiibo;
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager) {
