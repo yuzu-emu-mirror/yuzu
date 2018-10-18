@@ -301,14 +301,23 @@ void Config::ReadValues() {
             .toStdString());
     qt_config->endGroup();
 
+    qt_config->beginGroup("Core");
+    Settings::values.use_cpu_jit = qt_config->value("use_cpu_jit", true).toBool();
+    Settings::values.use_multi_core = qt_config->value("use_multi_core", false).toBool();
+    qt_config->endGroup();
+
     qt_config->beginGroup("System");
-    Settings::values.use_docked_mode = qt_config->value("use_docked_mode", false).toBool();
     Settings::values.enable_nfc = qt_config->value("enable_nfc", true).toBool();
 
     Settings::values.current_user = std::clamp<int>(qt_config->value("current_user", 0).toInt(), 0,
                                                     Service::Account::MAX_USERS - 1);
 
     Settings::values.language_index = qt_config->value("language_index", 1).toInt();
+    qt_config->endGroup();
+
+    qt_config->beginGroup("Renderer");
+    Settings::values.use_accurate_framebuffers =
+        qt_config->value("use_accurate_framebuffers", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -319,7 +328,6 @@ void Config::ReadValues() {
     qt_config->beginGroup("Debugging");
     Settings::values.use_gdbstub = qt_config->value("use_gdbstub", false).toBool();
     Settings::values.gdbstub_port = qt_config->value("gdbstub_port", 24689).toInt();
-    Settings::values.program_args = qt_config->value("program_args", "").toString().toStdString();
     qt_config->endGroup();
 
     qt_config->beginGroup("WebService");
@@ -529,12 +537,20 @@ void Config::SaveValues() {
                         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)));
     qt_config->endGroup();
 
+    qt_config->beginGroup("Core");
+    qt_config->setValue("use_cpu_jit", Settings::values.use_cpu_jit);
+    qt_config->setValue("use_multi_core", Settings::values.use_multi_core);
+    qt_config->endGroup();
+
     qt_config->beginGroup("System");
-    qt_config->setValue("use_docked_mode", Settings::values.use_docked_mode);
     qt_config->setValue("enable_nfc", Settings::values.enable_nfc);
     qt_config->setValue("current_user", Settings::values.current_user);
 
     qt_config->setValue("language_index", Settings::values.language_index);
+    qt_config->endGroup();
+
+    qt_config->beginGroup("Renderer");
+    qt_config->setValue("use_accurate_framebuffers", Settings::values.use_accurate_framebuffers);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -545,7 +561,6 @@ void Config::SaveValues() {
     qt_config->beginGroup("Debugging");
     qt_config->setValue("use_gdbstub", Settings::values.use_gdbstub);
     qt_config->setValue("gdbstub_port", Settings::values.gdbstub_port);
-    qt_config->setValue("program_args", QString::fromStdString(Settings::values.program_args));
     qt_config->endGroup();
 
     qt_config->beginGroup("WebService");
