@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <QWidget>
+#include "configuration/config.h"
 
 namespace Ui {
 class ConfigureDebug;
@@ -20,9 +21,12 @@ public:
 
     void applyConfiguration();
 
+    void setPerGame(bool per_game);
+    void loadValuesChange(const PerGameValuesChange& change);
+    void mergeValuesChange(PerGameValuesChange& change);
+
 private:
     void setConfiguration();
 
-private:
     std::unique_ptr<Ui::ConfigureDebug> ui;
 };
