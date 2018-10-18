@@ -16,7 +16,6 @@
 #include "core/settings.h"
 #include "input_common/main.h"
 #include "ui_configure_input.h"
-#include "yuzu/configuration/config.h"
 
 class QPushButton;
 class QString;

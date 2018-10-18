@@ -141,6 +141,9 @@ struct System::Impl {
         if (app_loader->ReadProgramId(title_id) == Loader::ResultStatus::Success)
             Settings::values.SetCurrentTitleID(title_id);
 
+        // Write config to log
+        Settings::values->LogSettings();
+
         auto main_process = Kernel::Process::Create(kernel, "main");
         kernel.MakeCurrentProcess(main_process.get());
 

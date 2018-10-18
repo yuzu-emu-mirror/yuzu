@@ -149,7 +149,7 @@ void Config::ReadValues() {
         if (token.size() != 16)
             continue;
 
-        u64 val = std::stoull(token, nullptr, 16);
+        const u64 val = std::stoull(token, nullptr, 16);
         titles.push_back(val);
     }
 

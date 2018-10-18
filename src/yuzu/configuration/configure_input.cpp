@@ -268,9 +268,9 @@ void ConfigureInput::applyConfiguration() {
 }
 
 void ConfigureInput::setPerGame(bool show) {
-    for (const auto button : buttons_delta)
+    for (auto* button : buttons_delta)
         button->setHidden(!show);
-    for (const auto analog : analogs_delta)
+    for (auto* analog : analogs_delta)
         analog->setHidden(!show);
     ui->override_label->setHidden(!show);
 }

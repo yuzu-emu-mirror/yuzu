@@ -6,7 +6,7 @@
 
 #include <memory>
 #include <QDialog>
-#include "core/file_sys/vfs.h"
+#include "core/file_sys/vfs_types.h"
 
 namespace Ui {
 class ConfigurePerGameDialog;

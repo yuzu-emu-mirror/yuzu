@@ -257,16 +257,17 @@ bool Config::UpdateCurrentGame(u64 title_id, Settings::PerGameValues& values) {
 
     const auto size = qt_config->beginReadArray("Per Game Settings");
 
-    for (std::size_t i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         qt_config->setArrayIndex(i);
         const auto read_title_id = qt_config->value("title_id", 0).toULongLong();
-        if (read_title_id == title_id) {
-            PerGameValuesChange changes{};
-            ReadPerGameSettings(values);
-            ReadPerGameSettingsDelta(changes);
+        if (read_title_id != title_id)
+            continue;
 
-            values = ApplyValuesDelta(Settings::values.default_game, values, changes);
-        }
+        PerGameValuesChange changes{};
+        ReadPerGameSettings(values);
+        ReadPerGameSettingsDelta(changes);
+
+        values = ApplyValuesDelta(Settings::values.default_game, values, changes);
     }
 
     qt_config->endArray();
@@ -499,7 +500,7 @@ void Config::SaveValues() {
 
     const auto size = qt_config->beginReadArray("Per Game Settings");
 
-    for (std::size_t i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         qt_config->setArrayIndex(i);
         const auto read_title_id = qt_config->value("title_id", 0).toULongLong();
         if (update_values.find(read_title_id) == update_values.end()) {
@@ -517,7 +518,7 @@ void Config::SaveValues() {
 
     qt_config->beginWriteArray("Per Game Settings", update_values.size());
 
-    std::size_t i = 0;
+    int i = 0;
     for (const auto& kv : update_values) {
         qt_config->setArrayIndex(i++);
         qt_config->setValue("title_id", kv.first);

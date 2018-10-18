@@ -9,6 +9,7 @@
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_audio.h"
+#include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_audio.h"
 
 ConfigureAudio::ConfigureAudio(QWidget* parent)

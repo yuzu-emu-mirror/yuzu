@@ -2,6 +2,7 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include "core/file_sys/vfs.h"
 #include "core/settings.h"
 #include "ui_configure_per_game.h"
 #include "yuzu/configuration/config.h"

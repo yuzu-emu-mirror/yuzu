@@ -6,7 +6,8 @@
 
 #include <memory>
 #include <QWidget>
-#include "configuration/config.h"
+
+struct PerGameValuesChange;
 
 namespace Ui {
 class ConfigureDebug;

@@ -116,6 +116,8 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 } // namespace NativeAnalog
 
 struct PerGameValues {
+    void LogSettings();
+
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;
@@ -154,7 +156,7 @@ struct Values {
     PerGameValues default_game;
 
     void SetUpdateCurrentGameFunction(std::function<bool(u64, PerGameValues&)> new_function);
-    u64 CurrentTitleID();
+    u64 CurrentTitleID() const;
     void SetCurrentTitleID(u64 title_id);
 
     PerGameValues& operator[](u64 title_id);

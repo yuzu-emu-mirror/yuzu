@@ -4,26 +4,18 @@
 
 #pragma once
 
-#include <array>
-#include <functional>
 #include <memory>
-#include <string>
-#include <unordered_map>
 #include <QKeyEvent>
 #include <QList>
 #include <QWidget>
-#include <boost/optional.hpp>
-#include "common/param_package.h"
 #include "core/file_sys/vfs.h"
-#include "core/settings.h"
-#include "input_common/main.h"
 #include "ui_configure_per_general.h"
 #include "yuzu/configuration/config.h"
 
-class QTreeView;
 class QGraphicsScene;
 class QStandardItem;
 class QStandardItemModel;
+class QTreeView;
 
 namespace Ui {
 class ConfigurePerGameGeneral;
@@ -34,6 +26,7 @@ class ConfigurePerGameGeneral : public QWidget {
 
 public:
     explicit ConfigurePerGameGeneral(QWidget* parent = nullptr);
+    ~ConfigurePerGameGeneral() override;
 
     /// Save all button configurations to settings file
     void applyConfiguration();
@@ -44,6 +37,8 @@ public:
     void mergeValuesChange(PerGameValuesChange& change);
 
 private:
+    void loadConfiguration();
+
     std::unique_ptr<Ui::ConfigurePerGameGeneral> ui;
     FileSys::VirtualFile file;
 
@@ -53,6 +48,4 @@ private:
     QGraphicsScene* scene;
 
     std::vector<QList<QStandardItem*>> list_items;
-
-    void loadConfiguration();
 };

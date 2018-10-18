@@ -13,7 +13,7 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "core/core.h"
-#include "core/file_sys/vfs.h"
+#include "core/file_sys/vfs_types.h"
 #include "ui_main.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"

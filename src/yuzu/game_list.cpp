@@ -32,50 +32,46 @@
 
 class HTMLDelegate : public QStyledItemDelegate {
 public:
-    void paint(QPainter* painter, const QStyleOptionViewItem& option,
-               const QModelIndex& index) const override;
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-};
+    void paint(QPainter* painter, const QStyleOptionViewItem& _option,
+               const QModelIndex& index) const override {
+        auto option = _option;
+        initStyleOption(&option, index);
 
-void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem& _option,
-                         const QModelIndex& index) const {
-    auto option = _option;
-    initStyleOption(&option, index);
+        QStyle* style = option.widget ? option.widget->style() : QApplication::style();
 
-    QStyle* style = option.widget ? option.widget->style() : QApplication::style();
+        QTextDocument document;
+        document.setHtml(option.text);
 
-    QTextDocument document;
-    document.setHtml(option.text);
+        /// Painting item without text
+        option.text = QString();
+        style->drawControl(QStyle::CE_ItemViewItem, &option, painter);
 
-    /// Painting item without text
-    option.text = QString();
-    style->drawControl(QStyle::CE_ItemViewItem, &option, painter);
+        QAbstractTextDocumentLayout::PaintContext ctx;
 
-    QAbstractTextDocumentLayout::PaintContext ctx;
+        // Highlighting text if item is selected
+        if (option.state & QStyle::State_Selected) {
+            ctx.palette.setColor(QPalette::Text,
+                                 option.palette.color(QPalette::Active, QPalette::HighlightedText));
+        }
 
-    // Highlighting text if item is selected
-    if (option.state & QStyle::State_Selected) {
-        ctx.palette.setColor(QPalette::Text,
-                             option.palette.color(QPalette::Active, QPalette::HighlightedText));
+        QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &option);
+        painter->save();
+        painter->translate(textRect.topLeft());
+        painter->setClipRect(textRect.translated(-textRect.topLeft()));
+        document.documentLayout()->draw(painter, ctx);
+        painter->restore();
     }
 
-    QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &option);
-    painter->save();
-    painter->translate(textRect.topLeft());
-    painter->setClipRect(textRect.translated(-textRect.topLeft()));
-    document.documentLayout()->draw(painter, ctx);
-    painter->restore();
-}
+    QSize sizeHint(const QStyleOptionViewItem& _option, const QModelIndex& index) const override {
+        auto option = _option;
+        initStyleOption(&option, index);
 
-QSize HTMLDelegate::sizeHint(const QStyleOptionViewItem& _option, const QModelIndex& index) const {
-    auto option = _option;
-    initStyleOption(&option, index);
-
-    QTextDocument document;
-    document.setHtml(option.text);
-    document.setTextWidth(option.rect.width());
-    return QSize(document.idealWidth(), UISettings::values.icon_size);
-}
+        QTextDocument document;
+        document.setHtml(option.text);
+        document.setTextWidth(option.rect.width());
+        return QSize(document.idealWidth(), UISettings::values.icon_size);
+    }
+};
 
 GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist) : gamelist{gamelist} {}
 

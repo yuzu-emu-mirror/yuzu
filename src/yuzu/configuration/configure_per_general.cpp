@@ -1,10 +1,11 @@
-// Copyright 2016 Citra Emulator Project
+// Copyright 2018 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <QHeaderView>
 #include <QMenu>
 #include <QMessageBox>
 #include <QStandardItemModel>
@@ -23,7 +24,6 @@
 
 ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigurePerGameGeneral>()) {
-
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
 
@@ -42,8 +42,8 @@ ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     tree_view->setContextMenuPolicy(Qt::NoContextMenu);
 
     item_model->insertColumns(0, 2);
-    item_model->setHeaderData(0, Qt::Horizontal, "Patch Name");
-    item_model->setHeaderData(1, Qt::Horizontal, "Version");
+    item_model->setHeaderData(0, Qt::Horizontal, tr("Patch Name"));
+    item_model->setHeaderData(1, Qt::Horizontal, tr("Version"));
 
     // We must register all custom types with the Qt Automoc system so that we are able to use it
     // with signals/slots. In this case, QList falls under the umbrells of custom types.
@@ -60,6 +60,8 @@ ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
 
     this->loadConfiguration();
 }
+
+ConfigurePerGameGeneral::~ConfigurePerGameGeneral() = default;
 
 void ConfigurePerGameGeneral::applyConfiguration() {
     std::vector<std::string> disabled_add_ons;
@@ -96,7 +98,7 @@ void ConfigurePerGameGeneral::loadConfiguration() {
 
     u64 program_id{};
     if (loader->ReadProgramId(program_id) == Loader::ResultStatus::Success) {
-        ui->display_title_id->setText(fmt::format("{:016X}", program_id).c_str());
+        ui->display_title_id->setText(QStringLiteral("%1").arg(program_id, 16, 16, QChar{'0'}));
 
         FileSys::PatchManager pm{program_id};
         const auto control = pm.GetControlMetadata();

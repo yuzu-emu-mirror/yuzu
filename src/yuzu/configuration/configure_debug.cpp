@@ -11,6 +11,7 @@
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_debug.h"
+#include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_debug.h"
 #include "yuzu/debugger/console.h"
 #include "yuzu/ui_settings.h"

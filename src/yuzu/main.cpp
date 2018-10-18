@@ -979,11 +979,12 @@ void GMainWindow::OnGameListOpenProperties(FileSys::VirtualFile file) {
     Settings::values.SetCurrentTitleID(title_id);
     ConfigurePerGameDialog dialog{this, file, config->GetPerGameSettingsDelta(title_id)};
     auto result = dialog.exec();
-    if (result == QDialog::Accepted) {
-        config->SetPerGameSettingsDelta(title_id, dialog.applyConfiguration());
-        config->Save();
-        game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
-    }
+    if (result != QDialog::Accepted)
+        return;
+
+    config->SetPerGameSettingsDelta(title_id, dialog.applyConfiguration());
+    config->Save();
+    game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
 }
 
 void GMainWindow::OnMenuLoadFile() {
