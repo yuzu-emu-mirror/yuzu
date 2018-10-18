@@ -37,43 +37,44 @@ public:
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 };
 
-void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
+void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem& _option,
                          const QModelIndex& index) const {
-    QStyleOptionViewItemV4 optionV4 = option;
-    initStyleOption(&optionV4, index);
+    auto option = _option;
+    initStyleOption(&option, index);
 
-    QStyle* style = optionV4.widget ? optionV4.widget->style() : QApplication::style();
+    QStyle* style = option.widget ? option.widget->style() : QApplication::style();
 
-    QTextDocument doc;
-    doc.setHtml(optionV4.text);
+    QTextDocument document;
+    document.setHtml(option.text);
 
     /// Painting item without text
-    optionV4.text = QString();
-    style->drawControl(QStyle::CE_ItemViewItem, &optionV4, painter);
+    option.text = QString();
+    style->drawControl(QStyle::CE_ItemViewItem, &option, painter);
 
     QAbstractTextDocumentLayout::PaintContext ctx;
 
     // Highlighting text if item is selected
-    if (optionV4.state & QStyle::State_Selected)
+    if (option.state & QStyle::State_Selected) {
         ctx.palette.setColor(QPalette::Text,
-                             optionV4.palette.color(QPalette::Active, QPalette::HighlightedText));
+                             option.palette.color(QPalette::Active, QPalette::HighlightedText));
+    }
 
-    QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &optionV4);
+    QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &option);
     painter->save();
     painter->translate(textRect.topLeft());
     painter->setClipRect(textRect.translated(-textRect.topLeft()));
-    doc.documentLayout()->draw(painter, ctx);
+    document.documentLayout()->draw(painter, ctx);
     painter->restore();
 }
 
-QSize HTMLDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    QStyleOptionViewItemV4 optionV4 = option;
-    initStyleOption(&optionV4, index);
+QSize HTMLDelegate::sizeHint(const QStyleOptionViewItem& _option, const QModelIndex& index) const {
+    auto option = _option;
+    initStyleOption(&option, index);
 
-    QTextDocument doc;
-    doc.setHtml(optionV4.text);
-    doc.setTextWidth(optionV4.rect.width());
-    return QSize(doc.idealWidth(), doc.size().height());
+    QTextDocument document;
+    document.setHtml(option.text);
+    document.setTextWidth(option.rect.width());
+    return QSize(document.idealWidth(), UISettings::values.icon_size);
 }
 
 GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist) : gamelist{gamelist} {}
