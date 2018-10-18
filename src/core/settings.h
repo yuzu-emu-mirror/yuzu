@@ -6,10 +6,15 @@
 
 #include <array>
 #include <atomic>
+#include <functional>
 #include <string>
+#include <vector>
 #include "common/common_types.h"
+#include "input_common/motion_emu.h"
 
 namespace Settings {
+
+constexpr u64 DEFAULT_PER_GAME = 0;
 
 namespace NativeButton {
 enum Values {
@@ -110,28 +115,15 @@ static const std::array<const char*, NumAnalogs> mapping = {{
 }};
 } // namespace NativeAnalog
 
-struct Values {
-    // System
-    bool use_docked_mode;
-    bool enable_nfc;
-    int current_user;
-    int language_index;
-
+struct PerGameValues {
     // Controls
     std::array<std::string, NativeButton::NumButtons> buttons;
     std::array<std::string, NativeAnalog::NumAnalogs> analogs;
     std::string motion_device;
     std::string touch_device;
-    std::atomic_bool is_device_reload_pending{true};
 
-    // Core
-    bool use_cpu_jit;
-    bool use_multi_core;
-
-    // Data Storage
-    bool use_virtual_sd;
-    std::string nand_dir;
-    std::string sdmc_dir;
+    // System
+    bool use_docked_mode;
 
     // Renderer
     float resolution_factor;
@@ -143,10 +135,6 @@ struct Values {
     float bg_green;
     float bg_blue;
 
-    std::string log_filter;
-
-    bool use_dev_keys;
-
     // Audio
     std::string sink_id;
     bool enable_audio_stretching;
@@ -154,15 +142,69 @@ struct Values {
     float volume;
 
     // Debugging
+    std::string program_args;
+
+    // Add-Ons
+    std::vector<std::string> disabled_patches;
+};
+
+struct Values {
+    Values();
+
+    // Per-Game
+    PerGameValues default_game;
+
+    void SetUpdateCurrentGameFunction(std::function<bool(u64, PerGameValues&)> new_function);
+    u64 CurrentTitleID();
+    void SetCurrentTitleID(u64 title_id);
+
+    PerGameValues& operator[](u64 title_id);
+    const PerGameValues& operator[](u64 title_id) const;
+    PerGameValues* operator->();
+    const PerGameValues* operator->() const;
+    PerGameValues& operator*();
+    const PerGameValues& operator*() const;
+
+    // Core
+    bool use_cpu_jit;
+    bool use_multi_core;
+
+    // System
+    std::string username;
+    bool enable_nfc;
+    int current_user;
+    int language_index;
+
+    // Renderer
+    bool use_accurate_framebuffers;
+
+    // Input
+    std::atomic_bool is_device_reload_pending{true};
+
+    // Data Storage
+    bool use_virtual_sd;
+    std::string nand_dir;
+    std::string sdmc_dir;
+
+    // Debugging
+    std::string log_filter;
+    bool use_dev_keys;
     bool use_gdbstub;
     u16 gdbstub_port;
-    std::string program_args;
 
     // WebService
     bool enable_telemetry;
     std::string web_api_url;
     std::string yuzu_username;
     std::string yuzu_token;
+
+private:
+    u64 current_title_id = 0;
+    PerGameValues current_game;
+
+    std::function<bool(u64, PerGameValues&)> update_current_game = [](u64 in, PerGameValues& val) {
+        return false;
+    };
 } extern values;
 
 void Apply();
