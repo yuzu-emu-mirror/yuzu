@@ -16,6 +16,7 @@
 #include "core/settings.h"
 #include "input_common/main.h"
 #include "ui_configure_input.h"
+#include "yuzu/configuration/config.h"
 
 class QPushButton;
 class QString;
@@ -34,6 +35,10 @@ public:
     /// Save all button configurations to settings file
     void applyConfiguration();
 
+    void setPerGame(bool per_game);
+    void loadValuesChange(const PerGameValuesChange& change);
+    void mergeValuesChange(PerGameValuesChange& change);
+
 private:
     std::unique_ptr<Ui::ConfigureInput> ui;
 
@@ -45,6 +50,9 @@ private:
 
     std::array<Common::ParamPackage, Settings::NativeButton::NumButtons> buttons_param;
     std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs> analogs_param;
+
+    std::array<QCheckBox*, Settings::NativeButton::NumButtons> buttons_delta;
+    std::array<QCheckBox*, Settings::NativeAnalog::NumAnalogs> analogs_delta;
 
     static constexpr int ANALOG_SUB_BUTTONS_NUM = 5;
 
