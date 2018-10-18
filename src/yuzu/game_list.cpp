@@ -52,6 +52,9 @@ public:
         if (option.state & QStyle::State_Selected) {
             ctx.palette.setColor(QPalette::Text,
                                  option.palette.color(QPalette::Active, QPalette::HighlightedText));
+        } else {
+            ctx.palette.setColor(QPalette::Text,
+                                 option.palette.color(QPalette::Normal, QPalette::Text));
         }
 
         QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &option);
