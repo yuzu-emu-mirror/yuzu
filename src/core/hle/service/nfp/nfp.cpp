@@ -34,22 +34,22 @@ public:
             {4, &IUser::StopDetection, "StopDetection"},
             {5, &IUser::Mount, "Mount"},
             {6, &IUser::Unmount, "Unmount"},
-            {7, nullptr, "OpenApplicationArea"},
-            {8, nullptr, "GetApplicationArea"},
+            {7, &IUser::OpenApplicationArea, "OpenApplicationArea"},
+            {8, &IUser::GetApplicationArea, "GetApplicationArea"},
             {9, nullptr, "SetApplicationArea"},
             {10, nullptr, "Flush"},
             {11, nullptr, "Restore"},
             {12, nullptr, "CreateApplicationArea"},
             {13, &IUser::GetTagInfo, "GetTagInfo"},
-            {14, nullptr, "GetRegisterInfo"},
-            {15, nullptr, "GetCommonInfo"},
+            {14, &IUser::GetRegisterInfo, "GetRegisterInfo"},
+            {15, &IUser::GetCommonInfo, "GetCommonInfo"},
             {16, &IUser::GetModelInfo, "GetModelInfo"},
             {17, &IUser::AttachActivateEvent, "AttachActivateEvent"},
             {18, &IUser::AttachDeactivateEvent, "AttachDeactivateEvent"},
             {19, &IUser::GetState, "GetState"},
             {20, &IUser::GetDeviceState, "GetDeviceState"},
             {21, &IUser::GetNpadId, "GetNpadId"},
-            {22, nullptr, "GetApplicationArea2"},
+            {22, &IUser::GetApplicationAreaSize, "GetApplicationAreaSize"},
             {23, &IUser::AttachAvailabilityChangeEvent, "AttachAvailabilityChangeEvent"},
             {24, nullptr, "RecreateApplicationArea"},
         };
@@ -94,6 +94,17 @@ private:
         INSERT_PADDING_BYTES(0x38);
     };
     static_assert(sizeof(ModelInfo) == 0x40, "ModelInfo is an invalid size");
+
+    struct CommonInfo {
+        u16_be last_write_year;
+        u8 last_write_month;
+        u8 last_write_day;
+        u16_be write_counter;
+        u16_be version;
+        u32_be application_area_size;
+        INSERT_PADDING_BYTES(52);
+    };
+    static_assert(sizeof(CommonInfo) == 0x40, "CommonInfo is an invalid size");
 
     void Initialize(Kernel::HLERequestContext& ctx) {
         IPC::ResponseBuilder rb{ctx, 2, 0};
@@ -144,6 +155,7 @@ private:
 
         Core::System& system{Core::System::GetInstance()};
         rb.PushCopyObjects(system.GetNFCEvent());
+        has_attached_handle = true;
     }
 
     void AttachDeactivateEvent(Kernel::HLERequestContext& ctx) {
@@ -175,6 +187,15 @@ private:
 
     void GetDeviceState(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NFP, "called");
+
+        Core::System& system{Core::System::GetInstance()};
+        const auto event = system.GetNFCEvent();
+
+        if (!event->ShouldWait(Kernel::GetCurrentThread()) && !has_attached_handle) {
+            device_state = DeviceState::TagFound;
+            event->Clear();
+        }
+
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(static_cast<u32>(device_state));
@@ -263,6 +284,54 @@ private:
         rb.PushCopyObjects(availability_change_event);
     }
 
+    void GetRegisterInfo(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
+
+        // TODO(ogniK): Pull Mii and owner data from amiibo
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void GetCommonInfo(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
+
+        // TODO(ogniK): Pull common information from amiibo
+
+        CommonInfo common_info{};
+        common_info.application_area_size = 0;
+        ctx.WriteBuffer(&common_info, sizeof(CommonInfo));
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void OpenApplicationArea(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_NFP, "called");
+        // We don't need to worry about this since we can just open the file
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    void GetApplicationAreaSize(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        // We don't need to worry about this since we can just open the file
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw<u32>(0); // This is from the GetCommonInfo stub
+    }
+
+    void GetApplicationArea(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NFP, "(STUBBED) called");
+
+        // TODO(ogniK): Pull application area from amiibo
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw<u32>(0); // This is from the GetCommonInfo stub
+    }
+
+    bool has_attached_handle{};
     const u64 device_handle{Common::MakeMagic('Y', 'U', 'Z', 'U')};
     const u32 npad_id{0}; // Player 1
     State state{State::NonInitialized};
