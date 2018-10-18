@@ -86,7 +86,7 @@ void ConfigureGraphics::setConfiguration() {
 void ConfigureGraphics::setPerGame(bool per_game) {
     ui->bg_checkbox->setHidden(!per_game);
     ui->resolution_factor_checkbox->setHidden(!per_game);
-    ui->use_accurate_framebuffers->setHidden(per_game);
+    ui->use_accurate_gpu_emulation->setHidden(per_game);
     ui->override_label->setHidden(!per_game);
     ui->toggle_frame_limit->setTristate(per_game);
 }

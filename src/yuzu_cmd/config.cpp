@@ -180,8 +180,8 @@ void Config::ReadValues() {
         sdl2_config->GetInteger("System", "current_user", 0), 0, Service::Account::MAX_USERS - 1);
 
     // Renderer
-    Settings::values.use_accurate_framebuffers =
-        sdl2_config->GetBoolean("Renderer", "use_accurate_framebuffers", false);
+    Settings::values.use_accurate_gpu_emulation =
+        sdl2_config->GetBoolean("Renderer", "use_accurate_gpu_emulation", false);
 
     // Miscellaneous
     Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");

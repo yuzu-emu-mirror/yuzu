@@ -165,8 +165,6 @@ void Config::ReadPerGameSettings(Settings::PerGameValues& values) {
     values.resolution_factor = qt_config->value("resolution_factor", 1.0).toFloat();
     values.use_frame_limit = qt_config->value("use_frame_limit", true).toBool();
     values.frame_limit = qt_config->value("frame_limit", 100).toInt();
-    Settings::values.use_accurate_gpu_emulation =
-        qt_config->value("use_accurate_gpu_emulation", false).toBool();
 
     values.bg_red = qt_config->value("bg_red", 0.0).toFloat();
     values.bg_green = qt_config->value("bg_green", 0.0).toFloat();
@@ -316,8 +314,8 @@ void Config::ReadValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
-    Settings::values.use_accurate_framebuffers =
-        qt_config->value("use_accurate_framebuffers", false).toBool();
+    Settings::values.use_accurate_gpu_emulation =
+        qt_config->value("use_accurate_gpu_emulation", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
@@ -425,7 +423,6 @@ void Config::SavePerGameSettings(const Settings::PerGameValues& values) {
     qt_config->setValue("resolution_factor", (double)values.resolution_factor);
     qt_config->setValue("use_frame_limit", values.use_frame_limit);
     qt_config->setValue("frame_limit", values.frame_limit);
-    qt_config->setValue("use_accurate_gpu_emulation", Settings::values.use_accurate_gpu_emulation);
 
     // Cast to double because Qt's written float values are not human-readable
     qt_config->setValue("bg_red", (double)values.bg_red);
@@ -550,7 +547,7 @@ void Config::SaveValues() {
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
-    qt_config->setValue("use_accurate_framebuffers", Settings::values.use_accurate_framebuffers);
+    qt_config->setValue("use_accurate_gpu_emulation", Settings::values.use_accurate_gpu_emulation);
     qt_config->endGroup();
 
     qt_config->beginGroup("Miscellaneous");
