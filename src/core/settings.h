@@ -129,7 +129,6 @@ struct PerGameValues {
     float resolution_factor;
     bool use_frame_limit;
     u16 frame_limit;
-    bool use_accurate_gpu_emulation;
 
     float bg_red;
     float bg_green;
@@ -176,7 +175,7 @@ struct Values {
     int language_index;
 
     // Renderer
-    bool use_accurate_framebuffers;
+    bool use_accurate_gpu_emulation;
 
     // Input
     std::atomic_bool is_device_reload_pending{true};

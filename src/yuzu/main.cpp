@@ -339,21 +339,21 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey("Main Window", "Toggle Speed Limit", this),
             &QShortcut::activated, this, [&] {
-                Settings::values.use_frame_limit = !Settings::values.use_frame_limit;
+                Settings::values->use_frame_limit = !Settings::values->use_frame_limit;
                 UpdateStatusBar();
             });
     constexpr u16 SPEED_LIMIT_STEP = 5;
     connect(hotkey_registry.GetHotkey("Main Window", "Increase Speed Limit", this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit += SPEED_LIMIT_STEP;
+                if (Settings::values->frame_limit < 9999 - SPEED_LIMIT_STEP) {
+                    Settings::values->frame_limit += SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey("Main Window", "Decrease Speed Limit", this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit > SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit -= SPEED_LIMIT_STEP;
+                if (Settings::values->frame_limit > SPEED_LIMIT_STEP) {
+                    Settings::values->frame_limit -= SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });
@@ -1375,10 +1375,10 @@ void GMainWindow::UpdateStatusBar() {
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
 
-    if (Settings::values.use_frame_limit) {
+    if (Settings::values->use_frame_limit) {
         emu_speed_label->setText(tr("Speed: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
-                                     .arg(Settings::values.frame_limit));
+                                     .arg(Settings::values->frame_limit));
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
