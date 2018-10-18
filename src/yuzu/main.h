@@ -13,6 +13,7 @@
 #include <boost/optional.hpp>
 #include "common/common_types.h"
 #include "core/core.h"
+#include "core/file_sys/vfs.h"
 #include "ui_main.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
@@ -157,6 +158,7 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
+    void OnGameListOpenProperties(FileSys::VirtualFile file);
     void OnMenuLoadFile();
     void OnMenuLoadFolder();
     void OnMenuInstallToNAND();
