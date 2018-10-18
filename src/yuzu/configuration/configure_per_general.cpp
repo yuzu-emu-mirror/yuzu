@@ -73,6 +73,10 @@ void ConfigurePerGameGeneral::applyConfiguration() {
     }
 
     Settings::values->disabled_patches = disabled_add_ons;
+
+    Settings::values->use_docked_mode = ui->use_docked_mode->checkState() == Qt::PartiallyChecked
+                                            ? Settings::values.default_game.use_docked_mode
+                                            : ui->use_docked_mode->isChecked();
 }
 
 void ConfigurePerGameGeneral::loadFromFile(FileSys::VirtualFile file) {

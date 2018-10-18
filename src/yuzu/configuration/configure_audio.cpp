@@ -114,7 +114,10 @@ void ConfigureAudio::applyConfiguration() {
     Settings::values->sink_id =
         ui->output_sink_combo_box->itemText(ui->output_sink_combo_box->currentIndex())
             .toStdString();
-    Settings::values->enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
+    Settings::values->enable_audio_stretching =
+        ui->toggle_audio_stretching->checkState() == Qt::PartiallyChecked
+            ? Settings::values.default_game.enable_audio_stretching
+            : ui->toggle_audio_stretching->isChecked();
     Settings::values->audio_device_id =
         ui->audio_device_combo_box->itemText(ui->audio_device_combo_box->currentIndex())
             .toStdString();

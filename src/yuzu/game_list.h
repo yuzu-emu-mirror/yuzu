@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include "common/common_types.h"
+#include "core/file_sys/vfs_types.h"
 #include "yuzu/compatibility_list.h"
 
 class GameListWorker;

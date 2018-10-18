@@ -112,7 +112,9 @@ void ConfigureGraphics::mergeValuesChange(PerGameValuesChange& change) {
 void ConfigureGraphics::applyConfiguration() {
     Settings::values->resolution_factor =
         ToResolutionFactor(static_cast<Resolution>(ui->resolution_factor_combobox->currentIndex()));
-    Settings::values->use_frame_limit = ui->toggle_frame_limit->isChecked();
+    Settings::values->use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked
+                                            ? Settings::values.default_game.use_frame_limit
+                                            : ui->toggle_frame_limit->isChecked();
     Settings::values->frame_limit = ui->frame_limit->value();
     Settings::values.use_accurate_gpu_emulation = ui->use_accurate_gpu_emulation->isChecked();
     Settings::values->bg_red = static_cast<float>(bg_color.redF());
