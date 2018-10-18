@@ -11,6 +11,7 @@
 #include <vector>
 #include <boost/optional.hpp>
 #include "common/common_types.h"
+#include "core/file_sys/control_metadata.h"
 #include "core/file_sys/vfs.h"
 
 namespace Kernel {
@@ -239,6 +240,15 @@ public:
      * @return ResultStatus result of function
      */
     virtual ResultStatus ReadTitle(std::string& title) {
+        return ResultStatus::ErrorNotImplemented;
+    }
+
+    /**
+     * Get the developer of the application
+     * @param developer Reference to store the application developer into
+     * @return ResultStatus result of function
+     */
+    virtual ResultStatus ReadDeveloper(std::string& developer) {
         return ResultStatus::ErrorNotImplemented;
     }
 
