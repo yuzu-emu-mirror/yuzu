@@ -21,6 +21,7 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_per_general.h"
+#include "yuzu/ui_settings.h"
 
 ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigurePerGameGeneral>()) {
@@ -59,6 +60,9 @@ ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     ui->icon_view->setScene(scene);
 
     this->loadConfiguration();
+
+    connect(item_model, &QStandardItemModel::itemChanged, this,
+            []() { UISettings::values.is_game_list_reload_pending.exchange(true); });
 }
 
 ConfigurePerGameGeneral::~ConfigurePerGameGeneral() = default;
