@@ -966,7 +966,6 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 }
 
 void GMainWindow::OnGameListOpenProperties(FileSys::VirtualFile file) {
-
     u64 title_id{};
     if (Loader::GetLoader(file)->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
         QMessageBox::information(
@@ -1346,13 +1345,30 @@ void GMainWindow::ToggleWindowMode() {
 }
 
 void GMainWindow::OnConfigure() {
-    Settings::values.SetCurrentTitleID(Settings::DEFAULT_PER_GAME);
-    ConfigureDialog configureDialog(this, hotkey_registry);
+    const auto old_title_id = Settings::values.CurrentTitleID();
     auto old_theme = UISettings::values.theme;
     const bool old_discord_presence = UISettings::values.enable_discord_presence;
-    auto result = configureDialog.exec();
+
+    int result = QDialog::Rejected;
+
+    if (emu_thread == nullptr) {
+        Settings::values.SetCurrentTitleID(Settings::DEFAULT_PER_GAME);
+        ConfigureDialog configureDialog(this, hotkey_registry);
+
+        result = configureDialog.exec();
+        if (result == QDialog::Accepted)
+            configureDialog.applyConfiguration();
+    } else {
+        ConfigurePerGameDialog configureDialog(this,
+                                               Core::System::GetInstance().GetAppLoader().GetFile(),
+                                               config->GetPerGameSettingsDelta(old_title_id));
+
+        result = configureDialog.exec();
+        if (result == QDialog::Accepted)
+            config->SetPerGameSettingsDelta(old_title_id, configureDialog.applyConfiguration());
+    }
+
     if (result == QDialog::Accepted) {
-        configureDialog.applyConfiguration();
         if (UISettings::values.theme != old_theme)
             UpdateUITheme();
         if (UISettings::values.enable_discord_presence != old_discord_presence)
@@ -1364,6 +1380,9 @@ void GMainWindow::OnConfigure() {
         }
         config->Save();
     }
+
+    if (emu_thread == nullptr)
+        Settings::values.SetCurrentTitleID(old_title_id);
 }
 
 void GMainWindow::OnLoadAmiibo() {

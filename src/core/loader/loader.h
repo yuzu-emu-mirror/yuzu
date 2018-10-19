@@ -252,6 +252,10 @@ public:
         return ResultStatus::ErrorNotImplemented;
     }
 
+    FileSys::VirtualFile GetFile() {
+        return file;
+    }
+
 protected:
     FileSys::VirtualFile file;
     bool is_loaded = false;

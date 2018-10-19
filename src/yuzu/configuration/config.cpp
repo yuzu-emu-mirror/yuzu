@@ -512,7 +512,7 @@ void Config::SaveValues() {
         if (update_values.find(read_title_id) == update_values.end()) {
             ReadPerGameSettings(values);
 
-            PerGameValuesChange change;
+            PerGameValuesChange change{};
             ReadPerGameSettingsDelta(change);
 
             update_values.emplace(read_title_id, values);
