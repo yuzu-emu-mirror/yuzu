@@ -64,6 +64,7 @@ void Values::SetCurrentTitleID(u64 title_id) {
         return;
 
     update_current_game(title_id, current_game);
+    current_title_id = title_id;
 }
 
 PerGameValues& Values::operator[](u64 title_id) {

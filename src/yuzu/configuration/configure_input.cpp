@@ -262,7 +262,7 @@ void ConfigureInput::applyConfiguration() {
     std::transform(analogs_delta.begin(), analogs_delta.end(), changes.analogs.begin(),
                    [](const QCheckBox* box) { return box->isChecked(); });
 
-    temp = ApplyValuesDelta(*Settings::values, temp, changes);
+    temp = ApplyValuesDelta(Settings::values.default_game, temp, changes);
     Settings::values->buttons = temp.buttons;
     Settings::values->analogs = temp.analogs;
 }

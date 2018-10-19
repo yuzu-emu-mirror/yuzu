@@ -122,7 +122,7 @@ Settings::PerGameValues ApplyValuesDelta(const Settings::PerGameValues& base,
     return out;
 }
 
-void Config::ReadPerGameSettings(Settings::PerGameValues& values) {
+void Config::ReadPerGameSettings(Settings::PerGameValues& values) const {
     qt_config->beginGroup("Controls");
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
         std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
@@ -158,7 +158,7 @@ void Config::ReadPerGameSettings(Settings::PerGameValues& values) {
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
-
+    values.use_docked_mode = qt_config->value("use_docked_mode", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("Renderer");
@@ -194,7 +194,7 @@ void Config::ReadPerGameSettings(Settings::PerGameValues& values) {
     qt_config->endGroup();
 }
 
-void Config::ReadPerGameSettingsDelta(PerGameValuesChange& values) {
+void Config::ReadPerGameSettingsDelta(PerGameValuesChange& values) const {
     qt_config->beginGroup("Controls");
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
         values.buttons[i] = qt_config
@@ -246,22 +246,25 @@ void Config::ReadPerGameSettingsDelta(PerGameValuesChange& values) {
 
 bool Config::UpdateCurrentGame(u64 title_id, Settings::PerGameValues& values) {
     if (Settings::values.CurrentTitleID() != 0) {
-        update_values.insert_or_assign(Settings::values.CurrentTitleID(),
-                                       *Settings::values.operator->());
+        update_values.insert_or_assign(Settings::values.CurrentTitleID(), *Settings::values);
     }
 
     if (update_values.find(title_id) != update_values.end()) {
-        values = update_values[title_id];
+        values = ApplyValuesDelta(Settings::values.default_game, update_values[title_id],
+                                  GetPerGameSettingsDelta(title_id));
         return true;
     }
 
     const auto size = qt_config->beginReadArray("Per Game Settings");
 
+    bool found = false;
     for (int i = 0; i < size; ++i) {
         qt_config->setArrayIndex(i);
         const auto read_title_id = qt_config->value("title_id", 0).toULongLong();
         if (read_title_id != title_id)
             continue;
+
+        found = true;
 
         PerGameValuesChange changes{};
         ReadPerGameSettings(values);
@@ -271,6 +274,9 @@ bool Config::UpdateCurrentGame(u64 title_id, Settings::PerGameValues& values) {
     }
 
     qt_config->endArray();
+
+    if (!found)
+        values = Settings::values.default_game;
 
     return true;
 }
@@ -455,11 +461,11 @@ void Config::SavePerGameSettings(const Settings::PerGameValues& values) {
 void Config::SavePerGameSettingsDelta(const PerGameValuesChange& values) {
     qt_config->beginGroup("Controls");
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-        qt_config->setValue(QString::fromStdString(Settings::NativeButton::mapping[i]),
+        qt_config->setValue(QString::fromStdString(Settings::NativeButton::mapping[i]) + "_changed",
                             values.buttons[i]);
     }
     for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-        qt_config->setValue(QString::fromStdString(Settings::NativeAnalog::mapping[i]),
+        qt_config->setValue(QString::fromStdString(Settings::NativeAnalog::mapping[i]) + "_changed",
                             values.analogs[i]);
     }
     qt_config->setValue("motion_device_changed", values.motion_device);
@@ -523,6 +529,18 @@ void Config::SaveValues() {
         qt_config->setArrayIndex(i++);
         qt_config->setValue("title_id", kv.first);
         SavePerGameSettings(kv.second);
+
+        const auto iter = update_values_delta.find(kv.first);
+        if (iter != update_values_delta.end()) {
+            SavePerGameSettingsDelta(iter->second);
+        } else {
+            LOG_WARNING(
+                Config,
+                "Missing values delta for title_id={:016X}! Falling back to default-derived delta.",
+                kv.first);
+            SavePerGameSettingsDelta(
+                CalculateValuesDelta(Settings::values.default_game, kv.second));
+        }
     }
 
     qt_config->endArray();
@@ -625,10 +643,26 @@ void Config::Save() {
 }
 
 PerGameValuesChange Config::GetPerGameSettingsDelta(u64 title_id) const {
-    if (update_values_delta.find(title_id) == update_values_delta.end())
-        return {};
+    if (update_values_delta.find(title_id) != update_values_delta.end())
+        return update_values_delta.at(title_id);
 
-    return update_values_delta.at(title_id);
+    const auto size = qt_config->beginReadArray("Per Game Settings");
+
+    for (int i = 0; i < size; ++i) {
+        qt_config->setArrayIndex(i);
+        const auto read_title_id = qt_config->value("title_id", 0).toULongLong();
+        if (read_title_id != title_id)
+            continue;
+
+        PerGameValuesChange changes{};
+        ReadPerGameSettingsDelta(changes);
+        qt_config->endArray();
+        return changes;
+    }
+
+    qt_config->endArray();
+
+    return {};
 }
 
 void Config::SetPerGameSettingsDelta(u64 title_id, PerGameValuesChange change) {

@@ -67,8 +67,8 @@ private:
     std::map<u64, Settings::PerGameValues> update_values;
     std::map<u64, PerGameValuesChange> update_values_delta;
 
-    void ReadPerGameSettings(Settings::PerGameValues& values);
-    void ReadPerGameSettingsDelta(PerGameValuesChange& values);
+    void ReadPerGameSettings(Settings::PerGameValues& values) const;
+    void ReadPerGameSettingsDelta(PerGameValuesChange& values) const;
     void SavePerGameSettings(const Settings::PerGameValues& values);
     void SavePerGameSettingsDelta(const PerGameValuesChange& values);
     void ReadValues();
