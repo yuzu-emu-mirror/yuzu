@@ -14,7 +14,6 @@ std::string n2hexstr(I w, size_t hex_len = sizeof(I) << 1) {
 }
 
 std::string ShaderDumper::hashName() {
-    u64 hash = Common::ComputeHash64(program.data(), sizeof(u64) * program.size());
     return n2hexstr(hash);
 }
 
@@ -28,7 +27,7 @@ bool IsSchedInstruction(u32 offset, u32 main_offset) {
 
 void ShaderDumper::dump() {
     FileUtil::IOFile sFile;
-    std::string name = prefix + hashName();
+    std::string name = prefix + hashName() + ".bin";
     sFile.Open(name, "wb");
     u32 start_offset = 10;
     u32 offset = start_offset;
@@ -50,5 +49,13 @@ void ShaderDumper::dump() {
         sFile.WriteArray<u64>(&fill, 1);
         size += 8;
     }
+    sFile.Close();
+}
+
+void ShaderDumper::dumpText(const std::string& s) {
+    FileUtil::IOFile sFile;
+    std::string name = prefix + hashName() + ".txt";
+    sFile.Open(name, "w");
+    sFile.WriteString(s);
     sFile.Close();
 }

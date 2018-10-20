@@ -83,10 +83,12 @@ void main() {
     if (faultyA) {
         ShaderDumper s(setup.program.code, "VS");
         s.dump();
+        s.dumpText(out);
     }
     if (faultyB) {
         ShaderDumper s(setup.program.code_b, "VS");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }
@@ -122,6 +124,7 @@ void main() {
     if (faulty) {
         ShaderDumper s(setup.program.code, "GS");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }
@@ -162,6 +165,7 @@ void main() {
     if (faulty) {
         ShaderDumper s(setup.program.code, "FM");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }
