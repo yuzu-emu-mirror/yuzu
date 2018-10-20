@@ -165,6 +165,7 @@ private slots:
     void OnMenuRecentFile();
     void OnConfigure();
     void OnAbout();
+    void OnKeyDumpHelp();
     void OnToggleFilterBar();
     void OnDisplayTitleBars(bool);
     void ToggleFullscreen();

@@ -105,6 +105,7 @@
     <addaction name="separator"/>
      <addaction name="action_Rederive"/>
     <addaction name="action_About"/>
+    <addaction name="action_Key_Dump"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Emulation"/>
@@ -170,6 +171,11 @@
     <string>About yuzu</string>
    </property>
   </action>
+   <action name="action_Key_Dump">
+     <property name="text">
+       <string>Key Dump Guide</string>
+     </property>
+   </action>
   <action name="action_Single_Window_Mode">
    <property name="checkable">
     <bool>true</bool>
