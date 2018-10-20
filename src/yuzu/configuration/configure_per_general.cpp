@@ -59,8 +59,6 @@ ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     scene = new QGraphicsScene;
     ui->icon_view->setScene(scene);
 
-    this->loadConfiguration();
-
     connect(item_model, &QStandardItemModel::itemChanged, this,
             []() { UISettings::values.is_game_list_reload_pending.exchange(true); });
 }
@@ -83,29 +81,9 @@ void ConfigurePerGameGeneral::applyConfiguration() {
                                             : ui->use_docked_mode->isChecked();
 }
 
-void ConfigurePerGameGeneral::loadFromFile(FileSys::VirtualFile file) {
-    this->file = std::move(file);
-    this->loadConfiguration();
-}
-
-void ConfigurePerGameGeneral::loadValuesChange(const PerGameValuesChange& change) {
-    ui->use_docked_mode->setCheckState(
-        change.use_docked_mode ? (Settings::values->use_docked_mode ? Qt::Checked : Qt::Unchecked)
-                               : Qt::PartiallyChecked);
-}
-
-void ConfigurePerGameGeneral::mergeValuesChange(PerGameValuesChange& change) {
-    change.use_docked_mode = ui->use_docked_mode->checkState() != Qt::PartiallyChecked;
-}
-
-void ConfigurePerGameGeneral::loadConfiguration() {
-    if (file == nullptr)
-        return;
-
-    const auto loader = Loader::GetLoader(file);
-
+void ConfigurePerGameGeneral::loadGameData(Loader::AppLoader& loader) {
     u64 program_id{};
-    if (loader->ReadProgramId(program_id) == Loader::ResultStatus::Success) {
+    if (loader.ReadProgramId(program_id) == Loader::ResultStatus::Success) {
         ui->display_title_id->setText(QStringLiteral("%1").arg(program_id, 16, 16, QChar{'0'}));
 
         FileSys::PatchManager pm{program_id};
@@ -118,11 +96,11 @@ void ConfigurePerGameGeneral::loadConfiguration() {
                 QString::fromStdString(control.first->GetDeveloperName()));
         } else {
             std::string title;
-            if (loader->ReadTitle(title) == Loader::ResultStatus::Success)
+            if (loader.ReadTitle(title) == Loader::ResultStatus::Success)
                 ui->display_name->setText(QString::fromStdString(title));
 
             std::string developer;
-            if (loader->ReadDeveloper(developer) == Loader::ResultStatus::Success)
+            if (loader.ReadDeveloper(developer) == Loader::ResultStatus::Success)
                 ui->display_developer->setText(QString::fromStdString(developer));
 
             ui->display_version->setText("1.0.0");
@@ -139,7 +117,7 @@ void ConfigurePerGameGeneral::loadConfiguration() {
                                         Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
         } else {
             std::vector<u8> bytes;
-            if (loader->ReadIcon(bytes) == Loader::ResultStatus::Success) {
+            if (loader.ReadIcon(bytes) == Loader::ResultStatus::Success) {
                 scene->clear();
 
                 QPixmap map;
@@ -151,7 +129,7 @@ void ConfigurePerGameGeneral::loadConfiguration() {
         }
 
         FileSys::VirtualFile update_raw;
-        loader->ReadUpdateRaw(update_raw);
+        loader.ReadUpdateRaw(update_raw);
 
         const auto& disabled = Settings::values[program_id].disabled_patches;
 
@@ -173,12 +151,24 @@ void ConfigurePerGameGeneral::loadConfiguration() {
         tree_view->setColumnWidth(0, 5 * tree_view->width() / 16);
     }
 
+    const auto file = loader.GetFile();
+
     ui->display_filename->setText(QString::fromStdString(file->GetName()));
 
     ui->display_format->setText(
-        QString::fromStdString(Loader::GetFileTypeString(loader->GetFileType())));
+        QString::fromStdString(Loader::GetFileTypeString(loader.GetFileType())));
 
     QLocale locale = this->locale();
     QString valueText = locale.formattedDataSize(file->GetSize());
     ui->display_size->setText(valueText);
+}
+
+void ConfigurePerGameGeneral::loadValuesChange(const PerGameValuesChange& change) {
+    ui->use_docked_mode->setCheckState(
+        change.use_docked_mode ? (Settings::values->use_docked_mode ? Qt::Checked : Qt::Unchecked)
+                               : Qt::PartiallyChecked);
+}
+
+void ConfigurePerGameGeneral::mergeValuesChange(PerGameValuesChange& change) {
+    change.use_docked_mode = ui->use_docked_mode->checkState() != Qt::PartiallyChecked;
 }

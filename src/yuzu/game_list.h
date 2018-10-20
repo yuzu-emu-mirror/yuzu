@@ -69,7 +69,7 @@ signals:
     void OpenFolderRequested(u64 program_id, GameListOpenTarget target);
     void DumpRomFSRequested(u64 program_id, const std::string& game_path);
     void CopyTIDRequested(u64 program_id);
-    void OpenGamePropertiesDialogRequested(FileSys::VirtualFile file);
+    void OpenGamePropertiesDialogRequested(const std::string& file);
     void NavigateToGamedbEntryRequested(u64 program_id,
                                         const CompatibilityList& compatibility_list);
 

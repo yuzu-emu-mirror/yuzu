@@ -393,9 +393,8 @@ void GameList::PopupContextMenu(const QPoint& menu_location) {
     connect(copy_tid, &QAction::triggered, [&]() { emit CopyTIDRequested(program_id); });
     connect(navigate_to_gamedb_entry, &QAction::triggered,
             [&]() { emit NavigateToGamedbEntryRequested(program_id, compatibility_list); });
-    connect(properties, &QAction::triggered, [&]() {
-        emit OpenGamePropertiesDialogRequested(vfs->OpenFile(path, FileSys::Mode::Read));
-    });
+    connect(properties, &QAction::triggered,
+            [&]() { emit OpenGamePropertiesDialogRequested(path); });
 
     context_menu.exec(tree_view->viewport()->mapToGlobal(menu_location));
 }

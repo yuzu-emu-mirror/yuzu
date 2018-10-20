@@ -38,7 +38,6 @@ namespace Core {
 
 /*static*/ System System::s_instance;
 
-namespace {
 FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
                                          const std::string& path) {
     // To account for split 00+01+etc files.
@@ -70,6 +69,7 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
     return vfs->OpenFile(path, FileSys::Mode::Read);
 }
 
+namespace {
 /// Runs a CPU core while the system is powered on
 void RunCpuCore(Cpu& cpu_state) {
     while (Core::System::GetInstance().IsPoweredOn()) {

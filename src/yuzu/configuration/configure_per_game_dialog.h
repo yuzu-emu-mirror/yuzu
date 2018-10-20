@@ -6,7 +6,10 @@
 
 #include <memory>
 #include <QDialog>
-#include "core/file_sys/vfs_types.h"
+
+namespace Loader {
+class AppLoader;
+}
 
 namespace Ui {
 class ConfigurePerGameDialog;
@@ -16,7 +19,7 @@ class ConfigurePerGameDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ConfigurePerGameDialog(QWidget* parent, FileSys::VirtualFile file,
+    explicit ConfigurePerGameDialog(QWidget* parent, Loader::AppLoader& file,
                                     const PerGameValuesChange& change);
     ~ConfigurePerGameDialog();
 

@@ -965,9 +965,10 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
     QDesktopServices::openUrl(QUrl("https://yuzu-emu.org/game/" + directory));
 }
 
-void GMainWindow::OnGameListOpenProperties(FileSys::VirtualFile file) {
+void GMainWindow::OnGameListOpenProperties(const std::string& file) {
     u64 title_id{};
-    if (Loader::GetLoader(file)->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
+    auto loader = Loader::GetLoader(Core::GetGameFileFromPath(vfs, file));
+    if (loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
         QMessageBox::information(
             this, tr("Per Game Configuration"),
             tr("Per Game Configuration is not supported on games that do not have a title ID. "
@@ -976,7 +977,7 @@ void GMainWindow::OnGameListOpenProperties(FileSys::VirtualFile file) {
     }
 
     Settings::values.SetCurrentTitleID(title_id);
-    ConfigurePerGameDialog dialog{this, file, config->GetPerGameSettingsDelta(title_id)};
+    ConfigurePerGameDialog dialog{this, *loader, config->GetPerGameSettingsDelta(title_id)};
     auto result = dialog.exec();
     if (result != QDialog::Accepted)
         return;
@@ -1359,8 +1360,7 @@ void GMainWindow::OnConfigure() {
         if (result == QDialog::Accepted)
             configureDialog.applyConfiguration();
     } else {
-        ConfigurePerGameDialog configureDialog(this,
-                                               Core::System::GetInstance().GetAppLoader().GetFile(),
+        ConfigurePerGameDialog configureDialog(this, Core::System::GetInstance().GetAppLoader(),
                                                config->GetPerGameSettingsDelta(old_title_id));
 
         result = configureDialog.exec();

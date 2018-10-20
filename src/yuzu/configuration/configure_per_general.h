@@ -17,6 +17,10 @@ class QStandardItem;
 class QStandardItemModel;
 class QTreeView;
 
+namespace Loader {
+class AppLoader;
+}
+
 namespace Ui {
 class ConfigurePerGameGeneral;
 }
@@ -31,16 +35,13 @@ public:
     /// Save all button configurations to settings file
     void applyConfiguration();
 
-    void loadFromFile(FileSys::VirtualFile file);
+    void loadGameData(Loader::AppLoader& file);
 
     void loadValuesChange(const PerGameValuesChange& change);
     void mergeValuesChange(PerGameValuesChange& change);
 
 private:
-    void loadConfiguration();
-
     std::unique_ptr<Ui::ConfigurePerGameGeneral> ui;
-    FileSys::VirtualFile file;
 
     QVBoxLayout* layout;
     QTreeView* tree_view;

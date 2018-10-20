@@ -158,7 +158,7 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
-    void OnGameListOpenProperties(FileSys::VirtualFile file);
+    void OnGameListOpenProperties(const std::string& file);
     void OnMenuLoadFile();
     void OnMenuLoadFolder();
     void OnMenuInstallToNAND();

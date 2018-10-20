@@ -8,11 +8,11 @@
 #include "yuzu/configuration/config.h"
 #include "yuzu/configuration/configure_per_game_dialog.h"
 
-ConfigurePerGameDialog::ConfigurePerGameDialog(QWidget* parent, FileSys::VirtualFile file,
+ConfigurePerGameDialog::ConfigurePerGameDialog(QWidget* parent, Loader::AppLoader& loader,
                                                const PerGameValuesChange& change)
     : QDialog(parent), ui(new Ui::ConfigurePerGameDialog) {
     ui->setupUi(this);
-    ui->generalTab->loadFromFile(std::move(file));
+    ui->generalTab->loadGameData(loader);
     ui->generalTab->loadValuesChange(change);
     ui->inputTab->setPerGame(true);
     ui->inputTab->loadValuesChange(change);
