@@ -80,21 +80,16 @@ void main() {
 }
 
 )";
-    if (setup.IsDualProgram()) {
-        ProgramResult program_b =
-            Decompiler::DecompileProgram(setup.program.code_b, PROGRAM_OFFSET,
-                                         Maxwell3D::Regs::ShaderStage::Vertex, "vertex_b", faultyB)
-                .get_value_or({});
-        out += program_b.first;
-    }
 
     if (faultyA) {
         ShaderDumper s(setup.program.code, "VS");
         s.dump();
+        s.dumpText(out);
     }
     if (faultyB) {
         ShaderDumper s(setup.program.code_b, "VS");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }
@@ -134,6 +129,7 @@ void main() {
     if (faulty) {
         ShaderDumper s(setup.program.code, "GS");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }
@@ -201,6 +197,7 @@ void main() {
     if (faulty) {
         ShaderDumper s(setup.program.code, "FM");
         s.dump();
+        s.dumpText(out);
     }
     return {out, program.second};
 }

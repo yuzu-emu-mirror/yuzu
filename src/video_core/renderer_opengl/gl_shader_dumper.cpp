@@ -1,8 +1,27 @@
 
+#include <unordered_set>
+
 #include "common/file_util.h"
 #include "common/hash.h"
 #include "video_core/engines/shader_bytecode.h"
 #include "video_core/renderer_opengl/gl_shader_dumper.h"
+
+struct DumpSet {
+    DumpSet() : values{} {
+        // Insert Marked Shaders here.
+        values.insert(0);
+    }
+    const bool IsMarked(u64 index) const {
+        return values.count(index) != 0;
+    }
+    std::unordered_set<u64> values;
+};
+
+auto dump_set = DumpSet{};
+
+bool ShaderDumper::IsProgramMarked(u64 hash) {
+    return dump_set.IsMarked(hash);
+}
 
 template <typename I>
 std::string n2hexstr(I w, size_t hex_len = sizeof(I) << 1) {
@@ -14,7 +33,6 @@ std::string n2hexstr(I w, size_t hex_len = sizeof(I) << 1) {
 }
 
 std::string ShaderDumper::hashName() {
-    u64 hash = Common::ComputeHash64(program.data(), sizeof(u64) * program.size());
     return n2hexstr(hash);
 }
 
@@ -28,7 +46,7 @@ bool IsSchedInstruction(u32 offset, u32 main_offset) {
 
 void ShaderDumper::dump() {
     FileUtil::IOFile sFile;
-    std::string name = prefix + hashName();
+    std::string name = prefix + hashName() + ".bin";
     sFile.Open(name, "wb");
     u32 start_offset = 10;
     u32 offset = start_offset;
@@ -50,5 +68,13 @@ void ShaderDumper::dump() {
         sFile.WriteArray<u64>(&fill, 1);
         size += 8;
     }
+    sFile.Close();
+}
+
+void ShaderDumper::dumpText(const std::string out) {
+    FileUtil::IOFile sFile;
+    std::string name = prefix + hashName() + ".txt";
+    sFile.Open(name, "w");
+    sFile.WriteString(out);
     sFile.Close();
 }

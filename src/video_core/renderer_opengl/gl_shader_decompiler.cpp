@@ -17,6 +17,7 @@
 #include "video_core/engines/shader_header.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_shader_decompiler.h"
+#include "video_core/renderer_opengl/gl_shader_dumper.h"
 
 namespace OpenGL::GLShader::Decompiler {
 
@@ -278,7 +279,7 @@ public:
                         const Maxwell3D::Regs::ShaderStage& stage, const std::string& suffix,
                         const Tegra::Shader::Header& header)
         : shader{shader}, declarations{declarations}, stage{stage}, suffix{suffix}, header{header},
-          fixed_pipeline_output_attributes_used{}, local_memory_size{0} {
+          fixed_pipeline_output_attributes_used{}, local_memory_size{0}, faulty{false} {
         BuildRegisterList();
         BuildInputList();
     }
@@ -601,6 +602,10 @@ public:
 
     void SetLocalMemory(u64 lmem) {
         local_memory_size = lmem;
+    }
+
+    bool IsFaulty() {
+        return faulty;
     }
 
 private:
@@ -942,6 +947,7 @@ private:
     const Tegra::Shader::Header& header;
     std::unordered_set<Attribute::Index> fixed_pipeline_output_attributes_used;
     u64 local_memory_size;
+    bool faulty;
 };
 
 class GLSLGenerator {
@@ -3732,6 +3738,12 @@ private:
     }
 
     void Generate(const std::string& suffix) {
+
+        u64 hash = ShaderDumper::GenerateHash(program_code);
+
+        shader.AddLine(fmt::format("// Program Hash Id: 0x{:x}UL", hash));
+        faulty |= ShaderDumper::IsProgramMarked(hash);
+
         // Add declarations for all subroutines
         for (const auto& subroutine : subroutines) {
             shader.AddLine("bool " + subroutine.GetName() + "();");
@@ -3805,6 +3817,7 @@ private:
         }
 
         GenerateDeclarations();
+        faulty = faulty || regs.IsFaulty();
     }
 
     /// Add declarations for registers
@@ -3841,8 +3854,8 @@ std::string GetCommonDeclarations() {
 }
 
 std::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
-                                                Maxwell3D::Regs::ShaderStage stage,
-                                                const std::string& suffix, bool& faulty_shader) {
+                                              Maxwell3D::Regs::ShaderStage stage,
+                                              const std::string& suffix, bool& faulty_shader) {
     try {
         const auto subroutines =
             ControlFlowAnalyzer(program_code, main_offset, suffix).GetSubroutines();
