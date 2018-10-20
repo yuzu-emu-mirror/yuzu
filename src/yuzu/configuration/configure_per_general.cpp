@@ -22,6 +22,7 @@
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_per_general.h"
 #include "yuzu/ui_settings.h"
+#include "yuzu/util/util.h"
 
 ConfigurePerGameGeneral::ConfigurePerGameGeneral(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigurePerGameGeneral>()) {
@@ -158,8 +159,7 @@ void ConfigurePerGameGeneral::loadGameData(Loader::AppLoader& loader) {
     ui->display_format->setText(
         QString::fromStdString(Loader::GetFileTypeString(loader.GetFileType())));
 
-    QLocale locale = this->locale();
-    QString valueText = locale.formattedDataSize(file->GetSize());
+    QString valueText = ReadableByteSize(file->GetSize());
     ui->display_size->setText(valueText);
 }
 
