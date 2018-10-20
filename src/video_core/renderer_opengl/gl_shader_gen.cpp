@@ -5,6 +5,7 @@
 #include "common/assert.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_shader_decompiler.h"
+#include "video_core/renderer_opengl/gl_shader_dumper.h"
 #include "video_core/renderer_opengl/gl_shader_gen.h"
 
 namespace OpenGL::GLShader {
@@ -14,6 +15,8 @@ using Tegra::Engines::Maxwell3D;
 static constexpr u32 PROGRAM_OFFSET{10};
 
 ProgramResult GenerateVertexShader(const ShaderSetup& setup) {
+    bool faultyA = false;
+    bool faultyB = false;
     std::string out = "#version 430 core\n";
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
@@ -36,7 +39,7 @@ layout(std140) uniform vs_config {
 
     ProgramResult program =
         Decompiler::DecompileProgram(setup.program.code, PROGRAM_OFFSET,
-                                     Maxwell3D::Regs::ShaderStage::Vertex, "vertex")
+                                     Maxwell3D::Regs::ShaderStage::Vertex, "vertex", faultyA)
             .value_or(ProgramResult());
 
     out += program.first;
@@ -44,7 +47,7 @@ layout(std140) uniform vs_config {
     if (setup.IsDualProgram()) {
         ProgramResult program_b =
             Decompiler::DecompileProgram(setup.program.code_b, PROGRAM_OFFSET,
-                                         Maxwell3D::Regs::ShaderStage::Vertex, "vertex_b")
+                                         Maxwell3D::Regs::ShaderStage::Vertex, "vertex_b", faultyB)
                 .value_or(ProgramResult());
         out += program_b.first;
     }
@@ -77,11 +80,27 @@ void main() {
 }
 
 )";
+    if (setup.IsDualProgram()) {
+        ProgramResult program_b =
+            Decompiler::DecompileProgram(setup.program.code_b, PROGRAM_OFFSET,
+                                         Maxwell3D::Regs::ShaderStage::Vertex, "vertex_b", faultyB)
+                .get_value_or({});
+        out += program_b.first;
+    }
 
+    if (faultyA) {
+        ShaderDumper s(setup.program.code, "VS");
+        s.dump();
+    }
+    if (faultyB) {
+        ShaderDumper s(setup.program.code_b, "VS");
+        s.dump();
+    }
     return {out, program.second};
 }
 
 ProgramResult GenerateGeometryShader(const ShaderSetup& setup) {
+    bool faulty = false;
     std::string out = "#version 430 core\n";
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
@@ -89,7 +108,7 @@ ProgramResult GenerateGeometryShader(const ShaderSetup& setup) {
 
     ProgramResult program =
         Decompiler::DecompileProgram(setup.program.code, PROGRAM_OFFSET,
-                                     Maxwell3D::Regs::ShaderStage::Geometry, "geometry")
+                                     Maxwell3D::Regs::ShaderStage::Geometry, "geometry", faulty)
             .value_or(ProgramResult());
     out += R"(
 out gl_PerVertex {
@@ -112,10 +131,15 @@ void main() {
 
 )";
     out += program.first;
+    if (faulty) {
+        ShaderDumper s(setup.program.code, "GS");
+        s.dump();
+    }
     return {out, program.second};
 }
 
 ProgramResult GenerateFragmentShader(const ShaderSetup& setup) {
+    bool faulty = false;
     std::string out = "#version 430 core\n";
     out += "#extension GL_ARB_separate_shader_objects : enable\n\n";
     out += Decompiler::GetCommonDeclarations();
@@ -123,7 +147,7 @@ ProgramResult GenerateFragmentShader(const ShaderSetup& setup) {
 
     ProgramResult program =
         Decompiler::DecompileProgram(setup.program.code, PROGRAM_OFFSET,
-                                     Maxwell3D::Regs::ShaderStage::Fragment, "fragment")
+                                     Maxwell3D::Regs::ShaderStage::Fragment, "fragment", faulty)
             .value_or(ProgramResult());
     out += R"(
 layout(location = 0) out vec4 FragColor0;
@@ -174,6 +198,10 @@ void main() {
 
 )";
     out += program.first;
+    if (faulty) {
+        ShaderDumper s(setup.program.code, "FM");
+        s.dump();
+    }
     return {out, program.second};
 }
 } // namespace OpenGL::GLShader

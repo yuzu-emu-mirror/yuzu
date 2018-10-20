@@ -953,7 +953,12 @@ public:
         std::memcpy(&header, program_code.data(), sizeof(Tegra::Shader::Header));
         local_memory_size = header.GetLocalMemorySize();
         regs.SetLocalMemory(local_memory_size);
+        faulty = false;
         Generate(suffix);
+    }
+
+    bool IsFaulty() {
+        return faulty;
     }
 
     std::string GetShaderCode() {
@@ -1460,6 +1465,7 @@ private:
 
         // Decoding failure
         if (!opcode) {
+            faulty = true;
             LOG_CRITICAL(HW_GPU, "Unhandled instruction: {0:x}", instr.value);
             UNREACHABLE();
             return offset + 1;
@@ -3819,6 +3825,7 @@ private:
     Maxwell3D::Regs::ShaderStage stage;
     const std::string& suffix;
     u64 local_memory_size;
+    bool faulty;
 
     ShaderWriter shader;
     ShaderWriter declarations;
@@ -3834,12 +3841,13 @@ std::string GetCommonDeclarations() {
 }
 
 std::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u32 main_offset,
-                                              Maxwell3D::Regs::ShaderStage stage,
-                                              const std::string& suffix) {
+                                                Maxwell3D::Regs::ShaderStage stage,
+                                                const std::string& suffix, bool& faulty_shader) {
     try {
         const auto subroutines =
             ControlFlowAnalyzer(program_code, main_offset, suffix).GetSubroutines();
         GLSLGenerator generator(subroutines, program_code, main_offset, stage, suffix);
+        faulty_shader = generator.IsFaulty();
         return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
         LOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());
