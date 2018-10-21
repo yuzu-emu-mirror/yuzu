@@ -85,6 +85,13 @@ use_cpu_jit =
 use_multi_core=
 
 [Renderer]
+# Which backend API to use.
+# 0: OpenGL (default), 1: Vulkan
+backend =
+
+# Which Vulkan physical device to use (defaults to 0)
+vulkan_device =
+
 # Whether to use software or hardware rendering.
 # 0: Software, 1 (default): Hardware
 use_hw_renderer =

@@ -343,6 +343,11 @@ struct TouchscreenInput {
     u32 rotation_angle;
 };
 
+enum class RendererBackend {
+    OpenGL = 0,
+    Vulkan = 1,
+};
+
 struct Values {
     // System
     bool use_docked_mode;
@@ -380,6 +385,9 @@ struct Values {
     std::string sdmc_dir;
 
     // Renderer
+    RendererBackend renderer_backend;
+    int vulkan_device;
+
     float resolution_factor;
     bool use_frame_limit;
     u16 frame_limit;

@@ -68,7 +68,27 @@ add_library(video_core STATIC
     video_core.h
 )
 
+if (Vulkan_FOUND)
+    target_sources(video_core PRIVATE
+        renderer_vulkan/renderer_vulkan.cpp
+        renderer_vulkan/renderer_vulkan.h
+        renderer_vulkan/vk_rasterizer.cpp
+        renderer_vulkan/vk_rasterizer.h
+        renderer_vulkan/vk_swapchain.cpp
+        renderer_vulkan/vk_swapchain.h
+        renderer_vulkan/vk_sync.cpp
+        renderer_vulkan/vk_sync.h
+        renderer_vulkan/vk_helper.cpp
+        renderer_vulkan/vk_helper.h)
+
+    target_include_directories(video_core PRIVATE Vulkan::Vulkan)
+    target_compile_definitions(video_core PRIVATE HAS_VULKAN)
+endif()
+
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
 target_link_libraries(video_core PRIVATE glad)
+if (Vulkan_FOUND)
+    target_link_libraries(video_core PRIVATE Vulkan::Vulkan)
+endif()

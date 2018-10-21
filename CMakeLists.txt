@@ -21,6 +21,8 @@ option(YUZU_USE_BUNDLED_UNICORN "Build/Download bundled Unicorn" ON)
 
 option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 
+option(ENABLE_VULKAN "Enables Vulkan backend" OFF)
+
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
 if(NOT EXISTS ${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit)
@@ -319,6 +321,10 @@ if (ENABLE_QT)
     endif()
 
     find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
+endif()
+
+if (ENABLE_VULKAN)
+    find_package(Vulkan REQUIRED)
 endif()
 
 # Platform-specific library requirements

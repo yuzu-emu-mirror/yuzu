@@ -52,6 +52,12 @@ public:
     /// Releases (dunno if this is the "right" word) the GLFW context from the caller thread
     virtual void DoneCurrent() = 0;
 
+    /// Returns if window is shown (not minimized)
+    virtual bool IsShown() const = 0;
+
+    /// Retrieves Vulkan specific handlers from the window
+    virtual void RetrieveVulkanHandlers(void** instance, void** surface) const = 0;
+
     /**
      * Signal that a touch pressed event has occurred (e.g. mouse click pressed)
      * @param framebuffer_x Framebuffer x-coordinate that was pressed

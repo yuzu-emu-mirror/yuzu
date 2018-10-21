@@ -336,6 +336,11 @@ void Config::ReadValues() {
     Settings::values.use_multi_core = sdl2_config->GetBoolean("Core", "use_multi_core", false);
 
     // Renderer
+    const int renderer_backend = sdl2_config->GetInteger(
+        "Renderer", "backend", static_cast<int>(Settings::RendererBackend::OpenGL));
+    Settings::values.renderer_backend = static_cast<Settings::RendererBackend>(renderer_backend);
+    Settings::values.vulkan_device = sdl2_config->GetInteger("Renderer", "vulkan_device", 0);
+
     Settings::values.resolution_factor =
         (float)sdl2_config->GetReal("Renderer", "resolution_factor", 1.0);
     Settings::values.use_frame_limit = sdl2_config->GetBoolean("Renderer", "use_frame_limit", true);

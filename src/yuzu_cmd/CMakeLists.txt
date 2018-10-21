@@ -6,10 +6,21 @@ add_executable(yuzu-cmd
     default_ini.h
     emu_window/emu_window_sdl2.cpp
     emu_window/emu_window_sdl2.h
+    emu_window/emu_window_sdl2_gl.cpp
+    emu_window/emu_window_sdl2_gl.h
     resource.h
     yuzu.cpp
     yuzu.rc
 )
+
+if (Vulkan_FOUND)
+    target_sources(yuzu-cmd PRIVATE
+                   emu_window/emu_window_sdl2_vk.cpp
+                   emu_window/emu_window_sdl2_vk.h)
+
+    target_include_directories(yuzu-cmd PRIVATE Vulkan::Vulkan)
+    target_compile_definitions(yuzu-cmd PRIVATE HAS_VULKAN)
+endif()
 
 create_target_directory_groups(yuzu-cmd)
 
@@ -17,6 +28,9 @@ target_link_libraries(yuzu-cmd PRIVATE common core input_common)
 target_link_libraries(yuzu-cmd PRIVATE inih glad)
 if (MSVC)
     target_link_libraries(yuzu-cmd PRIVATE getopt)
+endif()
+if (Vulkan_FOUND)
+    target_link_libraries(yuzu-cmd PRIVATE Vulkan::Vulkan)
 endif()
 target_link_libraries(yuzu-cmd PRIVATE ${PLATFORM_LIBRARIES} SDL2 Threads::Threads)
 
