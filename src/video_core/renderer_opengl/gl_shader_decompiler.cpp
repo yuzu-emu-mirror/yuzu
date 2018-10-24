@@ -1600,7 +1600,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1663,7 +1664,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1705,7 +1707,8 @@ private:
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
                 break;
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1959,7 +1962,8 @@ private:
                     op_b = regs.GetRegisterAsInteger(instr.gpr8);
                     op_a = std::to_string(instr.lea.imm.entry_a);
                     op_c = std::to_string(instr.lea.imm.entry_b);
-                    LOG_CRITICAL(HW_GPU, "Unhandled LEA subinstruction: {}", opcode.value().get().GetName());
+                    LOG_CRITICAL(HW_GPU, "Unhandled LEA subinstruction: {}",
+                                 opcode.value().get().GetName());
                     UNREACHABLE();
                 }
                 }
@@ -1982,7 +1986,8 @@ private:
             break;
         }
         case OpCode::Type::ArithmeticHalf: {
-            if (opcode.value().get().GetId() == OpCode::Id::HADD2_C || opcode.value().get().GetId() == OpCode::Id::HADD2_R) {
+            if (opcode.value().get().GetId() == OpCode::Id::HADD2_C ||
+                opcode.value().get().GetId() == OpCode::Id::HADD2_R) {
                 ASSERT_MSG(instr.alu_half.ftz == 0, "Unimplemented");
             }
             const bool negate_a =
@@ -2021,7 +2026,8 @@ private:
                 case OpCode::Id::HMUL2_R:
                     return '(' + op_a + " * " + op_b + ')';
                 default:
-                    LOG_CRITICAL(HW_GPU, "Unhandled half float instruction: {}", opcode.value().get().GetName());
+                    LOG_CRITICAL(HW_GPU, "Unhandled half float instruction: {}",
+                                 opcode.value().get().GetName());
                     UNREACHABLE();
                     return std::string("0");
                 }
@@ -2096,7 +2102,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -2298,7 +2305,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -2949,7 +2957,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -3151,7 +3160,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled predicate instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled predicate instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -3317,7 +3327,8 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled XMAD instruction: {}", opcode.value().get().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled XMAD instruction: {}",
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }

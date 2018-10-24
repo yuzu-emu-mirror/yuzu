@@ -280,7 +280,7 @@ std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNam
     } else {
         if (installed->HasEntry(update_tid, ContentRecordType::Program)) {
             const auto meta_ver = installed->GetEntryVersion(update_tid);
-            if (meta_ver  || meta_ver.value() == 0) {
+            if (meta_ver || meta_ver.value() == 0) {
                 out.insert_or_assign("Update", "");
             } else {
                 out.insert_or_assign(
