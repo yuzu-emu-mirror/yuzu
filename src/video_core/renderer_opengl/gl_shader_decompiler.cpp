@@ -144,7 +144,7 @@ private:
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
             const Instruction instr = {program_code[offset]};
             if (const auto opcode = OpCode::Decode(instr)) {
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::EXIT: {
                     // The EXIT instruction can be predicated, which means that the shader can
                     // conditionally end on this instruction. We have to consider the case where the
@@ -1464,8 +1464,8 @@ private:
             return offset + 1;
         }
 
-        shader.AddLine(
-            fmt::format("// {}: {} (0x{:016x})", offset, opcode.value().GetName(), instr.value));
+        shader.AddLine(fmt::format("// {}: {} (0x{:016x})", offset, opcode.value().get().GetName(),
+                                   instr.value));
 
         using Tegra::Shader::Pred;
         ASSERT_MSG(instr.pred.full_pred != Pred::NeverExecute,
@@ -1473,7 +1473,7 @@ private:
 
         // Some instructions (like SSY) don't have a predicate field, they are always
         // unconditionally executed.
-        bool can_be_predicated = OpCode::IsPredicatedInstruction(opcode.value().GetId());
+        bool can_be_predicated = OpCode::IsPredicatedInstruction(opcode.value().get().GetId());
 
         if (can_be_predicated && instr.pred.pred_index != static_cast<u64>(Pred::UnusedIndex)) {
             shader.AddLine("if (" +
@@ -1483,7 +1483,7 @@ private:
             ++shader.scope;
         }
 
-        switch (opcode.value().GetType()) {
+        switch (opcode.value().get().GetType()) {
         case OpCode::Type::Arithmetic: {
             std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
 
@@ -1500,7 +1500,7 @@ private:
                 }
             }
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::MOV_C:
             case OpCode::Id::MOV_R: {
                 // MOV does not have neither 'abs' nor 'neg' bits.
@@ -1600,14 +1600,14 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled arithmetic instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
             break;
         }
         case OpCode::Type::ArithmeticImmediate: {
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::MOV32_IMM: {
                 regs.SetRegisterToFloat(instr.gpr0, 0, GetImmediate32(instr), 1, 1);
                 break;
@@ -1651,7 +1651,7 @@ private:
             std::string op_a = instr.bfe.negate_a ? "-" : "";
             op_a += regs.GetRegisterAsInteger(instr.gpr8);
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::BFE_IMM: {
                 std::string inner_shift =
                     '(' + op_a + " << " + std::to_string(instr.bfe.GetLeftShiftValue()) + ')';
@@ -1663,7 +1663,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled BFE instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1685,7 +1685,7 @@ private:
                 }
             }
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::SHR_C:
             case OpCode::Id::SHR_R:
             case OpCode::Id::SHR_IMM: {
@@ -1705,7 +1705,7 @@ private:
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
                 break;
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled shift instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1715,7 +1715,7 @@ private:
             std::string op_a = regs.GetRegisterAsInteger(instr.gpr8);
             std::string op_b = std::to_string(instr.alu.imm20_32.Value());
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::IADD32I:
                 if (instr.iadd32i.negate_a)
                     op_a = "-(" + op_a + ')';
@@ -1737,7 +1737,7 @@ private:
             }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticIntegerImmediate instruction: {}",
-                             opcode.value().GetName());
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1757,7 +1757,7 @@ private:
                 }
             }
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::IADD_C:
             case OpCode::Id::IADD_R:
             case OpCode::Id::IADD_IMM: {
@@ -1793,7 +1793,7 @@ private:
                     }
                 };
 
-                if (opcode.value().GetId() == OpCode::Id::IADD3_R) {
+                if (opcode.value().get().GetId() == OpCode::Id::IADD3_R) {
                     apply_height(instr.iadd3.height_a, op_a);
                     apply_height(instr.iadd3.height_b, op_b);
                     apply_height(instr.iadd3.height_c, op_c);
@@ -1809,7 +1809,7 @@ private:
                     op_c = "-(" + op_c + ')';
 
                 std::string result;
-                if (opcode.value().GetId() == OpCode::Id::IADD3_R) {
+                if (opcode.value().get().GetId() == OpCode::Id::IADD3_R) {
                     switch (instr.iadd3.mode) {
                     case Tegra::Shader::IAdd3Mode::RightShift:
                         // TODO(tech4me): According to
@@ -1884,7 +1884,7 @@ private:
                 const std::string op_c = regs.GetRegisterAsInteger(instr.gpr39);
                 std::string lut;
 
-                if (opcode.value().GetId() == OpCode::Id::LOP3_R) {
+                if (opcode.value().get().GetId() == OpCode::Id::LOP3_R) {
                     lut = '(' + std::to_string(instr.alu.lop3.GetImmLut28()) + ')';
                 } else {
                     lut = '(' + std::to_string(instr.alu.lop3.GetImmLut48()) + ')';
@@ -1914,7 +1914,7 @@ private:
             case OpCode::Id::LEA_HI: {
                 std::string op_c;
 
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::LEA_R2: {
                     op_a = regs.GetRegisterAsInteger(instr.gpr20);
                     op_b = regs.GetRegisterAsInteger(instr.gpr39);
@@ -1959,7 +1959,7 @@ private:
                     op_b = regs.GetRegisterAsInteger(instr.gpr8);
                     op_a = std::to_string(instr.lea.imm.entry_a);
                     op_c = std::to_string(instr.lea.imm.entry_b);
-                    LOG_CRITICAL(HW_GPU, "Unhandled LEA subinstruction: {}", opcode.value().GetName());
+                    LOG_CRITICAL(HW_GPU, "Unhandled LEA subinstruction: {}", opcode.value().get().GetName());
                     UNREACHABLE();
                 }
                 }
@@ -1974,7 +1974,7 @@ private:
             }
             default: {
                 LOG_CRITICAL(HW_GPU, "Unhandled ArithmeticInteger instruction: {}",
-                             opcode.value().GetName());
+                             opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -1982,20 +1982,20 @@ private:
             break;
         }
         case OpCode::Type::ArithmeticHalf: {
-            if (opcode.value().GetId() == OpCode::Id::HADD2_C || opcode.value().GetId() == OpCode::Id::HADD2_R) {
+            if (opcode.value().get().GetId() == OpCode::Id::HADD2_C || opcode.value().get().GetId() == OpCode::Id::HADD2_R) {
                 ASSERT_MSG(instr.alu_half.ftz == 0, "Unimplemented");
             }
             const bool negate_a =
-                opcode.value().GetId() != OpCode::Id::HMUL2_R && instr.alu_half.negate_a != 0;
+                opcode.value().get().GetId() != OpCode::Id::HMUL2_R && instr.alu_half.negate_a != 0;
             const bool negate_b =
-                opcode.value().GetId() != OpCode::Id::HMUL2_C && instr.alu_half.negate_b != 0;
+                opcode.value().get().GetId() != OpCode::Id::HMUL2_C && instr.alu_half.negate_b != 0;
 
             const std::string op_a =
                 GetHalfFloat(regs.GetRegisterAsInteger(instr.gpr8, 0, false), instr.alu_half.type_a,
                              instr.alu_half.abs_a != 0, negate_a);
 
             std::string op_b;
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::HADD2_C:
             case OpCode::Id::HMUL2_C:
                 op_b = regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
@@ -2013,7 +2013,7 @@ private:
             op_b = GetHalfFloat(op_b, instr.alu_half.type_b, instr.alu_half.abs_b != 0, negate_b);
 
             const std::string result = [&]() {
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::HADD2_C:
                 case OpCode::Id::HADD2_R:
                     return '(' + op_a + " + " + op_b + ')';
@@ -2021,7 +2021,7 @@ private:
                 case OpCode::Id::HMUL2_R:
                     return '(' + op_a + " * " + op_b + ')';
                 default:
-                    LOG_CRITICAL(HW_GPU, "Unhandled half float instruction: {}", opcode.value().GetName());
+                    LOG_CRITICAL(HW_GPU, "Unhandled half float instruction: {}", opcode.value().get().GetName());
                     UNREACHABLE();
                     return std::string("0");
                 }
@@ -2032,7 +2032,7 @@ private:
             break;
         }
         case OpCode::Type::ArithmeticHalfImmediate: {
-            if (opcode.value().GetId() == OpCode::Id::HADD2_IMM) {
+            if (opcode.value().get().GetId() == OpCode::Id::HADD2_IMM) {
                 ASSERT_MSG(instr.alu_half_imm.ftz == 0, "Unimplemented");
             } else {
                 ASSERT_MSG(instr.alu_half_imm.precision == Tegra::Shader::HalfPrecision::None,
@@ -2046,7 +2046,7 @@ private:
             const std::string op_b = UnpackHalfImmediate(instr, true);
 
             const std::string result = [&]() {
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::HADD2_IMM:
                     return op_a + " + " + op_b;
                 case OpCode::Id::HMUL2_IMM:
@@ -2072,7 +2072,7 @@ private:
             ASSERT_MSG(instr.ffma.tab5980_1 == 0, "FFMA tab5980_1({}) not implemented",
                        instr.ffma.tab5980_1.Value());
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::FFMA_CR: {
                 op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
                                         GLSLRegister::Type::Float);
@@ -2096,7 +2096,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled FFMA instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -2107,14 +2107,14 @@ private:
             break;
         }
         case OpCode::Type::Hfma2: {
-            if (opcode.value().GetId() == OpCode::Id::HFMA2_RR) {
+            if (opcode.value().get().GetId() == OpCode::Id::HFMA2_RR) {
                 ASSERT_MSG(instr.hfma2.rr.precision == Tegra::Shader::HalfPrecision::None,
                            "Unimplemented");
             } else {
                 ASSERT_MSG(instr.hfma2.precision == Tegra::Shader::HalfPrecision::None,
                            "Unimplemented");
             }
-            const bool saturate = opcode.value().GetId() == OpCode::Id::HFMA2_RR
+            const bool saturate = opcode.value().get().GetId() == OpCode::Id::HFMA2_RR
                                       ? instr.hfma2.rr.saturate != 0
                                       : instr.hfma2.saturate != 0;
 
@@ -2122,7 +2122,7 @@ private:
                 GetHalfFloat(regs.GetRegisterAsInteger(instr.gpr8, 0, false), instr.hfma2.type_a);
             std::string op_b, op_c;
 
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::HFMA2_CR:
                 op_b = GetHalfFloat(regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
                                                     GLSLRegister::Type::UnsignedInteger),
@@ -2160,7 +2160,7 @@ private:
             break;
         }
         case OpCode::Type::Conversion: {
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::I2I_R: {
                 ASSERT_MSG(!instr.conversion.selector, "Unimplemented");
 
@@ -2298,14 +2298,14 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled conversion instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
             break;
         }
         case OpCode::Type::Memory: {
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::LD_A: {
                 // Note: Shouldn't this be interp mode flat? As in no interpolation made.
                 ASSERT_MSG(instr.gpr8.Value() == Register::ZeroIndex,
@@ -2949,7 +2949,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled memory instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -3043,7 +3043,7 @@ private:
                              instr.hsetp2.abs_a, instr.hsetp2.negate_a);
 
             const std::string op_b = [&]() {
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::HSETP2_R:
                     return GetHalfFloat(regs.GetRegisterAsInteger(instr.gpr20, 0, false),
                                         instr.hsetp2.type_b, instr.hsetp2.abs_a,
@@ -3105,7 +3105,7 @@ private:
             break;
         }
         case OpCode::Type::PredicateSetPredicate: {
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::PSETP: {
                 const std::string op_a =
                     GetPredicateCondition(instr.psetp.pred12, instr.psetp.neg_pred12 != 0);
@@ -3151,7 +3151,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled predicate instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled predicate instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -3239,7 +3239,7 @@ private:
                              instr.hset2.abs_a != 0, instr.hset2.negate_a != 0);
 
             const std::string op_b = [&]() {
-                switch (opcode.value().GetId()) {
+                switch (opcode.value().get().GetId()) {
                 case OpCode::Id::HSET2_R:
                     return GetHalfFloat(regs.GetRegisterAsInteger(instr.gpr20, 0, false),
                                         instr.hset2.type_b, instr.hset2.abs_b != 0,
@@ -3288,7 +3288,7 @@ private:
             const bool is_signed{instr.xmad.sign_a == 1};
 
             bool is_merge{};
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::XMAD_CR: {
                 is_merge = instr.xmad.merge_56;
                 op_b += regs.GetUniform(instr.cbuf34.index, instr.cbuf34.offset,
@@ -3317,7 +3317,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled XMAD instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled XMAD instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }
@@ -3369,7 +3369,7 @@ private:
             break;
         }
         default: {
-            switch (opcode.value().GetId()) {
+            switch (opcode.value().get().GetId()) {
             case OpCode::Id::EXIT: {
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
                     EmitFragmentOutputsWrite();
@@ -3564,7 +3564,7 @@ private:
                 break;
             }
             default: {
-                LOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode.value().GetName());
+                LOG_CRITICAL(HW_GPU, "Unhandled instruction: {}", opcode.value().get().GetName());
                 UNREACHABLE();
             }
             }

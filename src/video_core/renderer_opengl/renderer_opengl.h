@@ -51,7 +51,8 @@ public:
     ~RendererOpenGL() override;
 
     /// Swap buffers (render frame)
-    void SwapBuffers(std::optional<const Tegra::FramebufferConfig> framebuffer) override;
+    void SwapBuffers(
+        std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer) override;
 
     /// Initialize the renderer
     bool Init() override;

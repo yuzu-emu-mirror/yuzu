@@ -143,7 +143,7 @@ void NVFlinger::Compose() {
             continue;
         }
 
-        auto& igbp_buffer = buffer.value().igbp_buffer;
+        auto& igbp_buffer = buffer.value().get().igbp_buffer;
 
         // Now send the buffer to the GPU for drawing.
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
@@ -152,10 +152,10 @@ void NVFlinger::Compose() {
         ASSERT(nvdisp);
 
         nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
-                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride, buffer.value().transform,
-                     buffer.value().crop_rect);
+                     igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
+                     buffer.value().get().transform, buffer.value().get().crop_rect);
 
-        buffer_queue->ReleaseBuffer(buffer.value().slot);
+        buffer_queue->ReleaseBuffer(buffer.value().get().slot);
     }
 }
 

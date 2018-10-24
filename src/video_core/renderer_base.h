@@ -29,7 +29,8 @@ public:
     virtual ~RendererBase();
 
     /// Swap buffers (render frame)
-    virtual void SwapBuffers(std::optional<const Tegra::FramebufferConfig> framebuffer) = 0;
+    virtual void SwapBuffers(
+        std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer) = 0;
 
     /// Initialize the renderer
     virtual bool Init() = 0;
