@@ -70,7 +70,7 @@ void BufferQueue::QueueBuffer(u32 slot, BufferTransformFlags transform,
     itr->crop_rect = crop_rect;
 }
 
-std::optional<const BufferQueue::Buffer&> BufferQueue::AcquireBuffer() {
+std::optional<const BufferQueue::Buffer> BufferQueue::AcquireBuffer() {
     auto itr = std::find_if(queue.begin(), queue.end(), [](const Buffer& buffer) {
         return buffer.status == Buffer::Status::Queued;
     });

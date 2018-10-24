@@ -1455,7 +1455,7 @@ public:
         Type type;
     };
 
-    static std::optional<const Matcher&> Decode(Instruction instr) {
+    static std::optional<const Matcher> Decode(Instruction instr) {
         static const auto table{GetDecodeTable()};
 
         const auto matches_instruction = [instr](const auto& matcher) {
@@ -1463,7 +1463,7 @@ public:
         };
 
         auto iter = std::find_if(table.begin(), table.end(), matches_instruction);
-        return iter != table.end() ? std::optional<const Matcher&>(*iter) : std::nullopt;
+        return iter != table.end() ? std::optional<const Matcher>(*iter) : std::nullopt;
     }
 
 private:

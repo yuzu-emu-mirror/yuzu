@@ -78,7 +78,7 @@ public:
     const IGBPBuffer& RequestBuffer(u32 slot) const;
     void QueueBuffer(u32 slot, BufferTransformFlags transform,
                      const MathUtil::Rectangle<int>& crop_rect);
-    std::optional<const Buffer&> AcquireBuffer();
+    std::optional<const Buffer> AcquireBuffer();
     void ReleaseBuffer(u32 slot);
     u32 Query(QueryType type);
 

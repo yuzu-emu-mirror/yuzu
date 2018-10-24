@@ -115,7 +115,7 @@ RendererOpenGL::RendererOpenGL(Core::Frontend::EmuWindow& window)
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
-void RendererOpenGL::SwapBuffers(std::optional<const Tegra::FramebufferConfig&> framebuffer) {
+void RendererOpenGL::SwapBuffers(std::optional<const Tegra::FramebufferConfig> framebuffer) {
     ScopeAcquireGLContext acquire_context{render_window};
 
     Core::System::GetInstance().GetPerfStats().EndSystemFrame();

@@ -1560,7 +1560,7 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
     }
 }
 
-boost::optional<u64> GMainWindow::SelectRomFSDumpTarget(
+std::optional<u64> GMainWindow::SelectRomFSDumpTarget(
     const FileSys::RegisteredCacheUnion& installed, u64 program_id) {
     const auto dlc_entries =
         installed.ListEntriesFilter(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
@@ -1587,7 +1587,7 @@ boost::optional<u64> GMainWindow::SelectRomFSDumpTarget(
             this, tr("Select RomFS Dump Target"),
             tr("Please select which RomFS you would like to dump."), list, 0, false, &ok);
         if (!ok) {
-            return boost::none;
+            return {};
         }
 
         return romfs_tids[list.indexOf(res)];
