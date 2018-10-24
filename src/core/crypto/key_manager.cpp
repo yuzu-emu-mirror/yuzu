@@ -306,7 +306,7 @@ static std::optional<u64> FindTicketOffset(const std::array<u8, size>& data) {
 }
 
 std::optional<std::pair<Key128, Key128>> ParseTicket(const TicketRaw& ticket,
-                                                       const RSAKeyPair<2048>& key) {
+                                                     const RSAKeyPair<2048>& key) {
     u32 cert_authority;
     std::memcpy(&cert_authority, ticket.data() + 0x140, sizeof(cert_authority));
     if (cert_authority == 0)
@@ -362,7 +362,7 @@ std::optional<std::pair<Key128, Key128>> ParseTicket(const TicketRaw& ticket,
     m_2 = m_2 ^ MGF1<0xDF>(m_1);
 
     const auto offset = FindTicketOffset(m_2);
-    if (offset )
+    if (offset)
         return {};
     ASSERT(offset.value() > 0);
 
@@ -889,7 +889,7 @@ void KeyManager::DeriveETicket(PartitionDataManager& data) {
 
     for (const auto& raw : res) {
         const auto pair = ParseTicket(raw, rsa_key);
-        if (pair )
+        if (pair)
             continue;
         const auto& [rid, key] = pair.value();
         u128 rights_id;

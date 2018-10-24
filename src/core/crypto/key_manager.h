@@ -199,7 +199,7 @@ std::vector<TicketRaw> GetTicketblob(const FileUtil::IOFile& ticket_save);
 
 // Returns a pair of {rights_id, titlekey}. Fails if the ticket has no certificate authority (offset
 // 0x140-0x144 is zero)
-std::optional<std::pair<Key128, Key128>> ParseTicket(
-    const TicketRaw& ticket, const RSAKeyPair<2048>& eticket_extended_key);
+std::optional<std::pair<Key128, Key128>> ParseTicket(const TicketRaw& ticket,
+                                                     const RSAKeyPair<2048>& eticket_extended_key);
 
 } // namespace Core::Crypto

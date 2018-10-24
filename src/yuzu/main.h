@@ -178,8 +178,7 @@ private slots:
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
 
 private:
-    std::optional<u64> SelectRomFSDumpTarget(const FileSys::RegisteredCacheUnion&,
-                                               u64 program_id);
+    std::optional<u64> SelectRomFSDumpTarget(const FileSys::RegisteredCacheUnion&, u64 program_id);
     void UpdateStatusBar();
 
     Ui::MainWindow ui;

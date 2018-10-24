@@ -98,8 +98,7 @@ public:
     std::vector<RegisteredCacheEntry> ListEntries() const;
     // If a parameter is not std::nullopt, it will be filtered for from all entries.
     std::vector<RegisteredCacheEntry> ListEntriesFilter(
-        std::optional<TitleType> title_type = {},
-        std::optional<ContentRecordType> record_type = {},
+        std::optional<TitleType> title_type = {}, std::optional<ContentRecordType> record_type = {},
         std::optional<u64> title_id = {}) const;
 
     // Raw copies all the ncas from the xci/nsp to the csache. Does some quick checks to make sure
@@ -166,8 +165,7 @@ public:
     std::vector<RegisteredCacheEntry> ListEntries() const;
     // If a parameter is not std::nullopt, it will be filtered for from all entries.
     std::vector<RegisteredCacheEntry> ListEntriesFilter(
-        std::optional<TitleType> title_type = {},
-        std::optional<ContentRecordType> record_type = {},
+        std::optional<TitleType> title_type = {}, std::optional<ContentRecordType> record_type = {},
         std::optional<u64> title_id = {}) const;
 
 private:

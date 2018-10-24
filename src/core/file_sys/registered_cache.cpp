@@ -175,7 +175,7 @@ static std::optional<NcaID> CheckMapForContentRecord(
 }
 
 std::optional<NcaID> RegisteredCache::GetNcaIDFromMetadata(u64 title_id,
-                                                             ContentRecordType type) const {
+                                                           ContentRecordType type) const {
     if (type == ContentRecordType::Meta && meta_id.find(title_id) != meta_id.end())
         return meta_id.at(title_id);
 
@@ -283,7 +283,7 @@ bool RegisteredCache::HasEntry(RegisteredCacheEntry entry) const {
 
 VirtualFile RegisteredCache::GetEntryUnparsed(u64 title_id, ContentRecordType type) const {
     const auto id = GetNcaIDFromMetadata(title_id, type);
-    if (id )
+    if (id)
         return nullptr;
 
     return GetFileAtID(id.value());
@@ -307,7 +307,7 @@ std::optional<u32> RegisteredCache::GetEntryVersion(u64 title_id) const {
 
 VirtualFile RegisteredCache::GetEntryRaw(u64 title_id, ContentRecordType type) const {
     const auto id = GetNcaIDFromMetadata(title_id, type);
-    if (id )
+    if (id)
         return nullptr;
 
     return parser(GetFileAtID(id.value()), id.value());
@@ -468,7 +468,7 @@ InstallResult RegisteredCache::RawInstallNCA(std::shared_ptr<NCA> nca, const Vfs
     // game is massive), we're going to cheat and only hash the first MB of the NCA.
     // Also, for XCIs the NcaID matters, so if the override id isn't none, use that.
     NcaID id{};
-    if (override_id ) {
+    if (override_id) {
         const auto& data = in->ReadBytes(0x100000);
         mbedtls_sha256(data.data(), data.size(), hash.data(), 0);
         memcpy(id.data(), hash.data(), 16);

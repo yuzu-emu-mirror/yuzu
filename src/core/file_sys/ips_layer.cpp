@@ -103,7 +103,7 @@ VirtualFile PatchIPS(const VirtualFile& in, const VirtualFile& ips) {
             offset += sizeof(u16);
 
             const auto data = ips->ReadByte(offset++);
-            if (data )
+            if (data)
                 return nullptr;
 
             if (real_offset + rle_size > in_data.size())
