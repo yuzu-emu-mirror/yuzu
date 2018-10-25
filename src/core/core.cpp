@@ -137,9 +137,11 @@ struct System::Impl {
             virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
 
         // Force update title ID for per game settings in case any services use them
-        u64 title_id;
+        u64 title_id = 0;
         if (app_loader->ReadProgramId(title_id) == Loader::ResultStatus::Success)
             Settings::values.SetCurrentTitleID(title_id);
+        else
+            Settings::values.SetCurrentTitleID(Settings::DEFAULT_PER_GAME);
 
         // Write config to log
         Settings::values->LogSettings();

@@ -668,9 +668,3 @@ PerGameValuesChange Config::GetPerGameSettingsDelta(u64 title_id) const {
 void Config::SetPerGameSettingsDelta(u64 title_id, PerGameValuesChange change) {
     update_values_delta.insert_or_assign(title_id, change);
 }
-
-Config::~Config() {
-    Save();
-
-    delete qt_config;
-}

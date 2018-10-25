@@ -75,7 +75,8 @@ QString FormatPatchNameVersions(const FileSys::PatchManager& patch_manager,
         const QString type = QString::fromStdString(kv.first);
 
         if (kv.second.empty()) {
-            out.append(QStringLiteral(patch_disabled ? "<s>%1</s><br>" : "%1<br>").arg(type));
+            out.append((patch_disabled ? QStringLiteral("<s>%1</s><br>") : QStringLiteral("%1<br>"))
+                           .arg(type));
         } else {
             auto ver = kv.second;
 
@@ -84,7 +85,9 @@ QString FormatPatchNameVersions(const FileSys::PatchManager& patch_manager,
                 ver = Loader::GetFileTypeString(loader.GetFileType());
             }
 
-            out.append(QStringLiteral(patch_disabled ? "<s>%1 (%2)</s><br>" : "%1 (%2)<br>").arg(type, QString::fromStdString(ver)));
+            out.append((patch_disabled ? QStringLiteral("<s>%1 (%2)</s><br>")
+                                       : QStringLiteral("%1 (%2)<br>"))
+                           .arg(type, QString::fromStdString(ver)));
         }
     }
 

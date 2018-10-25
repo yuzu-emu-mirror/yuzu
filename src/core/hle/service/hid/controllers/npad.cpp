@@ -504,7 +504,7 @@ bool Controller_NPad::IsControllerSupported(NPadControllerType controller) const
             return false;
         }
         // Handheld should not be supported in docked mode
-        if (Settings::values.use_docked_mode) {
+        if (Settings::values->use_docked_mode) {
             return false;
         }
 
@@ -535,7 +535,7 @@ Controller_NPad::NPadControllerType Controller_NPad::DecideBestController(
     if (IsControllerSupported(priority)) {
         return priority;
     }
-    const auto is_docked = Settings::values.use_docked_mode;
+    const auto is_docked = Settings::values->use_docked_mode;
     if (is_docked && priority == NPadControllerType::Handheld) {
         priority = NPadControllerType::JoyDual;
         if (IsControllerSupported(priority)) {
