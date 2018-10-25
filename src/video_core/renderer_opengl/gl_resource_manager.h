@@ -101,7 +101,7 @@ public:
     void Create(const char* source, GLenum type) {
         if (handle != 0)
             return;
-        if (source == nullptr)
+        if (source)
             return;
         handle = GLShader::LoadShader(source, type);
     }
