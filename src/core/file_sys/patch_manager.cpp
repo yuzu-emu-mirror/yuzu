@@ -53,7 +53,7 @@ PatchManager::~PatchManager() = default;
 VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     LOG_INFO(Loader, "Patching ExeFS for title_id={:016X}", title_id);
 
-    if (exefs == nullptr)
+    if (exefs)
         return exefs;
 
     const auto installed = Service::FileSystem::GetUnionContents();
@@ -168,13 +168,13 @@ bool PatchManager::HasNSOPatch(const std::array<u8, 32>& build_id_) const {
 
 static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType type) {
     const auto load_dir = Service::FileSystem::GetModificationLoadRoot(title_id);
-    if ((type != ContentRecordType::Program && type != ContentRecordType::Data) ||
-        load_dir == nullptr || load_dir->GetSize() <= 0) {
+    if ((type != ContentRecordType::Program && type != ContentRecordType::Data) || load_dir ||
+        load_dir->GetSize() <= 0) {
         return;
     }
 
     auto extracted = ExtractRomFS(romfs);
-    if (extracted == nullptr) {
+    if (extracted) {
         return;
     }
 
@@ -198,14 +198,14 @@ static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType t
     layers.push_back(std::move(extracted));
 
     auto layered = LayeredVfsDirectory::MakeLayeredDirectory(std::move(layers));
-    if (layered == nullptr) {
+    if (layered) {
         return;
     }
 
     auto layered_ext = LayeredVfsDirectory::MakeLayeredDirectory(std::move(layers_ext));
 
     auto packed = CreateRomFS(std::move(layered), std::move(layered_ext));
-    if (packed == nullptr) {
+    if (packed) {
         return;
     }
 
@@ -224,7 +224,7 @@ VirtualFile PatchManager::PatchRomFS(VirtualFile romfs, u64 ivfc_offset, Content
     else
         LOG_DEBUG(Loader, log_string);
 
-    if (romfs == nullptr)
+    if (romfs)
         return romfs;
 
     const auto installed = Service::FileSystem::GetUnionContents();
@@ -356,7 +356,7 @@ std::pair<std::unique_ptr<NACP>, VirtualFile> PatchManager::GetControlMetadata()
     const auto installed{Service::FileSystem::GetUnionContents()};
 
     const auto base_control_nca = installed->GetEntry(title_id, ContentRecordType::Control);
-    if (base_control_nca == nullptr)
+    if (base_control_nca)
         return {};
 
     return ParseControlNCA(*base_control_nca);
@@ -364,22 +364,22 @@ std::pair<std::unique_ptr<NACP>, VirtualFile> PatchManager::GetControlMetadata()
 
 std::pair<std::unique_ptr<NACP>, VirtualFile> PatchManager::ParseControlNCA(const NCA& nca) const {
     const auto base_romfs = nca.GetRomFS();
-    if (base_romfs == nullptr)
+    if (base_romfs)
         return {};
 
     const auto romfs = PatchRomFS(base_romfs, nca.GetBaseIVFCOffset(), ContentRecordType::Control);
-    if (romfs == nullptr)
+    if (romfs)
         return {};
 
     const auto extracted = ExtractRomFS(romfs);
-    if (extracted == nullptr)
+    if (extracted)
         return {};
 
     auto nacp_file = extracted->GetFile("control.nacp");
-    if (nacp_file == nullptr)
+    if (nacp_file)
         nacp_file = extracted->GetFile("Control.nacp");
 
-    auto nacp = nacp_file == nullptr ? nullptr : std::make_unique<NACP>(nacp_file);
+    auto nacp = nacp_file ? nullptr : std::make_unique<NACP>(nacp_file);
 
     VirtualFile icon_file;
     for (const auto& language : FileSys::LANGUAGE_NAMES) {

@@ -215,7 +215,7 @@ ResultStatus AppLoader_NRO::ReadIcon(std::vector<u8>& buffer) {
 }
 
 ResultStatus AppLoader_NRO::ReadProgramId(u64& out_program_id) {
-    if (nacp == nullptr) {
+    if (nacp) {
         return ResultStatus::ErrorNoControl;
     }
 
@@ -224,7 +224,7 @@ ResultStatus AppLoader_NRO::ReadProgramId(u64& out_program_id) {
 }
 
 ResultStatus AppLoader_NRO::ReadRomFS(FileSys::VirtualFile& dir) {
-    if (romfs == nullptr) {
+    if (romfs) {
         return ResultStatus::ErrorNoRomFS;
     }
 
@@ -233,7 +233,7 @@ ResultStatus AppLoader_NRO::ReadRomFS(FileSys::VirtualFile& dir) {
 }
 
 ResultStatus AppLoader_NRO::ReadTitle(std::string& title) {
-    if (nacp == nullptr) {
+    if (nacp) {
         return ResultStatus::ErrorNoControl;
     }
 

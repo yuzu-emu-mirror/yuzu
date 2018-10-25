@@ -44,7 +44,7 @@ ResultVal<Handle> HandleTable::Create(SharedPtr<Object> obj) {
 
 ResultVal<Handle> HandleTable::Duplicate(Handle handle) {
     SharedPtr<Object> object = GetGeneric(handle);
-    if (object == nullptr) {
+    if (object) {
         LOG_ERROR(Kernel, "Tried to duplicate invalid handle: {:08X}", handle);
         return ERR_INVALID_HANDLE;
     }

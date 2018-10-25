@@ -45,7 +45,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::Process& process) {
 
     const auto exefs = nca->GetExeFS();
 
-    if (exefs == nullptr)
+    if (exefs)
         return ResultStatus::ErrorNoExeFS;
 
     directory_loader = std::make_unique<AppLoader_DeconstructedRomDirectory>(exefs, true);
@@ -63,22 +63,22 @@ ResultStatus AppLoader_NCA::Load(Kernel::Process& process) {
 }
 
 ResultStatus AppLoader_NCA::ReadRomFS(FileSys::VirtualFile& dir) {
-    if (nca == nullptr)
+    if (nca)
         return ResultStatus::ErrorNotInitialized;
-    if (nca->GetRomFS() == nullptr || nca->GetRomFS()->GetSize() == 0)
+    if (nca->GetRomFS() || nca->GetRomFS()->GetSize() == 0)
         return ResultStatus::ErrorNoRomFS;
     dir = nca->GetRomFS();
     return ResultStatus::Success;
 }
 
 u64 AppLoader_NCA::ReadRomFSIVFCOffset() const {
-    if (nca == nullptr)
+    if (nca)
         return 0;
     return nca->GetBaseIVFCOffset();
 }
 
 ResultStatus AppLoader_NCA::ReadProgramId(u64& out_program_id) {
-    if (nca == nullptr || nca->GetStatus() != ResultStatus::Success)
+    if (nca || nca->GetStatus() != ResultStatus::Success)
         return ResultStatus::ErrorNotInitialized;
     out_program_id = nca->GetTitleId();
     return ResultStatus::Success;

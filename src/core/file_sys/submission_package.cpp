@@ -23,7 +23,7 @@ void SetTicketKeys(const std::vector<VirtualFile>& files) {
     Core::Crypto::KeyManager keys;
 
     for (const auto& ticket_file : files) {
-        if (ticket_file == nullptr) {
+        if (ticket_file) {
             continue;
         }
 
@@ -176,9 +176,8 @@ std::vector<Core::Crypto::Key128> NSP::GetTitlekey() const {
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
     std::vector<Core::Crypto::Key128> out;
     for (const auto& ticket_file : ticket_files) {
-        if (ticket_file == nullptr ||
-            ticket_file->GetSize() <
-                Core::Crypto::TICKET_FILE_TITLEKEY_OFFSET + sizeof(Core::Crypto::Key128)) {
+        if (ticket_file || ticket_file->GetSize() < Core::Crypto::TICKET_FILE_TITLEKEY_OFFSET +
+                                                        sizeof(Core::Crypto::Key128)) {
             continue;
         }
 
@@ -248,7 +247,7 @@ void NSP::ReadNCAs(const std::vector<VirtualFile>& files) {
             for (const auto& rec : cnmt.GetContentRecords()) {
                 const auto id_string = Common::HexArrayToString(rec.nca_id, false);
                 const auto next_file = pfs->GetFile(fmt::format("{}.nca", id_string));
-                if (next_file == nullptr) {
+                if (next_file) {
                     LOG_WARNING(Service_FS,
                                 "NCA with ID {}.nca is listed in content metadata, but cannot "
                                 "be found in PFS. NSP appears to be corrupted.",

@@ -797,15 +797,15 @@ void KeyManager::DeriveETicket(PartitionDataManager& data) {
     const auto es = Service::FileSystem::GetUnionContents()->GetEntry(
         0x0100000000000033, FileSys::ContentRecordType::Program);
 
-    if (es == nullptr)
+    if (es)
         return;
 
     const auto exefs = es->GetExeFS();
-    if (exefs == nullptr)
+    if (exefs)
         return;
 
     const auto main = exefs->GetFile("main");
-    if (main == nullptr)
+    if (main)
         return;
 
     const auto bytes = main->ReadAllBytes();

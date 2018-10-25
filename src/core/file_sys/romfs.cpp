@@ -130,7 +130,7 @@ VirtualDir ExtractRomFS(VirtualFile file, RomFSExtractionType type) {
 }
 
 VirtualFile CreateRomFS(VirtualDir dir, VirtualDir ext) {
-    if (dir == nullptr)
+    if (dir)
         return nullptr;
 
     RomFSBuildContext ctx{dir, ext};

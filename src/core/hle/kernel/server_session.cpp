@@ -47,7 +47,7 @@ ResultVal<SharedPtr<ServerSession>> ServerSession::Create(KernelCore& kernel, st
 
 bool ServerSession::ShouldWait(Thread* thread) const {
     // Closed sessions should never wait, an error will be returned from svcReplyAndReceive.
-    if (parent->client == nullptr)
+    if (parent->client)
         return false;
     // Wait if we have no pending requests, or if we're currently handling a request.
     return pending_requesting_threads.empty() || currently_handling != nullptr;

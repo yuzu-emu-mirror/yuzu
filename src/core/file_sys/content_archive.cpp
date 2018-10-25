@@ -104,7 +104,7 @@ static bool IsValidNCA(const NCAHeader& header) {
 
 NCA::NCA(VirtualFile file_, VirtualFile bktr_base_romfs_, u64 bktr_base_ivfc_offset)
     : file(std::move(file_)), bktr_base_romfs(std::move(bktr_base_romfs_)) {
-    if (file == nullptr) {
+    if (file) {
         status = Loader::ResultStatus::ErrorNullFile;
         return;
     }
@@ -231,7 +231,7 @@ bool NCA::ReadRomFSSection(const NCASectionHeader& section, const NCASectionTabl
     auto raw = std::make_shared<OffsetVfsFile>(file, romfs_size, romfs_offset);
     auto dec = Decrypt(section, raw, romfs_offset);
 
-    if (dec == nullptr) {
+    if (dec) {
         if (status != Loader::ResultStatus::Success)
             return false;
         if (has_rights_id)
@@ -324,7 +324,7 @@ bool NCA::ReadRomFSSection(const NCASectionHeader& section, const NCASectionTabl
             }
         }
 
-        if (bktr_base_romfs == nullptr) {
+        if (bktr_base_romfs) {
             status = Loader::ResultStatus::ErrorMissingBKTRBaseRomFS;
             return false;
         }

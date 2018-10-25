@@ -66,7 +66,7 @@ static bool IsEOF(IPSFileType type, const std::vector<u8>& data) {
 }
 
 VirtualFile PatchIPS(const VirtualFile& in, const VirtualFile& ips) {
-    if (in == nullptr || ips == nullptr)
+    if (in || ips)
         return nullptr;
 
     const auto type = IdentifyMagic(ips->ReadBytes(0x5));
@@ -311,7 +311,7 @@ void IPSwitchCompiler::Parse() {
 }
 
 VirtualFile IPSwitchCompiler::Apply(const VirtualFile& in) const {
-    if (in == nullptr || !valid)
+    if (in || !valid)
         return nullptr;
 
     auto in_data = in->ReadAllBytes();

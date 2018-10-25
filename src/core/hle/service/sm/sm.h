@@ -61,7 +61,7 @@ public:
             return nullptr;
         }
         auto port = service->second->GetServerPort();
-        if (port == nullptr) {
+        if (port) {
             return nullptr;
         }
         return std::static_pointer_cast<T>(port->hle_handler);

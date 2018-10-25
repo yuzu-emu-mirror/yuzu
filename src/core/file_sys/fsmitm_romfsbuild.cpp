@@ -300,8 +300,7 @@ std::map<u64, VirtualFile> RomFSBuildContext::Build() {
         RomFSFileEntry cur_entry{};
 
         cur_entry.parent = cur_file->parent->entry_offset;
-        cur_entry.sibling =
-            cur_file->sibling == nullptr ? ROMFS_ENTRY_EMPTY : cur_file->sibling->entry_offset;
+        cur_entry.sibling = cur_file->sibling ? ROMFS_ENTRY_EMPTY : cur_file->sibling->entry_offset;
         cur_entry.offset = cur_file->offset;
         cur_entry.size = cur_file->size;
 
@@ -327,11 +326,9 @@ std::map<u64, VirtualFile> RomFSBuildContext::Build() {
         RomFSDirectoryEntry cur_entry{};
 
         cur_entry.parent = cur_dir == root ? 0 : cur_dir->parent->entry_offset;
-        cur_entry.sibling =
-            cur_dir->sibling == nullptr ? ROMFS_ENTRY_EMPTY : cur_dir->sibling->entry_offset;
-        cur_entry.child =
-            cur_dir->child == nullptr ? ROMFS_ENTRY_EMPTY : cur_dir->child->entry_offset;
-        cur_entry.file = cur_dir->file == nullptr ? ROMFS_ENTRY_EMPTY : cur_dir->file->entry_offset;
+        cur_entry.sibling = cur_dir->sibling ? ROMFS_ENTRY_EMPTY : cur_dir->sibling->entry_offset;
+        cur_entry.child = cur_dir->child ? ROMFS_ENTRY_EMPTY : cur_dir->child->entry_offset;
+        cur_entry.file = cur_dir->file ? ROMFS_ENTRY_EMPTY : cur_dir->file->entry_offset;
 
         const auto name_size = cur_dir->path_len - cur_dir->cur_path_ofs;
         const auto hash = romfs_calc_path_hash(cur_dir == root ? 0 : cur_dir->parent->entry_offset,

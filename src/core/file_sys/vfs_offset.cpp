@@ -12,7 +12,7 @@ namespace FileSys {
 OffsetVfsFile::OffsetVfsFile(std::shared_ptr<VfsFile> file_, std::size_t size_, std::size_t offset_,
                              std::string name_, VirtualDir parent_)
     : file(file_), offset(offset_), size(size_), name(std::move(name_)),
-      parent(parent_ == nullptr ? file->GetContainingDirectory() : std::move(parent_)) {}
+      parent(parent_ ? file->GetContainingDirectory() : std::move(parent_)) {}
 
 OffsetVfsFile::~OffsetVfsFile() = default;
 

@@ -26,7 +26,7 @@ AppLoader_XCI::AppLoader_XCI(FileSys::VirtualFile file)
         return;
 
     const auto control_nca = xci->GetNCAByType(FileSys::NCAContentType::Control);
-    if (control_nca == nullptr || control_nca->GetStatus() != ResultStatus::Success)
+    if (control_nca || control_nca->GetStatus() != ResultStatus::Success)
         return;
 
     std::tie(nacp_file, icon_file) =
@@ -92,7 +92,7 @@ ResultStatus AppLoader_XCI::ReadUpdateRaw(FileSys::VirtualFile& file) {
     const auto read = xci->GetSecurePartitionNSP()->GetNCAFile(
         FileSys::GetUpdateTitleID(program_id), FileSys::ContentRecordType::Program);
 
-    if (read == nullptr)
+    if (read)
         return ResultStatus::ErrorNoPackedUpdate;
     const auto nca_test = std::make_shared<FileSys::NCA>(read);
 
@@ -108,14 +108,14 @@ ResultStatus AppLoader_XCI::ReadProgramId(u64& out_program_id) {
 }
 
 ResultStatus AppLoader_XCI::ReadIcon(std::vector<u8>& buffer) {
-    if (icon_file == nullptr)
+    if (icon_file)
         return ResultStatus::ErrorNoControl;
     buffer = icon_file->ReadAllBytes();
     return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_XCI::ReadTitle(std::string& title) {
-    if (nacp_file == nullptr)
+    if (nacp_file)
         return ResultStatus::ErrorNoControl;
     title = nacp_file->GetApplicationName();
     return ResultStatus::Success;

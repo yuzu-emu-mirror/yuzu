@@ -39,7 +39,7 @@ ClientSession::~ClientSession() {
 ResultCode ClientSession::SendSyncRequest(SharedPtr<Thread> thread) {
     // Keep ServerSession alive until we're done working with it.
     SharedPtr<ServerSession> server = parent->server;
-    if (server == nullptr)
+    if (server)
         return ERR_SESSION_CLOSED_BY_REMOTE;
 
     // Signal the server session that new data is available

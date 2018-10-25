@@ -133,7 +133,7 @@ struct System::Impl {
         kernel.Initialize();
 
         // Create a default fs if one doesn't already exist.
-        if (virtual_filesystem == nullptr)
+        if (virtual_filesystem)
             virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
 
         auto main_process = Kernel::Process::Create(kernel, "main");
@@ -259,7 +259,7 @@ struct System::Impl {
     }
 
     Loader::ResultStatus GetGameName(std::string& out) const {
-        if (app_loader == nullptr)
+        if (app_loader)
             return Loader::ResultStatus::ErrorNotInitialized;
         return app_loader->ReadTitle(out);
     }

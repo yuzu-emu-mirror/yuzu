@@ -223,7 +223,7 @@ void RegisteredCache::ProcessFiles(const std::vector<NcaID>& ids) {
     for (const auto& id : ids) {
         const auto file = GetFileAtID(id);
 
-        if (file == nullptr)
+        if (file)
             continue;
         const auto nca = std::make_shared<NCA>(parser(file, id));
         if (nca->GetStatus() != Loader::ResultStatus::Success ||
@@ -246,7 +246,7 @@ void RegisteredCache::ProcessFiles(const std::vector<NcaID>& ids) {
 
 void RegisteredCache::AccumulateYuzuMeta() {
     const auto dir = this->dir->GetSubdirectory("yuzu_meta");
-    if (dir == nullptr)
+    if (dir)
         return;
 
     for (const auto& file : dir->GetFiles()) {
@@ -259,7 +259,7 @@ void RegisteredCache::AccumulateYuzuMeta() {
 }
 
 void RegisteredCache::Refresh() {
-    if (dir == nullptr)
+    if (dir)
         return;
     const auto ids = AccumulateFiles();
     ProcessFiles(ids);
@@ -319,7 +319,7 @@ VirtualFile RegisteredCache::GetEntryRaw(RegisteredCacheEntry entry) const {
 
 std::unique_ptr<NCA> RegisteredCache::GetEntry(u64 title_id, ContentRecordType type) const {
     const auto raw = GetEntryRaw(title_id, type);
-    if (raw == nullptr)
+    if (raw)
         return nullptr;
     return std::make_unique<NCA>(raw);
 }
@@ -386,7 +386,7 @@ std::vector<RegisteredCacheEntry> RegisteredCache::ListEntriesFilter(
 
 static std::shared_ptr<NCA> GetNCAFromNSPForID(std::shared_ptr<NSP> nsp, const NcaID& id) {
     const auto file = nsp->GetFile(fmt::format("{}.nca", Common::HexArrayToString(id, false)));
-    if (file == nullptr)
+    if (file)
         return nullptr;
     return std::make_shared<NCA>(file);
 }
@@ -423,7 +423,7 @@ InstallResult RegisteredCache::InstallEntry(std::shared_ptr<NSP> nsp, bool overw
     const CNMT cnmt(cnmt_file);
     for (const auto& record : cnmt.GetContentRecords()) {
         const auto nca = GetNCAFromNSPForID(nsp, record.nca_id);
-        if (nca == nullptr)
+        if (nca)
             return InstallResult::ErrorCopyFailed;
         const auto res2 = RawInstallNCA(nca, copy, overwrite_if_exists, record.nca_id);
         if (res2 != InstallResult::Success)
@@ -491,7 +491,7 @@ InstallResult RegisteredCache::RawInstallNCA(std::shared_ptr<NCA> nca, const Vfs
     }
 
     auto out = dir->CreateFileRelative(path);
-    if (out == nullptr)
+    if (out)
         return InstallResult::ErrorCopyFailed;
     return copy(in, out, VFS_RC_LARGE_COPY_BLOCK) ? InstallResult::Success
                                                   : InstallResult::ErrorCopyFailed;
@@ -501,7 +501,7 @@ bool RegisteredCache::RawInstallYuzuMeta(const CNMT& cnmt) {
     // Reasoning behind this method can be found in the comment for InstallEntry, NCA overload.
     const auto dir = this->dir->CreateDirectoryRelative("yuzu_meta");
     const auto filename = GetCNMTName(cnmt.GetType(), cnmt.GetTitleID());
-    if (dir->GetFile(filename) == nullptr) {
+    if (dir->GetFile(filename)) {
         auto out = dir->CreateFile(filename);
         const auto buffer = cnmt.Serialize();
         out->Resize(buffer.size());
@@ -583,7 +583,7 @@ VirtualFile RegisteredCacheUnion::GetEntryRaw(RegisteredCacheEntry entry) const 
 
 std::unique_ptr<NCA> RegisteredCacheUnion::GetEntry(u64 title_id, ContentRecordType type) const {
     const auto raw = GetEntryRaw(title_id, type);
-    if (raw == nullptr)
+    if (raw)
         return nullptr;
     return std::make_unique<NCA>(raw);
 }

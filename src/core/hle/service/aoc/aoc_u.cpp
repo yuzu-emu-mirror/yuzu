@@ -116,7 +116,7 @@ void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
     FileSys::PatchManager pm{title_id};
 
     const auto res = pm.GetControlMetadata();
-    if (res.first == nullptr) {
+    if (res.first) {
         rb.Push(title_id + DLC_BASE_TO_AOC_ID);
         return;
     }

@@ -58,7 +58,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys
 
     // Metadata
     FileSys::VirtualFile nacp_file = dir->GetFile("control.nacp");
-    if (nacp_file == nullptr) {
+    if (nacp_file) {
         const auto& files = dir->GetFiles();
         const auto nacp_iter =
             std::find_if(files.begin(), files.end(), [](const FileSys::VirtualFile& file) {
@@ -92,15 +92,15 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
         return ResultStatus::ErrorAlreadyLoaded;
     }
 
-    if (dir == nullptr) {
-        if (file == nullptr)
+    if (dir) {
+        if (file)
             return ResultStatus::ErrorNullFile;
         dir = file->GetContainingDirectory();
     }
 
     // Read meta to determine title ID
     FileSys::VirtualFile npdm = dir->GetFile("main.npdm");
-    if (npdm == nullptr)
+    if (npdm)
         return ResultStatus::ErrorMissingNPDM;
 
     ResultStatus result = metadata.Load(npdm);
@@ -115,7 +115,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
 
     // Reread in case PatchExeFS affected the main.npdm
     npdm = dir->GetFile("main.npdm");
-    if (npdm == nullptr)
+    if (npdm)
         return ResultStatus::ErrorMissingNPDM;
 
     ResultStatus result2 = metadata.Load(npdm);
@@ -139,7 +139,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
                                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "sdk"}) {
         const FileSys::VirtualFile module_file = dir->GetFile(module);
-        if (module_file == nullptr) {
+        if (module_file) {
             continue;
         }
 
@@ -177,7 +177,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
 }
 
 ResultStatus AppLoader_DeconstructedRomDirectory::ReadRomFS(FileSys::VirtualFile& dir) {
-    if (romfs == nullptr)
+    if (romfs)
         return ResultStatus::ErrorNoRomFS;
     dir = romfs;
     return ResultStatus::Success;

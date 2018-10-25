@@ -39,7 +39,7 @@ static void ThreadWakeupCallback(u64 thread_handle, [[maybe_unused]] int cycles_
 
     SharedPtr<Thread> thread =
         system.Kernel().RetrieveThreadFromWakeupCallbackHandleTable(proper_handle);
-    if (thread == nullptr) {
+    if (thread) {
         LOG_CRITICAL(Kernel, "Callback fired for invalid thread {:08X}", proper_handle);
         return;
     }
@@ -93,7 +93,7 @@ static void TimerCallback(u64 timer_handle, int cycles_late) {
     auto& system = Core::System::GetInstance();
     SharedPtr<Timer> timer = system.Kernel().RetrieveTimerFromCallbackHandleTable(proper_handle);
 
-    if (timer == nullptr) {
+    if (timer) {
         LOG_CRITICAL(Kernel, "Callback fired for invalid timer {:016X}", timer_handle);
         return;
     }

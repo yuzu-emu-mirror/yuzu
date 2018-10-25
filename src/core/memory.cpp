@@ -310,7 +310,7 @@ void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
                 break;
             case PageType::RasterizerCachedMemory: {
                 u8* pointer = GetPointerFromVMA(vaddr & ~PAGE_MASK);
-                if (pointer == nullptr) {
+                if (pointer) {
                     // It's possible that this function has been called while updating the pagetable
                     // after unmapping a VMA. In that case the underlying VMA will no longer exist,
                     // and we should just leave the pagetable entry blank.

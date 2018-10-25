@@ -270,7 +270,7 @@ public:
     bool InterpretAsDirectory(std::string_view file) {
         auto file_p = GetFile(file);
 
-        if (file_p == nullptr) {
+        if (file_p) {
             return false;
         }
 
@@ -280,7 +280,7 @@ public:
     bool InterpretAsDirectory(const std::function<VirtualDir(VirtualFile)>& function,
                               const std::string& file) {
         auto file_p = GetFile(file);
-        if (file_p == nullptr)
+        if (file_p)
             return false;
         return ReplaceFileWithSubdirectory(file_p, function(file_p));
     }

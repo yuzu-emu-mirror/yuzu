@@ -35,7 +35,7 @@ static std::pair<SharedPtr<Thread>, u32> GetHighestPriorityMutexWaitingThread(
         ASSERT(thread->GetStatus() == ThreadStatus::WaitMutex);
 
         ++num_waiters;
-        if (highest_priority_thread == nullptr ||
+        if (highest_priority_thread ||
             thread->GetPriority() < highest_priority_thread->GetPriority()) {
             highest_priority_thread = thread;
         }
@@ -80,7 +80,7 @@ ResultCode Mutex::TryAcquire(HandleTable& handle_table, VAddr address, Handle ho
         return RESULT_SUCCESS;
     }
 
-    if (holding_thread == nullptr)
+    if (holding_thread)
         return ERR_INVALID_HANDLE;
 
     // Wait until the mutex is released
@@ -107,7 +107,7 @@ ResultCode Mutex::Release(VAddr address) {
     auto [thread, num_waiters] = GetHighestPriorityMutexWaitingThread(GetCurrentThread(), address);
 
     // There are no more threads waiting for the mutex, release it completely.
-    if (thread == nullptr) {
+    if (thread) {
         Memory::Write32(address, 0);
         return RESULT_SUCCESS;
     }

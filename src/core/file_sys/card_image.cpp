@@ -173,7 +173,7 @@ bool XCI::ReplaceFileWithSubdirectory(VirtualFile file, VirtualDir dir) {
 }
 
 Loader::ResultStatus XCI::AddNCAFromPartition(XCIPartition part) {
-    if (partitions[static_cast<std::size_t>(part)] == nullptr) {
+    if (partitions[static_cast<std::size_t>(part)]) {
         return Loader::ResultStatus::ErrorXCIMissingPartition;
     }
 
@@ -201,6 +201,6 @@ Loader::ResultStatus XCI::AddNCAFromPartition(XCIPartition part) {
 }
 
 u8 XCI::GetFormatVersion() const {
-    return GetLogoPartition() == nullptr ? 0x1 : 0x2;
+    return GetLogoPartition() ? 0x1 : 0x2;
 }
 } // namespace FileSys

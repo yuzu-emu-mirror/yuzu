@@ -50,7 +50,7 @@ ResultCode VfsDirectoryServiceWrapper::CreateFile(const std::string& path_, u64 
     std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
     auto file = dir->CreateFile(FileUtil::GetFilename(path));
-    if (file == nullptr) {
+    if (file) {
         // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
     }
@@ -69,7 +69,7 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
     }
 
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
-    if (dir->GetFile(FileUtil::GetFilename(path)) == nullptr) {
+    if (dir->GetFile(FileUtil::GetFilename(path))) {
         return FileSys::ERROR_PATH_NOT_FOUND;
     }
     if (!dir->DeleteFile(FileUtil::GetFilename(path))) {
@@ -83,10 +83,10 @@ ResultCode VfsDirectoryServiceWrapper::DeleteFile(const std::string& path_) cons
 ResultCode VfsDirectoryServiceWrapper::CreateDirectory(const std::string& path_) const {
     std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
-    if (dir == nullptr && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
+    if (dir && FileUtil::GetFilename(FileUtil::GetParentPath(path)).empty())
         dir = backing;
     auto new_dir = dir->CreateSubdirectory(FileUtil::GetFilename(path));
-    if (new_dir == nullptr) {
+    if (new_dir) {
         // TODO(DarkLordZach): Find a better error code for this
         return ResultCode(-1);
     }
@@ -120,7 +120,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
     auto src = backing->GetFileRelative(src_path);
     if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
         // Use more-optimized vfs implementation rename.
-        if (src == nullptr)
+        if (src)
             return FileSys::ERROR_PATH_NOT_FOUND;
         if (!src->Rename(FileUtil::GetFilename(dest_path))) {
             // TODO(DarkLordZach): Find a better error code for this
@@ -155,7 +155,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
     auto src = GetDirectoryRelativeWrapped(backing, src_path);
     if (FileUtil::GetParentPath(src_path) == FileUtil::GetParentPath(dest_path)) {
         // Use more-optimized vfs implementation rename.
-        if (src == nullptr)
+        if (src)
             return FileSys::ERROR_PATH_NOT_FOUND;
         if (!src->Rename(FileUtil::GetFilename(dest_path))) {
             // TODO(DarkLordZach): Find a better error code for this
@@ -181,7 +181,7 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
     while (npath.size() > 0 && (npath[0] == '/' || npath[0] == '\\'))
         npath = npath.substr(1);
     auto file = backing->GetFileRelative(npath);
-    if (file == nullptr)
+    if (file)
         return FileSys::ERROR_PATH_NOT_FOUND;
 
     if (mode == FileSys::Mode::Append) {
@@ -195,7 +195,7 @@ ResultVal<FileSys::VirtualFile> VfsDirectoryServiceWrapper::OpenFile(const std::
 ResultVal<FileSys::VirtualDir> VfsDirectoryServiceWrapper::OpenDirectory(const std::string& path_) {
     std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, path);
-    if (dir == nullptr) {
+    if (dir) {
         // TODO(DarkLordZach): Find a better error code for this
         return FileSys::ERROR_PATH_NOT_FOUND;
     }
@@ -213,7 +213,7 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     const std::string& path_) const {
     std::string path(FileUtil::SanitizePath(path_));
     auto dir = GetDirectoryRelativeWrapped(backing, FileUtil::GetParentPath(path));
-    if (dir == nullptr)
+    if (dir)
         return FileSys::ERROR_PATH_NOT_FOUND;
     auto filename = FileUtil::GetFilename(path);
     // TODO(Subv): Some games use the '/' path, find out what this means.
@@ -237,28 +237,28 @@ static std::unique_ptr<FileSys::SDMCFactory> sdmc_factory;
 static std::unique_ptr<FileSys::BISFactory> bis_factory;
 
 ResultCode RegisterRomFS(std::unique_ptr<FileSys::RomFSFactory>&& factory) {
-    ASSERT_MSG(romfs_factory == nullptr, "Tried to register a second RomFS");
+    ASSERT_MSG(romfs_factory, "Tried to register a second RomFS");
     romfs_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered RomFS");
     return RESULT_SUCCESS;
 }
 
 ResultCode RegisterSaveData(std::unique_ptr<FileSys::SaveDataFactory>&& factory) {
-    ASSERT_MSG(romfs_factory == nullptr, "Tried to register a second save data");
+    ASSERT_MSG(romfs_factory, "Tried to register a second save data");
     save_data_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered save data");
     return RESULT_SUCCESS;
 }
 
 ResultCode RegisterSDMC(std::unique_ptr<FileSys::SDMCFactory>&& factory) {
-    ASSERT_MSG(sdmc_factory == nullptr, "Tried to register a second SDMC");
+    ASSERT_MSG(sdmc_factory, "Tried to register a second SDMC");
     sdmc_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered SDMC");
     return RESULT_SUCCESS;
 }
 
 ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory) {
-    ASSERT_MSG(bis_factory == nullptr, "Tried to register a second BIS");
+    ASSERT_MSG(bis_factory, "Tried to register a second BIS");
     bis_factory = std::move(factory);
     LOG_DEBUG(Service_FS, "Registered BIS");
     return RESULT_SUCCESS;
@@ -267,7 +267,7 @@ ResultCode RegisterBIS(std::unique_ptr<FileSys::BISFactory>&& factory) {
 void SetPackedUpdate(FileSys::VirtualFile update_raw) {
     LOG_TRACE(Service_FS, "Setting packed update for romfs");
 
-    if (romfs_factory == nullptr)
+    if (romfs_factory)
         return;
 
     romfs_factory->SetPackedUpdate(std::move(update_raw));
@@ -276,7 +276,7 @@ void SetPackedUpdate(FileSys::VirtualFile update_raw) {
 ResultVal<FileSys::VirtualFile> OpenRomFSCurrentProcess() {
     LOG_TRACE(Service_FS, "Opening RomFS for current process");
 
-    if (romfs_factory == nullptr) {
+    if (romfs_factory) {
         // TODO(bunnei): Find a better error code for this
         return ResultCode(-1);
     }
@@ -289,7 +289,7 @@ ResultVal<FileSys::VirtualFile> OpenRomFS(u64 title_id, FileSys::StorageId stora
     LOG_TRACE(Service_FS, "Opening RomFS for title_id={:016X}, storage_id={:02X}, type={:02X}",
               title_id, static_cast<u8>(storage_id), static_cast<u8>(type));
 
-    if (romfs_factory == nullptr) {
+    if (romfs_factory) {
         // TODO(bunnei): Find a better error code for this
         return ResultCode(-1);
     }
@@ -302,7 +302,7 @@ ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
     LOG_TRACE(Service_FS, "Opening Save Data for space_id={:01X}, save_struct={}",
               static_cast<u8>(space), save_struct.DebugInfo());
 
-    if (save_data_factory == nullptr) {
+    if (save_data_factory) {
         return ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound);
     }
 
@@ -312,7 +312,7 @@ ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
 ResultVal<FileSys::VirtualDir> OpenSDMC() {
     LOG_TRACE(Service_FS, "Opening SDMC");
 
-    if (sdmc_factory == nullptr) {
+    if (sdmc_factory) {
         return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SdCardNotFound);
     }
 
@@ -327,7 +327,7 @@ std::unique_ptr<FileSys::RegisteredCacheUnion> GetUnionContents() {
 FileSys::RegisteredCache* GetSystemNANDContents() {
     LOG_TRACE(Service_FS, "Opening System NAND Contents");
 
-    if (bis_factory == nullptr)
+    if (bis_factory)
         return nullptr;
 
     return bis_factory->GetSystemNANDContents();
@@ -336,7 +336,7 @@ FileSys::RegisteredCache* GetSystemNANDContents() {
 FileSys::RegisteredCache* GetUserNANDContents() {
     LOG_TRACE(Service_FS, "Opening User NAND Contents");
 
-    if (bis_factory == nullptr)
+    if (bis_factory)
         return nullptr;
 
     return bis_factory->GetUserNANDContents();
@@ -345,7 +345,7 @@ FileSys::RegisteredCache* GetUserNANDContents() {
 FileSys::RegisteredCache* GetSDMCContents() {
     LOG_TRACE(Service_FS, "Opening SDMC Contents");
 
-    if (sdmc_factory == nullptr)
+    if (sdmc_factory)
         return nullptr;
 
     return sdmc_factory->GetSDMCContents();
@@ -354,7 +354,7 @@ FileSys::RegisteredCache* GetSDMCContents() {
 FileSys::VirtualDir GetModificationLoadRoot(u64 title_id) {
     LOG_TRACE(Service_FS, "Opening mod load root for tid={:016X}", title_id);
 
-    if (bis_factory == nullptr)
+    if (bis_factory)
         return nullptr;
 
     return bis_factory->GetModificationLoadRoot(title_id);
@@ -374,11 +374,11 @@ void CreateFactories(FileSys::VfsFilesystem& vfs, bool overwrite) {
     auto load_directory = vfs.OpenDirectory(FileUtil::GetUserPath(FileUtil::UserPath::LoadDir),
                                             FileSys::Mode::ReadWrite);
 
-    if (bis_factory == nullptr)
+    if (bis_factory)
         bis_factory = std::make_unique<FileSys::BISFactory>(nand_directory, load_directory);
-    if (save_data_factory == nullptr)
+    if (save_data_factory)
         save_data_factory = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
-    if (sdmc_factory == nullptr)
+    if (sdmc_factory)
         sdmc_factory = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
 }
 

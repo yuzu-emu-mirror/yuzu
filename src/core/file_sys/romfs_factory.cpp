@@ -63,12 +63,12 @@ ResultVal<VirtualFile> RomFSFactory::Open(u64 title_id, StorageId storage, Conte
         UNIMPLEMENTED_MSG("Unimplemented storage_id={:02X}", static_cast<u8>(storage));
     }
 
-    if (res == nullptr) {
+    if (res) {
         // TODO(DarkLordZach): Find the right error code to use here
         return ResultCode(-1);
     }
     const auto romfs = res->GetRomFS();
-    if (romfs == nullptr) {
+    if (romfs) {
         // TODO(DarkLordZach): Find the right error code to use here
         return ResultCode(-1);
     }

@@ -316,11 +316,9 @@ PartitionDataManager::PartitionDataManager(const FileSys::VirtualDir& sysdata_di
       prodinfo(FindFileInDirWithNames(sysdata_dir, "PRODINFO")),
       secure_monitor(FindFileInDirWithNames(sysdata_dir, "secmon")),
       package1_decrypted(FindFileInDirWithNames(sysdata_dir, "pkg1_decr")),
-      secure_monitor_bytes(secure_monitor == nullptr ? std::vector<u8>{}
-                                                     : secure_monitor->ReadAllBytes()),
-      package1_decrypted_bytes(package1_decrypted == nullptr ? std::vector<u8>{}
-                                                             : package1_decrypted->ReadAllBytes()) {
-}
+      secure_monitor_bytes(secure_monitor ? std::vector<u8>{} : secure_monitor->ReadAllBytes()),
+      package1_decrypted_bytes(package1_decrypted ? std::vector<u8>{}
+                                                  : package1_decrypted->ReadAllBytes()) {}
 
 PartitionDataManager::~PartitionDataManager() = default;
 
@@ -579,7 +577,7 @@ FileSys::VirtualFile PartitionDataManager::GetProdInfoRaw() const {
 }
 
 void PartitionDataManager::DecryptProdInfo(std::array<u8, 0x20> bis_key) {
-    if (prodinfo == nullptr)
+    if (prodinfo)
         return;
 
     prodinfo_decrypted = std::make_shared<XTSEncryptionLayer>(prodinfo, bis_key);

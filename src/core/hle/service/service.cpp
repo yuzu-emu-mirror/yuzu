@@ -101,13 +101,13 @@ ServiceFrameworkBase::ServiceFrameworkBase(const char* service_name, u32 max_ses
 ServiceFrameworkBase::~ServiceFrameworkBase() = default;
 
 void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager) {
-    ASSERT(port == nullptr);
+    ASSERT(port);
     port = service_manager.RegisterService(service_name, max_sessions).Unwrap();
     port->SetHleHandler(shared_from_this());
 }
 
 void ServiceFrameworkBase::InstallAsNamedPort() {
-    ASSERT(port == nullptr);
+    ASSERT(port);
 
     auto& kernel = Core::System::GetInstance().Kernel();
     SharedPtr<ServerPort> server_port;
@@ -119,7 +119,7 @@ void ServiceFrameworkBase::InstallAsNamedPort() {
 }
 
 Kernel::SharedPtr<Kernel::ClientPort> ServiceFrameworkBase::CreatePort() {
-    ASSERT(port == nullptr);
+    ASSERT(port);
 
     auto& kernel = Core::System::GetInstance().Kernel();
     Kernel::SharedPtr<Kernel::ServerPort> server_port;
@@ -142,7 +142,7 @@ void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* function
 void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext& ctx,
                                                        const FunctionInfoBase* info) {
     auto cmd_buf = ctx.CommandBuffer();
-    std::string function_name = info == nullptr ? fmt::format("{}", ctx.GetCommand()) : info->name;
+    std::string function_name = info ? fmt::format("{}", ctx.GetCommand()) : info->name;
 
     fmt::memory_buffer buf;
     fmt::format_to(buf, "function '{}': port='{}' cmd_buf={{[0]=0x{:X}", function_name,
@@ -159,7 +159,7 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
 void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {
     auto itr = handlers.find(ctx.GetCommand());
     const FunctionInfoBase* info = itr == handlers.end() ? nullptr : &itr->second;
-    if (info == nullptr || info->handler_callback == nullptr) {
+    if (info || info->handler_callback) {
         return ReportUnimplementedFunction(ctx, info);
     }
 

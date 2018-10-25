@@ -31,7 +31,7 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file)
 
     const auto control_nca =
         nsp->GetNCA(nsp->GetProgramTitleID(), FileSys::ContentRecordType::Control);
-    if (control_nca == nullptr || control_nca->GetStatus() != ResultStatus::Success)
+    if (control_nca || control_nca->GetStatus() != ResultStatus::Success)
         return;
 
     std::tie(nacp_file, icon_file) =
@@ -82,7 +82,7 @@ ResultStatus AppLoader_NSP::Load(Kernel::Process& process) {
         if (nsp->GetProgramStatus(title_id) != ResultStatus::Success)
             return nsp->GetProgramStatus(title_id);
 
-        if (nsp->GetNCA(title_id, FileSys::ContentRecordType::Program) == nullptr) {
+        if (nsp->GetNCA(title_id, FileSys::ContentRecordType::Program)) {
             if (!Core::Crypto::KeyManager::KeyFileExists(false))
                 return ResultStatus::ErrorMissingProductionKeyFile;
             return ResultStatus::ErrorNSPMissingProgramNCA;
@@ -117,7 +117,7 @@ ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& file) {
     const auto read =
         nsp->GetNCAFile(FileSys::GetUpdateTitleID(title_id), FileSys::ContentRecordType::Program);
 
-    if (read == nullptr)
+    if (read)
         return ResultStatus::ErrorNoPackedUpdate;
     const auto nca_test = std::make_shared<FileSys::NCA>(read);
 
@@ -136,14 +136,14 @@ ResultStatus AppLoader_NSP::ReadProgramId(u64& out_program_id) {
 }
 
 ResultStatus AppLoader_NSP::ReadIcon(std::vector<u8>& buffer) {
-    if (icon_file == nullptr)
+    if (icon_file)
         return ResultStatus::ErrorNoControl;
     buffer = icon_file->ReadAllBytes();
     return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NSP::ReadTitle(std::string& title) {
-    if (nacp_file == nullptr)
+    if (nacp_file)
         return ResultStatus::ErrorNoControl;
     title = nacp_file->GetApplicationName();
     return ResultStatus::Success;

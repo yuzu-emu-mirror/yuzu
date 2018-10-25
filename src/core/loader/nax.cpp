@@ -18,7 +18,7 @@ FileType IdentifyTypeImpl(const FileSys::NAX& nax) {
     }
 
     const auto nca = nax.AsNCA();
-    if (nca == nullptr || nca->GetStatus() != ResultStatus::Success) {
+    if (nca || nca->GetStatus() != ResultStatus::Success) {
         return FileType::Error;
     }
 
@@ -50,7 +50,7 @@ ResultStatus AppLoader_NAX::Load(Kernel::Process& process) {
         return nax->GetStatus();
 
     const auto nca = nax->AsNCA();
-    if (nca == nullptr) {
+    if (nca) {
         if (!Core::Crypto::KeyManager::KeyFileExists(false))
             return ResultStatus::ErrorMissingProductionKeyFile;
         return ResultStatus::ErrorNAXInconvertibleToNCA;

@@ -122,7 +122,7 @@ void Thread::ResumeFromWait() {
     case ThreadStatus::Ready:
         // The thread's wakeup callback must have already been cleared when the thread was first
         // awoken.
-        ASSERT(wakeup_callback == nullptr);
+        ASSERT(wakeup_callback);
         // If the thread is waiting on multiple wait objects, it might be awoken more than once
         // before actually resuming. We can ignore subsequent wakeups if the thread status has
         // already been set to ThreadStatus::Ready.
@@ -146,8 +146,7 @@ void Thread::ResumeFromWait() {
     if (!new_processor_id) {
         new_processor_id = processor_id;
     }
-    if (ideal_core != -1 &&
-        Core::System::GetInstance().Scheduler(ideal_core).GetCurrentThread() == nullptr) {
+    if (ideal_core != -1 && Core::System::GetInstance().Scheduler(ideal_core).GetCurrentThread()) {
         new_processor_id = ideal_core;
     }
 
@@ -318,7 +317,7 @@ void Thread::AddMutexWaiter(SharedPtr<Thread> thread) {
     }
 
     // A thread can't wait on two different mutexes at the same time.
-    ASSERT(thread->lock_owner == nullptr);
+    ASSERT(thread->lock_owner);
 
     // Ensure that the thread is not already in the list of mutex waiters
     auto itr = std::find(wait_mutex_threads.begin(), wait_mutex_threads.end(), thread);
@@ -374,8 +373,7 @@ void Thread::ChangeCore(u32 core, u64 mask) {
     if (!new_processor_id) {
         new_processor_id = processor_id;
     }
-    if (ideal_core != -1 &&
-        Core::System::GetInstance().Scheduler(ideal_core).GetCurrentThread() == nullptr) {
+    if (ideal_core != -1 && Core::System::GetInstance().Scheduler(ideal_core).GetCurrentThread()) {
         new_processor_id = ideal_core;
     }
 

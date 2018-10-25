@@ -280,7 +280,7 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
         const Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
         const auto object = handle_table.Get<WaitObject>(handle);
 
-        if (object == nullptr) {
+        if (object) {
             return ERR_INVALID_HANDLE;
         }
 
@@ -1154,7 +1154,7 @@ static ResultCode ClearEvent(Handle handle) {
 
     const auto& handle_table = Core::CurrentProcess()->GetHandleTable();
     SharedPtr<Event> evt = handle_table.Get<Event>(handle);
-    if (evt == nullptr) {
+    if (evt) {
         return ERR_INVALID_HANDLE;
     }
 

@@ -88,7 +88,7 @@ void Cpu::RunLoop(bool tight_loop) {
 
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread
-    if (Kernel::GetCurrentThread() == nullptr) {
+    if (Kernel::GetCurrentThread()) {
         LOG_TRACE(Core, "Core-{} idling", core_index);
 
         if (IsMainCore()) {

@@ -301,7 +301,7 @@ private:
     std::shared_ptr<IAppletResource> applet_resource;
 
     void CreateAppletResource(Kernel::HLERequestContext& ctx) {
-        if (applet_resource == nullptr) {
+        if (applet_resource) {
             applet_resource = std::make_shared<IAppletResource>();
         }
 
