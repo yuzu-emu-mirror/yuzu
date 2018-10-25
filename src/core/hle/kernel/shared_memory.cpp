@@ -34,7 +34,7 @@ SharedPtr<SharedMemory> SharedMemory::Create(KernelCore& kernel, SharedPtr<Proce
         shared_memory->backing_block_offset = 0;
 
         // Refresh the address mappings for the current process.
-        if (Core::CurrentProcess() != nullptr) {
+        if (Core::CurrentProcess()) {
             Core::CurrentProcess()->VMManager().RefreshMemoryBlockMappings(
                 shared_memory->backing_block.get());
         }

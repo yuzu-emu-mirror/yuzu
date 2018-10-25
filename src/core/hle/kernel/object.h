@@ -94,7 +94,7 @@ using SharedPtr = boost::intrusive_ptr<T>;
  */
 template <typename T>
 inline SharedPtr<T> DynamicObjectCast(SharedPtr<Object> object) {
-    if (object != nullptr && object->GetHandleType() == T::HANDLE_TYPE) {
+    if (object && object->GetHandleType() == T::HANDLE_TYPE) {
         return boost::static_pointer_cast<T>(object);
     }
     return nullptr;

@@ -106,9 +106,9 @@ static ContentRecordType GetCRTypeFromNCAType(NCAContentType type) {
 
 VirtualFile RegisteredCache::OpenFileOrDirectoryConcat(const VirtualDir& dir,
                                                        std::string_view path) const {
-    if (dir->GetFileRelative(path) != nullptr)
+    if (dir->GetFileRelative(path))
         return dir->GetFileRelative(path);
-    if (dir->GetDirectoryRelative(path) != nullptr) {
+    if (dir->GetDirectoryRelative(path)) {
         const auto nca_dir = dir->GetDirectoryRelative(path);
         VirtualFile file = nullptr;
 
@@ -120,11 +120,11 @@ VirtualFile RegisteredCache::OpenFileOrDirectoryConcat(const VirtualDir& dir,
             // Since the files are a two-digit hex number, max is FF.
             for (std::size_t i = 0; i < 0x100; ++i) {
                 auto next = nca_dir->GetFile(fmt::format("{:02X}", i));
-                if (next != nullptr) {
+                if (next) {
                     concat.push_back(std::move(next));
                 } else {
                     next = nca_dir->GetFile(fmt::format("{:02x}", i));
-                    if (next != nullptr)
+                    if (next)
                         concat.push_back(std::move(next));
                     else
                         break;
@@ -153,7 +153,7 @@ VirtualFile RegisteredCache::GetFileAtID(NcaID id) const {
     for (u8 i = 0; i < 4; ++i) {
         const auto path = GetRelativePathFromNcaID(id, (i & 0b10) == 0, (i & 0b01) == 0);
         file = OpenFileOrDirectoryConcat(dir, path);
-        if (file != nullptr)
+        if (file)
             return file;
     }
     return file;
@@ -274,11 +274,11 @@ RegisteredCache::RegisteredCache(VirtualDir dir_, RegisteredCacheParsingFunction
 RegisteredCache::~RegisteredCache() = default;
 
 bool RegisteredCache::HasEntry(u64 title_id, ContentRecordType type) const {
-    return GetEntryRaw(title_id, type) != nullptr;
+    return GetEntryRaw(title_id, type);
 }
 
 bool RegisteredCache::HasEntry(RegisteredCacheEntry entry) const {
-    return GetEntryRaw(entry) != nullptr;
+    return GetEntryRaw(entry);
 }
 
 VirtualFile RegisteredCache::GetEntryUnparsed(u64 title_id, ContentRecordType type) const {
@@ -337,7 +337,7 @@ void RegisteredCache::IterateAllMetadata(
         if (filter(cnmt, EMPTY_META_CONTENT_RECORD))
             out.push_back(proc(cnmt, EMPTY_META_CONTENT_RECORD));
         for (const auto& rec : cnmt.GetContentRecords()) {
-            if (GetFileAtID(rec.nca_id) != nullptr && filter(cnmt, rec)) {
+            if (GetFileAtID(rec.nca_id) && filter(cnmt, rec)) {
                 out.push_back(proc(cnmt, rec));
             }
         }
@@ -345,7 +345,7 @@ void RegisteredCache::IterateAllMetadata(
     for (const auto& kv : yuzu_meta) {
         const auto& cnmt = kv.second;
         for (const auto& rec : cnmt.GetContentRecords()) {
-            if (GetFileAtID(rec.nca_id) != nullptr && filter(cnmt, rec)) {
+            if (GetFileAtID(rec.nca_id) && filter(cnmt, rec)) {
                 out.push_back(proc(cnmt, rec));
             }
         }
@@ -478,12 +478,12 @@ InstallResult RegisteredCache::RawInstallNCA(std::shared_ptr<NCA> nca, const Vfs
 
     std::string path = GetRelativePathFromNcaID(id, false, true);
 
-    if (GetFileAtID(id) != nullptr && !overwrite_if_exists) {
+    if (GetFileAtID(id) && !overwrite_if_exists) {
         LOG_WARNING(Loader, "Attempting to overwrite existing NCA. Skipping...");
         return InstallResult::ErrorAlreadyExists;
     }
 
-    if (GetFileAtID(id) != nullptr) {
+    if (GetFileAtID(id)) {
         LOG_WARNING(Loader, "Overwriting existing NCA...");
         VirtualDir c_dir;
         { c_dir = dir->GetFileRelative(path)->GetContainingDirectory(); }
@@ -556,7 +556,7 @@ boost::optional<u32> RegisteredCacheUnion::GetEntryVersion(u64 title_id) const {
 VirtualFile RegisteredCacheUnion::GetEntryUnparsed(u64 title_id, ContentRecordType type) const {
     for (const auto& c : caches) {
         const auto res = c->GetEntryUnparsed(title_id, type);
-        if (res != nullptr)
+        if (res)
             return res;
     }
 
@@ -570,7 +570,7 @@ VirtualFile RegisteredCacheUnion::GetEntryUnparsed(RegisteredCacheEntry entry) c
 VirtualFile RegisteredCacheUnion::GetEntryRaw(u64 title_id, ContentRecordType type) const {
     for (const auto& c : caches) {
         const auto res = c->GetEntryRaw(title_id, type);
-        if (res != nullptr)
+        if (res)
             return res;
     }
 

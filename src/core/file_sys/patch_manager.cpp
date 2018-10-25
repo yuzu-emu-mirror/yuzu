@@ -61,9 +61,9 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     // Game Updates
     const auto update_tid = GetUpdateTitleID(title_id);
     const auto update = installed->GetEntry(update_tid, ContentRecordType::Program);
-    if (update != nullptr) {
+    if (update) {
         if (update->GetStatus() == Loader::ResultStatus::ErrorMissingBKTRBaseRomFS &&
-            update->GetExeFS() != nullptr) {
+            update->GetExeFS()) {
             LOG_INFO(Loader, "    ExeFS: Update ({}) applied successfully",
                      FormatTitleVersion(installed->GetEntryVersion(update_tid).get_value_or(0)));
             exefs = update->GetExeFS();
@@ -79,7 +79,7 @@ static std::vector<VirtualFile> CollectPatches(const std::vector<VirtualDir>& pa
     out.reserve(patch_dirs.size());
     for (const auto& subdir : patch_dirs) {
         auto exefs_dir = subdir->GetSubdirectory("exefs");
-        if (exefs_dir != nullptr) {
+        if (exefs_dir) {
             for (const auto& file : exefs_dir->GetFiles()) {
                 if (file->GetExtension() == "ips") {
                     auto name = file->GetName();
@@ -134,14 +134,14 @@ std::vector<u8> PatchManager::PatchNSO(const std::vector<u8>& nso) const {
             LOG_INFO(Loader, "    - Applying IPS patch from mod \"{}\"",
                      patch_file->GetContainingDirectory()->GetParentDirectory()->GetName());
             const auto patched = PatchIPS(std::make_shared<VectorVfsFile>(out), patch_file);
-            if (patched != nullptr)
+            if (patched)
                 out = patched->ReadAllBytes();
         } else if (patch_file->GetExtension() == "pchtxt") {
             LOG_INFO(Loader, "    - Applying IPSwitch patch from mod \"{}\"",
                      patch_file->GetContainingDirectory()->GetParentDirectory()->GetName());
             const IPSwitchCompiler compiler{patch_file};
             const auto patched = compiler.Apply(std::make_shared<VectorVfsFile>(out));
-            if (patched != nullptr)
+            if (patched)
                 out = patched->ReadAllBytes();
         }
     }
@@ -188,11 +188,11 @@ static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType t
     layers_ext.reserve(patch_dirs.size() + 1);
     for (const auto& subdir : patch_dirs) {
         auto romfs_dir = subdir->GetSubdirectory("romfs");
-        if (romfs_dir != nullptr)
+        if (romfs_dir)
             layers.push_back(std::move(romfs_dir));
 
         auto ext_dir = subdir->GetSubdirectory("romfs_ext");
-        if (ext_dir != nullptr)
+        if (ext_dir)
             layers_ext.push_back(std::move(ext_dir));
     }
     layers.push_back(std::move(extracted));
@@ -232,18 +232,16 @@ VirtualFile PatchManager::PatchRomFS(VirtualFile romfs, u64 ivfc_offset, Content
     // Game Updates
     const auto update_tid = GetUpdateTitleID(title_id);
     const auto update = installed->GetEntryRaw(update_tid, type);
-    if (update != nullptr) {
+    if (update) {
         const auto new_nca = std::make_shared<NCA>(update, romfs, ivfc_offset);
-        if (new_nca->GetStatus() == Loader::ResultStatus::Success &&
-            new_nca->GetRomFS() != nullptr) {
+        if (new_nca->GetStatus() == Loader::ResultStatus::Success && new_nca->GetRomFS()) {
             LOG_INFO(Loader, "    RomFS: Update ({}) applied successfully",
                      FormatTitleVersion(installed->GetEntryVersion(update_tid).get_value_or(0)));
             romfs = new_nca->GetRomFS();
         }
-    } else if (update_raw != nullptr) {
+    } else if (update_raw) {
         const auto new_nca = std::make_shared<NCA>(update_raw, romfs, ivfc_offset);
-        if (new_nca->GetStatus() == Loader::ResultStatus::Success &&
-            new_nca->GetRomFS() != nullptr) {
+        if (new_nca->GetStatus() == Loader::ResultStatus::Success && new_nca->GetRomFS()) {
             LOG_INFO(Loader, "    RomFS: Update (PACKED) applied successfully");
             romfs = new_nca->GetRomFS();
         }
@@ -263,7 +261,7 @@ static void AppendCommaIfNotEmpty(std::string& to, const std::string& with) {
 }
 
 static bool IsDirValidAndNonEmpty(const VirtualDir& dir) {
-    return dir != nullptr && (!dir->GetFiles().empty() || !dir->GetSubdirectories().empty());
+    return dir && (!dir->GetFiles().empty() || !dir->GetSubdirectories().empty());
 }
 
 std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNames(
@@ -276,7 +274,7 @@ std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNam
     PatchManager update{update_tid};
     auto [nacp, discard_icon_file] = update.GetControlMetadata();
 
-    if (nacp != nullptr) {
+    if (nacp) {
         out.insert_or_assign("Update", nacp->GetVersionString());
     } else {
         if (installed->HasEntry(update_tid, ContentRecordType::Program)) {
@@ -288,14 +286,14 @@ std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNam
                     "Update",
                     FormatTitleVersion(meta_ver.get(), TitleVersionFormat::ThreeElements));
             }
-        } else if (update_raw != nullptr) {
+        } else if (update_raw) {
             out.insert_or_assign("Update", "PACKED");
         }
     }
 
     // General Mods (LayeredFS and IPS)
     const auto mod_dir = Service::FileSystem::GetModificationLoadRoot(title_id);
-    if (mod_dir != nullptr && mod_dir->GetSize() > 0) {
+    if (mod_dir && mod_dir->GetSize() > 0) {
         for (const auto& mod : mod_dir->GetSubdirectories()) {
             std::string types;
 
@@ -384,7 +382,7 @@ std::pair<std::unique_ptr<NACP>, VirtualFile> PatchManager::ParseControlNCA(cons
     VirtualFile icon_file;
     for (const auto& language : FileSys::LANGUAGE_NAMES) {
         icon_file = extracted->GetFile("icon_" + std::string(language) + ".dat");
-        if (icon_file != nullptr)
+        if (icon_file)
             break;
     }
 

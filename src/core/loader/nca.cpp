@@ -54,7 +54,7 @@ ResultStatus AppLoader_NCA::Load(Kernel::Process& process) {
     if (load_result != ResultStatus::Success)
         return load_result;
 
-    if (nca->GetRomFS() != nullptr && nca->GetRomFS()->GetSize() > 0)
+    if (nca->GetRomFS() && nca->GetRomFS()->GetSize() > 0)
         Service::FileSystem::RegisterRomFS(std::make_unique<FileSys::RomFSFactory>(*this));
 
     is_loaded = true;

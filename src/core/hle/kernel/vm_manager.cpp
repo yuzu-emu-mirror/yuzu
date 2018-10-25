@@ -91,7 +91,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
                                                           std::shared_ptr<std::vector<u8>> block,
                                                           std::size_t offset, u64 size,
                                                           MemoryState state) {
-    ASSERT(block != nullptr);
+    ASSERT(block);
     ASSERT(offset + size <= block->size());
 
     // This is the appropriately sized VMA that will turn into our allocation.
@@ -121,7 +121,7 @@ ResultVal<VMManager::VMAHandle> VMManager::MapMemoryBlock(VAddr target,
 
 ResultVal<VMManager::VMAHandle> VMManager::MapBackingMemory(VAddr target, u8* memory, u64 size,
                                                             MemoryState state) {
-    ASSERT(memory != nullptr);
+    ASSERT(memory);
 
     // This is the appropriately sized VMA that will turn into our allocation.
     CASCADE_RESULT(VMAIter vma_handle, CarveVMA(target, size));

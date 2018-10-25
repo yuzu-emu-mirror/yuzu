@@ -135,7 +135,7 @@ ResultCode VfsDirectoryServiceWrapper::RenameFile(const std::string& src_path_,
         return c_res;
 
     auto dest = backing->GetFileRelative(dest_path);
-    ASSERT_MSG(dest != nullptr, "Newly created file with success cannot be found.");
+    ASSERT_MSG(dest, "Newly created file with success cannot be found.");
 
     ASSERT_MSG(dest->WriteBytes(src->ReadAllBytes()) == src->GetSize(),
                "Could not write all of the bytes but everything else has succeded.");
@@ -220,9 +220,9 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     if (filename.empty())
         return MakeResult(FileSys::EntryType::Directory);
 
-    if (dir->GetFile(filename) != nullptr)
+    if (dir->GetFile(filename))
         return MakeResult(FileSys::EntryType::File);
-    if (dir->GetSubdirectory(filename) != nullptr)
+    if (dir->GetSubdirectory(filename))
         return MakeResult(FileSys::EntryType::Directory);
     return FileSys::ERROR_PATH_NOT_FOUND;
 }

@@ -931,7 +931,7 @@ static ResultCode SignalProcessWideKey(VAddr condition_variable_addr, s32 target
             thread->ResumeFromWait();
 
             auto* const lock_owner = thread->GetLockOwner();
-            if (lock_owner != nullptr) {
+            if (lock_owner) {
                 lock_owner->RemoveMutexWaiter(thread);
             }
 
@@ -1045,7 +1045,7 @@ static ResultCode ResetSignal(Handle handle) {
     const auto& handle_table = Core::CurrentProcess()->GetHandleTable();
     auto event = handle_table.Get<Event>(handle);
 
-    ASSERT(event != nullptr);
+    ASSERT(event);
 
     event->Clear();
     return RESULT_SUCCESS;

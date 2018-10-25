@@ -50,7 +50,7 @@ bool ServerSession::ShouldWait(Thread* thread) const {
     if (parent->client == nullptr)
         return false;
     // Wait if we have no pending requests, or if we're currently handling a request.
-    return pending_requesting_threads.empty() || currently_handling != nullptr;
+    return pending_requesting_threads.empty() || currently_handling;
 }
 
 void ServerSession::Acquire(Thread* thread) {
@@ -114,7 +114,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
     if (IsDomain() && context.GetDomainMessageHeader()) {
         result = HandleDomainSyncRequest(context);
         // If there is no domain header, the regular session handler is used
-    } else if (hle_handler != nullptr) {
+    } else if (hle_handler) {
         // If this ServerSession has an associated HLE handler, forward the request to it.
         result = hle_handler->HandleSyncRequest(context);
     }
@@ -124,7 +124,7 @@ ResultCode ServerSession::HandleSyncRequest(SharedPtr<Thread> thread) {
         // svcReplyAndReceive for LLE servers.
         thread->SetStatus(ThreadStatus::WaitIPC);
 
-        if (hle_handler != nullptr) {
+        if (hle_handler) {
             // For HLE services, we put the request threads to sleep for a short duration to
             // simulate IPC overhead, but only if the HLE handler didn't put the thread to sleep for
             // other reasons like an async callback. The IPC overhead is needed to prevent

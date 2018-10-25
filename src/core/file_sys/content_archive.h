@@ -70,7 +70,7 @@ static_assert(sizeof(NCAHeader) == 0x400, "NCAHeader has incorrect size.");
 
 inline bool IsDirectoryExeFS(const std::shared_ptr<VfsDirectory>& pfs) {
     // According to switchbrew, an exefs must only contain these two files:
-    return pfs->GetFile("main") != nullptr && pfs->GetFile("main.npdm") != nullptr;
+    return pfs->GetFile("main") && pfs->GetFile("main.npdm");
 }
 
 // An implementation of VfsDirectory that represents a Nintendo Content Archive (NCA) conatiner.

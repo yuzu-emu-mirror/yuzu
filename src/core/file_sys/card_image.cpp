@@ -44,7 +44,7 @@ XCI::XCI(VirtualFile file_)
     for (XCIPartition partition :
          {XCIPartition::Update, XCIPartition::Normal, XCIPartition::Secure, XCIPartition::Logo}) {
         auto raw = main_hfs.GetFile(partition_names[static_cast<std::size_t>(partition)]);
-        if (raw != nullptr)
+        if (raw)
             partitions[static_cast<std::size_t>(partition)] =
                 std::make_shared<PartitionFilesystem>(raw);
     }
@@ -123,7 +123,7 @@ u64 XCI::GetProgramTitleID() const {
 }
 
 bool XCI::HasProgramNCA() const {
-    return program != nullptr;
+    return program;
 }
 
 VirtualFile XCI::GetProgramNCAFile() const {
@@ -147,7 +147,7 @@ std::shared_ptr<NCA> XCI::GetNCAByType(NCAContentType type) const {
 
 VirtualFile XCI::GetNCAFileByType(NCAContentType type) const {
     auto nca = GetNCAByType(type);
-    if (nca != nullptr)
+    if (nca)
         return nca->GetBaseFile();
     return nullptr;
 }

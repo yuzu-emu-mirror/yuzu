@@ -136,7 +136,7 @@ void ClearPendingEvents() {
 }
 
 void ScheduleEvent(s64 cycles_into_future, const EventType* event_type, u64 userdata) {
-    ASSERT(event_type != nullptr);
+    ASSERT(event_type);
     s64 timeout = GetTicks() + cycles_into_future;
     // If this event needs to be scheduled before the next advance(), force one early
     if (!is_global_timer_sane)

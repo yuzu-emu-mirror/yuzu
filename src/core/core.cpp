@@ -50,11 +50,11 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
         std::vector<FileSys::VirtualFile> concat;
         for (u8 i = 0; i < 0x10; ++i) {
             auto next = dir->GetFile(fmt::format("{:02X}", i));
-            if (next != nullptr)
+            if (next)
                 concat.push_back(std::move(next));
             else {
                 next = dir->GetFile(fmt::format("{:02x}", i));
-                if (next != nullptr)
+                if (next)
                     concat.push_back(std::move(next));
                 else
                     break;

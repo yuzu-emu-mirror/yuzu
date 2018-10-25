@@ -19,7 +19,7 @@ HandleTable::HandleTable() {
 }
 
 ResultVal<Handle> HandleTable::Create(SharedPtr<Object> obj) {
-    DEBUG_ASSERT(obj != nullptr);
+    DEBUG_ASSERT(obj);
 
     u16 slot = next_free_slot;
     if (slot >= generations.size()) {
@@ -68,7 +68,7 @@ bool HandleTable::IsValid(Handle handle) const {
     std::size_t slot = GetSlot(handle);
     u16 generation = GetGeneration(handle);
 
-    return slot < MAX_COUNT && objects[slot] != nullptr && generations[slot] == generation;
+    return slot < MAX_COUNT && objects[slot] && generations[slot] == generation;
 }
 
 SharedPtr<Object> HandleTable::GetGeneric(Handle handle) const {

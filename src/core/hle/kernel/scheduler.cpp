@@ -27,7 +27,7 @@ Scheduler::~Scheduler() {
 
 bool Scheduler::HaveReadyThreads() const {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
-    return ready_queue.get_first() != nullptr;
+    return ready_queue.get_first();
 }
 
 Thread* Scheduler::GetCurrentThread() const {

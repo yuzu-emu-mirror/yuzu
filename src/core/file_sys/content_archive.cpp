@@ -352,7 +352,7 @@ bool NCA::ReadPFS0Section(const NCASectionHeader& section, const NCASectionTable
     const u64 size = MEDIA_OFFSET_MULTIPLIER * (entry.media_end_offset - entry.media_offset);
 
     auto dec = Decrypt(section, std::make_shared<OffsetVfsFile>(file, size, offset), offset);
-    if (dec != nullptr) {
+    if (dec) {
         auto npfs = std::make_shared<PartitionFilesystem>(std::move(dec));
 
         if (npfs->GetStatus() == Loader::ResultStatus::Success) {

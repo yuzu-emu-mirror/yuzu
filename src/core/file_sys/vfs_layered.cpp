@@ -26,7 +26,7 @@ VirtualDir LayeredVfsDirectory::MakeLayeredDirectory(std::vector<VirtualDir> dir
 std::shared_ptr<VfsFile> LayeredVfsDirectory::GetFileRelative(std::string_view path) const {
     for (const auto& layer : dirs) {
         const auto file = layer->GetFileRelative(path);
-        if (file != nullptr)
+        if (file)
             return file;
     }
 
@@ -38,7 +38,7 @@ std::shared_ptr<VfsDirectory> LayeredVfsDirectory::GetDirectoryRelative(
     std::vector<VirtualDir> out;
     for (const auto& layer : dirs) {
         auto dir = layer->GetDirectoryRelative(path);
-        if (dir != nullptr)
+        if (dir)
             out.push_back(std::move(dir));
     }
 

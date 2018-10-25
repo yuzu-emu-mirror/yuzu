@@ -334,7 +334,7 @@ public:
     }
 
     bool HasWakeupCallback() const {
-        return wakeup_callback != nullptr;
+        return wakeup_callback;
     }
 
     void SetWakeupCallback(WakeupCallback callback) {

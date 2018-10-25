@@ -70,7 +70,7 @@ static void MapPages(PageTable& page_table, VAddr base, u64 size, u8* memory, Pa
         page_table.pointers[base] = memory;
 
         base += 1;
-        if (memory != nullptr)
+        if (memory)
             memory += PAGE_SIZE;
     }
 }

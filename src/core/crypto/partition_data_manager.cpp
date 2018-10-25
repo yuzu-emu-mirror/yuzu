@@ -294,7 +294,7 @@ FileSys::VirtualFile FindFileInDirWithNames(const FileSys::VirtualDir& dir,
     auto upper = name;
     std::transform(upper.begin(), upper.end(), upper.begin(), [](u8 c) { return std::toupper(c); });
     for (const auto& fname : {name, name + ".bin", upper, upper + ".BIN"}) {
-        if (dir->GetFile(fname) != nullptr)
+        if (dir->GetFile(fname))
             return dir->GetFile(fname);
     }
 
@@ -325,7 +325,7 @@ PartitionDataManager::PartitionDataManager(const FileSys::VirtualDir& sysdata_di
 PartitionDataManager::~PartitionDataManager() = default;
 
 bool PartitionDataManager::HasBoot0() const {
-    return boot0 != nullptr;
+    return boot0;
 }
 
 FileSys::VirtualFile PartitionDataManager::GetBoot0Raw() const {
@@ -400,7 +400,7 @@ std::array<u8, 16> PartitionDataManager::GetKeyblobKeySource(std::size_t revisio
 }
 
 bool PartitionDataManager::HasFuses() const {
-    return fuses != nullptr;
+    return fuses;
 }
 
 FileSys::VirtualFile PartitionDataManager::GetFusesRaw() const {
@@ -416,7 +416,7 @@ std::array<u8, 16> PartitionDataManager::GetSecureBootKey() const {
 }
 
 bool PartitionDataManager::HasKFuses() const {
-    return kfuses != nullptr;
+    return kfuses;
 }
 
 FileSys::VirtualFile PartitionDataManager::GetKFusesRaw() const {
@@ -424,7 +424,7 @@ FileSys::VirtualFile PartitionDataManager::GetKFusesRaw() const {
 }
 
 bool PartitionDataManager::HasPackage2(Package2Type type) const {
-    return package2.at(static_cast<size_t>(type)) != nullptr;
+    return package2.at(static_cast<size_t>(type));
 }
 
 FileSys::VirtualFile PartitionDataManager::GetPackage2Raw(Package2Type type) const {
@@ -571,7 +571,7 @@ std::array<u8, 16> PartitionDataManager::GetAESKeyGenerationSource(Package2Type 
 }
 
 bool PartitionDataManager::HasProdInfo() const {
-    return prodinfo != nullptr;
+    return prodinfo;
 }
 
 FileSys::VirtualFile PartitionDataManager::GetProdInfoRaw() const {
@@ -587,7 +587,7 @@ void PartitionDataManager::DecryptProdInfo(std::array<u8, 0x20> bis_key) {
 
 std::array<u8, 576> PartitionDataManager::GetETicketExtendedKek() const {
     std::array<u8, 0x240> out{};
-    if (prodinfo_decrypted != nullptr)
+    if (prodinfo_decrypted)
         prodinfo_decrypted->Read(out.data(), out.size(), 0x3890);
     return out;
 }

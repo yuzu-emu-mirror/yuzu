@@ -166,7 +166,7 @@ VirtualFile NSP::GetNCAFile(u64 title_id, ContentRecordType type) const {
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
     const auto nca = GetNCA(title_id, type);
-    if (nca != nullptr)
+    if (nca)
         return nca->GetBaseFile();
     return nullptr;
 }

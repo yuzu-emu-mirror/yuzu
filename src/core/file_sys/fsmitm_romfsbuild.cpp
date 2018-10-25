@@ -145,7 +145,7 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
             child->path_len = child->cur_path_ofs + static_cast<u32>(kv.first.size());
             child->path = parent->path + "/" + kv.first;
 
-            if (ext != nullptr && ext->GetFileRelative(child->path + ".stub") != nullptr)
+            if (ext && ext->GetFileRelative(child->path + ".stub"))
                 continue;
 
             // Sanity check on path_len
@@ -161,7 +161,7 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
             child->path_len = child->cur_path_ofs + static_cast<u32>(kv.first.size());
             child->path = parent->path + "/" + kv.first;
 
-            if (ext != nullptr && ext->GetFileRelative(child->path + ".stub") != nullptr)
+            if (ext && ext->GetFileRelative(child->path + ".stub"))
                 continue;
 
             // Sanity check on path_len
@@ -169,12 +169,12 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
 
             child->source = root_romfs->GetFileRelative(child->path);
 
-            if (ext != nullptr) {
+            if (ext) {
                 const auto ips = ext->GetFileRelative(child->path + ".ips");
 
-                if (ips != nullptr) {
+                if (ips) {
                     auto patched = PatchIPS(child->source, ips);
-                    if (patched != nullptr)
+                    if (patched)
                         child->source = std::move(patched);
                 }
             }

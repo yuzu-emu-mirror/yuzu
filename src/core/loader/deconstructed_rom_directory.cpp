@@ -28,7 +28,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys
 
     // Title ID
     const auto npdm = dir->GetFile("main.npdm");
-    if (npdm != nullptr) {
+    if (npdm) {
         const auto res = metadata.Load(npdm);
         if (res == ResultStatus::Success)
             title_id = metadata.GetTitleID();
@@ -38,7 +38,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys
     FileSys::VirtualFile icon_file = nullptr;
     for (const auto& language : FileSys::LANGUAGE_NAMES) {
         icon_file = dir->GetFile("icon_" + std::string(language) + ".dat");
-        if (icon_file != nullptr) {
+        if (icon_file) {
             icon_data = icon_file->ReadAllBytes();
             break;
         }
@@ -68,7 +68,7 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys
             nacp_file = *nacp_iter;
     }
 
-    if (nacp_file != nullptr) {
+    if (nacp_file) {
         FileSys::NACP nacp(nacp_file);
         name = nacp.GetApplicationName();
     }
@@ -167,7 +167,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
         });
 
     // Register the RomFS if a ".romfs" file was found
-    if (romfs_iter != files.end() && *romfs_iter != nullptr) {
+    if (romfs_iter != files.end() && *romfs_iter) {
         romfs = *romfs_iter;
         Service::FileSystem::RegisterRomFS(std::make_unique<FileSys::RomFSFactory>(*this));
     }

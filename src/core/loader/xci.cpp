@@ -39,7 +39,7 @@ FileType AppLoader_XCI::IdentifyType(const FileSys::VirtualFile& file) {
     FileSys::XCI xci(file);
 
     if (xci.GetStatus() == ResultStatus::Success &&
-        xci.GetNCAByType(FileSys::NCAContentType::Program) != nullptr &&
+        xci.GetNCAByType(FileSys::NCAContentType::Program) &&
         AppLoader_NCA::IdentifyType(xci.GetNCAFileByType(FileSys::NCAContentType::Program)) ==
             FileType::NCA) {
         return FileType::XCI;
@@ -67,7 +67,7 @@ ResultStatus AppLoader_XCI::Load(Kernel::Process& process) {
         return result;
 
     FileSys::VirtualFile update_raw;
-    if (ReadUpdateRaw(update_raw) == ResultStatus::Success && update_raw != nullptr)
+    if (ReadUpdateRaw(update_raw) == ResultStatus::Success && update_raw)
         Service::FileSystem::SetPackedUpdate(std::move(update_raw));
 
     is_loaded = true;

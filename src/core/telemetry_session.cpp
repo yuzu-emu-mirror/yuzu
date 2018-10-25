@@ -133,7 +133,7 @@ TelemetrySession::TelemetrySession() {
 
         if (name.empty()) {
             auto [nacp, icon_file] = FileSys::PatchManager(program_id).GetControlMetadata();
-            if (nacp != nullptr)
+            if (nacp)
                 name = nacp->GetApplicationName();
         }
 

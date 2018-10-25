@@ -45,14 +45,14 @@ FileType AppLoader_NSP::IdentifyType(const FileSys::VirtualFile& file) {
 
     if (nsp.GetStatus() == ResultStatus::Success) {
         // Extracted Type case
-        if (nsp.IsExtractedType() && nsp.GetExeFS() != nullptr &&
-            FileSys::IsDirectoryExeFS(nsp.GetExeFS()) && nsp.GetRomFS() != nullptr) {
+        if (nsp.IsExtractedType() && nsp.GetExeFS() && FileSys::IsDirectoryExeFS(nsp.GetExeFS()) &&
+            nsp.GetRomFS()) {
             return FileType::NSP;
         }
 
         // Non-Ectracted Type case
         if (!nsp.IsExtractedType() &&
-            nsp.GetNCA(nsp.GetFirstTitleID(), FileSys::ContentRecordType::Program) != nullptr &&
+            nsp.GetNCA(nsp.GetFirstTitleID(), FileSys::ContentRecordType::Program) &&
             AppLoader_NCA::IdentifyType(nsp.GetNCAFile(
                 nsp.GetFirstTitleID(), FileSys::ContentRecordType::Program)) == FileType::NCA) {
             return FileType::NSP;
@@ -94,7 +94,7 @@ ResultStatus AppLoader_NSP::Load(Kernel::Process& process) {
         return result;
 
     FileSys::VirtualFile update_raw;
-    if (ReadUpdateRaw(update_raw) == ResultStatus::Success && update_raw != nullptr)
+    if (ReadUpdateRaw(update_raw) == ResultStatus::Success && update_raw)
         Service::FileSystem::SetPackedUpdate(std::move(update_raw));
 
     is_loaded = true;

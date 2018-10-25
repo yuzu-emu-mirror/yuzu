@@ -31,9 +31,9 @@ bool VfsFilesystem::IsWritable() const {
 
 VfsEntryType VfsFilesystem::GetEntryType(std::string_view path_) const {
     const auto path = FileUtil::SanitizePath(path_);
-    if (root->GetFileRelative(path) != nullptr)
+    if (root->GetFileRelative(path))
         return VfsEntryType::File;
-    if (root->GetDirectoryRelative(path) != nullptr)
+    if (root->GetDirectoryRelative(path))
         return VfsEntryType::Directory;
 
     return VfsEntryType::None;
@@ -65,7 +65,7 @@ VirtualFile VfsFilesystem::CopyFile(std::string_view old_path_, std::string_view
     if (old_file == nullptr)
         return nullptr;
     auto new_file = OpenFile(new_path, Mode::Read);
-    if (new_file != nullptr)
+    if (new_file)
         return nullptr;
     new_file = CreateFile(new_path, Mode::Write);
     if (new_file == nullptr)
@@ -115,7 +115,7 @@ VirtualDir VfsFilesystem::CopyDirectory(std::string_view old_path_, std::string_
     if (old_dir == nullptr)
         return nullptr;
     auto new_dir = OpenDirectory(new_path, Mode::Read);
-    if (new_dir != nullptr)
+    if (new_dir)
         return nullptr;
     new_dir = CreateDirectory(new_path, Mode::Write);
     if (new_dir == nullptr)

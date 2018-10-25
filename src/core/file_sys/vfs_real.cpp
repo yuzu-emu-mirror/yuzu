@@ -260,7 +260,7 @@ std::size_t RealVfsFile::Write(const u8* data, std::size_t length, std::size_t o
 }
 
 bool RealVfsFile::Rename(std::string_view name) {
-    return base.MoveFile(path, parent_path + DIR_SEP + std::string(name)) != nullptr;
+    return base.MoveFile(path, parent_path + DIR_SEP + std::string(name));
 }
 
 bool RealVfsFile::Close() {
@@ -404,7 +404,7 @@ bool RealVfsDirectory::DeleteFile(std::string_view name) {
 
 bool RealVfsDirectory::Rename(std::string_view name) {
     const std::string new_name = (parent_path + DIR_SEP).append(name);
-    return base.MoveFile(path, new_name) != nullptr;
+    return base.MoveFile(path, new_name);
 }
 
 std::string RealVfsDirectory::GetFullPath() const {

@@ -241,12 +241,12 @@ ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(Thread& thread) {
         // services don't deal with handles directly. However, the guest applications might check
         // for specific values in each of these descriptors.
         for (auto& object : copy_objects) {
-            ASSERT(object != nullptr);
+            ASSERT(object);
             dst_cmdbuf[current_offset++] = handle_table.Create(object).Unwrap();
         }
 
         for (auto& object : move_objects) {
-            ASSERT(object != nullptr);
+            ASSERT(object);
             dst_cmdbuf[current_offset++] = handle_table.Create(object).Unwrap();
         }
     }
