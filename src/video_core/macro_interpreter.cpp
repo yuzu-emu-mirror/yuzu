@@ -44,7 +44,7 @@ bool MacroInterpreter::Step(const std::vector<u32>& code, bool is_delay_slot) {
     pc += 4;
 
     // Update the program counter if we were delayed
-    if (delayed_pc != std::nullopt) {
+    if (delayed_pc) {
         ASSERT(is_delay_slot);
         pc = *delayed_pc;
         delayed_pc = {};

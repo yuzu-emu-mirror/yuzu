@@ -362,11 +362,11 @@ std::optional<std::pair<Key128, Key128>> ParseTicket(const TicketRaw& ticket,
     m_2 = m_2 ^ MGF1<0xDF>(m_1);
 
     const auto offset = FindTicketOffset(m_2);
-    if (offset)
+    if (!offset)
         return {};
-    ASSERT(offset.value() > 0);
+    ASSERT(*offset > 0);
 
-    std::memcpy(key_temp.data(), m_2.data() + offset.value(), key_temp.size());
+    std::memcpy(key_temp.data(), m_2.data() + *offset, key_temp.size());
 
     return std::make_pair(rights_id, key_temp);
 }
@@ -661,8 +661,8 @@ void KeyManager::DeriveSDSeedLazy() {
         return;
 
     const auto res = DeriveSDSeed();
-    if (res != std::nullopt)
-        SetKey(S128KeyType::SDSeed, res.value());
+    if (res)
+        SetKey(S128KeyType::SDSeed, *res);
 }
 
 static Key128 CalculateCMAC(const u8* source, size_t size, const Key128& key) {
@@ -889,9 +889,9 @@ void KeyManager::DeriveETicket(PartitionDataManager& data) {
 
     for (const auto& raw : res) {
         const auto pair = ParseTicket(raw, rsa_key);
-        if (pair)
+        if (!pair)
             continue;
-        const auto& [rid, key] = pair.value();
+        const auto& [rid, key] = *pair;
         u128 rights_id;
         std::memcpy(rights_id.data(), rid.data(), rid.size());
         SetKey(S128KeyType::Titlekey, key, rights_id[1], rights_id[0]);

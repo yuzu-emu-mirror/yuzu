@@ -134,7 +134,7 @@ void NVFlinger::Compose() {
 
         MicroProfileFlip();
 
-        if (buffer) {
+        if (!buffer) {
             auto& system_instance = Core::System::GetInstance();
 
             // There was no queued buffer to draw, render previous frame
@@ -143,7 +143,7 @@ void NVFlinger::Compose() {
             continue;
         }
 
-        auto& igbp_buffer = buffer.value().get().igbp_buffer;
+        auto& igbp_buffer = buffer->get().igbp_buffer;
 
         // Now send the buffer to the GPU for drawing.
         // TODO(Subv): Support more than just disp0. The display device selection is probably based
@@ -153,9 +153,9 @@ void NVFlinger::Compose() {
 
         nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
                      igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
-                     buffer.value().get().transform, buffer.value().get().crop_rect);
+                     buffer->get().transform, buffer->get().crop_rect);
 
-        buffer_queue->ReleaseBuffer(buffer.value().get().slot);
+        buffer_queue->ReleaseBuffer(buffer->get().slot);
     }
 }
 

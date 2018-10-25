@@ -310,13 +310,13 @@ bool NCA::ReadRomFSSection(const NCASectionHeader& section, const NCASectionTabl
             if (has_rights_id) {
                 status = Loader::ResultStatus::Success;
                 key = GetTitlekey();
-                if (key) {
+                if (!key) {
                     status = Loader::ResultStatus::ErrorMissingTitlekey;
                     return false;
                 }
             } else {
                 key = GetKeyAreaKey(NCASectionCryptoType::BKTR);
-                if (key) {
+                if (!key) {
                     status = Loader::ResultStatus::ErrorMissingKeyAreaKey;
                     return false;
                 }
@@ -331,7 +331,7 @@ bool NCA::ReadRomFSSection(const NCASectionHeader& section, const NCASectionTabl
         auto bktr = std::make_shared<BKTR>(
             bktr_base_romfs, std::make_shared<OffsetVfsFile>(file, romfs_size, base_offset),
             relocation_block, relocation_buckets, subsection_block, subsection_buckets, encrypted,
-            encrypted ? key.value() : Core::Crypto::Key128{}, base_offset, bktr_base_ivfc_offset,
+            encrypted ? *key : Core::Crypto::Key128{}, base_offset, bktr_base_ivfc_offset,
             section.raw.section_ctr);
 
         // BKTR applies to entire IVFC, so make an offset version to level 6
@@ -461,14 +461,14 @@ VirtualFile NCA::Decrypt(const NCASectionHeader& s_header, VirtualFile in, u64 s
             if (has_rights_id) {
                 status = Loader::ResultStatus::Success;
                 key = GetTitlekey();
-                if (key) {
+                if (!key) {
                     if (status == Loader::ResultStatus::Success)
                         status = Loader::ResultStatus::ErrorMissingTitlekey;
                     return nullptr;
                 }
             } else {
                 key = GetKeyAreaKey(NCASectionCryptoType::CTR);
-                if (key) {
+                if (!key) {
                     status = Loader::ResultStatus::ErrorMissingKeyAreaKey;
                     return nullptr;
                 }

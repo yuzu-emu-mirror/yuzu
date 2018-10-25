@@ -509,7 +509,7 @@ private:
             const u32 height{request.data.height};
             std::optional<u32> slot = buffer_queue->DequeueBuffer(width, height);
 
-            if (slot != std::nullopt) {
+            if (slot) {
                 // Buffer is available
                 IGBPDequeueBufferResponseParcel response{*slot};
                 ctx.WriteBuffer(response.Serialize());

@@ -786,7 +786,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
         ASSERT(index != -1 && index < 8);
 
         const auto user_id = manager.GetUser(index);
-        ASSERT(user_id != std::nullopt);
+        ASSERT(user_id);
         path = nand_dir + FileSys::SaveDataFactory::GetFullPath(FileSys::SaveDataSpaceId::NandUser,
                                                                 FileSys::SaveDataType::SaveData,
                                                                 program_id, user_id->uuid, 0);

@@ -125,7 +125,7 @@ void RendererOpenGL::SwapBuffers(
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
 
-    if (framebuffer != std::nullopt) {
+    if (framebuffer) {
         // If framebuffer is provided, reload it from memory to a texture
         if (screen_info.texture.width != (GLsizei)framebuffer.value().get().width ||
             screen_info.texture.height != (GLsizei)framebuffer.value().get().height ||
