@@ -53,23 +53,22 @@ PatchManager::~PatchManager() = default;
 VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     LOG_INFO(Loader, "Patching ExeFS for title_id={:016X}", title_id);
 
-    if (exefs) {
-        const auto installed = Service::FileSystem::GetUnionContents();
+    if (exefs == nullptr)
+        return exefs;
 
-        // Game Updates
-        const auto update_tid = GetUpdateTitleID(title_id);
-        const auto update = installed->GetEntry(update_tid, ContentRecordType::Program);
-        const bool update_status =
-            update->GetStatus() == Loader::ResultStatus::ErrorMissingBKTRBaseRomFS;
+    const auto installed = Service::FileSystem::GetUnionContents();
 
-        if (update && update_status && update->GetExeFS()) {
-            LOG_INFO(Loader, "    ExeFS: Update ({}) applied successfully",
-                     FormatTitleVersion(installed->GetEntryVersion(update_tid).get_value_or(0)));
-            exefs = update->GetExeFS();
-        }
+    // Game Updates
+    const auto update_tid = GetUpdateTitleID(title_id);
+    const auto update = installed->GetEntry(update_tid, ContentRecordType::Program);
+
+    if (update != nullptr && update->GetExeFS() != nullptr &&
+        update->GetStatus() == Loader::ResultStatus::ErrorMissingBKTRBaseRomFS) {
+        LOG_INFO(Loader, "    ExeFS: Update ({}) applied successfully",
+                 FormatTitleVersion(installed->GetEntryVersion(update_tid).get_value_or(0)));
+        exefs = update->GetExeFS();
     }
 
-    // exefs can be a nullptr
     return exefs;
 }
 
