@@ -20,6 +20,7 @@ public:
     explicit ConfigureGeneral(QWidget* parent = nullptr);
     ~ConfigureGeneral() override;
 
+    void ResetDefaults();
     void applyConfiguration();
 
 private:

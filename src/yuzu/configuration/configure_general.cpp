@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <QMessageBox>
+#include "common/file_util.h"
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_general.h"
@@ -23,6 +25,9 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
             [] { UISettings::values.is_game_list_reload_pending.exchange(true); });
 
     ui->use_cpu_jit->setEnabled(!Core::System::GetInstance().IsPoweredOn());
+
+    connect(ui->button_reset_defaults, &QPushButton::clicked, this,
+            &ConfigureGeneral::ResetDefaults);
 }
 
 ConfigureGeneral::~ConfigureGeneral() = default;
@@ -33,6 +38,17 @@ void ConfigureGeneral::setConfiguration() {
     ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot);
     ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
     ui->use_cpu_jit->setChecked(Settings::values.use_cpu_jit);
+}
+
+void ConfigureGeneral::ResetDefaults() {
+    QMessageBox::StandardButton answer = QMessageBox::question(
+        this, tr("yuzu"),
+        tr("Are you sure you want to <b>reset your settings</b> and close yuzu?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer == QMessageBox::No)
+        return;
+    FileUtil::Delete(FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + "qt-config.ini");
+    std::exit(0);
 }
 
 void ConfigureGeneral::applyConfiguration() {
