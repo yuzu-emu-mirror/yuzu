@@ -19,8 +19,22 @@ CachedGlobalRegion::CachedGlobalRegion(VAddr addr, u32 size) : addr{addr}, size{
     LabelGLObject(GL_BUFFER, buffer.handle, addr);
 }
 
+/// Helper function to get the maximum size we can use for an OpenGL uniform block
+static u32 GetMaxUniformBlockSize() {
+    GLint max_size{};
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &max_size);
+    return static_cast<u32>(max_size);
+}
+
 void CachedGlobalRegion::Reload(u32 size_) {
+    static const u32 max_size{GetMaxUniformBlockSize()};
+
     size = size_;
+    if (size > max_size) {
+        size = max_size;
+        LOG_CRITICAL(HW_GPU, "Global region size {} exceeded max UBO size of {}!", size_, max_size);
+    }
+
     glBindBuffer(GL_UNIFORM_BUFFER, buffer.handle);
     glBufferData(GL_UNIFORM_BUFFER, size, Memory::GetPointer(addr), GL_DYNAMIC_DRAW);
 }
