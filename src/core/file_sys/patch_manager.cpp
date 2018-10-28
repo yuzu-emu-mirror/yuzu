@@ -65,7 +65,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (update != nullptr && update->GetExeFS() != nullptr &&
         update->GetStatus() == Loader::ResultStatus::ErrorMissingBKTRBaseRomFS) {
         LOG_INFO(Loader, "    ExeFS: Update ({}) applied successfully",
-                     FormatTitleVersion(installed->GetEntryVersion(update_tid).value_or(0)));
+                 FormatTitleVersion(installed->GetEntryVersion(update_tid).value_or(0)));
         exefs = update->GetExeFS();
     }
 
@@ -284,8 +284,7 @@ std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNam
                 out.insert_or_assign("Update", "");
             } else {
                 out.insert_or_assign(
-                    "Update",
-                    FormatTitleVersion(*meta_ver, TitleVersionFormat::ThreeElements));
+                    "Update", FormatTitleVersion(*meta_ver, TitleVersionFormat::ThreeElements));
             }
         } else if (update_raw != nullptr) {
             out.insert_or_assign("Update", "PACKED");

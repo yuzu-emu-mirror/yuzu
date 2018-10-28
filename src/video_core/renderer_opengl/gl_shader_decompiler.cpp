@@ -810,7 +810,7 @@ private:
                                   std::optional<Register> vertex = {}) {
         auto GeometryPass = [&](const std::string& name) {
             if (stage == Maxwell3D::Regs::ShaderStage::Geometry && vertex) {
-                return "gs_" + name + '[' + GetRegisterAsInteger(vertex.value(), 0, false) + ']';
+                return "gs_" + name + '[' + GetRegisterAsInteger(*vertex, 0, false) + ']';
             }
             return name;
         };

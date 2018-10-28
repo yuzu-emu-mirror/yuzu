@@ -127,9 +127,9 @@ void RendererOpenGL::SwapBuffers(
 
     if (framebuffer) {
         // If framebuffer is provided, reload it from memory to a texture
-        if (screen_info.texture.width != (GLsizei)framebuffer.value().get().width ||
-            screen_info.texture.height != (GLsizei)framebuffer.value().get().height ||
-            screen_info.texture.pixel_format != framebuffer.value().get().pixel_format) {
+        if (screen_info.texture.width != (GLsizei)framebuffer->get().width ||
+            screen_info.texture.height != (GLsizei)framebuffer->get().height ||
+            screen_info.texture.pixel_format != framebuffer->get().pixel_format) {
             // Reallocate texture if the framebuffer size has changed.
             // This is expected to not happen very often and hence should not be a
             // performance problem.
