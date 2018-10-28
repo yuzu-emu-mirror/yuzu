@@ -274,7 +274,7 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
 
     // Next available bindpoints to use when uploading the const buffers and textures to the GLSL
     // shaders. The constbuffer bindpoint starts after the shader stage configuration bind points.
-    u32 current_constbuffer_bindpoint = Tegra::Engines::Maxwell3D::Regs::MaxShaderStage;
+    u32 current_buffer_bindpoint = Tegra::Engines::Maxwell3D::Regs::MaxShaderStage;
     u32 current_texture_bindpoint = 0;
 
     for (std::size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
@@ -328,9 +328,14 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
         }
 
         // Configure the const buffers for this shader stage.
-        current_constbuffer_bindpoint =
+        current_buffer_bindpoint =
             SetupConstBuffers(static_cast<Maxwell::ShaderStage>(stage), shader, primitive_mode,
-                              current_constbuffer_bindpoint);
+                              current_buffer_bindpoint);
+
+        // Configure global memory regions for this shader stage.
+        current_buffer_bindpoint =
+            SetupGlobalRegions(static_cast<Maxwell::ShaderStage>(stage), shader, primitive_mode,
+                               current_buffer_bindpoint);
 
         // Configure the textures for this shader stage.
         current_texture_bindpoint = SetupTextures(static_cast<Maxwell::ShaderStage>(stage), shader,
@@ -340,27 +345,6 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
         if (program == Maxwell::ShaderProgram::VertexA) {
             // VertexB was combined with VertexA, so we skip the VertexB iteration
             index++;
-        }
-
-        auto& maxwell3d{Core::System::GetInstance().GPU().Maxwell3D()};
-        auto& regions = maxwell3d.state.global_memory_uniforms;
-        size_t i = 0;
-        for (const auto& global_region : regions) {
-            const auto region = global_cache.GetGlobalRegion(
-                global_region, static_cast<Maxwell::ShaderStage>(stage));
-
-            const auto uniform_name = fmt::format("global_memory_region_declblock_{}", i);
-            const auto b_index = glGetProgramResourceIndex(shader->GetProgramHandle(primitive_mode),
-                                                           GL_UNIFORM_BLOCK, uniform_name.c_str());
-            if (b_index != GL_INVALID_INDEX) {
-                glBindBufferBase(GL_UNIFORM_BUFFER, current_constbuffer_bindpoint,
-                                 region->GetBufferHandle());
-                glUniformBlockBinding(shader->GetProgramHandle(primitive_mode), b_index,
-                                      current_constbuffer_bindpoint);
-                ++current_constbuffer_bindpoint;
-            }
-
-            ++i;
         }
     }
 }
@@ -893,6 +877,29 @@ u32 RasterizerOpenGL::SetupConstBuffers(Maxwell::ShaderStage stage, Shader& shad
                        bind_buffers.data(), bind_offsets.data(), bind_sizes.data());
 
     return current_bindpoint + static_cast<u32>(entries.size());
+}
+
+u32 RasterizerOpenGL::SetupGlobalRegions(Maxwell::ShaderStage stage, Shader& shader,
+                                         GLenum primitive_mode, u32 current_bindpoint) {
+    std::size_t global_region_index{};
+    const auto& maxwell3d{Core::System::GetInstance().GPU().Maxwell3D()};
+    for (const auto& global_region : maxwell3d.state.global_memory_uniforms) {
+        const auto& region{
+            global_cache.GetGlobalRegion(global_region, static_cast<Maxwell::ShaderStage>(stage))};
+        const GLenum b_index{
+            shader->GetProgramResourceIndex(CachedGlobalRegionUniform{global_region_index})};
+
+        if (b_index != GL_INVALID_INDEX) {
+            glBindBufferBase(GL_UNIFORM_BUFFER, current_bindpoint, region->GetBufferHandle());
+            glUniformBlockBinding(shader->GetProgramHandle(primitive_mode), b_index,
+                                  current_bindpoint);
+            ++current_bindpoint;
+        }
+
+        ++global_region_index;
+    }
+
+    return current_bindpoint;
 }
 
 u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, Shader& shader,
