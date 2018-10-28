@@ -17,7 +17,24 @@ namespace OpenGL {
 class RasterizerOpenGL;
 class CachedGlobalRegion;
 using GlobalRegion = std::shared_ptr<CachedGlobalRegion>;
-using Maxwell = Tegra::Engines::Maxwell3D::Regs;
+
+/// Helper class for caching global region uniform locations
+class CachedGlobalRegionUniform {
+public:
+    CachedGlobalRegionUniform(std::size_t index) : index{index} {}
+
+    std::string GetName() const {
+        return fmt::format("global_memory_region_declblock_{}", index);
+    }
+
+    u32 GetHash() const {
+        // This needs to be unique from ConstBufferEntry::GetHash and SamplerEntry::GetHash
+        return (static_cast<u32>(index) << 16) | 0xFFFF;
+    }
+
+private:
+    std::size_t index{};
+};
 
 class CachedGlobalRegion final : public RasterizerCacheObject {
 public:
