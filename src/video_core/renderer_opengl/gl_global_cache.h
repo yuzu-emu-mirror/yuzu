@@ -53,8 +53,9 @@ public:
     explicit GlobalRegionCacheOpenGL(RasterizerOpenGL& rasterizer);
 
     /// Gets the current specified shader stage program
-    GlobalRegion GetGlobalRegion(Tegra::Engines::Maxwell3D::GlobalMemoryDescriptor descriptor,
-                                 Tegra::Engines::Maxwell3D::Regs::ShaderStage stage);
+    GlobalRegion GetGlobalRegion(
+        const Tegra::Engines::Maxwell3D::GlobalMemoryDescriptor& descriptor,
+        Tegra::Engines::Maxwell3D::Regs::ShaderStage stage);
 };
 
 } // namespace OpenGL
