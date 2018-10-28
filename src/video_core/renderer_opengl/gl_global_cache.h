@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-
+#include <string>
+#include <unordered_map>
+#include <fmt/format.h>
 #include "common/common_types.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/rasterizer_cache.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
-#include "video_core/renderer_opengl/gl_shader_gen.h"
 
 namespace OpenGL {
 
@@ -21,7 +22,7 @@ using GlobalRegion = std::shared_ptr<CachedGlobalRegion>;
 /// Helper class for caching global region uniform locations
 class CachedGlobalRegionUniform {
 public:
-    CachedGlobalRegionUniform(std::size_t index) : index{index} {}
+    explicit CachedGlobalRegionUniform(std::size_t index) : index{index} {}
 
     std::string GetName() const {
         return fmt::format("global_memory_region_declblock_{}", index);
@@ -55,6 +56,9 @@ public:
         return buffer.handle;
     }
 
+    /// Reloads the global region from guest memory
+    void Reload(u32 size_);
+
     // We do not have to flush this cache as things in it are never modified by us.
     void Flush() override {}
 
@@ -73,6 +77,13 @@ public:
     GlobalRegion GetGlobalRegion(
         const Tegra::Engines::Maxwell3D::GlobalMemoryDescriptor& descriptor,
         Tegra::Engines::Maxwell3D::Regs::ShaderStage stage);
+
+private:
+    GlobalRegion TryGetReservedGlobalRegion(VAddr addr, u32 size) const;
+    GlobalRegion GetUncachedGlobalRegion(VAddr addr, u32 size);
+    void ReserveGlobalRegion(const GlobalRegion& region);
+
+    std::unordered_map<VAddr, GlobalRegion> reserve;
 };
 
 } // namespace OpenGL

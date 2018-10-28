@@ -15,14 +15,37 @@
 namespace OpenGL {
 
 CachedGlobalRegion::CachedGlobalRegion(VAddr addr, u32 size) : addr{addr}, size{size} {
-    std::vector<u8> new_data(size);
-    Memory::ReadBlock(addr, new_data.data(), new_data.size());
-
     buffer.Create();
-    glBindBuffer(GL_UNIFORM_BUFFER, buffer.handle);
-    glBufferData(GL_UNIFORM_BUFFER, new_data.size(), new_data.data(), GL_STATIC_READ);
+    LabelGLObject(GL_BUFFER, buffer.handle, addr);
+}
 
-    VideoCore::LabelGLObject(GL_BUFFER, buffer.handle, addr);
+void CachedGlobalRegion::Reload(u32 size_) {
+    size = size_;
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer.handle);
+    glBufferData(GL_UNIFORM_BUFFER, size, Memory::GetPointer(addr), GL_DYNAMIC_DRAW);
+}
+
+GlobalRegion GlobalRegionCacheOpenGL::TryGetReservedGlobalRegion(VAddr addr, u32 size) const {
+    auto search{reserve.find(addr)};
+    if (search == reserve.end()) {
+        return {};
+    }
+    return search->second;
+}
+
+GlobalRegion GlobalRegionCacheOpenGL::GetUncachedGlobalRegion(VAddr addr, u32 size) {
+    GlobalRegion region{TryGetReservedGlobalRegion(addr, size)};
+    if (!region) {
+        // No reserved surface available, create a new one and reserve it
+        region = std::make_shared<CachedGlobalRegion>(addr, size);
+        ReserveGlobalRegion(region);
+    }
+    region->Reload(size);
+    return region;
+}
+
+void GlobalRegionCacheOpenGL::ReserveGlobalRegion(const GlobalRegion& region) {
+    reserve[region->GetAddr()] = region;
 }
 
 GlobalRegionCacheOpenGL::GlobalRegionCacheOpenGL(RasterizerOpenGL& rasterizer)
@@ -49,7 +72,7 @@ GlobalRegion GlobalRegionCacheOpenGL::GetGlobalRegion(
 
     if (!region) {
         // No global region found - create a new one
-        region = std::make_shared<CachedGlobalRegion>(*actual_addr, size);
+        region = GetUncachedGlobalRegion(*actual_addr, size);
         Register(region);
     }
 
