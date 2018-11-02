@@ -29,11 +29,10 @@ public:
     /// Save all button configurations to settings file
     void ApplyConfiguration();
     void retranslateUi();
-
-private:
     /// Load configuration settings.
     void LoadConfiguration();
 
+private:
     void OnSelectProfile(int index);
     void OnConfigure();
 

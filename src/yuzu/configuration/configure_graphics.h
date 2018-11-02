@@ -20,8 +20,6 @@ public:
 
     void ApplyConfiguration();
     void retranslateUi();
-
-private:
     void SetConfiguration();
 
     void UpdateBackgroundColorButton(QColor color);

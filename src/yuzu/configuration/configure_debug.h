@@ -20,8 +20,6 @@ public:
 
     void ApplyConfiguration();
     void retranslateUi();
-
-private:
     void SetConfiguration();
 
     std::unique_ptr<Ui::ConfigureDebug> ui;

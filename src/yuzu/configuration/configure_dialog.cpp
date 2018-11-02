@@ -20,8 +20,7 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry)
     SetConfiguration();
     PopulateSelectionList();
 
-    connect(ui->generalTab, &ConfigureGeneral::languageChanged, this,
-            &ConfigureDialog::onLanguageChanged);
+    connect(ui->uiTab, &ConfigureUi::languageChanged, this, &ConfigureDialog::onLanguageChanged);
     connect(ui->selectorList, &QListWidget::itemSelectionChanged, this,
             &ConfigureDialog::UpdateVisibleTabs);
 
@@ -31,11 +30,20 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry)
 
 ConfigureDialog::~ConfigureDialog() = default;
 
-void ConfigureDialog::SetConfiguration() {}
+void ConfigureDialog::SetConfiguration() {
+    ui->generalTab->SetConfiguration();
+    ui->uiTab->SetConfiguration();
+    ui->systemTab->SetConfiguration();
+    ui->inputTab->loadConfiguration();
+    ui->graphicsTab->SetConfiguration();
+    ui->audioTab->SetConfiguration();
+    ui->debugTab->SetConfiguration();
+    ui->webTab->SetConfiguration();
+}
 
 void ConfigureDialog::ApplyConfiguration() {
     ui->generalTab->ApplyConfiguration();
-    ui->gameListTab->ApplyConfiguration();
+    ui->uiTab->ApplyConfiguration();
     ui->systemTab->ApplyConfiguration();
     ui->profileManagerTab->ApplyConfiguration();
     ui->inputTab->ApplyConfiguration();
@@ -89,9 +97,20 @@ void ConfigureDialog::UpdateVisibleTabs() {
 
 void ConfigureDialog::onLanguageChanged(const QString& locale) {
     emit languageChanged(locale);
+    // first apply the configuration, and then restore the display
+    applyConfiguration();
+    retranslateUi();
+    setConfiguration();
+}
+
+void ConfigureDialog::retranslateUi() {
+    int old_index = ui->tabWidget->currentIndex();
     ui->retranslateUi(this);
+    // restore selection after repopulating
+    ui->tabWidget->setCurrentIndex(old_index);
+
     ui->generalTab->retranslateUi();
-    ui->gameListTab->retranslateUi();
+    ui->uiTab->retranslateUi();
     ui->systemTab->retranslateUi();
     ui->inputTab->retranslateUi();
     ui->graphicsTab->retranslateUi();

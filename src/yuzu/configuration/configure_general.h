@@ -22,15 +22,8 @@ public:
 
     void ApplyConfiguration();
     void retranslateUi();
-
-private slots:
-    void onLanguageChanged(int index);
-
-signals:
-    void languageChanged(const QString& locale);
-
-private:
     void SetConfiguration();
 
+private:
     std::unique_ptr<Ui::ConfigureGeneral> ui;
 };

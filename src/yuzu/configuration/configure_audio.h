@@ -20,11 +20,11 @@ public:
 
     void ApplyConfiguration();
     void RetranslateUI();
+    void SetConfiguration();
 
 private:
     void UpdateAudioDevices(int sink_index);
 
-    void SetConfiguration();
     void SetOutputSinkFromSinkID();
     void SetAudioDeviceFromDeviceID();
     void SetVolumeIndicatorText(int percentage);

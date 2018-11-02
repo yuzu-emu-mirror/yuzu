@@ -8,23 +8,28 @@
 #include <QWidget>
 
 namespace Ui {
-class ConfigureGameList;
+class ConfigureUi;
 }
 
-class ConfigureGameList : public QWidget {
+class ConfigureUi : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigureGameList(QWidget* parent = nullptr);
-    ~ConfigureGameList() override;
+    explicit ConfigureUi(QWidget* parent = nullptr);
+    ~ConfigureUi() override;
 
     void ApplyConfiguration();
     void retranslateUi();
+    void SetConfiguration();
+
+private slots:
+    void onLanguageChanged(int index);
+
+signals:
+    void languageChanged(const QString& locale);
 
 private:
     void RequestGameListUpdate();
-
-    void SetConfiguration();
 
     void changeEvent(QEvent*) override;
     void RetranslateUI();
@@ -32,5 +37,5 @@ private:
     void InitializeIconSizeComboBox();
     void InitializeRowComboBoxes();
 
-    std::unique_ptr<Ui::ConfigureGameList> ui;
+    std::unique_ptr<Ui::ConfigureUi> ui;
 };

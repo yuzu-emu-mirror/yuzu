@@ -5,10 +5,12 @@
 #include <array>
 #include <utility>
 
+#include <QDirIterator>
+
 #include "common/common_types.h"
 #include "core/settings.h"
 #include "ui_configure_gamelist.h"
-#include "yuzu/configuration/configure_gamelist.h"
+#include "yuzu/configuration/configure_ui.h"
 #include "yuzu/ui_settings.h"
 
 namespace {
@@ -28,9 +30,30 @@ constexpr std::array row_text_names{
 };
 } // Anonymous namespace
 
-ConfigureGameList::ConfigureGameList(QWidget* parent)
-    : QWidget(parent), ui(new Ui::ConfigureGameList) {
+ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureUi) {
     ui->setupUi(this);
+
+    ui->language_combobox->addItem(tr("<System>"), QString(""));
+    ui->language_combobox->addItem(tr("English"), QString("en"));
+    QDirIterator it(":/languages", QDirIterator::NoIteratorFlags);
+    while (it.hasNext()) {
+        QString locale = it.next();
+        locale.truncate(locale.lastIndexOf('.'));
+        locale.remove(0, locale.lastIndexOf('/') + 1);
+        QString lang = QLocale::languageToString(QLocale(locale).language());
+        ui->language_combobox->addItem(lang, locale);
+    }
+
+    // Unlike other configuration changes, interface language changes need to be reflected on the
+    // interface immediately. This is done by passing a signal to the main window, and then
+    // retranslating when passing back.
+    connect(ui->language_combobox,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
+            &ConfigureUi::onLanguageChanged);
+
+    for (const auto& theme : UISettings::themes) {
+        ui->theme_combobox->addItem(theme.first, theme.second);
+    }
 
     InitializeIconSizeComboBox();
     InitializeRowComboBoxes();
@@ -38,19 +61,20 @@ ConfigureGameList::ConfigureGameList(QWidget* parent)
     SetConfiguration();
 
     // Force game list reload if any of the relevant settings are changed.
-    connect(ui->show_unknown, &QCheckBox::stateChanged, this,
-            &ConfigureGameList::RequestGameListUpdate);
+    connect(ui->show_unknown, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &ConfigureGameList::RequestGameListUpdate);
+            &ConfigureUi::RequestGameListUpdate);
     connect(ui->row_1_text_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &ConfigureGameList::RequestGameListUpdate);
+            &ConfigureUi::RequestGameListUpdate);
     connect(ui->row_2_text_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &ConfigureGameList::RequestGameListUpdate);
+            &ConfigureUi::RequestGameListUpdate);
 }
 
-ConfigureGameList::~ConfigureGameList() = default;
+ConfigureUi::~ConfigureUi() = default;
 
 void ConfigureGameList::ApplyConfiguration() {
+    UISettings::values.theme =
+        ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
     UISettings::values.show_unknown = ui->show_unknown->isChecked();
     UISettings::values.show_add_ons = ui->show_add_ons->isChecked();
     UISettings::values.icon_size = ui->icon_size_combobox->currentData().toUInt();
@@ -59,11 +83,14 @@ void ConfigureGameList::ApplyConfiguration() {
     Settings::Apply();
 }
 
-void ConfigureGameList::RequestGameListUpdate() {
+void ConfigureUi::RequestGameListUpdate() {
     UISettings::values.is_game_list_reload_pending.exchange(true);
 }
 
 void ConfigureGameList::SetConfiguration() {
+    ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
+    ui->language_combobox->setCurrentIndex(
+        ui->language_combobox->findData(UISettings::values.language));
     ui->show_unknown->setChecked(UISettings::values.show_unknown);
     ui->show_add_ons->setChecked(UISettings::values.show_add_ons);
     ui->icon_size_combobox->setCurrentIndex(
@@ -74,7 +101,7 @@ void ConfigureGameList::SetConfiguration() {
         ui->row_2_text_combobox->findData(UISettings::values.row_2_text_id));
 }
 
-void ConfigureGameList::changeEvent(QEvent* event) {
+void ConfigureUi::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
         return;
@@ -83,7 +110,7 @@ void ConfigureGameList::changeEvent(QEvent* event) {
     QWidget::changeEvent(event);
 }
 
-void ConfigureGameList::RetranslateUI() {
+void ConfigureUi::RetranslateUI() {
     ui->retranslateUi(this);
 
     for (int i = 0; i < ui->icon_size_combobox->count(); i++) {
@@ -98,13 +125,13 @@ void ConfigureGameList::RetranslateUI() {
     }
 }
 
-void ConfigureGameList::InitializeIconSizeComboBox() {
+void ConfigureUi::InitializeIconSizeComboBox() {
     for (const auto& size : default_icon_sizes) {
         ui->icon_size_combobox->addItem(QString::fromUtf8(size.second), size.first);
     }
 }
 
-void ConfigureGameList::InitializeRowComboBoxes() {
+void ConfigureUi::InitializeRowComboBoxes() {
     for (std::size_t i = 0; i < row_text_names.size(); ++i) {
         const QString row_text_name = QString::fromUtf8(row_text_names[i]);
 
@@ -113,6 +140,13 @@ void ConfigureGameList::InitializeRowComboBoxes() {
     }
 }
 
-void ConfigureGameList::retranslateUi() {
+void ConfigureUi::onLanguageChanged(int index) {
+    if (index == -1)
+        return;
+
+    emit languageChanged(ui->language_combobox->itemData(index).toString());
+}
+
+void ConfigureUi::retranslateUi() {
     ui->retranslateUi(this);
 }

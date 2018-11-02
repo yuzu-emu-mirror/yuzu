@@ -21,14 +21,13 @@ public:
 
     void ApplyConfiguration();
     void RetranslateUI();
+    void SetConfiguration();
 
 private:
     void RefreshTelemetryID();
     void OnLoginChanged();
     void VerifyLogin();
     void OnLoginVerified();
-
-    void SetConfiguration();
 
     bool user_verified = true;
     QFutureWatcher<bool> verify_watcher;

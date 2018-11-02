@@ -96,6 +96,51 @@
       </widget>
      </item>
     </layout>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="ConfigureGeneral" name="generalTab">
+      <attribute name="title">
+       <string>General</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureUi" name="uiTab">
+      <attribute name="title">
+       <string>UI</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureSystem" name="systemTab">
+      <attribute name="title">
+       <string>System</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureInputSimple" name="inputTab">
+      <attribute name="title">
+       <string>Input</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureGraphics" name="graphicsTab">
+      <attribute name="title">
+       <string>Graphics</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureAudio" name="audioTab">
+      <attribute name="title">
+       <string>Audio</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureDebug" name="debugTab">
+      <attribute name="title">
+       <string>Debug</string>
+      </attribute>
+     </widget>
+     <widget class="ConfigureWeb" name="webTab">
+      <attribute name="title">
+       <string>Web</string>
+      </attribute>
+     </widget>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -111,6 +156,12 @@
    <class>ConfigureGeneral</class>
    <extends>QWidget</extends>
    <header>configuration/configure_general.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureUi</class>
+   <extends>QWidget</extends>
+   <header>configuration/configure_ui.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
