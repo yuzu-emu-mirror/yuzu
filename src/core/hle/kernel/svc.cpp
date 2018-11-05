@@ -409,11 +409,11 @@ static void Break(u32 reason, u64 info1, u64 info2) {
             // We don't know what's in here so we'll hexdump it
             std::vector<u8> debug_buffer(sz);
             Memory::ReadBlock(addr, debug_buffer.data(), sz);
-            std::string hexdump = "";
-            for (auto i = 0; i < debug_buffer.size(); i++) {
+            std::string hexdump;
+            for (std::size_t i = 0; i < debug_buffer.size(); i++) {
                 hexdump += fmt::format("{:02X} ", debug_buffer[i]);
                 if (i != 0 && i % 16 == 0) {
-                    hexdump += "\n";
+                    hexdump += '\n';
                 }
             }
             LOG_CRITICAL(Debug_Emulated, "debug_buffer=\n{}", hexdump);
