@@ -229,6 +229,13 @@ void Module::Interface::IsUserRegistrationRequestPermitted(Kernel::HLERequestCon
     rb.Push(profile_manager->CanSystemRegisterUser());
 }
 
+void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushRaw<UUID>(profile_manager->GetLastOpenedUser());
+}
+
 void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 2};
