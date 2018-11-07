@@ -752,8 +752,7 @@ static void CopySurface(const Surface& src_surface, const Surface& dst_surface,
         }
         std::size_t remaining_size = dst_params.size_in_bytes - src_params.size_in_bytes;
         std::vector<u8> data(remaining_size);
-        std::memcpy(data.data(), Memory::GetPointer(dst_params.addr + src_params.size_in_bytes),
-                    data.size());
+        Memory::ReadBlock(dst_params.addr + src_params.size_in_bytes, data.data(), data.size());
 
         glBufferSubData(GL_PIXEL_PACK_BUFFER, src_params.size_in_bytes, remaining_size,
                         data.data());
@@ -1004,9 +1003,8 @@ void CachedSurface::LoadGLBuffer() {
         for (u32 i = 0; i < params.max_mip_level; i++)
             SwizzleFunc(morton_to_gl_fns, params, gl_buffer[i], i);
     } else {
-        const auto texture_src_data{Memory::GetPointer(params.addr)};
-        const auto texture_src_data_end{texture_src_data + params.size_in_bytes_gl};
-        gl_buffer[0].assign(texture_src_data, texture_src_data_end);
+        gl_buffer[0].resize(params.size_in_bytes_gl);
+        Memory::ReadBlock(params.addr, gl_buffer[0].data(), gl_buffer[0].size());
     }
     for (u32 i = 0; i < params.max_mip_level; i++)
         ConvertFormatAsNeeded_LoadGLBuffer(gl_buffer[i], params.pixel_format, params.MipWidth(i),
@@ -1035,15 +1033,14 @@ void CachedSurface::FlushGLBuffer() {
     ConvertFormatAsNeeded_FlushGLBuffer(gl_buffer[0], params.pixel_format, params.width,
                                         params.height);
     ASSERT(params.type != SurfaceType::Fill);
-    const u8* const texture_src_data = Memory::GetPointer(params.addr);
-    ASSERT(texture_src_data);
+    ASSERT(/*texture_src_data*/ Memory::GetPointer(params.addr));
     if (params.is_tiled) {
         ASSERT_MSG(params.block_width == 1, "Block width is defined as {} on texture type {}",
                    params.block_width, static_cast<u32>(params.target));
 
         SwizzleFunc(gl_to_morton_fns, params, gl_buffer[0], 0);
     } else {
-        std::memcpy(Memory::GetPointer(GetAddr()), gl_buffer[0].data(), GetSizeInBytes());
+        Memory::WriteBlock(GetAddr(), gl_buffer[0].data(), GetSizeInBytes());
     }
 }
 

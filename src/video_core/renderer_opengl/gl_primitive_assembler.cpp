@@ -47,12 +47,13 @@ GLintptr PrimitiveAssembler::MakeQuadIndexed(Tegra::GPUVAddr gpu_addr, std::size
 
     auto& memory_manager = Core::System::GetInstance().GPU().MemoryManager();
     const std::optional<VAddr> cpu_addr{memory_manager.GpuToCpuAddress(gpu_addr)};
-    const u8* source{Memory::GetPointer(*cpu_addr)};
+    index_cache.resize(count);
+    Memory::ReadBlock(*cpu_addr, index_cache.data(), count);
 
     for (u32 primitive = 0; primitive < count / 4; ++primitive) {
         for (std::size_t i = 0; i < TRIANGLES_PER_QUAD; ++i) {
             const u32 index = primitive * 4 + QUAD_MAP[i];
-            const u8* src_offset = source + (index * index_size);
+            const u8* src_offset = index_cache.data() + (index * index_size);
 
             std::memcpy(dst_pointer, src_offset, index_size);
             dst_pointer += index_size;

@@ -28,6 +28,7 @@ public:
 
 private:
     OGLBufferCache& buffer_cache;
+    std::vector<u8> index_cache;
 };
 
 } // namespace OpenGL
