@@ -5,6 +5,7 @@
 #include <vector>
 #include <glad/glad.h>
 #include "common/assert.h"
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "video_core/renderer_opengl/gl_shader_util.h"
 
@@ -41,7 +42,16 @@ GLuint LoadShader(const char* source, GLenum type) {
         if (result == GL_TRUE) {
             LOG_DEBUG(Render_OpenGL, "{}", shader_error);
         } else {
-            LOG_ERROR(Render_OpenGL, "Error compiling {} shader:\n{}", debug_type, shader_error);
+            static u32 error_shader_counter = 0;
+            FileUtil::IOFile sFile;
+            std::string name = "RejectedShader" + std::to_string(error_shader_counter) + ".txt";
+            sFile.Open(name, "w");
+            sFile.WriteCString(source);
+            sFile.WriteString("\n //");
+            sFile.WriteString(shader_error);
+            sFile.Close();
+            error_shader_counter++;
+            LOG_CRITICAL(Render_OpenGL, "Error compiling {} shader:\n{}", debug_type, shader_error);
         }
     }
     return shader_id;

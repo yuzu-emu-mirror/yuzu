@@ -260,6 +260,14 @@ public:
         return WriteArray(str.c_str(), str.length());
     }
 
+    std::size_t WriteCString(const char* str) {
+        if (!IsOpen()) {
+            return std::numeric_limits<std::size_t>::max();
+        }
+        std::fputs(str, m_file);
+        return std::strlen(str);
+    }
+
     bool IsOpen() const {
         return nullptr != m_file;
     }
