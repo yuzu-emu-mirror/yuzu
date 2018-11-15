@@ -1255,18 +1255,59 @@ static ResultCode GetProcessInfo(u64* out, Handle process_handle, u32 type) {
 
 static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:08X}, size=0x{:X}", addr, size);
+
+    if (!Common::Is4KBAligned(addr)) {
+        return ERR_INVALID_ADDRESS;
+    }
+
+    if (size == 0 || !Common::Is4KBAligned(size)) {
+        return ERR_INVALID_SIZE;
+    }
+
+    if (!IsValidAddressRange(addr, size)) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+
     auto* const current_process = Core::CurrentProcess();
     auto& vm_manager = current_process->VMManager();
-    vm_manager.MapPhysicalMemory(addr, size);
-    return RESULT_SUCCESS;
+
+    if (current_process->GetSystemResourceSize() == 0) {
+        return ERR_INVALID_STATE;
+    }
+
+    if (!vm_manager.IsInsideMapRegion(addr, size)) {
+        return ERR_INVALID_MEMORY_RANGE;
+    }
+
+    return vm_manager.MapPhysicalMemory(addr, size);
 }
 
 static ResultCode UnmapPhysicalMemory(VAddr addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:08X}, size=0x{:X}", addr, size);
+    if (!Common::Is4KBAligned(addr)) {
+        return ERR_INVALID_ADDRESS;
+    }
+
+    if (size == 0 || !Common::Is4KBAligned(size)) {
+        return ERR_INVALID_SIZE;
+    }
+
+    if (!IsValidAddressRange(addr, size)) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+
     auto* const current_process = Core::CurrentProcess();
     auto& vm_manager = current_process->VMManager();
-    vm_manager.UnmapPhysicalMemory(addr, size);
-    return RESULT_SUCCESS;
+
+    if (current_process->GetSystemResourceSize() == 0) {
+        return ERR_INVALID_STATE;
+    }
+
+    if (!vm_manager.IsInsideMapRegion(addr, size)) {
+        return ERR_INVALID_MEMORY_RANGE;
+    }
+
+    return vm_manager.UnmapPhysicalMemory(addr, size);
 }
 
 namespace {
