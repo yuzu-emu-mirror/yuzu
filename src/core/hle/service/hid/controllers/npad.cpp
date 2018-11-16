@@ -40,7 +40,7 @@ enum class JoystickId : std::size_t {
     Joystick_Right,
 };
 
-std::size_t Controller_NPad::NPadIdToIndex(u32 npad_id) {
+static std::size_t NPadIdToIndex(u32 npad_id) {
     switch (npad_id) {
     case 0:
     case 1:

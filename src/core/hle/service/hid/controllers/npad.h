@@ -112,7 +112,6 @@ public:
     void DisconnectNPad(u32 npad_id);
     LedPattern GetLedPattern(u32 npad_id);
     void SetVibrationEnabled(bool can_vibrate);
-    static std::size_t NPadIdToIndex(u32 npad_id);
 
 private:
     struct CommonHeader {
