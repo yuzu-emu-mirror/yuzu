@@ -733,7 +733,7 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {70, nullptr, "RequestToShutdown"},
         {71, nullptr, "RequestToReboot"},
         {80, nullptr, "ExitAndRequestToShowThanksMessage"},
-        {90, nullptr, "EnableApplicationCrashReport"},
+        {90, &IApplicationFunctions::EnableApplicationCrashReport, "EnableApplicationCrashReport"},
         {100, nullptr, "InitializeApplicationCopyrightFrameBuffer"},
         {101, nullptr, "SetApplicationCopyrightImage"},
         {102, nullptr, "SetApplicationCopyrightVisibility"},
@@ -751,6 +751,13 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
 }
 
 IApplicationFunctions::~IApplicationFunctions() = default;
+
+void IApplicationFunctions::EnableApplicationCrashReport(
+    Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+}
 
 void IApplicationFunctions::BeginBlockingHomeButtonShortAndLongPressed(
     Kernel::HLERequestContext& ctx) {
