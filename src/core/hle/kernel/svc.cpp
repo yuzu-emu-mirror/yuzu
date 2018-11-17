@@ -123,7 +123,7 @@ static ResultCode SetMemoryPermission(VAddr addr, u64 size, u32 prot) {
     auto* const current_process = Core::CurrentProcess();
     auto& vm_manager = current_process->VMManager();
 
-    if (!IsInsideAddressSpace(vm_manager, addr, size)) {
+    if (!vm_manager.IsInsideAddressSpace(addr, size)) {
         return ERR_INVALID_ADDRESS_STATE;
     }
 
