@@ -115,7 +115,7 @@ struct Values {
     // System
     bool use_docked_mode;
     bool enable_nfc;
-    std::optional<u64> rng_seed;
+    std::optional<u32> rng_seed;
     s32 current_user;
     s32 language_index;
 
@@ -159,6 +159,7 @@ struct Values {
     bool use_gdbstub;
     u16 gdbstub_port;
     std::string program_args;
+    bool dump_nso;
 
     // WebService
     bool enable_telemetry;

@@ -153,6 +153,7 @@ void Config::ReadValues() {
     Settings::values.use_gdbstub = qt_config->value("use_gdbstub", false).toBool();
     Settings::values.gdbstub_port = qt_config->value("gdbstub_port", 24689).toInt();
     Settings::values.program_args = qt_config->value("program_args", "").toString().toStdString();
+    Settings::values.dump_nso = qt_config->value("dump_nso", false).toBool();
     qt_config->endGroup();
 
     qt_config->beginGroup("WebService");
@@ -170,6 +171,7 @@ void Config::ReadValues() {
 
     qt_config->beginGroup("UIGameList");
     UISettings::values.show_unknown = qt_config->value("show_unknown", true).toBool();
+    UISettings::values.show_add_ons = qt_config->value("show_add_ons", true).toBool();
     UISettings::values.icon_size = qt_config->value("icon_size", 64).toUInt();
     UISettings::values.row_1_text_id = qt_config->value("row_1_text_id", 3).toUInt();
     UISettings::values.row_2_text_id = qt_config->value("row_2_text_id", 2).toUInt();
@@ -295,6 +297,7 @@ void Config::SaveValues() {
     qt_config->setValue("use_gdbstub", Settings::values.use_gdbstub);
     qt_config->setValue("gdbstub_port", Settings::values.gdbstub_port);
     qt_config->setValue("program_args", QString::fromStdString(Settings::values.program_args));
+    qt_config->setValue("dump_nso", Settings::values.dump_nso);
     qt_config->endGroup();
 
     qt_config->beginGroup("WebService");
@@ -310,6 +313,7 @@ void Config::SaveValues() {
 
     qt_config->beginGroup("UIGameList");
     qt_config->setValue("show_unknown", UISettings::values.show_unknown);
+    qt_config->setValue("show_add_ons", UISettings::values.show_add_ons);
     qt_config->setValue("icon_size", UISettings::values.icon_size);
     qt_config->setValue("row_1_text_id", UISettings::values.row_1_text_id);
     qt_config->setValue("row_2_text_id", UISettings::values.row_2_text_id);

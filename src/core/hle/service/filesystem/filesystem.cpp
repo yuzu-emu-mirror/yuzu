@@ -303,7 +303,7 @@ ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
               static_cast<u8>(space), save_struct.DebugInfo());
 
     if (save_data_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound);
+        return FileSys::ERROR_ENTITY_NOT_FOUND;
     }
 
     return save_data_factory->Open(space, save_struct);
@@ -313,7 +313,7 @@ ResultVal<FileSys::VirtualDir> OpenSaveDataSpace(FileSys::SaveDataSpaceId space)
     LOG_TRACE(Service_FS, "Opening Save Data Space for space_id={:01X}", static_cast<u8>(space));
 
     if (save_data_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::TitleNotFound);
+        return FileSys::ERROR_ENTITY_NOT_FOUND;
     }
 
     return MakeResult(save_data_factory->GetSaveDataSpaceDirectory(space));
@@ -323,15 +323,22 @@ ResultVal<FileSys::VirtualDir> OpenSDMC() {
     LOG_TRACE(Service_FS, "Opening SDMC");
 
     if (sdmc_factory == nullptr) {
-        return ResultCode(ErrorModule::FS, FileSys::ErrCodes::SdCardNotFound);
+        return FileSys::ERROR_SD_CARD_NOT_FOUND;
     }
 
     return sdmc_factory->Open();
 }
 
-std::unique_ptr<FileSys::RegisteredCacheUnion> GetUnionContents() {
-    return std::make_unique<FileSys::RegisteredCacheUnion>(std::vector<FileSys::RegisteredCache*>{
-        GetSystemNANDContents(), GetUserNANDContents(), GetSDMCContents()});
+std::shared_ptr<FileSys::RegisteredCacheUnion> registered_cache_union;
+
+std::shared_ptr<FileSys::RegisteredCacheUnion> GetUnionContents() {
+    if (registered_cache_union == nullptr) {
+        registered_cache_union =
+            std::make_shared<FileSys::RegisteredCacheUnion>(std::vector<FileSys::RegisteredCache*>{
+                GetSystemNANDContents(), GetUserNANDContents(), GetSDMCContents()});
+    }
+
+    return registered_cache_union;
 }
 
 FileSys::RegisteredCache* GetSystemNANDContents() {
@@ -370,6 +377,15 @@ FileSys::VirtualDir GetModificationLoadRoot(u64 title_id) {
     return bis_factory->GetModificationLoadRoot(title_id);
 }
 
+FileSys::VirtualDir GetModificationDumpRoot(u64 title_id) {
+    LOG_TRACE(Service_FS, "Opening mod dump root for tid={:016X}", title_id);
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
+    return bis_factory->GetModificationDumpRoot(title_id);
+}
+
 void CreateFactories(FileSys::VfsFilesystem& vfs, bool overwrite) {
     if (overwrite) {
         bis_factory = nullptr;
@@ -383,13 +399,21 @@ void CreateFactories(FileSys::VfsFilesystem& vfs, bool overwrite) {
                                           FileSys::Mode::ReadWrite);
     auto load_directory = vfs.OpenDirectory(FileUtil::GetUserPath(FileUtil::UserPath::LoadDir),
                                             FileSys::Mode::ReadWrite);
+    auto dump_directory = vfs.OpenDirectory(FileUtil::GetUserPath(FileUtil::UserPath::DumpDir),
+                                            FileSys::Mode::ReadWrite);
 
-    if (bis_factory == nullptr)
-        bis_factory = std::make_unique<FileSys::BISFactory>(nand_directory, load_directory);
-    if (save_data_factory == nullptr)
+    if (bis_factory == nullptr) {
+        bis_factory =
+            std::make_unique<FileSys::BISFactory>(nand_directory, load_directory, dump_directory);
+    }
+
+    if (save_data_factory == nullptr) {
         save_data_factory = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
-    if (sdmc_factory == nullptr)
+    }
+
+    if (sdmc_factory == nullptr) {
         sdmc_factory = std::make_unique<FileSys::SDMCFactory>(std::move(sd_directory));
+    }
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, FileSys::VfsFilesystem& vfs) {

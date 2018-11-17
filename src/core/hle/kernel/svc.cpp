@@ -99,6 +99,48 @@ static ResultCode SetHeapSize(VAddr* heap_addr, u64 heap_size) {
     return RESULT_SUCCESS;
 }
 
+static ResultCode SetMemoryPermission(VAddr addr, u64 size, u32 prot) {
+    LOG_TRACE(Kernel_SVC, "called, addr=0x{:X}, size=0x{:X}, prot=0x{:X}", addr, size, prot);
+
+    if (!Common::Is4KBAligned(addr)) {
+        return ERR_INVALID_ADDRESS;
+    }
+
+    if (size == 0 || !Common::Is4KBAligned(size)) {
+        return ERR_INVALID_SIZE;
+    }
+
+    if (!IsValidAddressRange(addr, size)) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+
+    const auto permission = static_cast<MemoryPermission>(prot);
+    if (permission != MemoryPermission::None && permission != MemoryPermission::Read &&
+        permission != MemoryPermission::ReadWrite) {
+        return ERR_INVALID_MEMORY_PERMISSIONS;
+    }
+
+    auto* const current_process = Core::CurrentProcess();
+    auto& vm_manager = current_process->VMManager();
+
+    if (!IsInsideAddressSpace(vm_manager, addr, size)) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+
+    const VMManager::VMAHandle iter = vm_manager.FindVMA(addr);
+    if (iter == vm_manager.vma_map.end()) {
+        return ERR_INVALID_ADDRESS_STATE;
+    }
+
+    LOG_WARNING(Kernel_SVC, "Uniformity check on protected memory is not implemented.");
+    // TODO: Performs a uniformity check to make sure only protected memory is changed (it doesn't
+    // make sense to allow changing permissions on kernel memory itself, etc).
+
+    const auto converted_permissions = SharedMemory::ConvertPermissions(permission);
+
+    return vm_manager.ReprotectRange(addr, size, converted_permissions);
+}
+
 static ResultCode SetMemoryAttribute(VAddr addr, u64 size, u32 state0, u32 state1) {
     LOG_WARNING(Kernel_SVC,
                 "(STUBBED) called, addr=0x{:X}, size=0x{:X}, state0=0x{:X}, state1=0x{:X}", addr,
@@ -148,7 +190,7 @@ static ResultCode ConnectToNamedPort(Handle* out_handle, VAddr port_name_address
     // Read 1 char beyond the max allowed port name to detect names that are too long.
     std::string port_name = Memory::ReadCString(port_name_address, PortNameMaxLength + 1);
     if (port_name.size() > PortNameMaxLength) {
-        return ERR_PORT_NAME_TOO_LONG;
+        return ERR_OUT_OF_RANGE;
     }
 
     LOG_TRACE(Kernel_SVC, "called port_name={}", port_name);
@@ -244,8 +286,9 @@ static ResultCode WaitSynchronization(Handle* index, VAddr handles_address, u64 
 
     static constexpr u64 MaxHandles = 0x40;
 
-    if (handle_count > MaxHandles)
-        return ResultCode(ErrorModule::Kernel, ErrCodes::TooLarge);
+    if (handle_count > MaxHandles) {
+        return ERR_OUT_OF_RANGE;
+    }
 
     auto* const thread = GetCurrentThread();
 
@@ -310,8 +353,7 @@ static ResultCode CancelSynchronization(Handle thread_handle) {
     }
 
     ASSERT(thread->GetStatus() == ThreadStatus::WaitSynchAny);
-    thread->SetWaitSynchronizationResult(
-        ResultCode(ErrorModule::Kernel, ErrCodes::SynchronizationCanceled));
+    thread->SetWaitSynchronizationResult(ERR_SYNCHRONIZATION_CANCELED);
     thread->ResumeFromWait();
     return RESULT_SUCCESS;
 }
@@ -535,7 +577,16 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
         *result = 0;
         break;
     case GetInfoType::RandomEntropy:
-        *result = Settings::values.rng_seed.value_or(0);
+        if (handle != 0) {
+            return ERR_INVALID_HANDLE;
+        }
+
+        if (info_sub_id >= Process::RANDOM_ENTROPY_SIZE) {
+            return ERR_INVALID_COMBINATION;
+        }
+
+        *result = current_process->GetRandomEntropy(info_sub_id);
+        return RESULT_SUCCESS;
         break;
     case GetInfoType::ASLRRegionBaseAddr:
         *result = vm_manager.GetASLRRegionBaseAddress();
@@ -570,7 +621,7 @@ static ResultCode GetInfo(u64* result, u64 info_id, u64 handle, u64 info_sub_id)
     case GetInfoType::ThreadTickCount: {
         constexpr u64 num_cpus = 4;
         if (info_sub_id != 0xFFFFFFFFFFFFFFFF && info_sub_id >= num_cpus) {
-            return ERR_INVALID_COMBINATION_KERNEL;
+            return ERR_INVALID_COMBINATION;
         }
 
         const auto thread =
@@ -1163,7 +1214,7 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
     }
 
     if (mask == 0) {
-        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidCombination);
+        return ERR_INVALID_COMBINATION;
     }
 
     /// This value is used to only change the affinity mask without changing the current ideal core.
@@ -1172,12 +1223,12 @@ static ResultCode SetThreadCoreMask(Handle thread_handle, u32 core, u64 mask) {
     if (core == OnlyChangeMask) {
         core = thread->GetIdealCore();
     } else if (core >= Core::NUM_CPU_CORES && core != static_cast<u32>(-1)) {
-        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidProcessorId);
+        return ERR_INVALID_PROCESSOR_ID;
     }
 
     // Error out if the input core isn't enabled in the input mask.
     if (core < Core::NUM_CPU_CORES && (mask & (1ull << core)) == 0) {
-        return ResultCode(ErrorModule::Kernel, ErrCodes::InvalidCombination);
+        return ERR_INVALID_COMBINATION;
     }
 
     thread->ChangeCore(core, mask);
@@ -1323,7 +1374,7 @@ struct FunctionDef {
 static const FunctionDef SVC_Table[] = {
     {0x00, nullptr, "Unknown"},
     {0x01, SvcWrap<SetHeapSize>, "SetHeapSize"},
-    {0x02, nullptr, "SetMemoryPermission"},
+    {0x02, SvcWrap<SetMemoryPermission>, "SetMemoryPermission"},
     {0x03, SvcWrap<SetMemoryAttribute>, "SetMemoryAttribute"},
     {0x04, SvcWrap<MapMemory>, "MapMemory"},
     {0x05, SvcWrap<UnmapMemory>, "UnmapMemory"},

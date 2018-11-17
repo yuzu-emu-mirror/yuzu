@@ -48,13 +48,14 @@ ResultVal<FileSys::VirtualDir> OpenSaveData(FileSys::SaveDataSpaceId space,
 ResultVal<FileSys::VirtualDir> OpenSaveDataSpace(FileSys::SaveDataSpaceId space);
 ResultVal<FileSys::VirtualDir> OpenSDMC();
 
-std::unique_ptr<FileSys::RegisteredCacheUnion> GetUnionContents();
+std::shared_ptr<FileSys::RegisteredCacheUnion> GetUnionContents();
 
 FileSys::RegisteredCache* GetSystemNANDContents();
 FileSys::RegisteredCache* GetUserNANDContents();
 FileSys::RegisteredCache* GetSDMCContents();
 
 FileSys::VirtualDir GetModificationLoadRoot(u64 title_id);
+FileSys::VirtualDir GetModificationDumpRoot(u64 title_id);
 
 // Creates the SaveData, SDMC, and BIS Factories. Should be called once and before any function
 // above is called.
