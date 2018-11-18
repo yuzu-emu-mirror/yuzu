@@ -138,7 +138,7 @@ void Config::ReadValues() {
     } else {
         Settings::values.rng_seed = std::nullopt;
     }
-    
+
     Settings::values.language_index = sdl2_config->GetInteger("System", "language_index", 1);
 
     // Miscellaneous
