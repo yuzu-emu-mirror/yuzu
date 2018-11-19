@@ -1075,7 +1075,7 @@ private:
             {PredCondition::LessEqual, "<="},         {PredCondition::GreaterThan, ">"},
             {PredCondition::NotEqual, "!="},          {PredCondition::GreaterEqual, ">="},
             {PredCondition::LessThanWithNan, "<"},    {PredCondition::NotEqualWithNan, "!="},
-            {PredCondition::LessEqualWithNan, ">"},   {PredCondition::GreaterThanWithNan, ">"},
+            {PredCondition::LessEqualWithNan, "<="},   {PredCondition::GreaterThanWithNan, ">"},
             {PredCondition::GreaterEqualWithNan, ">="}};
 
         const auto& comparison{PredicateComparisonStrings.find(condition)};
