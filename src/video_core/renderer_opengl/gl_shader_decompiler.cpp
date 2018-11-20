@@ -1071,11 +1071,16 @@ private:
                                        const std::string& op_a, const std::string& op_b) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},           {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="},         {PredCondition::GreaterThan, ">"},
-            {PredCondition::NotEqual, "!="},          {PredCondition::GreaterEqual, ">="},
-            {PredCondition::LessThanWithNan, "<"},    {PredCondition::NotEqualWithNan, "!="},
-            {PredCondition::LessEqualWithNan, "<="},   {PredCondition::GreaterThanWithNan, ">"},
+            {PredCondition::LessThan, "<"},
+            {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},
+            {PredCondition::GreaterThan, ">"},
+            {PredCondition::NotEqual, "!="},
+            {PredCondition::GreaterEqual, ">="},
+            {PredCondition::LessThanWithNan, "<"},
+            {PredCondition::NotEqualWithNan, "!="},
+            {PredCondition::LessEqualWithNan, "<="},
+            {PredCondition::GreaterThanWithNan, ">"},
             {PredCondition::GreaterEqualWithNan, ">="}};
 
         const auto& comparison{PredicateComparisonStrings.find(condition)};
