@@ -28,6 +28,63 @@ void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_SET, "called");
 }
 
+void SET_SYS::GetAccountSettings(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(account_settings);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::SetAccountSettings(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    account_settings = rp.Pop<u32>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::GetDataDeletionSettings(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u64>(data_deletion_settings);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::SetDataDeletionSettings(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    data_deletion_settings = rp.Pop<u64>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::GetLdnChannel(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 3};
+
+    rb.Push(RESULT_SUCCESS);
+    rb.Push<u32>(ldn_channel);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
+void SET_SYS::SetLdnChannel(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    ldn_channel = rp.Pop<u32>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    LOG_DEBUG(Service_SET, "called");
+}
+
 SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
     static const FunctionInfo functions[] = {
         {0, nullptr, "SetLanguageCode"},
@@ -46,8 +103,8 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
         {14, nullptr, "SetExternalSteadyClockSourceId"},
         {15, nullptr, "GetUserSystemClockContext"},
         {16, nullptr, "SetUserSystemClockContext"},
-        {17, nullptr, "GetAccountSettings"},
-        {18, nullptr, "SetAccountSettings"},
+        {17, &SET_SYS::GetAccountSettings, "GetAccountSettings"},
+        {18, &SET_SYS::SetAccountSettings, "SetAccountSettings"},
         {19, nullptr, "GetAudioVolume"},
         {20, nullptr, "SetAudioVolume"},
         {21, nullptr, "GetEulaVersions"},
@@ -76,8 +133,8 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
         {46, nullptr, "SetForceMuteOnHeadphoneRemoved"},
         {47, nullptr, "GetQuestFlag"},
         {48, nullptr, "SetQuestFlag"},
-        {49, nullptr, "GetDataDeletionSettings"},
-        {50, nullptr, "SetDataDeletionSettings"},
+        {49, &SET_SYS::GetDataDeletionSettings, "GetDataDeletionSettings"},
+        {50, &SET_SYS::SetDataDeletionSettings, "SetDataDeletionSettings"},
         {51, nullptr, "GetInitialSystemAppletProgramId"},
         {52, nullptr, "GetOverlayDispProgramId"},
         {53, nullptr, "GetDeviceTimeZoneLocationName"},
@@ -107,8 +164,8 @@ SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
         {77, nullptr, "GetDeviceNickName"},
         {78, nullptr, "SetDeviceNickName"},
         {79, nullptr, "GetProductModel"},
-        {80, nullptr, "GetLdnChannel"},
-        {81, nullptr, "SetLdnChannel"},
+        {80, &SET_SYS::GetLdnChannel, "GetLdnChannel"},
+        {81, &SET_SYS::SetLdnChannel, "SetLdnChannel"},
         {82, nullptr, "AcquireTelemetryDirtyFlagEventHandle"},
         {83, nullptr, "GetTelemetryDirtyFlags"},
         {84, nullptr, "GetPtmBatteryLot"},

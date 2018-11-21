@@ -22,8 +22,17 @@ private:
 
     void GetColorSetId(Kernel::HLERequestContext& ctx);
     void SetColorSetId(Kernel::HLERequestContext& ctx);
+    void GetAccountSettings(Kernel::HLERequestContext& ctx);
+    void SetAccountSettings(Kernel::HLERequestContext& ctx);
+    void GetDataDeletionSettings(Kernel::HLERequestContext& ctx);
+    void SetDataDeletionSettings(Kernel::HLERequestContext& ctx);
+    void GetLdnChannel(Kernel::HLERequestContext& ctx);
+    void SetLdnChannel(Kernel::HLERequestContext& ctx);
 
     ColorSet color_set = ColorSet::BasicWhite;
+    u32 account_settings = 0;
+    u64 data_deletion_settings = 0;
+    s32 ldn_channel = 0;
 };
 
 } // namespace Service::Set
