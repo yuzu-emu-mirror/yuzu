@@ -872,7 +872,26 @@ public:
 
                 Cull cull;
 
-                INSERT_PADDING_WORDS(0x28);
+                INSERT_PADDING_WORDS(0x6);
+
+                union {
+                    BitField<0, 1, u32> depth_range_0_1;
+                    BitField<3, 1, u32> depth_clamp_near;
+                    BitField<4, 1, u32> depth_clamp_far;
+                } view_volume_clip_control;
+
+                union {
+                    BitField<0, 4, u32> c0;
+                    BitField<4, 4, u32> c1;
+                    BitField<8, 4, u32> c2;
+                    BitField<12, 4, u32> c3;
+                    BitField<16, 4, u32> c4;
+                    BitField<20, 4, u32> c5;
+                    BitField<24, 4, u32> c6;
+                    BitField<28, 4, u32> c7;
+                } clip_distance_mode;
+
+                INSERT_PADDING_WORDS(0x20);
 
                 struct {
                     u32 enable;
@@ -1181,6 +1200,7 @@ ASSERT_REG_POSITION(primitive_restart, 0x591);
 ASSERT_REG_POSITION(index_array, 0x5F2);
 ASSERT_REG_POSITION(instanced_arrays, 0x620);
 ASSERT_REG_POSITION(cull, 0x646);
+ASSERT_REG_POSITION(clip_distance_mode, 0x650);
 ASSERT_REG_POSITION(logic_op, 0x671);
 ASSERT_REG_POSITION(clear_buffers, 0x674);
 ASSERT_REG_POSITION(color_mask, 0x680);

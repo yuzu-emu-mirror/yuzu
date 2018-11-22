@@ -49,6 +49,11 @@ public:
     } fragment_color_clamp;
 
     struct {
+        bool far_plane;
+        bool near_plane;
+    } depth_clamp; // GL_DEPTH_CLAMP
+
+    struct {
         bool enabled; // viewports arrays are only supported when geometry shaders are enabled.
     } geometry_shaders;
 
