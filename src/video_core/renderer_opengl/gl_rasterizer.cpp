@@ -118,9 +118,42 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& window, ScreenInfo
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uniform_buffer_alignment);
 
     LOG_CRITICAL(Render_OpenGL, "Sync fixed function OpenGL state here!");
+    CheckExtensions();
 }
 
 RasterizerOpenGL::~RasterizerOpenGL() {}
+
+void RasterizerOpenGL::CheckExtensions() {
+    if (!GLAD_GL_ARB_texture_filter_anisotropic && !GLAD_GL_EXT_texture_filter_anisotropic) {
+        LOG_WARNING(
+            Render_OpenGL,
+            "Anisotropic filter is not supported! this can cause graphical issues in some games.");
+    }
+    if (!GLAD_GL_ARB_viewport_array) {
+        LOG_WARNING(Render_OpenGL, "Viewport arrays are not supported! this can potyentially cause "
+                                   "issues in games that use geometry shaders.");
+    }
+    if (!GLAD_GL_ARB_color_buffer_float) {
+        LOG_WARNING(
+            Render_OpenGL,
+            "Color clamp control is not supported! this can cause graphical issues in some games.");
+    }
+    if (!GLAD_GL_ARB_buffer_storage) {
+        LOG_WARNING(
+            Render_OpenGL,
+            "Buffer storage control is not supported! this can cause performance degradation.");
+    }
+    if (!GLAD_GL_AMD_depth_clamp_separate) {
+        if (!GLAD_GL_ARB_depth_clamp) {
+            LOG_WARNING(
+                Render_OpenGL,
+                "Depth Clamp is not supported! this can cause graphical issues in some games.");
+        } else {
+            LOG_WARNING(Render_OpenGL, "Separate Depth Clamp is not supported! this can cause "
+                                       "graphical issues in some games.");
+        }
+    }
+}
 
 void RasterizerOpenGL::SetupVertexFormat() {
     auto& gpu = Core::System::GetInstance().GPU().Maxwell3D();
@@ -976,17 +1009,25 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, Shader& shader,
 void RasterizerOpenGL::SyncViewport(OpenGLState& current_state) {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
     for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumViewports; i++) {
-        const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[i].GetRect()};
         auto& viewport = current_state.viewports[i];
-        viewport.x = viewport_rect.left;
-        viewport.y = viewport_rect.bottom;
-        viewport.width = viewport_rect.GetWidth();
-        viewport.height = viewport_rect.GetHeight();
+        const auto& src = regs.viewports[i];
+        if (regs.viewport_transform_enabled) {
+            const MathUtil::Rectangle<s32> viewport_rect{regs.viewport_transform[i].GetRect()};
+            viewport.x = viewport_rect.left;
+            viewport.y = viewport_rect.bottom;
+            viewport.width = viewport_rect.GetWidth();
+            viewport.height = viewport_rect.GetHeight();
+        } else {
+            viewport.x = src.x;
+            viewport.y = src.y;
+            viewport.width = src.width;
+            viewport.height = src.height;
+        }
         viewport.depth_range_far = regs.viewports[i].depth_range_far;
         viewport.depth_range_near = regs.viewports[i].depth_range_near;
     }
-    state.depth_clamp.far_plane = regs.view_volume_clip_control.depth_clamp_far != 0;
-    state.depth_clamp.near_plane = regs.view_volume_clip_control.depth_clamp_near != 0;
+    current_state.depth_clamp.far_plane = regs.view_volume_clip_control.depth_clamp_far != 0;
+    current_state.depth_clamp.near_plane = regs.view_volume_clip_control.depth_clamp_near != 0;
 }
 
 void RasterizerOpenGL::SyncClipEnabled() {

@@ -239,10 +239,16 @@ void OpenGLState::ApplyStencilTest() const {
 void OpenGLState::TranslateViewportToScissor() {
     auto& current = this->viewports[0];
     if (current.scissor.enabled) {
-        current.scissor.x = std::max(current.x, current.scissor.x);
-        current.scissor.y = std::max(current.y, current.scissor.y);
-        current.scissor.width = std::min(current.width, current.scissor.width);
-        current.scissor.height = std::min(current.height, current.scissor.height);
+        GLint left = std::max(current.x, current.scissor.x);
+        GLint right =
+            std::max(current.x + current.width, current.scissor.x + current.scissor.width);
+        GLint bottom = std::max(current.y, current.scissor.y);
+        GLint top =
+            std::max(current.y + current.height, current.scissor.y + current.scissor.height);
+        current.scissor.x = std::max(left, 0);
+        current.scissor.y = std::max(bottom, 0);
+        current.scissor.width = std::max(right - left, 0);
+        current.scissor.height = std::max(top - bottom, 0);
     } else {
         current.scissor.enabled = true;
         current.scissor.x = current.x;
