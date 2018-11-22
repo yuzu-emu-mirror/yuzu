@@ -299,6 +299,11 @@ DrawParameters RasterizerOpenGL::SetupDraw() {
     return params;
 }
 
+bool RasterizerOpenGL::GeometryShaderActive() {
+    const auto& gpu = Core::System::GetInstance().GPU().Maxwell3D();
+    return gpu.regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
+}
+
 void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
     MICROPROFILE_SCOPE(OpenGL_Shader);
     const auto& gpu = Core::System::GetInstance().GPU().Maxwell3D();
@@ -643,7 +648,7 @@ void RasterizerOpenGL::DrawArrays() {
     const auto& regs = gpu.regs;
 
     ScopeAcquireGLContext acquire_context{emu_window};
-
+    state.geometry_shaders.enabled = GeometryShaderActive();
     ConfigureFramebuffers(state);
     SyncColorMask();
     SyncFragmentColorClampState();
@@ -1008,7 +1013,9 @@ u32 RasterizerOpenGL::SetupTextures(Maxwell::ShaderStage stage, Shader& shader,
 
 void RasterizerOpenGL::SyncViewport(OpenGLState& current_state) {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
-    for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumViewports; i++) {
+    const std::size_t viewport_count =
+        current_state.geometry_shaders.enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
+    for (std::size_t i = 0; i < viewport_count; i++) {
         auto& viewport = current_state.viewports[i];
         const auto& src = regs.viewports[i];
         if (regs.viewport_transform_enabled) {
@@ -1198,7 +1205,9 @@ void RasterizerOpenGL::SyncLogicOpState() {
 
 void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state) {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
-    for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumViewports; i++) {
+    const std::size_t viewport_count =
+        current_state.geometry_shaders.enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
+    for (std::size_t i = 0; i < viewport_count; i++) {
         const auto& src = regs.scissor_test[i];
         auto& dst = current_state.viewports[i].scissor;
         dst.enabled = (src.enable != 0);

@@ -228,6 +228,7 @@ private:
     DrawParameters SetupDraw();
 
     void SetupShaders(GLenum primitive_mode);
+    bool GeometryShaderActive();
 
     enum class AccelDraw { Disabled, Arrays, Indexed };
     AccelDraw accelerate_draw = AccelDraw::Disabled;

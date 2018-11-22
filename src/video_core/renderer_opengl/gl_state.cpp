@@ -527,6 +527,8 @@ void OpenGLState::Apply() const {
             } else {
                 glDisable(GL_DEPTH_CLAMP);
             }
+            UNIMPLEMENTED_IF_MSG(depth_clamp.far_plane != depth_clamp.near_plane,
+                                 "Unimplemented Depth Clamp Separation!");
         }
     }
     if (multisample_control.alpha_to_coverage != cur_state.multisample_control.alpha_to_coverage) {
