@@ -630,7 +630,7 @@ void RasterizerOpenGL::DrawArrays() {
     SyncTransformFeedback();
     SyncPointState();
     CheckAlphaTests();
-    SyncPolygonOffset();
+
     // TODO(bunnei): Sync framebuffer_scale uniform here
     // TODO(bunnei): Sync scissorbox uniform(s) here
 
@@ -1211,16 +1211,6 @@ void RasterizerOpenGL::SyncTransformFeedback() {
 void RasterizerOpenGL::SyncPointState() {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
     state.point.size = regs.point_size;
-}
-
-void RasterizerOpenGL::SyncPolygonOffset() {
-    const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
-    state.polygon_offset.fill_enable = regs.polygon_offset_fill_enable != 0;
-    state.polygon_offset.line_enable = regs.polygon_offset_line_enable != 0;
-    state.polygon_offset.point_enable = regs.polygon_offset_point_enable != 0;
-    state.polygon_offset.units = regs.polygon_offset_units;
-    state.polygon_offset.factor = regs.polygon_offset_factor;
-    state.polygon_offset.clamp = regs.polygon_offset_clamp;
 }
 
 void RasterizerOpenGL::CheckAlphaTests() {

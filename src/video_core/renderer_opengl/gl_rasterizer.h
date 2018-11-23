@@ -194,9 +194,6 @@ private:
     /// Syncs Color Mask
     void SyncColorMask();
 
-    /// Syncs the polygon offsets
-    void SyncPolygonOffset();
-
     /// Check asserts for alpha testing.
     void CheckAlphaTests();
 
