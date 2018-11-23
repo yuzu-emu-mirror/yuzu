@@ -92,6 +92,13 @@ OpenGLState::OpenGLState() {
 
     point.size = 1;
     fragment_color_clamp.enabled = false;
+
+    polygon_offset.fill_enable = false;
+    polygon_offset.line_enable = false;
+    polygon_offset.point_enable = false;
+    polygon_offset.factor = 0.0f;
+    polygon_offset.units = 0.0f;
+    polygon_offset.clamp = 0.0f;
 }
 
 void OpenGLState::ApplyDefaultState() {
