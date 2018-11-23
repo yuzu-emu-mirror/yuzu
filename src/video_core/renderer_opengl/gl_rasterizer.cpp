@@ -1152,7 +1152,6 @@ void RasterizerOpenGL::SyncPointState() {
     state.point.size = regs.point_size;
 }
 
-
 void RasterizerOpenGL::SyncPolygonOffset() {
     const auto& regs = Core::System::GetInstance().GPU().Maxwell3D().regs;
     state.polygon_offset.fill_enable = regs.polygon_offset_fill_enable != 0;

@@ -383,7 +383,6 @@ void OpenGLState::ApplyLogicOp() const {
     }
 }
 
-
 void OpenGLState::ApplyPolygonOffset() const {
 
     const bool fill_enable_changed =
@@ -427,7 +426,8 @@ void OpenGLState::ApplyPolygonOffset() const {
             glPolygonOffsetClamp(polygon_offset.factor, polygon_offset.units, polygon_offset.clamp);
         } else {
             glPolygonOffset(polygon_offset.factor, polygon_offset.units);
-            UNIMPLEMENTED_IF_MSG(polygon_offset.clamp != 0, "Unimplemented Depth polygon offset clamp.");
+            UNIMPLEMENTED_IF_MSG(polygon_offset.clamp != 0,
+                                 "Unimplemented Depth polygon offset clamp.");
         }
     }
 }
