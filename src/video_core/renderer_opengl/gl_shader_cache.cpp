@@ -84,7 +84,6 @@ CachedShader::CachedShader(VAddr addr, Maxwell::ShaderProgram program_type)
     }
 
     entries = program_result.second;
-    shader_length = entries.shader_length;
 
     if (program_type != Maxwell::ShaderProgram::Geometry) {
         OGLShader shader;
