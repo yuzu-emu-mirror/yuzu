@@ -41,6 +41,13 @@ __declspec(noinline, noreturn)
         }                                                                                          \
     while (0)
 
+#define UNIMPLEMENTED_IF_MSG(_a_, ...)                                                             \
+    do                                                                                             \
+        if (!(_a_)) {                                                                              \
+            LOG_CRITICAL(Debug, "Unimplemented Code:\n" __VA_ARGS__);                                \
+        }                                                                                          \
+    while (0)
+
 #define UNREACHABLE() ASSERT_MSG(false, "Unreachable code!")
 #define UNREACHABLE_MSG(...) ASSERT_MSG(false, __VA_ARGS__)
 
@@ -52,8 +59,7 @@ __declspec(noinline, noreturn)
 #define DEBUG_ASSERT_MSG(_a_, _desc_, ...)
 #endif
 
-#define UNIMPLEMENTED() ASSERT_MSG(false, "Unimplemented code!")
-#define UNIMPLEMENTED_MSG(...) ASSERT_MSG(false, __VA_ARGS__)
+#define UNIMPLEMENTED() UNIMPLEMENTED_IF_MSG(false, "Unimplemented code!")
+#define UNIMPLEMENTED_MSG(...) UNIMPLEMENTED_IF_MSG(false, __VA_ARGS__)
 
-#define UNIMPLEMENTED_IF(cond) ASSERT_MSG(!(cond), "Unimplemented code!")
-#define UNIMPLEMENTED_IF_MSG(cond, ...) ASSERT_MSG(!(cond), __VA_ARGS__)
+#define UNIMPLEMENTED_IF(cond) UNIMPLEMENTED_IF_MSG(!(cond), "Unimplemented code!")
