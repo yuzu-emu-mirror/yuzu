@@ -155,7 +155,6 @@ enum class PredCondition : u64 {
     NotEqual = 5,
     GreaterEqual = 6,
     LessThanWithNan = 9,
-    LessEqualWithNan = 11,
     GreaterThanWithNan = 12,
     NotEqualWithNan = 13,
     GreaterEqualWithNan = 14,
