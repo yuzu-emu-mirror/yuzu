@@ -6,8 +6,6 @@
 #include <cinttypes>
 #include <cstring>
 #include <stack>
-#include "applets/applets.h"
-#include "applets/software_keyboard.h"
 #include "audio_core/audio_renderer.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
@@ -18,6 +16,9 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
+#include "core/hle/service/am/applets/applets.h"
+#include "core/hle/service/am/applets/software_keyboard.h"
+#include "core/hle/service/am/applets/stub_applet.h"
 #include "core/hle/service/am/idle.h"
 #include "core/hle/service/am/omm.h"
 #include "core/hle/service/am/spsm.h"
@@ -482,11 +483,15 @@ void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& 
     rb.Push(RESULT_SUCCESS);
 
     if (Settings::values.use_docked_mode) {
-        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth));
-        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth) *
+                static_cast<u32>(Settings::values.resolution_factor));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight) *
+                static_cast<u32>(Settings::values.resolution_factor));
     } else {
-        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth));
-        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth) *
+                static_cast<u32>(Settings::values.resolution_factor));
+        rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight) *
+                static_cast<u32>(Settings::values.resolution_factor));
     }
 
     LOG_DEBUG(Service_AM, "called");
@@ -761,8 +766,9 @@ static std::shared_ptr<Applets::Applet> GetAppletFromId(AppletId id) {
     case AppletId::SoftwareKeyboard:
         return std::make_shared<Applets::SoftwareKeyboard>();
     default:
-        UNREACHABLE_MSG("Unimplemented AppletId [{:08X}]!", static_cast<u32>(id));
-        return nullptr;
+        LOG_ERROR(Service_AM, "Unimplemented AppletId [{:08X}]! -- Falling back to stub!",
+                  static_cast<u32>(id));
+        return std::make_shared<Applets::StubApplet>();
     }
 }
 

@@ -153,6 +153,7 @@ enum class PredCondition : u64 {
     NotEqual = 5,
     GreaterEqual = 6,
     LessThanWithNan = 9,
+    LessEqualWithNan = 11,
     GreaterThanWithNan = 12,
     NotEqualWithNan = 13,
     GreaterEqualWithNan = 14,
@@ -263,7 +264,7 @@ enum class FlowCondition : u64 {
     Fcsm_Tr = 0x1C, // TODO(bunnei): What is this used for?
 };
 
-enum class ControlCode : u64 {
+enum class ConditionCode : u64 {
     F = 0,
     LT = 1,
     EQ = 2,
@@ -571,7 +572,6 @@ union Instruction {
         BitField<39, 2, u64> tab5cb8_2;
         BitField<41, 3, u64> tab5c68_1;
         BitField<44, 2, u64> tab5c68_0;
-        BitField<47, 1, u64> cc;
         BitField<48, 1, u64> negate_b;
     } fmul;
 
@@ -839,7 +839,7 @@ union Instruction {
     union {
         BitField<0, 3, u64> pred0;
         BitField<3, 3, u64> pred3;
-        BitField<8, 5, ControlCode> cc; // flag in cc
+        BitField<8, 5, ConditionCode> cc; // flag in cc
         BitField<39, 3, u64> pred39;
         BitField<42, 1, u64> neg_pred39;
         BitField<45, 4, PredOperation> op; // op with pred39
@@ -1243,7 +1243,7 @@ union Instruction {
     BitField<60, 1, u64> is_b_gpr;
     BitField<59, 1, u64> is_c_gpr;
     BitField<20, 24, s64> smem_imm;
-    BitField<0, 5, ControlCode> flow_control_code;
+    BitField<0, 5, ConditionCode> flow_condition_code;
 
     Attribute attribute;
     Sampler sampler;

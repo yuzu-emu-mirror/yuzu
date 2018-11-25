@@ -35,6 +35,17 @@ constexpr u32 PROGRAM_HEADER_SIZE = sizeof(Tegra::Shader::Header);
 constexpr u32 MAX_GEOMETRY_BUFFERS = 6;
 constexpr u32 MAX_ATTRIBUTES = 0x100; // Size in vec4s, this value is untested
 
+static const char* INTERNAL_FLAG_NAMES[] = {"zero_flag", "sign_flag", "carry_flag",
+                                            "overflow_flag"};
+
+enum class InternalFlag : u64 {
+    ZeroFlag = 0,
+    SignFlag = 1,
+    CarryFlag = 2,
+    OverflowFlag = 3,
+    Amount
+};
+
 class DecompileFail : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
@@ -85,7 +96,8 @@ struct Subroutine {
 class ControlFlowAnalyzer {
 public:
     ControlFlowAnalyzer(const ProgramCode& program_code, u32 main_offset, const std::string& suffix)
-        : program_code(program_code) {
+        : program_code(program_code), shader_coverage_begin(main_offset),
+          shader_coverage_end(main_offset + 1) {
 
         // Recursively finds all subroutines.
         const Subroutine& program_main = AddSubroutine(main_offset, PROGRAM_END, suffix);
@@ -97,10 +109,16 @@ public:
         return std::move(subroutines);
     }
 
+    std::size_t GetShaderLength() const {
+        return shader_coverage_end * sizeof(u64);
+    }
+
 private:
     const ProgramCode& program_code;
     std::set<Subroutine> subroutines;
     std::map<std::pair<u32, u32>, ExitMethod> exit_method_map;
+    u32 shader_coverage_begin;
+    u32 shader_coverage_end;
 
     /// Adds and analyzes a new subroutine if it is not added yet.
     const Subroutine& AddSubroutine(u32 begin, u32 end, const std::string& suffix) {
@@ -142,6 +160,9 @@ private:
             return exit_method;
 
         for (u32 offset = begin; offset != end && offset != PROGRAM_END; ++offset) {
+            shader_coverage_begin = std::min(shader_coverage_begin, offset);
+            shader_coverage_end = std::max(shader_coverage_end, offset + 1);
+
             const Instruction instr = {program_code[offset]};
             if (const auto opcode = OpCode::Decode(instr)) {
                 switch (opcode->get().GetId()) {
@@ -258,14 +279,6 @@ private:
     const std::string& suffix;
 };
 
-enum class InternalFlag : u64 {
-    ZeroFlag = 0,
-    CarryFlag = 1,
-    OverflowFlag = 2,
-    NaNFlag = 3,
-    Amount
-};
-
 /**
  * Used to manage shader registers that are emulated with GLSL. This class keeps track of the state
  * of all registers (e.g. whether they are currently being used as Floats or Integers), and
@@ -372,7 +385,7 @@ public:
         if (sets_cc) {
             const std::string zero_condition = "( " + ConvertIntegerSize(value, size) + " == 0 )";
             SetInternalFlag(InternalFlag::ZeroFlag, zero_condition);
-            LOG_WARNING(HW_GPU, "Control Codes Imcomplete.");
+            LOG_WARNING(HW_GPU, "Condition codes implementation is incomplete.");
         }
     }
 
@@ -455,23 +468,25 @@ public:
         shader.AddLine("lmem[" + index + "] = " + func + '(' + value + ");");
     }
 
-    std::string GetControlCode(const Tegra::Shader::ControlCode cc) const {
+    std::string GetConditionCode(const Tegra::Shader::ConditionCode cc) const {
         switch (cc) {
-        case Tegra::Shader::ControlCode::NEU:
+        case Tegra::Shader::ConditionCode::NEU:
             return "!(" + GetInternalFlag(InternalFlag::ZeroFlag) + ')';
         default:
-            UNIMPLEMENTED_MSG("Unimplemented Control Code: {}", static_cast<u32>(cc));
+            UNIMPLEMENTED_MSG("Unimplemented condition code: {}", static_cast<u32>(cc));
             return "false";
         }
     }
 
-    std::string GetInternalFlag(const InternalFlag ii) const {
-        const u32 code = static_cast<u32>(ii);
-        return "internalFlag_" + std::to_string(code) + suffix;
+    std::string GetInternalFlag(const InternalFlag flag) const {
+        const auto index = static_cast<u32>(flag);
+        ASSERT(index < static_cast<u32>(InternalFlag::Amount));
+
+        return std::string(INTERNAL_FLAG_NAMES[index]) + '_' + suffix;
     }
 
-    void SetInternalFlag(const InternalFlag ii, const std::string& value) const {
-        shader.AddLine(GetInternalFlag(ii) + " = " + value + ';');
+    void SetInternalFlag(const InternalFlag flag, const std::string& value) const {
+        shader.AddLine(GetInternalFlag(flag) + " = " + value + ';');
     }
 
     /**
@@ -623,8 +638,8 @@ private:
 
     /// Generates declarations for internal flags.
     void GenerateInternalFlags() {
-        for (u32 ii = 0; ii < static_cast<u64>(InternalFlag::Amount); ii++) {
-            const InternalFlag code = static_cast<InternalFlag>(ii);
+        for (u32 flag = 0; flag < static_cast<u32>(InternalFlag::Amount); flag++) {
+            const InternalFlag code = static_cast<InternalFlag>(flag);
             declarations.AddLine("bool " + GetInternalFlag(code) + " = false;");
         }
         declarations.AddNewLine();
@@ -956,9 +971,10 @@ private:
 class GLSLGenerator {
 public:
     GLSLGenerator(const std::set<Subroutine>& subroutines, const ProgramCode& program_code,
-                  u32 main_offset, Maxwell3D::Regs::ShaderStage stage, const std::string& suffix)
+                  u32 main_offset, Maxwell3D::Regs::ShaderStage stage, const std::string& suffix,
+                  std::size_t shader_length)
         : subroutines(subroutines), program_code(program_code), main_offset(main_offset),
-          stage(stage), suffix(suffix) {
+          stage(stage), suffix(suffix), shader_length(shader_length) {
         std::memcpy(&header, program_code.data(), sizeof(Tegra::Shader::Header));
         local_memory_size = header.GetLocalMemorySize();
         regs.SetLocalMemory(local_memory_size);
@@ -971,7 +987,7 @@ public:
 
     /// Returns entries in the shader that are useful for external functions
     ShaderEntries GetEntries() const {
-        return {regs.GetConstBuffersDeclarations(), regs.GetSamplers()};
+        return {regs.GetConstBuffersDeclarations(), regs.GetSamplers(), shader_length};
     }
 
 private:
@@ -1076,11 +1092,17 @@ private:
                                        const std::string& op_a, const std::string& op_b) const {
         using Tegra::Shader::PredCondition;
         static const std::unordered_map<PredCondition, const char*> PredicateComparisonStrings = {
-            {PredCondition::LessThan, "<"},           {PredCondition::Equal, "=="},
-            {PredCondition::LessEqual, "<="},         {PredCondition::GreaterThan, ">"},
-            {PredCondition::NotEqual, "!="},          {PredCondition::GreaterEqual, ">="},
-            {PredCondition::LessThanWithNan, "<"},    {PredCondition::NotEqualWithNan, "!="},
-            {PredCondition::GreaterThanWithNan, ">"}, {PredCondition::GreaterEqualWithNan, ">="}};
+            {PredCondition::LessThan, "<"},
+            {PredCondition::Equal, "=="},
+            {PredCondition::LessEqual, "<="},
+            {PredCondition::GreaterThan, ">"},
+            {PredCondition::NotEqual, "!="},
+            {PredCondition::GreaterEqual, ">="},
+            {PredCondition::LessThanWithNan, "<"},
+            {PredCondition::NotEqualWithNan, "!="},
+            {PredCondition::LessEqualWithNan, "<="},
+            {PredCondition::GreaterThanWithNan, ">"},
+            {PredCondition::GreaterEqualWithNan, ">="}};
 
         const auto& comparison{PredicateComparisonStrings.find(condition)};
         UNIMPLEMENTED_IF_MSG(comparison == PredicateComparisonStrings.end(),
@@ -1089,6 +1111,7 @@ private:
         std::string predicate{'(' + op_a + ") " + comparison->second + " (" + op_b + ')'};
         if (condition == PredCondition::LessThanWithNan ||
             condition == PredCondition::NotEqualWithNan ||
+            condition == PredCondition::LessEqualWithNan ||
             condition == PredCondition::GreaterThanWithNan ||
             condition == PredCondition::GreaterEqualWithNan) {
             predicate += " || isnan(" + op_a + ") || isnan(" + op_b + ')';
@@ -1260,14 +1283,7 @@ private:
         regs.SetRegisterToInteger(dest, true, 0, result, 1, 1);
     }
 
-    void WriteTexsInstruction(const Instruction& instr, const std::string& coord,
-                              const std::string& texture) {
-        // Add an extra scope and declare the texture coords inside to prevent
-        // overwriting them in case they are used as outputs of the texs instruction.
-        shader.AddLine('{');
-        ++shader.scope;
-        shader.AddLine(coord);
-
+    void WriteTexsInstruction(const Instruction& instr, const std::string& texture) {
         // TEXS has two destination registers and a swizzle. The first two elements in the swizzle
         // go into gpr0+0 and gpr0+1, and the rest goes into gpr28+0 and gpr28+1
 
@@ -1290,9 +1306,6 @@ private:
 
             ++written_components;
         }
-
-        --shader.scope;
-        shader.AddLine('}');
     }
 
     static u32 TextureCoordinates(Tegra::Shader::TextureType texture_type) {
@@ -1525,9 +1538,8 @@ private:
                     instr.fmul.tab5c68_0 != 1, "FMUL tab5cb8_0({}) is not implemented",
                     instr.fmul.tab5c68_0
                         .Value()); // SMO typical sends 1 here which seems to be the default
-                UNIMPLEMENTED_IF_MSG(instr.fmul.cc != 0, "FMUL cc is not implemented");
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "FMUL Generates an unhandled Control Code");
+                                     "Condition codes generation in FMUL is not implemented");
 
                 op_b = GetOperandAbsNeg(op_b, false, instr.fmul.negate_b);
 
@@ -1539,7 +1551,7 @@ private:
             case OpCode::Id::FADD_R:
             case OpCode::Id::FADD_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "FADD Generates an unhandled Control Code");
+                                     "Condition codes generation in FADD is not implemented");
 
                 op_a = GetOperandAbsNeg(op_a, instr.alu.abs_a, instr.alu.negate_a);
                 op_b = GetOperandAbsNeg(op_b, instr.alu.abs_b, instr.alu.negate_b);
@@ -1589,7 +1601,7 @@ private:
             case OpCode::Id::FMNMX_R:
             case OpCode::Id::FMNMX_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "FMNMX Generates an unhandled Control Code");
+                                     "Condition codes generation in FMNMX is not implemented");
 
                 op_a = GetOperandAbsNeg(op_a, instr.alu.abs_a, instr.alu.negate_a);
                 op_b = GetOperandAbsNeg(op_b, instr.alu.abs_b, instr.alu.negate_b);
@@ -1626,7 +1638,7 @@ private:
             }
             case OpCode::Id::FMUL32_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.op_32.generates_cc,
-                                     "FMUL32 Generates an unhandled Control Code");
+                                     "Condition codes generation in FMUL32 is not implemented");
 
                 regs.SetRegisterToFloat(instr.gpr0, 0,
                                         regs.GetRegisterAsFloat(instr.gpr8) + " * " +
@@ -1636,7 +1648,7 @@ private:
             }
             case OpCode::Id::FADD32I: {
                 UNIMPLEMENTED_IF_MSG(instr.op_32.generates_cc,
-                                     "FADD32 Generates an unhandled Control Code");
+                                     "Condition codes generation in FADD32I is not implemented");
 
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
                 std::string op_b = GetImmediate32(instr);
@@ -1671,7 +1683,8 @@ private:
 
             switch (opcode->get().GetId()) {
             case OpCode::Id::BFE_IMM: {
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "BFE Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in BFE is not implemented");
 
                 std::string inner_shift =
                     '(' + op_a + " << " + std::to_string(instr.bfe.GetLeftShiftValue()) + ')';
@@ -1708,7 +1721,8 @@ private:
             case OpCode::Id::SHR_C:
             case OpCode::Id::SHR_R:
             case OpCode::Id::SHR_IMM: {
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "SHR Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in SHR is not implemented");
 
                 if (!instr.shift.is_signed) {
                     // Logical shift right
@@ -1723,8 +1737,8 @@ private:
             case OpCode::Id::SHL_C:
             case OpCode::Id::SHL_R:
             case OpCode::Id::SHL_IMM:
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "SHL Generates an unhandled Control Code");
-
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in SHL is not implemented");
                 regs.SetRegisterToInteger(instr.gpr0, true, 0, op_a + " << " + op_b, 1, 1);
                 break;
             default: {
@@ -1740,7 +1754,7 @@ private:
             switch (opcode->get().GetId()) {
             case OpCode::Id::IADD32I:
                 UNIMPLEMENTED_IF_MSG(instr.op_32.generates_cc,
-                                     "IADD32 Generates an unhandled Control Code");
+                                     "Condition codes generation in IADD32I is not implemented");
 
                 if (instr.iadd32i.negate_a)
                     op_a = "-(" + op_a + ')';
@@ -1750,7 +1764,7 @@ private:
                 break;
             case OpCode::Id::LOP32I: {
                 UNIMPLEMENTED_IF_MSG(instr.op_32.generates_cc,
-                                     "LOP32I Generates an unhandled Control Code");
+                                     "Condition codes generation in LOP32I is not implemented");
 
                 if (instr.alu.lop32i.invert_a)
                     op_a = "~(" + op_a + ')';
@@ -1794,7 +1808,7 @@ private:
             case OpCode::Id::IADD_R:
             case OpCode::Id::IADD_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "IADD Generates an unhandled Control Code");
+                                     "Condition codes generation in IADD is not implemented");
 
                 if (instr.alu_integer.negate_a)
                     op_a = "-(" + op_a + ')';
@@ -1810,7 +1824,7 @@ private:
             case OpCode::Id::IADD3_R:
             case OpCode::Id::IADD3_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "IADD3 Generates an unhandled Control Code");
+                                     "Condition codes generation in IADD3 is not implemented");
 
                 std::string op_c = regs.GetRegisterAsInteger(instr.gpr39);
 
@@ -1873,7 +1887,7 @@ private:
             case OpCode::Id::ISCADD_R:
             case OpCode::Id::ISCADD_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "ISCADD Generates an unhandled Control Code");
+                                     "Condition codes generation in ISCADD is not implemented");
 
                 if (instr.alu_integer.negate_a)
                     op_a = "-(" + op_a + ')';
@@ -1908,7 +1922,8 @@ private:
             case OpCode::Id::LOP_C:
             case OpCode::Id::LOP_R:
             case OpCode::Id::LOP_IMM: {
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "LOP Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in LOP is not implemented");
 
                 if (instr.alu.lop.invert_a)
                     op_a = "~(" + op_a + ')';
@@ -1924,7 +1939,7 @@ private:
             case OpCode::Id::LOP3_R:
             case OpCode::Id::LOP3_IMM: {
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "LOP3 Generates an unhandled Control Code");
+                                     "Condition codes generation in LOP3 is not implemented");
 
                 const std::string op_c = regs.GetRegisterAsInteger(instr.gpr39);
                 std::string lut;
@@ -1943,7 +1958,7 @@ private:
             case OpCode::Id::IMNMX_IMM: {
                 UNIMPLEMENTED_IF(instr.imnmx.exchange != Tegra::Shader::IMinMaxExchange::None);
                 UNIMPLEMENTED_IF_MSG(instr.generates_cc,
-                                     "IMNMX Generates an unhandled Control Code");
+                                     "Condition codes generation in IMNMX is not implemented");
 
                 const std::string condition =
                     GetPredicateCondition(instr.imnmx.pred, instr.imnmx.negate_pred != 0);
@@ -2116,7 +2131,8 @@ private:
                 instr.ffma.tab5980_0.Value()); // Seems to be 1 by default based on SMO
             UNIMPLEMENTED_IF_MSG(instr.ffma.tab5980_1 != 0, "FFMA tab5980_1({}) not implemented",
                                  instr.ffma.tab5980_1.Value());
-            UNIMPLEMENTED_IF_MSG(instr.generates_cc, "FFMA Generates an unhandled Control Code");
+            UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                 "Condition codes generation in FFMA is not implemented");
 
             switch (opcode->get().GetId()) {
             case OpCode::Id::FFMA_CR: {
@@ -2226,7 +2242,8 @@ private:
             case OpCode::Id::I2F_C: {
                 UNIMPLEMENTED_IF(instr.conversion.dest_size != Register::Size::Word);
                 UNIMPLEMENTED_IF(instr.conversion.selector);
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "I2F Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in I2F is not implemented");
 
                 std::string op_a{};
 
@@ -2256,7 +2273,8 @@ private:
             case OpCode::Id::F2F_R: {
                 UNIMPLEMENTED_IF(instr.conversion.dest_size != Register::Size::Word);
                 UNIMPLEMENTED_IF(instr.conversion.src_size != Register::Size::Word);
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "F2F Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in F2F is not implemented");
                 std::string op_a = regs.GetRegisterAsFloat(instr.gpr20);
 
                 if (instr.conversion.abs_a) {
@@ -2294,7 +2312,8 @@ private:
             case OpCode::Id::F2I_R:
             case OpCode::Id::F2I_C: {
                 UNIMPLEMENTED_IF(instr.conversion.src_size != Register::Size::Word);
-                UNIMPLEMENTED_IF_MSG(instr.generates_cc, "F2I Generates an unhandled Control Code");
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in F2I is not implemented");
                 std::string op_a{};
 
                 if (instr.is_b_gpr) {
@@ -2585,7 +2604,6 @@ private:
                 }
                 // TODO: make sure coordinates are always indexed to gpr8 and gpr20 is always bias
                 // or lod.
-                std::string op_c;
 
                 const std::string sampler =
                     GetSampler(instr.sampler, texture_type, is_array, depth_compare);
@@ -2608,27 +2626,35 @@ private:
                 }
                 case Tegra::Shader::TextureProcessMode::LB:
                 case Tegra::Shader::TextureProcessMode::LBA: {
-                    if (depth_compare) {
-                        if (is_array)
-                            op_c = regs.GetRegisterAsFloat(instr.gpr20.Value() + 2);
-                        else
-                            op_c = regs.GetRegisterAsFloat(instr.gpr20.Value() + 1);
-                    } else {
-                        op_c = regs.GetRegisterAsFloat(instr.gpr20);
-                    }
+                    const std::string bias = [&]() {
+                        if (depth_compare) {
+                            if (is_array)
+                                return regs.GetRegisterAsFloat(instr.gpr20.Value() + 2);
+                            else
+                                return regs.GetRegisterAsFloat(instr.gpr20.Value() + 1);
+                        } else {
+                            return regs.GetRegisterAsFloat(instr.gpr20);
+                        }
+                    }();
+                    shader.AddLine("float bias = " + bias + ';');
+
                     // TODO: Figure if A suffix changes the equation at all.
-                    texture = "texture(" + sampler + ", coords, " + op_c + ')';
+                    texture = "texture(" + sampler + ", coords, bias)";
                     break;
                 }
                 case Tegra::Shader::TextureProcessMode::LL:
                 case Tegra::Shader::TextureProcessMode::LLA: {
-                    if (num_coordinates <= 2) {
-                        op_c = regs.GetRegisterAsFloat(instr.gpr20);
-                    } else {
-                        op_c = regs.GetRegisterAsFloat(instr.gpr20.Value() + 1);
-                    }
+                    const std::string lod = [&]() {
+                        if (num_coordinates <= 2) {
+                            return regs.GetRegisterAsFloat(instr.gpr20);
+                        } else {
+                            return regs.GetRegisterAsFloat(instr.gpr20.Value() + 1);
+                        }
+                    }();
+                    shader.AddLine("float lod = " + lod + ';');
+
                     // TODO: Figure if A suffix changes the equation at all.
-                    texture = "textureLod(" + sampler + ", coords, " + op_c + ')';
+                    texture = "textureLod(" + sampler + ", coords, lod)";
                     break;
                 }
                 default: {
@@ -2655,7 +2681,6 @@ private:
                 break;
             }
             case OpCode::Id::TEXS: {
-                std::string coord;
                 Tegra::Shader::TextureType texture_type{instr.texs.GetTextureType()};
                 bool is_array{instr.texs.IsArrayTexture()};
 
@@ -2668,17 +2693,21 @@ private:
                 if (depth_compare)
                     num_coordinates += 1;
 
+                // Scope to avoid variable name overlaps.
+                shader.AddLine('{');
+                ++shader.scope;
+
                 switch (num_coordinates) {
                 case 2: {
                     if (is_array) {
                         const std::string index = regs.GetRegisterAsInteger(instr.gpr8);
                         const std::string x = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                         const std::string y = regs.GetRegisterAsFloat(instr.gpr20);
-                        coord = "vec3 coords = vec3(" + x + ", " + y + ", " + index + ");";
+                        shader.AddLine("vec3 coords = vec3(" + x + ", " + y + ", " + index + ");");
                     } else {
                         const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                         const std::string y = regs.GetRegisterAsFloat(instr.gpr20);
-                        coord = "vec2 coords = vec2(" + x + ", " + y + ");";
+                        shader.AddLine("vec2 coords = vec2(" + x + ", " + y + ");");
                     }
                     break;
                 }
@@ -2688,13 +2717,13 @@ private:
                         const std::string x = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                         const std::string y = regs.GetRegisterAsFloat(instr.gpr8.Value() + 2);
                         const std::string z = regs.GetRegisterAsFloat(instr.gpr20);
-                        coord =
-                            "vec4 coords = vec4(" + x + ", " + y + ", " + z + ", " + index + ");";
+                        shader.AddLine("vec4 coords = vec4(" + x + ", " + y + ", " + z + ", " +
+                                       index + ");");
                     } else {
                         const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                         const std::string y = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                         const std::string z = regs.GetRegisterAsFloat(instr.gpr20);
-                        coord = "vec3 coords = vec3(" + x + ", " + y + ", " + z + ");";
+                        shader.AddLine("vec3 coords = vec3(" + x + ", " + y + ", " + z + ");");
                     }
                     break;
                 }
@@ -2705,7 +2734,7 @@ private:
                     // Fallback to interpreting as a 2D texture for now
                     const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                     const std::string y = regs.GetRegisterAsFloat(instr.gpr20);
-                    coord = "vec2 coords = vec2(" + x + ", " + y + ");";
+                    shader.AddLine("vec2 coords = vec2(" + x + ", " + y + ");");
                     texture_type = Tegra::Shader::TextureType::Texture2D;
                     is_array = false;
                 }
@@ -2737,14 +2766,16 @@ private:
                 }
                 }
                 if (!depth_compare) {
-                    WriteTexsInstruction(instr, coord, texture);
+                    WriteTexsInstruction(instr, texture);
                 } else {
-                    WriteTexsInstruction(instr, coord, "vec4(" + texture + ')');
+                    WriteTexsInstruction(instr, "vec4(" + texture + ')');
                 }
+
+                shader.AddLine('}');
+                --shader.scope;
                 break;
             }
             case OpCode::Id::TLDS: {
-                std::string coord;
                 const Tegra::Shader::TextureType texture_type{instr.tlds.GetTextureType()};
                 const bool is_array{instr.tlds.IsArrayTexture()};
 
@@ -2758,12 +2789,16 @@ private:
                 UNIMPLEMENTED_IF_MSG(instr.tlds.UsesMiscMode(Tegra::Shader::TextureMiscMode::MZ),
                                      "MZ is not implemented");
 
-                u32 op_c_offset = 0;
+                u32 extra_op_offset = 0;
+
+                // Scope to avoid variable name overlaps.
+                shader.AddLine('{');
+                ++shader.scope;
 
                 switch (texture_type) {
                 case Tegra::Shader::TextureType::Texture1D: {
                     const std::string x = regs.GetRegisterAsInteger(instr.gpr8);
-                    coord = "int coords = " + x + ';';
+                    shader.AddLine("int coords = " + x + ';');
                     break;
                 }
                 case Tegra::Shader::TextureType::Texture2D: {
@@ -2771,8 +2806,8 @@ private:
 
                     const std::string x = regs.GetRegisterAsInteger(instr.gpr8);
                     const std::string y = regs.GetRegisterAsInteger(instr.gpr20);
-                    coord = "ivec2 coords = ivec2(" + x + ", " + y + ");";
-                    op_c_offset = 1;
+                    shader.AddLine("ivec2 coords = ivec2(" + x + ", " + y + ");");
+                    extra_op_offset = 1;
                     break;
                 }
                 default:
@@ -2787,9 +2822,10 @@ private:
                     break;
                 }
                 case Tegra::Shader::TextureProcessMode::LL: {
-                    const std::string op_c =
-                        regs.GetRegisterAsInteger(instr.gpr20.Value() + op_c_offset);
-                    texture = "texelFetch(" + sampler + ", coords, " + op_c + ')';
+                    shader.AddLine(
+                        "float lod = " +
+                        regs.GetRegisterAsInteger(instr.gpr20.Value() + extra_op_offset) + ';');
+                    texture = "texelFetch(" + sampler + ", coords, lod)";
                     break;
                 }
                 default: {
@@ -2798,7 +2834,10 @@ private:
                                       static_cast<u32>(instr.tlds.GetTextureProcessMode()));
                 }
                 }
-                WriteTexsInstruction(instr, coord, texture);
+                WriteTexsInstruction(instr, texture);
+
+                --shader.scope;
+                shader.AddLine('}');
                 break;
             }
             case OpCode::Id::TLD4: {
@@ -2821,18 +2860,23 @@ private:
                 if (depth_compare)
                     num_coordinates += 1;
 
+                // Add an extra scope and declare the texture coords inside to prevent
+                // overwriting them in case they are used as outputs of the texs instruction.
+                shader.AddLine('{');
+                ++shader.scope;
+
                 switch (num_coordinates) {
                 case 2: {
                     const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                     const std::string y = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
-                    coord = "vec2 coords = vec2(" + x + ", " + y + ");";
+                    shader.AddLine("vec2 coords = vec2(" + x + ", " + y + ");");
                     break;
                 }
                 case 3: {
                     const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                     const std::string y = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
                     const std::string z = regs.GetRegisterAsFloat(instr.gpr8.Value() + 2);
-                    coord = "vec3 coords = vec3(" + x + ", " + y + ", " + z + ");";
+                    shader.AddLine("vec3 coords = vec3(" + x + ", " + y + ", " + z + ");");
                     break;
                 }
                 default:
@@ -2840,17 +2884,13 @@ private:
                                       static_cast<u32>(num_coordinates));
                     const std::string x = regs.GetRegisterAsFloat(instr.gpr8);
                     const std::string y = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
-                    coord = "vec2 coords = vec2(" + x + ", " + y + ");";
+                    shader.AddLine("vec2 coords = vec2(" + x + ", " + y + ");");
                     texture_type = Tegra::Shader::TextureType::Texture2D;
                 }
 
                 const std::string sampler =
                     GetSampler(instr.sampler, texture_type, false, depth_compare);
-                // Add an extra scope and declare the texture coords inside to prevent
-                // overwriting them in case they are used as outputs of the texs instruction.
-                shader.AddLine("{");
-                ++shader.scope;
-                shader.AddLine(coord);
+
                 const std::string texture = "textureGather(" + sampler + ", coords, " +
                                             std::to_string(instr.tld4.component) + ')';
                 if (!depth_compare) {
@@ -2867,7 +2907,7 @@ private:
                     regs.SetRegisterToFloat(instr.gpr0, 0, texture, 1, 1, false);
                 }
                 --shader.scope;
-                shader.AddLine("}");
+                shader.AddLine('}');
                 break;
             }
             case OpCode::Id::TLD4S: {
@@ -2878,6 +2918,10 @@ private:
                     instr.tld4s.UsesMiscMode(Tegra::Shader::TextureMiscMode::AOFFI),
                     "AOFFI is not implemented");
 
+                // Scope to avoid variable name overlaps.
+                shader.AddLine('{');
+                ++shader.scope;
+
                 const bool depth_compare =
                     instr.tld4s.UsesMiscMode(Tegra::Shader::TextureMiscMode::DC);
                 const std::string op_a = regs.GetRegisterAsFloat(instr.gpr8);
@@ -2885,28 +2929,33 @@ private:
                 // TODO(Subv): Figure out how the sampler type is encoded in the TLD4S instruction.
                 const std::string sampler = GetSampler(
                     instr.sampler, Tegra::Shader::TextureType::Texture2D, false, depth_compare);
-                std::string coord;
                 if (!depth_compare) {
-                    coord = "vec2 coords = vec2(" + op_a + ", " + op_b + ");";
+                    shader.AddLine("vec2 coords = vec2(" + op_a + ", " + op_b + ");");
                 } else {
                     // Note: TLD4S coordinate encoding works just like TEXS's
-                    const std::string op_c = regs.GetRegisterAsFloat(instr.gpr8.Value() + 1);
-                    coord = "vec3 coords = vec3(" + op_a + ", " + op_c + ", " + op_b + ");";
+                    shader.AddLine(
+                        "float op_y = " + regs.GetRegisterAsFloat(instr.gpr8.Value() + 1) + ';');
+                    shader.AddLine("vec3 coords = vec3(" + op_a + ", op_y, " + op_b + ");");
                 }
                 const std::string texture = "textureGather(" + sampler + ", coords, " +
                                             std::to_string(instr.tld4s.component) + ')';
 
                 if (!depth_compare) {
-                    WriteTexsInstruction(instr, coord, texture);
+                    WriteTexsInstruction(instr, texture);
                 } else {
-                    WriteTexsInstruction(instr, coord, "vec4(" + texture + ')');
+                    WriteTexsInstruction(instr, "vec4(" + texture + ')');
                 }
+
+                --shader.scope;
+                shader.AddLine('}');
                 break;
             }
             case OpCode::Id::TXQ: {
                 UNIMPLEMENTED_IF_MSG(instr.txq.UsesMiscMode(Tegra::Shader::TextureMiscMode::NODEP),
                                      "NODEP is not implemented");
 
+                ++shader.scope;
+                shader.AddLine('{');
                 // TODO: the new commits on the texture refactor, change the way samplers work.
                 // Sadly, not all texture instructions specify the type of texture their sampler
                 // uses. This must be fixed at a later instance.
@@ -2914,8 +2963,14 @@ private:
                     GetSampler(instr.sampler, Tegra::Shader::TextureType::Texture2D, false, false);
                 switch (instr.txq.query_type) {
                 case Tegra::Shader::TextureQueryType::Dimension: {
-                    const std::string texture = "textureQueryLevels(" + sampler + ')';
-                    regs.SetRegisterToInteger(instr.gpr0, true, 0, texture, 1, 1);
+                    const std::string texture = "textureSize(" + sampler + ", " +
+                                                regs.GetRegisterAsInteger(instr.gpr8) + ')';
+                    const std::string mip_level = "textureQueryLevels(" + sampler + ')';
+                    shader.AddLine("ivec2 sizes = " + texture + ';');
+                    regs.SetRegisterToInteger(instr.gpr0, true, 0, "sizes.x", 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0.Value() + 1, true, 0, "sizes.y", 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0.Value() + 2, true, 0, "0", 1, 1);
+                    regs.SetRegisterToInteger(instr.gpr0.Value() + 3, true, 0, mip_level, 1, 1);
                     break;
                 }
                 default: {
@@ -2923,6 +2978,8 @@ private:
                                       static_cast<u32>(instr.txq.query_type.Value()));
                 }
                 }
+                --shader.scope;
+                shader.AddLine('}');
                 break;
             }
             case OpCode::Id::TMML: {
@@ -3171,7 +3228,8 @@ private:
             break;
         }
         case OpCode::Type::PredicateSetRegister: {
-            UNIMPLEMENTED_IF_MSG(instr.generates_cc, "PSET Generates an unhandled Control Code");
+            UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                 "Condition codes generation in PSET is not implemented");
 
             const std::string op_a =
                 GetPredicateCondition(instr.pset.pred12, instr.pset.neg_pred12 != 0);
@@ -3230,14 +3288,14 @@ private:
                 const std::string pred =
                     GetPredicateCondition(instr.csetp.pred39, instr.csetp.neg_pred39 != 0);
                 const std::string combiner = GetPredicateCombiner(instr.csetp.op);
-                const std::string control_code = regs.GetControlCode(instr.csetp.cc);
+                const std::string condition_code = regs.GetConditionCode(instr.csetp.cc);
                 if (instr.csetp.pred3 != static_cast<u64>(Pred::UnusedIndex)) {
                     SetPredicate(instr.csetp.pred3,
-                                 '(' + control_code + ") " + combiner + " (" + pred + ')');
+                                 '(' + condition_code + ") " + combiner + " (" + pred + ')');
                 }
                 if (instr.csetp.pred0 != static_cast<u64>(Pred::UnusedIndex)) {
                     SetPredicate(instr.csetp.pred0,
-                                 "!(" + control_code + ") " + combiner + " (" + pred + ')');
+                                 "!(" + condition_code + ") " + combiner + " (" + pred + ')');
                 }
                 break;
             }
@@ -3368,7 +3426,8 @@ private:
         case OpCode::Type::Xmad: {
             UNIMPLEMENTED_IF(instr.xmad.sign_a);
             UNIMPLEMENTED_IF(instr.xmad.sign_b);
-            UNIMPLEMENTED_IF_MSG(instr.generates_cc, "XMAD Generates an unhandled Control Code");
+            UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                 "Condition codes generation in XMAD is not implemented");
 
             std::string op_a{regs.GetRegisterAsInteger(instr.gpr8, 0, instr.xmad.sign_a)};
             std::string op_b;
@@ -3460,9 +3519,9 @@ private:
         default: {
             switch (opcode->get().GetId()) {
             case OpCode::Id::EXIT: {
-                const Tegra::Shader::ControlCode cc = instr.flow_control_code;
-                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ControlCode::T,
-                                     "EXIT Control Code used: {}", static_cast<u32>(cc));
+                const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T,
+                                     "EXIT condition code used: {}", static_cast<u32>(cc));
 
                 if (stage == Maxwell3D::Regs::ShaderStage::Fragment) {
                     EmitFragmentOutputsWrite();
@@ -3494,9 +3553,9 @@ private:
             case OpCode::Id::KIL: {
                 UNIMPLEMENTED_IF(instr.flow.cond != Tegra::Shader::FlowCondition::Always);
 
-                const Tegra::Shader::ControlCode cc = instr.flow_control_code;
-                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ControlCode::T,
-                                     "KIL Control Code used: {}", static_cast<u32>(cc));
+                const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T,
+                                     "KIL condition code used: {}", static_cast<u32>(cc));
 
                 // Enclose "discard" in a conditional, so that GLSL compilation does not complain
                 // about unexecuted instructions that may follow this.
@@ -3558,9 +3617,9 @@ private:
                 UNIMPLEMENTED_IF_MSG(instr.bra.constant_buffer != 0,
                                      "BRA with constant buffers are not implemented");
 
-                const Tegra::Shader::ControlCode cc = instr.flow_control_code;
-                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ControlCode::T,
-                                     "BRA Control Code used: {}", static_cast<u32>(cc));
+                const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T,
+                                     "BRA condition code used: {}", static_cast<u32>(cc));
 
                 const u32 target = offset + instr.bra.GetBranchTarget();
                 shader.AddLine("{ jmp_to = " + std::to_string(target) + "u; break; }");
@@ -3603,9 +3662,9 @@ private:
                 break;
             }
             case OpCode::Id::SYNC: {
-                const Tegra::Shader::ControlCode cc = instr.flow_control_code;
-                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ControlCode::T,
-                                     "SYNC Control Code used: {}", static_cast<u32>(cc));
+                const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T,
+                                     "SYNC condition code used: {}", static_cast<u32>(cc));
 
                 // The SYNC opcode jumps to the address previously set by the SSY opcode
                 EmitPopFromFlowStack();
@@ -3613,10 +3672,10 @@ private:
             }
             case OpCode::Id::BRK: {
                 // The BRK opcode jumps to the address previously set by the PBK opcode
-                const Tegra::Shader::ControlCode cc = instr.flow_control_code;
-                if (cc != Tegra::Shader::ControlCode::T) {
-                    UNIMPLEMENTED_MSG("BRK Control Code used: {}", static_cast<u32>(cc));
-                }
+                const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+                UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T,
+                                     "BRK condition code used: {}", static_cast<u32>(cc));
+
                 EmitPopFromFlowStack();
                 break;
             }
@@ -3627,6 +3686,9 @@ private:
                 break;
             }
             case OpCode::Id::VMAD: {
+                UNIMPLEMENTED_IF_MSG(instr.generates_cc,
+                                     "Condition codes generation in VMAD is not implemented");
+
                 const bool result_signed = instr.video.signed_a == 1 || instr.video.signed_b == 1;
                 const std::string op_a = GetVideoOperandA(instr);
                 const std::string op_b = GetVideoOperandB(instr);
@@ -3646,10 +3708,6 @@ private:
                 regs.SetRegisterToInteger(instr.gpr0, result_signed, 1, result, 1, 1,
                                           instr.vmad.saturate == 1, 0, Register::Size::Word,
                                           instr.vmad.cc);
-                if (instr.generates_cc) {
-                    UNIMPLEMENTED_MSG("VMAD Generates an unhandled Control Code");
-                }
-
                 break;
             }
             case OpCode::Id::VSETP: {
@@ -3801,6 +3859,7 @@ private:
     Maxwell3D::Regs::ShaderStage stage;
     const std::string& suffix;
     u64 local_memory_size;
+    std::size_t shader_length;
 
     ShaderWriter shader;
     ShaderWriter declarations;
@@ -3828,9 +3887,10 @@ std::optional<ProgramResult> DecompileProgram(const ProgramCode& program_code, u
                                               Maxwell3D::Regs::ShaderStage stage,
                                               const std::string& suffix) {
     try {
-        const auto subroutines =
-            ControlFlowAnalyzer(program_code, main_offset, suffix).GetSubroutines();
-        GLSLGenerator generator(subroutines, program_code, main_offset, stage, suffix);
+        ControlFlowAnalyzer analyzer(program_code, main_offset, suffix);
+        const auto subroutines = analyzer.GetSubroutines();
+        GLSLGenerator generator(subroutines, program_code, main_offset, stage, suffix,
+                                analyzer.GetShaderLength());
         return ProgramResult{generator.GetShaderCode(), generator.GetEntries()};
     } catch (const DecompileFail& exception) {
         LOG_ERROR(HW_GPU, "Shader decompilation failed: {}", exception.what());

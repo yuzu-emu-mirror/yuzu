@@ -12,6 +12,8 @@ add_library(core STATIC
     core_timing.h
     core_timing_util.cpp
     core_timing_util.h
+    cpu_core_manager.cpp
+    cpu_core_manager.h
     crypto/aes_util.cpp
     crypto/aes_util.h
     crypto/encryption_layer.cpp
@@ -156,6 +158,8 @@ add_library(core STATIC
     hle/service/am/applets/applets.h
     hle/service/am/applets/software_keyboard.cpp
     hle/service/am/applets/software_keyboard.h
+    hle/service/am/applets/stub_applet.cpp
+    hle/service/am/applets/stub_applet.h
     hle/service/am/idle.cpp
     hle/service/am/idle.h
     hle/service/am/omm.cpp
