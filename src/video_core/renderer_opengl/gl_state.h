@@ -161,10 +161,10 @@ public:
     } draw;
 
     struct viewport {
-        GLint x;
-        GLint y;
-        GLint width;
-        GLint height;
+        GLfloat x;
+        GLfloat y;
+        GLfloat width;
+        GLfloat height;
         GLfloat depth_range_near; // GL_DEPTH_RANGE
         GLfloat depth_range_far;  // GL_DEPTH_RANGE
         struct {
@@ -211,7 +211,6 @@ public:
     OpenGLState& ResetBuffer(GLuint handle);
     OpenGLState& ResetVertexArray(GLuint handle);
     OpenGLState& ResetFramebuffer(GLuint handle);
-    void EmulateViewportWithScissor();
 
 private:
     static OpenGLState cur_state;
