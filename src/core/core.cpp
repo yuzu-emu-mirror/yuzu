@@ -14,7 +14,6 @@
 #include "core/core.h"
 #include "core/core_cpu.h"
 #include "core/core_timing.h"
-#include "core/cpu_core_manager.h"
 #include "core/file_sys/mode.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
@@ -29,6 +28,7 @@
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
+#include "core/settings.h"
 #include "core/telemetry_session.h"
 #include "frontend/applets/software_keyboard.h"
 #include "video_core/debug_utils/debug_utils.h"
@@ -71,22 +71,64 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
 
     return vfs->OpenFile(path, FileSys::Mode::Read);
 }
+
+/// Runs a CPU core while the system is powered on
+void RunCpuCore(Cpu& cpu_state) {
+    while (Core::System::GetInstance().IsPoweredOn()) {
+        cpu_state.RunLoop(true);
+    }
+}
 } // Anonymous namespace
 
 struct System::Impl {
     Cpu& CurrentCpuCore() {
-        return cpu_core_manager.GetCurrentCore();
+        if (Settings::values.use_multi_core) {
+            const auto& search = thread_to_cpu.find(std::this_thread::get_id());
+            ASSERT(search != thread_to_cpu.end());
+            ASSERT(search->second);
+            return *search->second;
+        }
+
+        // Otherwise, use single-threaded mode active_core variable
+        return *cpu_cores[active_core];
     }
 
     ResultStatus RunLoop(bool tight_loop) {
         status = ResultStatus::Success;
 
-        cpu_core_manager.RunLoop(tight_loop);
+        // Update thread_to_cpu in case Core 0 is run from a different host thread
+        thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0].get();
+
+        if (GDBStub::IsServerEnabled()) {
+            GDBStub::HandlePacket();
+
+            // If the loop is halted and we want to step, use a tiny (1) number of instructions to
+            // execute. Otherwise, get out of the loop function.
+            if (GDBStub::GetCpuHaltFlag()) {
+                if (GDBStub::GetCpuStepFlag()) {
+                    tight_loop = false;
+                } else {
+                    return ResultStatus::Success;
+                }
+            }
+        }
+
+        for (active_core = 0; active_core < NUM_CPU_CORES; ++active_core) {
+            cpu_cores[active_core]->RunLoop(tight_loop);
+            if (Settings::values.use_multi_core) {
+                // Cores 1-3 are run on other threads in this mode
+                break;
+            }
+        }
+
+        if (GDBStub::IsServerEnabled()) {
+            GDBStub::SetCpuStepFlag(false);
+        }
 
         return status;
     }
 
-    ResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
+    ResultStatus Init(Frontend::EmuWindow& emu_window) {
         LOG_DEBUG(HW_Memory, "initialized OK");
 
         CoreTiming::Init();
@@ -103,6 +145,12 @@ struct System::Impl {
         auto main_process = Kernel::Process::Create(kernel, "main");
         kernel.MakeCurrentProcess(main_process.get());
 
+        cpu_barrier = std::make_unique<CpuBarrier>();
+        cpu_exclusive_monitor = Cpu::MakeExclusiveMonitor(cpu_cores.size());
+        for (std::size_t index = 0; index < cpu_cores.size(); ++index) {
+            cpu_cores[index] = std::make_unique<Cpu>(*cpu_exclusive_monitor, *cpu_barrier, index);
+        }
+
         telemetry_session = std::make_unique<Core::TelemetrySession>();
         service_manager = std::make_shared<Service::SM::ServiceManager>();
 
@@ -116,8 +164,17 @@ struct System::Impl {
 
         gpu_core = std::make_unique<Tegra::GPU>(renderer->Rasterizer());
 
-        cpu_core_manager.Initialize(system);
-        is_powered_on = true;
+        // Create threads for CPU cores 1-3, and build thread_to_cpu map
+        // CPU core 0 is run on the main thread
+        thread_to_cpu[std::this_thread::get_id()] = cpu_cores[0].get();
+        if (Settings::values.use_multi_core) {
+            for (std::size_t index = 0; index < cpu_core_threads.size(); ++index) {
+                cpu_core_threads[index] =
+                    std::make_unique<std::thread>(RunCpuCore, std::ref(*cpu_cores[index + 1]));
+                thread_to_cpu[cpu_core_threads[index]->get_id()] = cpu_cores[index + 1].get();
+            }
+        }
+
         LOG_DEBUG(Core, "Initialized OK");
 
         // Reset counters and set time origin to current frame
@@ -127,8 +184,7 @@ struct System::Impl {
         return ResultStatus::Success;
     }
 
-    ResultStatus Load(System& system, Frontend::EmuWindow& emu_window,
-                      const std::string& filepath) {
+    ResultStatus Load(Frontend::EmuWindow& emu_window, const std::string& filepath) {
         app_loader = Loader::GetLoader(GetGameFileFromPath(virtual_filesystem, filepath));
 
         if (!app_loader) {
@@ -145,7 +201,7 @@ struct System::Impl {
             return ResultStatus::ErrorSystemMode;
         }
 
-        ResultStatus init_result{Init(system, emu_window)};
+        ResultStatus init_result{Init(emu_window)};
         if (init_result != ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
                          static_cast<int>(init_result));
@@ -175,8 +231,6 @@ struct System::Impl {
         Telemetry().AddField(Telemetry::FieldType::Performance, "Shutdown_Frametime",
                              perf_results.frametime * 1000.0);
 
-        is_powered_on = false;
-
         // Shutdown emulation session
         renderer.reset();
         GDBStub::Shutdown();
@@ -186,7 +240,19 @@ struct System::Impl {
         gpu_core.reset();
 
         // Close all CPU/threading state
-        cpu_core_manager.Shutdown();
+        cpu_barrier->NotifyEnd();
+        if (Settings::values.use_multi_core) {
+            for (auto& thread : cpu_core_threads) {
+                thread->join();
+                thread.reset();
+            }
+        }
+        thread_to_cpu.clear();
+        for (auto& cpu_core : cpu_cores) {
+            cpu_core.reset();
+        }
+        cpu_exclusive_monitor.reset();
+        cpu_barrier.reset();
 
         // Shutdown kernel and core timing
         kernel.Shutdown();
@@ -223,8 +289,11 @@ struct System::Impl {
     std::unique_ptr<VideoCore::RendererBase> renderer;
     std::unique_ptr<Tegra::GPU> gpu_core;
     std::shared_ptr<Tegra::DebugContext> debug_context;
-    CpuCoreManager cpu_core_manager;
-    bool is_powered_on = false;
+    std::unique_ptr<ExclusiveMonitor> cpu_exclusive_monitor;
+    std::unique_ptr<CpuBarrier> cpu_barrier;
+    std::array<std::unique_ptr<Cpu>, NUM_CPU_CORES> cpu_cores;
+    std::array<std::unique_ptr<std::thread>, NUM_CPU_CORES - 1> cpu_core_threads;
+    std::size_t active_core{}; ///< Active core, only used in single thread mode
 
     /// Frontend applets
     std::unique_ptr<Core::Frontend::SoftwareKeyboardApplet> software_keyboard;
@@ -237,6 +306,9 @@ struct System::Impl {
 
     ResultStatus status = ResultStatus::Success;
     std::string status_details = "";
+
+    /// Map of guest threads to CPU cores
+    std::map<std::thread::id, Cpu*> thread_to_cpu;
 
     Core::PerfStats perf_stats;
     Core::FrameLimiter frame_limiter;
@@ -262,15 +334,17 @@ System::ResultStatus System::SingleStep() {
 }
 
 void System::InvalidateCpuInstructionCaches() {
-    impl->cpu_core_manager.InvalidateAllInstructionCaches();
+    for (auto& cpu : impl->cpu_cores) {
+        cpu->ArmInterface().ClearInstructionCache();
+    }
 }
 
 System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath) {
-    return impl->Load(*this, emu_window, filepath);
+    return impl->Load(emu_window, filepath);
 }
 
 bool System::IsPoweredOn() const {
-    return impl->is_powered_on;
+    return impl->cpu_barrier && impl->cpu_barrier->IsAlive();
 }
 
 void System::PrepareReschedule() {
@@ -334,20 +408,21 @@ const ARM_Interface& System::ArmInterface(std::size_t core_index) const {
 }
 
 Cpu& System::CpuCore(std::size_t core_index) {
-    return impl->cpu_core_manager.GetCore(core_index);
+    ASSERT(core_index < NUM_CPU_CORES);
+    return *impl->cpu_cores[core_index];
 }
 
 const Cpu& System::CpuCore(std::size_t core_index) const {
     ASSERT(core_index < NUM_CPU_CORES);
-    return impl->cpu_core_manager.GetCore(core_index);
+    return *impl->cpu_cores[core_index];
 }
 
 ExclusiveMonitor& System::Monitor() {
-    return impl->cpu_core_manager.GetExclusiveMonitor();
+    return *impl->cpu_exclusive_monitor;
 }
 
 const ExclusiveMonitor& System::Monitor() const {
-    return impl->cpu_core_manager.GetExclusiveMonitor();
+    return *impl->cpu_exclusive_monitor;
 }
 
 Tegra::GPU& System::GPU() {
@@ -431,7 +506,7 @@ const Core::Frontend::SoftwareKeyboardApplet& System::GetSoftwareKeyboard() cons
 }
 
 System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {
-    return impl->Init(*this, emu_window);
+    return impl->Init(emu_window);
 }
 
 void System::Shutdown() {
