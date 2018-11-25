@@ -50,7 +50,6 @@ public:
     u32 GetMainThreadStackSize() const;
     u64 GetTitleID() const;
     u64 GetFilesystemPermissions() const;
-    u32 GetSystemResourceSize() const;
 
     void Print() const;
 
@@ -69,8 +68,7 @@ private:
         u8 reserved_3;
         u8 main_thread_priority;
         u8 main_thread_cpu;
-        std::array<u8, 4> reserved_4;
-        u32 system_resource_size;
+        std::array<u8, 8> reserved_4;
         u32_le process_category;
         u32_le main_stack_size;
         std::array<u8, 0x10> application_name;
