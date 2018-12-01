@@ -80,10 +80,16 @@ ResultCode MapUnmapMemorySanityChecks(const VMManager& vm_manager, VAddr dst_add
     }
 
     if (!vm_manager.IsInsideAddressSpace(src_addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Source is not inside the address space, addr=0x{:016X}, size=0x{:016X}",
+                  src_addr, size);
         return ERR_INVALID_ADDRESS_STATE;
     }
 
     if (!vm_manager.IsInsideNewMapRegion(dst_addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Destination is not inside the new map region, addr=0x{:016X}, size=0x{:016X}",
+                  dst_addr, size);
         return ERR_INVALID_MEMORY_RANGE;
     }
 
@@ -1617,14 +1623,24 @@ static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:08X}, size=0x{:X}", addr, size);
 
     if (!Common::Is4KBAligned(addr)) {
+        LOG_ERROR(Kernel_SVC, "Address is not aligned to 4KB, 0x{:016X}", addr);
         return ERR_INVALID_ADDRESS;
     }
 
-    if (size == 0 || !Common::Is4KBAligned(size)) {
+    if (size == 0) {
+        LOG_ERROR(Kernel_SVC, "Size is 0");
+        return ERR_INVALID_SIZE;
+    }
+
+    if (!Common::Is4KBAligned(size)) {
+        LOG_ERROR(Kernel_SVC, "Size is not aligned to 4KB, 0x{:016X}", size);
         return ERR_INVALID_SIZE;
     }
 
     if (!IsValidAddressRange(addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Address is not a valid address range, addr=0x{:016X}, size=0x{:016X}", addr,
+                  size);
         return ERR_INVALID_ADDRESS_STATE;
     }
 
@@ -1632,10 +1648,15 @@ static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
     auto& vm_manager = current_process->VMManager();
 
     if (current_process->GetSystemResourceSize() == 0) {
+        LOG_ERROR(Kernel_SVC, "The system resource size is 0");
         return ERR_INVALID_STATE;
     }
 
     if (!vm_manager.IsInsideMapRegion(addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Destination does not fit within the map region, addr=0x{:016X}, "
+                  "size=0x{:016X}",
+                  addr, size);
         return ERR_INVALID_MEMORY_RANGE;
     }
 
@@ -1645,14 +1666,24 @@ static ResultCode MapPhysicalMemory(VAddr addr, u64 size) {
 static ResultCode UnmapPhysicalMemory(VAddr addr, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called, addr=0x{:08X}, size=0x{:X}", addr, size);
     if (!Common::Is4KBAligned(addr)) {
+        LOG_ERROR(Kernel_SVC, "Address is not aligned to 4KB, 0x{:016X}", addr);
         return ERR_INVALID_ADDRESS;
     }
 
-    if (size == 0 || !Common::Is4KBAligned(size)) {
+    if (size == 0) {
+        LOG_ERROR(Kernel_SVC, "Size is 0");
+        return ERR_INVALID_SIZE;
+    }
+
+    if (!Common::Is4KBAligned(size)) {
+        LOG_ERROR(Kernel_SVC, "Size is not aligned to 4KB, 0x{:016X}", size);
         return ERR_INVALID_SIZE;
     }
 
     if (!IsValidAddressRange(addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Address is not a valid address range, addr=0x{:016X}, size=0x{:016X}", addr,
+                  size);
         return ERR_INVALID_ADDRESS_STATE;
     }
 
@@ -1660,10 +1691,15 @@ static ResultCode UnmapPhysicalMemory(VAddr addr, u64 size) {
     auto& vm_manager = current_process->VMManager();
 
     if (current_process->GetSystemResourceSize() == 0) {
+        LOG_ERROR(Kernel_SVC, "The system resource size is 0");
         return ERR_INVALID_STATE;
     }
 
     if (!vm_manager.IsInsideMapRegion(addr, size)) {
+        LOG_ERROR(Kernel_SVC,
+                  "Destination does not fit within the map region, addr=0x{:016X}, "
+                  "size=0x{:016X}",
+                  addr, size);
         return ERR_INVALID_MEMORY_RANGE;
     }
 
