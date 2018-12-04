@@ -33,6 +33,11 @@ void SvcWrap() {
     FuncReturn(func(Param(0)).raw);
 }
 
+template <ResultCode func(s64)>
+void SvcWrap() {
+    FuncReturn(func(static_cast<s64>(Param(0))).raw);
+}
+
 template <ResultCode func(u32)>
 void SvcWrap() {
     FuncReturn(func(static_cast<u32>(Param(0))).raw);
@@ -246,11 +251,6 @@ void SvcWrap() {
 template <void func()>
 void SvcWrap() {
     func();
-}
-
-template <void func(s64)>
-void SvcWrap() {
-    func(static_cast<s64>(Param(0)));
 }
 
 template <void func(u64, u64 len)>

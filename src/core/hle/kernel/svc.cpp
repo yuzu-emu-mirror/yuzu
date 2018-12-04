@@ -1171,13 +1171,13 @@ static void ExitThread() {
 }
 
 /// Sleep the current thread
-static void SleepThread(s64 nanoseconds) {
+static ResultCode SleepThread(s64 nanoseconds) {
     LOG_TRACE(Kernel_SVC, "called nanoseconds={}", nanoseconds);
 
     // Don't attempt to yield execution if there are no available threads to run,
     // this way we avoid a useless reschedule to the idle thread.
     if (nanoseconds == 0 && !Core::System::GetInstance().CurrentScheduler().HaveReadyThreads())
-        return;
+        return RESULT_SUCCESS;
 
     // Sleep current thread and check for next thread to schedule
     WaitCurrentThread_Sleep();
@@ -1186,6 +1186,7 @@ static void SleepThread(s64 nanoseconds) {
     GetCurrentThread()->WakeAfterDelay(nanoseconds);
 
     Core::System::GetInstance().PrepareReschedule();
+    return RESULT_SUCCESS;
 }
 
 /// Wait process wide key atomic
