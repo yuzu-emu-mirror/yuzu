@@ -1516,7 +1516,7 @@ private:
     }
 
     std::pair<size_t, std::string> ValidateAndGetCoordinateElement(
-        const Tegra::Shader::TextureType& texture_type, const bool depth_compare,
+        const Tegra::Shader::TextureType texture_type, const bool depth_compare,
         const bool is_array, const bool lod_bias_enabled, size_t max_coords, size_t max_inputs) {
         const size_t coord_count = TextureCoordinates(texture_type);
 
