@@ -1519,6 +1519,7 @@ private:
         const Tegra::Shader::TextureType& texture_type, const bool depth_compare,
         const bool is_array, const bool lod_bias_enabled, size_t max_coords, size_t max_inputs) {
         const size_t coord_count = TextureCoordinates(texture_type);
+
         size_t total_coord_count = coord_count + (is_array ? 1 : 0) + (depth_compare ? 1 : 0);
         const size_t total_reg_count = total_coord_count + (lod_bias_enabled ? 1 : 0);
         if (total_coord_count > max_coords || total_reg_count > max_inputs) {
@@ -1540,8 +1541,8 @@ private:
 
     std::string GetTextureCode(const Tegra::Shader::Instruction& instr,
                                const Tegra::Shader::TextureType texture_type,
+                               const Tegra::Shader::TextureProcessMode process_mode,
                                const bool depth_compare, const bool is_array,
-                               const Tegra::Shader::TextureProcessMode tex_method,
                                const size_t bias_offset) {
 
         if ((texture_type == Tegra::Shader::TextureType::Texture3D &&
@@ -1554,9 +1555,9 @@ private:
         const std::string sampler =
             GetSampler(instr.sampler, texture_type, is_array, depth_compare);
 
-        const bool lod_needed = tex_method == Tegra::Shader::TextureProcessMode::LZ ||
-                                tex_method == Tegra::Shader::TextureProcessMode::LL ||
-                                tex_method == Tegra::Shader::TextureProcessMode::LLA;
+        const bool lod_needed = process_mode == Tegra::Shader::TextureProcessMode::LZ ||
+                                process_mode == Tegra::Shader::TextureProcessMode::LL ||
+                                process_mode == Tegra::Shader::TextureProcessMode::LLA;
 
         const bool gl_lod_supported = !(
             (texture_type == Tegra::Shader::TextureType::Texture2D && is_array && depth_compare) ||
@@ -1566,8 +1567,8 @@ private:
         const std::string read_method = lod_needed && gl_lod_supported ? "textureLod(" : "texture(";
         std::string texture = read_method + sampler + ", coord";
 
-        if (tex_method != Tegra::Shader::TextureProcessMode::None) {
-            if (tex_method == Tegra::Shader::TextureProcessMode::LZ) {
+        if (process_mode != Tegra::Shader::TextureProcessMode::None) {
+            if (process_mode == Tegra::Shader::TextureProcessMode::LZ) {
                 if (gl_lod_supported) {
                     texture += ", 0";
                 } else {
@@ -1588,7 +1589,7 @@ private:
 
     std::pair<std::string, std::string> GetTEXCode(
         const Instruction& instr, const Tegra::Shader::TextureType texture_type,
-        const Tegra::Shader::TextureProcessMode& process_mode, const bool depth_compare,
+        const Tegra::Shader::TextureProcessMode process_mode, const bool depth_compare,
         const bool is_array) {
         const bool lod_bias_enabled = (process_mode != Tegra::Shader::TextureProcessMode::None &&
                                        process_mode != Tegra::Shader::TextureProcessMode::LZ);
@@ -1623,11 +1624,11 @@ private:
         }
         coord += ");";
         return std::make_pair(
-            coord, GetTextureCode(instr, texture_type, depth_compare, is_array, process_mode, 0));
+            coord, GetTextureCode(instr, texture_type, process_mode, depth_compare, is_array, 0));
     }
 
     std::pair<std::string, std::string> GetTEXSCode(
-        const Instruction& instr, const Tegra::Shader::TextureType& texture_type,
+        const Instruction& instr, const Tegra::Shader::TextureType texture_type,
         const Tegra::Shader::TextureProcessMode process_mode, const bool depth_compare,
         const bool is_array) {
         const bool lod_bias_enabled = (process_mode != Tegra::Shader::TextureProcessMode::None &&
@@ -1664,8 +1665,9 @@ private:
         }
         coord += ");";
 
-        return std::make_pair(coord, GetTextureCode(instr, texture_type, depth_compare, is_array,
-                                                    process_mode, (coord_count > 2 ? 1 : 0)));
+        return std::make_pair(coord,
+                              GetTextureCode(instr, texture_type, process_mode, depth_compare,
+                                             is_array, (coord_count > 2 ? 1 : 0)));
     }
 
     /**
