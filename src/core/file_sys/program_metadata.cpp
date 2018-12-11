@@ -63,6 +63,10 @@ u32 ProgramMetadata::GetMainThreadStackSize() const {
     return npdm_header.main_stack_size;
 }
 
+u32 ProgramMetadata::GetExtraResourceSize() const {
+    return npdm_header.extra_resource_size;
+}
+
 u64 ProgramMetadata::GetTitleID() const {
     return aci_header.title_id;
 }

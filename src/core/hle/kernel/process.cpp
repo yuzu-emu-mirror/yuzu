@@ -68,6 +68,7 @@ void Process::LoadFromMetadata(const FileSys::ProgramMetadata& metadata) {
     program_id = metadata.GetTitleID();
     ideal_processor = metadata.GetMainThreadCore();
     is_64bit_process = metadata.Is64BitProgram();
+    extra_resource_size = metadata.GetExtraResourceSize();
     vm_manager.Reset(metadata.GetAddressSpaceType());
 }
 
