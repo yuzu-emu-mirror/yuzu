@@ -955,6 +955,9 @@ private:
         const Tegra::Shader::IpaInterpMode interp_mode =
             declr_input_attribute[attribute].interpolation_mode;
         std::string out;
+        if (stage != Maxwell3D::Regs::ShaderStage::Fragment) {
+            return out;
+        }
         switch (interp_mode) {
         case Tegra::Shader::IpaInterpMode::Flat: {
             out += "flat ";
@@ -965,7 +968,7 @@ private:
             break;
         }
         case Tegra::Shader::IpaInterpMode::Perspective: {
-            // Default, Smooth
+            out += "noperspective "; // perspective correction is done later
             break;
         }
         default: {
@@ -3660,6 +3663,12 @@ private:
                                                   instr.ipa.sample_mode.Value()};
                 regs.SetRegisterToInputAttibute(reg, attribute.element, attribute.index,
                                                 input_mode);
+
+                if (input_mode.interpolation_mode == Tegra::Shader::IpaInterpMode::Perspective) {
+                    const std::string value = '(' + regs.GetRegisterAsFloat(reg) + " * " +
+                                              regs.GetRegisterAsFloat(instr.gpr20) + ')';
+                    regs.SetRegisterToFloat(reg, 0, value, 1, 1);
+                }
 
                 if (instr.ipa.saturate) {
                     regs.SetRegisterToFloat(reg, 0, regs.GetRegisterAsFloat(reg), 1, 1, true);
