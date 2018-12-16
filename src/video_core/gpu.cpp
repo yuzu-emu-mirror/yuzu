@@ -125,25 +125,25 @@ u32 DepthFormatBytesPerPixel(DepthFormat format) {
 }
 
 enum class BufferMethods {
-    BIND_OBJECT = 0x0,
-    NOP = 0x8,
-    SEMAPHORE_ADDRESS_HIGH = 0x10,
-    SEMAPHORE_ADDRESS_LOW = 0x14,
-    SEMAPHORE_SEQUENCE = 0x18,
-    SEMAPHORE_TRIGGER = 0x1C,
-    NOTIFY_INTR = 0x20,
-    WRCACHE_FLUSH = 0x24,
-    UNK28 = 0x28,
-    UNK2C = 0x2C,
-    REF_CNT = 0x50,
-    SEMAPHORE_ACQUIRE = 0x68,
-    SEMAPHORE_RELEASE = 0x6C,
-    UNK70 = 0x70,
-    UNK74 = 0x74,
+    BindObject = 0x0,
+    Nop = 0x8,
+    SemaphoreAddressHigh = 0x10,
+    SemaphoreAddressLow = 0x14,
+    SemaphoreSequence = 0x18,
+    SemaphoreTrigger = 0x1C,
+    NotifyIntr = 0x20,
+    WrcacheFlush = 0x24,
+    Unk28 = 0x28,
+    Unk2c = 0x2C,
+    RefCnt = 0x50,
+    SemaphoreAcquire = 0x68,
+    SemaphoreRelease = 0x6C,
+    Unk70 = 0x70,
+    Unk74 = 0x74,
     UNK78 = 0x78,
-    UNK7C = 0x7C,
-    YEILD = 0x80,
-    NONPULLERMETHODS = 0x100,
+    Unk7c = 0x7C,
+    Yield = 0x80,
+    NonPullerMethods = 0x100,
 };
 
 enum class GpuSemaphoreOperation {
@@ -161,121 +161,94 @@ void GPU::CallMethod(const MethodCall& method_call) {
 
     // Note that, traditionally, methods are treated as 4-byte addressable locations, and hence
     // their numbers are written down multiplied by 4 in Docs. Hence why we multiply by 4 here.
-    BufferMethods method = static_cast<BufferMethods>(method_call.method * 4);
-    if (method < BufferMethods::NONPULLERMETHODS)
-    {
-        switch (method)
-        {
-        case BufferMethods::BIND_OBJECT:
-        {
+    const auto method = static_cast<BufferMethods>(method_call.method * 4);
+    if (method < BufferMethods::NonPullerMethods) {
+        switch (method) {
+        case BufferMethods::BindObject: {
             // Bind the current subchannel to the desired engine id.
             LOG_DEBUG(HW_GPU, "Binding subchannel {} to engine {}", method_call.subchannel,method_call.argument);
             bound_engines[method_call.subchannel] = static_cast<EngineID>(method_call.argument);
             break;
         }
-        case BufferMethods::NOP:
+        case BufferMethods::Nop:
             break;
-        case BufferMethods::SEMAPHORE_ADDRESS_HIGH:
-        {
-            if (method_call.argument & 0xffffff00)
-            {
-                LOG_ERROR(HW_GPU, "SEMAPHORE_ADDRESS_HIGH too large");
+        case BufferMethods::SemaphoreAddressHigh: {
+            if (method_call.argument & 0xffffff00) {
+                LOG_ERROR(HW_GPU, "SemaphoreAddressHigh too large");
                 return;
             }
             semaphore_addr.high.Assign(method_call.argument);
             break;
         }
-        case BufferMethods::SEMAPHORE_ADDRESS_LOW:
-        {
-            if (method_call.argument & 3)
-            {
-                LOG_ERROR(HW_GPU, "SEMAPHORE_ADDRESS_LOW unaligned");
+        case BufferMethods::SemaphoreAddressLow: {
+            if (method_call.argument & 3) {
+                LOG_ERROR(HW_GPU, "SemaphoreAddressLow unaligned");
                 return;
             }
             semaphore_addr.low.Assign(method_call.argument);
             break;
         }
-        case BufferMethods::SEMAPHORE_SEQUENCE:
-        {
+        case BufferMethods::SemaphoreSequence: {
             semaphore_sequence = method_call.argument;
             break;
         }
-        case BufferMethods::SEMAPHORE_TRIGGER:
-        {
-            GpuSemaphoreOperation op = static_cast<GpuSemaphoreOperation>(method_call.argument & 7);
+        case BufferMethods::SemaphoreTrigger: {
+            const auto op = static_cast<GpuSemaphoreOperation>(method_call.argument & 7);
             // TODO(Kmather73): Generate a real GPU timestamp and write it here instead of CoreTiming
-            u64 acquire_timestamp = CoreTiming::GetTicks();
-            if (method_call.argument == 2)
-            {
+            const auto acquire_timestamp = CoreTiming::GetTicks();
+            if (method_call.argument == 2) {
                  Memory::Write32(semaphore_addr.addr, method_call.argument);
                  Memory::Write32(semaphore_addr.addr + 0x4, 0);
                  Memory::Write64(semaphore_addr.addr + 0x8, acquire_timestamp);
-             }
-             else
-             {
-                 u32 word = Memory::Read32(semaphore_addr.addr);
-                 if ((op == GpuSemaphoreOperation::ACQUIRE_EQUAL && word == semaphore_sequence)
-                     || (op == GpuSemaphoreOperation::ACQUIRE_GEQUAL && (s32)(word - semaphore_sequence) > 0)
-                     || (op == GpuSemaphoreOperation::ACQUIRE_MASK && (word & semaphore_sequence)))
-                 {
+             } else {
+                 const u32 word = Memory::Read32(semaphore_addr.addr);
+                 if ((op == GpuSemaphoreOperation::ACQUIRE_EQUAL && word == semaphore_sequence) ||
+                     (op == GpuSemaphoreOperation::ACQUIRE_GEQUAL && static_cast<s32>(word - semaphore_sequence) > 0) ||
+                     (op == GpuSemaphoreOperation::ACQUIRE_MASK && (word & semaphore_sequence))) {
                      // Nothing to do in this case
-                 }
-                 else
-                 {
+                 } else {
                      acquire_source = true;
                      acquire_value = semaphore_sequence;
-                     if (op == GpuSemaphoreOperation::ACQUIRE_EQUAL)
-                     {
+                     if (op == GpuSemaphoreOperation::ACQUIRE_EQUAL) {
                          acquire_active = true;
                          acquire_mode = false;
-                     }
-                     else if (op == GpuSemaphoreOperation::ACQUIRE_GEQUAL)
-                     {
+                     } else if (op == GpuSemaphoreOperation::ACQUIRE_GEQUAL) {
                          acquire_active = true;
                          acquire_mode = true;
-                     }
-                     else
-                     {
+                     } else {
                          LOG_ERROR(HW_GPU, "Invalid semaphore operation");
                      }
                  }
              }
              break;
          }
-        case BufferMethods::NOTIFY_INTR:
-        {
+        case BufferMethods::NotifyIntr: {
             // TODO(Kmather73): Research and implement this method.
-            LOG_ERROR(HW_GPU, "Special puller engine method NOTIFY_INTR not implemented");
+            LOG_ERROR(HW_GPU, "Special puller engine method NotifyIntr not implemented");
             break;
         }
-        case BufferMethods::WRCACHE_FLUSH:
-        {
+        case BufferMethods::WrcacheFlush: {
             // TODO(Kmather73): Research and implement this method.
-            LOG_ERROR(HW_GPU, "Special puller engine method WRCACHE_FLUSH not implemented");
+            LOG_ERROR(HW_GPU, "Special puller engine method WrcacheFlush not implemented");
             break;
         }
-        case BufferMethods::UNK28:
-        {
+        case BufferMethods::Unk28: {
             // TODO(Kmather73): Research and implement this method.
-            LOG_ERROR(HW_GPU, "Special puller engine method UNK28 not implemented");
+            LOG_ERROR(HW_GPU, "Special puller engine method Unk28 not implemented");
             break;
         }
-        case BufferMethods::UNK2C:
-        {
+        case BufferMethods::Unk2c: {
             // TODO(Kmather73): Research and implement this method.
-            LOG_ERROR(HW_GPU, "Special puller engine method UNK2C not implemented");
+            LOG_ERROR(HW_GPU, "Special puller engine method Unk2c not implemented");
             break;
         }
-        case BufferMethods::SEMAPHORE_ACQUIRE:
-        {
-            if (!semaphore_off_val)
-            {
+        case BufferMethods::SemaphoreAcquire: {
+            if (!semaphore_off_val) {
                 LOG_ERROR(HW_GPU, "Semaphore has already be acquired");
                 return;
             }
-            u32 word = Memory::Read32(semaphore_addr.addr);
-            if (word != method_call.argument)
-            {
+            const u32 word = Memory::Read32(semaphore_addr.addr);
+            if (word != method_call.argument) {
                 acquire_active = true;
                 acquire_value = method_call.argument;
                 acquire_mode = false;
@@ -283,20 +256,17 @@ void GPU::CallMethod(const MethodCall& method_call) {
             }
             break;
         }
-        case BufferMethods::SEMAPHORE_RELEASE:
-        {
-            if (!semaphore_off_val)
-            {
+        case BufferMethods::SemaphoreRelease: {
+            if (!semaphore_off_val) {
                 LOG_ERROR(HW_GPU, "Semaphore can't be released since it is not currently been acquired");
                 return;
             }
             Memory::Write32(semaphore_addr.addr, method_call.method);
             break;
         }
-        case BufferMethods::YEILD:
-        {
+        case BufferMethods::Yield: {
             // TODO(Kmather73): Research and implement this method.
-            LOG_ERROR(HW_GPU, "Special puller engine method YEILD not implemented");
+            LOG_ERROR(HW_GPU, "Special puller engine method Yield not implemented");
             break;
         }
         default:

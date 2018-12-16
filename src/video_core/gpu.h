@@ -185,12 +185,12 @@ private:
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
 
     bool semaphore_off_val = true;
-    GpuSmaphoreAddress semaphore_addr;
-    u32 semaphore_sequence;
-    bool acquire_active;
-    bool acquire_mode;
-    u32 acquire_value;
-    bool acquire_source;
+    GpuSmaphoreAddress semaphore_addr = {0};
+    u32 semaphore_sequence = 0x0;
+    bool acquire_active = false;;
+    bool acquire_mode = false;
+    u32 acquire_value = 0;
+    bool acquire_source = false;
 };
 
 } // namespace Tegra
