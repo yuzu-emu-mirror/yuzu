@@ -115,6 +115,16 @@ enum class EngineID {
     MAXWELL_DMA_COPY_A = 0xB0B5,
 };
 
+union GpuSmaphoreAddress {
+    u64 raw;
+
+    BitField<0, 32, GPUVAddr> low;
+    BitField<32, 8, GPUVAddr> high;
+    BitField<0, 40, GPUVAddr> addr;
+};
+
+static_assert(sizeof(GpuSmaphoreAddress) == sizeof(u64), "GpuSmaphoreAddress is incorrect size");
+
 class GPU final {
 public:
     explicit GPU(VideoCore::RasterizerInterface& rasterizer);
@@ -173,6 +183,14 @@ private:
     std::unique_ptr<Engines::MaxwellDMA> maxwell_dma;
     /// Inline memory engine
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
+
+    bool semaphore_off_val = true;
+    GpuSmaphoreAddress semaphore_addr;
+    u32 semaphore_sequence;
+    bool acquire_active;
+    bool acquire_mode;
+    u32 acquire_value;
+    bool acquire_source;
 };
 
 } // namespace Tegra
