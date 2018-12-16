@@ -164,7 +164,8 @@ void GPU::CallMethod(const MethodCall& method_call) {
     BufferMethods method = static_cast<BufferMethods>(method_call.method * 4);
     if (method < BufferMethods::NONPULLERMETHODS)
     {
-        switch (method) {
+        switch (method)
+        {
         case BufferMethods::BIND_OBJECT:
         {
             // Bind the current subchannel to the desired engine id.
@@ -253,7 +254,8 @@ void GPU::CallMethod(const MethodCall& method_call) {
             LOG_ERROR(HW_GPU, "Special puller engine method WRCACHE_FLUSH not implemented");
             break;
         }
-        case BufferMethods::UNK28: {
+        case BufferMethods::UNK28:
+        {
             // TODO(Kmather73): Research and implement this method.
             LOG_ERROR(HW_GPU, "Special puller engine method UNK28 not implemented");
             break;
