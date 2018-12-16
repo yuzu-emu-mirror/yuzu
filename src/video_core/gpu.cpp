@@ -301,6 +301,7 @@ void GPU::CallMethod(const MethodCall& method_call) {
         }
         default:
             LOG_ERROR(HW_GPU, "Special puller engine method {:X} not implemented", static_cast<u32>(method));
+            break;
         }
         return;
     }
