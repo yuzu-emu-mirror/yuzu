@@ -205,8 +205,6 @@ private:
         bool acquire_source;
     } pullerState{};
 
-
-
     void ProcessBindMethod(const MethodCall& method_call);
     void ProcessSemaphoreTriggerMethod();
     void ProcessSemaphoreRelease();
