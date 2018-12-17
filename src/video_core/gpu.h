@@ -115,16 +115,6 @@ enum class EngineID {
     MAXWELL_DMA_COPY_A = 0xB0B5,
 };
 
-union GpuSmaphoreAddress {
-    u64 raw;
-
-    BitField<0, 32, GPUVAddr> low;
-    BitField<32, 8, GPUVAddr> high;
-    BitField<0, 40, GPUVAddr> addr;
-};
-
-static_assert(sizeof(GpuSmaphoreAddress) == sizeof(u64), "GpuSmaphoreAddress is incorrect size");
-
 class GPU final {
 public:
     explicit GPU(VideoCore::RasterizerInterface& rasterizer);
