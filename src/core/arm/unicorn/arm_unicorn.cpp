@@ -211,6 +211,8 @@ void ARM_Unicorn::SaveContext(ThreadContext& ctx) {
     CHECKED(uc_reg_read(uc, UC_ARM64_REG_SP, &ctx.sp));
     CHECKED(uc_reg_read(uc, UC_ARM64_REG_PC, &ctx.pc));
     CHECKED(uc_reg_read(uc, UC_ARM64_REG_NZCV, &ctx.pstate));
+    CHECKED(uc_reg_read(uc, UC_ARM64_REG_FPCR, &ctx.fpcr));
+    CHECKED(uc_reg_read(uc, UC_ARM64_REG_FPSR, &ctx.fpsr));
 
     for (auto i = 0; i < 29; ++i) {
         uregs[i] = UC_ARM64_REG_X0 + i;
@@ -238,6 +240,8 @@ void ARM_Unicorn::LoadContext(const ThreadContext& ctx) {
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_SP, &ctx.sp));
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_PC, &ctx.pc));
     CHECKED(uc_reg_write(uc, UC_ARM64_REG_NZCV, &ctx.pstate));
+    CHECKED(uc_reg_write(uc, UC_ARM64_REG_FPCR, &ctx.fpcr));
+    CHECKED(uc_reg_write(uc, UC_ARM64_REG_FPSR, &ctx.fpsr));
 
     for (int i = 0; i < 29; ++i) {
         uregs[i] = UC_ARM64_REG_X0 + i;
