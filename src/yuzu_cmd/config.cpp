@@ -226,11 +226,12 @@ static const std::array<int, 8> keyboard_mods{
 void Config::ReadValues() {
     // Controls
     for (std::size_t p = 0; p < Settings::values.players.size(); ++p) {
-        const auto group = fmt::format("ControlsP{}", p);
+        const auto group = fmt::format("Controls", p);
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
             std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-            Settings::values.players[p].buttons[i] =
-                sdl2_config->Get(group, Settings::NativeButton::mapping[i], default_param);
+            std::string controls_prefix = "player_" + std::to_string(p) + "_";
+            Settings::values.players[p].buttons[i] = sdl2_config->Get(
+                group, controls_prefix + Settings::NativeButton::mapping[i], default_param);
             if (Settings::values.players[p].buttons[i].empty())
                 Settings::values.players[p].buttons[i] = default_param;
         }

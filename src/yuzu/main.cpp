@@ -199,6 +199,11 @@ GMainWindow::GMainWindow()
     QStringList args = QApplication::arguments();
     if (args.length() >= 2) {
         BootGame(args[1]);
+        // Enter full screen mode
+        // Don't confirm closing
+        UISettings::values.confirm_before_closing = false;
+        ui.action_Single_Window_Mode->setData(true);
+        ShowFullscreen();
     }
 }
 
