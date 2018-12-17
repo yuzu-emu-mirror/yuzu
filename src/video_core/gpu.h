@@ -203,7 +203,7 @@ private:
         u32 semaphore_sequence;
         bool acquire_mode;
         bool acquire_source;
-    } pullerState {};
+    } pullerState{};
 
 
 

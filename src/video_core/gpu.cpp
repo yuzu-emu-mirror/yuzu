@@ -165,8 +165,7 @@ void GPU::CallMethod(const MethodCall& method_call) {
 
     if (ExecuteMethodOnEngine(method_call)) {
         CallEngineMethod(method_call);
-    }
-    else {
+    } else {
         CallPullerMethod(method_call);
     }
 }
@@ -242,7 +241,7 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
     }
     default:
         LOG_ERROR(HW_GPU, "Special puller engine method {:X} not implemented",
-                    static_cast<u32>(method));
+            static_cast<u32>(method));
         break;
     }
 }
@@ -306,7 +305,8 @@ void GPU::ProcessSemaphoreTriggerMethod() {
                 pullerState.acquire_active = true;
                 pullerState.acquire_mode = true;
             } else if (op == GpuSemaphoreOperation::AcquireMask) {
-                // TODO(kemathe) The acquire mask operation waits for a value that, ANDed with semaphore_sequence, gives a non-0 result
+                // TODO(kemathe) The acquire mask operation waits for a value that, ANDed with
+                // semaphore_sequence, gives a non-0 result
                 LOG_ERROR(HW_GPU, "Invalid semaphore operation AcquireMask not implemented");
             } else {
                 LOG_ERROR(HW_GPU, "Invalid semaphore operation");
@@ -334,7 +334,7 @@ void GPU::ProcessSemaphoreAcquire() {
     if (word != value) {
         pullerState.acquire_active = true;
         pullerState.acquire_value = value;
-        //TODO(kemathe73) figure out how to do the acquire_timeout
+        // TODO(kemathe73) figure out how to do the acquire_timeout
         pullerState.acquire_mode = false;
         pullerState.acquire_source = false;
     }
