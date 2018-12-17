@@ -166,6 +166,9 @@ public:
     /// Returns a const reference to the GPU DMA pusher.
     const Tegra::DmaPusher& DmaPusher() const;
 
+    // The puser and the puller share the reference counter, the pusher only had read access
+    const u32 ReferenceCount() const;
+
 private:
     std::unique_ptr<Tegra::DmaPusher> dma_pusher;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
@@ -184,13 +187,51 @@ private:
     /// Inline memory engine
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
 
-    bool semaphore_off_val = true;
-    GpuSmaphoreAddress semaphore_addr = {0};
-    u32 semaphore_sequence = 0x0;
-    bool acquire_active = false;;
-    bool acquire_mode = false;
-    u32 acquire_value = 0;
-    bool acquire_source = false;
+    struct Regs {
+        static constexpr size_t NUM_REGS = 0x40;
+
+        union {
+            std::array<u32, NUM_REGS> reg_array;
+        };
+    } regs{};
+
+    struct {
+        u32 reference_count;
+        bool acquire_active;
+        u32 acquire_timeout;
+        u32 acquire_value;
+        bool semaphore_off_val;
+        struct {
+            u8 smaphore_address_high;
+            u32 smaphore_address_low;
+
+            GPUVAddr SmaphoreAddress() const {
+                return static_cast<GPUVAddr>((static_cast<GPUVAddr>(smaphore_address_high) << 32) |
+                                             smaphore_address_low);
+            }
+        } semaphore;
+        u32 semaphore_sequence;
+        bool acquire_mode;
+        bool acquire_source;
+    } pullerState {};
+
+
+
+    void ProcessBindMethod(const MethodCall& method_call);
+    void ProcessSemaphoreTriggerMethod();
+    void ProcessSemaphoreRelease();
+    void ProcessSemaphoreAcquire();
+    void ProcessSetSemaphoreAddressHigh();
+    void ProcessSetSemaphoreAddressLow();
+    void ProcessSetSemaphoreSequence();
+    void SetReferenceCount();
+
+    // Calls a GPU puller method.
+    void CallPullerMethod(const MethodCall& method_call);
+    // Calls a GPU engine method.
+    void CallEngineMethod(const MethodCall& method_call);
+    // Determines where the method should be executed.
+    bool ExecuteMethodOnEngine(const MethodCall& method_call);
 };
 
 } // namespace Tegra
