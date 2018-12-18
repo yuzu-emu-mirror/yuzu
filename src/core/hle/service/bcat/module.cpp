@@ -12,7 +12,7 @@ namespace Service::BCAT {
 class IBcatService final : public ServiceFramework<IBcatService> {
 public:
     IBcatService() : ServiceFramework("IBcatService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {10100, nullptr, "RequestSyncDeliveryCache"},
             {10101, nullptr, "RequestSyncDeliveryCacheWithDirectoryName"},
             {10200, nullptr, "CancelSyncDeliveryCacheRequest"},

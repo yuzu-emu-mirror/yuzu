@@ -14,7 +14,7 @@ class GRC final : public ServiceFramework<GRC> {
 public:
     explicit GRC() : ServiceFramework{"grc:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "OpenContinuousRecorder"},
             {2, nullptr, "OpenGameMovieTrimmer"},
         };

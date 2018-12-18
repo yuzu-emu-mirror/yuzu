@@ -14,7 +14,7 @@ class NPNS_S final : public ServiceFramework<NPNS_S> {
 public:
     explicit NPNS_S() : ServiceFramework{"npns:s"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "ListenAll"},
             {2, nullptr, "ListenTo"},
             {3, nullptr, "Receive"},
@@ -57,7 +57,7 @@ class NPNS_U final : public ServiceFramework<NPNS_U> {
 public:
     explicit NPNS_U() : ServiceFramework{"npns:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "ListenAll"},
             {2, nullptr, "ListenTo"},
             {3, nullptr, "Receive"},

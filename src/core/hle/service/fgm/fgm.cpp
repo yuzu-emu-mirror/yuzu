@@ -16,7 +16,7 @@ class IRequest final : public ServiceFramework<IRequest> {
 public:
     explicit IRequest() : ServiceFramework{"IRequest"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "Set"},
             {2, nullptr, "Get"},
@@ -32,7 +32,7 @@ class FGM final : public ServiceFramework<FGM> {
 public:
     explicit FGM(const char* name) : ServiceFramework{name} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &FGM::Initialize, "Initialize"},
         };
         // clang-format on
@@ -54,7 +54,7 @@ class FGM_DBG final : public ServiceFramework<FGM_DBG> {
 public:
     explicit FGM_DBG() : ServiceFramework{"fgm:dbg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "Read"},
             {2, nullptr, "Cancel"},

@@ -15,7 +15,7 @@ namespace Service::NIFM {
 class IScanRequest final : public ServiceFramework<IScanRequest> {
 public:
     explicit IScanRequest() : ServiceFramework("IScanRequest") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Submit"},
             {1, nullptr, "IsProcessing"},
             {2, nullptr, "GetResult"},
@@ -28,7 +28,7 @@ public:
 class IRequest final : public ServiceFramework<IRequest> {
 public:
     explicit IRequest() : ServiceFramework("IRequest") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IRequest::GetRequestState, "GetRequestState"},
             {1, &IRequest::GetResult, "GetResult"},
             {2, &IRequest::GetSystemEventReadableHandles, "GetSystemEventReadableHandles"},
@@ -115,7 +115,7 @@ private:
 class INetworkProfile final : public ServiceFramework<INetworkProfile> {
 public:
     explicit INetworkProfile() : ServiceFramework("INetworkProfile") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Update"},
             {1, nullptr, "PersistOld"},
             {2, nullptr, "Persist"},
@@ -197,7 +197,7 @@ private:
 };
 
 IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {1, &IGeneralService::GetClientId, "GetClientId"},
         {2, &IGeneralService::CreateScanRequest, "CreateScanRequest"},
         {4, &IGeneralService::CreateRequest, "CreateRequest"},
@@ -242,7 +242,7 @@ IGeneralService::IGeneralService() : ServiceFramework("IGeneralService") {
 class NetworkInterface final : public ServiceFramework<NetworkInterface> {
 public:
     explicit NetworkInterface(const char* name) : ServiceFramework{name} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {4, &NetworkInterface::CreateGeneralServiceOld, "CreateGeneralServiceOld"},
             {5, &NetworkInterface::CreateGeneralService, "CreateGeneralService"},
         };

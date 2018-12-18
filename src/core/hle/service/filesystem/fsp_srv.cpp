@@ -44,7 +44,7 @@ class IStorage final : public ServiceFramework<IStorage> {
 public:
     explicit IStorage(FileSys::VirtualFile backend_)
         : ServiceFramework("IStorage"), backend(std::move(backend_)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IStorage::Read, "Read"},
             {1, nullptr, "Write"},
             {2, nullptr, "Flush"},
@@ -102,7 +102,7 @@ class IFile final : public ServiceFramework<IFile> {
 public:
     explicit IFile(FileSys::VirtualFile backend_)
         : ServiceFramework("IFile"), backend(std::move(backend_)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IFile::Read, "Read"},       {1, &IFile::Write, "Write"},
             {2, &IFile::Flush, "Flush"},     {3, &IFile::SetSize, "SetSize"},
             {4, &IFile::GetSize, "GetSize"}, {5, nullptr, "OperateRange"},
@@ -232,7 +232,7 @@ class IDirectory final : public ServiceFramework<IDirectory> {
 public:
     explicit IDirectory(FileSys::VirtualDir backend_)
         : ServiceFramework("IDirectory"), backend(std::move(backend_)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IDirectory::Read, "Read"},
             {1, &IDirectory::GetEntryCount, "GetEntryCount"},
         };
@@ -291,7 +291,7 @@ class IFileSystem final : public ServiceFramework<IFileSystem> {
 public:
     explicit IFileSystem(FileSys::VirtualDir backend)
         : ServiceFramework("IFileSystem"), backend(std::move(backend)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IFileSystem::CreateFile, "CreateFile"},
             {1, &IFileSystem::DeleteFile, "DeleteFile"},
             {2, &IFileSystem::CreateDirectory, "CreateDirectory"},
@@ -487,7 +487,7 @@ class ISaveDataInfoReader final : public ServiceFramework<ISaveDataInfoReader> {
 public:
     explicit ISaveDataInfoReader(FileSys::SaveDataSpaceId space)
         : ServiceFramework("ISaveDataInfoReader") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISaveDataInfoReader::ReadSaveDataInfo, "ReadSaveDataInfo"},
         };
         RegisterHandlers(functions);
@@ -626,7 +626,7 @@ private:
 
 FSP_SRV::FSP_SRV() : ServiceFramework("fsp-srv") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "MountContent"},
         {1, &FSP_SRV::Initialize, "Initialize"},
         {2, nullptr, "OpenDataFileSystemByCurrentProcess"},

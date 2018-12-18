@@ -7,7 +7,7 @@
 namespace Service::SPL {
 
 CSRNG::CSRNG(std::shared_ptr<Module> module) : Module::Interface(std::move(module), "csrng") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &CSRNG::GetRandomBytes, "GetRandomBytes"},
     };
     RegisterHandlers(functions);

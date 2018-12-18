@@ -25,7 +25,7 @@ public:
     explicit IAudioRenderer(AudioCore::AudioRendererParameter audren_params)
         : ServiceFramework("IAudioRenderer") {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IAudioRenderer::GetSampleRate, "GetSampleRate"},
             {1, &IAudioRenderer::GetSampleCount, "GetSampleCount"},
             {2, &IAudioRenderer::GetMixBufferCount, "GetMixBufferCount"},
@@ -145,7 +145,7 @@ private:
 class IAudioDevice final : public ServiceFramework<IAudioDevice> {
 public:
     IAudioDevice() : ServiceFramework("IAudioDevice") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IAudioDevice::ListAudioDeviceName, "ListAudioDeviceName"},
             {1, &IAudioDevice::SetAudioDeviceOutputVolume, "SetAudioDeviceOutputVolume"},
             {2, nullptr, "GetAudioDeviceOutputVolume"},
@@ -229,7 +229,7 @@ private:
 }; // namespace Audio
 
 AudRenU::AudRenU() : ServiceFramework("audren:u") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &AudRenU::OpenAudioRenderer, "OpenAudioRenderer"},
         {1, &AudRenU::GetAudioRendererWorkBufferSize, "GetAudioRendererWorkBufferSize"},
         {2, &AudRenU::GetAudioDevice, "GetAudioDevice"},

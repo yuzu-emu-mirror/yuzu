@@ -12,7 +12,7 @@ namespace Service::Friend {
 class IFriendService final : public ServiceFramework<IFriendService> {
 public:
     IFriendService() : ServiceFramework("IFriendService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetCompletionEvent"},
             {1, nullptr, "Cancel"},
             {10100, nullptr, "GetFriendListIds"},

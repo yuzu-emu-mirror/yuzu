@@ -17,7 +17,7 @@ class IDatabaseService final : public ServiceFramework<IDatabaseService> {
 public:
     explicit IDatabaseService() : ServiceFramework{"IDatabaseService"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "IsUpdated"},
             {1, nullptr, "IsFullDatabase"},
             {2, nullptr, "GetCount"},
@@ -53,7 +53,7 @@ class MiiDBModule final : public ServiceFramework<MiiDBModule> {
 public:
     explicit MiiDBModule(const char* name) : ServiceFramework{name} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &MiiDBModule::GetDatabaseService, "GetDatabaseService"},
         };
         // clang-format on
@@ -75,7 +75,7 @@ class MiiImg final : public ServiceFramework<MiiImg> {
 public:
     explicit MiiImg() : ServiceFramework{"miiimg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {10, nullptr, "Reload"},
             {11, nullptr, "GetCount"},

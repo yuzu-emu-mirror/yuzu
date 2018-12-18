@@ -8,7 +8,7 @@ namespace Service::VI {
 
 VI_S::VI_S(std::shared_ptr<Module> module, std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
     : Module::Interface(std::move(module), "vi:s", std::move(nv_flinger)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {1, &VI_S::GetDisplayService, "GetDisplayService"},
         {3, nullptr, "GetDisplayServiceWithProxyNameExchange"},
     };

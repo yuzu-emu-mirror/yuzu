@@ -14,7 +14,7 @@ class PCV final : public ServiceFramework<PCV> {
 public:
     explicit PCV() : ServiceFramework{"pcv"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SetPowerEnabled"},
             {1, nullptr, "SetClockEnabled"},
             {2, nullptr, "SetClockRate"},
@@ -53,7 +53,7 @@ class PCV_ARB final : public ServiceFramework<PCV_ARB> {
 public:
     explicit PCV_ARB() : ServiceFramework{"pcv:arb"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "ReleaseControl"},
         };
         // clang-format on
@@ -66,7 +66,7 @@ class PCV_IMM final : public ServiceFramework<PCV_IMM> {
 public:
     explicit PCV_IMM() : ServiceFramework{"pcv:imm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SetClockRate"},
         };
         // clang-format on

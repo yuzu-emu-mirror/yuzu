@@ -56,7 +56,7 @@ static u64 CalendarToPosix(const CalendarTime& calendar_time,
 class ISystemClock final : public ServiceFramework<ISystemClock> {
 public:
     ISystemClock() : ServiceFramework("ISystemClock") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISystemClock::GetCurrentTime, "GetCurrentTime"},
             {1, nullptr, "SetCurrentTime"},
             {2, &ISystemClock::GetSystemClockContext, "GetSystemClockContext"},
@@ -91,7 +91,7 @@ private:
 class ISteadyClock final : public ServiceFramework<ISteadyClock> {
 public:
     ISteadyClock() : ServiceFramework("ISteadyClock") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISteadyClock::GetCurrentTimePoint, "GetCurrentTimePoint"},
         };
         RegisterHandlers(functions);
@@ -112,7 +112,7 @@ private:
 class ITimeZoneService final : public ServiceFramework<ITimeZoneService> {
 public:
     ITimeZoneService() : ServiceFramework("ITimeZoneService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ITimeZoneService::GetDeviceLocationName, "GetDeviceLocationName"},
             {1, nullptr, "SetDeviceLocationName"},
             {2, &ITimeZoneService::GetTotalLocationNameCount, "GetTotalLocationNameCount"},

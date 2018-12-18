@@ -12,7 +12,7 @@ namespace Service::Audio {
 class IFinalOutputRecorder final : public ServiceFramework<IFinalOutputRecorder> {
 public:
     IFinalOutputRecorder() : ServiceFramework("IFinalOutputRecorder") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetFinalOutputRecorderState"},
             {1, nullptr, "StartFinalOutputRecorder"},
             {2, nullptr, "StopFinalOutputRecorder"},
@@ -30,7 +30,7 @@ public:
 };
 
 AudRecU::AudRecU() : ServiceFramework("audrec:u") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "OpenFinalOutputRecorder"},
     };
     RegisterHandlers(functions);

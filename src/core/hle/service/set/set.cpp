@@ -116,7 +116,7 @@ void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {
 }
 
 SET::SET() : ServiceFramework("set") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &SET::GetLanguageCode, "GetLanguageCode"},
         {1, &SET::GetAvailableLanguageCodes, "GetAvailableLanguageCodes"},
         {2, &SET::MakeLanguageCode, "MakeLanguageCode"},

@@ -19,7 +19,7 @@ class IBtmUserCore final : public ServiceFramework<IBtmUserCore> {
 public:
     explicit IBtmUserCore() : ServiceFramework{"IBtmUserCore"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IBtmUserCore::GetScanEvent, "GetScanEvent"},
             {1, nullptr, "Unknown1"},
             {2, nullptr, "Unknown2"},
@@ -110,7 +110,7 @@ class BTM_USR final : public ServiceFramework<BTM_USR> {
 public:
     explicit BTM_USR() : ServiceFramework{"btm:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &BTM_USR::GetCoreImpl, "GetCoreImpl"},
         };
         // clang-format on
@@ -131,7 +131,7 @@ class BTM final : public ServiceFramework<BTM> {
 public:
     explicit BTM() : ServiceFramework{"btm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "RegisterSystemEventForConnectedDeviceConditionImpl"},
@@ -165,7 +165,7 @@ class BTM_DBG final : public ServiceFramework<BTM_DBG> {
 public:
     explicit BTM_DBG() : ServiceFramework{"btm:dbg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "RegisterSystemEventForDiscoveryImpl"},
             {1, nullptr, "Unknown1"},
             {2, nullptr, "Unknown2"},
@@ -186,7 +186,7 @@ class IBtmSystemCore final : public ServiceFramework<IBtmSystemCore> {
 public:
     explicit IBtmSystemCore() : ServiceFramework{"IBtmSystemCore"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "StartGamepadPairingImpl"},
             {1, nullptr, "CancelGamepadPairingImpl"},
             {2, nullptr, "ClearGamepadPairingDatabaseImpl"},
@@ -208,7 +208,7 @@ class BTM_SYS final : public ServiceFramework<BTM_SYS> {
 public:
     explicit BTM_SYS() : ServiceFramework{"btm:sys"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &BTM_SYS::GetCoreImpl, "GetCoreImpl"},
         };
         // clang-format on

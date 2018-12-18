@@ -8,7 +8,7 @@ namespace Service::AM {
 
 OMM::OMM() : ServiceFramework{"omm"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetOperationMode"},
         {1, nullptr, "GetOperationModeChangeEvent"},
         {2, nullptr, "EnableAudioVisual"},

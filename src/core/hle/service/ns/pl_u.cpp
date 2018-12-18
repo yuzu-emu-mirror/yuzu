@@ -151,7 +151,7 @@ struct PL_U::Impl {
 };
 
 PL_U::PL_U() : ServiceFramework("pl:u"), impl{std::make_unique<Impl>()} {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &PL_U::RequestLoad, "RequestLoad"},
         {1, &PL_U::GetLoadState, "GetLoadState"},
         {2, &PL_U::GetSize, "GetSize"},

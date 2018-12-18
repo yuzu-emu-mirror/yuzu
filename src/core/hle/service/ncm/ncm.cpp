@@ -14,7 +14,7 @@ class LocationResolver final : public ServiceFramework<LocationResolver> {
 public:
     explicit LocationResolver() : ServiceFramework{"lr"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "OpenLocationResolver"},
             {1, nullptr, "OpenRegisteredLocationResolver"},
             {2, nullptr, "RefreshLocationResolver"},
@@ -30,7 +30,7 @@ class NCM final : public ServiceFramework<NCM> {
 public:
     explicit NCM() : ServiceFramework{"ncm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "CreateContentStorage"},
             {1, nullptr, "CreateContentMetaDatabase"},
             {2, nullptr, "VerifyContentStorage"},

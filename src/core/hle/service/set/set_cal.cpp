@@ -7,7 +7,7 @@
 namespace Service::Set {
 
 SET_CAL::SET_CAL() : ServiceFramework("set:cal") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetBluetoothBdAddress"},
         {1, nullptr, "GetConfigurationId1"},
         {2, nullptr, "GetAccelerometerOffset"},

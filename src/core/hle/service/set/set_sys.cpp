@@ -29,7 +29,7 @@ void SET_SYS::SetColorSetId(Kernel::HLERequestContext& ctx) {
 }
 
 SET_SYS::SET_SYS() : ServiceFramework("set:sys") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "SetLanguageCode"},
         {1, nullptr, "SetNetworkSettings"},
         {2, nullptr, "GetNetworkSettings"},

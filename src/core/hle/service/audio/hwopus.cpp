@@ -30,7 +30,7 @@ public:
                                 u32 channel_count)
         : ServiceFramework("IHardwareOpusDecoderManager"), decoder(std::move(decoder)),
           sample_rate(sample_rate), channel_count(channel_count) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IHardwareOpusDecoderManager::DecodeInterleaved, "DecodeInterleaved"},
             {1, nullptr, "SetContext"},
             {2, nullptr, "DecodeInterleavedForMultiStream"},
@@ -204,7 +204,7 @@ void HwOpus::OpenOpusDecoder(Kernel::HLERequestContext& ctx) {
 }
 
 HwOpus::HwOpus() : ServiceFramework("hwopus") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &HwOpus::OpenOpusDecoder, "OpenOpusDecoder"},
         {1, &HwOpus::GetWorkBufferSize, "GetWorkBufferSize"},
         {2, nullptr, "OpenOpusDecoderForMultiStream"},

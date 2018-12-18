@@ -16,7 +16,7 @@ namespace Service::LM {
 class ILogger final : public ServiceFramework<ILogger> {
 public:
     ILogger() : ServiceFramework("ILogger") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0x00000000, &ILogger::Initialize, "Initialize"},
             {0x00000001, &ILogger::SetDestination, "SetDestination"},
         };
@@ -195,7 +195,7 @@ private:
 class LM final : public ServiceFramework<LM> {
 public:
     explicit LM() : ServiceFramework{"lm"} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0x00000000, &LM::OpenLogger, "OpenLogger"},
         };
         RegisterHandlers(functions);

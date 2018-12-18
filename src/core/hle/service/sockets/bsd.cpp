@@ -73,7 +73,7 @@ void BSD::Close(Kernel::HLERequestContext& ctx) {
 }
 
 BSD::BSD(const char* name) : ServiceFramework(name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},
         {1, &BSD::StartMonitoring, "StartMonitoring"},
         {2, &BSD::Socket, "Socket"},
@@ -113,7 +113,7 @@ BSD::~BSD() = default;
 
 BSDCFG::BSDCFG() : ServiceFramework{"bsdcfg"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "SetIfUp"},
         {1, nullptr, "SetIfUpWithEvent"},
         {2, nullptr, "CancelIf"},

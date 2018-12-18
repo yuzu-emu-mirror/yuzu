@@ -8,7 +8,7 @@ namespace Service::AM {
 
 IdleSys::IdleSys() : ServiceFramework{"idle:sys"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetAutoPowerDownEvent"},
         {1, nullptr, "Unknown1"},
         {2, nullptr, "Unknown2"},

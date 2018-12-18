@@ -8,7 +8,7 @@ namespace Service::Friend {
 
 Friend::Friend(std::shared_ptr<Module> module, const char* name)
     : Interface(std::move(module), name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &Friend::CreateFriendService, "CreateFriendService"},
         {1, nullptr, "CreateNotificationService"},
         {2, nullptr, "CreateDaemonSuspendSessionService"},

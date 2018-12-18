@@ -51,7 +51,7 @@ public:
         : ServiceFramework("IAudioOut"), audio_core(audio_core),
           device_name(std::move(device_name)), audio_params(audio_params) {
 
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IAudioOut::GetAudioOutState, "GetAudioOutState"},
             {1, &IAudioOut::StartAudioOut, "StartAudioOut"},
             {2, &IAudioOut::StopAudioOut, "StopAudioOut"},
@@ -247,10 +247,15 @@ void AudOutU::OpenAudioOutImpl(Kernel::HLERequestContext& ctx) {
 }
 
 AudOutU::AudOutU() : ServiceFramework("audout:u") {
-    static const FunctionInfo functions[] = {{0, &AudOutU::ListAudioOutsImpl, "ListAudioOuts"},
-                                             {1, &AudOutU::OpenAudioOutImpl, "OpenAudioOut"},
-                                             {2, &AudOutU::ListAudioOutsImpl, "ListAudioOutsAuto"},
-                                             {3, &AudOutU::OpenAudioOutImpl, "OpenAudioOutAuto"}};
+    // clang-format off
+    static constexpr FunctionInfo functions[] = {
+        {0, &AudOutU::ListAudioOutsImpl, "ListAudioOuts"},
+        {1, &AudOutU::OpenAudioOutImpl, "OpenAudioOut"},
+        {2, &AudOutU::ListAudioOutsImpl, "ListAudioOutsAuto"},
+        {3, &AudOutU::OpenAudioOutImpl, "OpenAudioOutAuto"},
+    };
+    // clang-format on
+
     RegisterHandlers(functions);
     audio_core = std::make_unique<AudioCore::AudioOut>();
 }

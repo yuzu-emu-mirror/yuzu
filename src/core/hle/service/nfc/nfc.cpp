@@ -18,7 +18,7 @@ class IAm final : public ServiceFramework<IAm> {
 public:
     explicit IAm() : ServiceFramework{"NFC::IAm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "Finalize"},
             {2, nullptr, "NotifyForegroundApplet"},
@@ -33,7 +33,7 @@ class NFC_AM final : public ServiceFramework<NFC_AM> {
 public:
     explicit NFC_AM() : ServiceFramework{"nfc:am"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &NFC_AM::CreateAmInterface, "CreateAmInterface"},
         };
         // clang-format on
@@ -55,7 +55,7 @@ class MFIUser final : public ServiceFramework<MFIUser> {
 public:
     explicit MFIUser() : ServiceFramework{"NFC::MFIUser"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "Finalize"},
             {2, nullptr, "ListDevices"},
@@ -81,7 +81,7 @@ class NFC_MF_U final : public ServiceFramework<NFC_MF_U> {
 public:
     explicit NFC_MF_U() : ServiceFramework{"nfc:mf:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &NFC_MF_U::CreateUserInterface, "CreateUserInterface"},
         };
         // clang-format on
@@ -103,7 +103,7 @@ class IUser final : public ServiceFramework<IUser> {
 public:
     explicit IUser() : ServiceFramework{"NFC::IUser"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IUser::InitializeOld, "InitializeOld"},
             {1, &IUser::FinalizeOld, "FinalizeOld"},
             {2, &IUser::GetStateOld, "GetStateOld"},
@@ -173,7 +173,7 @@ class NFC_U final : public ServiceFramework<NFC_U> {
 public:
     explicit NFC_U() : ServiceFramework{"nfc:user"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &NFC_U::CreateUserInterface, "CreateUserInterface"},
         };
         // clang-format on
@@ -195,7 +195,7 @@ class ISystem final : public ServiceFramework<ISystem> {
 public:
     explicit ISystem() : ServiceFramework{"ISystem"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "Finalize"},
             {2, nullptr, "GetState"},
@@ -231,7 +231,7 @@ class NFC_SYS final : public ServiceFramework<NFC_SYS> {
 public:
     explicit NFC_SYS() : ServiceFramework{"nfc:sys"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &NFC_SYS::CreateSystemInterface, "CreateSystemInterface"},
         };
         // clang-format on

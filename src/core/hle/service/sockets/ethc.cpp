@@ -8,7 +8,7 @@ namespace Service::Sockets {
 
 ETHC_C::ETHC_C() : ServiceFramework{"ethc:c"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "Initialize"},
         {1, nullptr, "Cancel"},
         {2, nullptr, "GetResult"},
@@ -25,7 +25,7 @@ ETHC_C::~ETHC_C() = default;
 
 ETHC_I::ETHC_I() : ServiceFramework{"ethc:i"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetReadableHandle"},
         {1, nullptr, "Cancel"},
         {2, nullptr, "GetResult"},

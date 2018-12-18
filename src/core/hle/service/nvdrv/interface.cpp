@@ -110,7 +110,7 @@ void NVDRV::DumpGraphicsMemoryInfo(Kernel::HLERequestContext& ctx) {
 
 NVDRV::NVDRV(std::shared_ptr<Module> nvdrv, const char* name)
     : ServiceFramework(name), nvdrv(std::move(nvdrv)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &NVDRV::Open, "Open"},
         {1, &NVDRV::Ioctl, "Ioctl"},
         {2, &NVDRV::Close, "Close"},

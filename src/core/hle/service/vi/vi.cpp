@@ -472,7 +472,7 @@ class IHOSBinderDriver final : public ServiceFramework<IHOSBinderDriver> {
 public:
     explicit IHOSBinderDriver(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
         : ServiceFramework("IHOSBinderDriver"), nv_flinger(std::move(nv_flinger)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IHOSBinderDriver::TransactParcel, "TransactParcel"},
             {1, &IHOSBinderDriver::AdjustRefcount, "AdjustRefcount"},
             {2, &IHOSBinderDriver::GetNativeHandle, "GetNativeHandle"},
@@ -623,7 +623,7 @@ private:
 class ISystemDisplayService final : public ServiceFramework<ISystemDisplayService> {
 public:
     explicit ISystemDisplayService() : ServiceFramework("ISystemDisplayService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1200, nullptr, "GetZOrderCountMin"},
             {1202, nullptr, "GetZOrderCountMax"},
             {1203, nullptr, "GetDisplayLogicalResolution"},
@@ -722,7 +722,7 @@ class IManagerDisplayService final : public ServiceFramework<IManagerDisplayServ
 public:
     explicit IManagerDisplayService(std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
         : ServiceFramework("IManagerDisplayService"), nv_flinger(std::move(nv_flinger)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {200, nullptr, "AllocateProcessHeapBlock"},
             {201, nullptr, "FreeProcessHeapBlock"},
             {1020, &IManagerDisplayService::CloseDisplay, "CloseDisplay"},
@@ -1074,7 +1074,7 @@ private:
 IApplicationDisplayService::IApplicationDisplayService(
     std::shared_ptr<NVFlinger::NVFlinger> nv_flinger)
     : ServiceFramework("IApplicationDisplayService"), nv_flinger(std::move(nv_flinger)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {100, &IApplicationDisplayService::GetRelayService, "GetRelayService"},
         {101, &IApplicationDisplayService::GetSystemDisplayService, "GetSystemDisplayService"},
         {102, &IApplicationDisplayService::GetManagerDisplayService, "GetManagerDisplayService"},

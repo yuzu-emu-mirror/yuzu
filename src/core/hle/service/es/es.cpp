@@ -10,7 +10,7 @@ class ETicket final : public ServiceFramework<ETicket> {
 public:
     explicit ETicket() : ServiceFramework{"es"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "ImportTicket"},
             {2, nullptr, "ImportTicketCertificateSet"},
             {3, nullptr, "DeleteTicket"},

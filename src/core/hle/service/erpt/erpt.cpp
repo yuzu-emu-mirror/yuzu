@@ -14,7 +14,7 @@ class ErrorReportContext final : public ServiceFramework<ErrorReportContext> {
 public:
     explicit ErrorReportContext() : ServiceFramework{"erpt:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SubmitContext"},
             {1, nullptr, "CreateReport"},
             {2, nullptr, "SetInitialLaunchSettingsCompletionTime"},
@@ -35,7 +35,7 @@ class ErrorReportSession final : public ServiceFramework<ErrorReportSession> {
 public:
     explicit ErrorReportSession() : ServiceFramework{"erpt:r"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "OpenReport"},
             {1, nullptr, "OpenManager"},
         };

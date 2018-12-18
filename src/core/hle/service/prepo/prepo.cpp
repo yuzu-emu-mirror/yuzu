@@ -13,7 +13,7 @@ class PlayReport final : public ServiceFramework<PlayReport> {
 public:
     explicit PlayReport(const char* name) : ServiceFramework{name} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {10100, nullptr, "SaveReportOld"},
             {10101, &PlayReport::SaveReportWithUserOld, "SaveReportWithUserOld"},
             {10102, nullptr, "SaveReport"},

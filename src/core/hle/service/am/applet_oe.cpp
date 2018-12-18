@@ -17,7 +17,7 @@ public:
         : ServiceFramework("IApplicationProxy"), nvflinger(std::move(nvflinger)),
           msg_queue(std::move(msg_queue)) {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IApplicationProxy::GetCommonStateGetter, "GetCommonStateGetter"},
             {1, &IApplicationProxy::GetSelfController, "GetSelfController"},
             {2, &IApplicationProxy::GetWindowController, "GetWindowController"},
@@ -114,7 +114,7 @@ AppletOE::AppletOE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger,
                    std::shared_ptr<AppletMessageQueue> msg_queue)
     : ServiceFramework("appletOE"), nvflinger(std::move(nvflinger)),
       msg_queue(std::move(msg_queue)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &AppletOE::OpenApplicationProxy, "OpenApplicationProxy"},
     };
     RegisterHandlers(functions);

@@ -14,7 +14,7 @@ class ErrorUploadContext final : public ServiceFramework<ErrorUploadContext> {
 public:
     explicit ErrorUploadContext() : ServiceFramework{"eupld:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SetUrl"},
             {1, nullptr, "ImportCrt"},
             {2, nullptr, "ImportPki"},
@@ -30,7 +30,7 @@ class ErrorUploadRequest final : public ServiceFramework<ErrorUploadRequest> {
 public:
     explicit ErrorUploadRequest() : ServiceFramework{"eupld:r"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "UploadAll"},
             {2, nullptr, "UploadSelected"},

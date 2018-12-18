@@ -8,7 +8,7 @@ namespace Service::Audio {
 
 AudOutA::AudOutA() : ServiceFramework{"audout:a"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestSuspendAudioOuts"},
         {1, nullptr, "RequestResumeAudioOuts"},
         {2, nullptr, "GetAudioOutsProcessMasterVolume"},

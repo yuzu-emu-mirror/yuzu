@@ -12,7 +12,7 @@ namespace Service::Audio {
 class IAudioIn final : public ServiceFramework<IAudioIn> {
 public:
     IAudioIn() : ServiceFramework("IAudioIn") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetAudioInState"},
             {1, nullptr, "StartAudioIn"},
             {2, nullptr, "StopAudioIn"},
@@ -34,7 +34,7 @@ public:
 };
 
 AudInU::AudInU() : ServiceFramework("audin:u") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "ListAudioIns"},    {1, nullptr, "OpenAudioIn"},      {2, nullptr, "Unknown"},
         {3, nullptr, "OpenAudioInAuto"}, {4, nullptr, "ListAudioInsAuto"},
     };

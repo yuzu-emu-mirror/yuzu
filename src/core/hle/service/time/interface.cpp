@@ -8,7 +8,7 @@ namespace Service::Time {
 
 Time::Time(std::shared_ptr<Module> time, const char* name)
     : Module::Interface(std::move(time), name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &Time::GetStandardUserSystemClock, "GetStandardUserSystemClock"},
         {1, &Time::GetStandardNetworkSystemClock, "GetStandardNetworkSystemClock"},
         {2, &Time::GetStandardSteadyClock, "GetStandardSteadyClock"},

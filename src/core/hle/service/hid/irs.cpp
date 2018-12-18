@@ -13,7 +13,7 @@ namespace Service::HID {
 
 IRS::IRS() : ServiceFramework{"irs"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {302, &IRS::ActivateIrsensor, "ActivateIrsensor"},
         {303, &IRS::DeactivateIrsensor, "DeactivateIrsensor"},
         {304, &IRS::GetIrsensorSharedMemoryHandle, "GetIrsensorSharedMemoryHandle"},
@@ -177,7 +177,7 @@ IRS::~IRS() = default;
 
 IRS_SYS::IRS_SYS() : ServiceFramework{"irs:sys"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {500, nullptr, "SetAppletResourceUserId"},
         {501, nullptr, "RegisterAppletResourceUserId"},
         {502, nullptr, "UnregisterAppletResourceUserId"},

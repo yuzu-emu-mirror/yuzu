@@ -59,7 +59,7 @@ enum class HidController : std::size_t {
 class IAppletResource final : public ServiceFramework<IAppletResource> {
 public:
     IAppletResource() : ServiceFramework("IAppletResource") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IAppletResource::GetSharedMemoryHandle, "GetSharedMemoryHandle"},
         };
         RegisterHandlers(functions);
@@ -157,7 +157,7 @@ private:
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
 public:
     IActiveVibrationDeviceList() : ServiceFramework("IActiveVibrationDeviceList") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IActiveVibrationDeviceList::ActivateVibrationDevice, "ActivateVibrationDevice"},
         };
         RegisterHandlers(functions);
@@ -176,7 +176,7 @@ class Hid final : public ServiceFramework<Hid> {
 public:
     Hid() : ServiceFramework("hid") {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &Hid::CreateAppletResource, "CreateAppletResource"},
             {1, &Hid::ActivateDebugPad, "ActivateDebugPad"},
             {11, &Hid::ActivateTouchScreen, "ActivateTouchScreen"},
@@ -651,7 +651,7 @@ class HidDbg final : public ServiceFramework<HidDbg> {
 public:
     explicit HidDbg() : ServiceFramework{"hid:dbg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "DeactivateDebugPad"},
             {1, nullptr, "SetDebugPadAutoPilotState"},
             {2, nullptr, "UnsetDebugPadAutoPilotState"},
@@ -734,7 +734,7 @@ class HidSys final : public ServiceFramework<HidSys> {
 public:
     explicit HidSys() : ServiceFramework{"hid:sys"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {31, nullptr, "SendKeyboardLockKeyEvent"},
             {101, nullptr, "AcquireHomeButtonEventHandle"},
             {111, nullptr, "ActivateHomeButton"},
@@ -851,7 +851,7 @@ class HidTmp final : public ServiceFramework<HidTmp> {
 public:
     explicit HidTmp() : ServiceFramework{"hid:tmp"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetConsoleSixAxisSensorCalibrationValues"},
         };
         // clang-format on
@@ -864,7 +864,7 @@ class HidBus final : public ServiceFramework<HidBus> {
 public:
     explicit HidBus() : ServiceFramework{"hidbus"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "GetBusHandle"},
             {2, nullptr, "IsExternalDeviceConnected"},
             {3, nullptr, "Initialize"},

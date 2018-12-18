@@ -14,7 +14,7 @@ class ISession final : public ServiceFramework<ISession> {
 public:
     explicit ISession() : ServiceFramework{"ISession"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "QueryFunctions"},
             {1, nullptr, "AcquireFunction"},
             {2, nullptr, "ReleaseFunction"},
@@ -47,7 +47,7 @@ class PCIe final : public ServiceFramework<PCIe> {
 public:
     explicit PCIe() : ServiceFramework{"pcie"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "RegisterClassDriver"},
             {1, nullptr, "QueryFunctionsUnregistered"},
         };

@@ -179,7 +179,7 @@ void SM::UnregisterService(Kernel::HLERequestContext& ctx) {
 
 SM::SM(std::shared_ptr<ServiceManager> service_manager)
     : ServiceFramework("sm:", 4), service_manager(std::move(service_manager)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0x00000000, &SM::Initialize, "Initialize"},
         {0x00000001, &SM::GetService, "GetService"},
         {0x00000002, &SM::RegisterService, "RegisterService"},

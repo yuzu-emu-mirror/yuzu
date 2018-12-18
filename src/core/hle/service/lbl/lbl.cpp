@@ -17,7 +17,7 @@ class LBL final : public ServiceFramework<LBL> {
 public:
     explicit LBL() : ServiceFramework{"lbl"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SaveCurrentSetting"},
             {1, nullptr, "LoadCurrentSetting"},
             {2, nullptr, "SetCurrentBrightnessSetting"},

@@ -18,7 +18,7 @@ void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
 }
 
 SFDNSRES::SFDNSRES() : ServiceFramework("sfdnsres") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "SetDnsAddressesPrivate"},
         {1, nullptr, "GetDnsAddressPrivate"},
         {2, nullptr, "GetHostByName"},

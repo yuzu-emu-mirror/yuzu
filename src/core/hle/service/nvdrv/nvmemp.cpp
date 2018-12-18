@@ -9,7 +9,7 @@
 namespace Service::Nvidia {
 
 NVMEMP::NVMEMP() : ServiceFramework("nvmemp") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &NVMEMP::Cmd0, "Cmd0"},
         {1, &NVMEMP::Cmd1, "Cmd1"},
     };

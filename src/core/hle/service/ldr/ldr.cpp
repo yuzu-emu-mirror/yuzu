@@ -35,7 +35,7 @@ class DebugMonitor final : public ServiceFramework<DebugMonitor> {
 public:
     explicit DebugMonitor() : ServiceFramework{"ldr:dmnt"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "AddProcessToDebugLaunchQueue"},
             {1, nullptr, "ClearDebugLaunchQueue"},
             {2, nullptr, "GetNsoInfos"},
@@ -50,7 +50,7 @@ class ProcessManager final : public ServiceFramework<ProcessManager> {
 public:
     explicit ProcessManager() : ServiceFramework{"ldr:pm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "CreateProcess"},
             {1, nullptr, "GetProgramInfo"},
             {2, nullptr, "RegisterTitle"},
@@ -66,7 +66,7 @@ class Shell final : public ServiceFramework<Shell> {
 public:
     explicit Shell() : ServiceFramework{"ldr:shel"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "AddProcessToLaunchQueue"},
             {1, nullptr, "ClearLaunchQueue"},
         };
@@ -80,7 +80,7 @@ class RelocatableObject final : public ServiceFramework<RelocatableObject> {
 public:
     explicit RelocatableObject() : ServiceFramework{"ldr:ro"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &RelocatableObject::LoadNro, "LoadNro"},
             {1, &RelocatableObject::UnloadNro, "UnloadNro"},
             {2, &RelocatableObject::LoadNrr, "LoadNrr"},

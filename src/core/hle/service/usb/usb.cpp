@@ -17,7 +17,7 @@ class IDsInterface final : public ServiceFramework<IDsInterface> {
 public:
     explicit IDsInterface() : ServiceFramework{"IDsInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetDsEndpoint"},
             {1, nullptr, "GetSetupEvent"},
             {2, nullptr, "Unknown"},
@@ -42,7 +42,7 @@ class USB_DS final : public ServiceFramework<USB_DS> {
 public:
     explicit USB_DS() : ServiceFramework{"usb:ds"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "BindDevice"},
             {1, nullptr, "BindClientProcess"},
             {2, nullptr, "GetDsInterface"},
@@ -66,7 +66,7 @@ class IClientEpSession final : public ServiceFramework<IClientEpSession> {
 public:
     explicit IClientEpSession() : ServiceFramework{"IClientEpSession"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Open"},
             {1, nullptr, "Close"},
             {2, nullptr, "Unknown1"},
@@ -87,7 +87,7 @@ class IClientIfSession final : public ServiceFramework<IClientIfSession> {
 public:
     explicit IClientIfSession() : ServiceFramework{"IClientIfSession"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "SetInterface"},
             {2, nullptr, "GetInterface"},
@@ -109,7 +109,7 @@ class USB_HS final : public ServiceFramework<USB_HS> {
 public:
     explicit USB_HS() : ServiceFramework{"usb:hs"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "BindClientProcess"},
             {1, nullptr, "QueryAllInterfaces"},
             {2, nullptr, "QueryAvailableInterfaces"},
@@ -130,7 +130,7 @@ class IPdSession final : public ServiceFramework<IPdSession> {
 public:
     explicit IPdSession() : ServiceFramework{"IPdSession"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "BindNoticeEvent"},
             {1, nullptr, "UnbindNoticeEvent"},
             {2, nullptr, "GetStatus"},
@@ -149,7 +149,7 @@ class USB_PD final : public ServiceFramework<USB_PD> {
 public:
     explicit USB_PD() : ServiceFramework{"usb:pd"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &USB_PD::GetPdSession, "GetPdSession"},
         };
         // clang-format on
@@ -171,7 +171,7 @@ class IPdCradleSession final : public ServiceFramework<IPdCradleSession> {
 public:
     explicit IPdCradleSession() : ServiceFramework{"IPdCradleSession"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "VdmUserWrite"},
             {1, nullptr, "VdmUserRead"},
             {2, nullptr, "Vdm20Init"},
@@ -192,7 +192,7 @@ class USB_PD_C final : public ServiceFramework<USB_PD_C> {
 public:
     explicit USB_PD_C() : ServiceFramework{"usb:pd:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &USB_PD_C::GetPdCradleSession, "GetPdCradleSession"},
         };
         // clang-format on
@@ -214,7 +214,7 @@ class USB_PM final : public ServiceFramework<USB_PM> {
 public:
     explicit USB_PM() : ServiceFramework{"usb:pm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "Unknown3"},

@@ -48,7 +48,7 @@ class IProfile final : public ServiceFramework<IProfile> {
 public:
     explicit IProfile(UUID user_id, ProfileManager& profile_manager)
         : ServiceFramework("IProfile"), profile_manager(profile_manager), user_id(user_id) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IProfile::Get, "Get"},
             {1, &IProfile::GetBase, "GetBase"},
             {10, &IProfile::GetImageSize, "GetImageSize"},
@@ -137,7 +137,7 @@ private:
 class IManagerForApplication final : public ServiceFramework<IManagerForApplication> {
 public:
     IManagerForApplication() : ServiceFramework("IManagerForApplication") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IManagerForApplication::CheckAvailability, "CheckAvailability"},
             {1, &IManagerForApplication::GetAccountId, "GetAccountId"},
             {2, nullptr, "EnsureIdTokenCacheAsync"},

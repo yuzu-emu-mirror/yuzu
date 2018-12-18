@@ -9,7 +9,7 @@ namespace Service::FileSystem {
 
 FSP_PR::FSP_PR() : ServiceFramework{"fsp:pr"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RegisterProgram"},
         {1, nullptr, "UnregisterProgram"},
         {2, nullptr, "SetCurrentProcess"},

@@ -7,7 +7,7 @@
 namespace Service::Set {
 
 SET_FD::SET_FD() : ServiceFramework("set:fd") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {2, nullptr, "SetSettingsItemValue"},
         {3, nullptr, "ResetSettingsItemValue"},
         {4, nullptr, "CreateSettingsItemKeyIterator"},

@@ -11,7 +11,7 @@ namespace Service::PM {
 class BootMode final : public ServiceFramework<BootMode> {
 public:
     explicit BootMode() : ServiceFramework{"pm:bm"} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &BootMode::GetBootMode, "GetBootMode"},
             {1, nullptr, "SetMaintenanceBoot"},
         };
@@ -31,7 +31,7 @@ private:
 class DebugMonitor final : public ServiceFramework<DebugMonitor> {
 public:
     explicit DebugMonitor() : ServiceFramework{"pm:dmnt"} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "IsDebugMode"},
             {1, nullptr, "GetDebugProcesses"},
             {2, nullptr, "StartDebugProcess"},
@@ -47,7 +47,7 @@ public:
 class Info final : public ServiceFramework<Info> {
 public:
     explicit Info() : ServiceFramework{"pm:info"} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetTitleId"},
         };
         RegisterHandlers(functions);
@@ -57,7 +57,7 @@ public:
 class Shell final : public ServiceFramework<Shell> {
 public:
     explicit Shell() : ServiceFramework{"pm:shell"} {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "LaunchProcess"},
             {1, nullptr, "TerminateProcessByPid"},
             {2, nullptr, "TerminateProcessByTitleId"},

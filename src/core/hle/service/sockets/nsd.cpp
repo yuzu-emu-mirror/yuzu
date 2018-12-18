@@ -7,7 +7,7 @@
 namespace Service::Sockets {
 
 NSD::NSD(const char* name) : ServiceFramework(name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {10, nullptr, "GetSettingName"},
         {11, nullptr, "GetEnvironmentIdentifier"},
         {12, nullptr, "GetDeviceId"},

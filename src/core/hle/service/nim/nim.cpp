@@ -19,7 +19,7 @@ class NIM final : public ServiceFramework<NIM> {
 public:
     explicit NIM() : ServiceFramework{"nim"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "CreateSystemUpdateTask"},
             {1, nullptr, "DestroySystemUpdateTask"},
             {2, nullptr, "ListSystemUpdateTask"},
@@ -77,7 +77,7 @@ class NIM_ECA final : public ServiceFramework<NIM_ECA> {
 public:
     explicit NIM_ECA() : ServiceFramework{"nim:eca"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "CreateServerInterface"},
             {1, nullptr, "RefreshDebugAvailability"},
             {2, nullptr, "ClearDebugResponse"},
@@ -93,7 +93,7 @@ class NIM_SHP final : public ServiceFramework<NIM_SHP> {
 public:
     explicit NIM_SHP() : ServiceFramework{"nim:shp"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "RequestDeviceAuthenticationToken"},
             {1, nullptr, "RequestCachedDeviceAuthenticationToken"},
             {100, nullptr, "RequestRegisterDeviceAccount"},
@@ -128,7 +128,7 @@ class IEnsureNetworkClockAvailabilityService final
 public:
     IEnsureNetworkClockAvailabilityService()
         : ServiceFramework("IEnsureNetworkClockAvailabilityService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IEnsureNetworkClockAvailabilityService::StartTask, "StartTask"},
             {1, &IEnsureNetworkClockAvailabilityService::GetFinishNotificationEvent,
              "GetFinishNotificationEvent"},
@@ -202,7 +202,7 @@ class NTC final : public ServiceFramework<NTC> {
 public:
     explicit NTC() : ServiceFramework{"ntc"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &NTC::OpenEnsureNetworkClockAvailabilityService, "OpenEnsureNetworkClockAvailabilityService"},
             {100, &NTC::SuspendAutonomicTimeCorrection, "SuspendAutonomicTimeCorrection"},
             {101, &NTC::ResumeAutonomicTimeCorrection, "ResumeAutonomicTimeCorrection"},

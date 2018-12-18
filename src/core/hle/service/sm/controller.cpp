@@ -51,7 +51,7 @@ void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
 }
 
 Controller::Controller() : ServiceFramework("IpcController") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0x00000000, &Controller::ConvertSessionToDomain, "ConvertSessionToDomain"},
         {0x00000001, nullptr, "ConvertDomainToSession"},
         {0x00000002, &Controller::DuplicateSession, "DuplicateSession"},

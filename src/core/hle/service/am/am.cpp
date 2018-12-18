@@ -54,7 +54,7 @@ static_assert(sizeof(LaunchParameters) == 0x88);
 
 IWindowController::IWindowController() : ServiceFramework("IWindowController") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "CreateWindow"},
         {1, &IWindowController::GetAppletResourceUserId, "GetAppletResourceUserId"},
         {10, &IWindowController::AcquireForegroundRights, "AcquireForegroundRights"},
@@ -84,7 +84,7 @@ void IWindowController::AcquireForegroundRights(Kernel::HLERequestContext& ctx) 
 }
 
 IAudioController::IAudioController() : ServiceFramework("IAudioController") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &IAudioController::SetExpectedMasterVolume, "SetExpectedMasterVolume"},
         {1, &IAudioController::GetMainAppletExpectedMasterVolume,
          "GetMainAppletExpectedMasterVolume"},
@@ -120,7 +120,7 @@ void IAudioController::GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestCo
 
 IDisplayController::IDisplayController() : ServiceFramework("IDisplayController") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetLastForegroundCaptureImage"},
         {1, nullptr, "UpdateLastForegroundCaptureImage"},
         {2, nullptr, "GetLastApplicationCaptureImage"},
@@ -166,7 +166,7 @@ IDebugFunctions::~IDebugFunctions() = default;
 ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger)
     : ServiceFramework("ISelfController"), nvflinger(std::move(nvflinger)) {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "Exit"},
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
@@ -399,7 +399,7 @@ void AppletMessageQueue::OperationModeChanged() {
 ICommonStateGetter::ICommonStateGetter(std::shared_ptr<AppletMessageQueue> msg_queue)
     : ServiceFramework("ICommonStateGetter"), msg_queue(std::move(msg_queue)) {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &ICommonStateGetter::GetEventHandle, "GetEventHandle"},
         {1, &ICommonStateGetter::ReceiveMessage, "ReceiveMessage"},
         {2, nullptr, "GetThisAppletKind"},
@@ -497,7 +497,7 @@ void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& 
 IStorage::IStorage(std::vector<u8> buffer)
     : ServiceFramework("IStorage"), buffer(std::move(buffer)) {
     // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IStorage::Open, "Open"},
             {1, nullptr, "OpenTransferStorage"},
         };
@@ -536,7 +536,7 @@ public:
     explicit ILibraryAppletAccessor(std::shared_ptr<Applets::Applet> applet)
         : ServiceFramework("ILibraryAppletAccessor"), applet(std::move(applet)) {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ILibraryAppletAccessor::GetAppletStateChangedEvent, "GetAppletStateChangedEvent"},
             {1, &ILibraryAppletAccessor::IsCompleted, "IsCompleted"},
             {10, &ILibraryAppletAccessor::Start, "Start"},
@@ -691,7 +691,7 @@ void IStorage::Open(Kernel::HLERequestContext& ctx) {
 IStorageAccessor::IStorageAccessor(IStorage& storage)
     : ServiceFramework("IStorageAccessor"), backing(storage) {
     // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IStorageAccessor::GetSize, "GetSize"},
             {10, &IStorageAccessor::Write, "Write"},
             {11, &IStorageAccessor::Read, "Read"},
@@ -758,7 +758,7 @@ void IStorageAccessor::Read(Kernel::HLERequestContext& ctx) {
 }
 
 ILibraryAppletCreator::ILibraryAppletCreator() : ServiceFramework("ILibraryAppletCreator") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &ILibraryAppletCreator::CreateLibraryApplet, "CreateLibraryApplet"},
         {1, nullptr, "TerminateAllLibraryApplets"},
         {2, nullptr, "AreAnyLibraryAppletsLeft"},
@@ -848,7 +848,7 @@ void ILibraryAppletCreator::CreateTransferMemoryStorage(Kernel::HLERequestContex
 
 IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationFunctions") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
         {10, nullptr, "CreateApplicationAndPushAndRequestToStart"},
         {11, nullptr, "CreateApplicationAndPushAndRequestToStartForQuest"},
@@ -1053,7 +1053,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager,
 
 IHomeMenuFunctions::IHomeMenuFunctions() : ServiceFramework("IHomeMenuFunctions") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {10, &IHomeMenuFunctions::RequestToGetForeground, "RequestToGetForeground"},
         {11, nullptr, "LockForeground"},
         {12, nullptr, "UnlockForeground"},
@@ -1079,7 +1079,7 @@ void IHomeMenuFunctions::RequestToGetForeground(Kernel::HLERequestContext& ctx) 
 
 IGlobalStateController::IGlobalStateController() : ServiceFramework("IGlobalStateController") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestToEnterSleep"},
         {1, nullptr, "EnterSleep"},
         {2, nullptr, "StartSleepSequence"},
@@ -1101,7 +1101,7 @@ IGlobalStateController::~IGlobalStateController() = default;
 
 IApplicationCreator::IApplicationCreator() : ServiceFramework("IApplicationCreator") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "CreateApplication"},
         {1, nullptr, "PopLaunchRequestedApplication"},
         {10, nullptr, "CreateSystemApplication"},
@@ -1117,7 +1117,7 @@ IApplicationCreator::~IApplicationCreator() = default;
 IProcessWindingController::IProcessWindingController()
     : ServiceFramework("IProcessWindingController") {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetLaunchReason"},
         {11, nullptr, "OpenCallingLibraryApplet"},
         {21, nullptr, "PushContext"},

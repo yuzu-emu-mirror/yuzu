@@ -8,7 +8,7 @@ namespace Service::Audio {
 
 AudDbg::AudDbg(const char* name) : ServiceFramework{name} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestSuspendForDebug"},
         {1, nullptr, "RequestResumeForDebug"},
     };

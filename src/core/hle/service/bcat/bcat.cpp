@@ -8,7 +8,7 @@ namespace Service::BCAT {
 
 BCAT::BCAT(std::shared_ptr<Module> module, const char* name)
     : Module::Interface(std::move(module), name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &BCAT::CreateBcatService, "CreateBcatService"},
     };
     RegisterHandlers(functions);

@@ -50,7 +50,7 @@ static std::vector<u64> AccumulateAOCTitleIDs() {
 }
 
 AOC_U::AOC_U() : ServiceFramework("aoc:u"), add_on_content(AccumulateAOCTitleIDs()) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "CountAddOnContentByApplicationId"},
         {1, nullptr, "ListAddOnContentByApplicationId"},
         {2, &AOC_U::CountAddOnContent, "CountAddOnContent"},

@@ -8,7 +8,7 @@ namespace Service::Audio {
 
 AudInA::AudInA() : ServiceFramework{"audin:a"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestSuspendAudioIns"},
         {1, nullptr, "RequestResumeAudioIns"},
         {2, nullptr, "GetAudioInsProcessMasterVolume"},

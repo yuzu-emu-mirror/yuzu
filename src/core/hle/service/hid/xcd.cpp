@@ -8,7 +8,7 @@ namespace Service::HID {
 
 XCD_SYS::XCD_SYS() : ServiceFramework{"xcd:sys"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetDataFormat"},
         {1, nullptr, "SetDataFormat"},
         {2, nullptr, "GetMcuState"},

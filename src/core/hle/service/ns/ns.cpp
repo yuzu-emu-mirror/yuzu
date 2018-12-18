@@ -16,7 +16,7 @@ class IAccountProxyInterface final : public ServiceFramework<IAccountProxyInterf
 public:
     explicit IAccountProxyInterface() : ServiceFramework{"IAccountProxyInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "CreateUserAccount"},
         };
         // clang-format on
@@ -29,7 +29,7 @@ class IApplicationManagerInterface final : public ServiceFramework<IApplicationM
 public:
     explicit IApplicationManagerInterface() : ServiceFramework{"IApplicationManagerInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "ListApplicationRecord"},
             {1, nullptr, "GenerateApplicationRecordCount"},
             {2, nullptr, "GetApplicationRecordUpdateSystemEvent"},
@@ -311,7 +311,7 @@ class IApplicationVersionInterface final : public ServiceFramework<IApplicationV
 public:
     explicit IApplicationVersionInterface() : ServiceFramework{"IApplicationVersionInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetLaunchRequiredVersion"},
             {1, nullptr, "UpgradeLaunchRequiredVersion"},
             {35, nullptr, "UpdateVersionList"},
@@ -332,7 +332,7 @@ class IContentManagerInterface final : public ServiceFramework<IContentManagerIn
 public:
     explicit IContentManagerInterface() : ServiceFramework{"IContentManagerInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {11, nullptr, "CalculateApplicationOccupiedSize"},
             {43, nullptr, "CheckSdCardMountStatus"},
             {47, nullptr, "GetTotalSpaceSize"},
@@ -352,7 +352,7 @@ class IDocumentInterface final : public ServiceFramework<IDocumentInterface> {
 public:
     explicit IDocumentInterface() : ServiceFramework{"IDocumentInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {21, nullptr, "GetApplicationContentPath"},
             {23, nullptr, "ResolveApplicationContentPath"},
         };
@@ -366,7 +366,7 @@ class IDownloadTaskInterface final : public ServiceFramework<IDownloadTaskInterf
 public:
     explicit IDownloadTaskInterface() : ServiceFramework{"IDownloadTaskInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {701, nullptr, "ClearTaskStatusList"},
             {702, nullptr, "RequestDownloadTaskList"},
             {703, nullptr, "RequestEnsureDownloadTask"},
@@ -387,7 +387,7 @@ class IECommerceInterface final : public ServiceFramework<IECommerceInterface> {
 public:
     explicit IECommerceInterface() : ServiceFramework{"IECommerceInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "RequestLinkDevice"},
         };
         // clang-format on
@@ -400,7 +400,7 @@ class IFactoryResetInterface final : public ServiceFramework<IFactoryResetInterf
 public:
     explicit IFactoryResetInterface() : ServiceFramework{"IFactoryResetInterface"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {100, nullptr, "ResetToFactorySettings"},
             {101, nullptr, "ResetToFactorySettingsWithoutUserSaveData"},
             {102, nullptr, "ResetToFactorySettingsForRefurbishment "},
@@ -415,7 +415,7 @@ class NS final : public ServiceFramework<NS> {
 public:
     explicit NS(const char* name) : ServiceFramework{name} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {7992, &NS::PushInterface<IECommerceInterface>, "GetECommerceInterface"},
             {7993, &NS::PushInterface<IApplicationVersionInterface>, "GetApplicationVersionInterface"},
             {7994, &NS::PushInterface<IFactoryResetInterface>, "GetFactoryResetInterface"},
@@ -445,7 +445,7 @@ class NS_DEV final : public ServiceFramework<NS_DEV> {
 public:
     explicit NS_DEV() : ServiceFramework{"ns:dev"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "LaunchProgram"},
             {1, nullptr, "TerminateProcess"},
             {2, nullptr, "TerminateProgram"},
@@ -469,7 +469,7 @@ class ISystemUpdateControl final : public ServiceFramework<ISystemUpdateControl>
 public:
     explicit ISystemUpdateControl() : ServiceFramework{"ISystemUpdateControl"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "HasDownloaded"},
             {1, nullptr, "RequestCheckLatestUpdate"},
             {2, nullptr, "RequestDownloadLatestUpdate"},
@@ -504,7 +504,7 @@ class NS_SU final : public ServiceFramework<NS_SU> {
 public:
     explicit NS_SU() : ServiceFramework{"ns:su"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetBackgroundNetworkUpdateState"},
             {1, &NS_SU::OpenSystemUpdateControl, "OpenSystemUpdateControl"},
             {2, nullptr, "NotifyExFatDriverRequired"},
@@ -538,7 +538,7 @@ class NS_VM final : public ServiceFramework<NS_VM> {
 public:
     explicit NS_VM() : ServiceFramework{"ns:vm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1200, nullptr, "NeedsUpdateVulnerability"},
             {1201, nullptr, "UpdateSafeSystemVersionForDebug"},
             {1202, nullptr, "GetSafeSystemVersion"},

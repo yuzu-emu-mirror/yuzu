@@ -14,7 +14,7 @@ class WLANInfra final : public ServiceFramework<WLANInfra> {
 public:
     explicit WLANInfra() : ServiceFramework{"wlan:inf"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "GetMacAddress"},
@@ -54,7 +54,7 @@ class WLANLocal final : public ServiceFramework<WLANLocal> {
 public:
     explicit WLANLocal() : ServiceFramework{"wlan:lcl"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "Unknown3"},
@@ -115,7 +115,7 @@ class WLANLocalGetFrame final : public ServiceFramework<WLANLocalGetFrame> {
 public:
     explicit WLANLocalGetFrame() : ServiceFramework{"wlan:lg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown"},
         };
         // clang-format on
@@ -128,7 +128,7 @@ class WLANSocketGetFrame final : public ServiceFramework<WLANSocketGetFrame> {
 public:
     explicit WLANSocketGetFrame() : ServiceFramework{"wlan:sg"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown"},
         };
         // clang-format on
@@ -141,7 +141,7 @@ class WLANSocketManager final : public ServiceFramework<WLANSocketManager> {
 public:
     explicit WLANSocketManager() : ServiceFramework{"wlan:soc"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "Unknown3"},

@@ -17,7 +17,7 @@ class ARP_R final : public ServiceFramework<ARP_R> {
 public:
     explicit ARP_R() : ServiceFramework{"arp:r"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetApplicationLaunchProperty"},
             {1, nullptr, "GetApplicationLaunchPropertyWithApplicationId"},
             {2, nullptr, "GetApplicationControlProperty"},
@@ -33,7 +33,7 @@ class IRegistrar final : public ServiceFramework<IRegistrar> {
 public:
     explicit IRegistrar() : ServiceFramework{"IRegistrar"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Issue"},
             {1, nullptr, "SetApplicationLaunchProperty"},
             {2, nullptr, "SetApplicationControlProperty"},
@@ -48,7 +48,7 @@ class ARP_W final : public ServiceFramework<ARP_W> {
 public:
     explicit ARP_W() : ServiceFramework{"arp:w"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ARP_W::AcquireRegistrar, "AcquireRegistrar"},
             {1, nullptr, "DeleteProperties"},
         };

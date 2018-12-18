@@ -18,7 +18,7 @@ class Bt final : public ServiceFramework<Bt> {
 public:
     explicit Bt() : ServiceFramework{"bt"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown0"},
             {1, nullptr, "Unknown1"},
             {2, nullptr, "Unknown2"},
@@ -54,7 +54,7 @@ class BtDrv final : public ServiceFramework<BtDrv> {
 public:
     explicit BtDrv() : ServiceFramework{"btdrv"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown"},
             {1, nullptr, "Init"},
             {2, nullptr, "Enable"},

@@ -15,7 +15,7 @@ class IMonitorService final : public ServiceFramework<IMonitorService> {
 public:
     explicit IMonitorService() : ServiceFramework{"IMonitorService"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetStateForMonitor"},
             {1, nullptr, "GetNetworkInfoForMonitor"},
             {2, nullptr, "GetIpv4AddressForMonitor"},
@@ -35,7 +35,7 @@ class LDNM final : public ServiceFramework<LDNM> {
 public:
     explicit LDNM() : ServiceFramework{"ldn:m"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &LDNM::CreateMonitorService, "CreateMonitorService"}
         };
         // clang-format on
@@ -56,7 +56,7 @@ class ILocalCommunicationService final : public ServiceFramework<ILocalCommunica
 public:
     explicit ILocalCommunicationService(const char* name) : ServiceFramework{name} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetState"},
             {1, nullptr, "GetNetworkInfo"},
             {2, nullptr, "GetIpv4Address"},
@@ -95,7 +95,7 @@ class LDNS final : public ServiceFramework<LDNS> {
 public:
     explicit LDNS() : ServiceFramework{"ldn:s"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &LDNS::CreateSystemLocalCommunicationService, "CreateSystemLocalCommunicationService"},
         };
         // clang-format on
@@ -116,7 +116,7 @@ class LDNU final : public ServiceFramework<LDNU> {
 public:
     explicit LDNU() : ServiceFramework{"ldn:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &LDNU::CreateUserLocalCommunicationService, "CreateUserLocalCommunicationService"},
         };
         // clang-format on

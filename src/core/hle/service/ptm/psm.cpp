@@ -19,7 +19,7 @@ class PSM final : public ServiceFramework<PSM> {
 public:
     explicit PSM() : ServiceFramework{"psm"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &PSM::GetBatteryChargePercentage, "GetBatteryChargePercentage"},
             {1, &PSM::GetChargerType, "GetChargerType"},
             {2, nullptr, "EnableBatteryCharging"},

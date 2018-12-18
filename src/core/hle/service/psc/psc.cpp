@@ -16,7 +16,7 @@ class PSC_C final : public ServiceFramework<PSC_C> {
 public:
     explicit PSC_C() : ServiceFramework{"psc:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "Unknown3"},
@@ -35,7 +35,7 @@ class IPmModule final : public ServiceFramework<IPmModule> {
 public:
     explicit IPmModule() : ServiceFramework{"IPmModule"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Initialize"},
             {1, nullptr, "GetRequest"},
             {2, nullptr, "Acknowledge"},
@@ -51,7 +51,7 @@ class PSC_M final : public ServiceFramework<PSC_M> {
 public:
     explicit PSC_M() : ServiceFramework{"psc:m"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &PSC_M::GetPmModule, "GetPmModule"},
         };
         // clang-format on

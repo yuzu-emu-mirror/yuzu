@@ -12,7 +12,7 @@ namespace Service::APM {
 class ISession final : public ServiceFramework<ISession> {
 public:
     ISession() : ServiceFramework("ISession") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISession::SetPerformanceConfiguration, "SetPerformanceConfiguration"},
             {1, &ISession::GetPerformanceConfiguration, "GetPerformanceConfiguration"},
         };
@@ -61,7 +61,7 @@ private:
 
 APM::APM(std::shared_ptr<Module> apm, const char* name)
     : ServiceFramework(name), apm(std::move(apm)) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &APM::OpenSession, "OpenSession"},
         {1, nullptr, "GetPerformanceMode"},
     };
@@ -80,7 +80,7 @@ void APM::OpenSession(Kernel::HLERequestContext& ctx) {
 
 APM_Sys::APM_Sys() : ServiceFramework{"apm:sys"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestPerformanceMode"},
         {1, &APM_Sys::GetPerformanceEvent, "GetPerformanceEvent"},
         {2, nullptr, "GetThrottlingState"},

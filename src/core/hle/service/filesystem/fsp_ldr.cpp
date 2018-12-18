@@ -9,7 +9,7 @@ namespace Service::FileSystem {
 
 FSP_LDR::FSP_LDR() : ServiceFramework{"fsp:ldr"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "OpenCodeFileSystem"},
         {1, nullptr, "IsArchivedProgram"},
         {2, nullptr, "SetCurrentProcess"},

@@ -13,7 +13,7 @@ class MM_U final : public ServiceFramework<MM_U> {
 public:
     explicit MM_U() : ServiceFramework{"mm:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &MM_U::Initialize, "Initialize"},
             {1, &MM_U::Finalize, "Finalize"},
             {2, &MM_U::SetAndWait, "SetAndWait"},

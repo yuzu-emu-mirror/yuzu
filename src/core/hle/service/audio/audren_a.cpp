@@ -8,7 +8,7 @@ namespace Service::Audio {
 
 AudRenA::AudRenA() : ServiceFramework{"audren:a"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "RequestSuspendAudioRenderers"},
         {1, nullptr, "RequestResumeAudioRenderers"},
         {2, nullptr, "GetAudioRenderersProcessMasterVolume"},

@@ -14,7 +14,7 @@ class CAPS_A final : public ServiceFramework<CAPS_A> {
 public:
     explicit CAPS_A() : ServiceFramework{"caps:a"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "Unknown1"},
             {1, nullptr, "Unknown2"},
             {2, nullptr, "Unknown3"},
@@ -52,7 +52,7 @@ class CAPS_C final : public ServiceFramework<CAPS_C> {
 public:
     explicit CAPS_C() : ServiceFramework{"caps:c"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {2001, nullptr, "Unknown1"},
             {2002, nullptr, "Unknown2"},
             {2011, nullptr, "Unknown3"},
@@ -74,7 +74,7 @@ class CAPS_SC final : public ServiceFramework<CAPS_SC> {
 public:
     explicit CAPS_SC() : ServiceFramework{"caps:sc"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, nullptr, "Unknown1"},
             {2, nullptr, "Unknown2"},
             {1001, nullptr, "Unknown3"},
@@ -96,7 +96,7 @@ class CAPS_SS final : public ServiceFramework<CAPS_SS> {
 public:
     explicit CAPS_SS() : ServiceFramework{"caps:ss"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {201, nullptr, "Unknown1"},
             {202, nullptr, "Unknown2"},
             {203, nullptr, "Unknown3"},
@@ -112,7 +112,7 @@ class CAPS_SU final : public ServiceFramework<CAPS_SU> {
 public:
     explicit CAPS_SU() : ServiceFramework{"caps:su"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {201, nullptr, "SaveScreenShot"},
             {203, nullptr, "SaveScreenShotEx0"},
         };
@@ -126,7 +126,7 @@ class CAPS_U final : public ServiceFramework<CAPS_U> {
 public:
     explicit CAPS_U() : ServiceFramework{"caps:u"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {102, nullptr, "GetAlbumFileListByAruid"},
             {103, nullptr, "DeleteAlbumFileByAruid"},
             {104, nullptr, "GetAlbumFileSizeByAruid"},

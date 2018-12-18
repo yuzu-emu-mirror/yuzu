@@ -8,7 +8,7 @@ namespace Service::PCTL {
 
 PCTL::PCTL(std::shared_ptr<Module> module, const char* name)
     : Module::Interface(std::move(module), name) {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &PCTL::CreateService, "CreateService"},
         {1, &PCTL::CreateServiceWithoutInitialize, "CreateServiceWithoutInitialize"},
     };

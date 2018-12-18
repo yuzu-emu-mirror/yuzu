@@ -8,7 +8,7 @@ namespace Service::Account {
 
 ACC_U0::ACC_U0(std::shared_ptr<Module> module, std::shared_ptr<ProfileManager> profile_manager)
     : Module::Interface(std::move(module), std::move(profile_manager), "acc:u0") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, &ACC_U0::GetUserCount, "GetUserCount"},
         {1, &ACC_U0::GetUserExistence, "GetUserExistence"},
         {2, &ACC_U0::ListAllUsers, "ListAllUsers"},

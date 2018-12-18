@@ -10,7 +10,7 @@
 namespace Service::Audio {
 
 CodecCtl::CodecCtl() : ServiceFramework("codecctl") {
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "InitializeCodecController"},
         {1, nullptr, "FinalizeCodecController"},
         {2, nullptr, "SleepCodecController"},

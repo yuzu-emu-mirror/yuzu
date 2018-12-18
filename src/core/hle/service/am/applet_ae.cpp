@@ -16,7 +16,7 @@ public:
                                  std::shared_ptr<AppletMessageQueue> msg_queue)
         : ServiceFramework("ILibraryAppletProxy"), nvflinger(std::move(nvflinger)),
           msg_queue(std::move(msg_queue)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ILibraryAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},
             {1, &ILibraryAppletProxy::GetSelfController, "GetSelfController"},
             {2, &ILibraryAppletProxy::GetWindowController, "GetWindowController"},
@@ -113,7 +113,7 @@ public:
                                 std::shared_ptr<AppletMessageQueue> msg_queue)
         : ServiceFramework("ISystemAppletProxy"), nvflinger(std::move(nvflinger)),
           msg_queue(std::move(msg_queue)) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISystemAppletProxy::GetCommonStateGetter, "GetCommonStateGetter"},
             {1, &ISystemAppletProxy::GetSelfController, "GetSelfController"},
             {2, &ISystemAppletProxy::GetWindowController, "GetWindowController"},
@@ -242,7 +242,7 @@ AppletAE::AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger,
     : ServiceFramework("appletAE"), nvflinger(std::move(nvflinger)),
       msg_queue(std::move(msg_queue)) {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {100, &AppletAE::OpenSystemAppletProxy, "OpenSystemAppletProxy"},
         {200, &AppletAE::OpenLibraryAppletProxyOld, "OpenLibraryAppletProxyOld"},
         {201, &AppletAE::OpenLibraryAppletProxy, "OpenLibraryAppletProxy"},

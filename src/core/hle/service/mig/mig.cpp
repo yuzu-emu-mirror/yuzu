@@ -14,7 +14,7 @@ class MIG_USR final : public ServiceFramework<MIG_USR> {
 public:
     explicit MIG_USR() : ServiceFramework{"mig:usr"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {10, nullptr, "TryGetLastMigrationInfo"},
             {100, nullptr, "CreateServer"},
             {101, nullptr, "ResumeServer"},

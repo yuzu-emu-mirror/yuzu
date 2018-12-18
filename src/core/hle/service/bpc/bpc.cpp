@@ -14,7 +14,7 @@ class BPC final : public ServiceFramework<BPC> {
 public:
     explicit BPC() : ServiceFramework{"bpc"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "ShutdownSystem"},
             {1, nullptr, "RebootSystem"},
             {2, nullptr, "GetWakeupReason"},
@@ -37,7 +37,7 @@ class BPC_R final : public ServiceFramework<BPC_R> {
 public:
     explicit BPC_R() : ServiceFramework{"bpc:r"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "GetExternalRtcValue"},
             {1, nullptr, "SetExternalRtcValue"},
             {2, nullptr, "ReadExternalRtcResetFlag"},

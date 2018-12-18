@@ -12,7 +12,7 @@ namespace Service::PCTL {
 class IParentalControlService final : public ServiceFramework<IParentalControlService> {
 public:
     IParentalControlService() : ServiceFramework("IParentalControlService") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {1, &IParentalControlService::Initialize, "Initialize"},
             {1001, &IParentalControlService::CheckFreeCommunicationPermission,
              "CheckFreeCommunicationPermission"},

@@ -35,7 +35,7 @@ class IUser final : public ServiceFramework<IUser> {
 public:
     IUser(Module::Interface& nfp_interface)
         : ServiceFramework("NFP::IUser"), nfp_interface(nfp_interface) {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &IUser::Initialize, "Initialize"},
             {1, &IUser::Finalize, "Finalize"},
             {2, &IUser::ListDevices, "ListDevices"},

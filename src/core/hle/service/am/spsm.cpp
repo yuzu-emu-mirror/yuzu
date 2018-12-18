@@ -8,7 +8,7 @@ namespace Service::AM {
 
 SPSM::SPSM() : ServiceFramework{"spsm"} {
     // clang-format off
-    static const FunctionInfo functions[] = {
+    static constexpr FunctionInfo functions[] = {
         {0, nullptr, "GetState"},
         {1, nullptr, "SleepSystemAndWaitAwake"},
         {2, nullptr, "Unknown1"},

@@ -13,7 +13,7 @@ namespace Service::SSL {
 class ISslConnection final : public ServiceFramework<ISslConnection> {
 public:
     ISslConnection() : ServiceFramework("ISslConnection") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, nullptr, "SetSocketDescriptor"},
             {1, nullptr, "SetHostName"},
             {2, nullptr, "SetVerifyOption"},
@@ -48,7 +48,7 @@ public:
 class ISslContext final : public ServiceFramework<ISslContext> {
 public:
     ISslContext() : ServiceFramework("ISslContext") {
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &ISslContext::SetOption, "SetOption"},
             {1, nullptr, "GetOption"},
             {2, &ISslContext::CreateConnection, "CreateConnection"},
@@ -89,7 +89,7 @@ class SSL final : public ServiceFramework<SSL> {
 public:
     explicit SSL() : ServiceFramework{"ssl"} {
         // clang-format off
-        static const FunctionInfo functions[] = {
+        static constexpr FunctionInfo functions[] = {
             {0, &SSL::CreateContext, "CreateContext"},
             {1, nullptr, "GetContextCount"},
             {2, nullptr, "GetCertificates"},
