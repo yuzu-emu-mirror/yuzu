@@ -61,6 +61,7 @@ public:
     enum class NpadHoldType : u64 {
         Vertical = 0,
         Horizontal = 1,
+        HoldType_Max = 2,
     };
 
     enum class NPadAssignments : u32_le {

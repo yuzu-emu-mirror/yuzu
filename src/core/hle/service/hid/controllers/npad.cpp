@@ -512,11 +512,21 @@ std::size_t Controller_NPad::GetSupportedNPadIdTypesSize() const {
 
 void Controller_NPad::SetHoldType(NpadHoldType joy_hold_type) {
     styleset_changed_event.writable->Signal();
-    hold_type = joy_hold_type;
+    if (joy_hold_type < NpadHoldType::HoldType_Max) {
+        hold_type = joy_hold_type;
+    } else {
+        LOG_WARNING(Service_HID, "got bad hold type={}", static_cast<u64>(joy_hold_type));
+    }
 }
 
 Controller_NPad::NpadHoldType Controller_NPad::GetHoldType() const {
-    return hold_type;
+    if (hold_type < NpadHoldType::HoldType_Max) {
+        return hold_type;
+    } else {
+        LOG_WARNING(Service_HID, "has bad stored hold_type={}, defaulting to vertical",
+                    static_cast<u64>(hold_type));
+        return NpadHoldType::Vertical;
+    }
 }
 
 void Controller_NPad::SetNpadMode(u32 npad_id, NPadAssignments assignment_mode) {
