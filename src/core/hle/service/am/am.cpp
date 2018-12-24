@@ -20,6 +20,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "core/hle/service/am/applets/controller.h"
 #include "core/hle/service/am/applets/profile_select.h"
 #include "core/hle/service/am/applets/software_keyboard.h"
 #include "core/hle/service/am/applets/stub_applet.h"
@@ -43,6 +44,7 @@ constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 0x3};
 constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 0x1F7};
 
 enum class AppletId : u32 {
+    Controller = 0x0C,
     ProfileSelect = 0x10,
     SoftwareKeyboard = 0x11,
     LibAppletOff = 0x17,
@@ -790,6 +792,8 @@ ILibraryAppletCreator::~ILibraryAppletCreator() = default;
 
 static std::shared_ptr<Applets::Applet> GetAppletFromId(AppletId id) {
     switch (id) {
+    case AppletId::Controller:
+        return std::make_shared<Applets::Controller>();
     case AppletId::ProfileSelect:
         return std::make_shared<Applets::ProfileSelect>();
     case AppletId::SoftwareKeyboard:
