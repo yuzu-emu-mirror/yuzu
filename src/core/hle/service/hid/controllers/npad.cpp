@@ -33,19 +33,37 @@ enum class JoystickId : std::size_t {
     Joystick_Right,
 };
 
-static Controller_NPad::NPadControllerType MapSettingsTypeToNPad(Settings::ControllerType type) {
+Controller_NPad::NPadControllerType Controller_NPad::MapSettingsTypeToNPad(
+    Settings::ControllerType type) {
     switch (type) {
     case Settings::ControllerType::ProController:
-        return Controller_NPad::NPadControllerType::ProController;
+        return NPadControllerType::ProController;
     case Settings::ControllerType::DualJoycon:
-        return Controller_NPad::NPadControllerType::JoyDual;
+        return NPadControllerType::JoyDual;
     case Settings::ControllerType::LeftJoycon:
-        return Controller_NPad::NPadControllerType::JoyLeft;
+        return NPadControllerType::JoyLeft;
     case Settings::ControllerType::RightJoycon:
-        return Controller_NPad::NPadControllerType::JoyRight;
+        return NPadControllerType::JoyRight;
     default:
         UNREACHABLE();
-        return Controller_NPad::NPadControllerType::JoyDual;
+        return NPadControllerType::JoyDual;
+    }
+}
+
+Settings::ControllerType Controller_NPad::MapNPadTypeToSettings(NPadControllerType type) {
+    switch (type) {
+    case NPadControllerType::ProController:
+    case NPadControllerType::Handheld:
+        return Settings::ControllerType::ProController;
+    case NPadControllerType::JoyDual:
+        return Settings::ControllerType::DualJoycon;
+    case NPadControllerType::JoyLeft:
+        return Settings::ControllerType::LeftJoycon;
+    case NPadControllerType::JoyRight:
+        return Settings::ControllerType::RightJoycon;
+    default:
+        UNREACHABLE();
+        return Settings::ControllerType::DualJoycon;
     }
 }
 
@@ -96,7 +114,7 @@ u32 Controller_NPad::IndexToNPad(std::size_t index) {
 Controller_NPad::Controller_NPad() = default;
 Controller_NPad::~Controller_NPad() = default;
 
-void Controller_NPad::InitNewlyAddedControler(std::size_t controller_idx) {
+void Controller_NPad::InitNewlyAddedController(std::size_t controller_idx) {
     const auto controller_type = connected_controllers[controller_idx].type;
     auto& controller = shared_memory_entries[controller_idx];
     if (controller_type == NPadControllerType::None) {
@@ -448,7 +466,7 @@ void Controller_NPad::SetSupportedNPadIdTypes(u8* data, std::size_t length) {
                 AddNewController(requested_controller);
             } else {
                 controller.type = requested_controller;
-                InitNewlyAddedControler(i);
+                InitNewlyAddedController(i);
             }
             had_controller_update = true;
         }
@@ -513,7 +531,7 @@ void Controller_NPad::AddNewController(NPadControllerType controller) {
     controller = DecideBestController(controller);
     if (controller == NPadControllerType::Handheld) {
         connected_controllers[8] = {controller, true};
-        InitNewlyAddedControler(8);
+        InitNewlyAddedController(8);
         return;
     }
     const auto pos =
@@ -525,19 +543,19 @@ void Controller_NPad::AddNewController(NPadControllerType controller) {
     }
     const auto controller_id = std::distance(connected_controllers.begin(), pos);
     connected_controllers[controller_id] = {controller, true};
-    InitNewlyAddedControler(controller_id);
+    InitNewlyAddedController(controller_id);
 }
 
 void Controller_NPad::AddNewControllerAt(NPadControllerType controller, u32 npad_id) {
     controller = DecideBestController(controller);
     if (controller == NPadControllerType::Handheld) {
         connected_controllers[NPadIdToIndex(NPAD_HANDHELD)] = {controller, true};
-        InitNewlyAddedControler(NPadIdToIndex(NPAD_HANDHELD));
+        InitNewlyAddedController(NPadIdToIndex(NPAD_HANDHELD));
         return;
     }
 
     connected_controllers[NPadIdToIndex(npad_id)] = {controller, true};
-    InitNewlyAddedControler(NPadIdToIndex(npad_id));
+    InitNewlyAddedController(NPadIdToIndex(npad_id));
 }
 
 void Controller_NPad::ConnectNPad(u32 npad_id) {
@@ -546,36 +564,6 @@ void Controller_NPad::ConnectNPad(u32 npad_id) {
 
 void Controller_NPad::DisconnectNPad(u32 npad_id) {
     connected_controllers[NPadIdToIndex(npad_id)].is_connected = false;
-}
-
-bool Controller_NPad::IsControllerSupported(NPadControllerType controller) {
-    if (controller == NPadControllerType::Handheld) {
-        // Handheld is not even a supported type, lets stop here
-        if (std::find(supported_npad_id_types.begin(), supported_npad_id_types.end(),
-                      NPAD_HANDHELD) == supported_npad_id_types.end()) {
-            return false;
-        }
-        // Handheld should not be supported in docked mode
-        if (Settings::values.use_docked_mode) {
-            return false;
-        }
-    }
-    switch (controller) {
-    case NPadControllerType::ProController:
-        return style.pro_controller;
-    case NPadControllerType::Handheld:
-        return style.handheld;
-    case NPadControllerType::JoyDual:
-        return style.joycon_dual;
-    case NPadControllerType::JoyLeft:
-        return style.joycon_left;
-    case NPadControllerType::JoyRight:
-        return style.joycon_right;
-    case NPadControllerType::Pokeball:
-        return style.pokeball;
-    default:
-        return false;
-    }
 }
 
 Controller_NPad::LedPattern Controller_NPad::GetLedPattern(u32 npad_id) {

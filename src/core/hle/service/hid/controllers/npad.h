@@ -128,6 +128,10 @@ public:
     // Specifically for cheat engine and other features.
     u32 GetAndResetPressState();
 
+    NPadControllerType DecideBestController(NPadControllerType priority) const;
+
+    static NPadControllerType MapSettingsTypeToNPad(Settings::ControllerType type);
+    static Settings::ControllerType MapNPadTypeToSettings(NPadControllerType type);
     static std::size_t NPadIdToIndex(u32 npad_id);
     static u32 IndexToNPad(std::size_t index);
 
@@ -315,11 +319,9 @@ private:
     std::array<ControllerHolder, 10> connected_controllers{};
     bool can_controllers_vibrate{true};
 
-    void InitNewlyAddedControler(std::size_t controller_idx);
+    void InitNewlyAddedController(std::size_t controller_idx);
     bool IsControllerSupported(NPadControllerType controller) const;
-    NPadControllerType DecideBestController(NPadControllerType priority) const;
     void RequestPadStateUpdate(u32 npad_id);
     std::array<ControllerPad, 10> npad_pad_states{};
-    bool IsControllerSupported(NPadControllerType controller);
 };
 } // namespace Service::HID
