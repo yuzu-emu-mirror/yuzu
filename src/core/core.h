@@ -14,6 +14,7 @@
 
 namespace Core::Frontend {
 class EmuWindow;
+class ControllerApplet;
 class ProfileSelectApplet;
 class SoftwareKeyboardApplet;
 class WebBrowserApplet;
@@ -252,6 +253,10 @@ public:
     void SetFilesystem(std::shared_ptr<FileSys::VfsFilesystem> vfs);
 
     std::shared_ptr<FileSys::VfsFilesystem> GetFilesystem() const;
+
+    void SetControllerApplet(std::unique_ptr<Core::Frontend::ControllerApplet> applet);
+
+    const Core::Frontend::ControllerApplet& GetControllerApplet() const;
 
     void SetProfileSelector(std::unique_ptr<Frontend::ProfileSelectApplet> applet);
 

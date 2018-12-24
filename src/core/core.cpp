@@ -25,13 +25,13 @@
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/thread.h"
-#include "core/hle/service/am/applets/software_keyboard.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
 #include "core/settings.h"
 #include "core/telemetry_session.h"
+#include "frontend/applets/controller.h"
 #include "frontend/applets/profile_select.h"
 #include "frontend/applets/software_keyboard.h"
 #include "frontend/applets/web_browser.h"
@@ -107,6 +107,8 @@ struct System::Impl {
             virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
 
         /// Create default implementations of applets if one is not provided.
+        if (controller_applet == nullptr)
+            controller_applet = std::make_unique<Core::Frontend::DefaultControllerApplet>();
         if (profile_selector == nullptr)
             profile_selector = std::make_unique<Core::Frontend::DefaultProfileSelectApplet>();
         if (software_keyboard == nullptr)
@@ -248,6 +250,7 @@ struct System::Impl {
     bool is_powered_on = false;
 
     /// Frontend applets
+    std::unique_ptr<Core::Frontend::ControllerApplet> controller_applet;
     std::unique_ptr<Core::Frontend::ProfileSelectApplet> profile_selector;
     std::unique_ptr<Core::Frontend::SoftwareKeyboardApplet> software_keyboard;
     std::unique_ptr<Core::Frontend::WebBrowserApplet> web_browser;
@@ -451,6 +454,14 @@ void System::SetFilesystem(std::shared_ptr<FileSys::VfsFilesystem> vfs) {
 
 std::shared_ptr<FileSys::VfsFilesystem> System::GetFilesystem() const {
     return impl->virtual_filesystem;
+}
+
+void System::SetControllerApplet(std::unique_ptr<Core::Frontend::ControllerApplet> applet) {
+    impl->controller_applet = std::move(applet);
+}
+
+const Core::Frontend::ControllerApplet& System::GetControllerApplet() const {
+    return *impl->controller_applet;
 }
 
 void System::SetProfileSelector(std::unique_ptr<Frontend::ProfileSelectApplet> applet) {
