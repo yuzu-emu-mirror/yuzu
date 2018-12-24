@@ -33,6 +33,7 @@ class WaitTreeWidget;
 enum class GameListOpenTarget;
 
 namespace Core::Frontend {
+struct ControllerParameters;
 struct SoftwareKeyboardParameters;
 } // namespace Core::Frontend
 
@@ -102,7 +103,10 @@ signals:
     // Signal that tells widgets to update icons to use the current theme
     void UpdateThemedIcons();
 
+    void ControllerAppletReconfigureFinished(bool ok);
+
     void ProfileSelectorFinishedSelection(std::optional<Service::Account::UUID> uuid);
+
     void SoftwareKeyboardFinishedText(std::optional<std::u16string> text);
     void SoftwareKeyboardFinishedCheckDialog();
 
@@ -111,7 +115,11 @@ signals:
 
 public slots:
     void OnLoadComplete();
+    void ControllerAppletReconfigureControllers(
+        const Core::Frontend::ControllerParameters& parameters);
+
     void ProfileSelectorSelectProfile();
+
     void SoftwareKeyboardGetText(const Core::Frontend::SoftwareKeyboardParameters& parameters);
     void SoftwareKeyboardInvokeCheckDialog(std::u16string error_message);
     void WebBrowserOpenPage(std::string_view filename, std::string_view arguments);

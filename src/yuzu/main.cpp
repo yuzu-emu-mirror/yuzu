@@ -8,12 +8,15 @@
 #include <thread>
 
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
+#include "applets/controller.h"
 #include "applets/profile_select.h"
 #include "applets/software_keyboard.h"
 #include "applets/web_browser.h"
+#include "configuration/configure_input_simple.h"
 #include "configuration/configure_per_general.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
+#include "core/frontend/applets/controller.h"
 #include "core/frontend/scope_acquire_window_context.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/am/applets/applets.h"
@@ -220,6 +223,17 @@ GMainWindow::~GMainWindow() {
     // will get automatically deleted otherwise
     if (render_window->parent() == nullptr)
         delete render_window;
+}
+
+void GMainWindow::ControllerAppletReconfigureControllers(
+    const Core::Frontend::ControllerParameters& parameters) {
+    QtControllerAppletDialog dialog(this, parameters);
+    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                          Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.exec();
+
+    emit ControllerAppletReconfigureFinished(dialog.GetStatus());
 }
 
 void GMainWindow::ProfileSelectorSelectProfile() {
@@ -777,6 +791,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
 
     system.SetGPUDebugContext(debug_context);
 
+    system.SetControllerApplet(std::make_unique<QtControllerApplet>(*this));
     system.SetProfileSelector(std::make_unique<QtProfileSelector>(*this));
     system.SetSoftwareKeyboard(std::make_unique<QtSoftwareKeyboard>(*this));
     system.SetWebBrowser(std::make_unique<QtWebBrowser>(*this));
@@ -1491,6 +1506,7 @@ void GMainWindow::OnMenuRecentFile() {
 void GMainWindow::OnStartGame() {
     emu_thread->SetRunning(true);
 
+    qRegisterMetaType<Core::Frontend::ControllerParameters>("Core::Frontend::ControllerParameters");
     qRegisterMetaType<Core::Frontend::SoftwareKeyboardParameters>(
         "Core::Frontend::SoftwareKeyboardParameters");
     qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
