@@ -90,8 +90,9 @@ void ApplyInputProfileConfiguration(int profile_index) {
         INPUT_PROFILES.at(std::min(profile_index, static_cast<int>(INPUT_PROFILES.size() - 1))))();
 }
 
-ConfigureInputSimple::ConfigureInputSimple(QWidget* parent)
-    : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputSimple>()) {
+ConfigureInputSimple::ConfigureInputSimple(
+    QWidget* parent, std::optional<Core::Frontend::ControllerParameters> constraints)
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputSimple>()), constraints(constraints) {
     ui->setupUi(this);
 
     for (const auto& profile : INPUT_PROFILES) {
@@ -104,6 +105,7 @@ ConfigureInputSimple::ConfigureInputSimple(QWidget* parent)
     connect(ui->profile_configure, &QPushButton::pressed, this, &ConfigureInputSimple::OnConfigure);
 
     this->loadConfiguration();
+    UpdateErrors();
 }
 
 ConfigureInputSimple::~ConfigureInputSimple() = default;
@@ -130,8 +132,96 @@ void ConfigureInputSimple::OnSelectProfile(int index) {
     const auto old_docked = Settings::values.use_docked_mode;
     ApplyInputProfileConfiguration(index);
     OnDockedModeChanged(old_docked, Settings::values.use_docked_mode);
+    UpdateErrors();
 }
 
 void ConfigureInputSimple::OnConfigure() {
     std::get<2>(INPUT_PROFILES.at(ui->profile_combobox->currentIndex()))(this);
+    UpdateErrors();
+}
+
+static bool AnyPlayersMatchingType(Settings::ControllerType type) {
+    return std::any_of(
+        Settings::values.players.begin(), Settings::values.players.begin() + 8,
+        [type](const Settings::PlayerInput& in) { return in.type == type && in.connected; });
+}
+
+void ConfigureInputSimple::UpdateErrors() {
+    if (constraints == std::nullopt) {
+        ui->error_view->setHidden(true);
+        return;
+    }
+
+    ui->error_view->setHidden(false);
+
+    QString text;
+
+    const auto number_player =
+        std::count_if(Settings::values.players.begin(), Settings::values.players.begin() + 9,
+                      [](const Settings::PlayerInput& in) { return in.connected; });
+
+    if (number_player < constraints->min_players) {
+        text += tr("<li>The game requires a <i>minimum</i> of %1 players, you currently have %2 "
+                   "players.</li>")
+                    .arg(constraints->min_players)
+                    .arg(number_player);
+    }
+
+    if (number_player > constraints->max_players) {
+        text += tr("<li>The game allows a <i>maximum</i> of %1 players, you currently have %2 "
+                   "players.</li>")
+                    .arg(constraints->max_players)
+                    .arg(number_player);
+    }
+
+    if (AnyPlayersMatchingType(Settings::ControllerType::ProController) &&
+        !constraints->allowed_pro_controller) {
+        text += tr("<li>The game does not allow the use of the <i>Pro Controller</i>.</li>");
+    }
+
+    if (AnyPlayersMatchingType(Settings::ControllerType::DualJoycon) &&
+        !constraints->allowed_joycon_dual) {
+        text += tr("<li>The game does not allow the use of <i>Dual Joycons</i>.</li>");
+    }
+
+    if (AnyPlayersMatchingType(Settings::ControllerType::LeftJoycon) &&
+        !constraints->allowed_joycon_left) {
+        text += tr("<li>The game does not allow the use of the <i>Single Left Joycon</i> "
+                   "controller.</li>");
+    }
+
+    if (AnyPlayersMatchingType(Settings::ControllerType::RightJoycon) &&
+        !constraints->allowed_joycon_right) {
+        text += tr("<li>The game does not allow the use of the <i>Single Right Joycon</i> "
+                   "controller.</li>");
+    }
+
+    if (Settings::values.players[HANDHELD_INDEX].connected && !constraints->allowed_handheld) {
+        text += tr("<li>The game does not allow the use of the <i>Handheld</i> Controller.</li>");
+    }
+
+    const auto has_single = AnyPlayersMatchingType(Settings::ControllerType::LeftJoycon) ||
+                            AnyPlayersMatchingType(Settings::ControllerType::RightJoycon);
+
+    if (has_single && !constraints->allowed_single_layout) {
+        text += tr("<li>The game does not allow <i>single joycon</i> controllers.</li>");
+    }
+
+    if (has_single && constraints->merge_dual_joycons) {
+        text += tr(
+            "<li>The game requires that pairs of <i>single joycons</i> be merged into one <i>Dual "
+            "Joycon</i> controller.</li>");
+    }
+
+    if (!text.isEmpty()) {
+        is_valid = false;
+        ui->error_view->setText(
+            "<h4 style=\"color:#CC0000;\">The following errors were identified in "
+            "your input configuration:</h4><ul>" +
+            text + "</ul>");
+    } else {
+        is_valid = true;
+        ui->error_view->setText(
+            tr("<h4 style=\"color:#00CC00;\">Your input configuration is valid.</h4>"));
+    }
 }

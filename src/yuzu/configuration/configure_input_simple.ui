@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>473</width>
-    <height>685</height>
+    <height>247</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,6 +89,16 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item>
+    <widget class="QTextBrowser" name="error_view">
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>120</height>
+      </size>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
