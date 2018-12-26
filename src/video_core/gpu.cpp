@@ -291,9 +291,8 @@ void GPU::ProcessSemaphoreTriggerMethod() {
             u32 zeros;
             u64 timestamp;
 
-            Block(u32 sequence)
-            {
-               this->sequence = sequence;
+            Block(u32 sequence){
+                this->sequence = sequence;
                 zeros = 0;
                 timestamp = CoreTiming::GetTicks();
             }
@@ -376,8 +375,7 @@ void GPU::SetReferenceCount() {
 }
 
 void GPU::ProcessSetSemaphoreSequence() {
-    regs.semaphore_sequence =
-        regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreSequence)];
+    regs.semaphore_sequence = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreSequence)];
 }
 
 } // namespace Tegra
