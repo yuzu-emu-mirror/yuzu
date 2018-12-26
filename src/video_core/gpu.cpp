@@ -34,7 +34,7 @@ GPU::GPU(VideoCore::RasterizerInterface& rasterizer) {
     maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
     maxwell_dma = std::make_unique<Engines::MaxwellDMA>(rasterizer, *memory_manager);
     kepler_memory = std::make_unique<Engines::KeplerMemory>(rasterizer, *memory_manager);
-    pullerState.semaphore_off_val = true;
+    regs.semaphore_off_val = true;
 }
 
 GPU::~GPU() = default;
@@ -285,25 +285,25 @@ void GPU::ProcessSemaphoreTriggerMethod() {
     // CoreTiming
     const auto acquire_timestamp = CoreTiming::GetTicks();
     if (op == GpuSemaphoreOperation::WriteLong) {
-        Memory::Write32(pullerState.semaphore.SmaphoreAddress(), sequence);
-        Memory::Write32(pullerState.semaphore.SmaphoreAddress() + 0x4, 0);
-        Memory::Write64(pullerState.semaphore.SmaphoreAddress() + 0x8, acquire_timestamp);
+        Memory::Write32(regs.smaphore_address.SmaphoreAddress(), sequence);
+        Memory::Write32(regs.smaphore_address.SmaphoreAddress() + 0x4, 0);
+        Memory::Write64(regs.smaphore_address.SmaphoreAddress() + 0x8, acquire_timestamp);
     } else {
-        const u32 word = Memory::Read32(pullerState.semaphore.SmaphoreAddress());
-        if ((op == GpuSemaphoreOperation::AcquireEqual && word == pullerState.semaphore_sequence) ||
+        const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
+        if ((op == GpuSemaphoreOperation::AcquireEqual && word == regs.semaphore_sequence) ||
             (op == GpuSemaphoreOperation::AcquireGequal &&
-             static_cast<s32>(word - pullerState.semaphore_sequence) > 0) ||
-            (op == GpuSemaphoreOperation::AcquireMask && (word & pullerState.semaphore_sequence))) {
+             static_cast<s32>(word - regs.semaphore_sequence) > 0) ||
+            (op == GpuSemaphoreOperation::AcquireMask && (word & regs.semaphore_sequence))) {
             // Nothing to do in this case
         } else {
-            pullerState.acquire_source = true;
-            pullerState.acquire_value = pullerState.semaphore_sequence;
+            regs.acquire_source = true;
+            regs.acquire_value = regs.semaphore_sequence;
             if (op == GpuSemaphoreOperation::AcquireEqual) {
-                pullerState.acquire_active = true;
-                pullerState.acquire_mode = false;
+                regs.acquire_active = true;
+                regs.acquire_mode = false;
             } else if (op == GpuSemaphoreOperation::AcquireGequal) {
-                pullerState.acquire_active = true;
-                pullerState.acquire_mode = true;
+                regs.acquire_active = true;
+                regs.acquire_mode = true;
             } else if (op == GpuSemaphoreOperation::AcquireMask) {
                 // TODO(kemathe) The acquire mask operation waits for a value that, ANDed with
                 // semaphore_sequence, gives a non-0 result
@@ -316,27 +316,27 @@ void GPU::ProcessSemaphoreTriggerMethod() {
 }
 
 void GPU::ProcessSemaphoreRelease() {
-    if (!pullerState.semaphore_off_val) {
+    if (!regs.semaphore_off_val) {
         LOG_ERROR(HW_GPU, "Semaphore can't be released since it is not currently been acquired");
         return;
     }
-    Memory::Write32(pullerState.semaphore.SmaphoreAddress(),
+    Memory::Write32(regs.smaphore_address.SmaphoreAddress(),
                     regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreRelease)]);
 }
 
 void GPU::ProcessSemaphoreAcquire() {
-    if (!pullerState.semaphore_off_val) {
+    if (!regs.semaphore_off_val) {
         LOG_ERROR(HW_GPU, "Semaphore has already be acquired");
         return;
     }
-    const u32 word = Memory::Read32(pullerState.semaphore.SmaphoreAddress());
+    const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
     const auto value = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreAcquire)];
     if (word != value) {
-        pullerState.acquire_active = true;
-        pullerState.acquire_value = value;
+        regs.acquire_active = true;
+        regs.acquire_value = value;
         // TODO(kemathe73) figure out how to do the acquire_timeout
-        pullerState.acquire_mode = false;
-        pullerState.acquire_source = false;
+        regs.acquire_mode = false;
+        regs.acquire_source = false;
     }
 }
 void GPU::ProcessSetSemaphoreAddressHigh() {
@@ -346,7 +346,7 @@ void GPU::ProcessSetSemaphoreAddressHigh() {
         LOG_ERROR(HW_GPU, "SemaphoreAddressHigh too large");
         return;
     }
-    pullerState.semaphore.smaphore_address_high = addrHigh;
+    regs.smaphore_address.smaphore_address_high = addrHigh;
 }
 void GPU::ProcessSetSemaphoreAddressLow() {
     const auto addrLow = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreAddressLow)];
@@ -355,21 +355,17 @@ void GPU::ProcessSetSemaphoreAddressLow() {
         LOG_ERROR(HW_GPU, "SemaphoreAddressLow unaligned");
         return;
     }
-    pullerState.semaphore.smaphore_address_low = addrLow;
+    regs.smaphore_address.smaphore_address_low = addrLow;
 }
 
 void GPU::SetReferenceCount() {
     // TODO(kmather73) Wait for all previously submitted commands complete before setting.
-    pullerState.reference_count = regs.reg_array[static_cast<u32>(BufferMethods::RefCnt)];
+    regs.reference_count = regs.reg_array[static_cast<u32>(BufferMethods::RefCnt)];
 }
 
 void GPU::ProcessSetSemaphoreSequence() {
-    pullerState.semaphore_sequence =
+    regs.semaphore_sequence =
         regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreSequence)];
-}
-
-const u32 GPU::ReferenceCount() const {
-    return pullerState.reference_count;
 }
 
 } // namespace Tegra
