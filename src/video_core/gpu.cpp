@@ -285,9 +285,21 @@ void GPU::ProcessSemaphoreTriggerMethod() {
     // CoreTiming
     const auto acquire_timestamp = CoreTiming::GetTicks();
     if (op == GpuSemaphoreOperation::WriteLong) {
-        Memory::Write32(regs.smaphore_address.SmaphoreAddress(), sequence);
-        Memory::Write32(regs.smaphore_address.SmaphoreAddress() + 0x4, 0);
-        Memory::Write64(regs.smaphore_address.SmaphoreAddress() + 0x8, acquire_timestamp);
+        auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
+        struct Block {
+            u32 sequence;
+            u32 zeros;
+            u64 timestamp;
+
+            Block(u32 sequence)
+            {
+               this->sequence = sequence;
+                zeros = 0;
+                timestamp = CoreTiming::GetTicks();
+            }
+        } block(regs.semaphore_sequence);
+
+        Memory::WriteBlock(*address, &block, sizeof(block));
     } else {
         const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
         if ((op == GpuSemaphoreOperation::AcquireEqual && word == regs.semaphore_sequence) ||
