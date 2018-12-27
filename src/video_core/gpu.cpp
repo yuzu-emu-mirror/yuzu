@@ -291,7 +291,7 @@ void GPU::ProcessSemaphoreTriggerMethod() {
             u32 zeros;
             u64 timestamp;
 
-            Block(u32 sequence){
+            Block(u32 sequence) {
                 this->sequence = sequence;
                 zeros = 0;
                 timestamp = CoreTiming::GetTicks();
