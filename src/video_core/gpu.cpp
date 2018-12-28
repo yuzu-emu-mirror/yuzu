@@ -188,6 +188,7 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
     case BufferMethods::SemaphoreAddressHigh:
     case BufferMethods::SemaphoreAddressLow:
     case BufferMethods::SemaphoreSequence:
+    case BufferMethods::RefCnt:
         break;
     case BufferMethods::SemaphoreTrigger: {
         ProcessSemaphoreTriggerMethod();
@@ -211,10 +212,6 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
     case BufferMethods::Unk2c: {
         // TODO(Kmather73): Research and implement this method.
         LOG_ERROR(HW_GPU, "Special puller engine method Unk2c not implemented");
-        break;
-    }
-    case BufferMethods::RefCnt: {
-        SetReferenceCount();
         break;
     }
     case BufferMethods::SemaphoreAcquire: {
@@ -337,11 +334,6 @@ void GPU::ProcessSemaphoreAcquire() {
         regs.acquire_mode = false;
         regs.acquire_source = false;
     }
-}
-
-void GPU::SetReferenceCount() {
-    // TODO(kmather73) Wait for all previously submitted commands complete before setting.
-    regs.reference_count = regs.reg_array[static_cast<u32>(BufferMethods::RefCnt)];
 }
 
 } // namespace Tegra

@@ -209,8 +209,6 @@ private:
     void ProcessSemaphoreTriggerMethod();
     void ProcessSemaphoreRelease();
     void ProcessSemaphoreAcquire();
-    void ProcessSetSemaphoreSequence();
-    void SetReferenceCount();
 
     // Calls a GPU puller method.
     void CallPullerMethod(const MethodCall& method_call);
