@@ -269,9 +269,6 @@ void GPU::ProcessSemaphoreTriggerMethod() {
     const auto semaphoreOperationMask = 0xF;
     const auto sequence = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreTrigger)];
     const auto op = static_cast<GpuSemaphoreOperation>(sequence & semaphoreOperationMask);
-    // TODO(Kmather73): Generate a real GPU timestamp and write it here instead of
-    // CoreTiming
-    const auto acquire_timestamp = CoreTiming::GetTicks();
     if (op == GpuSemaphoreOperation::WriteLong) {
         auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
         struct Block {
@@ -282,7 +279,9 @@ void GPU::ProcessSemaphoreTriggerMethod() {
 
         Block block{};
         block.sequence = regs.semaphore_sequence;
-        block.timestamp = acquire_timestamp;
+        // TODO(Kmather73): Generate a real GPU timestamp and write it here instead of
+        // CoreTiming
+        block.timestamp = CoreTiming::GetTicks();
         Memory::WriteBlock(*address, &block, sizeof(block));
     } else {
         const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
