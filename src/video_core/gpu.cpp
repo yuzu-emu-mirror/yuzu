@@ -266,7 +266,8 @@ void GPU::ProcessBindMethod(const MethodCall& method_call) {
 
 void GPU::ProcessSemaphoreTriggerMethod() {
     const auto semaphoreOperationMask = 0xF;
-    const auto op = static_cast<GpuSemaphoreOperation>(regs.semaphore_trigger & semaphoreOperationMask);
+    const auto op =
+        static_cast<GpuSemaphoreOperation>(regs.semaphore_trigger & semaphoreOperationMask);
     if (op == GpuSemaphoreOperation::WriteLong) {
         auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
         struct Block {
