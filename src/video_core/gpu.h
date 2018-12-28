@@ -209,8 +209,6 @@ private:
     void ProcessSemaphoreTriggerMethod();
     void ProcessSemaphoreRelease();
     void ProcessSemaphoreAcquire();
-    void ProcessSetSemaphoreAddressHigh();
-    void ProcessSetSemaphoreAddressLow();
     void ProcessSetSemaphoreSequence();
     void SetReferenceCount();
 

@@ -185,15 +185,9 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
         break;
     }
     case BufferMethods::Nop:
+    case BufferMethods::SemaphoreAddressHigh:
+    case BufferMethods::SemaphoreAddressLow:
         break;
-    case BufferMethods::SemaphoreAddressHigh: {
-        ProcessSetSemaphoreAddressHigh();
-        break;
-    }
-    case BufferMethods::SemaphoreAddressLow: {
-        ProcessSetSemaphoreAddressLow();
-        break;
-    }
     case BufferMethods::SemaphoreSequence: {
         ProcessSetSemaphoreSequence();
         break;
