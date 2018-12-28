@@ -187,11 +187,8 @@ void GPU::CallPullerMethod(const MethodCall& method_call) {
     case BufferMethods::Nop:
     case BufferMethods::SemaphoreAddressHigh:
     case BufferMethods::SemaphoreAddressLow:
+    case BufferMethods::SemaphoreSequence:
         break;
-    case BufferMethods::SemaphoreSequence: {
-        ProcessSetSemaphoreSequence();
-        break;
-    }
     case BufferMethods::SemaphoreTrigger: {
         ProcessSemaphoreTriggerMethod();
         break;
@@ -345,10 +342,6 @@ void GPU::ProcessSemaphoreAcquire() {
 void GPU::SetReferenceCount() {
     // TODO(kmather73) Wait for all previously submitted commands complete before setting.
     regs.reference_count = regs.reg_array[static_cast<u32>(BufferMethods::RefCnt)];
-}
-
-void GPU::ProcessSetSemaphoreSequence() {
-    regs.semaphore_sequence = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreSequence)];
 }
 
 } // namespace Tegra
