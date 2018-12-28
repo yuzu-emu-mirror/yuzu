@@ -10,6 +10,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QTranslator>
 
 #include "common/common_types.h"
 #include "core/core.h"
@@ -206,11 +207,13 @@ private slots:
     void OnCaptureScreenshot();
     void OnCoreError(Core::System::ResultStatus, std::string);
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
+    void OnLanguageChanged(const QString& locale);
 
 private:
     std::optional<u64> SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id);
-    void UpdateWindowTitle(const QString& title_name = {});
+    void UpdateWindowTitle();
     void UpdateStatusBar();
+    void LoadTranslation();
 
     Ui::MainWindow ui;
 
@@ -232,6 +235,8 @@ private:
     // Whether emulation is currently running in yuzu.
     bool emulation_running = false;
     std::unique_ptr<EmuThread> emu_thread;
+    // The title of the game currently running
+    QString game_title;
     // The path to the game currently running
     QString game_path;
 
@@ -251,6 +256,8 @@ private:
     QStringList default_theme_paths;
 
     HotkeyRegistry hotkey_registry;
+
+    QTranslator translator;
 
 protected:
     void dropEvent(QDropEvent* event) override;

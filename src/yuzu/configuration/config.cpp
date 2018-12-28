@@ -519,6 +519,7 @@ void Config::ReadPathValues() {
     UISettings::values.game_directory_deepscan =
         ReadSetting(QStringLiteral("gameListDeepScan"), false).toBool();
     UISettings::values.recent_files = ReadSetting(QStringLiteral("recentFiles")).toStringList();
+	UISettings::values.language = ReadSetting(QStringLiteral("language"), QStringLiteral("")).toString();
 
     qt_config->endGroup();
 }
@@ -901,6 +902,7 @@ void Config::SavePathValues() {
     WriteSetting(QStringLiteral("gameListDeepScan"), UISettings::values.game_directory_deepscan,
                  false);
     WriteSetting(QStringLiteral("recentFiles"), UISettings::values.recent_files);
+	WriteSetting(QStringLiteral("language"), UISettings::values.language, QStringLiteral(""));
 
     qt_config->endGroup();
 }

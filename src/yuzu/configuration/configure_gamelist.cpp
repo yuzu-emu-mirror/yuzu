@@ -112,3 +112,7 @@ void ConfigureGameList::InitializeRowComboBoxes() {
         ui->row_2_text_combobox->addItem(row_text_name, QVariant::fromValue(i));
     }
 }
+
+void ConfigureGameList::retranslateUi() {
+    ui->retranslateUi(this);
+}

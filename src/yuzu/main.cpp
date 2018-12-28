@@ -176,6 +176,8 @@ GMainWindow::GMainWindow()
       provider(std::make_unique<FileSys::ManualContentProvider>()) {
     InitializeLogging();
 
+    LoadTranslation();
+
     debug_context = Tegra::DebugContext::Construct();
 
     setAcceptDrops(true);
@@ -884,6 +886,9 @@ bool GMainWindow::LoadROM(const QString& filename) {
     }
     game_path = filename;
 
+    std::string title;
+    system.GetAppLoader().ReadTitle(title);
+    game_title = QString::fromStdString(title);
     system.TelemetrySession().AddField(Telemetry::FieldType::App, "Frontend", "Qt");
     return true;
 }
@@ -948,7 +953,7 @@ void GMainWindow::BootGame(const QString& filename) {
             title_name = FileUtil::GetFilename(filename.toStdString());
     }
 
-    UpdateWindowTitle(QString::fromStdString(title_name));
+    UpdateWindowTitle();
 
     loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
     loading_screen->show();
@@ -990,6 +995,7 @@ void GMainWindow::ShutdownGame() {
     game_list->show();
     game_list->setFilterFocus();
 
+    game_title.clear();
     UpdateWindowTitle();
 
     // Disable status bar updates
@@ -1687,6 +1693,8 @@ void GMainWindow::OnConfigure() {
     const bool old_discord_presence = UISettings::values.enable_discord_presence;
 
     ConfigureDialog configure_dialog(this, hotkey_registry);
+    connect(&configure_dialog, &ConfigureDialog::languageChanged, this,
+            &GMainWindow::OnLanguageChanged);
     const auto result = configure_dialog.exec();
     if (result != QDialog::Accepted) {
         return;
@@ -1786,12 +1794,12 @@ void GMainWindow::OnCaptureScreenshot() {
     OnStartGame();
 }
 
-void GMainWindow::UpdateWindowTitle(const QString& title_name) {
+void GMainWindow::UpdateWindowTitle() {
     const QString full_name = QString::fromUtf8(Common::g_build_fullname);
     const QString branch_name = QString::fromUtf8(Common::g_scm_branch);
     const QString description = QString::fromUtf8(Common::g_scm_desc);
 
-    if (title_name.isEmpty()) {
+    if (game_title.isEmpty()) {
         setWindowTitle(QStringLiteral("yuzu %1| %2-%3").arg(full_name, branch_name, description));
     } else {
         setWindowTitle(QStringLiteral("yuzu %1| %4 | %2-%3")
@@ -2134,6 +2142,41 @@ void GMainWindow::UpdateUITheme() {
 
     QIcon::setThemeSearchPaths(theme_paths);
     emit UpdateThemedIcons();
+}
+
+void GMainWindow::LoadTranslation() {
+    // If the selected language is English, no need to install any translation
+    if (UISettings::values.language == QStringLiteral("en")) {
+        return;
+    }
+
+    bool loaded;
+
+    if (UISettings::values.language.isEmpty()) {
+        // If the selected language is empty, use system locale
+        loaded = translator.load(QLocale(), QStringLiteral(""), QStringLiteral(""),
+                                 QStringLiteral(":/languages/"));
+    } else {
+        // Otherwise load from the specified file
+        loaded = translator.load(UISettings::values.language, QStringLiteral(":/languages/"));
+    }
+
+    if (loaded) {
+        qApp->installTranslator(&translator);
+    } else {
+        UISettings::values.language = QStringLiteral("en");
+    }
+}
+
+void GMainWindow::OnLanguageChanged(const QString& locale) {
+    if (UISettings::values.language != QStringLiteral("en")) {
+        qApp->removeTranslator(&translator);
+    }
+
+    UISettings::values.language = locale;
+    LoadTranslation();
+    ui.retranslateUi(this);
+    UpdateWindowTitle();
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {

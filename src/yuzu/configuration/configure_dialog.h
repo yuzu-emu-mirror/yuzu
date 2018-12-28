@@ -22,6 +22,12 @@ public:
 
     void ApplyConfiguration();
 
+private slots:
+    void onLanguageChanged(const QString& locale);
+
+signals:
+    void languageChanged(const QString& locale);
+
 private:
     void SetConfiguration();
     void UpdateVisibleTabs();

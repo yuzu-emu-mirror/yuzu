@@ -110,3 +110,7 @@ void ConfigureGraphics::UpdateBackgroundColorButton(QColor color) {
     const QIcon color_icon(pixmap);
     ui->bg_button->setIcon(color_icon);
 }
+
+void ConfigureGraphics::retranslateUi() {
+    ui->retranslateUi(this);
+}

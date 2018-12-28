@@ -20,6 +20,8 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry)
     SetConfiguration();
     PopulateSelectionList();
 
+    connect(ui->generalTab, &ConfigureGeneral::languageChanged, this,
+            &ConfigureDialog::onLanguageChanged);
     connect(ui->selectorList, &QListWidget::itemSelectionChanged, this,
             &ConfigureDialog::UpdateVisibleTabs);
 
@@ -83,4 +85,17 @@ void ConfigureDialog::UpdateVisibleTabs() {
 
     for (const auto& tab : tabs)
         ui->tabWidget->addTab(widgets.find(tab)->second, tab);
+}
+
+void ConfigureDialog::onLanguageChanged(const QString& locale) {
+    emit languageChanged(locale);
+    ui->retranslateUi(this);
+    ui->generalTab->retranslateUi();
+    ui->gameListTab->retranslateUi();
+    ui->systemTab->retranslateUi();
+    ui->inputTab->retranslateUi();
+    ui->graphicsTab->retranslateUi();
+    ui->audioTab->retranslateUi();
+    ui->debugTab->retranslateUi();
+    ui->webTab->retranslateUi();
 }
