@@ -34,7 +34,6 @@ GPU::GPU(VideoCore::RasterizerInterface& rasterizer) {
     maxwell_compute = std::make_unique<Engines::MaxwellCompute>();
     maxwell_dma = std::make_unique<Engines::MaxwellDMA>(rasterizer, *memory_manager);
     kepler_memory = std::make_unique<Engines::KeplerMemory>(rasterizer, *memory_manager);
-    regs.semaphore_off_val = true;
 }
 
 GPU::~GPU() = default;
@@ -267,8 +266,7 @@ void GPU::ProcessBindMethod(const MethodCall& method_call) {
 
 void GPU::ProcessSemaphoreTriggerMethod() {
     const auto semaphoreOperationMask = 0xF;
-    const auto sequence = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreTrigger)];
-    const auto op = static_cast<GpuSemaphoreOperation>(sequence & semaphoreOperationMask);
+    const auto op = static_cast<GpuSemaphoreOperation>(regs.semaphore_trigger & semaphoreOperationMask);
     if (op == GpuSemaphoreOperation::WriteLong) {
         auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
         struct Block {
@@ -284,7 +282,9 @@ void GPU::ProcessSemaphoreTriggerMethod() {
         block.timestamp = CoreTiming::GetTicks();
         Memory::WriteBlock(*address, &block, sizeof(block));
     } else {
-        const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
+        const auto address =
+            memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
+        const u32 word = Memory::Read32(*address);
         if ((op == GpuSemaphoreOperation::AcquireEqual && word == regs.semaphore_sequence) ||
             (op == GpuSemaphoreOperation::AcquireGequal &&
              static_cast<s32>(word - regs.semaphore_sequence) > 0) ||
@@ -311,21 +311,14 @@ void GPU::ProcessSemaphoreTriggerMethod() {
 }
 
 void GPU::ProcessSemaphoreRelease() {
-    if (!regs.semaphore_off_val) {
-        LOG_ERROR(HW_GPU, "Semaphore can't be released since it is not currently been acquired");
-        return;
-    }
-    Memory::Write32(regs.smaphore_address.SmaphoreAddress(),
-                    regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreRelease)]);
+    const auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
+    Memory::Write32(*address, regs.semaphore_release);
 }
 
 void GPU::ProcessSemaphoreAcquire() {
-    if (!regs.semaphore_off_val) {
-        LOG_ERROR(HW_GPU, "Semaphore has already be acquired");
-        return;
-    }
-    const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
-    const auto value = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreAcquire)];
+    const auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
+    const u32 word = Memory::Read32(*address);
+    const auto value = regs.semaphore_acquire;
     if (word != value) {
         regs.acquire_active = true;
         regs.acquire_value = value;
