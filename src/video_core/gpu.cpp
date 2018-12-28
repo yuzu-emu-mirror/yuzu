@@ -288,16 +288,13 @@ void GPU::ProcessSemaphoreTriggerMethod() {
         auto address = memory_manager->GpuToCpuAddress(regs.smaphore_address.SmaphoreAddress());
         struct Block {
             u32 sequence;
-            u32 zeros;
+            u32 zeros = 0;
             u64 timestamp;
+        };
 
-            Block(u32 sequence) {
-                this->sequence = sequence;
-                zeros = 0;
-                timestamp = CoreTiming::GetTicks();
-            }
-        } block(regs.semaphore_sequence);
-
+        Block block{};
+        block.sequence = regs.semaphore_sequence;
+        block.timestamp = acquire_timestamp;
         Memory::WriteBlock(*address, &block, sizeof(block));
     } else {
         const u32 word = Memory::Read32(regs.smaphore_address.SmaphoreAddress());
@@ -349,24 +346,6 @@ void GPU::ProcessSemaphoreAcquire() {
         regs.acquire_mode = false;
         regs.acquire_source = false;
     }
-}
-void GPU::ProcessSetSemaphoreAddressHigh() {
-    const auto addrHigh = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreAddressHigh)];
-    // AddrHigh should only be 8 bits wide
-    if (addrHigh & 0xffffff00) {
-        LOG_ERROR(HW_GPU, "SemaphoreAddressHigh too large");
-        return;
-    }
-    regs.smaphore_address.smaphore_address_high = addrHigh;
-}
-void GPU::ProcessSetSemaphoreAddressLow() {
-    const auto addrLow = regs.reg_array[static_cast<u32>(BufferMethods::SemaphoreAddressLow)];
-    // AddrLow should be word aligned
-    if (addrLow & 3) {
-        LOG_ERROR(HW_GPU, "SemaphoreAddressLow unaligned");
-        return;
-    }
-    regs.smaphore_address.smaphore_address_low = addrLow;
 }
 
 void GPU::SetReferenceCount() {
