@@ -213,6 +213,7 @@ struct System::Impl {
         app_loader.reset();
 
         // Clear all applets
+        controller_applet.reset();
         profile_selector.reset();
         software_keyboard.reset();
         web_browser.reset();

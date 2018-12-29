@@ -59,7 +59,7 @@ bool Controller::TransactionComplete() const {
 }
 
 ResultCode Controller::GetStatus() const {
-    return complete ? RESULT_SUCCESS : ResultCode(0x2c80);
+    return RESULT_SUCCESS;
 }
 
 void Controller::ExecuteInteractive() {
