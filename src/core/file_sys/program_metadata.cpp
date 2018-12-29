@@ -40,6 +40,13 @@ Loader::ResultStatus ProgramMetadata::Load(VirtualFile file) {
     if (sizeof(FileAccessHeader) != file->ReadObject(&aci_file_access, aci_header.fah_offset))
         return Loader::ResultStatus::ErrorBadFileAccessHeader;
 
+    aci_kernel_capabilities.resize(aci_header.kac_size / sizeof(u32));
+    const u64 read_size = aci_header.kac_size;
+    const u64 read_offset = npdm_header.aci_offset + aci_header.kac_offset;
+    if (file->ReadBytes(aci_kernel_capabilities.data(), read_size, read_offset) != read_size) {
+        return Loader::ResultStatus::ErrorBadKernelCapabilityDescriptors;
+    }
+
     return Loader::ResultStatus::Success;
 }
 
@@ -71,6 +78,10 @@ u64 ProgramMetadata::GetFilesystemPermissions() const {
     return aci_file_access.permissions;
 }
 
+const ProgramMetadata::KernelCapabilityDescriptors& ProgramMetadata::GetKernelCapabilities() const {
+    return aci_kernel_capabilities;
+}
+
 void ProgramMetadata::Print() const {
     LOG_DEBUG(Service_FS, "Magic:                  {:.4}", npdm_header.magic.data());
     LOG_DEBUG(Service_FS, "Main thread priority:   0x{:02X}", npdm_header.main_thread_priority);
@@ -81,15 +92,19 @@ void ProgramMetadata::Print() const {
     LOG_DEBUG(Service_FS, " > 64-bit instructions: {}",
               npdm_header.has_64_bit_instructions ? "YES" : "NO");
 
-    auto address_space = "Unknown";
+    const char* address_space = "Unknown";
     switch (npdm_header.address_space_type) {
     case ProgramAddressSpaceType::Is36Bit:
+        address_space = "64-bit (36-bit address space)";
+        break;
     case ProgramAddressSpaceType::Is39Bit:
-        address_space = "64-bit";
+        address_space = "64-bit (39-bit address space)";
         break;
     case ProgramAddressSpaceType::Is32Bit:
-    case ProgramAddressSpaceType::Is32BitNoMap:
         address_space = "32-bit";
+        break;
+    case ProgramAddressSpaceType::Is32BitNoMap:
+        address_space = "32-bit (no map region)";
         break;
     }
 

@@ -65,6 +65,7 @@ PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format) {
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
         UNREACHABLE();
+        return PixelFormat::S8Z24;
     }
 }
 
@@ -141,6 +142,7 @@ PixelFormat PixelFormatFromRenderTargetFormat(Tegra::RenderTargetFormat format) 
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
         UNREACHABLE();
+        return PixelFormat::RGBA8_SRGB;
     }
 }
 
@@ -194,11 +196,14 @@ PixelFormat PixelFormatFromTextureFormat(Tegra::Texture::TextureFormat format,
         LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}", static_cast<u32>(component_type));
         UNREACHABLE();
     case Tegra::Texture::TextureFormat::G8R8:
+        // TextureFormat::G8R8 is actually ordered red then green, as such we can use
+        // PixelFormat::RG8U and PixelFormat::RG8S. This was tested with The Legend of Zelda: Breath
+        // of the Wild, which uses this format to render the hearts on the UI.
         switch (component_type) {
         case Tegra::Texture::ComponentType::UNORM:
-            return PixelFormat::G8R8U;
+            return PixelFormat::RG8U;
         case Tegra::Texture::ComponentType::SNORM:
-            return PixelFormat::G8R8S;
+            return PixelFormat::RG8S;
         }
         LOG_CRITICAL(HW_GPU, "Unimplemented component_type={}", static_cast<u32>(component_type));
         UNREACHABLE();
@@ -327,6 +332,7 @@ PixelFormat PixelFormatFromTextureFormat(Tegra::Texture::TextureFormat format,
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}, component_type={}", static_cast<u32>(format),
                      static_cast<u32>(component_type));
         UNREACHABLE();
+        return PixelFormat::ABGR8U;
     }
 }
 
@@ -346,6 +352,7 @@ ComponentType ComponentTypeFromTexture(Tegra::Texture::ComponentType type) {
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented component type={}", static_cast<u32>(type));
         UNREACHABLE();
+        return ComponentType::UNorm;
     }
 }
 
@@ -393,6 +400,7 @@ ComponentType ComponentTypeFromRenderTarget(Tegra::RenderTargetFormat format) {
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
         UNREACHABLE();
+        return ComponentType::UNorm;
     }
 }
 
@@ -403,6 +411,7 @@ PixelFormat PixelFormatFromGPUPixelFormat(Tegra::FramebufferConfig::PixelFormat 
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
         UNREACHABLE();
+        return PixelFormat::ABGR8U;
     }
 }
 
@@ -418,6 +427,7 @@ ComponentType ComponentTypeFromDepthFormat(Tegra::DepthFormat format) {
     default:
         LOG_CRITICAL(HW_GPU, "Unimplemented format={}", static_cast<u32>(format));
         UNREACHABLE();
+        return ComponentType::UNorm;
     }
 }
 

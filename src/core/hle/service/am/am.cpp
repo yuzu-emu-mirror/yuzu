@@ -8,6 +8,7 @@
 #include <stack>
 #include "audio_core/audio_renderer.h"
 #include "core/core.h"
+#include "core/file_sys/savedata_factory.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
@@ -19,6 +20,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "core/hle/service/am/applets/profile_select.h"
 #include "core/hle/service/am/applets/software_keyboard.h"
 #include "core/hle/service/am/applets/stub_applet.h"
 #include "core/hle/service/am/idle.h"
@@ -39,6 +41,7 @@ constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 0x2};
 constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 0x1F7};
 
 enum class AppletId : u32 {
+    ProfileSelect = 0x10,
     SoftwareKeyboard = 0x11,
 };
 
@@ -71,10 +74,13 @@ IWindowController::IWindowController() : ServiceFramework("IWindowController") {
 IWindowController::~IWindowController() = default;
 
 void IWindowController::GetAppletResourceUserId(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    const u64 process_id = Core::System::GetInstance().Kernel().CurrentProcess()->GetProcessID();
+
+    LOG_DEBUG(Service_AM, "called. Process ID=0x{:016X}", process_id);
+
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<u64>(0);
+    rb.Push<u64>(process_id);
 }
 
 void IWindowController::AcquireForegroundRights(Kernel::HLERequestContext& ctx) {
@@ -565,7 +571,6 @@ private:
     void GetAppletStateChangedEvent(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        applet->GetBroker().SignalStateChanged();
         const auto event = applet->GetBroker().GetStateChangedEvent();
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -773,6 +778,8 @@ ILibraryAppletCreator::~ILibraryAppletCreator() = default;
 
 static std::shared_ptr<Applets::Applet> GetAppletFromId(AppletId id) {
     switch (id) {
+    case AppletId::ProfileSelect:
+        return std::make_shared<Applets::ProfileSelect>();
     case AppletId::SoftwareKeyboard:
         return std::make_shared<Applets::SoftwareKeyboard>();
     default:
@@ -859,8 +866,8 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
         {23, &IApplicationFunctions::GetDisplayVersion, "GetDisplayVersion"},
         {24, nullptr, "GetLaunchStorageInfoForDebug"},
-        {25, nullptr, "ExtendSaveData"},
-        {26, nullptr, "GetSaveDataSize"},
+        {25, &IApplicationFunctions::ExtendSaveData, "ExtendSaveData"},
+        {26, &IApplicationFunctions::GetSaveDataSize, "GetSaveDataSize"},
         {30, &IApplicationFunctions::BeginBlockingHomeButtonShortAndLongPressed, "BeginBlockingHomeButtonShortAndLongPressed"},
         {31, &IApplicationFunctions::EndBlockingHomeButtonShortAndLongPressed, "EndBlockingHomeButtonShortAndLongPressed"},
         {32, &IApplicationFunctions::BeginBlockingHomeButton, "BeginBlockingHomeButton"},
@@ -1035,6 +1042,48 @@ void IApplicationFunctions::GetPseudoDeviceId(Kernel::HLERequestContext& ctx) {
     // Returns a 128-bit UUID
     rb.Push<u64>(0);
     rb.Push<u64>(0);
+}
+
+void IApplicationFunctions::ExtendSaveData(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto type{rp.PopRaw<FileSys::SaveDataType>()};
+    rp.Skip(1, false);
+    const auto user_id{rp.PopRaw<u128>()};
+    const auto new_normal_size{rp.PopRaw<u64>()};
+    const auto new_journal_size{rp.PopRaw<u64>()};
+
+    LOG_DEBUG(Service_AM,
+              "called with type={:02X}, user_id={:016X}{:016X}, new_normal={:016X}, "
+              "new_journal={:016X}",
+              static_cast<u8>(type), user_id[1], user_id[0], new_normal_size, new_journal_size);
+
+    FileSystem::WriteSaveDataSize(type, Core::CurrentProcess()->GetTitleID(), user_id,
+                                  {new_normal_size, new_journal_size});
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+
+    // The following value is used upon failure to help the system recover.
+    // Since we always succeed, this should be 0.
+    rb.Push<u64>(0);
+}
+
+void IApplicationFunctions::GetSaveDataSize(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto type{rp.PopRaw<FileSys::SaveDataType>()};
+    rp.Skip(1, false);
+    const auto user_id{rp.PopRaw<u128>()};
+
+    LOG_DEBUG(Service_AM, "called with type={:02X}, user_id={:016X}{:016X}", static_cast<u8>(type),
+              user_id[1], user_id[0]);
+
+    const auto size =
+        FileSystem::ReadSaveDataSize(type, Core::CurrentProcess()->GetTitleID(), user_id);
+
+    IPC::ResponseBuilder rb{ctx, 6};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(size.normal);
+    rb.Push(size.journal);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager,

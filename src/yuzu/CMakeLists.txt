@@ -7,6 +7,8 @@ add_executable(yuzu
     Info.plist
     about_dialog.cpp
     about_dialog.h
+    applets/profile_select.cpp
+    applets/profile_select.h
     applets/software_keyboard.cpp
     applets/software_keyboard.h
     bootmanager.cpp
@@ -31,6 +33,8 @@ add_executable(yuzu
     configuration/configure_input.h
     configuration/configure_input_player.cpp
     configuration/configure_input_player.h
+    configuration/configure_input_simple.cpp
+    configuration/configure_input_simple.h
     configuration/configure_mouse_advanced.cpp
     configuration/configure_mouse_advanced.h
     configuration/configure_system.cpp
@@ -87,6 +91,7 @@ set(UIS
     configuration/configure_graphics.ui
     configuration/configure_input.ui
     configuration/configure_input_player.ui
+    configuration/configure_input_simple.ui
     configuration/configure_mouse_advanced.ui
     configuration/configure_per_general.ui
     configuration/configure_system.ui

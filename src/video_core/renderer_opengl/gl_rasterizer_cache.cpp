@@ -101,8 +101,18 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
     params.srgb_conversion = config.tic.IsSrgbConversionEnabled();
     params.pixel_format = PixelFormatFromTextureFormat(config.tic.format, config.tic.r_type.Value(),
                                                        params.srgb_conversion);
+
+    if (params.pixel_format == PixelFormat::R16U && config.tsc.depth_compare_enabled) {
+        // Some titles create a 'R16U' (normalized 16-bit) texture with depth_compare enabled,
+        // then attempt to sample from it via a shadow sampler. Convert format to Z16 (which also
+        // causes GetFormatType to properly return 'Depth' below).
+        params.pixel_format = PixelFormat::Z16;
+    }
+
     params.component_type = ComponentTypeFromTexture(config.tic.r_type.Value());
     params.type = GetFormatType(params.pixel_format);
+    UNIMPLEMENTED_IF(params.type == SurfaceType::ColorTexture && config.tsc.depth_compare_enabled);
+
     params.width = Common::AlignUp(config.tic.Width(), GetCompressionFactor(params.pixel_format));
     params.height = Common::AlignUp(config.tic.Height(), GetCompressionFactor(params.pixel_format));
     params.unaligned_height = config.tic.Height();
@@ -257,7 +267,7 @@ static constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> tex
     {GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, ComponentType::UInt, false},           // R8UI
     {GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, ComponentType::Float, false},                 // RGBA16F
     {GL_RGBA16, GL_RGBA, GL_UNSIGNED_SHORT, ComponentType::UNorm, false},              // RGBA16U
-    {GL_RGBA16UI, GL_RGBA, GL_UNSIGNED_SHORT, ComponentType::UInt, false},             // RGBA16UI
+    {GL_RGBA16UI, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, ComponentType::UInt, false},     // RGBA16UI
     {GL_R11F_G11F_B10F, GL_RGB, GL_UNSIGNED_INT_10F_11F_11F_REV, ComponentType::Float,
      false},                                                                     // R11FG11FB10F
     {GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT, ComponentType::UInt, false}, // RGBA32UI
@@ -278,8 +288,6 @@ static constexpr std::array<FormatTuple, VideoCore::Surface::MaxPixelFormat> tex
     {GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT, GL_RGB, GL_UNSIGNED_INT_8_8_8_8, ComponentType::Float,
      true},                                                                    // BC6H_SF16
     {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, ComponentType::UNorm, false},        // ASTC_2D_4X4
-    {GL_RG8, GL_RG, GL_UNSIGNED_BYTE, ComponentType::UNorm, false},            // G8R8U
-    {GL_RG8, GL_RG, GL_BYTE, ComponentType::SNorm, false},                     // G8R8S
     {GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE, ComponentType::UNorm, false},        // BGRA8
     {GL_RGBA32F, GL_RGBA, GL_FLOAT, ComponentType::Float, false},              // RGBA32F
     {GL_RG32F, GL_RG, GL_FLOAT, ComponentType::Float, false},                  // RG32F
@@ -610,18 +618,6 @@ static void ConvertS8Z24ToZ24S8(std::vector<u8>& data, u32 width, u32 height, bo
     }
 }
 
-static void ConvertG8R8ToR8G8(std::vector<u8>& data, u32 width, u32 height) {
-    constexpr auto bpp{GetBytesPerPixel(PixelFormat::G8R8U)};
-    for (std::size_t y = 0; y < height; ++y) {
-        for (std::size_t x = 0; x < width; ++x) {
-            const std::size_t offset{bpp * (y * width + x)};
-            const u8 temp{data[offset]};
-            data[offset] = data[offset + 1];
-            data[offset + 1] = temp;
-        }
-    }
-}
-
 /**
  * Helper function to perform software conversion (as needed) when loading a buffer from Switch
  * memory. This is for Maxwell pixel formats that cannot be represented as-is in OpenGL or with
@@ -654,12 +650,6 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
         // Convert the S8Z24 depth format to Z24S8, as OpenGL does not support S8Z24.
         ConvertS8Z24ToZ24S8(data, width, height, false);
         break;
-
-    case PixelFormat::G8R8U:
-    case PixelFormat::G8R8S:
-        // Convert the G8R8 color format to R8G8, as OpenGL does not support G8R8.
-        ConvertG8R8ToR8G8(data, width, height);
-        break;
     }
 }
 
@@ -671,8 +661,6 @@ static void ConvertFormatAsNeeded_LoadGLBuffer(std::vector<u8>& data, PixelForma
 static void ConvertFormatAsNeeded_FlushGLBuffer(std::vector<u8>& data, PixelFormat pixel_format,
                                                 u32 width, u32 height) {
     switch (pixel_format) {
-    case PixelFormat::G8R8U:
-    case PixelFormat::G8R8S:
     case PixelFormat::ASTC_2D_4X4:
     case PixelFormat::ASTC_2D_8X8:
     case PixelFormat::ASTC_2D_4X4_SRGB:

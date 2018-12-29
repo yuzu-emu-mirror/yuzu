@@ -575,7 +575,7 @@ union Instruction {
 
     union {
         BitField<39, 2, u64> tab5cb8_2;
-        BitField<41, 3, u64> tab5c68_1;
+        BitField<41, 3, u64> postfactor;
         BitField<44, 2, u64> tab5c68_0;
         BitField<48, 1, u64> negate_b;
     } fmul;
@@ -609,7 +609,7 @@ union Instruction {
 
         BitField<31, 1, u64> negate_b;
         BitField<30, 1, u64> abs_b;
-        BitField<47, 2, HalfType> type_b;
+        BitField<28, 2, HalfType> type_b;
 
         BitField<35, 2, HalfType> type_c;
     } alu_half;
@@ -1049,7 +1049,7 @@ union Instruction {
         BitField<49, 1, u64> nodep_flag;
         BitField<50, 3, u64> component_mask_selector;
         BitField<53, 4, u64> texture_info;
-        BitField<60, 1, u64> fp32_flag;
+        BitField<59, 1, u64> fp32_flag;
 
         TextureType GetTextureType() const {
             // The TEXS instruction has a weird encoding for the texture type.
@@ -1065,6 +1065,7 @@ union Instruction {
             LOG_CRITICAL(HW_GPU, "Unhandled texture_info: {}",
                          static_cast<u32>(texture_info.Value()));
             UNREACHABLE();
+            return TextureType::Texture1D;
         }
 
         TextureProcessMode GetTextureProcessMode() const {
@@ -1145,6 +1146,7 @@ union Instruction {
             LOG_CRITICAL(HW_GPU, "Unhandled texture_info: {}",
                          static_cast<u32>(texture_info.Value()));
             UNREACHABLE();
+            return TextureType::Texture1D;
         }
 
         TextureProcessMode GetTextureProcessMode() const {
