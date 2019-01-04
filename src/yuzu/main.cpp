@@ -1800,10 +1800,10 @@ void GMainWindow::UpdateWindowTitle() {
     const QString description = QString::fromUtf8(Common::g_scm_desc);
 
     if (game_title.isEmpty()) {
-        setWindowTitle(QStringLiteral("yuzu %1| %2-%3").arg(full_name, branch_name, description));
+        setWindowTitle(tr("yuzu %1| %2-%3").arg(full_name, branch_name, description));
     } else {
-        setWindowTitle(QStringLiteral("yuzu %1| %4 | %2-%3")
-                           .arg(full_name, branch_name, description, title_name));
+        setWindowTitle(
+            tr("yuzu %1| %4 | %2-%3").arg(full_name, branch_name, description, game_title));
     }
 }
 

@@ -256,7 +256,7 @@ if (ENABLE_QT)
     if (YUZU_USE_QT_WEB_ENGINE)
         find_package(Qt5 REQUIRED COMPONENTS WebEngineCore WebEngineWidgets ${QT_PREFIX_HINT})
     endif ()
-	
+
     if (ENABLE_QT_TRANSLATION)
         find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
     endif()
