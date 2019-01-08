@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <memory>
 #include <vector>
 #include "common/common_types.h"
@@ -13,6 +14,7 @@
 #include "video_core/memory_manager.h"
 
 namespace VideoCore {
+class GPUThread;
 class RendererBase;
 } // namespace VideoCore
 
@@ -163,9 +165,13 @@ public:
     void SwapBuffers(
         std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer);
 
+    /// Waits the caller until the thread is idle, and then calls the callback
+    void WaitUntilIdle(std::function<void()> callback);
+
 private:
     std::unique_ptr<Tegra::DmaPusher> dma_pusher;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
+    std::unique_ptr<VideoCore::GPUThread> gpu_thread;
 
     /// Mapping of command subchannels to their bound engine ids.
     std::array<EngineID, 8> bound_engines = {};
