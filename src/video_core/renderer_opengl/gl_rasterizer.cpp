@@ -751,16 +751,19 @@ void RasterizerOpenGL::FlushRegion(VAddr addr, u64 size) {
 
     if (Settings::values.use_accurate_gpu_emulation) {
         // Only flush if use_accurate_gpu_emulation is enabled, as it incurs a performance hit
-        res_cache.FlushRegion(addr, size);
+        Core::System::GetInstance().GPU().WaitUntilIdle(
+            [this, addr, size]() { res_cache.FlushRegion(addr, size); });
     }
 }
 
 void RasterizerOpenGL::InvalidateRegion(VAddr addr, u64 size) {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
-    res_cache.InvalidateRegion(addr, size);
-    shader_cache.InvalidateRegion(addr, size);
-    global_cache.InvalidateRegion(addr, size);
-    buffer_cache.InvalidateRegion(addr, size);
+    Core::System::GetInstance().GPU().WaitUntilIdle([this, addr, size]() {
+        res_cache.InvalidateRegion(addr, size);
+        shader_cache.InvalidateRegion(addr, size);
+        global_cache.InvalidateRegion(addr, size);
+        buffer_cache.InvalidateRegion(addr, size);
+    });
 }
 
 void RasterizerOpenGL::FlushAndInvalidateRegion(VAddr addr, u64 size) {
