@@ -156,6 +156,13 @@ public:
     /// Returns a const reference to the GPU DMA pusher.
     const Tegra::DmaPusher& DmaPusher() const;
 
+    /// Push GPU command entries to be processed
+    void PushGPUEntries(Tegra::CommandList&& entries);
+
+    /// Swap buffers (render frame)
+    void SwapBuffers(
+        std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer);
+
 private:
     std::unique_ptr<Tegra::DmaPusher> dma_pusher;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
