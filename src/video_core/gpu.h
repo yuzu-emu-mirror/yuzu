@@ -13,8 +13,8 @@
 #include "video_core/memory_manager.h"
 
 namespace VideoCore {
-class RasterizerInterface;
-}
+class RendererBase;
+} // namespace VideoCore
 
 namespace Tegra {
 
@@ -117,7 +117,7 @@ enum class EngineID {
 
 class GPU final {
 public:
-    explicit GPU(VideoCore::RasterizerInterface& rasterizer);
+    explicit GPU(VideoCore::RendererBase& renderer);
     ~GPU();
 
     struct MethodCall {
@@ -173,6 +173,8 @@ private:
     std::unique_ptr<Engines::MaxwellDMA> maxwell_dma;
     /// Inline memory engine
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
+
+    VideoCore::RendererBase& renderer;
 };
 
 } // namespace Tegra

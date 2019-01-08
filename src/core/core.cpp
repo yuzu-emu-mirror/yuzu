@@ -130,7 +130,7 @@ struct System::Impl {
 
         is_powered_on = true;
 
-        gpu_core = std::make_unique<Tegra::GPU>(renderer->Rasterizer());
+        gpu_core = std::make_unique<Tegra::GPU>(*renderer);
 
         cpu_core_manager.Initialize(system);
 
