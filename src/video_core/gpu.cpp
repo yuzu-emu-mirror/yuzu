@@ -86,11 +86,19 @@ void GPU::SwapBuffers(
     }
 }
 
-void GPU::WaitUntilIdle(std::function<void()> callback) {
+void GPU::FlushRegion(VAddr addr, u64 size) {
     if (Settings::values.use_asynchronous_gpu_emulation) {
-        gpu_thread->WaitUntilIdle(std::move(callback));
+        gpu_thread->FlushRegion(addr, size);
     } else {
-        callback();
+        renderer.Rasterizer().FlushRegion(addr, size);
+    }
+}
+
+void GPU::InvalidateRegion(VAddr addr, u64 size) {
+    if (Settings::values.use_asynchronous_gpu_emulation) {
+        gpu_thread->InvalidateRegion(addr, size);
+    } else {
+        renderer.Rasterizer().InvalidateRegion(addr, size);
     }
 }
 

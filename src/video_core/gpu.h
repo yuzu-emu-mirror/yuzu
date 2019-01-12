@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <functional>
 #include <memory>
 #include <vector>
 #include "common/common_types.h"
@@ -165,8 +164,11 @@ public:
     void SwapBuffers(
         std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer);
 
-    /// Waits the caller until the thread is idle, and then calls the callback
-    void WaitUntilIdle(std::function<void()> callback);
+    /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
+    void FlushRegion(VAddr addr, u64 size);
+
+    /// Notify rasterizer that any caches of the specified region should be invalidated
+    void InvalidateRegion(VAddr addr, u64 size);
 
 private:
     std::unique_ptr<Tegra::DmaPusher> dma_pusher;

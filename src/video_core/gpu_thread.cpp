@@ -39,8 +39,24 @@ static void RunThread(VideoCore::RendererBase& renderer, Tegra::DmaPusher& dma_p
 
         if (is_dma_pending) {
             // Process pending DMA pushbuffer commands
-            std::lock_guard<std::recursive_mutex> lock{state.running_mutex};
+            std::lock_guard<std::mutex> lock{state.running_mutex};
             dma_pusher.DispatchCalls();
+        }
+
+        {
+            // Cache management
+            std::lock_guard<std::recursive_mutex> lock{state.cache_mutex};
+
+            for (const auto& region : state.flush_regions) {
+                renderer.Rasterizer().FlushRegion(region.addr, region.size);
+            }
+
+            for (const auto& region : state.invalidate_regions) {
+                renderer.Rasterizer().InvalidateRegion(region.addr, region.size);
+            }
+
+            state.flush_regions.clear();
+            state.invalidate_regions.clear();
         }
 
         if (is_swapbuffers_pending) {
@@ -106,10 +122,14 @@ void GPUThread::SwapBuffers(
     }
 }
 
-void GPUThread::WaitUntilIdle(std::function<void()> callback) {
-    // Needs to be a recursive mutex, as this can be called by the GPU thread
-    std::unique_lock<std::recursive_mutex> lock{state.running_mutex};
-    callback();
+void GPUThread::FlushRegion(VAddr addr, u64 size) {
+    std::lock_guard<std::recursive_mutex> lock{state.cache_mutex};
+    state.flush_regions.push_back({addr, size});
+}
+
+void GPUThread::InvalidateRegion(VAddr addr, u64 size) {
+    std::lock_guard<std::recursive_mutex> lock{state.cache_mutex};
+    state.invalidate_regions.push_back({addr, size});
 }
 
 } // namespace VideoCore

@@ -5,7 +5,6 @@
 #pragma once
 
 #include <condition_variable>
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -29,7 +28,16 @@ struct GPUThreadState final {
     std::condition_variable signal_condition;
     std::condition_variable running_condition;
     std::mutex signal_mutex;
-    std::recursive_mutex running_mutex;
+    std::mutex running_mutex;
+    std::recursive_mutex cache_mutex;
+
+    struct MemoryRegion final {
+        const VAddr addr;
+        const u64 size;
+    };
+
+    std::vector<MemoryRegion> flush_regions;
+    std::vector<MemoryRegion> invalidate_regions;
 };
 
 class GPUThread final {
@@ -44,8 +52,11 @@ public:
     void SwapBuffers(
         std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer);
 
-    /// Waits the caller until the thread is idle, and then calls the callback
-    void WaitUntilIdle(std::function<void()> callback);
+    /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
+    void FlushRegion(VAddr addr, u64 size);
+
+    /// Notify rasterizer that any caches of the specified region should be invalidated
+    void InvalidateRegion(VAddr addr, u64 size);
 
 private:
     GPUThreadState state;
