@@ -37,12 +37,6 @@ static void RunThread(VideoCore::RendererBase& renderer, Tegra::DmaPusher& dma_p
             }
         }
 
-        if (is_dma_pending) {
-            // Process pending DMA pushbuffer commands
-            std::lock_guard<std::mutex> lock{state.running_mutex};
-            dma_pusher.DispatchCalls();
-        }
-
         {
             // Cache management
             std::lock_guard<std::recursive_mutex> lock{state.cache_mutex};
@@ -57,6 +51,12 @@ static void RunThread(VideoCore::RendererBase& renderer, Tegra::DmaPusher& dma_p
 
             state.flush_regions.clear();
             state.invalidate_regions.clear();
+        }
+
+        if (is_dma_pending) {
+            // Process pending DMA pushbuffer commands
+            std::lock_guard<std::mutex> lock{state.running_mutex};
+            dma_pusher.DispatchCalls();
         }
 
         if (is_swapbuffers_pending) {
