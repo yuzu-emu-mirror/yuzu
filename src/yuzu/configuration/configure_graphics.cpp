@@ -76,6 +76,7 @@ void ConfigureGraphics::setConfiguration() {
     ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit);
     ui->frame_limit->setValue(Settings::values.frame_limit);
     ui->use_accurate_gpu_emulation->setChecked(Settings::values.use_accurate_gpu_emulation);
+    ui->use_asynchronous_gpu_emulation->setEnabled(!Core::System::GetInstance().IsPoweredOn());
     ui->use_asynchronous_gpu_emulation->setChecked(Settings::values.use_asynchronous_gpu_emulation);
     bg_color = QColor::fromRgbF(Settings::values.bg_red, Settings::values.bg_green,
                                 Settings::values.bg_blue);
