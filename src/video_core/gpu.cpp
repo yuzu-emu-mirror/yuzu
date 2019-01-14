@@ -160,8 +160,12 @@ void GPU::CallMethod(const MethodCall& method_call) {
     case EngineID::KEPLER_INLINE_TO_MEMORY_B:
         kepler_memory->CallMethod(method_call);
         break;
+    case EngineID::ZERO:
+        OG_TRACE(HW_GPU, "Stubbed engine call 0");
+        break;
     default:
         UNIMPLEMENTED_MSG("Unimplemented engine");
+        break;
     }
 }
 

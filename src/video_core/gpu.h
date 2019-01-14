@@ -113,6 +113,7 @@ enum class EngineID {
     MAXWELL_COMPUTE_B = 0xB1C0,
     KEPLER_INLINE_TO_MEMORY_B = 0xA140,
     MAXWELL_DMA_COPY_A = 0xB0B5,
+    ZERO = 0x0,
 };
 
 class GPU final {
