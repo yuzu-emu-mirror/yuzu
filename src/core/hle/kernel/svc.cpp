@@ -1103,7 +1103,7 @@ static void SleepThread(s64 nanoseconds) {
 
     // Don't attempt to yield execution if there are no available threads to run,
     // this way we avoid a useless reschedule to the idle thread.
-    if (nanoseconds == 0 && !Core::System::GetInstance().CurrentScheduler().HaveReadyThreads())
+    if (nanoseconds <= 0 && !Core::System::GetInstance().CurrentScheduler().HaveReadyThreads())
         return;
 
     // Sleep current thread and check for next thread to schedule
