@@ -43,6 +43,7 @@ add_library(common STATIC
     assert.h
     detached_tasks.cpp
     detached_tasks.h
+    bit_array.h
     bit_field.h
     bit_util.h
     cityhash.cpp
