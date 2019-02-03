@@ -272,6 +272,7 @@ struct SurfaceParams {
     u32 height;
     u32 depth;
     u32 unaligned_height;
+    u32 pitch;
     SurfaceTarget target;
     SurfaceClass identity;
     u32 max_mip_level;
