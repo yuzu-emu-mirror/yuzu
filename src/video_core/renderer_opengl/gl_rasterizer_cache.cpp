@@ -700,7 +700,8 @@ void CachedSurface::LoadGLBuffer() {
         u32 bpp = params.GetFormatBpp() / 8;
         u32 copy_size = params.width * bpp;
         if (params.pitch == copy_size) {
-            std::memcpy(gl_buffer[0].data(), Memory::GetPointer(params.addr), params.size_in_bytes_gl);
+            std::memcpy(gl_buffer[0].data(), Memory::GetPointer(params.addr),
+                        params.size_in_bytes_gl);
         } else {
             u8* start = Memory::GetPointer(params.addr);
             u8* write_to = gl_buffer[0].data();
@@ -1130,6 +1131,12 @@ Surface RasterizerCacheOpenGL::TryGetReservedSurface(const SurfaceParams& params
         return search->second;
     }
     return {};
+}
+
+void RasterizerCacheOpenGL::SignalFinish() {
+    for (const auto& o : surfaces_to_flush) {
+        FlushObject(o);
+    }
 }
 
 } // namespace OpenGL

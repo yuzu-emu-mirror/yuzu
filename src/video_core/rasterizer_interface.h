@@ -66,5 +66,7 @@ public:
     /// Initialize disk cached resources for the game being emulated
     virtual void LoadDiskResources(const std::atomic_bool& stop_loading = false,
                                    const DiskResourceLoadCallback& callback = {}) {}
+    /// Notify rasterizer that dma push has finished.
+    virtual void SignalFinish() = 0;
 };
 } // namespace VideoCore

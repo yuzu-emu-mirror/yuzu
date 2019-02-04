@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "common/alignment.h"
@@ -424,6 +425,26 @@ public:
     void FermiCopySurface(const Tegra::Engines::Fermi2D::Regs::Surface& src_config,
                           const Tegra::Engines::Fermi2D::Regs::Surface& dst_config);
 
+    void SignalFinish();
+
+protected:
+    void Register(const Surface& object) {
+        RasterizerCache<Surface>::Register(object);
+        const auto& params = object->GetSurfaceParams();
+        if (!params.is_tiled) {
+            surfaces_to_flush.insert(object);
+        }
+    }
+
+    /// Unregisters an object from the cache
+    void Unregister(const Surface& object) {
+        const auto& params = object->GetSurfaceParams();
+        if (!params.is_tiled) {
+            surfaces_to_flush.erase(object);
+        }
+        RasterizerCache<Surface>::Unregister(object);
+    }
+
 private:
     void LoadSurface(const Surface& surface);
     Surface GetSurface(const SurfaceParams& params, bool preserve_contents = true);
@@ -448,6 +469,8 @@ private:
     /// previously been used. This is to prevent surfaces from being constantly created and
     /// destroyed when used with different surface parameters.
     std::unordered_map<SurfaceReserveKey, Surface> surface_reserve;
+
+    std::unordered_set<Surface> surfaces_to_flush;
 
     OGLFramebuffer read_framebuffer;
     OGLFramebuffer draw_framebuffer;

@@ -142,6 +142,7 @@ void RendererOpenGL::SwapBuffers(
 
     // Restore the rasterizer state
     prev_state.Apply();
+    rasterizer->SignalFinish();
 }
 
 /**
