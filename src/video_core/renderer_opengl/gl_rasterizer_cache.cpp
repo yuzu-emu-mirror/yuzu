@@ -198,7 +198,7 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
         params.width = config.width;
     } else {
         params.pitch = config.width;
-        u32 bpp = params.GetFormatBpp() / 8;
+        const u32 bpp = params.GetFormatBpp() / 8;
         params.width = params.pitch / bpp;
     }
     params.height = config.height;
@@ -697,13 +697,13 @@ void CachedSurface::LoadGLBuffer() {
         for (u32 i = 0; i < params.max_mip_level; i++)
             SwizzleFunc(MortonSwizzleMode::MortonToLinear, params, gl_buffer[i], i);
     } else {
-        u32 bpp = params.GetFormatBpp() / 8;
-        u32 copy_size = params.width * bpp;
+        const u32 bpp = params.GetFormatBpp() / 8;
+        const u32 copy_size = params.width * bpp;
         if (params.pitch == copy_size) {
             std::memcpy(gl_buffer[0].data(), Memory::GetPointer(params.addr),
                         params.size_in_bytes_gl);
         } else {
-            u8* start = Memory::GetPointer(params.addr);
+            const u8* start = Memory::GetPointer(params.addr);
             u8* write_to = gl_buffer[0].data();
             for (u32 h = params.height; h > 0; h--) {
                 std::memcpy(write_to, start, copy_size);
@@ -747,7 +747,19 @@ void CachedSurface::FlushGLBuffer() {
 
         SwizzleFunc(MortonSwizzleMode::LinearToMorton, params, gl_buffer[0], 0);
     } else {
-        std::memcpy(Memory::GetPointer(GetAddr()), gl_buffer[0].data(), GetSizeInBytes());
+        const u32 bpp = params.GetFormatBpp() / 8;
+        const u32 copy_size = params.width * bpp;
+        if (params.pitch == copy_size) {
+            std::memcpy(Memory::GetPointer(params.addr), gl_buffer[0].data(), GetSizeInBytes());
+        } else {
+            u8* start = Memory::GetPointer(params.addr);
+            const u8* read_to = gl_buffer[0].data();
+            for (u32 h = params.height; h > 0; h--) {
+                std::memcpy(start, read_to, copy_size);
+                start += params.pitch;
+                read_to += copy_size;
+            }
+        }
     }
 }
 
@@ -1131,12 +1143,6 @@ Surface RasterizerCacheOpenGL::TryGetReservedSurface(const SurfaceParams& params
         return search->second;
     }
     return {};
-}
-
-void RasterizerCacheOpenGL::SignalFinish() {
-    for (const auto& o : surfaces_to_flush) {
-        FlushObject(o);
-    }
 }
 
 } // namespace OpenGL

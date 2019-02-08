@@ -1283,8 +1283,4 @@ void RasterizerOpenGL::CheckAlphaTests() {
     }
 }
 
-void RasterizerOpenGL::SignalFinish() {
-    res_cache.SignalFinish();
-}
-
 } // namespace OpenGL
