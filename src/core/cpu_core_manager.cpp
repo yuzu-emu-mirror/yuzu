@@ -37,10 +37,10 @@ void CpuCoreManager::Initialize(System& system) {
         return;
     }
 
-    for (std::size_t index = 0; index < core_threads.size(); ++index) {
+    for (std::size_t index = 1; index < core_threads.size(); index++) {
         core_threads[index] = std::make_unique<std::thread>(RunCpuCore, std::cref(system),
-                                                            std::ref(*cores[index + 1]));
-        thread_to_cpu[core_threads[index]->get_id()] = cores[index + 1].get();
+                                                            std::ref(*cores[index]));
+        thread_to_cpu[core_threads[index]->get_id()] = cores[index].get();
     }
 }
 
