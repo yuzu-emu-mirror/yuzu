@@ -400,7 +400,7 @@ static bool ValidCryptoRevisionString(std::string_view base, size_t begin, size_
 void KeyManager::LoadFromFile(const std::string& filename, bool is_title_keys) {
 #ifdef _WIN32
     std::string copy(filename);
-    if (copy.size() != 0 && copy.back() == ':')
+    if (!copy.empty() && copy.back() == ':')
         copy += DIR_SEP_CHR;
     std::wstring utf16 = Common::UTF8ToUTF16W(copy);
     std::ifstream file(utf16);
