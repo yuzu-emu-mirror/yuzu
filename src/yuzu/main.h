@@ -48,6 +48,7 @@ class DebugContext;
 enum class EmulatedDirectoryTarget {
     NAND,
     SDMC,
+    Keys,
 };
 
 enum class ReinitializeKeyBehavior {

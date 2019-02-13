@@ -405,6 +405,13 @@ void Config::ReadValues() {
                     QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)))
             .toString()
             .toStdString());
+    FileUtil::GetUserPath(
+        FileUtil::UserPath::KeysDir,
+        qt_config
+            ->value("keys_directory",
+                    QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::KeysDir)))
+            .toString()
+            .toStdString());
     qt_config->endGroup();
 
     qt_config->beginGroup("Core");
@@ -653,6 +660,8 @@ void Config::SaveValues() {
                         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir)));
     qt_config->setValue("sdmc_directory",
                         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)));
+    qt_config->setValue("keys_directory",
+                        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::KeysDir)));
     qt_config->endGroup();
 
     qt_config->beginGroup("System");
