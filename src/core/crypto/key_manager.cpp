@@ -402,7 +402,7 @@ void KeyManager::LoadFromFile(const std::string& filename, bool is_title_keys) {
     std::string copy(filename);
     if (copy.size() != 0 && copy.back() == ':')
         copy += DIR_SEP_CHR;
-    std::wstring utf16 = Common::UTF8ToUTF16W(copy).c_str();
+    std::wstring utf16 = Common::UTF8ToUTF16W(copy);
     std::ifstream file(utf16);
 #else
     std::ifstream file(filename);
