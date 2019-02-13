@@ -126,26 +126,14 @@ public:
     struct TextureUnit {
         GLuint texture; // GL_TEXTURE_BINDING_2D
         GLuint sampler; // GL_SAMPLER_BINDING
-        GLenum target;
-        struct {
-            GLint r; // GL_TEXTURE_SWIZZLE_R
-            GLint g; // GL_TEXTURE_SWIZZLE_G
-            GLint b; // GL_TEXTURE_SWIZZLE_B
-            GLint a; // GL_TEXTURE_SWIZZLE_A
-        } swizzle;
 
         void Unbind() {
             texture = 0;
-            swizzle.r = GL_RED;
-            swizzle.g = GL_GREEN;
-            swizzle.b = GL_BLUE;
-            swizzle.a = GL_ALPHA;
         }
 
         void Reset() {
             Unbind();
             sampler = 0;
-            target = GL_TEXTURE_2D;
         }
     };
     std::array<TextureUnit, Tegra::Engines::Maxwell3D::Regs::NumTextureSamplers> texture_units;
@@ -154,8 +142,6 @@ public:
         GLuint read_framebuffer; // GL_READ_FRAMEBUFFER_BINDING
         GLuint draw_framebuffer; // GL_DRAW_FRAMEBUFFER_BINDING
         GLuint vertex_array;     // GL_VERTEX_ARRAY_BINDING
-        GLuint vertex_buffer;    // GL_ARRAY_BUFFER_BINDING
-        GLuint uniform_buffer;   // GL_UNIFORM_BUFFER_BINDING
         GLuint shader_program;   // GL_CURRENT_PROGRAM
         GLuint program_pipeline; // GL_PROGRAM_PIPELINE_BINDING
     } draw;
@@ -206,10 +192,10 @@ public:
     }
     /// Apply this state as the current OpenGL state
     void Apply() const;
-    /// Apply only the state afecting the framebuffer
+    /// Apply only the state affecting the framebuffer
     void ApplyFramebufferState() const;
-    /// Apply only the state afecting the vertex buffer
-    void ApplyVertexBufferState() const;
+    /// Apply only the state affecting the vertex array
+    void ApplyVertexArrayState() const;
     /// Set the initial OpenGL state
     static void ApplyDefaultState();
     /// Resets any references to the given resource
@@ -217,7 +203,6 @@ public:
     OpenGLState& ResetSampler(GLuint handle);
     OpenGLState& ResetProgram(GLuint handle);
     OpenGLState& ResetPipeline(GLuint handle);
-    OpenGLState& ResetBuffer(GLuint handle);
     OpenGLState& ResetVertexArray(GLuint handle);
     OpenGLState& ResetFramebuffer(GLuint handle);
     void EmulateViewportWithScissor();

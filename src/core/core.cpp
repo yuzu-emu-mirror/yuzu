@@ -94,7 +94,7 @@ struct System::Impl {
     ResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
         LOG_DEBUG(HW_Memory, "initialized OK");
 
-        CoreTiming::Init();
+        Timing::Init();
         kernel.Initialize();
 
         const auto current_time = std::chrono::duration_cast<std::chrono::seconds>(
@@ -123,7 +123,7 @@ struct System::Impl {
         Service::Init(service_manager, *virtual_filesystem);
         GDBStub::Init();
 
-        renderer = VideoCore::CreateRenderer(emu_window);
+        renderer = VideoCore::CreateRenderer(emu_window, system);
         if (!renderer->Init()) {
             return ResultStatus::ErrorVideoCore;
         }
@@ -175,6 +175,7 @@ struct System::Impl {
             return static_cast<ResultStatus>(static_cast<u32>(ResultStatus::ErrorLoader) +
                                              static_cast<u32>(load_result));
         }
+
         status = ResultStatus::Success;
         return status;
     }
@@ -204,7 +205,7 @@ struct System::Impl {
 
         // Shutdown kernel and core timing
         kernel.Shutdown();
-        CoreTiming::Shutdown();
+        Timing::Shutdown();
 
         // Close app loader
         app_loader.reset();
@@ -231,7 +232,7 @@ struct System::Impl {
     }
 
     PerfStatsResults GetAndResetPerfStats() {
-        return perf_stats.GetAndResetStats(CoreTiming::GetGlobalTimeUs());
+        return perf_stats.GetAndResetStats(Timing::GetGlobalTimeUs());
     }
 
     Kernel::KernelCore kernel;
@@ -443,27 +444,31 @@ std::shared_ptr<FileSys::VfsFilesystem> System::GetFilesystem() const {
     return impl->virtual_filesystem;
 }
 
-void System::SetProfileSelector(std::unique_ptr<Core::Frontend::ProfileSelectApplet> applet) {
+void System::SetProfileSelector(std::unique_ptr<Frontend::ProfileSelectApplet> applet) {
     impl->profile_selector = std::move(applet);
 }
 
-const Core::Frontend::ProfileSelectApplet& System::GetProfileSelector() const {
+const Frontend::ProfileSelectApplet& System::GetProfileSelector() const {
     return *impl->profile_selector;
 }
 
-void System::SetSoftwareKeyboard(std::unique_ptr<Core::Frontend::SoftwareKeyboardApplet> applet) {
+void System::SetSoftwareKeyboard(std::unique_ptr<Frontend::SoftwareKeyboardApplet> applet) {
     impl->software_keyboard = std::move(applet);
 }
 
-const Core::Frontend::SoftwareKeyboardApplet& System::GetSoftwareKeyboard() const {
+const Frontend::SoftwareKeyboardApplet& System::GetSoftwareKeyboard() const {
     return *impl->software_keyboard;
 }
 
-void System::SetWebBrowser(std::unique_ptr<Core::Frontend::WebBrowserApplet> applet) {
+void System::SetWebBrowser(std::unique_ptr<Frontend::WebBrowserApplet> applet) {
     impl->web_browser = std::move(applet);
 }
 
-const Core::Frontend::WebBrowserApplet& System::GetWebBrowser() const {
+Frontend::WebBrowserApplet& System::GetWebBrowser() {
+    return *impl->web_browser;
+}
+
+const Frontend::WebBrowserApplet& System::GetWebBrowser() const {
     return *impl->web_browser;
 }
 

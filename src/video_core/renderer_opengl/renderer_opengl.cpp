@@ -14,6 +14,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
+#include "core/frontend/scope_acquire_window_context.h"
 #include "core/memory.h"
 #include "core/perf_stats.h"
 #include "core/settings.h"
@@ -97,29 +98,16 @@ static std::array<GLfloat, 3 * 2> MakeOrthographicMatrix(const float width, cons
     return matrix;
 }
 
-ScopeAcquireGLContext::ScopeAcquireGLContext(Core::Frontend::EmuWindow& emu_window_)
-    : emu_window{emu_window_} {
-    if (Settings::values.use_multi_core) {
-        emu_window.MakeCurrent();
-    }
-}
-ScopeAcquireGLContext::~ScopeAcquireGLContext() {
-    if (Settings::values.use_multi_core) {
-        emu_window.DoneCurrent();
-    }
-}
-
-RendererOpenGL::RendererOpenGL(Core::Frontend::EmuWindow& window)
-    : VideoCore::RendererBase{window} {}
+RendererOpenGL::RendererOpenGL(Core::Frontend::EmuWindow& window, Core::System& system)
+    : VideoCore::RendererBase{window}, system{system} {}
 
 RendererOpenGL::~RendererOpenGL() = default;
 
 /// Swap buffers (render frame)
 void RendererOpenGL::SwapBuffers(
     std::optional<std::reference_wrapper<const Tegra::FramebufferConfig>> framebuffer) {
-    ScopeAcquireGLContext acquire_context{render_window};
 
-    Core::System::GetInstance().GetPerfStats().EndSystemFrame();
+    system.GetPerfStats().EndSystemFrame();
 
     // Maintain the rasterizer's state as a priority
     OpenGLState prev_state = OpenGLState::GetCurState();
@@ -149,8 +137,8 @@ void RendererOpenGL::SwapBuffers(
 
     render_window.PollEvents();
 
-    Core::System::GetInstance().FrameLimiter().DoFrameLimiting(CoreTiming::GetGlobalTimeUs());
-    Core::System::GetInstance().GetPerfStats().BeginSystemFrame();
+    system.FrameLimiter().DoFrameLimiting(Core::Timing::GetGlobalTimeUs());
+    system.GetPerfStats().BeginSystemFrame();
 
     // Restore the rasterizer state
     prev_state.Apply();
@@ -183,10 +171,6 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
                                        Memory::GetPointer(framebuffer_addr),
                                        gl_framebuffer_data.data(), true);
 
-        state.texture_units[0].texture = screen_info.texture.resource.handle;
-        state.Apply();
-
-        glActiveTexture(GL_TEXTURE0);
         glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(framebuffer.stride));
 
         // Update existing texture
@@ -194,14 +178,11 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
         //       they differ from the LCD resolution.
         // TODO: Applications could theoretically crash yuzu here by specifying too large
         //       framebuffer sizes. We should make sure that this cannot happen.
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, framebuffer.width, framebuffer.height,
-                        screen_info.texture.gl_format, screen_info.texture.gl_type,
-                        gl_framebuffer_data.data());
+        glTextureSubImage2D(screen_info.texture.resource.handle, 0, 0, 0, framebuffer.width,
+                            framebuffer.height, screen_info.texture.gl_format,
+                            screen_info.texture.gl_type, gl_framebuffer_data.data());
 
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-
-        state.texture_units[0].texture = 0;
-        state.Apply();
     }
 }
 
@@ -211,17 +192,8 @@ void RendererOpenGL::LoadFBToScreenInfo(const Tegra::FramebufferConfig& framebuf
  */
 void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color_b, u8 color_a,
                                                 const TextureInfo& texture) {
-    state.texture_units[0].texture = texture.resource.handle;
-    state.Apply();
-
-    glActiveTexture(GL_TEXTURE0);
-    u8 framebuffer_data[4] = {color_a, color_b, color_g, color_r};
-
-    // Update existing texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, framebuffer_data);
-
-    state.texture_units[0].texture = 0;
-    state.Apply();
+    const u8 framebuffer_data[4] = {color_a, color_b, color_g, color_r};
+    glClearTexImage(texture.resource.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, framebuffer_data);
 }
 
 /**
@@ -245,41 +217,28 @@ void RendererOpenGL::InitOpenGLObjects() {
 
     // Generate VAO
     vertex_array.Create();
-
     state.draw.vertex_array = vertex_array.handle;
-    state.draw.vertex_buffer = vertex_buffer.handle;
-    state.draw.uniform_buffer = 0;
-    state.Apply();
 
     // Attach vertex data to VAO
-    glBufferData(GL_ARRAY_BUFFER, sizeof(ScreenRectVertex) * 4, nullptr, GL_STREAM_DRAW);
-    glVertexAttribPointer(attrib_position, 2, GL_FLOAT, GL_FALSE, sizeof(ScreenRectVertex),
-                          (GLvoid*)offsetof(ScreenRectVertex, position));
-    glVertexAttribPointer(attrib_tex_coord, 2, GL_FLOAT, GL_FALSE, sizeof(ScreenRectVertex),
-                          (GLvoid*)offsetof(ScreenRectVertex, tex_coord));
-    glEnableVertexAttribArray(attrib_position);
-    glEnableVertexAttribArray(attrib_tex_coord);
+    glNamedBufferData(vertex_buffer.handle, sizeof(ScreenRectVertex) * 4, nullptr, GL_STREAM_DRAW);
+    glVertexArrayAttribFormat(vertex_array.handle, attrib_position, 2, GL_FLOAT, GL_FALSE,
+                              offsetof(ScreenRectVertex, position));
+    glVertexArrayAttribFormat(vertex_array.handle, attrib_tex_coord, 2, GL_FLOAT, GL_FALSE,
+                              offsetof(ScreenRectVertex, tex_coord));
+    glVertexArrayAttribBinding(vertex_array.handle, attrib_position, 0);
+    glVertexArrayAttribBinding(vertex_array.handle, attrib_tex_coord, 0);
+    glEnableVertexArrayAttrib(vertex_array.handle, attrib_position);
+    glEnableVertexArrayAttrib(vertex_array.handle, attrib_tex_coord);
+    glVertexArrayVertexBuffer(vertex_array.handle, 0, vertex_buffer.handle, 0,
+                              sizeof(ScreenRectVertex));
 
     // Allocate textures for the screen
-    screen_info.texture.resource.Create();
+    screen_info.texture.resource.Create(GL_TEXTURE_2D);
 
-    // Allocation of storage is deferred until the first frame, when we
-    // know the framebuffer size.
-
-    state.texture_units[0].texture = screen_info.texture.resource.handle;
-    state.Apply();
-
-    glActiveTexture(GL_TEXTURE0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    const GLuint texture = screen_info.texture.resource.handle;
+    glTextureStorage2D(texture, 1, GL_RGBA8, 1, 1);
 
     screen_info.display_texture = screen_info.texture.resource.handle;
-
-    state.texture_units[0].texture = 0;
-    state.Apply();
 
     // Clear screen to black
     LoadColorToActiveGLTexture(0, 0, 0, 0, screen_info.texture);
@@ -291,19 +250,18 @@ void RendererOpenGL::CreateRasterizer() {
     }
     // Initialize sRGB Usage
     OpenGLState::ClearsRGBUsed();
-    rasterizer = std::make_unique<RasterizerOpenGL>(render_window, screen_info);
+    rasterizer = std::make_unique<RasterizerOpenGL>(render_window, system, screen_info);
 }
 
 void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
                                                  const Tegra::FramebufferConfig& framebuffer) {
-
     texture.width = framebuffer.width;
     texture.height = framebuffer.height;
 
     GLint internal_format;
     switch (framebuffer.pixel_format) {
     case Tegra::FramebufferConfig::PixelFormat::ABGR8:
-        internal_format = GL_RGBA;
+        internal_format = GL_RGBA8;
         texture.gl_format = GL_RGBA;
         texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
@@ -315,7 +273,7 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
         break;
     default:
-        internal_format = GL_RGBA;
+        internal_format = GL_RGBA8;
         texture.gl_format = GL_RGBA;
         texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         gl_framebuffer_data.resize(texture.width * texture.height * 4);
@@ -324,15 +282,9 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
         UNREACHABLE();
     }
 
-    state.texture_units[0].texture = texture.resource.handle;
-    state.Apply();
-
-    glActiveTexture(GL_TEXTURE0);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.width, texture.height, 0,
-                 texture.gl_format, texture.gl_type, nullptr);
-
-    state.texture_units[0].texture = 0;
-    state.Apply();
+    texture.resource.Release();
+    texture.resource.Create(GL_TEXTURE_2D);
+    glTextureStorage2D(texture.resource.handle, 1, internal_format, texture.width, texture.height);
 }
 
 void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x, float y, float w,
@@ -374,16 +326,13 @@ void RendererOpenGL::DrawScreenTriangles(const ScreenInfo& screen_info, float x,
     }};
 
     state.texture_units[0].texture = screen_info.display_texture;
-    state.texture_units[0].swizzle = {GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
     // Workaround brigthness problems in SMO by enabling sRGB in the final output
-    // if it has been used in the frame
-    // Needed because of this bug in QT
-    // QTBUG-50987
+    // if it has been used in the frame. Needed because of this bug in QT: QTBUG-50987
     state.framebuffer_srgb.enabled = OpenGLState::GetsRGBUsed();
     state.Apply();
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices.data());
+    glNamedBufferSubData(vertex_buffer.handle, 0, sizeof(vertices), vertices.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    // restore default state
+    // Restore default state
     state.framebuffer_srgb.enabled = false;
     state.texture_units[0].texture = 0;
     state.Apply();
@@ -514,7 +463,7 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 
 /// Initialize the renderer
 bool RendererOpenGL::Init() {
-    ScopeAcquireGLContext acquire_context{render_window};
+    Core::Frontend::ScopeAcquireWindowContext acquire_context{render_window};
 
     if (GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);

@@ -109,8 +109,7 @@ enum class SurfaceType {
     ColorTexture = 0,
     Depth = 1,
     DepthStencil = 2,
-    Fill = 3,
-    Invalid = 4,
+    Invalid = 3,
 };
 
 enum class SurfaceTarget {
@@ -440,6 +439,8 @@ static constexpr u32 GetBytesPerPixel(PixelFormat pixel_format) {
 SurfaceTarget SurfaceTargetFromTextureType(Tegra::Texture::TextureType texture_type);
 
 bool SurfaceTargetIsLayered(SurfaceTarget target);
+
+bool SurfaceTargetIsArray(SurfaceTarget target);
 
 PixelFormat PixelFormatFromDepthFormat(Tegra::DepthFormat format);
 

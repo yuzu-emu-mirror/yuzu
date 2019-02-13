@@ -37,6 +37,7 @@ void Maxwell3D::InitializeRegisterDefaults() {
         regs.viewports[viewport].depth_range_near = 0.0f;
         regs.viewports[viewport].depth_range_far = 1.0f;
     }
+
     // Doom and Bomberman seems to use the uninitialized registers and just enable blend
     // so initialize blend registers with sane values
     regs.blend.equation_rgb = Regs::Blend::Equation::Add;
@@ -66,6 +67,7 @@ void Maxwell3D::InitializeRegisterDefaults() {
     regs.stencil_back_func_func = Regs::ComparisonOp::Always;
     regs.stencil_back_func_mask = 0xFFFFFFFF;
     regs.stencil_back_mask = 0xFFFFFFFF;
+
     // TODO(Rodrigo): Most games do not set a point size. I think this is a case of a
     // register carrying a default value. Assume it's OpenGL's default (1).
     regs.point_size = 1.0f;
@@ -78,6 +80,9 @@ void Maxwell3D::InitializeRegisterDefaults() {
         regs.color_mask[color_mask].B.Assign(1);
         regs.color_mask[color_mask].A.Assign(1);
     }
+
+    // Commercial games seem to assume this value is enabled and nouveau sets this value manually.
+    regs.rt_separate_frag_data = 1;
 }
 
 void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
@@ -135,6 +140,25 @@ void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
 
     if (regs.reg_array[method_call.method] != method_call.argument) {
         regs.reg_array[method_call.method] = method_call.argument;
+        // Color buffers
+        constexpr u32 first_rt_reg = MAXWELL3D_REG_INDEX(rt);
+        constexpr u32 registers_per_rt = sizeof(regs.rt[0]) / sizeof(u32);
+        if (method_call.method >= first_rt_reg &&
+            method_call.method < first_rt_reg + registers_per_rt * Regs::NumRenderTargets) {
+            const std::size_t rt_index = (method_call.method - first_rt_reg) / registers_per_rt;
+            dirty_flags.color_buffer |= 1u << static_cast<u32>(rt_index);
+        }
+
+        // Zeta buffer
+        constexpr u32 registers_in_zeta = sizeof(regs.zeta) / sizeof(u32);
+        if (method_call.method == MAXWELL3D_REG_INDEX(zeta_enable) ||
+            method_call.method == MAXWELL3D_REG_INDEX(zeta_width) ||
+            method_call.method == MAXWELL3D_REG_INDEX(zeta_height) ||
+            (method_call.method >= MAXWELL3D_REG_INDEX(zeta) &&
+             method_call.method < MAXWELL3D_REG_INDEX(zeta) + registers_in_zeta)) {
+            dirty_flags.zeta_buffer = true;
+        }
+
         // Shader
         constexpr u32 shader_registers_count =
             sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
@@ -249,7 +273,8 @@ void Maxwell3D::ProcessQueryGet() {
     GPUVAddr sequence_address = regs.query.QueryAddress();
     // Since the sequence address is given as a GPU VAddr, we have to convert it to an application
     // VAddr before writing.
-    std::optional<VAddr> address = memory_manager.GpuToCpuAddress(sequence_address);
+    const auto address = memory_manager.GpuToCpuAddress(sequence_address);
+    ASSERT_MSG(address, "Invalid GPU address");
 
     // TODO(Subv): Support the other query units.
     ASSERT_MSG(regs.query.query_get.unit == Regs::QueryUnit::Crop,
@@ -292,7 +317,7 @@ void Maxwell3D::ProcessQueryGet() {
             LongQueryResult query_result{};
             query_result.value = result;
             // TODO(Subv): Generate a real GPU timestamp and write it here instead of CoreTiming
-            query_result.timestamp = CoreTiming::GetTicks();
+            query_result.timestamp = Core::Timing::GetTicks();
             Memory::WriteBlock(*address, &query_result, sizeof(query_result));
         }
         dirty_flags.OnMemoryWrite();
@@ -362,14 +387,14 @@ void Maxwell3D::ProcessCBBind(Regs::ShaderStage stage) {
 
 void Maxwell3D::ProcessCBData(u32 value) {
     // Write the input value to the current const buffer at the current position.
-    GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
+    const GPUVAddr buffer_address = regs.const_buffer.BufferAddress();
     ASSERT(buffer_address != 0);
 
     // Don't allow writing past the end of the buffer.
     ASSERT(regs.const_buffer.cb_pos + sizeof(u32) <= regs.const_buffer.cb_size);
 
-    std::optional<VAddr> address =
-        memory_manager.GpuToCpuAddress(buffer_address + regs.const_buffer.cb_pos);
+    const auto address = memory_manager.GpuToCpuAddress(buffer_address + regs.const_buffer.cb_pos);
+    ASSERT_MSG(address, "Invalid GPU address");
 
     Memory::Write32(*address, value);
     dirty_flags.OnMemoryWrite();
@@ -379,10 +404,11 @@ void Maxwell3D::ProcessCBData(u32 value) {
 }
 
 Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
-    GPUVAddr tic_base_address = regs.tic.TICAddress();
+    const GPUVAddr tic_base_address = regs.tic.TICAddress();
 
-    GPUVAddr tic_address_gpu = tic_base_address + tic_index * sizeof(Texture::TICEntry);
-    std::optional<VAddr> tic_address_cpu = memory_manager.GpuToCpuAddress(tic_address_gpu);
+    const GPUVAddr tic_address_gpu = tic_base_address + tic_index * sizeof(Texture::TICEntry);
+    const auto tic_address_cpu = memory_manager.GpuToCpuAddress(tic_address_gpu);
+    ASSERT_MSG(tic_address_cpu, "Invalid GPU address");
 
     Texture::TICEntry tic_entry;
     Memory::ReadBlock(*tic_address_cpu, &tic_entry, sizeof(Texture::TICEntry));
@@ -391,10 +417,10 @@ Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
                    tic_entry.header_version == Texture::TICHeaderVersion::Pitch,
                "TIC versions other than BlockLinear or Pitch are unimplemented");
 
-    auto r_type = tic_entry.r_type.Value();
-    auto g_type = tic_entry.g_type.Value();
-    auto b_type = tic_entry.b_type.Value();
-    auto a_type = tic_entry.a_type.Value();
+    const auto r_type = tic_entry.r_type.Value();
+    const auto g_type = tic_entry.g_type.Value();
+    const auto b_type = tic_entry.b_type.Value();
+    const auto a_type = tic_entry.a_type.Value();
 
     // TODO(Subv): Different data types for separate components are not supported
     ASSERT(r_type == g_type && r_type == b_type && r_type == a_type);
@@ -403,10 +429,11 @@ Texture::TICEntry Maxwell3D::GetTICEntry(u32 tic_index) const {
 }
 
 Texture::TSCEntry Maxwell3D::GetTSCEntry(u32 tsc_index) const {
-    GPUVAddr tsc_base_address = regs.tsc.TSCAddress();
+    const GPUVAddr tsc_base_address = regs.tsc.TSCAddress();
 
-    GPUVAddr tsc_address_gpu = tsc_base_address + tsc_index * sizeof(Texture::TSCEntry);
-    std::optional<VAddr> tsc_address_cpu = memory_manager.GpuToCpuAddress(tsc_address_gpu);
+    const GPUVAddr tsc_address_gpu = tsc_base_address + tsc_index * sizeof(Texture::TSCEntry);
+    const auto tsc_address_cpu = memory_manager.GpuToCpuAddress(tsc_address_gpu);
+    ASSERT_MSG(tsc_address_cpu, "Invalid GPU address");
 
     Texture::TSCEntry tsc_entry;
     Memory::ReadBlock(*tsc_address_cpu, &tsc_entry, sizeof(Texture::TSCEntry));
@@ -428,8 +455,10 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
     for (GPUVAddr current_texture = tex_info_buffer.address + TextureInfoOffset;
          current_texture < tex_info_buffer_end; current_texture += sizeof(Texture::TextureHandle)) {
 
-        Texture::TextureHandle tex_handle{
-            Memory::Read32(*memory_manager.GpuToCpuAddress(current_texture))};
+        const auto address = memory_manager.GpuToCpuAddress(current_texture);
+        ASSERT_MSG(address, "Invalid GPU address");
+
+        const Texture::TextureHandle tex_handle{Memory::Read32(*address)};
 
         Texture::FullTextureInfo tex_info{};
         // TODO(Subv): Use the shader to determine which textures are actually accessed.
@@ -438,23 +467,16 @@ std::vector<Texture::FullTextureInfo> Maxwell3D::GetStageTextures(Regs::ShaderSt
             sizeof(Texture::TextureHandle);
 
         // Load the TIC data.
-        if (tex_handle.tic_id != 0) {
-            tex_info.enabled = true;
-
-            auto tic_entry = GetTICEntry(tex_handle.tic_id);
-            // TODO(Subv): Workaround for BitField's move constructor being deleted.
-            std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
-        }
+        auto tic_entry = GetTICEntry(tex_handle.tic_id);
+        // TODO(Subv): Workaround for BitField's move constructor being deleted.
+        std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
 
         // Load the TSC data
-        if (tex_handle.tsc_id != 0) {
-            auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
-            // TODO(Subv): Workaround for BitField's move constructor being deleted.
-            std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
-        }
+        auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
+        // TODO(Subv): Workaround for BitField's move constructor being deleted.
+        std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
 
-        if (tex_info.enabled)
-            textures.push_back(tex_info);
+        textures.push_back(tex_info);
     }
 
     return textures;
@@ -466,31 +488,28 @@ Texture::FullTextureInfo Maxwell3D::GetStageTexture(Regs::ShaderStage stage,
     auto& tex_info_buffer = shader.const_buffers[regs.tex_cb_index];
     ASSERT(tex_info_buffer.enabled && tex_info_buffer.address != 0);
 
-    GPUVAddr tex_info_address = tex_info_buffer.address + offset * sizeof(Texture::TextureHandle);
+    const GPUVAddr tex_info_address =
+        tex_info_buffer.address + offset * sizeof(Texture::TextureHandle);
 
     ASSERT(tex_info_address < tex_info_buffer.address + tex_info_buffer.size);
 
-    std::optional<VAddr> tex_address_cpu = memory_manager.GpuToCpuAddress(tex_info_address);
-    Texture::TextureHandle tex_handle{Memory::Read32(*tex_address_cpu)};
+    const auto tex_address_cpu = memory_manager.GpuToCpuAddress(tex_info_address);
+    ASSERT_MSG(tex_address_cpu, "Invalid GPU address");
+
+    const Texture::TextureHandle tex_handle{Memory::Read32(*tex_address_cpu)};
 
     Texture::FullTextureInfo tex_info{};
     tex_info.index = static_cast<u32>(offset);
 
     // Load the TIC data.
-    if (tex_handle.tic_id != 0) {
-        tex_info.enabled = true;
-
-        auto tic_entry = GetTICEntry(tex_handle.tic_id);
-        // TODO(Subv): Workaround for BitField's move constructor being deleted.
-        std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
-    }
+    auto tic_entry = GetTICEntry(tex_handle.tic_id);
+    // TODO(Subv): Workaround for BitField's move constructor being deleted.
+    std::memcpy(&tex_info.tic, &tic_entry, sizeof(tic_entry));
 
     // Load the TSC data
-    if (tex_handle.tsc_id != 0) {
-        auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
-        // TODO(Subv): Workaround for BitField's move constructor being deleted.
-        std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
-    }
+    auto tsc_entry = GetTSCEntry(tex_handle.tsc_id);
+    // TODO(Subv): Workaround for BitField's move constructor being deleted.
+    std::memcpy(&tex_info.tsc, &tsc_entry, sizeof(tsc_entry));
 
     return tex_info;
 }

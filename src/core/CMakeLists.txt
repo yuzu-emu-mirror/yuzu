@@ -95,6 +95,8 @@ add_library(core STATIC
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
     frontend/input.h
+    frontend/scope_acquire_window_context.cpp
+    frontend/scope_acquire_window_context.h
     gdbstub/gdbstub.cpp
     gdbstub/gdbstub.h
     hle/ipc.h
@@ -138,8 +140,6 @@ add_library(core STATIC
     hle/kernel/svc_wrap.h
     hle/kernel/thread.cpp
     hle/kernel/thread.h
-    hle/kernel/timer.cpp
-    hle/kernel/timer.h
     hle/kernel/vm_manager.cpp
     hle/kernel/vm_manager.h
     hle/kernel/wait_object.cpp

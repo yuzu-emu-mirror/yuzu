@@ -83,8 +83,6 @@ OpenGLState::OpenGLState() {
     draw.read_framebuffer = 0;
     draw.draw_framebuffer = 0;
     draw.vertex_array = 0;
-    draw.vertex_buffer = 0;
-    draw.uniform_buffer = 0;
     draw.shader_program = 0;
     draw.program_pipeline = 0;
 
@@ -464,29 +462,35 @@ void OpenGLState::ApplyPolygonOffset() const {
 }
 
 void OpenGLState::ApplyTextures() const {
+    bool has_delta{};
+    std::size_t first{};
+    std::size_t last{};
+    std::array<GLuint, Tegra::Engines::Maxwell3D::Regs::NumTextureSamplers> textures;
+
     for (std::size_t i = 0; i < std::size(texture_units); ++i) {
         const auto& texture_unit = texture_units[i];
         const auto& cur_state_texture_unit = cur_state.texture_units[i];
+        textures[i] = texture_unit.texture;
 
-        if (texture_unit.texture != cur_state_texture_unit.texture) {
-            glActiveTexture(TextureUnits::MaxwellTexture(static_cast<int>(i)).Enum());
-            glBindTexture(texture_unit.target, texture_unit.texture);
+        if (textures[i] != cur_state_texture_unit.texture) {
+            if (!has_delta) {
+                first = i;
+                has_delta = true;
+            }
+            last = i;
         }
-        // Update the texture swizzle
-        if (texture_unit.swizzle.r != cur_state_texture_unit.swizzle.r ||
-            texture_unit.swizzle.g != cur_state_texture_unit.swizzle.g ||
-            texture_unit.swizzle.b != cur_state_texture_unit.swizzle.b ||
-            texture_unit.swizzle.a != cur_state_texture_unit.swizzle.a) {
-            std::array<GLint, 4> mask = {texture_unit.swizzle.r, texture_unit.swizzle.g,
-                                         texture_unit.swizzle.b, texture_unit.swizzle.a};
-            glTexParameteriv(texture_unit.target, GL_TEXTURE_SWIZZLE_RGBA, mask.data());
-        }
+    }
+
+    if (has_delta) {
+        glBindTextures(static_cast<GLuint>(first), static_cast<GLsizei>(last - first + 1),
+                       textures.data());
     }
 }
 
 void OpenGLState::ApplySamplers() const {
     bool has_delta{};
-    std::size_t first{}, last{};
+    std::size_t first{};
+    std::size_t last{};
     std::array<GLuint, Tegra::Engines::Maxwell3D::Regs::NumTextureSamplers> samplers;
     for (std::size_t i = 0; i < std::size(samplers); ++i) {
         samplers[i] = texture_units[i].sampler;
@@ -505,7 +509,6 @@ void OpenGLState::ApplySamplers() const {
 }
 
 void OpenGLState::ApplyFramebufferState() const {
-    // Framebuffer
     if (draw.read_framebuffer != cur_state.draw.read_framebuffer) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, draw.read_framebuffer);
     }
@@ -514,15 +517,9 @@ void OpenGLState::ApplyFramebufferState() const {
     }
 }
 
-void OpenGLState::ApplyVertexBufferState() const {
-    // Vertex array
+void OpenGLState::ApplyVertexArrayState() const {
     if (draw.vertex_array != cur_state.draw.vertex_array) {
         glBindVertexArray(draw.vertex_array);
-    }
-
-    // Vertex buffer
-    if (draw.vertex_buffer != cur_state.draw.vertex_buffer) {
-        glBindBuffer(GL_ARRAY_BUFFER, draw.vertex_buffer);
     }
 }
 
@@ -543,11 +540,7 @@ void OpenGLState::ApplyDepthClamp() const {
 
 void OpenGLState::Apply() const {
     ApplyFramebufferState();
-    ApplyVertexBufferState();
-    // Uniform buffer
-    if (draw.uniform_buffer != cur_state.draw.uniform_buffer) {
-        glBindBuffer(GL_UNIFORM_BUFFER, draw.uniform_buffer);
-    }
+    ApplyVertexArrayState();
 
     // Shader program
     if (draw.shader_program != cur_state.draw.shader_program) {
@@ -634,16 +627,6 @@ OpenGLState& OpenGLState::ResetProgram(GLuint handle) {
 OpenGLState& OpenGLState::ResetPipeline(GLuint handle) {
     if (draw.program_pipeline == handle) {
         draw.program_pipeline = 0;
-    }
-    return *this;
-}
-
-OpenGLState& OpenGLState::ResetBuffer(GLuint handle) {
-    if (draw.vertex_buffer == handle) {
-        draw.vertex_buffer = 0;
-    }
-    if (draw.uniform_buffer == handle) {
-        draw.uniform_buffer = 0;
     }
     return *this;
 }

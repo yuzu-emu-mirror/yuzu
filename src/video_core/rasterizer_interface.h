@@ -4,12 +4,22 @@
 
 #pragma once
 
+#include <atomic>
+#include <functional>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 
 namespace VideoCore {
+
+enum class LoadCallbackStage {
+    Prepare,
+    Decompile,
+    Build,
+    Complete,
+};
+using DiskResourceLoadCallback = std::function<void(LoadCallbackStage, std::size_t, std::size_t)>;
 
 class RasterizerInterface {
 public:
@@ -36,12 +46,9 @@ public:
 
     /// Attempt to use a faster method to perform a surface copy
     virtual bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Regs::Surface& src,
-                                       const Tegra::Engines::Fermi2D::Regs::Surface& dst) {
-        return false;
-    }
-
-    /// Attempt to use a faster method to fill a region
-    virtual bool AccelerateFill(const void* config) {
+                                       const Tegra::Engines::Fermi2D::Regs::Surface& dst,
+                                       const MathUtil::Rectangle<u32>& src_rect,
+                                       const MathUtil::Rectangle<u32>& dst_rect) {
         return false;
     }
 
@@ -57,5 +64,9 @@ public:
 
     /// Increase/decrease the number of object in pages touching the specified region
     virtual void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) {}
+
+    /// Initialize disk cached resources for the game being emulated
+    virtual void LoadDiskResources(const std::atomic_bool& stop_loading = false,
+                                   const DiskResourceLoadCallback& callback = {}) {}
 };
 } // namespace VideoCore

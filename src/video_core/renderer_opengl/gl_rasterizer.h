@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -33,6 +34,10 @@
 #include "video_core/renderer_opengl/gl_state.h"
 #include "video_core/renderer_opengl/gl_stream_buffer.h"
 
+namespace Core {
+class System;
+}
+
 namespace Core::Frontend {
 class EmuWindow;
 }
@@ -45,7 +50,8 @@ struct FramebufferCacheKey;
 
 class RasterizerOpenGL : public VideoCore::RasterizerInterface {
 public:
-    explicit RasterizerOpenGL(Core::Frontend::EmuWindow& renderer, ScreenInfo& info);
+    explicit RasterizerOpenGL(Core::Frontend::EmuWindow& window, Core::System& system,
+                              ScreenInfo& info);
     ~RasterizerOpenGL() override;
 
     void DrawArrays() override;
@@ -55,12 +61,15 @@ public:
     void InvalidateRegion(VAddr addr, u64 size) override;
     void FlushAndInvalidateRegion(VAddr addr, u64 size) override;
     bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Regs::Surface& src,
-                               const Tegra::Engines::Fermi2D::Regs::Surface& dst) override;
-    bool AccelerateFill(const void* config) override;
+                               const Tegra::Engines::Fermi2D::Regs::Surface& dst,
+                               const MathUtil::Rectangle<u32>& src_rect,
+                               const MathUtil::Rectangle<u32>& dst_rect) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
     bool AccelerateDrawBatch(bool is_indexed) override;
     void UpdatePagesCachedCount(Tegra::GPUVAddr addr, u64 size, int delta) override;
+    void LoadDiskResources(const std::atomic_bool& stop_loading,
+                           const VideoCore::DiskResourceLoadCallback& callback) override;
 
     /// Maximum supported size that a constbuffer can have in bytes.
     static constexpr std::size_t MaxConstbufferSize = 0x10000;
@@ -99,36 +108,48 @@ private:
         float max_anisotropic = 1.0f;
     };
 
+    struct FramebufferConfigState {
+        bool using_color_fb{};
+        bool using_depth_fb{};
+        bool preserve_contents{};
+        std::optional<std::size_t> single_color_target;
+
+        bool operator==(const FramebufferConfigState& rhs) const {
+            return std::tie(using_color_fb, using_depth_fb, preserve_contents,
+                            single_color_target) == std::tie(rhs.using_color_fb, rhs.using_depth_fb,
+                                                             rhs.preserve_contents,
+                                                             rhs.single_color_target);
+        }
+        bool operator!=(const FramebufferConfigState& rhs) const {
+            return !operator==(rhs);
+        }
+    };
+
     /**
      * Configures the color and depth framebuffer states.
      * @param use_color_fb If true, configure color framebuffers.
      * @param using_depth_fb If true, configure the depth/stencil framebuffer.
      * @param preserve_contents If true, tries to preserve data from a previously used framebuffer.
      * @param single_color_target Specifies if a single color buffer target should be used.
+     * @returns If depth (first) or stencil (second) are being stored in the bound zeta texture
+     * (requires using_depth_fb to be true)
      */
-    void ConfigureFramebuffers(OpenGLState& current_state, bool use_color_fb = true,
-                               bool using_depth_fb = true, bool preserve_contents = true,
-                               std::optional<std::size_t> single_color_target = {});
+    std::pair<bool, bool> ConfigureFramebuffers(
+        OpenGLState& current_state, bool use_color_fb = true, bool using_depth_fb = true,
+        bool preserve_contents = true, std::optional<std::size_t> single_color_target = {});
 
-    /**
-     * Configures the current constbuffers to use for the draw command.
-     * @param stage The shader stage to configure buffers for.
-     * @param shader The shader object that contains the specified stage.
-     * @param current_bindpoint The offset at which to start counting new buffer bindpoints.
-     * @returns The next available bindpoint for use in the next shader stage.
-     */
-    u32 SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, Shader& shader,
-                          GLenum primitive_mode, u32 current_bindpoint);
+    /// Configures the current constbuffers to use for the draw command.
+    void SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, const Shader& shader,
+                           GLuint program_handle, BaseBindings base_bindings);
 
-    /**
-     * Configures the current textures to use for the draw command.
-     * @param stage The shader stage to configure textures for.
-     * @param shader The shader object that contains the specified stage.
-     * @param current_unit The offset at which to start counting unused texture units.
-     * @returns The next available bindpoint for use in the next shader stage.
-     */
-    u32 SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, Shader& shader,
-                      GLenum primitive_mode, u32 current_unit);
+    /// Configures the current global memory entries to use for the draw command.
+    void SetupGlobalRegions(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage,
+                            const Shader& shader, GLenum primitive_mode,
+                            BaseBindings base_bindings);
+
+    /// Configures the current textures to use for the draw command.
+    void SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, const Shader& shader,
+                       GLuint program_handle, BaseBindings base_bindings);
 
     /// Syncs the viewport and depth range to match the guest state
     void SyncViewport(OpenGLState& current_state);
@@ -203,6 +224,8 @@ private:
         vertex_array_cache;
 
     std::map<FramebufferCacheKey, OGLFramebuffer> framebuffer_cache;
+    FramebufferConfigState current_framebuffer_config_state;
+    std::pair<bool, bool> current_depth_stencil_usage{};
 
     std::array<SamplerInfo, Tegra::Engines::Maxwell3D::Regs::NumTextureSamplers> texture_samplers;
 
@@ -215,8 +238,10 @@ private:
 
     std::size_t CalculateIndexBufferSize() const;
 
-    void SetupVertexFormat();
-    void SetupVertexBuffer();
+    /// Updates and returns a vertex array object representing current vertex format
+    GLuint SetupVertexFormat();
+
+    void SetupVertexBuffer(GLuint vao);
 
     DrawParameters SetupDraw();
 

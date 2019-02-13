@@ -186,7 +186,7 @@ enum class SubOp : u64 {
 };
 
 enum class F2iRoundingOp : u64 {
-    None = 0,
+    RoundEven = 0,
     Floor = 1,
     Ceil = 2,
     Trunc = 3,
@@ -208,6 +208,8 @@ enum class UniformType : u64 {
     SignedShort = 3,
     Single = 4,
     Double = 5,
+    Quad = 6,
+    UnsignedQuad = 7,
 };
 
 enum class StoreType : u64 {
@@ -215,9 +217,9 @@ enum class StoreType : u64 {
     Signed8 = 1,
     Unsigned16 = 2,
     Signed16 = 3,
-    Bytes32 = 4,
-    Bytes64 = 5,
-    Bytes128 = 6,
+    Bits32 = 4,
+    Bits64 = 5,
+    Bits128 = 6,
 };
 
 enum class IMinMaxExchange : u64 {
@@ -396,6 +398,10 @@ struct IpaMode {
     }
     bool operator!=(const IpaMode& a) const {
         return !operator==(a);
+    }
+    bool operator<(const IpaMode& a) const {
+        return std::tie(interpolation_mode, sampling_mode) <
+               std::tie(a.interpolation_mode, a.sampling_mode);
     }
 };
 
@@ -644,6 +650,7 @@ union Instruction {
             BitField<37, 2, HalfPrecision> precision;
             BitField<32, 1, u64> saturate;
 
+            BitField<31, 1, u64> negate_b;
             BitField<30, 1, u64> negate_c;
             BitField<35, 2, HalfType> type_c;
         } rr;
@@ -778,6 +785,12 @@ union Instruction {
     union {
         BitField<44, 2, u64> unknown;
     } st_l;
+
+    union {
+        BitField<48, 3, UniformType> type;
+        BitField<46, 2, u64> cache_mode;
+        BitField<20, 24, s64> immediate_offset;
+    } ldg;
 
     union {
         BitField<0, 3, u64> pred0;
@@ -967,6 +980,10 @@ union Instruction {
                 break;
             }
             return false;
+        }
+
+        bool IsComponentEnabled(std::size_t component) const {
+            return ((1ULL << component) & component_mask) != 0;
         }
     } txq;
 
@@ -1235,11 +1252,19 @@ union Instruction {
     union {
         BitField<20, 14, u64> offset;
         BitField<34, 5, u64> index;
+
+        u64 GetOffset() const {
+            return offset * 4;
+        }
     } cbuf34;
 
     union {
         BitField<20, 16, s64> offset;
         BitField<36, 5, u64> index;
+
+        s64 GetOffset() const {
+            return offset;
+        }
     } cbuf36;
 
     // Unsure about the size of this one.
@@ -1431,6 +1456,7 @@ public:
         PredicateSetRegister,
         RegisterSetPredicate,
         Conversion,
+        Video,
         Xmad,
         Unknown,
     };
@@ -1562,8 +1588,8 @@ private:
             INST("11100000--------", Id::IPA, Type::Trivial, "IPA"),
             INST("1111101111100---", Id::OUT_R, Type::Trivial, "OUT_R"),
             INST("1110111111010---", Id::ISBERD, Type::Trivial, "ISBERD"),
-            INST("01011111--------", Id::VMAD, Type::Trivial, "VMAD"),
-            INST("0101000011110---", Id::VSETP, Type::Trivial, "VSETP"),
+            INST("01011111--------", Id::VMAD, Type::Video, "VMAD"),
+            INST("0101000011110---", Id::VSETP, Type::Video, "VSETP"),
             INST("0011001-1-------", Id::FFMA_IMM, Type::Ffma, "FFMA_IMM"),
             INST("010010011-------", Id::FFMA_CR, Type::Ffma, "FFMA_CR"),
             INST("010100011-------", Id::FFMA_RC, Type::Ffma, "FFMA_RC"),

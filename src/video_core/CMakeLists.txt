@@ -5,12 +5,12 @@ add_library(video_core STATIC
     debug_utils/debug_utils.h
     engines/fermi_2d.cpp
     engines/fermi_2d.h
+    engines/kepler_compute.cpp
+    engines/kepler_compute.h
     engines/kepler_memory.cpp
     engines/kepler_memory.h
     engines/maxwell_3d.cpp
     engines/maxwell_3d.h
-    engines/maxwell_compute.cpp
-    engines/maxwell_compute.h
     engines/maxwell_dma.cpp
     engines/maxwell_dma.h
     engines/shader_bytecode.h
@@ -44,6 +44,8 @@ add_library(video_core STATIC
     renderer_opengl/gl_shader_cache.h
     renderer_opengl/gl_shader_decompiler.cpp
     renderer_opengl/gl_shader_decompiler.h
+    renderer_opengl/gl_shader_disk_cache.cpp
+    renderer_opengl/gl_shader_disk_cache.h
     renderer_opengl/gl_shader_gen.cpp
     renderer_opengl/gl_shader_gen.h
     renderer_opengl/gl_shader_manager.cpp
@@ -59,6 +61,35 @@ add_library(video_core STATIC
     renderer_opengl/renderer_opengl.h
     renderer_opengl/utils.cpp
     renderer_opengl/utils.h
+    shader/decode/arithmetic.cpp
+    shader/decode/arithmetic_immediate.cpp
+    shader/decode/bfe.cpp
+    shader/decode/bfi.cpp
+    shader/decode/shift.cpp
+    shader/decode/arithmetic_integer.cpp
+    shader/decode/arithmetic_integer_immediate.cpp
+    shader/decode/arithmetic_half.cpp
+    shader/decode/arithmetic_half_immediate.cpp
+    shader/decode/ffma.cpp
+    shader/decode/hfma2.cpp
+    shader/decode/conversion.cpp
+    shader/decode/memory.cpp
+    shader/decode/float_set_predicate.cpp
+    shader/decode/integer_set_predicate.cpp
+    shader/decode/half_set_predicate.cpp
+    shader/decode/predicate_set_register.cpp
+    shader/decode/predicate_set_predicate.cpp
+    shader/decode/register_set_predicate.cpp
+    shader/decode/float_set.cpp
+    shader/decode/integer_set.cpp
+    shader/decode/half_set.cpp
+    shader/decode/video.cpp
+    shader/decode/xmad.cpp
+    shader/decode/other.cpp
+    shader/decode.cpp
+    shader/shader_ir.cpp
+    shader/shader_ir.h
+    shader/track.cpp
     surface.cpp
     surface.h
     textures/astc.cpp
@@ -73,4 +104,4 @@ add_library(video_core STATIC
 create_target_directory_groups(video_core)
 
 target_link_libraries(video_core PUBLIC common core)
-target_link_libraries(video_core PRIVATE glad)
+target_link_libraries(video_core PRIVATE glad lz4_static)

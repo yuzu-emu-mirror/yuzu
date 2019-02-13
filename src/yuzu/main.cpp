@@ -14,6 +14,7 @@
 #include "configuration/configure_per_general.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
+#include "core/frontend/scope_acquire_window_context.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/hid/controllers/npad.h"
@@ -92,6 +93,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/game_list.h"
 #include "yuzu/game_list_p.h"
 #include "yuzu/hotkeys.h"
+#include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
 #include "yuzu/ui_settings.h"
 
@@ -410,6 +412,17 @@ void GMainWindow::InitializeWidgets() {
 
     game_list = new GameList(vfs, this);
     ui.horizontalLayout->addWidget(game_list);
+
+    loading_screen = new LoadingScreen(this);
+    loading_screen->hide();
+    ui.horizontalLayout->addWidget(loading_screen);
+    connect(loading_screen, &LoadingScreen::Hidden, [&] {
+        loading_screen->Clear();
+        if (emulation_running) {
+            render_window->show();
+            render_window->setFocus();
+        }
+    });
 
     // Create status bar
     message_label = new QLabel();
@@ -735,13 +748,15 @@ bool GMainWindow::LoadROM(const QString& filename) {
         ShutdownGame();
 
     render_window->InitRenderTarget();
-    render_window->MakeCurrent();
 
-    if (!gladLoadGL()) {
-        QMessageBox::critical(this, tr("Error while initializing OpenGL 4.3 Core!"),
-                              tr("Your GPU may not support OpenGL 4.3, or you do not "
-                                 "have the latest graphics driver."));
-        return false;
+    {
+        Core::Frontend::ScopeAcquireWindowContext acquire_context{*render_window};
+        if (!gladLoadGL()) {
+            QMessageBox::critical(this, tr("Error while initializing OpenGL 4.3 Core!"),
+                                  tr("Your GPU may not support OpenGL 4.3, or you do not "
+                                     "have the latest graphics driver."));
+            return false;
+        }
     }
 
     QStringList unsupported_gl_extensions = GetUnsupportedGLExtensions();
@@ -781,8 +796,6 @@ bool GMainWindow::LoadROM(const QString& filename) {
                "href='https://yuzu-emu.org/wiki/overview-of-switch-game-formats'>check out our "
                "wiki</a>. This message will not be shown again."));
     }
-
-    render_window->DoneCurrent();
 
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
@@ -874,6 +887,9 @@ void GMainWindow::BootGame(const QString& filename) {
     connect(emu_thread.get(), &EmuThread::DebugModeLeft, waitTreeWidget,
             &WaitTreeWidget::OnDebugModeLeft, Qt::BlockingQueuedConnection);
 
+    connect(emu_thread.get(), &EmuThread::LoadProgress, loading_screen,
+            &LoadingScreen::OnLoadProgress, Qt::QueuedConnection);
+
     // Update the GUI
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
@@ -897,8 +913,8 @@ void GMainWindow::BootGame(const QString& filename) {
                        .arg(Common::g_build_fullname, Common::g_scm_branch, Common::g_scm_desc,
                             QString::fromStdString(title_name)));
 
-    render_window->show();
-    render_window->setFocus();
+    loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
+    loading_screen->show();
 
     emulation_running = true;
     if (ui.action_Fullscreen->isChecked()) {
@@ -932,6 +948,8 @@ void GMainWindow::ShutdownGame() {
     ui.action_Load_Amiibo->setEnabled(false);
     ui.action_Capture_Screenshot->setEnabled(false);
     render_window->hide();
+    loading_screen->hide();
+    loading_screen->Clear();
     game_list->show();
     game_list->setFilterFocus();
     setWindowTitle(QString("yuzu %1| %2-%3")
@@ -1505,6 +1523,10 @@ void GMainWindow::OnStopGame() {
     ShutdownGame();
 }
 
+void GMainWindow::OnLoadComplete() {
+    loading_screen->OnLoadComplete();
+}
+
 void GMainWindow::OnMenuReportCompatibility() {
     if (!Settings::values.yuzu_token.empty() && !Settings::values.yuzu_username.empty()) {
         CompatDB compatdb{this};
@@ -1663,12 +1685,16 @@ void GMainWindow::OnToggleFilterBar() {
 
 void GMainWindow::OnCaptureScreenshot() {
     OnPauseGame();
-    const QString path =
-        QFileDialog::getSaveFileName(this, tr("Capture Screenshot"),
-                                     UISettings::values.screenshot_path, tr("PNG Image (*.png)"));
-    if (!path.isEmpty()) {
-        UISettings::values.screenshot_path = QFileInfo(path).path();
-        render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor, path);
+    QFileDialog png_dialog(this, tr("Capture Screenshot"), UISettings::values.screenshot_path,
+                           tr("PNG Image (*.png)"));
+    png_dialog.setAcceptMode(QFileDialog::AcceptSave);
+    png_dialog.setDefaultSuffix("png");
+    if (png_dialog.exec()) {
+        const QString path = png_dialog.selectedFiles().first();
+        if (!path.isEmpty()) {
+            UISettings::values.screenshot_path = QFileInfo(path).path();
+            render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor, path);
+        }
     }
     OnStartGame();
 }
@@ -1771,9 +1797,8 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
             this, tr("Confirm Key Rederivation"),
             tr("You are about to force rederive all of your keys. \nIf you do not know what this "
                "means or what you are doing, \nthis is a potentially destructive action. \nPlease "
-               "make "
-               "sure this is what you want \nand optionally make backups.\n\nThis will delete your "
-               "autogenerated key files and re-run the key derivation module."),
+               "make sure this is what you want \nand optionally make backups.\n\nThis will delete "
+               "your autogenerated key files and re-run the key derivation module."),
             QMessageBox::StandardButtons{QMessageBox::Ok, QMessageBox::Cancel});
 
         if (res == QMessageBox::Cancel)
@@ -1818,7 +1843,7 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
                     errors +
                     tr("<br><br>You can get all of these and dump all of your games easily by "
                        "following <a href='https://yuzu-emu.org/help/quickstart/'>the "
-                       "quickstart guide</a>. Alternatively, you can use another method of dumping "
+                       "quickstart guide</a>. Alternatively, you can use another method of dumping"
                        "to obtain all of your keys."));
         }
 
@@ -2025,6 +2050,9 @@ int main(int argc, char* argv[]) {
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
+
+    Settings::LogSettings();
+
     int result = app.exec();
     detached_tasks.WaitForAllTasks();
     return result;

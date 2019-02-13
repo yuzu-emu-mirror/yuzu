@@ -34,6 +34,7 @@ namespace Service::VI {
 
 constexpr ResultCode ERR_OPERATION_FAILED{ErrorModule::VI, 1};
 constexpr ResultCode ERR_UNSUPPORTED{ErrorModule::VI, 6};
+constexpr ResultCode ERR_NOT_FOUND{ErrorModule::VI, 7};
 
 struct DisplayInfo {
     /// The name of this particular display.
@@ -524,7 +525,7 @@ private:
         LOG_DEBUG(Service_VI, "called. id=0x{:08X} transaction={:X}, flags=0x{:08X}", id,
                   static_cast<u32>(transaction), flags);
 
-        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+        auto buffer_queue = nv_flinger->FindBufferQueue(id);
 
         if (transaction == TransactionId::Connect) {
             IGBPConnectRequestParcel request{ctx.ReadBuffer()};
@@ -558,7 +559,7 @@ private:
                     [=](Kernel::SharedPtr<Kernel::Thread> thread, Kernel::HLERequestContext& ctx,
                         Kernel::ThreadWakeupReason reason) {
                         // Repeat TransactParcel DequeueBuffer when a buffer is available
-                        auto buffer_queue = nv_flinger->GetBufferQueue(id);
+                        auto buffer_queue = nv_flinger->FindBufferQueue(id);
                         std::optional<u32> slot = buffer_queue->DequeueBuffer(width, height);
                         ASSERT_MSG(slot != std::nullopt, "Could not dequeue buffer.");
 
@@ -628,7 +629,7 @@ private:
 
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
 
-        const auto buffer_queue = nv_flinger->GetBufferQueue(id);
+        const auto buffer_queue = nv_flinger->FindBufferQueue(id);
 
         // TODO(Subv): Find out what this actually is.
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -704,13 +705,14 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
+    // This function currently does nothing but return a success error code in
+    // the vi library itself, so do the same thing, but log out the passed in values.
     void SetLayerVisibility(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
         const bool visibility = rp.Pop<bool>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:08X}, visibility={}", layer_id,
-                    visibility);
+        LOG_DEBUG(Service_VI, "called, layer_id=0x{:08X}, visibility={}", layer_id, visibility);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -837,11 +839,16 @@ private:
                     "(STUBBED) called. unknown=0x{:08X}, display=0x{:016X}, aruid=0x{:016X}",
                     unknown, display, aruid);
 
-        const u64 layer_id = nv_flinger->CreateLayer(display);
+        const auto layer_id = nv_flinger->CreateLayer(display);
+        if (!layer_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
 
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(layer_id);
+        rb.Push(*layer_id);
     }
 
     void AddToLayerStack(Kernel::HLERequestContext& ctx) {
@@ -949,9 +956,16 @@ private:
 
         ASSERT_MSG(name == "Default", "Non-default displays aren't supported yet");
 
+        const auto display_id = nv_flinger->OpenDisplay(name);
+        if (!display_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
+
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u64>(nv_flinger->OpenDisplay(name));
+        rb.Push<u64>(*display_id);
     }
 
     void CloseDisplay(Kernel::HLERequestContext& ctx) {
@@ -1042,10 +1056,21 @@ private:
 
         LOG_DEBUG(Service_VI, "called. layer_id=0x{:016X}, aruid=0x{:016X}", layer_id, aruid);
 
-        const u64 display_id = nv_flinger->OpenDisplay(display_name);
-        const u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+        const auto display_id = nv_flinger->OpenDisplay(display_name);
+        if (!display_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
 
-        NativeWindow native_window{buffer_queue_id};
+        const auto buffer_queue_id = nv_flinger->FindBufferQueueId(*display_id, layer_id);
+        if (!buffer_queue_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
+
+        NativeWindow native_window{*buffer_queue_id};
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
@@ -1061,13 +1086,24 @@ private:
 
         // TODO(Subv): What's the difference between a Stray and a Managed layer?
 
-        const u64 layer_id = nv_flinger->CreateLayer(display_id);
-        const u32 buffer_queue_id = nv_flinger->GetBufferQueueId(display_id, layer_id);
+        const auto layer_id = nv_flinger->CreateLayer(display_id);
+        if (!layer_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
 
-        NativeWindow native_window{buffer_queue_id};
+        const auto buffer_queue_id = nv_flinger->FindBufferQueueId(display_id, *layer_id);
+        if (!buffer_queue_id) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
+
+        NativeWindow native_window{*buffer_queue_id};
         IPC::ResponseBuilder rb{ctx, 6};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(layer_id);
+        rb.Push(*layer_id);
         rb.Push<u64>(ctx.WriteBuffer(native_window.Serialize()));
     }
 
@@ -1087,7 +1123,12 @@ private:
 
         LOG_WARNING(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
 
-        const auto vsync_event = nv_flinger->GetVsyncEvent(display_id);
+        const auto vsync_event = nv_flinger->FindVsyncEvent(display_id);
+        if (!vsync_event) {
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERR_NOT_FOUND);
+            return;
+        }
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);

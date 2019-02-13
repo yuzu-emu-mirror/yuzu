@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "common/alignment.h"
@@ -35,6 +36,14 @@ using PixelFormat = VideoCore::Surface::PixelFormat;
 using ComponentType = VideoCore::Surface::ComponentType;
 
 struct SurfaceParams {
+
+    enum class SurfaceClass {
+        Uploaded,
+        RenderTarget,
+        DepthBuffer,
+        Copy,
+    };
+
     static std::string SurfaceTargetName(SurfaceTarget target) {
         switch (target) {
         case SurfaceTarget::Texture1D:
@@ -210,6 +219,48 @@ struct SurfaceParams {
     /// Initializes parameters for caching, should be called after everything has been initialized
     void InitCacheParameters(Tegra::GPUVAddr gpu_addr);
 
+    std::string TargetName() const {
+        switch (target) {
+        case SurfaceTarget::Texture1D:
+            return "1D";
+        case SurfaceTarget::Texture2D:
+            return "2D";
+        case SurfaceTarget::Texture3D:
+            return "3D";
+        case SurfaceTarget::Texture1DArray:
+            return "1DArray";
+        case SurfaceTarget::Texture2DArray:
+            return "2DArray";
+        case SurfaceTarget::TextureCubemap:
+            return "Cube";
+        default:
+            LOG_CRITICAL(HW_GPU, "Unimplemented surface_target={}", static_cast<u32>(target));
+            UNREACHABLE();
+            return fmt::format("TUK({})", static_cast<u32>(target));
+        }
+    }
+
+    std::string ClassName() const {
+        switch (identity) {
+        case SurfaceClass::Uploaded:
+            return "UP";
+        case SurfaceClass::RenderTarget:
+            return "RT";
+        case SurfaceClass::DepthBuffer:
+            return "DB";
+        case SurfaceClass::Copy:
+            return "CP";
+        default:
+            LOG_CRITICAL(HW_GPU, "Unimplemented surface_class={}", static_cast<u32>(identity));
+            UNREACHABLE();
+            return fmt::format("CUK({})", static_cast<u32>(identity));
+        }
+    }
+
+    std::string IdentityString() const {
+        return ClassName() + '_' + TargetName() + '_' + (is_tiled ? 'T' : 'L');
+    }
+
     bool is_tiled;
     u32 block_width;
     u32 block_height;
@@ -222,9 +273,12 @@ struct SurfaceParams {
     u32 height;
     u32 depth;
     u32 unaligned_height;
+    u32 pitch;
     SurfaceTarget target;
+    SurfaceClass identity;
     u32 max_mip_level;
     bool is_layered;
+    bool is_array;
     bool srgb_conversion;
     // Parameters used for caching
     VAddr addr;
@@ -255,6 +309,7 @@ struct SurfaceReserveKey : Common::HashableStruct<OpenGL::SurfaceParams> {
     static SurfaceReserveKey Create(const OpenGL::SurfaceParams& params) {
         SurfaceReserveKey res;
         res.state = params;
+        res.state.identity = {}; // Ignore the origin of the texture
         res.state.gpu_addr = {}; // Ignore GPU vaddr in caching
         res.state.rt = {};       // Ignore rt config in caching
         return res;
@@ -294,7 +349,7 @@ public:
     }
 
     const OGLTexture& TextureLayer() {
-        if (params.is_layered) {
+        if (params.is_array) {
             return Texture();
         }
         EnsureTextureView();
@@ -329,6 +384,11 @@ public:
     // Upload data in gl_buffer to this surface's texture
     void UploadGLTexture(GLuint read_fb_handle, GLuint draw_fb_handle);
 
+    void UpdateSwizzle(Tegra::Texture::SwizzleSource swizzle_x,
+                       Tegra::Texture::SwizzleSource swizzle_y,
+                       Tegra::Texture::SwizzleSource swizzle_z,
+                       Tegra::Texture::SwizzleSource swizzle_w);
+
 private:
     void UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle, GLuint draw_fb_handle);
 
@@ -340,8 +400,8 @@ private:
     SurfaceParams params{};
     GLenum gl_target{};
     GLenum gl_internal_format{};
-    bool gl_is_compressed{};
     std::size_t cached_size_in_bytes{};
+    std::array<GLenum, 4> swizzle{GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
 };
 
 class RasterizerCacheOpenGL final : public RasterizerCache<Surface> {
@@ -363,7 +423,9 @@ public:
 
     /// Copies the contents of one surface to another
     void FermiCopySurface(const Tegra::Engines::Fermi2D::Regs::Surface& src_config,
-                          const Tegra::Engines::Fermi2D::Regs::Surface& dst_config);
+                          const Tegra::Engines::Fermi2D::Regs::Surface& dst_config,
+                          const MathUtil::Rectangle<u32>& src_rect,
+                          const MathUtil::Rectangle<u32>& dst_rect);
 
 private:
     void LoadSurface(const Surface& surface);
@@ -384,6 +446,10 @@ private:
     /// Performs a slow but accurate surface copy, flushing to RAM and reinterpreting the data
     void AccurateCopySurface(const Surface& src_surface, const Surface& dst_surface);
     void FastLayeredCopySurface(const Surface& src_surface, const Surface& dst_surface);
+    void FastCopySurface(const Surface& src_surface, const Surface& dst_surface);
+    void CopySurface(const Surface& src_surface, const Surface& dst_surface,
+                     const GLuint copy_pbo_handle, const GLenum src_attachment = 0,
+                     const GLenum dst_attachment = 0, const std::size_t cubemap_face = 0);
 
     /// The surface reserve is a "backup" cache, this is where we put unique surfaces that have
     /// previously been used. This is to prevent surfaces from being constantly created and
@@ -396,6 +462,9 @@ private:
     /// Use a Pixel Buffer Object to download the previous texture and then upload it to the new one
     /// using the new format.
     OGLBuffer copy_pbo;
+
+    std::array<Surface, Tegra::Engines::Maxwell3D::Regs::NumRenderTargets> last_color_buffers;
+    Surface last_depth_buffer;
 };
 
 } // namespace OpenGL

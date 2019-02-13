@@ -15,12 +15,12 @@ MICROPROFILE_DEFINE(OpenGL_ResourceDeletion, "OpenGL", "Resource Deletion", MP_R
 
 namespace OpenGL {
 
-void OGLTexture::Create() {
+void OGLTexture::Create(GLenum target) {
     if (handle != 0)
         return;
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    glGenTextures(1, &handle);
+    glCreateTextures(target, 1, &handle);
 }
 
 void OGLTexture::Release() {
@@ -71,7 +71,8 @@ void OGLShader::Release() {
 }
 
 void OGLProgram::CreateFromSource(const char* vert_shader, const char* geo_shader,
-                                  const char* frag_shader, bool separable_program) {
+                                  const char* frag_shader, bool separable_program,
+                                  bool hint_retrievable) {
     OGLShader vert, geo, frag;
     if (vert_shader)
         vert.Create(vert_shader, GL_VERTEX_SHADER);
@@ -81,7 +82,7 @@ void OGLProgram::CreateFromSource(const char* vert_shader, const char* geo_shade
         frag.Create(frag_shader, GL_FRAGMENT_SHADER);
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    Create(separable_program, vert.handle, geo.handle, frag.handle);
+    Create(separable_program, hint_retrievable, vert.handle, geo.handle, frag.handle);
 }
 
 void OGLProgram::Release() {
@@ -117,7 +118,7 @@ void OGLBuffer::Create() {
         return;
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    glGenBuffers(1, &handle);
+    glCreateBuffers(1, &handle);
 }
 
 void OGLBuffer::Release() {
@@ -126,7 +127,6 @@ void OGLBuffer::Release() {
 
     MICROPROFILE_SCOPE(OpenGL_ResourceDeletion);
     glDeleteBuffers(1, &handle);
-    OpenGLState::GetCurState().ResetBuffer(handle).Apply();
     handle = 0;
 }
 
@@ -152,7 +152,7 @@ void OGLVertexArray::Create() {
         return;
 
     MICROPROFILE_SCOPE(OpenGL_ResourceCreation);
-    glGenVertexArrays(1, &handle);
+    glCreateVertexArrays(1, &handle);
 }
 
 void OGLVertexArray::Release() {

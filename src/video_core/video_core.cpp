@@ -11,14 +11,16 @@
 
 namespace VideoCore {
 
-std::unique_ptr<RendererBase> CreateRenderer(Core::Frontend::EmuWindow& emu_window) {
-    return std::make_unique<OpenGL::RendererOpenGL>(emu_window);
+std::unique_ptr<RendererBase> CreateRenderer(Core::Frontend::EmuWindow& emu_window,
+                                             Core::System& system) {
+    return std::make_unique<OpenGL::RendererOpenGL>(emu_window, system);
 }
 
 u16 GetResolutionScaleFactor(const RendererBase& renderer) {
-    return !Settings::values.resolution_factor
-               ? renderer.GetRenderWindow().GetFramebufferLayout().GetScalingRatio()
-               : Settings::values.resolution_factor;
+    return static_cast<u16>(
+        Settings::values.resolution_factor
+            ? Settings::values.resolution_factor
+            : renderer.GetRenderWindow().GetFramebufferLayout().GetScalingRatio());
 }
 
 } // namespace VideoCore

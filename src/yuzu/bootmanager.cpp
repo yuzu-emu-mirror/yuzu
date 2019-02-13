@@ -3,9 +3,7 @@
 #include <QKeyEvent>
 #include <QScreen>
 #include <QWindow>
-
 #include <fmt/format.h>
-
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
 #include "core/core.h"
@@ -17,6 +15,7 @@
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 #include "yuzu/bootmanager.h"
+#include "yuzu/main.h"
 
 EmuThread::EmuThread(GRenderWindow* render_window) : render_window(render_window) {}
 
@@ -29,6 +28,15 @@ void EmuThread::run() {
     MicroProfileOnThreadCreate("EmuThread");
 
     stop_run = false;
+
+    emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
+
+    Core::System::GetInstance().Renderer().Rasterizer().LoadDiskResources(
+        stop_run, [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
+            emit LoadProgress(stage, value, total);
+        });
+
+    emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     // holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
@@ -114,6 +122,8 @@ GRenderWindow::GRenderWindow(QWidget* parent, EmuThread* emu_thread)
 
     InputCommon::Init();
     InputCommon::StartJoystickEventHandler();
+    connect(this, &GRenderWindow::FirstFrameDisplayed, static_cast<GMainWindow*>(parent),
+            &GMainWindow::OnLoadComplete);
 }
 
 GRenderWindow::~GRenderWindow() {
@@ -141,6 +151,10 @@ void GRenderWindow::SwapBuffers() {
     child->makeCurrent();
 
     child->swapBuffers();
+    if (!first_frame) {
+        emit FirstFrameDisplayed();
+        first_frame = true;
+    }
 }
 
 void GRenderWindow::MakeCurrent() {
@@ -308,6 +322,8 @@ void GRenderWindow::InitRenderTarget() {
     if (layout()) {
         delete layout();
     }
+
+    first_frame = false;
 
     // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
     // WA_DontShowOnScreen, WA_DeleteOnClose

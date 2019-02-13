@@ -18,7 +18,6 @@
 #include "video_core/morton.h"
 #include "video_core/renderer_opengl/gl_rasterizer.h"
 #include "video_core/renderer_opengl/gl_rasterizer_cache.h"
-#include "video_core/renderer_opengl/gl_state.h"
 #include "video_core/renderer_opengl/utils.h"
 #include "video_core/surface.h"
 #include "video_core/textures/astc.h"
@@ -44,14 +43,14 @@ struct FormatTuple {
     bool compressed;
 };
 
-static void ApplyTextureDefaults(GLenum target, u32 max_mip_level) {
-    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_mip_level - 1);
+static void ApplyTextureDefaults(GLuint texture, u32 max_mip_level) {
+    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, max_mip_level - 1);
     if (max_mip_level == 1) {
-        glTexParameterf(target, GL_TEXTURE_LOD_BIAS, 1000.0);
+        glTextureParameterf(texture, GL_TEXTURE_LOD_BIAS, 1000.0);
     }
 }
 
@@ -126,8 +125,12 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
 
     params.width = Common::AlignUp(config.tic.Width(), GetCompressionFactor(params.pixel_format));
     params.height = Common::AlignUp(config.tic.Height(), GetCompressionFactor(params.pixel_format));
+    if (!params.is_tiled) {
+        params.pitch = config.tic.Pitch();
+    }
     params.unaligned_height = config.tic.Height();
     params.target = SurfaceTargetFromTextureType(config.tic.texture_type);
+    params.identity = SurfaceClass::Uploaded;
 
     switch (params.target) {
     case SurfaceTarget::Texture1D:
@@ -167,6 +170,7 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
     }
 
     params.is_layered = SurfaceTargetIsLayered(params.target);
+    params.is_array = SurfaceTargetIsArray(params.target);
     params.max_mip_level = config.tic.max_mip_level + 1;
     params.rt = {};
 
@@ -190,10 +194,17 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
                              config.format == Tegra::RenderTargetFormat::RGBA8_SRGB;
     params.component_type = ComponentTypeFromRenderTarget(config.format);
     params.type = GetFormatType(params.pixel_format);
-    params.width = config.width;
+    if (params.is_tiled) {
+        params.width = config.width;
+    } else {
+        params.pitch = config.width;
+        const u32 bpp = params.GetFormatBpp() / 8;
+        params.width = params.pitch / bpp;
+    }
     params.height = config.height;
     params.unaligned_height = config.height;
     params.target = SurfaceTarget::Texture2D;
+    params.identity = SurfaceClass::RenderTarget;
     params.depth = 1;
     params.max_mip_level = 1;
     params.is_layered = false;
@@ -229,6 +240,7 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
     params.height = zeta_height;
     params.unaligned_height = zeta_height;
     params.target = SurfaceTarget::Texture2D;
+    params.identity = SurfaceClass::DepthBuffer;
     params.depth = 1;
     params.max_mip_level = 1;
     params.is_layered = false;
@@ -257,6 +269,7 @@ std::size_t SurfaceParams::InnerMemorySize(bool force_gl, bool layer_only,
     params.height = config.height;
     params.unaligned_height = config.height;
     params.target = SurfaceTarget::Texture2D;
+    params.identity = SurfaceClass::Copy;
     params.depth = 1;
     params.max_mip_level = 1;
     params.rt = {};
@@ -424,7 +437,8 @@ void SwizzleFunc(const MortonSwizzleMode& mode, const SurfaceParams& params,
     }
 }
 
-static void FastCopySurface(const Surface& src_surface, const Surface& dst_surface) {
+void RasterizerCacheOpenGL::FastCopySurface(const Surface& src_surface,
+                                            const Surface& dst_surface) {
     const auto& src_params{src_surface->GetSurfaceParams()};
     const auto& dst_params{dst_surface->GetSurfaceParams()};
 
@@ -434,12 +448,15 @@ static void FastCopySurface(const Surface& src_surface, const Surface& dst_surfa
     glCopyImageSubData(src_surface->Texture().handle, SurfaceTargetToGL(src_params.target), 0, 0, 0,
                        0, dst_surface->Texture().handle, SurfaceTargetToGL(dst_params.target), 0, 0,
                        0, 0, width, height, 1);
+
+    dst_surface->MarkAsModified(true, *this);
 }
 
 MICROPROFILE_DEFINE(OpenGL_CopySurface, "OpenGL", "CopySurface", MP_RGB(128, 192, 64));
-static void CopySurface(const Surface& src_surface, const Surface& dst_surface,
-                        const GLuint copy_pbo_handle, const GLenum src_attachment = 0,
-                        const GLenum dst_attachment = 0, const std::size_t cubemap_face = 0) {
+void RasterizerCacheOpenGL::CopySurface(const Surface& src_surface, const Surface& dst_surface,
+                                        const GLuint copy_pbo_handle, const GLenum src_attachment,
+                                        const GLenum dst_attachment,
+                                        const std::size_t cubemap_face) {
     MICROPROFILE_SCOPE(OpenGL_CopySurface);
     ASSERT_MSG(dst_attachment == 0, "Unimplemented");
 
@@ -519,63 +536,50 @@ static void CopySurface(const Surface& src_surface, const Surface& dst_surface,
         }
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     }
+
+    dst_surface->MarkAsModified(true, *this);
 }
 
 CachedSurface::CachedSurface(const SurfaceParams& params)
     : params(params), gl_target(SurfaceTargetToGL(params.target)),
       cached_size_in_bytes(params.size_in_bytes) {
-    texture.Create();
-    const auto& rect{params.GetRect()};
+    texture.Create(gl_target);
 
-    // Keep track of previous texture bindings
-    OpenGLState cur_state = OpenGLState::GetCurState();
-    const auto& old_tex = cur_state.texture_units[0];
-    SCOPE_EXIT({
-        cur_state.texture_units[0] = old_tex;
-        cur_state.Apply();
-    });
-
-    cur_state.texture_units[0].texture = texture.handle;
-    cur_state.texture_units[0].target = SurfaceTargetToGL(params.target);
-    cur_state.Apply();
-    glActiveTexture(GL_TEXTURE0);
+    // TODO(Rodrigo): Using params.GetRect() returns a different size than using its Mip*(0)
+    // alternatives. This signals a bug on those functions.
+    const auto width = static_cast<GLsizei>(params.MipWidth(0));
+    const auto height = static_cast<GLsizei>(params.MipHeight(0));
 
     const auto& format_tuple = GetFormatTuple(params.pixel_format, params.component_type);
     gl_internal_format = format_tuple.internal_format;
-    gl_is_compressed = format_tuple.compressed;
 
-    if (!format_tuple.compressed) {
-        // Only pre-create the texture for non-compressed textures.
-        switch (params.target) {
-        case SurfaceTarget::Texture1D:
-            glTexStorage1D(SurfaceTargetToGL(params.target), params.max_mip_level,
-                           format_tuple.internal_format, rect.GetWidth());
-            break;
-        case SurfaceTarget::Texture2D:
-        case SurfaceTarget::TextureCubemap:
-            glTexStorage2D(SurfaceTargetToGL(params.target), params.max_mip_level,
-                           format_tuple.internal_format, rect.GetWidth(), rect.GetHeight());
-            break;
-        case SurfaceTarget::Texture3D:
-        case SurfaceTarget::Texture2DArray:
-        case SurfaceTarget::TextureCubeArray:
-            glTexStorage3D(SurfaceTargetToGL(params.target), params.max_mip_level,
-                           format_tuple.internal_format, rect.GetWidth(), rect.GetHeight(),
-                           params.depth);
-            break;
-        default:
-            LOG_CRITICAL(Render_OpenGL, "Unimplemented surface target={}",
-                         static_cast<u32>(params.target));
-            UNREACHABLE();
-            glTexStorage2D(GL_TEXTURE_2D, params.max_mip_level, format_tuple.internal_format,
-                           rect.GetWidth(), rect.GetHeight());
-        }
+    switch (params.target) {
+    case SurfaceTarget::Texture1D:
+        glTextureStorage1D(texture.handle, params.max_mip_level, format_tuple.internal_format,
+                           width);
+        break;
+    case SurfaceTarget::Texture2D:
+    case SurfaceTarget::TextureCubemap:
+        glTextureStorage2D(texture.handle, params.max_mip_level, format_tuple.internal_format,
+                           width, height);
+        break;
+    case SurfaceTarget::Texture3D:
+    case SurfaceTarget::Texture2DArray:
+    case SurfaceTarget::TextureCubeArray:
+        glTextureStorage3D(texture.handle, params.max_mip_level, format_tuple.internal_format,
+                           width, height, params.depth);
+        break;
+    default:
+        LOG_CRITICAL(Render_OpenGL, "Unimplemented surface target={}",
+                     static_cast<u32>(params.target));
+        UNREACHABLE();
+        glTextureStorage2D(texture.handle, params.max_mip_level, format_tuple.internal_format,
+                           width, height);
     }
 
-    ApplyTextureDefaults(SurfaceTargetToGL(params.target), params.max_mip_level);
+    ApplyTextureDefaults(texture.handle, params.max_mip_level);
 
-    LabelGLObject(GL_TEXTURE, texture.handle, params.addr,
-                  SurfaceParams::SurfaceTargetName(params.target));
+    OpenGL::LabelGLObject(GL_TEXTURE, texture.handle, params.addr, params.IdentityString());
 
     // Clamp size to mapped GPU memory region
     // TODO(bunnei): Super Mario Odyssey maps a 0x40000 byte region and then uses it for a 0x80000
@@ -699,9 +703,20 @@ void CachedSurface::LoadGLBuffer() {
         for (u32 i = 0; i < params.max_mip_level; i++)
             SwizzleFunc(MortonSwizzleMode::MortonToLinear, params, gl_buffer[i], i);
     } else {
-        const auto texture_src_data{Memory::GetPointer(params.addr)};
-        const auto texture_src_data_end{texture_src_data + params.size_in_bytes_gl};
-        gl_buffer[0].assign(texture_src_data, texture_src_data_end);
+        const u32 bpp = params.GetFormatBpp() / 8;
+        const u32 copy_size = params.width * bpp;
+        if (params.pitch == copy_size) {
+            std::memcpy(gl_buffer[0].data(), Memory::GetPointer(params.addr),
+                        params.size_in_bytes_gl);
+        } else {
+            const u8* start = Memory::GetPointer(params.addr);
+            u8* write_to = gl_buffer[0].data();
+            for (u32 h = params.height; h > 0; h--) {
+                std::memcpy(write_to, start, copy_size);
+                start += params.pitch;
+                write_to += copy_size;
+            }
+        }
     }
     for (u32 i = 0; i < params.max_mip_level; i++) {
         ConvertFormatAsNeeded_LoadGLBuffer(gl_buffer[i], params.pixel_format, params.MipWidth(i),
@@ -730,7 +745,6 @@ void CachedSurface::FlushGLBuffer() {
     glPixelStorei(GL_PACK_ROW_LENGTH, 0);
     ConvertFormatAsNeeded_FlushGLBuffer(gl_buffer[0], params.pixel_format, params.width,
                                         params.height);
-    ASSERT(params.type != SurfaceType::Fill);
     const u8* const texture_src_data = Memory::GetPointer(params.addr);
     ASSERT(texture_src_data);
     if (params.is_tiled) {
@@ -739,7 +753,19 @@ void CachedSurface::FlushGLBuffer() {
 
         SwizzleFunc(MortonSwizzleMode::LinearToMorton, params, gl_buffer[0], 0);
     } else {
-        std::memcpy(Memory::GetPointer(GetAddr()), gl_buffer[0].data(), GetSizeInBytes());
+        const u32 bpp = params.GetFormatBpp() / 8;
+        const u32 copy_size = params.width * bpp;
+        if (params.pitch == copy_size) {
+            std::memcpy(Memory::GetPointer(params.addr), gl_buffer[0].data(), GetSizeInBytes());
+        } else {
+            u8* start = Memory::GetPointer(params.addr);
+            const u8* read_to = gl_buffer[0].data();
+            for (u32 h = params.height; h > 0; h--) {
+                std::memcpy(start, read_to, copy_size);
+                start += params.pitch;
+                read_to += copy_size;
+            }
+        }
     }
 }
 
@@ -748,63 +774,50 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
     const auto& rect{params.GetRect(mip_map)};
 
     // Load data from memory to the surface
-    const GLint x0 = static_cast<GLint>(rect.left);
-    const GLint y0 = static_cast<GLint>(rect.bottom);
-    std::size_t buffer_offset =
+    const auto x0 = static_cast<GLint>(rect.left);
+    const auto y0 = static_cast<GLint>(rect.bottom);
+    auto buffer_offset =
         static_cast<std::size_t>(static_cast<std::size_t>(y0) * params.MipWidth(mip_map) +
                                  static_cast<std::size_t>(x0)) *
         GetBytesPerPixel(params.pixel_format);
 
     const FormatTuple& tuple = GetFormatTuple(params.pixel_format, params.component_type);
-    const GLuint target_tex = texture.handle;
-    OpenGLState cur_state = OpenGLState::GetCurState();
-
-    const auto& old_tex = cur_state.texture_units[0];
-    SCOPE_EXIT({
-        cur_state.texture_units[0] = old_tex;
-        cur_state.Apply();
-    });
-    cur_state.texture_units[0].texture = target_tex;
-    cur_state.texture_units[0].target = SurfaceTargetToGL(params.target);
-    cur_state.Apply();
 
     // Ensure no bad interactions with GL_UNPACK_ALIGNMENT
     ASSERT(params.MipWidth(mip_map) * GetBytesPerPixel(params.pixel_format) % 4 == 0);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(params.MipWidth(mip_map)));
 
-    GLsizei image_size = static_cast<GLsizei>(params.GetMipmapSizeGL(mip_map, false));
-    glActiveTexture(GL_TEXTURE0);
+    const auto image_size = static_cast<GLsizei>(params.GetMipmapSizeGL(mip_map, false));
     if (tuple.compressed) {
         switch (params.target) {
         case SurfaceTarget::Texture2D:
-            glCompressedTexImage2D(SurfaceTargetToGL(params.target), mip_map, tuple.internal_format,
-                                   static_cast<GLsizei>(params.MipWidth(mip_map)),
-                                   static_cast<GLsizei>(params.MipHeight(mip_map)), 0, image_size,
-                                   &gl_buffer[mip_map][buffer_offset]);
+            glCompressedTextureSubImage2D(
+                texture.handle, mip_map, 0, 0, static_cast<GLsizei>(params.MipWidth(mip_map)),
+                static_cast<GLsizei>(params.MipHeight(mip_map)), tuple.internal_format, image_size,
+                &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture3D:
-            glCompressedTexImage3D(SurfaceTargetToGL(params.target), mip_map, tuple.internal_format,
-                                   static_cast<GLsizei>(params.MipWidth(mip_map)),
-                                   static_cast<GLsizei>(params.MipHeight(mip_map)),
-                                   static_cast<GLsizei>(params.MipDepth(mip_map)), 0, image_size,
-                                   &gl_buffer[mip_map][buffer_offset]);
+            glCompressedTextureSubImage3D(
+                texture.handle, mip_map, 0, 0, 0, static_cast<GLsizei>(params.MipWidth(mip_map)),
+                static_cast<GLsizei>(params.MipHeight(mip_map)),
+                static_cast<GLsizei>(params.MipDepth(mip_map)), tuple.internal_format, image_size,
+                &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture2DArray:
         case SurfaceTarget::TextureCubeArray:
-            glCompressedTexImage3D(SurfaceTargetToGL(params.target), mip_map, tuple.internal_format,
-                                   static_cast<GLsizei>(params.MipWidth(mip_map)),
-                                   static_cast<GLsizei>(params.MipHeight(mip_map)),
-                                   static_cast<GLsizei>(params.depth), 0, image_size,
-                                   &gl_buffer[mip_map][buffer_offset]);
+            glCompressedTextureSubImage3D(
+                texture.handle, mip_map, 0, 0, 0, static_cast<GLsizei>(params.MipWidth(mip_map)),
+                static_cast<GLsizei>(params.MipHeight(mip_map)), static_cast<GLsizei>(params.depth),
+                tuple.internal_format, image_size, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::TextureCubemap: {
-            GLsizei layer_size = static_cast<GLsizei>(params.LayerSizeGL(mip_map));
+            const auto layer_size = static_cast<GLsizei>(params.LayerSizeGL(mip_map));
             for (std::size_t face = 0; face < params.depth; ++face) {
-                glCompressedTexImage2D(static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face),
-                                       mip_map, tuple.internal_format,
-                                       static_cast<GLsizei>(params.MipWidth(mip_map)),
-                                       static_cast<GLsizei>(params.MipHeight(mip_map)), 0,
-                                       layer_size, &gl_buffer[mip_map][buffer_offset]);
+                glCompressedTextureSubImage3D(
+                    texture.handle, mip_map, 0, 0, static_cast<GLint>(face),
+                    static_cast<GLsizei>(params.MipWidth(mip_map)),
+                    static_cast<GLsizei>(params.MipHeight(mip_map)), 1, tuple.internal_format,
+                    layer_size, &gl_buffer[mip_map][buffer_offset]);
                 buffer_offset += layer_size;
             }
             break;
@@ -813,46 +826,43 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
             LOG_CRITICAL(Render_OpenGL, "Unimplemented surface target={}",
                          static_cast<u32>(params.target));
             UNREACHABLE();
-            glCompressedTexImage2D(GL_TEXTURE_2D, mip_map, tuple.internal_format,
-                                   static_cast<GLsizei>(params.MipWidth(mip_map)),
-                                   static_cast<GLsizei>(params.MipHeight(mip_map)), 0,
-                                   static_cast<GLsizei>(params.size_in_bytes_gl),
-                                   &gl_buffer[mip_map][buffer_offset]);
+            glCompressedTextureSubImage2D(
+                texture.handle, mip_map, 0, 0, static_cast<GLsizei>(params.MipWidth(mip_map)),
+                static_cast<GLsizei>(params.MipHeight(mip_map)), tuple.internal_format,
+                static_cast<GLsizei>(params.size_in_bytes_gl), &gl_buffer[mip_map][buffer_offset]);
         }
     } else {
-
         switch (params.target) {
         case SurfaceTarget::Texture1D:
-            glTexSubImage1D(SurfaceTargetToGL(params.target), mip_map, x0,
-                            static_cast<GLsizei>(rect.GetWidth()), tuple.format, tuple.type,
-                            &gl_buffer[mip_map][buffer_offset]);
+            glTextureSubImage1D(texture.handle, mip_map, x0, static_cast<GLsizei>(rect.GetWidth()),
+                                tuple.format, tuple.type, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture2D:
-            glTexSubImage2D(SurfaceTargetToGL(params.target), mip_map, x0, y0,
-                            static_cast<GLsizei>(rect.GetWidth()),
-                            static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
-                            &gl_buffer[mip_map][buffer_offset]);
+            glTextureSubImage2D(texture.handle, mip_map, x0, y0,
+                                static_cast<GLsizei>(rect.GetWidth()),
+                                static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
+                                &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture3D:
-            glTexSubImage3D(SurfaceTargetToGL(params.target), mip_map, x0, y0, 0,
-                            static_cast<GLsizei>(rect.GetWidth()),
-                            static_cast<GLsizei>(rect.GetHeight()), params.MipDepth(mip_map),
-                            tuple.format, tuple.type, &gl_buffer[mip_map][buffer_offset]);
+            glTextureSubImage3D(texture.handle, mip_map, x0, y0, 0,
+                                static_cast<GLsizei>(rect.GetWidth()),
+                                static_cast<GLsizei>(rect.GetHeight()), params.MipDepth(mip_map),
+                                tuple.format, tuple.type, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture2DArray:
         case SurfaceTarget::TextureCubeArray:
-            glTexSubImage3D(SurfaceTargetToGL(params.target), mip_map, x0, y0, 0,
-                            static_cast<GLsizei>(rect.GetWidth()),
-                            static_cast<GLsizei>(rect.GetHeight()), params.depth, tuple.format,
-                            tuple.type, &gl_buffer[mip_map][buffer_offset]);
+            glTextureSubImage3D(texture.handle, mip_map, x0, y0, 0,
+                                static_cast<GLsizei>(rect.GetWidth()),
+                                static_cast<GLsizei>(rect.GetHeight()), params.depth, tuple.format,
+                                tuple.type, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::TextureCubemap: {
             std::size_t start = buffer_offset;
             for (std::size_t face = 0; face < params.depth; ++face) {
-                glTexSubImage2D(static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face), mip_map,
-                                x0, y0, static_cast<GLsizei>(rect.GetWidth()),
-                                static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
-                                &gl_buffer[mip_map][buffer_offset]);
+                glTextureSubImage3D(texture.handle, mip_map, x0, y0, static_cast<GLint>(face),
+                                    static_cast<GLsizei>(rect.GetWidth()),
+                                    static_cast<GLsizei>(rect.GetHeight()), 1, tuple.format,
+                                    tuple.type, &gl_buffer[mip_map][buffer_offset]);
                 buffer_offset += params.LayerSizeGL(mip_map);
             }
             break;
@@ -861,9 +871,10 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
             LOG_CRITICAL(Render_OpenGL, "Unimplemented surface target={}",
                          static_cast<u32>(params.target));
             UNREACHABLE();
-            glTexSubImage2D(GL_TEXTURE_2D, mip_map, x0, y0, static_cast<GLsizei>(rect.GetWidth()),
-                            static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
-                            &gl_buffer[mip_map][buffer_offset]);
+            glTextureSubImage2D(texture.handle, mip_map, x0, y0,
+                                static_cast<GLsizei>(rect.GetWidth()),
+                                static_cast<GLsizei>(rect.GetHeight()), tuple.format, tuple.type,
+                                &gl_buffer[mip_map][buffer_offset]);
         }
     }
 
@@ -873,37 +884,45 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
 void CachedSurface::EnsureTextureView() {
     if (texture_view.handle != 0)
         return;
-    // Compressed texture are not being created with immutable storage
-    UNIMPLEMENTED_IF(gl_is_compressed);
 
     const GLenum target{TargetLayer()};
+    const GLuint num_layers{target == GL_TEXTURE_CUBE_MAP_ARRAY ? 6u : 1u};
+    constexpr GLuint min_layer = 0;
+    constexpr GLuint min_level = 0;
 
-    texture_view.Create();
-    glTextureView(texture_view.handle, target, texture.handle, gl_internal_format, 0,
-                  params.max_mip_level, 0, 1);
-
-    OpenGLState cur_state = OpenGLState::GetCurState();
-    const auto& old_tex = cur_state.texture_units[0];
-    SCOPE_EXIT({
-        cur_state.texture_units[0] = old_tex;
-        cur_state.Apply();
-    });
-    cur_state.texture_units[0].texture = texture_view.handle;
-    cur_state.texture_units[0].target = target;
-    cur_state.Apply();
-
-    ApplyTextureDefaults(target, params.max_mip_level);
+    glGenTextures(1, &texture_view.handle);
+    glTextureView(texture_view.handle, target, texture.handle, gl_internal_format, min_level,
+                  params.max_mip_level, min_layer, num_layers);
+    ApplyTextureDefaults(texture_view.handle, params.max_mip_level);
+    glTextureParameteriv(texture_view.handle, GL_TEXTURE_SWIZZLE_RGBA,
+                         reinterpret_cast<const GLint*>(swizzle.data()));
 }
 
 MICROPROFILE_DEFINE(OpenGL_TextureUL, "OpenGL", "Texture Upload", MP_RGB(128, 192, 64));
 void CachedSurface::UploadGLTexture(GLuint read_fb_handle, GLuint draw_fb_handle) {
-    if (params.type == SurfaceType::Fill)
-        return;
-
     MICROPROFILE_SCOPE(OpenGL_TextureUL);
 
     for (u32 i = 0; i < params.max_mip_level; i++)
         UploadGLMipmapTexture(i, read_fb_handle, draw_fb_handle);
+}
+
+void CachedSurface::UpdateSwizzle(Tegra::Texture::SwizzleSource swizzle_x,
+                                  Tegra::Texture::SwizzleSource swizzle_y,
+                                  Tegra::Texture::SwizzleSource swizzle_z,
+                                  Tegra::Texture::SwizzleSource swizzle_w) {
+    const GLenum new_x = MaxwellToGL::SwizzleSource(swizzle_x);
+    const GLenum new_y = MaxwellToGL::SwizzleSource(swizzle_y);
+    const GLenum new_z = MaxwellToGL::SwizzleSource(swizzle_z);
+    const GLenum new_w = MaxwellToGL::SwizzleSource(swizzle_w);
+    if (swizzle[0] == new_x && swizzle[1] == new_y && swizzle[2] == new_z && swizzle[3] == new_w) {
+        return;
+    }
+    swizzle = {new_x, new_y, new_z, new_w};
+    const auto swizzle_data = reinterpret_cast<const GLint*>(swizzle.data());
+    glTextureParameteriv(texture.handle, GL_TEXTURE_SWIZZLE_RGBA, swizzle_data);
+    if (texture_view.handle != 0) {
+        glTextureParameteriv(texture_view.handle, GL_TEXTURE_SWIZZLE_RGBA, swizzle_data);
+    }
 }
 
 RasterizerCacheOpenGL::RasterizerCacheOpenGL(RasterizerOpenGL& rasterizer)
@@ -919,9 +938,16 @@ Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextu
 }
 
 Surface RasterizerCacheOpenGL::GetDepthBufferSurface(bool preserve_contents) {
-    const auto& regs{Core::System::GetInstance().GPU().Maxwell3D().regs};
+    auto& gpu{Core::System::GetInstance().GPU().Maxwell3D()};
+    const auto& regs{gpu.regs};
+
+    if (!gpu.dirty_flags.zeta_buffer) {
+        return last_depth_buffer;
+    }
+    gpu.dirty_flags.zeta_buffer = false;
+
     if (!regs.zeta.Address() || !regs.zeta_enable) {
-        return {};
+        return last_depth_buffer = {};
     }
 
     SurfaceParams depth_params{SurfaceParams::CreateForDepthBuffer(
@@ -929,25 +955,31 @@ Surface RasterizerCacheOpenGL::GetDepthBufferSurface(bool preserve_contents) {
         regs.zeta.memory_layout.block_width, regs.zeta.memory_layout.block_height,
         regs.zeta.memory_layout.block_depth, regs.zeta.memory_layout.type)};
 
-    return GetSurface(depth_params, preserve_contents);
+    return last_depth_buffer = GetSurface(depth_params, preserve_contents);
 }
 
 Surface RasterizerCacheOpenGL::GetColorBufferSurface(std::size_t index, bool preserve_contents) {
-    const auto& regs{Core::System::GetInstance().GPU().Maxwell3D().regs};
+    auto& gpu{Core::System::GetInstance().GPU().Maxwell3D()};
+    const auto& regs{gpu.regs};
+
+    if ((gpu.dirty_flags.color_buffer & (1u << static_cast<u32>(index))) == 0) {
+        return last_color_buffers[index];
+    }
+    gpu.dirty_flags.color_buffer &= ~(1u << static_cast<u32>(index));
 
     ASSERT(index < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets);
 
     if (index >= regs.rt_control.count) {
-        return {};
+        return last_color_buffers[index] = {};
     }
 
     if (regs.rt[index].Address() == 0 || regs.rt[index].format == Tegra::RenderTargetFormat::NONE) {
-        return {};
+        return last_color_buffers[index] = {};
     }
 
     const SurfaceParams color_params{SurfaceParams::CreateForFramebuffer(index)};
 
-    return GetSurface(color_params, preserve_contents);
+    return last_color_buffers[index] = GetSurface(color_params, preserve_contents);
 }
 
 void RasterizerCacheOpenGL::LoadSurface(const Surface& surface) {
@@ -1025,26 +1057,161 @@ void RasterizerCacheOpenGL::FastLayeredCopySurface(const Surface& src_surface,
         }
         address += layer_size;
     }
+
+    dst_surface->MarkAsModified(true, *this);
+}
+
+static bool BlitSurface(const Surface& src_surface, const Surface& dst_surface,
+                        const MathUtil::Rectangle<u32>& src_rect,
+                        const MathUtil::Rectangle<u32>& dst_rect, GLuint read_fb_handle,
+                        GLuint draw_fb_handle, GLenum src_attachment = 0, GLenum dst_attachment = 0,
+                        std::size_t cubemap_face = 0) {
+
+    const auto& src_params{src_surface->GetSurfaceParams()};
+    const auto& dst_params{dst_surface->GetSurfaceParams()};
+
+    OpenGLState prev_state{OpenGLState::GetCurState()};
+    SCOPE_EXIT({ prev_state.Apply(); });
+
+    OpenGLState state;
+    state.draw.read_framebuffer = read_fb_handle;
+    state.draw.draw_framebuffer = draw_fb_handle;
+    state.Apply();
+
+    u32 buffers{};
+
+    if (src_params.type == SurfaceType::ColorTexture) {
+        switch (src_params.target) {
+        case SurfaceTarget::Texture2D:
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                                   GL_TEXTURE_2D, src_surface->Texture().handle, 0);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   0, 0);
+            break;
+        case SurfaceTarget::TextureCubemap:
+            glFramebufferTexture2D(
+                GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemap_face),
+                src_surface->Texture().handle, 0);
+            glFramebufferTexture2D(
+                GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemap_face), 0, 0);
+            break;
+        case SurfaceTarget::Texture2DArray:
+            glFramebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                                      src_surface->Texture().handle, 0, 0);
+            glFramebufferTextureLayer(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0, 0);
+            break;
+        case SurfaceTarget::Texture3D:
+            glFramebufferTexture3D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                                   SurfaceTargetToGL(src_params.target),
+                                   src_surface->Texture().handle, 0, 0);
+            glFramebufferTexture3D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                   SurfaceTargetToGL(src_params.target), 0, 0, 0);
+            break;
+        default:
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                                   GL_TEXTURE_2D, src_surface->Texture().handle, 0);
+            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   0, 0);
+            break;
+        }
+
+        switch (dst_params.target) {
+        case SurfaceTarget::Texture2D:
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                                   GL_TEXTURE_2D, dst_surface->Texture().handle, 0);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   0, 0);
+            break;
+        case SurfaceTarget::TextureCubemap:
+            glFramebufferTexture2D(
+                GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemap_face),
+                dst_surface->Texture().handle, 0);
+            glFramebufferTexture2D(
+                GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                static_cast<GLenum>(GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubemap_face), 0, 0);
+            break;
+        case SurfaceTarget::Texture2DArray:
+            glFramebufferTextureLayer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                                      dst_surface->Texture().handle, 0, 0);
+            glFramebufferTextureLayer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, 0, 0, 0);
+            break;
+
+        case SurfaceTarget::Texture3D:
+            glFramebufferTexture3D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                                   SurfaceTargetToGL(dst_params.target),
+                                   dst_surface->Texture().handle, 0, 0);
+            glFramebufferTexture3D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                   SurfaceTargetToGL(dst_params.target), 0, 0, 0);
+            break;
+        default:
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                                   GL_TEXTURE_2D, dst_surface->Texture().handle, 0);
+            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                   0, 0);
+            break;
+        }
+
+        buffers = GL_COLOR_BUFFER_BIT;
+    } else if (src_params.type == SurfaceType::Depth) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                               GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                               src_surface->Texture().handle, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                               GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                               dst_surface->Texture().handle, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+
+        buffers = GL_DEPTH_BUFFER_BIT;
+    } else if (src_params.type == SurfaceType::DepthStencil) {
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + src_attachment,
+                               GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                               src_surface->Texture().handle, 0);
+
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + dst_attachment,
+                               GL_TEXTURE_2D, 0, 0);
+        glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                               dst_surface->Texture().handle, 0);
+
+        buffers = GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+    }
+
+    glBlitFramebuffer(src_rect.left, src_rect.top, src_rect.right, src_rect.bottom, dst_rect.left,
+                      dst_rect.top, dst_rect.right, dst_rect.bottom, buffers,
+                      buffers == GL_COLOR_BUFFER_BIT ? GL_LINEAR : GL_NEAREST);
+
+    return true;
 }
 
 void RasterizerCacheOpenGL::FermiCopySurface(
     const Tegra::Engines::Fermi2D::Regs::Surface& src_config,
-    const Tegra::Engines::Fermi2D::Regs::Surface& dst_config) {
+    const Tegra::Engines::Fermi2D::Regs::Surface& dst_config,
+    const MathUtil::Rectangle<u32>& src_rect, const MathUtil::Rectangle<u32>& dst_rect) {
 
     const auto& src_params = SurfaceParams::CreateForFermiCopySurface(src_config);
     const auto& dst_params = SurfaceParams::CreateForFermiCopySurface(dst_config);
 
-    ASSERT(src_params.width == dst_params.width);
-    ASSERT(src_params.height == dst_params.height);
     ASSERT(src_params.pixel_format == dst_params.pixel_format);
     ASSERT(src_params.block_height == dst_params.block_height);
     ASSERT(src_params.is_tiled == dst_params.is_tiled);
     ASSERT(src_params.depth == dst_params.depth);
-    ASSERT(src_params.depth == 1); // Currently, FastCopySurface only works with 2D surfaces
     ASSERT(src_params.target == dst_params.target);
     ASSERT(src_params.rt.index == dst_params.rt.index);
 
-    FastCopySurface(GetSurface(src_params, true), GetSurface(dst_params, false));
+    auto src_surface = GetSurface(src_params, true);
+    auto dst_surface = GetSurface(dst_params, true);
+
+    BlitSurface(src_surface, dst_surface, src_rect, dst_rect, read_framebuffer.handle,
+                draw_framebuffer.handle);
+
+    dst_surface->MarkAsModified(true, *this);
 }
 
 void RasterizerCacheOpenGL::AccurateCopySurface(const Surface& src_surface,
