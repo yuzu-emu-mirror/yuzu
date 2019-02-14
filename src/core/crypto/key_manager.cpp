@@ -398,15 +398,8 @@ static bool ValidCryptoRevisionString(std::string_view base, size_t begin, size_
 }
 
 void KeyManager::LoadFromFile(const std::string& filename, bool is_title_keys) {
-#ifdef _WIN32
-    std::string copy(filename);
-    if (!copy.empty() && copy.back() == ':')
-        copy += DIR_SEP_CHR;
-    std::wstring utf16 = Common::UTF8ToUTF16W(copy);
-    std::ifstream file(utf16);
-#else
-    std::ifstream file(filename);
-#endif
+    std::ifstream file;
+    OpenFStream<std::ifstream>(file, filename, std::ios_base::in);
     if (!file.is_open())
         return;
 
