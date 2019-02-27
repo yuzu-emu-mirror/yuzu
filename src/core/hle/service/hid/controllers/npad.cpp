@@ -27,6 +27,7 @@ constexpr u32 MAX_NPAD_ID = 7;
 constexpr std::array<u32, 10> npad_id_list{
     0, 1, 2, 3, 4, 5, 6, 7, NPAD_HANDHELD, NPAD_UNKNOWN,
 };
+constexpr s32 HID_JOYSTICK_DZONE = HID_JOYSTICK_MAX * 0.02;
 
 enum class JoystickId : std::size_t {
     Joystick_Left,
@@ -286,6 +287,18 @@ void Controller_NPad::RequestPadStateUpdate(u32 npad_id) {
     lstick_entry.y = static_cast<s32>(stick_l_y_f * HID_JOYSTICK_MAX);
     rstick_entry.x = static_cast<s32>(stick_r_x_f * HID_JOYSTICK_MAX);
     rstick_entry.y = static_cast<s32>(stick_r_y_f * HID_JOYSTICK_MAX);
+    HandleAnalogDeadZone(&lstick_entry);
+    HandleAnalogDeadZone(&rstick_entry);
+}
+
+void Controller_NPad::HandleAnalogDeadZone(AnalogPosition* analogStick) {
+
+    if (analogStick->x > -HID_JOYSTICK_DZONE && analogStick->x < HID_JOYSTICK_DZONE) {
+        analogStick->x = 0;
+    }
+    if (analogStick->y > -HID_JOYSTICK_DZONE && analogStick->y < HID_JOYSTICK_DZONE) {
+        analogStick->y = 0;
+    }
 }
 
 void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* data,

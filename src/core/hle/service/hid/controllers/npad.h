@@ -319,6 +319,7 @@ private:
     bool IsControllerSupported(NPadControllerType controller) const;
     NPadControllerType DecideBestController(NPadControllerType priority) const;
     void RequestPadStateUpdate(u32 npad_id);
+    void HandleAnalogDeadZone(AnalogPosition *analogStick);
     std::array<ControllerPad, 10> npad_pad_states{};
     bool IsControllerSupported(NPadControllerType controller);
 };
