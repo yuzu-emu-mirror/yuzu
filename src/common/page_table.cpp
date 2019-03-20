@@ -6,7 +6,9 @@
 
 namespace Common {
 
-PageTable::PageTable(std::size_t page_size_in_bits) : page_size_in_bits{page_size_in_bits} {}
+PageTable::PageTable(std::size_t page_size_in_bits) : page_size_in_bits{page_size_in_bits} {
+    number_of_entries = 1ULL << page_size_in_bits;
+}
 
 PageTable::~PageTable() = default;
 
@@ -24,6 +26,7 @@ void PageTable::Resize(std::size_t address_space_width_in_bits) {
 
     pointers.shrink_to_fit();
     attributes.shrink_to_fit();
+    number_of_entries = num_page_table_entries;
 }
 
 } // namespace Common

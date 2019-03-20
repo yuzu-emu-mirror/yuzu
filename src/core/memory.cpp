@@ -152,7 +152,12 @@ static u8* GetPointerFromVMA(VAddr vaddr) {
 
 template <typename T>
 T Read(const VAddr vaddr) {
-    const u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
+    auto entry = vaddr >> PAGE_BITS;
+    if (entry > current_page_table->number_of_entries) {
+        LOG_ERROR(HW_Memory, "Out of range Read{} @ 0x{:08X}", sizeof(T) * 8, vaddr);
+        return 0;
+    }
+    const u8* page_pointer = current_page_table->pointers[entry];
     if (page_pointer) {
         // NOTE: Avoid adding any extra logic to this fast-path block
         T value;
