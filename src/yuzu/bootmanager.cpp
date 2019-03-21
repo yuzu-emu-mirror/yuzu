@@ -6,6 +6,7 @@
 #include <fmt/format.h>
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
+#include "common/thread.h"
 #include "core/core.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/settings.h"
@@ -23,6 +24,8 @@ void EmuThread::run() {
     render_window->MakeCurrent();
 
     MicroProfileOnThreadCreate("EmuThread");
+
+    Common::SetCurrentThreadName("yuzu Main");
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
 

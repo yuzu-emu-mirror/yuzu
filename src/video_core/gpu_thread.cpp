@@ -4,6 +4,7 @@
 
 #include "common/assert.h"
 #include "common/microprofile.h"
+#include "common/thread.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
@@ -22,6 +23,7 @@ static void RunThread(VideoCore::RendererBase& renderer, Tegra::DmaPusher& dma_p
 
     // Wait for first GPU command before acquiring the window context
     state.WaitForCommands();
+    Common::SetCurrentThreadName("yuzu GPU");
 
     // If emulation was stopped during disk shader loading, abort before trying to acquire context
     if (!state.is_running) {
