@@ -2759,7 +2759,10 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
     if (tuple.compressed) {
         switch (params.target) {
         case SurfaceTarget::Texture2D:
-            Shaggizise();
+            glCompressedTextureSubImage2D(
+                texture.handle, mip_map, 0, 0, static_cast<GLsizei>(params.MipWidth(mip_map)),
+                static_cast<GLsizei>(params.MipHeight(mip_map)), tuple.internal_format, image_size,
+                &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture3D:
             glCompressedTextureSubImage3D(
@@ -2803,7 +2806,14 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
                                 tuple.format, tuple.type, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture2D:
-            Shaggizise();
+            if (Settings::values.shaggie) {
+                Shaggizise();
+            } else {
+                glTextureSubImage2D(texture.handle, mip_map, x0, y0,
+                                    static_cast<GLsizei>(rect.GetWidth()),
+                                    static_cast<GLsizei>(rect.GetHeight()), tuple.format,
+                                    tuple.type, &gl_buffer[mip_map][buffer_offset]);
+            }
             break;
         case SurfaceTarget::Texture3D:
             glTextureSubImage3D(texture.handle, mip_map, x0, y0, 0,
