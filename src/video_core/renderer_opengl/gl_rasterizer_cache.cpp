@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <ctime>
 #include <optional>
 #include <glad/glad.h>
 
@@ -784,8 +785,8 @@ void CachedSurface::UploadGLMipmapTexture(u32 mip_map, GLuint read_fb_handle,
                                 tuple.format, tuple.type, &gl_buffer[mip_map][buffer_offset]);
             break;
         case SurfaceTarget::Texture2D:
-            // Only shaggize once every five or so times
-            if (Settings::values.shaggie && !(rand() % 5)) {
+            // Only shaggize once every three or so times
+            if (Settings::values.shaggie && !(rand() % 3)) {
                 Shaggizise();
             } else {
                 glTextureSubImage2D(texture.handle, mip_map, x0, y0,
@@ -883,6 +884,7 @@ RasterizerCacheOpenGL::RasterizerCacheOpenGL(RasterizerOpenGL& rasterizer)
     read_framebuffer.Create();
     draw_framebuffer.Create();
     copy_pbo.Create();
+    srand(time(NULL));
 }
 
 Surface RasterizerCacheOpenGL::GetTextureSurface(const Tegra::Texture::FullTextureInfo& config,
