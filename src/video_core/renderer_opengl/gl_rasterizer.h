@@ -209,10 +209,10 @@ private:
 
     OpenGLState state;
 
+    FramebufferCacheOpenGL framebuffer_cache;
     RasterizerCacheOpenGL res_cache;
     ShaderCacheOpenGL shader_cache;
     GlobalRegionCacheOpenGL global_cache;
-    FramebufferCacheOpenGL framebuffer_cache;
 
     Core::System& system;
 

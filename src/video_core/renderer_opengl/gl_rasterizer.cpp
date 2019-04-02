@@ -81,8 +81,10 @@ struct DrawParameters {
 };
 
 RasterizerOpenGL::RasterizerOpenGL(Core::System& system, ScreenInfo& info)
-    : res_cache{*this}, shader_cache{*this, system}, global_cache{*this}, system{system},
-      screen_info{info}, buffer_cache(*this, STREAM_BUFFER_SIZE) {
+    : framebuffer_cache{std::make_shared<FramebufferCacheOpenGLImpl>()},
+      res_cache{*this, framebuffer_cache}, shader_cache{*this, system},
+      global_cache{*this}, system{system}, screen_info{info},
+      buffer_cache(*this, STREAM_BUFFER_SIZE) {
     // Create sampler objects
     for (std::size_t i = 0; i < texture_samplers.size(); ++i) {
         texture_samplers[i].Create();
@@ -512,7 +514,7 @@ std::pair<bool, bool> RasterizerOpenGL::ConfigureFramebuffers(
                                depth_surface->GetSurfaceParams().type == SurfaceType::DepthStencil;
     }
 
-    current_state.draw.draw_framebuffer = framebuffer_cache.GetFramebuffer(fbkey);
+    current_state.draw.draw_framebuffer = framebuffer_cache->GetFramebuffer(fbkey);
     SyncViewport(current_state);
 
     return current_depth_stencil_usage = {static_cast<bool>(depth_surface), fbkey.stencil_enable};

@@ -27,11 +27,11 @@ bool FramebufferCacheKey::operator==(const FramebufferCacheKey& rhs) const {
                                       rhs.zeta);
 }
 
-FramebufferCacheOpenGL::FramebufferCacheOpenGL() = default;
+FramebufferCacheOpenGLImpl::FramebufferCacheOpenGLImpl() = default;
 
-FramebufferCacheOpenGL::~FramebufferCacheOpenGL() = default;
+FramebufferCacheOpenGLImpl::~FramebufferCacheOpenGLImpl() = default;
 
-GLuint FramebufferCacheOpenGL::GetFramebuffer(const FramebufferCacheKey& key) {
+GLuint FramebufferCacheOpenGLImpl::GetFramebuffer(const FramebufferCacheKey& key) {
     const auto [entry, is_cache_miss] = cache.try_emplace(key);
     auto& framebuffer{entry->second};
     if (is_cache_miss) {
@@ -40,7 +40,13 @@ GLuint FramebufferCacheOpenGL::GetFramebuffer(const FramebufferCacheKey& key) {
     return framebuffer.handle;
 }
 
-OGLFramebuffer FramebufferCacheOpenGL::CreateFramebuffer(const FramebufferCacheKey& key) {
+void FramebufferCacheOpenGLImpl::InvalidateTexture(GLuint texture) {
+    for (auto it = cache.begin(); it != cache.end();) {
+        it = TryTextureInvalidation(texture, it);
+    }
+}
+
+OGLFramebuffer FramebufferCacheOpenGLImpl::CreateFramebuffer(const FramebufferCacheKey& key) {
     OGLFramebuffer framebuffer;
     framebuffer.Create();
 
@@ -71,6 +77,21 @@ OGLFramebuffer FramebufferCacheOpenGL::CreateFramebuffer(const FramebufferCacheK
     }
 
     return framebuffer;
+}
+
+FramebufferCacheOpenGLImpl::CacheType::iterator FramebufferCacheOpenGLImpl::TryTextureInvalidation(
+    GLuint texture, CacheType::iterator it) {
+    const auto& [key, framebuffer] = *it;
+    const std::size_t count = key.is_single_buffer ? 1 : static_cast<std::size_t>(key.colors_count);
+    for (std::size_t i = 0; i < count; ++i) {
+        if (texture == key.colors[i]) {
+            return cache.erase(it);
+        }
+    }
+    if (texture == key.zeta) {
+        return cache.erase(it);
+    }
+    return ++it;
 }
 
 } // namespace OpenGL

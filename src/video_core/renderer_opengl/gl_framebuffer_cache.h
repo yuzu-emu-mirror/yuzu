@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <memory>
 #include <unordered_map>
 
 #include <glad/glad.h>
@@ -16,6 +17,9 @@
 #include "video_core/renderer_opengl/gl_state.h"
 
 namespace OpenGL {
+
+class FramebufferCacheOpenGLImpl;
+using FramebufferCacheOpenGL = std::shared_ptr<FramebufferCacheOpenGLImpl>;
 
 struct alignas(sizeof(u64)) FramebufferCacheKey {
     bool is_single_buffer = false;
@@ -51,18 +55,28 @@ struct hash<OpenGL::FramebufferCacheKey> {
 
 namespace OpenGL {
 
-class FramebufferCacheOpenGL {
+class FramebufferCacheOpenGLImpl {
 public:
-    FramebufferCacheOpenGL();
-    ~FramebufferCacheOpenGL();
+    FramebufferCacheOpenGLImpl();
+    ~FramebufferCacheOpenGLImpl();
 
+    /// Returns and caches a framebuffer with the passed arguments.
     GLuint GetFramebuffer(const FramebufferCacheKey& key);
 
+    /// Invalidates a texture inside the cache.
+    void InvalidateTexture(GLuint texture);
+
 private:
+    using CacheType = std::unordered_map<FramebufferCacheKey, OGLFramebuffer>;
+
+    /// Returns a new framebuffer from the passed arguments.
     OGLFramebuffer CreateFramebuffer(const FramebufferCacheKey& key);
 
+    /// Attempts to destroy the framebuffer cache entry in `it` and returns the next one.
+    CacheType::iterator TryTextureInvalidation(GLuint texture, CacheType::iterator it);
+
     OpenGLState local_state;
-    std::unordered_map<FramebufferCacheKey, OGLFramebuffer> cache;
+    CacheType cache;
 };
 
 } // namespace OpenGL
