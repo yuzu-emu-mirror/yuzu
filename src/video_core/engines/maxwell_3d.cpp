@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <utility>
 #include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -24,6 +25,82 @@ Maxwell3D::Maxwell3D(Core::System& system, VideoCore::RasterizerInterface& raste
     : memory_manager(memory_manager), system{system}, rasterizer{rasterizer},
       macro_interpreter(*this) {
     InitializeRegisterDefaults();
+    InitDirtyRegsMask();
+    InitExecRegsMask();
+}
+
+void Maxwell3D::InitDirtyRegsMask() {
+    std::fill(must_process_dirty.begin(), must_process_dirty.end(), false);
+
+    auto mark_dirty = [&](const u32 start, const u32 end) {
+        for (u32 i = start; i < end; i++) {
+            must_process_dirty[i] = true;
+        }
+    };
+
+    u32 start = MAXWELL3D_REG_INDEX(rt);
+    u32 end = start + (sizeof(regs.rt[0]) / sizeof(u32)) * Regs::NumRenderTargets;
+    mark_dirty(start, end);
+
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_enable)] = true;
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_width)] = true;
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_height)] = true;
+
+    start = MAXWELL3D_REG_INDEX(zeta);
+    end = start + sizeof(regs.zeta) / sizeof(u32);
+    mark_dirty(start, end);
+
+    start = MAXWELL3D_REG_INDEX(shader_config[0]);
+    end = start + sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
+    mark_dirty(start, end);
+
+    start = MAXWELL3D_REG_INDEX(vertex_attrib_format);
+    end = start + regs.vertex_attrib_format.size();
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(vertex_array);
+    end = start + 4 * 32;
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(vertex_array_limit);
+    end = start + 2 * 32;
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(instanced_arrays);
+    end = start + 32;
+    mark_dirty(start, end);
+}
+
+void Maxwell3D::InitExecRegsMask() {
+    std::fill(must_process_exec.begin(), must_process_exec.end(), false);
+
+    must_process_exec[MAXWELL3D_REG_INDEX(macros.data)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(macros.bind)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[0])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[1])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[2])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[3])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[4])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[5])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[6])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[7])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[8])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[9])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[10])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[11])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[12])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[13])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[14])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[15])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[0].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[1].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[2].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[3].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[4].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(draw.vertex_end_gl)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(clear_buffers)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(query.query_get)] = true;
+
 }
 
 void Maxwell3D::InitializeRegisterDefaults() {
@@ -104,6 +181,119 @@ void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
     macro_interpreter.Execute(search->second, std::move(parameters));
 }
 
+void Maxwell3D::CheckDirty(const u32 method) {
+    // Color buffers
+    constexpr u32 first_rt_reg = MAXWELL3D_REG_INDEX(rt);
+    constexpr u32 registers_per_rt = sizeof(regs.rt[0]) / sizeof(u32);
+    if (method >= first_rt_reg &&
+        method < first_rt_reg + registers_per_rt * Regs::NumRenderTargets) {
+        const std::size_t rt_index = (method - first_rt_reg) / registers_per_rt;
+        dirty_flags.color_buffer.set(rt_index);
+    }
+
+    // Zeta buffer
+    constexpr u32 registers_in_zeta = sizeof(regs.zeta) / sizeof(u32);
+    if (method == MAXWELL3D_REG_INDEX(zeta_enable) ||
+        method == MAXWELL3D_REG_INDEX(zeta_width) ||
+        method == MAXWELL3D_REG_INDEX(zeta_height) ||
+        (method >= MAXWELL3D_REG_INDEX(zeta) &&
+         method < MAXWELL3D_REG_INDEX(zeta) + registers_in_zeta)) {
+        dirty_flags.zeta_buffer = true;
+    }
+
+    // Shader
+    constexpr u32 shader_registers_count =
+        sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
+    if (method >= MAXWELL3D_REG_INDEX(shader_config[0]) &&
+        method < MAXWELL3D_REG_INDEX(shader_config[0]) + shader_registers_count) {
+        dirty_flags.shaders = true;
+    }
+
+    // Vertex format
+    if (method >= MAXWELL3D_REG_INDEX(vertex_attrib_format) &&
+        method < MAXWELL3D_REG_INDEX(vertex_attrib_format) + regs.vertex_attrib_format.size()) {
+        dirty_flags.vertex_attrib_format = true;
+    }
+
+    // Vertex buffer
+    if (method >= MAXWELL3D_REG_INDEX(vertex_array) &&
+        method < MAXWELL3D_REG_INDEX(vertex_array) + 4 * 32) {
+        dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array)) >> 2);
+    } else if (method >= MAXWELL3D_REG_INDEX(vertex_array_limit) &&
+               method < MAXWELL3D_REG_INDEX(vertex_array_limit) + 2 * 32) {
+        dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array_limit)) >> 1);
+    } else if (method >= MAXWELL3D_REG_INDEX(instanced_arrays) &&
+               method < MAXWELL3D_REG_INDEX(instanced_arrays) + 32) {
+        dirty_flags.vertex_array.set(method - MAXWELL3D_REG_INDEX(instanced_arrays));
+    }
+}
+
+void Maxwell3D::ExecuteMethod(const u32 method, const u32 method_argument) {
+    switch (method) {
+    case MAXWELL3D_REG_INDEX(macros.data): {
+        ProcessMacroUpload(method_argument);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(macros.bind): {
+        ProcessMacroBind(method_argument);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[0]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[1]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[2]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[3]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[4]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[5]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[6]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[7]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[8]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[9]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[10]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[11]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[12]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[13]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[14]):
+    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[15]): {
+        ProcessCBData(method_argument);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
+        ProcessCBBind(Regs::ShaderStage::Vertex);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[1].raw_config): {
+        ProcessCBBind(Regs::ShaderStage::TesselationControl);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[2].raw_config): {
+        ProcessCBBind(Regs::ShaderStage::TesselationEval);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[3].raw_config): {
+        ProcessCBBind(Regs::ShaderStage::Geometry);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(cb_bind[4].raw_config): {
+        ProcessCBBind(Regs::ShaderStage::Fragment);
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
+        DrawArrays();
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(clear_buffers): {
+        ProcessClearBuffers();
+        break;
+    }
+    case MAXWELL3D_REG_INDEX(query.query_get): {
+        ProcessQueryGet();
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
     auto debug_context = system.GetGPUDebugContext();
 
@@ -144,114 +334,14 @@ void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
 
     if (regs.reg_array[method] != method_call.argument) {
         regs.reg_array[method] = method_call.argument;
-        // Color buffers
-        constexpr u32 first_rt_reg = MAXWELL3D_REG_INDEX(rt);
-        constexpr u32 registers_per_rt = sizeof(regs.rt[0]) / sizeof(u32);
-        if (method >= first_rt_reg &&
-            method < first_rt_reg + registers_per_rt * Regs::NumRenderTargets) {
-            const std::size_t rt_index = (method - first_rt_reg) / registers_per_rt;
-            dirty_flags.color_buffer.set(rt_index);
-        }
-
-        // Zeta buffer
-        constexpr u32 registers_in_zeta = sizeof(regs.zeta) / sizeof(u32);
-        if (method == MAXWELL3D_REG_INDEX(zeta_enable) ||
-            method == MAXWELL3D_REG_INDEX(zeta_width) ||
-            method == MAXWELL3D_REG_INDEX(zeta_height) ||
-            (method >= MAXWELL3D_REG_INDEX(zeta) &&
-             method < MAXWELL3D_REG_INDEX(zeta) + registers_in_zeta)) {
-            dirty_flags.zeta_buffer = true;
-        }
-
-        // Shader
-        constexpr u32 shader_registers_count =
-            sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
-        if (method >= MAXWELL3D_REG_INDEX(shader_config[0]) &&
-            method < MAXWELL3D_REG_INDEX(shader_config[0]) + shader_registers_count) {
-            dirty_flags.shaders = true;
-        }
-
-        // Vertex format
-        if (method >= MAXWELL3D_REG_INDEX(vertex_attrib_format) &&
-            method < MAXWELL3D_REG_INDEX(vertex_attrib_format) + regs.vertex_attrib_format.size()) {
-            dirty_flags.vertex_attrib_format = true;
-        }
-
-        // Vertex buffer
-        if (method >= MAXWELL3D_REG_INDEX(vertex_array) &&
-            method < MAXWELL3D_REG_INDEX(vertex_array) + 4 * 32) {
-            dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array)) >> 2);
-        } else if (method >= MAXWELL3D_REG_INDEX(vertex_array_limit) &&
-                   method < MAXWELL3D_REG_INDEX(vertex_array_limit) + 2 * 32) {
-            dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array_limit)) >> 1);
-        } else if (method >= MAXWELL3D_REG_INDEX(instanced_arrays) &&
-                   method < MAXWELL3D_REG_INDEX(instanced_arrays) + 32) {
-            dirty_flags.vertex_array.set(method - MAXWELL3D_REG_INDEX(instanced_arrays));
+        if (must_process_dirty[method]) {
+            CheckDirty(method);
         }
     }
 
-    switch (method) {
-    case MAXWELL3D_REG_INDEX(macros.data): {
-        ProcessMacroUpload(method_call.argument);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(macros.bind): {
-        ProcessMacroBind(method_call.argument);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[0]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[1]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[2]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[3]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[4]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[5]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[6]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[7]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[8]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[9]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[10]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[11]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[12]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[13]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[14]):
-    case MAXWELL3D_REG_INDEX(const_buffer.cb_data[15]): {
-        ProcessCBData(method_call.argument);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
-        ProcessCBBind(Regs::ShaderStage::Vertex);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(cb_bind[1].raw_config): {
-        ProcessCBBind(Regs::ShaderStage::TesselationControl);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(cb_bind[2].raw_config): {
-        ProcessCBBind(Regs::ShaderStage::TesselationEval);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(cb_bind[3].raw_config): {
-        ProcessCBBind(Regs::ShaderStage::Geometry);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(cb_bind[4].raw_config): {
-        ProcessCBBind(Regs::ShaderStage::Fragment);
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(draw.vertex_end_gl): {
-        DrawArrays();
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(clear_buffers): {
-        ProcessClearBuffers();
-        break;
-    }
-    case MAXWELL3D_REG_INDEX(query.query_get): {
-        ProcessQueryGet();
-        break;
-    }
-    default:
-        break;
+    if (must_process_exec[method])
+    {
+        ExecuteMethod(method, method_call.argument);
     }
 
     if (debug_context) {

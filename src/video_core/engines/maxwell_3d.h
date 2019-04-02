@@ -1137,6 +1137,11 @@ public:
 private:
     void InitializeRegisterDefaults();
 
+    void InitDirtyRegsMask();
+    void InitExecRegsMask();
+    void CheckDirty(const u32 method);
+    void ExecuteMethod(const u32 method, const u32 method_argument);
+
     Core::System& system;
 
     VideoCore::RasterizerInterface& rasterizer;
@@ -1151,6 +1156,9 @@ private:
     u32 executing_macro = 0;
     /// Parameters that have been submitted to the macro call so far.
     std::vector<u32> macro_params;
+
+    std::array<bool, Regs::NUM_REGS> must_process_dirty;
+    std::array<bool, Regs::NUM_REGS> must_process_exec;
 
     /// Interpreter for the macro codes uploaded to the GPU.
     MacroInterpreter macro_interpreter;
