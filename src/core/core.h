@@ -169,6 +169,9 @@ public:
     /// Prepare the core emulation for a reschedule
     void PrepareReschedule();
 
+    /// Prepare the core emulation for a reschedule
+    void PrepareReschedule(s32 core_index);
+
     /// Gets and resets core performance statistics
     PerfStatsResults GetAndResetPerfStats();
 

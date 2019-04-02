@@ -516,7 +516,7 @@ static ResultCode WaitSynchronization(Core::System& system, Handle* index, VAddr
     thread->WakeAfterDelay(nano_seconds);
     thread->SetWakeupCallback(DefaultThreadWakeupCallback);
 
-    system.CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
 
     return RESULT_TIMEOUT;
 }
@@ -534,8 +534,7 @@ static ResultCode CancelSynchronization(Core::System& system, Handle thread_hand
     }
 
     thread->CancelWait();
-    if (thread->GetProcessorID() >= 0)
-        Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
     return RESULT_SUCCESS;
 }
 
@@ -986,8 +985,7 @@ static ResultCode SetThreadActivity(Core::System& system, Handle handle, u32 act
 
     thread->SetActivity(static_cast<ThreadActivity>(activity));
 
-    if (thread->GetProcessorID() >= 0)
-        Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
     return RESULT_SUCCESS;
 }
 
@@ -1069,8 +1067,7 @@ static ResultCode SetThreadPriority(Core::System& system, Handle handle, u32 pri
 
     thread->SetPriority(priority);
 
-    if (thread->GetProcessorID() >= 0)
-        Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
     return RESULT_SUCCESS;
 }
 
@@ -1426,8 +1423,7 @@ static ResultCode CreateThread(Core::System& system, Handle* out_handle, VAddr e
     thread->SetName(
         fmt::format("thread[entry_point={:X}, handle={:X}]", entry_point, *new_thread_handle));
 
-    if (thread->GetProcessorID() >= 0)
-        Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
 
     return RESULT_SUCCESS;
 }
@@ -1449,10 +1445,7 @@ static ResultCode StartThread(Core::System& system, Handle thread_handle) {
     thread->ResumeFromWait();
 
     if (thread->GetStatus() == ThreadStatus::Ready) {
-        if (thread->GetProcessorID() >= 0)
-            Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
-        else
-            Core::System::GetInstance().GlobalScheduler().SetReselectionPending();
+        system.PrepareReschedule(thread->GetProcessorID());
     }
 
     return RESULT_SUCCESS;
@@ -1499,10 +1492,7 @@ static void SleepThread(Core::System& system, s64 nanoseconds) {
         current_thread->Sleep(nanoseconds);
     }
 
-    // Reschedule all CPU cores
-    for (std::size_t i = 0; i < Core::NUM_CPU_CORES; ++i) {
-        system.CpuCore(i).PrepareReschedule();
-    }
+    system.PrepareReschedule(current_thread->GetProcessorID());
 }
 
 /// Wait process wide key atomic
@@ -1549,7 +1539,7 @@ static ResultCode WaitProcessWideKeyAtomic(Core::System& system, VAddr mutex_add
 
     // Note: Deliberately don't attempt to inherit the lock owner's priority.
 
-    system.CpuCore(current_thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(current_thread->GetProcessorID());
     return RESULT_SUCCESS;
 }
 
@@ -1561,7 +1551,7 @@ static ResultCode SignalProcessWideKey(Core::System& system, VAddr condition_var
 
     // Retrieve a list of all threads that are waiting for this condition variable.
     std::vector<SharedPtr<Thread>> waiting_threads;
-    const auto& scheduler = Core::System::GetInstance().GlobalScheduler();
+    const auto& scheduler = system.GlobalScheduler();
     const auto& thread_list = scheduler.GetThreadList();
 
     for (const auto& thread : thread_list) {
@@ -1623,8 +1613,7 @@ static ResultCode SignalProcessWideKey(Core::System& system, VAddr condition_var
             thread->SetLockOwner(nullptr);
             thread->SetMutexWaitAddress(0);
             thread->SetWaitHandle(0);
-            if (thread->GetProcessorID() >= 0)
-                Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+            system.PrepareReschedule(thread->GetProcessorID());
         } else {
             // Atomically signal that the mutex now has a waiting thread.
             do {
@@ -1648,8 +1637,7 @@ static ResultCode SignalProcessWideKey(Core::System& system, VAddr condition_var
             thread->SetStatus(ThreadStatus::WaitMutex);
 
             owner->AddMutexWaiter(thread);
-            if (thread->GetProcessorID() >= 0)
-                Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+            system.PrepareReschedule(thread->GetProcessorID());
         }
     }
 
@@ -1675,13 +1663,10 @@ static ResultCode WaitForAddress(Core::System& system, VAddr address, u32 type, 
     }
 
     const auto arbitration_type = static_cast<AddressArbiter::ArbitrationType>(type);
-    auto& address_arbiter =
-        system.Kernel().CurrentProcess()->GetAddressArbiter();
+    auto& address_arbiter = system.Kernel().CurrentProcess()->GetAddressArbiter();
     ResultCode result = address_arbiter.WaitForAddress(address, arbitration_type, value, timeout);
     if (result == RESULT_SUCCESS)
-        Core::System::GetInstance()
-            .CpuCore(GetCurrentThread()->GetProcessorID())
-            .PrepareReschedule();
+        system.PrepareReschedule();
     return result;
 }
 
@@ -1968,10 +1953,10 @@ static ResultCode SetThreadCoreMask(Core::System& system, Handle thread_handle, 
         return ERR_INVALID_HANDLE;
     }
 
-    Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
     thread->ChangeCore(core, affinity_mask);
-    if (thread->GetProcessorID() >= 0)
-        Core::System::GetInstance().CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    system.PrepareReschedule(thread->GetProcessorID());
+
     return RESULT_SUCCESS;
 }
 
@@ -2082,7 +2067,7 @@ static ResultCode SignalEvent(Core::System& system, Handle handle) {
     }
 
     writable_event->Signal();
-    Core::System::GetInstance().PrepareReschedule();
+    system.PrepareReschedule();
     return RESULT_SUCCESS;
 }
 
