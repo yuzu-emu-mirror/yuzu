@@ -135,8 +135,8 @@ public:
      * containing several bitfields can be assembled by formatting each of their values and ORing
      * the results together.
      */
-    static constexpr FORCE_INLINE StorageType FormatValue(const T& value) {
-        return ((StorageType)value << position) & mask;
+    [[nodiscard]] static constexpr FORCE_INLINE StorageType FormatValue(const T& value) noexcept {
+        return (static_cast<StorageType>(value) << position) & mask;
     }
 
     /**
@@ -144,7 +144,8 @@ public:
      * (such as Value() or operator T), but this can be used to extract a value from a bitfield
      * union in a constexpr context.
      */
-    static constexpr FORCE_INLINE T ExtractValue(const StorageType& storage) {
+    [[nodiscard]] static constexpr FORCE_INLINE T
+    ExtractValue(const StorageType& storage) noexcept {
         if constexpr (std::numeric_limits<UnderlyingType>::is_signed) {
             std::size_t shift = 8 * sizeof(T) - bits;
             return static_cast<T>(static_cast<UnderlyingType>(storage << (shift - position)) >>
@@ -168,19 +169,19 @@ public:
     constexpr BitField(BitField&&) noexcept = default;
     constexpr BitField& operator=(BitField&&) noexcept = default;
 
-    constexpr FORCE_INLINE operator T() const {
+    [[nodiscard]] constexpr FORCE_INLINE operator T() const noexcept {
         return Value();
     }
 
-    constexpr FORCE_INLINE void Assign(const T& value) {
+    constexpr FORCE_INLINE void Assign(const T& value) noexcept {
         storage = (static_cast<StorageType>(storage) & ~mask) | FormatValue(value);
     }
 
-    constexpr T Value() const {
+    [[nodiscard]] constexpr T Value() const noexcept {
         return ExtractValue(storage);
     }
 
-    constexpr explicit operator bool() const {
+    [[nodiscard]] constexpr explicit operator bool() const noexcept {
         return Value() != 0;
     }
 
