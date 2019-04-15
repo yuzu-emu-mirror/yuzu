@@ -64,7 +64,7 @@ public:
     /// @param output     Where to store the popped slots
     /// @param max_slots  Maximum number of slots to pop
     /// @returns The number of slots actually popped
-    std::size_t Pop(void* output, std::size_t max_slots = ~std::size_t(0)) {
+    [[nodiscard]] std::size_t Pop(void* output, std::size_t max_slots = ~std::size_t(0)) {
         const std::size_t read_index = m_read_index.load();
         const std::size_t slots_filled = m_write_index.load() - read_index;
         const std::size_t pop_count = std::min(slots_filled, max_slots);
@@ -83,7 +83,7 @@ public:
         return pop_count;
     }
 
-    std::vector<T> Pop(std::size_t max_slots = ~std::size_t(0)) {
+    [[nodiscard]] std::vector<T> Pop(std::size_t max_slots = ~std::size_t(0)) {
         std::vector<T> out(std::min(max_slots, capacity) * granularity);
         const std::size_t count = Pop(out.data(), out.size() / granularity);
         out.resize(count * granularity);
@@ -91,12 +91,12 @@ public:
     }
 
     /// @returns Number of slots used
-    std::size_t Size() const {
+    [[nodiscard]] std::size_t Size() const {
         return m_write_index.load() - m_read_index.load();
     }
 
     /// @returns Maximum size of ring buffer
-    constexpr std::size_t Capacity() const {
+    [[nodiscard]] constexpr std::size_t Capacity() const {
         return capacity;
     }
 
