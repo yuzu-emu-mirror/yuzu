@@ -13,12 +13,12 @@
 
 namespace Common {
 
-u8 ToHexNibble(char c1);
+[[nodiscard]] u8 ToHexNibble(char c1);
 
-std::vector<u8> HexStringToVector(std::string_view str, bool little_endian);
+[[nodiscard]] std::vector<u8> HexStringToVector(std::string_view str, bool little_endian);
 
 template <std::size_t Size, bool le = false>
-std::array<u8, Size> HexStringToArray(std::string_view str) {
+[[nodiscard]] std::array<u8, Size> HexStringToArray(std::string_view str) {
     std::array<u8, Size> out{};
     if constexpr (le) {
         for (std::size_t i = 2 * Size - 2; i <= 2 * Size; i -= 2)
@@ -30,17 +30,17 @@ std::array<u8, Size> HexStringToArray(std::string_view str) {
     return out;
 }
 
-std::string HexVectorToString(const std::vector<u8>& vector, bool upper = true);
+[[nodiscard]] std::string HexVectorToString(const std::vector<u8>& vector, bool upper = true);
 
 template <std::size_t Size>
-std::string HexArrayToString(std::array<u8, Size> array, bool upper = true) {
+[[nodiscard]] std::string HexArrayToString(std::array<u8, Size> array, bool upper = true) {
     std::string out;
     for (u8 c : array)
         out += fmt::format(upper ? "{:02X}" : "{:02x}", c);
     return out;
 }
 
-std::array<u8, 0x10> operator"" _array16(const char* str, std::size_t len);
-std::array<u8, 0x20> operator"" _array32(const char* str, std::size_t len);
+[[nodiscard]] std::array<u8, 0x10> operator"" _array16(const char* str, std::size_t len);
+[[nodiscard]] std::array<u8, 0x20> operator"" _array32(const char* str, std::size_t len);
 
 } // namespace Common
