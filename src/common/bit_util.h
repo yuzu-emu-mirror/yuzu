@@ -17,12 +17,12 @@ namespace Common {
 
 /// Gets the size of a specified type T in bits.
 template <typename T>
-constexpr std::size_t BitSize() {
+[[nodiscard]] constexpr std::size_t BitSize() noexcept {
     return sizeof(T) * CHAR_BIT;
 }
 
 #ifdef _MSC_VER
-inline u32 CountLeadingZeroes32(u32 value) {
+[[nodiscard]] inline u32 CountLeadingZeroes32(u32 value) noexcept {
     unsigned long leading_zero = 0;
 
     if (_BitScanReverse(&leading_zero, value) != 0) {
@@ -32,7 +32,7 @@ inline u32 CountLeadingZeroes32(u32 value) {
     return 32;
 }
 
-inline u32 CountLeadingZeroes64(u64 value) {
+[[nodiscard]] inline u32 CountLeadingZeroes64(u64 value) noexcept {
     unsigned long leading_zero = 0;
 
     if (_BitScanReverse64(&leading_zero, value) != 0) {
@@ -42,7 +42,7 @@ inline u32 CountLeadingZeroes64(u64 value) {
     return 64;
 }
 #else
-inline u32 CountLeadingZeroes32(u32 value) {
+[[nodiscard]] inline u32 CountLeadingZeroes32(u32 value) noexcept {
     if (value == 0) {
         return 32;
     }
@@ -50,7 +50,7 @@ inline u32 CountLeadingZeroes32(u32 value) {
     return static_cast<u32>(__builtin_clz(value));
 }
 
-inline u32 CountLeadingZeroes64(u64 value) {
+[[nodiscard]] inline u32 CountLeadingZeroes64(u64 value) noexcept {
     if (value == 0) {
         return 64;
     }
@@ -60,7 +60,7 @@ inline u32 CountLeadingZeroes64(u64 value) {
 #endif
 
 #ifdef _MSC_VER
-inline u32 CountTrailingZeroes32(u32 value) {
+[[nodiscard]] inline u32 CountTrailingZeroes32(u32 value) noexcept {
     unsigned long trailing_zero = 0;
 
     if (_BitScanForward(&trailing_zero, value) != 0) {
@@ -70,7 +70,7 @@ inline u32 CountTrailingZeroes32(u32 value) {
     return 32;
 }
 
-inline u32 CountTrailingZeroes64(u64 value) {
+[[nodiscard]] inline u32 CountTrailingZeroes64(u64 value) noexcept {
     unsigned long trailing_zero = 0;
 
     if (_BitScanForward64(&trailing_zero, value) != 0) {
@@ -80,7 +80,7 @@ inline u32 CountTrailingZeroes64(u64 value) {
     return 64;
 }
 #else
-inline u32 CountTrailingZeroes32(u32 value) {
+[[nodiscard]] inline u32 CountTrailingZeroes32(u32 value) noexcept {
     if (value == 0) {
         return 32;
     }
@@ -88,7 +88,7 @@ inline u32 CountTrailingZeroes32(u32 value) {
     return static_cast<u32>(__builtin_ctz(value));
 }
 
-inline u32 CountTrailingZeroes64(u64 value) {
+[[nodiscard]] inline u32 CountTrailingZeroes64(u64 value) noexcept {
     if (value == 0) {
         return 64;
     }
