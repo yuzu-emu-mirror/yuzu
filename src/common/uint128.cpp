@@ -12,7 +12,7 @@
 
 namespace Common {
 
-u128 Multiply64Into128(u64 a, u64 b) {
+u128 Multiply64Into128(u64 a, u64 b) noexcept {
     u128 result;
 #ifdef _MSC_VER
     result[0] = _umul128(a, b, &result[1]);
@@ -24,7 +24,7 @@ u128 Multiply64Into128(u64 a, u64 b) {
     return result;
 }
 
-std::pair<u64, u64> Divide128On32(u128 dividend, u32 divisor) {
+std::pair<u64, u64> Divide128On32(u128 dividend, u32 divisor) noexcept {
     u64 remainder = dividend[0] % divisor;
     u64 accum = dividend[0] / divisor;
     if (dividend[1] == 0)
