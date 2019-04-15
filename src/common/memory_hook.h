@@ -26,21 +26,22 @@ class MemoryHook {
 public:
     virtual ~MemoryHook();
 
-    virtual std::optional<bool> IsValidAddress(VAddr addr) = 0;
+    [[nodiscard]] virtual std::optional<bool> IsValidAddress(VAddr addr) = 0;
 
-    virtual std::optional<u8> Read8(VAddr addr) = 0;
-    virtual std::optional<u16> Read16(VAddr addr) = 0;
-    virtual std::optional<u32> Read32(VAddr addr) = 0;
-    virtual std::optional<u64> Read64(VAddr addr) = 0;
+    [[nodiscard]] virtual std::optional<u8> Read8(VAddr addr) = 0;
+    [[nodiscard]] virtual std::optional<u16> Read16(VAddr addr) = 0;
+    [[nodiscard]] virtual std::optional<u32> Read32(VAddr addr) = 0;
+    [[nodiscard]] virtual std::optional<u64> Read64(VAddr addr) = 0;
 
-    virtual bool ReadBlock(VAddr src_addr, void* dest_buffer, std::size_t size) = 0;
+    [[nodiscard]] virtual bool ReadBlock(VAddr src_addr, void* dest_buffer, std::size_t size) = 0;
 
-    virtual bool Write8(VAddr addr, u8 data) = 0;
-    virtual bool Write16(VAddr addr, u16 data) = 0;
-    virtual bool Write32(VAddr addr, u32 data) = 0;
-    virtual bool Write64(VAddr addr, u64 data) = 0;
+    [[nodiscard]] virtual bool Write8(VAddr addr, u8 data) = 0;
+    [[nodiscard]] virtual bool Write16(VAddr addr, u16 data) = 0;
+    [[nodiscard]] virtual bool Write32(VAddr addr, u32 data) = 0;
+    [[nodiscard]] virtual bool Write64(VAddr addr, u64 data) = 0;
 
-    virtual bool WriteBlock(VAddr dest_addr, const void* src_buffer, std::size_t size) = 0;
+    [[nodiscard]] virtual bool WriteBlock(VAddr dest_addr, const void* src_buffer,
+                                          std::size_t size) = 0;
 };
 
 using MemoryHookPointer = std::shared_ptr<MemoryHook>;
