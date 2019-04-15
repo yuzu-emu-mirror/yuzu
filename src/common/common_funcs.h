@@ -52,11 +52,11 @@ __declspec(dllimport) void __stdcall DebugBreak(void);
 // Call directly after the command or use the error num.
 // This function might change the error code.
 // Defined in Misc.cpp.
-std::string GetLastErrorMsg();
+[[nodiscard]] std::string GetLastErrorMsg();
 
 namespace Common {
 
-constexpr u32 MakeMagic(char a, char b, char c, char d) {
+[[nodiscard]] constexpr u32 MakeMagic(char a, char b, char c, char d) noexcept {
     return a | b << 8 | c << 16 | d << 24;
 }
 
