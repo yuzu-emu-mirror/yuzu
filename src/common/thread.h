@@ -29,7 +29,7 @@ public:
     }
 
     template <class Clock, class Duration>
-    bool WaitUntil(const std::chrono::time_point<Clock, Duration>& time) {
+    [[nodiscard]] bool WaitUntil(const std::chrono::time_point<Clock, Duration>& time) {
         std::unique_lock lk{mutex};
         if (!condvar.wait_until(lk, time, [this] { return is_set; }))
             return false;
