@@ -46,7 +46,7 @@ public:
     virtual void SetFilter(const Filter& new_filter) {
         filter = new_filter;
     }
-    virtual const char* GetName() const = 0;
+    [[nodiscard]] virtual const char* GetName() const = 0;
     virtual void Write(const Entry& entry) = 0;
 
 private:
@@ -58,12 +58,14 @@ private:
  */
 class ConsoleBackend : public Backend {
 public:
-    static const char* Name() {
+    [[nodiscard]] static const char* Name() {
         return "console";
     }
-    const char* GetName() const override {
+
+    [[nodiscard]] const char* GetName() const override {
         return Name();
     }
+
     void Write(const Entry& entry) override;
 };
 
@@ -72,13 +74,14 @@ public:
  */
 class ColorConsoleBackend : public Backend {
 public:
-    static const char* Name() {
+    [[nodiscard]] static const char* Name() {
         return "color_console";
     }
 
-    const char* GetName() const override {
+    [[nodiscard]] const char* GetName() const override {
         return Name();
     }
+
     void Write(const Entry& entry) override;
 };
 
@@ -89,11 +92,11 @@ class FileBackend : public Backend {
 public:
     explicit FileBackend(const std::string& filename);
 
-    static const char* Name() {
+    [[nodiscard]] static const char* Name() {
         return "file";
     }
 
-    const char* GetName() const override {
+    [[nodiscard]] const char* GetName() const override {
         return Name();
     }
 
@@ -109,12 +112,14 @@ private:
  */
 class DebuggerBackend : public Backend {
 public:
-    static const char* Name() {
+    [[nodiscard]] static const char* Name() {
         return "debugger";
     }
-    const char* GetName() const override {
+
+    [[nodiscard]] const char* GetName() const override {
         return Name();
     }
+
     void Write(const Entry& entry) override;
 };
 
@@ -122,18 +127,18 @@ void AddBackend(std::unique_ptr<Backend> backend);
 
 void RemoveBackend(std::string_view backend_name);
 
-Backend* GetBackend(std::string_view backend_name);
+[[nodiscard]] Backend* GetBackend(std::string_view backend_name);
 
 /**
  * Returns the name of the passed log class as a C-string. Subclasses are separated by periods
  * instead of underscores as in the enumeration.
  */
-const char* GetLogClassName(Class log_class);
+[[nodiscard]] const char* GetLogClassName(Class log_class);
 
 /**
  * Returns the name of the passed log level as a C-string.
  */
-const char* GetLevelName(Level log_level);
+[[nodiscard]] const char* GetLevelName(Level log_level);
 
 /**
  * The global filter will prevent any messages from even being processed if they are filtered. Each
