@@ -43,21 +43,21 @@ public:
         using reference = std::conditional_t<is_constant, const T&, T&>;
         using difference_type = typename std::pointer_traits<pointer>::difference_type;
 
-        friend bool operator==(const iterator_impl& lhs, const iterator_impl& rhs) {
+        [[nodiscard]] friend bool operator==(const iterator_impl& lhs, const iterator_impl& rhs) {
             if (lhs.IsEnd() && rhs.IsEnd())
                 return true;
             return std::tie(lhs.current_priority, lhs.it) == std::tie(rhs.current_priority, rhs.it);
         }
 
-        friend bool operator!=(const iterator_impl& lhs, const iterator_impl& rhs) {
+        [[nodiscard]] friend bool operator!=(const iterator_impl& lhs, const iterator_impl& rhs) {
             return !operator==(lhs, rhs);
         }
 
-        reference operator*() const {
+        [[nodiscard]] reference operator*() const {
             return *it;
         }
 
-        pointer operator->() const {
+        [[nodiscard]] pointer operator->() const {
             return it.operator->();
         }
 
@@ -143,15 +143,15 @@ public:
         explicit iterator_impl(container_ref mlq, u32 current_priority)
             : mlq(mlq), it(), current_priority(current_priority) {}
 
-        bool IsEnd() const {
+        [[nodiscard]] bool IsEnd() const {
             return current_priority == mlq.depth();
         }
 
-        list_iterator GetBeginItForPrio() const {
+        [[nodiscard]] list_iterator GetBeginItForPrio() const {
             return mlq.levels[current_priority].begin();
         }
 
-        list_iterator GetEndItForPrio() const {
+        [[nodiscard]] list_iterator GetEndItForPrio() const {
             return mlq.levels[current_priority].end();
         }
 
@@ -223,15 +223,15 @@ public:
         ListShiftForward(levels[priority], n);
     }
 
-    std::size_t depth() const {
+    [[nodiscard]] std::size_t depth() const {
         return Depth;
     }
 
-    std::size_t size(u32 priority) const {
+    [[nodiscard]] std::size_t size(u32 priority) const {
         return levels[priority].size();
     }
 
-    std::size_t size() const {
+    [[nodiscard]] std::size_t size() const {
         u64 priorities = used_priorities;
         std::size_t size = 0;
         while (priorities != 0) {
@@ -242,64 +242,64 @@ public:
         return size;
     }
 
-    bool empty() const {
+    [[nodiscard]] bool empty() const {
         return used_priorities == 0;
     }
 
-    bool empty(u32 priority) const {
+    [[nodiscard]] bool empty(u32 priority) const {
         return (used_priorities & (1ULL << priority)) == 0;
     }
 
-    u32 highest_priority_set(u32 max_priority = 0) const {
+    [[nodiscard]] u32 highest_priority_set(u32 max_priority = 0) const {
         const u64 priorities =
             max_priority == 0 ? used_priorities : (used_priorities & ~((1ULL << max_priority) - 1));
         return priorities == 0 ? Depth : static_cast<u32>(CountTrailingZeroes64(priorities));
     }
 
-    u32 lowest_priority_set(u32 min_priority = Depth - 1) const {
+    [[nodiscard]] u32 lowest_priority_set(u32 min_priority = Depth - 1) const {
         const u64 priorities = min_priority >= Depth - 1
                                    ? used_priorities
                                    : (used_priorities & ((1ULL << (min_priority + 1)) - 1));
         return priorities == 0 ? Depth : 63 - CountLeadingZeroes64(priorities);
     }
 
-    const_iterator cbegin(u32 max_prio = 0) const {
+    [[nodiscard]] const_iterator cbegin(u32 max_prio = 0) const {
         const u32 priority = highest_priority_set(max_prio);
         return priority == Depth ? cend()
                                  : const_iterator{*this, levels[priority].cbegin(), priority};
     }
-    const_iterator begin(u32 max_prio = 0) const {
+    [[nodiscard]] const_iterator begin(u32 max_prio = 0) const {
         return cbegin(max_prio);
     }
-    iterator begin(u32 max_prio = 0) {
+    [[nodiscard]] iterator begin(u32 max_prio = 0) {
         const u32 priority = highest_priority_set(max_prio);
         return priority == Depth ? end() : iterator{*this, levels[priority].begin(), priority};
     }
 
-    const_iterator cend(u32 min_prio = Depth - 1) const {
+    [[nodiscard]] const_iterator cend(u32 min_prio = Depth - 1) const {
         return min_prio == Depth - 1 ? const_iterator{*this, Depth} : cbegin(min_prio + 1);
     }
-    const_iterator end(u32 min_prio = Depth - 1) const {
+    [[nodiscard]] const_iterator end(u32 min_prio = Depth - 1) const {
         return cend(min_prio);
     }
-    iterator end(u32 min_prio = Depth - 1) {
+    [[nodiscard]] iterator end(u32 min_prio = Depth - 1) {
         return min_prio == Depth - 1 ? iterator{*this, Depth} : begin(min_prio + 1);
     }
 
-    T& front(u32 max_priority = 0) {
+    [[nodiscard]] T& front(u32 max_priority = 0) {
         const u32 priority = highest_priority_set(max_priority);
         return levels[priority == Depth ? 0 : priority].front();
     }
-    const T& front(u32 max_priority = 0) const {
+    [[nodiscard]] const T& front(u32 max_priority = 0) const {
         const u32 priority = highest_priority_set(max_priority);
         return levels[priority == Depth ? 0 : priority].front();
     }
 
-    T back(u32 min_priority = Depth - 1) {
+    [[nodiscard]] T back(u32 min_priority = Depth - 1) {
         const u32 priority = lowest_priority_set(min_priority); // intended
         return levels[priority == Depth ? 63 : priority].back();
     }
-    const T& back(u32 min_priority = Depth - 1) const {
+    [[nodiscard]] const T& back(u32 min_priority = Depth - 1) const {
         const u32 priority = lowest_priority_set(min_priority); // intended
         return levels[priority == Depth ? 63 : priority].back();
     }
@@ -322,7 +322,8 @@ private:
         in_list.splice(position, out_list, element);
     }
 
-    static const_list_iterator ListIterateTo(const std::list<T>& list, const T& element) {
+    [[nodiscard]] static const_list_iterator ListIterateTo(const std::list<T>& list,
+                                                           const T& element) {
         auto it = list.cbegin();
         while (it != list.cend() && *it != element) {
             ++it;
