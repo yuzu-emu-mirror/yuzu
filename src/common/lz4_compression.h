@@ -16,7 +16,7 @@ namespace Common::Compression {
  *
  * @return the compressed data.
  */
-std::vector<u8> CompressDataLZ4(const u8* source, std::size_t source_size);
+[[nodiscard]] std::vector<u8> CompressDataLZ4(const u8* source, std::size_t source_size);
 
 /**
  * Utilizes the LZ4 subalgorithm LZ4HC with the specified compression level. Higher compression
@@ -30,7 +30,8 @@ std::vector<u8> CompressDataLZ4(const u8* source, std::size_t source_size);
  *
  * @return the compressed data.
  */
-std::vector<u8> CompressDataLZ4HC(const u8* source, std::size_t source_size, s32 compression_level);
+[[nodiscard]] std::vector<u8> CompressDataLZ4HC(const u8* source, std::size_t source_size,
+                                                s32 compression_level);
 
 /**
  * Utilizes the LZ4 subalgorithm LZ4HC with the highest possible compression level.
@@ -40,7 +41,7 @@ std::vector<u8> CompressDataLZ4HC(const u8* source, std::size_t source_size, s32
  *
  * @return the compressed data.
  */
-std::vector<u8> CompressDataLZ4HCMax(const u8* source, std::size_t source_size);
+[[nodiscard]] std::vector<u8> CompressDataLZ4HCMax(const u8* source, std::size_t source_size);
 
 /**
  * Decompresses a source memory region with LZ4 and returns the uncompressed data in a vector.
@@ -50,6 +51,7 @@ std::vector<u8> CompressDataLZ4HCMax(const u8* source, std::size_t source_size);
  *
  * @return the decompressed data.
  */
-std::vector<u8> DecompressDataLZ4(const std::vector<u8>& compressed, std::size_t uncompressed_size);
+[[nodiscard]] std::vector<u8> DecompressDataLZ4(const std::vector<u8>& compressed,
+                                                std::size_t uncompressed_size);
 
 } // namespace Common::Compression
