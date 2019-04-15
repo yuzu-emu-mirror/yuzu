@@ -14,35 +14,39 @@ public:
     Vec3<T> xyz;
     T w{};
 
-    Quaternion<decltype(-T{})> Inverse() const {
+    [[nodiscard]] Quaternion<decltype(-T{})> Inverse() const noexcept {
         return {-xyz, w};
     }
 
-    Quaternion<decltype(T{} + T{})> operator+(const Quaternion& other) const {
+    [[nodiscard]] Quaternion<decltype(T{} + T{})> operator+(const Quaternion& other) const
+        noexcept {
         return {xyz + other.xyz, w + other.w};
     }
 
-    Quaternion<decltype(T{} - T{})> operator-(const Quaternion& other) const {
+    [[nodiscard]] Quaternion<decltype(T{} - T{})> operator-(const Quaternion& other) const
+        noexcept {
         return {xyz - other.xyz, w - other.w};
     }
 
-    Quaternion<decltype(T{} * T{} - T{} * T{})> operator*(const Quaternion& other) const {
+    [[nodiscard]] Quaternion<decltype(T{} * T{} - T{} * T{})> operator*(
+        const Quaternion& other) const noexcept {
         return {xyz * other.w + other.xyz * w + Cross(xyz, other.xyz),
                 w * other.w - Dot(xyz, other.xyz)};
     }
 
-    Quaternion<T> Normalized() const {
+    [[nodiscard]] Quaternion<T> Normalized() const noexcept {
         T length = std::sqrt(xyz.Length2() + w * w);
         return {xyz / length, w / length};
     }
 };
 
 template <typename T>
-auto QuaternionRotate(const Quaternion<T>& q, const Vec3<T>& v) {
+[[nodiscard]] auto QuaternionRotate(const Quaternion<T>& q, const Vec3<T>& v) noexcept {
     return v + 2 * Cross(q.xyz, Cross(q.xyz, v) + v * q.w);
 }
 
-inline Quaternion<float> MakeQuaternion(const Vec3<float>& axis, float angle) {
+[[nodiscard]] inline Quaternion<float> MakeQuaternion(const Vec3<float>& axis,
+                                                      float angle) noexcept {
     return {axis * std::sin(angle / 2), std::cos(angle / 2)};
 }
 
