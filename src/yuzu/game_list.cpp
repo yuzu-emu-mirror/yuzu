@@ -296,22 +296,19 @@ void GameList::ValidateEntry(const QModelIndex& item) {
 
 void GameList::DonePopulating(QStringList watch_list) {
     // Clear out the old directories to watch for changes and add the new ones
-    auto watch_dirs = watcher->directories();
+    const QStringList watch_dirs = watcher->directories();
     if (!watch_dirs.isEmpty()) {
         watcher->removePaths(watch_dirs);
     }
     // Workaround: Add the watch paths in chunks to allow the gui to refresh
     // This prevents the UI from stalling when a large number of watch paths are added
-    // Also artificially caps the watcher to a certain number of directories
-    constexpr int LIMIT_WATCH_DIRECTORIES = 5000;
-    constexpr int SLICE_SIZE = 25;
-    int len = std::min(watch_list.length(), LIMIT_WATCH_DIRECTORIES);
-    for (int i = 0; i < len; i += SLICE_SIZE) {
-        watcher->addPaths(watch_list.mid(i, i + SLICE_SIZE));
+    constexpr int slice_size = 25;
+    for (int i = 0; i < watch_list.length(); i += slice_size) {
+        watcher->addPaths(watch_list.mid(i, i + slice_size));
         QCoreApplication::processEvents();
     }
     tree_view->setEnabled(true);
-    int rowCount = tree_view->model()->rowCount();
+    const int rowCount = tree_view->model()->rowCount();
     search_field->setFilterResult(rowCount, rowCount);
     if (rowCount > 0) {
         search_field->setFocus();
