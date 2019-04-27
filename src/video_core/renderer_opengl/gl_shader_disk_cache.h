@@ -40,9 +40,11 @@ struct BaseBindings {
     u32 cbuf{};
     u32 gmem{};
     u32 sampler{};
+    u32 image{};
 
     bool operator==(const BaseBindings& rhs) const {
-        return std::tie(cbuf, gmem, sampler) == std::tie(rhs.cbuf, rhs.gmem, rhs.sampler);
+        return std::tie(cbuf, gmem, sampler, image) ==
+               std::tie(rhs.cbuf, rhs.gmem, rhs.sampler, rhs.image);
     }
 
     bool operator!=(const BaseBindings& rhs) const {
@@ -87,7 +89,10 @@ namespace std {
 template <>
 struct hash<OpenGL::BaseBindings> {
     std::size_t operator()(const OpenGL::BaseBindings& bindings) const {
-        return bindings.cbuf | bindings.gmem << 8 | bindings.sampler << 16;
+        return static_cast<std::size_t>(bindings.cbuf) ^
+               (static_cast<std::size_t>(bindings.gmem) << 8) ^
+               (static_cast<std::size_t>(bindings.sampler) << 16) ^
+               (static_cast<std::size_t>(bindings.image) << 24);
     }
 };
 
@@ -289,8 +294,8 @@ private:
         return LoadArrayFromPrecompiled(&object, 1);
     }
 
-    // Copre system
     Core::System& system;
+
     // Stores whole precompiled cache which will be read from or saved to the precompiled chache
     // file
     FileSys::VectorVfsFile precompiled_cache_virtual_file;
