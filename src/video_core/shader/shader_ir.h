@@ -274,6 +274,15 @@ public:
     explicit Image(std::size_t offset, std::size_t index, Tegra::Shader::ImageType type)
         : offset{offset}, index{index}, type{type}, is_bindless{false} {}
 
+    explicit Image(u32 cbuf_index, u32 cbuf_offset, std::size_t index,
+                   Tegra::Shader::ImageType type)
+        : offset{(static_cast<u64>(cbuf_index) << 32) | cbuf_offset}, index{index}, type{type},
+          is_bindless{true} {}
+
+    explicit Image(std::size_t offset, std::size_t index, Tegra::Shader::ImageType type,
+                   bool is_bindless)
+        : offset{offset}, index{index}, type{type}, is_bindless{is_bindless} {}
+
     std::size_t GetOffset() const {
         return offset;
     }
@@ -814,6 +823,9 @@ private:
 
     /// Accesses an image.
     const Image& GetImage(Tegra::Shader::Image image, Tegra::Shader::ImageType type);
+
+    /// Access a bindless image sampler.
+    const Image& GetBindlessImage(Tegra::Shader::Register reg, Tegra::Shader::ImageType type);
 
     /// Extracts a sequence of bits from a node
     Node BitfieldExtract(Node value, u32 offset, u32 bits);
