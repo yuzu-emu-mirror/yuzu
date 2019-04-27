@@ -930,6 +930,11 @@ private:
         return {};
     }
 
+    Id ImageStore(Operation operation) {
+        UNIMPLEMENTED();
+        return {};
+    }
+
     Id Branch(Operation operation) {
         const auto target = std::get_if<ImmediateNode>(operation[0]);
         UNIMPLEMENTED_IF(!target);
@@ -1281,6 +1286,8 @@ private:
         &SPIRVDecompiler::TextureQueryDimensions,
         &SPIRVDecompiler::TextureQueryLod,
         &SPIRVDecompiler::TexelFetch,
+
+        &SPIRVDecompiler::ImageStore,
 
         &SPIRVDecompiler::Branch,
         &SPIRVDecompiler::PushFlowStack,

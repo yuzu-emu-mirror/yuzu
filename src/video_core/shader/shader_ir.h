@@ -172,6 +172,8 @@ enum class OperationCode {
     TextureQueryLod,        /// (MetaTexture, float[N] coords) -> float4
     TexelFetch,             /// (MetaTexture, int[N], int) -> float4
 
+    ImageStore, /// (MetaImage, float[N] coords) -> void
+
     Branch,        /// (uint branch_target) -> void
     PushFlowStack, /// (uint branch_target) -> void
     PopFlowStack,  /// () -> void
@@ -267,6 +269,39 @@ private:
     bool is_bindless{}; ///< Whether this sampler belongs to a bindless texture or not.
 };
 
+class Image {
+public:
+    explicit Image(std::size_t offset, std::size_t index, Tegra::Shader::ImageType type)
+        : offset{offset}, index{index}, type{type}, is_bindless{false} {}
+
+    std::size_t GetOffset() const {
+        return offset;
+    }
+
+    std::size_t GetIndex() const {
+        return index;
+    }
+
+    Tegra::Shader::ImageType GetType() const {
+        return type;
+    }
+
+    bool IsBindless() const {
+        return is_bindless;
+    }
+
+    bool operator<(const Image& rhs) const {
+        return std::tie(offset, index, type, is_bindless) <
+               std::tie(rhs.offset, rhs.index, rhs.type, rhs.is_bindless);
+    }
+
+private:
+    std::size_t offset{};
+    std::size_t index{};
+    Tegra::Shader::ImageType type{};
+    bool is_bindless{};
+};
+
 class ConstBuffer {
 public:
     explicit ConstBuffer(u32 max_offset, bool is_indirect)
@@ -328,10 +363,15 @@ struct MetaTexture {
     u32 element{};
 };
 
+struct MetaImage {
+    const Image& image;
+    std::vector<Node> values;
+};
+
 inline constexpr MetaArithmetic PRECISE = {true};
 inline constexpr MetaArithmetic NO_PRECISE = {false};
 
-using Meta = std::variant<MetaArithmetic, MetaTexture, Tegra::Shader::HalfType>;
+using Meta = std::variant<MetaArithmetic, MetaTexture, MetaImage, Tegra::Shader::HalfType>;
 
 /// Holds any kind of operation that can be done in the IR
 class OperationNode final {
@@ -602,6 +642,10 @@ public:
         return used_samplers;
     }
 
+    const std::set<Image>& GetImages() const {
+        return used_images;
+    }
+
     const std::array<bool, Tegra::Engines::Maxwell3D::Regs::NumClipDistances>& GetClipDistances()
         const {
         return used_clip_distances;
@@ -648,6 +692,7 @@ private:
     u32 DecodeConversion(NodeBlock& bb, u32 pc);
     u32 DecodeMemory(NodeBlock& bb, u32 pc);
     u32 DecodeTexture(NodeBlock& bb, u32 pc);
+    u32 DecodeImage(NodeBlock& bb, u32 pc);
     u32 DecodeFloatSetPredicate(NodeBlock& bb, u32 pc);
     u32 DecodeIntegerSetPredicate(NodeBlock& bb, u32 pc);
     u32 DecodeHalfSetPredicate(NodeBlock& bb, u32 pc);
@@ -767,6 +812,9 @@ private:
                                       Tegra::Shader::TextureType type, bool is_array,
                                       bool is_shadow);
 
+    /// Accesses an image.
+    const Image& GetImage(Tegra::Shader::Image image, Tegra::Shader::ImageType type);
+
     /// Extracts a sequence of bits from a node
     Node BitfieldExtract(Node value, u32 offset, u32 bits);
 
@@ -879,6 +927,7 @@ private:
     std::set<Tegra::Shader::Attribute::Index> used_output_attributes;
     std::map<u32, ConstBuffer> used_cbufs;
     std::set<Sampler> used_samplers;
+    std::set<Image> used_images;
     std::array<bool, Tegra::Engines::Maxwell3D::Regs::NumClipDistances> used_clip_distances{};
     std::map<GlobalMemoryBase, GlobalMemoryUsage> used_global_memory;
 

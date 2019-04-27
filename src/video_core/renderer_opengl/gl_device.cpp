@@ -24,6 +24,11 @@ Device::Device() {
     has_variable_aoffi = TestVariableAoffi();
 }
 
+Device::Device(std::nullptr_t) {
+    uniform_buffer_alignment = 0;
+    has_variable_aoffi = true;
+}
+
 bool Device::TestVariableAoffi() {
     const GLchar* AOFFI_TEST = R"(#version 430 core
 uniform sampler2D tex;
