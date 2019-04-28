@@ -119,11 +119,6 @@ void RasterizerOpenGL::CheckExtensions() {
             Render_OpenGL,
             "Anisotropic filter is not supported! This can cause graphical issues in some games.");
     }
-    if (!GLAD_GL_ARB_buffer_storage) {
-        LOG_WARNING(
-            Render_OpenGL,
-            "Buffer storage control is not supported! This can cause performance degradation.");
-    }
 }
 
 GLuint RasterizerOpenGL::SetupVertexFormat() {
