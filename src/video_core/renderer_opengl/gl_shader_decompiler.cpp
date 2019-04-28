@@ -402,9 +402,13 @@ private:
     void DeclareSamplers() {
         const auto& samplers = ir.GetSamplers();
         for (const auto& sampler : samplers) {
+            const std::string name{GetSampler(sampler)};
+            const std::string description{"layout (binding = SAMPLER_BINDING_" +
+                                          std::to_string(sampler.GetIndex()) + ") uniform "};
             std::string sampler_type = [&]() {
                 switch (sampler.GetType()) {
                 case Tegra::Shader::TextureType::Texture1D:
+                    // Special cased, read below.
                     return "sampler1D";
                 case Tegra::Shader::TextureType::Texture2D:
                     return "sampler2D";
@@ -422,8 +426,19 @@ private:
             if (sampler.IsShadow())
                 sampler_type += "Shadow";
 
-            code.AddLine("layout (binding = SAMPLER_BINDING_" + std::to_string(sampler.GetIndex()) +
-                         ") uniform " + sampler_type + ' ' + GetSampler(sampler) + ';');
+            if (sampler.GetType() == Tegra::Shader::TextureType::Texture1D) {
+                // 1D textures can be aliased to texture buffers, hide the declarations behind a
+                // preprocessor flag and use one or the other from the GPU state. This has to be
+                // done because shaders don't have enough information to determine the texture type.
+                EmitIfdefIsBuffer(sampler);
+                code.AddLine(description + "samplerBuffer " + name + ';');
+                code.AddLine("#else");
+                code.AddLine(description + sampler_type + ' ' + name + ';');
+                code.AddLine("#endif");
+            } else {
+                // The other texture types (2D, 3D and cubes) don't have this issue.
+                code.AddLine(description + sampler_type + ' ' + name + ';');
+            }
         }
         if (!samplers.empty())
             code.AddNewLine();
@@ -1313,13 +1328,28 @@ private:
             else if (next < count)
                 expr += ", ";
         }
+
+        // Store a copy of the expression without the lod to be used with texture buffers
+        std::string expr_buffer = expr;
+
         if (meta->lod) {
             expr += ", ";
             expr += CastOperand(Visit(meta->lod), Type::Int);
         }
         expr += ')';
+        expr += GetSwizzle(meta->element);
 
-        return expr + GetSwizzle(meta->element);
+        expr_buffer += ')';
+        expr_buffer += GetSwizzle(meta->element);
+
+        const std::string tmp{code.GenerateTemporary()};
+        EmitIfdefIsBuffer(meta->sampler);
+        code.AddLine("float " + tmp + " = " + expr_buffer + ';');
+        code.AddLine("#else");
+        code.AddLine("float " + tmp + " = " + expr + ';');
+        code.AddLine("#endif");
+
+        return tmp;
     }
 
     std::string Branch(Operation operation) {
@@ -1634,6 +1664,10 @@ private:
 
     std::string GetSampler(const Sampler& sampler) const {
         return GetDeclarationWithSuffix(static_cast<u32>(sampler.GetIndex()), "sampler");
+    }
+
+    void EmitIfdefIsBuffer(const Sampler& sampler) {
+        code.AddLine(fmt::format("#ifdef SAMPLER_{}_IS_BUFFER", sampler.GetIndex()));
     }
 
     std::string GetDeclarationWithSuffix(u32 index, const std::string& name) const {
