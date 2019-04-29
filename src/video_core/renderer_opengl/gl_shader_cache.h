@@ -6,6 +6,7 @@
 
 #include <array>
 #include <atomic>
+#include <bitset>
 #include <memory>
 #include <set>
 #include <tuple>
@@ -22,7 +23,7 @@
 
 namespace Core {
 class System;
-} // namespace Core
+}
 
 namespace OpenGL {
 
@@ -63,8 +64,7 @@ public:
     }
 
     /// Gets the GL program handle for the shader
-    std::tuple<GLuint, BaseBindings> GetProgramHandle(GLenum primitive_mode,
-                                                      BaseBindings base_bindings);
+    std::tuple<GLuint, BaseBindings> GetProgramHandle(const ProgramVariant& variant);
 
 private:
     // Geometry programs. These are needed because GLSL needs an input topology but it's not
@@ -78,15 +78,14 @@ private:
         CachedProgram triangles_adjacency;
     };
 
-    GLuint GetGeometryShader(GLenum primitive_mode, BaseBindings base_bindings);
+    GLuint GetGeometryShader(const ProgramVariant& variant);
 
     /// Generates a geometry shader or returns one that already exists.
-    GLuint LazyGeometryProgram(CachedProgram& target_program, BaseBindings base_bindings,
-                               GLenum primitive_mode);
+    GLuint LazyGeometryProgram(CachedProgram& target_program, const ProgramVariant& variant);
 
-    CachedProgram TryLoadProgram(GLenum primitive_mode, BaseBindings base_bindings) const;
+    CachedProgram TryLoadProgram(const ProgramVariant& variant) const;
 
-    ShaderDiskCacheUsage GetUsage(GLenum primitive_mode, BaseBindings base_bindings) const;
+    ShaderDiskCacheUsage GetUsage(const ProgramVariant& variant) const;
 
     u8* host_ptr{};
     VAddr cpu_addr{};
@@ -100,8 +99,8 @@ private:
 
     std::string code;
 
-    std::unordered_map<BaseBindings, CachedProgram> programs;
-    std::unordered_map<BaseBindings, GeometryPrograms> geometry_programs;
+    std::unordered_map<ProgramVariant, CachedProgram> programs;
+    std::unordered_map<ProgramVariant, GeometryPrograms> geometry_programs;
 
     std::unordered_map<u32, GLuint> cbuf_resource_cache;
     std::unordered_map<u32, GLuint> gmem_resource_cache;

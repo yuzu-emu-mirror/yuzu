@@ -106,16 +106,16 @@ private:
 
     /// Configures the current constbuffers to use for the draw command.
     void SetupConstBuffers(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, const Shader& shader,
-                           GLuint program_handle, BaseBindings base_bindings);
+                           BaseBindings base_bindings);
 
     /// Configures the current global memory entries to use for the draw command.
     void SetupGlobalRegions(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage,
-                            const Shader& shader, GLenum primitive_mode,
-                            BaseBindings base_bindings);
+                            const Shader& shader, BaseBindings base_bindings);
 
-    /// Configures the current textures to use for the draw command.
-    void SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage, const Shader& shader,
-                       GLuint program_handle, BaseBindings base_bindings);
+    /// Configures the current textures to use for the draw command. Returns shaders texture buffer
+    /// usage.
+    TextureBufferUsage SetupTextures(Tegra::Engines::Maxwell3D::Regs::ShaderStage stage,
+                                     const Shader& shader, BaseBindings base_bindings);
 
     /// Syncs the viewport and depth range to match the guest state
     void SyncViewport(OpenGLState& current_state);
