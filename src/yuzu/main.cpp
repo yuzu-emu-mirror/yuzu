@@ -2129,6 +2129,11 @@ int main(int argc, char* argv[]) {
     // generating shaders
     setlocale(LC_ALL, "C");
 
+    // Environment variables
+#ifdef __linux__
+    setenv("MESA_GL_VERSION_OVERRIDE", "4.5COMPAT", 0);
+#endif
+
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
