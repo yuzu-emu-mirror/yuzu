@@ -53,6 +53,21 @@ public:
         RegisterHandlers(functions);
     }
 
+    void LoadFromSettings() {
+        current_brightness = Settings::values.backlight_brightness;
+        current_vr_mode_brightness = Settings::values.backlight_brightness;
+
+        if (auto_brightness_enabled) {
+            return;
+        }
+
+        if (vr_mode_enabled) {
+            Renderer().SetCurrentBrightness(current_vr_mode_brightness);
+        } else {
+            Renderer().SetCurrentBrightness(current_brightness);
+        }
+    }
+
 private:
     void EnableVrMode(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_LBL, "called");
@@ -80,8 +95,26 @@ private:
         rb.Push(vr_mode_enabled);
     }
 
+    bool auto_brightness_enabled = false;
+    bool dimming_enabled = true;
+
+    f32 current_brightness = GetAutoBrightnessValue();
+    f32 current_vr_mode_brightness = GetAutoBrightnessValue();
+
     bool vr_mode_enabled = false;
 };
+
+void RequestLoadCurrentSetting(SM::ServiceManager& sm) {
+    if (&sm == nullptr) {
+        return;
+    }
+
+    const auto lbl = sm.GetService<LBL>("lbl");
+
+    if (lbl) {
+        lbl->LoadFromSettings();
+    }
+}
 
 void InstallInterfaces(SM::ServiceManager& sm) {
     std::make_shared<LBL>()->InstallAsService(sm);
