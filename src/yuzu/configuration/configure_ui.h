@@ -19,7 +19,7 @@ public:
     ~ConfigureUi() override;
 
     void ApplyConfiguration();
-    void retranslateUi();
+    void RetranslateUI();
     void SetConfiguration();
 
 private slots:
@@ -32,7 +32,6 @@ private:
     void RequestGameListUpdate();
 
     void changeEvent(QEvent*) override;
-    void RetranslateUI();
 
     void InitializeLanguageComboBox();
     void InitializeIconSizeComboBox();

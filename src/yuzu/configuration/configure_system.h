@@ -21,12 +21,10 @@ public:
     ~ConfigureSystem() override;
 
     void ApplyConfiguration();
-    void setConfiguration();
-    void retranslateUi();
+    void SetConfiguration();
+    void RetranslateUI();
 
 private:
-    void SetConfiguration();
-
     void ReadSystemSettings();
 
     void RefreshConsoleID();

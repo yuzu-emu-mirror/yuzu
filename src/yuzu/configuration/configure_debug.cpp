@@ -52,6 +52,6 @@ void ConfigureDebug::ApplyConfiguration() {
     Log::SetGlobalFilter(filter);
 }
 
-void ConfigureDebug::retranslateUi() {
+void ConfigureDebug::RetranslateUI() {
     ui->retranslateUi(this);
 }

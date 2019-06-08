@@ -19,7 +19,7 @@ public:
     ~ConfigureGraphics() override;
 
     void ApplyConfiguration();
-    void retranslateUi();
+    void RetranslateUI();
     void SetConfiguration();
 
     void UpdateBackgroundColorButton(QColor color);

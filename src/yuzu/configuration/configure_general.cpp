@@ -36,6 +36,6 @@ void ConfigureGeneral::ApplyConfiguration() {
     Settings::values.use_cpu_jit = ui->use_cpu_jit->isChecked();
 }
 
-void ConfigureGeneral::retranslateUi() {
+void ConfigureGeneral::RetranslateUI() {
     ui->retranslateUi(this);
 }

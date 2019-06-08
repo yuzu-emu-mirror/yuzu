@@ -111,6 +111,6 @@ void ConfigureGraphics::UpdateBackgroundColorButton(QColor color) {
     ui->bg_button->setIcon(color_icon);
 }
 
-void ConfigureGraphics::retranslateUi() {
+void ConfigureGraphics::RetranslateUI() {
     ui->retranslateUi(this);
 }

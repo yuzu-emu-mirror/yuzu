@@ -36,7 +36,8 @@ ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::Configur
     InitializeLanguageComboBox();
 
     for (const auto& theme : UISettings::themes) {
-        ui->theme_combobox->addItem(theme.first, theme.second);
+        ui->theme_combobox->addItem(QString::fromStdString(theme.first),
+                                    QString::fromStdString(theme.second));
     }
 
     InitializeIconSizeComboBox();
@@ -56,7 +57,7 @@ ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::Configur
 
 ConfigureUi::~ConfigureUi() = default;
 
-void ConfigureGameList::ApplyConfiguration() {
+void ConfigureUi::ApplyConfiguration() {
     UISettings::values.theme =
         ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
     UISettings::values.show_unknown = ui->show_unknown->isChecked();
@@ -71,7 +72,7 @@ void ConfigureUi::RequestGameListUpdate() {
     UISettings::values.is_game_list_reload_pending.exchange(true);
 }
 
-void ConfigureGameList::SetConfiguration() {
+void ConfigureUi::SetConfiguration() {
     ui->theme_combobox->setCurrentIndex(ui->theme_combobox->findData(UISettings::values.theme));
     ui->language_combobox->setCurrentIndex(
         ui->language_combobox->findData(UISettings::values.language));
@@ -112,11 +113,11 @@ void ConfigureUi::RetranslateUI() {
 void ConfigureUi::InitializeLanguageComboBox() {
     ui->language_combobox->addItem(tr("<System>"), QString());
     ui->language_combobox->addItem(tr("English"), QStringLiteral("en"));
-    QDirIterator it(":/languages", QDirIterator::NoIteratorFlags);
+    QDirIterator it(QStringLiteral(":/languages"), QDirIterator::NoIteratorFlags);
     while (it.hasNext()) {
         QString locale = it.next();
-        locale.truncate(locale.lastIndexOf('.'));
-        locale.remove(0, locale.lastIndexOf('/') + 1);
+        locale.truncate(locale.lastIndexOf(QLatin1Char('.')));
+        locale.remove(0, locale.lastIndexOf(QLatin1Char('/')) + 1);
         const QString lang = QLocale::languageToString(QLocale(locale).language());
         ui->language_combobox->addItem(lang, locale);
     }
@@ -148,8 +149,4 @@ void ConfigureUi::onLanguageChanged(int index) {
         return;
 
     emit languageChanged(ui->language_combobox->itemData(index).toString());
-}
-
-void ConfigureUi::retranslateUi() {
-    ui->retranslateUi(this);
 }

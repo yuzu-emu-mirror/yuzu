@@ -103,6 +103,6 @@ void ConfigureSystem::RefreshConsoleID() {
         tr("Console ID: 0x%1").arg(QString::number(console_id, 16).toUpper()));
 }
 
-void ConfigureSystem::retranslateUi() {
+void ConfigureSystem::RetranslateUI() {
     ui->retranslateUi(this);
 }

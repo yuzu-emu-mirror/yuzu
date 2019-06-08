@@ -138,6 +138,6 @@ void ConfigureInputSimple::OnConfigure() {
     std::get<2>(INPUT_PROFILES.at(ui->profile_combobox->currentIndex()))(this);
 }
 
-void ConfigureInputSimple::retranslateUi() {
+void ConfigureInputSimple::RetranslateUI() {
     ui->retranslateUi(this);
 }

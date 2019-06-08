@@ -33,7 +33,7 @@ void ConfigureDialog::SetConfiguration() {
     ui->generalTab->SetConfiguration();
     ui->uiTab->SetConfiguration();
     ui->systemTab->SetConfiguration();
-    ui->inputTab->loadConfiguration();
+    ui->inputTab->LoadConfiguration();
     ui->graphicsTab->SetConfiguration();
     ui->audioTab->SetConfiguration();
     ui->debugTab->SetConfiguration();
@@ -60,10 +60,14 @@ void ConfigureDialog::PopulateSelectionList() {
 
     const std::array<std::pair<QString, QStringList>, 4> items{
         {{tr("General"),
-          {QT_TR_NOOP("General"), QT_TR_NOOP("Web"), QT_TR_NOOP("Debug"), QT_TR_NOOP("UI")}},
-         {tr("System"), {QT_TR_NOOP("System"), QT_TR_NOOP("Profiles"), QT_TR_NOOP("Audio")}},
-         {tr("Graphics"), {QT_TR_NOOP("Graphics")}},
-         {tr("Controls"), {QT_TR_NOOP("Input"), QT_TR_NOOP("Hotkeys")}}}};
+          {QT_TR_NOOP(QStringLiteral("General")), QT_TR_NOOP(QStringLiteral("Web")),
+           QT_TR_NOOP(QStringLiteral("Debug")), QT_TR_NOOP(QStringLiteral("UI"))}},
+         {tr("System"),
+          {QT_TR_NOOP(QStringLiteral("System")), QT_TR_NOOP(QStringLiteral("Profiles")),
+           QT_TR_NOOP(QStringLiteral("Audio"))}},
+         {tr("Graphics"), {QT_TR_NOOP(QStringLiteral("Graphics"))}},
+         {tr("Controls"),
+          {QT_TR_NOOP(QStringLiteral("Input")), QT_TR_NOOP(QStringLiteral("Hotkeys"))}}}};
 
     for (const auto& entry : items) {
         auto* const item = new QListWidgetItem(entry.first);
@@ -78,16 +82,17 @@ void ConfigureDialog::UpdateVisibleTabs() {
     if (items.isEmpty())
         return;
 
-    const std::map<QString, QWidget*> widgets = {{"General", ui->generalTab},
-                                                 {"System", ui->systemTab},
-                                                 {"Profiles", ui->profileManagerTab},
-                                                 {"Input", ui->inputTab},
-                                                 {"Hotkeys", ui->hotkeysTab},
-                                                 {"Graphics", ui->graphicsTab},
-                                                 {"Audio", ui->audioTab},
-                                                 {"Debug", ui->debugTab},
-                                                 {"Web", ui->webTab},
-                                                 {"UI", ui->uiTab}};
+    const std::map<QString, QWidget*> widgets = {
+        {QStringLiteral("General"), ui->generalTab},
+        {QStringLiteral("System"), ui->systemTab},
+        {QStringLiteral("Profiles"), ui->profileManagerTab},
+        {QStringLiteral("Input"), ui->inputTab},
+        {QStringLiteral("Hotkeys"), ui->hotkeysTab},
+        {QStringLiteral("Graphics"), ui->graphicsTab},
+        {QStringLiteral("Audio"), ui->audioTab},
+        {QStringLiteral("Debug"), ui->debugTab},
+        {QStringLiteral("Web"), ui->webTab},
+        {QStringLiteral("UI"), ui->uiTab}};
 
     ui->tabWidget->clear();
 
@@ -100,12 +105,12 @@ void ConfigureDialog::UpdateVisibleTabs() {
 void ConfigureDialog::onLanguageChanged(const QString& locale) {
     emit languageChanged(locale);
     // first apply the configuration, and then restore the display
-    applyConfiguration();
-    retranslateUi();
-    setConfiguration();
+    ApplyConfiguration();
+    RetranslateUI();
+    SetConfiguration();
 }
 
-void ConfigureDialog::retranslateUi() {
+void ConfigureDialog::RetranslateUI() {
     int old_row = ui->selectorList->currentRow();
     int old_index = ui->tabWidget->currentIndex();
     ui->retranslateUi(this);
@@ -114,12 +119,12 @@ void ConfigureDialog::retranslateUi() {
     ui->selectorList->setCurrentRow(old_row);
     ui->tabWidget->setCurrentIndex(old_index);
 
-    ui->generalTab->retranslateUi();
-    ui->uiTab->retranslateUi();
-    ui->systemTab->retranslateUi();
-    ui->inputTab->retranslateUi();
-    ui->graphicsTab->retranslateUi();
-    ui->audioTab->retranslateUi();
-    ui->debugTab->retranslateUi();
-    ui->webTab->retranslateUi();
+    ui->generalTab->RetranslateUI();
+    ui->uiTab->RetranslateUI();
+    ui->systemTab->RetranslateUI();
+    ui->inputTab->RetranslateUI();
+    ui->graphicsTab->RetranslateUI();
+    ui->audioTab->RetranslateUI();
+    ui->debugTab->RetranslateUI();
+    ui->webTab->RetranslateUI();
 }

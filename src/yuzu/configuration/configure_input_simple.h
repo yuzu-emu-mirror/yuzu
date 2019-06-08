@@ -28,7 +28,7 @@ public:
 
     /// Save all button configurations to settings file
     void ApplyConfiguration();
-    void retranslateUi();
+    void RetranslateUI();
     /// Load configuration settings.
     void LoadConfiguration();
 

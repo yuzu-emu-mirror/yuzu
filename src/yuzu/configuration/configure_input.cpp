@@ -210,6 +210,6 @@ void ConfigureInput::RestoreDefaults() {
     UpdateUIEnabled();
 }
 
-void ConfigureInput::retranslateUi() {
+void ConfigureInput::RetranslateUI() {
     ui->retranslateUi(this);
 }

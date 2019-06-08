@@ -21,7 +21,7 @@ public:
     ~ConfigureGeneral() override;
 
     void ApplyConfiguration();
-    void retranslateUi();
+    void RetranslateUI();
     void SetConfiguration();
 
 private:
