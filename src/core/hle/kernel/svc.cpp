@@ -731,6 +731,9 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         // 5.0.0+
         UserExceptionContextAddr = 20,
         ThreadTickCount = 0xF0000002,
+        // 6.0.0+
+        TotalMemoryUsageMinusHeap = 21,
+        TotalPhysicalMemoryUsedMinusHeap = 22,
     };
 
     const auto info_id_type = static_cast<GetInfoType>(info_id);
@@ -750,6 +753,8 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
     case GetInfoType::TotalPhysicalMemoryUsed:
     case GetInfoType::IsVirtualAddressMemoryEnabled:
     case GetInfoType::PersonalMmHeapUsage:
+    case GetInfoType::TotalMemoryUsageMinusHeap:
+    case GetInfoType::TotalPhysicalMemoryUsedMinusHeap:
     case GetInfoType::TitleId:
     case GetInfoType::UserExceptionContextAddr: {
         if (info_sub_id != 0) {
@@ -818,6 +823,16 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
 
         case GetInfoType::TitleId:
             *result = process->GetTitleID();
+            return RESULT_SUCCESS;
+
+        case GetInfoType::TotalMemoryUsageMinusHeap:
+            *result = process->VMManager().GetTotalMemoryUsage() -
+                      process->VMManager().GetCurrentHeapSize();
+            return RESULT_SUCCESS;
+
+        case GetInfoType::TotalPhysicalMemoryUsedMinusHeap:
+            *result =
+                process->GetTotalPhysicalMemoryUsed() - process->VMManager().GetCurrentHeapSize();
             return RESULT_SUCCESS;
 
         case GetInfoType::UserExceptionContextAddr:
