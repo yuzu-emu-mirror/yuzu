@@ -6,10 +6,11 @@
 
 #include <map>
 #include "core/file_sys/vfs_types.h"
+#include "core/hle/applet/applet.h"
+#include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/applets.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 enum class ShimKind : u32;
 enum class ShopWebTarget;
@@ -76,4 +77,4 @@ private:
     std::string shop_extra_parameter;
 };
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

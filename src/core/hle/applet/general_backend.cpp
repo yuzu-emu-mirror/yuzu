@@ -9,18 +9,18 @@
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/hle/applet/general_backend.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/general_backend.h"
 #include "core/reporter.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 constexpr ResultCode ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
 
 static void LogCurrentStorage(AppletDataBroker& broker, std::string_view prefix) {
-    std::unique_ptr<IStorage> storage = broker.PopNormalDataToApplet();
+    std::unique_ptr<Service::AM::IStorage> storage = broker.PopNormalDataToApplet();
     for (; storage != nullptr; storage = broker.PopNormalDataToApplet()) {
         const auto data = storage->GetData();
         LOG_INFO(Service_AM,
@@ -147,7 +147,7 @@ void Auth::AuthFinished(bool successful) {
     std::vector<u8> out(sizeof(Return));
     std::memcpy(out.data(), &return_, sizeof(Return));
 
-    broker.PushNormalDataFromApplet(IStorage{out});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{out});
     broker.SignalStateChanged();
 }
 
@@ -196,7 +196,7 @@ void PhotoViewer::Execute() {
 }
 
 void PhotoViewer::ViewFinished() {
-    broker.PushNormalDataFromApplet(IStorage{{}});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{{}});
     broker.SignalStateChanged();
 }
 
@@ -231,8 +231,8 @@ void StubApplet::ExecuteInteractive() {
     LOG_WARNING(Service_AM, "called (STUBBED)");
     LogCurrentStorage(broker, "ExecuteInteractive");
 
-    broker.PushNormalDataFromApplet(IStorage{std::vector<u8>(0x1000)});
-    broker.PushInteractiveDataFromApplet(IStorage{std::vector<u8>(0x1000)});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{std::vector<u8>(0x1000)});
+    broker.PushInteractiveDataFromApplet(Service::AM::IStorage{std::vector<u8>(0x1000)});
     broker.SignalStateChanged();
 }
 
@@ -240,9 +240,9 @@ void StubApplet::Execute() {
     LOG_WARNING(Service_AM, "called (STUBBED)");
     LogCurrentStorage(broker, "Execute");
 
-    broker.PushNormalDataFromApplet(IStorage{std::vector<u8>(0x1000)});
-    broker.PushInteractiveDataFromApplet(IStorage{std::vector<u8>(0x1000)});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{std::vector<u8>(0x1000)});
+    broker.PushInteractiveDataFromApplet(Service::AM::IStorage{std::vector<u8>(0x1000)});
     broker.SignalStateChanged();
 }
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

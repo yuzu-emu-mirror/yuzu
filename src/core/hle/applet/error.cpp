@@ -9,12 +9,12 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/error.h"
+#include "core/hle/applet/error.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/error.h"
 #include "core/reporter.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 #pragma pack(push, 4)
 struct ShowError {
@@ -184,8 +184,8 @@ void Error::Execute() {
 
 void Error::DisplayCompleted() {
     complete = true;
-    broker.PushNormalDataFromApplet(IStorage{{}});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{{}});
     broker.SignalStateChanged();
 }
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

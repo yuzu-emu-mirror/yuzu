@@ -23,12 +23,12 @@
 #include "core/file_sys/vfs_types.h"
 #include "core/frontend/applets/general_frontend.h"
 #include "core/frontend/applets/web_browser.h"
+#include "core/hle/applet/web_browser.h"
 #include "core/hle/kernel/process.h"
-#include "core/hle/service/am/applets/web_browser.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/loader.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 enum class WebArgTLVType : u16 {
     InitialURL = 0x1,
@@ -283,7 +283,7 @@ void WebBrowser::Finalize() {
     std::vector<u8> data(sizeof(WebCommonReturnValue));
     std::memcpy(data.data(), &out, sizeof(WebCommonReturnValue));
 
-    broker.PushNormalDataFromApplet(IStorage{data});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{data});
     broker.SignalStateChanged();
 
     if (!temporary_dir.empty() && FileUtil::IsDirectory(temporary_dir)) {
@@ -547,4 +547,4 @@ void WebBrowser::ExecuteOffline() {
     frontend.OpenPageLocal(filename, [this] { UnpackRomFS(); }, [this] { Finalize(); });
 }
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

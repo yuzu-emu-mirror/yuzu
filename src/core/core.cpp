@@ -19,12 +19,12 @@
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/gdbstub/gdbstub.h"
+#include "core/hle/applet/applet.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/thread.h"
-#include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/glue/manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
@@ -304,7 +304,7 @@ struct System::Impl {
     std::unique_ptr<Tools::Freezer> memory_freezer;
 
     /// Frontend applets
-    Service::AM::Applets::AppletManager applet_manager;
+    HLE::Applet::AppletManager applet_manager;
 
     /// Glue services
     Service::Glue::ARPManager arp_manager;
@@ -519,7 +519,7 @@ std::shared_ptr<FileSys::VfsFilesystem> System::GetFilesystem() const {
     return impl->virtual_filesystem;
 }
 
-void System::SetAppletFrontendSet(Service::AM::Applets::AppletFrontendSet&& set) {
+void System::SetAppletFrontendSet(HLE::Applet::AppletFrontendSet&& set) {
     impl->applet_manager.SetAppletFrontendSet(std::move(set));
 }
 
@@ -527,11 +527,11 @@ void System::SetDefaultAppletFrontendSet() {
     impl->applet_manager.SetDefaultAppletFrontendSet();
 }
 
-Service::AM::Applets::AppletManager& System::GetAppletManager() {
+HLE::Applet::AppletManager& System::GetAppletManager() {
     return impl->applet_manager;
 }
 
-const Service::AM::Applets::AppletManager& System::GetAppletManager() const {
+const HLE::Applet::AppletManager& System::GetAppletManager() const {
     return impl->applet_manager;
 }
 

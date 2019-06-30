@@ -18,8 +18,8 @@
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/general_frontend.h"
 #include "core/frontend/scope_acquire_window_context.h"
+#include "core/hle/applet/applet.h"
 #include "core/hle/service/acc/profile_manager.h"
-#include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "core/hle/service/hid/hid.h"
 

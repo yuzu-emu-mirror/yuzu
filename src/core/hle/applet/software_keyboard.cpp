@@ -7,11 +7,11 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/software_keyboard.h"
+#include "core/hle/applet/software_keyboard.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/software_keyboard.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 constexpr std::size_t SWKBD_OUTPUT_BUFFER_SIZE = 0x7D8;
 constexpr std::size_t SWKBD_OUTPUT_INTERACTIVE_BUFFER_SIZE = 0x7D4;
@@ -101,7 +101,7 @@ void SoftwareKeyboard::ExecuteInteractive() {
 
 void SoftwareKeyboard::Execute() {
     if (complete) {
-        broker.PushNormalDataFromApplet(IStorage{final_data});
+        broker.PushNormalDataFromApplet(Service::AM::IStorage{final_data});
         return;
     }
 
@@ -143,16 +143,16 @@ void SoftwareKeyboard::WriteText(std::optional<std::u16string> text) {
         final_data = output_main;
 
         if (complete) {
-            broker.PushNormalDataFromApplet(IStorage{output_main});
+            broker.PushNormalDataFromApplet(Service::AM::IStorage{output_main});
             broker.SignalStateChanged();
         } else {
-            broker.PushInteractiveDataFromApplet(IStorage{output_sub});
+            broker.PushInteractiveDataFromApplet(Service::AM::IStorage{output_sub});
         }
     } else {
         output_main[0] = 1;
         complete = true;
-        broker.PushNormalDataFromApplet(IStorage{output_main});
+        broker.PushNormalDataFromApplet(Service::AM::IStorage{output_main});
         broker.SignalStateChanged();
     }
 }
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

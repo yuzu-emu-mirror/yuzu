@@ -25,6 +25,11 @@ enum class ContentProviderUnionSlot;
 class VfsFilesystem;
 } // namespace FileSys
 
+namespace HLE::Applet {
+struct AppletFrontendSet;
+class AppletManager;
+} // namespace HLE::Applet
+
 namespace Kernel {
 class KernelCore;
 class Process;
@@ -37,11 +42,6 @@ enum class ResultStatus : u16;
 } // namespace Loader
 
 namespace Service {
-
-namespace AM::Applets {
-struct AppletFrontendSet;
-class AppletManager;
-} // namespace AM::Applets
 
 namespace Glue {
 class ARPManager;
@@ -271,13 +271,13 @@ public:
     void RegisterCheatList(const std::vector<FileSys::CheatList>& list, const std::string& build_id,
                            VAddr code_region_start, VAddr code_region_end);
 
-    void SetAppletFrontendSet(Service::AM::Applets::AppletFrontendSet&& set);
+    void SetAppletFrontendSet(HLE::Applet::AppletFrontendSet&& set);
 
     void SetDefaultAppletFrontendSet();
 
-    Service::AM::Applets::AppletManager& GetAppletManager();
+    HLE::Applet::AppletManager& GetAppletManager();
 
-    const Service::AM::Applets::AppletManager& GetAppletManager() const;
+    const HLE::Applet::AppletManager& GetAppletManager() const;
 
     void SetContentProvider(std::unique_ptr<FileSys::ContentProviderUnion> provider);
 

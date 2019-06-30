@@ -25,8 +25,9 @@ class WebBrowserApplet;
 namespace Service::AM {
 
 class IStorage;
+}
 
-namespace Applets {
+namespace HLE::Applet {
 
 enum class AppletId : u32 {
     OverlayDisplay = 0x02,
@@ -64,17 +65,17 @@ public:
     // Retrieves but does not pop the data sent to applet.
     RawChannelData PeekDataToAppletForDebug() const;
 
-    std::unique_ptr<IStorage> PopNormalDataToGame();
-    std::unique_ptr<IStorage> PopNormalDataToApplet();
+    std::unique_ptr<Service::AM::IStorage> PopNormalDataToGame();
+    std::unique_ptr<Service::AM::IStorage> PopNormalDataToApplet();
 
-    std::unique_ptr<IStorage> PopInteractiveDataToGame();
-    std::unique_ptr<IStorage> PopInteractiveDataToApplet();
+    std::unique_ptr<Service::AM::IStorage> PopInteractiveDataToGame();
+    std::unique_ptr<Service::AM::IStorage> PopInteractiveDataToApplet();
 
-    void PushNormalDataFromGame(IStorage storage);
-    void PushNormalDataFromApplet(IStorage storage);
+    void PushNormalDataFromGame(Service::AM::IStorage storage);
+    void PushNormalDataFromApplet(Service::AM::IStorage storage);
 
-    void PushInteractiveDataFromGame(IStorage storage);
-    void PushInteractiveDataFromApplet(IStorage storage);
+    void PushInteractiveDataFromGame(Service::AM::IStorage storage);
+    void PushInteractiveDataFromApplet(Service::AM::IStorage storage);
 
     void SignalStateChanged() const;
 
@@ -86,16 +87,16 @@ private:
     // Queues are named from applet's perspective
 
     // PopNormalDataToApplet and PushNormalDataFromGame
-    std::deque<std::unique_ptr<IStorage>> in_channel;
+    std::deque<std::unique_ptr<Service::AM::IStorage>> in_channel;
 
     // PopNormalDataToGame and PushNormalDataFromApplet
-    std::deque<std::unique_ptr<IStorage>> out_channel;
+    std::deque<std::unique_ptr<Service::AM::IStorage>> out_channel;
 
     // PopInteractiveDataToApplet and PushInteractiveDataFromGame
-    std::deque<std::unique_ptr<IStorage>> in_interactive_channel;
+    std::deque<std::unique_ptr<Service::AM::IStorage>> in_interactive_channel;
 
     // PopInteractiveDataToGame and PushInteractiveDataFromApplet
-    std::deque<std::unique_ptr<IStorage>> out_interactive_channel;
+    std::deque<std::unique_ptr<Service::AM::IStorage>> out_interactive_channel;
 
     Kernel::EventPair state_changed_event;
 
@@ -193,5 +194,4 @@ private:
     AppletFrontendSet frontend;
 };
 
-} // namespace Applets
-} // namespace Service::AM
+} // namespace HLE::Applet

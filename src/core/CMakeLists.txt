@@ -111,6 +111,18 @@ add_library(core STATIC
     frontend/scope_acquire_window_context.h
     gdbstub/gdbstub.cpp
     gdbstub/gdbstub.h
+    hle/applet/applet.cpp
+    hle/applet/applet.h
+    hle/applet/error.cpp
+    hle/applet/error.h
+    hle/applet/general_backend.cpp
+    hle/applet/general_backend.h
+    hle/applet/profile_select.cpp
+    hle/applet/profile_select.h
+    hle/applet/software_keyboard.cpp
+    hle/applet/software_keyboard.h
+    hle/applet/web_browser.cpp
+    hle/applet/web_browser.h
     hle/ipc.h
     hle/ipc_helpers.h
     hle/kernel/address_arbiter.cpp
@@ -184,18 +196,6 @@ add_library(core STATIC
     hle/service/am/applet_ae.h
     hle/service/am/applet_oe.cpp
     hle/service/am/applet_oe.h
-    hle/service/am/applets/applets.cpp
-    hle/service/am/applets/applets.h
-    hle/service/am/applets/error.cpp
-    hle/service/am/applets/error.h
-    hle/service/am/applets/general_backend.cpp
-    hle/service/am/applets/general_backend.h
-    hle/service/am/applets/profile_select.cpp
-    hle/service/am/applets/profile_select.h
-    hle/service/am/applets/software_keyboard.cpp
-    hle/service/am/applets/software_keyboard.h
-    hle/service/am/applets/web_browser.cpp
-    hle/service/am/applets/web_browser.h
     hle/service/am/idle.cpp
     hle/service/am/idle.h
     hle/service/am/omm.cpp

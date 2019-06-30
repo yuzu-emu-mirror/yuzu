@@ -8,10 +8,10 @@
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/frontend/applets/profile_select.h"
+#include "core/hle/applet/profile_select.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/profile_select.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 constexpr ResultCode ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
 
@@ -49,7 +49,7 @@ void ProfileSelect::ExecuteInteractive() {
 
 void ProfileSelect::Execute() {
     if (complete) {
-        broker.PushNormalDataFromApplet(IStorage{final_data});
+        broker.PushNormalDataFromApplet(Service::AM::IStorage{final_data});
         return;
     }
 
@@ -70,8 +70,8 @@ void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {
 
     final_data = std::vector<u8>(sizeof(UserSelectionOutput));
     std::memcpy(final_data.data(), &output, final_data.size());
-    broker.PushNormalDataFromApplet(IStorage{final_data});
+    broker.PushNormalDataFromApplet(Service::AM::IStorage{final_data});
     broker.SignalStateChanged();
 }
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

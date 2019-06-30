@@ -10,18 +10,18 @@
 #include "core/frontend/applets/profile_select.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/frontend/applets/web_browser.h"
+#include "core/hle/applet/applet.h"
+#include "core/hle/applet/error.h"
+#include "core/hle/applet/general_backend.h"
+#include "core/hle/applet/profile_select.h"
+#include "core/hle/applet/software_keyboard.h"
+#include "core/hle/applet/web_browser.h"
 #include "core/hle/kernel/readable_event.h"
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/writable_event.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/applets.h"
-#include "core/hle/service/am/applets/error.h"
-#include "core/hle/service/am/applets/general_backend.h"
-#include "core/hle/service/am/applets/profile_select.h"
-#include "core/hle/service/am/applets/software_keyboard.h"
-#include "core/hle/service/am/applets/web_browser.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 AppletDataBroker::AppletDataBroker() {
     auto& kernel = Core::System::GetInstance().Kernel();
@@ -51,7 +51,7 @@ AppletDataBroker::RawChannelData AppletDataBroker::PeekDataToAppletForDebug() co
     return {std::move(out_normal), std::move(out_interactive)};
 }
 
-std::unique_ptr<IStorage> AppletDataBroker::PopNormalDataToGame() {
+std::unique_ptr<Service::AM::IStorage> AppletDataBroker::PopNormalDataToGame() {
     if (out_channel.empty())
         return nullptr;
 
@@ -60,7 +60,7 @@ std::unique_ptr<IStorage> AppletDataBroker::PopNormalDataToGame() {
     return out;
 }
 
-std::unique_ptr<IStorage> AppletDataBroker::PopNormalDataToApplet() {
+std::unique_ptr<Service::AM::IStorage> AppletDataBroker::PopNormalDataToApplet() {
     if (in_channel.empty())
         return nullptr;
 
@@ -69,7 +69,7 @@ std::unique_ptr<IStorage> AppletDataBroker::PopNormalDataToApplet() {
     return out;
 }
 
-std::unique_ptr<IStorage> AppletDataBroker::PopInteractiveDataToGame() {
+std::unique_ptr<Service::AM::IStorage> AppletDataBroker::PopInteractiveDataToGame() {
     if (out_interactive_channel.empty())
         return nullptr;
 
@@ -78,7 +78,7 @@ std::unique_ptr<IStorage> AppletDataBroker::PopInteractiveDataToGame() {
     return out;
 }
 
-std::unique_ptr<IStorage> AppletDataBroker::PopInteractiveDataToApplet() {
+std::unique_ptr<Service::AM::IStorage> AppletDataBroker::PopInteractiveDataToApplet() {
     if (in_interactive_channel.empty())
         return nullptr;
 
@@ -87,21 +87,21 @@ std::unique_ptr<IStorage> AppletDataBroker::PopInteractiveDataToApplet() {
     return out;
 }
 
-void AppletDataBroker::PushNormalDataFromGame(IStorage storage) {
-    in_channel.push_back(std::make_unique<IStorage>(storage));
+void AppletDataBroker::PushNormalDataFromGame(Service::AM::IStorage storage) {
+    in_channel.push_back(std::make_unique<Service::AM::IStorage>(storage));
 }
 
-void AppletDataBroker::PushNormalDataFromApplet(IStorage storage) {
-    out_channel.push_back(std::make_unique<IStorage>(storage));
+void AppletDataBroker::PushNormalDataFromApplet(Service::AM::IStorage storage) {
+    out_channel.push_back(std::make_unique<Service::AM::IStorage>(storage));
     pop_out_data_event.writable->Signal();
 }
 
-void AppletDataBroker::PushInteractiveDataFromGame(IStorage storage) {
-    in_interactive_channel.push_back(std::make_unique<IStorage>(storage));
+void AppletDataBroker::PushInteractiveDataFromGame(Service::AM::IStorage storage) {
+    in_interactive_channel.push_back(std::make_unique<Service::AM::IStorage>(storage));
 }
 
-void AppletDataBroker::PushInteractiveDataFromApplet(IStorage storage) {
-    out_interactive_channel.push_back(std::make_unique<IStorage>(storage));
+void AppletDataBroker::PushInteractiveDataFromApplet(Service::AM::IStorage storage) {
+    out_interactive_channel.push_back(std::make_unique<Service::AM::IStorage>(storage));
     pop_interactive_out_data_event.writable->Signal();
 }
 
@@ -241,4 +241,4 @@ std::shared_ptr<Applet> AppletManager::GetApplet(AppletId id, u64 current_proces
     }
 }
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

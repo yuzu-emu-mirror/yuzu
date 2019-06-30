@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include "core/hle/applet/applet.h"
 #include "core/hle/result.h"
-#include "core/hle/service/am/applets/applets.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 enum class ErrorAppletMode : u8 {
     ShowError = 0,
@@ -44,4 +44,4 @@ private:
     bool complete = false;
 };
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

@@ -11,6 +11,10 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/hle/applet/applet.h"
+#include "core/hle/applet/profile_select.h"
+#include "core/hle/applet/software_keyboard.h"
+#include "core/hle/applet/web_browser.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
@@ -21,10 +25,6 @@
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
-#include "core/hle/service/am/applets/applets.h"
-#include "core/hle/service/am/applets/profile_select.h"
-#include "core/hle/service/am/applets/software_keyboard.h"
-#include "core/hle/service/am/applets/web_browser.h"
 #include "core/hle/service/am/idle.h"
 #include "core/hle/service/am/omm.h"
 #include "core/hle/service/am/spsm.h"
@@ -674,7 +674,7 @@ void ICommonStateGetter::GetPerformanceMode(Kernel::HLERequestContext& ctx) {
 
 class ILibraryAppletAccessor final : public ServiceFramework<ILibraryAppletAccessor> {
 public:
-    explicit ILibraryAppletAccessor(std::shared_ptr<Applets::Applet> applet)
+    explicit ILibraryAppletAccessor(std::shared_ptr<HLE::Applet::Applet> applet)
         : ServiceFramework("ILibraryAppletAccessor"), applet(std::move(applet)) {
         // clang-format off
         static const FunctionInfo functions[] = {
@@ -816,7 +816,7 @@ private:
         rb.PushCopyObjects(applet->GetBroker().GetInteractiveDataEvent());
     }
 
-    std::shared_ptr<Applets::Applet> applet;
+    std::shared_ptr<HLE::Applet::Applet> applet;
 };
 
 void IStorage::Open(Kernel::HLERequestContext& ctx) {
@@ -917,7 +917,7 @@ ILibraryAppletCreator::~ILibraryAppletCreator() = default;
 
 void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto applet_id = rp.PopRaw<Applets::AppletId>();
+    const auto applet_id = rp.PopRaw<HLE::Applet::AppletId>();
     const auto applet_mode = rp.PopRaw<u32>();
 
     LOG_DEBUG(Service_AM, "called with applet_id={:08X}, applet_mode={:08X}",

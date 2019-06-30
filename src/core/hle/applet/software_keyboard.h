@@ -11,12 +11,12 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "core/hle/applet/applet.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/applets.h"
 
 union ResultCode;
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 enum class KeysetDisable : u32 {
     Space = 0x02,
@@ -76,4 +76,4 @@ private:
     std::vector<u8> final_data;
 };
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

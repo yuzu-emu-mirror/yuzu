@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "core/hle/service/am/applets/applets.h"
+#include "core/hle/applet/applet.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 enum class AuthAppletType : u32 {
     ShowParentalAuthentication,
@@ -78,4 +78,4 @@ private:
     AppletId id;
 };
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet

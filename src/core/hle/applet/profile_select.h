@@ -8,10 +8,10 @@
 
 #include "common/common_funcs.h"
 #include "common/uuid.h"
+#include "core/hle/applet/applet.h"
 #include "core/hle/result.h"
-#include "core/hle/service/am/applets/applets.h"
 
-namespace Service::AM::Applets {
+namespace HLE::Applet {
 
 struct UserSelectionConfig {
     // TODO(DarkLordZach): RE this structure
@@ -50,4 +50,4 @@ private:
     std::vector<u8> final_data;
 };
 
-} // namespace Service::AM::Applets
+} // namespace HLE::Applet
