@@ -160,8 +160,12 @@ public:
             depth_buffer.target->MarkAsRenderTarget(false, NO_RT);
         depth_buffer.target = surface_view.first;
         depth_buffer.view = surface_view.second;
-        if (depth_buffer.target)
+        if (depth_buffer.target) {
             depth_buffer.target->MarkAsRenderTarget(true, DEPTH_RT);
+            if (IsResScannerEnabled()) {
+                MarkScannerRender(depth_buffer.target);
+            }
+        }
         return surface_view.second;
     }
 
@@ -194,8 +198,12 @@ public:
             render_targets[index].target->MarkAsRenderTarget(false, NO_RT);
         render_targets[index].target = surface_view.first;
         render_targets[index].view = surface_view.second;
-        if (render_targets[index].target)
+        if (render_targets[index].target) {
             render_targets[index].target->MarkAsRenderTarget(true, static_cast<u32>(index));
+            if (IsResScannerEnabled()) {
+                MarkScannerRender(render_targets[index].target);
+            }
+        }
         return surface_view.second;
     }
 
@@ -1020,7 +1028,12 @@ private:
             params.num_levels > 1 || params.IsCompressed() || params.block_depth > 1) {
             return;
         }
-        scaling_database.Unregister(params.pixel_format, params.width, params.height);
+        scaling_database.Register(params.pixel_format, params.width, params.height);
+    }
+
+    void MarkScannerRender(const TSurface& surface) {
+        const auto params = surface->GetSurfaceParams();
+        scaling_database.MarkRendered(params.pixel_format, params.width, params.height);
     }
 
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {
