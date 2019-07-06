@@ -11,9 +11,10 @@ GPUClock::GPUClock() = default;
 GPUClock::~GPUClock() = default;
 
 u64 GPUClock::GetTicks() const {
+    constexpr u32 ns_per_second = 1000000000U;
     const u64 ns = GetNsTime().count();
     const u128 middle = Common::Multiply64Into128(ns, gpu_clock);
-    return Common::Divide128On32(middle, 1000000000).first;
+    return Common::Divide128On32(middle, ns_per_second).first;
 }
 
 } // namespace Tegra

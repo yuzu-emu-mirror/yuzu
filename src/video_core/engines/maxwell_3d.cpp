@@ -330,8 +330,7 @@ void Maxwell3D::ProcessQueryGet() {
             // wait queues.
             LongQueryResult query_result{};
             query_result.value = result;
-            // TODO(Subv): Generate a real GPU timestamp and write it here instead of CoreTiming
-            query_result.timestamp = system.GPU().GetClock().GetNsTime().count();
+            query_result.timestamp = system.GPU().Clock().GetNsTime().count();
             memory_manager.WriteBlock(sequence_address, &query_result, sizeof(query_result));
         }
         dirty_flags.OnMemoryWrite();

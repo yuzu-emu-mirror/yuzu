@@ -30,10 +30,9 @@ u32 FramebufferConfig::BytesPerPixel(PixelFormat format) {
     UNREACHABLE();
 }
 
-GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer)
-    : renderer{renderer} {
-    clock = std::make_unique<Tegra::GPUClock>();
+GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer) : renderer{renderer} {
     auto& rasterizer{renderer.Rasterizer()};
+    clock = std::make_unique<Tegra::GPUClock>();
     memory_manager = std::make_unique<Tegra::MemoryManager>(rasterizer);
     dma_pusher = std::make_unique<Tegra::DmaPusher>(*this);
     maxwell_3d = std::make_unique<Engines::Maxwell3D>(system, rasterizer, *memory_manager);
@@ -44,6 +43,14 @@ GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer)
 }
 
 GPU::~GPU() = default;
+
+Tegra::GPUClock& GPU::Clock() {
+    return *clock;
+}
+
+const Tegra::GPUClock& GPU::Clock() const {
+    return *clock;
+}
 
 Engines::Maxwell3D& GPU::Maxwell3D() {
     return *maxwell_3d;
@@ -67,14 +74,6 @@ DmaPusher& GPU::DmaPusher() {
 
 const DmaPusher& GPU::DmaPusher() const {
     return *dma_pusher;
-}
-
-Tegra::GPUClock& GPU::GetClock() {
-    return *clock;
-}
-
-const Tegra::GPUClock& GPU::GetClock() const {
-    return *clock;
 }
 
 u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {

@@ -150,6 +150,12 @@ public:
     /// Calls a GPU method.
     void CallMethod(const MethodCall& method_call);
 
+    /// Returns a reference to the GPU's Clock.
+    Tegra::GPUClock& Clock();
+
+    /// Returns a const reference to the GPU's Clock.
+    const Tegra::GPUClock& Clock() const;
+
     /// Returns a reference to the Maxwell3D GPU engine.
     Engines::Maxwell3D& Maxwell3D();
 
@@ -167,12 +173,6 @@ public:
 
     /// Returns a const reference to the GPU DMA pusher.
     const Tegra::DmaPusher& DmaPusher() const;
-
-    /// Returns a reference to the GPU's Clock.
-    Tegra::GPUClock& GetClock();
-
-    /// Returns a const reference to the GPU's Clock.
-    const Tegra::GPUClock& GetClock() const;
 
     struct Regs {
         static constexpr size_t NUM_REGS = 0x100;
@@ -255,6 +255,7 @@ protected:
     VideoCore::RendererBase& renderer;
 
 private:
+    std::unique_ptr<GPUClock> clock;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
 
     /// Mapping of command subchannels to their bound engine ids
@@ -269,8 +270,6 @@ private:
     std::unique_ptr<Engines::MaxwellDMA> maxwell_dma;
     /// Inline memory engine
     std::unique_ptr<Engines::KeplerMemory> kepler_memory;
-
-    std::unique_ptr<GPUClock> clock;
 };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \

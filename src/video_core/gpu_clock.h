@@ -2,6 +2,20 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+/**
+ * The GPU runs at different clockspeeds and paces than the CPU. It requires
+ * its own timer in order to keep it at check. Sadly a cycle timer is unfeasible
+ * for the GPU since it's pretty hard to accurately estimate the length of time
+ * actions like Draw, DispatchCompute and Clear can take (varying very unproportionally)
+ * Using the CPU's clock also has it's disadvantages:
+ * - If the CPU is idle while the GPU is running, the timer will advance unproportionally
+ * due to how CPU's idle timing works.
+ * - If the GPU is synced, the timer won't advance until control is given back to
+ * the CPU.
+ * For all these reasons, it has been decided to use a host timer for the GPU.
+ *
+ **/
+
 #pragma once
 
 #include <chrono>
@@ -24,22 +38,22 @@ public:
     GPUClock();
     ~GPUClock();
 
+    u64 GetTicks() const;
+
     std::chrono::nanoseconds GetNsTime() const {
-        Clock::time_point now = Clock::now();
+        const Clock::time_point now = Clock::now();
         return std::chrono::duration_cast<std::chrono::nanoseconds>(now - start_walltime);
     }
 
     std::chrono::microseconds GetUsTime() const {
-        Clock::time_point now = Clock::now();
+        const Clock::time_point now = Clock::now();
         return std::chrono::duration_cast<std::chrono::microseconds>(now - start_walltime);
     }
 
     std::chrono::milliseconds GetMsTime() const {
-        Clock::time_point now = Clock::now();
+        const Clock::time_point now = Clock::now();
         return std::chrono::duration_cast<std::chrono::milliseconds>(now - start_walltime);
     }
-
-    u64 GetTicks() const;
 
     void SetGPUClock(const u64 new_clock) {
         gpu_clock = new_clock;
