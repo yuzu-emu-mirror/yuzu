@@ -22,6 +22,8 @@ add_library(video_core STATIC
     gpu.h
     gpu_asynch.cpp
     gpu_asynch.h
+    gpu_clock.cpp
+    gpu_clock.h
     gpu_synch.cpp
     gpu_synch.h
     gpu_thread.cpp

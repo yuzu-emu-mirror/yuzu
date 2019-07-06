@@ -12,6 +12,7 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
+#include "video_core/gpu_clock.h"
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_base.h"
 
@@ -29,7 +30,9 @@ u32 FramebufferConfig::BytesPerPixel(PixelFormat format) {
     UNREACHABLE();
 }
 
-GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer) : renderer{renderer} {
+GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer)
+    : renderer{renderer} {
+    clock = std::make_unique<Tegra::GPUClock>();
     auto& rasterizer{renderer.Rasterizer()};
     memory_manager = std::make_unique<Tegra::MemoryManager>(rasterizer);
     dma_pusher = std::make_unique<Tegra::DmaPusher>(*this);
@@ -64,6 +67,14 @@ DmaPusher& GPU::DmaPusher() {
 
 const DmaPusher& GPU::DmaPusher() const {
     return *dma_pusher;
+}
+
+Tegra::GPUClock& GPU::GetClock() {
+    return *clock;
+}
+
+const Tegra::GPUClock& GPU::GetClock() const {
+    return *clock;
 }
 
 u32 RenderTargetBytesPerPixel(RenderTargetFormat format) {
