@@ -76,6 +76,8 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_accurate_gpu_emulation->setChecked(Settings::values.use_accurate_gpu_emulation);
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_asynchronous_gpu_emulation->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+    ui->use_resolution_scanner->setEnabled(runtime_lock);
+    ui->use_resolution_scanner->setChecked(Settings::values.use_resolution_scanner);
     ui->force_30fps_mode->setEnabled(runtime_lock);
     ui->force_30fps_mode->setChecked(Settings::values.force_30fps_mode);
     UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red, Settings::values.bg_green,
@@ -89,6 +91,8 @@ void ConfigureGraphics::ApplyConfiguration() {
     Settings::values.use_accurate_gpu_emulation = ui->use_accurate_gpu_emulation->isChecked();
     Settings::values.use_asynchronous_gpu_emulation =
         ui->use_asynchronous_gpu_emulation->isChecked();
+    Settings::values.use_resolution_scanner =
+        ui->use_resolution_scanner->isChecked();
     Settings::values.force_30fps_mode = ui->force_30fps_mode->isChecked();
     Settings::values.bg_red = static_cast<float>(bg_color.redF());
     Settings::values.bg_green = static_cast<float>(bg_color.greenF());
