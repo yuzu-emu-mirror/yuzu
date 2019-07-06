@@ -7,6 +7,10 @@
 #include <unordered_set>
 #include "video_core/surface.h"
 
+namespace Core {
+class System;
+}
+
 namespace VideoCommon::Resolution {
 
 using VideoCore::Surface::PixelFormat;
@@ -44,25 +48,30 @@ namespace VideoCommon::Resolution {
 
 class ScalingDatabase {
 public:
-    explicit ScalingDatabase() : database{} {}
+    explicit ScalingDatabase(Core::System& system);
+    ~ScalingDatabase();
+
+    void SaveDatabase();
 
     bool IsInDatabase(const PixelFormat format, const u32 width, const u32 height) {
         ResolutionKey key{format, width, height};
         return database.count(key) > 0;
     }
 
-    void Register(const PixelFormat format, const u32 width, const u32 height) {
-        ResolutionKey key{format, width, height};
-        database.insert(key);
-    }
+    void MarkRendered(const PixelFormat format, const u32 width, const u32 height);
+    void Register(const PixelFormat format, const u32 width, const u32 height);
+    void Unregister(const PixelFormat format, const u32 width, const u32 height);
 
-    void Unregister(const PixelFormat format, const u32 width, const u32 height) {
-        ResolutionKey key{format, width, height};
-        database.erase(key);
-    }
+    std::string GetTitleID() const;
+    std::string GetProfilePath() const;
 
 private:
-    std::unordered_set<ResolutionKey> database;
+    std::unordered_map<ResolutionKey, bool> database;
+    std::unordered_set<ResolutionKey> blacklist;
+    u64 title_id;
+    Core::System& system;
+
+    static constexpr u32 DBVersion = 1;
 };
 
 } // namespace VideoCommon::Resolution
