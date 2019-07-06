@@ -5,13 +5,19 @@
 #include <fstream>
 #include <json.hpp>
 
+#include "common/assert.h"
+#include "common/common_paths.h"
+#include "common/common_types.h"
+#include "common/file_util.h"
 #include "core/core.h"
 #include "core/hle/kernel/process.h"
 #include "video_core/texture_cache/resolution_scaling/database.h"
 
 namespace VideoCommon::Resolution {
 
-explicit ScalingDatabase::ScalingDatabase(Core::System& system) : database{}, blacklist{}, system{system} {
+using namespace nlohmann;
+
+ScalingDatabase::ScalingDatabase(Core::System& system) : database{}, blacklist{}, system{system} {
     title_id = system.CurrentProcess()->GetTitleID();
 }
 
@@ -39,13 +45,14 @@ void ScalingDatabase::SaveDatabase() {
 }
 
 void ScalingDatabase::Register(const PixelFormat format, const u32 width, const u32 height) {
+    ResolutionKey key{format, width, height};
     if (blacklist.count(key) == 0) {
         ResolutionKey key{format, width, height};
         database.emplace(key, false);
     }
 }
 
-void MarkRendered(const PixelFormat format, const u32 width, const u32 height) {
+void ScalingDatabase::MarkRendered(const PixelFormat format, const u32 width, const u32 height) {
     ResolutionKey key{format, width, height};
     auto search = database.find(key);
     if (search != database.end()) {
@@ -59,7 +66,7 @@ void ScalingDatabase::Unregister(const PixelFormat format, const u32 width, cons
     blacklist.insert(key);
 }
 
-std::string GetBaseDir() const {
+std::string GetBaseDir() {
     return FileUtil::GetUserPath(FileUtil::UserPath::RescalingDir);
 }
 
