@@ -296,7 +296,7 @@ void GPU::ProcessSemaphoreTriggerMethod() {
         block.sequence = regs.semaphore_sequence;
         // TODO(Kmather73): Generate a real GPU timestamp and write it here instead of
         // CoreTiming
-        block.timestamp = Core::System::GetInstance().CoreTiming().GetTicks();
+        block.timestamp = clock->GetNsTime().count();
         memory_manager->WriteBlock(regs.semaphore_address.SemaphoreAddress(), &block,
                                    sizeof(block));
     } else {
