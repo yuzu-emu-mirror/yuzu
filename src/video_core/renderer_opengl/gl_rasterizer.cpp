@@ -421,7 +421,6 @@ void RasterizerOpenGL::ConfigureFramebuffers() {
     texture_cache.GuardRenderTargets(false);
 
     state.draw.draw_framebuffer = framebuffer_cache.GetFramebuffer(fbkey);
-    SyncViewport(state);
 }
 
 void RasterizerOpenGL::ConfigureClearFramebuffer(OpenGLState& current_state, bool using_color_fb,
@@ -547,9 +546,11 @@ void RasterizerOpenGL::Clear() {
 
     ConfigureClearFramebuffer(clear_state, use_color, use_depth, use_stencil);
 
-    SyncViewport(clear_state);
+    bool res_scaling = texture_cache.IsResolutionScalingEnabled();
+
+    SyncViewport(clear_state, res_scaling);
     if (regs.clear_flags.scissor) {
-        SyncScissorTest(clear_state);
+        SyncScissorTest(clear_state, res_scaling);
     }
 
     if (regs.clear_flags.viewport) {
@@ -584,7 +585,6 @@ void RasterizerOpenGL::DrawPrelude() {
     SyncLogicOpState();
     SyncCullMode();
     SyncPrimitiveRestart();
-    SyncScissorTest(state);
     SyncTransformFeedback();
     SyncPointState();
     SyncPolygonOffset();
@@ -640,6 +640,10 @@ void RasterizerOpenGL::DrawPrelude() {
         // As all cached buffers are invalidated, we need to recheck their state.
         gpu.dirty.ResetVertexArrays();
     }
+
+    bool res_scaling = texture_cache.IsResolutionScalingEnabled();
+    SyncViewport(state, res_scaling);
+    SyncScissorTest(state, res_scaling);
 
     shader_program_manager->SetConstants(gpu);
     shader_program_manager->ApplyTo(state);
@@ -1063,20 +1067,21 @@ void RasterizerOpenGL::SetupImage(u32 binding, const Tegra::Texture::TICEntry& t
     state.images[binding] = view->GetTexture();
 }
 
-void RasterizerOpenGL::SyncViewport(OpenGLState& current_state) {
+void RasterizerOpenGL::SyncViewport(OpenGLState& current_state, bool rescaling) {
     const auto& regs = system.GPU().Maxwell3D().regs;
     const bool geometry_shaders_enabled =
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
+    float factor = rescaling ? Settings::values.resolution_factor : 1.0;
     for (std::size_t i = 0; i < viewport_count; i++) {
         auto& viewport = current_state.viewports[i];
         const auto& src = regs.viewports[i];
         const Common::Rectangle<s32> viewport_rect{regs.viewport_transform[i].GetRect()};
-        viewport.x = viewport_rect.left;
-        viewport.y = viewport_rect.bottom;
-        viewport.width = viewport_rect.GetWidth();
-        viewport.height = viewport_rect.GetHeight();
+        viewport.x = viewport_rect.left * factor;
+        viewport.y = viewport_rect.bottom * factor;
+        viewport.width = viewport_rect.GetWidth() * factor;
+        viewport.height = viewport_rect.GetHeight() * factor;
         viewport.depth_range_far = src.depth_range_far;
         viewport.depth_range_near = src.depth_range_near;
     }
@@ -1287,12 +1292,13 @@ void RasterizerOpenGL::SyncLogicOpState() {
     state.logic_op.operation = MaxwellToGL::LogicOp(regs.logic_op.operation);
 }
 
-void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state) {
+void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state, bool rescaling) {
     const auto& regs = system.GPU().Maxwell3D().regs;
     const bool geometry_shaders_enabled =
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
+    float factor = rescaling ? Settings::values.resolution_factor : 1.0;
     for (std::size_t i = 0; i < viewport_count; i++) {
         const auto& src = regs.scissor_test[i];
         auto& dst = current_state.viewports[i].scissor;
@@ -1302,10 +1308,10 @@ void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state) {
         }
         const u32 width = src.max_x - src.min_x;
         const u32 height = src.max_y - src.min_y;
-        dst.x = src.min_x;
-        dst.y = src.min_y;
-        dst.width = width;
-        dst.height = height;
+        dst.x = src.min_x * factor;
+        dst.y = src.min_y * factor;
+        dst.width = width * factor;
+        dst.height = height * factor;
     }
 }
 

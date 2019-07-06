@@ -1,0 +1,68 @@
+// Copyright 2019 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#pragma once
+
+#include <unordered_set>
+#include "video_core/surface.h"
+
+namespace VideoCommon::Resolution {
+
+using VideoCore::Surface::PixelFormat;
+
+struct ResolutionKey {
+    PixelFormat format;
+    u32 width;
+    u32 height;
+    std::size_t Hash() const {
+        const std::size_t comp1 = static_cast<std::size_t>(format) << 44;
+        const std::size_t comp2 = static_cast<std::size_t>(height) << 24;
+        const std::size_t comp3 = static_cast<std::size_t>(width);
+        return comp1 | comp2 | comp3;
+    }
+
+    bool operator==(const ResolutionKey& ks) const {
+        return std::tie(format, width, height) == std::tie(ks.format, ks.width, ks.height);
+    }
+};
+
+} // namespace VideoCommon::Resolution
+
+namespace std {
+
+template <>
+struct hash<VideoCommon::Resolution::ResolutionKey> {
+    std::size_t operator()(const VideoCommon::Resolution::ResolutionKey& k) const {
+        return k.Hash();
+    }
+};
+
+} // namespace std
+
+namespace VideoCommon::Resolution {
+
+class ScalingDatabase {
+public:
+    explicit ScalingDatabase() : database{} {}
+
+    bool IsInDatabase(const PixelFormat format, const u32 width, const u32 height) {
+        ResolutionKey key{format, width, height};
+        return database.count(key) > 0;
+    }
+
+    void Register(const PixelFormat format, const u32 width, const u32 height) {
+        ResolutionKey key{format, width, height};
+        database.insert(key);
+    }
+
+    void Unregister(const PixelFormat format, const u32 width, const u32 height) {
+        ResolutionKey key{format, width, height};
+        database.erase(key);
+    }
+
+private:
+    std::unordered_set<ResolutionKey> database;
+};
+
+} // namespace VideoCommon::Resolution

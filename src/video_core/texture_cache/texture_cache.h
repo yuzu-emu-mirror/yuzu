@@ -29,6 +29,7 @@
 #include "video_core/rasterizer_interface.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/copy_params.h"
+#include "video_core/texture_cache/resolution_scaling/database.h"
 #include "video_core/texture_cache/surface_base.h"
 #include "video_core/texture_cache/surface_params.h"
 #include "video_core/texture_cache/surface_view.h"
@@ -254,6 +255,39 @@ public:
         return ++ticks;
     }
 
+    bool IsResolutionScalingEnabled() const {
+        if (!EnabledRescaling()) {
+            return false;
+        }
+        u32 enabled_targets = 0;
+        u32 rescaled_targets = 0;
+        bool rescaling = false;
+        for (const auto& target : render_targets) {
+            if (target.target) {
+                enabled_targets++;
+                if (target.target->IsRescaled()) {
+                    rescaling = true;
+                    rescaled_targets++;
+                }
+            }
+        }
+        if (depth_buffer.target) {
+            enabled_targets++;
+            if (depth_buffer.target->IsRescaled()) {
+                rescaling = true;
+                rescaled_targets++;
+            }
+        }
+        if (rescaling) {
+            if (rescaled_targets != enabled_targets) {
+                LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Redo the database.");
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
 protected:
     TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
         : system{system}, rasterizer{rasterizer} {
@@ -351,6 +385,16 @@ protected:
         SurfaceParams params = SurfaceParams::CreateForFermiCopySurface(config);
         const GPUVAddr gpu_addr = config.Address();
         return GetSurface(gpu_addr, params, true, false);
+    }
+
+    // Must be called by child's create surface
+    void SignalCreatedSurface(TSurface& new_surface) {
+        const auto& params = new_surface->GetSurfaceParams();
+        if (guard_render_targets && EnabledRescaling()) {
+            if (scaling_database.IsInDatabase(params.pixel_format, params.width, params.height)) {
+                new_surface->MarkAsRescaled(true);
+            }
+        }
     }
 
     Core::System& system;
@@ -924,6 +968,10 @@ private:
         return {};
     }
 
+    bool EnabledRescaling() const {
+        return Settings::values.resolution_factor != 1.0; //|| Settings::values.res_scanning
+    }
+
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {
         return siblings_table[static_cast<std::size_t>(format)];
     }
@@ -972,6 +1020,8 @@ private:
 
     StagingCache staging_cache;
     std::recursive_mutex mutex;
+
+    Resolution::ScalingDatabase scaling_database;
 };
 
 } // namespace VideoCommon

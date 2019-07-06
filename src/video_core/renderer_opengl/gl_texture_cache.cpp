@@ -199,7 +199,7 @@ void ApplyTextureDefaults(const SurfaceParams& params, GLuint texture) {
 }
 
 OGLTexture CreateTexture(const SurfaceParams& params, GLenum target, GLenum internal_format,
-                         OGLBuffer& texture_buffer) {
+                         OGLBuffer& texture_buffer, float resolution_factor) {
     OGLTexture texture;
     texture.Create(target);
 
@@ -214,6 +214,9 @@ OGLTexture CreateTexture(const SurfaceParams& params, GLenum target, GLenum inte
         glTextureBuffer(texture.handle, internal_format, texture_buffer.handle);
         break;
     case SurfaceTarget::Texture2D:
+        glTextureStorage2D(texture.handle, params.emulated_levels, internal_format,
+                           params.width * resolution_factor, params.height * resolution_factor);
+        break;
     case SurfaceTarget::TextureCubemap:
         glTextureStorage2D(texture.handle, params.emulated_levels, internal_format, params.width,
                            params.height);
@@ -242,8 +245,12 @@ CachedSurface::CachedSurface(const GPUVAddr gpu_addr, const SurfaceParams& param
     format = tuple.format;
     type = tuple.type;
     is_compressed = tuple.compressed;
+}
+
+void CachedSurface::Init() {
     target = GetTextureTarget(params.target);
-    texture = CreateTexture(params, target, internal_format, texture_buffer);
+    float resolution_factor = IsRescaled() ? Settings::values.resolution_factor : 1.0;
+    texture = CreateTexture(params, target, internal_format, texture_buffer, resolution_factor);
     DecorateSurfaceName();
     main_view = CreateViewInner(
         ViewParams(params.target, 0, params.is_layered ? params.depth : 1, 0, params.num_levels),
@@ -325,6 +332,7 @@ void CachedSurface::UploadTextureMipmap(u32 level, const std::vector<u8>& stagin
             UNREACHABLE();
         }
     } else {
+        float resolution_factor = IsRescaled() ? Settings::values.resolution_factor : 1.0;
         switch (params.target) {
         case SurfaceTarget::Texture1D:
             glTextureSubImage1D(texture.handle, level, 0, params.GetMipWidth(level), format, type,
@@ -337,8 +345,9 @@ void CachedSurface::UploadTextureMipmap(u32 level, const std::vector<u8>& stagin
             break;
         case SurfaceTarget::Texture1DArray:
         case SurfaceTarget::Texture2D:
-            glTextureSubImage2D(texture.handle, level, 0, 0, params.GetMipWidth(level),
-                                params.GetMipHeight(level), format, type, buffer);
+            glTextureSubImage2D(
+                texture.handle, level, 0, 0, params.GetMipWidth(level) * resolution_factor,
+                params.GetMipHeight(level) * resolution_factor, format, type, buffer);
             break;
         case SurfaceTarget::Texture3D:
         case SurfaceTarget::Texture2DArray:
@@ -461,7 +470,10 @@ TextureCacheOpenGL::TextureCacheOpenGL(Core::System& system,
 TextureCacheOpenGL::~TextureCacheOpenGL() = default;
 
 Surface TextureCacheOpenGL::CreateSurface(GPUVAddr gpu_addr, const SurfaceParams& params) {
-    return std::make_shared<CachedSurface>(gpu_addr, params);
+    Surface new_surface = std::make_shared<CachedSurface>(gpu_addr, params);
+    SignalCreatedSurface(new_surface);
+    new_surface->Init();
+    return new_surface;
 }
 
 void TextureCacheOpenGL::ImageCopy(Surface& src_surface, Surface& dst_surface,
