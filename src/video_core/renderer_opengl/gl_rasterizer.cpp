@@ -547,7 +547,12 @@ void RasterizerOpenGL::Clear() {
 
     ConfigureClearFramebuffer(clear_state, use_color, use_depth, use_stencil);
 
-    bool res_scaling = texture_cache.IsResolutionScalingEnabled();
+    bool res_scaling;
+    if (use_color) {
+        res_scaling = texture_cache.IsResolutionScalingEnabledRT(regs.clear_buffers.RT);
+    } else {
+        res_scaling = texture_cache.IsResolutionScalingEnabledDB();
+    }
 
     SyncViewport(clear_state, res_scaling);
     if (regs.clear_flags.scissor) {

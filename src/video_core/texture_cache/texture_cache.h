@@ -12,6 +12,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <fmt/format.h>
 
 #include <boost/icl/interval_map.hpp>
 #include <boost/range/iterator_range.hpp>
@@ -291,12 +292,35 @@ public:
         return CheckResolutionScalingEnabled();
     }
 
+    bool IsResolutionScalingEnabledRT(const std::size_t index) {
+        if (!EnabledRescaling()) {
+            return false;
+        }
+        if (render_targets[index].target) {
+            return render_targets[index].target->IsRescaled();
+        }
+        return false;
+    }
+
+    bool IsResolutionScalingEnabledDB() {
+        if (!EnabledRescaling()) {
+            return false;
+        }
+        if (depth_buffer.target) {
+            return depth_buffer.target->IsRescaled();
+        }
+        return false;
+    }
+
 protected:
     TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
         : system{system}, rasterizer{rasterizer}, scaling_database{system} {
         for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; i++) {
             SetEmptyColorBuffer(i);
         }
+
+        enable_resolution_scaling =
+            Settings::values.resolution_factor != 1.0 && !Settings::values.use_resolution_scanner;
 
         SetEmptyDepthBuffer();
         staging_cache.SetSize(2);
@@ -910,9 +934,29 @@ private:
         return {new_surface, new_surface->GetMainView()};
     }
 
-    void LoadSurface(const TSurface& surface) {
-        if (IsResScannerEnabled()) {
-            UnmarkScanner(surface);
+    void LoadSurfaceRescaled(TSurface& surface) {
+        const auto& params = surface->GetSurfaceParams();
+        enable_resolution_scaling = false;
+        TSurface proxy = CreateSurface(surface->GetGpuAddr(), params);
+        enable_resolution_scaling = true;
+        staging_cache.GetBuffer(0).resize(proxy->GetHostSizeInBytes());
+        proxy->LoadBuffer(system.GPU().MemoryManager(), staging_cache);
+        proxy->UploadTexture(staging_cache.GetBuffer(0));
+        Tegra::Engines::Fermi2D::Config copy_config;
+        const Common::Rectangle<u32> rect{0, 0, params.width, params.height};
+        copy_config.operation = Tegra::Engines::Fermi2D::Operation::SrcCopy;
+        copy_config.filter = Tegra::Engines::Fermi2D::Filter::Linear;
+        copy_config.src_rect = rect;
+        copy_config.dst_rect = rect;
+        TView src_view = proxy->GetMainView();
+        TView dst_view = surface->GetMainView();
+        ImageBlit(src_view, dst_view, copy_config);
+    }
+
+    void LoadSurface(TSurface& surface) {
+        if (surface->IsRescaled()) {
+            LoadSurfaceRescaled(surface);
+            return;
         }
         staging_cache.GetBuffer(0).resize(surface->GetHostSizeInBytes());
         surface->LoadBuffer(system.GPU().MemoryManager(), staging_cache);
@@ -998,8 +1042,7 @@ private:
     }
 
     bool EnabledRescaling() const {
-        return Settings::values.resolution_factor != 1.0 &&
-               !Settings::values.use_resolution_scanner;
+        return enable_resolution_scaling;
     }
 
     bool IsResScannerEnabled() const {
@@ -1047,14 +1090,25 @@ private:
         }
         if (black_list) {
             if (black_listed != enabled_targets) {
+                std::string blacklist_msg{};
                 for (const auto& target : render_targets) {
                     if (target.target) {
                         UnmarkScanner(target.target);
+                        const auto& params = target.target->GetSurfaceParams();
+                        blacklist_msg += fmt::format("Format:{}, Height:{}, Width:{}\n",
+                                                     static_cast<u32>(params.pixel_format),
+                                                     params.height, params.width);
                     }
                 }
                 if (depth_buffer.target) {
                     UnmarkScanner(depth_buffer.target);
+                    const auto& params = depth_buffer.target->GetSurfaceParams();
+                    blacklist_msg += fmt::format("Format:{}, Height:{}, Width:{}\n",
+                                                 static_cast<u32>(params.pixel_format),
+                                                 params.height, params.width);
                 }
+                LOG_CRITICAL(HW_GPU, "Scan detected a conflict:\n{}\nBlacklisting all",
+                             blacklist_msg);
             }
         }
         return false;
@@ -1107,6 +1161,7 @@ private:
     // Guards the cache for protection conflicts.
     bool guard_render_targets{};
     bool guard_samplers{};
+    bool enable_resolution_scaling{};
 
     // The siblings table is for formats that can inter exchange with one another
     // without causing issues. This is only valid when a conflict occurs on a non
