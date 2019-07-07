@@ -168,7 +168,6 @@ public:
             depth_buffer.target->MarkAsRenderTarget(true, DEPTH_RT);
             if (IsResScannerEnabled()) {
                 MarkScanner(depth_buffer.target);
-                MarkScannerRender(depth_buffer.target);
             }
         }
         return surface_view.second;
@@ -207,7 +206,6 @@ public:
             render_targets[index].target->MarkAsRenderTarget(true, static_cast<u32>(index));
             if (IsResScannerEnabled()) {
                 MarkScanner(render_targets[index].target);
-                MarkScannerRender(render_targets[index].target);
             }
         }
         return surface_view.second;
@@ -1064,11 +1062,6 @@ private:
     bool IsBlackListed(const TSurface& surface) {
         const auto params = surface->GetSurfaceParams();
         return scaling_database.IsBlacklisted(params.pixel_format, params.width, params.height);
-    }
-
-    void MarkScannerRender(const TSurface& surface) {
-        const auto params = surface->GetSurfaceParams();
-        scaling_database.MarkRendered(params.pixel_format, params.width, params.height);
     }
 
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {

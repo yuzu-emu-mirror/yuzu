@@ -65,7 +65,6 @@ public:
         return blacklist.count(key) > 0;
     }
 
-    void MarkRendered(const PixelFormat format, const u32 width, const u32 height);
     void Register(const PixelFormat format, const u32 width, const u32 height);
     void Unregister(const PixelFormat format, const u32 width, const u32 height);
 
@@ -73,7 +72,7 @@ public:
     std::string GetProfilePath() const;
 
 private:
-    std::unordered_map<ResolutionKey, bool> database;
+    std::unordered_set<ResolutionKey> database;
     std::unordered_set<ResolutionKey> blacklist;
     bool initialized{};
     u64 title_id;

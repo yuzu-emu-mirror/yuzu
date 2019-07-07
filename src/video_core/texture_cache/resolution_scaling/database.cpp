@@ -51,7 +51,7 @@ void ScalingDatabase::LoadDatabase() {
         key.format = static_cast<PixelFormat>(entry["format"].get<u32>());
         key.width = entry["width"].get<u32>();
         key.height = entry["height"].get<u32>();
-        database.emplace(key, true);
+        database.insert(key);
     }
     for (const auto& entry : in["blacklist"]) {
         ResolutionKey key{};
@@ -66,15 +66,12 @@ void ScalingDatabase::SaveDatabase() {
     json out;
     out["version"] = DBVersion;
     auto entries = json::array();
-    for (const auto& pair : database) {
-        const auto [key, value] = pair;
-        if (value) {
-            entries.push_back({
-                {"format", static_cast<u32>(key.format)},
-                {"width", key.width},
-                {"height", key.height},
-            });
-        }
+    for (const auto& key : database) {
+        entries.push_back({
+            {"format", static_cast<u32>(key.format)},
+            {"width", key.width},
+            {"height", key.height},
+        });
     }
     out["entries"] = std::move(entries);
     auto blacklist_entries = json::array();
@@ -95,15 +92,7 @@ void ScalingDatabase::Register(const PixelFormat format, const u32 width, const 
     ResolutionKey key{format, width, height};
     if (blacklist.count(key) == 0) {
         ResolutionKey key{format, width, height};
-        database.emplace(key, false);
-    }
-}
-
-void ScalingDatabase::MarkRendered(const PixelFormat format, const u32 width, const u32 height) {
-    ResolutionKey key{format, width, height};
-    auto search = database.find(key);
-    if (search != database.end()) {
-        search->second = true;
+        database.insert(key);
     }
 }
 
