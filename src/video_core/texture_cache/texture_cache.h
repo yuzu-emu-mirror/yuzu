@@ -255,11 +255,7 @@ public:
         if (IsResScannerEnabled()) {
             bool is_candidate = src_surface.first->IsRescaleCandidate();
             if (is_candidate) {
-                if (IsBlackListed(dst_surface.first)) {
-                    UnmarkScanner(src_surface.first);
-                } else {
-                    MarkScanner(dst_surface.first);
-                }
+                MarkScanner(dst_surface.first);
             }
         }
         ImageBlit(src_surface.second, dst_surface.second, copy_config);
@@ -286,48 +282,13 @@ public:
     }
 
     bool IsResolutionScalingEnabled() {
-        const bool res_scanning = IsResScannerEnabled();
-        if (!EnabledRescaling() && !res_scanning) {
+        if (IsResScannerEnabled()) {
+            return CheckBlackListMatch();
+        }
+        if (!EnabledRescaling()) {
             return false;
         }
-        u32 enabled_targets = 0;
-        u32 rescaled_targets = 0;
-        bool rescaling = false;
-        for (const auto& target : render_targets) {
-            if (target.target) {
-                enabled_targets++;
-                if (target.target->IsRescaleCandidate()) {
-                    rescaling = true;
-                    rescaled_targets++;
-                }
-            }
-        }
-        if (depth_buffer.target) {
-            enabled_targets++;
-            if (depth_buffer.target->IsRescaleCandidate()) {
-                rescaling = true;
-                rescaled_targets++;
-            }
-        }
-        if (rescaling) {
-            if (rescaled_targets != enabled_targets) {
-                if (res_scanning) {
-                    for (const auto& target : render_targets) {
-                        if (target.target) {
-                            UnmarkScanner(target.target);
-                        }
-                    }
-                    if (depth_buffer.target) {
-                        UnmarkScanner(depth_buffer.target);
-                    }
-                    return false;
-                }
-                LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Redo the database.");
-                return false;
-            }
-            return !res_scanning;
-        }
-        return false;
+        return CheckResolutionScalingEnabled();
     }
 
 protected:
@@ -1052,8 +1013,8 @@ private:
 
     void MarkScanner(const TSurface& surface) {
         const auto params = surface->GetSurfaceParams();
-        if (!params.is_tiled || params.target != SurfaceTarget::Texture2D ||
-            params.num_levels > 1 || params.IsCompressed() || params.block_depth > 1) {
+        if (params.target != SurfaceTarget::Texture2D || params.num_levels > 1 ||
+            params.IsCompressed() || params.block_depth > 1) {
             return;
         }
         scaling_database.Register(params.pixel_format, params.width, params.height);
@@ -1062,6 +1023,72 @@ private:
     bool IsBlackListed(const TSurface& surface) {
         const auto params = surface->GetSurfaceParams();
         return scaling_database.IsBlacklisted(params.pixel_format, params.width, params.height);
+    }
+
+    bool CheckBlackListMatch() {
+        u32 enabled_targets = 0;
+        u32 black_listed = 0;
+        bool black_list = false;
+        for (const auto& target : render_targets) {
+            if (target.target) {
+                enabled_targets++;
+                if (IsBlackListed(target.target)) {
+                    black_list = true;
+                    black_listed++;
+                }
+            }
+        }
+        if (depth_buffer.target) {
+            enabled_targets++;
+            if (IsBlackListed(depth_buffer.target)) {
+                black_list = true;
+                black_listed++;
+            }
+        }
+        if (black_list) {
+            if (black_listed != enabled_targets) {
+                for (const auto& target : render_targets) {
+                    if (target.target) {
+                        UnmarkScanner(target.target);
+                    }
+                }
+                if (depth_buffer.target) {
+                    UnmarkScanner(depth_buffer.target);
+                }
+            }
+        }
+        return false;
+    }
+
+    bool CheckResolutionScalingEnabled() {
+        u32 enabled_targets = 0;
+        u32 rescaled_targets = 0;
+        bool rescaling = false;
+        for (const auto& target : render_targets) {
+            if (target.target) {
+                enabled_targets++;
+                if (target.target->IsRescaleCandidate()) {
+                    rescaling = true;
+                    rescaled_targets++;
+                }
+            }
+        }
+        if (depth_buffer.target) {
+            enabled_targets++;
+            if (depth_buffer.target->IsRescaleCandidate()) {
+                rescaling = true;
+                rescaled_targets++;
+            }
+        }
+        if (rescaling) {
+            if (rescaled_targets != enabled_targets) {
+                LOG_CRITICAL(HW_GPU,
+                             "Rescaling Database is incorrectly set! Rescan the database!.");
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {

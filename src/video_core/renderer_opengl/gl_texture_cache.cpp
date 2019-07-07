@@ -484,15 +484,21 @@ void TextureCacheOpenGL::ImageCopy(Surface& src_surface, Surface& dst_surface,
         // A fallback is needed
         return;
     }
+    bool src_rescaled = src_surface->IsRescaled();
+    bool dst_rescaled = dst_surface->IsRescaled();
+    if (src_rescaled != dst_rescaled) {
+        LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Rescan the database!.");
+    }
+    u32 factor = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1.0);
     const auto src_handle = src_surface->GetTexture();
     const auto src_target = src_surface->GetTarget();
     const auto dst_handle = dst_surface->GetTexture();
     const auto dst_target = dst_surface->GetTarget();
-    glCopyImageSubData(src_handle, src_target, copy_params.source_level, copy_params.source_x,
-                       copy_params.source_y, copy_params.source_z, dst_handle, dst_target,
-                       copy_params.dest_level, copy_params.dest_x, copy_params.dest_y,
-                       copy_params.dest_z, copy_params.width, copy_params.height,
-                       copy_params.depth);
+    glCopyImageSubData(src_handle, src_target, copy_params.source_level,
+                       copy_params.source_x * factor, copy_params.source_y * factor,
+                       copy_params.source_z, dst_handle, dst_target, copy_params.dest_level,
+                       copy_params.dest_x * factor, copy_params.dest_y * factor, copy_params.dest_z,
+                       copy_params.width * factor, copy_params.height * factor, copy_params.depth);
 }
 
 void TextureCacheOpenGL::ImageBlit(View& src_view, View& dst_view,
@@ -551,8 +557,14 @@ void TextureCacheOpenGL::ImageBlit(View& src_view, View& dst_view,
     const Common::Rectangle<u32>& dst_rect = copy_config.dst_rect;
     const bool is_linear = copy_config.filter == Tegra::Engines::Fermi2D::Filter::Linear;
 
-    glBlitFramebuffer(src_rect.left, src_rect.top, src_rect.right, src_rect.bottom, dst_rect.left,
-                      dst_rect.top, dst_rect.right, dst_rect.bottom, buffers,
+    bool src_rescaled = src_view->GetParent().IsRescaled();
+    bool dst_rescaled = dst_view->GetParent().IsRescaled();
+    u32 factor1 = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1);
+    u32 factor2 = static_cast<u32>(dst_rescaled ? Settings::values.resolution_factor : 1);
+
+    glBlitFramebuffer(src_rect.left * factor1, src_rect.top * factor1, src_rect.right * factor1,
+                      src_rect.bottom * factor1, dst_rect.left * factor2, dst_rect.top * factor2,
+                      dst_rect.right * factor2, dst_rect.bottom * factor2, buffers,
                       is_linear && (buffers == GL_COLOR_BUFFER_BIT) ? GL_LINEAR : GL_NEAREST);
 }
 
@@ -565,8 +577,15 @@ void TextureCacheOpenGL::BufferCopy(Surface& src_surface, Surface& dst_surface) 
     const auto source_format = GetFormatTuple(src_params.pixel_format, src_params.component_type);
     const auto dest_format = GetFormatTuple(dst_params.pixel_format, dst_params.component_type);
 
-    const std::size_t source_size = src_surface->GetHostSizeInBytes();
-    const std::size_t dest_size = dst_surface->GetHostSizeInBytes();
+    bool src_rescaled = src_surface->IsRescaled();
+    bool dst_rescaled = dst_surface->IsRescaled();
+    if (src_rescaled != dst_rescaled) {
+        LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Rescan the database!.");
+    }
+    u32 factor = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1.0);
+
+    const std::size_t source_size = src_surface->GetHostSizeInBytes() * factor * factor;
+    const std::size_t dest_size = dst_surface->GetHostSizeInBytes() * factor * factor;
 
     const std::size_t buffer_size = std::max(source_size, dest_size);
 
@@ -585,8 +604,8 @@ void TextureCacheOpenGL::BufferCopy(Surface& src_surface, Surface& dst_surface) 
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, copy_pbo_handle);
 
-    const GLsizei width = static_cast<GLsizei>(dst_params.width);
-    const GLsizei height = static_cast<GLsizei>(dst_params.height);
+    const GLsizei width = static_cast<GLsizei>(dst_params.width * factor);
+    const GLsizei height = static_cast<GLsizei>(dst_params.height * factor);
     const GLsizei depth = static_cast<GLsizei>(dst_params.depth);
     if (dest_format.compressed) {
         LOG_CRITICAL(HW_GPU, "Compressed buffer copy is unimplemented!");

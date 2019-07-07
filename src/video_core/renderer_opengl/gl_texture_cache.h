@@ -98,6 +98,10 @@ public:
         return texture_view.handle;
     }
 
+    const CachedSurface& GetParent() const {
+        return surface;
+    }
+
     const SurfaceParams& GetSurfaceParams() const {
         return surface.GetSurfaceParams();
     }
