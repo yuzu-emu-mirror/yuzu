@@ -88,7 +88,9 @@ enum class Language : u8 {
     Korean = 12,
     Taiwanese = 13,
     Chinese = 14,
-
+    
+    Czech = 17, // not sure
+    
     Default = 255,
 };
 
