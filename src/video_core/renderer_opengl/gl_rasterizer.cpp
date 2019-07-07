@@ -251,7 +251,10 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
         if (!gpu.regs.IsShaderConfigEnabled(index)) {
             switch (program) {
             case Maxwell::ShaderProgram::Geometry:
-                shader_program_manager->UseTrivialGeometryShader();
+                shader_program_manager->BindGeometryShader(nullptr);
+                break;
+            case Maxwell::ShaderProgram::Fragment:
+                shader_program_manager->BindFragmentShader(nullptr);
                 break;
             default:
                 break;
@@ -260,14 +263,6 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
         }
 
         const std::size_t stage{index == 0 ? 0 : index - 1}; // Stage indices are 0 - 5
-
-        GLShader::MaxwellUniformData ubo{};
-        ubo.SetFromRegs(gpu, stage);
-        const auto [buffer, offset] =
-            buffer_cache.UploadHostMemory(&ubo, sizeof(ubo), device.GetUniformBufferAlignment());
-
-        // Bind the emulation info buffer
-        bind_ubo_pushbuffer.Push(buffer, offset, static_cast<GLsizeiptr>(sizeof(ubo)));
 
         Shader shader{shader_cache.GetStageProgram(program)};
 
@@ -282,13 +277,13 @@ void RasterizerOpenGL::SetupShaders(GLenum primitive_mode) {
         switch (program) {
         case Maxwell::ShaderProgram::VertexA:
         case Maxwell::ShaderProgram::VertexB:
-            shader_program_manager->UseProgrammableVertexShader(program_handle);
+            shader_program_manager->BindVertexShader(&program_handle);
             break;
         case Maxwell::ShaderProgram::Geometry:
-            shader_program_manager->UseProgrammableGeometryShader(program_handle);
+            shader_program_manager->BindGeometryShader(&program_handle);
             break;
         case Maxwell::ShaderProgram::Fragment:
-            shader_program_manager->UseProgrammableFragmentShader(program_handle);
+            shader_program_manager->BindFragmentShader(&program_handle);
             break;
         default:
             UNIMPLEMENTED_MSG("Unimplemented shader index={}, enable={}, offset=0x{:08X}", index,
@@ -605,11 +600,6 @@ void RasterizerOpenGL::DrawPrelude() {
         buffer_size = Common::AlignUp(buffer_size, 4) + CalculateIndexBufferSize();
     }
 
-    // Uniform space for the 5 shader stages
-    buffer_size = Common::AlignUp<std::size_t>(buffer_size, 4) +
-                  (sizeof(GLShader::MaxwellUniformData) + device.GetUniformBufferAlignment()) *
-                      Maxwell::MaxShaderStage;
-
     // Add space for at least 18 constant buffers
     buffer_size += Maxwell::MaxConstBuffers *
                    (Maxwell::MaxConstBufferSize + device.GetUniformBufferAlignment());
@@ -651,6 +641,7 @@ void RasterizerOpenGL::DrawPrelude() {
         gpu.dirty.ResetVertexArrays();
     }
 
+    shader_program_manager->SetConstants(gpu);
     shader_program_manager->ApplyTo(state);
     state.Apply();
 
@@ -773,7 +764,7 @@ void RasterizerOpenGL::DispatchCompute(GPUVAddr code_addr) {
     SetupComputeImages(kernel);
 
     const auto [program, next_bindings] = kernel->GetProgramHandle(variant);
-    state.draw.shader_program = program;
+    state.draw.shader_program = program.handle;
     state.draw.program_pipeline = 0;
 
     const std::size_t buffer_size =
