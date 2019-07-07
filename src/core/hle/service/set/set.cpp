@@ -29,6 +29,7 @@ constexpr std::array<LanguageCode, 17> available_language_codes = {{
     LanguageCode::ES_419,
     LanguageCode::ZH_HANS,
     LanguageCode::ZH_HANT,
+    LanguageCode::CZ,
 }};
 
 constexpr std::size_t pre4_0_0_max_entries = 15;
