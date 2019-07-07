@@ -36,6 +36,7 @@ enum SystemLanguage {
     // 4.0.0+
     SimplifiedChinese = 15,
     TraditionalChinese = 16,
+    Czech = 17,//cs-CZ
 };
 
 class AppletMessageQueue {
