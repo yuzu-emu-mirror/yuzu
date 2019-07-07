@@ -180,7 +180,7 @@ public:
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "CreateProcess"},
-            {1, nullptr, "GetProgramInfo"},
+            {1, &ProcessManager::GetProgramInfo, "GetProgramInfo"},
             {2, &ProcessManager::RegisterTitle, "RegisterTitle"},
             {3, &ProcessManager::UnregisterTitle, "UnregisterTitle"},
         };
@@ -190,6 +190,34 @@ public:
     }
 
 private:
+    void GetProgramInfo(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto title_id = rp.PopRaw<u64>();
+        const auto storage_id = rp.PopEnum<FileSys::StorageId>();
+
+        LOG_DEBUG(Service_LDR, "called, title_id={:016X}, storage_id={:02X}", title_id,
+                  static_cast<u8>(storage_id));
+
+        const auto iter =
+            std::find_if(process_list.begin(), process_list.end(), [title_id](const auto& process) {
+                return process->GetTitleID() == title_id;
+            });
+
+        if (iter == process_list.end()) {
+            LOG_ERROR(Service_LDR, "Cannot find process with given title ID!");
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERROR_TITLE_NOT_FOUND);
+            return;
+        }
+
+        const auto info = GetProgramInfoFromProcess(**iter);
+
+        ctx.WriteBuffer(info);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
     void RegisterTitle(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto title_id = rp.PopRaw<u64>();
