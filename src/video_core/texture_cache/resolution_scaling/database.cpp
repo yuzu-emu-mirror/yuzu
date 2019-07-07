@@ -2,7 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cstring>
 #include <fstream>
+#include <fmt/format.h>
 #include <json.hpp>
 
 #include "common/assert.h"
@@ -18,11 +20,46 @@ namespace VideoCommon::Resolution {
 using namespace nlohmann;
 
 ScalingDatabase::ScalingDatabase(Core::System& system) : database{}, blacklist{}, system{system} {
-    title_id = system.CurrentProcess()->GetTitleID();
+    title_id = 0;
 }
 
 ScalingDatabase::~ScalingDatabase() {
     SaveDatabase();
+}
+
+void ScalingDatabase::Init() {
+    title_id = system.CurrentProcess()->GetTitleID();
+    LoadDatabase();
+    initialized = true;
+}
+
+void ScalingDatabase::LoadDatabase() {
+    const std::string path = GetProfilePath();
+    bool exists = FileUtil::Exists(path);
+    if (!exists) {
+        return;
+    }
+    std::ifstream file(path);
+    json in;
+    file >> in;
+    u32 version = in["version"].get<u32>();
+    if (version != DBVersion) {
+        return;
+    }
+    for (const auto& entry : in["entries"]) {
+        ResolutionKey key{};
+        key.format = static_cast<PixelFormat>(entry["format"].get<u32>());
+        key.width = entry["width"].get<u32>();
+        key.height = entry["height"].get<u32>();
+        database.emplace(key, true);
+    }
+    for (const auto& entry : in["blacklist"]) {
+        ResolutionKey key{};
+        key.format = static_cast<PixelFormat>(entry["format"].get<u32>());
+        key.width = entry["width"].get<u32>();
+        key.height = entry["height"].get<u32>();
+        blacklist.insert(key);
+    }
 }
 
 void ScalingDatabase::SaveDatabase() {
@@ -40,7 +77,17 @@ void ScalingDatabase::SaveDatabase() {
         }
     }
     out["entries"] = std::move(entries);
-    std::ofstream file(GetProfilePath());
+    auto blacklist_entries = json::array();
+    for (const auto& key : blacklist) {
+        blacklist_entries.push_back({
+            {"format", static_cast<u32>(key.format)},
+            {"width", key.width},
+            {"height", key.height},
+        });
+    }
+    out["blacklist"] = blacklist_entries;
+    const std::string path = GetProfilePath();
+    std::ofstream file(path);
     file << std::setw(4) << out << std::endl;
 }
 

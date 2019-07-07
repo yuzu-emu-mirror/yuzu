@@ -52,10 +52,17 @@ public:
     ~ScalingDatabase();
 
     void SaveDatabase();
+    void LoadDatabase();
+    void Init();
 
     bool IsInDatabase(const PixelFormat format, const u32 width, const u32 height) {
         ResolutionKey key{format, width, height};
         return database.count(key) > 0;
+    }
+
+    bool IsBlacklisted(const PixelFormat format, const u32 width, const u32 height) {
+        ResolutionKey key{format, width, height};
+        return blacklist.count(key) > 0;
     }
 
     void MarkRendered(const PixelFormat format, const u32 width, const u32 height);
@@ -68,6 +75,7 @@ public:
 private:
     std::unordered_map<ResolutionKey, bool> database;
     std::unordered_set<ResolutionKey> blacklist;
+    bool initialized{};
     u64 title_id;
     Core::System& system;
 

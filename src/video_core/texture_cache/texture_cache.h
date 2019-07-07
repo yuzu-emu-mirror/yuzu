@@ -71,6 +71,10 @@ public:
         }
     }
 
+    void LoadResources() {
+        scaling_database.Init();
+    }
+
     /***
      * `Guard` guarantees that rendertargets don't unregister themselves if the
      * collide. Protection is currently only done on 3D slices.
@@ -163,6 +167,7 @@ public:
         if (depth_buffer.target) {
             depth_buffer.target->MarkAsRenderTarget(true, DEPTH_RT);
             if (IsResScannerEnabled()) {
+                MarkScanner(depth_buffer.target);
                 MarkScannerRender(depth_buffer.target);
             }
         }
@@ -201,6 +206,7 @@ public:
         if (render_targets[index].target) {
             render_targets[index].target->MarkAsRenderTarget(true, static_cast<u32>(index));
             if (IsResScannerEnabled()) {
+                MarkScanner(render_targets[index].target);
                 MarkScannerRender(render_targets[index].target);
             }
         }
@@ -282,7 +288,7 @@ public:
         for (const auto& target : render_targets) {
             if (target.target) {
                 enabled_targets++;
-                if (target.target->IsRescaled()) {
+                if (target.target->IsRescaleCandidate()) {
                     rescaling = true;
                     rescaled_targets++;
                 }
@@ -290,7 +296,7 @@ public:
         }
         if (depth_buffer.target) {
             enabled_targets++;
-            if (depth_buffer.target->IsRescaled()) {
+            if (depth_buffer.target->IsRescaleCandidate()) {
                 rescaling = true;
                 rescaled_targets++;
             }
@@ -374,9 +380,6 @@ protected:
                          gpu_addr);
             return;
         }
-        if (IsResScannerEnabled()) {
-            MarkScanner(surface);
-        }
         const bool continuous = system.GPU().MemoryManager().IsBlockContinuous(gpu_addr, size);
         surface->MarkAsContinuous(continuous);
         surface->SetCacheAddr(cache_ptr);
@@ -427,9 +430,13 @@ protected:
     // Must be called by child's create surface
     void SignalCreatedSurface(TSurface& new_surface) {
         const auto& params = new_surface->GetSurfaceParams();
-        if (guard_render_targets && EnabledRescaling()) {
+        if (EnabledRescaling()) {
             if (scaling_database.IsInDatabase(params.pixel_format, params.width, params.height)) {
                 new_surface->MarkAsRescaled(true);
+            }
+        } else if (IsResScannerEnabled()) {
+            if (scaling_database.IsInDatabase(params.pixel_format, params.width, params.height)) {
+                new_surface->MarkAsRescaleCandidate(true);
             }
         }
     }
@@ -726,7 +733,7 @@ private:
 
         // If none are found, we are done. we just load the surface and create it.
         if (overlaps.empty()) {
-            return InitializeSurface(gpu_addr, params, preserve_contents);
+            return InitializeSurface(gpu_addr, params, preserve_contents && !is_render);
         }
 
         // Step 3
@@ -925,6 +932,9 @@ private:
     }
 
     void LoadSurface(const TSurface& surface) {
+        if (IsResScannerEnabled()) {
+            UnmarkScanner(surface);
+        }
         staging_cache.GetBuffer(0).resize(surface->GetHostSizeInBytes());
         surface->LoadBuffer(system.GPU().MemoryManager(), staging_cache);
         surface->UploadTexture(staging_cache.GetBuffer(0));
@@ -1029,6 +1039,11 @@ private:
             return;
         }
         scaling_database.Register(params.pixel_format, params.width, params.height);
+    }
+
+    bool IsBlackListed(const TSurface& surface) {
+        const auto params = surface->GetSurfaceParams();
+        return scaling_database.IsBlackListed(params.pixel_format, params.width, params.height);
     }
 
     void MarkScannerRender(const TSurface& surface) {
