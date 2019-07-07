@@ -26,6 +26,7 @@ enum class ApplicationLanguage : u8 {
     Korean,
     TraditionalChinese,
     SimplifiedChinese,
+    Czech,
     Count
 };
 using ApplicationLanguagePriorityList =
