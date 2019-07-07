@@ -24,6 +24,7 @@ const std::array<const char*, 15> LANGUAGE_NAMES{{
     "Korean",
     "Taiwanese",
     "Chinese",
+    "Czech", //Again not sure
 }};
 
 std::string LanguageEntry::GetApplicationName() const {
