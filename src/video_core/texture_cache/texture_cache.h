@@ -254,6 +254,16 @@ public:
         DeduceBestBlit(src_params, dst_params, src_gpu_addr, dst_gpu_addr);
         std::pair<TSurface, TView> dst_surface = GetSurface(dst_gpu_addr, dst_params, true, false);
         std::pair<TSurface, TView> src_surface = GetSurface(src_gpu_addr, src_params, true, false);
+        if (IsResScannerEnabled()) {
+            bool is_candidate = src_surface.first->IsRescaleCandidate();
+            if (is_candidate) {
+                if (IsBlackListed(dst_surface.first)) {
+                    UnmarkScanner(src_surface.first);
+                } else {
+                    MarkScanner(dst_surface.first);
+                }
+            }
+        }
         ImageBlit(src_surface.second, dst_surface.second, copy_config);
         dst_surface.first->MarkAsModified(true, Tick());
     }
@@ -398,7 +408,7 @@ protected:
         }
 
         if (IsResScannerEnabled()) {
-            if (reason == UnregisterReason::Restructured || reason == UnregisterReason::Rebuilt) {
+            if (reason == UnregisterReason::Restructured) {
                 UnmarkScanner(surface);
             }
         }
@@ -420,11 +430,11 @@ protected:
         return new_surface;
     }
 
-    std::pair<TSurface, TView> GetFermiSurface(
-        const Tegra::Engines::Fermi2D::Regs::Surface& config) {
+    std::pair<TSurface, TView> GetFermiSurface(const Tegra::Engines::Fermi2D::Regs::Surface& config,
+                                               const bool is_render) {
         SurfaceParams params = SurfaceParams::CreateForFermiCopySurface(config);
         const GPUVAddr gpu_addr = config.Address();
-        return GetSurface(gpu_addr, params, true, false);
+        return GetSurface(gpu_addr, params, true, is_render);
     }
 
     // Must be called by child's create surface
@@ -581,6 +591,16 @@ private:
             std::vector<CopyParams> bricks = current_surface->BreakDown(final_params);
             for (auto& brick : bricks) {
                 ImageCopy(current_surface, new_surface, brick);
+            }
+        }
+        if (IsResScannerEnabled()) {
+            bool is_candidate = current_surface->IsRescaleCandidate();
+            if (is_candidate) {
+                if (IsBlackListed(new_surface)) {
+                    UnmarkScanner(current_surface);
+                } else {
+                    MarkScanner(new_surface);
+                }
             }
         }
         Unregister(current_surface, UnregisterReason::Rebuilt);
@@ -1043,7 +1063,7 @@ private:
 
     bool IsBlackListed(const TSurface& surface) {
         const auto params = surface->GetSurfaceParams();
-        return scaling_database.IsBlackListed(params.pixel_format, params.width, params.height);
+        return scaling_database.IsBlacklisted(params.pixel_format, params.width, params.height);
     }
 
     void MarkScannerRender(const TSurface& surface) {
