@@ -19,6 +19,10 @@ namespace VideoCommon::Resolution {
 
 using namespace nlohmann;
 
+std::string GetBaseDir() {
+    return FileUtil::GetUserPath(FileUtil::UserPath::RescalingDir);
+}
+
 ScalingDatabase::ScalingDatabase(Core::System& system) : database{}, blacklist{}, system{system} {
     title_id = 0;
 }
@@ -63,6 +67,11 @@ void ScalingDatabase::LoadDatabase() {
 }
 
 void ScalingDatabase::SaveDatabase() {
+    std::string dir = GetBaseDir();
+    if (!FileUtil::CreateDir(dir)) {
+        LOG_ERROR(HW_GPU, "Failed to create directory={}", dir);
+        return;
+    }
     json out;
     out["version"] = DBVersion;
     auto entries = json::array();
@@ -100,10 +109,6 @@ void ScalingDatabase::Unregister(const PixelFormat format, const u32 width, cons
     ResolutionKey key{format, width, height};
     database.erase(key);
     blacklist.insert(key);
-}
-
-std::string GetBaseDir() {
-    return FileUtil::GetUserPath(FileUtil::UserPath::RescalingDir);
 }
 
 std::string ScalingDatabase::GetTitleID() const {
