@@ -175,18 +175,77 @@ private:
 
 class ProcessManager final : public ServiceFramework<ProcessManager> {
 public:
-    explicit ProcessManager() : ServiceFramework{"ldr:pm"} {
+    explicit ProcessManager(const std::vector<Kernel::SharedPtr<Kernel::Process>>& process_list)
+        : ServiceFramework{"ldr:pm"}, process_list(process_list) {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "CreateProcess"},
             {1, nullptr, "GetProgramInfo"},
-            {2, nullptr, "RegisterTitle"},
-            {3, nullptr, "UnregisterTitle"},
+            {2, &ProcessManager::RegisterTitle, "RegisterTitle"},
+            {3, &ProcessManager::UnregisterTitle, "UnregisterTitle"},
         };
         // clang-format on
 
         RegisterHandlers(functions);
     }
+
+private:
+    void RegisterTitle(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto title_id = rp.PopRaw<u64>();
+        const auto storage_id = rp.PopEnum<FileSys::StorageId>();
+
+        LOG_DEBUG(Service_LDR, "called, title_id={:016X}, storage_id={:02X}", title_id,
+                  static_cast<u8>(storage_id));
+
+        const auto iter =
+            std::find_if(registry.begin(), registry.end(),
+                         [title_id](const auto& kv) { return kv.second.title_id == title_id; });
+
+        if (iter != registry.end()) {
+            LOG_ERROR(Service_LDR, "Cannot register title with identical ID!");
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERROR_ALREADY_REGISTERED);
+            return;
+        }
+
+        const auto index = next_register_id;
+        registry.insert_or_assign(next_register_id++, TitleRegistration{title_id, storage_id});
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u64>(index);
+    }
+
+    void UnregisterTitle(Kernel::HLERequestContext& ctx) {
+        IPC::RequestParser rp{ctx};
+        const auto register_id = rp.PopRaw<u64>();
+
+        LOG_DEBUG(Service_LDR, "called, register_id={:08X}", register_id);
+
+        const auto iter = registry.find(register_id);
+
+        if (iter == registry.end()) {
+            LOG_ERROR(Service_LDR, "Cannot unregister nonexistant ID!");
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERROR_TITLE_NOT_FOUND);
+            return;
+        }
+
+        registry.erase(iter);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
+    struct TitleRegistration {
+        u64 title_id;
+        FileSys::StorageId storage_id;
+    };
+    u64 next_register_id = 1;
+    std::map<u64, TitleRegistration> registry;
+
+    const std::vector<Kernel::SharedPtr<Kernel::Process>>& process_list;
 };
 
 class Shell final : public ServiceFramework<Shell> {
