@@ -27,6 +27,7 @@
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/staging_buffer_cache.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/copy_params.h"
 #include "video_core/texture_cache/surface_base.h"
@@ -48,7 +49,7 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::SurfaceTarget;
 using RenderTargetConfig = Tegra::Engines::Maxwell3D::Regs::RenderTargetConfig;
 
-template <typename TSurface, typename TView>
+template <typename TSurface, typename TView, typename StagingBufferType>
 class TextureCache {
     using IntervalMap = boost::icl::interval_map<CacheAddr, std::set<TSurface>>;
     using IntervalType = typename IntervalMap::interval_type;
@@ -62,10 +63,10 @@ public:
         }
     }
 
-    /***
+    /**
      * `Guard` guarantees that rendertargets don't unregister themselves if the
      * collide. Protection is currently only done on 3D slices.
-     ***/
+     */
     void GuardRenderTargets(bool new_guard) {
         guard_render_targets = new_guard;
     }
@@ -242,7 +243,6 @@ protected:
         }
 
         SetEmptyDepthBuffer();
-        staging_cache.SetSize(2);
 
         const auto make_siblings = [this](PixelFormat a, PixelFormat b) {
             siblings_table[static_cast<std::size_t>(a)] = b;
@@ -687,9 +687,9 @@ private:
     }
 
     void LoadSurface(const TSurface& surface) {
-        staging_cache.GetBuffer(0).resize(surface->GetHostSizeInBytes());
-        surface->LoadBuffer(system.GPU().MemoryManager(), staging_cache);
-        surface->UploadTexture(staging_cache.GetBuffer(0));
+        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+        surface->LoadBuffer(system.GPU().MemoryManager(), buffer.GetPointer());
+        surface->UploadTexture(buffer);
         surface->MarkAsModified(false, Tick());
     }
 
@@ -697,9 +697,9 @@ private:
         if (!surface->IsModified()) {
             return;
         }
-        staging_cache.GetBuffer(0).resize(surface->GetHostSizeInBytes());
-        surface->DownloadTexture(staging_cache.GetBuffer(0));
-        surface->FlushBuffer(system.GPU().MemoryManager(), staging_cache);
+        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+        surface->DownloadTexture(buffer);
+        surface->FlushBuffer(system.GPU().MemoryManager(), buffer.GetPointer());
         surface->MarkAsModified(false, Tick());
     }
 
@@ -813,7 +813,7 @@ private:
 
     std::vector<TSurface> sampled_textures;
 
-    StagingCache staging_cache;
+    StagingBufferCache<StagingBufferType> staging_buffer_cache;
     std::recursive_mutex mutex;
 };
 

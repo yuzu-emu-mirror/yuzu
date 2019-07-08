@@ -19,12 +19,10 @@ using Tegra::Texture::ConvertFromGuestToHost;
 using VideoCore::MortonSwizzleMode;
 using VideoCore::Surface::SurfaceCompression;
 
-StagingCache::StagingCache() = default;
-
-StagingCache::~StagingCache() = default;
-
-SurfaceBaseImpl::SurfaceBaseImpl(GPUVAddr gpu_addr, const SurfaceParams& params)
-    : params{params}, host_memory_size{params.GetHostSizeInBytes()}, gpu_addr{gpu_addr},
+SurfaceBaseImpl::SurfaceBaseImpl(GPUVAddr gpu_addr, const SurfaceParams& params,
+                                 std::vector<u8>& temporary_buffer)
+    : params{params}, temporary_buffer{temporary_buffer},
+      host_memory_size{params.GetHostSizeInBytes()}, gpu_addr{gpu_addr},
       mipmap_sizes(params.num_levels), mipmap_offsets(params.num_levels) {
     std::size_t offset = 0;
     for (u32 level = 0; level < params.num_levels; ++level) {
@@ -44,6 +42,8 @@ SurfaceBaseImpl::SurfaceBaseImpl(GPUVAddr gpu_addr, const SurfaceParams& params)
         guest_memory_size = layer_size;
     }
 }
+
+SurfaceBaseImpl::~SurfaceBaseImpl() = default;
 
 MatchTopologyResult SurfaceBaseImpl::MatchesTopology(const SurfaceParams& rhs) const {
     const u32 src_bpp{params.GetBytesPerPixel()};
@@ -179,10 +179,8 @@ void SurfaceBaseImpl::SwizzleFunc(MortonSwizzleMode mode, u8* memory, const Surf
     }
 }
 
-void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager,
-                                 StagingCache& staging_cache) {
+void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager, u8* staging_buffer) {
     MICROPROFILE_SCOPE(GPU_Load_Texture);
-    auto& staging_buffer = staging_cache.GetBuffer(0);
     u8* host_ptr;
     is_continuous = memory_manager.IsBlockContinuous(gpu_addr, guest_memory_size);
 
@@ -195,9 +193,8 @@ void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager,
         }
     } else {
         // Use an extra temporal buffer
-        auto& tmp_buffer = staging_cache.GetBuffer(1);
-        tmp_buffer.resize(guest_memory_size);
-        host_ptr = tmp_buffer.data();
+        temporary_buffer.resize(guest_memory_size);
+        host_ptr = temporary_buffer.data();
         memory_manager.ReadBlockUnsafe(gpu_addr, host_ptr, guest_memory_size);
     }
 
@@ -207,7 +204,7 @@ void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager,
         for (u32 level = 0; level < params.num_levels; ++level) {
             const std::size_t host_offset{params.GetHostMipmapLevelOffset(level)};
             SwizzleFunc(MortonSwizzleMode::MortonToLinear, host_ptr, params,
-                        staging_buffer.data() + host_offset, level);
+                        staging_buffer + host_offset, level);
         }
     } else {
         ASSERT_MSG(params.num_levels == 1, "Linear mipmap loading is not implemented");
@@ -218,10 +215,10 @@ void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager,
         const u32 height{(params.height + block_height - 1) / block_height};
         const u32 copy_size{width * bpp};
         if (params.pitch == copy_size) {
-            std::memcpy(staging_buffer.data(), host_ptr, params.GetHostSizeInBytes());
+            std::memcpy(staging_buffer, host_ptr, params.GetHostSizeInBytes());
         } else {
             const u8* start{host_ptr};
-            u8* write_to{staging_buffer.data()};
+            u8* write_to{staging_buffer};
             for (u32 h = height; h > 0; --h) {
                 std::memcpy(write_to, start, copy_size);
                 start += params.pitch;
@@ -241,18 +238,16 @@ void SurfaceBaseImpl::LoadBuffer(Tegra::MemoryManager& memory_manager,
         const std::size_t out_host_offset = compression_type == SurfaceCompression::Rearranged
                                                 ? in_host_offset
                                                 : params.GetConvertedMipmapOffset(level);
-        u8* in_buffer = staging_buffer.data() + in_host_offset;
-        u8* out_buffer = staging_buffer.data() + out_host_offset;
+        u8* in_buffer = staging_buffer + in_host_offset;
+        u8* out_buffer = staging_buffer + out_host_offset;
         ConvertFromGuestToHost(in_buffer, out_buffer, params.pixel_format,
                                params.GetMipWidth(level), params.GetMipHeight(level),
                                params.GetMipDepth(level), true, true);
     }
 }
 
-void SurfaceBaseImpl::FlushBuffer(Tegra::MemoryManager& memory_manager,
-                                  StagingCache& staging_cache) {
+void SurfaceBaseImpl::FlushBuffer(Tegra::MemoryManager& memory_manager, u8* staging_buffer) {
     MICROPROFILE_SCOPE(GPU_Flush_Texture);
-    auto& staging_buffer = staging_cache.GetBuffer(0);
     u8* host_ptr;
 
     // Handle continuouty
@@ -264,9 +259,8 @@ void SurfaceBaseImpl::FlushBuffer(Tegra::MemoryManager& memory_manager,
         }
     } else {
         // Use an extra temporal buffer
-        auto& tmp_buffer = staging_cache.GetBuffer(1);
-        tmp_buffer.resize(guest_memory_size);
-        host_ptr = tmp_buffer.data();
+        temporary_buffer.resize(guest_memory_size);
+        host_ptr = temporary_buffer.data();
     }
 
     if (params.is_tiled) {
@@ -274,7 +268,7 @@ void SurfaceBaseImpl::FlushBuffer(Tegra::MemoryManager& memory_manager,
         for (u32 level = 0; level < params.num_levels; ++level) {
             const std::size_t host_offset{params.GetHostMipmapLevelOffset(level)};
             SwizzleFunc(MortonSwizzleMode::LinearToMorton, host_ptr, params,
-                        staging_buffer.data() + host_offset, level);
+                        staging_buffer + host_offset, level);
         }
     } else {
         ASSERT(params.target == SurfaceTarget::Texture2D);
@@ -283,10 +277,10 @@ void SurfaceBaseImpl::FlushBuffer(Tegra::MemoryManager& memory_manager,
         const u32 bpp{params.GetBytesPerPixel()};
         const u32 copy_size{params.width * bpp};
         if (params.pitch == copy_size) {
-            std::memcpy(host_ptr, staging_buffer.data(), guest_memory_size);
+            std::memcpy(host_ptr, staging_buffer, guest_memory_size);
         } else {
             u8* start{host_ptr};
-            const u8* read_to{staging_buffer.data()};
+            const u8* read_to{staging_buffer};
             for (u32 h = params.height; h > 0; --h) {
                 std::memcpy(start, read_to, copy_size);
                 start += params.pitch;

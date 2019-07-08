@@ -26,21 +26,23 @@ using VideoCommon::ViewParams;
 
 class CachedSurfaceView;
 class CachedSurface;
+class StagingBuffer;
 class TextureCacheOpenGL;
 
 using Surface = std::shared_ptr<CachedSurface>;
 using View = std::shared_ptr<CachedSurfaceView>;
-using TextureCacheBase = VideoCommon::TextureCache<Surface, View>;
+using TextureCacheBase = VideoCommon::TextureCache<Surface, View, StagingBuffer>;
 
-class CachedSurface final : public VideoCommon::SurfaceBase<View> {
+class CachedSurface final : public VideoCommon::SurfaceBase<View, StagingBuffer> {
     friend CachedSurfaceView;
 
 public:
-    explicit CachedSurface(GPUVAddr gpu_addr, const SurfaceParams& params);
+    explicit CachedSurface(GPUVAddr gpu_addr, const SurfaceParams& params,
+                           std::vector<u8>& temporary_buffer);
     ~CachedSurface();
 
-    void UploadTexture(const std::vector<u8>& staging_buffer) override;
-    void DownloadTexture(std::vector<u8>& staging_buffer) override;
+    void UploadTexture(StagingBuffer& buffer) override;
+    void DownloadTexture(StagingBuffer& buffer) override;
 
     GLenum GetTarget() const {
         return target;
@@ -57,7 +59,7 @@ protected:
     View CreateViewInner(const ViewParams& view_key, bool is_proxy);
 
 private:
-    void UploadTextureMipmap(u32 level, const std::vector<u8>& staging_buffer);
+    void UploadTextureMipmap(u32 level, const StagingBuffer& staging_buffer);
 
     GLenum internal_format{};
     GLenum format{};
@@ -115,6 +117,29 @@ private:
     bool is_proxy;
 };
 
+class StagingBuffer final {
+public:
+    explicit StagingBuffer(std::size_t size);
+    ~StagingBuffer();
+
+    void QueueFence();
+
+    [[nodiscard]] bool IsAvailable() const;
+
+    [[nodiscard]] GLuint GetHandle() const {
+        return buffer.handle;
+    }
+
+    [[nodiscard]] u8* GetPointer() const {
+        return pointer;
+    }
+
+private:
+    OGLBuffer buffer;
+    OGLSync sync;
+    u8* pointer{};
+};
+
 class TextureCacheOpenGL final : public TextureCacheBase {
 public:
     explicit TextureCacheOpenGL(Core::System& system, VideoCore::RasterizerInterface& rasterizer,
@@ -138,6 +163,7 @@ private:
     OGLFramebuffer src_framebuffer;
     OGLFramebuffer dst_framebuffer;
     std::unordered_map<u32, OGLBuffer> copy_pbo_cache;
+    std::vector<u8> temporary_buffer;
 };
 
 } // namespace OpenGL
