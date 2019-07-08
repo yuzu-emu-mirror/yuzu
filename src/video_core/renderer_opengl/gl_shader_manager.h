@@ -40,6 +40,10 @@ public:
         state.y_direction = y_direction;
     }
 
+    void SetRescalingFactor(GLfloat rescaling_factor) {
+        state.rescaling_factor = rescaling_factor;
+    }
+
     void SetViewportScale(GLfloat x, GLfloat y) {
         state.viewport_scale = {x, y};
     }
@@ -52,6 +56,7 @@ private:
                 GLuint instance_id;
                 GLuint flip_stage;
                 GLfloat y_direction;
+                GLfloat rescaling_factor;
             };
         };
 
@@ -67,7 +72,7 @@ public:
     explicit ProgramManager();
     ~ProgramManager();
 
-    void SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d);
+    void SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d, bool rescaling);
 
     void ApplyTo(OpenGLState& state);
 

@@ -4,6 +4,7 @@
 
 #include <array>
 #include "common/common_types.h"
+#include "core/settings.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
 
@@ -37,7 +38,7 @@ ProgramManager::ProgramManager() {
 
 ProgramManager::~ProgramManager() = default;
 
-void ProgramManager::SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d) {
+void ProgramManager::SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d, bool rescaling) {
     const auto& regs = maxwell_3d.regs;
     const auto& state = maxwell_3d.state;
 
@@ -61,6 +62,8 @@ void ProgramManager::SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d) {
     // Y_NEGATE controls what value S2R returns for the Y_DIRECTION system value.
     const GLfloat y_direction = regs.screen_y_control.y_negate == 0 ? 1.0f : -1.0f;
 
+    const GLfloat rescale_factor = rescaling ? Settings::values.resolution_factor : 1.0f;
+
     for (const auto stage :
          std::array{current_state.vertex, current_state.geometry, current_state.fragment}) {
         if (!stage) {
@@ -70,6 +73,7 @@ void ProgramManager::SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d) {
         stage->SetFlipStage(flip_stage);
         stage->SetYDirection(y_direction);
         stage->SetViewportScale(flip_x, flip_y);
+        stage->SetRescalingFactor(rescale_factor);
         stage->UpdateConstants();
     }
 }
