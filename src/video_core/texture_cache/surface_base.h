@@ -207,11 +207,6 @@ public:
 
     void MarkAsRescaled(const bool is_rescaled) {
         this->is_rescaled = is_rescaled;
-        this->is_rescale_candidate = is_rescaled;
-    }
-
-    void MarkAsRescaleCandidate(const bool is_rescale_candidate) {
-        this->is_rescale_candidate = is_rescale_candidate;
     }
 
     void MarkAsPicked(bool is_picked_) {
@@ -237,10 +232,6 @@ public:
 
     bool IsRescaled() const {
         return is_rescaled;
-    }
-
-    bool IsRescaleCandidate() const {
-        return is_rescale_candidate;
     }
 
     bool IsRegistered() const {
@@ -336,7 +327,6 @@ private:
     bool is_registered{};
     bool is_picked{};
     bool is_rescaled{};
-    bool is_rescale_candidate{};
     u32 index{NO_RT};
     u64 modification_tick{};
 };

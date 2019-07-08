@@ -254,7 +254,7 @@ public:
         std::pair<TSurface, TView> dst_surface = GetSurface(dst_gpu_addr, dst_params, true, false);
         std::pair<TSurface, TView> src_surface = GetSurface(src_gpu_addr, src_params, true, false);
         if (IsResScannerEnabled()) {
-            bool is_candidate = src_surface.first->IsRescaleCandidate();
+            bool is_candidate = IsInRSDatabase(src_surface.first);
             if (is_candidate) {
                 MarkScanner(dst_surface.first);
             }
@@ -422,14 +422,9 @@ protected:
 
     // Must be called by child's create surface
     void SignalCreatedSurface(TSurface& new_surface) {
-        const auto& params = new_surface->GetSurfaceParams();
         if (EnabledRescaling()) {
-            if (scaling_database.IsInDatabase(params.pixel_format, params.width, params.height)) {
+            if (IsInRSDatabase(new_surface)) {
                 new_surface->MarkAsRescaled(true);
-            }
-        } else if (IsResScannerEnabled()) {
-            if (scaling_database.IsInDatabase(params.pixel_format, params.width, params.height)) {
-                new_surface->MarkAsRescaleCandidate(true);
             }
         }
     }
@@ -577,9 +572,9 @@ private:
             }
         }
         if (IsResScannerEnabled()) {
-            bool is_candidate = current_surface->IsRescaleCandidate();
+            bool is_candidate = IsInRSDatabase(current_surface);
             if (is_candidate) {
-                if (IsBlackListed(new_surface)) {
+                if (IsRSBlacklisted(new_surface)) {
                     UnmarkScanner(current_surface);
                 } else {
                     MarkScanner(new_surface);
@@ -1063,9 +1058,14 @@ private:
         scaling_database.Register(params.pixel_format, params.width, params.height);
     }
 
-    bool IsBlackListed(const TSurface& surface) {
+    bool IsRSBlacklisted(const TSurface& surface) {
         const auto params = surface->GetSurfaceParams();
         return scaling_database.IsBlacklisted(params.pixel_format, params.width, params.height);
+    }
+
+    bool IsInRSDatabase(const TSurface& surface) {
+        const auto& params = surface->GetSurfaceParams();
+        return scaling_database.IsInDatabase(params.pixel_format, params.width, params.height);
     }
 
     bool CheckBlackListMatch() {
@@ -1075,7 +1075,7 @@ private:
         for (const auto& target : render_targets) {
             if (target.target) {
                 enabled_targets++;
-                if (IsBlackListed(target.target)) {
+                if (IsRSBlacklisted(target.target)) {
                     black_list = true;
                     black_listed++;
                 }
@@ -1083,7 +1083,7 @@ private:
         }
         if (depth_buffer.target) {
             enabled_targets++;
-            if (IsBlackListed(depth_buffer.target)) {
+            if (IsRSBlacklisted(depth_buffer.target)) {
                 black_list = true;
                 black_listed++;
             }
@@ -1121,7 +1121,7 @@ private:
         for (const auto& target : render_targets) {
             if (target.target) {
                 enabled_targets++;
-                if (target.target->IsRescaleCandidate()) {
+                if (target.target->IsRescaled()) {
                     rescaling = true;
                     rescaled_targets++;
                 }
@@ -1129,7 +1129,7 @@ private:
         }
         if (depth_buffer.target) {
             enabled_targets++;
-            if (depth_buffer.target->IsRescaleCandidate()) {
+            if (depth_buffer.target->IsRescaled()) {
                 rescaling = true;
                 rescaled_targets++;
             }
