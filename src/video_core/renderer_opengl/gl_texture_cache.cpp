@@ -199,7 +199,7 @@ void ApplyTextureDefaults(const SurfaceParams& params, GLuint texture) {
 }
 
 OGLTexture CreateTexture(const SurfaceParams& params, GLenum target, GLenum internal_format,
-                         OGLBuffer& texture_buffer, float resolution_factor) {
+                         OGLBuffer& texture_buffer, u32 resolution_factor) {
     OGLTexture texture;
     texture.Create(target);
 
@@ -249,7 +249,7 @@ CachedSurface::CachedSurface(const GPUVAddr gpu_addr, const SurfaceParams& param
 
 void CachedSurface::Init() {
     target = GetTextureTarget(params.target);
-    float resolution_factor = IsRescaled() ? Settings::values.resolution_factor : 1.0;
+    u32 resolution_factor = IsRescaled() ? static_cast<u32>(Settings::values.resolution_factor) : 1;
     texture = CreateTexture(params, target, internal_format, texture_buffer, resolution_factor);
     DecorateSurfaceName();
     main_view = CreateViewInner(
@@ -332,7 +332,6 @@ void CachedSurface::UploadTextureMipmap(u32 level, const std::vector<u8>& stagin
             UNREACHABLE();
         }
     } else {
-        float resolution_factor = IsRescaled() ? Settings::values.resolution_factor : 1.0;
         switch (params.target) {
         case SurfaceTarget::Texture1D:
             glTextureSubImage1D(texture.handle, level, 0, params.GetMipWidth(level), format, type,
@@ -345,9 +344,8 @@ void CachedSurface::UploadTextureMipmap(u32 level, const std::vector<u8>& stagin
             break;
         case SurfaceTarget::Texture1DArray:
         case SurfaceTarget::Texture2D:
-            glTextureSubImage2D(
-                texture.handle, level, 0, 0, params.GetMipWidth(level) * resolution_factor,
-                params.GetMipHeight(level) * resolution_factor, format, type, buffer);
+            glTextureSubImage2D(texture.handle, level, 0, 0, params.GetMipWidth(level),
+                                params.GetMipHeight(level), format, type, buffer);
             break;
         case SurfaceTarget::Texture3D:
         case SurfaceTarget::Texture2DArray:
@@ -489,7 +487,7 @@ void TextureCacheOpenGL::ImageCopy(Surface& src_surface, Surface& dst_surface,
     if (src_rescaled != dst_rescaled) {
         LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Rescan the database!.");
     }
-    u32 factor = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1.0);
+    const u32 factor = src_rescaled ? static_cast<u32>(Settings::values.resolution_factor) : 1U;
     const auto src_handle = src_surface->GetTexture();
     const auto src_target = src_surface->GetTarget();
     const auto dst_handle = dst_surface->GetTexture();
@@ -559,8 +557,8 @@ void TextureCacheOpenGL::ImageBlit(View& src_view, View& dst_view,
 
     bool src_rescaled = src_view->GetParent().IsRescaled();
     bool dst_rescaled = dst_view->GetParent().IsRescaled();
-    u32 factor1 = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1);
-    u32 factor2 = static_cast<u32>(dst_rescaled ? Settings::values.resolution_factor : 1);
+    const u32 factor1 = src_rescaled ? static_cast<u32>(Settings::values.resolution_factor) : 1U;
+    const u32 factor2 = dst_rescaled ? static_cast<u32>(Settings::values.resolution_factor) : 1U;
 
     glBlitFramebuffer(src_rect.left * factor1, src_rect.top * factor1, src_rect.right * factor1,
                       src_rect.bottom * factor1, dst_rect.left * factor2, dst_rect.top * factor2,
@@ -582,7 +580,7 @@ void TextureCacheOpenGL::BufferCopy(Surface& src_surface, Surface& dst_surface) 
     if (src_rescaled != dst_rescaled) {
         LOG_CRITICAL(HW_GPU, "Rescaling Database is incorrectly set! Rescan the database!.");
     }
-    u32 factor = static_cast<u32>(src_rescaled ? Settings::values.resolution_factor : 1.0);
+    const u32 factor = src_rescaled ? static_cast<u32>(Settings::values.resolution_factor) : 1U;
 
     const std::size_t source_size = src_surface->GetHostSizeInBytes() * factor * factor;
     const std::size_t dest_size = dst_surface->GetHostSizeInBytes() * factor * factor;
