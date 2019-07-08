@@ -450,8 +450,7 @@ std::pair<bool, bool> RasterizerOpenGL::ConfigureFramebuffers(
             }
 
             fbkey.is_single_buffer = true;
-            fbkey.color_attachments[0] =
-                GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(*single_color_target);
+            fbkey.color_attachments[0] = GL_COLOR_ATTACHMENT0;
             fbkey.colors[0] = color_surface;
             for (std::size_t index = 0; index < Maxwell::NumRenderTargets; ++index) {
                 if (index != *single_color_target) {
@@ -583,7 +582,8 @@ void RasterizerOpenGL::Clear() {
     clear_state.ApplyFramebufferState();
 
     if (use_color) {
-        glClearBufferfv(GL_COLOR, regs.clear_buffers.RT, regs.clear_color);
+        // Our framebuffer cache always places this RT on the slot 0.
+        glClearBufferfv(GL_COLOR, 0, regs.clear_color);
     }
 
     if (clear_depth && clear_stencil) {
