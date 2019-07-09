@@ -122,9 +122,13 @@ public:
     explicit StagingBuffer(std::size_t size);
     ~StagingBuffer();
 
-    void QueueFence();
+    void QueueFence(bool own);
 
-    [[nodiscard]] bool IsAvailable() const;
+    void WaitFence();
+
+    void Discard();
+
+    [[nodiscard]] bool IsAvailable();
 
     [[nodiscard]] GLuint GetHandle() const {
         return buffer.handle;
@@ -136,8 +140,9 @@ public:
 
 private:
     OGLBuffer buffer;
-    OGLSync sync;
+    GLsync sync{};
     u8* pointer{};
+    bool owned{};
 };
 
 class TextureCacheOpenGL final : public TextureCacheBase {

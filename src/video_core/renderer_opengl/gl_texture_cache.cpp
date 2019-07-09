@@ -245,28 +245,61 @@ StagingBuffer::StagingBuffer(std::size_t size) {
         GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT));
 }
 
-StagingBuffer::~StagingBuffer() = default;
-
-void StagingBuffer::QueueFence() {
-    sync.Release();
-    sync.Create();
+StagingBuffer::~StagingBuffer() {
+    if (sync) {
+        glDeleteSync(sync);
+    }
 }
 
-bool StagingBuffer::IsAvailable() const {
-    if (!sync.handle) {
-        return true;
-    }
-    switch (glClientWaitSync(sync.handle, 0, 0)) {
+void StagingBuffer::QueueFence(bool own) {
+    DEBUG_ASSERT(!sync);
+    owned = own;
+    sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+}
+
+void StagingBuffer::WaitFence() {
+    ASSERT(sync);
+    switch (glClientWaitSync(sync, 0, GL_TIMEOUT_IGNORED)) {
     case GL_ALREADY_SIGNALED:
     case GL_CONDITION_SATISFIED:
-        return true;
+        break;
     case GL_TIMEOUT_EXPIRED:
-        return false;
     case GL_WAIT_FAILED:
         UNREACHABLE_MSG("Fence wait failed");
+        break;
+    }
+    Discard();
+}
+
+void StagingBuffer::Discard() {
+    DEBUG_ASSERT(sync);
+    glDeleteSync(sync);
+    sync = nullptr;
+    owned = false;
+}
+
+bool StagingBuffer::IsAvailable() {
+    if (owned) {
+        return false;
+    }
+    if (!sync) {
         return true;
     }
-    UNREACHABLE();
+    switch (glClientWaitSync(sync, 0, 0)) {
+    case GL_TIMEOUT_EXPIRED:
+        return false;
+    case GL_ALREADY_SIGNALED:
+    case GL_CONDITION_SATISFIED:
+        break;
+    case GL_WAIT_FAILED:
+        UNREACHABLE_MSG("Fence wait failed");
+        break;
+    default:
+        UNREACHABLE_MSG("Unknown glClientWaitSync result");
+        break;
+    }
+    glDeleteSync(sync);
+    sync = nullptr;
     return true;
 }
 
@@ -308,7 +341,10 @@ void CachedSurface::DownloadTexture(StagingBuffer& buffer) {
                               static_cast<GLsizei>(params.GetHostMipmapSize(level)), mip_offset);
         }
     }
-    glFinish();
+    // According to Cemu glGetTextureImage and friends do not flush, resulting in a softlock if we
+    // wait for a fence. To fix this we have to explicitly flush and then queue a fence.
+    glFlush();
+    buffer.QueueFence(true);
 }
 
 void CachedSurface::UploadTexture(StagingBuffer& buffer) {
@@ -319,7 +355,7 @@ void CachedSurface::UploadTexture(StagingBuffer& buffer) {
     for (u32 level = 0; level < params.emulated_levels; ++level) {
         UploadTextureMipmap(level, buffer);
     }
-    buffer.QueueFence();
+    buffer.QueueFence(false);
 }
 
 void CachedSurface::UploadTextureMipmap(u32 level, const StagingBuffer& staging_buffer) {

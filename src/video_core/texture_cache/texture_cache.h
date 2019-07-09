@@ -133,12 +133,18 @@ public:
             regs.zeta.memory_layout.block_width, regs.zeta.memory_layout.block_height,
             regs.zeta.memory_layout.block_depth, regs.zeta.memory_layout.type)};
         auto surface_view = GetSurface(gpu_addr, depth_params, preserve_contents, true);
-        if (depth_buffer.target)
+        if (auto& old_target = depth_buffer.target; old_target != surface_view.first) {
+            FlushAoT(old_target);
+        }
+
+        if (depth_buffer.target) {
             depth_buffer.target->MarkAsRenderTarget(false, NO_RT);
+        }
         depth_buffer.target = surface_view.first;
         depth_buffer.view = surface_view.second;
-        if (depth_buffer.target)
+        if (depth_buffer.target) {
             depth_buffer.target->MarkAsRenderTarget(true, DEPTH_RT);
+        }
         return surface_view.second;
     }
 
@@ -167,12 +173,18 @@ public:
 
         auto surface_view = GetSurface(gpu_addr, SurfaceParams::CreateForFramebuffer(system, index),
                                        preserve_contents, true);
-        if (render_targets[index].target)
+        if (auto& old_target = render_targets[index].target; old_target != surface_view.first) {
+            FlushAoT(old_target);
+        }
+
+        if (render_targets[index].target) {
             render_targets[index].target->MarkAsRenderTarget(false, NO_RT);
+        }
         render_targets[index].target = surface_view.first;
         render_targets[index].view = surface_view.second;
-        if (render_targets[index].target)
+        if (render_targets[index].target) {
             render_targets[index].target->MarkAsRenderTarget(true, static_cast<u32>(index));
+        }
         return surface_view.second;
     }
 
@@ -189,19 +201,25 @@ public:
     }
 
     void SetEmptyDepthBuffer() {
-        if (depth_buffer.target == nullptr) {
+        auto& target = depth_buffer.target;
+        if (target == nullptr) {
             return;
         }
-        depth_buffer.target->MarkAsRenderTarget(false, NO_RT);
+        FlushAoT(target);
+        target->MarkAsRenderTarget(false, NO_RT);
+
         depth_buffer.target = nullptr;
         depth_buffer.view = nullptr;
     }
 
     void SetEmptyColorBuffer(std::size_t index) {
-        if (render_targets[index].target == nullptr) {
+        auto& target = render_targets[index].target;
+        if (target == nullptr) {
             return;
         }
-        render_targets[index].target->MarkAsRenderTarget(false, NO_RT);
+        FlushAoT(target);
+        target->MarkAsRenderTarget(false, NO_RT);
+
         render_targets[index].target = nullptr;
         render_targets[index].view = nullptr;
     }
@@ -697,9 +715,16 @@ private:
         if (!surface->IsModified()) {
             return;
         }
-        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
-        surface->DownloadTexture(buffer);
-        surface->FlushBuffer(system.GPU().MemoryManager(), buffer.GetPointer());
+
+        auto buffer = surface->GetFlushBuffer();
+        if (!buffer) {
+            buffer = &staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+            surface->DownloadTexture(*buffer);
+        }
+        buffer->WaitFence();
+        surface->SetFlushBuffer(nullptr);
+
+        surface->FlushBuffer(system.GPU().MemoryManager(), buffer->GetPointer());
         surface->MarkAsModified(false, Tick());
     }
 
@@ -765,6 +790,15 @@ private:
             }
         }
         return {};
+    }
+
+    void FlushAoT(TSurface& surface) {
+        if (!surface || !surface->IsLinear() || surface->GetFlushBuffer()) {
+            return;
+        }
+        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+        surface->DownloadTexture(buffer);
+        surface->SetFlushBuffer(&buffer);
     }
 
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {

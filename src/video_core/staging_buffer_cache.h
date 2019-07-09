@@ -25,7 +25,7 @@ public:
         const u32 ceil = Common::Log2Ceil64(size);
         auto& buffers = cache[ceil];
         const auto it = std::find_if(buffers.begin(), buffers.end(),
-                                     [](const auto& buffer) { return buffer->IsAvailable(); });
+                                     [](auto& buffer) { return buffer->IsAvailable(); });
         if (it != buffers.end()) {
             return **it;
         }

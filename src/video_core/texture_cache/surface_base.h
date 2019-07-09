@@ -177,9 +177,24 @@ public:
 
     virtual void DownloadTexture(StagingBufferType& buffer) = 0;
 
+    void SetFlushBuffer(StagingBufferType* buffer) {
+        flush_buffer = buffer;
+    }
+
+    StagingBufferType* GetFlushBuffer() const {
+        return flush_buffer;
+    }
+
     void MarkAsModified(const bool is_modified_, const u64 tick) {
         is_modified = is_modified_ || is_target;
         modification_tick = tick;
+
+        if (is_modified && flush_buffer) {
+            // The buffer has been modified while we thought it was no longer being to be used and
+            // we queued a flush.
+            flush_buffer->Discard();
+            flush_buffer = nullptr;
+        }
     }
 
     void MarkAsRenderTarget(const bool is_target, const u32 index) {
@@ -303,6 +318,8 @@ private:
     bool is_picked{};
     u32 index{NO_RT};
     u64 modification_tick{};
+
+    StagingBufferType* flush_buffer{};
 };
 
 } // namespace VideoCommon
