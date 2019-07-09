@@ -197,13 +197,13 @@ public:
         }
     }
 
-    void MarkAsRenderTarget(const bool is_target, const u32 index) {
-        this->is_target = is_target;
-        this->index = index;
+    void MarkAsRenderTarget(const bool is_target_, const u32 index_) {
+        is_target = is_target_;
+        index = index_;
     }
 
-    void MarkAsPicked(const bool is_picked) {
-        this->is_picked = is_picked;
+    void MarkAsPicked(const bool is_picked_) {
+        is_picked = is_picked_;
     }
 
     bool IsModified() const {
@@ -211,7 +211,7 @@ public:
     }
 
     bool IsProtected() const {
-        // Only 3D Slices are to be protected
+        // Only 3D slices are to be protected
         return is_target && params.block_depth > 0;
     }
 
