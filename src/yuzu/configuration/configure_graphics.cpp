@@ -20,7 +20,7 @@ enum class Resolution : int {
 float ToResolutionFactor(Resolution option) {
     switch (option) {
     case Resolution::Auto:
-        return 0.f;
+        return 1.f;
     case Resolution::Scale1x:
         return 1.f;
     case Resolution::Scale2x:
