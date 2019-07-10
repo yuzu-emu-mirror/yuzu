@@ -64,6 +64,8 @@ add_library(video_core STATIC
     renderer_opengl/gl_shader_manager.h
     renderer_opengl/gl_shader_util.cpp
     renderer_opengl/gl_shader_util.h
+    renderer_opengl/gl_staging_buffer.cpp
+    renderer_opengl/gl_staging_buffer.h
     renderer_opengl/gl_state.cpp
     renderer_opengl/gl_state.h
     renderer_opengl/gl_stream_buffer.cpp

@@ -254,8 +254,10 @@ public:
     }
 
 protected:
-    TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
-        : system{system}, rasterizer{rasterizer} {
+    TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer,
+                 std::unique_ptr<StagingBufferCache<StagingBufferType>> staging_buffer_cache)
+        : system{system}, rasterizer{rasterizer}, staging_buffer_cache{
+                                                      std::move(staging_buffer_cache)} {
         for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; i++) {
             SetEmptyColorBuffer(i);
         }
@@ -705,8 +707,12 @@ private:
     }
 
     void LoadSurface(const TSurface& surface) {
-        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
-        surface->LoadBuffer(system.GPU().MemoryManager(), buffer.GetPointer());
+        const auto host_size = surface->GetHostSizeInBytes();
+        auto& buffer = staging_buffer_cache->GetWriteBuffer(host_size);
+
+        surface->LoadBuffer(system.GPU().MemoryManager(), buffer.Map(host_size));
+        buffer.Unmap(host_size);
+
         surface->UploadTexture(buffer);
         surface->MarkAsModified(false, Tick());
     }
@@ -716,15 +722,17 @@ private:
             return;
         }
 
+        const auto host_size = surface->GetHostSizeInBytes();
         auto buffer = surface->GetFlushBuffer();
         if (!buffer) {
-            buffer = &staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+            buffer = &staging_buffer_cache->GetReadBuffer(host_size);
             surface->DownloadTexture(*buffer);
         }
         buffer->WaitFence();
         surface->SetFlushBuffer(nullptr);
 
-        surface->FlushBuffer(system.GPU().MemoryManager(), buffer->GetPointer());
+        surface->FlushBuffer(system.GPU().MemoryManager(), buffer->Map(host_size));
+        buffer->Unmap(host_size);
         surface->MarkAsModified(false, Tick());
     }
 
@@ -793,10 +801,11 @@ private:
     }
 
     void FlushAoT(TSurface& surface) {
-        if (!surface || !surface->IsLinear() || surface->GetFlushBuffer()) {
+        if (staging_buffer_cache->CanFlushAheadOfTime() || !surface || !surface->IsLinear() ||
+            surface->GetFlushBuffer()) {
             return;
         }
-        auto& buffer = staging_buffer_cache.GetBuffer(surface->GetHostSizeInBytes());
+        auto& buffer = staging_buffer_cache->GetReadBuffer(surface->GetHostSizeInBytes());
         surface->DownloadTexture(buffer);
         surface->SetFlushBuffer(&buffer);
     }
@@ -847,7 +856,7 @@ private:
 
     std::vector<TSurface> sampled_textures;
 
-    StagingBufferCache<StagingBufferType> staging_buffer_cache;
+    std::unique_ptr<StagingBufferCache<StagingBufferType>> staging_buffer_cache;
     std::recursive_mutex mutex;
 };
 

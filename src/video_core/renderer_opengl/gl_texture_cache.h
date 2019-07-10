@@ -18,6 +18,7 @@
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
 #include "video_core/texture_cache/texture_cache.h"
+#include "video_core/renderer_opengl/gl_staging_buffer.h"
 
 namespace OpenGL {
 
@@ -59,7 +60,7 @@ protected:
     View CreateViewInner(const ViewParams& view_key, bool is_proxy);
 
 private:
-    void UploadTextureMipmap(u32 level, const StagingBuffer& staging_buffer);
+    void UploadTextureMipmap(u32 level, const u8* opengl_pointer);
 
     GLenum internal_format{};
     GLenum format{};
@@ -115,34 +116,6 @@ private:
     OGLTextureView texture_view;
     u32 swizzle;
     bool is_proxy;
-};
-
-class StagingBuffer final {
-public:
-    explicit StagingBuffer(std::size_t size);
-    ~StagingBuffer();
-
-    void QueueFence(bool own);
-
-    void WaitFence();
-
-    void Discard();
-
-    [[nodiscard]] bool IsAvailable();
-
-    [[nodiscard]] GLuint GetHandle() const {
-        return buffer.handle;
-    }
-
-    [[nodiscard]] u8* GetPointer() const {
-        return pointer;
-    }
-
-private:
-    OGLBuffer buffer;
-    GLsync sync{};
-    u8* pointer{};
-    bool owned{};
 };
 
 class TextureCacheOpenGL final : public TextureCacheBase {
