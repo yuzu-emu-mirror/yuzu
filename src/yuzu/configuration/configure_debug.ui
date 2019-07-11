@@ -193,6 +193,13 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QCheckBox" name="unicorn_mapping">
+        <property name="text">
+         <string>Enable Unicorn Memory Mapping</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

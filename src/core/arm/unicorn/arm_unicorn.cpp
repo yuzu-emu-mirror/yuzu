@@ -10,6 +10,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
+#include "core/settings.h"
 
 namespace Core {
 
@@ -78,11 +79,15 @@ ARM_Unicorn::~ARM_Unicorn() {
 
 void ARM_Unicorn::MapBackingMemory(VAddr address, std::size_t size, u8* memory,
                                    Kernel::VMAPermission perms) {
-    CHECKED(uc_mem_map_ptr(uc, address, size, static_cast<u32>(perms), memory));
+    if (Settings::values.unicorn_mapping) {
+        CHECKED(uc_mem_map_ptr(uc, address, size, static_cast<u32>(perms), memory));
+    }
 }
 
 void ARM_Unicorn::UnmapMemory(VAddr address, std::size_t size) {
-    CHECKED(uc_mem_unmap(uc, address, size));
+    if (Settings::values.unicorn_mapping) {
+        CHECKED(uc_mem_unmap(uc, address, size));
+    }
 }
 
 void ARM_Unicorn::SetPC(u64 pc) {

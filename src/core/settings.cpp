@@ -103,6 +103,7 @@ void LogSettings() {
     LogSetting("Debugging_UseGdbstub", Settings::values.use_gdbstub);
     LogSetting("Debugging_GdbstubPort", Settings::values.gdbstub_port);
     LogSetting("Debugging_ProgramArgs", Settings::values.program_args);
+    LogSetting("Debugging_UnicornMapping", Settings::values.unicorn_mapping);
 }
 
 } // namespace Settings

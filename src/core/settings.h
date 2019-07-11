@@ -417,6 +417,7 @@ struct Values {
     bool dump_nso;
     bool reporting_services;
     bool quest_flag;
+    bool unicorn_mapping;
 
     // WebService
     bool enable_telemetry;
