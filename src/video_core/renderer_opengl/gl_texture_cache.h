@@ -17,8 +17,8 @@
 #include "video_core/engines/shader_bytecode.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"
-#include "video_core/texture_cache/texture_cache.h"
 #include "video_core/renderer_opengl/gl_staging_buffer.h"
+#include "video_core/texture_cache/texture_cache.h"
 
 namespace OpenGL {
 
