@@ -31,75 +31,30 @@ class StagingBuffer : public NonCopyable {
 public:
     virtual ~StagingBuffer() = default;
 
+    /// Returns the base pointer passed to an OpenGL function.
     [[nodiscard]] virtual u8* GetOpenGLPointer() const = 0;
 
+    /// Maps the staging buffer.
     [[nodiscard]] virtual u8* Map(std::size_t size) const = 0;
 
+    /// Unmaps the staging buffer
     virtual void Unmap(std::size_t size) const = 0;
 
+    /// Inserts a fence in the OpenGL pipeline.
+    /// @param own Protects the fence from being used before it's waited, intended for flushes.
     virtual void QueueFence(bool own) = 0;
 
+    /// Waits for a fence and releases the ownership.
     virtual void WaitFence() = 0;
 
+    /// Discards the deferred operation and its bound fence. A fence must be queued.
     virtual void Discard() = 0;
 
+    /// Returns true when the fence is available.
     [[nodiscard]] virtual bool IsAvailable() = 0;
 
+    /// Binds the staging buffer handle to an OpenGL target.
     virtual void Bind(GLenum target) const = 0;
-};
-
-class PersistentStagingBuffer final : public StagingBuffer {
-public:
-    explicit PersistentStagingBuffer(std::size_t size, bool is_readable);
-    ~PersistentStagingBuffer() override;
-
-    u8* GetOpenGLPointer() const override;
-
-    u8* Map(std::size_t size) const override;
-
-    void Unmap(std::size_t size) const override;
-
-    void QueueFence(bool own) override;
-
-    void WaitFence() override;
-
-    void Discard() override;
-
-    bool IsAvailable() override;
-
-    void Bind(GLenum target) const override;
-
-private:
-    OGLBuffer buffer;
-    GLsync sync{};
-    u8* pointer{};
-    bool is_readable{};
-    bool owned{};
-};
-
-class CpuStagingBuffer final : public StagingBuffer {
-public:
-    explicit CpuStagingBuffer(std::size_t size, bool is_readable);
-    ~CpuStagingBuffer() override;
-
-    u8* GetOpenGLPointer() const override;
-
-    u8* Map(std::size_t size) const override;
-
-    void Unmap(std::size_t size) const override;
-
-    void QueueFence(bool own) override;
-
-    void WaitFence() override;
-
-    void Discard() override;
-
-    bool IsAvailable() override;
-
-    void Bind(GLenum target) const override;
-
-private:
-    std::unique_ptr<u8[]> pointer;
 };
 
 } // namespace OpenGL
