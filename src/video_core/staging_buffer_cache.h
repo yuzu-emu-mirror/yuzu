@@ -23,15 +23,15 @@ public:
     explicit StagingBufferCache(bool can_flush_aot) : can_flush_aot{can_flush_aot} {}
     virtual ~StagingBufferCache() = default;
 
-    [[nodiscard]] StagingBufferType& GetWriteBuffer(std::size_t size) {
+    StagingBufferType& GetWriteBuffer(std::size_t size) {
         return GetBuffer(size, false);
     }
 
-    [[nodiscard]] StagingBufferType& GetReadBuffer(std::size_t size) {
+    StagingBufferType& GetReadBuffer(std::size_t size) {
         return GetBuffer(size, true);
     }
 
-    [[nodiscard]] bool CanFlushAheadOfTime() const {
+    bool CanFlushAheadOfTime() const {
         return can_flush_aot;
     }
 
