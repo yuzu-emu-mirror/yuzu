@@ -15,7 +15,7 @@ jobs:
     displayName: 'Determine Testing Status'
     inputs:
       scriptSource: 'filePath'
-      scriptPath: '../scripts/merge/check-label-presence.py'
+      scriptPath: '.ci/scripts/merge/check-label-presence.py'
       arguments: '$(System.PullRequest.PullRequestNumber) create-testing-build'
   - ${{ if eq(variables.enabletesting, 'true') }}:
     - template: ./sync-source.yml
