@@ -4,7 +4,7 @@ jobs:
   pool:
     vmImage: ubuntu-latest
   strategy:
-    maxParallel: 10
+    maxParallel: 5
     matrix:
       windows:
         BuildSuffix: 'windows-testing'
