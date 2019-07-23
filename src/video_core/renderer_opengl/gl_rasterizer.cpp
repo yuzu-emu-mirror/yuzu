@@ -811,6 +811,14 @@ void RasterizerOpenGL::FlushAndInvalidateRegion(CacheAddr addr, u64 size) {
     InvalidateRegion(addr, size);
 }
 
+u32 RasterizerOpenGL::IsCacheHit(const GPUVAddr gpu_addr, const std::size_t size) {
+    u32 flags = 0;
+    if (texture_cache.IsHit(gpu_addr, size)) {
+        flags |= VideoCore::Caches::TextureCache;
+    }
+    return flags;
+}
+
 void RasterizerOpenGL::TickFrame() {
     buffer_cache.TickFrame();
 }

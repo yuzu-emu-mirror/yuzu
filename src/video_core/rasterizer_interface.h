@@ -22,6 +22,13 @@ enum class LoadCallbackStage {
     Build,
     Complete,
 };
+
+enum Caches : u32 {
+    TextureCache = 1,
+    BufferCache = 2,
+    ShaderCache = 4,
+};
+
 using DiskResourceLoadCallback = std::function<void(LoadCallbackStage, std::size_t, std::size_t)>;
 
 class RasterizerInterface {
@@ -46,6 +53,11 @@ public:
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     /// and invalidated
     virtual void FlushAndInvalidateRegion(CacheAddr addr, u64 size) = 0;
+
+    /// Checks if the memory adress and size is within any of caches of the gpu.
+    /// The result will be a flag variable based on VideoCore::Caches, turning on
+    /// corresponding bits for caches that were hit.
+    virtual u32 IsCacheHit(GPUVAddr gpu_addr, std::size_t size) = 0;
 
     /// Notify rasterizer that a frame is about to finish
     virtual void TickFrame() = 0;

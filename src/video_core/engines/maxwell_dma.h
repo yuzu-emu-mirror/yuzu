@@ -177,6 +177,30 @@ public:
         };
     } regs{};
 
+    struct SurfaceConfig {
+        bool in_cache;
+        u32 bytes_per_pixel;
+        GPUVAddr gpu_addr;
+        bool is_linear;
+        union {
+            struct {
+                u32 pitch;
+                u32 width;
+                u32 height;
+            };
+            Regs::Parameters tiled;
+        };
+    };
+
+    struct CopyConfig {
+        u32 src_pos_x;
+        u32 src_pos_y;
+        u32 src_pos_z;
+        u32 dst_pos_x;
+        u32 dst_pos_y;
+        u32 dst_pos_z;
+    };
+
 private:
     Core::System& system;
 
@@ -186,6 +210,11 @@ private:
 
     std::vector<u8> read_buffer;
     std::vector<u8> write_buffer;
+
+    void TiledLinearCopy(const std::size_t src_size, const std::size_t dst_size);
+    void LinearTiledCopy(const std::size_t src_size, const std::size_t dst_size);
+    void TextureAccelerateDMA(const std::size_t src_size, const std::size_t dst_size, bool src_hit,
+                              bool dst_hit);
 
     /// Performs the copy from the source buffer to the destination buffer as configured in the
     /// registers.

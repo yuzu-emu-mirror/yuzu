@@ -234,6 +234,26 @@ public:
         return ++ticks;
     }
 
+    bool IsHit(const GPUVAddr gpu_addr, const std::size_t size) {
+        std::lock_guard lock{mutex};
+        const auto host_ptr{system.GPU().MemoryManager().GetPointer(gpu_addr)};
+        const auto cache_addr{ToCacheAddr(host_ptr)};
+
+        if (!cache_addr) {
+            return false;
+        }
+
+        if (l1_cache.count(cache_addr) > 0) {
+            return true;
+        }
+
+        auto overlaps{GetSurfacesInRegion(cache_addr, size)};
+        if (overlaps.empty()) {
+            return false;
+        }
+        return true;
+    }
+
 protected:
     TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
         : system{system}, rasterizer{rasterizer} {
