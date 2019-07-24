@@ -42,6 +42,10 @@ void MaxwellDMA::TiledLinearCopy(const std::size_t src_size, const std::size_t d
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();
 
+    const std::size_t src_layer_size = Texture::CalculateSize(
+        true, bytes_per_pixel, regs.src_params.size_x, regs.src_params.size_y, 1,
+        regs.src_params.BlockHeight(), regs.src_params.BlockDepth());
+
     if (read_buffer.size() < src_size) {
         read_buffer.resize(src_size);
     }
@@ -53,10 +57,10 @@ void MaxwellDMA::TiledLinearCopy(const std::size_t src_size, const std::size_t d
     memory_manager.ReadBlock(source, read_buffer.data(), src_size);
     memory_manager.ReadBlock(dest, write_buffer.data(), dst_size);
 
-    Texture::UnswizzleSubrect(regs.x_count, regs.y_count, regs.dst_pitch, regs.src_params.size_x,
-                              bytes_per_pixel, read_buffer.data(), write_buffer.data(),
-                              regs.src_params.BlockHeight(), regs.src_params.pos_x,
-                              regs.src_params.pos_y);
+    Texture::UnswizzleSubrect(
+        regs.x_count, regs.y_count, regs.dst_pitch, regs.src_params.size_x, bytes_per_pixel,
+        read_buffer.data() + src_layer_size * regs.src_params.pos_z, write_buffer.data(),
+        regs.src_params.BlockHeight(), regs.src_params.pos_x, regs.src_params.pos_y);
 
     memory_manager.WriteBlock(dest, write_buffer.data(), dst_size);
 }
@@ -66,10 +70,8 @@ void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t d
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();
 
-    const u32 src_bytes_per_pixel = regs.src_pitch / regs.x_count;
-
     const std::size_t dst_layer_size = Texture::CalculateSize(
-        true, src_bytes_per_pixel, regs.dst_params.size_x, regs.dst_params.size_y, 1,
+        true, bytes_per_pixel, regs.dst_params.size_x, regs.dst_params.size_y, 1,
         regs.dst_params.BlockHeight(), regs.dst_params.BlockDepth());
 
     if (read_buffer.size() < src_size) {
@@ -85,7 +87,7 @@ void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t d
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
     Texture::SwizzleSubrect(regs.x_count, regs.y_count, regs.src_pitch, regs.dst_params.size_x,
-                            bytes_per_pixel,
+                            regs.dst_params.pos_x, regs.dst_params.pos_y, bytes_per_pixel,
                             write_buffer.data() + dst_layer_size * regs.dst_params.pos_z,
                             read_buffer.data(), regs.dst_params.BlockHeight());
 
