@@ -8,6 +8,7 @@
 #include <functional>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
+#include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
 
 namespace Tegra {
@@ -68,6 +69,10 @@ public:
                                        const Tegra::Engines::Fermi2D::Config& copy_config) {
         return false;
     }
+
+    virtual void AccelerateDMATexture(const Tegra::Engines::MaxwellDMA::SurfaceConfig& src_config,
+                                      const Tegra::Engines::MaxwellDMA::SurfaceConfig& dst_config,
+                                      const Tegra::Engines::MaxwellDMA::CopyConfig& copy_config) {}
 
     /// Attempt to use a faster method to display the framebuffer to screen
     virtual bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,

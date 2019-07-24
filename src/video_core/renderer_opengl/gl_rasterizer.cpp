@@ -831,6 +831,13 @@ bool RasterizerOpenGL::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Regs
     return true;
 }
 
+void RasterizerOpenGL::AccelerateDMATexture(
+    const Tegra::Engines::MaxwellDMA::SurfaceConfig& src_config,
+    const Tegra::Engines::MaxwellDMA::SurfaceConfig& dst_config,
+    const Tegra::Engines::MaxwellDMA::CopyConfig& copy_config) {
+    texture_cache.AccelerateDMA(src_config, dst_config, copy_config);
+}
+
 bool RasterizerOpenGL::AccelerateDisplay(const Tegra::FramebufferConfig& config,
                                          VAddr framebuffer_addr, u32 pixel_stride) {
     if (!framebuffer_addr) {

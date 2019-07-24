@@ -37,11 +37,10 @@ void MaxwellDMA::CallMethod(const GPU::MethodCall& method_call) {
 #undef MAXWELLDMA_REG_INDEX
 }
 
-void MaxwellDMA::TiledLinearCopy(const std::size_t src_size, const std::size_t dst_size) {
+void MaxwellDMA::TiledLinearCopy(const std::size_t src_size, const std::size_t dst_size,
+                                 const std::size_t bytes_per_pixel) {
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();
-
-    const u32 src_bytes_per_pixel = regs.src_pitch / regs.src_params.size_x;
 
     if (read_buffer.size() < src_size) {
         read_buffer.resize(src_size);
@@ -55,14 +54,15 @@ void MaxwellDMA::TiledLinearCopy(const std::size_t src_size, const std::size_t d
     memory_manager.ReadBlock(dest, write_buffer.data(), dst_size);
 
     Texture::UnswizzleSubrect(regs.x_count, regs.y_count, regs.dst_pitch, regs.src_params.size_x,
-                              src_bytes_per_pixel, read_buffer.data(), write_buffer.data(),
+                              bytes_per_pixel, read_buffer.data(), write_buffer.data(),
                               regs.src_params.BlockHeight(), regs.src_params.pos_x,
                               regs.src_params.pos_y);
 
     memory_manager.WriteBlock(dest, write_buffer.data(), dst_size);
 }
 
-void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t dst_size) {
+void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t dst_size,
+                                 const std::size_t bytes_per_pixel) {
     const GPUVAddr source = regs.src_address.Address();
     const GPUVAddr dest = regs.dst_address.Address();
 
@@ -85,7 +85,7 @@ void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t d
 
     // If the input is linear and the output is tiled, swizzle the input and copy it over.
     Texture::SwizzleSubrect(regs.x_count, regs.y_count, regs.src_pitch, regs.dst_params.size_x,
-                            src_bytes_per_pixel,
+                            bytes_per_pixel,
                             write_buffer.data() + dst_layer_size * regs.dst_params.pos_z,
                             read_buffer.data(), regs.dst_params.BlockHeight());
 
@@ -93,19 +93,20 @@ void MaxwellDMA::LinearTiledCopy(const std::size_t src_size, const std::size_t d
 }
 
 void MaxwellDMA::TextureAccelerateDMA(const std::size_t src_size, const std::size_t dst_size,
-                                      bool src_hit, bool dst_hit) {
+                                      const bool src_hit, const bool dst_hit,
+                                      const std::size_t bytes_per_pixel) {
     // Configure Source
     SurfaceConfig src_config;
     src_config.in_cache = src_hit;
     src_config.gpu_addr = regs.src_address.Address();
+    src_config.size = src_size;
     src_config.is_linear = regs.exec.is_src_linear != 0;
+    src_config.bytes_per_pixel = bytes_per_pixel;
     if (src_config.is_linear) {
-        src_config.bytes_per_pixel = regs.src_pitch / regs.x_count;
         src_config.pitch = regs.src_pitch;
-        src_config.width = regs.x_count;
-        src_config.height = regs.y_count;
+        src_config.width = regs.x_count + regs.src_params.pos_x;
+        src_config.height = regs.y_count + regs.src_params.pos_y;
     } else {
-        src_config.bytes_per_pixel = regs.src_pitch / regs.src_params.size_x;
         src_config.tiled = regs.src_params;
     }
 
@@ -113,24 +114,15 @@ void MaxwellDMA::TextureAccelerateDMA(const std::size_t src_size, const std::siz
     SurfaceConfig dst_config;
     dst_config.in_cache = dst_hit;
     dst_config.gpu_addr = regs.dst_address.Address();
+    dst_config.size = dst_size;
     dst_config.is_linear = regs.exec.is_dst_linear != 0;
+    dst_config.bytes_per_pixel = bytes_per_pixel;
     if (dst_config.is_linear) {
-        dst_config.bytes_per_pixel = regs.dst_pitch / regs.x_count;
         dst_config.pitch = regs.dst_pitch;
-        dst_config.width = regs.x_count;
-        dst_config.height = regs.y_count;
+        dst_config.width = regs.x_count + regs.dst_params.pos_x;
+        dst_config.height = regs.y_count + regs.dst_params.pos_y;
     } else {
-        dst_config.bytes_per_pixel = regs.dst_pitch / regs.dst_params.size_x;
         dst_config.tiled = regs.dst_params;
-    }
-
-    if (dst_config.bytes_per_pixel != src_config.bytes_per_pixel) {
-        if (src_config.is_linear) {
-            LinearTiledCopy(src_size, dst_size);
-        } else {
-            TiledLinearCopy(src_size, dst_size);
-        }
-        return;
     }
 
     CopyConfig copy_config;
@@ -140,8 +132,10 @@ void MaxwellDMA::TextureAccelerateDMA(const std::size_t src_size, const std::siz
     copy_config.dst_pos_x = regs.dst_params.pos_x;
     copy_config.dst_pos_y = regs.dst_params.pos_y;
     copy_config.dst_pos_z = regs.dst_params.pos_z;
+    copy_config.width = regs.x_count;
+    copy_config.height = regs.y_count;
 
-    // rasterizer.AccelerateDMATexture(src_config, dst_config, copy_config);
+    rasterizer.AccelerateDMATexture(src_config, dst_config, copy_config);
 }
 
 void MaxwellDMA::HandleCopy() {
@@ -193,9 +187,9 @@ void MaxwellDMA::HandleCopy() {
     if (regs.exec.is_dst_linear && !regs.exec.is_src_linear) {
         ASSERT(regs.src_params.size_z == 1);
         // If the input is tiled and the output is linear, deswizzle the input and copy it over.
-        const u32 src_bytes_per_pixel = regs.src_pitch / regs.src_params.size_x;
+        const u32 bytes_per_pixel = regs.dst_pitch / regs.x_count;
         const std::size_t src_size = Texture::CalculateSize(
-            true, src_bytes_per_pixel, regs.src_params.size_x, regs.src_params.size_y,
+            true, bytes_per_pixel, regs.src_params.size_x, regs.src_params.size_y,
             regs.src_params.size_z, regs.src_params.BlockHeight(), regs.src_params.BlockDepth());
 
         const std::size_t dst_size = regs.dst_pitch * regs.y_count;
@@ -206,17 +200,17 @@ void MaxwellDMA::HandleCopy() {
         const bool dst_hit = dst_flags == VideoCore::Caches::TextureCache;
 
         if (src_hit || dst_hit) {
-            TextureAccelerateDMA(src_size, dst_size, src_hit, dst_hit);
+            TextureAccelerateDMA(src_size, dst_size, src_hit, dst_hit, bytes_per_pixel);
         } else {
-            TiledLinearCopy(src_size, dst_size);
+            TiledLinearCopy(src_size, dst_size, bytes_per_pixel);
         }
     } else {
         ASSERT(regs.dst_params.BlockDepth() == 0);
 
-        const u32 src_bytes_per_pixel = regs.src_pitch / regs.x_count;
+        const u32 bytes_per_pixel = regs.src_pitch / regs.x_count;
 
         const std::size_t dst_size = Texture::CalculateSize(
-            true, src_bytes_per_pixel, regs.dst_params.size_x, regs.dst_params.size_y,
+            true, bytes_per_pixel, regs.dst_params.size_x, regs.dst_params.size_y,
             regs.dst_params.size_z, regs.dst_params.BlockHeight(), regs.dst_params.BlockDepth());
 
         const std::size_t src_size = regs.src_pitch * regs.y_count;
@@ -227,9 +221,9 @@ void MaxwellDMA::HandleCopy() {
         const bool dst_hit = dst_flags == VideoCore::Caches::TextureCache;
 
         if (src_hit || dst_hit) {
-            TextureAccelerateDMA(src_size, dst_size, src_hit, dst_hit);
+            TextureAccelerateDMA(src_size, dst_size, src_hit, dst_hit, bytes_per_pixel);
         } else {
-            LinearTiledCopy(src_size, dst_size);
+            LinearTiledCopy(src_size, dst_size, bytes_per_pixel);
         }
     }
 }

@@ -67,6 +67,9 @@ public:
     bool AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Regs::Surface& src,
                                const Tegra::Engines::Fermi2D::Regs::Surface& dst,
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
+    void AccelerateDMATexture(const Tegra::Engines::MaxwellDMA::SurfaceConfig& src_config,
+                              const Tegra::Engines::MaxwellDMA::SurfaceConfig& dst_config,
+                              const Tegra::Engines::MaxwellDMA::CopyConfig& copy_config) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
     bool AccelerateDrawBatch(bool is_indexed) override;

@@ -12,6 +12,7 @@
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/engines/maxwell_dma.h"
 #include "video_core/shader/shader_ir.h"
 #include "video_core/surface.h"
 #include "video_core/textures/decoders.h"
@@ -39,6 +40,12 @@ public:
     /// Creates SurfaceCachedParams from a Fermi2D surface configuration.
     static SurfaceParams CreateForFermiCopySurface(
         const Tegra::Engines::Fermi2D::Regs::Surface& config);
+
+    /// Creates SurfaceCachedParams from a MaxwellDMA surface configuration.
+    static SurfaceParams CreateForDMASurface(
+        const Tegra::Engines::MaxwellDMA::SurfaceConfig& config,
+        VideoCore::Surface::ComponentType component_type,
+        VideoCore::Surface::PixelFormat pixel_format, VideoCore::Surface::SurfaceTarget target);
 
     std::size_t Hash() const {
         return static_cast<std::size_t>(

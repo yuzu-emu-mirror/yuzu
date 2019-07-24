@@ -58,6 +58,10 @@ public:
                 BitField<16, 16, u32> pos_y;
             };
 
+            u32 BlockWidth() const {
+                return block_width.Value();
+            }
+
             u32 BlockHeight() const {
                 return block_height.Value();
             }
@@ -181,6 +185,7 @@ public:
         bool in_cache;
         u32 bytes_per_pixel;
         GPUVAddr gpu_addr;
+        std::size_t size;
         bool is_linear;
         union {
             struct {
@@ -199,6 +204,8 @@ public:
         u32 dst_pos_x;
         u32 dst_pos_y;
         u32 dst_pos_z;
+        u32 width;
+        u32 height;
     };
 
 private:
@@ -211,10 +218,10 @@ private:
     std::vector<u8> read_buffer;
     std::vector<u8> write_buffer;
 
-    void TiledLinearCopy(const std::size_t src_size, const std::size_t dst_size);
-    void LinearTiledCopy(const std::size_t src_size, const std::size_t dst_size);
-    void TextureAccelerateDMA(const std::size_t src_size, const std::size_t dst_size, bool src_hit,
-                              bool dst_hit);
+    void TiledLinearCopy(std::size_t src_size, std::size_t dst_size, std::size_t bytes_per_pixel);
+    void LinearTiledCopy(std::size_t src_size, std::size_t dst_size, std::size_t bytes_per_pixel);
+    void TextureAccelerateDMA(std::size_t src_size, std::size_t dst_size, bool src_hit,
+                              bool dst_hit, std::size_t bytes_per_pixel);
 
     /// Performs the copy from the source buffer to the destination buffer as configured in the
     /// registers.

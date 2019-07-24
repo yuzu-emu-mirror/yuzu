@@ -9,6 +9,7 @@
 namespace VideoCommon {
 
 struct CopyParams {
+    constexpr CopyParams() = default;
     constexpr CopyParams(u32 source_x, u32 source_y, u32 source_z, u32 dest_x, u32 dest_y,
                          u32 dest_z, u32 source_level, u32 dest_level, u32 width, u32 height,
                          u32 depth)

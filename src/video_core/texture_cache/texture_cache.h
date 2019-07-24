@@ -215,6 +215,50 @@ public:
         dst_surface.first->MarkAsModified(true, Tick());
     }
 
+    void AccelerateDMA(const Tegra::Engines::MaxwellDMA::SurfaceConfig& src_config,
+                       const Tegra::Engines::MaxwellDMA::SurfaceConfig& dst_config,
+                       const Tegra::Engines::MaxwellDMA::CopyConfig& copy_config) {
+        TSurface src_surface;
+        TSurface dst_surface;
+        DMAInfo src_info;
+        DMAInfo dst_info;
+        if (src_config.in_cache && src_config.in_cache) {
+            src_info = ExploreDMA(src_config);
+            dst_info = ExploreDMA(dst_config);
+        } else if (src_config.in_cache) {
+            src_info = ExploreDMA(src_config);
+            dst_info.pixel_format = src_info.pixel_format;
+            dst_info.component_type = src_info.component_type;
+            dst_info.target = FigureDMATarget(dst_config);
+        } else {
+            dst_info = ExploreDMA(dst_config);
+            src_info.pixel_format = dst_info.pixel_format;
+            src_info.component_type = dst_info.component_type;
+            src_info.target = FigureDMATarget(src_config);
+        }
+        src_surface = GetDMASurface(src_config, src_info).first;
+        dst_surface = GetDMASurface(dst_config, dst_info).first;
+        const auto& src_params = src_surface->GetSurfaceParams();
+        const auto& dst_params = dst_surface->GetSurfaceParams();
+        if (src_params.type != dst_params.type) {
+            BufferCopy(src_surface, dst_surface);
+            return;
+        }
+        CopyParams copy_params{};
+        copy_params.source_x = copy_config.src_pos_x;
+        copy_params.source_y = copy_config.src_pos_y;
+        copy_params.source_z = copy_config.src_pos_z;
+        copy_params.dest_x = copy_config.dst_pos_x;
+        copy_params.dest_y = copy_config.dst_pos_y;
+        copy_params.dest_z = copy_config.dst_pos_z;
+        copy_params.source_level = 0;
+        copy_params.dest_level = 0;
+        copy_params.width = copy_config.width;
+        copy_params.height = copy_config.height;
+        copy_params.depth = 1;
+        ImageCopy(src_surface, dst_surface, copy_params);
+    }
+
     TSurface TryFindFramebufferSurface(const u8* host_ptr) {
         const CacheAddr cache_addr = ToCacheAddr(host_ptr);
         if (!cache_addr) {
@@ -362,6 +406,12 @@ private:
         Ignore = 0,
         Flush = 1,
         BufferCopy = 3,
+    };
+
+    struct DMAInfo {
+        SurfaceTarget target;
+        PixelFormat pixel_format;
+        VideoCore::Surface::ComponentType component_type;
     };
 
     /**
@@ -791,6 +841,67 @@ private:
 
     constexpr PixelFormat GetSiblingFormat(PixelFormat format) const {
         return siblings_table[static_cast<std::size_t>(format)];
+    }
+
+    DMAInfo ExploreDMA(const Tegra::Engines::MaxwellDMA::SurfaceConfig& config) {
+        const auto host_ptr{system.GPU().MemoryManager().GetPointer(config.gpu_addr)};
+        const auto cache_addr{ToCacheAddr(host_ptr)};
+        DMAInfo dma_info{};
+
+        auto it = l1_cache.find(cache_addr);
+
+        if (it != l1_cache.end()) {
+            TSurface current_surface = it->second;
+            const auto& params = current_surface->GetSurfaceParams();
+            if (params.is_tiled == !config.is_linear) {
+                if (params.is_tiled) {
+                    if (std::tie(config.tiled.size_x, config.tiled.size_y, config.tiled.size_z) ==
+                        std::tie(params.width, params.height, params.pitch)) {
+                        dma_info.target = params.target;
+                        dma_info.component_type = params.component_type;
+                        dma_info.pixel_format = params.pixel_format;
+                    }
+                } else {
+                    if (std::tie(config.width, config.height, config.pitch) ==
+                        std::tie(params.width, params.height, params.pitch)) {
+                        dma_info.target = params.target;
+                        dma_info.component_type = params.component_type;
+                        dma_info.pixel_format = params.pixel_format;
+                    }
+                }
+            }
+        }
+
+        auto overlaps{GetSurfacesInRegion(cache_addr, config.size)};
+        TSurface current_surface = overlaps[0];
+        const auto& params = current_surface->GetSurfaceParams();
+        dma_info.target = SurfaceTarget::Texture2DArray;
+        dma_info.component_type = params.component_type;
+        dma_info.pixel_format = params.pixel_format;
+        return dma_info;
+    }
+
+    std::pair<TSurface, TView> GetDMASurface(
+        const Tegra::Engines::MaxwellDMA::SurfaceConfig& config, const DMAInfo& info) {
+        SurfaceParams params = SurfaceParams::CreateForDMASurface(config, info.component_type,
+                                                                  info.pixel_format, info.target);
+        const GPUVAddr gpu_addr = config.gpu_addr;
+        return GetSurface(gpu_addr, params, true, false);
+    }
+
+    SurfaceTarget FigureDMATarget(const Tegra::Engines::MaxwellDMA::SurfaceConfig& config) {
+        if (config.is_linear) {
+            return SurfaceTarget::Texture2D;
+        } else {
+            if (config.tiled.size_z > 1) {
+                u32 block_depth = config.tiled.BlockDepth();
+                if (block_depth > 0) {
+                    return SurfaceTarget::Texture3D;
+                }
+                return SurfaceTarget::Texture2DArray;
+            }
+            return SurfaceTarget::Texture2D;
+        }
     }
 
     struct FramebufferTargetInfo {

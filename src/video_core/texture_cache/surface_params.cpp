@@ -202,6 +202,39 @@ SurfaceParams SurfaceParams::CreateForFermiCopySurface(
     return params;
 }
 
+SurfaceParams SurfaceParams::CreateForDMASurface(
+    const Tegra::Engines::MaxwellDMA::SurfaceConfig& config,
+    const VideoCore::Surface::ComponentType component_type,
+    const VideoCore::Surface::PixelFormat pixel_format,
+    const VideoCore::Surface::SurfaceTarget target) {
+    SurfaceParams params{};
+    params.is_tiled = !config.is_linear;
+    params.srgb_conversion = false;
+    params.block_width = params.is_tiled ? std::min(config.tiled.BlockWidth(), 5U) : 0,
+    params.block_height = params.is_tiled ? std::min(config.tiled.BlockHeight(), 5U) : 0,
+    params.block_depth = params.is_tiled ? std::min(config.tiled.BlockDepth(), 5U) : 0,
+    params.tile_width_spacing = 1;
+    params.pixel_format = pixel_format;
+    params.component_type = component_type;
+    params.type = GetFormatType(pixel_format);
+    params.target = target;
+    if (params.is_tiled) {
+        params.depth = config.tiled.size_z;
+        params.width = config.tiled.size_x;
+        params.height = config.tiled.size_y;
+        params.pitch = params.width * config.bytes_per_pixel;
+    } else {
+        params.depth = 1;
+        params.width = config.width;
+        params.height = config.height;
+        params.pitch = config.pitch;
+    }
+    params.num_levels = 1;
+    params.emulated_levels = 1;
+    params.is_layered = params.IsLayered();
+    return params;
+}
+
 bool SurfaceParams::IsLayered() const {
     switch (target) {
     case SurfaceTarget::Texture1DArray:
