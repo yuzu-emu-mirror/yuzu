@@ -87,19 +87,10 @@ public:
         if (!sync) {
             return true;
         }
-        switch (glClientWaitSync(sync, 0, 0)) {
-        case GL_TIMEOUT_EXPIRED:
-            // The fence is unavailable
+        GLint status;
+        glGetSynciv(sync, GL_SYNC_STATUS, sizeof(GLint), nullptr, &status);
+        if (status == GL_UNSIGNALED) {
             return false;
-        case GL_ALREADY_SIGNALED:
-        case GL_CONDITION_SATISFIED:
-            break;
-        case GL_WAIT_FAILED:
-            UNREACHABLE_MSG("Fence wait failed");
-            break;
-        default:
-            UNREACHABLE_MSG("Unknown glClientWaitSync result");
-            break;
         }
         // The fence has been signaled, we can destroy it
         glDeleteSync(sync);
