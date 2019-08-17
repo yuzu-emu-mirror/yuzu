@@ -15,8 +15,10 @@ class PersistentStagingBuffer final : public StagingBuffer {
 public:
     explicit PersistentStagingBuffer(std::size_t size, bool is_read_buffer)
         : is_read_buffer{is_read_buffer} {
-        constexpr GLenum storage_read = GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT;
-        constexpr GLenum storage_write = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT;
+        constexpr GLenum storage_read =
+            GL_CLIENT_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT;
+        constexpr GLenum storage_write =
+            GL_CLIENT_STORAGE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT;
         constexpr GLenum map_read = GL_MAP_PERSISTENT_BIT | GL_MAP_READ_BIT;
         constexpr GLenum map_write = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT |
                                      GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT;
