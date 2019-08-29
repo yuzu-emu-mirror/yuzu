@@ -18,10 +18,7 @@
 #include "video_core/buffer_cache/buffer_block.h"
 #include "video_core/buffer_cache/map_interval.h"
 #include "video_core/memory_manager.h"
-
-namespace VideoCore {
-class RasterizerInterface;
-}
+#include "video_core/rasterizer_interface.h"
 
 namespace VideoCommon {
 
