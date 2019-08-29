@@ -348,7 +348,6 @@ private:
         const CacheAddr cache_addr_end = cache_addr + size - 1;
         u64 page_start = cache_addr >> block_page_bits;
         const u64 page_end = cache_addr_end >> block_page_bits;
-        const u64 num_pages = page_end - page_start + 1;
         while (page_start <= page_end) {
             auto it = blocks.find(page_start);
             if (it == blocks.end()) {
