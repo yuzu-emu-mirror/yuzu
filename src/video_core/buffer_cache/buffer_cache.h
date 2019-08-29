@@ -416,7 +416,10 @@ private:
         return false;
     }
 
+    VideoCore::RasterizerInterface& rasterizer;
+    Core::System& system;
     std::unique_ptr<StreamBuffer> stream_buffer;
+
     TBufferType stream_buffer_handle{};
 
     bool invalidated = false;
@@ -440,8 +443,7 @@ private:
     std::list<TBuffer> pending_destruction{};
     u64 epoch{};
     u64 modified_ticks{};
-    VideoCore::RasterizerInterface& rasterizer;
-    Core::System& system;
+
     std::recursive_mutex mutex;
 };
 
