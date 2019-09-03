@@ -1292,7 +1292,6 @@ void IApplicationFunctions::GetSaveDataSize(Kernel::HLERequestContext& ctx) {
 
 void IApplicationFunctions::GetGpuErrorDetectedSystemEvent(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
-    gpu_error_detected_event.writable->Clear();
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
