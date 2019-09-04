@@ -1068,7 +1068,7 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
 
     auto& kernel = Core::System::GetInstance().Kernel();
     gpu_error_detected_event = Kernel::WritableEvent::CreateEventPair(
-        kernel, Kernel::ResetType::Manual, "ISelfController:GpuErrorDetectedSystemEvent");
+        kernel, Kernel::ResetType::Manual, "IApplicationFunctions:GpuErrorDetectedSystemEvent");
 }
 
 IApplicationFunctions::~IApplicationFunctions() = default;
