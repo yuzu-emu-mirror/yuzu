@@ -273,7 +273,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {80, nullptr, "SetWirelessPriorityMode"},
         {90, &ISelfController::GetAccumulatedSuspendedTickValue, "GetAccumulatedSuspendedTickValue"},
         {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
-        {100, nullptr, "SetAlbumImageTakenNotificationEnabled"},
+        {100, &ISelfController::SetAlbumImageTakenNotificationEnabled, "SetAlbumImageTakenNotificationEnabled"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
     // clang-format on
@@ -499,6 +499,17 @@ void ISelfController::GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequest
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(accumulated_suspended_tick_changed_event.readable);
+}
+
+void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    set_album_image_taken_notification_enabled = rp.Pop<bool>();
+
+    LOG_WARNING(Service_AM, "(STUBBED) called. set_album_image_taken_notification_enabled={}",
+              set_album_image_taken_notification_enabled);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 AppletMessageQueue::AppletMessageQueue() {

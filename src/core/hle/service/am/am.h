@@ -137,6 +137,7 @@ private:
     void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx);
+    void SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
     Kernel::EventPair launchable_event;
@@ -145,6 +146,7 @@ private:
     u32 idle_time_detection_extension = 0;
     u64 num_fatal_sections_entered = 0;
     bool is_auto_sleep_disabled = false;
+    bool set_album_image_taken_notification_enabled = false;
 };
 
 class ICommonStateGetter final : public ServiceFramework<ICommonStateGetter> {
