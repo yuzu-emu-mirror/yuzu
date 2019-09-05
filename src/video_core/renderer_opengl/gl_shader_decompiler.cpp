@@ -943,18 +943,19 @@ private:
         case Attribute::Index::Position:
             switch (stage) {
             case ProgramType::Geometry:
-                return fmt::format("gl_in[{}].gl_Position{}", Visit(buffer).AsUint(),
-                                   GetSwizzle(element));
+                return {fmt::format("gl_in[{}].gl_Position{}", Visit(buffer).AsUint(),
+                                    GetSwizzle(element)),
+                        Type::Float};
             case ProgramType::Fragment: {
                 switch (element) {
                 case 0:
-                    return "(gl_FragCoord.x / utof(config_pack[3]))";
+                    return {"(gl_FragCoord.x / utof(config_pack[3]))", Type::Float};
                 case 1:
-                    return "(gl_FragCoord.y / utof(config_pack[3]))";
+                    return {"(gl_FragCoord.y / utof(config_pack[3]))", Type::Float};
                 case 2:
-                    return "gl_FragCoord.z";
+                    return {"gl_FragCoord.z", Type::Float};
                 case 3:
-                    return "1.0f";
+                    return {"1.0f", Type::Float};
                 }
             }
             default:
