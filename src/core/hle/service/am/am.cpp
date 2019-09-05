@@ -506,7 +506,7 @@ void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestCo
     set_album_image_taken_notification_enabled = rp.Pop<bool>();
 
     LOG_WARNING(Service_AM, "(STUBBED) called. set_album_image_taken_notification_enabled={}",
-              set_album_image_taken_notification_enabled);
+                set_album_image_taken_notification_enabled);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
