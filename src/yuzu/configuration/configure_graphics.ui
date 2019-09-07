@@ -51,13 +51,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="use_resolution_scanner">
-          <property name="text">
-           <string>Enable Resolution Scanner</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QLabel" name="label">
@@ -70,7 +63,7 @@
            <widget class="QComboBox" name="resolution_factor_combobox">
             <item>
              <property name="text">
-              <string>Auto (Window Size)</string>
+              <string>Profile Scanner (Native)</string>
              </property>
             </item>
             <item>
