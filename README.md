@@ -6,7 +6,7 @@ yuzu emulator
 
 yuzu is an experimental open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
 
-It is written in C++ with portability in mind, with builds actively maintained for Windows and Linux. The emulator is capable of running several commerical games.
+It is written in C++ with portability in mind, with builds actively maintained for Windows and Linux. The emulator is capable of running several commercial games.
 
 yuzu only emulates a subset of Switch hardware and therefore most commercial games **do not** run at full speed or are not fully functional.
 
