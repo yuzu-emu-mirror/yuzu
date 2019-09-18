@@ -10,7 +10,7 @@ It is written in C++ with portability in mind, with builds actively maintained f
 
 yuzu only emulates a subset of Switch hardware and therefore most commercial games **do not** run at full speed or are fully functional.
 
-Do you want to check which games are compatible and which ones are not? Please visit our [Compatability page](https://yuzu-emu.org/game/)!
+Do you want to check which games are compatible and which ones are not? Please visit our [Compatibility page](https://yuzu-emu.org/game/)!
 
 yuzu is licensed under the GPLv2 (or any later version). Refer to the license.txt file included.
 
