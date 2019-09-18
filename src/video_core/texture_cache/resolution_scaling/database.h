@@ -72,10 +72,10 @@ public:
     std::string GetProfilePath() const;
 
 private:
-    std::unordered_set<ResolutionKey> database;
-    std::unordered_set<ResolutionKey> blacklist;
+    std::unordered_set<ResolutionKey> database{};
+    std::unordered_set<ResolutionKey> blacklist{};
     bool initialized{};
-    u64 title_id;
+    u64 title_id{};
     Core::System& system;
 
     static constexpr u32 DBVersion = 1;

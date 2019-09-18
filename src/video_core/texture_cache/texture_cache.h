@@ -320,7 +320,7 @@ protected:
         }
 
         enable_resolution_scaling =
-            Settings::values.resolution_factor != 1.0 && !Settings::values.use_resolution_scanner;
+            Settings::values.resolution_factor != 1.0f && !Settings::values.use_resolution_scanner;
 
         SetEmptyDepthBuffer();
         staging_cache.SetSize(2);
@@ -422,10 +422,8 @@ protected:
 
     // Must be called by child's create surface
     void SignalCreatedSurface(TSurface& new_surface) {
-        if (EnabledRescaling()) {
-            if (IsInRSDatabase(new_surface)) {
-                new_surface->MarkAsRescaled(true);
-            }
+        if (EnabledRescaling() && IsInRSDatabase(new_surface)) {
+            new_surface->MarkAsRescaled(true);
         }
     }
 

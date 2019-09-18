@@ -647,7 +647,7 @@ void RasterizerOpenGL::DrawPrelude() {
         gpu.dirty.ResetVertexArrays();
     }
 
-    bool res_scaling = texture_cache.IsResolutionScalingEnabled();
+    const bool res_scaling = texture_cache.IsResolutionScalingEnabled();
     SyncViewport(state, res_scaling);
     SyncScissorTest(state, res_scaling);
 
@@ -1079,7 +1079,7 @@ void RasterizerOpenGL::SyncViewport(OpenGLState& current_state, bool rescaling) 
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
-    float factor = rescaling ? Settings::values.resolution_factor : 1.0;
+    const float factor = rescaling ? Settings::values.resolution_factor : 1.0f;
     for (std::size_t i = 0; i < viewport_count; i++) {
         auto& viewport = current_state.viewports[i];
         const auto& src = regs.viewports[i];
@@ -1304,7 +1304,7 @@ void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state, bool rescalin
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
-    float factor = rescaling ? Settings::values.resolution_factor : 1.0;
+    const float factor = rescaling ? Settings::values.resolution_factor : 1.0f;
     for (std::size_t i = 0; i < viewport_count; i++) {
         const auto& src = regs.scissor_test[i];
         auto& dst = current_state.viewports[i].scissor;
@@ -1314,10 +1314,10 @@ void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state, bool rescalin
         }
         const u32 width = src.max_x - src.min_x;
         const u32 height = src.max_y - src.min_y;
-        dst.x = src.min_x * factor;
-        dst.y = src.min_y * factor;
-        dst.width = width * factor;
-        dst.height = height * factor;
+        dst.x = static_cast<u32>(src.min_x * factor);
+        dst.y = static_cast<u32>(src.min_y * factor);
+        dst.width = static_cast<u32>(width * factor);
+        dst.height = static_cast<u32>(height * factor);
     }
 }
 

@@ -128,7 +128,7 @@ private:
                     const GLShader::ImageEntry& entry);
 
     /// Syncs the viewport and depth range to match the guest state
-    void SyncViewport(OpenGLState& current_state, bool rescaling = false);
+    void SyncViewport(OpenGLState& current_state, bool rescaling);
 
     /// Syncs the clip enabled status to match the guest state
     void SyncClipEnabled(
@@ -162,7 +162,7 @@ private:
     void SyncMultiSampleState();
 
     /// Syncs the scissor test state to match the guest state
-    void SyncScissorTest(OpenGLState& current_state, bool rescaling = false);
+    void SyncScissorTest(OpenGLState& current_state, bool rescaling);
 
     /// Syncs the transform feedback state to match the guest state
     void SyncTransformFeedback();

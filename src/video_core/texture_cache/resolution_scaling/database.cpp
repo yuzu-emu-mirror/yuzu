@@ -39,7 +39,7 @@ void ScalingDatabase::Init() {
 
 void ScalingDatabase::LoadDatabase() {
     const std::string path = GetProfilePath();
-    bool exists = FileUtil::Exists(path);
+    const bool exists = FileUtil::Exists(path);
     if (!exists) {
         return;
     }
@@ -67,7 +67,7 @@ void ScalingDatabase::LoadDatabase() {
 }
 
 void ScalingDatabase::SaveDatabase() {
-    std::string dir = GetBaseDir();
+    const std::string dir = GetBaseDir();
     if (!FileUtil::CreateDir(dir)) {
         LOG_ERROR(HW_GPU, "Failed to create directory={}", dir);
         return;
@@ -97,7 +97,7 @@ void ScalingDatabase::SaveDatabase() {
     file << std::setw(4) << out << std::endl;
 }
 
-void ScalingDatabase::Register(const PixelFormat format, const u32 width, const u32 height) {
+void ScalingDatabase::Register(PixelFormat format, u32 width, u32 height) {
     ResolutionKey key{format, width, height};
     if (blacklist.count(key) == 0) {
         ResolutionKey key{format, width, height};
@@ -105,7 +105,7 @@ void ScalingDatabase::Register(const PixelFormat format, const u32 width, const 
     }
 }
 
-void ScalingDatabase::Unregister(const PixelFormat format, const u32 width, const u32 height) {
+void ScalingDatabase::Unregister(PixelFormat format, u32 width, u32 height) {
     ResolutionKey key{format, width, height};
     database.erase(key);
     blacklist.insert(key);

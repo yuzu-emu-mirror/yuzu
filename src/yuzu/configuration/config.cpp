@@ -626,8 +626,6 @@ void Config::ReadRendererValues() {
         ReadSetting(QStringLiteral("use_asynchronous_gpu_emulation"), false).toBool();
     Settings::values.use_resolution_scanner =
         ReadSetting(QStringLiteral("use_resolution_scanner"), false).toBool();
-    Settings::values.use_resolution_scanner =
-        ReadSetting(QStringLiteral("use_resolution_scanner"), false).toBool();
     Settings::values.force_30fps_mode =
         ReadSetting(QStringLiteral("force_30fps_mode"), false).toBool();
 
