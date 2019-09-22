@@ -230,7 +230,7 @@ Hid::Hid() : ServiceFramework("hid") {
         {303, nullptr, "ActivateSevenSixAxisSensor"},
         {304, nullptr, "StartSevenSixAxisSensor"},
         {305, nullptr, "StopSevenSixAxisSensor"},
-        {306, nullptr, "InitializeSevenSixAxisSensor"},
+        {306, &Hid::InitializeSevenSixAxisSensor, "InitializeSevenSixAxisSensor"},
         {307, nullptr, "FinalizeSevenSixAxisSensor"},
         {308, nullptr, "SetSevenSixAxisSensorFusionStrength"},
         {309, nullptr, "GetSevenSixAxisSensorFusionStrength"},
@@ -385,6 +385,25 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
 
     LOG_WARNING(Service_HID, "(STUBBED) called, handle={}, applet_resource_user_id={}", handle,
                 applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+    const auto transfer_memory_size_first{rp.Pop<u64>()};
+    const auto transfer_memory_size_second{rp.Pop<u64>()};
+    const auto transfer_memory_handle_first{rp.Pop<u64>()};
+    const auto transfer_memory_handle_second{rp.Pop<u64>()};
+
+    LOG_WARNING(Service_HID,
+                "(STUBBED) called, applet_resource_user_id={}, transfer_memory_size_first={}, "
+                "transfer_memory_size_second={}, transfer_memory_handle_first={}, "
+                "transfer_memory_handle_second={}",
+                applet_resource_user_id, transfer_memory_size_first, transfer_memory_size_second,
+                transfer_memory_handle_first, transfer_memory_handle_second);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
