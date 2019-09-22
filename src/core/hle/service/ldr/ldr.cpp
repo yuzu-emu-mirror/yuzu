@@ -167,7 +167,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push(write_size);
+        rb.Push(static_cast<u32>(write_size));
     }
 
     const std::vector<Kernel::SharedPtr<Kernel::Process>>& process_list;
@@ -292,7 +292,7 @@ public:
 
 class RelocatableObject final : public ServiceFramework<RelocatableObject> {
 public:
-    explicit RelocatableObject() : ServiceFramework{"ldr:ro"} {
+    explicit RelocatableObject(const char* name) : ServiceFramework{name} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &RelocatableObject::LoadNro, "LoadNro"},
