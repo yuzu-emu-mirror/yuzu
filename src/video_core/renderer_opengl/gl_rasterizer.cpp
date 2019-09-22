@@ -1084,10 +1084,10 @@ void RasterizerOpenGL::SyncViewport(OpenGLState& current_state, bool rescaling) 
         auto& viewport = current_state.viewports[i];
         const auto& src = regs.viewports[i];
         const Common::Rectangle<s32> viewport_rect{regs.viewport_transform[i].GetRect()};
-        viewport.x = viewport_rect.left * factor;
-        viewport.y = viewport_rect.bottom * factor;
-        viewport.width = viewport_rect.GetWidth() * factor;
-        viewport.height = viewport_rect.GetHeight() * factor;
+        viewport.x = static_cast<GLint>(viewport_rect.left * factor);
+        viewport.y = static_cast<GLint>(viewport_rect.bottom * factor);
+        viewport.width = static_cast<GLint>(viewport_rect.GetWidth() * factor);
+        viewport.height = static_cast<GLint>(viewport_rect.GetHeight() * factor);
         viewport.depth_range_far = src.depth_range_far;
         viewport.depth_range_near = src.depth_range_near;
     }

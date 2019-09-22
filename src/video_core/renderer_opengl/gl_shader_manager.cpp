@@ -12,16 +12,15 @@ namespace OpenGL::GLShader {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
-enum ProgramLocations : u32 {
-    CONFIG_PACK = 0,
-    VIEWPORT_SCALE = 1,
-};
-
 StageProgram::StageProgram() = default;
 
 StageProgram::~StageProgram() = default;
 
 void StageProgram::UpdateConstants() {
+    enum ProgramLocations : u32 {
+        CONFIG_PACK = 0,
+        VIEWPORT_SCALE = 1,
+    };
     if (state.config_pack != old_state.config_pack) {
         glProgramUniform4uiv(handle, CONFIG_PACK, 1, state.config_pack.data());
         old_state.config_pack = state.config_pack;
@@ -65,7 +64,7 @@ void ProgramManager::SetConstants(Tegra::Engines::Maxwell3D& maxwell_3d, bool re
     const GLfloat rescale_factor = rescaling ? Settings::values.resolution_factor : 1.0f;
 
     for (const auto stage :
-         std::array{current_state.vertex, current_state.geometry, current_state.fragment}) {
+         {current_state.vertex, current_state.geometry, current_state.fragment}) {
         if (!stage) {
             continue;
         }

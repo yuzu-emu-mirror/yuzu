@@ -29,6 +29,10 @@ struct ResolutionKey {
     bool operator==(const ResolutionKey& ks) const {
         return std::tie(format, width, height) == std::tie(ks.format, ks.width, ks.height);
     }
+
+    bool operator!=(const ResolutionKey& ks) const {
+        return !(*this == ks);
+    }
 };
 
 } // namespace VideoCommon::Resolution
@@ -55,13 +59,13 @@ public:
     void LoadDatabase();
     void Init();
 
-    bool IsInDatabase(const PixelFormat format, const u32 width, const u32 height) {
-        ResolutionKey key{format, width, height};
+    bool IsInDatabase(const PixelFormat format, const u32 width, const u32 height) const {
+        const ResolutionKey key{format, width, height};
         return database.count(key) > 0;
     }
 
-    bool IsBlacklisted(const PixelFormat format, const u32 width, const u32 height) {
-        ResolutionKey key{format, width, height};
+    bool IsBlacklisted(const PixelFormat format, const u32 width, const u32 height) const {
+        const ResolutionKey key{format, width, height};
         return blacklist.count(key) > 0;
     }
 
