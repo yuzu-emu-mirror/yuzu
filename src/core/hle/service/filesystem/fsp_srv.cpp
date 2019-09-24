@@ -500,7 +500,7 @@ public:
         const auto file_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(file_buffer);
 
-        LOG_DEBUG(Service_FS, "() called. file={}", name);
+        LOG_DEBUG(Service_FS, "called. file={}", name);
 
         auto result = backend.GetFileTimeStampRaw(name);
 
