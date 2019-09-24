@@ -241,6 +241,14 @@ ResultVal<FileSys::EntryType> VfsDirectoryServiceWrapper::GetEntryType(
     return FileSys::ERROR_PATH_NOT_FOUND;
 }
 
+ResultVal<FileUtil::FileTimeStampRaw> VfsDirectoryServiceWrapper::GetFileTimeStampRaw(const std::string& path_) const {
+    std::string path(FileUtil::SanitizePath(path_));
+    auto file = backing->GetFileRelative(path);
+    if (file == nullptr)
+        return FileSys::ERROR_PATH_NOT_FOUND;
+    return MakeResult(FileUtil::GetTimeStamp(path));
+}
+
 FileSystemController::FileSystemController() = default;
 
 FileSystemController::~FileSystemController() = default;

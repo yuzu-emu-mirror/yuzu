@@ -367,6 +367,35 @@ u64 GetSize(FILE* f) {
     return size;
 }
 
+FileTimeStampRaw GetTimeStamp(const std::string& filename) {
+
+    FileTimeStampRaw timestamp = FileTimeStampRaw();
+
+    if (!Exists(filename)) {
+        LOG_ERROR(Common_Filesystem, "failed {}: No such file", filename);
+        return timestamp;
+    }
+
+    struct stat buf;
+#ifdef _WIN32
+    if (_wstat64(Common::UTF8ToUTF16W(filename).c_str(), &buf) == 0)
+#else
+    if (stat(filename.c_str(), &buf) == 0)
+#endif
+    {
+        LOG_TRACE(Common_Filesystem, "{}: Created={}, Accessed={}, Modified={}", filename, buf.st_ctime, buf.st_atime, buf.st_mtime);
+
+        timestamp.Created = buf.st_ctime;
+        timestamp.Accessed = buf.st_atime;
+        timestamp.Modified = buf.st_mtime;
+        
+        return timestamp;
+    }
+
+    LOG_ERROR(Common_Filesystem, "Stat failed {}: {}", filename, GetLastErrorMsg());
+    return timestamp;
+}
+
 bool CreateEmptyFile(const std::string& filename) {
     LOG_TRACE(Common_Filesystem, "{}", filename);
 

@@ -46,6 +46,13 @@ struct FSTEntry {
     std::vector<FSTEntry> children;
 };
 
+// Timestamps for GetFileTimeStampRaw
+struct FileTimeStampRaw {
+    u64 Created;
+    u64 Accessed;
+    u64 Modified;
+};
+
 // Returns true if file filename exists
 bool Exists(const std::string& filename);
 
@@ -60,6 +67,9 @@ u64 GetSize(const int fd);
 
 // Overloaded GetSize, accepts FILE*
 u64 GetSize(FILE* f);
+
+// Returns the timestamp of filename
+FileTimeStampRaw GetTimeStamp(const std::string& filename);
 
 // Returns true if successful, or path already exists.
 bool CreateDir(const std::string& filename);

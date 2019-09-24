@@ -6,6 +6,7 @@
 
 #include <memory>
 #include "common/common_types.h"
+#include "common/file_util.h"
 #include "core/file_sys/directory.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/result.h"
@@ -224,6 +225,13 @@ public:
      * @return The type of the specified path or error code
      */
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
+
+    /**
+     * Gets the creation, last accessed, and last modified timestamps of a File specified by its path
+     * @param path Path relative to the archive
+     * @return The timestamps of the File. They are expressed as a Unix timestamp
+     */
+    ResultVal<FileUtil::FileTimeStampRaw> GetFileTimeStampRaw(const std::string& path) const;
 
 private:
     FileSys::VirtualDir backing;
