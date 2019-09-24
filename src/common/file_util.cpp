@@ -383,12 +383,13 @@ FileTimeStampRaw GetTimeStamp(const std::string& filename) {
     if (stat(filename.c_str(), &buf) == 0)
 #endif
     {
-        LOG_TRACE(Common_Filesystem, "{}: Created={}, Accessed={}, Modified={}", filename, buf.st_ctime, buf.st_atime, buf.st_mtime);
+        LOG_TRACE(Common_Filesystem, "{}: Created={}, Accessed={}, Modified={}", filename,
+                  buf.st_ctime, buf.st_atime, buf.st_mtime);
 
         timestamp.Created = buf.st_ctime;
         timestamp.Accessed = buf.st_atime;
         timestamp.Modified = buf.st_mtime;
-        
+
         return timestamp;
     }
 

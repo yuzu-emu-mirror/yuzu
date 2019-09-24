@@ -227,7 +227,8 @@ public:
     ResultVal<FileSys::EntryType> GetEntryType(const std::string& path) const;
 
     /**
-     * Gets the creation, last accessed, and last modified timestamps of a File specified by its path
+     * Gets the creation, last accessed, and last modified timestamps of a File
+     * specified by its path
      * @param path Path relative to the archive
      * @return The timestamps of the File. They are expressed as a Unix timestamp
      */
