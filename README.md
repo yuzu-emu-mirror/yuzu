@@ -4,7 +4,7 @@ yuzu emulator
 [![AppVeyor CI Build Status](https://ci.appveyor.com/api/projects/status/77k97svb2usreu68?svg=true)](https://ci.appveyor.com/project/bunnei/yuzu)
 [![Azure Mainline CI Build Status](https://dev.azure.com/yuzu-emu/yuzu/_apis/build/status/yuzu%20mainline?branchName=master)](https://dev.azure.com/yuzu-emu/yuzu/)
 
-yuzu is an experimental open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
+yuzu is an open-source emulator for the Nintendo Switch from the creators of [Citra](https://citra-emu.org/).
 
 It is written in C++ with portability in mind, with builds actively maintained for Windows and Linux. The emulator is capable of running several commercial games.
 
