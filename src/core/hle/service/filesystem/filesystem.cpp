@@ -713,8 +713,7 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
 void InstallInterfaces(Core::System& system) {
     std::make_shared<FSP_LDR>()->InstallAsService(system.ServiceManager());
     std::make_shared<FSP_PR>()->InstallAsService(system.ServiceManager());
-    std::make_shared<FSP_SRV>(system.GetFileSystemController(), system.GetReporter())
-        ->InstallAsService(system.ServiceManager());
+    std::make_shared<FSP_SRV>(system)->InstallAsService(system.ServiceManager());
 }
 
 } // namespace Service::FileSystem
