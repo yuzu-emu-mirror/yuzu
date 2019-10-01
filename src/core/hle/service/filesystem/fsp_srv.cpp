@@ -664,8 +664,31 @@ private:
     u64 next_entry_index = 0;
 };
 
-FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
-    : ServiceFramework("fsp-srv"), fsc(fsc), reporter(reporter) {
+class IEventNotifier final : public ServiceFramework<IEventNotifier> {
+public:
+    explicit IEventNotifier(Kernel::SharedPtr<Kernel::ReadableEvent> event)
+        : ServiceFramework{"IEventNotifier"}, event(std::move(event)) {
+        static const FunctionInfo functions[] = {
+            {0, &IEventNotifier::GetEventHandle, "GetEventHandle"},
+        };
+
+        RegisterHandlers(functions);
+    }
+
+private:
+    void GetEventHandle(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_FS, "called");
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(event);
+    }
+
+    Kernel::SharedPtr<Kernel::ReadableEvent> event;
+};
+
+FSP_SRV::FSP_SRV(Core::System& system)
+    : ServiceFramework("fsp-srv"), system(system), fsc(system.GetFileSystemController()) {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, nullptr, "OpenFileSystem"},
@@ -724,8 +747,8 @@ FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
         {204, nullptr, "OpenDataFileSystemByProgramIndex"},
         {205, nullptr, "OpenDataStorageByProgramIndex"},
         {400, nullptr, "OpenDeviceOperator"},
-        {500, nullptr, "OpenSdCardDetectionEventNotifier"},
-        {501, nullptr, "OpenGameCardDetectionEventNotifier"},
+        {500, &FSP_SRV::OpenSdCardDetectionEventNotifier, "OpenSdCardDetectionEventNotifier"},
+        {501, &FSP_SRV::OpenGameCardDetectionEventNotifier, "OpenGameCardDetectionEventNotifier"},
         {510, nullptr, "OpenSystemDataUpdateEventNotifier"},
         {511, nullptr, "NotifySystemDataUpdateEvent"},
         {520, nullptr, "SimulateGameCardDetectionEvent"},
@@ -776,6 +799,12 @@ FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
     };
     // clang-format on
     RegisterHandlers(functions);
+
+    auto& kernel{system.Kernel()};
+    sd_card_detection_event = Kernel::WritableEvent::CreateEventPair(
+        kernel, Kernel::ResetType::Automatic, "fsp-srv:SdCardDetectionEvent");
+    game_card_detection_event = Kernel::WritableEvent::CreateEventPair(
+        kernel, Kernel::ResetType::Automatic, "fsp-srv:GameCardDetectionEvent");
 }
 
 FSP_SRV::~FSP_SRV() = default;
@@ -1195,6 +1224,32 @@ void FSP_SRV::GetAccessLogVersionInfo(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushEnum(AccessLogVersion::Latest);
     rb.Push(access_log_program_index);
+}
+
+void FSP_SRV::OpenSdCardDetectionEventNotifier(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_FS, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(std::make_shared<IEventNotifier>(sd_card_detection_event.readable));
+}
+
+void FSP_SRV::OpenGameCardDetectionEventNotifier(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_FS, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(std::make_shared<IEventNotifier>(game_card_detection_event.readable));
+}
+
+void FSP_SRV::SetSdCardEncryptionSeed(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto seed = rp.PopRaw<u128>();
+
+    LOG_INFO(Service_FS, "called with seed={:016X}{:016X}", seed[1], seed[0]);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 } // namespace Service::FileSystem

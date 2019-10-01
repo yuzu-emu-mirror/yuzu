@@ -5,6 +5,7 @@
 #pragma once
 
 #include <memory>
+#include "core/hle/kernel/writable_event.h"
 #include "core/hle/service/service.h"
 
 namespace Core {
@@ -58,6 +59,8 @@ private:
     void OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
     void OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx);
     void GetAccessLogVersionInfo(Kernel::HLERequestContext& ctx);
+    void OpenSdCardDetectionEventNotifier(Kernel::HLERequestContext& ctx);
+    void OpenGameCardDetectionEventNotifier(Kernel::HLERequestContext& ctx);
 
     Core::System& system;
     FileSystemController& fsc;
@@ -68,6 +71,7 @@ private:
     LogMode log_mode = LogMode::LogToSdCard;
 
     Kernel::EventPair sd_card_detection_event;
+    Kernel::EventPair game_card_detection_event;
 };
 
 } // namespace Service::FileSystem
