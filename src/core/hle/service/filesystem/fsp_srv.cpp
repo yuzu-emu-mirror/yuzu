@@ -59,6 +59,12 @@ enum class FileSystemType : u8 {
     ApplicationPackage = 7,
 };
 
+enum class SaveDataOpenMode {
+    Normal,
+    ReadOnly,
+    System,
+};
+
 class IStorage final : public ServiceFramework<IStorage> {
 public:
     explicit IStorage(FileSys::VirtualFile backend_)
@@ -508,14 +514,17 @@ private:
 
 class ISaveDataInfoReader final : public ServiceFramework<ISaveDataInfoReader> {
 public:
-    explicit ISaveDataInfoReader(FileSys::SaveDataSpaceId space, FileSystemController& fsc)
+    explicit ISaveDataInfoReader(FileSystemController& fsc,
+                                 std::vector<FileSys::SaveDataSpaceId> spaces)
         : ServiceFramework("ISaveDataInfoReader"), fsc(fsc) {
         static const FunctionInfo functions[] = {
             {0, &ISaveDataInfoReader::ReadSaveDataInfo, "ReadSaveDataInfo"},
         };
         RegisterHandlers(functions);
 
-        FindAllSaves(space);
+        for (const auto& space : spaces) {
+            FindAllSaves(space);
+        }
     }
 
     void ReadSaveDataInfo(Kernel::HLERequestContext& ctx) {
@@ -673,7 +682,7 @@ FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
         {19, nullptr, "FormatSdCardFileSystem"},
         {21, nullptr, "DeleteSaveDataFileSystem"},
         {22, &FSP_SRV::CreateSaveDataFileSystem, "CreateSaveDataFileSystem"},
-        {23, nullptr, "CreateSaveDataFileSystemBySystemSaveDataId"},
+        {23, &FSP_SRV::CreateSaveDataFileSystemBySystemSaveDataId, "CreateSaveDataFileSystemBySystemSaveDataId"},
         {24, nullptr, "RegisterSaveDataFileSystemAtomicDeletion"},
         {25, nullptr, "DeleteSaveDataFileSystemBySaveDataSpaceId"},
         {26, nullptr, "FormatSdCardDryRun"},
@@ -686,12 +695,12 @@ FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
         {34, nullptr, "GetCacheStorageSize"},
         {35, nullptr, "CreateSaveDataFileSystemByHashSalt"},
         {51, &FSP_SRV::OpenSaveDataFileSystem, "OpenSaveDataFileSystem"},
-        {52, nullptr, "OpenSaveDataFileSystemBySystemSaveDataId"},
+        {52, &FSP_SRV::OpenSaveDataFileSystemBySystemSaveDataId, "OpenSaveDataFileSystemBySystemSaveDataId"},
         {53, &FSP_SRV::OpenReadOnlySaveDataFileSystem, "OpenReadOnlySaveDataFileSystem"},
         {57, nullptr, "ReadSaveDataFileSystemExtraDataBySaveDataSpaceId"},
         {58, nullptr, "ReadSaveDataFileSystemExtraData"},
         {59, nullptr, "WriteSaveDataFileSystemExtraData"},
-        {60, nullptr, "OpenSaveDataInfoReader"},
+        {60, &FSP_SRV::OpenSaveDataInfoReader, "OpenSaveDataInfoReader"},
         {61, &FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId, "OpenSaveDataInfoReaderBySaveDataSpaceId"},
         {62, nullptr, "OpenCacheStorageList"},
         {64, nullptr, "OpenSaveDataInternalStorageFileSystem"},
@@ -943,44 +952,103 @@ void FSP_SRV::CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 }
 
-void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
-    LOG_INFO(Service_FS, "called.");
+void FSP_SRV::CreateSaveDataFileSystemBySystemSaveDataId(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    auto save_struct = rp.PopRaw<FileSys::SaveDataDescriptor>();
+    auto save_create_struct = rp.PopRaw<std::array<u8, 0x40>>();
+
+    LOG_DEBUG(Service_FS, "called save_struct = {}", save_struct.DebugInfo());
+
+    const auto dir = fsc.CreateSaveData(FileSys::SaveDataSpaceId::NandSystem, save_struct);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(dir.Code());
+}
+
+namespace {
+
+FileSys::StorageId StorageFromSaveDataSpace(FileSys::SaveDataSpaceId space) {
+    switch (space) {
+    case FileSys::SaveDataSpaceId::NandSystem:
+    case FileSys::SaveDataSpaceId::ProperSystem:
+    case FileSys::SaveDataSpaceId::TemporaryStorage:
+        return FileSys::StorageId::NandSystem;
+    case FileSys::SaveDataSpaceId::NandUser:
+        return FileSys::StorageId::NandUser;
+    case FileSys::SaveDataSpaceId::SdCardSystem:
+    case FileSys::SaveDataSpaceId::SdCardUser:
+        return FileSys::StorageId::SdCard;
+    default:
+        return FileSys::StorageId::None;
+    }
+}
+
+template <SaveDataOpenMode mode>
+void OpenSaveDataFileSystemGeneric(Kernel::HLERequestContext& ctx, FileSystemController& fsc) {
+    IPC::RequestParser rp{ctx};
 
     struct Parameters {
         FileSys::SaveDataSpaceId save_data_space_id;
         FileSys::SaveDataDescriptor descriptor;
     };
 
-    IPC::RequestParser rp{ctx};
     const auto parameters = rp.PopRaw<Parameters>();
-
     auto dir = fsc.OpenSaveData(parameters.save_data_space_id, parameters.descriptor);
+
     if (dir.Failed()) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 0};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
         return;
     }
 
-    FileSys::StorageId id;
-    if (parameters.save_data_space_id == FileSys::SaveDataSpaceId::NandUser) {
-        id = FileSys::StorageId::NandUser;
-    } else if (parameters.save_data_space_id == FileSys::SaveDataSpaceId::SdCardSystem ||
-               parameters.save_data_space_id == FileSys::SaveDataSpaceId::SdCardUser) {
-        id = FileSys::StorageId::SdCard;
-    } else {
-        id = FileSys::StorageId::NandSystem;
+    auto diru = dir.Unwrap();
+
+    if (diru == nullptr) {
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
+        return;
     }
 
-    IFileSystem filesystem(std::move(dir.Unwrap()), SizeGetter::FromStorageId(fsc, id));
+    if constexpr (mode == SaveDataOpenMode::ReadOnly) {
+        diru = std::make_shared<FileSys::ReadOnlyVfsDirectoryLayer>(diru);
+    }
+
+    IFileSystem filesystem(
+        std::move(diru),
+        SizeGetter::FromStorageId(fsc, StorageFromSaveDataSpace(parameters.save_data_space_id)));
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
 
+} // namespace
+
+void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
+    OpenSaveDataFileSystemGeneric<SaveDataOpenMode::Normal>(ctx, fsc);
+}
+
 void FSP_SRV::OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_FS, "(STUBBED) called, delegating to 51 OpenSaveDataFilesystem");
-    OpenSaveDataFileSystem(ctx);
+    OpenSaveDataFileSystemGeneric<SaveDataOpenMode::ReadOnly>(ctx, fsc);
+}
+
+void FSP_SRV::OpenSaveDataFileSystemBySystemSaveDataId(Kernel::HLERequestContext& ctx) {
+    OpenSaveDataFileSystemGeneric<SaveDataOpenMode::System>(ctx, fsc);
+}
+
+void FSP_SRV::OpenSaveDataInfoReader(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_FS, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<ISaveDataInfoReader>(
+        std::make_shared<ISaveDataInfoReader>(fsc, std::vector<FileSys::SaveDataSpaceId>{
+                                                       FileSys::SaveDataSpaceId::NandSystem,
+                                                       FileSys::SaveDataSpaceId::NandUser,
+                                                       FileSys::SaveDataSpaceId::TemporaryStorage,
+                                                       FileSys::SaveDataSpaceId::SdCardUser,
+                                                   }));
 }
 
 void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext& ctx) {
@@ -990,7 +1058,32 @@ void FSP_SRV::OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext&
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<ISaveDataInfoReader>(std::make_shared<ISaveDataInfoReader>(space, fsc));
+    rb.PushIpcInterface<ISaveDataInfoReader>(
+        std::make_shared<ISaveDataInfoReader>(fsc, std::vector<FileSys::SaveDataSpaceId>{space}));
+}
+
+void FSP_SRV::OpenImageDirectoryFileSystem(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto storage = rp.PopRaw<ImageDirectoryId>();
+    LOG_DEBUG(Service_FS, "called, storage={:08X}", static_cast<u32>(storage));
+
+    auto dir = fsc.GetImageDirectory(storage);
+
+    if (dir == nullptr) {
+        LOG_ERROR(Service_FS, "The image directory requested was invalid!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(std::make_shared<IFileSystem>(
+        std::move(dir), SizeGetter::FromStorageId(fsc, storage == ImageDirectoryId::NAND
+                                                           ? FileSys::StorageId::NandUser
+                                                           : FileSys::StorageId::SdCard)));
+}
+
 }
 
 void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
@@ -1089,7 +1182,7 @@ void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_FS, "called, log='{}'", log);
 
-    reporter.SaveFilesystemAccessReport(log_mode, std::move(log));
+    system.GetReporter().SaveFilesystemAccessReport(log_mode, std::move(log));
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

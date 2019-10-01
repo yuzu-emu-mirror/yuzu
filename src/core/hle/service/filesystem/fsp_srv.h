@@ -43,6 +43,11 @@ private:
     void InvalidateBisCache(Kernel::HLERequestContext& ctx);
     void OpenSdCardFileSystem(Kernel::HLERequestContext& ctx);
     void CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx);
+    void CreateSaveDataFileSystemBySystemSaveDataId(Kernel::HLERequestContext& ctx);
+    void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);
+    void OpenSaveDataFileSystemBySystemSaveDataId(Kernel::HLERequestContext& ctx);
+    void OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx);
+    void OpenSaveDataInfoReader(Kernel::HLERequestContext& ctx);
     void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext& ctx);
