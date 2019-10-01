@@ -86,6 +86,8 @@ add_library(core STATIC
     file_sys/vfs_offset.h
     file_sys/vfs_real.cpp
     file_sys/vfs_real.h
+    file_sys/vfs_ro_layer.cpp
+    file_sys/vfs_ro_layer.h
     file_sys/vfs_static.h
     file_sys/vfs_types.h
     file_sys/vfs_vector.cpp
