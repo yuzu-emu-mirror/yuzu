@@ -736,8 +736,8 @@ FSP_SRV::FSP_SRV(Core::System& system)
         {82, nullptr, "OpenSaveDataTransferManagerVersion2"},
         {83, nullptr, "OpenSaveDataTransferProhibiterForCloudBackUp"},
         {84, nullptr, "ListApplicationAccessibleSaveDataOwnerId"},
-        {100, nullptr, "OpenImageDirectoryFileSystem"},
-        {110, nullptr, "OpenContentStorageFileSystem"},
+        {100, &FSP_SRV::OpenImageDirectoryFileSystem, "OpenImageDirectoryFileSystem"},
+        {110, &FSP_SRV::OpenContentStorageFileSystem, "OpenContentStorageFileSystem"},
         {120, nullptr, "OpenCloudBackupWorkStorageFileSystem"},
         {130, nullptr, "OpenCustomStorageFileSystem"},
         {200, &FSP_SRV::OpenDataStorageByCurrentProcess, "OpenDataStorageByCurrentProcess"},
@@ -770,7 +770,7 @@ FSP_SRV::FSP_SRV(Core::System& system)
         {615, nullptr, "QuerySaveDataInternalStorageTotalSize"},
         {616, nullptr, "GetSaveDataCommitId"},
         {617, nullptr, "UnregisterExternalKey"},
-        {620, nullptr, "SetSdCardEncryptionSeed"},
+        {620, &FSP_SRV::SetSdCardEncryptionSeed, "SetSdCardEncryptionSeed"},
         {630, nullptr, "SetSdCardAccessibility"},
         {631, nullptr, "IsSdCardAccessible"},
         {640, nullptr, "IsSignedSystemPartitionOnSdCardValid"},
@@ -1113,6 +1113,38 @@ void FSP_SRV::OpenImageDirectoryFileSystem(Kernel::HLERequestContext& ctx) {
                                                            : FileSys::StorageId::SdCard)));
 }
 
+void FSP_SRV::OpenContentStorageFileSystem(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto storage = rp.PopRaw<ContentStorageId>();
+
+    LOG_DEBUG(Service_FS, "called, storage={:08X}", static_cast<u32>(storage));
+
+    auto dir = fsc.GetContentDirectory(storage);
+
+    if (dir == nullptr) {
+        LOG_ERROR(Service_FS, "The content storage requested was invalid!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    FileSys::StorageId storage_id = FileSys::StorageId::None;
+    switch (storage) {
+    case ContentStorageId::SdCard:
+        storage_id = FileSys::StorageId::SdCard;
+        break;
+    case ContentStorageId::User:
+        storage_id = FileSys::StorageId::NandUser;
+        break;
+    case ContentStorageId::System:
+        storage_id = FileSys::StorageId::NandSystem;
+        break;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(
+        std::make_shared<IFileSystem>(std::move(dir), SizeGetter::FromStorageId(fsc, storage_id)));
 }
 
 void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {

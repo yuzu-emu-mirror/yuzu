@@ -49,9 +49,9 @@ private:
     void OpenSaveDataFileSystemBySystemSaveDataId(Kernel::HLERequestContext& ctx);
     void OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataInfoReader(Kernel::HLERequestContext& ctx);
-    void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);
-    void OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataInfoReaderBySaveDataSpaceId(Kernel::HLERequestContext& ctx);
+    void OpenImageDirectoryFileSystem(Kernel::HLERequestContext& ctx);
+    void OpenContentStorageFileSystem(Kernel::HLERequestContext& ctx);
     void SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
     void GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
     void OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
@@ -61,6 +61,7 @@ private:
     void GetAccessLogVersionInfo(Kernel::HLERequestContext& ctx);
     void OpenSdCardDetectionEventNotifier(Kernel::HLERequestContext& ctx);
     void OpenGameCardDetectionEventNotifier(Kernel::HLERequestContext& ctx);
+    void SetSdCardEncryptionSeed(Kernel::HLERequestContext& ctx);
 
     Core::System& system;
     FileSystemController& fsc;
