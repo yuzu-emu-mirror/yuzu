@@ -14,17 +14,22 @@
 #include "common/hex_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
+#include "core/file_sys/content_archive.h"
 #include "core/file_sys/directory.h"
 #include "core/file_sys/errors.h"
 #include "core/file_sys/mode.h"
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/patch_manager.h"
+#include "core/file_sys/registered_cache.h"
+#include "core/file_sys/romfs.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/system_archive/system_archive.h"
 #include "core/file_sys/vfs.h"
+#include "core/file_sys/vfs_ro_layer.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/readable_event.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/fsp_srv.h"
 #include "core/reporter.h"
@@ -660,9 +665,9 @@ FSP_SRV::FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter)
         {7, &FSP_SRV::OpenFileSystemWithPatch, "OpenFileSystemWithPatch"},
         {8, nullptr, "OpenFileSystemWithId"},
         {9, nullptr, "OpenDataFileSystemByApplicationId"},
-        {11, nullptr, "OpenBisFileSystem"},
-        {12, nullptr, "OpenBisStorage"},
-        {13, nullptr, "InvalidateBisCache"},
+        {11, &FSP_SRV::OpenBisFileSystem, "OpenBisFileSystem"},
+        {12, &FSP_SRV::OpenBisStorage, "OpenBisStorage"},
+        {13, &FSP_SRV::InvalidateBisCache, "InvalidateBisCache"},
         {17, nullptr, "OpenHostFileSystem"},
         {18, &FSP_SRV::OpenSdCardFileSystem, "OpenSdCardFileSystem"},
         {19, nullptr, "FormatSdCardFileSystem"},
@@ -781,11 +786,134 @@ void FSP_SRV::OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx) {
 
     const auto type = rp.PopRaw<FileSystemType>();
     const auto title_id = rp.PopRaw<u64>();
-    LOG_WARNING(Service_FS, "(STUBBED) called with type={}, title_id={:016X}",
-                static_cast<u8>(type), title_id);
+    LOG_DEBUG(Service_FS, "called with type={}, title_id={:016X}", static_cast<u8>(type), title_id);
 
-    IPC::ResponseBuilder rb{ctx, 2, 0, 0};
-    rb.Push(ResultCode(-1));
+    const auto& prov{system.GetContentProvider()};
+
+    FileSys::PatchManager pm{title_id};
+    FileSys::ContentRecordType cr_type;
+
+    switch (type) {
+    case FileSystemType::ApplicationPackage:
+    case FileSystemType::Logo:
+        cr_type = FileSys::ContentRecordType::Program;
+        break;
+    case FileSystemType::ContentControl:
+        cr_type = FileSys::ContentRecordType::Control;
+        break;
+    case FileSystemType::ContentManual:
+        cr_type = FileSys::ContentRecordType::HtmlDocument;
+        break;
+    case FileSystemType::ContentMeta:
+        cr_type = FileSys::ContentRecordType::Meta;
+        break;
+    case FileSystemType::ContentData:
+        cr_type = FileSys::ContentRecordType::Data;
+        break;
+    default:
+        LOG_WARNING(Service_FS, "called with invalid filesystem type!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    const auto& nca{prov.GetEntry(title_id, cr_type)};
+    if (nca == nullptr) {
+        LOG_WARNING(Service_FS, "NCA requested doesn't exist in content provider!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    FileSys::VirtualDir dir;
+
+    if (type == FileSystemType::ApplicationPackage) {
+        dir = nca->GetExeFS();
+        if (dir != nullptr)
+            dir = pm.PatchExeFS(dir);
+    } else if (type == FileSystemType::Logo) {
+        dir = nca->GetSubdirectories()[1];
+    } else if (type == FileSystemType::ContentControl || type == FileSystemType::ContentManual ||
+               type == FileSystemType::ContentData) {
+        if (nca->GetRomFS() != nullptr) {
+            const auto romfs = pm.PatchRomFS(nca->GetRomFS(), nca->GetBaseIVFCOffset(), cr_type);
+            if (romfs != nullptr)
+                dir = FileSys::ExtractRomFS(romfs);
+        }
+    } else {
+        dir = nca->GetSubdirectories()[0];
+    }
+
+    if (dir == nullptr) {
+        LOG_WARNING(Service_FS, "couldn't get requested NCA section!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(std::make_shared<IFileSystem>(
+        dir, SizeGetter::FromStorageId(fsc, FileSys::StorageId::Host)));
+}
+
+void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto partition = rp.PopRaw<FileSys::BisPartitionId>();
+
+    LOG_DEBUG(Service_FS, "called with partition_id={:08X}", static_cast<u32>(partition));
+
+    auto dir = fsc.OpenBISPartition(partition);
+
+    if (dir.Failed()) {
+        LOG_ERROR(Service_FS,
+                  "Failed to mount BIS filesystem for partition_id={:08X}! Could be invalid "
+                  "argument or uninitialized system.",
+                  static_cast<u32>(partition));
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(dir.Code());
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+
+    IFileSystem fs(dir.Unwrap(), SizeGetter::FromStorageId(fsc, FileSys::StorageId::Host));
+    rb.PushIpcInterface<IFileSystem>(std::move(fs));
+}
+
+void FSP_SRV::OpenBisStorage(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto partition = rp.PopRaw<FileSys::BisPartitionId>();
+
+    LOG_DEBUG(Service_FS, "called with partition_id={:08X}", static_cast<u32>(partition));
+
+    auto file = fsc.OpenBISPartitionStorage(partition);
+
+    if (file.Failed()) {
+        LOG_ERROR(Service_FS,
+                  "Failed to mount BIS storage for partition_id={:08X}! Could be invalid "
+                  "argument or uninitialized system.",
+                  static_cast<u32>(partition));
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(file.Code());
+        return;
+    }
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+
+    IStorage fs(file.Unwrap());
+    rb.PushIpcInterface<IStorage>(std::move(fs));
+}
+
+void FSP_SRV::InvalidateBisCache(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_FS, "called");
+
+    // Exists for SDK compatibility -- We do not emulate a BIS cache.
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void FSP_SRV::OpenSdCardFileSystem(Kernel::HLERequestContext& ctx) {

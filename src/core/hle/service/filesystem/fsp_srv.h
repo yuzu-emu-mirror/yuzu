@@ -32,12 +32,15 @@ enum class LogMode : u32 {
 
 class FSP_SRV final : public ServiceFramework<FSP_SRV> {
 public:
-    explicit FSP_SRV(FileSystemController& fsc, const Core::Reporter& reporter);
+    explicit FSP_SRV(Core::System& system);
     ~FSP_SRV() override;
 
 private:
     void SetCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx);
+    void OpenBisFileSystem(Kernel::HLERequestContext& ctx);
+    void OpenBisStorage(Kernel::HLERequestContext& ctx);
+    void InvalidateBisCache(Kernel::HLERequestContext& ctx);
     void OpenSdCardFileSystem(Kernel::HLERequestContext& ctx);
     void CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);
@@ -51,6 +54,7 @@ private:
     void OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx);
     void GetAccessLogVersionInfo(Kernel::HLERequestContext& ctx);
 
+    Core::System& system;
     FileSystemController& fsc;
 
     FileSys::VirtualFile romfs;
@@ -58,7 +62,7 @@ private:
     u32 access_log_program_index = 0;
     LogMode log_mode = LogMode::LogToSdCard;
 
-    const Core::Reporter& reporter;
+    Kernel::EventPair sd_card_detection_event;
 };
 
 } // namespace Service::FileSystem
