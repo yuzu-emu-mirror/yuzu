@@ -268,6 +268,7 @@ CachedProgram SpecializeShader(const std::string& code, const GLShader::ShaderEn
 
     auto program = std::make_shared<GLShader::StageProgram>();
     program->Create(true, hint_retrievable, shader.handle);
+    program->SetUniformLocations();
     return program;
 }
 

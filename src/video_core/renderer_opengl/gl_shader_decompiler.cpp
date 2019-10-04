@@ -2496,9 +2496,8 @@ std::string GetCommonDeclarations() {
         "    return bvec2(comparison.x || is_nan1.x || is_nan2.x, comparison.y || is_nan1.y || "
         "is_nan2.y);\n"
         "}}\n\n"
-        "layout(location = 0) uniform uvec4 config_pack; // instance_id, flip_stage, y_direction, "
-        "padding\n"
-        "layout(location = 1) uniform vec2 viewport_flip;\n\n");
+        "uniform uvec4 config_pack; // instance_id, flip_stage, y_direction, padding\n"
+        "uniform vec2 viewport_flip;\n\n");
 }
 
 ProgramResult Decompile(const Device& device, const ShaderIR& ir, ProgramType stage,

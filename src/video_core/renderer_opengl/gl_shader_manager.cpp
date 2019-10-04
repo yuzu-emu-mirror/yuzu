@@ -16,17 +16,18 @@ StageProgram::StageProgram() = default;
 
 StageProgram::~StageProgram() = default;
 
+void StageProgram::SetUniformLocations() {
+    config_pack_location = glGetUniformLocation(handle, "config_pack");
+    viewport_flip_location = glGetUniformLocation(handle, "viewport_flip");
+}
+
 void StageProgram::UpdateConstants() {
-    enum ProgramLocations : u32 {
-        CONFIG_PACK = 0,
-        VIEWPORT_SCALE = 1,
-    };
     if (state.config_pack != old_state.config_pack) {
-        glProgramUniform4uiv(handle, CONFIG_PACK, 1, state.config_pack.data());
+        glProgramUniform4uiv(handle, config_pack_location, 1, state.config_pack.data());
         old_state.config_pack = state.config_pack;
     }
     if (state.viewport_scale != old_state.viewport_scale) {
-        glProgramUniform2fv(handle, VIEWPORT_SCALE, 1, state.viewport_scale.data());
+        glProgramUniform2fv(handle, viewport_flip_location, 1, state.viewport_scale.data());
         old_state.viewport_scale = state.viewport_scale;
     }
 }

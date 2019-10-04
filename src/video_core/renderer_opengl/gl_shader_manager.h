@@ -26,6 +26,8 @@ public:
     explicit StageProgram();
     ~StageProgram();
 
+    void SetUniformLocations();
+
     void UpdateConstants();
 
     void SetInstanceID(GLuint instance_id) {
@@ -62,6 +64,9 @@ private:
 
         std::array<GLfloat, 2> viewport_scale{};
     };
+
+    GLint config_pack_location = -1;
+    GLint viewport_flip_location = -1;
 
     State state;
     State old_state;
