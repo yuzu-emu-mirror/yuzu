@@ -342,6 +342,8 @@ protected:
                 ManageRenderTargetUnregister(old_surface);
             }
             UnregisterInnerCache(old_surface);
+            old_surface->MarkAsRegistered(false);
+            ReserveSurface(old_surface->GetSurfaceParams(), old_surface);
         }
         const GPUVAddr gpu_addr = new_surface->GetGpuAddr();
         const CacheAddr cache_ptr = ToCacheAddr(system.GPU().MemoryManager().GetPointer(gpu_addr));
