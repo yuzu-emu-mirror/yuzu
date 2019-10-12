@@ -336,6 +336,29 @@ protected:
         ReserveSurface(surface->GetSurfaceParams(), surface);
     }
 
+    void Swap(TSurface old_surface, TSurface new_surface) {
+        if (!guard_render_targets && !old_surface->IsProtected()) {
+            if (old_surface->IsRenderTarget()) {
+                ManageRenderTargetUnregister(old_surface);
+            }
+            UnregisterInnerCache(old_surface);
+        }
+        const GPUVAddr gpu_addr = new_surface->GetGpuAddr();
+        const CacheAddr cache_ptr = ToCacheAddr(system.GPU().MemoryManager().GetPointer(gpu_addr));
+        const std::optional<VAddr> cpu_addr = old_surface->GetCpuAddr();
+        if (!cache_ptr || !cpu_addr) {
+            LOG_CRITICAL(HW_GPU, "Failed to register surface with unmapped gpu_address 0x{:016x}",
+                         gpu_addr);
+            return;
+        }
+        new_surface->MarkAsContinuous(system.GPU().MemoryManager().IsBlockContinuous(
+            gpu_addr, new_surface->GetSizeInBytes()));
+        new_surface->SetCacheAddr(cache_ptr);
+        new_surface->SetCpuAddr(*cpu_addr);
+        RegisterInnerCache(new_surface);
+        new_surface->MarkAsRegistered(true);
+    }
+
     TSurface GetUncachedSurface(const GPUVAddr gpu_addr, const SurfaceParams& params) {
         if (const auto surface = TryGetReservedSurface(params); surface) {
             surface->SetGpuAddr(gpu_addr);
@@ -495,8 +518,7 @@ private:
                 ImageCopy(current_surface, new_surface, brick);
             }
         }
-        Unregister(current_surface);
-        Register(new_surface);
+        Swap(current_surface, new_surface);
         new_surface->MarkAsModified(current_surface->IsModified(), Tick());
         return {new_surface, new_surface->GetMainView()};
     }
