@@ -344,21 +344,25 @@ protected:
             UnregisterInnerCache(old_surface);
             old_surface->MarkAsRegistered(false);
             ReserveSurface(old_surface->GetSurfaceParams(), old_surface);
+            const GPUVAddr gpu_addr = new_surface->GetGpuAddr();
+            const CacheAddr cache_ptr =
+                ToCacheAddr(system.GPU().MemoryManager().GetPointer(gpu_addr));
+            const std::optional<VAddr> cpu_addr = old_surface->GetCpuAddr();
+            if (!cache_ptr || !cpu_addr) {
+                LOG_CRITICAL(HW_GPU,
+                             "Failed to register surface with unmapped gpu_address 0x{:016x}",
+                             gpu_addr);
+                return;
+            }
+            new_surface->MarkAsContinuous(system.GPU().MemoryManager().IsBlockContinuous(
+                gpu_addr, new_surface->GetSizeInBytes()));
+            new_surface->SetCacheAddr(cache_ptr);
+            new_surface->SetCpuAddr(*cpu_addr);
+            RegisterInnerCache(new_surface);
+            new_surface->MarkAsRegistered(true);
+        } else {
+            Register(new_surface);
         }
-        const GPUVAddr gpu_addr = new_surface->GetGpuAddr();
-        const CacheAddr cache_ptr = ToCacheAddr(system.GPU().MemoryManager().GetPointer(gpu_addr));
-        const std::optional<VAddr> cpu_addr = old_surface->GetCpuAddr();
-        if (!cache_ptr || !cpu_addr) {
-            LOG_CRITICAL(HW_GPU, "Failed to register surface with unmapped gpu_address 0x{:016x}",
-                         gpu_addr);
-            return;
-        }
-        new_surface->MarkAsContinuous(system.GPU().MemoryManager().IsBlockContinuous(
-            gpu_addr, new_surface->GetSizeInBytes()));
-        new_surface->SetCacheAddr(cache_ptr);
-        new_surface->SetCpuAddr(*cpu_addr);
-        RegisterInnerCache(new_surface);
-        new_surface->MarkAsRegistered(true);
     }
 
     TSurface GetUncachedSurface(const GPUVAddr gpu_addr, const SurfaceParams& params) {
