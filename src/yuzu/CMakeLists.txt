@@ -103,6 +103,9 @@ add_executable(yuzu
     main.cpp
     main.h
     main.ui
+    status/system_archive.cpp
+    status/system_archive.h
+    status/system_archive.ui
     uisettings.cpp
     uisettings.h
     util/limitable_input_dialog.cpp
