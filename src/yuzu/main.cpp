@@ -897,6 +897,23 @@ bool GMainWindow::LoadROM(const QString& filename) {
                "wiki</a>. This message will not be shown again."));
     }
 
+    const auto no_imported =
+        system.GetFileSystemController().GetSysdataImportedDirectory()->GetFiles().empty();
+
+    if (result == Core::System::ResultStatus::Success &&
+        system.GetAppLoader().GetFileType() == Loader::FileType::XCI && no_imported) {
+        if (QMessageBox::question(this, tr("Import System Archives"),
+                                  tr("The game type you are using includes additional system files "
+                                     "that may improve yuzu's compatibility with this and other "
+                                     "games. Would you like to import these files?")) ==
+            QMessageBox::Yes) {
+            const auto game = Core::GetGameFileFromPath(vfs, filename.toStdString());
+            FileSys::XCI xci{game};
+            FileSys::SystemArchive::ImportXCISystemUpdate(
+                system.GetFileSystemController().GetSysdataImportedDirectory(), xci);
+        }
+    }
+
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
         case Core::System::ResultStatus::ErrorGetLoader:
