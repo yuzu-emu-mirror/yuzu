@@ -717,6 +717,14 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::SDMC,
                                        sdmc_factory->GetSDMCContents());
     }
+
+    sysdata_imported_dir =
+        vfs.CreateDirectory(FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) + "imported",
+                            FileSys::Mode::ReadWrite);
+}
+
+FileSys::VirtualDir FileSystemController::GetSysdataImportedDirectory() const {
+    return sysdata_imported_dir;
 }
 
 void InstallInterfaces(Core::System& system) {
