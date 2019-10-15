@@ -9,6 +9,9 @@
 
 namespace FileSys::SystemArchive {
 
+constexpr u64 SYSTEM_ARCHIVE_BASE_TITLE_ID = 0x0100000000000800;
+constexpr std::size_t SYSTEM_ARCHIVE_COUNT = 0x28;
+
 VirtualFile SynthesizeSystemArchive(u64 title_id);
 
 } // namespace FileSys::SystemArchive
