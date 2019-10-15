@@ -86,6 +86,8 @@ add_library(core STATIC
     file_sys/system_archive/data/font_nintendo_extended.h
     file_sys/system_archive/data/font_standard.cpp
     file_sys/system_archive/data/font_standard.h
+    file_sys/system_archive/importer.cpp
+    file_sys/system_archive/importer.h
     file_sys/system_archive/mii_model.cpp
     file_sys/system_archive/mii_model.h
     file_sys/system_archive/ng_word.cpp
