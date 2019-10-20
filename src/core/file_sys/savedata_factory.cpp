@@ -95,7 +95,7 @@ ResultVal<VirtualDir> SaveDataFactory::Open(SaveDataSpaceId space,
         GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
     auto out = dir->GetDirectoryRelative(save_directory);
-    
+
     if (out == nullptr) {
         // TODO (bunnei): This is a work-around to always create a save data directory if it does
         // not already exist. This is a hack, as we do not understand how this works on hardware.
