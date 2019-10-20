@@ -95,6 +95,16 @@ ResultVal<VirtualDir> SaveDataFactory::Open(SaveDataSpaceId space,
         GetFullPath(space, meta.type, meta.title_id, meta.user_id, meta.save_id);
 
     auto out = dir->GetDirectoryRelative(save_directory);
+    
+    if (out == nullptr) {
+        // TODO (bunnei): This is a work-around to always create a save data directory if it does
+        // not already exist. This is a hack, as we do not understand how this works on hardware.
+        // Without a save data directory, many games will assert on boot. This should not have any
+        // bad side-effects.
+        // TODO: It seems that some games do not use proper channels (EnsureSaveData,
+        // CreateSaveData) to create save data. Need to investigate how HW deals with this.
+        out = dir->CreateDirectoryRelative(save_directory);
+    }
 
     // Return an error if the save data doesn't actually exist.
     if (out == nullptr) {
