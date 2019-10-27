@@ -41,13 +41,6 @@ enum SystemLanguage {
     TraditionalChinese = 16,
 };
 
-// Notification flags
-bool operation_mode_changed_notification = false;
-bool performance_mode_changed_notification = false;
-bool restart_message_enabled = false;
-bool out_of_focus_suspending_enabled = false;
-bool album_image_taken_notification_enabled = false;
-
 class AppletMessageQueue {
 public:
     enum class AppletMessage : u32 {
@@ -133,6 +126,9 @@ public:
                              std::shared_ptr<NVFlinger::NVFlinger> nvflinger_);
     ~ISelfController() override;
 
+    bool GetOperationModeChangedNotification() const;
+    bool GetAlbumImageTakenNotificationEnabled() const;
+
 private:
     void Exit(Kernel::HLERequestContext& ctx);
     void LockExit(Kernel::HLERequestContext& ctx);
@@ -164,6 +160,11 @@ private:
 
     u32 idle_time_detection_extension = 0;
     u64 num_fatal_sections_entered = 0;
+    bool operation_mode_changed_notification = false;
+    bool performance_mode_changed_notification = false;
+    bool restart_message_enabled = false;
+    bool out_of_focus_suspending_enabled = false;
+    bool album_image_taken_notification_enabled = false;
     bool is_auto_sleep_disabled = false;
 };
 
