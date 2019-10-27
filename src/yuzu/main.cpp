@@ -1914,8 +1914,8 @@ void GMainWindow::OnCaptureScreenshot() {
     auto& sm{Core::System::GetInstance().ServiceManager()};
     auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
     auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
-    bool is_notification_enabled =
-        Service::AM::ISelfController::GetAlbumImageTakenNotificationEnabled();
+    auto isc = sm.GetService<Service::AM::ISelfController>("ISelfController");
+    bool is_notification_enabled = isc->GetAlbumImageTakenNotificationEnabled();
     bool has_signalled = false;
     if (applet_oe != nullptr && is_notification_enabled) {
         applet_oe->GetMessageQueue()->ScreenshotTaken();
