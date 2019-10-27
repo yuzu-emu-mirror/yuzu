@@ -36,7 +36,8 @@ void OnDockedModeChanged(bool last_state, bool new_state) {
     // change to one and it will handle both automatically
     auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
     auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
-    bool is_notification_enabled = Service::AM::operation_mode_changed_notification;
+    bool is_notification_enabled =
+        Service::AM::ISelfController::GetOperationModeChangedNotification();
     bool has_signalled = false;
 
     if (applet_oe != nullptr && is_notification_enabled) {

@@ -549,6 +549,14 @@ void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestCo
     rb.Push(RESULT_SUCCESS);
 }
 
+bool ISelfController::GetOperationModeChangedNotification() const {
+    return operation_mode_changed_notification;
+}
+
+bool ISelfController::GetAlbumImageTakenNotificationEnabled() const {
+    return album_image_taken_notification_enabled;
+}
+
 AppletMessageQueue::AppletMessageQueue(Kernel::KernelCore& kernel) {
     on_new_message =
         Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OnMessageReceived");
