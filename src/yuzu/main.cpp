@@ -1911,6 +1911,18 @@ void GMainWindow::OnCaptureScreenshot() {
         }
     }
     OnStartGame();
+    auto& sm{Core::System::GetInstance().ServiceManager()};
+    auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
+    auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
+    bool is_notification_enabled = Service::AM::album_image_taken_notification_enabled;
+    bool has_signalled = false;
+    if (applet_oe != nullptr && is_notification_enabled) {
+        applet_oe->GetMessageQueue()->ScreenshotTaken();
+        has_signalled = true;
+    }
+    if (applet_ae != nullptr && !has_signalled && is_notification_enabled) {
+        applet_ae->GetMessageQueue()->ScreenshotTaken();
+    }
 }
 
 void GMainWindow::UpdateWindowTitle(const QString& title_name) {

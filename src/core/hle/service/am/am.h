@@ -41,6 +41,13 @@ enum SystemLanguage {
     TraditionalChinese = 16,
 };
 
+// Notification flags
+bool operation_mode_changed_notification = false;
+bool performance_mode_changed_notification = false;
+bool restart_message_enabled = false;
+bool out_of_focus_suspending_enabled = false;
+bool album_image_taken_notification_enabled = false;
+
 class AppletMessageQueue {
 public:
     enum class AppletMessage : u32 {
@@ -49,18 +56,20 @@ public:
         FocusStateChanged = 15,
         OperationModeChanged = 30,
         PerformanceModeChanged = 31,
+        ScreenshotTaken = 92,
     };
 
     explicit AppletMessageQueue(Kernel::KernelCore& kernel);
     ~AppletMessageQueue();
 
-    const std::shared_ptr<Kernel::ReadableEvent>& GetMesssageRecieveEvent() const;
+    const std::shared_ptr<Kernel::ReadableEvent>& GetMesssageReceiveEvent() const;
     const std::shared_ptr<Kernel::ReadableEvent>& GetOperationModeChangedEvent() const;
     void PushMessage(AppletMessage msg);
     AppletMessage PopMessage();
     std::size_t GetMessageCount() const;
-    void OperationModeChanged();
     void RequestExit();
+    void OperationModeChanged();
+    void ScreenshotTaken();
 
 private:
     std::queue<AppletMessage> messages;
@@ -146,6 +155,7 @@ private:
     void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx);
+    void SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx);
 
     Core::System& system;
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;

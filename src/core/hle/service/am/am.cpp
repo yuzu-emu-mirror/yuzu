@@ -290,7 +290,7 @@ ISelfController::ISelfController(Core::System& system,
         {80, nullptr, "SetWirelessPriorityMode"},
         {90, &ISelfController::GetAccumulatedSuspendedTickValue, "GetAccumulatedSuspendedTickValue"},
         {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
-        {100, nullptr, "SetAlbumImageTakenNotificationEnabled"},
+        {100, &ISelfController::SetAlbumImageTakenNotificationEnabled, "SetAlbumImageTakenNotificationEnabled"},
         {110, nullptr, "SetApplicationAlbumUserData"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
@@ -315,7 +315,7 @@ ISelfController::ISelfController(Core::System& system,
 ISelfController::~ISelfController() = default;
 
 void ISelfController::Exit(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_AM, "called");
+    LOG_DEBUG(Service_AM, "called.");
 
     system.Shutdown();
 
@@ -324,7 +324,7 @@ void ISelfController::Exit(Kernel::HLERequestContext& ctx) {
 }
 
 void ISelfController::LockExit(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_AM, "called");
+    LOG_DEBUG(Service_AM, "called.");
 
     system.SetExitLock(true);
 
@@ -333,7 +333,7 @@ void ISelfController::LockExit(Kernel::HLERequestContext& ctx) {
 }
 
 void ISelfController::UnlockExit(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_AM, "called");
+    LOG_DEBUG(Service_AM, "called.");
 
     system.SetExitLock(false);
 
@@ -366,7 +366,7 @@ void ISelfController::LeaveFatalSection(Kernel::HLERequestContext& ctx) {
 }
 
 void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     launchable_event.writable->Signal();
 
@@ -376,7 +376,7 @@ void ISelfController::GetLibraryAppletLaunchableEvent(Kernel::HLERequestContext&
 }
 
 void ISelfController::SetScreenShotPermission(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -384,9 +384,10 @@ void ISelfController::SetScreenShotPermission(Kernel::HLERequestContext& ctx) {
 
 void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
+    operation_mode_changed_notification = rp.Pop<bool>();
 
-    bool flag = rp.Pop<bool>();
-    LOG_WARNING(Service_AM, "(STUBBED) called flag={}", flag);
+    LOG_DEBUG(Service_AM, "called. operation_mode_changed_notification={}",
+              operation_mode_changed_notification);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -394,9 +395,10 @@ void ISelfController::SetOperationModeChangedNotification(Kernel::HLERequestCont
 
 void ISelfController::SetPerformanceModeChangedNotification(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
+    performance_mode_changed_notification = rp.Pop<bool>();
 
-    bool flag = rp.Pop<bool>();
-    LOG_WARNING(Service_AM, "(STUBBED) called flag={}", flag);
+    LOG_WARNING(Service_AM, "(STUBBED) called. performance_mode_changed_notification={}",
+                performance_mode_changed_notification);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -422,33 +424,37 @@ void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
 }
 
 void ISelfController::SetRestartMessageEnabled(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
+    restart_message_enabled = rp.Pop<bool>();
+
+    LOG_WARNING(Service_AM, "(STUBBED) called. restart_message_enabled={}",
+                restart_message_enabled);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void ISelfController::SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx) {
-    // Takes 3 input u8s with each field located immediately after the previous
-    // u8, these are bool flags. No output.
+    // Takes an input u8 bool flag. No output.
     IPC::RequestParser rp{ctx};
+    out_of_focus_suspending_enabled = rp.Pop<bool>();
 
-    bool enabled = rp.Pop<bool>();
-    LOG_WARNING(Service_AM, "(STUBBED) called enabled={}", enabled);
+    LOG_WARNING(Service_AM, "(STUBBED) called. out_of_focus_suspending_enabled={}",
+                out_of_focus_suspending_enabled);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void ISelfController::SetScreenShotImageOrientation(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     // TODO(Subv): Find out how AM determines the display to use, for now just
     // create the layer in the Default display.
@@ -461,7 +467,7 @@ void ISelfController::CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx) 
 }
 
 void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -470,7 +476,7 @@ void ISelfController::SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx)
 void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     idle_time_detection_extension = rp.Pop<u32>();
-    LOG_WARNING(Service_AM, "(STUBBED) called idle_time_detection_extension={}",
+    LOG_WARNING(Service_AM, "(STUBBED) called. idle_time_detection_extension={}",
                 idle_time_detection_extension);
 
     IPC::ResponseBuilder rb{ctx, 2};
@@ -478,7 +484,7 @@ void ISelfController::SetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
 }
 
 void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_WARNING(Service_AM, "(STUBBED) called.");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -532,16 +538,27 @@ void ISelfController::GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequest
     rb.PushCopyObjects(accumulated_suspended_tick_changed_event.readable);
 }
 
+void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    album_image_taken_notification_enabled = rp.Pop<bool>();
+
+    LOG_DEBUG(Service_AM, "called. album_image_taken_notification_enabled={}",
+              album_image_taken_notification_enabled);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 AppletMessageQueue::AppletMessageQueue(Kernel::KernelCore& kernel) {
     on_new_message =
-        Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OnMessageRecieved");
+        Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OnMessageReceived");
     on_operation_mode_changed =
         Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OperationModeChanged");
 }
 
 AppletMessageQueue::~AppletMessageQueue() = default;
 
-const std::shared_ptr<Kernel::ReadableEvent>& AppletMessageQueue::GetMesssageRecieveEvent() const {
+const std::shared_ptr<Kernel::ReadableEvent>& AppletMessageQueue::GetMesssageReceiveEvent() const {
     return on_new_message.readable;
 }
 
@@ -572,14 +589,18 @@ std::size_t AppletMessageQueue::GetMessageCount() const {
     return messages.size();
 }
 
+void AppletMessageQueue::RequestExit() {
+    PushMessage(AppletMessage::ExitRequested);
+}
+
 void AppletMessageQueue::OperationModeChanged() {
     PushMessage(AppletMessage::OperationModeChanged);
     PushMessage(AppletMessage::PerformanceModeChanged);
     on_operation_mode_changed.writable->Signal();
 }
 
-void AppletMessageQueue::RequestExit() {
-    PushMessage(AppletMessage::ExitRequested);
+void AppletMessageQueue::ScreenshotTaken() {
+    PushMessage(AppletMessage::ScreenshotTaken);
 }
 
 ICommonStateGetter::ICommonStateGetter(Core::System& system,
@@ -645,7 +666,7 @@ void ICommonStateGetter::GetEventHandle(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushCopyObjects(msg_queue->GetMesssageRecieveEvent());
+    rb.PushCopyObjects(msg_queue->GetMessageReceiveEvent());
 }
 
 void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
