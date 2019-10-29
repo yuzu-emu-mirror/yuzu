@@ -78,34 +78,55 @@ std::string ReadOnlyVfsDirectoryLayer::GetName() const {
 }
 
 std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectoryLayer::GetParentDirectory() const {
-    return std::make_shared<ReadOnlyVfsDirectoryLayer>(base->GetParentDirectory());
+    auto out = base->GetParentDirectory();
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsDirectoryLayer>(out);
 }
 
 std::shared_ptr<VfsFile> ReadOnlyVfsDirectoryLayer::GetFileRelative(std::string_view path) const {
-    return std::make_shared<ReadOnlyVfsFileLayer>(base->GetFileRelative(path));
+    auto out = base->GetFileRelative(path);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsFileLayer>(out);
 }
 
 std::shared_ptr<VfsFile> ReadOnlyVfsDirectoryLayer::GetFileAbsolute(std::string_view path) const {
-    return std::make_shared<ReadOnlyVfsFileLayer>(base->GetFileAbsolute(path));
+    auto out = base->GetFileAbsolute(path);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsFileLayer>(out);
 }
 
 std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectoryLayer::GetDirectoryRelative(
     std::string_view path) const {
-    return std::make_shared<ReadOnlyVfsDirectoryLayer>(base->GetDirectoryRelative(path));
+    auto out = base->GetDirectoryRelative(path);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsDirectoryLayer>(out);
 }
 
 std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectoryLayer::GetDirectoryAbsolute(
     std::string_view path) const {
-    return std::make_shared<ReadOnlyVfsDirectoryLayer>(base->GetDirectoryAbsolute(path));
+    auto out = base->GetDirectoryAbsolute(path);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsDirectoryLayer>(out);
 }
 
 std::shared_ptr<VfsFile> ReadOnlyVfsDirectoryLayer::GetFile(std::string_view name) const {
-    return std::make_shared<ReadOnlyVfsFileLayer>(base->GetFile(name));
+    auto out = base->GetFile(name);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsFileLayer>(out);
 }
 
 std::shared_ptr<VfsDirectory> ReadOnlyVfsDirectoryLayer::GetSubdirectory(
     std::string_view name) const {
-    return std::make_shared<ReadOnlyVfsDirectoryLayer>(base->GetSubdirectory(name));
+    auto out = base->GetSubdirectory(name);
+    if (out == nullptr)
+        return nullptr;
+    return std::make_shared<ReadOnlyVfsDirectoryLayer>(out);
 }
 
 bool ReadOnlyVfsDirectoryLayer::IsRoot() const {
