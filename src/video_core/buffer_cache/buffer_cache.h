@@ -5,13 +5,14 @@
 #pragma once
 
 #include <array>
-#include <boost/range.hpp>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <boost/range.hpp>
 
 #include "common/alignment.h"
 #include "common/common_types.h"
