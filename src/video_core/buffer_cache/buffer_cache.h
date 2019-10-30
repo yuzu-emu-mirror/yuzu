@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <boost/range.hpp>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
