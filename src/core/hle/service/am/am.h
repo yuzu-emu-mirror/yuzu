@@ -127,6 +127,7 @@ public:
     ~ISelfController() override;
 
     bool GetOperationModeChangedNotification() const;
+    bool GetPerformanceModeChangedNotification() const;
     bool GetAlbumImageTakenNotificationEnabled() const;
 
 private:
