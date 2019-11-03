@@ -542,8 +542,8 @@ void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestCo
     IPC::RequestParser rp{ctx};
     album_image_taken_notification_enabled = rp.Pop<bool>();
 
-    LOG_DEBUG(Service_AM, "called. album_image_taken_notification_enabled={}",
-              album_image_taken_notification_enabled);
+    LOG_WARNING(Service_AM, "(STUBBED) called. album_image_taken_notification_enabled={}",
+                album_image_taken_notification_enabled);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -551,6 +551,10 @@ void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestCo
 
 bool ISelfController::GetOperationModeChangedNotification() const {
     return operation_mode_changed_notification;
+}
+
+bool ISelfController::GetPerformanceModeChangedNotification() const {
+    return performance_mode_changed_notification;
 }
 
 bool ISelfController::GetAlbumImageTakenNotificationEnabled() const {
