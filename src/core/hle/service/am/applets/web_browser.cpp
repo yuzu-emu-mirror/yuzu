@@ -117,39 +117,39 @@ namespace {
 constexpr std::size_t SHIM_KIND_COUNT = 0x8;
 
 struct WebArgHeader {
-    u16 count;
-    INSERT_PADDING_BYTES(2);
-    ShimKind kind;
+    u16 count{};
+    INSERT_PADDING_BYTES(2){};
+    ShimKind kind{};
 };
 static_assert(sizeof(WebArgHeader) == 0x8, "WebArgHeader has incorrect size.");
 
 struct WebArgTLV {
-    WebArgTLVType type;
-    u16 size;
-    u32 offset;
+    WebArgTLVType type{};
+    u16 size{};
+    u32 offset{};
 };
 static_assert(sizeof(WebArgTLV) == 0x8, "WebArgTLV has incorrect size.");
 
 struct WebCommonReturnValue {
-    u32 result_code;
+    u32 result_code{};
     INSERT_PADDING_BYTES(0x4);
-    std::array<char, 0x1000> last_url;
-    u64 last_url_size;
+    std::array<char, 0x1000> last_url{};
+    u64 last_url_size{};
 };
 static_assert(sizeof(WebCommonReturnValue) == 0x1010, "WebCommonReturnValue has incorrect size.");
 
 struct WebWifiPageArg {
-    INSERT_PADDING_BYTES(4);
-    std::array<char, 0x100> connection_test_url;
-    std::array<char, 0x400> initial_url;
-    std::array<u8, 0x10> nifm_network_uuid;
-    u32 nifm_requirement;
+    INSERT_PADDING_BYTES(4){};
+    std::array<char, 0x100> connection_test_url{};
+    std::array<char, 0x400> initial_url{};
+    std::array<u8, 0x10> nifm_network_uuid{};
+    u32 nifm_requirement{};
 };
 static_assert(sizeof(WebWifiPageArg) == 0x518, "WebWifiPageArg has incorrect size.");
 
 struct WebWifiReturnValue {
-    INSERT_PADDING_BYTES(4);
-    u32 result;
+    INSERT_PADDING_BYTES(4){};
+    u32 result{};
 };
 static_assert(sizeof(WebWifiReturnValue) == 0x8, "WebWifiReturnValue has incorrect size.");
 
@@ -545,7 +545,8 @@ void WebBrowser::ExecuteShop() {
 }
 
 void WebBrowser::ExecuteOffline() {
-    frontend.OpenPageLocal(filename, [this] { UnpackRomFS(); }, [this] { Finalize(); });
+    frontend.OpenPageLocal(
+        filename, [this] { UnpackRomFS(); }, [this] { Finalize(); });
 }
 
 } // namespace Service::AM::Applets

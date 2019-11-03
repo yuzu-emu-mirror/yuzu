@@ -25,8 +25,8 @@ enum class PcmFormat : u32 {
 struct ADPCMState {
     // Two historical samples from previous processed buffer,
     // required for ADPCM decoding
-    s16 yn1; ///< y[n-1]
-    s16 yn2; ///< y[n-2]
+    s16 yn1{}; ///< y[n-1]
+    s16 yn2{}; ///< y[n-2]
 };
 
 using ADPCM_Coeff = std::array<s16, 16>;

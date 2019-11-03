@@ -24,13 +24,14 @@
 namespace Loader {
 namespace {
 struct MODHeader {
-    u32_le magic;
-    u32_le dynamic_offset;
-    u32_le bss_start_offset;
-    u32_le bss_end_offset;
-    u32_le eh_frame_hdr_start_offset;
-    u32_le eh_frame_hdr_end_offset;
-    u32_le module_offset; // Offset to runtime-generated module object. typically equal to .bss base
+    u32_le magic{};
+    u32_le dynamic_offset{};
+    u32_le bss_start_offset{};
+    u32_le bss_end_offset{};
+    u32_le eh_frame_hdr_start_offset{};
+    u32_le eh_frame_hdr_end_offset{};
+    u32_le
+        module_offset{}; // Offset to runtime-generated module object. typically equal to .bss base
 };
 static_assert(sizeof(MODHeader) == 0x1c, "MODHeader has incorrect size.");
 

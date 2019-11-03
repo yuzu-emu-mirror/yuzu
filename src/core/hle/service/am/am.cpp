@@ -55,10 +55,10 @@ enum class LaunchParameterKind : u32 {
 constexpr u32 LAUNCH_PARAMETER_ACCOUNT_PRESELECTED_USER_MAGIC = 0xC79497CA;
 
 struct LaunchParameterAccountPreselectedUser {
-    u32_le magic;
-    u32_le is_account_selected;
-    u128 current_user;
-    INSERT_PADDING_BYTES(0x70);
+    u32_le magic{};
+    u32_le is_account_selected{};
+    u128 current_user{};
+    INSERT_PADDING_BYTES(0x70){};
 };
 static_assert(sizeof(LaunchParameterAccountPreselectedUser) == 0x88);
 
@@ -146,8 +146,8 @@ void IAudioController::GetLibraryAppletExpectedMasterVolume(Kernel::HLERequestCo
 
 void IAudioController::ChangeMainAppletMasterVolume(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        float volume;
-        s64 fade_time_ns;
+        float volume{};
+        s64 fade_time_ns{};
     };
     static_assert(sizeof(Parameters) == 16);
 
@@ -398,9 +398,9 @@ void ISelfController::SetFocusHandlingMode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     struct FocusHandlingModeParams {
-        u8 unknown0;
-        u8 unknown1;
-        u8 unknown2;
+        u8 unknown0{};
+        u8 unknown1{};
+        u8 unknown2{};
     };
     const auto flags = rp.PopRaw<FocusHandlingModeParams>();
 

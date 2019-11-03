@@ -29,25 +29,25 @@ public:
 
 private:
     struct AnalogStick {
-        s32_le x;
-        s32_le y;
+        s32_le x{};
+        s32_le y{};
     };
     static_assert(sizeof(AnalogStick) == 0x8, "AnalogStick is an invalid size");
 
     struct XPadState {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-        s32_le attributes;
-        u32_le pad_states;
-        AnalogStick x_stick;
-        AnalogStick y_stick;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
+        s32_le attributes{};
+        u32_le pad_states{};
+        AnalogStick x_stick{};
+        AnalogStick y_stick{};
     };
     static_assert(sizeof(XPadState) == 0x28, "XPadState is an invalid size");
 
     struct XPadEntry {
-        CommonHeader header;
+        CommonHeader header{};
         std::array<XPadState, 17> pad_states{};
-        INSERT_PADDING_BYTES(0x138);
+        INSERT_PADDING_BYTES(0x138){};
     };
     static_assert(sizeof(XPadEntry) == 0x400, "XPadEntry is an invalid size");
 

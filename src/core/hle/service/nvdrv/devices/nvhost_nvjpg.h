@@ -26,7 +26,7 @@ private:
     };
 
     struct IoctlSetNvmapFD {
-        u32_le nvmap_fd;
+        u32_le nvmap_fd{};
     };
     static_assert(sizeof(IoctlSetNvmapFD) == 4, "IoctlSetNvmapFD is incorrect size");
 

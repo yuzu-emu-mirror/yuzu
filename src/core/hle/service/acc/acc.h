@@ -44,8 +44,8 @@ public:
         };
 
         struct ApplicationInfo {
-            Service::Glue::ApplicationLaunchProperty launch_property;
-            ApplicationType application_type;
+            Service::Glue::ApplicationLaunchProperty launch_property{};
+            ApplicationType application_type{};
 
             constexpr explicit operator bool() const {
                 return launch_property.title_id != 0x0;

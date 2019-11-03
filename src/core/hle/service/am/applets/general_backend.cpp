@@ -52,12 +52,12 @@ void Auth::Initialize() {
     ASSERT(data.size() >= 0xC);
 
     struct Arg {
-        INSERT_PADDING_BYTES(4);
-        AuthAppletType type;
-        u8 arg0;
-        u8 arg1;
-        u8 arg2;
-        INSERT_PADDING_BYTES(1);
+        INSERT_PADDING_BYTES(4){};
+        AuthAppletType type{};
+        u8 arg0{};
+        u8 arg1{};
+        u8 arg2{};
+        INSERT_PADDING_BYTES(1){};
     };
     static_assert(sizeof(Arg) == 0xC, "Arg (AuthApplet) has incorrect size.");
 

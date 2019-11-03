@@ -8,7 +8,7 @@
 namespace Service::Glue {
 
 struct ARPManager::MapEntry {
-    ApplicationLaunchProperty launch;
+    ApplicationLaunchProperty launch{};
     std::vector<u8> control;
 };
 

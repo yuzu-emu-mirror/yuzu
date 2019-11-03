@@ -75,7 +75,7 @@ AOC_U::~AOC_U() = default;
 
 void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        u64 process_id;
+        u64 process_id{};
     };
     static_assert(sizeof(Parameters) == 8);
 
@@ -102,9 +102,9 @@ void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
 
 void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        u32 offset;
-        u32 count;
-        u64 process_id;
+        u32 offset{};
+        u32 count{};
+        u64 process_id{};
     };
     static_assert(sizeof(Parameters) == 16);
 
@@ -148,7 +148,7 @@ void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
 
 void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        u64 process_id;
+        u64 process_id{};
     };
     static_assert(sizeof(Parameters) == 8);
 
@@ -174,8 +174,8 @@ void AOC_U::GetAddOnContentBaseId(Kernel::HLERequestContext& ctx) {
 
 void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        s32 addon_index;
-        u64 process_id;
+        s32 addon_index{};
+        u64 process_id{};
     };
     static_assert(sizeof(Parameters) == 16);
 

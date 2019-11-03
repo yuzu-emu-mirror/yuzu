@@ -45,17 +45,17 @@ enum class ELFSymbolVisibility : u8 {
 };
 
 struct ELFSymbol {
-    u32 name_index;
+    u32 name_index{};
     union {
-        u8 info;
+        u8 info{};
 
         BitField<0, 4, ELFSymbolType> type;
         BitField<4, 4, ELFSymbolBinding> binding;
     };
-    ELFSymbolVisibility visibility;
-    u16 sh_index;
-    u64 value;
-    u64 size;
+    ELFSymbolVisibility visibility{};
+    u16 sh_index{};
+    u64 value{};
+    u64 size{};
 };
 static_assert(sizeof(ELFSymbol) == 0x18, "ELFSymbol has incorrect size.");
 

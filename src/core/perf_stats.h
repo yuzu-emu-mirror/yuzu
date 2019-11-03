@@ -14,13 +14,13 @@ namespace Core {
 
 struct PerfStatsResults {
     /// System FPS (LCD VBlanks) in Hz
-    double system_fps;
+    double system_fps{};
     /// Game FPS (GSP frame submissions) in Hz
-    double game_fps;
+    double game_fps{};
     /// Walltime per system frame, in seconds, excluding any waits
-    double frametime;
+    double frametime{};
     /// Ratio of walltime / emulated time elapsed
-    double emulation_speed;
+    double emulation_speed{};
 };
 
 /**

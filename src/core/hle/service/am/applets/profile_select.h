@@ -21,13 +21,13 @@ struct UserSelectionConfig {
     // TODO(DarkLordZach): RE this structure
     // It seems to be flags and the like that determine the UI of the applet on the switch... from
     // my research this is safe to ignore for now.
-    INSERT_PADDING_BYTES(0xA0);
+    INSERT_PADDING_BYTES(0xA0){};
 };
 static_assert(sizeof(UserSelectionConfig) == 0xA0, "UserSelectionConfig has incorrect size.");
 
 struct UserSelectionOutput {
-    u64 result;
-    u128 uuid_selected;
+    u64 result{};
+    u128 uuid_selected{};
 };
 static_assert(sizeof(UserSelectionOutput) == 0x18, "UserSelectionOutput has incorrect size.");
 

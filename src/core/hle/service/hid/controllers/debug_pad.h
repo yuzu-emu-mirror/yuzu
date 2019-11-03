@@ -33,8 +33,8 @@ public:
 
 private:
     struct AnalogStick {
-        s32_le x;
-        s32_le y;
+        s32_le x{};
+        s32_le y{};
     };
     static_assert(sizeof(AnalogStick) == 0x8);
 
@@ -68,19 +68,19 @@ private:
     static_assert(sizeof(Attributes) == 0x4, "Attributes is an invalid size");
 
     struct PadStates {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-        Attributes attribute;
-        PadState pad_state;
-        AnalogStick r_stick;
-        AnalogStick l_stick;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
+        Attributes attribute{};
+        PadState pad_state{};
+        AnalogStick r_stick{};
+        AnalogStick l_stick{};
     };
     static_assert(sizeof(PadStates) == 0x28, "PadStates is an invalid state");
 
     struct SharedMemory {
-        CommonHeader header;
-        std::array<PadStates, 17> pad_states;
-        INSERT_PADDING_BYTES(0x138);
+        CommonHeader header{};
+        std::array<PadStates, 17> pad_states{};
+        INSERT_PADDING_BYTES(0x138){};
     };
     static_assert(sizeof(SharedMemory) == 0x400, "SharedMemory is an invalid size");
     SharedMemory shared_memory{};

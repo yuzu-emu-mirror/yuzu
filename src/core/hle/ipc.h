@@ -37,7 +37,7 @@ enum class CommandType : u32 {
 
 struct CommandHeader {
     union {
-        u32_le raw_low;
+        u32_le raw_low{};
         BitField<0, 16, CommandType> type;
         BitField<16, 4, u32> num_buf_x_descriptors;
         BitField<20, 4, u32> num_buf_a_descriptors;
@@ -52,7 +52,7 @@ struct CommandHeader {
     };
 
     union {
-        u32_le raw_high;
+        u32_le raw_high{};
         BitField<0, 10, u32> data_size;
         BitField<10, 4, BufferDescriptorCFlag> buf_c_descriptor_flags;
         BitField<31, 1, u32> enable_handle_descriptor;
@@ -77,7 +77,7 @@ struct BufferDescriptorX {
         BitField<16, 16, u32> size;
     };
 
-    u32_le address_bits_0_31;
+    u32_le address_bits_0_31{};
 
     u32_le Counter() const {
         u32_le counter{counter_bits_0_5};
@@ -99,8 +99,8 @@ struct BufferDescriptorX {
 static_assert(sizeof(BufferDescriptorX) == 8, "BufferDescriptorX size is incorrect");
 
 struct BufferDescriptorABW {
-    u32_le size_bits_0_31;
-    u32_le address_bits_0_31;
+    u32_le size_bits_0_31{};
+    u32_le address_bits_0_31{};
 
     union {
         BitField<0, 2, u32> flags;
@@ -125,7 +125,7 @@ struct BufferDescriptorABW {
 static_assert(sizeof(BufferDescriptorABW) == 12, "BufferDescriptorABW size is incorrect");
 
 struct BufferDescriptorC {
-    u32_le address_bits_0_31;
+    u32_le address_bits_0_31{};
 
     union {
         BitField<0, 16, u32> address_bits_32_47;
@@ -145,8 +145,8 @@ struct BufferDescriptorC {
 static_assert(sizeof(BufferDescriptorC) == 8, "BufferDescriptorC size is incorrect");
 
 struct DataPayloadHeader {
-    u32_le magic;
-    INSERT_PADDING_WORDS(1);
+    u32_le magic{};
+    INSERT_PADDING_WORDS(1){};
 };
 static_assert(sizeof(DataPayloadHeader) == 8, "DataPayloadHeader size is incorrect");
 

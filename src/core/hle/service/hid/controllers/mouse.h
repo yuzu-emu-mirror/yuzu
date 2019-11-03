@@ -31,22 +31,22 @@ public:
 
 private:
     struct MouseState {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-        s32_le x;
-        s32_le y;
-        s32_le delta_x;
-        s32_le delta_y;
-        s32_le mouse_wheel_x;
-        s32_le mouse_wheel_y;
-        s32_le button;
-        s32_le attribute;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
+        s32_le x{};
+        s32_le y{};
+        s32_le delta_x{};
+        s32_le delta_y{};
+        s32_le mouse_wheel_x{};
+        s32_le mouse_wheel_y{};
+        s32_le button{};
+        s32_le attribute{};
     };
     static_assert(sizeof(MouseState) == 0x30, "MouseState is an invalid size");
 
     struct SharedMemory {
-        CommonHeader header;
-        std::array<MouseState, 17> mouse_states;
+        CommonHeader header{};
+        std::array<MouseState, 17> mouse_states{};
     };
     SharedMemory shared_memory{};
 

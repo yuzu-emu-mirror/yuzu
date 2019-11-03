@@ -9,9 +9,9 @@ namespace Service::Sockets {
 
 void SFDNSRES::GetAddrInfo(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        u8 use_nsd_resolve;
-        u32 unknown;
-        u64 process_id;
+        u8 use_nsd_resolve{};
+        u32 unknown{};
+        u64 process_id{};
     };
 
     IPC::RequestParser rp{ctx};

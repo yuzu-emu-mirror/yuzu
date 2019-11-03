@@ -325,25 +325,25 @@ enum class ControllerType {
 };
 
 struct PlayerInput {
-    bool connected;
-    ControllerType type;
-    ButtonsRaw buttons;
-    AnalogsRaw analogs;
+    bool connected{};
+    ControllerType type{};
+    ButtonsRaw buttons{};
+    AnalogsRaw analogs{};
 
-    u32 body_color_right;
-    u32 button_color_right;
-    u32 body_color_left;
-    u32 button_color_left;
+    u32 body_color_right{};
+    u32 button_color_right{};
+    u32 body_color_left{};
+    u32 button_color_left{};
 };
 
 struct TouchscreenInput {
-    bool enabled;
+    bool enabled{};
     std::string device;
 
-    u32 finger;
-    u32 diameter_x;
-    u32 diameter_y;
-    u32 rotation_angle;
+    u32 finger{};
+    u32 diameter_x{};
+    u32 diameter_y{};
+    u32 rotation_angle{};
 };
 
 enum class NANDTotalSize : u64 {

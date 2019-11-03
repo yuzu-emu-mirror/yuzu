@@ -35,8 +35,8 @@ enum class FontArchives : u64 {
 };
 
 struct FontRegion {
-    u32 offset;
-    u32 size;
+    u32 offset{};
+    u32 size{};
 };
 
 constexpr std::array<std::pair<FontArchives, const char*>, 7> SHARED_FONTS{

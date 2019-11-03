@@ -31,8 +31,8 @@ using DirectoryGetter = std::function<FileSys::VirtualDir(u64)>;
 using Passphrase = std::array<u8, 0x20>;
 
 struct TitleIDVersion {
-    u64 title_id;
-    u64 build_id;
+    u64 title_id{};
+    u64 build_id{};
 };
 
 using DirectoryName = std::array<char, 0x20>;
@@ -49,16 +49,16 @@ struct DeliveryCacheProgressImpl {
         Done = 0x9,
     };
 
-    Status status;
+    Status status{};
     ResultCode result = RESULT_SUCCESS;
-    DirectoryName current_directory;
-    FileName current_file;
-    s64 current_downloaded_bytes; ///< Bytes downloaded on current file.
-    s64 current_total_bytes;      ///< Bytes total on current file.
-    s64 total_downloaded_bytes;   ///< Bytes downloaded on overall download.
-    s64 total_bytes;              ///< Bytes total on overall download.
+    DirectoryName current_directory{};
+    FileName current_file{};
+    s64 current_downloaded_bytes{}; ///< Bytes downloaded on current file.
+    s64 current_total_bytes{};      ///< Bytes total on current file.
+    s64 total_downloaded_bytes{};   ///< Bytes downloaded on overall download.
+    s64 total_bytes{};              ///< Bytes total on overall download.
     INSERT_PADDING_BYTES(
-        0x198); ///< Appears to be unused in official code, possibly reserved for future use.
+        0x198){}; ///< Appears to be unused in official code, possibly reserved for future use.
 };
 static_assert(sizeof(DeliveryCacheProgressImpl) == 0x200,
               "DeliveryCacheProgressImpl has incorrect size.");

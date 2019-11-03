@@ -80,9 +80,9 @@ bool VerifyNameValidFile(Kernel::HLERequestContext& ctx, FileName name) {
 } // Anonymous namespace
 
 struct DeliveryCacheDirectoryEntry {
-    FileName name;
-    u64 size;
-    BCATDigest digest;
+    FileName name{};
+    u64 size{};
+    BCATDigest digest{};
 };
 
 class IDeliveryCacheProgressService final : public ServiceFramework<IDeliveryCacheProgressService> {

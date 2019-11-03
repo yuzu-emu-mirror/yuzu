@@ -22,29 +22,29 @@ using UserIDArray = std::array<Common::UUID, MAX_USERS>;
 /// Contains extra data related to a user.
 /// TODO: RE this structure
 struct ProfileData {
-    INSERT_PADDING_WORDS(1);
-    u32 icon_id;
-    u8 bg_color_id;
-    INSERT_PADDING_BYTES(0x7);
-    INSERT_PADDING_BYTES(0x10);
-    INSERT_PADDING_BYTES(0x60);
+    INSERT_PADDING_WORDS(1){};
+    u32 icon_id{};
+    u8 bg_color_id{};
+    INSERT_PADDING_BYTES(0x7){};
+    INSERT_PADDING_BYTES(0x10){};
+    INSERT_PADDING_BYTES(0x60){};
 };
 static_assert(sizeof(ProfileData) == 0x80, "ProfileData structure has incorrect size");
 
 /// This holds general information about a users profile. This is where we store all the information
 /// based on a specific user
 struct ProfileInfo {
-    Common::UUID user_uuid;
-    ProfileUsername username;
-    u64 creation_time;
-    ProfileData data; // TODO(ognik): Work out what this is
-    bool is_open;
+    Common::UUID user_uuid{};
+    ProfileUsername username{};
+    u64 creation_time{};
+    ProfileData data{}; // TODO(ognik): Work out what this is
+    bool is_open{};
 };
 
 struct ProfileBase {
-    Common::UUID user_uuid;
-    u64_le timestamp;
-    ProfileUsername username;
+    Common::UUID user_uuid{};
+    u64_le timestamp{};
+    ProfileUsername username{};
 
     // Zero out all the fields to make the profile slot considered "Empty"
     void Invalidate() {

@@ -38,14 +38,14 @@ struct MessageHeader {
         Critical,
     };
 
-    u64_le pid;
-    u64_le thread_context;
+    u64_le pid{};
+    u64_le thread_context{};
     union {
         BitField<0, 16, Flags> flags;
         BitField<16, 8, Severity> severity;
         BitField<24, 8, u32> verbosity;
     };
-    u32_le payload_size;
+    u32_le payload_size{};
 
     bool IsHeadLog() const {
         return flags & IsHead;
@@ -73,8 +73,8 @@ std::ostream& operator<<(std::ostream& os, Field field);
 using FieldMap = std::map<Field, std::vector<u8>>;
 
 struct LogMessage {
-    MessageHeader header;
-    FieldMap fields;
+    MessageHeader header{};
+    FieldMap fields{};
 };
 
 std::string FormatField(Field type, const std::vector<u8>& data);

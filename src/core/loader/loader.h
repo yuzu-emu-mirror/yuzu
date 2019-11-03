@@ -137,8 +137,8 @@ std::ostream& operator<<(std::ostream& os, ResultStatus status);
 class AppLoader : NonCopyable {
 public:
     struct LoadParameters {
-        s32 main_thread_priority;
-        u64 main_thread_stack_size;
+        s32 main_thread_priority{};
+        u64 main_thread_stack_size{};
     };
     using LoadResult = std::pair<ResultStatus, std::optional<LoadParameters>>;
 

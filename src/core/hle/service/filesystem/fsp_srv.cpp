@@ -256,8 +256,8 @@ public:
 
         // TODO(DarkLordZach): Verify that this is the correct behavior.
         // Build entry index now to save time later.
-        BuildEntryIndex(entries, backend->GetFiles(), FileSys::File);
-        BuildEntryIndex(entries, backend->GetSubdirectories(), FileSys::Directory);
+        BuildEntryIndex(entries, backend->GetFiles(), FileSys::EntryType::File);
+        BuildEntryIndex(entries, backend->GetSubdirectories(), FileSys::EntryType::Directory);
     }
 
 private:
@@ -631,17 +631,17 @@ private:
     }
 
     struct SaveDataInfo {
-        u64_le save_id_unknown;
-        FileSys::SaveDataSpaceId space;
-        FileSys::SaveDataType type;
-        INSERT_PADDING_BYTES(0x6);
-        std::array<u8, 0x10> user_id;
-        u64_le save_id;
-        u64_le title_id;
-        u64_le save_image_size;
-        u16_le index;
-        FileSys::SaveDataRank rank;
-        INSERT_PADDING_BYTES(0x25);
+        u64_le save_id_unknown{};
+        FileSys::SaveDataSpaceId space{};
+        FileSys::SaveDataType type{};
+        INSERT_PADDING_BYTES(0x6){};
+        std::array<u8, 0x10> user_id{};
+        u64_le save_id{};
+        u64_le title_id{};
+        u64_le save_image_size{};
+        u16_le index{};
+        FileSys::SaveDataRank rank{};
+        INSERT_PADDING_BYTES(0x25){};
     };
     static_assert(sizeof(SaveDataInfo) == 0x60, "SaveDataInfo has incorrect size.");
 
@@ -819,8 +819,8 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     LOG_INFO(Service_FS, "called.");
 
     struct Parameters {
-        FileSys::SaveDataSpaceId save_data_space_id;
-        FileSys::SaveDataDescriptor descriptor;
+        FileSys::SaveDataSpaceId save_data_space_id{};
+        FileSys::SaveDataDescriptor descriptor{};
     };
 
     IPC::RequestParser rp{ctx};

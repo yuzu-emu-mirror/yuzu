@@ -148,9 +148,9 @@ public:
 
     struct BacktraceEntry {
         std::string module;
-        u64 address;
-        u64 original_address;
-        u64 offset;
+        u64 address{};
+        u64 original_address{};
+        u64 offset{};
         std::string name;
     };
 

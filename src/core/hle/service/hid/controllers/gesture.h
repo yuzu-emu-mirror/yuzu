@@ -29,34 +29,34 @@ public:
 
 private:
     struct Locations {
-        s32_le x;
-        s32_le y;
+        s32_le x{};
+        s32_le y{};
     };
 
     struct GestureState {
-        s64_le sampling_number;
-        s64_le sampling_number2;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
 
-        s64_le detection_count;
-        s32_le type;
-        s32_le dir;
-        s32_le x;
-        s32_le y;
-        s32_le delta_x;
-        s32_le delta_y;
-        f32 vel_x;
-        f32 vel_y;
-        s32_le attributes;
-        f32 scale;
-        f32 rotation;
-        s32_le location_count;
-        std::array<Locations, 4> locations;
+        s64_le detection_count{};
+        s32_le type{};
+        s32_le dir{};
+        s32_le x{};
+        s32_le y{};
+        s32_le delta_x{};
+        s32_le delta_y{};
+        f32 vel_x{};
+        f32 vel_y{};
+        s32_le attributes{};
+        f32 scale{};
+        f32 rotation{};
+        s32_le location_count{};
+        std::array<Locations, 4> locations{};
     };
     static_assert(sizeof(GestureState) == 0x68, "GestureState is an invalid size");
 
     struct SharedMemory {
-        CommonHeader header;
-        std::array<GestureState, 17> gesture_states;
+        CommonHeader header{};
+        std::array<GestureState, 17> gesture_states{};
     };
     SharedMemory shared_memory{};
 };

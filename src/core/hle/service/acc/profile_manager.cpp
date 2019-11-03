@@ -16,17 +16,17 @@ namespace Service::Account {
 using Common::UUID;
 
 struct UserRaw {
-    UUID uuid;
-    UUID uuid2;
-    u64 timestamp;
-    ProfileUsername username;
-    ProfileData extra_data;
+    UUID uuid{};
+    UUID uuid2{};
+    u64 timestamp{};
+    ProfileUsername username{};
+    ProfileData extra_data{};
 };
 static_assert(sizeof(UserRaw) == 0xC8, "UserRaw has incorrect size.");
 
 struct ProfileDataRaw {
-    INSERT_PADDING_BYTES(0x10);
-    std::array<UserRaw, MAX_USERS> users;
+    INSERT_PADDING_BYTES(0x10){};
+    std::array<UserRaw, MAX_USERS> users{};
 };
 static_assert(sizeof(ProfileDataRaw) == 0x650, "ProfileDataRaw has incorrect size.");
 

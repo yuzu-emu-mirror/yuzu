@@ -32,19 +32,19 @@ public:
 
 private:
     struct KeyboardState {
-        s64_le sampling_number;
-        s64_le sampling_number2;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
 
-        s32_le modifier;
-        s32_le attribute;
-        std::array<u8, 32> key;
+        s32_le modifier{};
+        s32_le attribute{};
+        std::array<u8, 32> key{};
     };
     static_assert(sizeof(KeyboardState) == 0x38, "KeyboardState is an invalid size");
 
     struct SharedMemory {
-        CommonHeader header;
-        std::array<KeyboardState, 17> pad_states;
-        INSERT_PADDING_BYTES(0x28);
+        CommonHeader header{};
+        std::array<KeyboardState, 17> pad_states{};
+        INSERT_PADDING_BYTES(0x28){};
     };
     static_assert(sizeof(SharedMemory) == 0x400, "SharedMemory is an invalid size");
     SharedMemory shared_memory{};

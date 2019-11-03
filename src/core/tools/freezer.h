@@ -28,9 +28,9 @@ namespace Tools {
 class Freezer {
 public:
     struct Entry {
-        VAddr address;
-        u32 width;
-        u64 value;
+        VAddr address{};
+        u32 width{};
+        u64 value{};
     };
 
     explicit Freezer(Core::Timing::CoreTiming& core_timing);

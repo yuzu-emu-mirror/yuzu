@@ -124,7 +124,7 @@ private:
         std::unordered_map<int, bool> buttons;
         std::unordered_map<int, Sint16> axes;
         std::unordered_map<int, Uint8> hats;
-    } state;
+    } state{};
     std::string guid;
     int port;
     std::unique_ptr<SDL_Joystick, decltype(&SDL_JoystickClose)> sdl_joystick;

@@ -17,12 +17,12 @@ struct SoftwareKeyboardParameters {
     std::u16string sub_text;
     std::u16string guide_text;
     std::u16string initial_text;
-    std::size_t max_length;
-    bool password;
-    bool cursor_at_beginning;
+    std::size_t max_length{};
+    bool password{};
+    bool cursor_at_beginning{};
 
     union {
-        u8 value;
+        u8 value{};
 
         BitField<1, 1, u8> disable_space;
         BitField<2, 1, u8> disable_address;

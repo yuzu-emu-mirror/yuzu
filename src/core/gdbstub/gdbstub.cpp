@@ -168,10 +168,10 @@ WSADATA InitData;
 #endif
 
 struct Breakpoint {
-    bool active;
-    VAddr addr;
-    u64 len;
-    std::array<u8, 4> inst;
+    bool active{};
+    VAddr addr{};
+    u64 len{};
+    std::array<u8, 4> inst{};
 };
 
 using BreakpointMap = std::map<VAddr, Breakpoint>;
@@ -181,8 +181,8 @@ BreakpointMap breakpoints_write;
 
 struct Module {
     std::string name;
-    VAddr beg;
-    VAddr end;
+    VAddr beg{};
+    VAddr end{};
 };
 
 std::vector<Module> modules;

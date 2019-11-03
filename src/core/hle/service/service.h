@@ -81,7 +81,7 @@ private:
     friend class ServiceFramework;
 
     struct FunctionInfoBase {
-        u32 expected_header;
+        u32 expected_header{};
         HandlerFnP<ServiceFrameworkBase> handler_callback;
         const char* name;
     };
@@ -98,7 +98,7 @@ private:
     /// Identifier string used to connect to the service.
     std::string service_name;
     /// Maximum number of concurrent sessions that this service can handle.
-    u32 max_sessions;
+    u32 max_sessions{};
 
     /// Flag to store if a port was already create/installed to detect multiple install attempts,
     /// which is not supported.

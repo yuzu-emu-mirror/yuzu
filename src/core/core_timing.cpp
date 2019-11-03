@@ -18,9 +18,9 @@ namespace Core::Timing {
 constexpr int MAX_SLICE_LENGTH = 10000;
 
 struct CoreTiming::Event {
-    s64 time;
-    u64 fifo_order;
-    u64 userdata;
+    s64 time{};
+    u64 fifo_order{};
+    u64 userdata{};
     const EventType* type;
 
     // Sort by time, unless the times are the same, in which case sort by

@@ -23,7 +23,7 @@ struct FramebufferLayout {
     u32 width{ScreenUndocked::Width};
     u32 height{ScreenUndocked::Height};
 
-    Common::Rectangle<u32> screen;
+    Common::Rectangle<u32> screen{};
 
     /**
      * Returns the ration of pixel size of the screen, compared to the native size of the undocked

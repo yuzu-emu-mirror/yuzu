@@ -30,7 +30,7 @@ struct EventInterface {
     // Mask representing currently busy events
     u64 events_mask{};
     // Each kernel event associated to an NV event
-    std::array<Kernel::EventPair, MaxNvEvents> events;
+    std::array<Kernel::EventPair, MaxNvEvents> events{};
     // The status of the current NVEvent
     std::array<EventState, MaxNvEvents> status{};
     // Tells if an NVEvent is registered or not

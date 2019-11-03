@@ -20,11 +20,11 @@ class Filter;
  * formatting on different frontends, as well as facilitating filtering and aggregation.
  */
 struct Entry {
-    std::chrono::microseconds timestamp;
-    Class log_class;
-    Level log_level;
+    std::chrono::microseconds timestamp{};
+    Class log_class{};
+    Level log_level{};
     std::string filename;
-    unsigned int line_num;
+    unsigned int line_num{};
     std::string function;
     std::string message;
     bool final_entry = false;

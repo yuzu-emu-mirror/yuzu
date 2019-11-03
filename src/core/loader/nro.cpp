@@ -27,48 +27,49 @@
 namespace Loader {
 
 struct NroSegmentHeader {
-    u32_le offset;
-    u32_le size;
+    u32_le offset{};
+    u32_le size{};
 };
 static_assert(sizeof(NroSegmentHeader) == 0x8, "NroSegmentHeader has incorrect size.");
 
 struct NroHeader {
-    INSERT_PADDING_BYTES(0x4);
-    u32_le module_header_offset;
-    INSERT_PADDING_BYTES(0x8);
-    u32_le magic;
-    INSERT_PADDING_BYTES(0x4);
-    u32_le file_size;
-    INSERT_PADDING_BYTES(0x4);
-    std::array<NroSegmentHeader, 3> segments; // Text, RoData, Data (in that order)
-    u32_le bss_size;
-    INSERT_PADDING_BYTES(0x44);
+    INSERT_PADDING_BYTES(0x4){};
+    u32_le module_header_offset{};
+    INSERT_PADDING_BYTES(0x8){};
+    u32_le magic{};
+    INSERT_PADDING_BYTES(0x4){};
+    u32_le file_size{};
+    INSERT_PADDING_BYTES(0x4){};
+    std::array<NroSegmentHeader, 3> segments{}; // Text, RoData, Data (in that order)
+    u32_le bss_size{};
+    INSERT_PADDING_BYTES(0x44){};
 };
 static_assert(sizeof(NroHeader) == 0x80, "NroHeader has incorrect size.");
 
 struct ModHeader {
-    u32_le magic;
-    u32_le dynamic_offset;
-    u32_le bss_start_offset;
-    u32_le bss_end_offset;
-    u32_le unwind_start_offset;
-    u32_le unwind_end_offset;
-    u32_le module_offset; // Offset to runtime-generated module object. typically equal to .bss base
+    u32_le magic{};
+    u32_le dynamic_offset{};
+    u32_le bss_start_offset{};
+    u32_le bss_end_offset{};
+    u32_le unwind_start_offset{};
+    u32_le unwind_end_offset{};
+    u32_le
+        module_offset{}; // Offset to runtime-generated module object. typically equal to .bss base
 };
 static_assert(sizeof(ModHeader) == 0x1c, "ModHeader has incorrect size.");
 
 struct AssetSection {
-    u64_le offset;
-    u64_le size;
+    u64_le offset{};
+    u64_le size{};
 };
 static_assert(sizeof(AssetSection) == 0x10, "AssetSection has incorrect size.");
 
 struct AssetHeader {
-    u32_le magic;
-    u32_le format_version;
-    AssetSection icon;
-    AssetSection nacp;
-    AssetSection romfs;
+    u32_le magic{};
+    u32_le format_version{};
+    AssetSection icon{};
+    AssetSection nacp{};
+    AssetSection romfs{};
 };
 static_assert(sizeof(AssetHeader) == 0x38, "AssetHeader has incorrect size.");
 

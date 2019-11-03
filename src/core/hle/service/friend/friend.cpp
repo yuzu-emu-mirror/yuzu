@@ -107,12 +107,12 @@ private:
     };
 
     struct SizedFriendFilter {
-        PresenceFilter presence;
-        u8 is_favorite;
-        u8 same_app;
-        u8 same_app_played;
-        u8 arbitary_app_played;
-        u64 group_id;
+        PresenceFilter presence{};
+        u8 is_favorite{};
+        u8 same_app{};
+        u8 same_app_played{};
+        u8 arbitary_app_played{};
+        u64 group_id{};
     };
     static_assert(sizeof(SizedFriendFilter) == 0x10, "SizedFriendFilter is an invalid size");
 
@@ -223,17 +223,17 @@ private:
     };
 
     struct SizedNotificationInfo {
-        NotificationTypes notification_type;
+        NotificationTypes notification_type{};
         INSERT_PADDING_WORDS(
-            1); // TODO(ogniK): This doesn't seem to be used within any IPC returns as of now
-        u64_le account_id;
+            1){}; // TODO(ogniK): This doesn't seem to be used within any IPC returns as of now
+        u64_le account_id{};
     };
     static_assert(sizeof(SizedNotificationInfo) == 0x10,
                   "SizedNotificationInfo is an incorrect size");
 
     struct States {
-        bool has_updated_friends;
-        bool has_received_friend_request;
+        bool has_updated_friends{};
+        bool has_received_friend_request{};
     };
 
     Common::UUID uuid;

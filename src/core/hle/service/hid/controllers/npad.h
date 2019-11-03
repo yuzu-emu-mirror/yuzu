@@ -51,10 +51,10 @@ public:
     static_assert(sizeof(NPadType) == 4, "NPadType is an invalid size");
 
     struct Vibration {
-        f32 amp_low;
-        f32 freq_low;
-        f32 amp_high;
-        f32 freq_high;
+        f32 amp_low{};
+        f32 freq_low{};
+        f32 amp_high{};
+        f32 freq_high{};
     };
     static_assert(sizeof(Vibration) == 0x10, "Vibration is an invalid size");
 
@@ -138,16 +138,16 @@ public:
 
 private:
     struct CommonHeader {
-        s64_le timestamp;
-        s64_le total_entry_count;
-        s64_le last_entry_index;
-        s64_le entry_count;
+        s64_le timestamp{};
+        s64_le total_entry_count{};
+        s64_le last_entry_index{};
+        s64_le entry_count{};
     };
     static_assert(sizeof(CommonHeader) == 0x20, "CommonHeader is an invalid size");
 
     struct ControllerColor {
-        u32_le body_color;
-        u32_le button_color;
+        u32_le body_color{};
+        u32_le button_color{};
     };
     static_assert(sizeof(ControllerColor) == 8, "ControllerColor is an invalid size");
 
@@ -197,8 +197,8 @@ private:
     static_assert(sizeof(ControllerPadState) == 8, "ControllerPadState is an invalid size");
 
     struct AnalogPosition {
-        s32_le x;
-        s32_le y;
+        s32_le x{};
+        s32_le y{};
     };
     static_assert(sizeof(AnalogPosition) == 8, "AnalogPosition is an invalid size");
 
@@ -216,23 +216,23 @@ private:
     static_assert(sizeof(ConnectionState) == 4, "ConnectionState is an invalid size");
 
     struct ControllerPad {
-        ControllerPadState pad_states;
-        AnalogPosition l_stick;
-        AnalogPosition r_stick;
+        ControllerPadState pad_states{};
+        AnalogPosition l_stick{};
+        AnalogPosition r_stick{};
     };
     static_assert(sizeof(ControllerPad) == 0x18, "ControllerPad is an invalid size");
 
     struct GenericStates {
-        s64_le timestamp;
-        s64_le timestamp2;
-        ControllerPad pad;
-        ConnectionState connection_status;
+        s64_le timestamp{};
+        s64_le timestamp2{};
+        ControllerPad pad{};
+        ConnectionState connection_status{};
     };
     static_assert(sizeof(GenericStates) == 0x30, "NPadGenericStates is an invalid size");
 
     struct NPadGeneric {
-        CommonHeader common;
-        std::array<GenericStates, 17> npad;
+        CommonHeader common{};
+        std::array<GenericStates, 17> npad{};
     };
     static_assert(sizeof(NPadGeneric) == 0x350, "NPadGeneric is an invalid size");
 
@@ -266,39 +266,39 @@ private:
     };
 
     struct NPadEntry {
-        NPadType joy_styles;
-        NPadAssignments pad_assignment;
+        NPadType joy_styles{};
+        NPadAssignments pad_assignment{};
 
-        ColorReadError single_color_error;
-        ControllerColor single_color;
+        ColorReadError single_color_error{};
+        ControllerColor single_color{};
 
-        ColorReadError dual_color_error;
-        ControllerColor left_color;
-        ControllerColor right_color;
+        ColorReadError dual_color_error{};
+        ControllerColor left_color{};
+        ControllerColor right_color{};
 
-        NPadGeneric main_controller_states;
-        NPadGeneric handheld_states;
-        NPadGeneric dual_states;
-        NPadGeneric left_joy_states;
-        NPadGeneric right_joy_states;
-        NPadGeneric pokeball_states;
-        NPadGeneric libnx; // TODO(ogniK): Find out what this actually is, libnx seems to only be
-                           // relying on this for the time being
+        NPadGeneric main_controller_states{};
+        NPadGeneric handheld_states{};
+        NPadGeneric dual_states{};
+        NPadGeneric left_joy_states{};
+        NPadGeneric right_joy_states{};
+        NPadGeneric pokeball_states{};
+        NPadGeneric libnx{}; // TODO(ogniK): Find out what this actually is, libnx seems to only be
+                             // relying on this for the time being
         INSERT_PADDING_BYTES(
             0x708 *
-            6); // TODO(ogniK): SixAxis states, require more information before implementation
-        NPadDevice device_type;
-        NPadProperties properties;
-        INSERT_PADDING_WORDS(1);
-        std::array<u32, 3> battery_level;
-        INSERT_PADDING_BYTES(0x5c);
-        INSERT_PADDING_BYTES(0xdf8);
+            6){}; // TODO(ogniK): SixAxis states, require more information before implementation
+        NPadDevice device_type{};
+        NPadProperties properties{};
+        INSERT_PADDING_WORDS(1){};
+        std::array<u32, 3> battery_level{};
+        INSERT_PADDING_BYTES(0x5c){};
+        INSERT_PADDING_BYTES(0xdf8){};
     };
     static_assert(sizeof(NPadEntry) == 0x5000, "NPadEntry is an invalid size");
 
     struct ControllerHolder {
-        NPadControllerType type;
-        bool is_connected;
+        NPadControllerType type{};
+        bool is_connected{};
     };
 
     void InitNewlyAddedControler(std::size_t controller_idx);

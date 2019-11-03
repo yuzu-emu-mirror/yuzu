@@ -14,12 +14,12 @@
 namespace Service::Glue {
 
 struct ApplicationLaunchProperty {
-    u64 title_id;
-    u32 version;
-    FileSys::StorageId base_game_storage_id;
-    FileSys::StorageId update_storage_id;
-    u8 program_index;
-    u8 reserved;
+    u64 title_id{};
+    u32 version{};
+    FileSys::StorageId base_game_storage_id{};
+    FileSys::StorageId update_storage_id{};
+    u8 program_index{};
+    u8 reserved{};
 };
 static_assert(sizeof(ApplicationLaunchProperty) == 0x10,
               "ApplicationLaunchProperty has incorrect size.");

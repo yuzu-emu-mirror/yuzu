@@ -74,13 +74,13 @@ public:
 
 private:
     struct TagInfo {
-        std::array<u8, 10> uuid;
-        u8 uuid_length; // TODO(ogniK): Figure out if this is actual the uuid length or does it
-                        // mean something else
-        INSERT_PADDING_BYTES(0x15);
-        u32_le protocol;
-        u32_le tag_type;
-        INSERT_PADDING_BYTES(0x2c);
+        std::array<u8, 10> uuid{};
+        u8 uuid_length{}; // TODO(ogniK): Figure out if this is actual the uuid length or does it
+                          // mean something else
+        INSERT_PADDING_BYTES(0x15){};
+        u32_le protocol{};
+        u32_le tag_type{};
+        INSERT_PADDING_BYTES(0x2c){};
     };
     static_assert(sizeof(TagInfo) == 0x54, "TagInfo is an invalid size");
 
@@ -100,13 +100,13 @@ private:
     };
 
     struct CommonInfo {
-        u16_be last_write_year;
-        u8 last_write_month;
-        u8 last_write_day;
-        u16_be write_counter;
-        u16_be version;
-        u32_be application_area_size;
-        INSERT_PADDING_BYTES(0x34);
+        u16_be last_write_year{};
+        u8 last_write_month{};
+        u8 last_write_day{};
+        u16_be write_counter{};
+        u16_be version{};
+        u32_be application_area_size{};
+        INSERT_PADDING_BYTES(0x34){};
     };
     static_assert(sizeof(CommonInfo) == 0x40, "CommonInfo is an invalid size");
 

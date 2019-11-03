@@ -32,18 +32,18 @@ using namespace Common;
 namespace Core::Crypto {
 
 struct Package2Header {
-    std::array<u8, 0x100> signature;
-    Key128 header_ctr;
-    std::array<Key128, 4> section_ctr;
-    u32_le magic;
-    u32_le base_offset;
-    INSERT_PADDING_BYTES(4);
-    u8 version_max;
-    u8 version_min;
-    INSERT_PADDING_BYTES(2);
-    std::array<u32_le, 4> section_size;
-    std::array<u32_le, 4> section_offset;
-    std::array<SHA256Hash, 4> section_hash;
+    std::array<u8, 0x100> signature{};
+    Key128 header_ctr{};
+    std::array<Key128, 4> section_ctr{};
+    u32_le magic{};
+    u32_le base_offset{};
+    INSERT_PADDING_BYTES(4){};
+    u8 version_max{};
+    u8 version_min{};
+    INSERT_PADDING_BYTES(2){};
+    std::array<u32_le, 4> section_size{};
+    std::array<u32_le, 4> section_offset{};
+    std::array<SHA256Hash, 4> section_hash{};
 };
 static_assert(sizeof(Package2Header) == 0x200, "Package2Header has incorrect size.");
 

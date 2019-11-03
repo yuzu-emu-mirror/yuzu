@@ -27,9 +27,9 @@ constexpr std::array<char, 10> DefaultDevice{{"DeviceOut"}};
 constexpr int DefaultSampleRate{48000};
 
 struct AudoutParams {
-    s32_le sample_rate;
-    u16_le channel_count;
-    INSERT_PADDING_BYTES(2);
+    s32_le sample_rate{};
+    u16_le channel_count{};
+    INSERT_PADDING_BYTES(2){};
 };
 static_assert(sizeof(AudoutParams) == 0x8, "AudoutParams is an invalid size");
 
@@ -75,11 +75,11 @@ public:
 
 private:
     struct AudioBuffer {
-        u64_le next;
-        u64_le buffer;
-        u64_le buffer_capacity;
-        u64_le buffer_size;
-        u64_le offset;
+        u64_le next{};
+        u64_le buffer{};
+        u64_le buffer_capacity{};
+        u64_le buffer_size{};
+        u64_le offset{};
     };
     static_assert(sizeof(AudioBuffer) == 0x28, "AudioBuffer is an invalid size");
 
@@ -205,7 +205,7 @@ private:
     AudioCore::StreamPtr stream;
     std::string device_name;
 
-    [[maybe_unused]] AudoutParams audio_params {};
+    [[maybe_unused]] AudoutParams audio_params{};
 
     /// This is the event handle used to check if the audio buffer was released
     Kernel::EventPair buffer_event;

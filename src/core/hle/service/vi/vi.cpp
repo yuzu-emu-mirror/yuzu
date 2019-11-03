@@ -45,7 +45,7 @@ struct DisplayInfo {
 
     /// Whether or not the display has a limited number of layers.
     u8 has_limited_layers{1};
-    INSERT_PADDING_BYTES(7){};
+    INSERT_PADDING_BYTES(7);
 
     /// Indicates the total amount of layers supported by the display.
     /// @note This is only valid if has_limited_layers is set.
@@ -172,10 +172,10 @@ protected:
 
 private:
     struct Header {
-        u32_le data_size;
-        u32_le data_offset;
-        u32_le objects_size;
-        u32_le objects_offset;
+        u32_le data_size{};
+        u32_le data_offset{};
+        u32_le objects_size{};
+        u32_le objects_offset{};
     };
     static_assert(sizeof(Header) == 16, "ParcelHeader has wrong size");
 
@@ -200,10 +200,10 @@ private:
     struct Data {
         u32_le magic = 2;
         u32_le process_id = 1;
-        u32_le id;
-        INSERT_PADDING_WORDS(3);
+        u32_le id{};
+        INSERT_PADDING_WORDS(3){};
         std::array<u8, 8> dispdrv = {'d', 'i', 's', 'p', 'd', 'r', 'v', '\0'};
-        INSERT_PADDING_WORDS(2);
+        INSERT_PADDING_WORDS(2){};
     };
     static_assert(sizeof(Data) == 0x28, "ParcelData has wrong size");
 
@@ -223,12 +223,12 @@ public:
     }
 
     struct Data {
-        u32_le unk;
-        u32_le api;
-        u32_le producer_controlled_by_app;
+        u32_le unk{};
+        u32_le api{};
+        u32_le producer_controlled_by_app{};
     };
 
-    Data data;
+    Data data{};
 };
 
 class IGBPConnectResponseParcel : public Parcel {
@@ -246,11 +246,11 @@ protected:
 
 private:
     struct Data {
-        u32_le width;
-        u32_le height;
-        u32_le transform_hint;
-        u32_le num_pending_buffers;
-        u32_le status;
+        u32_le width{};
+        u32_le height{};
+        u32_le transform_hint{};
+        u32_le num_pending_buffers{};
+        u32_le status{};
     };
     static_assert(sizeof(Data) == 20, "ParcelData has wrong size");
 
@@ -267,7 +267,7 @@ protected:
 
 private:
     struct Data {
-        u32_le unk_0;
+        u32_le unk_0{};
     };
 
     Data data{};
@@ -288,13 +288,13 @@ public:
     }
 
     struct Data {
-        u32_le slot;
-        INSERT_PADDING_WORDS(1);
-        u32_le graphic_buffer_length;
-        INSERT_PADDING_WORDS(1);
+        u32_le slot{};
+        INSERT_PADDING_WORDS(1){};
+        u32_le graphic_buffer_length{};
+        INSERT_PADDING_WORDS(1){};
     };
 
-    Data data;
+    Data data{};
     NVFlinger::IGBPBuffer buffer;
 };
 
@@ -319,14 +319,14 @@ public:
     }
 
     struct Data {
-        u32_le pixel_format;
-        u32_le width;
-        u32_le height;
-        u32_le get_frame_timestamps;
-        u32_le usage;
+        u32_le pixel_format{};
+        u32_le width{};
+        u32_le height{};
+        u32_le get_frame_timestamps{};
+        u32_le usage{};
     };
 
-    Data data;
+    Data data{};
 };
 
 class IGBPDequeueBufferResponseParcel : public Parcel {
@@ -392,20 +392,20 @@ public:
     }
 
     struct Data {
-        u32_le slot;
-        INSERT_PADDING_WORDS(3);
-        u32_le timestamp;
-        s32_le is_auto_timestamp;
-        s32_le crop_top;
-        s32_le crop_left;
-        s32_le crop_right;
-        s32_le crop_bottom;
-        s32_le scaling_mode;
-        NVFlinger::BufferQueue::BufferTransformFlags transform;
-        u32_le sticky_transform;
-        INSERT_PADDING_WORDS(1);
-        u32_le swap_interval;
-        Service::Nvidia::MultiFence multi_fence;
+        u32_le slot{};
+        INSERT_PADDING_WORDS(3){};
+        u32_le timestamp{};
+        s32_le is_auto_timestamp{};
+        s32_le crop_top{};
+        s32_le crop_left{};
+        s32_le crop_right{};
+        s32_le crop_bottom{};
+        s32_le scaling_mode{};
+        NVFlinger::BufferQueue::BufferTransformFlags transform{};
+        u32_le sticky_transform{};
+        INSERT_PADDING_WORDS(1){};
+        u32_le swap_interval{};
+        Service::Nvidia::MultiFence multi_fence{};
 
         Common::Rectangle<int> GetCropRect() const {
             return {crop_left, crop_top, crop_right, crop_bottom};
@@ -413,7 +413,7 @@ public:
     };
     static_assert(sizeof(Data) == 96, "ParcelData has wrong size");
 
-    Data data;
+    Data data{};
 };
 
 class IGBPQueueBufferResponseParcel : public Parcel {
@@ -431,11 +431,11 @@ protected:
 
 private:
     struct Data {
-        u32_le width;
-        u32_le height;
-        u32_le transform_hint;
-        u32_le num_pending_buffers;
-        u32_le status;
+        u32_le width{};
+        u32_le height{};
+        u32_le transform_hint{};
+        u32_le num_pending_buffers{};
+        u32_le status{};
     };
     static_assert(sizeof(Data) == 20, "ParcelData has wrong size");
 

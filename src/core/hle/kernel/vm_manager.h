@@ -249,18 +249,18 @@ constexpr u32 ToSvcMemoryState(MemoryState state) {
 }
 
 struct MemoryInfo {
-    u64 base_address;
-    u64 size;
-    u32 state;
-    u32 attributes;
-    u32 permission;
-    u32 ipc_ref_count;
-    u32 device_ref_count;
+    u64 base_address{};
+    u64 size{};
+    u32 state{};
+    u32 attributes{};
+    u32 permission{};
+    u32 ipc_ref_count{};
+    u32 device_ref_count{};
 };
 static_assert(sizeof(MemoryInfo) == 0x28, "MemoryInfo has incorrect size.");
 
 struct PageInfo {
-    u32 flags;
+    u32 flags{};
 };
 
 /**

@@ -95,9 +95,9 @@ public:
 
     void LoadNrr(Kernel::HLERequestContext& ctx) {
         struct Parameters {
-            u64_le process_id;
-            u64_le nrr_address;
-            u64_le nrr_size;
+            u64_le process_id{};
+            u64_le nrr_address{};
+            u64_le nrr_size{};
         };
 
         IPC::RequestParser rp{ctx};
@@ -198,8 +198,8 @@ public:
         }
 
         struct Parameters {
-            u64_le process_id;
-            u64_le nrr_address;
+            u64_le process_id{};
+            u64_le nrr_address{};
         };
 
         IPC::RequestParser rp{ctx};
@@ -233,11 +233,11 @@ public:
 
     void LoadNro(Kernel::HLERequestContext& ctx) {
         struct Parameters {
-            u64_le process_id;
-            u64_le image_address;
-            u64_le image_size;
-            u64_le bss_address;
-            u64_le bss_size;
+            u64_le process_id{};
+            u64_le image_address{};
+            u64_le image_size{};
+            u64_le bss_address{};
+            u64_le bss_size{};
         };
 
         IPC::RequestParser rp{ctx};
@@ -383,8 +383,8 @@ public:
         }
 
         struct Parameters {
-            u64_le process_id;
-            u64_le nro_address;
+            u64_le process_id{};
+            u64_le nro_address{};
         };
 
         IPC::RequestParser rp{ctx};
@@ -450,50 +450,50 @@ private:
     using SHA256Hash = std::array<u8, 0x20>;
 
     struct NROHeader {
-        INSERT_PADDING_WORDS(1);
-        u32_le mod_offset;
-        INSERT_PADDING_WORDS(2);
-        u32_le magic;
-        u32_le version;
-        u32_le nro_size;
-        u32_le flags;
-        u32_le text_offset;
-        u32_le text_size;
-        u32_le ro_offset;
-        u32_le ro_size;
-        u32_le rw_offset;
-        u32_le rw_size;
-        u32_le bss_size;
-        INSERT_PADDING_WORDS(1);
-        std::array<u8, 0x20> build_id;
-        INSERT_PADDING_BYTES(0x20);
+        INSERT_PADDING_WORDS(1){};
+        u32_le mod_offset{};
+        INSERT_PADDING_WORDS(2){};
+        u32_le magic{};
+        u32_le version{};
+        u32_le nro_size{};
+        u32_le flags{};
+        u32_le text_offset{};
+        u32_le text_size{};
+        u32_le ro_offset{};
+        u32_le ro_size{};
+        u32_le rw_offset{};
+        u32_le rw_size{};
+        u32_le bss_size{};
+        INSERT_PADDING_WORDS(1){};
+        std::array<u8, 0x20> build_id{};
+        INSERT_PADDING_BYTES(0x20){};
     };
     static_assert(sizeof(NROHeader) == 0x80, "NROHeader has invalid size.");
 
     struct NRRHeader {
-        u32_le magic;
-        INSERT_PADDING_BYTES(12);
-        u64_le title_id_mask;
-        u64_le title_id_pattern;
-        INSERT_PADDING_BYTES(16);
-        std::array<u8, 0x100> modulus;
-        std::array<u8, 0x100> signature_1;
-        std::array<u8, 0x100> signature_2;
-        u64_le title_id;
-        u32_le size;
-        INSERT_PADDING_BYTES(4);
-        u32_le hash_offset;
-        u32_le hash_count;
-        INSERT_PADDING_BYTES(8);
+        u32_le magic{};
+        INSERT_PADDING_BYTES(12){};
+        u64_le title_id_mask{};
+        u64_le title_id_pattern{};
+        INSERT_PADDING_BYTES(16){};
+        std::array<u8, 0x100> modulus{};
+        std::array<u8, 0x100> signature_1{};
+        std::array<u8, 0x100> signature_2{};
+        u64_le title_id{};
+        u32_le size{};
+        INSERT_PADDING_BYTES(4){};
+        u32_le hash_offset{};
+        u32_le hash_count{};
+        INSERT_PADDING_BYTES(8){};
     };
     static_assert(sizeof(NRRHeader) == 0x350, "NRRHeader has incorrect size.");
 
     struct NROInfo {
-        SHA256Hash hash;
-        VAddr nro_address;
-        u64 nro_size;
-        VAddr bss_address;
-        u64 bss_size;
+        SHA256Hash hash{};
+        VAddr nro_address{};
+        u64 nro_size{};
+        VAddr bss_address{};
+        u64 bss_size{};
     };
 
     bool initialized = false;

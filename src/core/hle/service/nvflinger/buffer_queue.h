@@ -22,20 +22,20 @@ class KernelCore;
 namespace Service::NVFlinger {
 
 struct IGBPBuffer {
-    u32_le magic;
-    u32_le width;
-    u32_le height;
-    u32_le stride;
-    u32_le format;
-    u32_le usage;
-    INSERT_PADDING_WORDS(1);
-    u32_le index;
-    INSERT_PADDING_WORDS(3);
-    u32_le gpu_buffer_id;
-    INSERT_PADDING_WORDS(17);
-    u32_le nvmap_handle;
-    u32_le offset;
-    INSERT_PADDING_WORDS(60);
+    u32_le magic{};
+    u32_le width{};
+    u32_le height{};
+    u32_le stride{};
+    u32_le format{};
+    u32_le usage{};
+    INSERT_PADDING_WORDS(1){};
+    u32_le index{};
+    INSERT_PADDING_WORDS(3){};
+    u32_le gpu_buffer_id{};
+    INSERT_PADDING_WORDS(17){};
+    u32_le nvmap_handle{};
+    u32_le offset{};
+    INSERT_PADDING_WORDS(60){};
 };
 
 static_assert(sizeof(IGBPBuffer) == 0x16C, "IGBPBuffer has wrong size");
@@ -69,13 +69,13 @@ public:
     struct Buffer {
         enum class Status { Free = 0, Queued = 1, Dequeued = 2, Acquired = 3 };
 
-        u32 slot;
+        u32 slot{};
         Status status = Status::Free;
-        IGBPBuffer igbp_buffer;
-        BufferTransformFlags transform;
-        Common::Rectangle<int> crop_rect;
-        u32 swap_interval;
-        Service::Nvidia::MultiFence multi_fence;
+        IGBPBuffer igbp_buffer{};
+        BufferTransformFlags transform{};
+        Common::Rectangle<int> crop_rect{};
+        u32 swap_interval{};
+        Service::Nvidia::MultiFence multi_fence{};
     };
 
     void SetPreallocatedBuffer(u32 slot, const IGBPBuffer& igbp_buffer);

@@ -29,7 +29,7 @@ struct SpecialRegion {
     enum class Type {
         DebugHook,
         IODevice,
-    } type;
+    } type{};
 
     MemoryHookPointer handler;
 

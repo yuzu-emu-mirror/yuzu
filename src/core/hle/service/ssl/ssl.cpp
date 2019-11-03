@@ -68,8 +68,8 @@ public:
 private:
     void SetOption(Kernel::HLERequestContext& ctx) {
         struct Parameters {
-            u8 enable;
-            u32 option;
+            u8 enable{};
+            u32 option{};
         };
 
         IPC::RequestParser rp{ctx};

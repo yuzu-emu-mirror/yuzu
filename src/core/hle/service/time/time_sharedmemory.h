@@ -61,7 +61,7 @@ public:
         MemoryBarrier<SystemClockContext, 0x38> standard_local_system_clock_context;
         MemoryBarrier<SystemClockContext, 0x80> standard_network_system_clock_context;
         MemoryBarrier<bool, 0xc8> standard_user_system_clock_automatic_correction;
-        u32_le format_version;
+        u32_le format_version{};
     };
     static_assert(sizeof(Format) == 0xd8, "Format is an invalid size");
 

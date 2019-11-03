@@ -563,8 +563,8 @@ void Maxwell3D::ProcessQueryGet() {
     // TODO(Subv): Research and implement how query sync conditions work.
 
     struct LongQueryResult {
-        u64_le value;
-        u64_le timestamp;
+        u64_le value{};
+        u64_le timestamp{};
     };
     static_assert(sizeof(LongQueryResult) == 16, "LongQueryResult has wrong size");
 

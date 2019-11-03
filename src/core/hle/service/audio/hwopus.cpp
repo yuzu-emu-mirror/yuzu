@@ -28,9 +28,9 @@ using OpusDecoderPtr = std::unique_ptr<OpusMSDecoder, OpusDeleter>;
 
 struct OpusPacketHeader {
     // Packet size in bytes.
-    u32_be size;
+    u32_be size{};
     // Indicates the final range of the codec's entropy coder.
-    u32_be final_range;
+    u32_be final_range{};
 };
 static_assert(sizeof(OpusPacketHeader) == 0x8, "OpusHeader is an invalid size");
 

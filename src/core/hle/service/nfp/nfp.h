@@ -20,15 +20,15 @@ public:
         ~Interface() override;
 
         struct ModelInfo {
-            std::array<u8, 0x8> amiibo_identification_block;
-            INSERT_PADDING_BYTES(0x38);
+            std::array<u8, 0x8> amiibo_identification_block{};
+            INSERT_PADDING_BYTES(0x38){};
         };
         static_assert(sizeof(ModelInfo) == 0x40, "ModelInfo is an invalid size");
 
         struct AmiiboFile {
-            std::array<u8, 10> uuid;
-            INSERT_PADDING_BYTES(0x4a);
-            ModelInfo model_info;
+            std::array<u8, 10> uuid{};
+            INSERT_PADDING_BYTES(0x4a){};
+            ModelInfo model_info{};
         };
         static_assert(sizeof(AmiiboFile) == 0x94, "AmiiboFile is an invalid size");
 

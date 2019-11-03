@@ -593,7 +593,7 @@ enum class BreakType : u32 {
 
 struct BreakReason {
     union {
-        u32 raw;
+        u32 raw{};
         BitField<0, 30, BreakType> break_type;
         BitField<31, 1, u32> signal_debugger;
     };
@@ -2347,7 +2347,7 @@ namespace {
 struct FunctionDef {
     using Func = void(Core::System&);
 
-    u32 id;
+    u32 id{};
     Func* func;
     const char* name;
 };

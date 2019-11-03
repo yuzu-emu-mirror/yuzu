@@ -13,33 +13,33 @@ namespace Service::Time {
 class SharedMemory;
 
 struct LocationName {
-    std::array<u8, 0x24> name;
+    std::array<u8, 0x24> name{};
 };
 static_assert(sizeof(LocationName) == 0x24, "LocationName is incorrect size");
 
 struct CalendarTime {
-    u16_le year;
-    u8 month; // Starts at 1
-    u8 day;   // Starts at 1
-    u8 hour;
-    u8 minute;
-    u8 second;
+    u16_le year{};
+    u8 month{}; // Starts at 1
+    u8 day{};   // Starts at 1
+    u8 hour{};
+    u8 minute{};
+    u8 second{};
 };
 static_assert(sizeof(CalendarTime) == 0x8, "CalendarTime structure has incorrect size");
 
 struct CalendarAdditionalInfo {
-    u32_le day_of_week;
-    u32_le day_of_year;
-    std::array<u8, 8> name;
-    u8 is_dst;
-    s32_le utc_offset;
+    u32_le day_of_week{};
+    u32_le day_of_year{};
+    std::array<u8, 8> name{};
+    u8 is_dst{};
+    s32_le utc_offset{};
 };
 static_assert(sizeof(CalendarAdditionalInfo) == 0x18,
               "CalendarAdditionalInfo structure has incorrect size");
 
 // TODO(mailwl) RE this structure
 struct TimeZoneRule {
-    INSERT_PADDING_BYTES(0x4000);
+    INSERT_PADDING_BYTES(0x4000){};
 };
 
 struct SteadyClockTimePoint {
@@ -58,20 +58,20 @@ static_assert(sizeof(SystemClockContext) == 0x20,
               "SystemClockContext structure has incorrect size");
 
 struct ClockSnapshot {
-    SystemClockContext user_clock_context;
-    SystemClockContext network_clock_context;
-    s64_le system_posix_time;
-    s64_le network_posix_time;
-    CalendarTime system_calendar_time;
-    CalendarTime network_calendar_time;
-    CalendarAdditionalInfo system_calendar_info;
-    CalendarAdditionalInfo network_calendar_info;
-    SteadyClockTimePoint steady_clock_timepoint;
-    LocationName location_name;
-    u8 clock_auto_adjustment_enabled;
-    u8 type;
-    u8 version;
-    INSERT_PADDING_BYTES(1);
+    SystemClockContext user_clock_context{};
+    SystemClockContext network_clock_context{};
+    s64_le system_posix_time{};
+    s64_le network_posix_time{};
+    CalendarTime system_calendar_time{};
+    CalendarTime network_calendar_time{};
+    CalendarAdditionalInfo system_calendar_info{};
+    CalendarAdditionalInfo network_calendar_info{};
+    SteadyClockTimePoint steady_clock_timepoint{};
+    LocationName location_name{};
+    u8 clock_auto_adjustment_enabled{};
+    u8 type{};
+    u8 version{};
+    INSERT_PADDING_BYTES(1){};
 };
 static_assert(sizeof(ClockSnapshot) == 0xd0, "ClockSnapshot is an invalid size");
 

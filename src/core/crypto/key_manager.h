@@ -51,9 +51,9 @@ enum class TitleKeyType : u8 {
 };
 
 struct TicketData {
-    std::array<u8, 0x40> issuer;
+    std::array<u8, 0x40> issuer{};
     union {
-        std::array<u8, 0x100> title_key_block;
+        std::array<u8, 0x100> title_key_block{};
 
         struct {
             Key128 title_key_common;
@@ -61,38 +61,38 @@ struct TicketData {
         };
     };
 
-    INSERT_PADDING_BYTES(0x1);
-    TitleKeyType type;
-    INSERT_PADDING_BYTES(0x3);
-    u8 revision;
-    INSERT_PADDING_BYTES(0xA);
-    u64 ticket_id;
-    u64 device_id;
-    std::array<u8, 0x10> rights_id;
-    u32 account_id;
-    INSERT_PADDING_BYTES(0x14C);
+    INSERT_PADDING_BYTES(0x1){};
+    TitleKeyType type{};
+    INSERT_PADDING_BYTES(0x3){};
+    u8 revision{};
+    INSERT_PADDING_BYTES(0xA){};
+    u64 ticket_id{};
+    u64 device_id{};
+    std::array<u8, 0x10> rights_id{};
+    u32 account_id{};
+    INSERT_PADDING_BYTES(0x14C){};
 };
 static_assert(sizeof(TicketData) == 0x2C0, "TicketData has incorrect size.");
 
 struct RSA4096Ticket {
-    SignatureType sig_type;
-    std::array<u8, 0x200> sig_data;
-    INSERT_PADDING_BYTES(0x3C);
-    TicketData data;
+    SignatureType sig_type{};
+    std::array<u8, 0x200> sig_data{};
+    INSERT_PADDING_BYTES(0x3C){};
+    TicketData data{};
 };
 
 struct RSA2048Ticket {
-    SignatureType sig_type;
-    std::array<u8, 0x100> sig_data;
-    INSERT_PADDING_BYTES(0x3C);
-    TicketData data;
+    SignatureType sig_type{};
+    std::array<u8, 0x100> sig_data{};
+    INSERT_PADDING_BYTES(0x3C){};
+    TicketData data{};
 };
 
 struct ECDSATicket {
-    SignatureType sig_type;
-    std::array<u8, 0x3C> sig_data;
-    INSERT_PADDING_BYTES(0x40);
-    TicketData data;
+    SignatureType sig_type{};
+    std::array<u8, 0x3C> sig_data{};
+    INSERT_PADDING_BYTES(0x40){};
+    TicketData data{};
 };
 
 struct Ticket {
@@ -111,10 +111,10 @@ static_assert(sizeof(Key256) == 32, "Key256 must be 256 bytes big.");
 
 template <size_t bit_size, size_t byte_size = (bit_size >> 3)>
 struct RSAKeyPair {
-    std::array<u8, byte_size> encryption_key;
-    std::array<u8, byte_size> decryption_key;
-    std::array<u8, byte_size> modulus;
-    std::array<u8, 4> exponent;
+    std::array<u8, byte_size> encryption_key{};
+    std::array<u8, byte_size> decryption_key{};
+    std::array<u8, byte_size> modulus{};
+    std::array<u8, 4> exponent{};
 };
 
 template <size_t bit_size, size_t byte_size>
@@ -202,9 +202,9 @@ enum class RSAKekType : u8 {
 
 template <typename KeyType>
 struct KeyIndex {
-    KeyType type;
-    u64 field1;
-    u64 field2;
+    KeyType type{};
+    u64 field1{};
+    u64 field2{};
 
     std::string DebugInfo() const {
         u8 key_size = 16;

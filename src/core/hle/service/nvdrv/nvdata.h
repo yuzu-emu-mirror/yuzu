@@ -9,15 +9,15 @@ constexpr u32 MaxSyncPoints = 192;
 constexpr u32 MaxNvEvents = 64;
 
 struct Fence {
-    s32 id;
-    u32 value;
+    s32 id{};
+    u32 value{};
 };
 
 static_assert(sizeof(Fence) == 8, "Fence has wrong size");
 
 struct MultiFence {
-    u32 num_fences;
-    std::array<Fence, 4> fences;
+    u32 num_fences{};
+    std::array<Fence, 4> fences{};
 };
 
 enum NvResult : u32 {

@@ -661,8 +661,8 @@ void AudRenU::OpenAudioRendererAuto(Kernel::HLERequestContext& ctx) {
 
 void AudRenU::GetAudioDeviceServiceWithRevisionInfo(Kernel::HLERequestContext& ctx) {
     struct Parameters {
-        u32 revision;
-        u64 aruid;
+        u32 revision{};
+        u64 aruid{};
     };
 
     IPC::RequestParser rp{ctx};

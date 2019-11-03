@@ -22,8 +22,8 @@ enum class BreakpointType {
 };
 
 struct BreakpointAddress {
-    VAddr address;
-    BreakpointType type;
+    VAddr address{};
+    BreakpointType type{};
 };
 
 /**

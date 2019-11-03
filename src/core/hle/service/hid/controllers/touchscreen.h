@@ -40,29 +40,29 @@ private:
     static_assert(sizeof(Attributes) == 0x4, "Attributes is an invalid size");
 
     struct TouchState {
-        u64_le delta_time;
-        Attributes attribute;
-        u32_le finger;
-        u32_le x;
-        u32_le y;
-        u32_le diameter_x;
-        u32_le diameter_y;
-        u32_le rotation_angle;
+        u64_le delta_time{};
+        Attributes attribute{};
+        u32_le finger{};
+        u32_le x{};
+        u32_le y{};
+        u32_le diameter_x{};
+        u32_le diameter_y{};
+        u32_le rotation_angle{};
     };
     static_assert(sizeof(TouchState) == 0x28, "Touchstate is an invalid size");
 
     struct TouchScreenEntry {
-        s64_le sampling_number;
-        s64_le sampling_number2;
-        s32_le entry_count;
-        std::array<TouchState, 16> states;
+        s64_le sampling_number{};
+        s64_le sampling_number2{};
+        s32_le entry_count{};
+        std::array<TouchState, 16> states{};
     };
     static_assert(sizeof(TouchScreenEntry) == 0x298, "TouchScreenEntry is an invalid size");
 
     struct TouchScreenSharedMemory {
-        CommonHeader header;
+        CommonHeader header{};
         std::array<TouchScreenEntry, 17> shared_memory_entries{};
-        INSERT_PADDING_BYTES(0x3c8);
+        INSERT_PADDING_BYTES(0x3c8){};
     };
     static_assert(sizeof(TouchScreenSharedMemory) == 0x3000,
                   "TouchScreenSharedMemory is an invalid size");

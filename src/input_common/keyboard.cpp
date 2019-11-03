@@ -29,7 +29,7 @@ private:
 };
 
 struct KeyButtonPair {
-    int key_code;
+    int key_code{};
     KeyButton* key_button;
 };
 

@@ -18,7 +18,7 @@ struct WebResult {
         WrongContent,
         NoWebservice,
     };
-    Code result_code;
+    Code result_code{};
     std::string result_string;
     std::string returned_data;
 };

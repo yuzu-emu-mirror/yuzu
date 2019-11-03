@@ -38,10 +38,10 @@ void SetCurrentThreadName(const char* name) {
 
 #pragma pack(push, 8)
     struct THREADNAME_INFO {
-        DWORD dwType;     // must be 0x1000
-        LPCSTR szName;    // pointer to name (in user addr space)
-        DWORD dwThreadID; // thread ID (-1=caller thread)
-        DWORD dwFlags;    // reserved for future use, must be zero
+        DWORD dwType{};     // must be 0x1000
+        LPCSTR szName;      // pointer to name (in user addr space)
+        DWORD dwThreadID{}; // thread ID (-1=caller thread)
+        DWORD dwFlags{};    // reserved for future use, must be zero
     } info;
 #pragma pack(pop)
 
