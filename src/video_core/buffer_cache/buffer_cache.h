@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/icl/interval_map.hpp>
+#include <boost/icl/interval_set.hpp>
 #include <boost/range/iterator_range.hpp>
 
 #include "common/alignment.h"
