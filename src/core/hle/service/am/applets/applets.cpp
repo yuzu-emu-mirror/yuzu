@@ -88,6 +88,7 @@ std::unique_ptr<IStorage> AppletDataBroker::PopInteractiveDataToApplet() {
 
 void AppletDataBroker::PushNormalDataFromGame(IStorage storage) {
     in_channel.push_back(std::make_unique<IStorage>(storage));
+    pop_out_data_event.writable->Clear();
 }
 
 void AppletDataBroker::PushNormalDataFromApplet(IStorage storage) {
@@ -97,6 +98,7 @@ void AppletDataBroker::PushNormalDataFromApplet(IStorage storage) {
 
 void AppletDataBroker::PushInteractiveDataFromGame(IStorage storage) {
     in_interactive_channel.push_back(std::make_unique<IStorage>(storage));
+    pop_interactive_out_data_event.writable->Clear();
 }
 
 void AppletDataBroker::PushInteractiveDataFromApplet(IStorage storage) {
