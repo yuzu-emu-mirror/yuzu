@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "common/common_types.h"
@@ -48,6 +50,8 @@ public:
     /// Waits on an address with a particular arbitration type.
     ResultCode WaitForAddress(VAddr address, ArbitrationType type, s32 value, s64 timeout_ns);
 
+    void HandleWakeupThread(std::shared_ptr<Thread> thread);
+
 private:
     /// Signals an address being waited on.
     ResultCode SignalToAddressOnly(VAddr address, s32 num_to_wake);
@@ -71,8 +75,16 @@ private:
     // Waits on the given address with a timeout in nanoseconds
     ResultCode WaitForAddressImpl(VAddr address, s64 timeout);
 
+    void WakeThreads(const std::vector<std::shared_ptr<Thread>>& waiting_threads, s32 num_to_wake);
+
+    void InsertThread(std::shared_ptr<Thread> thread);
+    void RemoveThread(std::shared_ptr<Thread> thread);
+
     // Gets the threads waiting on an address.
-    std::vector<std::shared_ptr<Thread>> GetThreadsWaitingOnAddress(VAddr address) const;
+    std::vector<std::shared_ptr<Thread>> GetThreadsWaitingOnAddress(VAddr address);
+
+    /// List of threads waiting for a address arbiter
+    std::unordered_map<VAddr, std::list<std::shared_ptr<Thread>>> arb_threads;
 
     Core::System& system;
 };
