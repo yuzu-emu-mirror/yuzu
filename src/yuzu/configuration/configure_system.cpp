@@ -71,6 +71,9 @@ void ConfigureSystem::SetConfiguration() {
     const auto rtc_time = Settings::values.custom_rtc.value_or(
         std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
     ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+
+    if (!enabled)
+        ui->group_system_settings->setEnabled(false);
 }
 
 void ConfigureSystem::ReadSystemSettings() {}
