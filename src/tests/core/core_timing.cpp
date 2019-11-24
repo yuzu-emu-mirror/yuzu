@@ -7,7 +7,9 @@
 #include <array>
 #include <bitset>
 #include <cstdlib>
+#include <memory>
 #include <string>
+
 #include "common/file_util.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -65,11 +67,16 @@ TEST_CASE("CoreTiming[BasicOrder]", "[core]") {
     ScopeInit guard;
     auto& core_timing = guard.core_timing;
 
-    Core::Timing::EventType* cb_a = core_timing.RegisterEvent("callbackA", CallbackTemplate<0>);
-    Core::Timing::EventType* cb_b = core_timing.RegisterEvent("callbackB", CallbackTemplate<1>);
-    Core::Timing::EventType* cb_c = core_timing.RegisterEvent("callbackC", CallbackTemplate<2>);
-    Core::Timing::EventType* cb_d = core_timing.RegisterEvent("callbackD", CallbackTemplate<3>);
-    Core::Timing::EventType* cb_e = core_timing.RegisterEvent("callbackE", CallbackTemplate<4>);
+    std::shared_ptr<Core::Timing::EventType> cb_a =
+        Core::Timing::CreateEvent("callbackA", CallbackTemplate<0>);
+    std::shared_ptr<Core::Timing::EventType> cb_b =
+        Core::Timing::CreateEvent("callbackB", CallbackTemplate<1>);
+    std::shared_ptr<Core::Timing::EventType> cb_c =
+        Core::Timing::CreateEvent("callbackC", CallbackTemplate<2>);
+    std::shared_ptr<Core::Timing::EventType> cb_d =
+        Core::Timing::CreateEvent("callbackD", CallbackTemplate<3>);
+    std::shared_ptr<Core::Timing::EventType> cb_e =
+        Core::Timing::CreateEvent("callbackE", CallbackTemplate<4>);
 
     // Enter slice 0
     core_timing.ResetRun();
@@ -99,8 +106,8 @@ TEST_CASE("CoreTiming[FairSharing]", "[core]") {
     ScopeInit guard;
     auto& core_timing = guard.core_timing;
 
-    Core::Timing::EventType* empty_callback =
-        core_timing.RegisterEvent("empty_callback", EmptyCallback);
+    std::shared_ptr<Core::Timing::EventType> empty_callback =
+        Core::Timing::CreateEvent("empty_callback", EmptyCallback);
 
     callbacks_done = 0;
     u64 MAX_CALLBACKS = 10;
@@ -133,8 +140,10 @@ TEST_CASE("Core::Timing[PredictableLateness]", "[core]") {
     ScopeInit guard;
     auto& core_timing = guard.core_timing;
 
-    Core::Timing::EventType* cb_a = core_timing.RegisterEvent("callbackA", CallbackTemplate<0>);
-    Core::Timing::EventType* cb_b = core_timing.RegisterEvent("callbackB", CallbackTemplate<1>);
+    std::shared_ptr<Core::Timing::EventType> cb_a =
+        Core::Timing::CreateEvent("callbackA", CallbackTemplate<0>);
+    std::shared_ptr<Core::Timing::EventType> cb_b =
+        Core::Timing::CreateEvent("callbackB", CallbackTemplate<1>);
 
     // Enter slice 0
     core_timing.ResetRun();
@@ -149,15 +158,15 @@ TEST_CASE("Core::Timing[PredictableLateness]", "[core]") {
 namespace ChainSchedulingTest {
 static int reschedules = 0;
 
-static void RescheduleCallback(Core::Timing::CoreTiming& core_timing, u64 userdata,
+static void RescheduleCallback(Core::Timing::CoreTiming& core_timing,
+                               std::shared_ptr<Core::Timing::EventType> event_type,
                                s64 cycles_late) {
     --reschedules;
     REQUIRE(reschedules >= 0);
     REQUIRE(lateness == cycles_late);
 
     if (reschedules > 0) {
-        core_timing.ScheduleEvent(1000, reinterpret_cast<Core::Timing::EventType*>(userdata),
-                                  userdata);
+        core_timing.ScheduleEvent(1000, event_type, {});
     }
 }
 } // namespace ChainSchedulingTest
@@ -168,12 +177,15 @@ TEST_CASE("CoreTiming[ChainScheduling]", "[core]") {
     ScopeInit guard;
     auto& core_timing = guard.core_timing;
 
-    Core::Timing::EventType* cb_a = core_timing.RegisterEvent("callbackA", CallbackTemplate<0>);
-    Core::Timing::EventType* cb_b = core_timing.RegisterEvent("callbackB", CallbackTemplate<1>);
-    Core::Timing::EventType* cb_c = core_timing.RegisterEvent("callbackC", CallbackTemplate<2>);
-    Core::Timing::EventType* cb_rs = core_timing.RegisterEvent(
-        "callbackReschedule", [&core_timing](u64 userdata, s64 cycles_late) {
-            RescheduleCallback(core_timing, userdata, cycles_late);
+    std::shared_ptr<Core::Timing::EventType> cb_a =
+        Core::Timing::CreateEvent("callbackA", CallbackTemplate<0>);
+    std::shared_ptr<Core::Timing::EventType> cb_b =
+        Core::Timing::CreateEvent("callbackB", CallbackTemplate<1>);
+    std::shared_ptr<Core::Timing::EventType> cb_c =
+        Core::Timing::CreateEvent("callbackC", CallbackTemplate<2>);
+    std::shared_ptr<Core::Timing::EventType> cb_rs = Core::Timing::CreateEvent(
+        "callbackReschedule", [&core_timing, cb_rs](u64 userdata, s64 cycles_late) {
+            RescheduleCallback(core_timing, cb_rs, cycles_late);
         });
 
     // Enter slice 0
@@ -182,7 +194,7 @@ TEST_CASE("CoreTiming[ChainScheduling]", "[core]") {
     core_timing.ScheduleEvent(800, cb_a, CB_IDS[0]);
     core_timing.ScheduleEvent(1000, cb_b, CB_IDS[1]);
     core_timing.ScheduleEvent(2200, cb_c, CB_IDS[2]);
-    core_timing.ScheduleEvent(1000, cb_rs, reinterpret_cast<u64>(cb_rs));
+    core_timing.ScheduleEvent(1000, cb_rs, {});
     REQUIRE(800 == core_timing.GetDowncount());
 
     reschedules = 3;
