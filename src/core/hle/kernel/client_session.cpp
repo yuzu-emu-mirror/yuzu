@@ -16,9 +16,6 @@ ClientSession::ClientSession(KernelCore& kernel) : Object{kernel} {}
 ClientSession::~ClientSession() {
     // This destructor will be called automatically when the last ClientSession handle is closed by
     // the emulated application.
-
-    // A local reference to the ServerSession is necessary to guarantee it
-    // will be kept alive until after ClientDisconnected() returns.
     if (parent->server) {
         parent->server->ClientDisconnected();
     }
