@@ -11,6 +11,7 @@
 #include <thread>
 #include <variant>
 
+#include "common/thread.h"
 #include "common/threadsafe_queue.h"
 #include "video_core/gpu.h"
 
@@ -90,6 +91,7 @@ struct SynchState final {
     CommandQueue queue;
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
+    Common::Event sync_event{};
 };
 
 /// Class used to manage the GPU thread
