@@ -46,9 +46,8 @@ public:
         ElementPtr* new_ptr = new ElementPtr();
         write_ptr->next.store(new_ptr, std::memory_order_release);
         write_ptr = new_ptr;
-        cv.notify_one();
-
         ++size;
+        cv.notify_one();
     }
 
     void Pop() {
