@@ -79,7 +79,7 @@ static void GenerateErrorReport(Core::System& system, ResultCode error_code,
         static_cast<u32>(error_code.description.Value()), info.set_flags, info.program_entry_point);
     if (info.backtrace_size != 0x0) {
         crash_report += "Registers:\n";
-        for (size_t i = 0; i < info.registers.size(); i++) {
+        for (size_t i = 0; i < info.registers.size(); ++i) {
             crash_report +=
                 fmt::format("    X[{:02d}]:                       {:016x}\n", i, info.registers[i]);
         }
@@ -91,7 +91,7 @@ static void GenerateErrorReport(Core::System& system, ResultCode error_code,
         crash_report += fmt::format("    ESR:                         {:016x}\n", info.esr);
         crash_report += fmt::format("    FAR:                         {:016x}\n", info.far);
         crash_report += "\nBacktrace:\n";
-        for (size_t i = 0; i < info.backtrace_size; i++) {
+        for (size_t i = 0; i < info.backtrace_size; ++i) {
             crash_report +=
                 fmt::format("    Backtrace[{:02d}]:               {:016x}\n", i, info.backtrace[i]);
         }

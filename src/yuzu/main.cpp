@@ -1084,7 +1084,7 @@ void GMainWindow::UpdateRecentFiles() {
     const int num_recent_files =
         std::min(UISettings::values.recent_files.size(), max_recent_files_item);
 
-    for (int i = 0; i < num_recent_files; i++) {
+    for (int i = 0; i < num_recent_files; ++i) {
         const QString text = QStringLiteral("&%1. %2").arg(i + 1).arg(
             QFileInfo(UISettings::values.recent_files[i]).fileName());
         actions_recent_files[i]->setText(text);

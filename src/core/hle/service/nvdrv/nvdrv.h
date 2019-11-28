@@ -45,7 +45,7 @@ struct EventInterface {
     static constexpr u32 unassigned_syncpt = 0xFFFFFFFF;
     std::optional<u32> GetFreeEvent() const {
         u64 mask = events_mask;
-        for (u32 i = 0; i < MaxNvEvents; i++) {
+        for (u32 i = 0; i < MaxNvEvents; ++i) {
             const bool is_free = (mask & 0x1) == 0;
             if (is_free) {
                 if (status[i] == EventState::Registered || status[i] == EventState::Free) {

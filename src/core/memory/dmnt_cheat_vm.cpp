@@ -186,7 +186,7 @@ void DmntCheatVm::LogOpcode(const CheatVmOpcode& opcode) {
         callbacks->CommandLog("Opcode: Save or Restore Register Mask");
         callbacks->CommandLog(
             fmt::format("Op Type:   {:d}", static_cast<u32>(save_restore_regmask->op_type)));
-        for (std::size_t i = 0; i < NumRegisters; i++) {
+        for (std::size_t i = 0; i < NumRegisters; ++i) {
             callbacks->CommandLog(
                 fmt::format("Act[{:02X}]:   {:d}", i, save_restore_regmask->should_operate[i]));
         }
@@ -538,7 +538,7 @@ bool DmntCheatVm::DecodeNextOpcode(CheatVmOpcode& out) {
         // X = 16-bit bitmask, bit i --> save or restore register i.
         save_restore_regmask.op_type =
             static_cast<SaveRestoreRegisterOpType>((first_dword >> 20) & 0xF);
-        for (std::size_t i = 0; i < NumRegisters; i++) {
+        for (std::size_t i = 0; i < NumRegisters; ++i) {
             save_restore_regmask.should_operate[i] = (first_dword & (1u << i)) != 0;
         }
         opcode.opcode = save_restore_regmask;
@@ -675,7 +675,7 @@ bool DmntCheatVm::LoadProgram(const std::vector<CheatEntry>& entries) {
     // Reset opcode count.
     num_opcodes = 0;
 
-    for (std::size_t i = 0; i < entries.size(); i++) {
+    for (std::size_t i = 0; i < entries.size(); ++i) {
         if (entries[i].enabled) {
             // Bounds check.
             if (entries[i].definition.num_opcodes + num_opcodes > MaximumProgramOpcodeCount) {
@@ -683,7 +683,7 @@ bool DmntCheatVm::LoadProgram(const std::vector<CheatEntry>& entries) {
                 return false;
             }
 
-            for (std::size_t n = 0; n < entries[i].definition.num_opcodes; n++) {
+            for (std::size_t n = 0; n < entries[i].definition.num_opcodes; ++n) {
                 program[num_opcodes++] = entries[i].definition.opcodes[n];
             }
         }
@@ -711,11 +711,11 @@ void DmntCheatVm::Execute(const CheatProcessMetadata& metadata) {
         callbacks->CommandLog(
             fmt::format("Instruction Ptr: {:04X}", static_cast<u32>(instruction_ptr)));
 
-        for (std::size_t i = 0; i < NumRegisters; i++) {
+        for (std::size_t i = 0; i < NumRegisters; ++i) {
             callbacks->CommandLog(fmt::format("Registers[{:02X}]: {:016X}", i, registers[i]));
         }
 
-        for (std::size_t i = 0; i < NumRegisters; i++) {
+        for (std::size_t i = 0; i < NumRegisters; ++i) {
             callbacks->CommandLog(fmt::format("SavedRegs[{:02X}]: {:016X}", i, saved_values[i]));
         }
         LogOpcode(cur_opcode);
@@ -1137,7 +1137,7 @@ void DmntCheatVm::Execute(const CheatProcessMetadata& metadata) {
                 dst = registers.data();
                 break;
             }
-            for (std::size_t i = 0; i < NumRegisters; i++) {
+            for (std::size_t i = 0; i < NumRegisters; ++i) {
                 if (save_restore_regmask->should_operate[i]) {
                     switch (save_restore_regmask->op_type) {
                     case SaveRestoreRegisterOpType::ClearSaved:

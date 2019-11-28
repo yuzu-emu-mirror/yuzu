@@ -131,8 +131,8 @@ std::vector<CopyParams> SurfaceBaseImpl::BreakDownLayered(const SurfaceParams& i
     std::vector<CopyParams> result;
     result.reserve(static_cast<std::size_t>(layers) * static_cast<std::size_t>(mipmaps));
 
-    for (u32 layer = 0; layer < layers; layer++) {
-        for (u32 level = 0; level < mipmaps; level++) {
+    for (u32 layer = 0; layer < layers; ++layer) {
+        for (u32 level = 0; level < mipmaps; ++level) {
             const u32 width = SurfaceParams::IntersectWidth(params, in_params, level, level);
             const u32 height = SurfaceParams::IntersectHeight(params, in_params, level, level);
             result.emplace_back(width, height, layer, level);
@@ -146,7 +146,7 @@ std::vector<CopyParams> SurfaceBaseImpl::BreakDownNonLayered(const SurfaceParams
     std::vector<CopyParams> result;
     result.reserve(mipmaps);
 
-    for (u32 level = 0; level < mipmaps; level++) {
+    for (u32 level = 0; level < mipmaps; ++level) {
         const u32 width = SurfaceParams::IntersectWidth(params, in_params, level, level);
         const u32 height = SurfaceParams::IntersectHeight(params, in_params, level, level);
         const u32 depth{std::min(params.GetMipDepth(level), in_params.GetMipDepth(level))};

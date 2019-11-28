@@ -69,7 +69,7 @@ public:
     }
 
     std::optional<VAddr> ReserveSlot() {
-        for (std::size_t i = 0; i < is_slot_used.size(); i++) {
+        for (std::size_t i = 0; i < is_slot_used.size(); ++i) {
             if (is_slot_used[i]) {
                 continue;
             }

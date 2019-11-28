@@ -218,7 +218,7 @@ private:
         std::vector<AudioDeviceName> name_buffer;
         name_buffer.reserve(audio_device_names.size());
 
-        for (std::size_t i = 0; i < count && i < audio_device_names.size(); i++) {
+        for (std::size_t i = 0; i < count && i < audio_device_names.size(); ++i) {
             const auto type = static_cast<DeviceType>(i);
 
             if (!usb_output_supported && type == DeviceType::USBOutput) {

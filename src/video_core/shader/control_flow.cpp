@@ -85,7 +85,7 @@ enum class BlockCollision : u32 { None, Found, Inside };
 
 std::pair<BlockCollision, u32> TryGetBlock(CFGRebuildState& state, u32 address) {
     const auto& blocks = state.block_info;
-    for (u32 index = 0; index < blocks.size(); index++) {
+    for (u32 index = 0; index < blocks.size(); ++index) {
         if (blocks[index].start == address) {
             return {BlockCollision::Found, index};
         }
@@ -437,7 +437,7 @@ std::pair<ParseResult, ParseInfo> ParseCode(CFGRebuildState& state, u32 address)
             const auto result = *tmp;
             const s32 pc_target = offset + result.relative_position;
             std::vector<CaseBranch> branches;
-            for (u32 i = 0; i < result.entries; i++) {
+            for (u32 i = 0; i < result.entries; ++i) {
                 auto key = state.locker.ObtainKey(result.buffer, result.offset + i * 4);
                 if (!key) {
                     return {ParseResult::AbnormalFlow, parse_info};

@@ -181,7 +181,7 @@ void VKSwapchain::CreateSemaphores() {
     const auto& dld{device.GetDispatchLoader()};
 
     present_semaphores.resize(image_count);
-    for (std::size_t i = 0; i < image_count; i++) {
+    for (std::size_t i = 0; i < image_count; ++i) {
         present_semaphores[i] = dev.createSemaphoreUnique({}, nullptr, dld);
     }
 }
@@ -191,7 +191,7 @@ void VKSwapchain::CreateImageViews() {
     const auto& dld{device.GetDispatchLoader()};
 
     image_views.resize(image_count);
-    for (std::size_t i = 0; i < image_count; i++) {
+    for (std::size_t i = 0; i < image_count; ++i) {
         const vk::ImageViewCreateInfo image_view_ci({}, images[i], vk::ImageViewType::e2D,
                                                     image_format, {},
                                                     {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1});

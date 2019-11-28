@@ -31,7 +31,7 @@ void WakeThreads(const std::vector<std::shared_ptr<Thread>>& waiting_threads, s3
     }
 
     // Signal the waiting threads.
-    for (std::size_t i = 0; i < last; i++) {
+    for (std::size_t i = 0; i < last; ++i) {
         ASSERT(waiting_threads[i]->GetStatus() == ThreadStatus::WaitArb);
         waiting_threads[i]->SetWaitSynchronizationResult(RESULT_SUCCESS);
         waiting_threads[i]->SetArbiterWaitAddress(0);

@@ -172,7 +172,7 @@ void Controller_NPad::InitNewlyAddedControler(std::size_t controller_idx) {
 
 void Controller_NPad::OnInit() {
     auto& kernel = system.Kernel();
-    for (std::size_t i = 0; i < styleset_changed_events.size(); i++) {
+    for (std::size_t i = 0; i < styleset_changed_events.size(); ++i) {
         styleset_changed_events[i] = Kernel::WritableEvent::CreateEventPair(
             kernel, fmt::format("npad:NpadStyleSetChanged_{}", i));
     }
@@ -297,7 +297,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
                                std::size_t data_len) {
     if (!IsControllerActivated())
         return;
-    for (std::size_t i = 0; i < shared_memory_entries.size(); i++) {
+    for (std::size_t i = 0; i < shared_memory_entries.size(); ++i) {
         auto& npad = shared_memory_entries[i];
         const std::array<NPadGeneric*, 7> controller_npads{&npad.main_controller_states,
                                                            &npad.handheld_states,
@@ -438,7 +438,7 @@ void Controller_NPad::SetSupportedNPadIdTypes(u8* data, std::size_t length) {
     supported_npad_id_types.clear();
     supported_npad_id_types.resize(length / sizeof(u32));
     std::memcpy(supported_npad_id_types.data(), data, length);
-    for (std::size_t i = 0; i < connected_controllers.size(); i++) {
+    for (std::size_t i = 0; i < connected_controllers.size(); ++i) {
         auto& controller = connected_controllers[i];
         if (!controller.is_connected) {
             continue;
@@ -492,7 +492,7 @@ void Controller_NPad::VibrateController(const std::vector<u32>& controller_ids,
     if (!can_controllers_vibrate) {
         return;
     }
-    for (std::size_t i = 0; i < controller_ids.size(); i++) {
+    for (std::size_t i = 0; i < controller_ids.size(); ++i) {
         std::size_t controller_pos = NPadIdToIndex(static_cast<u32>(i));
         if (connected_controllers[controller_pos].is_connected) {
             // TODO(ogniK): Vibrate the physical controller

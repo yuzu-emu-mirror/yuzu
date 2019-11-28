@@ -51,7 +51,7 @@ void ConfigureAudio::SetOutputSinkFromSinkID() {
 
     int new_sink_index = 0;
     const QString sink_id = QString::fromStdString(Settings::values.sink_id);
-    for (int index = 0; index < ui->output_sink_combo_box->count(); index++) {
+    for (int index = 0; index < ui->output_sink_combo_box->count(); ++index) {
         if (ui->output_sink_combo_box->itemText(index) == sink_id) {
             new_sink_index = index;
             break;
@@ -65,7 +65,7 @@ void ConfigureAudio::SetAudioDeviceFromDeviceID() {
     int new_device_index = -1;
 
     const QString device_id = QString::fromStdString(Settings::values.audio_device_id);
-    for (int index = 0; index < ui->audio_device_combo_box->count(); index++) {
+    for (int index = 0; index < ui->audio_device_combo_box->count(); ++index) {
         if (ui->audio_device_combo_box->itemText(index) == device_id) {
             new_device_index = index;
             break;

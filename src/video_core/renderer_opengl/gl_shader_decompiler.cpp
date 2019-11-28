@@ -529,7 +529,7 @@ private:
     }
 
     void DeclareInternalFlags() {
-        for (u32 flag = 0; flag < static_cast<u32>(InternalFlag::Amount); flag++) {
+        for (u32 flag = 0; flag < static_cast<u32>(InternalFlag::Amount); ++flag) {
             const auto flag_code = static_cast<InternalFlag>(flag);
             code.AddLine("bool {} = false;", GetInternalFlag(flag_code));
         }
@@ -2401,7 +2401,7 @@ private:
 
 void GLSLDecompiler::DecompileAST() {
     const u32 num_flow_variables = ir.GetASTNumVariables();
-    for (u32 i = 0; i < num_flow_variables; i++) {
+    for (u32 i = 0; i < num_flow_variables; ++i) {
         code.AddLine("bool {} = false;", GetFlowVariable(i));
     }
 

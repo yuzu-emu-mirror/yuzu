@@ -38,7 +38,7 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
 
 Module::Module(Core::System& system) {
     auto& kernel = system.Kernel();
-    for (u32 i = 0; i < MaxNvEvents; i++) {
+    for (u32 i = 0; i < MaxNvEvents; ++i) {
         std::string event_label = fmt::format("NVDRV::NvEvent_{}", i);
         events_interface.events[i] = Kernel::WritableEvent::CreateEventPair(kernel, event_label);
         events_interface.status[i] = EventState::Free;
@@ -91,7 +91,7 @@ ResultCode Module::Close(u32 fd) {
 }
 
 void Module::SignalSyncpt(const u32 syncpoint_id, const u32 value) {
-    for (u32 i = 0; i < MaxNvEvents; i++) {
+    for (u32 i = 0; i < MaxNvEvents; ++i) {
         if (events_interface.assigned_syncpt[i] == syncpoint_id &&
             events_interface.assigned_value[i] == value) {
             events_interface.LiberateEvent(i);

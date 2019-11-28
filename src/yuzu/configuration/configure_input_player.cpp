@@ -237,7 +237,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
     analog_map_stick = {ui->buttonLStickAnalog, ui->buttonRStickAnalog};
 
-    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
+    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; ++button_id) {
         auto* const button = button_map[button_id];
         if (button == nullptr) {
             continue;
@@ -279,8 +279,8 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         });
     }
 
-    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
-        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
+    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
+        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
             auto* const analog_button = analog_map_buttons[analog_id][sub_button_id];
             if (analog_button == nullptr) {
                 continue;
@@ -452,13 +452,13 @@ void ConfigureInputPlayer::LoadConfiguration() {
 }
 
 void ConfigureInputPlayer::RestoreDefaults() {
-    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
+    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; ++button_id) {
         buttons_param[button_id] = Common::ParamPackage{
             InputCommon::GenerateKeyboardParam(Config::default_buttons[button_id])};
     }
 
-    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
-        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
+    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
+        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
             Common::ParamPackage params{InputCommon::GenerateKeyboardParam(
                 Config::default_analogs[analog_id][sub_button_id])};
             SetAnalogButton(params, analogs_param[analog_id], analog_sub_buttons[sub_button_id]);
@@ -468,7 +468,7 @@ void ConfigureInputPlayer::RestoreDefaults() {
 }
 
 void ConfigureInputPlayer::ClearAll() {
-    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; button_id++) {
+    for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; ++button_id) {
         const auto* const button = button_map[button_id];
         if (button == nullptr || !button->isEnabled()) {
             continue;
@@ -477,8 +477,8 @@ void ConfigureInputPlayer::ClearAll() {
         buttons_param[button_id].Clear();
     }
 
-    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
-        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
+    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
+        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
             const auto* const analog_button = analog_map_buttons[analog_id][sub_button_id];
             if (analog_button == nullptr || !analog_button->isEnabled()) {
                 continue;
@@ -492,12 +492,12 @@ void ConfigureInputPlayer::ClearAll() {
 }
 
 void ConfigureInputPlayer::UpdateButtonLabels() {
-    for (int button = 0; button < Settings::NativeButton::NumButtons; button++) {
+    for (int button = 0; button < Settings::NativeButton::NumButtons; ++button) {
         button_map[button]->setText(ButtonToText(buttons_param[button]));
     }
 
-    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; analog_id++) {
-        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; sub_button_id++) {
+    for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
+        for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
             auto* const analog_button = analog_map_buttons[analog_id][sub_button_id];
 
             if (analog_button == nullptr) {

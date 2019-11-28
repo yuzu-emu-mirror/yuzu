@@ -126,7 +126,7 @@ struct PL_U::Impl {
         // based on the shared memory dump
         unsigned cur_offset = 0;
 
-        for (std::size_t i = 0; i < SHARED_FONTS.size(); i++) {
+        for (std::size_t i = 0; i < SHARED_FONTS.size(); ++i) {
             // Out of shared fonts/invalid font
             if (GetU32Swapped(input.data() + cur_offset) != EXPECTED_RESULT) {
                 break;
@@ -292,7 +292,7 @@ void PL_U::GetSharedFontInOrderOfPriority(Kernel::HLERequestContext& ctx) {
     std::vector<u32> font_sizes;
 
     // TODO(ogniK): Have actual priority order
-    for (std::size_t i = 0; i < impl->shared_font_regions.size(); i++) {
+    for (std::size_t i = 0; i < impl->shared_font_regions.size(); ++i) {
         font_codes.push_back(static_cast<u32>(i));
         auto region = impl->GetSharedFontRegion(i);
         font_offsets.push_back(region.offset);

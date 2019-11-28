@@ -68,7 +68,7 @@ public:
             std::vector<s16> buf;
             buf.reserve(samples.size() * num_channels / source_num_channels);
             for (std::size_t i = 0; i < samples.size(); i += source_num_channels) {
-                for (std::size_t ch = 0; ch < num_channels; ch++) {
+                for (std::size_t ch = 0; ch < num_channels; ++ch) {
                     buf.push_back(samples[i + ch]);
                 }
             }
@@ -223,7 +223,7 @@ std::vector<std::string> ListCubebSinkDevices() {
     if (cubeb_enumerate_devices(ctx, CUBEB_DEVICE_TYPE_OUTPUT, &collection) != CUBEB_OK) {
         LOG_WARNING(Audio_Sink, "Audio output device enumeration not supported");
     } else {
-        for (std::size_t i = 0; i < collection.count; i++) {
+        for (std::size_t i = 0; i < collection.count; ++i) {
             const cubeb_device_info& device = collection.device[i];
             if (device.friendly_name) {
                 device_list.emplace_back(device.friendly_name);

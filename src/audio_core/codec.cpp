@@ -28,7 +28,7 @@ std::vector<s16> DecodeADPCM(const u8* const data, std::size_t size, const ADPCM
 
     const std::size_t NUM_FRAMES =
         (sample_count + (SAMPLES_PER_FRAME - 1)) / SAMPLES_PER_FRAME; // Round up.
-    for (std::size_t framei = 0; framei < NUM_FRAMES; framei++) {
+    for (std::size_t framei = 0; framei < NUM_FRAMES; ++framei) {
         const int frame_header = data[framei * FRAME_LEN];
         const int scale = 1 << (frame_header & 0xF);
         const int idx = (frame_header >> 4) & 0x7;

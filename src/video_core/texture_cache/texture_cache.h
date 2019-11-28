@@ -258,7 +258,7 @@ public:
 protected:
     TextureCache(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
         : system{system}, rasterizer{rasterizer} {
-        for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; i++) {
+        for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; ++i) {
             SetEmptyColorBuffer(i);
         }
 

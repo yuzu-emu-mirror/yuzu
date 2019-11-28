@@ -101,7 +101,7 @@ struct RomFSBuildFileContext {
 static u32 romfs_calc_path_hash(u32 parent, std::string_view path, u32 start,
                                 std::size_t path_len) {
     u32 hash = parent ^ 123456789;
-    for (u32 i = 0; i < path_len; i++) {
+    for (u32 i = 0; i < path_len; ++i) {
         hash = (hash >> 5) | (hash << 27);
         hash ^= path[start + i];
     }

@@ -122,7 +122,7 @@ struct Header {
             }
             AttributeUse GetAttributeUse(u32 attribute) const {
                 AttributeUse result = AttributeUse::Unused;
-                for (u32 i = 0; i < 4; i++) {
+                for (u32 i = 0; i < 4; ++i) {
                     const auto index = GetAttributeIndexUse(attribute, i);
                     if (index == AttributeUse::Unused) {
                         continue;

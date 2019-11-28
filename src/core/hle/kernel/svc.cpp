@@ -624,7 +624,7 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
             debug_buffer.resize(sz);
             Memory::ReadBlock(addr, debug_buffer.data(), sz);
             std::string hexdump;
-            for (std::size_t i = 0; i < debug_buffer.size(); i++) {
+            for (std::size_t i = 0; i < debug_buffer.size(); ++i) {
                 hexdump += fmt::format("{:02X} ", debug_buffer[i]);
                 if (i != 0 && i % 16 == 0) {
                     hexdump += '\n';

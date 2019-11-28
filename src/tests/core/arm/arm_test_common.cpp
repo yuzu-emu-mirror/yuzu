@@ -96,7 +96,7 @@ bool TestEnvironment::TestMemory::ReadBlock(VAddr src_addr, void* dest_buffer, s
     VAddr addr = src_addr;
     u8* data = static_cast<u8*>(dest_buffer);
 
-    for (std::size_t i = 0; i < size; i++, addr++, data++) {
+    for (std::size_t i = 0; i < size; ++i, ++addr, ++data) {
         *data = *Read8(addr);
     }
 
@@ -136,7 +136,7 @@ bool TestEnvironment::TestMemory::WriteBlock(VAddr dest_addr, const void* src_bu
     VAddr addr = dest_addr;
     const u8* data = static_cast<const u8*>(src_buffer);
 
-    for (std::size_t i = 0; i < size; i++, addr++, data++) {
+    for (std::size_t i = 0; i < size; ++i, ++addr, ++data) {
         env->write_records.emplace_back(8, addr, *data);
         if (env->mutable_memory)
             env->SetMemory8(addr, *data);

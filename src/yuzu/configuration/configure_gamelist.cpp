@@ -85,11 +85,11 @@ void ConfigureGameList::changeEvent(QEvent* event) {
 void ConfigureGameList::RetranslateUI() {
     ui->retranslateUi(this);
 
-    for (int i = 0; i < ui->icon_size_combobox->count(); i++) {
+    for (int i = 0; i < ui->icon_size_combobox->count(); ++i) {
         ui->icon_size_combobox->setItemText(i, tr(default_icon_sizes[i].second));
     }
 
-    for (int i = 0; i < ui->row_1_text_combobox->count(); i++) {
+    for (int i = 0; i < ui->row_1_text_combobox->count(); ++i) {
         const QString name = tr(row_text_names[i]);
 
         ui->row_1_text_combobox->setItemText(i, name);

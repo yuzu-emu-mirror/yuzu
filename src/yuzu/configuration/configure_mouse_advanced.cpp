@@ -76,7 +76,7 @@ ConfigureMouseAdvanced::ConfigureMouseAdvanced(QWidget* parent)
         ui->left_button, ui->right_button, ui->middle_button, ui->forward_button, ui->back_button,
     };
 
-    for (int button_id = 0; button_id < Settings::NativeMouseButton::NumMouseButtons; button_id++) {
+    for (int button_id = 0; button_id < Settings::NativeMouseButton::NumMouseButtons; ++button_id) {
         auto* const button = button_map[button_id];
         if (button == nullptr) {
             continue;
@@ -153,7 +153,7 @@ void ConfigureMouseAdvanced::RetranslateUI() {
 }
 
 void ConfigureMouseAdvanced::RestoreDefaults() {
-    for (int button_id = 0; button_id < Settings::NativeMouseButton::NumMouseButtons; button_id++) {
+    for (int button_id = 0; button_id < Settings::NativeMouseButton::NumMouseButtons; ++button_id) {
         buttons_param[button_id] = Common::ParamPackage{
             InputCommon::GenerateKeyboardParam(Config::default_mouse_buttons[button_id])};
     }
@@ -173,7 +173,7 @@ void ConfigureMouseAdvanced::ClearAll() {
 }
 
 void ConfigureMouseAdvanced::UpdateButtonLabels() {
-    for (int button = 0; button < Settings::NativeMouseButton::NumMouseButtons; button++) {
+    for (int button = 0; button < Settings::NativeMouseButton::NumMouseButtons; ++button) {
         button_map[button]->setText(ButtonToText(buttons_param[button]));
     }
 }

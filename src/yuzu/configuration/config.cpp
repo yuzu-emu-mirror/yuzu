@@ -1064,7 +1064,7 @@ void Config::SaveShortcutValues() {
 
     // Lengths of UISettings::values.shortcuts & default_hotkeys are same.
     // However, their ordering must also be the same.
-    for (std::size_t i = 0; i < default_hotkeys.size(); i++) {
+    for (std::size_t i = 0; i < default_hotkeys.size(); ++i) {
         const auto& [name, group, shortcut] = UISettings::values.shortcuts[i];
         const auto& default_hotkey = default_hotkeys[i].shortcut;
 

@@ -290,7 +290,7 @@ u32 SurfaceParams::GetMipBlockDepth(u32 level) const {
 
 std::size_t SurfaceParams::GetGuestMipmapLevelOffset(u32 level) const {
     std::size_t offset = 0;
-    for (u32 i = 0; i < level; i++) {
+    for (u32 i = 0; i < level; ++i) {
         offset += GetInnerMipmapMemorySize(i, false, false);
     }
     return offset;
@@ -298,7 +298,7 @@ std::size_t SurfaceParams::GetGuestMipmapLevelOffset(u32 level) const {
 
 std::size_t SurfaceParams::GetHostMipmapLevelOffset(u32 level) const {
     std::size_t offset = 0;
-    for (u32 i = 0; i < level; i++) {
+    for (u32 i = 0; i < level; ++i) {
         offset += GetInnerMipmapMemorySize(i, true, false) * GetNumLayers();
     }
     return offset;
@@ -306,7 +306,7 @@ std::size_t SurfaceParams::GetHostMipmapLevelOffset(u32 level) const {
 
 std::size_t SurfaceParams::GetConvertedMipmapOffset(u32 level) const {
     std::size_t offset = 0;
-    for (u32 i = 0; i < level; i++) {
+    for (u32 i = 0; i < level; ++i) {
         offset += GetConvertedMipmapSize(i);
     }
     return offset;

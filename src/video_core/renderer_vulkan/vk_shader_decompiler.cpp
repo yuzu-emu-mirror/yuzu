@@ -319,7 +319,7 @@ private:
     }
 
     void DeclareFlowVariables() {
-        for (u32 i = 0; i < ir.GetASTNumVariables(); i++) {
+        for (u32 i = 0; i < ir.GetASTNumVariables(); ++i) {
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             Name(id, fmt::format("flow_var_{}", static_cast<u32>(i)));
             flow_variables.emplace(i, AddGlobalVariable(id));
@@ -1828,7 +1828,7 @@ private:
 
 void SPIRVDecompiler::DecompileAST() {
     const u32 num_flow_variables = ir.GetASTNumVariables();
-    for (u32 i = 0; i < num_flow_variables; i++) {
+    for (u32 i = 0; i < num_flow_variables; ++i) {
         const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
         Name(id, fmt::format("flow_var_{}", i));
         flow_variables.emplace(i, AddGlobalVariable(id));

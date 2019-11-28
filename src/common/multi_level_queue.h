@@ -306,7 +306,7 @@ public:
 
     void clear() {
         used_priorities = 0;
-        for (std::size_t i = 0; i < Depth; i++) {
+        for (std::size_t i = 0; i < Depth; ++i) {
             levels[i].clear();
         }
     }

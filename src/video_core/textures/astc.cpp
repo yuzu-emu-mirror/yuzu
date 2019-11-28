@@ -48,7 +48,7 @@ public:
 
     unsigned int ReadBits(unsigned int nBits) {
         unsigned int ret = 0;
-        for (unsigned int i = 0; i < nBits; i++) {
+        for (unsigned int i = 0; i < nBits; ++i) {
             ret |= (ReadBit() & 1) << i;
         }
         return ret;
@@ -72,13 +72,13 @@ public:
     }
 
     void WriteBitsR(unsigned int val, unsigned int nBits) {
-        for (unsigned int i = 0; i < nBits; i++) {
+        for (unsigned int i = 0; i < nBits; ++i) {
             WriteBit((val >> (nBits - i - 1)) & 1);
         }
     }
 
     void WriteBits(unsigned int val, unsigned int nBits) {
-        for (unsigned int i = 0; i < nBits; i++) {
+        for (unsigned int i = 0; i < nBits; ++i) {
             WriteBit((val >> i) & 1);
         }
     }
@@ -213,7 +213,7 @@ public:
     // Count the number of bits set in a number.
     static inline uint32_t Popcnt(uint32_t n) {
         uint32_t c;
-        for (c = 0; n; c++) {
+        for (c = 0; n; ++c) {
             n &= n - 1;
         }
         return c;
@@ -331,7 +331,7 @@ private:
             t[0] = (Cb[1] << 1) | (Cb[0] & ~Cb[1]);
         }
 
-        for (uint32_t i = 0; i < 5; i++) {
+        for (uint32_t i = 0; i < 5; ++i) {
             IntegerEncodedValue val(eIntegerEncoding_Trit, nBitsPerValue);
             val.SetBitValue(m[i]);
             val.SetTritValue(t[i]);
@@ -379,7 +379,7 @@ private:
             }
         }
 
-        for (uint32_t i = 0; i < 3; i++) {
+        for (uint32_t i = 0; i < 3; ++i) {
             IntegerEncodedValue val(eIntegerEncoding_Quint, nBitsPerValue);
             val.m_BitValue = m[i];
             val.m_QuintValue = q[i];
@@ -633,16 +633,16 @@ static void FillVoidExtentLDR(InputBitStream& strm, uint32_t* const outBuf, uint
     uint32_t rgba = (r >> 8) | (g & 0xFF00) | (static_cast<uint32_t>(b) & 0xFF00) << 8 |
                     (static_cast<uint32_t>(a) & 0xFF00) << 16;
 
-    for (uint32_t j = 0; j < blockHeight; j++) {
-        for (uint32_t i = 0; i < blockWidth; i++) {
+    for (uint32_t j = 0; j < blockHeight; ++j) {
+        for (uint32_t i = 0; i < blockWidth; ++i) {
             outBuf[j * blockWidth + i] = rgba;
         }
     }
 }
 
 static void FillError(uint32_t* outBuf, uint32_t blockWidth, uint32_t blockHeight) {
-    for (uint32_t j = 0; j < blockHeight; j++) {
-        for (uint32_t i = 0; i < blockWidth; i++) {
+    for (uint32_t j = 0; j < blockHeight; ++j) {
+        for (uint32_t i = 0; i < blockWidth; ++i) {
             outBuf[j * blockWidth + i] = 0xFFFF00FF;
         }
     }
@@ -692,7 +692,7 @@ public:
     // or by repeating the most significant bits when going from
     // smaller to larger bit depths.
     void ChangeBitDepth(const uint8_t (&depth)[4]) {
-        for (uint32_t i = 0; i < 4; i++) {
+        for (uint32_t i = 0; i < 4; ++i) {
             Component(i) = ChangeBitDepth(Component(i), m_BitDepth[i], depth[i]);
             m_BitDepth[i] = depth[i];
         }
@@ -767,7 +767,7 @@ public:
     }
 
     void GetBitDepth(uint8_t (&outDepth)[4]) const {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; ++i) {
             outDepth[i] = m_BitDepth[i];
         }
     }
@@ -794,7 +794,7 @@ public:
 
     // Clamps the pixel to the range [0,255]
     void ClampByte() {
-        for (uint32_t i = 0; i < 4; i++) {
+        for (uint32_t i = 0; i < 4; ++i) {
             color[i] = (color[i] < 0) ? 0 : ((color[i] > 255) ? 255 : color[i]);
         }
     }
@@ -808,7 +808,7 @@ static void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* mode
                               const uint32_t nPartitions, const uint32_t nBitsForColorData) {
     // First figure out how many color values we have
     uint32_t nValues = 0;
-    for (uint32_t i = 0; i < nPartitions; i++) {
+    for (uint32_t i = 0; i < nPartitions; ++i) {
         nValues += ((modes[i] >> 2) + 1) << 1;
     }
 
@@ -969,7 +969,7 @@ static void DecodeColorValues(uint32_t* out, uint8_t* data, const uint32_t* mode
     }
 
     // Make sure that each of our values is in the proper range...
-    for (uint32_t i = 0; i < nValues; i++) {
+    for (uint32_t i = 0; i < nValues; ++i) {
         assert(out[i] <= 255);
     }
 }
@@ -1090,9 +1090,9 @@ static void UnquantizeTexelWeights(uint32_t out[2][144],
     uint32_t Dt = (1024 + (blockHeight / 2)) / (blockHeight - 1);
 
     const uint32_t kPlaneScale = params.m_bDualPlane ? 2U : 1U;
-    for (uint32_t plane = 0; plane < kPlaneScale; plane++)
-        for (uint32_t t = 0; t < blockHeight; t++)
-            for (uint32_t s = 0; s < blockWidth; s++) {
+    for (uint32_t plane = 0; plane < kPlaneScale; ++plane)
+        for (uint32_t t = 0; t < blockHeight; ++t)
+            for (uint32_t s = 0; s < blockWidth; ++s) {
                 uint32_t cs = Ds * s;
                 uint32_t ct = Dt * t;
 
@@ -1262,13 +1262,13 @@ static void ComputeEndpoints(Pixel& ep1, Pixel& ep2, const uint32_t*& colorValue
                              uint32_t colorEndpointMode) {
 #define READ_UINT_VALUES(N)                                                                        \
     uint32_t v[N];                                                                                 \
-    for (uint32_t i = 0; i < N; i++) {                                                             \
+    for (uint32_t i = 0; i < N; ++i) {                                                             \
         v[i] = *(colorValues++);                                                                   \
     }
 
 #define READ_INT_VALUES(N)                                                                         \
     int32_t v[N];                                                                                  \
-    for (uint32_t i = 0; i < N; i++) {                                                             \
+    for (uint32_t i = 0; i < N; ++i) {                                                             \
         v[i] = static_cast<int32_t>(*(colorValues++));                                             \
     }
 
@@ -1498,19 +1498,19 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
         CEM >>= 2;
 
         bool C[4] = {0};
-        for (uint32_t i = 0; i < nPartitions; i++) {
+        for (uint32_t i = 0; i < nPartitions; ++i) {
             C[i] = CEM & 1;
             CEM >>= 1;
         }
 
         uint8_t M[4] = {0};
-        for (uint32_t i = 0; i < nPartitions; i++) {
+        for (uint32_t i = 0; i < nPartitions; ++i) {
             M[i] = CEM & 3;
             CEM >>= 2;
             assert(M[i] <= 3);
         }
 
-        for (uint32_t i = 0; i < nPartitions; i++) {
+        for (uint32_t i = 0; i < nPartitions; ++i) {
             colorEndpointMode[i] = baseMode;
             if (!(C[i]))
                 colorEndpointMode[i] -= 1;
@@ -1519,13 +1519,13 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
         }
     } else if (nPartitions > 1) {
         uint32_t CEM = baseCEM >> 2;
-        for (uint32_t i = 0; i < nPartitions; i++) {
+        for (uint32_t i = 0; i < nPartitions; ++i) {
             colorEndpointMode[i] = CEM;
         }
     }
 
     // Make sure everything up till here is sane.
-    for (uint32_t i = 0; i < nPartitions; i++) {
+    for (uint32_t i = 0; i < nPartitions; ++i) {
         assert(colorEndpointMode[i] < 16);
     }
     assert(strm.GetBitsRead() + weightParams.GetPackedBitSize() == 128);
@@ -1537,7 +1537,7 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
 
     Pixel endpoints[4][2];
     const uint32_t* colorValuesPtr = colorValues;
-    for (uint32_t i = 0; i < nPartitions; i++) {
+    for (uint32_t i = 0; i < nPartitions; ++i) {
         ComputeEndpoints(endpoints[i][0], endpoints[i][1], colorValuesPtr, colorEndpointMode[i]);
     }
 
@@ -1546,7 +1546,7 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
     memcpy(texelWeightData, inBuf, sizeof(texelWeightData));
 
     // Reverse everything
-    for (uint32_t i = 0; i < 8; i++) {
+    for (uint32_t i = 0; i < 8; ++i) {
 // Taken from http://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64Bits
 #define REVERSE_BYTE(b) (((b)*0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32
         unsigned char a = static_cast<unsigned char>(REVERSE_BYTE(texelWeightData[i]));
@@ -1577,14 +1577,14 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
 
     // Now that we have endpoints and weights, we can interpolate and generate
     // the proper decoding...
-    for (uint32_t j = 0; j < blockHeight; j++)
-        for (uint32_t i = 0; i < blockWidth; i++) {
+    for (uint32_t j = 0; j < blockHeight; ++j) {
+        for (uint32_t i = 0; i < blockWidth; ++i) {
             uint32_t partition = Select2DPartition(partitionIndex, i, j, nPartitions,
                                                    (blockHeight * blockWidth) < 32);
             assert(partition < nPartitions);
 
             Pixel p;
-            for (uint32_t c = 0; c < 4; c++) {
+            for (uint32_t c = 0; c < 4; ++c) {
                 uint32_t C0 = endpoints[partition][0].Component(c);
                 C0 = Replicate(C0, 8, 16);
                 uint32_t C1 = endpoints[partition][1].Component(c);
@@ -1607,6 +1607,7 @@ static void DecompressBlock(const uint8_t inBuf[16], const uint32_t blockWidth,
 
             outBuf[j * blockWidth + i] = p.Pack();
         }
+    }
 }
 
 } // namespace ASTCC
@@ -1618,7 +1619,7 @@ std::vector<uint8_t> Decompress(const uint8_t* data, uint32_t width, uint32_t he
     uint32_t blockIdx = 0;
     std::size_t depth_offset = 0;
     std::vector<uint8_t> outData(height * width * depth * 4);
-    for (uint32_t k = 0; k < depth; k++) {
+    for (uint32_t k = 0; k < depth; ++k) {
         for (uint32_t j = 0; j < height; j += block_height) {
             for (uint32_t i = 0; i < width; i += block_width) {
 
@@ -1632,11 +1633,11 @@ std::vector<uint8_t> Decompress(const uint8_t* data, uint32_t width, uint32_t he
                 uint32_t decompHeight = std::min(block_height, height - j);
 
                 uint8_t* outRow = depth_offset + outData.data() + (j * width + i) * 4;
-                for (uint32_t jj = 0; jj < decompHeight; jj++) {
+                for (uint32_t jj = 0; jj < decompHeight; ++jj) {
                     memcpy(outRow + jj * width * 4, uncompData + jj * block_width, decompWidth * 4);
                 }
 
-                blockIdx++;
+                ++blockIdx;
             }
         }
         depth_offset += height * width * 4;

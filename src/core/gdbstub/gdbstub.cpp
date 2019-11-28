@@ -857,7 +857,7 @@ static void ReadRegisters() {
 
     u8* bufptr = buffer;
 
-    for (u32 reg = 0; reg <= SP_REGISTER; reg++) {
+    for (u32 reg = 0; reg <= SP_REGISTER; ++reg) {
         LongToGdbHex(bufptr + reg * 16, RegRead(reg, current_thread));
     }
 
@@ -873,7 +873,7 @@ static void ReadRegisters() {
 
     u128 r;
 
-    for (u32 reg = UC_ARM64_REG_Q0; reg < FPCR_REGISTER; reg++) {
+    for (u32 reg = UC_ARM64_REG_Q0; reg < FPCR_REGISTER; ++reg) {
         r = FpuRead(reg, current_thread);
         LongToGdbHex(bufptr + reg * 32, r[0]);
         LongToGdbHex(bufptr + reg * 32 + 16, r[1]);
@@ -927,7 +927,7 @@ static void WriteRegisters() {
     if (command_buffer[0] != 'G')
         return SendReply("E01");
 
-    for (u32 i = 0, reg = 0; reg <= FPCR_REGISTER; i++, reg++) {
+    for (u32 i = 0, reg = 0; reg <= FPCR_REGISTER; ++i, ++reg) {
         if (reg <= SP_REGISTER) {
             RegWrite(reg, GdbHexToLong(buffer_ptr + i * 16), current_thread);
         } else if (reg == PC_REGISTER) {

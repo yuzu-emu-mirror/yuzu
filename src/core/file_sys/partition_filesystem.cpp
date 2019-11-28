@@ -58,7 +58,7 @@ PartitionFilesystem::PartitionFilesystem(std::shared_ptr<VfsFile> file) {
     std::size_t entries_offset = sizeof(Header);
     std::size_t strtab_offset = entries_offset + (pfs_header.num_entries * entry_size);
     content_offset = strtab_offset + pfs_header.strtab_size;
-    for (u16 i = 0; i < pfs_header.num_entries; i++) {
+    for (u16 i = 0; i < pfs_header.num_entries; ++i) {
         FSEntry entry;
 
         memcpy(&entry, &file_data[entries_offset + (i * entry_size)], sizeof(FSEntry));
@@ -109,7 +109,7 @@ std::shared_ptr<VfsDirectory> PartitionFilesystem::GetParentDirectory() const {
 void PartitionFilesystem::PrintDebugInfo() const {
     LOG_DEBUG(Service_FS, "Magic:                  {:.4}", pfs_header.magic);
     LOG_DEBUG(Service_FS, "Files:                  {}", pfs_header.num_entries);
-    for (u32 i = 0; i < pfs_header.num_entries; i++) {
+    for (u32 i = 0; i < pfs_header.num_entries; ++i) {
         LOG_DEBUG(Service_FS, " > File {}:              {} (0x{:X} bytes)", i,
                   pfs_files[i]->GetName(), pfs_files[i]->GetSize());
     }

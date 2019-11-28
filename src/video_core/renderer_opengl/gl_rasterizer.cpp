@@ -1025,7 +1025,7 @@ void RasterizerOpenGL::SyncViewport(OpenGLState& current_state) {
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
-    for (std::size_t i = 0; i < viewport_count; i++) {
+    for (std::size_t i = 0; i < viewport_count; ++i) {
         auto& viewport = current_state.viewports[i];
         const auto& src = regs.viewports[i];
         const Common::Rectangle<s32> viewport_rect{regs.viewport_transform[i].GetRect()};
@@ -1149,7 +1149,7 @@ void RasterizerOpenGL::SyncColorMask() {
 
     const std::size_t count =
         regs.independent_blend_enable ? Tegra::Engines::Maxwell3D::Regs::NumRenderTargets : 1;
-    for (std::size_t i = 0; i < count; i++) {
+    for (std::size_t i = 0; i < count; ++i) {
         const auto& source = regs.color_mask[regs.color_mask_common ? 0 : i];
         auto& dest = state.color_mask[i];
         dest.red_enabled = (source.R == 0) ? GL_FALSE : GL_TRUE;
@@ -1198,7 +1198,7 @@ void RasterizerOpenGL::SyncBlendState() {
             blend.src_a_func = MaxwellToGL::BlendFunc(src.factor_source_a);
             blend.dst_a_func = MaxwellToGL::BlendFunc(src.factor_dest_a);
         }
-        for (std::size_t i = 1; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; i++) {
+        for (std::size_t i = 1; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; ++i) {
             state.blend[i].enabled = false;
         }
         maxwell3d.dirty.blend_state = false;
@@ -1206,7 +1206,7 @@ void RasterizerOpenGL::SyncBlendState() {
         return;
     }
 
-    for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; i++) {
+    for (std::size_t i = 0; i < Tegra::Engines::Maxwell3D::Regs::NumRenderTargets; ++i) {
         auto& blend = state.blend[i];
         const auto& src = regs.independent_blend[i];
         blend.enabled = regs.blend.enable[i] != 0;
@@ -1244,7 +1244,7 @@ void RasterizerOpenGL::SyncScissorTest(OpenGLState& current_state) {
         regs.IsShaderConfigEnabled(static_cast<size_t>(Maxwell::ShaderProgram::Geometry));
     const std::size_t viewport_count =
         geometry_shaders_enabled ? Tegra::Engines::Maxwell3D::Regs::NumViewports : 1;
-    for (std::size_t i = 0; i < viewport_count; i++) {
+    for (std::size_t i = 0; i < viewport_count; ++i) {
         const auto& src = regs.scissor_test[i];
         auto& dst = current_state.viewports[i].scissor;
         dst.enabled = (src.enable != 0);

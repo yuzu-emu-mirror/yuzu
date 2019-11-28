@@ -194,7 +194,7 @@ void NVFlinger::Compose() {
 
         const auto& gpu = system.GPU();
         const auto& multi_fence = buffer->get().multi_fence;
-        for (u32 fence_id = 0; fence_id < multi_fence.num_fences; fence_id++) {
+        for (u32 fence_id = 0; fence_id < multi_fence.num_fences; ++fence_id) {
             const auto& fence = multi_fence.fences[fence_id];
             gpu.WaitFence(fence.id, fence.value);
         }

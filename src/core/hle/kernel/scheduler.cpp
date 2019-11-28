@@ -126,7 +126,7 @@ bool GlobalScheduler::YieldThreadAndBalanceLoad(Thread* yielding_thread) {
     scheduled_queue[core_id].yield(priority);
 
     std::array<Thread*, NUM_CPU_CORES> current_threads;
-    for (u32 i = 0; i < NUM_CPU_CORES; i++) {
+    for (u32 i = 0; i < NUM_CPU_CORES; ++i) {
         current_threads[i] = scheduled_queue[i].empty() ? nullptr : scheduled_queue[i].front();
     }
 
@@ -179,7 +179,7 @@ bool GlobalScheduler::YieldThreadAndWaitForLoadBalancing(Thread* yielding_thread
     if (scheduled_queue[core_id].empty()) {
         // Here, "current_threads" is calculated after the ""yield"", unlike yield -1
         std::array<Thread*, NUM_CPU_CORES> current_threads;
-        for (u32 i = 0; i < NUM_CPU_CORES; i++) {
+        for (u32 i = 0; i < NUM_CPU_CORES; ++i) {
             current_threads[i] = scheduled_queue[i].empty() ? nullptr : scheduled_queue[i].front();
         }
         for (auto& thread : suggested_queue[core_id]) {
@@ -209,7 +209,7 @@ bool GlobalScheduler::YieldThreadAndWaitForLoadBalancing(Thread* yielding_thread
 }
 
 void GlobalScheduler::PreemptThreads() {
-    for (std::size_t core_id = 0; core_id < NUM_CPU_CORES; core_id++) {
+    for (std::size_t core_id = 0; core_id < NUM_CPU_CORES; ++core_id) {
         const u32 priority = preemption_priorities[core_id];
 
         if (scheduled_queue[core_id].size(priority) > 0) {
@@ -350,7 +350,7 @@ bool GlobalScheduler::AskForReselectionOrMarkRedundant(Thread* current_thread,
 }
 
 void GlobalScheduler::Shutdown() {
-    for (std::size_t core = 0; core < NUM_CPU_CORES; core++) {
+    for (std::size_t core = 0; core < NUM_CPU_CORES; ++core) {
         scheduled_queue[core].clear();
         suggested_queue[core].clear();
     }

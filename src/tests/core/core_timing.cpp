@@ -111,7 +111,7 @@ TEST_CASE("CoreTiming[FairSharing]", "[core]") {
 
     callbacks_done = 0;
     u64 MAX_CALLBACKS = 10;
-    for (std::size_t i = 0; i < 10; i++) {
+    for (std::size_t i = 0; i < 10; ++i) {
         core_timing.ScheduleEvent(i * 3333U, empty_callback, 0);
     }
 

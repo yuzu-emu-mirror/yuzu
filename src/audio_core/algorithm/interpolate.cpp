@@ -53,7 +53,7 @@ std::vector<s16> Interpolate(InterpolationState& state, std::vector<s16> input, 
         while (pos <= 1.0) {
             double l = 0.0;
             double r = 0.0;
-            for (std::size_t j = 0; j < h.size(); j++) {
+            for (std::size_t j = 0; j < h.size(); ++j) {
                 const double lanczos_calc = Lanczos(taps, pos + j - taps + 1);
                 l += lanczos_calc * h[j][0];
                 r += lanczos_calc * h[j][1];

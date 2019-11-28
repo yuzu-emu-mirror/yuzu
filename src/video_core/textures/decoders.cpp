@@ -64,12 +64,12 @@ void PreciseProcessBlock(u8* const swizzled_data, u8* const unswizzled_data, con
     std::array<u8*, 2> data_ptrs;
     u32 z_address = tile_offset;
 
-    for (u32 z = z_start; z < z_end; z++) {
+    for (u32 z = z_start; z < z_end; ++z) {
         u32 y_address = z_address;
         u32 pixel_base = layer_z * z + y_start * stride_x;
-        for (u32 y = y_start; y < y_end; y++) {
+        for (u32 y = y_start; y < y_end; ++y) {
             const auto& table = legacy_swizzle_table[y % gob_size_y];
-            for (u32 x = x_start; x < x_end; x++) {
+            for (u32 x = x_start; x < x_end; ++x) {
                 const u32 swizzle_offset{y_address + table[x * bytes_per_pixel % gob_size_x]};
                 const u32 pixel_index{x * out_bytes_per_pixel + pixel_base};
                 data_ptrs[unswizzle] = swizzled_data + swizzle_offset;
@@ -99,10 +99,10 @@ void FastProcessBlock(u8* const swizzled_data, u8* const unswizzled_data, const 
     const u32 x_startb = x_start * bytes_per_pixel;
     const u32 x_endb = x_end * bytes_per_pixel;
 
-    for (u32 z = z_start; z < z_end; z++) {
+    for (u32 z = z_start; z < z_end; ++z) {
         u32 y_address = z_address;
         u32 pixel_base = layer_z * z + y_start * stride_x;
-        for (u32 y = y_start; y < y_end; y++) {
+        for (u32 y = y_start; y < y_end; ++y) {
             const auto& table = fast_swizzle_table[y % gob_size_y];
             for (u32 xb = x_startb; xb < x_endb; xb += fast_swizzle_align) {
                 const u32 swizzle_offset{y_address + table[(xb / fast_swizzle_align) % 4]};
@@ -150,13 +150,13 @@ void SwizzledData(u8* const swizzled_data, u8* const unswizzled_data, const bool
     const u32 xy_block_size = gob_size * block_height;
     const u32 block_size = xy_block_size * block_depth;
     u32 tile_offset = 0;
-    for (u32 zb = 0; zb < blocks_on_z; zb++) {
+    for (u32 zb = 0; zb < blocks_on_z; ++zb) {
         const u32 z_start = zb * block_z_elements;
         const u32 z_end = std::min(depth, z_start + block_z_elements);
-        for (u32 yb = 0; yb < blocks_on_y; yb++) {
+        for (u32 yb = 0; yb < blocks_on_y; ++yb) {
             const u32 y_start = yb * block_y_elements;
             const u32 y_end = std::min(height, y_start + block_y_elements);
-            for (u32 xb = 0; xb < blocks_on_x; xb++) {
+            for (u32 xb = 0; xb < blocks_on_x; ++xb) {
                 const u32 x_start = xb * block_x_elements;
                 const u32 x_end = std::min(width, x_start + block_x_elements);
                 if constexpr (fast) {

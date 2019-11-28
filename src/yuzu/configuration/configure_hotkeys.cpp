@@ -90,10 +90,10 @@ void ConfigureHotkeys::Configure(QModelIndex index) {
 }
 
 bool ConfigureHotkeys::IsUsedKey(QKeySequence key_sequence) const {
-    for (int r = 0; r < model->rowCount(); r++) {
+    for (int r = 0; r < model->rowCount(); ++r) {
         const QStandardItem* const parent = model->item(r, 0);
 
-        for (int r2 = 0; r2 < parent->rowCount(); r2++) {
+        for (int r2 = 0; r2 < parent->rowCount(); ++r2) {
             const QStandardItem* const key_seq_item = parent->child(r2, 1);
             const auto key_seq_str = key_seq_item->text();
             const auto key_seq = QKeySequence::fromString(key_seq_str, QKeySequence::NativeText);
@@ -108,9 +108,9 @@ bool ConfigureHotkeys::IsUsedKey(QKeySequence key_sequence) const {
 }
 
 void ConfigureHotkeys::ApplyConfiguration(HotkeyRegistry& registry) {
-    for (int key_id = 0; key_id < model->rowCount(); key_id++) {
+    for (int key_id = 0; key_id < model->rowCount(); ++key_id) {
         const QStandardItem* parent = model->item(key_id, 0);
-        for (int key_column_id = 0; key_column_id < parent->rowCount(); key_column_id++) {
+        for (int key_column_id = 0; key_column_id < parent->rowCount(); ++key_column_id) {
             const QStandardItem* action = parent->child(key_column_id, 0);
             const QStandardItem* keyseq = parent->child(key_column_id, 1);
             for (auto& [group, sub_actions] : registry.hotkey_groups) {

@@ -36,11 +36,11 @@ Filter::Filter(double a0, double a1, double a2, double b0, double b1, double b2)
 
 void Filter::Process(std::vector<s16>& signal) {
     const std::size_t num_frames = signal.size() / 2;
-    for (std::size_t i = 0; i < num_frames; i++) {
+    for (std::size_t i = 0; i < num_frames; ++i) {
         std::rotate(in.begin(), in.end() - 1, in.end());
         std::rotate(out.begin(), out.end() - 1, out.end());
 
-        for (std::size_t ch = 0; ch < channel_count; ch++) {
+        for (std::size_t ch = 0; ch < channel_count; ++ch) {
             in[0][ch] = signal[i * channel_count + ch];
 
             out[0][ch] = b0 * in[0][ch] + b1 * in[1][ch] + b2 * in[2][ch] - a1 * out[1][ch] -
@@ -61,7 +61,7 @@ static double CascadingBiquadQ(std::size_t total_count, std::size_t index) {
 
 CascadingFilter CascadingFilter::LowPass(double cutoff, std::size_t cascade_size) {
     std::vector<Filter> cascade(cascade_size);
-    for (std::size_t i = 0; i < cascade_size; i++) {
+    for (std::size_t i = 0; i < cascade_size; ++i) {
         cascade[i] = Filter::LowPass(cutoff, CascadingBiquadQ(cascade_size, i));
     }
     return CascadingFilter{std::move(cascade)};

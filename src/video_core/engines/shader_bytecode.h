@@ -1858,7 +1858,7 @@ private:
          */
         static constexpr auto GetMaskAndExpect(const char* const bitstring) {
             u16 mask = 0, expect = 0;
-            for (std::size_t i = 0; i < opcode_bitsize; i++) {
+            for (std::size_t i = 0; i < opcode_bitsize; ++i) {
                 const std::size_t bit_position = opcode_bitsize - i - 1;
                 switch (bitstring[i]) {
                 case '0':

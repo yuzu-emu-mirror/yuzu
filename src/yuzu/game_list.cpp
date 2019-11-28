@@ -225,7 +225,7 @@ void GameList::onTextChanged(const QString& new_text) {
 }
 
 void GameList::onUpdateThemedIcons() {
-    for (int i = 0; i < item_model->invisibleRootItem()->rowCount(); i++) {
+    for (int i = 0; i < item_model->invisibleRootItem()->rowCount(); ++i) {
         QStandardItem* child = item_model->invisibleRootItem()->child(i);
 
         const int icon_size = std::min(static_cast<int>(UISettings::values.icon_size), 64);
@@ -398,7 +398,7 @@ void GameList::ValidateEntry(const QModelIndex& item) {
 }
 
 bool GameList::isEmpty() const {
-    for (int i = 0; i < item_model->rowCount(); i++) {
+    for (int i = 0; i < item_model->rowCount(); ++i) {
         const QStandardItem* child = item_model->invisibleRootItem()->child(i);
         const auto type = static_cast<GameListItemType>(child->type());
         if (!child->hasChildren() &&

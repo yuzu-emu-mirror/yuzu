@@ -17,7 +17,7 @@ TEST_CASE("RingBuffer: Basic Tests", "[common]") {
     RingBuffer<char, 4, 1> buf;
 
     // Pushing values into a ring buffer with space should succeed.
-    for (std::size_t i = 0; i < 4; i++) {
+    for (std::size_t i = 0; i < 4; ++i) {
         const char elem = static_cast<char>(i);
         const std::size_t count = buf.Push(&elem, 1);
         REQUIRE(count == 1);
