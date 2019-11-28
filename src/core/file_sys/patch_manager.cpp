@@ -284,12 +284,16 @@ std::vector<Memory::CheatEntry> PatchManager::CreateCheatList(
         return {};
     }
 
+    const auto& disabled = Settings::values.disabled_addons[title_id];
     auto patch_dirs = load_dir->GetSubdirectories();
     std::sort(patch_dirs.begin(), patch_dirs.end(),
               [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
 
     std::vector<Memory::CheatEntry> out;
     for (const auto& subdir : patch_dirs) {
+        if (std::find(disabled.begin(), disabled.end(), subdir->GetName()) != disabled.end())
+            continue;
+
         auto cheats_dir = subdir->GetSubdirectory("cheats");
         if (cheats_dir != nullptr) {
             auto res = ReadCheatFileFromFolder(system, title_id, build_id_, cheats_dir, true);
