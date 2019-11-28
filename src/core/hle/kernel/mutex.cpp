@@ -7,6 +7,7 @@
 
 #include "common/assert.h"
 #include "core/core.h"
+#include "core/core_cpu.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/kernel.h"
@@ -23,7 +24,7 @@ namespace Kernel {
 /// Returns the number of threads that are waiting for a mutex, and the highest priority one among
 /// those.
 static std::pair<std::shared_ptr<Thread>, u32> GetHighestPriorityMutexWaitingThread(
-    const std::shared_ptr<Thread>& current_thread, VAddr mutex_addr) {
+    Thread* current_thread, VAddr mutex_addr) {
 
     std::shared_ptr<Thread> highest_priority_thread;
     u32 num_waiters = 0;
@@ -45,16 +46,15 @@ static std::pair<std::shared_ptr<Thread>, u32> GetHighestPriorityMutexWaitingThr
 }
 
 /// Update the mutex owner field of all threads waiting on the mutex to point to the new owner.
-static void TransferMutexOwnership(VAddr mutex_addr, std::shared_ptr<Thread> current_thread,
-                                   std::shared_ptr<Thread> new_owner) {
+static void TransferMutexOwnership(VAddr mutex_addr, Thread* current_thread, Thread* new_owner) {
     const auto threads = current_thread->GetMutexWaitingThreads();
     for (const auto& thread : threads) {
         if (thread->GetMutexWaitAddress() != mutex_addr)
             continue;
 
-        ASSERT(thread->GetLockOwner() == current_thread.get());
+        ASSERT(thread->GetLockOwner() == current_thread);
         current_thread->RemoveMutexWaiter(thread);
-        if (new_owner != thread)
+        if (new_owner != thread.get())
             new_owner->AddMutexWaiter(thread);
     }
 }
@@ -79,7 +79,7 @@ ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
     // thread.
     ASSERT(requesting_thread == current_thread);
 
-    const u32 addr_value = system.Memory().Read32(address);
+    u32 addr_value = system.Memory().Read32(address);
 
     // If the mutex isn't being held, just return success.
     if (addr_value != (holding_thread_handle | Mutex::MutexHasWaitersFlag)) {
@@ -88,6 +88,20 @@ ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
 
     if (holding_thread == nullptr) {
         return ERR_INVALID_HANDLE;
+    }
+
+    // This a workaround where an unknown bug writes the mutex value to give ownership to a cond var
+    // waiting thread.
+    if (holding_thread->GetStatus() == ThreadStatus::WaitCondVar) {
+        if (holding_thread->GetMutexWaitAddress() == address) {
+            Release(address, holding_thread.get());
+            addr_value = system.Memory().Read32(address);
+            if (addr_value == 0)
+                return RESULT_SUCCESS;
+            else {
+                holding_thread = handle_table.Get<Thread>(addr_value & Mutex::MutexOwnerMask);
+            }
+        }
     }
 
     // Wait until the mutex is released
@@ -105,15 +119,13 @@ ResultCode Mutex::TryAcquire(VAddr address, Handle holding_thread_handle,
     return RESULT_SUCCESS;
 }
 
-ResultCode Mutex::Release(VAddr address) {
+ResultCode Mutex::Release(VAddr address, Thread* holding_thread) {
     // The mutex address must be 4-byte aligned
     if ((address % sizeof(u32)) != 0) {
         return ERR_INVALID_ADDRESS;
     }
 
-    std::shared_ptr<Thread> current_thread =
-        SharedFrom(system.CurrentScheduler().GetCurrentThread());
-    auto [thread, num_waiters] = GetHighestPriorityMutexWaitingThread(current_thread, address);
+    auto [thread, num_waiters] = GetHighestPriorityMutexWaitingThread(holding_thread, address);
 
     // There are no more threads waiting for the mutex, release it completely.
     if (thread == nullptr) {
@@ -122,7 +134,7 @@ ResultCode Mutex::Release(VAddr address) {
     }
 
     // Transfer the ownership of the mutex from the previous owner to the new one.
-    TransferMutexOwnership(address, current_thread, thread);
+    TransferMutexOwnership(address, holding_thread, thread.get());
 
     u32 mutex_value = thread->GetWaitHandle();
 
@@ -143,7 +155,10 @@ ResultCode Mutex::Release(VAddr address) {
     thread->SetWaitHandle(0);
     thread->SetWaitSynchronizationResult(RESULT_SUCCESS);
 
-    system.PrepareReschedule();
+    if (thread->GetProcessorID() >= 0)
+        system.CpuCore(thread->GetProcessorID()).PrepareReschedule();
+    if (holding_thread->GetProcessorID() >= 0)
+        system.CpuCore(holding_thread->GetProcessorID()).PrepareReschedule();
 
     return RESULT_SUCCESS;
 }
