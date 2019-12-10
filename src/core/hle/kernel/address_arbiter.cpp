@@ -200,26 +200,26 @@ void AddressArbiter::HandleWakeupThread(std::shared_ptr<Thread> thread) {
 }
 
 void AddressArbiter::InsertThread(std::shared_ptr<Thread> thread) {
-    VAddr arb_addr = thread->GetArbiterWaitAddress();
+    const VAddr arb_addr = thread->GetArbiterWaitAddress();
     std::list<std::shared_ptr<Thread>>& thread_list = arb_threads[arb_addr];
     auto it = thread_list.begin();
     while (it != thread_list.end()) {
-        const std::shared_ptr<Thread> current_thread = *it;
+        const std::shared_ptr<Thread>& current_thread = *it;
         if (current_thread->GetPriority() >= thread->GetPriority()) {
             thread_list.insert(it, thread);
             return;
         }
         ++it;
     }
-    thread_list.push_back(thread);
+    thread_list.push_back(std::move(thread));
 }
 
 void AddressArbiter::RemoveThread(std::shared_ptr<Thread> thread) {
-    VAddr arb_addr = thread->GetArbiterWaitAddress();
+    const VAddr arb_addr = thread->GetArbiterWaitAddress();
     std::list<std::shared_ptr<Thread>>& thread_list = arb_threads[arb_addr];
     auto it = thread_list.begin();
     while (it != thread_list.end()) {
-        const std::shared_ptr<Thread> current_thread = *it;
+        const std::shared_ptr<Thread>& current_thread = *it;
         if (current_thread.get() == thread.get()) {
             thread_list.erase(it);
             return;
@@ -230,12 +230,12 @@ void AddressArbiter::RemoveThread(std::shared_ptr<Thread> thread) {
 }
 
 std::vector<std::shared_ptr<Thread>> AddressArbiter::GetThreadsWaitingOnAddress(VAddr address) {
-    std::vector<std::shared_ptr<Thread>> result{};
+    std::vector<std::shared_ptr<Thread>> result;
     std::list<std::shared_ptr<Thread>>& thread_list = arb_threads[address];
     auto it = thread_list.begin();
     while (it != thread_list.end()) {
         std::shared_ptr<Thread> current_thread = *it;
-        result.push_back(current_thread);
+        result.push_back(std::move(current_thread));
         ++it;
     }
     return result;
