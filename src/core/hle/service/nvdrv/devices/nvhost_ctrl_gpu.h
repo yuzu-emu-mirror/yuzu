@@ -160,8 +160,9 @@ private:
 
     struct IoctlGetGpuTime {
         u64_le gpu_time;
+        u64_le reserved;
     };
-    static_assert(sizeof(IoctlGetGpuTime) == 8, "IoctlGetGpuTime is incorrect size");
+    static_assert(sizeof(IoctlGetGpuTime) == 16, "IoctlGetGpuTime is incorrect size");
 
     u32 GetCharacteristics(const std::vector<u8>& input, std::vector<u8>& output,
                            std::vector<u8>& output2, IoctlVersion version);
