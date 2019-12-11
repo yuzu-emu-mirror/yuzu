@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/range/iterator_range_core.hpp>
+
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "core/core.h"
