@@ -485,7 +485,7 @@ void GMainWindow::InitializeWidgets() {
 
     async_status_button = new QPushButton();
     async_status_button->setText(tr("ASYNC"));
-    async_status_button->setObjectName(tr("StatusButton"));
+    async_status_button->setObjectName(tr("StatusBarToggleButton"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
     statusBar()->addPermanentWidget(async_status_button, 0);
@@ -508,9 +508,7 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setChecked(false);
     renderer_status_button->setDisabled(true);
 #endif // HAS_VULKAN
-    renderer_status_button->setObjectName(tr("StatusButton"));
-    renderer_status_button->setStyleSheet(QStringLiteral("QPushButton:checked{color: #e85c00;}"
-                                                         "QPushButton:!checked{color: #00ccdd;}"));
+    renderer_status_button->setObjectName(tr("RendererStatusBarButton"));
     statusBar()->addPermanentWidget(renderer_status_button, 0);
 
     statusBar()->setVisible(true);
@@ -2372,8 +2370,16 @@ void GMainWindow::UpdateUITheme() {
     QStringList theme_paths(default_theme_paths);
 
     if (is_default_theme || current_theme.isEmpty()) {
-        qApp->setStyleSheet({});
-        setStyleSheet({});
+        const QString theme_uri(QLatin1Char{':'} + QStringLiteral("default/style.qss"));
+        QFile f(theme_uri);
+        if (f.open(QFile::ReadOnly | QFile::Text)) {
+            QTextStream ts(&f);
+            qApp->setStyleSheet(ts.readAll());
+            setStyleSheet(ts.readAll());
+        } else {
+            qApp->setStyleSheet({});
+            setStyleSheet({});
+        }
         theme_paths.append(default_icons);
         QIcon::setThemeName(default_icons);
     } else {
