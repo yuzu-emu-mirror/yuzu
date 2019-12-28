@@ -1233,3 +1233,25 @@ QDateEdit::down-arrow:hover,
 QDateEdit::down-arrow:focus {
     image: url(:/qss_icons/rc/down_arrow.png);
 }
+
+QPushButton#StatusButton,
+QPushButton#StatusButton:disabled {
+    border: 1px solid;
+    color: #FFFFFF;
+    border-color: #FF6666;
+    background-color: transparent;
+    padding: 0px 3px 0px 3px;
+    text-align: center;
+}
+
+QPushButton#StatusButton:hover {
+    border-color: #0000FF
+}
+
+QPushButton#StatusButton:checked {
+    border-color: #00FF00;
+}
+
+QPushButton#StatusButton:hover:checked {
+    border-color: #0000FF;
+}
