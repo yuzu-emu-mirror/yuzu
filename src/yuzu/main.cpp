@@ -490,26 +490,27 @@ void GMainWindow::InitializeWidgets() {
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
     statusBar()->addPermanentWidget(async_status_button, 0);
 
-    accurate_status_button = new QPushButton();
-    accurate_status_button->setText(tr("ACCUR"));
-    accurate_status_button->setObjectName(tr("StatusButton"));
-    accurate_status_button->setCheckable(true);
-    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
-    statusBar()->addPermanentWidget(accurate_status_button, 0);
-
-    fps30_status_button = new QPushButton();
-    fps30_status_button->setText(tr("30FPS"));
-    fps30_status_button->setObjectName(tr("StatusButton"));
-    fps30_status_button->setCheckable(true);
-    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
-    statusBar()->addPermanentWidget(fps30_status_button, 0);
-
     renderer_status_button = new QPushButton();
+    renderer_status_button->setCheckable(true);
+#ifdef HAS_VULKAN
+    switch (Settings::values.renderer_backend) {
+    case Settings::RendererBackend::OpenGL:
+        renderer_status_button->setText(tr("OPENGL"));
+        renderer_status_button->setChecked(false);
+        break;
+    case Settings::RendererBackend::Vulkan:
+        renderer_status_button->setText(tr("VULKAN"));
+        renderer_status_button->setChecked(true);
+        break;
+    }
+#else
     renderer_status_button->setText(tr("OPENGL"));
-    renderer_status_button->setObjectName(tr("StatusButton"));
+    renderer_status_button->setChecked(false);
     renderer_status_button->setDisabled(true);
-    renderer_status_button->setStyleSheet(
-        QStringLiteral("QPushButton:disabled{border-color: #0000FF;}"));
+#endif // HAS_VULKAN
+    renderer_status_button->setObjectName(tr("StatusButton"));
+    renderer_status_button->setStyleSheet(QStringLiteral("QPushButton:checked{color: #e85c00;}"
+                                                         "QPushButton:!checked{color: #00ccdd;}"));
     statusBar()->addPermanentWidget(renderer_status_button, 0);
 
     statusBar()->setVisible(true);
@@ -749,8 +750,7 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
 
     connect(async_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleASyncGPU);
-    connect(accurate_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleAccurateGPU);
-    connect(fps30_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggle30FPSGPU);
+    connect(renderer_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleRendererAPI);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1030,8 +1030,6 @@ void GMainWindow::BootGame(const QString& filename) {
     }
     status_bar_update_timer.start(2000);
     async_status_button->setDisabled(true);
-    accurate_status_button->setDisabled(true);
-    fps30_status_button->setDisabled(true);
     renderer_status_button->setDisabled(true);
 
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
@@ -1103,8 +1101,9 @@ void GMainWindow::ShutdownGame() {
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
     async_status_button->setEnabled(true);
-    accurate_status_button->setEnabled(true);
-    fps30_status_button->setEnabled(true);
+#ifdef HAS_VULKAN
+    renderer_status_button->setEnabled(true);
+#endif
 
     emulation_running = false;
 
@@ -1874,8 +1873,18 @@ void GMainWindow::OnConfigure() {
     config->Save();
 
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
-    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
+#ifdef HAS_VULKAN
+    switch (Settings::values.renderer_backend) {
+    case Settings::RendererBackend::OpenGL:
+        renderer_status_button->setText(tr("OPENGL"));
+        renderer_status_button->setChecked(false);
+        break;
+    case Settings::RendererBackend::Vulkan:
+        renderer_status_button->setText(tr("VULKAN"));
+        renderer_status_button->setChecked(true);
+        break;
+    }
+#endif
 }
 
 void GMainWindow::OnLoadAmiibo() {
@@ -2164,24 +2173,26 @@ void GMainWindow::OnToggleASyncGPU() {
     Settings::Apply();
 }
 
-void GMainWindow::OnToggleAccurateGPU() {
+void GMainWindow::OnToggleRendererAPI() {
     if (emulation_running)
         return;
 
-    Settings::values.use_accurate_gpu_emulation = !Settings::values.use_accurate_gpu_emulation;
-    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
+#ifdef HAS_VULKAN
+    switch (Settings::values.renderer_backend) {
+    case Settings::RendererBackend::OpenGL:
+        Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+        renderer_status_button->setText(tr("OPENGL"));
+        renderer_status_button->setChecked(false);
+        break;
+    case Settings::RendererBackend::Vulkan:
+        Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
+        renderer_status_button->setText(tr("VULKAN"));
+        renderer_status_button->setChecked(true);
+        break;
+    }
 
     Settings::Apply();
-}
-
-void GMainWindow::OnToggle30FPSGPU() {
-    if (emulation_running)
-        return;
-
-    Settings::values.force_30fps_mode = !Settings::values.force_30fps_mode;
-    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
-
-    Settings::Apply();
+#endif // HAS_VULKAN
 }
 
 std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed,

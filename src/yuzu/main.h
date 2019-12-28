@@ -217,8 +217,7 @@ private slots:
     void OnCoreError(Core::System::ResultStatus, std::string);
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
     void OnToggleASyncGPU();
-    void OnToggleAccurateGPU();
-    void OnToggle30FPSGPU();
+    void OnToggleRendererAPI();
 
 private:
     std::optional<u64> SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id);
@@ -241,8 +240,6 @@ private:
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
     QPushButton* async_status_button = nullptr;
-    QPushButton* accurate_status_button = nullptr;
-    QPushButton* fps30_status_button = nullptr;
     QPushButton* renderer_status_button = nullptr;
     QTimer status_bar_update_timer;
 
