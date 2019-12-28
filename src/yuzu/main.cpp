@@ -507,10 +507,9 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button = new QPushButton();
     renderer_status_button->setText(tr("OPENGL"));
     renderer_status_button->setObjectName(tr("StatusButton"));
-    //renderer_status_button->setCheckable(true);
-    //renderer_status_button->setChecked(true);
     renderer_status_button->setDisabled(true);
-    renderer_status_button->setStyleSheet(QStringLiteral("QPushButton:disabled{border-color: #0000FF;}"));
+    renderer_status_button->setStyleSheet(
+        QStringLiteral("QPushButton:disabled{border-color: #0000FF;}"));
     statusBar()->addPermanentWidget(renderer_status_button, 0);
 
     statusBar()->setVisible(true);
