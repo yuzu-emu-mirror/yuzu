@@ -2179,12 +2179,12 @@ void GMainWindow::OnToggleRendererAPI() {
 
 #ifdef HAS_VULKAN
     switch (Settings::values.renderer_backend) {
-    case Settings::RendererBackend::OpenGL:
+    case Settings::RendererBackend::Vulkan:
         Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
         renderer_status_button->setText(tr("OPENGL"));
         renderer_status_button->setChecked(false);
         break;
-    case Settings::RendererBackend::Vulkan:
+    case Settings::RendererBackend::OpenGL:
         Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
         renderer_status_button->setText(tr("VULKAN"));
         renderer_status_button->setChecked(true);
