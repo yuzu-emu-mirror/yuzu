@@ -27,6 +27,7 @@ class LoadingScreen;
 class MicroProfileDialog;
 class ProfilerWidget;
 class QLabel;
+class QPushButton;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 class GameListPlaceholder;
@@ -210,6 +211,9 @@ private slots:
     void OnCaptureScreenshot();
     void OnCoreError(Core::System::ResultStatus, std::string);
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
+    void OnToggleASyncGPU();
+    void OnToggleAccurateGPU();
+    void OnToggle30FPSGPU();
 
 private:
     std::optional<u64> SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id);
@@ -229,6 +233,10 @@ private:
     QLabel* emu_speed_label = nullptr;
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
+    QPushButton* async_status_button = nullptr;
+    QPushButton* accurate_status_button = nullptr;
+    QPushButton* fps30_status_button = nullptr;
+    QPushButton* renderer_status_button = nullptr;
     QTimer status_bar_update_timer;
 
     std::unique_ptr<Config> config;

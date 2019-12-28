@@ -478,6 +478,37 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label, 0);
     }
+
+    async_status_button = new QPushButton();
+    async_status_button->setText(tr("ASYNC"));
+    async_status_button->setObjectName(tr("StatusButton"));
+    async_status_button->setCheckable(true);
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+    statusBar()->addPermanentWidget(async_status_button, 0);
+
+    accurate_status_button = new QPushButton();
+    accurate_status_button->setText(tr("ACCUR"));
+    accurate_status_button->setObjectName(tr("StatusButton"));
+    accurate_status_button->setCheckable(true);
+    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
+    statusBar()->addPermanentWidget(accurate_status_button, 0);
+
+    fps30_status_button = new QPushButton();
+    fps30_status_button->setText(tr("30FPS"));
+    fps30_status_button->setObjectName(tr("StatusButton"));
+    fps30_status_button->setCheckable(true);
+    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
+    statusBar()->addPermanentWidget(fps30_status_button, 0);
+
+    renderer_status_button = new QPushButton();
+    renderer_status_button->setText(tr("OPENGL"));
+    renderer_status_button->setObjectName(tr("StatusButton"));
+    //renderer_status_button->setCheckable(true);
+    //renderer_status_button->setChecked(true);
+    renderer_status_button->setDisabled(true);
+    renderer_status_button->setStyleSheet(QStringLiteral("QPushButton:disabled{border-color: #0000FF;}"));
+    statusBar()->addPermanentWidget(renderer_status_button, 0);
+
     statusBar()->setVisible(true);
     setStyleSheet(QStringLiteral("QStatusBar::item{border: none;}"));
 }
@@ -724,6 +755,10 @@ void GMainWindow::ConnectWidgetEvents() {
             &GRenderWindow::OnEmulationStopping);
 
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
+
+    connect(async_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleASyncGPU);
+    connect(accurate_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleAccurateGPU);
+    connect(fps30_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggle30FPSGPU);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1000,6 +1035,10 @@ void GMainWindow::BootGame(const QString& filename) {
         game_list_placeholder->hide();
     }
     status_bar_update_timer.start(2000);
+    async_status_button->setDisabled(true);
+    accurate_status_button->setDisabled(true);
+    fps30_status_button->setDisabled(true);
+    renderer_status_button->setDisabled(true);
 
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
 
@@ -1069,6 +1108,9 @@ void GMainWindow::ShutdownGame() {
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
+    async_status_button->setEnabled(true);
+    accurate_status_button->setEnabled(true);
+    fps30_status_button->setEnabled(true);
 
     emulation_running = false;
 
@@ -1836,6 +1878,10 @@ void GMainWindow::OnConfigure() {
     }
 
     config->Save();
+
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
+    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
 }
 
 void GMainWindow::OnLoadAmiibo() {
@@ -2111,6 +2157,37 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
     if (behavior == ReinitializeKeyBehavior::Warning) {
         game_list->PopulateAsync(UISettings::values.game_dirs);
     }
+}
+
+void GMainWindow::OnToggleASyncGPU() {
+    if (emulation_running)
+        return;
+
+    Settings::values.use_asynchronous_gpu_emulation =
+        !Settings::values.use_asynchronous_gpu_emulation;
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+
+    Settings::Apply();
+}
+
+void GMainWindow::OnToggleAccurateGPU() {
+    if (emulation_running)
+        return;
+
+    Settings::values.use_accurate_gpu_emulation = !Settings::values.use_accurate_gpu_emulation;
+    accurate_status_button->setChecked(Settings::values.use_accurate_gpu_emulation);
+
+    Settings::Apply();
+}
+
+void GMainWindow::OnToggle30FPSGPU() {
+    if (emulation_running)
+        return;
+
+    Settings::values.force_30fps_mode = !Settings::values.force_30fps_mode;
+    fps30_status_button->setChecked(Settings::values.force_30fps_mode);
+
+    Settings::Apply();
 }
 
 std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed,
