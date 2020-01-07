@@ -1123,7 +1123,6 @@ void GMainWindow::ShutdownGame() {
 
     // Disable status bar updates
     status_bar_update_timer.stop();
-    message_label->setVisible(false);
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
@@ -2097,7 +2096,6 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
         if (emu_thread) {
             emu_thread->SetRunning(true);
             message_label->setText(status_message);
-            message_label->setVisible(true);
         }
     }
 }
