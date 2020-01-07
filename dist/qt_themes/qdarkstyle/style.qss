@@ -1271,4 +1271,4 @@ QPushButton#RendererStatusBarButton:checked {
 
 QPushButton#RendererStatusBarButton:!checked{
     color: #00ccdd;
-} 
+}
