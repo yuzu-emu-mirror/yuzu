@@ -1,4 +1,4 @@
-QPushButton#StatusBarToggleButton {
+QPushButton#TogglableStatusBarButton {
     color: #959595;
     border: 1px solid transparent;
     background-color: transparent;
@@ -6,11 +6,11 @@ QPushButton#StatusBarToggleButton {
     text-align: center;
 }
 
-QPushButton#StatusBarToggleButton:checked {
+QPushButton#TogglableStatusBarButton:checked {
     color: #000000;
 }
 
-QPushButton#StatusBarToggleButton:hover {
+QPushButton#TogglableStatusBarButton:hover {
     border: 1px solid #76797C;
 }
 

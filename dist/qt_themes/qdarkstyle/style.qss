@@ -1234,7 +1234,7 @@ QDateEdit::down-arrow:focus {
     image: url(:/qss_icons/rc/down_arrow.png);
 }
 
-QPushButton#StatusBarToggleButton {
+QPushButton#TogglableStatusBarButton {
     color: #656565;
     border: 1px solid transparent;
     background-color: transparent;
@@ -1242,11 +1242,11 @@ QPushButton#StatusBarToggleButton {
     text-align: center;
 }
 
-QPushButton#StatusBarToggleButton:checked {
+QPushButton#TogglableStatusBarButton:checked {
     color: #ffffff;
 }
 
-QPushButton#StatusBarToggleButton:hover {
+QPushButton#TogglableStatusBarButton:hover {
     border: 1px solid #76797C;
 }
 

@@ -458,7 +458,6 @@ void GMainWindow::InitializeWidgets() {
     // Create status bar
     message_label = new QLabel();
     // Configured separately for left alignment
-    message_label->setVisible(false);
     message_label->setFrameStyle(QFrame::NoFrame);
     message_label->setContentsMargins(4, 0, 4, 0);
     message_label->setAlignment(Qt::AlignLeft);
@@ -480,36 +479,68 @@ void GMainWindow::InitializeWidgets() {
         label->setVisible(false);
         label->setFrameStyle(QFrame::NoFrame);
         label->setContentsMargins(4, 0, 4, 0);
-        statusBar()->addPermanentWidget(label, 0);
+        statusBar()->addPermanentWidget(label);
     }
 
+    // Setup Dock button
+    dock_status_button = new QPushButton();
+    dock_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    connect(dock_status_button, &QPushButton::clicked, [&] {
+        Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
+        dock_status_button->setChecked(Settings::values.use_docked_mode);
+        OnDockedModeChanged(!Settings::values.use_docked_mode, Settings::values.use_docked_mode);
+    });
+    dock_status_button->setText(tr("DOCK"));
+    dock_status_button->setCheckable(true);
+    dock_status_button->setChecked(Settings::values.use_docked_mode);
+    statusBar()->insertPermanentWidget(0, dock_status_button);
+
+    // Setup ASync button
     async_status_button = new QPushButton();
+    async_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    connect(async_status_button, &QPushButton::clicked, [&] {
+        if (emulation_running)
+            return;
+        Settings::values.use_asynchronous_gpu_emulation =
+            !Settings::values.use_asynchronous_gpu_emulation;
+        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+        Settings::Apply();
+    });
     async_status_button->setText(tr("ASYNC"));
-    async_status_button->setObjectName(tr("StatusBarToggleButton"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-    statusBar()->addPermanentWidget(async_status_button, 0);
+    statusBar()->insertPermanentWidget(0, async_status_button);
 
+    // Setup Renderer API button
     renderer_status_button = new QPushButton();
-    renderer_status_button->setCheckable(true);
-#ifdef HAS_VULKAN
-    switch (Settings::values.renderer_backend) {
-    case Settings::RendererBackend::OpenGL:
-        renderer_status_button->setText(tr("OPENGL"));
-        renderer_status_button->setChecked(false);
-        break;
-    case Settings::RendererBackend::Vulkan:
-        renderer_status_button->setText(tr("VULKAN"));
-        renderer_status_button->setChecked(true);
-        break;
-    }
-#else
-    renderer_status_button->setText(tr("OPENGL"));
-    renderer_status_button->setChecked(false);
-    renderer_status_button->setDisabled(true);
-#endif // HAS_VULKAN
     renderer_status_button->setObjectName(tr("RendererStatusBarButton"));
-    statusBar()->addPermanentWidget(renderer_status_button, 0);
+    renderer_status_button->setCheckable(true);
+    connect(renderer_status_button, &QPushButton::toggled, [=](bool checked) {
+        renderer_status_button->setText(tr(checked ? "VULKAN" : "OPENGL"));
+    });
+    renderer_status_button->toggle();
+
+#ifndef HAS_VULKAN
+    renderer_status_button->setChecked(false);
+    renderer_status_button->setCheckable(false);
+    renderer_status_button->setDisabled(true);
+#else
+    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+                                       Settings::RendererBackend::Vulkan);
+    connect(renderer_status_button, &QPushButton::clicked, [=] {
+        if (emulation_running)
+            return;
+
+        if (renderer_status_button->isChecked()) {
+            Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
+        } else {
+            Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+        }
+
+        Settings::Apply();
+    });
+#endif // HAS_VULKAN
+    statusBar()->insertPermanentWidget(0, renderer_status_button);
 
     statusBar()->setVisible(true);
     setStyleSheet(QStringLiteral("QStatusBar::item{border: none;}"));
@@ -662,6 +693,7 @@ void GMainWindow::InitializeHotkeys() {
                 Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
                 OnDockedModeChanged(!Settings::values.use_docked_mode,
                                     Settings::values.use_docked_mode);
+                dock_status_button->setChecked(Settings::values.use_docked_mode);
             });
 }
 
@@ -746,9 +778,6 @@ void GMainWindow::ConnectWidgetEvents() {
             &GRenderWindow::OnEmulationStopping);
 
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
-
-    connect(async_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleASyncGPU);
-    connect(renderer_status_button, &QPushButton::clicked, this, &GMainWindow::OnToggleRendererAPI);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1870,18 +1899,11 @@ void GMainWindow::OnConfigure() {
 
     config->Save();
 
+    dock_status_button->setChecked(Settings::values.use_docked_mode);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 #ifdef HAS_VULKAN
-    switch (Settings::values.renderer_backend) {
-    case Settings::RendererBackend::OpenGL:
-        renderer_status_button->setText(tr("OPENGL"));
-        renderer_status_button->setChecked(false);
-        break;
-    case Settings::RendererBackend::Vulkan:
-        renderer_status_button->setText(tr("VULKAN"));
-        renderer_status_button->setChecked(true);
-        break;
-    }
+    renderer_status_button->setChecked(
+        Settings::values.renderer_backend == Settings::RendererBackend::Vulkan ? true : false);
 #endif
 }
 
@@ -2158,39 +2180,6 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
     if (behavior == ReinitializeKeyBehavior::Warning) {
         game_list->PopulateAsync(UISettings::values.game_dirs);
     }
-}
-
-void GMainWindow::OnToggleASyncGPU() {
-    if (emulation_running)
-        return;
-
-    Settings::values.use_asynchronous_gpu_emulation =
-        !Settings::values.use_asynchronous_gpu_emulation;
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-
-    Settings::Apply();
-}
-
-void GMainWindow::OnToggleRendererAPI() {
-    if (emulation_running)
-        return;
-
-#ifdef HAS_VULKAN
-    switch (Settings::values.renderer_backend) {
-    case Settings::RendererBackend::Vulkan:
-        Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
-        renderer_status_button->setText(tr("OPENGL"));
-        renderer_status_button->setChecked(false);
-        break;
-    case Settings::RendererBackend::OpenGL:
-        Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
-        renderer_status_button->setText(tr("VULKAN"));
-        renderer_status_button->setChecked(true);
-        break;
-    }
-
-    Settings::Apply();
-#endif // HAS_VULKAN
 }
 
 std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed,
