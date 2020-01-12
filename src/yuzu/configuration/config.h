@@ -34,7 +34,6 @@ private:
     void ReadKeyboardValues();
     void ReadMouseValues();
     void ReadTouchscreenValues();
-    void ApplyDefaultProfileIfInputInvalid();
 
     // Read functions bases off the respective config section names.
     void ReadAudioValues();

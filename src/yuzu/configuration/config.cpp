@@ -6,7 +6,6 @@
 #include <QKeySequence>
 #include <QSettings>
 #include "common/file_util.h"
-#include "configure_input_simple.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "input_common/main.h"
@@ -391,13 +390,6 @@ void Config::ReadTouchscreenValues() {
         ReadSetting(QStringLiteral("touchscreen_diameter_y"), 15).toUInt();
 }
 
-void Config::ApplyDefaultProfileIfInputInvalid() {
-    if (!std::any_of(Settings::values.players.begin(), Settings::values.players.end(),
-                     [](const Settings::PlayerInput& in) { return in.connected; })) {
-        ApplyInputProfileConfiguration(UISettings::values.profile_index);
-    }
-}
-
 void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
@@ -718,8 +710,6 @@ void Config::ReadUIValues() {
     UISettings::values.profile_index = ReadSetting(QStringLiteral("profileIndex"), 0).toUInt();
     UISettings::values.pause_when_in_background =
         ReadSetting(QStringLiteral("pauseWhenInBackground"), false).toBool();
-
-    ApplyDefaultProfileIfInputInvalid();
 
     qt_config->endGroup();
 }
