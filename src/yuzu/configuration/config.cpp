@@ -707,7 +707,6 @@ void Config::ReadUIValues() {
     UISettings::values.first_start = ReadSetting(QStringLiteral("firstStart"), true).toBool();
     UISettings::values.callout_flags = ReadSetting(QStringLiteral("calloutFlags"), 0).toUInt();
     UISettings::values.show_console = ReadSetting(QStringLiteral("showConsole"), false).toBool();
-    UISettings::values.profile_index = ReadSetting(QStringLiteral("profileIndex"), 0).toUInt();
     UISettings::values.pause_when_in_background =
         ReadSetting(QStringLiteral("pauseWhenInBackground"), false).toBool();
 
@@ -1115,7 +1114,6 @@ void Config::SaveUIValues() {
     WriteSetting(QStringLiteral("firstStart"), UISettings::values.first_start, true);
     WriteSetting(QStringLiteral("calloutFlags"), UISettings::values.callout_flags, 0);
     WriteSetting(QStringLiteral("showConsole"), UISettings::values.show_console, false);
-    WriteSetting(QStringLiteral("profileIndex"), UISettings::values.profile_index, 0);
     WriteSetting(QStringLiteral("pauseWhenInBackground"),
                  UISettings::values.pause_when_in_background, false);
 
