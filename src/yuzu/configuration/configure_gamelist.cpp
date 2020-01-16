@@ -21,11 +21,8 @@ constexpr std::array default_icon_sizes{
 };
 
 constexpr std::array row_text_names{
-    QT_TR_NOOP("Filename"),
-    QT_TR_NOOP("Filetype"),
-    QT_TR_NOOP("Title ID"),
-    QT_TR_NOOP("Title Name"),
-    QT_TR_NOOP("None"),
+    QT_TR_NOOP("Filename"),   QT_TR_NOOP("Filetype"), QT_TR_NOOP("Title ID"),
+    QT_TR_NOOP("Title Name"), QT_TR_NOOP("None"),
 };
 } // Anonymous namespace
 
@@ -112,8 +109,9 @@ void ConfigureGameList::InitializeRowComboBoxes() {
 }
 
 void ConfigureGameList::UpdateFirstRowComboBox(bool init) {
-    const int currentIndex = init ? UISettings::values.row_1_text_id :
-        ui->row_1_text_combobox->findData(ui->row_1_text_combobox->currentData());
+    const int currentIndex =
+        init ? UISettings::values.row_1_text_id
+             : ui->row_1_text_combobox->findData(ui->row_1_text_combobox->currentData());
 
     ui->row_1_text_combobox->clear();
 
@@ -130,8 +128,9 @@ void ConfigureGameList::UpdateFirstRowComboBox(bool init) {
 }
 
 void ConfigureGameList::UpdateSecondRowComboBox(bool init) {
-    const int currentIndex = init ? UISettings::values.row_2_text_id :
-        ui->row_2_text_combobox->findData(ui->row_2_text_combobox->currentData());
+    const int currentIndex =
+        init ? UISettings::values.row_2_text_id
+             : ui->row_2_text_combobox->findData(ui->row_2_text_combobox->currentData());
 
     ui->row_2_text_combobox->clear();
 

@@ -108,7 +108,7 @@ public:
             }};
 
             const auto& row1 = row_data.at(UISettings::values.row_1_text_id);
-            int row2_id = UISettings::values.row_2_text_id;
+            const int row2_id = UISettings::values.row_2_text_id;
 
             if (row2_id == 4) // None
                 return row1;
