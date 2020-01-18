@@ -148,6 +148,14 @@ struct VoiceOutStatus {
 };
 static_assert(sizeof(VoiceOutStatus) == 0x10, "VoiceOutStatus has wrong size");
 
+struct ChannelInfoIn {
+    u32_le id;
+    std::array<float_le, 24> mix;
+    bool is_used;
+    INSERT_PADDING_BYTES(11);
+};
+static_assert(sizeof(ChannelInfoIn) == 0x70, "ChannelInfoIn has wrong size");
+
 struct AuxInfo {
     std::array<u8, 24> input_mix_buffers;
     std::array<u8, 24> output_mix_buffers;
@@ -235,11 +243,13 @@ public:
     Stream::State GetStreamState() const;
 
 private:
+    class ChannelState;
     class EffectState;
     class VoiceState;
 
     AudioRendererParameter worker_params;
     std::shared_ptr<Kernel::WritableEvent> buffer_event;
+    std::vector<ChannelState> channels;
     std::vector<VoiceState> voices;
     std::vector<EffectState> effects;
     std::unique_ptr<AudioOut> audio_out;
