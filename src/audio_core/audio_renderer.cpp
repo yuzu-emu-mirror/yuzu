@@ -8,6 +8,7 @@
 #include "audio_core/codec.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/microprofile.h"
 #include "core/core.h"
 #include "core/hle/kernel/writable_event.h"
 #include "core/memory.h"
@@ -16,6 +17,18 @@ namespace AudioCore {
 
 constexpr u32 STREAM_SAMPLE_RATE{48000};
 constexpr u32 STREAM_NUM_CHANNELS{2};
+
+static void RunThread(AudioRenderer::SynchState& synch_state) {
+    MicroProfileOnThreadCreate("AudioRendererThread");
+    while (synch_state.is_running) {
+        auto next{synch_state.input_queue.PopWait()};
+        if (next.empty()) {
+            continue;
+        }
+
+        synch_state.output_queue.Push(synch_state.renderer.UpdateAudioRenderer(std::move(next)));
+    }
+}
 
 class AudioRenderer::VoiceState {
 public:
@@ -72,12 +85,14 @@ private:
     EffectOutStatus out_status{};
     EffectInStatus info{};
 };
+
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Memory::Memory& memory_,
                              AudioRendererParameter params,
                              std::shared_ptr<Kernel::WritableEvent> buffer_event,
                              std::size_t instance_number)
     : worker_params{params}, buffer_event{buffer_event}, voices(params.voice_count),
-      effects(params.effect_count), memory{memory_} {
+      effects(params.effect_count), memory{memory_},
+      synch_state{*this}, thread{RunThread, std::ref(synch_state)} {
 
     audio_out = std::make_unique<AudioCore::AudioOut>();
     stream = audio_out->OpenStream(core_timing, STREAM_SAMPLE_RATE, STREAM_NUM_CHANNELS,
@@ -90,7 +105,12 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Memory::Memo
     QueueMixedBuffer(2);
 }
 
-AudioRenderer::~AudioRenderer() = default;
+AudioRenderer::~AudioRenderer() {
+    // Terminate thread
+    synch_state.is_running = false;
+    QueueUpdateAudioRenderer({}); // Queue empty data to force thread to wakeup
+    thread.join();
+}
 
 u32 AudioRenderer::GetSampleRate() const {
     return worker_params.sample_rate;
@@ -113,7 +133,15 @@ static constexpr u32 VersionFromRevision(u32_le rev) {
     return ((rev >> 24) & 0xff) - 0x30;
 }
 
-std::vector<u8> AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_params) {
+void AudioRenderer::QueueUpdateAudioRenderer(std::vector<u8>&& input_params) {
+    synch_state.input_queue.Push(std::move(input_params));
+}
+
+std::vector<u8> AudioRenderer::GetUpdateAudioRendererResult() {
+    return synch_state.output_queue.PopWait();
+}
+
+std::vector<u8> AudioRenderer::UpdateAudioRenderer(std::vector<u8>&& input_params) {
     // Copy UpdateDataHeader struct
     UpdateDataHeader config{};
     std::memcpy(&config, input_params.data(), sizeof(UpdateDataHeader));

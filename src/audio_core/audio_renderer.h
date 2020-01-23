@@ -6,12 +6,14 @@
 
 #include <array>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "audio_core/stream.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"
+#include "common/threadsafe_queue.h"
 #include "core/hle/kernel/object.h"
 
 namespace Core::Timing {
@@ -226,13 +228,28 @@ public:
                   std::shared_ptr<Kernel::WritableEvent> buffer_event, std::size_t instance_number);
     ~AudioRenderer();
 
-    std::vector<u8> UpdateAudioRenderer(const std::vector<u8>& input_params);
-    void QueueMixedBuffer(Buffer::Tag tag);
-    void ReleaseAndQueueBuffers();
+    void QueueUpdateAudioRenderer(std::vector<u8>&& input_params);
+    std::vector<u8> GetUpdateAudioRendererResult();
+    std::vector<u8> UpdateAudioRenderer(std::vector<u8>&& input_params);
+
     u32 GetSampleRate() const;
     u32 GetSampleCount() const;
     u32 GetMixBufferCount() const;
     Stream::State GetStreamState() const;
+
+    /// Struct used to synchronize the AudioRenderer thread
+    struct SynchState final {
+        SynchState(AudioRenderer& renderer) : renderer{renderer} {}
+
+        std::atomic_bool is_running{true};
+        Common::SPSCQueue<std::vector<u8>> input_queue;
+        Common::SPSCQueue<std::vector<u8>> output_queue;
+        AudioRenderer& renderer;
+    };
+
+private:
+    void QueueMixedBuffer(Buffer::Tag tag);
+    void ReleaseAndQueueBuffers();
 
 private:
     class EffectState;
@@ -245,6 +262,10 @@ private:
     std::unique_ptr<AudioOut> audio_out;
     StreamPtr stream;
     Memory::Memory& memory;
+
+    // Used for thread management
+    SynchState synch_state;
+    std::thread thread;
 };
 
 } // namespace AudioCore

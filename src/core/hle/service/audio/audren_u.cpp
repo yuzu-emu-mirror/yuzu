@@ -92,9 +92,17 @@ private:
     }
 
     void RequestUpdateImpl(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
-
-        ctx.WriteBuffer(renderer->UpdateAudioRenderer(ctx.ReadBuffer()));
+        LOG_DEBUG(Service_Audio, "called");
+        renderer->QueueUpdateAudioRenderer(ctx.ReadBuffer());
+        ctx.SleepClientThread("IAudioRenderer::RequestUpdateImpl", UINT64_MAX,
+                              [=](std::shared_ptr<Kernel::Thread> thread,
+                                  Kernel::HLERequestContext& ctx,
+                                  Kernel::ThreadWakeupReason reason) {
+                                  ctx.WriteBuffer(renderer->GetUpdateAudioRendererResult());
+                                  IPC::ResponseBuilder rb{ctx, 2};
+                                  rb.Push(RESULT_SUCCESS);
+                              },
+                              system_event.writable);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
