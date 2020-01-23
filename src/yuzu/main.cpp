@@ -485,6 +485,7 @@ void GMainWindow::InitializeWidgets() {
     // Setup Dock button
     dock_status_button = new QPushButton();
     dock_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    dock_status_button->setFocusPolicy(Qt::NoFocus);
     connect(dock_status_button, &QPushButton::clicked, [&] {
         Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
         dock_status_button->setChecked(Settings::values.use_docked_mode);
@@ -498,6 +499,7 @@ void GMainWindow::InitializeWidgets() {
     // Setup ASync button
     async_status_button = new QPushButton();
     async_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    async_status_button->setFocusPolicy(Qt::NoFocus);
     connect(async_status_button, &QPushButton::clicked, [&] {
         if (emulation_running)
             return;
@@ -515,6 +517,7 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button = new QPushButton();
     renderer_status_button->setObjectName(tr("RendererStatusBarButton"));
     renderer_status_button->setCheckable(true);
+    renderer_status_button->setFocusPolicy(Qt::NoFocus);
     connect(renderer_status_button, &QPushButton::toggled, [=](bool checked) {
         renderer_status_button->setText(tr(checked ? "VULKAN" : "OPENGL"));
     });
