@@ -117,7 +117,7 @@ void NVDRV::Close(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::Initialize(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -129,7 +129,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
     u32 fd = rp.Pop<u32>();
     // TODO(Blinkhawk): Figure the meaning of the flag at bit 16
     u32 event_id = rp.Pop<u32>() & 0x000000FF;
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, fd={:X}, event_id={:X}", fd, event_id);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, fd={:X}, event_id={:X}", fd, event_id);
 
     IPC::ResponseBuilder rb{ctx, 3, 1};
     rb.Push(RESULT_SUCCESS);
@@ -147,7 +147,7 @@ void NVDRV::QueryEvent(Kernel::HLERequestContext& ctx) {
 void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     pid = rp.Pop<u64>();
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, pid=0x{:X}", pid);
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -155,14 +155,14 @@ void NVDRV::SetClientPID(Kernel::HLERequestContext& ctx) {
 }
 
 void NVDRV::FinishInitialize(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void NVDRV::GetStatus(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

@@ -92,7 +92,18 @@ void Filter::ParseFilterString(std::string_view filter_view) {
     }
 }
 
+void Filter::ClearIgnoredLevels() {
+    ignored_levels.clear();
+}
+
+void Filter::AddIgnoredLevel(Level level) {
+    ignored_levels.push_back(level);
+}
+
 bool Filter::CheckMessage(Class log_class, Level level) const {
+    if (std::find(ignored_levels.begin(), ignored_levels.end(), level) != ignored_levels.end()) {
+        return false;
+    }
     return static_cast<u8>(level) >=
            static_cast<u8>(class_levels[static_cast<std::size_t>(log_class)]);
 }

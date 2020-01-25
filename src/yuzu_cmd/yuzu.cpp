@@ -74,6 +74,8 @@ static void PrintVersion() {
 static void InitializeLogging() {
     Log::Filter log_filter(Log::Level::Debug);
     log_filter.ParseFilterString(Settings::values.log_filter);
+    if (Settings::values.log_stubbed_services)
+        log_filter.AddIgnoredLevel(Log::Level::Stubbed);
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());

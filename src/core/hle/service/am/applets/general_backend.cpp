@@ -23,17 +23,18 @@ static void LogCurrentStorage(AppletDataBroker& broker, std::string_view prefix)
     std::unique_ptr<IStorage> storage = broker.PopNormalDataToApplet();
     for (; storage != nullptr; storage = broker.PopNormalDataToApplet()) {
         const auto data = storage->GetData();
-        LOG_INFO(Service_AM,
-                 "called (STUBBED), during {} received normal data with size={:08X}, data={}",
-                 prefix, data.size(), Common::HexToString(data));
+        LOG_STUBBED(Service_AM,
+                    "called (STUBBED), during {} received normal data with size={:08X}, data={}",
+                    prefix, data.size(), Common::HexToString(data));
     }
 
     storage = broker.PopInteractiveDataToApplet();
     for (; storage != nullptr; storage = broker.PopInteractiveDataToApplet()) {
         const auto data = storage->GetData();
-        LOG_INFO(Service_AM,
-                 "called (STUBBED), during {} received interactive data with size={:08X}, data={}",
-                 prefix, data.size(), Common::HexToString(data));
+        LOG_STUBBED(
+            Service_AM,
+            "called (STUBBED), during {} received interactive data with size={:08X}, data={}",
+            prefix, data.size(), Common::HexToString(data));
     }
 }
 
@@ -208,7 +209,7 @@ StubApplet::StubApplet(Core::System& system_, AppletId id_)
 StubApplet::~StubApplet() = default;
 
 void StubApplet::Initialize() {
-    LOG_WARNING(Service_AM, "called (STUBBED)");
+    LOG_STUBBED(Service_AM, "called (STUBBED)");
     Applet::Initialize();
 
     const auto data = broker.PeekDataToAppletForDebug();
@@ -221,17 +222,17 @@ void StubApplet::Initialize() {
 }
 
 bool StubApplet::TransactionComplete() const {
-    LOG_WARNING(Service_AM, "called (STUBBED)");
+    LOG_STUBBED(Service_AM, "called (STUBBED)");
     return true;
 }
 
 ResultCode StubApplet::GetStatus() const {
-    LOG_WARNING(Service_AM, "called (STUBBED)");
+    LOG_STUBBED(Service_AM, "called (STUBBED)");
     return RESULT_SUCCESS;
 }
 
 void StubApplet::ExecuteInteractive() {
-    LOG_WARNING(Service_AM, "called (STUBBED)");
+    LOG_STUBBED(Service_AM, "called (STUBBED)");
     LogCurrentStorage(broker, "ExecuteInteractive");
 
     broker.PushNormalDataFromApplet(IStorage{std::vector<u8>(0x1000)});
@@ -240,7 +241,7 @@ void StubApplet::ExecuteInteractive() {
 }
 
 void StubApplet::Execute() {
-    LOG_WARNING(Service_AM, "called (STUBBED)");
+    LOG_STUBBED(Service_AM, "called (STUBBED)");
     LogCurrentStorage(broker, "Execute");
 
     broker.PushNormalDataFromApplet(IStorage{std::vector<u8>(0x1000)});

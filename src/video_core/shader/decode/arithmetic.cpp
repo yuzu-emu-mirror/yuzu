@@ -144,7 +144,7 @@ u32 ShaderIR::DecodeArithmetic(NodeBlock& bb, u32 pc) {
     case OpCode::Id::RRO_C:
     case OpCode::Id::RRO_R:
     case OpCode::Id::RRO_IMM: {
-        LOG_DEBUG(HW_GPU, "(STUBBED) RRO used");
+        LOG_STUBBED(HW_GPU, "(STUBBED) RRO used");
 
         // Currently RRO is only implemented as a register move.
         op_b = GetOperandAbsNegFloat(op_b, instr.alu.abs_b, instr.alu.negate_b);

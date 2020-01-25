@@ -247,14 +247,14 @@ public:
 
 private:
     void CheckAvailability(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_STUBBED(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push(false); // TODO: Check when this is supposed to return true and when not
     }
 
     void GetAccountId(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_STUBBED(Service_ACC, "(STUBBED) called");
         // Should return a nintendo account ID
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
@@ -311,7 +311,7 @@ void Module::Interface::GetProfile(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::IsUserRegistrationRequestPermitted(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_ACC, "(STUBBED) called");
+    LOG_STUBBED(Service_ACC, "(STUBBED) called");
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push(profile_manager->CanSystemRegisterUser());

@@ -116,14 +116,14 @@ public:
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_PCTL, "(STUBBED) called");
+        LOG_STUBBED(Service_PCTL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 0};
         rb.Push(RESULT_SUCCESS);
     }
 
     void CheckFreeCommunicationPermission(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_PCTL, "(STUBBED) called");
+        LOG_STUBBED(Service_PCTL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);

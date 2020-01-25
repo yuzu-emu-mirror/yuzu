@@ -581,7 +581,7 @@ private:
             IGBPQueryResponseParcel response{value};
             ctx.WriteBuffer(response.Serialize());
         } else if (transaction == TransactionId::CancelBuffer) {
-            LOG_CRITICAL(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
+            LOG_STUBBED(Service_VI, "(STUBBED) called, transaction=CancelBuffer");
         } else if (transaction == TransactionId::Disconnect ||
                    transaction == TransactionId::DetachBuffer) {
             const auto buffer = ctx.ReadBuffer();
@@ -602,7 +602,7 @@ private:
         const s32 addval = rp.PopRaw<s32>();
         const u32 type = rp.Pop<u32>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called id={}, addval={:08X}, type={:08X}", id, addval,
+        LOG_STUBBED(Service_VI, "(STUBBED) called id={}, addval={:08X}, type={:08X}", id, addval,
                     type);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -614,7 +614,7 @@ private:
         const u32 id = rp.Pop<u32>();
         const u32 unknown = rp.Pop<u32>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
+        LOG_STUBBED(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
 
         const auto& buffer_queue = nv_flinger->FindBufferQueue(id);
 
@@ -684,7 +684,7 @@ private:
         const u64 layer_id = rp.Pop<u64>();
         const u64 z_value = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. layer_id=0x{:016X}, z_value=0x{:016X}", layer_id,
+        LOG_STUBBED(Service_VI, "(STUBBED) called. layer_id=0x{:016X}, z_value=0x{:016X}", layer_id,
                     z_value);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -705,7 +705,7 @@ private:
     }
 
     void GetDisplayMode(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 6};
         rb.Push(RESULT_SUCCESS);
@@ -814,7 +814,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display=0x{:016X}", display);
+        LOG_STUBBED(Service_VI, "(STUBBED) called. display=0x{:016X}", display);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -848,7 +848,7 @@ private:
         const u32 stack = rp.Pop<u32>();
         const u64 layer_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. stack=0x{:08X}, layer_id=0x{:016X}", stack,
+        LOG_STUBBED(Service_VI, "(STUBBED) called. stack=0x{:08X}, layer_id=0x{:016X}", stack,
                     layer_id);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -860,7 +860,7 @@ private:
         const u64 layer_id = rp.Pop<u64>();
         const bool visibility = rp.Pop<bool>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
+        LOG_STUBBED(Service_VI, "(STUBBED) called, layer_id=0x{:X}, visibility={}", layer_id,
                     visibility);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -892,7 +892,7 @@ private:
     };
 
     void GetRelayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -900,7 +900,7 @@ private:
     }
 
     void GetSystemDisplayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -908,7 +908,7 @@ private:
     }
 
     void GetManagerDisplayService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -916,7 +916,7 @@ private:
     }
 
     void GetIndirectDisplayTransactionService(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -924,7 +924,7 @@ private:
     }
 
     void OpenDisplay(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         IPC::RequestParser rp{ctx};
         const auto name_buf = rp.PopRaw<std::array<char, 0x40>>();
@@ -963,7 +963,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
+        LOG_STUBBED(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -1023,7 +1023,7 @@ private:
     }
 
     void ListDisplays(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_VI, "(STUBBED) called");
+        LOG_STUBBED(Service_VI, "(STUBBED) called");
 
         DisplayInfo display_info;
         display_info.width *= static_cast<u64>(Settings::values.resolution_factor);
@@ -1113,7 +1113,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 layer_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. layer_id=0x{:016X}", layer_id);
+        LOG_STUBBED(Service_VI, "(STUBBED) called. layer_id=0x{:016X}", layer_id);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -1123,7 +1123,7 @@ private:
         IPC::RequestParser rp{ctx};
         const u64 display_id = rp.Pop<u64>();
 
-        LOG_WARNING(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
+        LOG_STUBBED(Service_VI, "(STUBBED) called. display_id=0x{:016X}", display_id);
 
         const auto vsync_event = nv_flinger->FindVsyncEvent(display_id);
         if (!vsync_event) {

@@ -48,7 +48,7 @@ public:
 
 private:
     void GetBatteryChargePercentage(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_PSM, "(STUBBED) called");
+        LOG_STUBBED(Service_PSM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -56,7 +56,7 @@ private:
     }
 
     void GetChargerType(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_PSM, "(STUBBED) called");
+        LOG_STUBBED(Service_PSM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);

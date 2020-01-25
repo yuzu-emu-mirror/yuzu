@@ -260,7 +260,7 @@ private:
     }
 
     void AttachAvailabilityChangeEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -268,7 +268,7 @@ private:
     }
 
     void GetRegisterInfo(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
 
         // TODO(ogniK): Pull Mii and owner data from amiibo
 
@@ -277,7 +277,7 @@ private:
     }
 
     void GetCommonInfo(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
 
         // TODO(ogniK): Pull common information from amiibo
 
@@ -290,13 +290,13 @@ private:
     }
 
     void OpenApplicationArea(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ErrCodes::ERR_NO_APPLICATION_AREA);
     }
 
     void GetApplicationAreaSize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
         // We don't need to worry about this since we can just open the file
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -304,7 +304,7 @@ private:
     }
 
     void GetApplicationArea(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFP, "(STUBBED) called");
+        LOG_STUBBED(Service_NFP, "(STUBBED) called");
 
         // TODO(ogniK): Pull application area from amiibo
 

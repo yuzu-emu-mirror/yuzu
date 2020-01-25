@@ -33,6 +33,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->toggle_console->setEnabled(!Core::System::GetInstance().IsPoweredOn());
     ui->toggle_console->setChecked(UISettings::values.show_console);
     ui->log_filter_edit->setText(QString::fromStdString(Settings::values.log_filter));
+    ui->toggle_stubbed_logging->setChecked(Settings::values.log_ignore_stubbed_services);
     ui->homebrew_args_edit->setText(QString::fromStdString(Settings::values.program_args));
     ui->reporting_services->setChecked(Settings::values.reporting_services);
     ui->quest_flag->setChecked(Settings::values.quest_flag);
@@ -43,12 +44,18 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.gdbstub_port = ui->gdbport_spinbox->value();
     UISettings::values.show_console = ui->toggle_console->isChecked();
     Settings::values.log_filter = ui->log_filter_edit->text().toStdString();
+    Settings::values.log_ignore_stubbed_services = ui->toggle_stubbed_logging->isChecked();
     Settings::values.program_args = ui->homebrew_args_edit->text().toStdString();
     Settings::values.reporting_services = ui->reporting_services->isChecked();
     Settings::values.quest_flag = ui->quest_flag->isChecked();
     Debugger::ToggleConsole();
+
     Log::Filter filter;
     filter.ParseFilterString(Settings::values.log_filter);
+
+    if (Settings::values.log_ignore_stubbed_services)
+        filter.AddIgnoredLevel(Log::Level::Stubbed);
+
     Log::SetGlobalFilter(filter);
 }
 

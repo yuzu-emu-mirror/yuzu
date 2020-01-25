@@ -44,14 +44,14 @@ IRS::IRS(Core::System& system) : ServiceFramework{"irs"}, system(system) {
 }
 
 void IRS::ActivateIrsensor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::DeactivateIrsensor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -66,35 +66,35 @@ void IRS::GetIrsensorSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
 }
 
 void IRS::StopImageProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::RunMomentProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::RunClusteringProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::RunImageTransferProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::GetImageTransferProcessorState(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 5};
     rb.Push(RESULT_SUCCESS);
@@ -103,14 +103,14 @@ void IRS::GetImageTransferProcessorState(Kernel::HLERequestContext& ctx) {
 }
 
 void IRS::RunTeraPluginProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::GetNpadIrCameraHandle(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
@@ -118,56 +118,56 @@ void IRS::GetNpadIrCameraHandle(Kernel::HLERequestContext& ctx) {
 }
 
 void IRS::RunPointingProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::SuspendImageProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::CheckFirmwareVersion(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::SetFunctionLevel(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::RunImageTransferExProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::RunIrLedProcessor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::StopImageProcessorAsync(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
 
 void IRS::ActivateIrsensorWithFunctionLevel(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_IRS, "(STUBBED) called");
+    LOG_STUBBED(Service_IRS, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

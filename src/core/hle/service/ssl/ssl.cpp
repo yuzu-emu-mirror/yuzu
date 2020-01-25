@@ -80,7 +80,7 @@ private:
         IPC::RequestParser rp{ctx};
         const auto parameters = rp.PopRaw<Parameters>();
 
-        LOG_WARNING(Service_SSL, "(STUBBED) called. enable={}, option={}", parameters.enable,
+        LOG_STUBBED(Service_SSL, "(STUBBED) called. enable={}, option={}", parameters.enable,
                     parameters.option);
 
         IPC::ResponseBuilder rb{ctx, 2};
@@ -88,7 +88,7 @@ private:
     }
 
     void CreateConnection(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_SSL, "(STUBBED) called");
+        LOG_STUBBED(Service_SSL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);
@@ -119,7 +119,7 @@ public:
 private:
     u32 ssl_version{};
     void CreateContext(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_SSL, "(STUBBED) called");
+        LOG_STUBBED(Service_SSL, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
         rb.Push(RESULT_SUCCESS);

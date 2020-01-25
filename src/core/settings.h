@@ -431,7 +431,9 @@ struct Values {
     float bg_green;
     float bg_blue;
 
+    // Log
     std::string log_filter;
+    bool log_ignore_stubbed_services;
 
     bool use_dev_keys;
 

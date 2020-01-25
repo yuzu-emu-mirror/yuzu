@@ -123,14 +123,14 @@ private:
 
     void DeclareCloseOnlinePlaySession(Kernel::HLERequestContext& ctx) {
         // Stub used by Splatoon 2
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_STUBBED(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void UpdateUserPresence(Kernel::HLERequestContext& ctx) {
         // Stub used by Retro City Rampage
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_STUBBED(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
@@ -141,7 +141,7 @@ private:
         const auto uuid = rp.PopRaw<Common::UUID>();
         [[maybe_unused]] const auto filter = rp.PopRaw<SizedFriendFilter>();
         const auto pid = rp.Pop<u64>();
-        LOG_WARNING(Service_ACC, "(STUBBED) called, offset={}, uuid={}, pid={}", friend_offset,
+        LOG_STUBBED(Service_ACC, "(STUBBED) called, offset={}, uuid={}, pid={}", friend_offset,
                     uuid.Format(), pid);
 
         IPC::ResponseBuilder rb{ctx, 3};

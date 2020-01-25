@@ -847,7 +847,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             return RESULT_SUCCESS;
 
         case GetInfoType::SystemResourceUsage:
-            LOG_WARNING(Kernel_SVC, "(STUBBED) Attempted to query system resource usage");
+            LOG_STUBBED(Kernel_SVC, "(STUBBED) Attempted to query system resource usage");
             *result = process->GetSystemResourceUsage();
             return RESULT_SUCCESS;
 
@@ -871,7 +871,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             break;
         }
 
-        LOG_WARNING(Kernel_SVC, "(STUBBED) Unimplemented svcGetInfo id=0x{:016X}", info_id);
+        LOG_STUBBED(Kernel_SVC, "(STUBBED) Unimplemented svcGetInfo id=0x{:016X}", info_id);
         return ERR_INVALID_ENUM_VALUE;
     }
 
@@ -923,7 +923,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         return RESULT_SUCCESS;
 
     case GetInfoType::PrivilegedProcessId:
-        LOG_WARNING(Kernel_SVC,
+        LOG_STUBBED(Kernel_SVC,
                     "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
         return RESULT_SUCCESS;
@@ -964,7 +964,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
     }
 
     default:
-        LOG_WARNING(Kernel_SVC, "(STUBBED) Unimplemented svcGetInfo id=0x{:016X}", info_id);
+        LOG_STUBBED(Kernel_SVC, "(STUBBED) Unimplemented svcGetInfo id=0x{:016X}", info_id);
         return ERR_INVALID_ENUM_VALUE;
     }
 }

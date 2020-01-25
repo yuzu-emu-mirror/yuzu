@@ -30,14 +30,14 @@ public:
 
 private:
     void Initialize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void Finalize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -47,7 +47,7 @@ private:
         IPC::RequestParser rp{ctx};
         min = rp.Pop<u32>();
         max = rp.Pop<u32>();
-        LOG_WARNING(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
+        LOG_STUBBED(Service_MM, "(STUBBED) called, min=0x{:X}, max=0x{:X}", min, max);
 
         current = min;
         IPC::ResponseBuilder rb{ctx, 2};
@@ -55,7 +55,7 @@ private:
     }
 
     void Get(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -63,7 +63,7 @@ private:
     }
 
     void InitializeWithId(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -71,7 +71,7 @@ private:
     }
 
     void FinalizeWithId(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -82,7 +82,7 @@ private:
         u32 input_id = rp.Pop<u32>();
         min = rp.Pop<u32>();
         max = rp.Pop<u32>();
-        LOG_WARNING(Service_MM, "(STUBBED) called, input_id=0x{:X}, min=0x{:X}, max=0x{:X}",
+        LOG_STUBBED(Service_MM, "(STUBBED) called, input_id=0x{:X}, min=0x{:X}, max=0x{:X}",
                     input_id, min, max);
 
         current = min;
@@ -91,7 +91,7 @@ private:
     }
 
     void GetWithId(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_MM, "(STUBBED) called");
+        LOG_STUBBED(Service_MM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);

@@ -104,7 +104,7 @@ void BufferQueue::ReleaseBuffer(u32 slot) {
 }
 
 u32 BufferQueue::Query(QueryType type) {
-    LOG_WARNING(Service, "(STUBBED) called type={}", static_cast<u32>(type));
+    LOG_STUBBED(Service, "(STUBBED) called type={}", static_cast<u32>(type));
 
     switch (type) {
     case QueryType::NativeWindowFormat:

@@ -512,7 +512,7 @@ void Maxwell3D::ProcessMacroBind(u32 data) {
 }
 
 void Maxwell3D::ProcessFirmwareCall4() {
-    LOG_WARNING(HW_GPU, "(STUBBED) called");
+    LOG_STUBBED(HW_GPU, "(STUBBED) called");
 
     // Firmware call 4 is a blob that changes some registers depending on its parameters.
     // These registers don't affect emulation and so are stubbed by setting 0xd00 to 1.

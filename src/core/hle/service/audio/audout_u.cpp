@@ -127,7 +127,7 @@ private:
     }
 
     void AppendAudioOutBufferImpl(Kernel::HLERequestContext& ctx) {
-        LOG_DEBUG(Service_Audio, "(STUBBED) called {}", ctx.Description());
+        LOG_STUBBED(Service_Audio, "(STUBBED) called {}", ctx.Description());
         IPC::RequestParser rp{ctx};
 
         const auto& input_buffer{ctx.ReadBuffer()};

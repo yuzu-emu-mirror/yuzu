@@ -29,8 +29,8 @@ enum class Level : u8 {
               ///< completed.
     Critical, ///< Major problems during execution that threaten the stability of the entire
               ///< application.
-
-    Count ///< Total number of logging levels
+    Stubbed,  ///< Debug information for stubbed services.
+    Count     ///< Total number of logging levels
 };
 
 typedef u8 ClassType;
@@ -170,4 +170,7 @@ void FmtLogMessage(Class log_class, Level log_level, const char* filename, unsig
                          ::Log::TrimSourcePath(__FILE__), __LINE__, __func__, __VA_ARGS__)
 #define LOG_CRITICAL(log_class, ...)                                                               \
     ::Log::FmtLogMessage(::Log::Class::log_class, ::Log::Level::Critical,                          \
+                         ::Log::TrimSourcePath(__FILE__), __LINE__, __func__, __VA_ARGS__)
+#define LOG_STUBBED(log_class, ...)                                                                \
+    ::Log::FmtLogMessage(::Log::Class::log_class, ::Log::Level::Stubbed,                           \
                          ::Log::TrimSourcePath(__FILE__), __LINE__, __func__, __VA_ARGS__)

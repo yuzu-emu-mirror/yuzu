@@ -574,6 +574,8 @@ void Config::ReadMiscellaneousValues() {
         ReadSetting(QStringLiteral("log_filter"), QStringLiteral("*:Info"))
             .toString()
             .toStdString();
+    Settings::values.log_ignore_stubbed_services =
+        ReadSetting(QStringLiteral("log_ignore_stubbed_services"), false).toBool();
     Settings::values.use_dev_keys = ReadSetting(QStringLiteral("use_dev_keys"), false).toBool();
 
     qt_config->endGroup();
@@ -1028,6 +1030,9 @@ void Config::SaveMiscellaneousValues() {
 
     WriteSetting(QStringLiteral("log_filter"), QString::fromStdString(Settings::values.log_filter),
                  QStringLiteral("*:Info"));
+    WriteSetting(QStringLiteral("log_ignore_stubbed_services"),
+                 Settings::values.log_ignore_stubbed_services,
+                 false);
     WriteSetting(QStringLiteral("use_dev_keys"), Settings::values.use_dev_keys, false);
 
     qt_config->endGroup();

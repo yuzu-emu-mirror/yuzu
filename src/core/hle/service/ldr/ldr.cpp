@@ -439,7 +439,7 @@ public:
     }
 
     void Initialize(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_LDR, "(STUBBED) called");
+        LOG_STUBBED(Service_LDR, "(STUBBED) called");
 
         initialized = true;
 

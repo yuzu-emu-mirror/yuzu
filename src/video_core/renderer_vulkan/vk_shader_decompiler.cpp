@@ -1959,7 +1959,7 @@ private:
     }
 
     Expression YNegate(Operation) {
-        LOG_WARNING(Render_Vulkan, "(STUBBED)");
+        LOG_STUBBED(Render_Vulkan, "(STUBBED)");
         return {Constant(t_float, 1.0f), Type::Float};
     }
 

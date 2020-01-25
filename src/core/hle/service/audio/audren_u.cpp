@@ -92,7 +92,7 @@ private:
     }
 
     void RequestUpdateImpl(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         ctx.WriteBuffer(renderer->UpdateAudioRenderer(ctx.ReadBuffer()));
         IPC::ResponseBuilder rb{ctx, 2};
@@ -100,7 +100,7 @@ private:
     }
 
     void Start(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
 
@@ -108,7 +108,7 @@ private:
     }
 
     void Stop(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
 
@@ -116,7 +116,7 @@ private:
     }
 
     void QuerySystemEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
@@ -245,7 +245,7 @@ private:
         const auto device_name_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(device_name_buffer);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called. name={}, volume={}", name, volume);
+        LOG_STUBBED(Service_Audio, "(STUBBED) called. name={}, volume={}", name, volume);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -257,7 +257,7 @@ private:
         const auto device_name_buffer = ctx.ReadBuffer();
         const std::string name = Common::StringFromBuffer(device_name_buffer);
 
-        LOG_WARNING(Service_Audio, "(STUBBED) called. name={}", name);
+        LOG_STUBBED(Service_Audio, "(STUBBED) called. name={}", name);
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -265,7 +265,7 @@ private:
     }
 
     void GetActiveAudioDeviceName(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         // Currently set to always be TV audio output.
         const auto& device_name = audio_device_names[2];
@@ -280,7 +280,7 @@ private:
     }
 
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         buffer_event.writable->Signal();
 
@@ -290,7 +290,7 @@ private:
     }
 
     void GetActiveChannelCount(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -299,7 +299,7 @@ private:
 
     // Should be similar to QueryAudioDeviceOutputEvent
     void QueryAudioDeviceInputEvent(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_Audio, "(STUBBED) called");
+        LOG_STUBBED(Service_Audio, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);

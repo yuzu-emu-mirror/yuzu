@@ -161,7 +161,7 @@ u32 nvhost_ctrl_gpu::ZCullGetInfo(const std::vector<u8>& input, std::vector<u8>&
 }
 
 u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IoctlZbcSetTable params{};
     std::memcpy(&params, input.data(), input.size());
@@ -171,7 +171,7 @@ u32 nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<u8>& 
 }
 
 u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IoctlZbcQueryTable params{};
     std::memcpy(&params, input.data(), input.size());
@@ -181,7 +181,7 @@ u32 nvhost_ctrl_gpu::ZBCQueryTable(const std::vector<u8>& input, std::vector<u8>
 }
 
 u32 nvhost_ctrl_gpu::FlushL2(const std::vector<u8>& input, std::vector<u8>& output) {
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     IoctlFlushL2 params{};
     std::memcpy(&params, input.data(), input.size());

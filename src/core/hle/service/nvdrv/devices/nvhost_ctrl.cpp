@@ -160,7 +160,7 @@ u32 nvhost_ctrl::IocCtrlEventSignal(const std::vector<u8>& input, std::vector<u8
     // TODO(Blinkhawk): This is normally called when an NvEvents timeout on WaitSynchronization
     // It is believed from RE to cancel the GPU Event. However, better research is required
     u32 event_id = params.user_event_id & 0x00FF;
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, user_event_id: {:X}", event_id);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, user_event_id: {:X}", event_id);
     if (event_id >= MaxNvEvents) {
         return NvResult::BadParameter;
     }

@@ -224,14 +224,14 @@ private:
 
     // TODO(ogniK): Do we need these?
     void SuspendAutonomicTimeCorrection(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIM, "(STUBBED) called");
+        LOG_STUBBED(Service_NIM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
 
     void ResumeAutonomicTimeCorrection(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NIM, "(STUBBED) called");
+        LOG_STUBBED(Service_NIM, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);

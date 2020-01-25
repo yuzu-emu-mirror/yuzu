@@ -8,7 +8,7 @@
 namespace Service::Sockets {
 
 void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
 
@@ -17,7 +17,7 @@ void BSD::RegisterClient(Kernel::HLERequestContext& ctx) {
 }
 
 void BSD::StartMonitoring(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
 
@@ -31,7 +31,7 @@ void BSD::Socket(Kernel::HLERequestContext& ctx) {
     u32 type = rp.Pop<u32>();
     u32 protocol = rp.Pop<u32>();
 
-    LOG_WARNING(Service, "(STUBBED) called domain={} type={} protocol={}", domain, type, protocol);
+    LOG_STUBBED(Service, "(STUBBED) called domain={} type={} protocol={}", domain, type, protocol);
 
     u32 fd = next_fd++;
 
@@ -43,7 +43,7 @@ void BSD::Socket(Kernel::HLERequestContext& ctx) {
 }
 
 void BSD::Connect(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
 
@@ -53,7 +53,7 @@ void BSD::Connect(Kernel::HLERequestContext& ctx) {
 }
 
 void BSD::SendTo(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
 
@@ -63,7 +63,7 @@ void BSD::SendTo(Kernel::HLERequestContext& ctx) {
 }
 
 void BSD::Close(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 4};
 

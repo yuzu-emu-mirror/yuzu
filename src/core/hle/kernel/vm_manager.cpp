@@ -1026,7 +1026,7 @@ ResultVal<std::size_t> VMManager::SizeOfUnmappablePhysicalMemoryInRange(VAddr ad
 }
 
 u64 VMManager::GetTotalPhysicalMemoryAvailable() const {
-    LOG_WARNING(Kernel, "(STUBBED) called");
+    LOG_STUBBED(Kernel, "(STUBBED) called");
     return 0xF8000000;
 }
 

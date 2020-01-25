@@ -183,7 +183,7 @@ void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto [addon_index, process_id] = rp.PopRaw<Parameters>();
 
-    LOG_WARNING(Service_AOC, "(STUBBED) called with addon_index={}, process_id={}", addon_index,
+    LOG_STUBBED(Service_AOC, "(STUBBED) called with addon_index={}, process_id={}", addon_index,
                 process_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
@@ -191,7 +191,7 @@ void AOC_U::PrepareAddOnContent(Kernel::HLERequestContext& ctx) {
 }
 
 void AOC_U::GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AOC, "(STUBBED) called");
+    LOG_STUBBED(Service_AOC, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);

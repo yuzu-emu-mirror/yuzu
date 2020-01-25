@@ -59,7 +59,7 @@ u32 nvhost_as_gpu::ioctl(Ioctl command, const std::vector<u8>& input, const std:
 u32 nvhost_as_gpu::InitalizeEx(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlInitalizeEx params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, big_page_size=0x{:X}", params.big_page_size);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, big_page_size=0x{:X}", params.big_page_size);
 
     return 0;
 }
@@ -85,7 +85,7 @@ u32 nvhost_as_gpu::AllocateSpace(const std::vector<u8>& input, std::vector<u8>& 
 u32 nvhost_as_gpu::Remap(const std::vector<u8>& input, std::vector<u8>& output) {
     std::size_t num_entries = input.size() / sizeof(IoctlRemapEntry);
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, num_entries=0x{:X}", num_entries);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, num_entries=0x{:X}", num_entries);
 
     std::vector<IoctlRemapEntry> entries(num_entries);
     std::memcpy(entries.data(), input.data(), input.size());
@@ -199,7 +199,7 @@ u32 nvhost_as_gpu::BindChannel(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_as_gpu::GetVARegions(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetVaRegions params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, buf_addr={:X}, buf_size={:X}", params.buf_addr,
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, buf_addr={:X}, buf_size={:X}", params.buf_addr,
                 params.buf_size);
 
     params.buf_size = 0x30;

@@ -20,7 +20,7 @@ void DefaultSoftwareKeyboardApplet::RequestText(
 
 void DefaultSoftwareKeyboardApplet::SendTextCheckDialog(
     std::u16string error_message, std::function<void()> finished_check) const {
-    LOG_WARNING(Service_AM,
+    LOG_STUBBED(Service_AM,
                 "(STUBBED) called - Default fallback software keyboard does not support text "
                 "check! (error_message={})",
                 Common::UTF16ToUTF8(error_message));

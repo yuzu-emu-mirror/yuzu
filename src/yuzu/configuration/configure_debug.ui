@@ -104,6 +104,17 @@
        </layout>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="toggle_stubbed_logging">
+          <property name="text">
+           <string>Ignore stubbed services</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
          <string>Enable Verbose Reporting Services</string>

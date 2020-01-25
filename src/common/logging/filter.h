@@ -42,6 +42,10 @@ public:
      */
     void ParseFilterString(std::string_view filter_view);
 
+    void ClearIgnoredLevels();
+
+    void AddIgnoredLevel(Level level);
+
     /// Matches class/level combination against the filter, returning true if it passed.
     bool CheckMessage(Class log_class, Level level) const;
 
@@ -50,5 +54,6 @@ public:
 
 private:
     std::array<Level, static_cast<std::size_t>(Class::Count)> class_levels;
+    std::list<Level> ignored_levels;
 };
 } // namespace Log

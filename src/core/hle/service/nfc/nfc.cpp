@@ -154,7 +154,7 @@ private:
     }
 
     void GetStateOld(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFC, "(STUBBED) called");
+        LOG_STUBBED(Service_NFC, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -162,7 +162,7 @@ private:
     }
 
     void FinalizeOld(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_NFC, "(STUBBED) called");
+        LOG_STUBBED(Service_NFC, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);

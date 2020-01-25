@@ -101,7 +101,7 @@ u32 nvhost_gpu::ZCullBind(const std::vector<u8>& input, std::vector<u8>& output)
 u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetErrorNotifier params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, offset={:X}, size={:X}, mem={:X}", params.offset,
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, offset={:X}, size={:X}, mem={:X}", params.offset,
                 params.size, params.mem);
 
     std::memcpy(output.data(), &params, output.size());
@@ -110,7 +110,7 @@ u32 nvhost_gpu::SetErrorNotifier(const std::vector<u8>& input, std::vector<u8>& 
 
 u32 nvhost_gpu::SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output) {
     std::memcpy(&channel_priority, input.data(), input.size());
-    LOG_DEBUG(Service_NVDRV, "(STUBBED) called, priority={:X}", channel_priority);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, priority={:X}", channel_priority);
 
     return 0;
 }
@@ -135,7 +135,7 @@ u32 nvhost_gpu::AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& ou
 u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlAllocObjCtx params{};
     std::memcpy(&params, input.data(), input.size());
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, class_num={:X}, flags={:X}", params.class_num,
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called, class_num={:X}, flags={:X}", params.class_num,
                 params.flags);
 
     params.obj_id = 0x0;

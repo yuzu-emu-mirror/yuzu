@@ -34,13 +34,13 @@ void Controller::DuplicateSession(Kernel::HLERequestContext& ctx) {
 }
 
 void Controller::DuplicateSessionEx(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called, using DuplicateSession");
+    LOG_STUBBED(Service, "(STUBBED) called, using DuplicateSession");
 
     DuplicateSession(ctx);
 }
 
 void Controller::QueryPointerBufferSize(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service, "(STUBBED) called");
+    LOG_STUBBED(Service, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);

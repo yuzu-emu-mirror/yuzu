@@ -471,7 +471,7 @@ public:
     }
 
     void Commit(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_FS, "(STUBBED) called");
+        LOG_STUBBED(Service_FS, "(STUBBED) called");
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
@@ -784,7 +784,7 @@ void FSP_SRV::OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx) {
 
     const auto type = rp.PopRaw<FileSystemType>();
     const auto title_id = rp.PopRaw<u64>();
-    LOG_WARNING(Service_FS, "(STUBBED) called with type={}, title_id={:016X}",
+    LOG_STUBBED(Service_FS, "(STUBBED) called with type={}, title_id={:016X}",
                 static_cast<u8>(type), title_id);
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 0};
@@ -854,7 +854,7 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
 }
 
 void FSP_SRV::OpenReadOnlySaveDataFileSystem(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_FS, "(STUBBED) called, delegating to 51 OpenSaveDataFilesystem");
+    LOG_STUBBED(Service_FS, "(STUBBED) called, delegating to 51 OpenSaveDataFilesystem");
     OpenSaveDataFileSystem(ctx);
 }
 

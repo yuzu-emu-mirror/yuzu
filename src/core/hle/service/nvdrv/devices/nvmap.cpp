@@ -143,7 +143,7 @@ u32 nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output) {
     IocFromIdParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     auto itr = std::find_if(handles.begin(), handles.end(),
                             [&](const auto& entry) { return entry.second->id == params.id; });
@@ -173,7 +173,7 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     IocParamParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called type={}", params.param);
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called type={}", params.param);
 
     auto object = GetObject(params.handle);
     if (!object) {
@@ -218,7 +218,7 @@ u32 nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
     IocFreeParams params;
     std::memcpy(&params, input.data(), sizeof(params));
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called");
+    LOG_STUBBED(Service_NVDRV, "(STUBBED) called");
 
     auto itr = handles.find(params.handle);
     if (itr == handles.end()) {
