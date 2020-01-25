@@ -81,6 +81,8 @@ private:
     Clock::time_point frame_begin = reset_point;
     /// Total visible duration (including frame-limiting, etc.) of the previous system frame
     Clock::duration previous_frame_length = Clock::duration::zero();
+
+    u32 target_fps{60};
 };
 
 class FrameLimiter {

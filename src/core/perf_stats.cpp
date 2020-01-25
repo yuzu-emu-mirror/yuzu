@@ -108,13 +108,15 @@ PerfStatsResults PerfStats::GetAndResetStats(microseconds current_system_time_us
     system_frames = 0;
     game_frames = 0;
 
+    target_fps = static_cast<u32>(results.game_fps / results.emulation_speed);
+
     return results;
 }
 
 double PerfStats::GetLastFrameTimeScale() {
     std::lock_guard lock{object_mutex};
 
-    constexpr double FRAME_LENGTH = 1.0 / 60;
+    double FRAME_LENGTH = 1.0 / target_fps;
     return duration_cast<DoubleSecs>(previous_frame_length).count() / FRAME_LENGTH;
 }
 
