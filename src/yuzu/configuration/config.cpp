@@ -407,6 +407,8 @@ void Config::ReadAudioValues() {
                                    .toStdString();
     Settings::values.enable_audio_stretching =
         ReadSetting(QStringLiteral("enable_audio_stretching"), true).toBool();
+    Settings::values.enable_realtime_audio =
+        ReadSetting(QStringLiteral("enable_realtime_audio"), true).toBool();
     Settings::values.audio_device_id =
         ReadSetting(QStringLiteral("output_device"), QStringLiteral("auto"))
             .toString()
@@ -915,6 +917,8 @@ void Config::SaveAudioValues() {
                  QStringLiteral("auto"));
     WriteSetting(QStringLiteral("enable_audio_stretching"),
                  Settings::values.enable_audio_stretching, true);
+    WriteSetting(QStringLiteral("enable_realtime_audio"), Settings::values.enable_realtime_audio,
+                 true);
     WriteSetting(QStringLiteral("output_device"),
                  QString::fromStdString(Settings::values.audio_device_id), QStringLiteral("auto"));
     WriteSetting(QStringLiteral("volume"), Settings::values.volume, 1.0f);

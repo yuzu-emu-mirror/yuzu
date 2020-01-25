@@ -201,6 +201,11 @@ output_engine =
 # 0: No, 1 (default): Yes
 enable_audio_stretching =
 
+# Whether or not to enable the real-time audio processing.
+# This effect adjusts audio speed to match real-time speed and helps prevent audio stutter.
+# 0: No, 1 (default): Yes
+enable_realtime_audio =
+
 # Which audio device to use.
 # auto (default): Auto-select
 output_device =

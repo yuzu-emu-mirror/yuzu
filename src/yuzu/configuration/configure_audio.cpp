@@ -42,6 +42,7 @@ void ConfigureAudio::SetConfiguration() {
     SetAudioDeviceFromDeviceID();
 
     ui->toggle_audio_stretching->setChecked(Settings::values.enable_audio_stretching);
+    ui->toggle_realtime_audio->setChecked(Settings::values.enable_realtime_audio);
     ui->volume_slider->setValue(Settings::values.volume * ui->volume_slider->maximum());
     SetVolumeIndicatorText(ui->volume_slider->sliderPosition());
 }
@@ -84,6 +85,7 @@ void ConfigureAudio::ApplyConfiguration() {
         ui->output_sink_combo_box->itemText(ui->output_sink_combo_box->currentIndex())
             .toStdString();
     Settings::values.enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
+    Settings::values.enable_realtime_audio = ui->toggle_realtime_audio->isChecked();
     Settings::values.audio_device_id =
         ui->audio_device_combo_box->itemText(ui->audio_device_combo_box->currentIndex())
             .toStdString();
