@@ -60,7 +60,7 @@ static_assert(sizeof(KeyboardConfig) == 0x3E0, "KeyboardConfig has incorrect siz
 class SoftwareKeyboard final : public Applet {
 public:
     explicit SoftwareKeyboard(Core::System& system_,
-                              const Core::Frontend::SoftwareKeyboardApplet& frontend_);
+                              Core::Frontend::SoftwareKeyboardApplet& frontend);
     ~SoftwareKeyboard() override;
 
     void Initialize() override;
@@ -73,7 +73,7 @@ public:
     void WriteText(std::optional<std::u16string> text);
 
 private:
-    const Core::Frontend::SoftwareKeyboardApplet& frontend;
+    Core::Frontend::SoftwareKeyboardApplet& frontend;
 
     KeyboardConfig config;
     std::u16string initial_text;

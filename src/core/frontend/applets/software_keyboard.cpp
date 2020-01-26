@@ -10,8 +10,7 @@ namespace Core::Frontend {
 SoftwareKeyboardApplet::~SoftwareKeyboardApplet() = default;
 
 void DefaultSoftwareKeyboardApplet::RequestText(
-    std::function<void(std::optional<std::u16string>)> out,
-    SoftwareKeyboardParameters parameters) const {
+    std::function<void(std::optional<std::u16string>)> out, SoftwareKeyboardParameters parameters) {
     if (parameters.initial_text.empty())
         out(u"yuzu");
 

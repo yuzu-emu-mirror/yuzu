@@ -38,7 +38,7 @@ public:
     virtual ~SoftwareKeyboardApplet();
 
     virtual void RequestText(std::function<void(std::optional<std::u16string>)> out,
-                             SoftwareKeyboardParameters parameters) const = 0;
+                             SoftwareKeyboardParameters parameters) = 0;
     virtual void SendTextCheckDialog(std::u16string error_message,
                                      std::function<void()> finished_check) const = 0;
 };
@@ -46,7 +46,7 @@ public:
 class DefaultSoftwareKeyboardApplet final : public SoftwareKeyboardApplet {
 public:
     void RequestText(std::function<void(std::optional<std::u16string>)> out,
-                     SoftwareKeyboardParameters parameters) const override;
+                     SoftwareKeyboardParameters parameters) override;
     void SendTextCheckDialog(std::u16string error_message,
                              std::function<void()> finished_check) const override;
 };

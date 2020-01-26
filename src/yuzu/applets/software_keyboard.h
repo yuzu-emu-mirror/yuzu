@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
+
 #include <QDialog>
 #include <QValidator>
 #include "core/frontend/applets/software_keyboard.h"
@@ -59,7 +62,7 @@ public:
     ~QtSoftwareKeyboard() override;
 
     void RequestText(std::function<void(std::optional<std::u16string>)> out,
-                     Core::Frontend::SoftwareKeyboardParameters parameters) const override;
+                     Core::Frontend::SoftwareKeyboardParameters parameters) override;
     void SendTextCheckDialog(std::u16string error_message,
                              std::function<void()> finished_check) const override;
 
@@ -73,4 +76,7 @@ private:
 
     mutable std::function<void(std::optional<std::u16string>)> text_output;
     mutable std::function<void()> finished_check;
+
+    std::mutex mutex;
+    std::condition_variable condition_variable;
 };

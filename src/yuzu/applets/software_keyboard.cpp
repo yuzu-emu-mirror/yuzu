@@ -129,9 +129,13 @@ QtSoftwareKeyboard::QtSoftwareKeyboard(GMainWindow& main_window) {
 QtSoftwareKeyboard::~QtSoftwareKeyboard() = default;
 
 void QtSoftwareKeyboard::RequestText(std::function<void(std::optional<std::u16string>)> out,
-                                     Core::Frontend::SoftwareKeyboardParameters parameters) const {
+                                     Core::Frontend::SoftwareKeyboardParameters parameters) {
     text_output = std::move(out);
     emit MainWindowGetText(parameters);
+
+    // Block calling thread until user input is available
+    std::unique_lock<std::mutex> lock{mutex};
+    condition_variable.wait(lock);
 }
 
 void QtSoftwareKeyboard::SendTextCheckDialog(std::u16string error_message,
@@ -144,10 +148,14 @@ void QtSoftwareKeyboard::MainWindowFinishedText(std::optional<std::u16string> te
     // Acquire the HLE mutex
     std::lock_guard lock{HLE::g_hle_lock};
     text_output(std::move(text));
+
+    // Signal that text is ready
+    condition_variable.notify_one();
 }
 
 void QtSoftwareKeyboard::MainWindowFinishedCheckDialog() {
     // Acquire the HLE mutex
     std::lock_guard lock{HLE::g_hle_lock};
+
     finished_check();
 }
