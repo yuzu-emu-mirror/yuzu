@@ -108,16 +108,16 @@ void AppletDataBroker::SignalStateChanged() const {
     state_changed_event.writable->Signal();
 }
 
-std::shared_ptr<Kernel::ReadableEvent> AppletDataBroker::GetNormalDataEvent() const {
-    return pop_out_data_event.readable;
+std::shared_ptr<Kernel::WritableEvent> AppletDataBroker::GetNormalDataEvent() const {
+    return pop_out_data_event.writable;
 }
 
-std::shared_ptr<Kernel::ReadableEvent> AppletDataBroker::GetInteractiveDataEvent() const {
-    return pop_interactive_out_data_event.readable;
+std::shared_ptr<Kernel::WritableEvent> AppletDataBroker::GetInteractiveDataEvent() const {
+    return pop_interactive_out_data_event.writable;
 }
 
-std::shared_ptr<Kernel::ReadableEvent> AppletDataBroker::GetStateChangedEvent() const {
-    return state_changed_event.readable;
+std::shared_ptr<Kernel::WritableEvent> AppletDataBroker::GetStateChangedEvent() const {
+    return state_changed_event.writable;
 }
 
 Applet::Applet(Kernel::KernelCore& kernel_) : broker{kernel_} {}

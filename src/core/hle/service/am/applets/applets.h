@@ -86,9 +86,9 @@ public:
 
     void SignalStateChanged() const;
 
-    std::shared_ptr<Kernel::ReadableEvent> GetNormalDataEvent() const;
-    std::shared_ptr<Kernel::ReadableEvent> GetInteractiveDataEvent() const;
-    std::shared_ptr<Kernel::ReadableEvent> GetStateChangedEvent() const;
+    std::shared_ptr<Kernel::WritableEvent> GetNormalDataEvent() const;
+    std::shared_ptr<Kernel::WritableEvent> GetInteractiveDataEvent() const;
+    std::shared_ptr<Kernel::WritableEvent> GetStateChangedEvent() const;
 
 private:
     // Queues are named from applet's perspective

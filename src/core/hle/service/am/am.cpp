@@ -778,11 +778,9 @@ private:
     void GetAppletStateChangedEvent(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_AM, "called");
 
-        const auto event = applet->GetBroker().GetStateChangedEvent();
-
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushCopyObjects(event);
+        rb.PushCopyObjects(applet->GetBroker().GetStateChangedEvent()->GetReadableEvent());
     }
 
     void IsCompleted(Kernel::HLERequestContext& ctx) {
@@ -836,6 +834,8 @@ private:
             return;
         }
 
+        applet->GetBroker().GetNormalDataEvent()->Clear();
+
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IStorage>(std::move(*storage));
     }
@@ -868,6 +868,8 @@ private:
             return;
         }
 
+        applet->GetBroker().GetInteractiveDataEvent()->Clear();
+
         rb.Push(RESULT_SUCCESS);
         rb.PushIpcInterface<IStorage>(std::move(*storage));
     }
@@ -877,7 +879,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushCopyObjects(applet->GetBroker().GetNormalDataEvent());
+        rb.PushCopyObjects(applet->GetBroker().GetNormalDataEvent()->GetReadableEvent());
     }
 
     void GetPopInteractiveOutDataEvent(Kernel::HLERequestContext& ctx) {
@@ -885,7 +887,7 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(RESULT_SUCCESS);
-        rb.PushCopyObjects(applet->GetBroker().GetInteractiveDataEvent());
+        rb.PushCopyObjects(applet->GetBroker().GetInteractiveDataEvent()->GetReadableEvent());
     }
 
     std::shared_ptr<Applets::Applet> applet;
