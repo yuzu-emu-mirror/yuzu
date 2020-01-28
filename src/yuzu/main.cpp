@@ -480,7 +480,7 @@ void GMainWindow::InitializeWidgets() {
 
     // Setup Dock button
     dock_status_button = new QPushButton();
-    dock_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     dock_status_button->setFocusPolicy(Qt::NoFocus);
     connect(dock_status_button, &QPushButton::clicked, [&] {
         Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
@@ -494,11 +494,12 @@ void GMainWindow::InitializeWidgets() {
 
     // Setup ASync button
     async_status_button = new QPushButton();
-    async_status_button->setObjectName(tr("TogglableStatusBarButton"));
+    async_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     async_status_button->setFocusPolicy(Qt::NoFocus);
     connect(async_status_button, &QPushButton::clicked, [&] {
-        if (emulation_running)
+        if (emulation_running) {
             return;
+        }
         Settings::values.use_asynchronous_gpu_emulation =
             !Settings::values.use_asynchronous_gpu_emulation;
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
@@ -511,11 +512,11 @@ void GMainWindow::InitializeWidgets() {
 
     // Setup Renderer API button
     renderer_status_button = new QPushButton();
-    renderer_status_button->setObjectName(tr("RendererStatusBarButton"));
+    renderer_status_button->setObjectName(QStringLiteral("RendererStatusBarButton"));
     renderer_status_button->setCheckable(true);
     renderer_status_button->setFocusPolicy(Qt::NoFocus);
     connect(renderer_status_button, &QPushButton::toggled, [=](bool checked) {
-        renderer_status_button->setText(tr(checked ? "VULKAN" : "OPENGL"));
+        renderer_status_button->setText(checked ? tr("VULKAN") : tr("OPENGL"));
     });
     renderer_status_button->toggle();
 
@@ -527,9 +528,9 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setChecked(Settings::values.renderer_backend ==
                                        Settings::RendererBackend::Vulkan);
     connect(renderer_status_button, &QPushButton::clicked, [=] {
-        if (emulation_running)
+        if (emulation_running) {
             return;
-
+        }
         if (renderer_status_button->isChecked()) {
             Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
         } else {
@@ -1909,8 +1910,8 @@ void GMainWindow::OnConfigure() {
     dock_status_button->setChecked(Settings::values.use_docked_mode);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 #ifdef HAS_VULKAN
-    renderer_status_button->setChecked(
-        Settings::values.renderer_backend == Settings::RendererBackend::Vulkan ? true : false);
+    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+                                       Settings::RendererBackend::Vulkan);
 #endif
 }
 
@@ -2365,7 +2366,7 @@ void GMainWindow::UpdateUITheme() {
     QStringList theme_paths(default_theme_paths);
 
     if (is_default_theme || current_theme.isEmpty()) {
-        const QString theme_uri(QLatin1Char{':'} + QStringLiteral("default/style.qss"));
+        const QString theme_uri(QStringLiteral(":default/style.qss"));
         QFile f(theme_uri);
         if (f.open(QFile::ReadOnly | QFile::Text)) {
             QTextStream ts(&f);
