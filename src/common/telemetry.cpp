@@ -76,9 +76,7 @@ void AppendCPUInfo(FieldCollection& fc) {
 }
 
 void AppendOSInfo(FieldCollection& fc) {
-#ifdef __APPLE__
-    fc.AddField(FieldType::UserSystem, "OsPlatform", "Apple");
-#elif defined(_WIN32)
+#ifdef _WIN32
     fc.AddField(FieldType::UserSystem, "OsPlatform", "Windows");
 #elif defined(__linux__) || defined(linux) || defined(__linux)
     fc.AddField(FieldType::UserSystem, "OsPlatform", "Linux");
