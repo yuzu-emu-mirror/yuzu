@@ -108,6 +108,8 @@ add_library(common STATIC
     common_types.h
     dynamic_library.cpp
     dynamic_library.h
+    fiber.cpp
+    fiber.h
     file_util.cpp
     file_util.h
     hash.h
