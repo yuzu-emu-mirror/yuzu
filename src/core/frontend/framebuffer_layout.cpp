@@ -27,8 +27,11 @@ FramebufferLayout DefaultFrameLayout(u32 width, u32 height) {
     // so just calculate them both even if the other isn't showing.
     FramebufferLayout res{width, height};
 
-    const float emulation_aspect_ratio{static_cast<float>(ScreenUndocked::Height) /
-                                       ScreenUndocked::Width};
+    const float emulation_aspect_ratio =
+        Settings::values.stretch_to_full
+            ? static_cast<float>(height) / width
+            : static_cast<float>(ScreenUndocked::Height) / ScreenUndocked::Width;
+
     const auto window_aspect_ratio = static_cast<float>(height) / width;
 
     const Common::Rectangle<u32> screen_window_area{0, 0, width, height};

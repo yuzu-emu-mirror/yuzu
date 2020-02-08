@@ -92,6 +92,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="stretch_to_full">
+          <property name="text">
+           <string>Stretch to full screen</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="force_30fps_mode">
           <property name="text">
            <string>Force 30 FPS mode</string>

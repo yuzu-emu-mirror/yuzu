@@ -146,6 +146,10 @@ use_accurate_gpu_emulation =
 # 0 : Off (slow), 1 (default): On (fast)
 use_asynchronous_gpu_emulation =
 
+# Whether to stretch to full screen
+# 0 (default): Off, 1 : On
+stretch_to_full =
+
 # The clear color for the renderer. What shows up on the sides of the bottom screen.
 # Must be in range of 0.0-1.0. Defaults to 1.0 for all.
 bg_red =
