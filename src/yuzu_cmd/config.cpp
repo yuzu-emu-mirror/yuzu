@@ -388,6 +388,8 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_accurate_gpu_emulation", false);
     Settings::values.use_asynchronous_gpu_emulation =
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", false);
+    Settings::values.aspect_ratio =
+        static_cast<int>(sdl2_config->GetReal("Renderer", "aspect_ratio", 0));
 
     Settings::values.bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
     Settings::values.bg_green =
