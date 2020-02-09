@@ -388,8 +388,9 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_accurate_gpu_emulation", false);
     Settings::values.use_asynchronous_gpu_emulation =
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", false);
-    Settings::values.stretch_to_full =
-        sdl2_config->GetBoolean("Renderer", "stretch_to_full", false);
+    Settings::values.stretch_to_fullscreen =
+        sdl2_config->GetBoolean("Renderer", "stretch_to_fullscreen", false);
+
     Settings::values.bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
     Settings::values.bg_green =
         static_cast<float>(sdl2_config->GetReal("Renderer", "bg_green", 0.0));

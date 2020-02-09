@@ -28,19 +28,22 @@ __declspec(noinline, noreturn)
 }
 
 #define ASSERT(_a_)                                                                                \
-    if (!(_a_)) {                                                                                  \
-        LOG_CRITICAL(Debug, "Assertion Failed!");                                                  \
-    }
+    do                                                                                             \
+        if (!(_a_)) {                                                                              \
+            assert_noinline_call([] { LOG_CRITICAL(Debug, "Assertion Failed!"); });                \
+        }                                                                                          \
+    while (0)
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
-    if (!(_a_)) {                                                                                  \
-        LOG_CRITICAL(Debug, "Assertion Failed! " __VA_ARGS__);                                     \
-    }
+    do                                                                                             \
+        if (!(_a_)) {                                                                              \
+            assert_noinline_call([&] { LOG_CRITICAL(Debug, "Assertion Failed!\n" __VA_ARGS__); }); \
+        }                                                                                          \
+    while (0)
 
-#define UNREACHABLE()                                                                              \
-    { LOG_CRITICAL(Debug, "Unreachable code!"); }
+#define UNREACHABLE() assert_noinline_call([] { LOG_CRITICAL(Debug, "Unreachable code!"); })
 #define UNREACHABLE_MSG(...)                                                                       \
-    { LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__); }
+    assert_noinline_call([&] { LOG_CRITICAL(Debug, "Unreachable code!\n" __VA_ARGS__); })
 
 #ifdef _DEBUG
 #define DEBUG_ASSERT(_a_) ASSERT(_a_)
