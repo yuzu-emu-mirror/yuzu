@@ -23,6 +23,7 @@ public:
 private:
     enum class IoctlCommand : u32_le {
         IocSetNVMAPfdCommand = 0x40044801,
+        IocChannelGetWaitBase = 0xC0080003,
     };
 
     struct IoctlSetNvmapFD {
@@ -47,10 +48,19 @@ private:
         INSERT_PADDING_BYTES(0x3);
     };
     static_assert(sizeof(IoctlMapCmdBuffer) == 12, "IoctlMapCmdBuffer is incorrect size");
+    
+    struct IoctChannelWaitBase {
+        // [in]
+        u32_le module_id;
+        // [out] Returns the current waitbase value for a given module. Always returns 0
+        u32_le waitbase_value;
+    };
+    static_assert(sizeof(IoctChannelWaitBase) == 8, "IoctChannelWaitBase is incorrect size");
 
     u32_le nvmap_fd{};
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ChannelGetWaitBase(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
