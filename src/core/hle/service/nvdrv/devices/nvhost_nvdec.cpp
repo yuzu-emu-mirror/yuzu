@@ -9,7 +9,7 @@
 #include "core/hle/service/nvdrv/devices/nvhost_nvdec.h"
 
 namespace Service::Nvidia::Devices {
-    
+
 constexpr u32 NVHOST_IOCTL_MAGIC(0x0);
 constexpr u32 NVHOST_IOCTL_CHANNEL_MAP_CMD_BUFFER(0x9);
 constexpr u32 NVHOST_IOCTL_CHANNEL_MAP_CMD_BUFFER_EX(0x25);
@@ -45,7 +45,6 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
     return 0;
 }
 
-    
 u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSetNvmapFD params{};
     std::memcpy(&params, input.data(), input.size());
@@ -62,8 +61,7 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
     std::memcpy(&params, input.data(), startPt);
 
     std::vector<IoctlCmdBuf> cmdBufs(params.num_cmdbufs);
-    std::memcpy(cmdBufs.data(), input.data() + startPt,
-                sizeof(IoctlCmdBuf) * params.num_cmdbufs);
+    std::memcpy(cmdBufs.data(), input.data() + startPt, sizeof(IoctlCmdBuf) * params.num_cmdbufs);
     startPt += sizeof(IoctlCmdBuf) * params.num_cmdbufs;
     // TODO(namkazt): what to do with this?
 
@@ -76,7 +74,7 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
     std::memcpy(relocShifts.data(), input.data() + startPt,
                 sizeof(IoctlRelocShift) * params.num_relocs);
     startPt += sizeof(IoctlRelocShift) * params.num_relocs;
-    //TODO(namkazt): what to do with this?
+    // TODO(namkazt): what to do with this?
 
     std::vector<IoctlSyncPtIncr> syncPtIncrs(params.num_syncpt_incrs);
     std::memcpy(syncPtIncrs.data(), input.data() + startPt,
@@ -92,8 +90,9 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
         }
     }
 
-    LOG_WARNING(Service_NVDRV,
-        "(STUBBED) called, num_cmdbufs: {}, num_relocs: {}, num_syncpt_incrs: {}, num_fences: {}", 
+    LOG_WARNING(
+        Service_NVDRV,
+        "(STUBBED) called, num_cmdbufs: {}, num_relocs: {}, num_syncpt_incrs: {}, num_fences: {}",
         params.num_cmdbufs, params.num_relocs, params.num_syncpt_incrs, params.num_fences);
 
     std::memcpy(output.data(), &params, 16);
@@ -135,10 +134,11 @@ u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<
     std::memcpy(handles.data(), input.data() + 12,
                 sizeof(IoctlHandleMapBuffer) * params.num_handles);
 
-    LOG_WARNING(Service_NVDRV, "(STUBBED) called, num_handles: {}, is_compressed: {}", params.num_handles, params.is_compressed);
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, num_handles: {}, is_compressed: {}",
+                params.num_handles, params.is_compressed);
 
-    //TODO(namkazt): Uses nvmap_pin internally to pin a given number of nvmap handles to an appropriate device
-    // physical address.
+    // TODO(namkazt): Uses nvmap_pin internally to pin a given number of nvmap handles to an
+    // appropriate device physical address.
 
     std::memcpy(output.data(), &params, 12);
     std::memcpy(output.data() + 12, handles.data(),
