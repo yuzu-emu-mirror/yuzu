@@ -25,6 +25,8 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
     switch (static_cast<IoctlCommand>(command.raw)) {
     case IoctlCommand::IocSetNVMAPfdCommand:
         return SetNVMAPfd(input, output);
+    case IoctlCommand::IocChannelGetWaitBase:
+        return ChannelGetWaitBase(input, output);
     }
   
     if (command.group == NVHOST_IOCTL_MAGIC) {
@@ -43,6 +45,17 @@ u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& outp
     LOG_DEBUG(Service_NVDRV, "called, fd={}", params.nvmap_fd);
 
     nvmap_fd = params.nvmap_fd;
+    return 0;
+}
+  
+u32 nvhost_nvdec::ChannelGetWaitBase(const std::vector<u8>& input, std::vector<u8>& output) {
+    IoctChannelWaitBase params{};
+    std::memcpy(&params, input.data(), input.size());
+    LOG_DEBUG(Service_NVDRV, "called, module_id: {}", params.module_id);
+
+    params.waitbase_value = 0;
+
+    std::memcpy(output.data(), &params, output.size());
     return 0;
 }
 
