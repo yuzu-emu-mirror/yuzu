@@ -81,7 +81,7 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
                 sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs);
     startPt += sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs;
     // apply increment to sync points and create new one if not existed
-    for (auto syncIncr : syncPtIncrs) {
+    for (const auto& syncIncr : syncPtIncrs) {
         auto itr = syncPtValues.find(syncIncr.syncpt_id);
         if (itr == syncPtValues.end()) {
             syncPtValues[syncIncr.syncpt_id] = syncIncr.syncpt_incrs;
@@ -95,7 +95,7 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
         "(STUBBED) called, num_cmdbufs: {}, num_relocs: {}, num_syncpt_incrs: {}, num_fences: {}",
         params.num_cmdbufs, params.num_relocs, params.num_syncpt_incrs, params.num_fences);
 
-    std::memcpy(output.data(), &params, 16);
+    std::memcpy(output.data(), &params, sizeof(params));
     return 0;
 }
 
@@ -128,7 +128,7 @@ u32 nvhost_nvdec::ChannelGetWaitBase(const std::vector<u8>& input, std::vector<u
 
 u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlMapCmdBuffer params{};
-    std::memcpy(&params, input.data(), 12);
+    std::memcpy(&params, input.data(), sizeof(params));
 
     std::vector<IoctlHandleMapBuffer> handles(params.num_handles);
     std::memcpy(handles.data(), input.data() + 12,
@@ -140,7 +140,7 @@ u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<
     // TODO(namkazt): Uses nvmap_pin internally to pin a given number of nvmap handles to an
     // appropriate device physical address.
 
-    std::memcpy(output.data(), &params, 12);
+    std::memcpy(output.data(), &params, sizeof(params));
     std::memcpy(output.data() + 12, handles.data(),
                 sizeof(IoctlHandleMapBuffer) * params.num_handles);
     return 0;
