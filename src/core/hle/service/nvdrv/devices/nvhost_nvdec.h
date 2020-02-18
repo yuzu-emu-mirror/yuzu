@@ -73,7 +73,7 @@ private:
         u32_le num_syncpt_incrs;
         // [in]
         u32_le num_fences;
-        // __in    struct cmdbuf cmdbufs[]; 
+        // __in    struct cmdbuf cmdbufs[];
         // __in    struct reloc relocs[];
         // __in    struct reloc_shift reloc_shifts[];
         // __in    struct syncpt_incr syncpt_incrs[];
@@ -82,8 +82,8 @@ private:
     static_assert(sizeof(IoctlSubmit) == 16, "IoctlSubmit is incorrect size");
 
     struct IoctlHandleMapBuffer {
-        u32_le handle_id_in;     // nvmap handle to map
-        u32_le phys_addr_out;    // returned device physical address mapped to the handle
+        u32_le handle_id_in;  // nvmap handle to map
+        u32_le phys_addr_out; // returned device physical address mapped to the handle
     };
     static_assert(sizeof(IoctlHandleMapBuffer) == 8, "IoctlHandleMapBuffer is incorrect size");
 
