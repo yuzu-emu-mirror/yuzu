@@ -51,6 +51,7 @@ private:
     u32_le nvmap_fd{};
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Service::Nvidia::Devices
