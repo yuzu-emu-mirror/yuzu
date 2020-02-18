@@ -29,6 +29,24 @@ private:
         u32_le nvmap_fd;
     };
     static_assert(sizeof(IoctlSetNvmapFD) == 4, "IoctlSetNvmapFD is incorrect size");
+    
+    struct IoctlHandleMapBuffer {
+        u32_le handle_id_in;     // nvmap handle to map
+        u32_le phys_addr_out;    // returned device physical address mapped to the handle
+    };
+    static_assert(sizeof(IoctlHandleMapBuffer) == 8, "IoctlHandleMapBuffer is incorrect size");
+
+    struct IoctlMapCmdBuffer {
+        // [in] number of nvmap handles to map
+        u32_le num_handles;
+        // [in] ignored
+        u32_le reserved;
+        // [in] memory to map is compressed
+        u8 is_compressed;
+        // [in] padding[3] u8 ignored
+        INSERT_PADDING_BYTES(0x3);
+    };
+    static_assert(sizeof(IoctlMapCmdBuffer) == 12, "IoctlMapCmdBuffer is incorrect size");
 
     u32_le nvmap_fd{};
 
