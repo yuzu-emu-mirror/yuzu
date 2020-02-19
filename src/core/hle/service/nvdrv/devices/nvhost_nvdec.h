@@ -5,10 +5,10 @@
 #pragma once
 
 #include <vector>
-#include <unordered_map>
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
+#include "core/hle/service/nvdrv/nvdrv.h"
 
 namespace Service::Nvidia::Devices {
 
@@ -92,7 +92,7 @@ private:
         // [in] number of nvmap handles to map
         u32_le num_handles;
         // [in] ignored
-        u32_le reserved;
+        INSERT_PADDING_BYTES(0x4);
         // [in] memory to map is compressed
         u8 is_compressed;
         // [in] padding[3] u8 ignored
@@ -100,31 +100,48 @@ private:
     };
     static_assert(sizeof(IoctlMapCmdBuffer) == 12, "IoctlMapCmdBuffer is incorrect size");
 
-    struct IoctChannelWaitBase {
+    struct IoctlHandleUnmapBuffer {
+        u32_le handle_id_in;       // nvmap handle to map
+        INSERT_PADDING_BYTES(0x4); // reserved - ignored
+    };
+    static_assert(sizeof(IoctlHandleUnmapBuffer) == 8, "IoctlHandleUnmapBuffer is incorrect size");
+
+    struct IoctlUnmapCmdBuffer {
+        // [in] number of nvmap handles to map
+        u32_le num_handles;
+        // [in] ignored
+        INSERT_PADDING_BYTES(0x4);
+        // [in] memory to map is compressed
+        u8 is_compressed;
+        // [in] padding[3] u8 ignored
+        INSERT_PADDING_BYTES(0x3);
+    };
+    static_assert(sizeof(IoctlUnmapCmdBuffer) == 12, "IoctlUnmapCmdBuffer is incorrect size");
+
+    struct IoctlChannelWaitBase {
         // [in]
         u32_le module_id;
         // [out] Returns the current waitbase value for a given module. Always returns 0
         u32_le waitbase_value;
     };
-    static_assert(sizeof(IoctChannelWaitBase) == 8, "IoctChannelWaitBase is incorrect size");
+    static_assert(sizeof(IoctlChannelWaitBase) == 8, "IoctChannelWaitBase is incorrect size");
 
-    struct IoctChannelSyncPoint {
+    struct IoctlChannelSyncPoint {
         // [in]
         u32_le syncpt_id;
         // [out] Returns the current syncpoint value for a given module. Identical to Linux driver.
         u32_le syncpt_value;
     };
-    static_assert(sizeof(IoctChannelSyncPoint) == 8, "IoctChannelSyncPoint is incorrect size");
+    static_assert(sizeof(IoctlChannelSyncPoint) == 8, "IoctChannelSyncPoint is incorrect size");
 
     u32_le nvmap_fd{};
-
-    std::unordered_map<u32, u32> sync_point_values;
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelGetSyncPoint(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelGetWaitBase(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 ChannelUnmapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output);
 };
 
 } // namespace Service::Nvidia::Devices
