@@ -55,40 +55,43 @@ u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& outp
 }
 
 u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& output) {
-    u32 startPt = 16;
+    u32 start_point = 16;
 
     IoctlSubmit params{};
-    std::memcpy(&params, input.data(), startPt);
+    std::memcpy(&params, input.data(), start_point);
 
-    std::vector<IoctlCmdBuf> cmdBufs(params.num_cmdbufs);
-    std::memcpy(cmdBufs.data(), input.data() + startPt, sizeof(IoctlCmdBuf) * params.num_cmdbufs);
-    startPt += sizeof(IoctlCmdBuf) * params.num_cmdbufs;
+    std::vector<IoctlCmdBuf> cmd_bufs(params.num_cmdbufs);
+    std::memcpy(cmd_bufs.data(), input.data() + start_point,
+                sizeof(IoctlCmdBuf) * params.num_cmdbufs);
+    start_point += sizeof(IoctlCmdBuf) * params.num_cmdbufs;
     // TODO(namkazt): what to do with this?
 
     std::vector<IoctlReloc> relocs(params.num_relocs);
-    std::memcpy(relocs.data(), input.data() + startPt, sizeof(IoctlReloc) * params.num_relocs);
-    startPt += sizeof(IoctlReloc) * params.num_relocs;
+    std::memcpy(relocs.data(), input.data() + start_point, sizeof(IoctlReloc) * params.num_relocs);
+    start_point += sizeof(IoctlReloc) * params.num_relocs;
     // TODO(namkazt): what to do with this?
 
-    std::vector<IoctlRelocShift> relocShifts(params.num_relocs);
-    std::memcpy(relocShifts.data(), input.data() + startPt,
+    std::vector<IoctlRelocShift> reloc_shifts(params.num_relocs);
+    std::memcpy(reloc_shifts.data(), input.data() + start_point,
                 sizeof(IoctlRelocShift) * params.num_relocs);
-    startPt += sizeof(IoctlRelocShift) * params.num_relocs;
+    start_point += sizeof(IoctlRelocShift) * params.num_relocs;
     // TODO(namkazt): what to do with this?
 
-    std::vector<IoctlSyncPtIncr> syncPtIncrs(params.num_syncpt_incrs);
-    std::memcpy(syncPtIncrs.data(), input.data() + startPt,
+    std::vector<IoctlSyncPtIncr> sync_point_incrs(params.num_syncpt_incrs);
+    std::memcpy(sync_point_incrs.data(), input.data() + start_point,
                 sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs);
-    startPt += sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs;
+    start_point += sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs;
     // apply increment to sync points and create new one if not existed
-    for (const auto& syncIncr : syncPtIncrs) {
-        auto itr = syncPtValues.find(syncIncr.syncpt_id);
-        if (itr == syncPtValues.end()) {
-            syncPtValues[syncIncr.syncpt_id] = syncIncr.syncpt_incrs;
+    for (const auto& sync_incr : sync_point_incrs) {
+        const auto iter = sync_point_values.find(sync_incr.syncpt_id);
+        if (iter == sync_point_values.end()) {
+            sync_point_values.insert_or_assign(sync_incr.syncpt_id, sync_incr.syncpt_incrs);
         } else {
-            syncPtValues[syncIncr.syncpt_id] += syncIncr.syncpt_incrs;
+            iter->second += sync_incr.syncpt_incrs;
         }
     }
+
+    // TODO(namkazt): check on fence
 
     LOG_WARNING(
         Service_NVDRV,
@@ -96,6 +99,7 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
         params.num_cmdbufs, params.num_relocs, params.num_syncpt_incrs, params.num_fences);
 
     std::memcpy(output.data(), &params, sizeof(params));
+    // TODO(namkazt): write result back to output
     return 0;
 }
 
@@ -104,11 +108,11 @@ u32 nvhost_nvdec::ChannelGetSyncPoint(const std::vector<u8>& input, std::vector<
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "called, module_id: {}", params.syncpt_id);
 
-    auto itr = syncPtValues.find(params.syncpt_id);
-    if (itr == syncPtValues.end()) {
+    const auto iter = sync_point_values.find(params.syncpt_id);
+    if (iter == sync_point_values.end()) {
         params.syncpt_value = 0;
     } else {
-        params.syncpt_value = itr->second;
+        params.syncpt_value = iter->second;
     }
 
     std::memcpy(output.data(), &params, output.size());

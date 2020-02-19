@@ -5,6 +5,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include "common/common_types.h"
 #include "common/swap.h"
 #include "core/hle/service/nvdrv/devices/nvdevice.h"
@@ -117,7 +118,7 @@ private:
 
     u32_le nvmap_fd{};
 
-    std::unordered_map<u32, u32> syncPtValues;
+    std::unordered_map<u32, u32> sync_point_values;
 
     u32 SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& output);
     u32 ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& output);
