@@ -6,13 +6,16 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_nvdec.h"
+#include "video_core/gpu.h"
 
 namespace Service::Nvidia::Devices {
 
 constexpr u32 NVHOST_IOCTL_MAGIC(0x0);
 constexpr u32 NVHOST_IOCTL_CHANNEL_MAP_CMD_BUFFER(0x9);
 constexpr u32 NVHOST_IOCTL_CHANNEL_MAP_CMD_BUFFER_EX(0x25);
+constexpr u32 NVHOST_IOCTL_CHANNEL_UNMAP_CMD_BUFFER(0x0A);
 constexpr u32 NVHOST_IOCTL_CHANNEL_SUBMIT(0x1);
 
 nvhost_nvdec::nvhost_nvdec(Core::System& system) : nvdevice(system) {}
@@ -36,6 +39,8 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
     if (command.group == NVHOST_IOCTL_MAGIC) {
         if (command.cmd == NVHOST_IOCTL_CHANNEL_MAP_CMD_BUFFER) {
             return ChannelMapCmdBuffer(input, output);
+        } else if (command.cmd == NVHOST_IOCTL_CHANNEL_UNMAP_CMD_BUFFER) {
+            return ChannelUnmapCmdBuffer(input, output);
         } else if (command.cmd == NVHOST_IOCTL_CHANNEL_SUBMIT) {
             return ChannelSubmit(input, output);
         }
@@ -56,6 +61,7 @@ u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& outp
 
 u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& output) {
     u32 start_point = 16;
+    auto& gpu = system.GPU();
 
     IoctlSubmit params{};
     std::memcpy(&params, input.data(), start_point);
@@ -81,14 +87,12 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
     std::memcpy(sync_point_incrs.data(), input.data() + start_point,
                 sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs);
     start_point += sizeof(IoctlSyncPtIncr) * params.num_syncpt_incrs;
-    // apply increment to sync points and create new one if not existed
+    // apply increment to sync points
     for (const auto& sync_incr : sync_point_incrs) {
-        const auto iter = sync_point_values.find(sync_incr.syncpt_id);
-        if (iter == sync_point_values.end()) {
-            sync_point_values.insert_or_assign(sync_incr.syncpt_id, sync_incr.syncpt_incrs);
-        } else {
-            iter->second += sync_incr.syncpt_incrs;
+        if (sync_incr.syncpt_id >= MaxSyncPoints) {
+            continue;
         }
+        gpu.IncrementSyncPoint(sync_incr.syncpt_id);
     }
 
     // TODO(namkazt): check on fence
@@ -100,34 +104,34 @@ u32 nvhost_nvdec::ChannelSubmit(const std::vector<u8>& input, std::vector<u8>& o
 
     std::memcpy(output.data(), &params, sizeof(params));
     // TODO(namkazt): write result back to output
-    return 0;
+    return NvResult::Success;
 }
 
 u32 nvhost_nvdec::ChannelGetSyncPoint(const std::vector<u8>& input, std::vector<u8>& output) {
-    IoctChannelSyncPoint params{};
+    IoctlChannelSyncPoint params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_WARNING(Service_NVDRV, "called, module_id: {}", params.syncpt_id);
 
-    const auto iter = sync_point_values.find(params.syncpt_id);
-    if (iter == sync_point_values.end()) {
-        params.syncpt_value = 0;
-    } else {
-        params.syncpt_value = iter->second;
+    if (params.syncpt_id >= MaxSyncPoints) {
+        return NvResult::BadParameter;
     }
 
+    auto& gpu = system.GPU();
+    params.syncpt_value = gpu.GetSyncpointValue(params.syncpt_id);
+
     std::memcpy(output.data(), &params, output.size());
-    return 0;
+    return NvResult::Success;
 }
 
 u32 nvhost_nvdec::ChannelGetWaitBase(const std::vector<u8>& input, std::vector<u8>& output) {
-    IoctChannelWaitBase params{};
+    IoctlChannelWaitBase params{};
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called, module_id: {}", params.module_id);
 
     params.waitbase_value = 0;
 
     std::memcpy(output.data(), &params, output.size());
-    return 0;
+    return NvResult::Success;
 }
 
 u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output) {
@@ -135,7 +139,7 @@ u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<
     std::memcpy(&params, input.data(), sizeof(params));
 
     std::vector<IoctlHandleMapBuffer> handles(params.num_handles);
-    std::memcpy(handles.data(), input.data() + 12,
+    std::memcpy(handles.data(), input.data() + sizeof(params),
                 sizeof(IoctlHandleMapBuffer) * params.num_handles);
 
     LOG_WARNING(Service_NVDRV, "(STUBBED) called, num_handles: {}, is_compressed: {}",
@@ -145,9 +149,29 @@ u32 nvhost_nvdec::ChannelMapCmdBuffer(const std::vector<u8>& input, std::vector<
     // appropriate device physical address.
 
     std::memcpy(output.data(), &params, sizeof(params));
-    std::memcpy(output.data() + 12, handles.data(),
+    std::memcpy(output.data() + sizeof(params), handles.data(),
                 sizeof(IoctlHandleMapBuffer) * params.num_handles);
-    return 0;
+    return NvResult::Success;
+}
+
+u32 nvhost_nvdec::ChannelUnmapCmdBuffer(const std::vector<u8>& input, std::vector<u8>& output) {
+    IoctlUnmapCmdBuffer params{};
+    std::memcpy(&params, input.data(), sizeof(params));
+
+    std::vector<IoctlHandleUnmapBuffer> handles(params.num_handles);
+    std::memcpy(handles.data(), input.data() + sizeof(params),
+                sizeof(IoctlHandleUnmapBuffer) * params.num_handles);
+
+    LOG_WARNING(Service_NVDRV, "(STUBBED) called, num_handles: {}, is_compressed: {}",
+                params.num_handles, params.is_compressed);
+
+    // TODO(namkazt): Uses nvmap_unpin internally to unpin a given number of nvmap handles from
+    // their device physical address.
+
+    std::memcpy(output.data(), &params, sizeof(params));
+    std::memcpy(output.data() + sizeof(params), handles.data(),
+                sizeof(IoctlHandleMapBuffer) * params.num_handles);
+    return NvResult::Success;
 }
 
 } // namespace Service::Nvidia::Devices
