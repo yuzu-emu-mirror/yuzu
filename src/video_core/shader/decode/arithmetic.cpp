@@ -11,6 +11,7 @@
 
 namespace VideoCommon::Shader {
 
+using Tegra::Shader::FmulPostFactor;
 using Tegra::Shader::Instruction;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::SubOp;
@@ -57,7 +58,7 @@ u32 ShaderIR::DecodeArithmetic(NodeBlock& bb, u32 pc) {
             op_a = Operation(OperationCode::FMul, NO_PRECISE, op_a,
                              Immediate(FmulPostFactor[instr.fmul.postfactor]));
         }
-        
+
         // TODO(Rodrigo): Should precise be used when there's a postfactor?
         Node value = Operation(OperationCode::FMul, PRECISE, op_a, op_b);
 
