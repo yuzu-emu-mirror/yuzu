@@ -156,16 +156,6 @@ struct make_unsigned<Tegra::Shader::Register> {
 
 namespace Tegra::Shader {
 
-constexpr std::array FmulPostFactor{
-    1.000f, // None
-    0.500f, // Divide 2
-    0.250f, // Divide 4
-    0.125f, // Divide 8
-    2.000f, // Mul 2
-    4.000f, // Mul 4
-    8.000f, // Mul 8
-};
-
 enum class Pred : u64 {
     UnusedIndex = 0x7,
     NeverExecute = 0xF,
