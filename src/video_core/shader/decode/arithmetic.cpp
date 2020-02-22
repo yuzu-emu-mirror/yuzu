@@ -11,7 +11,6 @@
 
 namespace VideoCommon::Shader {
 
-using Tegra::Shader::FmulPostFactor;
 using Tegra::Shader::Instruction;
 using Tegra::Shader::OpCode;
 using Tegra::Shader::SubOp;
@@ -53,6 +52,16 @@ u32 ShaderIR::DecodeArithmetic(NodeBlock& bb, u32 pc) {
         }
 
         op_b = GetOperandAbsNegFloat(op_b, false, instr.fmul.negate_b);
+        
+        constexpr std::array FmulPostFactor = {
+            1.000f, // None
+            0.500f, // Devide 2
+            0.250f, // Devide 4
+            0.125f, // Devide 8
+            8.000f, // Mul 8
+            4.000f, // Mul 4
+            2.000f, // Mul 2
+        };
 
         if (instr.fmul.postfactor != 0) {
             op_a = Operation(OperationCode::FMul, NO_PRECISE, op_a,
