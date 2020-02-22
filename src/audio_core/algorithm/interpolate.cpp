@@ -162,6 +162,11 @@ std::vector<s16> Interpolate(InterpolationState& state, std::vector<s16> input, 
 
     std::vector<s16> output(static_cast<std::size_t>(input.size() / ratio));
     int in_offset = 0;
+
+    // Pad the end with zeros, as the below algorithm reads a frame past the buffer on the final
+    // iteration. Fixes audio crackling in Crash Team Racing Nitro-Fueled.
+    input.resize(input.size() + 32);
+
     for (std::size_t out_offset = 0; out_offset < output.size(); out_offset += 2) {
         const int lut_index = (state.fraction >> 8) * 4;
 
