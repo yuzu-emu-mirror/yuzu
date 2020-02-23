@@ -55,9 +55,9 @@ u32 ShaderIR::DecodeArithmetic(NodeBlock& bb, u32 pc) {
 
         static constexpr std::array FmulPostFactor = {
             1.000f, // None
-            0.500f, // Devide 2
-            0.250f, // Devide 4
-            0.125f, // Devide 8
+            0.500f, // Divide 2
+            0.250f, // Divide 4
+            0.125f, // Divide 8
             8.000f, // Mul 8
             4.000f, // Mul 4
             2.000f, // Mul 2
