@@ -150,7 +150,7 @@ static_assert(sizeof(VoiceOutStatus) == 0x10, "VoiceOutStatus has wrong size");
 
 struct ChannelInfoIn {
     u32_le id;
-    std::array<float_le, 24> mix;
+    std::array<float_le, 24> mix_volume;
     bool is_used;
     INSERT_PADDING_BYTES(11);
 };

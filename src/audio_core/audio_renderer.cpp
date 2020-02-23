@@ -355,6 +355,17 @@ static constexpr s16 ClampToS16(s32 value) {
     return static_cast<s16>(std::clamp(value, -32768, 32767));
 }
 
+static std::size_t GetMixVolumeIndex(const VoiceInfo& voice_info, std::size_t offset) {
+    switch (voice_info.channel_count) {
+    case 1:
+        return 0;
+    case 2:
+        return offset % 2;
+    default:
+        UNIMPLEMENTED_MSG("Unimplemented channel_count={}", voice_info.channel_count);
+    }
+}
+
 void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     constexpr std::size_t BUFFER_SIZE{512};
     std::vector<s16> buffer(BUFFER_SIZE * stream->GetNumChannels());
@@ -376,15 +387,15 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
             samples_remaining -= samples.size() / stream->GetNumChannels();
 
             // TODO(FearlessTobi): Implement Surround mixing
-            const auto& mix = channels[voice.GetInfo().id].GetInfo().mix;
+            const auto& mix_volumes{channels[voice.GetInfo().id].GetInfo().mix_volume};
             for (const auto& sample : samples) {
                 const s32 buffer_sample{buffer[offset]};
 
-                // index 0 is for the left ear, 1 is for the right
-                const float submix = mix[offset % 2];
+                // Index 0 is for the left channel, 1 is for the right channel
+                const float mix_volume{mix_volumes[GetMixVolumeIndex(voice.GetInfo(), offset)]};
 
                 buffer[offset++] = ClampToS16(
-                    buffer_sample + static_cast<s32>(sample * voice.GetInfo().volume * submix));
+                    buffer_sample + static_cast<s32>(sample * voice.GetInfo().volume * mix_volume));
             }
         }
     }
