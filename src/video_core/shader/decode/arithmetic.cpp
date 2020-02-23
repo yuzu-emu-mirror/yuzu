@@ -53,7 +53,7 @@ u32 ShaderIR::DecodeArithmetic(NodeBlock& bb, u32 pc) {
 
         op_b = GetOperandAbsNegFloat(op_b, false, instr.fmul.negate_b);
 
-        constexpr std::array FmulPostFactor = {
+        static constexpr std::array FmulPostFactor = {
             1.000f, // None
             0.500f, // Devide 2
             0.250f, // Devide 4
