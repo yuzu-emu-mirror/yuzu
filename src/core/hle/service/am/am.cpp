@@ -674,16 +674,10 @@ void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
 
 void ICommonStateGetter::SetLcdBacklighOffEnabled(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    auto is_lcd_backlight_off_enabled = rp.Pop<bool>();
+    const auto is_lcd_backlight_off_enabled = rp.Pop<bool>();
 
     LOG_WARNING(Service_AM, "(STUBBED) called. is_lcd_backlight_off_enabled={}",
                 is_lcd_backlight_off_enabled);
-
-    if (is_lcd_backlight_off_enabled) {
-        // Turn off the backlight
-    } else {
-        // Turn on the backlight
-    }
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
