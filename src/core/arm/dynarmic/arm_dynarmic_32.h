@@ -21,13 +21,15 @@ class Memory;
 
 namespace Core {
 
+class CPUInterruptHandler;
 class DynarmicCallbacks32;
 class DynarmicExclusiveMonitor;
 class System;
 
 class ARM_Dynarmic_32 final : public ARM_Interface {
 public:
-    ARM_Dynarmic_32(System& system, ExclusiveMonitor& exclusive_monitor, std::size_t core_index);
+    ARM_Dynarmic_32(System& system, CPUInterruptHandler& interrupt_handler,
+                    ExclusiveMonitor& exclusive_monitor, std::size_t core_index);
     ~ARM_Dynarmic_32() override;
 
     void SetPC(u64 pc) override;

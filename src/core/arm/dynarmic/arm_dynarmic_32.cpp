@@ -115,9 +115,9 @@ void ARM_Dynarmic_32::Step() {
     cb->InterpreterFallback(jit->Regs()[15], 1);
 }
 
-ARM_Dynarmic_32::ARM_Dynarmic_32(System& system, ExclusiveMonitor& exclusive_monitor,
-                                 std::size_t core_index)
-    : ARM_Interface{system},
+ARM_Dynarmic_32::ARM_Dynarmic_32(System& system, CPUInterruptHandler& interrupt_handler,
+                                 ExclusiveMonitor& exclusive_monitor, std::size_t core_index)
+    : ARM_Interface{system, interrupt_handler},
       cb(std::make_unique<DynarmicCallbacks32>(*this)), core_index{core_index},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)} {}
 
