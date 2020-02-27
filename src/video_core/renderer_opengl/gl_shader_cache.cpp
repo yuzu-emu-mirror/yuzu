@@ -117,7 +117,7 @@ constexpr GLenum GetGLShaderType(ShaderType shader_type) {
 /// Hashes one (or two) program streams
 u64 GetUniqueIdentifier(ShaderType shader_type, bool is_a, const ProgramCode& code,
                         const ProgramCode& code_b = {}) {
-    u64 unique_identifier = boost::hash_value(code);
+    std::size_t unique_identifier = boost::hash_value(code);
     if (is_a) {
         // VertexA programs include two programs
         boost::hash_combine(unique_identifier, boost::hash_value(code_b));

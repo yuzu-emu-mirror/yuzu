@@ -21,6 +21,13 @@
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
 
+#if defined(PAGE_SIZE)
+#undef PAGE_SIZE
+#endif
+#if defined(PAGE_SHIFT)
+#undef PAGE_SHIFT
+#endif
+
 namespace VideoCommon {
 
 template <class QueryCache, class HostCounter>

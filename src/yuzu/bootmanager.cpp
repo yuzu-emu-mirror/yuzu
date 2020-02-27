@@ -8,11 +8,13 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMessageBox>
+#ifndef __APPLE__
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QOpenGLFunctions_4_3_Core>
 #include <QOpenGLWindow>
+#endif
 #include <QPainter>
 #include <QScreen>
 #include <QStringList>
@@ -112,6 +114,7 @@ void EmuThread::run() {
 #endif
 }
 
+#ifndef __APPLE__
 class OpenGLContext : public Core::Frontend::GraphicsContext {
 public:
     explicit OpenGLContext(QOpenGLContext* shared_context)
@@ -142,67 +145,7 @@ private:
     QOpenGLContext* context;
     QOffscreenSurface* surface;
 };
-
-class ChildRenderWindow : public QWindow {
-public:
-    ChildRenderWindow(QWindow* parent, QWidget* event_handler)
-        : QWindow{parent}, event_handler{event_handler} {}
-
-    virtual ~ChildRenderWindow() = default;
-
-    virtual void Present() = 0;
-
-protected:
-    bool event(QEvent* event) override {
-        switch (event->type()) {
-        case QEvent::UpdateRequest:
-            Present();
-            return true;
-        case QEvent::MouseButtonPress:
-        case QEvent::MouseButtonRelease:
-        case QEvent::MouseButtonDblClick:
-        case QEvent::MouseMove:
-        case QEvent::KeyPress:
-        case QEvent::KeyRelease:
-        case QEvent::FocusIn:
-        case QEvent::FocusOut:
-        case QEvent::FocusAboutToChange:
-        case QEvent::Enter:
-        case QEvent::Leave:
-        case QEvent::Wheel:
-        case QEvent::TabletMove:
-        case QEvent::TabletPress:
-        case QEvent::TabletRelease:
-        case QEvent::TabletEnterProximity:
-        case QEvent::TabletLeaveProximity:
-        case QEvent::TouchBegin:
-        case QEvent::TouchUpdate:
-        case QEvent::TouchEnd:
-        case QEvent::InputMethodQuery:
-        case QEvent::TouchCancel:
-            return QCoreApplication::sendEvent(event_handler, event);
-        case QEvent::Drop:
-            GetMainWindow()->DropAction(static_cast<QDropEvent*>(event));
-            return true;
-        case QEvent::DragResponse:
-        case QEvent::DragEnter:
-        case QEvent::DragLeave:
-        case QEvent::DragMove:
-            GetMainWindow()->AcceptDropEvent(static_cast<QDropEvent*>(event));
-            return true;
-        default:
-            return QWindow::event(event);
-        }
-    }
-
-    void exposeEvent(QExposeEvent* event) override {
-        QWindow::requestUpdate();
-        QWindow::exposeEvent(event);
-    }
-
-private:
-    QWidget* event_handler{};
-};
+#endif
 
 class RenderWidget : public QWidget {
 public:
@@ -274,14 +217,17 @@ public:
         return autoFillBackground() ? QWidget::paintEngine() : nullptr;
     }
 
+    virtual void Present() {}
+
 private:
     GRenderWindow* parent;
 };
 
-class OpenGLWindow final : public ChildRenderWindow {
+#ifndef __APPLE__
+class OpenGLWidget final : public RenderWidget {
 public:
-    OpenGLWindow(QWindow* parent, QWidget* event_handler, QOpenGLContext* shared_context)
-        : ChildRenderWindow{parent, event_handler},
+    OpenGLWidget(GRenderWindow* parent, QOpenGLContext* shared_context)
+        : RenderWidget{parent},
           context(new QOpenGLContext(shared_context->parent())) {
 
         // disable vsync for any shared contexts
@@ -300,7 +246,7 @@ public:
         // WA_DontShowOnScreen, WA_DeleteOnClose
     }
 
-    ~OpenGLWindow() override {
+    ~OpenGLWidget() override {
         context->doneCurrent();
     }
 
@@ -320,25 +266,6 @@ public:
 private:
     QOpenGLContext* context{};
 };
-
-#ifdef HAS_VULKAN
-class VulkanWindow final : public ChildRenderWindow {
-public:
-    VulkanWindow(QWindow* parent, QWidget* event_handler, QVulkanInstance* instance)
-        : ChildRenderWindow{parent, event_handler} {
-        setSurfaceType(QSurface::SurfaceType::VulkanSurface);
-        setVulkanInstance(instance);
-    }
-
-    ~VulkanWindow() override = default;
-
-    void Present() override {
-        // TODO(bunnei): ImplementMe
-    }
-
-private:
-    QWidget* event_handler = nullptr;
-};
 #endif
 
 static Core::Frontend::WindowSystemType GetWindowSystemType() {
@@ -346,6 +273,8 @@ static Core::Frontend::WindowSystemType GetWindowSystemType() {
     QString platform_name = QGuiApplication::platformName();
     if (platform_name == QStringLiteral("windows"))
         return Core::Frontend::WindowSystemType::Windows;
+    else if (platform_name == QStringLiteral("cocoa"))
+        return Core::Frontend::WindowSystemType::MacOS;
     else if (platform_name == QStringLiteral("xcb"))
         return Core::Frontend::WindowSystemType::X11;
     else if (platform_name == QStringLiteral("wayland"))
@@ -396,15 +325,19 @@ GRenderWindow::~GRenderWindow() {
 }
 
 void GRenderWindow::MakeCurrent() {
+#ifndef __APPLE__
     if (core_context) {
         core_context->MakeCurrent();
     }
+#endif
 }
 
 void GRenderWindow::DoneCurrent() {
+#ifndef __APPLE__
     if (core_context) {
         core_context->DoneCurrent();
     }
+#endif
 }
 
 void GRenderWindow::PollEvents() {
@@ -567,14 +500,18 @@ void GRenderWindow::resizeEvent(QResizeEvent* event) {
 }
 
 std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedContext() const {
+#ifndef __APPLE__
     if (Settings::values.renderer_backend == Settings::RendererBackend::OpenGL) {
         return std::make_unique<OpenGLContext>(QOpenGLContext::globalShareContext());
     }
+#endif
     return {};
 }
 
 bool GRenderWindow::ReloadRenderTarget() {
+#ifndef __APPLE__
     core_context.reset();
+#endif
     delete child;
     delete layout();
     first_frame = false;
@@ -656,6 +593,7 @@ void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_p
 }
 
 bool GRenderWindow::InitializeOpenGL() {
+#ifndef __APPLE__
     // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
     // WA_DontShowOnScreen, WA_DeleteOnClose
     QSurfaceFormat fmt;
@@ -667,20 +605,18 @@ bool GRenderWindow::InitializeOpenGL() {
     fmt.setSwapInterval(0);
     QSurfaceFormat::setDefaultFormat(fmt);
 
-    GMainWindow* parent = GetMainWindow();
-    QWindow* parent_win_handle = parent ? parent->windowHandle() : nullptr;
-    child_window = new OpenGLWindow(parent_win_handle, this, QOpenGLContext::globalShareContext());
-    child_window->create();
-    child_widget = createWindowContainer(child_window, this);
-    child_widget->resize(Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height);
     layout()->addWidget(child_widget);
 
     core_context = CreateSharedContext();
     return true;
+#else
+    return false;
+#endif
 }
 
 bool GRenderWindow::InitializeVulkan() {
 #ifdef HAS_VULKAN
+    child->windowHandle()->setSurfaceType(QSurface::SurfaceType::VulkanSurface);
     layout()->addWidget(child);
     return true;
 #else

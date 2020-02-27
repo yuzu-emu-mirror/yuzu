@@ -19,7 +19,6 @@
 
 class GRenderWindow;
 class QKeyEvent;
-class QOpenGLContext;
 class QScreen;
 class QTouchEvent;
 class QStringList;
@@ -188,7 +187,9 @@ private:
 
     EmuThread* emu_thread;
 
+#ifndef __APPLE__
     std::unique_ptr<GraphicsContext> core_context;
+#endif
 
     /// Temporary storage of the screenshot taken
     QImage screenshot_image;

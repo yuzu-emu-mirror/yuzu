@@ -24,7 +24,7 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
         return SetNVMAPfd(input, output);
     }
 
-    UNIMPLEMENTED_MSG("Unimplemented ioctl");
+    //UNIMPLEMENTED_MSG("Unimplemented ioctl");
     return 0;
 }
 

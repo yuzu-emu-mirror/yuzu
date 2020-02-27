@@ -5,7 +5,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modul
 include(DownloadExternals)
 include(CMakeDependentOption)
 
-project(yuzu)
+set(CMAKE_OSX_ARCHITECTURES "x86_64")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15.0" CACHE STRING "")
+
+project(yuzu C CXX ASM)
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
@@ -28,6 +31,10 @@ option(ENABLE_CUBEB "Enables the cubeb audio backend" ON)
 option(ENABLE_VULKAN "Enables Vulkan backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
+
+if(APPLE)
+  option(OSX_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
+endif()
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/hooks/pre-commit AND NOT EXISTS ${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
@@ -276,6 +283,31 @@ if (APPLE)
     # Umbrella framework for everything GUI-related
     find_library(COCOA_LIBRARY Cocoa)
     set(PLATFORM_LIBRARIES ${COCOA_LIBRARY} ${IOKIT_LIBRARY} ${COREVIDEO_LIBRARY})
+
+    if(NOT OSX_USE_DEFAULT_SEARCH_PATH)
+      # Hack up the path to prioritize the path to built-in OS libraries to
+      # increase the chance of not depending on a bunch of copies of them
+      # installed by MacPorts, Fink, Homebrew, etc, and ending up copying
+      # them into the bundle.  Since we optionally depend on libraries which
+      # are not part of OS X (ffmpeg, etc.), however, don't remove the default
+      # path entirely as was done in a previous version of this file.  This is
+      # still kinda evil, since it defeats the user's path settings...
+      # See http://www.cmake.org/cmake/help/v3.0/command/find_program.html
+      list(APPEND CMAKE_PREFIX_PATH "/usr")
+    endif()
+
+    # Linker flags.
+    # Drop unreachable code and data.
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-dead_strip,-dead_strip_dylibs")
+
+    find_library(APPKIT_LIBRARY AppKit)
+    find_library(APPSERV_LIBRARY ApplicationServices)
+    find_library(CARBON_LIBRARY Carbon)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+    find_library(CORESERV_LIBRARY CoreServices)
+    find_library(FOUNDATION_LIBRARY Foundation)
+    find_library(IOK_LIBRARY IOKit)
 elseif (WIN32)
     # WSAPoll and SHGetKnownFolderPath (AppData/Roaming) didn't exist before WinNT 6.x (Vista)
     add_definitions(-D_WIN32_WINNT=0x0600 -DWINVER=0x0600)

@@ -291,10 +291,10 @@ public:
         AddCapability(spv::Capability::SampledBuffer);
         AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
         AddCapability(spv::Capability::DrawParameters);
-        AddCapability(spv::Capability::SubgroupBallotKHR);
-        AddCapability(spv::Capability::SubgroupVoteKHR);
-        AddExtension("SPV_KHR_shader_ballot");
-        AddExtension("SPV_KHR_subgroup_vote");
+//        AddCapability(spv::Capability::SubgroupBallotKHR);
+//        AddCapability(spv::Capability::SubgroupVoteKHR);
+//        AddExtension("SPV_KHR_shader_ballot");
+//        AddExtension("SPV_KHR_subgroup_vote");
         AddExtension("SPV_KHR_storage_buffer_storage_class");
         AddExtension("SPV_KHR_variable_pointers");
         AddExtension("SPV_KHR_shader_draw_parameters");
@@ -514,8 +514,8 @@ private:
     }
 
     void DeclareCommon() {
-        thread_id =
-            DeclareInputBuiltIn(spv::BuiltIn::SubgroupLocalInvocationId, t_in_uint, "thread_id");
+        //thread_id =
+        //    DeclareInputBuiltIn(spv::BuiltIn::SubgroupLocalInvocationId, t_in_uint, "thread_id");
     }
 
     void DeclareVertex() {
@@ -621,7 +621,8 @@ private:
 
     void DeclareRegisters() {
         for (const u32 gpr : ir.GetRegisters()) {
-            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
+            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private);
+//            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
             Name(id, fmt::format("gpr_{}", gpr));
             registers.emplace(gpr, AddGlobalVariable(id));
         }
@@ -630,7 +631,8 @@ private:
     void DeclareCustomVariables() {
         const u32 num_custom_variables = ir.GetNumCustomVariables();
         for (u32 i = 0; i < num_custom_variables; ++i) {
-            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
+            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private);
+            //const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
             Name(id, fmt::format("custom_var_{}", i));
             custom_variables.emplace(i, AddGlobalVariable(id));
         }
@@ -638,7 +640,8 @@ private:
 
     void DeclarePredicates() {
         for (const auto pred : ir.GetPredicates()) {
-            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+            //const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             Name(id, fmt::format("pred_{}", static_cast<u32>(pred)));
             predicates.emplace(pred, AddGlobalVariable(id));
         }
@@ -646,7 +649,8 @@ private:
 
     void DeclareFlowVariables() {
         for (u32 i = 0; i < ir.GetASTNumVariables(); i++) {
-            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+            //const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             Name(id, fmt::format("flow_var_{}", static_cast<u32>(i)));
             flow_variables.emplace(i, AddGlobalVariable(id));
         }
@@ -693,7 +697,8 @@ private:
         constexpr std::array names = {"zero", "sign", "carry", "overflow"};
         for (std::size_t flag = 0; flag < INTERNAL_FLAGS_COUNT; ++flag) {
             const auto flag_code = static_cast<InternalFlag>(flag);
-            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+            //const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             internal_flags[flag] = AddGlobalVariable(Name(id, names[flag]));
         }
     }
@@ -1294,7 +1299,7 @@ private:
         }
 
         if (const auto comment = std::get_if<CommentNode>(&*node)) {
-            Name(OpUndef(t_void), comment->GetText());
+            //Name(OpUndef(t_void), comment->GetText());
             return {};
         }
 

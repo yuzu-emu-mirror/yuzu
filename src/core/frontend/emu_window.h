@@ -19,6 +19,7 @@ enum class WindowSystemType {
     Windows,
     X11,
     Wayland,
+    MacOS,
 };
 
 /**
@@ -113,7 +114,7 @@ public:
     /**
      * Returns system information about the drawing area.
      */
-    const WindowSystemInfo& GetWindowInfo() const {
+    WindowSystemInfo& GetWindowInfo() {
         return window_info;
     }
 

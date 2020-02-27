@@ -16,6 +16,7 @@
 #include "video_core/renderer_vulkan/vk_device.h"
 #include "video_core/renderer_vulkan/wrapper.h"
 
+
 namespace Vulkan {
 
 namespace {
@@ -38,11 +39,11 @@ constexpr std::array REQUIRED_EXTENSIONS = {
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
-    VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+    //VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
-    VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
-    VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
+    //VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
+    //VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
 };
 
@@ -179,7 +180,8 @@ bool VKDevice::Create() {
     features.fullDrawIndexUint32 = false;
     features.imageCubeArray = false;
     features.independentBlend = true;
-    features.geometryShader = true;
+    features.geometryShader = false;
+    //features.geometryShader = true;
     features.tessellationShader = true;
     features.sampleRateShading = false;
     features.dualSrcBlend = false;
@@ -473,7 +475,7 @@ bool VKDevice::IsSuitable(vk::PhysicalDevice physical, VkSurfaceKHR surface) {
         std::make_pair(features.largePoints, "largePoints"),
         std::make_pair(features.multiViewport, "multiViewport"),
         std::make_pair(features.depthBiasClamp, "depthBiasClamp"),
-        std::make_pair(features.geometryShader, "geometryShader"),
+        //std::make_pair(features.geometryShader, "geometryShader"),
         std::make_pair(features.tessellationShader, "tessellationShader"),
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),

@@ -175,6 +175,10 @@ public:
         return {surface.GetAspectMask(), base_level, base_layer, num_layers};
     }
 
+    VideoCore::Surface::PixelFormat GetFormat() const {
+        return params.pixel_format;
+    }
+
     void Transition(VkImageLayout new_layout, VkPipelineStageFlags new_stage_mask,
                     VkAccessFlags new_access) const {
         surface.Transition(base_layer, num_layers, base_level, num_levels, new_stage_mask,
