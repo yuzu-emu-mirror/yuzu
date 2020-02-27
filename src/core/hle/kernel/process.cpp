@@ -185,7 +185,6 @@ void Process::RemoveConditionVariableThread(std::shared_ptr<Thread> thread) {
         }
         ++it;
     }
-    UNREACHABLE();
 }
 
 std::vector<std::shared_ptr<Thread>> Process::GetConditionVariableThreads(
