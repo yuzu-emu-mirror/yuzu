@@ -776,10 +776,6 @@ void Config::ReadWebServiceValues() {
 
     Settings::values.enable_telemetry =
         ReadSetting(QStringLiteral("enable_telemetry"), true).toBool();
-    Settings::values.web_api_url =
-        ReadSetting(QStringLiteral("web_api_url"), QStringLiteral("https://api.yuzu-emu.org"))
-            .toString()
-            .toStdString();
     Settings::values.yuzu_username =
         ReadSetting(QStringLiteral("yuzu_username")).toString().toStdString();
     Settings::values.yuzu_token =
@@ -1190,9 +1186,6 @@ void Config::SaveWebServiceValues() {
     qt_config->beginGroup(QStringLiteral("WebService"));
 
     WriteSetting(QStringLiteral("enable_telemetry"), Settings::values.enable_telemetry, true);
-    WriteSetting(QStringLiteral("web_api_url"),
-                 QString::fromStdString(Settings::values.web_api_url),
-                 QStringLiteral("https://api.yuzu-emu.org"));
     WriteSetting(QStringLiteral("yuzu_username"),
                  QString::fromStdString(Settings::values.yuzu_username));
     WriteSetting(QStringLiteral("yuzu_token"), QString::fromStdString(Settings::values.yuzu_token));
