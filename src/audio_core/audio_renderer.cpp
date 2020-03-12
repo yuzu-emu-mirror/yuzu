@@ -291,8 +291,9 @@ void AudioRenderer::VoiceState::RefreshBuffer(Memory::Memory& memory) {
             samples[index * 2 + 1] = new_samples[index];
         }
         break;
-    case 2: {
-        // 2 channel is played as is
+    case 2:
+    case 6: {
+        // 2 and 6 channel is played as is
         samples = std::move(new_samples);
         break;
     }
