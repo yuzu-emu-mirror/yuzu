@@ -19,14 +19,14 @@
 
 class GRenderWindow;
 class QKeyEvent;
+class QOpenGLContext;
 class QScreen;
 class QTouchEvent;
 class QStringList;
-class QSurface;
-class QOpenGLContext;
-#ifdef HAS_VULKAN
-class QVulkanInstance;
-#endif
+
+class RenderWidget;
+class GMainWindow;
+class GRenderWindow;
 
 namespace VideoCore {
 enum class LoadCallbackStage;
@@ -132,8 +132,6 @@ public:
     void DoneCurrent() override;
     void PollEvents() override;
     bool IsShown() const override;
-    void RetrieveVulkanHandlers(void* get_instance_proc_addr, void* instance,
-                                void* surface) const override;
     std::unique_ptr<Core::Frontend::GraphicsContext> CreateSharedContext() const override;
 
     void BackupGeometry();
@@ -142,6 +140,7 @@ public:
     QByteArray saveGeometry();                        // overridden
 
     qreal windowPixelRatio() const;
+    std::pair<u32, u32> ScaleTouch(QPointF pos) const;
 
     void closeEvent(QCloseEvent* event) override;
 
@@ -158,7 +157,7 @@ public:
 
     void focusOutEvent(QFocusEvent* event) override;
 
-    bool InitRenderTarget();
+    bool ReloadRenderTarget();
 
     /// Destroy the previous run's child_widget which should also destroy the child_window
     void ReleaseRenderTarget();
@@ -176,25 +175,20 @@ signals:
     void FirstFrameDisplayed();
 
 private:
-    std::pair<u32, u32> ScaleTouch(QPointF pos) const;
     void TouchBeginEvent(const QTouchEvent* event);
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
-
-    void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
     bool InitializeOpenGL();
     bool InitializeVulkan();
     bool LoadOpenGL();
     QStringList GetUnsupportedGLExtensions() const;
 
+    RenderWidget* child = nullptr;
+
     EmuThread* emu_thread;
 
     std::unique_ptr<GraphicsContext> core_context;
-
-#ifdef HAS_VULKAN
-    std::unique_ptr<QVulkanInstance> vk_instance;
-#endif
 
     /// Temporary storage of the screenshot taken
     QImage screenshot_image;

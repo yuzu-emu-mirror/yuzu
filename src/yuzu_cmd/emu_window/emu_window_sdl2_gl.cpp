@@ -136,7 +136,6 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(Core::System& system, bool fullscreen)
     }
 
     OnResize();
-    OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
     SDL_PumpEvents();
     LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", Common::g_build_fullname, Common::g_scm_branch,
              Common::g_scm_desc);
@@ -154,12 +153,6 @@ void EmuWindow_SDL2_GL::MakeCurrent() {
 
 void EmuWindow_SDL2_GL::DoneCurrent() {
     core_context->DoneCurrent();
-}
-
-void EmuWindow_SDL2_GL::RetrieveVulkanHandlers(void* get_instance_proc_addr, void* instance,
-                                               void* surface) const {
-    // Should not have been called from OpenGL
-    UNREACHABLE();
 }
 
 std::unique_ptr<Core::Frontend::GraphicsContext> EmuWindow_SDL2_GL::CreateSharedContext() const {

@@ -17,10 +17,6 @@ public:
     void DoneCurrent() override;
     void Present() override;
 
-    /// Ignored in OpenGL
-    void RetrieveVulkanHandlers(void* get_instance_proc_addr, void* instance,
-                                void* surface) const override;
-
     std::unique_ptr<Core::Frontend::GraphicsContext> CreateSharedContext() const override;
 
 private:

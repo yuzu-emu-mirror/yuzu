@@ -875,7 +875,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
     if (emu_thread != nullptr)
         ShutdownGame();
 
-    if (!render_window->InitRenderTarget()) {
+    if (!render_window->ReloadRenderTarget()) {
         return false;
     }
 

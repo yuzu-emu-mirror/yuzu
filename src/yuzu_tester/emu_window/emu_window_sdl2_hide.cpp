@@ -125,7 +125,3 @@ void EmuWindow_SDL2_Hide::DoneCurrent() {
 bool EmuWindow_SDL2_Hide::IsShown() const {
     return false;
 }
-
-void EmuWindow_SDL2_Hide::RetrieveVulkanHandlers(void*, void*, void*) const {
-    UNREACHABLE();
-}
