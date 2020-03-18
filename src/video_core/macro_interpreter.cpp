@@ -328,6 +328,12 @@ void MacroInterpreter::SetMethodAddress(u32 address) {
 }
 
 void MacroInterpreter::Send(u32 value) {
+    // Use the tracked value in shadow_regs when requested.
+    if (method_address.address < Engines::Maxwell3D::Regs::NUM_REGS &&
+        maxwell3d.regs.shadow_ram_control == Engines::Maxwell3D::Regs::ShadowRamControl::Replay) {
+        value = maxwell3d.shadow_regs.reg_array[method_address.address];
+    }
+
     maxwell3d.CallMethodFromMME({method_address.address, value});
     // Increment the method address by the method increment.
     method_address.address.Assign(method_address.address.Value() +
