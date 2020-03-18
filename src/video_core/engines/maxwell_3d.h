@@ -531,6 +531,11 @@ public:
             Fill = 0x1b02,
         };
 
+        // Thanks to fincs for reverse engineering
+        // MME shadow RAM and Ryujinx for providing
+        // the base for the implementation.
+        // https://github.com/fincs
+        // https://github.com/Ryujinx/Ryujinx/pull/987
         enum class ShadowRamControl : u32 {
             Track = 0,
             TrackWithFilter = 1,
