@@ -155,7 +155,7 @@ UniqueInstance CreateInstance(Common::DynamicLibrary& library, vk::DispatchLoade
                 return !std::strcmp(extension, prop.extensionName);
             });
         if (it == properties.end()) {
-            LOG_ERROR(Render_Vulkan, "Required instance extension {} is not available");
+            LOG_ERROR(Render_Vulkan, "Required instance extension {} is not available", extension);
             return UniqueInstance{};
         }
     }
