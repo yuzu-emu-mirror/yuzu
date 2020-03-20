@@ -71,19 +71,25 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        /// We are using host timing, NOP
+        this->ticks -= ticks;
     }
+
     u64 GetTicksRemaining() override {
         if (!parent.interrupt_handler.IsInterrupted()) {
-            return 1000ULL;
+            return std::max<s64>(ticks, 0);
         }
         return 0ULL;
+    }
+
+    void ResetTicks() {
+        ticks = 1000LL;
     }
 
     ARM_Dynarmic_32& parent;
     std::size_t num_interpreted_instructions{};
     u64 tpidrro_el0{};
     u64 tpidr_el0{};
+    s64 ticks{};
 };
 
 std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& page_table,
@@ -98,6 +104,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& 
 }
 
 void ARM_Dynarmic_32::Run() {
+    cb->ResetTicks();
     jit->Run();
 }
 
