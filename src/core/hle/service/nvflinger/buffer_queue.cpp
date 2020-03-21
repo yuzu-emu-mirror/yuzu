@@ -15,7 +15,7 @@
 namespace Service::NVFlinger {
 
 BufferQueue::BufferQueue(Kernel::KernelCore& kernel, u32 id, u64 layer_id)
-    : id(id), layer_id(layer_id) {
+    : id(id), layer_id(layer_id), max_buffer_count(0) {
     buffer_wait_event = Kernel::WritableEvent::CreateEventPair(kernel, "BufferQueue NativeHandle");
 }
 
@@ -33,6 +33,10 @@ void BufferQueue::SetPreallocatedBuffer(u32 slot, const IGBPBuffer& igbp_buffer)
     buffer_wait_event.writable->Signal();
 }
 
+void BufferQueue::SetBufferCount(u32 bufferCount) {
+    max_buffer_count = bufferCount;
+}
+
 std::optional<std::pair<u32, Service::Nvidia::MultiFence*>> BufferQueue::DequeueBuffer(u32 width,
                                                                                        u32 height) {
     auto itr = std::find_if(queue.begin(), queue.end(), [&](const Buffer& buffer) {
@@ -47,6 +51,9 @@ std::optional<std::pair<u32, Service::Nvidia::MultiFence*>> BufferQueue::Dequeue
     });
 
     if (itr == queue.end()) {
+        if (queue.size() < max_buffer_count) {
+            // TODO: Actually implement that create a new IGBPBuffer from GPU
+        }
         return {};
     }
 

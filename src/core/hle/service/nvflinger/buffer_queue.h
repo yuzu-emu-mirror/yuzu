@@ -79,6 +79,7 @@ public:
     };
 
     void SetPreallocatedBuffer(u32 slot, const IGBPBuffer& igbp_buffer);
+    void SetBufferCount(u32 bufferCount);
     std::optional<std::pair<u32, Service::Nvidia::MultiFence*>> DequeueBuffer(u32 width,
                                                                               u32 height);
     const IGBPBuffer& RequestBuffer(u32 slot) const;
@@ -104,6 +105,7 @@ private:
     std::vector<Buffer> queue;
     std::list<u32> queue_sequence;
     Kernel::EventPair buffer_wait_event;
+    u32 max_buffer_count;
 };
 
 } // namespace Service::NVFlinger

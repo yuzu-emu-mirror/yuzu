@@ -379,6 +379,28 @@ protected:
     NVFlinger::IGBPBuffer buffer;
 };
 
+class IGBPSetBufferCountRequestParcel : public Parcel {
+public:
+    explicit IGBPSetBufferCountRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
+        Deserialize();
+    }
+    ~IGBPSetBufferCountRequestParcel() override = default;
+
+    void DeserializeData() override {
+        std::u16string token = ReadInterfaceToken();
+        count = Read<u32_le>();
+    }
+
+    u32_le count;
+};
+
+class IGBPSetBufferCountResponseParcel : public Parcel {
+protected:
+    void SerializeData() override {
+        Write<u32>(0);
+    }
+};
+
 class IGBPQueueBufferRequestParcel : public Parcel {
 public:
     explicit IGBPQueueBufferRequestParcel(std::vector<u8> buffer) : Parcel(std::move(buffer)) {
@@ -587,6 +609,13 @@ private:
             const auto buffer = ctx.ReadBuffer();
 
             IGBPEmptyResponseParcel response{};
+            ctx.WriteBuffer(response.Serialize());
+        } else if (transaction == TransactionId::SetBufferCount) {
+            IGBPSetBufferCountRequestParcel request{ctx.ReadBuffer()};
+
+            buffer_queue.SetBufferCount(request.count);
+
+            IGBPSetBufferCountResponseParcel response{};
             ctx.WriteBuffer(response.Serialize());
         } else {
             ASSERT_MSG(false, "Unimplemented");
