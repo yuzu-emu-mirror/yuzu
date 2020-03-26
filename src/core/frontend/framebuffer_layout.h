@@ -9,8 +9,8 @@
 namespace Layout {
 
 namespace MinimumSize {
-constexpr u32 MinimumWidth = 640;
-constexpr u32 MinimumHeight = 360;
+constexpr u32 Width = 640;
+constexpr u32 Height = 360;
 } // namespace MinimumSize
 
 namespace ScreenUndocked {

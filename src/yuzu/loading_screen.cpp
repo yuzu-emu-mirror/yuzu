@@ -62,7 +62,7 @@ LoadingScreen::LoadingScreen(QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::LoadingScreen>()),
       previous_stage(VideoCore::LoadCallbackStage::Complete) {
     ui->setupUi(this);
-    setMinimumSize(Layout::MinimumSize::MinimumWidth, Layout::MinimumSize::MinimumHeight);
+    setMinimumSize(Layout::MinimumSize::Width, Layout::MinimumSize::Height);
 
     // Create a fade out effect to hide this loading screen widget.
     // When fading opacity, it will fade to the parent widgets background color, which is why we
