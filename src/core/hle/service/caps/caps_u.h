@@ -16,6 +16,9 @@ class CAPS_U final : public ServiceFramework<CAPS_U> {
 public:
     explicit CAPS_U();
     ~CAPS_U() override;
+
+private:
+    void GetAlbumContentsFileListForApplication(Kernel::HLERequestContext& ctx);
 };
 
 } // namespace Service::Capture
