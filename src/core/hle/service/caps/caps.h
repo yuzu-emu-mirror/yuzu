@@ -10,6 +10,7 @@ class ServiceManager;
 
 namespace Service::Capture {
 
+/// Registers all Capture services with the specified service manager.
 void InstallInterfaces(SM::ServiceManager& sm);
 
 } // namespace Service::Capture
