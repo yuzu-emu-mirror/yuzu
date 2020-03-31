@@ -31,6 +31,11 @@ constexpr std::array Depth16UnormS8_UINT = {VK_FORMAT_D24_UNORM_S8_UINT,
 
 constexpr std::array REQUIRED_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE2_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+    VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
@@ -523,8 +528,8 @@ std::vector<const char*> VKDevice::LoadExtensions() {
         Test(extension, ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
         Test(extension, ext_shader_viewport_index_layer,
              VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, true);
-        Test(extension, has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
-             false);
+        // Test(extension, has_ext_subgroup_size_control,
+        // VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
         Test(extension, has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME,
              false);
         if (Settings::values.renderer_debug) {

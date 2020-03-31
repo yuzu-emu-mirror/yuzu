@@ -276,7 +276,7 @@ class SPIRVDecompiler final : public Sirit::Module {
 public:
     explicit SPIRVDecompiler(const VKDevice& device, const ShaderIR& ir, ShaderType stage,
                              const Registry& registry, const Specialization& specialization)
-        : Module(0x00010300), device{device}, ir{ir}, stage{stage}, header{ir.GetHeader()},
+        : Module(0x00010000), device{device}, ir{ir}, stage{stage}, header{ir.GetHeader()},
           registry{registry}, specialization{specialization} {
         if (stage != ShaderType::Compute) {
             transform_feedback = BuildTransformFeedback(registry.GetGraphicsInfo());
@@ -298,6 +298,7 @@ public:
         AddExtension("SPV_KHR_storage_buffer_storage_class");
         AddExtension("SPV_KHR_variable_pointers");
         AddExtension("SPV_KHR_shader_draw_parameters");
+        AddExtension("SPV_KHR_16bit_storage");
 
         if (!transform_feedback.empty()) {
             if (device.IsExtTransformFeedbackSupported()) {
