@@ -5,8 +5,8 @@
 #include <memory>
 
 #include "common/common_types.h"
-#include "common/swap.h"
 #include "common/string_util.h"
+#include "common/swap.h"
 #include "core/file_sys/fsmitm_romfsbuild.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/vfs.h"
