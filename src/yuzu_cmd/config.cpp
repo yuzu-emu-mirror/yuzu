@@ -405,7 +405,7 @@ void Config::ReadValues() {
     Settings::values.enable_audio_stretching =
         sdl2_config->GetBoolean("Audio", "enable_audio_stretching", true);
     Settings::values.enable_realtime_audio =
-        sdl2_config->GetBoolean("Audio", "enable_realtime_audio", true);
+        sdl2_config->GetBoolean("Audio", "enable_realtime_audio", false);
     Settings::values.audio_device_id = sdl2_config->Get("Audio", "output_device", "auto");
     Settings::values.volume = static_cast<float>(sdl2_config->GetReal("Audio", "volume", 1));
 
