@@ -22,7 +22,7 @@ public:
     explicit GuestDriverProfile(std::optional<u32> texture_handler_size)
         : texture_handler_size{texture_handler_size} {}
 
-    void DeduceTextureHandlerSize(std::vector<u32> bound_offsets);
+    void DeduceTextureHandlerSize(const std::vector<u32>& bound_offsets);
 
     u32 GetTextureHandlerSize() const {
         return texture_handler_size.value_or(default_texture_handler_size);

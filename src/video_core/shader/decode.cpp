@@ -49,7 +49,7 @@ void DeduceTextureHandlerSize(VideoCore::GuestDriverProfile& gpu_driver,
         bound_offsets.emplace_back(sampler.GetOffset());
     }
     if (count > 1) {
-        gpu_driver.DeduceTextureHandlerSize(std::move(bound_offsets));
+        gpu_driver.DeduceTextureHandlerSize(bound_offsets);
     }
 }
 
