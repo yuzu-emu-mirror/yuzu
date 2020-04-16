@@ -12,20 +12,50 @@
 
 namespace Core::Frontend {
 
+/// Information for the Graphics Backends signifying what type of screen pointer is in
+/// WindowInformation
+enum class WindowSystemType {
+    Headless,
+    Windows,
+    X11,
+    Wayland,
+    MacOS,
+};
+
 /**
- * Represents a graphics context that can be used for background computation or drawing. If the
- * graphics backend doesn't require the context, then the implementation of these methods can be
- * stubs
+ * Represents a drawing context that supports graphics operations.
  */
 class GraphicsContext {
 public:
     virtual ~GraphicsContext();
 
+    /// Inform the driver to swap the front/back buffers and present the current image
+    virtual void SwapBuffers() {}
+
     /// Makes the graphics context current for the caller thread
-    virtual void MakeCurrent() = 0;
+    virtual void MakeCurrent() {}
 
     /// Releases (dunno if this is the "right" word) the context from the caller thread
-    virtual void DoneCurrent() = 0;
+    virtual void DoneCurrent() {}
+
+    class Scoped {
+    public:
+        explicit Scoped(GraphicsContext& context_) : context(context_) {
+            context.MakeCurrent();
+        }
+        ~Scoped() {
+            context.DoneCurrent();
+        }
+
+    private:
+        GraphicsContext& context;
+    };
+
+    /// Calls MakeCurrent on the context and calls DoneCurrent when the scope for the returned value
+    /// ends
+    Scoped Acquire() {
+        return Scoped{*this};
+    }
 };
 
 /**
@@ -46,38 +76,34 @@ public:
  * - DO NOT TREAT THIS CLASS AS A GUI TOOLKIT ABSTRACTION LAYER. That's not what it is. Please
  *   re-read the upper points again and think about it if you don't see this.
  */
-class EmuWindow : public GraphicsContext {
+class EmuWindow {
 public:
     /// Data structure to store emuwindow configuration
-    struct WindowConfig {
-        bool fullscreen = false;
-        int res_width = 0;
-        int res_height = 0;
-        std::pair<unsigned, unsigned> min_client_area_size;
-    };
+    struct WindowSystemInfo {
+        // Window system type. Determines which GL context or Vulkan WSI is used.
+        WindowSystemType type = WindowSystemType::Headless;
 
+        // Connection to a display server. This is used on X11 and Wayland platforms.
+        void* display_connection = nullptr;
+
+        // Render surface. This is a pointer to the native window handle, which depends
+        // on the platform. e.g. HWND for Windows, Window for X11. If the surface is
+        // set to nullptr, the video backend will run in headless mode.
+        void* render_surface = nullptr;
+
+        // Scale of the render surface. For hidpi systems, this will be >1.
+        float render_surface_scale = 1.0f;
+    };
     /// Polls window events
     virtual void PollEvents() = 0;
 
     /**
-     * Returns a GraphicsContext that the frontend provides that is shared with the emu window. This
-     * context can be used from other threads for background graphics computation. If the frontend
-     * is using a graphics backend that doesn't need anything specific to run on a different thread,
-     * then it can use a stubbed implemenation for GraphicsContext.
-     *
-     * If the return value is null, then the core should assume that the frontend cannot provide a
-     * Shared Context
+     * Returns a GraphicsContext that the frontend provides to be used for rendering.
      */
-    virtual std::unique_ptr<GraphicsContext> CreateSharedContext() const {
-        return nullptr;
-    }
+    virtual std::unique_ptr<GraphicsContext> CreateSharedContext() const = 0;
 
     /// Returns if window is shown (not minimized)
     virtual bool IsShown() const = 0;
-
-    /// Retrieves Vulkan specific handlers from the window
-    virtual void RetrieveVulkanHandlers(void* get_instance_proc_addr, void* instance,
-                                        void* surface) const = 0;
 
     /**
      * Signal that a touch pressed event has occurred (e.g. mouse click pressed)
@@ -97,22 +123,17 @@ public:
     void TouchMoved(unsigned framebuffer_x, unsigned framebuffer_y);
 
     /**
-     * Returns currently active configuration.
-     * @note Accesses to the returned object need not be consistent because it may be modified in
-     * another thread
+     * Returns system information about the drawing area.
      */
-    const WindowConfig& GetActiveConfig() const {
-        return active_config;
+    WindowSystemInfo& GetWindowInfo() {
+        return window_info;
     }
 
     /**
-     * Requests the internal configuration to be replaced by the specified argument at some point in
-     * the future.
-     * @note This method is thread-safe, because it delays configuration changes to the GUI event
-     * loop. Hence there is no guarantee on when the requested configuration will be active.
+     * Returns system information about the drawing area.
      */
-    void SetConfig(const WindowConfig& val) {
-        config = val;
+    const WindowSystemInfo& GetWindowInfo() const {
+        return window_info;
     }
 
     /**
@@ -130,25 +151,8 @@ public:
     void UpdateCurrentFramebufferLayout(unsigned width, unsigned height);
 
 protected:
-    EmuWindow();
+    explicit EmuWindow();
     virtual ~EmuWindow();
-
-    /**
-     * Processes any pending configuration changes from the last SetConfig call.
-     * This method invokes OnMinimalClientAreaChangeRequest if the corresponding configuration
-     * field changed.
-     * @note Implementations will usually want to call this from the GUI thread.
-     * @todo Actually call this in existing implementations.
-     */
-    void ProcessConfigurationChanges() {
-        // TODO: For proper thread safety, we should eventually implement a proper
-        // multiple-writer/single-reader queue...
-
-        if (config.min_client_area_size != active_config.min_client_area_size) {
-            OnMinimalClientAreaChangeRequest(config.min_client_area_size);
-            config.min_client_area_size = active_config.min_client_area_size;
-        }
-    }
 
     /**
      * Update framebuffer layout with the given parameter.
@@ -167,6 +171,8 @@ protected:
         client_area_height = size.second;
     }
 
+    WindowSystemInfo window_info;
+
 private:
     /**
      * Handler called when the minimal client area was requested to be changed via SetConfig.
@@ -181,10 +187,6 @@ private:
 
     unsigned client_area_width;  ///< Current client width, should be set by window impl.
     unsigned client_area_height; ///< Current client height, should be set by window impl.
-
-    WindowConfig config;        ///< Internal configuration (changes pending for being applied in
-                                /// ProcessConfigurationChanges)
-    WindowConfig active_config; ///< Internal active configuration
 
     class TouchState;
     std::shared_ptr<TouchState> touch_state;
