@@ -37,16 +37,24 @@ public:
     }
 
     void MakeCurrent() override {
-        SDL_GL_MakeCurrent(window, context);
+        if (is_current) {
+            return;
+        }
+        is_current = SDL_GL_MakeCurrent(window, context) == 0;
     }
 
     void DoneCurrent() override {
+        if (!is_current) {
+            return;
+        }
         SDL_GL_MakeCurrent(window, nullptr);
+        is_current = false;
     }
 
 private:
     SDL_Window* window;
     SDL_GLContext context;
+    bool is_current = false;
 };
 
 bool EmuWindow_SDL2_GL::SupportsRequiredGLExtensions() {
@@ -136,7 +144,6 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(Core::System& system, bool fullscreen)
     }
 
     OnResize();
-    OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
     SDL_PumpEvents();
     LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", Common::g_build_fullname, Common::g_scm_branch,
              Common::g_scm_desc);
@@ -146,20 +153,6 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(Core::System& system, bool fullscreen)
 EmuWindow_SDL2_GL::~EmuWindow_SDL2_GL() {
     core_context.reset();
     SDL_GL_DeleteContext(window_context);
-}
-
-void EmuWindow_SDL2_GL::MakeCurrent() {
-    core_context->MakeCurrent();
-}
-
-void EmuWindow_SDL2_GL::DoneCurrent() {
-    core_context->DoneCurrent();
-}
-
-void EmuWindow_SDL2_GL::RetrieveVulkanHandlers(void* get_instance_proc_addr, void* instance,
-                                               void* surface) const {
-    // Should not have been called from OpenGL
-    UNREACHABLE();
 }
 
 std::unique_ptr<Core::Frontend::GraphicsContext> EmuWindow_SDL2_GL::CreateSharedContext() const {
