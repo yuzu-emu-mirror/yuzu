@@ -43,3 +43,7 @@ if (MSVC)
     copy_yuzu_SDL_deps(yuzu-cmd)
     copy_yuzu_unicorn_deps(yuzu-cmd)
 endif()
+
+if(APPLE)
+    target_include_directories(yuzu-cmd PRIVATE ../../externals/MoltenVK/include)
+endif()
