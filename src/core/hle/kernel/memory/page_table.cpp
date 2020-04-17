@@ -859,7 +859,6 @@ ResultCode PageTable::LockForDeviceAddressSpace(VAddr addr, std::size_t size) {
                               },
                               perm);
 
-
     return RESULT_SUCCESS;
 }
 
@@ -881,7 +880,6 @@ ResultCode PageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size) 
                                   block->UnshareToDevice(perm);
                               },
                               perm);
-
 
     return RESULT_SUCCESS;
 }
