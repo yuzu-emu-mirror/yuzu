@@ -348,11 +348,11 @@ Instance Instance::Create(Span<const char*> layers, Span<const char*> extensions
     application_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     application_info.pEngineName = "yuzu Emulator";
     application_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    #ifdef __APPLE__ // MoltenVK officially supports 1.0
-        application_info.apiVersion = VK_API_VERSION_1_0;
-    #else
-        application_info.apiVersion = VK_API_VERSION_1_1;
-    #endif
+#ifdef __APPLE__ // MoltenVK officially supports 1.0
+    application_info.apiVersion = VK_API_VERSION_1_0;
+#else
+    application_info.apiVersion = VK_API_VERSION_1_1;
+#endif
 
     VkInstanceCreateInfo ci;
     ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

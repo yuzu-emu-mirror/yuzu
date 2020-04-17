@@ -86,7 +86,8 @@ Common::DynamicLibrary OpenVulkanLibrary() {
     char* libvulkan_env = getenv("LIBVULKAN_PATH");
     if (!libvulkan_env || !library.Open(libvulkan_env)) {
         // Use the libvulkan.dylib from the application bundle.
-        std::string filename = FileUtil::GetBundleDirectory() + "/Contents/Frameworks/libvulkan.dylib";
+        std::string filename =
+            FileUtil::GetBundleDirectory() + "/Contents/Frameworks/libvulkan.dylib";
         library.Open(filename.c_str());
     }
 #else
@@ -176,7 +177,8 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
     // application_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 
     // // Try for Vulkan 1.1 if the loader supports it.
-    // if (dld.vkEnumerateInstanceVersion && vk::enumerateInstanceVersion(dld) >= VK_MAKE_VERSION(1, 1, 0)) {
+    // if (dld.vkEnumerateInstanceVersion && vk::enumerateInstanceVersion(dld) >= VK_MAKE_VERSION(1,
+    // 1, 0)) {
     //     application_info.apiVersion = VK_MAKE_VERSION(1, 1, 0);
     // } else {
     //     LOG_ERROR(Render_Vulkan, "Vulkan 1.1 is not susupported! Try updating your drivers");
@@ -184,12 +186,13 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
     // }
     // const std::array layers = {"VK_LAYER_LUNARG_standard_validation"};
     // const vk::InstanceCreateInfo instance_ci(
-    //     {}, &application_info, enable_layers ? static_cast<u32>(layers.size()) : 0, layers.data(),
-    //     static_cast<u32>(extensions.size()), extensions.data());
+    //     {}, &application_info, enable_layers ? static_cast<u32>(layers.size()) : 0,
+    //     layers.data(), static_cast<u32>(extensions.size()), extensions.data());
     // vk::Instance unsafe_instance;
-    // if (vk::createInstance(&instance_ci, nullptr, &unsafe_instance, dld) != vk::Result::eSuccess) {
+    // if (vk::createInstance(&instance_ci, nullptr, &unsafe_instance, dld) != vk::Result::eSuccess)
+    // {
 
-    //static constexpr std::array layers_data{"VK_LAYER_LUNARG_standard_validation"};
+    // static constexpr std::array layers_data{"VK_LAYER_LUNARG_standard_validation"};
     static constexpr std::array layers_data{"VK_LAYER_KHRONOS_validation"};
     vk::Span<const char*> layers = layers_data;
     if (!enable_layers) {
@@ -252,7 +255,8 @@ std::string BuildCommaSeparatedExtensions(std::vector<std::string> available_ext
 
 void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal layer.
+    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal
+    // layer.
     id view = reinterpret_cast<id>(wsi.render_surface);
     Class clsCAMetalLayer = objc_getClass("CAMetalLayer");
     if (!clsCAMetalLayer) {
@@ -262,31 +266,33 @@ void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
 
     // [CAMetalLayer layer]
     id layer = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("CAMetalLayer"),
-                                                        sel_getUid("layer"));
+                                                                  sel_getUid("layer"));
     if (!layer) {
         LOG_ERROR(Render_Vulkan, "Failed to create Metal layer.");
         return;
     }
 
     // [view setWantsLayer:YES]
-    reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)(view, sel_getUid("setWantsLayer:"), YES);
+    reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)(view, sel_getUid("setWantsLayer:"),
+                                                            YES);
 
     // [view setLayer:layer]
     reinterpret_cast<void (*)(id, SEL, id)>(objc_msgSend)(view, sel_getUid("setLayer:"), layer);
 
     // NSScreen* screen = [NSScreen mainScreen]
     id screen = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("NSScreen"),
-                                                         sel_getUid("mainScreen"));
+                                                                   sel_getUid("mainScreen"));
 
     // CGFloat factor = [screen backingScaleFactor]
-    double factor =
-    reinterpret_cast<double (*)(id, SEL)>(objc_msgSend)(screen, sel_getUid("backingScaleFactor"));
+    double factor = reinterpret_cast<double (*)(id, SEL)>(objc_msgSend)(
+        screen, sel_getUid("backingScaleFactor"));
 
     // layer.contentsScale = factor
-    reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(layer, sel_getUid("setContentsScale:"),
-                                                    factor);
+    reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(
+        layer, sel_getUid("setContentsScale:"), factor);
 
-    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main thread.
+    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main
+    // thread.
     wsi.render_surface = layer;
 #endif
 }

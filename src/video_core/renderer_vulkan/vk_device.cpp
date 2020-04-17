@@ -176,11 +176,11 @@ bool VKDevice::Create() {
     features.fullDrawIndexUint32 = false;
     features.imageCubeArray = false;
     features.independentBlend = true;
-    #ifdef __APPLE__
-        features.geometryShader = false;
-    #else
-        features.geometryShader = true;
-    #endif
+#ifdef __APPLE__
+    features.geometryShader = false;
+#else
+    features.geometryShader = true;
+#endif
     features.tessellationShader = true;
     features.sampleRateShading = false;
     features.dualSrcBlend = false;
@@ -473,7 +473,7 @@ bool VKDevice::IsSuitable(vk::PhysicalDevice physical, VkSurfaceKHR surface) {
         std::make_pair(features.largePoints, "largePoints"),
         std::make_pair(features.multiViewport, "multiViewport"),
         std::make_pair(features.depthBiasClamp, "depthBiasClamp"),
-        //std::make_pair(features.geometryShader, "geometryShader"),
+        // std::make_pair(features.geometryShader, "geometryShader"),
         std::make_pair(features.tessellationShader, "tessellationShader"),
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),

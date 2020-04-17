@@ -47,7 +47,7 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(Core::System& system, bool fullscreen)
         exit(1);
     }
 
-    auto extra_ext_names = std::make_unique<const char* []>(extra_ext_count);
+    auto extra_ext_names = std::make_unique<const char*[]>(extra_ext_count);
     if (!SDL_Vulkan_GetInstanceExtensions(render_window, &extra_ext_count, extra_ext_names.get())) {
         LOG_CRITICAL(Frontend, "Failed to query Vulkan extensions from SDL! {}", SDL_GetError());
         exit(1);
