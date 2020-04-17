@@ -278,6 +278,7 @@ public:
         InputCommon::GetMotionEmu()->Tilt(pos.x(), pos.y());
     }
 
+
     void SetFillBackground(bool fill) {
         setAutoFillBackground(fill);
         setAttribute(Qt::WA_OpaquePaintEvent, !fill);
@@ -288,6 +289,7 @@ public:
 private:
     GRenderWindow* render_window;
 };
+
 
 #ifndef __APPLE__
 class OpenGLRenderWidget : public RenderWidget {
