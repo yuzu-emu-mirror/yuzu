@@ -28,7 +28,7 @@ static constexpr bool IsRevisionSupported(u32 required, u32_le user_revision) {
 static constexpr bool IsValidRevision(u32_le revision) {
     const auto base = VersionFromRevision(revision);
     constexpr auto max_rev = VersionFromRevision(CURRENT_PROCESS_RERVISION);
-    return revision <= max_rev;
+    return base <= max_rev;
 }
 
 static constexpr bool CanConsumeBuffer(std::size_t size, std::size_t offset, std::size_t required) {
