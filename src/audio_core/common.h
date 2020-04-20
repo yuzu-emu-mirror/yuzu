@@ -31,8 +31,7 @@ static constexpr bool IsValidRevision(u32_le revision) {
     return revision <= max_rev;
 }
 
-static constexpr bool CanConsumeBuffer(std::size_t size, std::size_t offset,
-                                         std::size_t required) {
+static constexpr bool CanConsumeBuffer(std::size_t size, std::size_t offset, std::size_t required) {
     if (offset > size) {
         return false;
     }
