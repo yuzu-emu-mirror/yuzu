@@ -360,9 +360,11 @@ static std::size_t GetMixVolumeIndex(const VoiceInfo& voice_info, std::size_t of
     case 1:
         return 0;
     case 2:
+    case 6:
         return offset % 2;
     default:
         UNIMPLEMENTED_MSG("Unimplemented channel_count={}", voice_info.channel_count);
+        return 0;
     }
 }
 
