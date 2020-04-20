@@ -11,6 +11,19 @@ find_library(lz4_LIBRARY
   PATHS ${PC_lz4_LIBRARY_DIRS}
 )
 
+if(lz4_INCLUDE_DIR)
+  file(STRINGS "${lz4_INCLUDE_DIR}/lz4.h" _lz4_version_lines
+    REGEX "#define[ \t]+LZ4_VERSION_(MAJOR|MINOR|RELEASE)")
+  string(REGEX REPLACE ".*LZ4_VERSION_MAJOR *\([0-9]*\).*" "\\1" _lz4_version_major "${_lz4_version_lines}")
+  string(REGEX REPLACE ".*LZ4_VERSION_MINOR *\([0-9]*\).*" "\\1" _lz4_version_minor "${_lz4_version_lines}")
+  string(REGEX REPLACE ".*LZ4_VERSION_RELEASE *\([0-9]*\).*" "\\1" _lz4_version_release "${_lz4_version_lines}")
+  set(lz4_VERSION "${_lz4_version_major}.${_lz4_version_minor}.${_lz4_version_release}")
+  unset(_lz4_version_major)
+  unset(_lz4_version_minor)
+  unset(_lz4_version_release)
+  unset(_lz4_version_lines)
+endif()
+
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(lz4
   FOUND_VAR lz4_FOUND

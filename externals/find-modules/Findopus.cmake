@@ -22,14 +22,14 @@ find_package_handle_standard_args(opus
 )
 
 if(opus_FOUND)
-  set(opus_LIBRARIES ${opus_LIBRARY})
-  set(opus_INCLUDE_DIRS ${opus_INCLUDE_DIR})
-  set(opus_DEFINITIONS ${PC_opus_CFLAGS_OTHER})
+  set(Opus_LIBRARIES ${opus_LIBRARY})
+  set(Opus_INCLUDE_DIRS ${opus_INCLUDE_DIR})
+  set(Opus_DEFINITIONS ${PC_opus_CFLAGS_OTHER})
 endif()
 
-if(opus_FOUND AND NOT TARGET opus::opus)
-  add_library(opus::opus UNKNOWN IMPORTED)
-  set_target_properties(opus::opus PROPERTIES
+if(opus_FOUND AND NOT TARGET Opus::Opus)
+  add_library(Opus::Opus UNKNOWN IMPORTED)
+  set_target_properties(Opus::Opus PROPERTIES
     IMPORTED_LOCATION "${opus_LIBRARY}"
     INTERFACE_COMPILE_OPTIONS "${PC_opus_CFLAGS_OTHER}"
     INTERFACE_INCLUDE_DIRECTORIES "${opus_INCLUDE_DIR}"

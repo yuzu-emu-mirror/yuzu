@@ -1,13 +1,13 @@
 
 find_package(PkgConfig QUIET)
-pkg_check_modules(PC_zstd QUIET zstd)
+pkg_check_modules(PC_zstd QUIET libzstd)
 
 find_path(zstd_INCLUDE_DIR
   NAMES zstd.h
   PATHS ${PC_zstd_INCLUDE_DIRS}
 )
 find_library(zstd_LIBRARY
-  NAMES zstd_static
+  NAMES zstd
   PATHS ${PC_zstd_LIBRARY_DIRS}
 )
 
