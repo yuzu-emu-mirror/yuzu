@@ -96,7 +96,10 @@ private:
 
         auto result = renderer->UpdateAudioRenderer(ctx.ReadBuffer());
 
-        ctx.WriteBuffer(result.Unwrap());
+        if (result.Succeeded()) {
+            ctx.WriteBuffer(result.Unwrap());
+        }
+
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(result.Code());
     }

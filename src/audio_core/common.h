@@ -13,7 +13,7 @@ namespace Audren {
 constexpr ResultCode ERR_INVALID_PARAMETERS{ErrorModule::Audio, 41};
 }
 
-static constexpr u32_le CURRENT_PROCESS_RERVISION = Common::MakeMagic('R', 'E', 'V', '8');
+static constexpr u32_le CURRENT_PROCESS_REVISION = Common::MakeMagic('R', 'E', 'V', '8');
 
 static constexpr u32 VersionFromRevision(u32_le rev) {
     // "REV7" -> 7
@@ -27,7 +27,7 @@ static constexpr bool IsRevisionSupported(u32 required, u32_le user_revision) {
 
 static constexpr bool IsValidRevision(u32_le revision) {
     const auto base = VersionFromRevision(revision);
-    constexpr auto max_rev = VersionFromRevision(CURRENT_PROCESS_RERVISION);
+    constexpr auto max_rev = VersionFromRevision(CURRENT_PROCESS_REVISION);
     return base <= max_rev;
 }
 

@@ -7,11 +7,11 @@
 
 namespace AudioCore {
 
-BehaviorInfo::BehaviorInfo() : process_revision(CURRENT_PROCESS_RERVISION) {}
+BehaviorInfo::BehaviorInfo() : process_revision(CURRENT_PROCESS_REVISION) {}
 BehaviorInfo::~BehaviorInfo() = default;
 
 bool BehaviorInfo::UpdateInput(const std::vector<u8>& buffer, std::size_t offset) {
-    if (CanConsumeBuffer(buffer.size(), offset, sizeof(InParams))) {
+    if (!CanConsumeBuffer(buffer.size(), offset, sizeof(InParams))) {
         LOG_ERROR(Audio, "Buffer is an invalid size!");
         return false;
     }
