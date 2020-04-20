@@ -297,6 +297,21 @@ void AudioRenderer::VoiceState::RefreshBuffer(Core::Memory::Memory& memory) {
         samples = std::move(new_samples);
         break;
     }
+    case 6: {
+        samples.resize((new_samples.size() / 6) * 2);
+        const std::size_t sample_count = samples.size() / 2;
+        for (std::size_t index = 0; index < sample_count; ++index) {
+            const auto FL = static_cast<double>(new_samples[index * 6]);
+            const auto FR = static_cast<double>(new_samples[index * 6 + 1]);
+            const auto FC = static_cast<double>(new_samples[index * 6 + 2]);
+            const auto BL = static_cast<double>(new_samples[index * 6 + 4]);
+            const auto BR = static_cast<double>(new_samples[index * 6 + 5]);
+
+            samples[index * 2] = static_cast<s16>(0.3694 * FL + 0.2612 * FC + 0.3694 * BL);
+            samples[index * 2 + 1] = static_cast<s16>(0.3694 * FR + 0.2612 * FC + 0.3694 * BR);
+        }
+        break;
+    }
     default:
         UNIMPLEMENTED_MSG("Unimplemented channel_count={}", info.channel_count);
         break;
