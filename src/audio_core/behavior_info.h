@@ -31,6 +31,7 @@ public:
     bool IsAudioRenererProcessingTimeLimit75PercentSupported() const;
     bool IsAudioRenererProcessingTimeLimit70PercentSupported() const;
     bool IsElapsedFrameCountSupported() const;
+    bool IsMemoryPoolForceMappingEnabled() const;
 
 private:
     u32_le process_revision{};

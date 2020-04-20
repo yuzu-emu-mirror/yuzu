@@ -91,4 +91,8 @@ bool BehaviorInfo::IsElapsedFrameCountSupported() const {
     return IsRevisionSupported(5, user_revision);
 }
 
+bool BehaviorInfo::IsMemoryPoolForceMappingEnabled() const {
+    return flags & 1;
+}
+
 } // namespace AudioCore

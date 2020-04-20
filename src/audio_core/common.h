@@ -22,7 +22,7 @@ static constexpr u32 VersionFromRevision(u32_le rev) {
 
 static constexpr bool IsRevisionSupported(u32 required, u32_le user_revision) {
     const auto base = VersionFromRevision(user_revision);
-    return required >= base;
+    return required <= base;
 }
 
 static constexpr bool IsValidRevision(u32_le revision) {
