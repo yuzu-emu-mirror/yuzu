@@ -202,7 +202,7 @@ ResultVal<std::vector<u8>> AudioRenderer::UpdateAudioRenderer(const std::vector<
     }
 
     // Update behavior info output
-    std::size_t behavior_out_status_offset{
+    const std::size_t behavior_out_status_offset{
         sizeof(UpdateDataHeader) + response_data.memory_pools_size + response_data.voices_size +
         response_data.effects_size + response_data.sinks_size +
         response_data.performance_manager_size};

@@ -2,8 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cstring>
+#include "audio_core/behavior_info.h"
 #include "audio_core/common.h"
-#include "behavior_info.h"
+#include "common/logging/log.h"
 
 namespace AudioCore {
 
@@ -92,7 +94,7 @@ bool BehaviorInfo::IsElapsedFrameCountSupported() const {
 }
 
 bool BehaviorInfo::IsMemoryPoolForceMappingEnabled() const {
-    return flags & 1;
+    return (flags & 1) != 0;
 }
 
 } // namespace AudioCore
