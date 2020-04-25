@@ -27,7 +27,8 @@ PhysicalCore::PhysicalCore(Core::System& system, std::size_t id,
         std::make_unique<Core::ARM_Dynarmic_64>(system, exclusive_monitor, core_index);
 
 #else
-    arm_interface = std::make_shared<Core::ARM_Unicorn>(system);
+    arm_interface_64 = std::make_unique<Core::ARM_Unicorn>(system);
+    arm_interface = arm_interface_64.get();
     LOG_WARNING(Core, "CPU JIT requested, but Dynarmic not available");
 #endif
 
@@ -54,11 +55,13 @@ void PhysicalCore::Shutdown() {
 }
 
 void PhysicalCore::SetIs64Bit(bool is_64_bit) {
+#ifdef ARCHITECTURE_x86_64
     if (is_64_bit) {
         arm_interface = arm_interface_64.get();
     } else {
         arm_interface = arm_interface_32.get();
     }
+#endif
 }
 
 } // namespace Kernel
