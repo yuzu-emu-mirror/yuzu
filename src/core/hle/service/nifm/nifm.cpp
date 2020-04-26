@@ -217,7 +217,17 @@ private:
             rb.Push<u8>(1);
         }
     }
+    void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+        
+        auto const current_ip_address = network_profile_data.ip_data.address_settings.ip_address.address;
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push(current_ip_address);
+    }
     Core::System& system;
+    Service::NIFM::NetworkProfileData network_profile_data{};
 };
 
 IGeneralService::IGeneralService(Core::System& system)
@@ -234,7 +244,7 @@ IGeneralService::IGeneralService(Core::System& system)
         {9, nullptr, "SetNetworkProfile"},
         {10, &IGeneralService::RemoveNetworkProfile, "RemoveNetworkProfile"},
         {11, nullptr, "GetScanDataOld"},
-        {12, nullptr, "GetCurrentIpAddress"},
+        {12, &IGeneralService::GetCurrentIpAddress, "GetCurrentIpAddress"},
         {13, nullptr, "GetCurrentAccessPointOld"},
         {14, &IGeneralService::CreateTemporaryNetworkProfile, "CreateTemporaryNetworkProfile"},
         {15, nullptr, "GetCurrentIpConfigInfo"},
