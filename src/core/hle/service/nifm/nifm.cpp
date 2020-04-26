@@ -13,6 +13,9 @@
 
 namespace Service::NIFM {
 
+constexpr ResultCode ERR_NO_INTERNET_CONNECTION = {ErrorModule::NIFM, 0x12C};
+constexpr ResultCode ERR_OBJECT_IS_NULL = {ErrorModule::NIFM, 0x15E};
+
 enum class RequestState : u32 {
     NotSubmitted = 1,
     Error = 1, ///< The duplicate 1 is intentional; it means both not submitted and error on HW.
@@ -223,7 +226,11 @@ private:
         auto const current_ip_address = network_profile_data.ip_data.address_settings.ip_address.address;
 
         IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(RESULT_SUCCESS);
+        if (current_ip_address == 0) {
+            rb.Push(ERR_NO_INTERNET_CONNECTION);
+        } else {
+            rb.Push(RESULT_SUCCESS);
+        }
         rb.Push(current_ip_address);
     }
     Core::System& system;
