@@ -222,8 +222,9 @@ private:
     }
     void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
-        
-        auto const current_ip_address = network_profile_data.ip_data.address_settings.ip_address.address;
+
+        auto const current_ip_address =
+            network_profile_data.ip_data.address_settings.ip_address.address;
 
         IPC::ResponseBuilder rb{ctx, 3};
         if (current_ip_address == 0) {
