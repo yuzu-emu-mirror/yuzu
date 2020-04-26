@@ -23,7 +23,7 @@ static_assert(sizeof(ClientId) == 0x4, "ClientId has incorrect size.");
 
 #pragma pack(1)
 struct Uuid {
-   u128 uuid{};
+    u128 uuid{};
 };
 #pragma pack()
 static_assert(sizeof(Uuid) == 0x10, "Uuid has incorrect size.");
