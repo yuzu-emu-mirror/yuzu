@@ -13,8 +13,8 @@
 
 namespace Service::NIFM {
 
-constexpr ResultCode ERR_NO_INTERNET_CONNECTION = {ErrorModule::NIFM, 0x12C};
-constexpr ResultCode ERR_OBJECT_IS_NULL = {ErrorModule::NIFM, 0x15E};
+constexpr ResultCode ERR_NO_INTERNET_CONNECTION{ErrorModule::NIFM, 0x12C};
+constexpr ResultCode ERR_OBJECT_IS_NULL{ErrorModule::NIFM, 0x15E};
 
 enum class RequestState : u32 {
     NotSubmitted = 1,
@@ -223,7 +223,7 @@ private:
     void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_NIFM, "(STUBBED) called");
 
-        auto const current_ip_address =
+        const auto current_ip_address =
             network_profile_data.ip_data.address_settings.ip_address.address;
 
         IPC::ResponseBuilder rb{ctx, 3};
