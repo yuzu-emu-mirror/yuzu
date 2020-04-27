@@ -36,7 +36,7 @@ struct WirelessSettingData {
     INSERT_PADDING_BYTES(0x1);
     u32 unk2{};
     u32 unk3{};
-    std::array<u8, 0x41> pass_phrase{};
+    std::array<u8, 0x41> passphrase{};
     INSERT_PADDING_BYTES(0x3);
 };
 #pragma pack()
