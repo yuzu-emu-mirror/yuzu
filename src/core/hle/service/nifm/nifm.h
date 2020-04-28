@@ -50,10 +50,10 @@ struct SfWirelessSettingData {
 };
 static_assert(sizeof(SfWirelessSettingData) == 0x65, "SfWirelessSettingData has incorrect size.");
 
-struct IpAddress {
+struct IpV4Address {
     u32 address{};
 };
-static_assert(sizeof(IpAddress) == 0x4, "IpAddress has incorrect size.");
+static_assert(sizeof(IpV4Address) == 0x4, "IpV4Address has incorrect size.");
 
 struct SubnetMask {
     u32 mask{};
@@ -68,7 +68,7 @@ static_assert(sizeof(Gateway) == 0x4, "Gateway has incorrect size.");
 #pragma pack(1)
 struct IpAddressSetting {
     u8 is_automatic{};
-    IpAddress ip_address{};
+    IpV4Address ip_address{};
     SubnetMask subnet_mask{};
     Gateway gateway{};
 };
