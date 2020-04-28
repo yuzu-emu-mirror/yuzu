@@ -13,8 +13,8 @@
 
 namespace Service::NIFM {
 
-constexpr ResultCode ERR_NO_INTERNET_CONNECTION{ErrorModule::NIFM, 0x12C};
-constexpr ResultCode ERR_OBJECT_IS_NULL{ErrorModule::NIFM, 0x15E};
+constexpr ResultCode ERR_NO_INTERNET_CONNECTION{ErrorModule::NIFM, 300};
+constexpr ResultCode ERR_OBJECT_IS_NULL{ErrorModule::NIFM, 350};
 
 enum class RequestState : u32 {
     NotSubmitted = 1,
