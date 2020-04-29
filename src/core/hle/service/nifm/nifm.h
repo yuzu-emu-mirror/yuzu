@@ -67,16 +67,18 @@ static_assert(sizeof(Gateway) == 0x4, "Gateway has incorrect size.");
 
 #pragma pack(1)
 struct IpAddressSetting {
+    // Ryujinx (https://github.com/Ryujinx/Ryujinx/) calls this "IsDhcpEnabled"
     u8 is_automatic{};
     IpV4Address ip_address{};
     SubnetMask subnet_mask{};
-    Gateway gateway{};
+    Gateway gateway_address{};
 };
 #pragma pack()
 static_assert(sizeof(IpAddressSetting) == 0xD, "IpAddressSetting has incorrect size.");
 
 #pragma pack(1)
 struct DNSSetting {
+    // Ryujinx (https://github.com/Ryujinx/Ryujinx/) calls this "IsDynamicDnsEnabled"
     u8 is_automatic{};
     u32 primary_dns{};
     u32 secondary_dns{};
@@ -89,7 +91,7 @@ struct ProxySetting {
     INSERT_PADDING_BYTES(0x1);
     u16 port{};
     std::array<u8, 0x64> server{};
-    u8 auto_authentication{};
+    u8 use_auto_authentication{};
     std::array<u8, 0x20> user_string{};
     std::array<u8, 0x20> password{};
     INSERT_PADDING_BYTES(0x1);
