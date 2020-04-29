@@ -236,6 +236,8 @@ void Controller_NPad::OnLoadInputDevices() {
                        players[i].analogs.begin() + Settings::NativeAnalog::STICK_HID_END,
                        sticks[i].begin(), Input::CreateDevice<Input::AnalogDevice>);
     }
+    motion_sensors[Settings::values.udp_pad_index] =
+        Input::CreateDevice<Input::MotionDevice>(Settings::values.motion_device);
 }
 
 void Controller_NPad::OnRelease() {}
@@ -338,6 +340,25 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             cur_entry.timestamp2 = cur_entry.timestamp;
         }
 
+        const std::array<SixAxisGeneric*, 6> controller_sixaxes{&npad.full,       &npad._handheld,
+                                                                &npad._left_dual, &npad._right_dual,
+                                                                &npad._left,      &npad._right};
+
+        for (auto* sixaxis : controller_sixaxes) {
+            sixaxis->common.entry_count = 16;
+            sixaxis->common.total_entry_count = 17;
+
+            const auto& last_entry = sixaxis->sixaxis[sixaxis->common.last_entry_index];
+
+            sixaxis->common.timestamp = core_timing.GetTicks();
+            sixaxis->common.last_entry_index = (sixaxis->common.last_entry_index + 1) % 17;
+
+            auto& cur_entry = sixaxis->sixaxis[sixaxis->common.last_entry_index];
+
+            cur_entry.timestamp = last_entry.timestamp + 1;
+            cur_entry.timestamp2 = cur_entry.timestamp;
+        }
+
         const auto& controller_type = connected_controllers[i].type;
 
         if (controller_type == NPadControllerType::None || !connected_controllers[i].is_connected) {
@@ -358,6 +379,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         auto& pokeball_entry =
             npad.pokeball_states.npad[npad.pokeball_states.common.last_entry_index];
         auto& libnx_entry = npad.libnx.npad[npad.libnx.common.last_entry_index];
+        auto& sixaxis_entry = npad.full.sixaxis[npad.full.common.last_entry_index];
 
         libnx_entry.connection_status.raw = 0;
 
@@ -433,6 +455,12 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         libnx_entry.pad.pad_states.raw = pad_state.pad_states.raw;
         libnx_entry.pad.l_stick = pad_state.l_stick;
         libnx_entry.pad.r_stick = pad_state.r_stick;
+
+        // Set this entry regardless of the controller type, for now.
+        if (motion_sensors[i] && sixaxis_sensor_enabled) {
+            auto& sensor = motion_sensors[i];
+            std::tie(sixaxis_entry.accelerometer, sixaxis_entry.gyroscope) = sensor->GetStatus();
+        }
 
         press_state |= static_cast<u32>(pad_state.pad_states.raw);
     }

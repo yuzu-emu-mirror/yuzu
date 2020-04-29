@@ -31,6 +31,7 @@
 #include "core/hle/service/hid/controllers/keyboard.h"
 #include "core/hle/service/hid/controllers/mouse.h"
 #include "core/hle/service/hid/controllers/npad.h"
+#include "core/hle/service/hid/controllers/sixaxis.h"
 #include "core/hle/service/hid/controllers/stubbed.h"
 #include "core/hle/service/hid/controllers/touchscreen.h"
 #include "core/hle/service/hid/controllers/xpad.h"
@@ -395,9 +396,10 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
     const auto handle{rp.Pop<u32>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    LOG_WARNING(Service_HID, "(STUBBED) called, handle={}, applet_resource_user_id={}", handle,
+    LOG_DEBUG(Service_HID, "called, handle={}, applet_resource_user_id={}", handle,
                 applet_resource_user_id);
 
+    applet_resource->ActivateController(HidController::SixAxisSensor);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
@@ -825,8 +827,9 @@ void Hid::StopSixAxisSensor(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto handle{rp.Pop<u32>()};
 
-    LOG_WARNING(Service_HID, "(STUBBED) called, handle={}", handle);
+    LOG_DEBUG(Service_HID, "called, handle={}", handle);
 
+    applet_resource->DeactivateController(HidController::SixAxisSensor);
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
