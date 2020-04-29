@@ -379,7 +379,6 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         auto& pokeball_entry =
             npad.pokeball_states.npad[npad.pokeball_states.common.last_entry_index];
         auto& libnx_entry = npad.libnx.npad[npad.libnx.common.last_entry_index];
-        auto& sixaxis_entry = npad.full.sixaxis[npad.full.common.last_entry_index];
 
         libnx_entry.connection_status.raw = 0;
 
@@ -459,7 +458,13 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         // Set this entry regardless of the controller type, for now.
         if (motion_sensors[i] && sixaxis_sensor_enabled) {
             auto& sensor = motion_sensors[i];
-            std::tie(sixaxis_entry.accelerometer, sixaxis_entry.gyroscope) = sensor->GetStatus();
+            Common::Vec3f accel, gyro;
+            std::tie(accel, gyro) = sensor->GetStatus();
+            // Try to set it for all entries
+            for (auto* sixaxis : controller_sixaxes) {
+                sixaxis->sixaxis[sixaxis->common.last_entry_index].accelerometer = accel;
+                sixaxis->sixaxis[sixaxis->common.last_entry_index].gyroscope = gyro;
+            }
         }
 
         press_state |= static_cast<u32>(pad_state.pad_states.raw);
