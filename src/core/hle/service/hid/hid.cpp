@@ -31,7 +31,6 @@
 #include "core/hle/service/hid/controllers/keyboard.h"
 #include "core/hle/service/hid/controllers/mouse.h"
 #include "core/hle/service/hid/controllers/npad.h"
-#include "core/hle/service/hid/controllers/sixaxis.h"
 #include "core/hle/service/hid/controllers/stubbed.h"
 #include "core/hle/service/hid/controllers/touchscreen.h"
 #include "core/hle/service/hid/controllers/xpad.h"
