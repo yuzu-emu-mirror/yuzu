@@ -40,7 +40,7 @@ void CoreManager::RunLoop(bool tight_loop) {
             physical_core.Step();
         }
     }
-    
+
     Reschedule();
     core_timing.Advance();
 }
