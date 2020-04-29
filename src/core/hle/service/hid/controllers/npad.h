@@ -301,8 +301,8 @@ private:
         NPadGeneric left_joy_states;
         NPadGeneric right_joy_states;
         NPadGeneric pokeball_states;
-        NPadGeneric libnx;   // TODO(ogniK): Find out what this actually is, libnx seems to only be
-                             // relying on this for the time being
+        NPadGeneric libnx; // TODO(ogniK): Find out what this actually is, libnx seems to only be
+                           // relying on this for the time being
         SixAxisGeneric full;
         SixAxisGeneric handheld;
         SixAxisGeneric left_dual;
