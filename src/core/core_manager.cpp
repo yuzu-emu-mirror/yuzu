@@ -28,8 +28,6 @@ CoreManager::CoreManager(System& system, std::size_t core_index)
 CoreManager::~CoreManager() = default;
 
 void CoreManager::RunLoop(bool tight_loop) {
-    Reschedule();
-
     // If we don't have a currently active thread then don't execute instructions,
     // instead advance to the next event and try to yield to the next thread
     if (Kernel::GetCurrentThread() == nullptr) {
@@ -42,9 +40,9 @@ void CoreManager::RunLoop(bool tight_loop) {
             physical_core.Step();
         }
     }
-    core_timing.Advance();
-
+    
     Reschedule();
+    core_timing.Advance();
 }
 
 void CoreManager::SingleStep() {
