@@ -245,7 +245,7 @@ private:
         Common::Vec3f gyroscope;
         INSERT_PADDING_BYTES(12); // unknown sensor data
         std::array<Common::Vec3f, 3> orientation;
-        s64_le _always_one; // always 1
+        s64_le always_one; // always 1
     };
     static_assert(sizeof(SixAxisState) == 0x68, "SixAxisState is an invalid size");
 
@@ -303,12 +303,12 @@ private:
         NPadGeneric pokeball_states;
         NPadGeneric libnx;   // TODO(ogniK): Find out what this actually is, libnx seems to only be
                              // relying on this for the time being
-        SixAxisGeneric full; // used
-        SixAxisGeneric _handheld;   // stub
-        SixAxisGeneric _left_dual;  // stub
-        SixAxisGeneric _right_dual; // stub
-        SixAxisGeneric _left;       // stub
-        SixAxisGeneric _right;      // stub
+        SixAxisGeneric full;
+        SixAxisGeneric handheld;
+        SixAxisGeneric left_dual;
+        SixAxisGeneric right_dual;
+        SixAxisGeneric left;
+        SixAxisGeneric right;
         NPadDevice device_type;
         NPadProperties properties;
         INSERT_PADDING_WORDS(1);

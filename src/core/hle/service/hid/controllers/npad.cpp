@@ -340,9 +340,9 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             cur_entry.timestamp2 = cur_entry.timestamp;
         }
 
-        const std::array<SixAxisGeneric*, 6> controller_sixaxes{&npad.full,       &npad._handheld,
-                                                                &npad._left_dual, &npad._right_dual,
-                                                                &npad._left,      &npad._right};
+        const std::array<SixAxisGeneric*, 6> controller_sixaxes{
+            &npad.full, &npad.handheld, &npad.left_dual, &npad.right_dual, &npad.left, &npad.right,
+        };
 
         for (auto* sixaxis : controller_sixaxes) {
             sixaxis->common.entry_count = 16;
@@ -457,13 +457,14 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
 
         // Set this entry regardless of the controller type, for now.
         if (motion_sensors[i] && sixaxis_sensor_enabled) {
-            auto& sensor = motion_sensors[i];
+            const auto& sensor = motion_sensors[i];
             Common::Vec3f accel, gyro;
             std::tie(accel, gyro) = sensor->GetStatus();
             // Try to set it for all entries
             for (auto* sixaxis : controller_sixaxes) {
                 sixaxis->sixaxis[sixaxis->common.last_entry_index].accelerometer = accel;
                 sixaxis->sixaxis[sixaxis->common.last_entry_index].gyroscope = gyro;
+                sixaxis->sixaxis[sixaxis->common.last_entry_index].always_one = 1;
             }
         }
 
