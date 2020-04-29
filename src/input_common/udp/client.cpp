@@ -52,7 +52,7 @@ public:
     }
 
     void StartSend(const clock::time_point& from) {
-        timer.expires_at(from + std::chrono::seconds(3));
+        timer.expires_at(from);
         timer.async_wait([this](const boost::system::error_code& error) { HandleSend(error); });
     }
 

@@ -238,14 +238,14 @@ private:
     static_assert(sizeof(NPadGeneric) == 0x350, "NPadGeneric is an invalid size");
 
     struct SixAxisState {
-        s64_le timestamp;
-        INSERT_PADDING_BYTES(8); // unknown
-        s64_le timestamp2;
-        Common::Vec3f accelerometer;
-        Common::Vec3f gyroscope;
-        INSERT_PADDING_BYTES(12); // unknown sensor data
-        std::array<Common::Vec3f, 3> orientation;
-        s64_le always_one; // always 1
+        s64_le timestamp{};
+        INSERT_PADDING_WORDS(2); // unknown
+        s64_le timestamp2{};
+        Common::Vec3f accelerometer{};
+        Common::Vec3f gyroscope{};
+        INSERT_PADDING_WORDS(3); // unknown
+        std::array<Common::Vec3f, 3> orientation{};
+        s64_le always_one{1}; // always 1
     };
     static_assert(sizeof(SixAxisState) == 0x68, "SixAxisState is an invalid size");
 
