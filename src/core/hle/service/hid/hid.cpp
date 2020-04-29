@@ -397,7 +397,7 @@ void Hid::StartSixAxisSensor(Kernel::HLERequestContext& ctx) {
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
     LOG_DEBUG(Service_HID, "called, handle={}, applet_resource_user_id={}", handle,
-                applet_resource_user_id);
+              applet_resource_user_id);
 
     applet_resource->ActivateController(HidController::SixAxisSensor);
     IPC::ResponseBuilder rb{ctx, 2};
