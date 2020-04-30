@@ -43,9 +43,21 @@
 
 namespace Service::AM {
 
-constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 0x2};
-constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 0x3};
-constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 0x1F7};
+constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
+constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 3};
+constexpr ResultCode ERR_TITLEID_NOT_FOUND{ErrorModule::AM, 37};
+constexpr ResultCode ERR_INVALID_INPUT{ErrorModule::AM, 500};
+constexpr ResultCode ERR_ISTORAGE_ALREADY_IN_USE{ErrorModule::AM, 502};
+constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
+constexpr ResultCode ERR_INVALID_PARAMETERS{ErrorModule::AM, 506};
+constexpr ResultCode ERR_OPENED_AS_WRONG_TYPE{ErrorModule::AM, 511};
+constexpr ResultCode ERR_UNBALANCED_FATAL_SECTION{ErrorModule::AM, 512};
+constexpr ResultCode ERR_NULL_OBJECT{ErrorModule::AM, 518};
+constexpr ResultCode ERR_FAILED_TO_ALLOCATE_MEMORY{ErrorModule::AM, 600};
+constexpr ResultCode ERR_THREAD_STACK_POOL_EXHAUSTED{ErrorModule::AM, 712};
+constexpr ResultCode ERR_DEBUG_MODE_NOT_ENABLED{ErrorModule::AM, 974};
+constexpr ResultCode ERR_AM_DEBUG_DEV_FUNCTION_NOT_SET{ErrorModule::AM, 980};
+constexpr ResultCode ERR_NOT_IMPLEMENTED{ErrorModule::AM, 998};
 
 enum class LaunchParameterKind : u32 {
     ApplicationSpecific = 1,
