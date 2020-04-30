@@ -40,9 +40,10 @@ private:
 
 class UDPTouchFactory final : public Input::Factory<Input::TouchDevice> {
 public:
-    explicit UDPTouchFactory(std::shared_ptr<DeviceStatus> status_) : status(std::move(status_)) {}
+    explicit UDPTouchFactory() {}
 
     std::unique_ptr<Input::TouchDevice> Create(const Common::ParamPackage& params) override {
+        status = std::make_shared<DeviceStatus>();
         {
             std::lock_guard guard(status->update_mutex);
             status->touch_calibration = DeviceStatus::CalibrationData{};
@@ -52,45 +53,46 @@ public:
             status->touch_calibration->max_x = params.Get("max_x", 1800);
             status->touch_calibration->max_y = params.Get("max_y", 850);
         }
+        std::string host = params.Get("host", "127.0.0.1");
+        int port = params.Get("port", 26760);
+        int pad_index = params.Get("pad_index", 0);
+        client = std::make_shared<Client>(status, host, port, pad_index);
         return std::make_unique<UDPTouchDevice>(status);
     }
 
 private:
     std::shared_ptr<DeviceStatus> status;
+    std::shared_ptr<Client> client;
 };
 
 class UDPMotionFactory final : public Input::Factory<Input::MotionDevice> {
 public:
-    explicit UDPMotionFactory(std::shared_ptr<DeviceStatus> status_) : status(std::move(status_)) {}
+    explicit UDPMotionFactory() {}
 
     std::unique_ptr<Input::MotionDevice> Create(const Common::ParamPackage& params) override {
+        std::string host = params.Get("host", "127.0.0.1");
+        int port = params.Get("port", 26760);
+        int pad_index = params.Get("pad_index", 0);
+        status = std::make_shared<DeviceStatus>();
+        client = std::make_shared<Client>(status, host, port, pad_index);
         return std::make_unique<UDPMotionDevice>(status);
     }
 
 private:
     std::shared_ptr<DeviceStatus> status;
+    std::shared_ptr<Client> client;
 };
 
 State::State() {
-    auto status = std::make_shared<DeviceStatus>();
-    client =
-        std::make_unique<Client>(status, Settings::values.udp_input_address,
-                                 Settings::values.udp_input_port, Settings::values.udp_pad_index);
 
-    Input::RegisterFactory<Input::TouchDevice>("cemuhookudp",
-                                               std::make_shared<UDPTouchFactory>(status));
+    Input::RegisterFactory<Input::TouchDevice>("cemuhookudp", std::make_shared<UDPTouchFactory>());
     Input::RegisterFactory<Input::MotionDevice>("cemuhookudp",
-                                                std::make_shared<UDPMotionFactory>(status));
+                                                std::make_shared<UDPMotionFactory>());
 }
 
 State::~State() {
     Input::UnregisterFactory<Input::TouchDevice>("cemuhookudp");
     Input::UnregisterFactory<Input::MotionDevice>("cemuhookudp");
-}
-
-void State::ReloadUDPClient() {
-    client->ReloadSocket(Settings::values.udp_input_address, Settings::values.udp_input_port,
-                         Settings::values.udp_pad_index);
 }
 
 std::unique_ptr<State> Init() {

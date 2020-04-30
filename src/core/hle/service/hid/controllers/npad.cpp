@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <sstream>
 #include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/common_types.h"
@@ -371,6 +372,16 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         Common::Vec3f accel, gyro;
         if (sixaxis_sensor_enabled && motion_sensors[i]) {
             std::tie(accel, gyro) = motion_sensors[i]->GetStatus();
+#if 1
+            std::ostringstream builder{};
+            builder << "Got gyro x=";
+            builder << gyro.x;
+            builder << " y=";
+            builder << gyro.y;
+            builder << " z=";
+            builder << gyro.z;
+            LOG_INFO(Service_HID, builder.str().c_str());
+#endif
         }
 
         auto& main_controller =
