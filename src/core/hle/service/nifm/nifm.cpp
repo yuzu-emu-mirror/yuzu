@@ -13,9 +13,6 @@
 
 namespace Service::NIFM {
 
-constexpr ResultCode ERR_NO_INTERNET_CONNECTION{ErrorModule::NIFM, 300};
-constexpr ResultCode ERR_OBJECT_IS_NULL{ErrorModule::NIFM, 350};
-
 enum class RequestState : u32 {
     NotSubmitted = 1,
     Error = 1, ///< The duplicate 1 is intentional; it means both not submitted and error on HW.
