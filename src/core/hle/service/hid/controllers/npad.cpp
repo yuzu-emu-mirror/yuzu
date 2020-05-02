@@ -438,7 +438,8 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
                 if (motion_sensors[i][0] && motion_sensors[i][1]) {
                     npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].accelerometer =
                         accel1;
-                    npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].gyroscope = gyro1;
+                    npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].gyroscope =
+                        gyro1;
                     npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].accelerometer =
                         accel2;
                     npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].gyroscope =

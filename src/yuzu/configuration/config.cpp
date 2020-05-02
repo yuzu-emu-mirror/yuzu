@@ -307,7 +307,8 @@ void Config::ReadPlayerValues() {
                     .toStdString();
             player_motion.enabled =
                 qt_config
-                    ->value(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i), false)
+                    ->value(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
+                            false)
                     .toBool();
             if (player_motion.device.empty()) {
                 player_motion.device = default_param;
