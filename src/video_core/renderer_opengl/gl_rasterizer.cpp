@@ -59,14 +59,12 @@ constexpr std::size_t NumSupportedVertexAttributes = 16;
 template <typename Engine, typename Entry>
 Tegra::Texture::FullTextureInfo GetTextureInfo(const Engine& engine, const Entry& entry,
                                                ShaderType shader_type, std::size_t index = 0) {
-    if (entry.IsBindless()) {
-        const Tegra::Texture::TextureHandle tex_handle =
-            engine.AccessConstBuffer32(shader_type, entry.GetBuffer(), entry.GetOffset());
+    if (entry.is_bindless) {
+        const auto tex_handle = engine.AccessConstBuffer32(shader_type, entry.buffer, entry.offset);
         return engine.GetTextureInfo(tex_handle);
     }
     const auto& gpu_profile = engine.AccessGuestDriverProfile();
-    const u32 offset =
-        entry.GetOffset() + static_cast<u32>(index * gpu_profile.GetTextureHandlerSize());
+    const u32 offset = entry.offset + static_cast<u32>(index * gpu_profile.GetTextureHandlerSize());
     if constexpr (std::is_same_v<Engine, Tegra::Engines::Maxwell3D>) {
         return engine.GetStageTexture(shader_type, offset);
     } else {
@@ -348,7 +346,7 @@ void RasterizerOpenGL::ConfigureFramebuffers() {
 
     texture_cache.GuardRenderTargets(true);
 
-    View depth_surface = texture_cache.GetDepthBufferSurface();
+    View depth_surface = texture_cache.GetDepthBufferSurface(true);
 
     const auto& regs = gpu.regs;
     UNIMPLEMENTED_IF(regs.rt_separate_frag_data == 0);
@@ -357,7 +355,7 @@ void RasterizerOpenGL::ConfigureFramebuffers() {
     FramebufferCacheKey key;
     const auto colors_count = static_cast<std::size_t>(regs.rt_control.count);
     for (std::size_t index = 0; index < colors_count; ++index) {
-        View color_surface{texture_cache.GetColorBufferSurface(index)};
+        View color_surface{texture_cache.GetColorBufferSurface(index, true)};
         if (!color_surface) {
             continue;
         }
@@ -381,28 +379,52 @@ void RasterizerOpenGL::ConfigureFramebuffers() {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_cache.GetFramebuffer(key));
 }
 
-void RasterizerOpenGL::ConfigureClearFramebuffer(bool using_color_fb, bool using_depth_fb,
-                                                 bool using_stencil_fb) {
+void RasterizerOpenGL::ConfigureClearFramebuffer(bool using_color, bool using_depth_stencil) {
     auto& gpu = system.GPU().Maxwell3D();
     const auto& regs = gpu.regs;
 
     texture_cache.GuardRenderTargets(true);
     View color_surface;
-    if (using_color_fb) {
+
+    if (using_color) {
+        // Determine if we have to preserve the contents.
+        // First we have to make sure all clear masks are enabled.
+        bool preserve_contents = !regs.clear_buffers.R || !regs.clear_buffers.G ||
+                                 !regs.clear_buffers.B || !regs.clear_buffers.A;
         const std::size_t index = regs.clear_buffers.RT;
-        color_surface = texture_cache.GetColorBufferSurface(index);
+        if (regs.clear_flags.scissor) {
+            // Then we have to confirm scissor testing clears the whole image.
+            const auto& scissor = regs.scissor_test[0];
+            preserve_contents |= scissor.min_x > 0;
+            preserve_contents |= scissor.min_y > 0;
+            preserve_contents |= scissor.max_x < regs.rt[index].width;
+            preserve_contents |= scissor.max_y < regs.rt[index].height;
+        }
+
+        color_surface = texture_cache.GetColorBufferSurface(index, preserve_contents);
         texture_cache.MarkColorBufferInUse(index);
     }
+
     View depth_surface;
-    if (using_depth_fb || using_stencil_fb) {
-        depth_surface = texture_cache.GetDepthBufferSurface();
+    if (using_depth_stencil) {
+        bool preserve_contents = false;
+        if (regs.clear_flags.scissor) {
+            // For depth stencil clears we only have to confirm scissor test covers the whole image.
+            const auto& scissor = regs.scissor_test[0];
+            preserve_contents |= scissor.min_x > 0;
+            preserve_contents |= scissor.min_y > 0;
+            preserve_contents |= scissor.max_x < regs.zeta_width;
+            preserve_contents |= scissor.max_y < regs.zeta_height;
+        }
+
+        depth_surface = texture_cache.GetDepthBufferSurface(preserve_contents);
         texture_cache.MarkDepthBufferInUse();
     }
     texture_cache.GuardRenderTargets(false);
 
     FramebufferCacheKey key;
-    key.colors[0] = color_surface;
-    key.zeta = depth_surface;
+    key.colors[0] = std::move(color_surface);
+    key.zeta = std::move(depth_surface);
 
     state_tracker.NotifyFramebuffer();
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer_cache.GetFramebuffer(key));
@@ -422,8 +444,7 @@ void RasterizerOpenGL::Clear() {
     if (regs.clear_buffers.R || regs.clear_buffers.G || regs.clear_buffers.B ||
         regs.clear_buffers.A) {
         use_color = true;
-    }
-    if (use_color) {
+
         state_tracker.NotifyColorMask0();
         glColorMaski(0, regs.clear_buffers.R != 0, regs.clear_buffers.G != 0,
                      regs.clear_buffers.B != 0, regs.clear_buffers.A != 0);
@@ -461,7 +482,7 @@ void RasterizerOpenGL::Clear() {
 
     UNIMPLEMENTED_IF(regs.clear_flags.viewport);
 
-    ConfigureClearFramebuffer(use_color, use_depth, use_stencil);
+    ConfigureClearFramebuffer(use_color, use_depth || use_stencil);
 
     if (use_color) {
         glClearBufferfv(GL_COLOR, 0, regs.clear_color);
@@ -833,9 +854,9 @@ void RasterizerOpenGL::SetupDrawGlobalMemory(std::size_t stage_index, const Shad
 
     u32 binding = device.GetBaseBindings(stage_index).shader_storage_buffer;
     for (const auto& entry : shader->GetEntries().global_memory_entries) {
-        const auto addr{cbufs.const_buffers[entry.GetCbufIndex()].address + entry.GetCbufOffset()};
-        const auto gpu_addr{memory_manager.Read<u64>(addr)};
-        const auto size{memory_manager.Read<u32>(addr + 8)};
+        const GPUVAddr addr{cbufs.const_buffers[entry.cbuf_index].address + entry.cbuf_offset};
+        const GPUVAddr gpu_addr{memory_manager.Read<u64>(addr)};
+        const u32 size{memory_manager.Read<u32>(addr + 8)};
         SetupGlobalMemory(binding++, entry, gpu_addr, size);
     }
 }
@@ -847,7 +868,7 @@ void RasterizerOpenGL::SetupComputeGlobalMemory(const Shader& kernel) {
 
     u32 binding = 0;
     for (const auto& entry : kernel->GetEntries().global_memory_entries) {
-        const auto addr{cbufs[entry.GetCbufIndex()].Address() + entry.GetCbufOffset()};
+        const auto addr{cbufs[entry.cbuf_index].Address() + entry.cbuf_offset};
         const auto gpu_addr{memory_manager.Read<u64>(addr)};
         const auto size{memory_manager.Read<u32>(addr + 8)};
         SetupGlobalMemory(binding++, entry, gpu_addr, size);
@@ -858,7 +879,7 @@ void RasterizerOpenGL::SetupGlobalMemory(u32 binding, const GlobalMemoryEntry& e
                                          GPUVAddr gpu_addr, std::size_t size) {
     const auto alignment{device.GetShaderStorageBufferAlignment()};
     const auto [ssbo, buffer_offset] =
-        buffer_cache.UploadMemory(gpu_addr, size, alignment, entry.IsWritten());
+        buffer_cache.UploadMemory(gpu_addr, size, alignment, entry.is_written);
     glBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding, ssbo, buffer_offset,
                       static_cast<GLsizeiptr>(size));
 }
@@ -869,7 +890,7 @@ void RasterizerOpenGL::SetupDrawTextures(std::size_t stage_index, const Shader& 
     u32 binding = device.GetBaseBindings(stage_index).sampler;
     for (const auto& entry : shader->GetEntries().samplers) {
         const auto shader_type = static_cast<ShaderType>(stage_index);
-        for (std::size_t i = 0; i < entry.Size(); ++i) {
+        for (std::size_t i = 0; i < entry.size; ++i) {
             const auto texture = GetTextureInfo(maxwell3d, entry, shader_type, i);
             SetupTexture(binding++, texture, entry);
         }
@@ -881,7 +902,7 @@ void RasterizerOpenGL::SetupComputeTextures(const Shader& kernel) {
     const auto& compute = system.GPU().KeplerCompute();
     u32 binding = 0;
     for (const auto& entry : kernel->GetEntries().samplers) {
-        for (std::size_t i = 0; i < entry.Size(); ++i) {
+        for (std::size_t i = 0; i < entry.size; ++i) {
             const auto texture = GetTextureInfo(compute, entry, ShaderType::Compute, i);
             SetupTexture(binding++, texture, entry);
         }
@@ -938,7 +959,7 @@ void RasterizerOpenGL::SetupImage(u32 binding, const Tegra::Texture::TICEntry& t
     if (!tic.IsBuffer()) {
         view->ApplySwizzle(tic.x_source, tic.y_source, tic.z_source, tic.w_source);
     }
-    if (entry.IsWritten()) {
+    if (entry.is_written) {
         view->MarkAsModified(texture_cache.Tick());
     }
     glBindImageTexture(binding, view->GetTexture(), 0, GL_TRUE, 0, GL_READ_WRITE,
@@ -999,11 +1020,7 @@ void RasterizerOpenGL::SyncDepthClamp() {
     }
     flags[Dirty::DepthClampEnabled] = false;
 
-    const auto& state = gpu.regs.view_volume_clip_control;
-    UNIMPLEMENTED_IF_MSG(state.depth_clamp_far != state.depth_clamp_near,
-                         "Unimplemented depth clamp separation!");
-
-    oglEnable(GL_DEPTH_CLAMP, state.depth_clamp_far || state.depth_clamp_near);
+    oglEnable(GL_DEPTH_CLAMP, gpu.regs.view_volume_clip_control.depth_clamp_disabled == 0);
 }
 
 void RasterizerOpenGL::SyncClipEnabled(u32 clip_mask) {

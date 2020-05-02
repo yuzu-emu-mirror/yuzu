@@ -52,11 +52,6 @@ enum class LaunchParameterKind : u32 {
     AccountPreselectedUser = 2,
 };
 
-enum class VrMode : u8 {
-    Disabled = 0,
-    Enabled = 1,
-};
-
 constexpr u32 LAUNCH_PARAMETER_ACCOUNT_PRESELECTED_USER_MAGIC = 0xC79497CA;
 
 struct LaunchParameterAccountPreselectedUser {
@@ -685,27 +680,21 @@ void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::IsVrModeEnabled(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_DEBUG(Service_AM, "called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.PushEnum(VrMode::Disabled);
+    rb.Push(vr_mode_state);
 }
 
 void ICommonStateGetter::SetVrModeEnabled(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto is_vr_mode_enabled = rp.Pop<bool>();
+    vr_mode_state = rp.Pop<bool>();
 
-    LOG_WARNING(Service_AM, "(STUBBED) called. is_vr_mode_enabled={}", is_vr_mode_enabled);
+    LOG_WARNING(Service_AM, "VR Mode is {}", vr_mode_state ? "on" : "off");
 
     IPC::ResponseBuilder rb{ctx, 2};
-    if (!is_vr_mode_enabled) {
-        rb.Push(RESULT_SUCCESS);
-    } else {
-        // TODO: Find better error code for this
-        UNIMPLEMENTED_MSG("is_vr_mode_enabled={}", is_vr_mode_enabled);
-        rb.Push(RESULT_UNKNOWN);
-    }
+    rb.Push(RESULT_SUCCESS);
 }
 
 void ICommonStateGetter::SetLcdBacklighOffEnabled(Kernel::HLERequestContext& ctx) {
@@ -1169,7 +1158,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {121, nullptr, "ClearUserChannel"},
         {122, nullptr, "UnpopToUserChannel"},
         {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"},
-        {140, nullptr, "GetFriendInvitationStorageChannelEvent"},
+        {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"},
         {141, nullptr, "TryPopFromFriendInvitationStorageChannel"},
         {150, nullptr, "GetNotificationStorageChannelEvent"},
         {151, nullptr, "TryPopFromNotificationStorageChannel"},
@@ -1186,6 +1175,9 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
     auto& kernel = system.Kernel();
     gpu_error_detected_event = Kernel::WritableEvent::CreateEventPair(
         kernel, "IApplicationFunctions:GpuErrorDetectedSystemEvent");
+
+    friend_invitation_storage_channel_event = Kernel::WritableEvent::CreateEventPair(
+        kernel, "IApplicationFunctions:FriendInvitationStorageChannelEvent");
 }
 
 IApplicationFunctions::~IApplicationFunctions() = default;
@@ -1498,6 +1490,14 @@ void IApplicationFunctions::GetGpuErrorDetectedSystemEvent(Kernel::HLERequestCon
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushCopyObjects(gpu_error_detected_event.readable);
+}
+
+void IApplicationFunctions::GetFriendInvitationStorageChannelEvent(Kernel::HLERequestContext& ctx) {
+    LOG_DEBUG(Service_AM, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushCopyObjects(friend_invitation_storage_channel_event.readable);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager,

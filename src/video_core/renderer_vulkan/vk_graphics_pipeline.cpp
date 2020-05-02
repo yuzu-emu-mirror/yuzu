@@ -6,7 +6,6 @@
 #include <cstring>
 #include <vector>
 
-#include "common/assert.h"
 #include "common/common_types.h"
 #include "common/microprofile.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
@@ -249,7 +248,7 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const RenderPassParams& renderpa
     rasterization_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization_ci.pNext = nullptr;
     rasterization_ci.flags = 0;
-    rasterization_ci.depthClampEnable = rs.depth_clamp_enable;
+    rasterization_ci.depthClampEnable = rs.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE;
     rasterization_ci.rasterizerDiscardEnable = VK_FALSE;
     rasterization_ci.polygonMode = VK_POLYGON_MODE_FILL;
     rasterization_ci.cullMode =

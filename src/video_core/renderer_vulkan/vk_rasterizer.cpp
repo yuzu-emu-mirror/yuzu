@@ -9,14 +9,12 @@
 #include <vector>
 
 #include <boost/container/static_vector.hpp>
-#include <boost/functional/hash.hpp>
 
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
 #include "core/core.h"
-#include "core/memory.h"
 #include "core/settings.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -119,14 +117,13 @@ template <typename Engine, typename Entry>
 Tegra::Texture::FullTextureInfo GetTextureInfo(const Engine& engine, const Entry& entry,
                                                std::size_t stage, std::size_t index = 0) {
     const auto stage_type = static_cast<Tegra::Engines::ShaderType>(stage);
-    if (entry.IsBindless()) {
-        const Tegra::Texture::TextureHandle tex_handle =
-            engine.AccessConstBuffer32(stage_type, entry.GetBuffer(), entry.GetOffset());
+    if (entry.is_bindless) {
+        const auto tex_handle = engine.AccessConstBuffer32(stage_type, entry.buffer, entry.offset);
         return engine.GetTextureInfo(tex_handle);
     }
     const auto& gpu_profile = engine.AccessGuestDriverProfile();
     const u32 entry_offset = static_cast<u32>(index * gpu_profile.GetTextureHandlerSize());
-    const u32 offset = entry.GetOffset() + entry_offset;
+    const u32 offset = entry.offset + entry_offset;
     if constexpr (std::is_same_v<Engine, Tegra::Engines::Maxwell3D>) {
         return engine.GetStageTexture(stage_type, offset);
     } else {
@@ -656,7 +653,7 @@ RasterizerVulkan::Texceptions RasterizerVulkan::UpdateAttachments() {
     Texceptions texceptions;
     for (std::size_t rt = 0; rt < Maxwell::NumRenderTargets; ++rt) {
         if (update_rendertargets) {
-            color_attachments[rt] = texture_cache.GetColorBufferSurface(rt);
+            color_attachments[rt] = texture_cache.GetColorBufferSurface(rt, true);
         }
         if (color_attachments[rt] && WalkAttachmentOverlaps(*color_attachments[rt])) {
             texceptions[rt] = true;
@@ -664,7 +661,7 @@ RasterizerVulkan::Texceptions RasterizerVulkan::UpdateAttachments() {
     }
 
     if (update_rendertargets) {
-        zeta_attachment = texture_cache.GetDepthBufferSurface();
+        zeta_attachment = texture_cache.GetDepthBufferSurface(true);
     }
     if (zeta_attachment && WalkAttachmentOverlaps(*zeta_attachment)) {
         texceptions[ZETA_TEXCEPTION_INDEX] = true;
@@ -896,6 +893,9 @@ void RasterizerVulkan::SetupVertexArrays(FixedPipelineState::VertexInput& vertex
 
 void RasterizerVulkan::SetupIndexBuffer(BufferBindings& buffer_bindings, DrawParameters& params,
                                         bool is_indexed) {
+    if (params.num_vertices == 0) {
+        return;
+    }
     const auto& regs = system.GPU().Maxwell3D().regs;
     switch (regs.draw.topology) {
     case Maxwell::PrimitiveTopology::Quads: {
@@ -971,7 +971,7 @@ void RasterizerVulkan::SetupGraphicsTextures(const ShaderEntries& entries, std::
     MICROPROFILE_SCOPE(Vulkan_Textures);
     const auto& gpu = system.GPU().Maxwell3D();
     for (const auto& entry : entries.samplers) {
-        for (std::size_t i = 0; i < entry.Size(); ++i) {
+        for (std::size_t i = 0; i < entry.size; ++i) {
             const auto texture = GetTextureInfo(gpu, entry, stage, i);
             SetupTexture(texture, entry);
         }
@@ -1023,7 +1023,7 @@ void RasterizerVulkan::SetupComputeTextures(const ShaderEntries& entries) {
     MICROPROFILE_SCOPE(Vulkan_Textures);
     const auto& gpu = system.GPU().KeplerCompute();
     for (const auto& entry : entries.samplers) {
-        for (std::size_t i = 0; i < entry.Size(); ++i) {
+        for (std::size_t i = 0; i < entry.size; ++i) {
             const auto texture = GetTextureInfo(gpu, entry, ComputeShaderIndex, i);
             SetupTexture(texture, entry);
         }
@@ -1105,7 +1105,7 @@ void RasterizerVulkan::SetupTexture(const Tegra::Texture::FullTextureInfo& textu
 void RasterizerVulkan::SetupImage(const Tegra::Texture::TICEntry& tic, const ImageEntry& entry) {
     auto view = texture_cache.GetImageSurface(tic, entry);
 
-    if (entry.IsWritten()) {
+    if (entry.is_written) {
         view->MarkAsModified(texture_cache.Tick());
     }
 
