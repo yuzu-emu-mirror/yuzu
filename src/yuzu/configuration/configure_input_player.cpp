@@ -660,10 +660,10 @@ void ConfigureInputPlayer::UpdateButtonLabels() {
         group.address->setText(QString::fromStdString(param.param.Get("address", "127.0.0.1")));
         group.port->setValue(param.param.Get("port", 26760));
         group.padIndex->setValue(param.param.Get("pad_index", 0));
-        group.cx->setValue(param.param.Get("cx", 0));
-        group.cy->setValue(param.param.Get("cy", 0));
-        group.cz->setValue(param.param.Get("cz", 0));
-        group.sensitivity->setValue(param.param.Get("sensitivity", 1));
+        group.cx->setValue(param.param.Get("cx", 0.0f));
+        group.cy->setValue(param.param.Get("cy", 0.0f));
+        group.cz->setValue(param.param.Get("cz", 0.0f));
+        group.sensitivity->setValue(param.param.Get("sensitivity", 1.0f));
         group.enabled->setChecked(param.enabled);
         group.inner->setVisible(param.enabled);
     }
