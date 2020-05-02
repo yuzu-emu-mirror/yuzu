@@ -340,7 +340,7 @@ private:
         std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID>,
         10>
         sticks;
-    std::array<std::unique_ptr<Input::MotionDevice>, 10> motion_sensors;
+    std::array<std::array<std::unique_ptr<Input::MotionDevice>, 2>, 10> motion_sensors;
     bool sixaxis_sensor_enabled{true};
     std::vector<u32> supported_npad_id_types{};
     NpadHoldType hold_type{NpadHoldType::Vertical};

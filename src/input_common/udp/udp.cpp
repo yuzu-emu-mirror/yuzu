@@ -28,14 +28,24 @@ private:
 
 class UDPMotionDevice final : public Input::MotionDevice {
 public:
-    explicit UDPMotionDevice(std::shared_ptr<DeviceStatus> status_) : status(std::move(status_)) {}
+    explicit UDPMotionDevice(const std::string& host, int port, int pad_index, Common::Vec3f offset,
+                             float sensitivity)
+        : offset(offset), sensitivity(sensitivity) {
+        status = std::make_shared<DeviceStatus>();
+        client = std::make_unique<Client>(status, host, port, pad_index);
+    }
     std::tuple<Common::Vec3<float>, Common::Vec3<float>> GetStatus() const override {
         std::lock_guard guard(status->update_mutex);
-        return status->motion_status;
+        std::tuple<Common::Vec3<float>, Common::Vec3<float>> motion = status->motion_status;
+        std::get<0>(motion) = (std::get<0>(motion) + offset) * sensitivity;
+        return motion;
     }
 
 private:
     std::shared_ptr<DeviceStatus> status;
+    std::unique_ptr<Client> client;
+    Common::Vec3f offset;
+    float sensitivity;
 };
 
 class UDPTouchFactory final : public Input::Factory<Input::TouchDevice> {
@@ -73,14 +83,13 @@ public:
         std::string host = params.Get("host", "127.0.0.1");
         int port = params.Get("port", 26760);
         int pad_index = params.Get("pad_index", 0);
-        status = std::make_shared<DeviceStatus>();
-        client = std::make_shared<Client>(status, host, port, pad_index);
-        return std::make_unique<UDPMotionDevice>(status);
+        float cx = params.Get("cx", 0);
+        float cy = params.Get("cy", 0);
+        float cz = params.Get("cz", 0);
+        Common::Vec3f offset(cx, cy, cz);
+        float sensitivity = params.Get("sensitivity", 1);
+        return std::make_unique<UDPMotionDevice>(host, port, pad_index, offset, sensitivity);
     }
-
-private:
-    std::shared_ptr<DeviceStatus> status;
-    std::shared_ptr<Client> client;
 };
 
 State::State() {

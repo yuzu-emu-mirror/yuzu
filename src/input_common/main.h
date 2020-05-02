@@ -30,6 +30,10 @@ class MotionEmu;
 /// Gets the motion emulation factory.
 MotionEmu* GetMotionEmu();
 
+/// Generates a serialized param package for creating a cemuhookudp motion device
+std::string GenerateMotionParam(const std::string& address, int port, int pad_index, float cx,
+                                float cy, float cz, float sensitivity);
+
 /// Generates a serialized param package for creating a keyboard button device
 std::string GenerateKeyboardParam(int key_code);
 

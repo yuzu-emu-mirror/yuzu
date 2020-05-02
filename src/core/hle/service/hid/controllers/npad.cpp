@@ -236,8 +236,12 @@ void Controller_NPad::OnLoadInputDevices() {
         std::transform(players[i].analogs.begin() + Settings::NativeAnalog::STICK_HID_BEGIN,
                        players[i].analogs.begin() + Settings::NativeAnalog::STICK_HID_END,
                        sticks[i].begin(), Input::CreateDevice<Input::AnalogDevice>);
+        std::transform(players[i].motion_devices.begin(), players[i].motion_devices.end(),
+                       motion_sensors[i].begin(), [](const Settings::MotionRaw& raw) {
+                           return raw.enabled ? Input::CreateDevice<Input::MotionDevice>(raw.device)
+                                              : nullptr;
+                       });
     }
-    motion_sensors[0] = Input::CreateDevice<Input::MotionDevice>(Settings::values.motion_device);
 }
 
 void Controller_NPad::OnRelease() {}
@@ -369,19 +373,16 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         auto& pad_state = npad_pad_states[npad_index];
 
         // Try to get motion sensor state if it exists
-        Common::Vec3f accel, gyro;
-        if (sixaxis_sensor_enabled && motion_sensors[i]) {
-            std::tie(accel, gyro) = motion_sensors[i]->GetStatus();
-#if 1
-            std::ostringstream builder{};
-            builder << "Got gyro x=";
-            builder << gyro.x;
-            builder << " y=";
-            builder << gyro.y;
-            builder << " z=";
-            builder << gyro.z;
-            LOG_INFO(Service_HID, builder.str().c_str());
-#endif
+        Common::Vec3f accel1, gyro1, accel2, gyro2;
+        if (sixaxis_sensor_enabled) {
+            const auto& sensor1 = motion_sensors[i][0];
+            const auto& sensor2 = motion_sensors[i][1];
+            if (sensor1) {
+                std::tie(accel1, gyro1) = sensor1->GetStatus();
+            }
+            if (sensor2) {
+                std::tie(accel2, gyro2) = sensor2->GetStatus();
+            }
         }
 
         auto& main_controller =
@@ -413,9 +414,9 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             handheld_entry.pad.l_stick = pad_state.l_stick;
             handheld_entry.pad.r_stick = pad_state.r_stick;
 
-            if (sixaxis_sensor_enabled && motion_sensors[i]) {
-                npad.handheld.sixaxis[npad.handheld.common.last_entry_index].accelerometer = accel;
-                npad.handheld.sixaxis[npad.handheld.common.last_entry_index].gyroscope = gyro;
+            if (sixaxis_sensor_enabled && motion_sensors[i][0]) {
+                npad.handheld.sixaxis[npad.handheld.common.last_entry_index].accelerometer = accel1;
+                npad.handheld.sixaxis[npad.handheld.common.last_entry_index].gyroscope = gyro1;
             }
             break;
         case NPadControllerType::JoyDual:
@@ -433,15 +434,21 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             dual_entry.pad.l_stick = pad_state.l_stick;
             dual_entry.pad.r_stick = pad_state.r_stick;
 
-            if (sixaxis_sensor_enabled && motion_sensors[i]) {
-                // TODO(anirudhb): Separate inputs for dual joy-cons.
-                npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].accelerometer =
-                    accel;
-                npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].gyroscope = gyro;
-
-                npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].accelerometer =
-                    accel;
-                npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].gyroscope = gyro;
+            if (sixaxis_sensor_enabled) {
+                if (motion_sensors[i][0] && motion_sensors[i][1]) {
+                    npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].accelerometer =
+                        accel1;
+                    npad.left_dual.sixaxis[npad.left_dual.common.last_entry_index].gyroscope = gyro1;
+                    npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].accelerometer =
+                        accel2;
+                    npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].gyroscope =
+                        gyro2;
+                } else {
+                    npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].accelerometer =
+                        accel1;
+                    npad.right_dual.sixaxis[npad.right_dual.common.last_entry_index].gyroscope =
+                        gyro1;
+                }
             }
             break;
         case NPadControllerType::JoyLeft:
@@ -452,9 +459,9 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             left_entry.pad.l_stick = pad_state.l_stick;
             left_entry.pad.r_stick = pad_state.r_stick;
 
-            if (sixaxis_sensor_enabled && motion_sensors[i]) {
-                npad.left.sixaxis[npad.left.common.last_entry_index].accelerometer = accel;
-                npad.left.sixaxis[npad.left.common.last_entry_index].gyroscope = gyro;
+            if (sixaxis_sensor_enabled && motion_sensors[i][0]) {
+                npad.left.sixaxis[npad.left.common.last_entry_index].accelerometer = accel1;
+                npad.left.sixaxis[npad.left.common.last_entry_index].gyroscope = gyro1;
             }
             break;
         case NPadControllerType::JoyRight:
@@ -465,9 +472,9 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             right_entry.pad.l_stick = pad_state.l_stick;
             right_entry.pad.r_stick = pad_state.r_stick;
 
-            if (sixaxis_sensor_enabled && motion_sensors[i]) {
-                npad.right.sixaxis[npad.right.common.last_entry_index].accelerometer = accel;
-                npad.right.sixaxis[npad.right.common.last_entry_index].gyroscope = gyro;
+            if (sixaxis_sensor_enabled && motion_sensors[i][0]) {
+                npad.right.sixaxis[npad.right.common.last_entry_index].accelerometer = accel1;
+                npad.right.sixaxis[npad.right.common.last_entry_index].gyroscope = gyro1;
             }
             break;
         case NPadControllerType::Pokeball:
@@ -489,9 +496,9 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             main_controller.pad.l_stick = pad_state.l_stick;
             main_controller.pad.r_stick = pad_state.r_stick;
 
-            if (sixaxis_sensor_enabled && motion_sensors[i]) {
-                npad.full.sixaxis[npad.full.common.last_entry_index].accelerometer = accel;
-                npad.full.sixaxis[npad.full.common.last_entry_index].gyroscope = gyro;
+            if (sixaxis_sensor_enabled && motion_sensors[i][0]) {
+                npad.full.sixaxis[npad.full.common.last_entry_index].accelerometer = accel1;
+                npad.full.sixaxis[npad.full.common.last_entry_index].gyroscope = gyro1;
             }
             break;
         }

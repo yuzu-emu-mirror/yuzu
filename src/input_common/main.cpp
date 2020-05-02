@@ -52,6 +52,17 @@ MotionEmu* GetMotionEmu() {
     return motion_emu.get();
 }
 
+std::string GenerateMotionParam(const std::string& address, int port, int pad_index, float cx,
+                                float cy, float cz, float sensitivity) {
+    Common::ParamPackage param{
+        {"engine", "cemuhookudp"},      {"address", address},
+        {"port", std::to_string(port)}, {"pad_index", std::to_string(pad_index)},
+        {"cx", std::to_string(cx)},     {"cy", std::to_string(cy)},
+        {"cz", std::to_string(cz)},     {"sensitivity", std::to_string(sensitivity)},
+    };
+    return param.Serialize();
+}
+
 std::string GenerateKeyboardParam(int key_code) {
     Common::ParamPackage param{
         {"engine", "keyboard"},

@@ -293,6 +293,26 @@ void Config::ReadPlayerValues() {
                 player_analogs = default_param;
             }
         }
+
+        for (int i = 0; i < 2; ++i) {
+            const std::string default_param =
+                InputCommon::GenerateMotionParam("127.0.0.1", 26760, 0, 0, 0, 0, 1);
+            auto& player_motion = player.motion_devices[i];
+
+            player_motion.device =
+                qt_config
+                    ->value(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
+                            QString::fromStdString(default_param))
+                    .toString()
+                    .toStdString();
+            player_motion.enabled =
+                qt_config
+                    ->value(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i), false)
+                    .toBool();
+            if (player_motion.device.empty()) {
+                player_motion.device = default_param;
+            }
+        }
     }
 
     std::stable_partition(
@@ -844,6 +864,16 @@ void Config::SavePlayerValues() {
                              QString::fromStdString(Settings::NativeAnalog::mapping[i]),
                          QString::fromStdString(player.analogs[i]),
                          QString::fromStdString(default_param));
+        }
+
+        for (int i = 0; i < 2; ++i) {
+            const std::string default_param =
+                InputCommon::GenerateMotionParam("127.0.0.1", 26760, 0, 0, 0, 0, 1);
+            WriteSetting(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
+                         QString::fromStdString(player.motion_devices[i].device),
+                         QString::fromStdString(default_param));
+            WriteSetting(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
+                         player.motion_devices[i].enabled);
         }
     }
 }

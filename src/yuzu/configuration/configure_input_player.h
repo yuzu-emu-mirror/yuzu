@@ -17,6 +17,9 @@
 #include "ui_configure_input.h"
 
 class QKeyEvent;
+class QLineEdit;
+class QSpinBox;
+class QDoubleSpinBox;
 class QPushButton;
 class QString;
 class QTimer;
@@ -78,8 +81,14 @@ private:
     /// This will be the the setting function when an input is awaiting configuration.
     std::optional<std::function<void(const Common::ParamPackage&)>> input_setter;
 
+    struct MotionParam {
+        bool enabled;
+        Common::ParamPackage param;
+    };
+
     std::array<Common::ParamPackage, Settings::NativeButton::NumButtons> buttons_param;
     std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs> analogs_param;
+    std::array<MotionParam, 2> motion_param;
 
     static constexpr int ANALOG_SUB_BUTTONS_NUM = 5;
 
@@ -101,6 +110,21 @@ private:
         analog_map_deadzone_and_modifier_slider;
     std::array<QLabel*, Settings::NativeAnalog::NumAnalogs>
         analog_map_deadzone_and_modifier_slider_label;
+
+    /// Motion inputs are represented with 6 fields, used to configure calibration and connection
+    struct MotionGroup {
+        QLineEdit* address;
+        QSpinBox* port;
+        QSpinBox* padIndex;
+        QDoubleSpinBox* cx;
+        QDoubleSpinBox* cy;
+        QDoubleSpinBox* cz;
+        QDoubleSpinBox* sensitivity;
+        QPushButton* calibrateButton;
+        QCheckBox* enabled;
+        QFrame* inner;
+    };
+    std::array<MotionGroup, 2> motion_groups;
 
     static const std::array<std::string, ANALOG_SUB_BUTTONS_NUM> analog_sub_buttons;
 

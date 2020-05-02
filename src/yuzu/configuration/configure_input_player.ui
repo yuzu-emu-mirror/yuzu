@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>408</width>
-    <height>731</height>
+    <width>528</width>
+    <height>964</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Configure Input</string>
@@ -16,7 +22,122 @@
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
     <layout class="QGridLayout" name="buttons">
-     <item row="1" column="1">
+     <item row="1" column="0">
+      <widget class="QGroupBox" name="faceButtons">
+       <property name="title">
+        <string>Face Buttons</string>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
+       <property name="checkable">
+        <bool>false</bool>
+       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsAVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonFaceButtonsAHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelA">
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>A:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonA">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsBVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonFaceButtonsBHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelB">
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>B:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonB">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsXVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonFaceButtonsXHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelX">
+              <property name="text">
+               <string>X:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonX">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <layout class="QVBoxLayout" name="buttonFaceButtonsYVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonFaceButtonsYHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelY">
+              <property name="text">
+               <string>Y:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonY">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="2" column="1">
       <widget class="QGroupBox" name="RStick">
        <property name="title">
         <string>Right Stick</string>
@@ -180,7 +301,7 @@
                <string>Deadzone: 0</string>
               </property>
               <property name="alignment">
-               <enum>Qt::AlignHCenter</enum>
+               <set>Qt::AlignHCenter</set>
               </property>
              </widget>
             </item>
@@ -211,7 +332,7 @@
        </layout>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="1" column="1">
       <widget class="QGroupBox" name="Dpad">
        <property name="title">
         <string>Directional Pad</string>
@@ -326,10 +447,10 @@
        </layout>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QGroupBox" name="faceButtons">
+     <item row="4" column="0">
+      <widget class="QGroupBox" name="shoulderButtons">
        <property name="title">
-        <string>Face Buttons</string>
+        <string>Shoulder Buttons</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -337,28 +458,22 @@
        <property name="checkable">
         <bool>false</bool>
        </property>
-       <layout class="QGridLayout" name="gridLayout">
+       <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0">
-         <layout class="QVBoxLayout" name="buttonFaceButtonsAVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsLVerticalLayout">
           <item>
-           <layout class="QHBoxLayout" name="buttonFaceButtonsAHorizontalLayout">
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsLHorizontalLayout">
             <item>
-             <widget class="QLabel" name="labelA">
-              <property name="minimumSize">
-               <size>
-                <width>80</width>
-                <height>0</height>
-               </size>
-              </property>
+             <widget class="QLabel" name="labelL">
               <property name="text">
-               <string>A:</string>
+               <string>L:</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonA">
+           <widget class="QPushButton" name="buttonL">
             <property name="text">
              <string/>
             </property>
@@ -367,26 +482,20 @@
          </layout>
         </item>
         <item row="0" column="1">
-         <layout class="QVBoxLayout" name="buttonFaceButtonsBVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsRVerticalLayout">
           <item>
-           <layout class="QHBoxLayout" name="buttonFaceButtonsBHorizontalLayout">
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsRHorizontalLayout">
             <item>
-             <widget class="QLabel" name="labelB">
-              <property name="minimumSize">
-               <size>
-                <width>80</width>
-                <height>0</height>
-               </size>
-              </property>
+             <widget class="QLabel" name="labelR">
               <property name="text">
-               <string>B:</string>
+               <string>R:</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonB">
+           <widget class="QPushButton" name="buttonR">
             <property name="text">
              <string/>
             </property>
@@ -395,20 +504,20 @@
          </layout>
         </item>
         <item row="1" column="0">
-         <layout class="QVBoxLayout" name="buttonFaceButtonsXVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsZLVerticalLayout">
           <item>
-           <layout class="QHBoxLayout" name="buttonFaceButtonsXHorizontalLayout">
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsZLHorizontalLayout">
             <item>
-             <widget class="QLabel" name="labelX">
+             <widget class="QLabel" name="labelZL">
               <property name="text">
-               <string>X:</string>
+               <string>ZL:</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonX">
+           <widget class="QPushButton" name="buttonZL">
             <property name="text">
              <string/>
             </property>
@@ -417,222 +526,75 @@
          </layout>
         </item>
         <item row="1" column="1">
-         <layout class="QVBoxLayout" name="buttonFaceButtonsYVerticalLayout">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsZRVerticalLayout">
           <item>
-           <layout class="QHBoxLayout" name="buttonFaceButtonsYHorizontalLayout">
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsZRHorizontalLayout">
             <item>
-             <widget class="QLabel" name="labelY">
+             <widget class="QLabel" name="labelZR">
               <property name="text">
-               <string>Y:</string>
+               <string>ZR:</string>
               </property>
              </widget>
             </item>
            </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonY">
+           <widget class="QPushButton" name="buttonZR">
             <property name="text">
              <string/>
             </property>
            </widget>
           </item>
          </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="5" column="0" colspan="2">
-      <widget class="QGroupBox" name="controller_color">
-       <property name="title">
-        <string>Controller Color</string>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_10" columnstretch="0,0,0,0,0,0,0">
-        <item row="0" column="0">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="left_body_label">
-          <property name="text">
-           <string>Left Body</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="6">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="left_buttons_label">
-          <property name="minimumSize">
-           <size>
-            <width>90</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Left Buttons</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="5">
-         <widget class="QPushButton" name="right_buttons_button">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>32</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="4">
-         <widget class="QLabel" name="right_body_label">
-          <property name="text">
-           <string>Right Body</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QLabel" name="right_buttons_label">
-          <property name="minimumSize">
-           <size>
-            <width>90</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Right Buttons</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QPushButton" name="left_buttons_button">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>32</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QPushButton" name="left_body_button">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>32</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsSLVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsSLHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelSL">
+              <property name="text">
+               <string>SL:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonSL">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
-        <item row="0" column="5">
-         <widget class="QPushButton" name="right_body_button">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>32</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
+        <item row="1" column="2">
+         <layout class="QVBoxLayout" name="buttonShoulderButtonsSRVerticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="buttonShoulderButtonsSRHorizontalLayout">
+            <item>
+             <widget class="QLabel" name="labelSR">
+              <property name="text">
+               <string>SR:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonSR">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
      </item>
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="QGroupBox" name="LStick">
        <property name="title">
         <string>Left Stick</string>
@@ -796,7 +758,7 @@
                <string>Deadzone: 0</string>
               </property>
               <property name="alignment">
-               <enum>Qt::AlignHCenter</enum>
+               <set>Qt::AlignHCenter</set>
               </property>
              </widget>
             </item>
@@ -827,154 +789,7 @@
        </layout>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QGroupBox" name="shoulderButtons">
-       <property name="title">
-        <string>Shoulder Buttons</string>
-       </property>
-       <property name="flat">
-        <bool>false</bool>
-       </property>
-       <property name="checkable">
-        <bool>false</bool>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="0" column="0">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsLVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsLHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelL">
-              <property name="text">
-               <string>L:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonL">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="0" column="1">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsRVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsRHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelR">
-              <property name="text">
-               <string>R:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonR">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="0">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsZLVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsZLHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelZL">
-              <property name="text">
-               <string>ZL:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonZL">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="1">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsZRVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsZRHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelZR">
-              <property name="text">
-               <string>ZR:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonZR">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="0" column="2">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsSLVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsSLHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelSL">
-              <property name="text">
-               <string>SL:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonSL">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="1" column="2">
-         <layout class="QVBoxLayout" name="buttonShoulderButtonsSRVerticalLayout">
-          <item>
-           <layout class="QHBoxLayout" name="buttonShoulderButtonsSRHorizontalLayout">
-            <item>
-             <widget class="QLabel" name="labelSR">
-              <property name="text">
-               <string>SR:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="QPushButton" name="buttonSR">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="3" column="1">
+     <item row="4" column="1">
       <widget class="QGroupBox" name="misc">
        <property name="title">
         <string>Misc.</string>
@@ -1098,6 +913,669 @@
             <property name="text">
              <string/>
             </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="6" column="0" colspan="2">
+      <widget class="QGroupBox" name="controller_color">
+       <property name="title">
+        <string>Controller Color</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_10" columnstretch="0,0,0,0,0,0,0">
+        <item row="1" column="4">
+         <widget class="QLabel" name="right_buttons_label">
+          <property name="minimumSize">
+           <size>
+            <width>90</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Right Buttons</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="left_buttons_label">
+          <property name="minimumSize">
+           <size>
+            <width>90</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Left Buttons</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="6">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="left_body_label">
+          <property name="text">
+           <string>Left Body</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="5">
+         <widget class="QPushButton" name="right_body_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QPushButton" name="left_buttons_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="5">
+         <widget class="QPushButton" name="right_buttons_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="right_body_label">
+          <property name="text">
+           <string>Right Body</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="left_body_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>32</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QGroupBox" name="motionDevice">
+       <property name="title">
+        <string>Motion Device</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_8">
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="firstMotionDevice_2">
+            <layout class="QVBoxLayout" name="firstMotionDevice">
+             <item>
+              <widget class="QCheckBox" name="firstMotionEnabled">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Enabled</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="firstMotionDeviceInner">
+               <layout class="QVBoxLayout" name="verticalLayout">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_9">
+                    <property name="text">
+                     <string>Server address</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="motionAddress1">
+                    <property name="text">
+                     <string>127.0.0.1</string>
+                    </property>
+                    <property name="clearButtonEnabled">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_15">
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_14">
+                    <item>
+                     <widget class="QLabel" name="label_11">
+                      <property name="text">
+                       <string>Pad index</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSpinBox" name="motionPadIndex1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="showGroupSeparator" stdset="0">
+                       <bool>false</bool>
+                      </property>
+                      <property name="maximum">
+                       <number>3</number>
+                      </property>
+                      <property name="value">
+                       <number>0</number>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_4">
+                    <item>
+                     <widget class="QLabel" name="label_10">
+                      <property name="text">
+                       <string>Server port</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSpinBox" name="motionPort1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="showGroupSeparator" stdset="0">
+                       <bool>false</bool>
+                      </property>
+                      <property name="maximum">
+                       <number>65535</number>
+                      </property>
+                      <property name="value">
+                       <number>26760</number>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_6">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label">
+                    <property name="text">
+                     <string>Gyro X offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroXoff1">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_7">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_2">
+                    <property name="text">
+                     <string>Gyro Y offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroYoff1">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_8">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_3">
+                    <property name="text">
+                     <string>Gyro Z offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroZoff1">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_9">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_4">
+                    <property name="text">
+                     <string>Gyro sensiitivity</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroSensitivity1">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="value">
+                     <double>1.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="calibrate1">
+                  <property name="text">
+                   <string>Calibrate offsets</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="secondMotionDevice_2">
+            <layout class="QVBoxLayout" name="secondMotionDevice">
+             <item>
+              <widget class="QCheckBox" name="secondMotionEnabled">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>Right</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="secondMotionDeviceInner">
+               <layout class="QVBoxLayout" name="verticalLayout_2">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_19">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_14">
+                    <property name="text">
+                     <string>Server address</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="motionAddress2">
+                    <property name="text">
+                     <string>127.0.0.1</string>
+                    </property>
+                    <property name="clearButtonEnabled">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_16">
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_17">
+                    <item>
+                     <widget class="QLabel" name="label_12">
+                      <property name="text">
+                       <string>Pad index</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSpinBox" name="motionPadIndex2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="showGroupSeparator" stdset="0">
+                       <bool>false</bool>
+                      </property>
+                      <property name="maximum">
+                       <number>3</number>
+                      </property>
+                      <property name="value">
+                       <number>0</number>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_18">
+                    <item>
+                     <widget class="QLabel" name="label_13">
+                      <property name="text">
+                       <string>Server port</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QSpinBox" name="motionPort2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="showGroupSeparator" stdset="0">
+                       <bool>false</bool>
+                      </property>
+                      <property name="maximum">
+                       <number>65535</number>
+                      </property>
+                      <property name="value">
+                       <number>26760</number>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_11">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_6">
+                    <property name="text">
+                     <string>Gyro X offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroXoff2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_12">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_7">
+                    <property name="text">
+                     <string>Gyro Y offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroYoff2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_10">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_5">
+                    <property name="text">
+                     <string>Gyro Z offset</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroZoff2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_13">
+                  <property name="spacing">
+                   <number>10</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="label_8">
+                    <property name="text">
+                     <string>Gyro sensiitivity</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="gyroSensitivity2">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="value">
+                     <double>1.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="calibrate2">
+                  <property name="text">
+                   <string>Calibrate offsets</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>
@@ -1236,6 +1714,38 @@
     <hint type="destinationlabel">
      <x>229</x>
      <y>375</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>firstMotionEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>firstMotionDeviceInner</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>689</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>139</x>
+     <y>800</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>secondMotionEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>secondMotionDeviceInner</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>387</x>
+     <y>689</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>387</x>
+     <y>800</y>
     </hint>
    </hints>
   </connection>
