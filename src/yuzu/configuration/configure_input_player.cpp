@@ -456,6 +456,17 @@ void ConfigureInputPlayer::ApplyConfiguration() {
         debug ? Settings::values.debug_pad_analogs : Settings::values.players[player_index].analogs;
     auto& motion = Settings::values.players[player_index].motion_devices;
 
+    // convert motion group into params
+    for (int i = 0; i < 2; ++i) {
+        auto& group = motion_groups[i];
+        motion_param[i] =
+            MotionParam{group.enabled->isChecked(),
+                        Common::ParamPackage(InputCommon::GenerateMotionParam(
+                            group.address->text().toStdString(), group.port->value(),
+                            group.padIndex->value(), group.cx->value(), group.cy->value(),
+                            group.cz->value(), group.sensitivity->value()))};
+    }
+
     std::transform(buttons_param.begin(), buttons_param.end(), buttons.begin(),
                    [](const Common::ParamPackage& param) { return param.Serialize(); });
     std::transform(analogs_param.begin(), analogs_param.end(), analogs.begin(),
@@ -515,12 +526,12 @@ void ConfigureInputPlayer::LoadConfiguration() {
         std::transform(Settings::values.players[player_index].analogs.begin(),
                        Settings::values.players[player_index].analogs.end(), analogs_param.begin(),
                        [](const std::string& str) { return Common::ParamPackage(str); });
-        std::transform(Settings::values.players[player_index].motion_devices.begin(),
-                       Settings::values.players[player_index].motion_devices.end(),
-                       motion_param.begin(), [](const Settings::MotionRaw& raw) {
-                           return MotionParam{raw.enabled, Common::ParamPackage(raw.device)};
-                       });
     }
+    std::transform(Settings::values.players[player_index].motion_devices.begin(),
+                   Settings::values.players[player_index].motion_devices.end(),
+                   motion_param.begin(), [](const Settings::MotionRaw& raw) {
+                       return MotionParam{raw.enabled, Common::ParamPackage(raw.device)};
+                   });
 
     UpdateButtonLabels();
 
@@ -652,6 +663,7 @@ void ConfigureInputPlayer::UpdateButtonLabels() {
         group.cx->setValue(param.param.Get("cx", 0));
         group.cy->setValue(param.param.Get("cy", 0));
         group.cz->setValue(param.param.Get("cz", 0));
+        group.sensitivity->setValue(param.param.Get("sensitivity", 1));
         group.enabled->setChecked(param.enabled);
         group.inner->setVisible(param.enabled);
     }
