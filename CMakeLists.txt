@@ -132,7 +132,7 @@ else()
 endif()
 
 # Output binaries to bin/
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin/$<CONFIG>)
 
 # System imported libraries
 # If not found, download any missing through Conan
