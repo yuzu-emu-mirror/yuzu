@@ -313,7 +313,7 @@ void Config::ReadPlayerValues() {
                     .toStdString();
             player_motion_device.enabled =
                 qt_config
-                    ->value(QStringLiteral("player_%1_motion_device%2_enabled").arg(p).arg(i),
+                    ->value(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
                             default_param.enabled)
                     .toBool();
             if (player_motion_device.config.empty()) {
@@ -881,7 +881,7 @@ void Config::SavePlayerValues() {
             WriteSetting(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
                          QString::fromStdString(player_motion_device.config),
                          QString::fromStdString(default_param.config));
-            WriteSetting(QStringLiteral("player_%1_motion_device%2_enabled").arg(p).arg(i),
+            WriteSetting(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
                          player_motion_device.enabled);
         }
     }
