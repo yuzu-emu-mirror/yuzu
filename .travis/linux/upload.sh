@@ -8,7 +8,7 @@ COMPRESSION_FLAGS="-cJvf"
 
 mkdir "$REV_NAME"
 
-cp build/bin/yuzu-cmd "$REV_NAME"
-cp build/bin/yuzu "$REV_NAME"
+cp build/bin/Release/yuzu-cmd "$REV_NAME"
+cp build/bin/Release/yuzu "$REV_NAME"
 
 . .travis/common/post-upload.sh

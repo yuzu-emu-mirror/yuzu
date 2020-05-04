@@ -8,8 +8,8 @@ COMPRESSION_FLAGS="-czvf"
 
 mkdir "$REV_NAME"
 
-cp build/bin/yuzu-cmd "$REV_NAME"
-cp -r build/bin/yuzu.app "$REV_NAME"
+cp build/bin/Release/yuzu-cmd "$REV_NAME"
+cp -r build/bin/Release/yuzu.app "$REV_NAME"
 
 # move libs into folder for deployment
 macpack "${REV_NAME}/yuzu.app/Contents/MacOS/yuzu" -d "../Frameworks"
