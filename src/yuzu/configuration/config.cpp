@@ -303,7 +303,7 @@ void Config::ReadPlayerValues() {
         }
 
         for (std::size_t i = 0; i < player.motion_devices.size(); ++i) {
-            const std::pair<bool, const char*>& default_param = default_motion_devices[i];
+            const auto& default_param = default_motion_devices[i];
             auto& player_motion_device = player.motion_devices[i];
 
             player_motion_device.config =
@@ -879,7 +879,7 @@ void Config::SavePlayerValues() {
         }
 
         for (std::size_t i = 0; i < player.motion_devices.size(); ++i) {
-            const std::pair<bool, const char*>& default_param = default_motion_devices[i];
+            const auto& default_param = default_motion_devices[i];
             const Settings::MotionRaw& player_motion_device = player.motion_devices[i];
             WriteSetting(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
                          QString::fromStdString(player_motion_device.config),
