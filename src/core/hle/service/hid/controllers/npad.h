@@ -245,9 +245,9 @@ private:
     static_assert(sizeof(NPadGeneric) == 0x350, "NPadGeneric is an invalid size");
 
     struct SixAxisStates {
-        s64_le timestamp;
+        s64_le timestamp{};
         INSERT_PADDING_WORDS(2);
-        s64_le timestamp2;
+        s64_le timestamp2{};
         Common::Vec3f accel{};
         Common::Vec3f gyro{};
         INSERT_PADDING_WORDS(3);

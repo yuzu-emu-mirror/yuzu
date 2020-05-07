@@ -366,7 +366,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         }
 
         // Try to read sixaxis sensor states
-        Common::Vec3f accel1, gyro1, accel2, gyro2;
+        Common::Vec3f accel1{}, gyro1{}, accel2{}, gyro2{};
         if (sixaxis_sensors_enabled) {
             const auto& device1 = motion_devices[i][0];
             if (device1) {
