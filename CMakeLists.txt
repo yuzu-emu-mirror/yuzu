@@ -28,6 +28,12 @@ option(ENABLE_VULKAN "Enables Vulkan backend" ON)
 
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
+# Default to a Release build
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+    message(STATUS "Defaulting to a Release build")
+endif()
+
 if(EXISTS ${PROJECT_SOURCE_DIR}/hooks/pre-commit AND NOT EXISTS ${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit)
     message(STATUS "Copying pre-commit hook")
     file(COPY hooks/pre-commit
@@ -134,7 +140,7 @@ if (YUZU_CONAN_INSTALLED)
     message(STATUS "Adding conan installed libraries to the search path")
 endif()
 
-function(yuzu_find_packages)
+macro(yuzu_find_packages)
     set(options FORCE_REQUIRED)
     cmake_parse_arguments(FN "${options}" "" "" ${ARGN})
 
@@ -173,8 +179,8 @@ function(yuzu_find_packages)
             list(APPEND CONAN_REQUIRED_LIBS ${PACKAGE_CONAN})
         endif()
     endforeach()
-    set(CONAN_REQUIRED_LIBS ${CONAN_REQUIRED_LIBS} PARENT_SCOPE)
-endfunction()
+    unset(FN_FORCE_REQUIRED)
+endmacro()
 
 # Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS
 yuzu_find_packages()
@@ -299,12 +305,14 @@ if (TARGET sdl2::sdl2)
     # imported from the conan generated sdl2Config.cmake
     set_target_properties(sdl2::sdl2 PROPERTIES IMPORTED_GLOBAL TRUE)
     add_library(SDL2 ALIAS sdl2::sdl2)
-elseif (TARGET SDL2::SDL2)
-    # imported from system package manager
-    set_target_properties(SDL2::SDL2 PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(SDL2 ALIAS SDL2::SDL2)
 elseif(SDL2_FOUND)
     # found through the system package manager
+    # Some installations don't set SDL2_LIBRARIES
+    if("${SDL2_LIBRARIES}" STREQUAL "")
+        message(WARNING "SDL2_LIBRARIES wasn't set, manually setting to SDL2::SDL2")
+        set(SDL2_LIBRARIES "SDL2::SDL2")
+    endif()
+
     include_directories(SYSTEM ${SDL2_INCLUDE_DIRS})
     add_library(SDL2 INTERFACE)
     target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARIES}")
@@ -354,8 +362,12 @@ if (YUZU_USE_BUNDLED_UNICORN)
         find_package(PythonInterp 2.7 REQUIRED)
 
         if (MINGW)
+            # Intentionally call the unicorn makefile directly instead of using make.sh so that we can override the
+            # UNAME_S makefile variable to MINGW. This way we don't have to hack at the uname binary to build
+            # Additionally, overriding DO_WINDOWS_EXPORT prevents unicorn from patching the static unicorn.a by using msvc and cmd,
+            # which are both things we don't have in a mingw cross compiling environment.
             add_custom_command(OUTPUT ${LIBUNICORN_LIBRARY}
-                COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" PYTHON="${PYTHON_EXECUTABLE}" /bin/sh make.sh cross-win64
+                COMMAND ${CMAKE_COMMAND} -E env UNICORN_ARCHS="aarch64" PYTHON="${PYTHON_EXECUTABLE}" CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-gcc-ar RANLIB=x86_64-w64-mingw32-gcc-ranlib make UNAME_S=MINGW DO_WINDOWS_EXPORT=0
                 WORKING_DIRECTORY ${UNICORN_PREFIX}
             )
         else()
