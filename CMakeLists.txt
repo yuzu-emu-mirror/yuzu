@@ -29,7 +29,8 @@ option(ENABLE_VULKAN "Enables Vulkan backend" ON)
 option(USE_DISCORD_PRESENCE "Enables Discord Rich Presence" OFF)
 
 # Default to a Release build
-if (NOT CMAKE_BUILD_TYPE)
+get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if (NOT IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
     message(STATUS "Defaulting to a Release build")
 endif()
@@ -127,7 +128,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # =======================================================================
 set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-get_property(IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if (YUZU_CONAN_INSTALLED)
     if (IS_MULTI_CONFIG)
         include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
@@ -248,9 +248,9 @@ if (CONAN_REQUIRED_LIBS)
         include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
     else()
         conan_cmake_run(REQUIRES ${CONAN_REQUIRED_LIBS}
-            OPTIONS ${CONAN_LIB_OPTIONS}
-            BUILD missing
-            GENERATORS cmake cmake_find_package_multi)
+                        OPTIONS ${CONAN_LIB_OPTIONS}
+                        BUILD missing
+                        GENERATORS cmake cmake_find_package_multi)
         include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
     endif()
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
