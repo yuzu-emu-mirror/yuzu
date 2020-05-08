@@ -13,6 +13,7 @@ project(yuzu)
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
+CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF "ENABLE_QT;MSVC" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
@@ -194,7 +195,22 @@ if(ENABLE_QT)
         list(APPEND CMAKE_MODULE_PATH "${CONAN_QT_ROOT_RELEASE}")
         list(APPEND CMAKE_PREFIX_PATH "${CONAN_QT_ROOT_RELEASE}")
     endif()
-    find_package(Qt5 5.9 COMPONENTS Widgets OpenGL)
+    # Workaround for an issue where conan tries to build Qt from scratch instead of download prebuilt binaries
+    set(QT_PREFIX_HINT)
+    if(YUZU_USE_BUNDLED_QT)
+        if ((MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1930) AND ARCHITECTURE_x86_64)
+            set(QT_VER qt-5.12.0-msvc2017_64)
+        else()
+            message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable YUZU_USE_BUNDLED_QT and provide your own.")
+        endif()
+
+        if (DEFINED QT_VER)
+            download_bundled_external("qt/" ${QT_VER} QT_PREFIX)
+        endif()
+
+        set(QT_PREFIX_HINT HINTS "${QT_PREFIX}")
+    endif()
+    find_package(Qt5 5.9 COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
     if (NOT Qt5_FOUND)
         list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
     endif()
