@@ -45,7 +45,7 @@
             </item>
             <item>
              <property name="text">
-              <string notr="true">Extreme(very slow)</string>
+              <string notr="true">Extreme (very slow)</string>
              </property>
             </item>
            </widget>
@@ -86,7 +86,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="anisotropic_filtering_combobox">
+           <widget class="QComboBox" name="anisotropic_filtering">
             <item>
              <property name="text">
               <string>Default</string>

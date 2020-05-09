@@ -309,14 +309,6 @@ enum class TextureMipmapFilter : u32 {
     Linear = 3,
 };
 
-enum class Anisotropy {
-    Default,
-    Filter2x,
-    Filter4x,
-    Filter8x,
-    Filter16x,
-};
-
 struct TSCEntry {
     union {
         struct {

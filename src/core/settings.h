@@ -382,6 +382,14 @@ enum class GPUAccuracy : u32 {
     Extreme = 2,
 };
 
+enum class Anisotropy {
+    Default = 0,
+    Filter2x = 1,
+    Filter4x = 2,
+    Filter8x = 3,
+    Filter16x = 4,
+};
+
 struct Values {
     // System
     bool use_docked_mode;
@@ -438,7 +446,7 @@ struct Values {
 
     float resolution_factor;
     int aspect_ratio;
-    int max_anisotropy;
+    Anisotropy max_anisotropy;
     bool use_frame_limit;
     u16 frame_limit;
     bool use_disk_shader_cache;
@@ -486,6 +494,10 @@ struct Values {
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
 } extern values;
+
+const char* GPUAccuracyLevelToChar(GPUAccuracy gpu_accuracy);
+
+const char* AnisotropicFilteringLevelToChar(Anisotropy anisotropy);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();

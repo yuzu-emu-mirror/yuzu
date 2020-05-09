@@ -92,11 +92,12 @@ void LogSettings() {
     LogSetting("Renderer_UseFrameLimit", Settings::values.use_frame_limit);
     LogSetting("Renderer_FrameLimit", Settings::values.frame_limit);
     LogSetting("Renderer_UseDiskShaderCache", Settings::values.use_disk_shader_cache);
-    LogSetting("Renderer_GPUAccuracyLevel", Settings::values.gpu_accuracy);
+    LogSetting("Renderer_GPUAccuracyLevel", GPUAccuracyLevelToChar(Settings::values.gpu_accuracy));
     LogSetting("Renderer_UseAsynchronousGpuEmulation",
                Settings::values.use_asynchronous_gpu_emulation);
     LogSetting("Renderer_UseVsync", Settings::values.use_vsync);
-    LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values.max_anisotropy);
+    LogSetting("Renderer_AnisotropicFilteringLevel",
+               AnisotropicFilteringLevelToChar(Settings::values.max_anisotropy));
     LogSetting("Audio_OutputEngine", Settings::values.sink_id);
     LogSetting("Audio_EnableAudioStretching", Settings::values.enable_audio_stretching);
     LogSetting("Audio_OutputDevice", Settings::values.audio_device_id);
@@ -108,6 +109,33 @@ void LogSettings() {
     LogSetting("Debugging_ProgramArgs", Settings::values.program_args);
     LogSetting("Services_BCATBackend", Settings::values.bcat_backend);
     LogSetting("Services_BCATBoxcatLocal", Settings::values.bcat_boxcat_local);
+}
+
+const char* GPUAccuracyLevelToChar(GPUAccuracy gpu_accuracy) {
+    switch (gpu_accuracy) {
+    case GPUAccuracy::Normal:
+        return "Normal";
+    case GPUAccuracy::High:
+        return "High";
+    case GPUAccuracy::Extreme:
+        return "Extreme";
+    }
+    return "Unknown";
+}
+
+const char* AnisotropicFilteringLevelToChar(Anisotropy anisotropy) {
+    switch (anisotropy) {
+    case Anisotropy::Default:
+        return "Default";
+    case Anisotropy::Filter2x:
+        return "2x";
+    case Anisotropy::Filter4x:
+        return "4x";
+    case Anisotropy::Filter8x:
+        return "8x";
+    case Anisotropy::Filter16x:
+        return "16x";
+    }
 }
 
 bool IsGPULevelExtreme() {
