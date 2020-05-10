@@ -163,7 +163,7 @@ macro(yuzu_find_packages)
     # Cmake has a *serious* lack of 2D array or associative array...
     # Capitalization matters here. We need the naming to match the generated paths from Conan
     set(REQUIRED_LIBS
-    #    Cmake Pkg Prefix  Version     Conan Pkg
+    #    Cmake Pkg Prefix  Version     Conan Pkg            Components
         "Catch2            2.13        catch2/2.13.0"
         "fmt               7.1         fmt/7.1.2"
     # can't use until https://github.com/bincrafters/community/issues/1173
@@ -185,13 +185,16 @@ macro(yuzu_find_packages)
         list(GET PACKAGE_SPLIT 0 PACKAGE_PREFIX)
         list(GET PACKAGE_SPLIT 1 PACKAGE_VERSION)
         list(GET PACKAGE_SPLIT 2 PACKAGE_CONAN)
+        list(REMOVE_AT PACKAGE_SPLIT 0 1 2)
+        set(PACKAGE_COMPONENTS ${PACKAGE_SPLIT})
+
         # This function is called twice, once to check if the packages exist on the system already
         # and a second time to check if conan installed them properly. The second check passes in FORCE_REQUIRED
         if (NOT ${PACKAGE_PREFIX}_FOUND)
             if (FN_FORCE_REQUIRED)
-                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION} REQUIRED)
+                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION} REQUIRED COMPONENTS ${PACKAGE_COMPONENTS})
             else()
-                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION})
+                find_package(${PACKAGE_PREFIX} ${PACKAGE_VERSION} COMPONENTS ${PACKAGE_COMPONENTS})
             endif()
         endif()
         if (NOT ${PACKAGE_PREFIX}_FOUND)
