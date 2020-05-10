@@ -180,6 +180,35 @@ macro(yuzu_find_packages)
         list(APPEND REQUIRED_LIBS "SDL2 2.0.10 sdl2/2.0.14@bincrafters/stable")
     endif()
 
+    if(ENABLE_QT)
+        # Workaround for an issue where conan tries to build Qt from scratch instead of download prebuilt binaries
+        set(QT_PREFIX_HINT)
+        if(YUZU_USE_BUNDLED_QT)
+            if ((MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1930) AND ARCHITECTURE_x86_64)
+                set(QT_VER qt-5.12.8-msvc2017_64)
+            else()
+                message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable YUZU_USE_BUNDLED_QT and provide your own.")
+            endif()
+
+            if (DEFINED QT_VER)
+                download_bundled_external("qt/" ${QT_VER} QT_PREFIX)
+            endif()
+
+            set(QT_PREFIX_HINT HINTS "${QT_PREFIX}")
+        endif()
+
+        set(QT_ADDITIONAL_COMPONENTS)
+        if (YUZU_USE_QT_WEB_ENGINE)
+            set(QT_ADDITIONAL_COMPONENTS "WebEngineCore WebEngineWidgets")
+        endif()
+
+        if (ENABLE_QT_TRANSLATION)
+            set(QT_ADDITIONAL_COMPONENTS "${QT_ADDITIONAL_COMPONENTS} LinguistTools")
+        endif()
+
+        list(APPEND REQUIRED_LIBS "Qt5 5.11 qt/5.14.1@bincrafters/stable Widgets ${QT_ADDITIONAL_COMPONENTS} ${QT_PREFIX_HINT}")
+    endif()
+
     foreach(PACKAGE ${REQUIRED_LIBS})
         string(REGEX REPLACE "[ \t\r\n]+" ";" PACKAGE_SPLIT ${PACKAGE})
         list(GET PACKAGE_SPLIT 0 PACKAGE_PREFIX)
@@ -225,43 +254,6 @@ endif()
 
 # Attempt to locate any packages that are required and report the missing ones in CONAN_REQUIRED_LIBS
 yuzu_find_packages()
-
-# Qt5 requires that we find components, so it doesn't fit our pretty little find package function
-if(ENABLE_QT)
-    # We want to load the generated conan qt config so that we get the QT_ROOT var so that we can use the official
-    # Qt5Config inside the root folder instead of the conan generated one.
-    if(EXISTS ${CMAKE_BINARY_DIR}/qtConfig.cmake)
-        include(${CMAKE_BINARY_DIR}/qtConfig.cmake)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_QT_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_QT_ROOT_RELEASE}")
-    endif()
-    # Workaround for an issue where conan tries to build Qt from scratch instead of download prebuilt binaries
-    set(QT_PREFIX_HINT)
-    if(YUZU_USE_BUNDLED_QT)
-        if ((MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1930) AND ARCHITECTURE_x86_64)
-            set(QT_VER qt-5.12.8-msvc2017_64)
-        else()
-            message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable YUZU_USE_BUNDLED_QT and provide your own.")
-        endif()
-
-        if (DEFINED QT_VER)
-            download_bundled_external("qt/" ${QT_VER} QT_PREFIX)
-        endif()
-
-        set(QT_PREFIX_HINT HINTS "${QT_PREFIX}")
-    endif()
-    find_package(Qt5 5.9 COMPONENTS Widgets ${QT_PREFIX_HINT})
-    if (YUZU_USE_QT_WEB_ENGINE)
-        find_package(Qt5 COMPONENTS WebEngineCore WebEngineWidgets)
-    endif()
-
-    if (ENABLE_QT_TRANSLATION)
-        find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
-    endif()
-    if (NOT Qt5_FOUND)
-        list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
-    endif()
-endif()
 
 # Install any missing dependencies with conan install
 if (CONAN_REQUIRED_LIBS)
