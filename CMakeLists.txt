@@ -176,6 +176,10 @@ macro(yuzu_find_packages)
         #"opus              1.3         opus/1.3.1"
     )
 
+    if(ENABLE_SDL2)
+        list(APPEND REQUIRED_LIBS "SDL2 2.0.10 sdl2/2.0.14@bincrafters/stable")
+    endif()
+
     foreach(PACKAGE ${REQUIRED_LIBS})
         string(REGEX REPLACE "[ \t\r\n]+" ";" PACKAGE_SPLIT ${PACKAGE})
         list(GET PACKAGE_SPLIT 0 PACKAGE_PREFIX)
@@ -253,19 +257,6 @@ if(ENABLE_QT)
     endif()
     if (NOT Qt5_FOUND)
         list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
-    endif()
-endif()
-# find SDL2 exports a bunch of variables that are needed, so its easier to do this outside of the yuzu_find_package
-if(ENABLE_SDL2)
-    if(EXISTS ${CMAKE_BINARY_DIR}/sdl2Config.cmake)
-        include(${CMAKE_BINARY_DIR}/sdl2Config.cmake)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-    endif()
-    find_package(SDL2)
-    if (NOT SDL2_FOUND)
-        # otherwise add this to the list of libraries to install
-        list(APPEND CONAN_REQUIRED_LIBS "sdl2/2.0.14@bincrafters/stable")
     endif()
 endif()
 
