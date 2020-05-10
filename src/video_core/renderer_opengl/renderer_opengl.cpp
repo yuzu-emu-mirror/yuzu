@@ -177,14 +177,19 @@ const char* GetType(GLenum type) {
 
 void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
                            const GLchar* message, const void* user_param) {
-    const char format[] = "{} {} {}: {}";
+    static constexpr char format[] = "{} {} {}: {}";
+    if (severity == GL_DEBUG_SEVERITY_HIGH) {
+        LOG_CRITICAL(Render_OpenGL, format, GetSource(source), GetType(type), id, message);
+        return;
+    }
+
+    if (!Settings::values.renderer_debug) {
+        return;
+    }
     const char* const str_source = GetSource(source);
     const char* const str_type = GetType(type);
 
     switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH:
-        LOG_CRITICAL(Render_OpenGL, format, str_source, str_type, id, message);
-        break;
     case GL_DEBUG_SEVERITY_MEDIUM:
         LOG_WARNING(Render_OpenGL, format, str_source, str_type, id, message);
         break;
