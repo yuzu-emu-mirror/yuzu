@@ -101,12 +101,12 @@ void ThreadManager::FlushRegion(VAddr addr, u64 size) {
 }
 
 void ThreadManager::InvalidateRegion(VAddr addr, u64 size) {
-    system.Renderer().Rasterizer().OnCPUWrite(addr, size);
+    PushCommand(InvalidateRegionCommand(addr, size));
 }
 
 void ThreadManager::FlushAndInvalidateRegion(VAddr addr, u64 size) {
     // Skip flush on asynch mode, as FlushAndInvalidateRegion is not used for anything too important
-    system.Renderer().Rasterizer().OnCPUWrite(addr, size);
+    PushCommand(InvalidateRegionCommand(addr, size));
 }
 
 void ThreadManager::WaitIdle() const {
