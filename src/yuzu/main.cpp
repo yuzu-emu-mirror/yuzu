@@ -135,6 +135,24 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
+namespace {
+
+    QString GetAccountUsername() {
+        Service::Account::ProfileManager manager;
+        const auto current_user = manager.GetUser(Settings::values.current_user);
+        ASSERT(current_user);
+        Service::Account::ProfileBase profile;
+        if (!manager.GetProfileBase(*current_user, profile)) {
+            return {};
+        }
+
+        const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+            reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
+        return QString::fromStdString(text);
+    }
+
+}
+
 constexpr int default_mouse_timeout = 2500;
 
 constexpr u64 DLC_BASE_TITLE_ID_MASK = 0xFFFFFFFFFFFFE000;
@@ -440,20 +458,6 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
 }
 
 #endif
-
-QString GetAccountUsername() {
-    Service::Account::ProfileManager manager;
-    const auto current_user = manager.GetUser(Settings::values.current_user);
-    ASSERT(current_user);
-    Service::Account::ProfileBase profile;
-    if (!manager.GetProfileBase(*current_user, profile)) {
-        return {};
-    }
-
-    const auto text = Common::StringFromFixedZeroTerminatedBuffer(
-        reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
-    return QString::fromStdString(text);
-}
 
 void GMainWindow::InitializeWidgets() {
 #ifdef YUZU_ENABLE_COMPATIBILITY_REPORTING
