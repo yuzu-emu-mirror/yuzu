@@ -137,21 +137,21 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 namespace {
 
-    QString GetAccountUsername() {
-        Service::Account::ProfileManager manager;
-        const auto current_user = manager.GetUser(Settings::values.current_user);
-        ASSERT(current_user);
-        Service::Account::ProfileBase profile;
-        if (!manager.GetProfileBase(*current_user, profile)) {
-            return {};
-        }
-
-        const auto text = Common::StringFromFixedZeroTerminatedBuffer(
-            reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
-        return QString::fromStdString(text);
+QString GetAccountUsername() {
+    Service::Account::ProfileManager manager;
+    const auto current_user = manager.GetUser(Settings::values.current_user);
+    ASSERT(current_user);
+    Service::Account::ProfileBase profile;
+    if (!manager.GetProfileBase(*current_user, profile)) {
+        return {};
     }
 
+    const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+        reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
+    return QString::fromStdString(text);
 }
+
+} // Anonymous namespace
 
 constexpr int default_mouse_timeout = 2500;
 
