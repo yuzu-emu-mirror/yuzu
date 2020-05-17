@@ -441,6 +441,20 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
 
 #endif
 
+QString GetAccountUsername() {
+    Service::Account::ProfileManager manager;
+    const auto current_user = manager.GetUser(Settings::values.current_user);
+    ASSERT(current_user);
+    Service::Account::ProfileBase profile;
+    if (!manager.GetProfileBase(*current_user, profile)) {
+        return {};
+    }
+
+    const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+        reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
+    return QString::fromStdString(text);
+}
+
 void GMainWindow::InitializeWidgets() {
 #ifdef YUZU_ENABLE_COMPATIBILITY_REPORTING
     ui.action_Report_Compatibility->setVisible(true);
@@ -492,6 +506,48 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label);
     }
+
+    // Setup Profile button
+    profile_status_button = new QPushButton();
+    profile_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    profile_status_button->setCheckable(true);
+    profile_status_button->setChecked(true);
+    profile_status_button->setFocusPolicy(Qt::NoFocus);
+    const auto username = GetAccountUsername();
+    profile_status_button->setText(username);
+    connect(profile_status_button, &QPushButton::clicked, [=] {
+        profile_status_button->setChecked(true);
+
+        if (emulation_running) {
+            return;
+        }
+
+        // User save data
+        const auto select_profile = [this] {
+            QtProfileSelectionDialog dialog(this);
+            dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                                  Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+            dialog.setWindowModality(Qt::WindowModal);
+
+            if (dialog.exec() == QDialog::Rejected) {
+                return -1;
+            }
+
+            return dialog.GetIndex();
+        };
+
+        const auto index = select_profile();
+        if (index == -1) {
+            return;
+        }
+
+        Settings::values.current_user = index;
+        Settings::Apply();
+
+        const auto username = GetAccountUsername();
+        profile_status_button->setText(username);
+    });
+    statusBar()->insertPermanentWidget(0, profile_status_button);
 
     // Setup Dock button
     dock_status_button = new QPushButton();
@@ -1902,6 +1958,8 @@ void GMainWindow::OnConfigure() {
         ui.centralwidget->setMouseTracking(false);
     }
 
+    const auto username = GetAccountUsername();
+    profile_status_button->setText(username);
     dock_status_button->setChecked(Settings::values.use_docked_mode);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 #ifdef HAS_VULKAN
