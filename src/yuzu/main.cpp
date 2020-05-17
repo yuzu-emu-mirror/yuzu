@@ -138,18 +138,21 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 namespace {
 
 QString GetAccountUsername() {
+    const QString nouser = QString::fromStdString("No User");
     Service::Account::ProfileManager manager;
     const auto current_user = manager.GetUser(Settings::values.current_user);
-    ASSERT(current_user);
+    if (!current_user.has_value()) {
+        return nouser;
+    }
     Service::Account::ProfileBase profile;
     if (!manager.GetProfileBase(*current_user, profile)) {
-        return {};
+        return nouser;
     }
 
     const auto text = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
 
-    return QString::fromStdString(text.empty() ? "No User" : text);
+    return text.empty() ? nouser : QString::fromStdString(text);
 }
 
 } // Anonymous namespace
