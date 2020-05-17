@@ -148,7 +148,8 @@ QString GetAccountUsername() {
 
     const auto text = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
-    return QString::fromStdString(text);
+
+    return QString::fromStdString(text.empty() ? "No User" : text);
 }
 
 } // Anonymous namespace
