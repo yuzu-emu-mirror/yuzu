@@ -141,7 +141,7 @@ QString GetAccountUsername() {
     const QString nouser = QString::fromStdString("No User");
     Service::Account::ProfileManager manager;
     const auto current_user = manager.GetUser(Settings::values.current_user);
-    if (!current_user.has_value()) {
+    if (!current_user.has_value() || (current_user == Common::UUID{})) {
         return nouser;
     }
     Service::Account::ProfileBase profile;
