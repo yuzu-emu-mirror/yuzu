@@ -6,8 +6,9 @@
 #include <map>
 #include <set>
 #include <stack>
-#include <unordered_map>
 #include <vector>
+
+#include <tsl/robin_map.h>
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -75,11 +76,11 @@ struct CFGRebuildState {
     std::vector<BlockInfo> block_info;
     std::list<u32> inspect_queries;
     std::list<Query> queries;
-    std::unordered_map<u32, u32> registered;
+    tsl::robin_map<u32, u32> registered;
     std::set<u32> labels;
     std::map<u32, u32> ssy_labels;
     std::map<u32, u32> pbk_labels;
-    std::unordered_map<u32, BlockStack> stacks;
+    tsl::robin_map<u32, BlockStack> stacks;
     ASTManager* manager{};
 };
 

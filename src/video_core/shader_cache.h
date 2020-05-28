@@ -115,7 +115,7 @@ private:
             if (it == invalidation_cache.end()) {
                 continue;
             }
-            InvalidatePageEntries(it->second, addr, addr_end);
+            InvalidatePageEntries(it.value(), addr, addr_end);
         }
     }
 
@@ -175,9 +175,9 @@ private:
     void RemoveEntryFromInvalidationCache(const Entry* entry) {
         const u64 page_end = (entry->addr_end + PAGE_SIZE - 1) >> PAGE_BITS;
         for (u64 page = entry->addr_start >> PAGE_BITS; page < page_end; ++page) {
-            const auto entries_it = invalidation_cache.find(page);
+            auto entries_it = invalidation_cache.find(page);
             ASSERT(entries_it != invalidation_cache.end());
-            std::vector<Entry*>& entries = entries_it->second;
+            std::vector<Entry*>& entries = entries_it.value();
 
             const auto entry_it = std::find(entries.begin(), entries.end(), entry);
             ASSERT(entry_it != entries.end());
@@ -231,8 +231,8 @@ private:
     mutable std::mutex lookup_mutex;
     std::mutex invalidation_mutex;
 
-    std::unordered_map<u64, std::unique_ptr<Entry>> lookup_cache;
-    std::unordered_map<u64, std::vector<Entry*>> invalidation_cache;
+    tsl::robin_map<u64, std::unique_ptr<Entry>> lookup_cache;
+    tsl::robin_map<u64, std::vector<Entry*>> invalidation_cache;
     std::vector<std::unique_ptr<T>> storage;
     std::vector<Entry*> marked_for_removal;
 };

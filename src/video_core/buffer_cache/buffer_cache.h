@@ -7,14 +7,15 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <boost/intrusive/set.hpp>
+
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -526,7 +527,7 @@ private:
         for (u64 page_start = start >> WRITE_PAGE_BIT; page_start <= page_end; ++page_start) {
             auto it = written_pages.find(page_start);
             if (it != written_pages.end()) {
-                it->second = it->second + 1;
+                it.value() += 1;
             } else {
                 written_pages.insert_or_assign(page_start, 1);
             }
@@ -537,12 +538,13 @@ private:
         const u64 page_end = end >> WRITE_PAGE_BIT;
         for (u64 page_start = start >> WRITE_PAGE_BIT; page_start <= page_end; ++page_start) {
             auto it = written_pages.find(page_start);
-            if (it != written_pages.end()) {
-                if (it->second > 1) {
-                    it->second = it->second - 1;
-                } else {
-                    written_pages.erase(it);
-                }
+            if (it == written_pages.end()) {
+                continue;
+            }
+            u32& num_stores = it.value();
+            --num_stores;
+            if (num_stores == 0) {
+                written_pages.erase(it);
             }
         }
     }
@@ -564,7 +566,7 @@ private:
 
     void MarkForAsyncFlush(MapInterval* map) {
         if (!uncommitted_flushes) {
-            uncommitted_flushes = std::make_shared<std::unordered_set<MapInterval*>>();
+            uncommitted_flushes = std::make_shared<tsl::robin_set<MapInterval*>>();
         }
         uncommitted_flushes->insert(map);
     }
@@ -583,8 +585,8 @@ private:
     boost::intrusive::set<MapInterval, boost::intrusive::compare<MapIntervalCompare>>
         mapped_addresses;
 
-    std::unordered_map<u64, u32> written_pages;
-    std::unordered_map<u64, std::shared_ptr<Buffer>> blocks;
+    tsl::robin_map<u64, u32> written_pages;
+    tsl::robin_map<u64, std::shared_ptr<Buffer>> blocks;
 
     std::queue<std::shared_ptr<Buffer>> pending_destruction;
     u64 epoch = 0;
@@ -594,7 +596,7 @@ private:
 
     std::list<MapInterval*> marked_for_unregister;
 
-    std::shared_ptr<std::unordered_set<MapInterval*>> uncommitted_flushes;
+    std::shared_ptr<tsl::robin_set<MapInterval*>> uncommitted_flushes;
     std::list<std::shared_ptr<std::list<MapInterval*>>> committed_flushes;
 
     std::recursive_mutex mutex;

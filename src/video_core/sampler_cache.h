@@ -5,7 +5,8 @@
 #pragma once
 
 #include <cstddef>
-#include <unordered_map>
+
+#include <tsl/robin_map.h>
 
 #include "video_core/textures/texture.h"
 
@@ -40,8 +41,8 @@ template <typename SamplerType, typename SamplerStorageType>
 class SamplerCache {
 public:
     SamplerType GetSampler(const Tegra::Texture::TSCEntry& tsc) {
-        const auto [entry, is_cache_miss] = cache.try_emplace(SamplerCacheKey{tsc});
-        auto& sampler = entry->second;
+        auto [entry, is_cache_miss] = cache.try_emplace(SamplerCacheKey{tsc});
+        auto& sampler = entry.value();
         if (is_cache_miss) {
             sampler = CreateSampler(tsc);
         }
@@ -54,7 +55,10 @@ protected:
     virtual SamplerType ToSamplerType(const SamplerStorageType& sampler) const = 0;
 
 private:
-    std::unordered_map<SamplerCacheKey, SamplerStorageType> cache;
+    tsl::robin_map<SamplerCacheKey, SamplerStorageType, std::hash<SamplerCacheKey>,
+                   std::equal_to<SamplerCacheKey>,
+                   std::allocator<std::pair<SamplerCacheKey, SamplerStorageType>>, true>
+        cache;
 };
 
 } // namespace VideoCommon

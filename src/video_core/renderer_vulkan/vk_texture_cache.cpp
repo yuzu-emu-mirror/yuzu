@@ -372,8 +372,8 @@ VkImageView CachedSurfaceView::GetImageView(SwizzleSource x_source, SwizzleSourc
     }
     last_swizzle = new_swizzle;
 
-    const auto [entry, is_cache_miss] = view_cache.try_emplace(new_swizzle);
-    auto& image_view = entry->second;
+    auto [entry, is_cache_miss] = view_cache.try_emplace(new_swizzle);
+    auto& image_view = entry.value();
     if (!is_cache_miss) {
         return last_image_view = *image_view;
     }

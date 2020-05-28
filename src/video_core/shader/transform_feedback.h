@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "video_core/shader/registry.h"
@@ -18,6 +18,6 @@ struct VaryingTFB {
     std::size_t components;
 };
 
-std::unordered_map<u8, VaryingTFB> BuildTransformFeedback(const GraphicsInfo& info);
+tsl::robin_map<u8, VaryingTFB> BuildTransformFeedback(const GraphicsInfo& info);
 
 } // namespace VideoCommon::Shader

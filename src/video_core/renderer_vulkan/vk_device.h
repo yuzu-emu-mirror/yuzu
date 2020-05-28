@@ -6,8 +6,9 @@
 
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
+
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "video_core/renderer_vulkan/nsight_aftermath_tracker.h"
@@ -252,7 +253,7 @@ private:
     std::vector<std::string> reported_extensions; ///< Reported Vulkan extensions.
 
     /// Format properties dictionary.
-    std::unordered_map<VkFormat, VkFormatProperties> format_properties;
+    tsl::robin_map<VkFormat, VkFormatProperties> format_properties;
 
     /// Nsight Aftermath GPU crash tracker
     NsightAftermathTracker nsight_aftermath_tracker;

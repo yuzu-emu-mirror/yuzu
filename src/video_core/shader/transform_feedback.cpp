@@ -4,7 +4,8 @@
 
 #include <algorithm>
 #include <array>
-#include <unordered_map>
+
+#include <tsl/robin_map.h>
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -70,9 +71,8 @@ constexpr std::array VECTORS = {
 };
 } // namespace
 
-std::unordered_map<u8, VaryingTFB> BuildTransformFeedback(const GraphicsInfo& info) {
-
-    std::unordered_map<u8, VaryingTFB> tfb;
+tsl::robin_map<u8, VaryingTFB> BuildTransformFeedback(const GraphicsInfo& info) {
+    tsl::robin_map<u8, VaryingTFB> tfb;
 
     for (std::size_t buffer = 0; buffer < Maxwell::NumTransformFeedbackBuffers; ++buffer) {
         const auto& locations = info.tfb_varying_locs[buffer];

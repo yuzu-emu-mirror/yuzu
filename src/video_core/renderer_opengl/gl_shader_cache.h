@@ -10,9 +10,9 @@
 #include <memory>
 #include <string>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
+
+#include <tsl/robin_map.h>
 
 #include <glad/glad.h>
 
@@ -110,15 +110,15 @@ public:
     Shader* GetComputeKernel(GPUVAddr code_addr);
 
 private:
-    ProgramSharedPtr GeneratePrecompiledProgram(
-        const ShaderDiskCacheEntry& entry, const ShaderDiskCachePrecompiled& precompiled_entry,
-        const std::unordered_set<GLenum>& supported_formats);
+    ProgramSharedPtr GeneratePrecompiledProgram(const ShaderDiskCacheEntry& entry,
+                                                const ShaderDiskCachePrecompiled& precompiled_entry,
+                                                const std::vector<GLint>& supported_formats);
 
     Core::System& system;
     Core::Frontend::EmuWindow& emu_window;
     const Device& device;
     ShaderDiskCacheOpenGL disk_cache;
-    std::unordered_map<u64, PrecompiledShader> runtime_cache;
+    tsl::robin_map<u64, PrecompiledShader> runtime_cache;
 
     std::unique_ptr<Shader> null_shader;
     std::unique_ptr<Shader> null_kernel;

@@ -7,7 +7,6 @@
 #include <optional>
 #include <string_view>
 #include <thread>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -78,8 +77,8 @@ VkFormatFeatureFlags GetFormatFeatures(VkFormatProperties properties, FormatType
     }
 }
 
-std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(
-    vk::PhysicalDevice physical, const vk::InstanceDispatch& dld) {
+tsl::robin_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::PhysicalDevice physical,
+                                                                 const vk::InstanceDispatch& dld) {
     static constexpr std::array formats{
         VK_FORMAT_A8B8G8R8_UNORM_PACK32,
         VK_FORMAT_A8B8G8R8_UINT_PACK32,
@@ -153,7 +152,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(
         VK_FORMAT_ASTC_6x5_SRGB_BLOCK,
         VK_FORMAT_E5B9G9R9_UFLOAT_PACK32,
     };
-    std::unordered_map<VkFormat, VkFormatProperties> format_properties;
+    tsl::robin_map<VkFormat, VkFormatProperties> format_properties;
     for (const auto format : formats) {
         format_properties.emplace(format, physical.GetFormatProperties(format));
     }
@@ -752,12 +751,9 @@ void VKDevice::CollectTelemetryParameters() {
 std::vector<VkDeviceQueueCreateInfo> VKDevice::GetDeviceQueueCreateInfos() const {
     static constexpr float QUEUE_PRIORITY = 1.0f;
 
-    std::unordered_set<u32> unique_queue_families{graphics_family, present_family};
     std::vector<VkDeviceQueueCreateInfo> queue_cis;
-    queue_cis.reserve(unique_queue_families.size());
-
-    for (const u32 queue_family : unique_queue_families) {
-        auto& ci = queue_cis.emplace_back(VkDeviceQueueCreateInfo{
+    const auto insert_queue = [&queue_cis](u32 queue_family) {
+        auto& ci = queue_cis.emplace_back({
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
@@ -765,6 +761,11 @@ std::vector<VkDeviceQueueCreateInfo> VKDevice::GetDeviceQueueCreateInfos() const
         });
         ci.queueCount = 1;
         ci.pQueuePriorities = &QUEUE_PRIORITY;
+    };
+
+    insert_queue(graphics_family);
+    if (present_family != graphics_family) {
+        insert_queue(present_family);
     }
 
     return queue_cis;

@@ -8,10 +8,11 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 
 #include <glad/glad.h>
 
@@ -166,7 +167,7 @@ private:
     std::size_t precompiled_cache_virtual_file_offset = 0;
 
     // Stored transferable shaders
-    std::unordered_set<u64> stored_transferable;
+    tsl::robin_set<u64> stored_transferable;
 
     // The cache has been loaded at boot
     bool is_usable{};

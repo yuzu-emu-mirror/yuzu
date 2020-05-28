@@ -307,7 +307,10 @@ private:
     u32 draw_counter = 0;
 
     // TODO(Rodrigo): Invalidate on image destruction
-    std::unordered_map<FramebufferCacheKey, vk::Framebuffer> framebuffer_cache;
+    tsl::robin_map<FramebufferCacheKey, vk::Framebuffer, std::hash<FramebufferCacheKey>,
+                   std::equal_to<FramebufferCacheKey>,
+                   std::allocator<std::pair<FramebufferCacheKey, vk::Framebuffer>>, true>
+        framebuffer_cache;
 };
 
 } // namespace Vulkan

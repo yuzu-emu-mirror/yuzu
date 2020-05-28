@@ -6,7 +6,8 @@
 
 #include <array>
 #include <cstddef>
-#include <unordered_map>
+
+#include <tsl/robin_map.h>
 
 #include <glad/glad.h>
 
@@ -62,7 +63,10 @@ public:
 private:
     OGLFramebuffer CreateFramebuffer(const FramebufferCacheKey& key);
 
-    std::unordered_map<FramebufferCacheKey, OGLFramebuffer> cache;
+    tsl::robin_map<FramebufferCacheKey, OGLFramebuffer, std::hash<FramebufferCacheKey>,
+                   std::equal_to<FramebufferCacheKey>,
+                   std::allocator<std::pair<FramebufferCacheKey, OGLFramebuffer>>, true>
+        cache;
 };
 
 } // namespace OpenGL

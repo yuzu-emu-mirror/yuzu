@@ -11,12 +11,13 @@
 #include <mutex>
 #include <set>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 
 #include <boost/container/small_vector.hpp>
 #include <boost/icl/interval_map.hpp>
 #include <boost/range/iterator_range.hpp>
+
+#include <tsl/robin_map.h>
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -833,8 +834,8 @@ private:
         // Step 1
         // Check Level 1 Cache for a fast structural match. If candidate surface
         // matches at certain level we are pretty much done.
-        if (const auto iter = l1_cache.find(cpu_addr); iter != l1_cache.end()) {
-            TSurface& current_surface = iter->second;
+        if (auto iter = l1_cache.find(cpu_addr); iter != l1_cache.end()) {
+            TSurface& current_surface = iter.value();
             const auto topological_result = current_surface->MatchesTopology(params);
             if (topological_result != MatchTopologyResult::FullMatch) {
                 VectorSurface overlaps{current_surface};
@@ -963,8 +964,8 @@ private:
             return result;
         }
 
-        if (const auto iter = l1_cache.find(*cpu_addr); iter != l1_cache.end()) {
-            TSurface& current_surface = iter->second;
+        if (auto iter = l1_cache.find(*cpu_addr); iter != l1_cache.end()) {
+            TSurface& current_surface = iter.value();
             const auto topological_result = current_surface->MatchesTopology(params);
             if (topological_result != MatchTopologyResult::FullMatch) {
                 Deduction result{};
@@ -1273,19 +1274,22 @@ private:
     // large in size.
     static constexpr u64 registry_page_bits{20};
     static constexpr u64 registry_page_size{1 << registry_page_bits};
-    std::unordered_map<VAddr, std::vector<TSurface>> registry;
+    tsl::robin_map<VAddr, std::vector<TSurface>> registry;
 
     static constexpr u32 DEPTH_RT = 8;
     static constexpr u32 NO_RT = 0xFFFFFFFF;
 
     // The L1 Cache is used for fast texture lookup before checking the overlaps
     // This avoids calculating size and other stuffs.
-    std::unordered_map<VAddr, TSurface> l1_cache;
+    tsl::robin_map<VAddr, TSurface> l1_cache;
 
     /// The surface reserve is a "backup" cache, this is where we put unique surfaces that have
     /// previously been used. This is to prevent surfaces from being constantly created and
     /// destroyed when used with different surface parameters.
-    std::unordered_map<SurfaceParams, std::vector<TSurface>> surface_reserve;
+    tsl::robin_map<SurfaceParams, std::vector<TSurface>, std::hash<SurfaceParams>,
+                   std::equal_to<SurfaceParams>,
+                   std::allocator<std::pair<SurfaceParams, std::vector<TSurface>>>, true>
+        surface_reserve;
     std::array<FramebufferTargetInfo, Tegra::Engines::Maxwell3D::Regs::NumRenderTargets>
         render_targets;
     FramebufferTargetInfo depth_buffer;
@@ -1294,7 +1298,7 @@ private:
 
     /// This cache stores null surfaces in order to be used as a placeholder
     /// for invalid texture calls.
-    std::unordered_map<u32, TSurface> invalid_cache;
+    tsl::robin_map<u32, TSurface> invalid_cache;
     std::vector<u8> invalid_memory;
 
     std::list<TSurface> marked_for_unregister;

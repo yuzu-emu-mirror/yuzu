@@ -7,9 +7,10 @@
 #include <array>
 #include <functional>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <tsl/robin_map.h>
 
 #include <glad/glad.h>
 
@@ -151,7 +152,7 @@ private:
 
     OGLFramebuffer src_framebuffer;
     OGLFramebuffer dst_framebuffer;
-    std::unordered_map<u32, OGLBuffer> copy_pbo_cache;
+    tsl::robin_map<u32, OGLBuffer> copy_pbo_cache;
 };
 
 } // namespace OpenGL

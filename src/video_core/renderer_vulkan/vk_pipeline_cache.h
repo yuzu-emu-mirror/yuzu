@@ -8,11 +8,12 @@
 #include <cstddef>
 #include <memory>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <boost/functional/hash.hpp>
+
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "video_core/engines/const_buffer_engine_interface.h"
@@ -178,9 +179,18 @@ private:
     GraphicsPipelineCacheKey last_graphics_key;
     VKGraphicsPipeline* last_graphics_pipeline = nullptr;
 
-    std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<VKGraphicsPipeline>>
+    tsl::robin_map<
+        GraphicsPipelineCacheKey, std::unique_ptr<VKGraphicsPipeline>,
+        std::hash<GraphicsPipelineCacheKey>, std::equal_to<GraphicsPipelineCacheKey>,
+        std::allocator<std::pair<GraphicsPipelineCacheKey, std::unique_ptr<VKGraphicsPipeline>>>,
+        true>
         graphics_cache;
-    std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<VKComputePipeline>> compute_cache;
+    tsl::robin_map<
+        ComputePipelineCacheKey, std::unique_ptr<VKComputePipeline>,
+        std::hash<ComputePipelineCacheKey>, std::equal_to<ComputePipelineCacheKey>,
+        std::allocator<std::pair<ComputePipelineCacheKey, std::unique_ptr<VKComputePipeline>>>,
+        true>
+        compute_cache;
 };
 
 void FillDescriptorUpdateTemplateEntries(

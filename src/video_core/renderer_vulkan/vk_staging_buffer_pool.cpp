@@ -3,9 +3,10 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <tsl/robin_map.h>
 
 #include "common/bit_util.h"
 #include "common/common_types.h"

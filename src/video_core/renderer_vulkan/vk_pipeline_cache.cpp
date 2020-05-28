@@ -212,8 +212,8 @@ VKGraphicsPipeline& VKPipelineCache::GetGraphicsPipeline(const GraphicsPipelineC
     }
     last_graphics_key = key;
 
-    const auto [pair, is_cache_miss] = graphics_cache.try_emplace(key);
-    auto& entry = pair->second;
+    auto [pair, is_cache_miss] = graphics_cache.try_emplace(key);
+    auto& entry = pair.value();
     if (is_cache_miss) {
         LOG_INFO(Render_Vulkan, "Compile 0x{:016X}", key.Hash());
         const auto [program, bindings] = DecompileShaders(key);
@@ -227,8 +227,8 @@ VKGraphicsPipeline& VKPipelineCache::GetGraphicsPipeline(const GraphicsPipelineC
 VKComputePipeline& VKPipelineCache::GetComputePipeline(const ComputePipelineCacheKey& key) {
     MICROPROFILE_SCOPE(Vulkan_PipelineCache);
 
-    const auto [pair, is_cache_miss] = compute_cache.try_emplace(key);
-    auto& entry = pair->second;
+    auto [pair, is_cache_miss] = compute_cache.try_emplace(key);
+    auto& entry = pair.value();
     if (!is_cache_miss) {
         return *entry;
     }
