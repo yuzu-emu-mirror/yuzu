@@ -165,6 +165,7 @@ macro(yuzu_find_packages)
         #"libzip            1.5         libzip/1.5.2@bincrafters/stable"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.7         nlohmann_json/3.7.3"
+        "tsl-robin-map     0.6.2       tsl-robin-map/0.6.2@tessil/stable"
         "ZLIB              1.2         zlib/1.2.11"
         "zstd              1.4         zstd/1.4.4"
     )
