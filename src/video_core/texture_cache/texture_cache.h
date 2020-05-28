@@ -542,7 +542,7 @@ private:
                                               const SurfaceParams& params, const GPUVAddr gpu_addr,
                                               const bool preserve_contents,
                                               const MatchTopologyResult untopological) {
-        const bool do_load = preserve_contents && Settings::IsGPULevelExtreme();
+        const bool do_load = preserve_contents;
         for (auto& surface : overlaps) {
             Unregister(surface);
         }
