@@ -979,6 +979,42 @@ bool GMainWindow::LoadROM(const QString& filename) {
     return true;
 }
 
+QString GMainWindow::LoadDLCsName(u64 title_id) {
+    const FileSys::PatchManager patch_manager(title_id);
+    std::string dlc = "";
+    std::size_t dlc_count = 0;
+
+    for (const auto& kv : patch_manager.GetPatchVersionNames(nullptr)) {
+        if (kv.first == "DLC" && !kv.second.empty()) {
+            // bound the string size, in case a game has a lot of DLCs installed
+            dlc_count++;
+            if (dlc_count > 5) {
+                continue;
+            } else if (dlc_count == 5) {
+                dlc.append(", ... ");
+                continue;
+            }
+
+            if (!dlc.empty()) {
+                dlc.append(", ");
+            }
+            dlc.append(kv.second);
+        }
+    }
+
+    if (dlc.empty()) {
+        dlc = "No DLC";
+    } else {
+        dlc = "DLC: " + dlc;
+    }
+
+    if (dlc_count > 5) {
+        dlc.append(" (" + std::to_string(dlc_count) + ")");
+    }
+
+    return QString::fromStdString(dlc);
+}
+
 void GMainWindow::SelectAndSetCurrentUser() {
     QtProfileSelectionDialog dialog(this);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
@@ -1035,27 +1071,15 @@ void GMainWindow::BootGame(const QString& filename) {
     }
 
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
-    const FileSys::PatchManager patch_manager(title_id);
-    QString dlc;
-
-    for (const auto& kv : patch_manager.GetPatchVersionNames(nullptr)) {
-        if (kv.first == "DLC" && !kv.second.empty()) {
-            dlc = QString::fromStdString("DLC " + kv.second);
-        }
-    }
-
-    if (dlc.isEmpty()) {
-        dlc = QString::fromStdString("No DLC");
-    }
-
+    const QString dlc = LoadDLCsName(title_id);
     std::string title_name;
     QString title_version;
-    const auto res = Core::System::GetInstance().GetGameName(title_name);
+    const auto res_name = Core::System::GetInstance().GetGameName(title_name);
     const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
     if (metadata.first != nullptr) {
         title_version = QString::fromStdString(metadata.first->GetVersionString());
 
-        if (res != Loader::ResultStatus::Success) {
+        if (res_name != Loader::ResultStatus::Success) {
             title_name = metadata.first->GetApplicationName();
             if (title_name.empty()) {
                 title_name = FileUtil::GetFilename(filename.toStdString());

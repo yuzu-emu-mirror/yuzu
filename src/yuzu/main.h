@@ -135,6 +135,7 @@ private:
     void AllowOSSleep();
 
     bool LoadROM(const QString& filename);
+    QString LoadDLCsName(u64 title_id);
     void BootGame(const QString& filename);
     void ShutdownGame();
 
