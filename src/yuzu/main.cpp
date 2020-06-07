@@ -1035,19 +1035,36 @@ void GMainWindow::BootGame(const QString& filename) {
     }
 
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    const FileSys::PatchManager patch_manager(title_id);
+    QString dlc;
+
+    for (const auto& kv : patch_manager.GetPatchVersionNames(nullptr)) {
+        if (kv.first == "DLC" && !kv.second.empty()) {
+            dlc = QString::fromStdString("DLC " + kv.second);
+        }
+    }
+
+    if (dlc.isEmpty()) {
+        dlc = QString::fromStdString("No DLC");
+    }
 
     std::string title_name;
+    QString title_version;
     const auto res = Core::System::GetInstance().GetGameName(title_name);
-    if (res != Loader::ResultStatus::Success) {
-        const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
-        if (metadata.first != nullptr)
-            title_name = metadata.first->GetApplicationName();
+    const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
+    if (metadata.first != nullptr) {
+        title_version = QString::fromStdString(metadata.first->GetVersionString());
 
-        if (title_name.empty())
-            title_name = FileUtil::GetFilename(filename.toStdString());
+        if (res != Loader::ResultStatus::Success) {
+            title_name = metadata.first->GetApplicationName();
+            if (title_name.empty()) {
+                title_name = FileUtil::GetFilename(filename.toStdString());
+            }
+        }
     }
     LOG_INFO(Frontend, "Booting game: {:016X} | {}", title_id, title_name);
-    UpdateWindowTitle(QString::fromStdString(title_name));
+    UpdateWindowTitle(QString::fromStdString(title_name),
+                      QString::fromStdString(std::to_string(title_id)), title_version, dlc);
 
     loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
     loading_screen->show();
@@ -1995,7 +2012,8 @@ void GMainWindow::OnCaptureScreenshot() {
     OnStartGame();
 }
 
-void GMainWindow::UpdateWindowTitle(const QString& title_name) {
+void GMainWindow::UpdateWindowTitle(const QString& title_name, const QString& title_id,
+                                    const QString& title_version, const QString& dlc) {
     const auto full_name = std::string(Common::g_build_fullname);
     const auto branch_name = std::string(Common::g_scm_branch);
     const auto description = std::string(Common::g_scm_desc);
@@ -2012,8 +2030,9 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu {0}| {3} | {1}-{2}" : fmt, full_name, branch_name,
-                        description, title_name.toStdString(), date, build_id)));
+            fmt::format(fmt.empty() ? "yuzu {0}| {3} | {4} | {5} | {6} | {1}-{2}" : fmt, full_name,
+                        branch_name, description, title_name.toStdString(), title_id.toStdString(),
+                        title_version.toStdString(), dlc.toStdString(), date, build_id)));
     }
 }
 
