@@ -1087,8 +1087,7 @@ void GMainWindow::BootGame(const QString& filename) {
         }
     }
     LOG_INFO(Frontend, "Booting game: {:016X} | {}", title_id, title_name);
-    UpdateWindowTitle(QString::fromStdString(title_name),
-                      QString::fromStdString(std::to_string(title_id)), title_version, dlc);
+    UpdateWindowTitle(QString::fromStdString(title_name), title_id, title_version, dlc);
 
     loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
     loading_screen->show();
@@ -2036,7 +2035,7 @@ void GMainWindow::OnCaptureScreenshot() {
     OnStartGame();
 }
 
-void GMainWindow::UpdateWindowTitle(const QString& title_name, const QString& title_id,
+void GMainWindow::UpdateWindowTitle(const QString& title_name, u64 title_id,
                                     const QString& title_version, const QString& dlc) {
     const auto full_name = std::string(Common::g_build_fullname);
     const auto branch_name = std::string(Common::g_scm_branch);
