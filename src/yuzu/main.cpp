@@ -2055,7 +2055,7 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name, const QString& ti
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
             fmt::format(fmt.empty() ? "yuzu {0}| {3} | {4} | {5} | {6} | {1}-{2}" : fmt, full_name,
-                        branch_name, description, title_name.toStdString(), title_id.toStdString(),
+                        branch_name, description, title_name.toStdString(), fmt::format("{:016X}", title_id),
                         title_version.toStdString(), dlc.toStdString(), date, build_id)));
     }
 }
