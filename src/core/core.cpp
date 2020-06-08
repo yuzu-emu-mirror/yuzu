@@ -161,8 +161,8 @@ struct System::Impl {
 
         const auto current_time = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch());
-        Settings::values.custom_rtc_differential =
-            Settings::values.custom_rtc.value_or(current_time) - current_time;
+        Settings::values->custom_rtc_differential =
+            Settings::values->custom_rtc.value_or(current_time) - current_time;
 
         // Create a default fs if one doesn't already exist.
         if (virtual_filesystem == nullptr)
@@ -241,12 +241,12 @@ struct System::Impl {
         main_process->Run(load_parameters->main_thread_priority,
                           load_parameters->main_thread_stack_size);
 
-        if (Settings::values.gamecard_inserted) {
-            if (Settings::values.gamecard_current_game) {
+        if (Settings::values->gamecard_inserted) {
+            if (Settings::values->gamecard_current_game) {
                 fs_controller.SetGameCard(GetGameFileFromPath(virtual_filesystem, filepath));
-            } else if (!Settings::values.gamecard_path.empty()) {
+            } else if (!Settings::values->gamecard_path.empty()) {
                 fs_controller.SetGameCard(
-                    GetGameFileFromPath(virtual_filesystem, Settings::values.gamecard_path));
+                    GetGameFileFromPath(virtual_filesystem, Settings::values->gamecard_path));
             }
         }
 

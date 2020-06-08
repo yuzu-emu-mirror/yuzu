@@ -43,7 +43,7 @@ ProfileManager::ProfileManager() {
     if (user_count == 0)
         CreateNewUser(UUID::Generate(), "yuzu");
 
-    auto current = std::clamp<int>(Settings::values.current_user, 0, MAX_USERS - 1);
+    auto current = std::clamp<int>(Settings::values->current_user, 0, MAX_USERS - 1);
     if (UserExistsIndex(current))
         current = 0;
 

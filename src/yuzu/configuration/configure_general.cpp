@@ -33,9 +33,9 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background);
     ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse);
 
-    ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit);
+    ui->toggle_frame_limit->setChecked(Settings::values->use_frame_limit);
     ui->frame_limit->setEnabled(ui->toggle_frame_limit->isChecked());
-    ui->frame_limit->setValue(Settings::values.frame_limit);
+    ui->frame_limit->setValue(Settings::values->frame_limit);
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
@@ -44,9 +44,9 @@ void ConfigureGeneral::ApplyConfiguration() {
     UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
     UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
 
-    Settings::values.use_frame_limit = ui->toggle_frame_limit->isChecked();
-    Settings::values.frame_limit = ui->frame_limit->value();
-    Settings::values.use_multi_core = ui->use_multi_core->isChecked();
+    Settings::values->use_frame_limit = ui->toggle_frame_limit->isChecked();
+    Settings::values->frame_limit = ui->frame_limit->value();
+    Settings::values->use_multi_core = ui->use_multi_core->isChecked();
 }
 
 void ConfigureGeneral::changeEvent(QEvent* event) {

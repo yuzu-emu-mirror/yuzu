@@ -81,7 +81,7 @@ void ConfigurePerGameGeneral::ApplyConfiguration() {
             disabled_addons.push_back(item.front()->text().toStdString());
     }
 
-    auto current = Settings::values.disabled_addons[title_id];
+    auto current = Settings::values->disabled_addons[title_id];
     std::sort(disabled_addons.begin(), disabled_addons.end());
     std::sort(current.begin(), current.end());
     if (disabled_addons != current) {
@@ -89,7 +89,7 @@ void ConfigurePerGameGeneral::ApplyConfiguration() {
                          "game_list" + DIR_SEP + fmt::format("{:016X}.pv.txt", title_id));
     }
 
-    Settings::values.disabled_addons[title_id] = disabled_addons;
+    Settings::values->disabled_addons[title_id] = disabled_addons;
 }
 
 void ConfigurePerGameGeneral::changeEvent(QEvent* event) {
@@ -161,7 +161,7 @@ void ConfigurePerGameGeneral::LoadConfiguration() {
     FileSys::VirtualFile update_raw;
     loader->ReadUpdateRaw(update_raw);
 
-    const auto& disabled = Settings::values.disabled_addons[title_id];
+    const auto& disabled = Settings::values->disabled_addons[title_id];
 
     for (const auto& patch : pm.GetPatchVersionNames(update_raw)) {
         const auto name =

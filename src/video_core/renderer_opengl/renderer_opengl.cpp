@@ -455,7 +455,7 @@ void RendererOpenGL::LoadColorToActiveGLTexture(u8 color_r, u8 color_g, u8 color
 void RendererOpenGL::InitOpenGLObjects() {
     frame_mailbox = std::make_unique<FrameMailbox>();
 
-    glClearColor(Settings::values.bg_red, Settings::values.bg_green, Settings::values.bg_blue,
+    glClearColor(Settings::values->bg_red, Settings::values->bg_green, Settings::values->bg_blue,
                  0.0f);
 
     // Create shader programs
@@ -561,7 +561,7 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     if (renderer_settings.set_background_color) {
         // Update background color before drawing
-        glClearColor(Settings::values.bg_red, Settings::values.bg_green, Settings::values.bg_blue,
+        glClearColor(Settings::values->bg_red, Settings::values->bg_green, Settings::values->bg_blue,
                      0.0f);
     }
 
@@ -766,7 +766,7 @@ void RendererOpenGL::RenderScreenshot() {
 }
 
 bool RendererOpenGL::Init() {
-    if (Settings::values.renderer_debug && GLAD_GL_KHR_debug) {
+    if (Settings::values->renderer_debug && GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(DebugHandler, nullptr);

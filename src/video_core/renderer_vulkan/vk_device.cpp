@@ -571,7 +571,7 @@ std::vector<const char*> VKDevice::LoadExtensions() {
              false);
         Test(extension, has_ext_extended_dynamic_state,
              VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
-        if (Settings::values.renderer_debug) {
+        if (Settings::values->renderer_debug) {
             Test(extension, nv_device_diagnostics_config,
                  VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME, true);
         }

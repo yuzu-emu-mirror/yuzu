@@ -159,15 +159,15 @@ void SET::GetQuestFlag(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u32>(Settings::values.quest_flag));
+    rb.Push(static_cast<u32>(Settings::values->quest_flag));
 }
 
 void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_SET, "called {}", Settings::values.language_index);
+    LOG_DEBUG(Service_SET, "called {}", Settings::values->language_index);
 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
-    rb.PushEnum(available_language_codes[Settings::values.language_index]);
+    rb.PushEnum(available_language_codes[Settings::values->language_index]);
 }
 
 void SET::GetRegionCode(Kernel::HLERequestContext& ctx) {
@@ -175,7 +175,7 @@ void SET::GetRegionCode(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(Settings::values.region_index);
+    rb.Push(Settings::values->region_index);
 }
 
 void SET::GetKeyCodeMap(Kernel::HLERequestContext& ctx) {

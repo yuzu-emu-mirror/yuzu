@@ -63,7 +63,7 @@ FramebufferLayout FrameLayoutFromResolutionScale(u32 res_scale);
 
 /**
  * Convenience method to determine emulation aspect ratio
- * @param aspect Represents the index of aspect ratio stored in Settings::values.aspect_ratio
+ * @param aspect Represents the index of aspect ratio stored in Settings::values->aspect_ratio
  * @param window_aspect_ratio Current window aspect ratio
  * @return Emulation render window aspect ratio
  */

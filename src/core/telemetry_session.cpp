@@ -116,7 +116,7 @@ u64 RegenerateTelemetryId() {
 
 bool VerifyLogin(const std::string& username, const std::string& token) {
 #ifdef ENABLE_WEB_SERVICE
-    return WebService::VerifyLogin(Settings::values.web_api_url, username, token);
+    return WebService::VerifyLogin(Settings::values->web_api_url, username, token);
 #else
     return false;
 #endif
@@ -133,14 +133,14 @@ TelemetrySession::~TelemetrySession() {
 
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values.web_api_url, Settings::values.yuzu_username, Settings::values.yuzu_token);
+        Settings::values->web_api_url, Settings::values->yuzu_username, Settings::values->yuzu_token);
 #else
     auto backend = std::make_unique<Telemetry::NullVisitor>();
 #endif
 
     // Complete the session, submitting to the web service backend if necessary
     field_collection.Accept(*backend);
-    if (Settings::values.enable_telemetry) {
+    if (Settings::values->enable_telemetry) {
         backend->Complete();
     }
 }
@@ -188,27 +188,27 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader) {
 
     // Log user configuration information
     constexpr auto field_type = Telemetry::FieldType::UserConfig;
-    AddField(field_type, "Audio_SinkId", Settings::values.sink_id);
-    AddField(field_type, "Audio_EnableAudioStretching", Settings::values.enable_audio_stretching);
-    AddField(field_type, "Core_UseMultiCore", Settings::values.use_multi_core);
-    AddField(field_type, "Renderer_Backend", TranslateRenderer(Settings::values.renderer_backend));
-    AddField(field_type, "Renderer_ResolutionFactor", Settings::values.resolution_factor);
-    AddField(field_type, "Renderer_UseFrameLimit", Settings::values.use_frame_limit);
-    AddField(field_type, "Renderer_FrameLimit", Settings::values.frame_limit);
-    AddField(field_type, "Renderer_UseDiskShaderCache", Settings::values.use_disk_shader_cache);
+    AddField(field_type, "Audio_SinkId", Settings::values->sink_id);
+    AddField(field_type, "Audio_EnableAudioStretching", Settings::values->enable_audio_stretching);
+    AddField(field_type, "Core_UseMultiCore", Settings::values->use_multi_core);
+    AddField(field_type, "Renderer_Backend", TranslateRenderer(Settings::values->renderer_backend));
+    AddField(field_type, "Renderer_ResolutionFactor", Settings::values->resolution_factor);
+    AddField(field_type, "Renderer_UseFrameLimit", Settings::values->use_frame_limit);
+    AddField(field_type, "Renderer_FrameLimit", Settings::values->frame_limit);
+    AddField(field_type, "Renderer_UseDiskShaderCache", Settings::values->use_disk_shader_cache);
     AddField(field_type, "Renderer_GPUAccuracyLevel",
-             TranslateGPUAccuracyLevel(Settings::values.gpu_accuracy));
+             TranslateGPUAccuracyLevel(Settings::values->gpu_accuracy));
     AddField(field_type, "Renderer_UseAsynchronousGpuEmulation",
-             Settings::values.use_asynchronous_gpu_emulation);
-    AddField(field_type, "Renderer_UseVsync", Settings::values.use_vsync);
-    AddField(field_type, "Renderer_UseAssemblyShaders", Settings::values.use_assembly_shaders);
-    AddField(field_type, "System_UseDockedMode", Settings::values.use_docked_mode);
+             Settings::values->use_asynchronous_gpu_emulation);
+    AddField(field_type, "Renderer_UseVsync", Settings::values->use_vsync);
+    AddField(field_type, "Renderer_UseAssemblyShaders", Settings::values->use_assembly_shaders);
+    AddField(field_type, "System_UseDockedMode", Settings::values->use_docked_mode);
 }
 
 bool TelemetrySession::SubmitTestcase() {
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values.web_api_url, Settings::values.yuzu_username, Settings::values.yuzu_token);
+        Settings::values->web_api_url, Settings::values->yuzu_username, Settings::values->yuzu_token);
     field_collection.Accept(*backend);
     return backend->SubmitTestcase();
 #else

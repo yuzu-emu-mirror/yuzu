@@ -78,7 +78,7 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
 }
 
 std::unique_ptr<MacroEngine> GetMacroEngine(Engines::Maxwell3D& maxwell3d) {
-    if (Settings::values.disable_macro_jit) {
+    if (Settings::values->disable_macro_jit) {
         return std::make_unique<MacroInterpreter>(maxwell3d);
     }
 #ifdef ARCHITECTURE_x86_64

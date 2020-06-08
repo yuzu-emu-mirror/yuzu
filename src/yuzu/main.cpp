@@ -162,7 +162,7 @@ void GMainWindow::ShowTelemetryCallout() {
            "data is collected</a> to help improve yuzu. "
            "<br/><br/>Would you like to share your usage data with us?");
     if (QMessageBox::question(this, tr("Telemetry"), telemetry_message) != QMessageBox::Yes) {
-        Settings::values.enable_telemetry = false;
+        Settings::values->enable_telemetry = false;
         Settings::Apply();
     }
 }
@@ -171,7 +171,7 @@ const int GMainWindow::max_recent_files_item;
 
 static void InitializeLogging() {
     Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values.log_filter);
+    log_filter.ParseFilterString(Settings::values->log_filter);
     Log::SetGlobalFilter(log_filter);
 
     const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
@@ -517,13 +517,13 @@ void GMainWindow::InitializeWidgets() {
     dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     dock_status_button->setFocusPolicy(Qt::NoFocus);
     connect(dock_status_button, &QPushButton::clicked, [&] {
-        Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
-        dock_status_button->setChecked(Settings::values.use_docked_mode);
-        OnDockedModeChanged(!Settings::values.use_docked_mode, Settings::values.use_docked_mode);
+        Settings::values->use_docked_mode = !Settings::values->use_docked_mode;
+        dock_status_button->setChecked(Settings::values->use_docked_mode);
+        OnDockedModeChanged(!Settings::values->use_docked_mode, Settings::values->use_docked_mode);
     });
     dock_status_button->setText(tr("DOCK"));
     dock_status_button->setCheckable(true);
-    dock_status_button->setChecked(Settings::values.use_docked_mode);
+    dock_status_button->setChecked(Settings::values->use_docked_mode);
     statusBar()->insertPermanentWidget(0, dock_status_button);
 
     // Setup ASync button
@@ -581,16 +581,16 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setCheckable(false);
     renderer_status_button->setDisabled(true);
 #else
-    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+    renderer_status_button->setChecked(Settings::values->renderer_backend ==
                                        Settings::RendererBackend::Vulkan);
     connect(renderer_status_button, &QPushButton::clicked, [=] {
         if (emulation_running) {
             return;
         }
         if (renderer_status_button->isChecked()) {
-            Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
+            Settings::values->renderer_backend = Settings::RendererBackend::Vulkan;
         } else {
-            Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+            Settings::values->renderer_backend = Settings::RendererBackend::OpenGL;
         }
 
         Settings::Apply();
@@ -727,21 +727,21 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                Settings::values.use_frame_limit = !Settings::values.use_frame_limit;
+                Settings::values->use_frame_limit = !Settings::values->use_frame_limit;
                 UpdateStatusBar();
             });
     constexpr u16 SPEED_LIMIT_STEP = 5;
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit += SPEED_LIMIT_STEP;
+                if (Settings::values->frame_limit < 9999 - SPEED_LIMIT_STEP) {
+                    Settings::values->frame_limit += SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit > SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit -= SPEED_LIMIT_STEP;
+                if (Settings::values->frame_limit > SPEED_LIMIT_STEP) {
+                    Settings::values->frame_limit -= SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });
@@ -759,10 +759,10 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Change Docked Mode"), this),
             &QShortcut::activated, this, [&] {
-                Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
-                OnDockedModeChanged(!Settings::values.use_docked_mode,
-                                    Settings::values.use_docked_mode);
-                dock_status_button->setChecked(Settings::values.use_docked_mode);
+                Settings::values->use_docked_mode = !Settings::values->use_docked_mode;
+                OnDockedModeChanged(!Settings::values->use_docked_mode,
+                                    Settings::values->use_docked_mode);
+                dock_status_button->setChecked(Settings::values->use_docked_mode);
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
             &QShortcut::activated, this,
@@ -1032,7 +1032,7 @@ void GMainWindow::SelectAndSetCurrentUser() {
         return;
     }
 
-    Settings::values.current_user = dialog.GetIndex();
+    Settings::values->current_user = dialog.GetIndex();
 }
 
 void GMainWindow::BootGame(const QString& filename) {
@@ -1831,7 +1831,7 @@ void GMainWindow::ErrorDisplayDisplayError(QString body) {
 }
 
 void GMainWindow::OnMenuReportCompatibility() {
-    if (!Settings::values.yuzu_token.empty() && !Settings::values.yuzu_username.empty()) {
+    if (!Settings::values->yuzu_token.empty() && !Settings::values->yuzu_username.empty()) {
         CompatDB compatdb{this};
         compatdb.exec();
     } else {
@@ -1926,7 +1926,7 @@ void GMainWindow::ToggleWindowMode() {
 
 void GMainWindow::ResetWindowSize() {
     const auto aspect_ratio = Layout::EmulationAspectRatio(
-        static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio),
+        static_cast<Layout::AspectRatio>(Settings::values->aspect_ratio),
         static_cast<float>(Layout::ScreenUndocked::Height) / Layout::ScreenUndocked::Width);
     if (!ui.action_Single_Window_Mode->isChecked()) {
         render_window->resize(Layout::ScreenUndocked::Height / aspect_ratio,
@@ -1981,7 +1981,7 @@ void GMainWindow::OnConfigure() {
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 
 #ifdef HAS_VULKAN
-    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+    renderer_status_button->setChecked(Settings::values->renderer_backend ==
                                        Settings::RendererBackend::Vulkan);
 #endif
 }
@@ -2097,10 +2097,10 @@ void GMainWindow::UpdateStatusBar() {
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
 
-    if (Settings::values.use_frame_limit) {
+    if (Settings::values->use_frame_limit) {
         emu_speed_label->setText(tr("Speed: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
-                                     .arg(Settings::values.frame_limit));
+                                     .arg(Settings::values->frame_limit));
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }

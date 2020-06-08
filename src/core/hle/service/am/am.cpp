@@ -729,16 +729,16 @@ void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
 
-    if (Settings::values.use_docked_mode) {
+    if (Settings::values->use_docked_mode) {
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values->resolution_factor));
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values->resolution_factor));
     } else {
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values->resolution_factor));
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values->resolution_factor));
     }
 }
 
@@ -802,7 +802,7 @@ void IStorage::Open(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
-    const bool use_docked_mode{Settings::values.use_docked_mode};
+    const bool use_docked_mode{Settings::values->use_docked_mode};
     LOG_DEBUG(Service_AM, "called, use_docked_mode={}", use_docked_mode);
 
     IPC::ResponseBuilder rb{ctx, 3};
@@ -1289,7 +1289,7 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
         params.is_account_selected = 1;
 
         Account::ProfileManager profile_manager{};
-        const auto uuid = profile_manager.GetUser(Settings::values.current_user);
+        const auto uuid = profile_manager.GetUser(Settings::values->current_user);
         ASSERT(uuid);
         params.current_user = uuid->uuid;
 

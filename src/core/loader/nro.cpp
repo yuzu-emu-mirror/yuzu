@@ -157,8 +157,8 @@ static bool LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
         codeset.segments[i].size = PageAlignSize(nro_header.segments[i].size);
     }
 
-    if (!Settings::values.program_args.empty()) {
-        const auto arg_data = Settings::values.program_args;
+    if (!Settings::values->program_args.empty()) {
+        const auto arg_data = Settings::values->program_args;
         codeset.DataSegment().size += NSO_ARGUMENT_DATA_ALLOCATION_SIZE;
         NSOArgumentHeader args_header{
             NSO_ARGUMENT_DATA_ALLOCATION_SIZE, static_cast<u32_le>(arg_data.size()), {}};

@@ -53,9 +53,9 @@ void Controller_Keyboard::OnUpdate(const Core::Timing::CoreTiming& core_timing, 
 }
 
 void Controller_Keyboard::OnLoadInputDevices() {
-    std::transform(Settings::values.keyboard_keys.begin(), Settings::values.keyboard_keys.end(),
+    std::transform(Settings::values->keyboard_keys.begin(), Settings::values->keyboard_keys.end(),
                    keyboard_keys.begin(), Input::CreateDevice<Input::ButtonDevice>);
-    std::transform(Settings::values.keyboard_mods.begin(), Settings::values.keyboard_mods.end(),
+    std::transform(Settings::values->keyboard_mods.begin(), Settings::values->keyboard_mods.end(),
                    keyboard_mods.begin(), Input::CreateDevice<Input::ButtonDevice>);
 }
 } // namespace Service::HID

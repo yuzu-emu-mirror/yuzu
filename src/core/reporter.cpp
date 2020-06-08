@@ -439,7 +439,7 @@ void Reporter::SaveUserReport() const {
 }
 
 bool Reporter::IsReportingEnabled() const {
-    return Settings::values.reporting_services;
+    return Settings::values->reporting_services;
 }
 
 } // namespace Core

@@ -46,43 +46,43 @@ bool Config::LoadINI(const std::string& default_contents, bool retry) {
 
 void Config::ReadValues() {
     // Controls
-    for (std::size_t p = 0; p < Settings::values.players.size(); ++p) {
+    for (std::size_t p = 0; p < Settings::values->players.size(); ++p) {
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-            Settings::values.players[p].buttons[i] = "";
+            Settings::values->players[p].buttons[i] = "";
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-            Settings::values.players[p].analogs[i] = "";
+            Settings::values->players[p].analogs[i] = "";
         }
     }
 
-    Settings::values.mouse_enabled = false;
+    Settings::values->mouse_enabled = false;
     for (int i = 0; i < Settings::NativeMouseButton::NumMouseButtons; ++i) {
-        Settings::values.mouse_buttons[i] = "";
+        Settings::values->mouse_buttons[i] = "";
     }
 
-    Settings::values.motion_device = "";
+    Settings::values->motion_device = "";
 
-    Settings::values.keyboard_enabled = false;
+    Settings::values->keyboard_enabled = false;
 
-    Settings::values.debug_pad_enabled = false;
+    Settings::values->debug_pad_enabled = false;
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-        Settings::values.debug_pad_buttons[i] = "";
+        Settings::values->debug_pad_buttons[i] = "";
     }
 
     for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-        Settings::values.debug_pad_analogs[i] = "";
+        Settings::values->debug_pad_analogs[i] = "";
     }
 
-    Settings::values.touchscreen.enabled = "";
-    Settings::values.touchscreen.device = "";
-    Settings::values.touchscreen.finger = 0;
-    Settings::values.touchscreen.rotation_angle = 0;
-    Settings::values.touchscreen.diameter_x = 15;
-    Settings::values.touchscreen.diameter_y = 15;
+    Settings::values->touchscreen.enabled = "";
+    Settings::values->touchscreen.device = "";
+    Settings::values->touchscreen.finger = 0;
+    Settings::values->touchscreen.rotation_angle = 0;
+    Settings::values->touchscreen.diameter_x = 15;
+    Settings::values->touchscreen.diameter_y = 15;
 
     // Data Storage
-    Settings::values.use_virtual_sd =
+    Settings::values->use_virtual_sd =
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
     FileUtil::GetUserPath(FileUtil::UserPath::NANDDir,
                           sdl2_config->Get("Data Storage", "nand_directory",
@@ -92,67 +92,67 @@ void Config::ReadValues() {
                                            FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)));
 
     // System
-    Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
+    Settings::values->use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
 
-    Settings::values.current_user = std::clamp<int>(
+    Settings::values->current_user = std::clamp<int>(
         sdl2_config->GetInteger("System", "current_user", 0), 0, Service::Account::MAX_USERS - 1);
 
     const auto rng_seed_enabled = sdl2_config->GetBoolean("System", "rng_seed_enabled", false);
     if (rng_seed_enabled) {
-        Settings::values.rng_seed = sdl2_config->GetInteger("System", "rng_seed", 0);
+        Settings::values->rng_seed = sdl2_config->GetInteger("System", "rng_seed", 0);
     } else {
-        Settings::values.rng_seed = std::nullopt;
+        Settings::values->rng_seed = std::nullopt;
     }
 
     const auto custom_rtc_enabled = sdl2_config->GetBoolean("System", "custom_rtc_enabled", false);
     if (custom_rtc_enabled) {
-        Settings::values.custom_rtc =
+        Settings::values->custom_rtc =
             std::chrono::seconds(sdl2_config->GetInteger("System", "custom_rtc", 0));
     } else {
-        Settings::values.custom_rtc = std::nullopt;
+        Settings::values->custom_rtc = std::nullopt;
     }
 
     // Core
-    Settings::values.use_multi_core = sdl2_config->GetBoolean("Core", "use_multi_core", false);
+    Settings::values->use_multi_core = sdl2_config->GetBoolean("Core", "use_multi_core", false);
 
     // Renderer
-    Settings::values.aspect_ratio =
+    Settings::values->aspect_ratio =
         static_cast<int>(sdl2_config->GetInteger("Renderer", "aspect_ratio", 0));
-    Settings::values.max_anisotropy =
+    Settings::values->max_anisotropy =
         static_cast<int>(sdl2_config->GetInteger("Renderer", "max_anisotropy", 0));
-    Settings::values.use_frame_limit = false;
-    Settings::values.frame_limit = 100;
-    Settings::values.use_disk_shader_cache =
+    Settings::values->use_frame_limit = false;
+    Settings::values->frame_limit = 100;
+    Settings::values->use_disk_shader_cache =
         sdl2_config->GetBoolean("Renderer", "use_disk_shader_cache", false);
     const int gpu_accuracy_level = sdl2_config->GetInteger("Renderer", "gpu_accuracy", 0);
-    Settings::values.gpu_accuracy = static_cast<Settings::GPUAccuracy>(gpu_accuracy_level);
-    Settings::values.use_asynchronous_gpu_emulation =
+    Settings::values->gpu_accuracy = static_cast<Settings::GPUAccuracy>(gpu_accuracy_level);
+    Settings::values->use_asynchronous_gpu_emulation =
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", false);
-    Settings::values.use_fast_gpu_time =
+    Settings::values->use_fast_gpu_time =
         sdl2_config->GetBoolean("Renderer", "use_fast_gpu_time", true);
 
-    Settings::values.bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
-    Settings::values.bg_green =
+    Settings::values->bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
+    Settings::values->bg_green =
         static_cast<float>(sdl2_config->GetReal("Renderer", "bg_green", 0.0));
-    Settings::values.bg_blue = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_blue", 0.0));
+    Settings::values->bg_blue = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_blue", 0.0));
 
     // Audio
-    Settings::values.sink_id = "null";
-    Settings::values.enable_audio_stretching = false;
-    Settings::values.audio_device_id = "auto";
-    Settings::values.volume = 0;
+    Settings::values->sink_id = "null";
+    Settings::values->enable_audio_stretching = false;
+    Settings::values->audio_device_id = "auto";
+    Settings::values->volume = 0;
 
-    Settings::values.language_index = sdl2_config->GetInteger("System", "language_index", 1);
+    Settings::values->language_index = sdl2_config->GetInteger("System", "language_index", 1);
 
     // Miscellaneous
-    Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
-    Settings::values.use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
+    Settings::values->log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
+    Settings::values->use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
 
     // Debugging
-    Settings::values.use_gdbstub = false;
-    Settings::values.program_args = "";
-    Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
-    Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
+    Settings::values->use_gdbstub = false;
+    Settings::values->program_args = "";
+    Settings::values->dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
+    Settings::values->dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
     std::stringstream ss(title_list);
@@ -168,16 +168,16 @@ void Config::ReadValues() {
             out.push_back(inner_line);
         }
 
-        Settings::values.disabled_addons.insert_or_assign(title_id, out);
+        Settings::values->disabled_addons.insert_or_assign(title_id, out);
     }
 
     // Web Service
-    Settings::values.enable_telemetry =
+    Settings::values->enable_telemetry =
         sdl2_config->GetBoolean("WebService", "enable_telemetry", true);
-    Settings::values.web_api_url =
+    Settings::values->web_api_url =
         sdl2_config->Get("WebService", "web_api_url", "https://api.yuzu-emu.org");
-    Settings::values.yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
-    Settings::values.yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
+    Settings::values->yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
+    Settings::values->yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
 }
 
 void Config::Reload() {

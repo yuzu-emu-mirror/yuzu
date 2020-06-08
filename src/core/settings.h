@@ -382,7 +382,7 @@ enum class GPUAccuracy : u32 {
     Extreme = 2,
 };
 
-struct Values {
+typedef struct Values_t {
     // System
     bool use_docked_mode;
     std::optional<u32> rng_seed;
@@ -489,7 +489,11 @@ struct Values {
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
-} extern values;
+} Values;
+
+extern Values global_values;
+extern Values game_values;
+extern Values *values;
 
 float Volume();
 

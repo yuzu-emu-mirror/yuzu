@@ -96,7 +96,7 @@ public:
         }
         if (is_written) {
             map->MarkAsModified(true, GetModifiedTicks());
-            if (Settings::IsGPULevelHigh() && Settings::values.use_asynchronous_gpu_emulation) {
+            if (Settings::IsGPULevelHigh() && Settings::values->use_asynchronous_gpu_emulation) {
                 MarkForAsyncFlush(map);
             }
             if (!map->is_written) {
@@ -369,7 +369,7 @@ private:
         }
         if (modified_inheritance) {
             map->MarkAsModified(true, GetModifiedTicks());
-            if (Settings::IsGPULevelHigh() && Settings::values.use_asynchronous_gpu_emulation) {
+            if (Settings::IsGPULevelHigh() && Settings::values->use_asynchronous_gpu_emulation) {
                 MarkForAsyncFlush(map);
             }
         }

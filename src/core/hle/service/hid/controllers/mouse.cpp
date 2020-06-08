@@ -36,7 +36,7 @@ void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8*
     cur_entry.sampling_number = last_entry.sampling_number + 1;
     cur_entry.sampling_number2 = cur_entry.sampling_number;
 
-    if (Settings::values.mouse_enabled) {
+    if (Settings::values->mouse_enabled) {
         const auto [px, py, sx, sy] = mouse_device->GetStatus();
         const auto x = static_cast<s32>(px * Layout::ScreenUndocked::Width);
         const auto y = static_cast<s32>(py * Layout::ScreenUndocked::Height);
@@ -56,8 +56,8 @@ void Controller_Mouse::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8*
 }
 
 void Controller_Mouse::OnLoadInputDevices() {
-    mouse_device = Input::CreateDevice<Input::MouseDevice>(Settings::values.mouse_device);
-    std::transform(Settings::values.mouse_buttons.begin(), Settings::values.mouse_buttons.end(),
+    mouse_device = Input::CreateDevice<Input::MouseDevice>(Settings::values->mouse_device);
+    std::transform(Settings::values->mouse_buttons.begin(), Settings::values->mouse_buttons.end(),
                    mouse_button_devices.begin(), Input::CreateDevice<Input::ButtonDevice>);
 }
 } // namespace Service::HID
