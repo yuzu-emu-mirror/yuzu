@@ -41,6 +41,10 @@ target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
 # SoundTouch
 add_subdirectory(soundtouch)
 
+# Opus
+add_subdirectory(opus)
+target_include_directories(opus INTERFACE ./opus/include)
+
 # Cubeb
 if(ENABLE_CUBEB)
     set(BUILD_TESTS OFF CACHE BOOL "")
