@@ -57,7 +57,7 @@ class FrameMailbox;
 class RendererOpenGL final : public VideoCore::RendererBase {
 public:
     explicit RendererOpenGL(Core::Frontend::EmuWindow& emu_window, Core::System& system,
-                            Core::Frontend::GraphicsContext& context);
+                            std::unique_ptr<Core::Frontend::GraphicsContext> context);
     ~RendererOpenGL() override;
 
     bool Init() override;
@@ -95,7 +95,7 @@ private:
 
     Core::Frontend::EmuWindow& emu_window;
     Core::System& system;
-    Core::Frontend::GraphicsContext& context;
+    std::unique_ptr<Core::Frontend::GraphicsContext> context;
     const Device device;
 
     StateTracker state_tracker{system};

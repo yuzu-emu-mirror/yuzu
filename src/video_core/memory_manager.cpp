@@ -15,8 +15,7 @@
 
 namespace Tegra {
 
-MemoryManager::MemoryManager(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
-    : rasterizer{rasterizer}, system{system} {
+MemoryManager::MemoryManager(Core::System& system_) : system{system_} {
     page_table.Resize(address_space_width, page_bits, false);
 
     // Initialize the map with a single free region covering the entire managed space.
@@ -28,6 +27,10 @@ MemoryManager::MemoryManager(Core::System& system, VideoCore::RasterizerInterfac
 }
 
 MemoryManager::~MemoryManager() = default;
+
+void MemoryManager::BindRasterizer(VideoCore::RasterizerInterface& rasterizer_) {
+    rasterizer = &rasterizer_;
+}
 
 GPUVAddr MemoryManager::AllocateSpace(u64 size, u64 align) {
     const u64 aligned_size{Common::AlignUp(size, page_size)};
@@ -225,7 +228,7 @@ void MemoryManager::ReadBlock(GPUVAddr gpu_src_addr, void* dest_buffer,
         const VAddr src_addr{page_table.backing_addr[page_index] + page_offset};
         // Flush must happen on the rasterizer interface, such that memory is always synchronous
         // when it is read (even when in asynchronous GPU mode). Fixes Dead Cells title menu.
-        rasterizer.FlushRegion(src_addr, copy_amount);
+        rasterizer->FlushRegion(src_addr, copy_amount);
         memory.ReadBlockUnsafe(src_addr, dest_buffer, copy_amount);
 
         page_index++;
@@ -275,7 +278,7 @@ void MemoryManager::WriteBlock(GPUVAddr gpu_dest_addr, const void* src_buffer,
         const VAddr dest_addr{page_table.backing_addr[page_index] + page_offset};
         // Invalidate must happen on the rasterizer interface, such that memory is always
         // synchronous when it is written (even when in asynchronous GPU mode).
-        rasterizer.InvalidateRegion(dest_addr, copy_amount);
+        rasterizer->InvalidateRegion(dest_addr, copy_amount);
         memory.WriteBlockUnsafe(dest_addr, src_buffer, copy_amount);
 
         page_index++;

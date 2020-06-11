@@ -313,9 +313,9 @@ public:
     }
 };
 
-RendererOpenGL::RendererOpenGL(Core::Frontend::EmuWindow& emu_window, Core::System& system,
-                               Core::Frontend::GraphicsContext& context)
-    : RendererBase{emu_window}, emu_window{emu_window}, system{system}, context{context},
+RendererOpenGL::RendererOpenGL(Core::Frontend::EmuWindow& emu_window_, Core::System& system_,
+                               std::unique_ptr<Core::Frontend::GraphicsContext> context_)
+    : RendererBase{emu_window_, std::move(context_)}, emu_window{emu_window_}, system{system_},
       program_manager{device}, has_debug_tool{HasDebugTool()} {}
 
 RendererOpenGL::~RendererOpenGL() = default;
@@ -384,7 +384,7 @@ void RendererOpenGL::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (has_debug_tool) {
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         Present(0);
-        context.SwapBuffers();
+        context->SwapBuffers();
     }
 }
 

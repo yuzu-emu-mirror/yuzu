@@ -51,8 +51,11 @@ struct VirtualMemoryArea {
 
 class MemoryManager final {
 public:
-    explicit MemoryManager(Core::System& system, VideoCore::RasterizerInterface& rasterizer);
+    explicit MemoryManager(Core::System& system);
     ~MemoryManager();
+
+    /// Binds a renderer to the memory manager.
+    void BindRasterizer(VideoCore::RasterizerInterface& rasterizer);
 
     GPUVAddr AllocateSpace(u64 size, u64 align);
     GPUVAddr AllocateSpace(GPUVAddr addr, u64 size, u64 align);
@@ -181,7 +184,7 @@ private:
 
     Common::PageTable page_table;
     VMAMap vma_map;
-    VideoCore::RasterizerInterface& rasterizer;
+    VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     Core::System& system;
 };

@@ -38,7 +38,8 @@ struct VKScreenInfo {
 
 class RendererVulkan final : public VideoCore::RendererBase {
 public:
-    explicit RendererVulkan(Core::Frontend::EmuWindow& window, Core::System& system);
+    explicit RendererVulkan(Core::Frontend::EmuWindow& window, Core::System& system,
+                            std::unique_ptr<Core::Frontend::GraphicsContext> context);
     ~RendererVulkan() override;
 
     bool Init() override;
