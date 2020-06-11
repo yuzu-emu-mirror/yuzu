@@ -22,9 +22,20 @@
 
 namespace Common {
 
+const VAddr address_space_size{1ULL << 39};
+void* vmem{nullptr};
+void* next_base{nullptr};
+
 void* AllocateMemoryPages(std::size_t size) {
+
 #ifdef _WIN32
-    void* base{VirtualAlloc(nullptr, size, MEM_COMMIT, PAGE_READWRITE)};
+    if (vmem == nullptr) {
+        vmem = VirtualAlloc(nullptr, address_space_size, MEM_RESERVE, PAGE_READWRITE);
+        ASSERT(vmem);
+        next_base = vmem;
+    }
+    void* base{VirtualAlloc(next_base, size, MEM_COMMIT, PAGE_READWRITE)};
+    next_base = (char*)base + size;
 #else
     void* base{mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0)};
 
@@ -34,6 +45,8 @@ void* AllocateMemoryPages(std::size_t size) {
 #endif
 
     ASSERT(base);
+    ASSERT(base >= vmem);
+    ASSERT(base < (char*)vmem + address_space_size);
 
     return base;
 }
@@ -43,7 +56,7 @@ void FreeMemoryPages(void* base, std::size_t size) {
         return;
     }
 #ifdef _WIN32
-    ASSERT(VirtualFree(base, 0, MEM_RELEASE));
+    ASSERT(VirtualFree(base, size, MEM_DECOMMIT));
 #else
     ASSERT(munmap(base, size) == 0);
 #endif
