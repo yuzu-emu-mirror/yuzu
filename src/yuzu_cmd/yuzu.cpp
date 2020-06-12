@@ -25,6 +25,7 @@
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/gdbstub/gdbstub.h"
+#include "core/hle/kernel/process.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
@@ -234,7 +235,9 @@ int main(int argc, char** argv) {
     // Core is loaded, start the GPU (makes the GPU contexts current to this thread)
     system.GPU().Start();
 
-    system.Renderer().Rasterizer().LoadDiskResources();
+    system.Renderer().Rasterizer().LoadDiskResources(
+        system.CurrentProcess()->GetTitleID(), false,
+        [](VideoCore::LoadCallbackStage, size_t value, size_t total) {});
 
     std::thread render_thread([&emu_window] { emu_window->Present(); });
     system.Run();

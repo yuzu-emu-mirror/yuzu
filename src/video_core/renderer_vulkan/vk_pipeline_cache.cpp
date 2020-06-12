@@ -133,64 +133,57 @@ bool ComputePipelineCacheKey::operator==(const ComputePipelineCacheKey& rhs) con
     return std::memcmp(&rhs, this, sizeof *this) == 0;
 }
 
-Shader::Shader(Core::System& system, Tegra::Engines::ShaderType stage, GPUVAddr gpu_addr,
-               VideoCommon::Shader::ProgramCode program_code, u32 main_offset)
-    : gpu_addr{gpu_addr}, program_code{std::move(program_code)},
-      registry{stage, GetEngine(system, stage)}, shader_ir{this->program_code, main_offset,
-                                                           compiler_settings, registry},
-      entries{GenerateShaderEntries(shader_ir)} {}
+Shader::Shader(Tegra::Engines::ConstBufferEngineInterface& engine, Tegra::Engines::ShaderType stage,
+               GPUVAddr gpu_addr_, VAddr cpu_addr, VideoCommon::Shader::ProgramCode program_code_,
+               u32 main_offset)
+    : gpu_addr{gpu_addr_}, program_code{std::move(program_code_)}, registry{stage, engine},
+      shader_ir{program_code, main_offset, compiler_settings, registry}, entries{
+                                                                             GenerateShaderEntries(
+                                                                                 shader_ir)} {}
 
 Shader::~Shader() = default;
 
-Tegra::Engines::ConstBufferEngineInterface& Shader::GetEngine(Core::System& system,
-                                                              Tegra::Engines::ShaderType stage) {
-    if (stage == ShaderType::Compute) {
-        return system.GPU().KeplerCompute();
-    } else {
-        return system.GPU().Maxwell3D();
-    }
-}
-
-VKPipelineCache::VKPipelineCache(Core::System& system, RasterizerVulkan& rasterizer,
-                                 const VKDevice& device, VKScheduler& scheduler,
-                                 VKDescriptorPool& descriptor_pool,
-                                 VKUpdateDescriptorQueue& update_descriptor_queue,
-                                 VKRenderPassCache& renderpass_cache)
-    : VideoCommon::ShaderCache<Shader>{rasterizer}, system{system}, device{device},
-      scheduler{scheduler}, descriptor_pool{descriptor_pool},
-      update_descriptor_queue{update_descriptor_queue}, renderpass_cache{renderpass_cache} {}
+VKPipelineCache::VKPipelineCache(RasterizerVulkan& rasterizer,
+                                 Tegra::Engines::Maxwell3D& maxwell3d_,
+                                 Tegra::Engines::KeplerCompute& kepler_compute_,
+                                 Tegra::MemoryManager& gpu_memory_, const VKDevice& device_,
+                                 VKScheduler& scheduler_, VKDescriptorPool& descriptor_pool_,
+                                 VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                 VKRenderPassCache& renderpass_cache_)
+    : VideoCommon::ShaderCache<Shader>{rasterizer}, maxwell3d{maxwell3d_},
+      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, device{device_},
+      scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
+      update_descriptor_queue{update_descriptor_queue_}, renderpass_cache{renderpass_cache_} {}
 
 VKPipelineCache::~VKPipelineCache() = default;
 
 std::array<Shader*, Maxwell::MaxShaderProgram> VKPipelineCache::GetShaders() {
-    const auto& gpu = system.GPU().Maxwell3D();
-
     std::array<Shader*, Maxwell::MaxShaderProgram> shaders{};
+
     for (std::size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
         const auto program{static_cast<Maxwell::ShaderProgram>(index)};
 
         // Skip stages that are not enabled
-        if (!gpu.regs.IsShaderConfigEnabled(index)) {
+        if (!maxwell3d.regs.IsShaderConfigEnabled(index)) {
             continue;
         }
 
-        auto& memory_manager{system.GPU().MemoryManager()};
-        const GPUVAddr program_addr{GetShaderAddress(system, program)};
-        const std::optional cpu_addr = memory_manager.GpuToCpuAddress(program_addr);
+        const GPUVAddr gpu_addr{GetShaderAddress(maxwell3d, program)};
+        const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
         ASSERT(cpu_addr);
 
         Shader* result = cpu_addr ? TryGet(*cpu_addr) : null_shader.get();
         if (!result) {
-            const auto host_ptr{memory_manager.GetPointer(program_addr)};
+            const u8* const host_ptr{gpu_memory.GetPointer(gpu_addr)};
 
             // No shader found - create a new one
-            constexpr u32 stage_offset = STAGE_MAIN_OFFSET;
+            static constexpr u32 stage_offset = STAGE_MAIN_OFFSET;
             const auto stage = static_cast<ShaderType>(index == 0 ? 0 : index - 1);
-            ProgramCode code = GetShaderCode(memory_manager, program_addr, host_ptr, false);
+            ProgramCode code = GetShaderCode(gpu_memory, gpu_addr, host_ptr, false);
             const std::size_t size_in_bytes = code.size() * sizeof(u64);
 
-            auto shader = std::make_unique<Shader>(system, stage, program_addr, std::move(code),
-                                                   stage_offset);
+            auto shader = std::make_unique<Shader>(maxwell3d, stage, gpu_addr, *cpu_addr,
+                                                   std::move(code), stage_offset);
             result = shader.get();
 
             if (cpu_addr) {
@@ -234,22 +227,21 @@ VKComputePipeline& VKPipelineCache::GetComputePipeline(const ComputePipelineCach
     }
     LOG_INFO(Render_Vulkan, "Compile 0x{:016X}", key.Hash());
 
-    auto& memory_manager = system.GPU().MemoryManager();
-    const auto program_addr = key.shader;
+    const GPUVAddr gpu_addr = key.shader;
 
-    const auto cpu_addr = memory_manager.GpuToCpuAddress(program_addr);
+    const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
     ASSERT(cpu_addr);
 
     Shader* shader = cpu_addr ? TryGet(*cpu_addr) : null_kernel.get();
     if (!shader) {
         // No shader found - create a new one
-        const auto host_ptr = memory_manager.GetPointer(program_addr);
+        const auto host_ptr = gpu_memory.GetPointer(gpu_addr);
 
-        ProgramCode code = GetShaderCode(memory_manager, program_addr, host_ptr, true);
+        ProgramCode code = GetShaderCode(gpu_memory, gpu_addr, host_ptr, true);
         const std::size_t size_in_bytes = code.size() * sizeof(u64);
 
-        auto shader_info = std::make_unique<Shader>(system, ShaderType::Compute, program_addr,
-                                                    std::move(code), KERNEL_MAIN_OFFSET);
+        auto shader_info = std::make_unique<Shader>(kepler_compute, ShaderType::Compute, gpu_addr,
+                                                    *cpu_addr, std::move(code), KERNEL_MAIN_OFFSET);
         shader = shader_info.get();
 
         if (cpu_addr) {
@@ -308,8 +300,6 @@ void VKPipelineCache::OnShaderRemoval(Shader* shader) {
 std::pair<SPIRVProgram, std::vector<VkDescriptorSetLayoutBinding>>
 VKPipelineCache::DecompileShaders(const GraphicsPipelineCacheKey& key) {
     const auto& fixed_state = key.fixed_state;
-    auto& memory_manager = system.GPU().MemoryManager();
-    const auto& gpu = system.GPU().Maxwell3D();
 
     Specialization specialization;
     if (fixed_state.dynamic_state.Topology() == Maxwell::PrimitiveTopology::Points ||
@@ -333,12 +323,12 @@ VKPipelineCache::DecompileShaders(const GraphicsPipelineCacheKey& key) {
         const auto program_enum = static_cast<Maxwell::ShaderProgram>(index);
 
         // Skip stages that are not enabled
-        if (!gpu.regs.IsShaderConfigEnabled(index)) {
+        if (!maxwell3d.regs.IsShaderConfigEnabled(index)) {
             continue;
         }
 
-        const GPUVAddr gpu_addr = GetShaderAddress(system, program_enum);
-        const std::optional<VAddr> cpu_addr = memory_manager.GpuToCpuAddress(gpu_addr);
+        const GPUVAddr gpu_addr = GetShaderAddress(maxwell3d, program_enum);
+        const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
         Shader* const shader = cpu_addr ? TryGet(*cpu_addr) : null_shader.get();
 
         const std::size_t stage = index == 0 ? 0 : index - 1; // Stage indices are 0 - 5

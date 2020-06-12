@@ -16,14 +16,23 @@
 
 namespace Core {
 class System;
-}
+class TelemetrySession;
+} // namespace Core
 
 namespace Core::Frontend {
 class EmuWindow;
 }
 
+namespace Core::Memory {
+class Memory;
+}
+
 namespace Layout {
 struct FramebufferLayout;
+}
+
+namespace Tegra {
+class GPU;
 }
 
 namespace OpenGL {
@@ -56,7 +65,9 @@ class FrameMailbox;
 
 class RendererOpenGL final : public VideoCore::RendererBase {
 public:
-    explicit RendererOpenGL(Core::Frontend::EmuWindow& emu_window, Core::System& system,
+    explicit RendererOpenGL(Core::TelemetrySession& telemetry_session,
+                            Core::Frontend::EmuWindow& emu_window, Core::Memory::Memory& cpu_memory,
+                            Tegra::GPU& gpu,
                             std::unique_ptr<Core::Frontend::GraphicsContext> context);
     ~RendererOpenGL() override;
 
@@ -93,12 +104,13 @@ private:
 
     bool Present(int timeout_ms);
 
+    Core::TelemetrySession& telemetry_session;
     Core::Frontend::EmuWindow& emu_window;
-    Core::System& system;
-    std::unique_ptr<Core::Frontend::GraphicsContext> context;
-    const Device device;
+    Core::Memory::Memory& cpu_memory;
+    Tegra::GPU& gpu;
 
-    StateTracker state_tracker{system};
+    const Device device;
+    StateTracker state_tracker{gpu};
 
     // OpenGL object IDs
     OGLBuffer vertex_buffer;

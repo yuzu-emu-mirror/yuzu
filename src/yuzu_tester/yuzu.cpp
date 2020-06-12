@@ -254,7 +254,6 @@ int main(int argc, char** argv) {
     system.TelemetrySession().AddField(Telemetry::FieldType::App, "Frontend", "SDLHideTester");
 
     system.GPU().Start();
-    system.Renderer().Rasterizer().LoadDiskResources();
 
     system.Run();
     while (!finished) {
