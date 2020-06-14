@@ -1,4 +1,4 @@
-﻿// Copyright 2016 Citra Emulator Project
+// Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -7,7 +7,6 @@
 #include <memory>
 #include <vector>
 
-#include <QDialog>
 #include <QList>
 
 #include "core/file_sys/vfs_types.h"
@@ -19,20 +18,22 @@ class QTreeView;
 class QVBoxLayout;
 
 namespace Ui {
-class ConfigurePerGameGeneral;
+class ConfigurePerGameAddons;
 }
 
-class ConfigurePerGameGeneral : public QDialog {
+class ConfigurePerGameAddons : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ConfigurePerGameGeneral(QWidget* parent, u64 title_id);
-    ~ConfigurePerGameGeneral() override;
+    explicit ConfigurePerGameAddons(QWidget* parent = nullptr);
+    ~ConfigurePerGameAddons() override;
 
     /// Save all button configurations to settings file
     void ApplyConfiguration();
 
     void LoadFromFile(FileSys::VirtualFile file);
+
+    void SetTitleId(u64 t_id);
 
 private:
     void changeEvent(QEvent* event) override;
@@ -40,14 +41,13 @@ private:
 
     void LoadConfiguration();
 
-    std::unique_ptr<Ui::ConfigurePerGameGeneral> ui;
+    std::unique_ptr<Ui::ConfigurePerGameAddons> ui;
     FileSys::VirtualFile file;
     u64 title_id;
 
     QVBoxLayout* layout;
     QTreeView* tree_view;
     QStandardItemModel* item_model;
-    QGraphicsScene* scene;
 
     std::vector<QList<QStandardItem*>> list_items;
 };

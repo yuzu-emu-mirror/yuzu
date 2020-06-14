@@ -16,7 +16,7 @@
 #include "applets/software_keyboard.h"
 #include "applets/web_browser.h"
 #include "configuration/configure_input.h"
-#include "configuration/configure_per_general.h"
+#include "configuration/configure_per_game.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/general_frontend.h"
@@ -1521,7 +1521,7 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
         return;
     }
 
-    ConfigurePerGameGeneral dialog(this, title_id);
+    ConfigurePerGame dialog(this, title_id);
     dialog.LoadFromFile(v_file);
     auto result = dialog.exec();
     if (result == QDialog::Accepted) {

@@ -60,9 +60,12 @@ add_executable(yuzu
     configuration/configure_mouse_advanced.cpp
     configuration/configure_mouse_advanced.h
     configuration/configure_mouse_advanced.ui
-    configuration/configure_per_general.cpp
-    configuration/configure_per_general.h
-    configuration/configure_per_general.ui
+    configuration/configure_per_game.cpp
+    configuration/configure_per_game.h
+    configuration/configure_per_game.ui
+    configuration/configure_per_game_addons.cpp
+    configuration/configure_per_game_addons.h
+    configuration/configure_per_game_addons.ui
     configuration/configure_profile_manager.cpp
     configuration/configure_profile_manager.h
     configuration/configure_profile_manager.ui
