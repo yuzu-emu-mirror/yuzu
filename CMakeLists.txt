@@ -152,7 +152,6 @@ macro(yuzu_find_packages)
         "Boost             1.71        boost/1.72.0"
         "Catch2            2.11        catch2/2.11.0"
         "fmt               6.2         fmt/6.2.0"
-        "OpenSSL           1.1         openssl/1.1.1f"
     # can't use until https://github.com/bincrafters/community/issues/1173
         #"libzip            1.5         libzip/1.5.2@bincrafters/stable"
         "lz4               1.8         lz4/1.9.2"

@@ -73,6 +73,19 @@ if (NOT LIBZIP_FOUND)
 endif()
 
 if (ENABLE_WEB_SERVICE)
+    # LibreSSL
+    find_package(OpenSSL COMPONENTS Crypto SSL)
+    if (NOT OpenSSL_FOUND)
+        message(STATUS "OpenSSL not found, falling back to externals")
+        set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
+        add_subdirectory(libressl EXCLUDE_FROM_ALL)
+        target_include_directories(ssl INTERFACE ./libressl/include)
+        target_compile_definitions(ssl PRIVATE -DHAVE_INET_NTOP)
+        get_directory_property(OPENSSL_LIBRARIES
+            DIRECTORY libressl
+            DEFINITION OPENSSL_LIBS)
+    endif()
+
     # lurlparser
     add_subdirectory(lurlparser EXCLUDE_FROM_ALL)
 
@@ -80,5 +93,9 @@ if (ENABLE_WEB_SERVICE)
     add_library(httplib INTERFACE)
     target_include_directories(httplib INTERFACE ./httplib)
     target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
-    target_link_libraries(httplib INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
+
+    # JSON
+    add_library(json-headers INTERFACE)
+    target_include_directories(json-headers INTERFACE ./json)
 endif()
