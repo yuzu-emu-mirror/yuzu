@@ -311,15 +311,6 @@ elseif (TARGET Boost::boost)
     add_library(boost ALIAS Boost::boost)
 endif()
 
-if (NOT TARGET OpenSSL::SSL)
-    set_target_properties(OpenSSL::OpenSSL PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(OpenSSL::SSL ALIAS OpenSSL::OpenSSL)
-endif()
-if (NOT TARGET OpenSSL::Crypto)
-    set_target_properties(OpenSSL::OpenSSL PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(OpenSSL::Crypto ALIAS OpenSSL::OpenSSL)
-endif()
-
 if (TARGET sdl2::sdl2)
     # imported from the conan generated sdl2Config.cmake
     set_target_properties(sdl2::sdl2 PROPERTIES IMPORTED_GLOBAL TRUE)

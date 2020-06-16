@@ -94,8 +94,4 @@ if (ENABLE_WEB_SERVICE)
     target_include_directories(httplib INTERFACE ./httplib)
     target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
     target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
-
-    # JSON
-    add_library(json-headers INTERFACE)
-    target_include_directories(json-headers INTERFACE ./json)
 endif()
