@@ -74,17 +74,13 @@ endif()
 
 if (ENABLE_WEB_SERVICE)
     # LibreSSL
-    find_package(OpenSSL COMPONENTS Crypto SSL)
-    if (NOT OpenSSL_FOUND)
-        message(STATUS "OpenSSL not found, falling back to externals")
-        set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
-        add_subdirectory(libressl EXCLUDE_FROM_ALL)
-        target_include_directories(ssl INTERFACE ./libressl/include)
-        target_compile_definitions(ssl PRIVATE -DHAVE_INET_NTOP)
-        get_directory_property(OPENSSL_LIBRARIES
-            DIRECTORY libressl
-            DEFINITION OPENSSL_LIBS)
-    endif()
+    set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
+    add_subdirectory(libressl EXCLUDE_FROM_ALL)
+    target_include_directories(ssl INTERFACE ./libressl/include)
+    target_compile_definitions(ssl PRIVATE -DHAVE_INET_NTOP)
+    get_directory_property(OPENSSL_LIBRARIES
+        DIRECTORY libressl
+        DEFINITION OPENSSL_LIBS)
 
     # lurlparser
     add_subdirectory(lurlparser EXCLUDE_FROM_ALL)
