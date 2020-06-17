@@ -236,6 +236,24 @@ private:
     };
     static_assert(sizeof(NPadGeneric) == 0x350, "NPadGeneric is an invalid size");
 
+    struct SixAxisStates {
+        s64_le timestamp{};
+        INSERT_PADDING_WORDS(2);
+        s64_le timestamp2{};
+        Common::Vec3f accel{};
+        Common::Vec3f gyro{};
+        INSERT_PADDING_WORDS(3);
+        std::array<Common::Vec3f, 3> orientation{};
+        s64_le always_one{1};
+    };
+    static_assert(sizeof(SixAxisStates) == 0x68, "SixAxisStates is an invalid size");
+
+    struct SixAxisGeneric {
+        CommonHeader common{};
+        std::array<SixAxisStates, 17> sixaxis{};
+    };
+    static_assert(sizeof(SixAxisGeneric) == 0x708, "SixAxisGeneric is an invalid size");
+
     enum class ColorReadError : u32_le {
         ReadOk = 0,
         ColorDoesntExist = 1,
@@ -284,9 +302,12 @@ private:
         NPadGeneric pokeball_states;
         NPadGeneric libnx; // TODO(ogniK): Find out what this actually is, libnx seems to only be
                            // relying on this for the time being
-        INSERT_PADDING_BYTES(
-            0x708 *
-            6); // TODO(ogniK): SixAxis states, require more information before implementation
+        SixAxisGeneric sixaxis_full;
+        SixAxisGeneric sixaxis_handheld;
+        SixAxisGeneric sixaxis_dual_left;
+        SixAxisGeneric sixaxis_dual_right;
+        SixAxisGeneric sixaxis_left;
+        SixAxisGeneric sixaxis_right;
         NPadDevice device_type;
         NPadProperties properties;
         INSERT_PADDING_WORDS(1);
@@ -318,6 +339,8 @@ private:
         std::array<std::unique_ptr<Input::AnalogDevice>, Settings::NativeAnalog::NUM_STICKS_HID>,
         10>
         sticks;
+    std::array<std::array<std::unique_ptr<Input::MotionDevice>, 2>, 10> motion_devices;
+    bool sixaxis_sensors_enabled{true};
     std::vector<u32> supported_npad_id_types{};
     NpadHoldType hold_type{NpadHoldType::Vertical};
     // Each controller should have their own styleset changed event

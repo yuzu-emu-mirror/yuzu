@@ -28,6 +28,7 @@ public:
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardKeys> default_keyboard_keys;
     static const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> default_keyboard_mods;
     static const std::array<UISettings::Shortcut, 15> default_hotkeys;
+    static const std::array<std::pair<bool, const char*>, 2> default_motion_devices;
 
 private:
     void ReadValues();

@@ -324,11 +324,17 @@ enum class ControllerType {
     LeftJoycon,
 };
 
+struct MotionRaw {
+    bool enabled;
+    std::string config;
+};
+
 struct PlayerInput {
     bool connected;
     ControllerType type;
     ButtonsRaw buttons;
     AnalogsRaw analogs;
+    std::array<MotionRaw, 2> motion_devices;
 
     u32 body_color_right;
     u32 button_color_right;
