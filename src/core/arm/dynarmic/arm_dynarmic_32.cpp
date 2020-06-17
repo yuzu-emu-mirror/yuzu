@@ -7,12 +7,11 @@
 #include <dynarmic/A32/a32.h>
 #include <dynarmic/A32/config.h>
 #include <dynarmic/A32/context.h>
-#include "common/microprofile.h"
+#include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_32.h"
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/arm_dynarmic_cp15.h"
 #include "core/core.h"
-#include "core/core_manager.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
@@ -71,20 +70,31 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
+        if (parent.uses_wall_clock) {
+            return;
+        }
         // Divide the number of ticks by the amount of CPU cores. TODO(Subv): This yields only a
         // rough approximation of the amount of executed ticks in the system, it may be thrown off
         // if not all cores are doing a similar amount of work. Instead of doing this, we should
         // device a way so that timing is consistent across all cores without increasing the ticks 4
         // times.
-        u64 amortized_ticks = (ticks - num_interpreted_instructions) / Core::NUM_CPU_CORES;
+        u64 amortized_ticks =
+            (ticks - num_interpreted_instructions) / Core::Hardware::NUM_CPU_CORES;
         // Always execute at least one tick.
         amortized_ticks = std::max<u64>(amortized_ticks, 1);
 
         parent.system.CoreTiming().AddTicks(amortized_ticks);
         num_interpreted_instructions = 0;
     }
+
     u64 GetTicksRemaining() override {
-        return std::max(parent.system.CoreTiming().GetDowncount(), {});
+        if (parent.uses_wall_clock) {
+            if (!parent.interrupt_handlers[parent.core_index].IsInterrupted()) {
+                return 1000U;
+            }
+            return 0U;
+        }
+        return std::max<s64>(parent.system.CoreTiming().GetDowncount(), 0);
     }
 
     ARM_Dynarmic_32& parent;
@@ -104,10 +114,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& 
     return std::make_unique<Dynarmic::A32::Jit>(config);
 }
 
-MICROPROFILE_DEFINE(ARM_Jit_Dynarmic_32, "ARM JIT", "Dynarmic", MP_RGB(255, 64, 64));
-
 void ARM_Dynarmic_32::Run() {
-    MICROPROFILE_SCOPE(ARM_Jit_Dynarmic_32);
     jit->Run();
 }
 
@@ -115,9 +122,10 @@ void ARM_Dynarmic_32::Step() {
     cb->InterpreterFallback(jit->Regs()[15], 1);
 }
 
-ARM_Dynarmic_32::ARM_Dynarmic_32(System& system, ExclusiveMonitor& exclusive_monitor,
+ARM_Dynarmic_32::ARM_Dynarmic_32(System& system, CPUInterrupts& interrupt_handlers,
+                                 bool uses_wall_clock, ExclusiveMonitor& exclusive_monitor,
                                  std::size_t core_index)
-    : ARM_Interface{system},
+    : ARM_Interface{system, interrupt_handlers, uses_wall_clock},
       cb(std::make_unique<DynarmicCallbacks32>(*this)), core_index{core_index},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)} {}
 
@@ -169,6 +177,10 @@ void ARM_Dynarmic_32::SetTPIDR_EL0(u64 value) {
     cb->tpidr_el0 = value;
 }
 
+void ARM_Dynarmic_32::ChangeProcessorId(std::size_t new_core_id) {
+    // jit->ChangeProcessorId(new_core_id);
+}
+
 void ARM_Dynarmic_32::SaveContext(ThreadContext32& ctx) {
     Dynarmic::A32::Context context;
     jit->SaveContext(context);
@@ -188,6 +200,9 @@ void ARM_Dynarmic_32::PrepareReschedule() {
 }
 
 void ARM_Dynarmic_32::ClearInstructionCache() {
+    if (!jit) {
+        return;
+    }
     jit->ClearCache();
 }
 

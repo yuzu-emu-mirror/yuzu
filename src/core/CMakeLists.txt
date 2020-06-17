@@ -7,6 +7,8 @@ endif()
 add_library(core STATIC
     arm/arm_interface.h
     arm/arm_interface.cpp
+    arm/cpu_interrupt_handler.cpp
+    arm/cpu_interrupt_handler.h
     arm/exclusive_monitor.cpp
     arm/exclusive_monitor.h
     arm/unicorn/arm_unicorn.cpp
@@ -15,8 +17,6 @@ add_library(core STATIC
     constants.h
     core.cpp
     core.h
-    core_manager.cpp
-    core_manager.h
     core_timing.cpp
     core_timing.h
     core_timing_util.cpp
