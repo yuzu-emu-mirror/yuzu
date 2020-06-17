@@ -34,6 +34,9 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
 
+    Settings::SwapValues(true);
+    game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
+
     ui->addonsTab->SetTitleId(title_id);
 
     scene = new QGraphicsScene;
@@ -44,7 +47,8 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     LoadConfiguration();
 }
 
-ConfigurePerGame::~ConfigurePerGame() = default;
+ConfigurePerGame::~ConfigurePerGame() {
+}
 
 void ConfigurePerGame::ApplyConfiguration() {
     ui->addonsTab->ApplyConfiguration();

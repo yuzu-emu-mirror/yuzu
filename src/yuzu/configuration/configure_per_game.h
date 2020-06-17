@@ -10,6 +10,7 @@
 #include <QDialog>
 #include <QList>
 
+#include "yuzu/configuration/config.h"
 #include "core/file_sys/vfs_types.h"
 
 class QGraphicsScene;
@@ -46,10 +47,7 @@ private:
     FileSys::VirtualFile file;
     u64 title_id;
 
-    //QVBoxLayout* layout;
-    //QTreeView* tree_view;
-    //QStandardItemModel* item_model;
     QGraphicsScene* scene;
 
-    //std::vector<QList<QStandardItem*>> list_items;
+    std::unique_ptr<Config> game_config;
 };

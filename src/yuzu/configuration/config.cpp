@@ -13,12 +13,13 @@
 #include "input_common/udp/client.h"
 #include "yuzu/configuration/config.h"
 
-Config::Config() {
+Config::Config(const std::string& config_file, bool is_global) {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
-    qt_config_loc = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + "qt-config.ini";
+    qt_config_loc = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + config_file;
     FileUtil::CreateFullPath(qt_config_loc);
     qt_config =
         std::make_unique<QSettings>(QString::fromStdString(qt_config_loc), QSettings::IniFormat);
+    global = is_global;
     Reload();
 }
 
@@ -807,18 +808,20 @@ void Config::ReadWebServiceValues() {
 }
 
 void Config::ReadValues() {
+    if (global) {
+        ReadDebuggingValues();
+        ReadDataStorageValues();
+        ReadWebServiceValues();
+        ReadDisabledAddOnValues();
+        ReadUIValues();
+    }
     ReadControlValues();
     ReadCoreValues();
     ReadRendererValues();
     ReadAudioValues();
-    ReadDataStorageValues();
     ReadSystemValues();
     ReadMiscellaneousValues();
-    ReadDebuggingValues();
-    ReadWebServiceValues();
     ReadServiceValues();
-    ReadDisabledAddOnValues();
-    ReadUIValues();
 }
 
 void Config::SavePlayerValues() {
@@ -905,18 +908,20 @@ void Config::SaveTouchscreenValues() {
 }
 
 void Config::SaveValues() {
+    if (global) {
+        SaveDebuggingValues();
+        SaveDataStorageValues();
+        SaveWebServiceValues();
+        SaveDisabledAddOnValues();
+        SaveUIValues();
+    }
     SaveControlValues();
     SaveCoreValues();
     SaveRendererValues();
     SaveAudioValues();
-    SaveDataStorageValues();
     SaveSystemValues();
     SaveMiscellaneousValues();
-    SaveDebuggingValues();
-    SaveWebServiceValues();
     SaveServiceValues();
-    SaveDisabledAddOnValues();
-    SaveUIValues();
 }
 
 void Config::SaveAudioValues() {

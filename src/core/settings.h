@@ -499,6 +499,7 @@ extern Values game_values;
 extern Values *values;
 
 float Volume();
+void SwapValues(bool global);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();

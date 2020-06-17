@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cstring>
+
 #include "common/file_util.h"
 #include "core/core.h"
 #include "core/gdbstub/gdbstub.h"
@@ -64,6 +66,16 @@ const std::array<const char*, NumMouseButtons> mapping = {{
 Values global_values;
 Values game_values;
 Values *values = &global_values;
+
+void SwapValues(bool global) {
+    if (global) {
+        values = &global_values;
+    }
+    else {
+        std::memcpy(&game_values, &global_values, sizeof(global_values));
+        values = &game_values;
+    }
+}
 
 std::string GetTimeZoneString() {
     static constexpr std::array<const char*, 46> timezones{{

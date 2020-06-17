@@ -15,7 +15,7 @@ class QSettings;
 
 class Config {
 public:
-    Config();
+    Config(const std::string& config_loc = "qt-config.ini", bool is_global = true);
     ~Config();
 
     void Reload();
@@ -87,4 +87,6 @@ private:
 
     std::unique_ptr<QSettings> qt_config;
     std::string qt_config_loc;
+
+    bool global;
 };
