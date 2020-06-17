@@ -22,12 +22,14 @@ class Memory;
 namespace Core {
 
 class DynarmicCallbacks64;
+class CPUInterruptHandler;
 class DynarmicExclusiveMonitor;
 class System;
 
 class ARM_Dynarmic_64 final : public ARM_Interface {
 public:
-    ARM_Dynarmic_64(System& system, ExclusiveMonitor& exclusive_monitor, std::size_t core_index);
+    ARM_Dynarmic_64(System& system, CPUInterrupts& interrupt_handlers, bool uses_wall_clock,
+                    ExclusiveMonitor& exclusive_monitor, std::size_t core_index);
     ~ARM_Dynarmic_64() override;
 
     void SetPC(u64 pc) override;
@@ -44,6 +46,7 @@ public:
     void SetTlsAddress(VAddr address) override;
     void SetTPIDR_EL0(u64 value) override;
     u64 GetTPIDR_EL0() const override;
+    void ChangeProcessorId(std::size_t new_core_id) override;
 
     void SaveContext(ThreadContext32& ctx) override {}
     void SaveContext(ThreadContext64& ctx) override;
@@ -80,7 +83,11 @@ public:
     explicit DynarmicExclusiveMonitor(Memory::Memory& memory, std::size_t core_count);
     ~DynarmicExclusiveMonitor() override;
 
-    void SetExclusive(std::size_t core_index, VAddr addr) override;
+    u8 ExclusiveRead8(std::size_t core_index, VAddr addr) override;
+    u16 ExclusiveRead16(std::size_t core_index, VAddr addr) override;
+    u32 ExclusiveRead32(std::size_t core_index, VAddr addr) override;
+    u64 ExclusiveRead64(std::size_t core_index, VAddr addr) override;
+    u128 ExclusiveRead128(std::size_t core_index, VAddr addr) override;
     void ClearExclusive() override;
 
     bool ExclusiveWrite8(std::size_t core_index, VAddr vaddr, u8 value) override;

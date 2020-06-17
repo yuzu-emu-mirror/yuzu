@@ -104,9 +104,22 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <widget class="QMenu" name="menuSystem_Archives">
+     <property name="title">
+      <string>System Archives</string>
+     </property>
+     <addaction name="actionImport_Directory"/>
+     <addaction name="actionImport_Cartridge"/>
+     <addaction name="separator"/>
+     <addaction name="actionClear_Imported"/>
+     <addaction name="separator"/>
+     <addaction name="actionView_Status"/>
+    </widget>
     <addaction name="action_Rederive"/>
     <addaction name="separator"/>
     <addaction name="action_Capture_Screenshot"/>
+    <addaction name="separator"/>
+    <addaction name="menuSystem_Archives"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -267,6 +280,26 @@
    </property>
    <property name="text">
     <string>Capture Screenshot</string>
+   </property>
+  </action>
+  <action name="actionImport_Directory">
+   <property name="text">
+    <string>Import Directory</string>
+   </property>
+  </action>
+  <action name="actionImport_Cartridge">
+   <property name="text">
+    <string>Import Cartridge</string>
+   </property>
+  </action>
+  <action name="actionClear_Imported">
+   <property name="text">
+    <string>Clear Imported</string>
+   </property>
+  </action>
+  <action name="actionView_Status">
+   <property name="text">
+    <string>View Status</string>
    </property>
   </action>
  </widget>

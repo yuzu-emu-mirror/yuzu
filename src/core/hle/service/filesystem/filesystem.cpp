@@ -40,7 +40,10 @@ static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
     if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
-    return base->GetDirectoryRelative(dir_name);
+    const auto res = base->GetDirectoryRelative(dir_name);
+    if (res == nullptr)
+        return base->CreateDirectoryRelative(dir_name);
+    return res;
 }
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)
@@ -718,6 +721,14 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::SDMC,
                                        sdmc_factory->GetSDMCContents());
     }
+
+    sysdata_imported_dir =
+        vfs.CreateDirectory(FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) + "imported",
+                            FileSys::Mode::ReadWrite);
+}
+
+FileSys::VirtualDir FileSystemController::GetSysdataImportedDirectory() const {
+    return sysdata_imported_dir;
 }
 
 void InstallInterfaces(Core::System& system) {

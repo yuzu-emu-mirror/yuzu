@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include "common/common_types.h"
+#include "core/hardware_properties.h"
 
 namespace Common {
 struct PageTable;
@@ -18,11 +19,16 @@ enum class VMAPermission : u8;
 
 namespace Core {
 class System;
+class CPUInterruptHandler;
+
+using CPUInterrupts = std::array<CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>;
 
 /// Generic ARMv8 CPU interface
 class ARM_Interface : NonCopyable {
 public:
-    explicit ARM_Interface(System& system_) : system{system_} {}
+    explicit ARM_Interface(System& system_, CPUInterrupts& interrupt_handlers, bool uses_wall_clock)
+        : system{system_}, interrupt_handlers{interrupt_handlers}, uses_wall_clock{
+                                                                       uses_wall_clock} {}
     virtual ~ARM_Interface() = default;
 
     struct ThreadContext32 {
@@ -143,6 +149,8 @@ public:
      */
     virtual void SetTPIDR_EL0(u64 value) = 0;
 
+    virtual void ChangeProcessorId(std::size_t new_core_id) = 0;
+
     virtual void SaveContext(ThreadContext32& ctx) = 0;
     virtual void SaveContext(ThreadContext64& ctx) = 0;
     virtual void LoadContext(const ThreadContext32& ctx) = 0;
@@ -162,6 +170,9 @@ public:
         std::string name;
     };
 
+    static std::vector<BacktraceEntry> GetBacktraceFromContext(System& system,
+                                                               const ThreadContext64& ctx);
+
     std::vector<BacktraceEntry> GetBacktrace() const;
 
     /// fp (= r29) points to the last frame record.
@@ -175,6 +186,8 @@ public:
 protected:
     /// System context that this ARM interface is running under.
     System& system;
+    CPUInterrupts& interrupt_handlers;
+    bool uses_wall_clock;
 };
 
 } // namespace Core

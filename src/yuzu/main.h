@@ -189,6 +189,10 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
+    void OnClearImportedSysdata();
+    void OnImportDirectorySystemUpdate();
+    void OnImportCartridgeSystemUpdate();
+    void OnViewSystemArchiveStatus();
     void OnGameListOpenDirectory(const QString& directory);
     void OnGameListAddDirectory();
     void OnGameListShowList(bool show);
@@ -234,6 +238,7 @@ private:
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
     QPushButton* async_status_button = nullptr;
+    QPushButton* multicore_status_button = nullptr;
     QPushButton* renderer_status_button = nullptr;
     QPushButton* dock_status_button = nullptr;
     QTimer status_bar_update_timer;
