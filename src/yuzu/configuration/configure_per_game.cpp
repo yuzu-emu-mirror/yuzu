@@ -6,6 +6,7 @@
 #include <memory>
 #include <utility>
 
+#include <QCheckBox>
 #include <QHeaderView>
 #include <QMenu>
 #include <QStandardItemModel>
@@ -33,10 +34,12 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
 
-    ui->tabAddons->SetTitleId(title_id);
+    ui->addonsTab->SetTitleId(title_id);
 
     scene = new QGraphicsScene;
     ui->icon_view->setScene(scene);
+
+    connect(ui->checkGlobal, &QCheckBox::stateChanged, this, &ConfigurePerGame::UpdateVisibleTabs);
 
     LoadConfiguration();
 }
@@ -44,7 +47,15 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
 ConfigurePerGame::~ConfigurePerGame() = default;
 
 void ConfigurePerGame::ApplyConfiguration() {
-    ui->tabAddons->ApplyConfiguration();
+    ui->addonsTab->ApplyConfiguration();
+    ui->generalTab->ApplyConfiguration();
+    ui->systemTab->ApplyConfiguration();
+    ui->graphicsTab->ApplyConfiguration();
+    ui->graphicsAdvancedTab->ApplyConfiguration();
+    ui->audioTab->ApplyConfiguration();
+    ui->inputTab->ApplyConfiguration();
+    Settings::Apply();
+    Settings::LogSettings();
 }
 
 void ConfigurePerGame::changeEvent(QEvent* event) {
@@ -69,7 +80,9 @@ void ConfigurePerGame::LoadConfiguration() {
         return;
     }
 
-    ui->tabAddons->LoadFromFile(file);
+    ui->checkGlobal->setChecked(Settings::values->use_global_values);
+
+    ui->addonsTab->LoadFromFile(file);
 
     ui->display_title_id->setText(QString::fromStdString(fmt::format("{:016X}", title_id)));
 
@@ -122,4 +135,16 @@ void ConfigurePerGame::LoadConfiguration() {
 
     const auto valueText = ReadableByteSize(file->GetSize());
     ui->display_size->setText(valueText);
+
+    UpdateVisibleTabs();
+}
+
+void ConfigurePerGame::UpdateVisibleTabs() {
+    bool visible = !ui->checkGlobal->isChecked();
+    ui->generalTab->setEnabled(visible);
+    ui->systemTab->setEnabled(visible);
+    ui->graphicsTab->setEnabled(visible);
+    ui->graphicsAdvancedTab->setEnabled(visible);
+    ui->audioTab->setEnabled(visible);
+    ui->inputTab->setEnabled(visible);
 }

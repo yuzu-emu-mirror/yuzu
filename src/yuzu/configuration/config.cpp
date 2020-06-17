@@ -579,6 +579,9 @@ void Config::ReadMiscellaneousValues() {
             .toString()
             .toStdString();
     Settings::values->use_dev_keys = ReadSetting(QStringLiteral("use_dev_keys"), false).toBool();
+    Settings::values->use_global_values =
+        ReadSetting(QStringLiteral("use_global_values"), true).toBool() ||
+        Settings::values == &Settings::global_values;
 
     qt_config->endGroup();
 }
@@ -1051,6 +1054,8 @@ void Config::SaveMiscellaneousValues() {
     WriteSetting(QStringLiteral("log_filter"), QString::fromStdString(Settings::values->log_filter),
                  QStringLiteral("*:Info"));
     WriteSetting(QStringLiteral("use_dev_keys"), Settings::values->use_dev_keys, false);
+    WriteSetting(QStringLiteral("use_global_values"), Settings::values->use_global_values ||
+                 Settings::values == &Settings::global_values, true);
 
     qt_config->endGroup();
 }

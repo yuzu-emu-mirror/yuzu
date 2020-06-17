@@ -33,7 +33,7 @@ public:
 
     void LoadFromFile(FileSys::VirtualFile file);
 
-    void SetTitleId(u64 t_id);
+    void SetTitleId(u64 id);
 
 private:
     void changeEvent(QEvent* event) override;

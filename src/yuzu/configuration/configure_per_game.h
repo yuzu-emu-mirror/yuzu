@@ -40,6 +40,8 @@ private:
 
     void LoadConfiguration();
 
+    void UpdateVisibleTabs();
+
     std::unique_ptr<Ui::ConfigurePerGame> ui;
     FileSys::VirtualFile file;
     u64 title_id;

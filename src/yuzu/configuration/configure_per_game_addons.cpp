@@ -15,7 +15,6 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
-//~ #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/xts_archive.h"
 #include "core/loader/loader.h"
@@ -89,8 +88,8 @@ void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file) {
     LoadConfiguration();
 }
 
-void ConfigurePerGameAddons::SetTitleId(u64 t_id) {
-    this->title_id = t_id;
+void ConfigurePerGameAddons::SetTitleId(u64 id) {
+    this->title_id = id;
 }
 
 void ConfigurePerGameAddons::changeEvent(QEvent* event) {
