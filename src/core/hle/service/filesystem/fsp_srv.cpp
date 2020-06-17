@@ -21,6 +21,7 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/system_archive/importer.h"
 #include "core/file_sys/system_archive/system_archive.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
@@ -925,7 +926,12 @@ void FSP_SRV::OpenDataStorageByDataId(Kernel::HLERequestContext& ctx) {
     auto data = fsc.OpenRomFS(title_id, storage_id, FileSys::ContentRecordType::Data);
 
     if (data.Failed()) {
-        const auto archive = FileSys::SystemArchive::SynthesizeSystemArchive(title_id);
+        auto archive = FileSys::SystemArchive::GetImportedSystemArchive(
+            fsc.GetSystemNANDContentDirectory(), title_id);
+
+        if (archive == nullptr) {
+            archive = FileSys::SystemArchive::SynthesizeSystemArchive(title_id);
+        }
 
         if (archive != nullptr) {
             IPC::ResponseBuilder rb{ctx, 2, 0, 1};

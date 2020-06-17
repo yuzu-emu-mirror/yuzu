@@ -116,6 +116,8 @@ public:
 
     FileSys::VirtualDir GetBCATDirectory(u64 title_id) const;
 
+    FileSys::VirtualDir GetSysdataImportedDirectory() const;
+
     // Creates the SaveData, SDMC, and BIS Factories. Should be called once and before any function
     // above is called.
     void CreateFactories(FileSys::VfsFilesystem& vfs, bool overwrite = true);
@@ -129,6 +131,8 @@ private:
     std::unique_ptr<FileSys::XCI> gamecard;
     std::unique_ptr<FileSys::RegisteredCache> gamecard_registered;
     std::unique_ptr<FileSys::PlaceholderCache> gamecard_placeholder;
+
+    FileSys::VirtualDir sysdata_imported_dir;
 
     Core::System& system;
 };

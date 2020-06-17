@@ -189,6 +189,10 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
+    void OnClearImportedSysdata();
+    void OnImportDirectorySystemUpdate();
+    void OnImportCartridgeSystemUpdate();
+    void OnViewSystemArchiveStatus();
     void OnGameListOpenDirectory(const QString& directory);
     void OnGameListAddDirectory();
     void OnGameListShowList(bool show);

@@ -26,6 +26,7 @@
 #include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "core/hle/service/hid/hid.h"
+#include "yuzu/status/system_archive.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
 // defines.
@@ -37,6 +38,10 @@ static FileSys::VirtualDir VfsFilesystemCreateDirectoryWrapper(
 static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::VirtualDir& dir,
                                                           const std::string& path) {
     return dir->CreateFile(path);
+}
+
+static bool VfsDirectoryDeleteFileWrapper(const FileSys::VirtualDir& dir, const std::string& path) {
+    return dir->DeleteFile(path);
 }
 
 #include <fmt/ostream.h>
@@ -83,6 +88,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/submission_package.h"
+#include "core/file_sys/system_archive/importer.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/am/am.h"
@@ -868,6 +874,16 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Capture_Screenshot, &QAction::triggered, this,
             &GMainWindow::OnCaptureScreenshot);
 
+    // Tools
+    connect(ui.actionImport_Directory, &QAction::triggered, this,
+            &GMainWindow::OnImportDirectorySystemUpdate);
+    connect(ui.actionImport_Cartridge, &QAction::triggered, this,
+            &GMainWindow::OnImportCartridgeSystemUpdate);
+    connect(ui.actionClear_Imported, &QAction::triggered, this,
+            &GMainWindow::OnClearImportedSysdata);
+    connect(ui.actionView_Status, &QAction::triggered, this,
+            &GMainWindow::OnViewSystemArchiveStatus);
+
     // Help
     connect(ui.action_Open_yuzu_Folder, &QAction::triggered, this, &GMainWindow::OnOpenYuzuFolder);
     connect(ui.action_Rederive, &QAction::triggered, this,
@@ -948,6 +964,23 @@ bool GMainWindow::LoadROM(const QString& filename) {
                "support.<br><br>For an explanation of the various Switch formats yuzu supports, <a "
                "href='https://yuzu-emu.org/wiki/overview-of-switch-game-formats'>check out our "
                "wiki</a>. This message will not be shown again."));
+    }
+
+    const auto no_imported =
+        system.GetFileSystemController().GetSysdataImportedDirectory()->GetFiles().empty();
+
+    if (result == Core::System::ResultStatus::Success &&
+        system.GetAppLoader().GetFileType() == Loader::FileType::XCI && no_imported) {
+        if (QMessageBox::question(this, tr("Import System Archives"),
+                                  tr("The game type you are using includes additional system files "
+                                     "that may improve yuzu's compatibility with this and other "
+                                     "games. Would you like to import these files?")) ==
+            QMessageBox::Yes) {
+            const auto game = Core::GetGameFileFromPath(vfs, filename.toStdString());
+            FileSys::XCI xci{game};
+            FileSys::SystemArchive::ImportXCISystemUpdate(
+                system.GetFileSystemController().GetSysdataImportedDirectory(), xci);
+        }
     }
 
     if (result != Core::System::ResultStatus::Success) {
@@ -1444,6 +1477,71 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
     }
 
     QDesktopServices::openUrl(QUrl(QStringLiteral("https://yuzu-emu.org/game/") + directory));
+}
+
+void GMainWindow::OnClearImportedSysdata() {
+    Core::System& system{Core::System::GetInstance()};
+
+    const auto path = FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) + "imported" DIR_SEP;
+    QDir dir(QString::fromStdString(path));
+    const auto list = dir.entryList(QDir::Files);
+    for (const auto& file : list) {
+        if (!dir.remove(file)) {
+            QMessageBox::warning(this, tr("Clear Failed"),
+                                 tr("The imported sysdata directory was not able to be cleared."));
+            return;
+        }
+    }
+
+    QMessageBox::information(this, tr("Clear Successful"),
+                             tr("The imported sysdata directory was cleared successfully."));
+}
+
+void GMainWindow::OnImportDirectorySystemUpdate() {
+    Core::System& system{Core::System::GetInstance()};
+
+    const auto dir = QFileDialog::getExistingDirectory(this, tr("Select System Update Directory"));
+
+    if (dir.isEmpty()) {
+        return;
+    }
+
+    const auto vdir = vfs->OpenDirectory(dir.toStdString(), FileSys::Mode::Read);
+    if (FileSys::SystemArchive::ImportDirectorySystemUpdate(
+            system.GetFileSystemController().GetSysdataImportedDirectory(), vdir)) {
+        QMessageBox::information(this, tr("Import Successful"),
+                                 tr("The system update import was successful."));
+    } else {
+        QMessageBox::warning(this, tr("Import Failed"), tr("The system update import failed."));
+    }
+}
+
+void GMainWindow::OnImportCartridgeSystemUpdate() {
+    Core::System& system{Core::System::GetInstance()};
+
+    const auto file = QFileDialog::getOpenFileName(this, tr("Select Cartridge File"), QString{},
+                                                   QStringLiteral("Cartridge Images (*.xci)"));
+
+    if (file.isEmpty()) {
+        return;
+    }
+
+    FileSys::XCI xci{vfs->OpenFile(file.toStdString(), FileSys::Mode::Read)};
+    if (FileSys::SystemArchive::ImportXCISystemUpdate(
+            system.GetFileSystemController().GetSysdataImportedDirectory(), xci)) {
+        QMessageBox::information(this, tr("Import Successful"),
+                                 tr("The system update import was successful."));
+    } else {
+        QMessageBox::warning(this, tr("Import Failed"), tr("The system update import failed."));
+    }
+}
+
+void GMainWindow::OnViewSystemArchiveStatus() {
+    Core::System& system{Core::System::GetInstance()};
+
+    system.GetFileSystemController().CreateFactories(*vfs);
+    SystemArchiveDialog dialog(this, system.GetFileSystemController());
+    dialog.exec();
 }
 
 void GMainWindow::OnGameListOpenDirectory(const QString& directory) {
