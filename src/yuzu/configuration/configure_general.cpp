@@ -12,7 +12,6 @@
 
 ConfigureGeneral::ConfigureGeneral(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGeneral) {
-
     ui->setupUi(this);
 
     SetConfiguration();
@@ -28,33 +27,33 @@ void ConfigureGeneral::SetConfiguration() {
     ui->use_multi_core->setEnabled(runtime_lock);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core);
 
-    if (Settings::values == &Settings::global_values) {
+    if (Settings::config_values == &Settings::global_values) {
         ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
         ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot);
         ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background);
         ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse);
     }
-    ui->toggle_check_exit->setVisible(Settings::values == &Settings::global_values);
-    ui->toggle_user_on_boot->setVisible(Settings::values == &Settings::global_values);
-    ui->toggle_background_pause->setVisible(Settings::values == &Settings::global_values);
-    ui->toggle_hide_mouse->setVisible(Settings::values == &Settings::global_values);
+    ui->toggle_check_exit->setVisible(Settings::config_values == &Settings::global_values);
+    ui->toggle_user_on_boot->setVisible(Settings::config_values == &Settings::global_values);
+    ui->toggle_background_pause->setVisible(Settings::config_values == &Settings::global_values);
+    ui->toggle_hide_mouse->setVisible(Settings::config_values == &Settings::global_values);
 
-    ui->toggle_frame_limit->setChecked(Settings::values->use_frame_limit);
+    ui->toggle_frame_limit->setChecked(Settings::config_values->use_frame_limit);
     ui->frame_limit->setEnabled(ui->toggle_frame_limit->isChecked());
-    ui->frame_limit->setValue(Settings::values->frame_limit);
+    ui->frame_limit->setValue(Settings::config_values->frame_limit);
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
-    if (Settings::values == &Settings::global_values) {
+    if (Settings::config_values == &Settings::global_values) {
         UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
     }
 
-    Settings::values->use_frame_limit = ui->toggle_frame_limit->isChecked();
-    Settings::values->frame_limit = ui->frame_limit->value();
     Settings::values->use_multi_core = ui->use_multi_core->isChecked();
+    Settings::config_values->use_frame_limit = ui->toggle_frame_limit->isChecked();
+    Settings::config_values->frame_limit = ui->frame_limit->value();
 }
 
 void ConfigureGeneral::changeEvent(QEvent* event) {

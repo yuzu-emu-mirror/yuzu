@@ -58,7 +58,7 @@ void ConfigureFilesystem::setConfiguration() {
         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir)));
     ui->sdmc_directory_edit->setText(
         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)));
-    ui->gamecard_path_edit->setText(QString::fromStdString(Settings::values->gamecard_path));
+    ui->gamecard_path_edit->setText(QString::fromStdString(Settings::config_values->gamecard_path));
     ui->dump_path_edit->setText(
         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::DumpDir)));
     ui->load_path_edit->setText(
@@ -66,17 +66,17 @@ void ConfigureFilesystem::setConfiguration() {
     ui->cache_directory_edit->setText(
         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir)));
 
-    ui->gamecard_inserted->setChecked(Settings::values->gamecard_inserted);
-    ui->gamecard_current_game->setChecked(Settings::values->gamecard_current_game);
-    ui->dump_exefs->setChecked(Settings::values->dump_exefs);
-    ui->dump_nso->setChecked(Settings::values->dump_nso);
+    ui->gamecard_inserted->setChecked(Settings::config_values->gamecard_inserted);
+    ui->gamecard_current_game->setChecked(Settings::config_values->gamecard_current_game);
+    ui->dump_exefs->setChecked(Settings::config_values->dump_exefs);
+    ui->dump_nso->setChecked(Settings::config_values->dump_nso);
 
     ui->cache_game_list->setChecked(UISettings::values.cache_game_list);
 
-    SetComboBoxFromData(ui->nand_size, Settings::values->nand_total_size);
-    SetComboBoxFromData(ui->usrnand_size, Settings::values->nand_user_size);
-    SetComboBoxFromData(ui->sysnand_size, Settings::values->nand_system_size);
-    SetComboBoxFromData(ui->sdmc_size, Settings::values->sdmc_size);
+    SetComboBoxFromData(ui->nand_size, Settings::config_values->nand_total_size);
+    SetComboBoxFromData(ui->usrnand_size, Settings::config_values->nand_user_size);
+    SetComboBoxFromData(ui->sysnand_size, Settings::config_values->nand_system_size);
+    SetComboBoxFromData(ui->sdmc_size, Settings::config_values->sdmc_size);
 
     UpdateEnabledControls();
 }
@@ -90,22 +90,22 @@ void ConfigureFilesystem::applyConfiguration() {
     FileUtil::GetUserPath(FileUtil::UserPath::LoadDir, ui->load_path_edit->text().toStdString());
     FileUtil::GetUserPath(FileUtil::UserPath::CacheDir,
                           ui->cache_directory_edit->text().toStdString());
-    Settings::values->gamecard_path = ui->gamecard_path_edit->text().toStdString();
+    Settings::config_values->gamecard_path = ui->gamecard_path_edit->text().toStdString();
 
-    Settings::values->gamecard_inserted = ui->gamecard_inserted->isChecked();
-    Settings::values->gamecard_current_game = ui->gamecard_current_game->isChecked();
-    Settings::values->dump_exefs = ui->dump_exefs->isChecked();
-    Settings::values->dump_nso = ui->dump_nso->isChecked();
+    Settings::config_values->gamecard_inserted = ui->gamecard_inserted->isChecked();
+    Settings::config_values->gamecard_current_game = ui->gamecard_current_game->isChecked();
+    Settings::config_values->dump_exefs = ui->dump_exefs->isChecked();
+    Settings::config_values->dump_nso = ui->dump_nso->isChecked();
 
     UISettings::values.cache_game_list = ui->cache_game_list->isChecked();
 
-    Settings::values->nand_total_size = static_cast<Settings::NANDTotalSize>(
+    Settings::config_values->nand_total_size = static_cast<Settings::NANDTotalSize>(
         ui->nand_size->itemData(ui->nand_size->currentIndex()).toULongLong());
-    Settings::values->nand_system_size = static_cast<Settings::NANDSystemSize>(
+    Settings::config_values->nand_system_size = static_cast<Settings::NANDSystemSize>(
         ui->nand_size->itemData(ui->sysnand_size->currentIndex()).toULongLong());
-    Settings::values->nand_user_size = static_cast<Settings::NANDUserSize>(
+    Settings::config_values->nand_user_size = static_cast<Settings::NANDUserSize>(
         ui->nand_size->itemData(ui->usrnand_size->currentIndex()).toULongLong());
-    Settings::values->sdmc_size = static_cast<Settings::SDMCSize>(
+    Settings::config_values->sdmc_size = static_cast<Settings::SDMCSize>(
         ui->nand_size->itemData(ui->sdmc_size->currentIndex()).toULongLong());
 }
 

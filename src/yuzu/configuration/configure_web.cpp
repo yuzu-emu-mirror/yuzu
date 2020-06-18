@@ -88,15 +88,16 @@ void ConfigureWeb::SetConfiguration() {
     ui->web_signup_link->setOpenExternalLinks(true);
     ui->web_token_info_link->setOpenExternalLinks(true);
 
-    if (Settings::values->yuzu_username.empty()) {
+    if (Settings::config_values->yuzu_username.empty()) {
         ui->username->setText(tr("Unspecified"));
     } else {
-        ui->username->setText(QString::fromStdString(Settings::values->yuzu_username));
+        ui->username->setText(QString::fromStdString(Settings::config_values->yuzu_username));
     }
 
-    ui->toggle_telemetry->setChecked(Settings::values->enable_telemetry);
+    ui->toggle_telemetry->setChecked(Settings::config_values->enable_telemetry);
     ui->edit_token->setText(QString::fromStdString(
-        GenerateDisplayToken(Settings::values->yuzu_username, Settings::values->yuzu_token)));
+        GenerateDisplayToken(Settings::config_values->yuzu_username,
+                             Settings::config_values->yuzu_token)));
 
     // Connect after setting the values, to avoid calling OnLoginChanged now
     connect(ui->edit_token, &QLineEdit::textChanged, this, &ConfigureWeb::OnLoginChanged);
@@ -107,12 +108,13 @@ void ConfigureWeb::SetConfiguration() {
 }
 
 void ConfigureWeb::ApplyConfiguration() {
-    Settings::values->enable_telemetry = ui->toggle_telemetry->isChecked();
+    Settings::config_values->enable_telemetry = ui->toggle_telemetry->isChecked();
     UISettings::values.enable_discord_presence = ui->toggle_discordrpc->isChecked();
     if (user_verified) {
-        Settings::values->yuzu_username =
+        Settings::config_values->yuzu_username =
             UsernameFromDisplayToken(ui->edit_token->text().toStdString());
-        Settings::values->yuzu_token = TokenFromDisplayToken(ui->edit_token->text().toStdString());
+        Settings::config_values->yuzu_token =
+            TokenFromDisplayToken(ui->edit_token->text().toStdString());
     } else {
         QMessageBox::warning(
             this, tr("Token not verified"),

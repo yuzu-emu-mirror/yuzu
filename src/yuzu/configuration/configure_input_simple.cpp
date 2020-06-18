@@ -39,33 +39,33 @@ constexpr std::size_t PLAYER_0_INDEX = 0;
 constexpr std::size_t HANDHELD_INDEX = 8;
 
 void HandheldOnProfileSelect() {
-    Settings::values->players[HANDHELD_INDEX].connected = true;
-    Settings::values->players[HANDHELD_INDEX].type = Settings::ControllerType::DualJoycon;
+    Settings::config_values->players[HANDHELD_INDEX].connected = true;
+    Settings::config_values->players[HANDHELD_INDEX].type = Settings::ControllerType::DualJoycon;
 
     for (std::size_t player = 0; player < HANDHELD_INDEX; ++player) {
-        Settings::values->players[player].connected = false;
+        Settings::config_values->players[player].connected = false;
     }
 
-    Settings::values->use_docked_mode = false;
-    Settings::values->keyboard_enabled = false;
-    Settings::values->mouse_enabled = false;
-    Settings::values->debug_pad_enabled = false;
-    Settings::values->touchscreen.enabled = true;
+    Settings::config_values->use_docked_mode = false;
+    Settings::config_values->keyboard_enabled = false;
+    Settings::config_values->mouse_enabled = false;
+    Settings::config_values->debug_pad_enabled = false;
+    Settings::config_values->touchscreen.enabled = true;
 }
 
 void DualJoyconsDockedOnProfileSelect() {
-    Settings::values->players[PLAYER_0_INDEX].connected = true;
-    Settings::values->players[PLAYER_0_INDEX].type = Settings::ControllerType::DualJoycon;
+    Settings::config_values->players[PLAYER_0_INDEX].connected = true;
+    Settings::config_values->players[PLAYER_0_INDEX].type = Settings::ControllerType::DualJoycon;
 
     for (std::size_t player = 1; player <= HANDHELD_INDEX; ++player) {
-        Settings::values->players[player].connected = false;
+        Settings::config_values->players[player].connected = false;
     }
 
-    Settings::values->use_docked_mode = true;
-    Settings::values->keyboard_enabled = false;
-    Settings::values->mouse_enabled = false;
-    Settings::values->debug_pad_enabled = false;
-    Settings::values->touchscreen.enabled = true;
+    Settings::config_values->use_docked_mode = true;
+    Settings::config_values->keyboard_enabled = false;
+    Settings::config_values->mouse_enabled = false;
+    Settings::config_values->debug_pad_enabled = false;
+    Settings::config_values->touchscreen.enabled = true;
 }
 
 // Name, OnProfileSelect (called when selected in drop down), OnConfigure (called when configure
@@ -142,9 +142,9 @@ void ConfigureInputSimple::LoadConfiguration() {
 }
 
 void ConfigureInputSimple::OnSelectProfile(int index) {
-    const auto old_docked = Settings::values->use_docked_mode;
+    const auto old_docked = Settings::config_values->use_docked_mode;
     ApplyInputProfileConfiguration(index);
-    OnDockedModeChanged(old_docked, Settings::values->use_docked_mode);
+    OnDockedModeChanged(old_docked, Settings::config_values->use_docked_mode);
 }
 
 void ConfigureInputSimple::OnConfigure() {

@@ -260,11 +260,6 @@
            <string>Audio</string>
           </attribute>
          </widget>
-         <widget class="ConfigureInputSimple" name="inputTab">
-          <attribute name="title">
-           <string>Input</string>
-          </attribute>
-         </widget>
         </widget>
        </item>
       </layout>
@@ -324,12 +319,6 @@
    <class>ConfigurePerGameAddons</class>
    <extends>QWidget</extends>
    <header>configuration/configure_per_game_addons.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ConfigureInputSimple</class>
-   <extends>QWidget</extends>
-   <header>configuration/configure_input_simple.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -58,23 +58,24 @@ void ConfigureSystem::SetConfiguration() {
     ui->label_console_id->setVisible(Settings::values == &Settings::global_values);
     ui->button_regenerate_console_id->setVisible(Settings::values == &Settings::global_values);
 
-    ui->combo_language->setCurrentIndex(Settings::values->language_index);
-    ui->combo_region->setCurrentIndex(Settings::values->region_index);
-    ui->combo_time_zone->setCurrentIndex(Settings::values->time_zone_index);
-    ui->combo_sound->setCurrentIndex(Settings::values->sound_index);
+    ui->combo_language->setCurrentIndex(Settings::config_values->language_index);
+    ui->combo_region->setCurrentIndex(Settings::config_values->region_index);
+    ui->combo_time_zone->setCurrentIndex(Settings::config_values->time_zone_index);
+    ui->combo_sound->setCurrentIndex(Settings::config_values->sound_index);
 
-    ui->rng_seed_checkbox->setChecked(Settings::values->rng_seed.has_value());
-    ui->rng_seed_edit->setEnabled(Settings::values->rng_seed.has_value());
+    ui->rng_seed_checkbox->setChecked(Settings::config_values->rng_seed.has_value());
+    ui->rng_seed_edit->setEnabled(Settings::config_values->rng_seed.has_value());
 
     const auto rng_seed = QStringLiteral("%1")
-                              .arg(Settings::values->rng_seed.value_or(0), 8, 16, QLatin1Char{'0'})
+                              .arg(Settings::config_values->rng_seed.value_or(0), 8, 16,
+                                   QLatin1Char{'0'})
                               .toUpper();
     ui->rng_seed_edit->setText(rng_seed);
 
-    ui->custom_rtc_checkbox->setChecked(Settings::values->custom_rtc.has_value());
-    ui->custom_rtc_edit->setEnabled(Settings::values->custom_rtc.has_value());
+    ui->custom_rtc_checkbox->setChecked(Settings::config_values->custom_rtc.has_value());
+    ui->custom_rtc_edit->setEnabled(Settings::config_values->custom_rtc.has_value());
 
-    const auto rtc_time = Settings::values->custom_rtc.value_or(
+    const auto rtc_time = Settings::config_values->custom_rtc.value_or(
         std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
     ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
 }
@@ -86,22 +87,22 @@ void ConfigureSystem::ApplyConfiguration() {
         return;
     }
 
-    Settings::values->language_index = ui->combo_language->currentIndex();
-    Settings::values->region_index = ui->combo_region->currentIndex();
-    Settings::values->time_zone_index = ui->combo_time_zone->currentIndex();
-    Settings::values->sound_index = ui->combo_sound->currentIndex();
+    Settings::config_values->language_index = ui->combo_language->currentIndex();
+    Settings::config_values->region_index = ui->combo_region->currentIndex();
+    Settings::config_values->time_zone_index = ui->combo_time_zone->currentIndex();
+    Settings::config_values->sound_index = ui->combo_sound->currentIndex();
 
     if (ui->rng_seed_checkbox->isChecked()) {
-        Settings::values->rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
+        Settings::config_values->rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
     } else {
-        Settings::values->rng_seed = std::nullopt;
+        Settings::config_values->rng_seed = std::nullopt;
     }
 
     if (ui->custom_rtc_checkbox->isChecked()) {
-        Settings::values->custom_rtc =
+        Settings::config_values->custom_rtc =
             std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
     } else {
-        Settings::values->custom_rtc = std::nullopt;
+        Settings::config_values->custom_rtc = std::nullopt;
     }
 
     Settings::Apply();

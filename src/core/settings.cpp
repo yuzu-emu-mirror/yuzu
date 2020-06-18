@@ -66,6 +66,7 @@ const std::array<const char*, NumMouseButtons> mapping = {{
 Values global_values;
 Values game_values;
 Values *values = &global_values;
+Values *config_values = &global_values;
 
 void CopyValues(Values& dst, const Values& src) {
     dst.udp_input_address = src.udp_input_address;
@@ -112,6 +113,16 @@ void SwapValues(ValuesSwapTarget target) {
     else {
         CopyValues(game_values, global_values);
         values = &game_values;
+    }
+}
+
+void SwapConfigValues(ValuesSwapTarget target) {
+    if (target == ValuesSwapTarget::ToGlobal) {
+        config_values = &global_values;
+    }
+    else {
+        CopyValues(game_values, global_values);
+        config_values = &game_values;
     }
 }
 

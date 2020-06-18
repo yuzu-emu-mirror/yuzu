@@ -41,8 +41,8 @@ void ConfigureAudio::SetConfiguration() {
 
     SetAudioDeviceFromDeviceID();
 
-    ui->toggle_audio_stretching->setChecked(Settings::values->enable_audio_stretching);
-    ui->volume_slider->setValue(Settings::values->volume * ui->volume_slider->maximum());
+    ui->toggle_audio_stretching->setChecked(Settings::config_values->enable_audio_stretching);
+    ui->volume_slider->setValue(Settings::config_values->volume * ui->volume_slider->maximum());
     SetVolumeIndicatorText(ui->volume_slider->sliderPosition());
 }
 
@@ -50,7 +50,7 @@ void ConfigureAudio::SetOutputSinkFromSinkID() {
     [[maybe_unused]] const QSignalBlocker blocker(ui->output_sink_combo_box);
 
     int new_sink_index = 0;
-    const QString sink_id = QString::fromStdString(Settings::values->sink_id);
+    const QString sink_id = QString::fromStdString(Settings::config_values->sink_id);
     for (int index = 0; index < ui->output_sink_combo_box->count(); index++) {
         if (ui->output_sink_combo_box->itemText(index) == sink_id) {
             new_sink_index = index;
@@ -64,7 +64,7 @@ void ConfigureAudio::SetOutputSinkFromSinkID() {
 void ConfigureAudio::SetAudioDeviceFromDeviceID() {
     int new_device_index = -1;
 
-    const QString device_id = QString::fromStdString(Settings::values->audio_device_id);
+    const QString device_id = QString::fromStdString(Settings::config_values->audio_device_id);
     for (int index = 0; index < ui->audio_device_combo_box->count(); index++) {
         if (ui->audio_device_combo_box->itemText(index) == device_id) {
             new_device_index = index;
@@ -80,14 +80,14 @@ void ConfigureAudio::SetVolumeIndicatorText(int percentage) {
 }
 
 void ConfigureAudio::ApplyConfiguration() {
-    Settings::values->sink_id =
+    Settings::config_values->sink_id =
         ui->output_sink_combo_box->itemText(ui->output_sink_combo_box->currentIndex())
             .toStdString();
-    Settings::values->enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
-    Settings::values->audio_device_id =
+    Settings::config_values->enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
+    Settings::config_values->audio_device_id =
         ui->audio_device_combo_box->itemText(ui->audio_device_combo_box->currentIndex())
             .toStdString();
-    Settings::values->volume =
+    Settings::config_values->volume =
         static_cast<float>(ui->volume_slider->sliderPosition()) / ui->volume_slider->maximum();
 }
 

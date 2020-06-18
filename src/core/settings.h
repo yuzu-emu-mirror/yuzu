@@ -497,16 +497,18 @@ struct Values {
 extern Values global_values;
 extern Values game_values;
 extern Values *values;
+extern Values *config_values;
 
 float Volume();
-void CopyValues(Values& dst, const Values& src);
 
 enum class ValuesSwapTarget {
     ToGlobal,
     ToGame,
 };
 
+void CopyValues(Values& dst, const Values& src);
 void SwapValues(ValuesSwapTarget target);
+void SwapConfigValues(ValuesSwapTarget target);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();
