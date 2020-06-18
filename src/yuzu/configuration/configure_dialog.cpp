@@ -30,9 +30,7 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry)
     ui->selectorList->setCurrentRow(0);
 }
 
-ConfigureDialog::~ConfigureDialog() {
-    Settings::CopyValues(Settings::game_values, Settings::global_values);
-}
+ConfigureDialog::~ConfigureDialog() = default;
 
 void ConfigureDialog::SetConfiguration() {}
 
