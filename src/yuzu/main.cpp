@@ -1039,19 +1039,31 @@ void GMainWindow::BootGame(const QString& filename) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
-    // Swap settings to use game configuration if need be
-    Settings::SwapValues(Settings::ValuesSwapTarget::ToGame);
-    Config per_game_config(filename.toUtf8().constData(), false);
-    if (Settings::game_values.use_global_values) {
-        Settings::SwapValues(Settings::ValuesSwapTarget::ToGlobal);
-    }
-
     if (UISettings::values.select_user_on_boot) {
         SelectAndSetCurrentUser();
     }
 
     if (!LoadROM(filename))
         return;
+
+    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+
+    // Swap settings to use game configuration if need be
+    Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
+    Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
+    Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
+
+    if (Settings::game_values.use_global_values) {
+        LOG_INFO(Frontend, "Using global configuration");
+    }
+    else {
+        Settings::SwapValues(Settings::ValuesSwapTarget::ToGame);
+        LOG_INFO(Frontend, "Using game-specific configuration");
+    }
+
+    UpdateStatusButtons();
+
+    Settings::LogSettings();
 
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>();
@@ -1084,8 +1096,6 @@ void GMainWindow::BootGame(const QString& filename) {
         setMouseTracking(true);
         ui.centralwidget->setMouseTracking(true);
     }
-
-    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
 
     std::string title_name;
     std::string title_version;
@@ -1174,6 +1184,8 @@ void GMainWindow::ShutdownGame() {
     emulation_running = false;
 
     game_path.clear();
+
+    Settings::SwapValues(Settings::ValuesSwapTarget::ToGlobal);
 
     // When closing the game, destroy the GLWindow to clear the context after the game is closed
     render_window->ReleaseRenderTarget();
@@ -1825,8 +1837,6 @@ void GMainWindow::OnStopGame() {
         return;
     }
 
-    Settings::SwapValues(Settings::ValuesSwapTarget::ToGlobal);
-
     ShutdownGame();
 }
 
@@ -1983,16 +1993,7 @@ void GMainWindow::OnConfigure() {
         ui.centralwidget->setMouseTracking(false);
     }
 
-    dock_status_button->setChecked(Settings::values.use_docked_mode);
-    multicore_status_button->setChecked(Settings::values.use_multi_core);
-    Settings::values.use_asynchronous_gpu_emulation =
-        Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-
-#ifdef HAS_VULKAN
-    renderer_status_button->setChecked(Settings::values->renderer_backend ==
-                                       Settings::RendererBackend::Vulkan);
-#endif
+    UpdateStatusButtons();
 }
 
 void GMainWindow::OnLoadAmiibo() {
@@ -2119,6 +2120,19 @@ void GMainWindow::UpdateStatusBar() {
     emu_speed_label->setVisible(!Settings::values.use_multi_core);
     game_fps_label->setVisible(true);
     emu_frametime_label->setVisible(true);
+}
+
+void GMainWindow::UpdateStatusButtons() {
+    dock_status_button->setChecked(Settings::values.use_docked_mode);
+    multicore_status_button->setChecked(Settings::values.use_multi_core);
+    Settings::values.use_asynchronous_gpu_emulation =
+        Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+
+#ifdef HAS_VULKAN
+    renderer_status_button->setChecked(Settings::values->renderer_backend ==
+                                       Settings::RendererBackend::Vulkan);
+#endif
 }
 
 void GMainWindow::HideMouseCursor() {
@@ -2547,8 +2561,6 @@ int main(int argc, char* argv[]) {
 
     QObject::connect(&app, &QGuiApplication::applicationStateChanged, &main_window,
                      &GMainWindow::OnAppFocusStateChanged);
-
-    Settings::LogSettings();
 
     int result = app.exec();
     detached_tasks.WaitForAllTasks();

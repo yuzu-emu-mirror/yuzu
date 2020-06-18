@@ -50,6 +50,7 @@ void ConfigureDialog::ApplyConfiguration() {
     ui->serviceTab->ApplyConfiguration();
     Settings::Apply();
     Settings::LogSettings();
+    Settings::CopyValues(Settings::game_values, Settings::global_values);
 }
 
 void ConfigureDialog::changeEvent(QEvent* event) {

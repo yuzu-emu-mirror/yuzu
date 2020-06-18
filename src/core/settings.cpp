@@ -69,6 +69,21 @@ Values *values = &global_values;
 Values *config_values = &global_values;
 
 void CopyValues(Values& dst, const Values& src) {
+    // Controls
+    dst.players = src.players;
+    dst.mouse_enabled = src.mouse_enabled;
+    dst.mouse_device = src.mouse_device;
+
+    dst.keyboard_enabled = src.keyboard_enabled;
+    dst.keyboard_keys = src.keyboard_keys;
+    dst.keyboard_mods = src.keyboard_mods;
+
+    dst.debug_pad_enabled = src.debug_pad_enabled;
+    dst.debug_pad_buttons = src.debug_pad_buttons;
+    dst.debug_pad_analogs = src.debug_pad_analogs;
+
+    dst.motion_device = src.motion_device;
+    dst.touchscreen = src.touchscreen;
     dst.udp_input_address = src.udp_input_address;
     dst.udp_input_port = src.udp_input_port;
     dst.udp_pad_index = src.udp_pad_index;
@@ -202,7 +217,8 @@ bool IsGPULevelExtreme() {
 }
 
 bool IsGPULevelHigh() {
-    return values->gpu_accuracy == GPUAccuracy::Extreme || values->gpu_accuracy == GPUAccuracy::High;
+    return values->gpu_accuracy == GPUAccuracy::Extreme ||
+           values->gpu_accuracy == GPUAccuracy::High;
 }
 
 } // namespace Settings
