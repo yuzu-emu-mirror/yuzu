@@ -96,8 +96,8 @@ int main(int argc, char** argv) {
     Config config;
 
     int option_index = 0;
-    bool use_gdbstub = Settings::values->use_gdbstub;
-    u32 gdb_port = static_cast<u32>(Settings::values->gdbstub_port);
+    bool use_gdbstub = Settings::base_values.use_gdbstub;
+    u32 gdb_port = static_cast<u32>(Settings::base_values.gdbstub_port);
 
     InitializeLogging();
 
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
                 PrintVersion();
                 return 0;
             case 'p':
-                Settings::values->program_args = argv[optind];
+                Settings::base_values.program_args = argv[optind];
                 ++optind;
                 break;
             }
@@ -174,8 +174,8 @@ int main(int argc, char** argv) {
     }
 
     // Apply the command line arguments
-    Settings::values->gdbstub_port = gdb_port;
-    Settings::values->use_gdbstub = use_gdbstub;
+    Settings::base_values.gdbstub_port = gdb_port;
+    Settings::base_values.use_gdbstub = use_gdbstub;
     Settings::Apply();
 
     Core::System& system{Core::System::GetInstance()};

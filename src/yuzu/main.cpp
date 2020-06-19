@@ -1040,14 +1040,17 @@ void GMainWindow::BootGame(const QString& filename) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
-    if (UISettings::values.select_user_on_boot) {
-        SelectAndSetCurrentUser();
+    u64 title_id;
+
+    const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
+    const auto loader = Loader::GetLoader(v_file);
+    if (loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
+        QMessageBox::information(this, tr("Properties"),
+                                 tr("The game properties could not be loaded."));
+        return;
     }
 
-    if (!LoadROM(filename))
-        return;
-
-    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    //~ const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
 
     // Swap settings to use game configuration if need be
     Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
@@ -1065,6 +1068,13 @@ void GMainWindow::BootGame(const QString& filename) {
     UpdateStatusButtons();
 
     Settings::LogSettings();
+
+    if (UISettings::values.select_user_on_boot) {
+        SelectAndSetCurrentUser();
+    }
+
+    if (!LoadROM(filename))
+        return;
 
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>();

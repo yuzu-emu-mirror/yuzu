@@ -46,43 +46,46 @@ bool Config::LoadINI(const std::string& default_contents, bool retry) {
 
 void Config::ReadValues() {
     // Controls
-    for (std::size_t p = 0; p < Settings::global_values.players.size(); ++p) {
+    for (std::size_t p = 0; p < Settings::base_values.players.size(); ++p) {
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-            Settings::global_values.players[p].buttons[i] = "";
+            Settings::base_values.players[p].buttons[i] = "";
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-            Settings::global_values.players[p].analogs[i] = "";
+            Settings::base_values.players[p].analogs[i] = "";
         }
     }
 
-    Settings::values->mouse_enabled = false;
+    Settings::base_values.mouse_enabled = false;
     for (int i = 0; i < Settings::NativeMouseButton::NumMouseButtons; ++i) {
-        Settings::values->mouse_buttons[i] = "";
+        Settings::base_values.mouse_buttons[i] = "";
     }
 
-    Settings::values->motion_device = "";
+    Settings::base_values.motion_device = "";
 
-    Settings::values->keyboard_enabled = false;
+    Settings::base_values.keyboard_enabled = false;
 
-    Settings::values->debug_pad_enabled = false;
+    Settings::base_values.debug_pad_enabled = false;
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-        Settings::values->debug_pad_buttons[i] = "";
+        Settings::base_values.debug_pad_buttons[i] = "";
     }
 
     for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-        Settings::values->debug_pad_analogs[i] = "";
+        Settings::base_values.debug_pad_analogs[i] = "";
     }
 
-    Settings::values->touchscreen.enabled = "";
-    Settings::values->touchscreen.device = "";
-    Settings::values->touchscreen.finger = 0;
-    Settings::values->touchscreen.rotation_angle = 0;
-    Settings::values->touchscreen.diameter_x = 15;
-    Settings::values->touchscreen.diameter_y = 15;
+    Settings::base_values.touchscreen.enabled = "";
+    Settings::base_values.touchscreen.device = "";
+    Settings::base_values.touchscreen.finger = 0;
+    Settings::base_values.touchscreen.rotation_angle = 0;
+    Settings::base_values.touchscreen.diameter_x = 15;
+    Settings::base_values.touchscreen.diameter_y = 15;
+
+    Settings::base_values.use_docked_mode = sdl2_config->GetBoolean("Controls", "use_docked_mode",
+                                                                    false);
 
     // Data Storage
-    Settings::values->use_virtual_sd =
+    Settings::base_values.use_virtual_sd =
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
     FileUtil::GetUserPath(FileUtil::UserPath::NANDDir,
                           sdl2_config->Get("Data Storage", "nand_directory",
@@ -92,8 +95,6 @@ void Config::ReadValues() {
                                            FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir)));
 
     // System
-    Settings::values->use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
-
     Settings::values->current_user = std::clamp<int>(
         sdl2_config->GetInteger("System", "current_user", 0), 0, Service::Account::MAX_USERS - 1);
 
@@ -149,10 +150,10 @@ void Config::ReadValues() {
     Settings::values->use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
 
     // Debugging
-    Settings::values->use_gdbstub = false;
-    Settings::values->program_args = "";
-    Settings::values->dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
-    Settings::values->dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
+    Settings::base_values.use_gdbstub = false;
+    Settings::base_values.program_args = "";
+    Settings::base_values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
+    Settings::base_values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
     std::stringstream ss(title_list);
@@ -168,16 +169,16 @@ void Config::ReadValues() {
             out.push_back(inner_line);
         }
 
-        Settings::global_values.disabled_addons.insert_or_assign(title_id, out);
+        Settings::base_values.disabled_addons.insert_or_assign(title_id, out);
     }
 
     // Web Service
-    Settings::values->enable_telemetry =
+    Settings::base_values.enable_telemetry =
         sdl2_config->GetBoolean("WebService", "enable_telemetry", true);
-    Settings::values->web_api_url =
+    Settings::base_values.web_api_url =
         sdl2_config->Get("WebService", "web_api_url", "https://api.yuzu-emu.org");
-    Settings::values->yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
-    Settings::values->yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
+    Settings::base_values.yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
+    Settings::base_values.yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
 }
 
 void Config::Reload() {

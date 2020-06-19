@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    Settings::values->use_gdbstub = false;
+    Settings::base_values.use_gdbstub = false;
     Settings::Apply();
 
     std::unique_ptr<EmuWindow_SDL2_Hide> emu_window{std::make_unique<EmuWindow_SDL2_Hide>()};
