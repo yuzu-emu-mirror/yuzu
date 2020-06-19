@@ -729,7 +729,7 @@ void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& 
     IPC::ResponseBuilder rb{ctx, 4};
     rb.Push(RESULT_SUCCESS);
 
-    if (Settings::values->use_docked_mode) {
+    if (Settings::base_values.use_docked_mode) {
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth) *
                 static_cast<u32>(Settings::values->resolution_factor));
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight) *
@@ -802,7 +802,7 @@ void IStorage::Open(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::GetOperationMode(Kernel::HLERequestContext& ctx) {
-    const bool use_docked_mode{Settings::values->use_docked_mode};
+    const bool use_docked_mode{Settings::base_values.use_docked_mode};
     LOG_DEBUG(Service_AM, "called, use_docked_mode={}", use_docked_mode);
 
     IPC::ResponseBuilder rb{ctx, 3};

@@ -203,7 +203,7 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader) {
              Settings::values->use_asynchronous_gpu_emulation);
     AddField(field_type, "Renderer_UseVsync", Settings::values->use_vsync);
     AddField(field_type, "Renderer_UseAssemblyShaders", Settings::values->use_assembly_shaders);
-    AddField(field_type, "System_UseDockedMode", Settings::values->use_docked_mode);
+    AddField(field_type, "System_UseDockedMode", Settings::base_values.use_docked_mode);
 }
 
 bool TelemetrySession::SubmitTestcase() {

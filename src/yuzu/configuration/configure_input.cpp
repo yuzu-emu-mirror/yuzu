@@ -129,9 +129,9 @@ void ConfigureInput::ApplyConfiguration() {
         }
     }
 
-    const bool pre_docked_mode = Settings::config_values->use_docked_mode;
-    Settings::config_values->use_docked_mode = ui->use_docked_mode->isChecked();
-    OnDockedModeChanged(pre_docked_mode, Settings::config_values->use_docked_mode);
+    const bool pre_docked_mode = Settings::base_values.use_docked_mode;
+    Settings::base_values.use_docked_mode = ui->use_docked_mode->isChecked();
+    OnDockedModeChanged(pre_docked_mode, Settings::base_values.use_docked_mode);
     Settings::base_values
         .players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]
         .connected = ui->handheld_connected->isChecked();
@@ -201,7 +201,7 @@ void ConfigureInput::LoadConfiguration() {
 
     LoadPlayerControllerIndices();
 
-    ui->use_docked_mode->setChecked(Settings::config_values->use_docked_mode);
+    ui->use_docked_mode->setChecked(Settings::base_values.use_docked_mode);
     ui->handheld_connected->setChecked(
         Settings::base_values
             .players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]

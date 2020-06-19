@@ -447,6 +447,8 @@ void Config::ReadControlValues() {
             .toInt());
     Settings::base_values.udp_pad_index =
         static_cast<u8>(ReadSetting(QStringLiteral("udp_pad_index"), 0).toUInt());
+    Settings::base_values.use_docked_mode =
+        ReadSetting(QStringLiteral("use_docked_mode"), false).toBool();
 
     qt_config->endGroup();
 }
@@ -698,9 +700,6 @@ void Config::ReadShortcutValues() {
 
 void Config::ReadSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
-
-    Settings::config_values->use_docked_mode =
-        ReadSetting(QStringLiteral("use_docked_mode"), false).toBool();
 
     Settings::config_values->current_user = std::clamp<int>(
         ReadSetting(QStringLiteral("current_user"), 0).toInt(), 0, Service::Account::MAX_USERS - 1);
@@ -977,6 +976,8 @@ void Config::SaveControlValues() {
     WriteSetting(QStringLiteral("udp_input_port"), Settings::base_values.udp_input_port,
                  InputCommon::CemuhookUDP::DEFAULT_PORT);
     WriteSetting(QStringLiteral("udp_pad_index"), Settings::base_values.udp_pad_index, 0);
+    WriteSetting(QStringLiteral("use_docked_mode"), Settings::base_values.use_docked_mode,
+                 false);
 
     qt_config->endGroup();
 }
@@ -1176,8 +1177,6 @@ void Config::SaveShortcutValues() {
 void Config::SaveSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    WriteSetting(QStringLiteral("use_docked_mode"), Settings::config_values->use_docked_mode,
-                 false);
     WriteSetting(QStringLiteral("current_user"), Settings::config_values->current_user, 0);
     WriteSetting(QStringLiteral("language_index"), Settings::config_values->language_index, 1);
     WriteSetting(QStringLiteral("region_index"), Settings::config_values->region_index, 1);

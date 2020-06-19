@@ -46,7 +46,7 @@ void HandheldOnProfileSelect() {
         Settings::base_values.players[player].connected = false;
     }
 
-    Settings::config_values->use_docked_mode = false;
+    Settings::base_values.use_docked_mode = false;
     Settings::base_values.keyboard_enabled = false;
     Settings::base_values.mouse_enabled = false;
     Settings::base_values.debug_pad_enabled = false;
@@ -61,7 +61,7 @@ void DualJoyconsDockedOnProfileSelect() {
         Settings::base_values.players[player].connected = false;
     }
 
-    Settings::config_values->use_docked_mode = true;
+    Settings::base_values.use_docked_mode = true;
     Settings::base_values.keyboard_enabled = false;
     Settings::base_values.mouse_enabled = false;
     Settings::base_values.debug_pad_enabled = false;
@@ -142,9 +142,9 @@ void ConfigureInputSimple::LoadConfiguration() {
 }
 
 void ConfigureInputSimple::OnSelectProfile(int index) {
-    const auto old_docked = Settings::config_values->use_docked_mode;
+    const auto old_docked = Settings::base_values.use_docked_mode;
     ApplyInputProfileConfiguration(index);
-    OnDockedModeChanged(old_docked, Settings::config_values->use_docked_mode);
+    OnDockedModeChanged(old_docked, Settings::base_values.use_docked_mode);
 }
 
 void ConfigureInputSimple::OnConfigure() {

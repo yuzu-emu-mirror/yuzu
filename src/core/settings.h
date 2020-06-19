@@ -420,7 +420,6 @@ struct Values {
     float bg_blue;
 
     // System
-    bool use_docked_mode;
     std::optional<u32> rng_seed;
     // Measured in seconds since epoch
     std::optional<std::chrono::seconds> custom_rtc;
@@ -456,6 +455,8 @@ struct NonSwitchingValues {
     std::string udp_input_address;
     u16 udp_input_port;
     u8 udp_pad_index;
+
+    bool use_docked_mode;
 
     // Data Storage
     bool use_virtual_sd;
