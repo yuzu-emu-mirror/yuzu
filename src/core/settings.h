@@ -383,54 +383,19 @@ enum class GPUAccuracy : u32 {
 };
 
 struct Values {
-    // System
-    bool use_docked_mode;
-    std::optional<u32> rng_seed;
-    // Measured in seconds since epoch
-    std::optional<std::chrono::seconds> custom_rtc;
-    // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
-    std::chrono::seconds custom_rtc_differential;
-
-    s32 current_user;
-    s32 language_index;
-    s32 region_index;
-    s32 time_zone_index;
-    s32 sound_index;
-
-    // Controls
-    std::array<PlayerInput, 10> players;
-
-    bool mouse_enabled;
-    std::string mouse_device;
-    MouseButtonsRaw mouse_buttons;
-
-    bool keyboard_enabled;
-    KeyboardKeysRaw keyboard_keys;
-    KeyboardModsRaw keyboard_mods;
-
-    bool debug_pad_enabled;
-    ButtonsRaw debug_pad_buttons;
-    AnalogsRaw debug_pad_analogs;
-
-    std::string motion_device;
-    TouchscreenInput touchscreen;
-    std::atomic_bool is_device_reload_pending{true};
-    std::string udp_input_address;
-    u16 udp_input_port;
-    u8 udp_pad_index;
+    // Audio
+    std::string sink_id;
+    bool enable_audio_stretching;
+    std::string audio_device_id;
+    float volume;
 
     // Core
     bool use_multi_core;
 
-    // Data Storage
-    bool use_virtual_sd;
-    bool gamecard_inserted;
-    bool gamecard_current_game;
-    std::string gamecard_path;
-    NANDTotalSize nand_total_size;
-    NANDSystemSize nand_system_size;
-    NANDUserSize nand_user_size;
-    SDMCSize sdmc_size;
+    // Misceallaneous
+    std::string log_filter;
+    bool use_dev_keys;
+    bool use_global_values;
 
     // Renderer
     RendererBackend renderer_backend;
@@ -454,16 +419,53 @@ struct Values {
     float bg_green;
     float bg_blue;
 
-    std::string log_filter;
+    // System
+    bool use_docked_mode;
+    std::optional<u32> rng_seed;
+    // Measured in seconds since epoch
+    std::optional<std::chrono::seconds> custom_rtc;
+    // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
+    std::chrono::seconds custom_rtc_differential;
 
-    bool use_dev_keys;
+    s32 current_user;
+    s32 language_index;
+    s32 region_index;
+    s32 time_zone_index;
+    s32 sound_index;
+};
 
-    // Audio
-    bool audio_muted;
-    std::string sink_id;
-    bool enable_audio_stretching;
-    std::string audio_device_id;
-    float volume;
+struct NonSwitchingValues {
+    // Controls
+    std::array<PlayerInput, 10> players;
+
+    bool mouse_enabled;
+    std::string mouse_device;
+    MouseButtonsRaw mouse_buttons;
+
+    bool keyboard_enabled;
+    KeyboardKeysRaw keyboard_keys;
+    KeyboardModsRaw keyboard_mods;
+
+    bool debug_pad_enabled;
+    ButtonsRaw debug_pad_buttons;
+    AnalogsRaw debug_pad_analogs;
+
+    std::string motion_device;
+    TouchscreenInput touchscreen;
+    std::atomic_bool is_device_reload_pending{true};
+    std::string udp_input_address;
+    u16 udp_input_port;
+    u8 udp_pad_index;
+
+    // Data Storage
+    bool use_virtual_sd;
+    bool gamecard_inserted;
+    bool gamecard_current_game;
+    std::string gamecard_path;
+    NANDTotalSize nand_total_size;
+    NANDSystemSize nand_system_size;
+    NANDUserSize nand_user_size;
+    SDMCSize sdmc_size;
 
     // Debugging
     bool record_frame_times;
@@ -477,7 +479,7 @@ struct Values {
     bool disable_cpu_opt;
     bool disable_macro_jit;
 
-    // BCAT
+    // Services
     std::string bcat_backend;
     bool bcat_boxcat_local;
 
@@ -489,11 +491,9 @@ struct Values {
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
-
-    // Per-Game Settings
-    bool use_global_values;
 };
 
+extern NonSwitchingValues base_values;
 extern Values global_values;
 extern Values game_values;
 extern Values *values;

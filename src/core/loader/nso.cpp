@@ -105,8 +105,8 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::Process& process,
         codeset.segments[i].size = nso_header.segments[i].size;
     }
 
-    if (should_pass_arguments && !Settings::values->program_args.empty()) {
-        const auto arg_data{Settings::values->program_args};
+    if (should_pass_arguments && !Settings::base_values.program_args.empty()) {
+        const auto arg_data{Settings::base_values.program_args};
 
         codeset.DataSegment().size += NSO_ARGUMENT_DATA_ALLOCATION_SIZE;
         NSOArgumentHeader args_header{
@@ -129,7 +129,7 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::Process& process,
     }
 
     // Apply patches if necessary
-    if (pm && (pm->HasNSOPatch(nso_header.build_id) || Settings::values->dump_nso)) {
+    if (pm && (pm->HasNSOPatch(nso_header.build_id) || Settings::base_values.dump_nso)) {
         std::vector<u8> pi_header;
         pi_header.insert(pi_header.begin(), reinterpret_cast<u8*>(&nso_header),
                          reinterpret_cast<u8*>(&nso_header) + sizeof(NSOHeader));

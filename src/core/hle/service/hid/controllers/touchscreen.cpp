@@ -43,16 +43,16 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
     const auto [x, y, pressed] = touch_device->GetStatus();
     auto& touch_entry = cur_entry.states[0];
     touch_entry.attribute.raw = 0;
-    if (pressed && Settings::values->touchscreen.enabled) {
+    if (pressed && Settings::base_values.touchscreen.enabled) {
         touch_entry.x = static_cast<u16>(x * Layout::ScreenUndocked::Width);
         touch_entry.y = static_cast<u16>(y * Layout::ScreenUndocked::Height);
-        touch_entry.diameter_x = Settings::values->touchscreen.diameter_x;
-        touch_entry.diameter_y = Settings::values->touchscreen.diameter_y;
-        touch_entry.rotation_angle = Settings::values->touchscreen.rotation_angle;
+        touch_entry.diameter_x = Settings::base_values.touchscreen.diameter_x;
+        touch_entry.diameter_y = Settings::base_values.touchscreen.diameter_y;
+        touch_entry.rotation_angle = Settings::base_values.touchscreen.rotation_angle;
         const u64 tick = core_timing.GetCPUTicks();
         touch_entry.delta_time = tick - last_touch;
         last_touch = tick;
-        touch_entry.finger = Settings::values->touchscreen.finger;
+        touch_entry.finger = Settings::base_values.touchscreen.finger;
         cur_entry.entry_count = 1;
     } else {
         cur_entry.entry_count = 0;
@@ -62,6 +62,7 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
 }
 
 void Controller_Touchscreen::OnLoadInputDevices() {
-    touch_device = Input::CreateDevice<Input::TouchDevice>(Settings::values->touchscreen.device);
+    touch_device = Input::CreateDevice<Input::TouchDevice>(
+        Settings::base_values.touchscreen.device);
 }
 } // namespace Service::HID

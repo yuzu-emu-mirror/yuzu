@@ -159,11 +159,11 @@ void Controller_NPad::InitNewlyAddedControler(std::size_t controller_idx) {
     controller.single_color.button_color = 0;
 
     controller.dual_color_error = ColorReadError::ReadOk;
-    controller.left_color.body_color = Settings::values->players[controller_idx].body_color_left;
-    controller.left_color.button_color = Settings::values->players[controller_idx].button_color_left;
-    controller.right_color.body_color = Settings::values->players[controller_idx].body_color_right;
+    controller.left_color.body_color = Settings::base_values.players[controller_idx].body_color_left;
+    controller.left_color.button_color = Settings::base_values.players[controller_idx].button_color_left;
+    controller.right_color.body_color = Settings::base_values.players[controller_idx].body_color_right;
     controller.right_color.button_color =
-        Settings::values->players[controller_idx].button_color_right;
+        Settings::base_values.players[controller_idx].button_color_right;
 
     controller.battery_level[0] = BATTERY_FULL;
     controller.battery_level[1] = BATTERY_FULL;
@@ -193,7 +193,7 @@ void Controller_NPad::OnInit() {
     }
 
     std::transform(
-        Settings::values->players.begin(), Settings::values->players.end(),
+        Settings::base_values.players.begin(), Settings::base_values.players.end(),
         connected_controllers.begin(), [](const Settings::PlayerInput& player) {
             return ControllerHolder{MapSettingsTypeToNPad(player.type), player.connected};
         });
@@ -227,7 +227,7 @@ void Controller_NPad::OnInit() {
 }
 
 void Controller_NPad::OnLoadInputDevices() {
-    const auto& players = Settings::values->players;
+    const auto& players = Settings::base_values.players;
     for (std::size_t i = 0; i < players.size(); ++i) {
         std::transform(players[i].buttons.begin() + Settings::NativeButton::BUTTON_HID_BEGIN,
                        players[i].buttons.begin() + Settings::NativeButton::BUTTON_HID_END,
@@ -459,7 +459,7 @@ void Controller_NPad::SetSupportedNPadIdTypes(u8* data, std::size_t length) {
             continue;
         }
         const auto requested_controller =
-            i <= MAX_NPAD_ID ? MapSettingsTypeToNPad(Settings::values->players[i].type)
+            i <= MAX_NPAD_ID ? MapSettingsTypeToNPad(Settings::base_values.players[i].type)
                              : NPadControllerType::Handheld;
         if (!IsControllerSupported(requested_controller)) {
             const auto is_handheld = requested_controller == NPadControllerType::Handheld;

@@ -39,33 +39,33 @@ constexpr std::size_t PLAYER_0_INDEX = 0;
 constexpr std::size_t HANDHELD_INDEX = 8;
 
 void HandheldOnProfileSelect() {
-    Settings::config_values->players[HANDHELD_INDEX].connected = true;
-    Settings::config_values->players[HANDHELD_INDEX].type = Settings::ControllerType::DualJoycon;
+    Settings::base_values.players[HANDHELD_INDEX].connected = true;
+    Settings::base_values.players[HANDHELD_INDEX].type = Settings::ControllerType::DualJoycon;
 
     for (std::size_t player = 0; player < HANDHELD_INDEX; ++player) {
-        Settings::config_values->players[player].connected = false;
+        Settings::base_values.players[player].connected = false;
     }
 
     Settings::config_values->use_docked_mode = false;
-    Settings::config_values->keyboard_enabled = false;
-    Settings::config_values->mouse_enabled = false;
-    Settings::config_values->debug_pad_enabled = false;
-    Settings::config_values->touchscreen.enabled = true;
+    Settings::base_values.keyboard_enabled = false;
+    Settings::base_values.mouse_enabled = false;
+    Settings::base_values.debug_pad_enabled = false;
+    Settings::base_values.touchscreen.enabled = true;
 }
 
 void DualJoyconsDockedOnProfileSelect() {
-    Settings::config_values->players[PLAYER_0_INDEX].connected = true;
-    Settings::config_values->players[PLAYER_0_INDEX].type = Settings::ControllerType::DualJoycon;
+    Settings::base_values.players[PLAYER_0_INDEX].connected = true;
+    Settings::base_values.players[PLAYER_0_INDEX].type = Settings::ControllerType::DualJoycon;
 
     for (std::size_t player = 1; player <= HANDHELD_INDEX; ++player) {
-        Settings::config_values->players[player].connected = false;
+        Settings::base_values.players[player].connected = false;
     }
 
     Settings::config_values->use_docked_mode = true;
-    Settings::config_values->keyboard_enabled = false;
-    Settings::config_values->mouse_enabled = false;
-    Settings::config_values->debug_pad_enabled = false;
-    Settings::config_values->touchscreen.enabled = true;
+    Settings::base_values.keyboard_enabled = false;
+    Settings::base_values.mouse_enabled = false;
+    Settings::base_values.debug_pad_enabled = false;
+    Settings::base_values.touchscreen.enabled = true;
 }
 
 // Name, OnProfileSelect (called when selected in drop down), OnConfigure (called when configure

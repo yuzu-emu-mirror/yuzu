@@ -159,7 +159,7 @@ void SET::GetQuestFlag(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(static_cast<u32>(Settings::values->quest_flag));
+    rb.Push(static_cast<u32>(Settings::base_values.quest_flag));
 }
 
 void SET::GetLanguageCode(Kernel::HLERequestContext& ctx) {

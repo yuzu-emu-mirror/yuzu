@@ -226,24 +226,24 @@ static const std::array<int, 8> keyboard_mods{
 
 void Config::ReadValues() {
     // Controls
-    for (std::size_t p = 0; p < Settings::values->players.size(); ++p) {
+    for (std::size_t p = 0; p < Settings::global_values.players.size(); ++p) {
         const auto group = fmt::format("ControlsP{}", p);
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
             std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-            Settings::values->players[p].buttons[i] =
+            Settings::global_values.players[p].buttons[i] =
                 sdl2_config->Get(group, Settings::NativeButton::mapping[i], default_param);
-            if (Settings::values->players[p].buttons[i].empty())
-                Settings::values->players[p].buttons[i] = default_param;
+            if (Settings::global_values.players[p].buttons[i].empty())
+                Settings::global_values.players[p].buttons[i] = default_param;
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
             std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
                 default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
                 default_analogs[i][3], default_analogs[i][4], 0.5f);
-            Settings::values->players[p].analogs[i] =
+            Settings::global_values.players[p].analogs[i] =
                 sdl2_config->Get(group, Settings::NativeAnalog::mapping[i], default_param);
-            if (Settings::values->players[p].analogs[i].empty())
-                Settings::values->players[p].analogs[i] = default_param;
+            if (Settings::global_values.players[p].analogs[i].empty())
+                Settings::global_values.players[p].analogs[i] = default_param;
         }
     }
 

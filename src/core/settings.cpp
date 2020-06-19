@@ -63,6 +63,7 @@ const std::array<const char*, NumMouseButtons> mapping = {{
 }};
 }
 
+NonSwitchingValues base_values;
 Values global_values;
 Values game_values;
 Values *values = &global_values;
@@ -70,55 +71,55 @@ Values *config_values = &global_values;
 
 void CopyValues(Values& dst, const Values& src) {
     // Controls
-    dst.players = src.players;
-    dst.mouse_enabled = src.mouse_enabled;
-    dst.mouse_device = src.mouse_device;
+    //~ dst.players = src.players;
+    //~ dst.mouse_enabled = src.mouse_enabled;
+    //~ dst.mouse_device = src.mouse_device;
 
-    dst.keyboard_enabled = src.keyboard_enabled;
-    dst.keyboard_keys = src.keyboard_keys;
-    dst.keyboard_mods = src.keyboard_mods;
+    //~ dst.keyboard_enabled = src.keyboard_enabled;
+    //~ dst.keyboard_keys = src.keyboard_keys;
+    //~ dst.keyboard_mods = src.keyboard_mods;
 
-    dst.debug_pad_enabled = src.debug_pad_enabled;
-    dst.debug_pad_buttons = src.debug_pad_buttons;
-    dst.debug_pad_analogs = src.debug_pad_analogs;
+    //~ dst.debug_pad_enabled = src.debug_pad_enabled;
+    //~ dst.debug_pad_buttons = src.debug_pad_buttons;
+    //~ dst.debug_pad_analogs = src.debug_pad_analogs;
 
-    dst.motion_device = src.motion_device;
-    dst.touchscreen = src.touchscreen;
-    dst.udp_input_address = src.udp_input_address;
-    dst.udp_input_port = src.udp_input_port;
-    dst.udp_pad_index = src.udp_pad_index;
+    //~ dst.motion_device = src.motion_device;
+    //~ dst.touchscreen = src.touchscreen;
+    //~ dst.udp_input_address = src.udp_input_address;
+    //~ dst.udp_input_port = src.udp_input_port;
+    //~ dst.udp_pad_index = src.udp_pad_index;
 
-    dst.use_virtual_sd = src.use_virtual_sd;
-    dst.gamecard_inserted = src.gamecard_inserted;
-    dst.gamecard_current_game = src.gamecard_current_game;
-    dst.gamecard_path = src.gamecard_path;
-    dst.nand_total_size = src.nand_total_size;
-    dst.nand_system_size = src.nand_system_size;
-    dst.nand_user_size = src.nand_user_size;
-    dst.sdmc_size = src.sdmc_size;
+    //~ dst.use_virtual_sd = src.use_virtual_sd;
+    //~ dst.gamecard_inserted = src.gamecard_inserted;
+    //~ dst.gamecard_current_game = src.gamecard_current_game;
+    //~ dst.gamecard_path = src.gamecard_path;
+    //~ dst.nand_total_size = src.nand_total_size;
+    //~ dst.nand_system_size = src.nand_system_size;
+    //~ dst.nand_user_size = src.nand_user_size;
+    //~ dst.sdmc_size = src.sdmc_size;
 
-    dst.log_filter = src.log_filter;
+    //~ dst.log_filter = src.log_filter;
 
-    dst.use_dev_keys = src.use_dev_keys;
+    //~ dst.use_dev_keys = src.use_dev_keys;
 
-    dst.record_frame_times = src.record_frame_times;
-    dst.use_gdbstub = src.use_gdbstub;
-    dst.gdbstub_port = src.gdbstub_port;
-    dst.program_args = src.program_args;
-    dst.dump_exefs = src.dump_exefs;
-    dst.dump_nso = src.dump_nso;
-    dst.reporting_services = src.reporting_services;
-    dst.quest_flag = src.quest_flag;
-    dst.disable_cpu_opt = src.disable_cpu_opt;
-    dst.disable_macro_jit = src.disable_macro_jit;
+    //~ dst.record_frame_times = src.record_frame_times;
+    //~ dst.use_gdbstub = src.use_gdbstub;
+    //~ dst.gdbstub_port = src.gdbstub_port;
+    //~ dst.program_args = src.program_args;
+    //~ dst.dump_exefs = src.dump_exefs;
+    //~ dst.dump_nso = src.dump_nso;
+    //~ dst.reporting_services = src.reporting_services;
+    //~ dst.quest_flag = src.quest_flag;
+    //~ dst.disable_cpu_opt = src.disable_cpu_opt;
+    //~ dst.disable_macro_jit = src.disable_macro_jit;
 
-    dst.bcat_backend = src.bcat_backend;
-    dst.bcat_boxcat_local = src.bcat_boxcat_local;
+    //~ dst.bcat_backend = src.bcat_backend;
+    //~ dst.bcat_boxcat_local = src.bcat_boxcat_local;
 
-    dst.enable_telemetry = src.enable_telemetry;
-    dst.web_api_url = src.web_api_url;
-    dst.yuzu_username = src.yuzu_username;
-    dst.yuzu_token = src.yuzu_token;
+    //~ dst.enable_telemetry = src.enable_telemetry;
+    //~ dst.web_api_url = src.web_api_url;
+    //~ dst.yuzu_username = src.yuzu_username;
+    //~ dst.yuzu_token = src.yuzu_token;
 }
 
 void SwapValues(ValuesSwapTarget target) {
@@ -157,8 +158,8 @@ std::string GetTimeZoneString() {
 }
 
 void Apply() {
-    GDBStub::SetServerPort(values->gdbstub_port);
-    GDBStub::ToggleServer(values->use_gdbstub);
+    GDBStub::SetServerPort(base_values.gdbstub_port);
+    GDBStub::ToggleServer(base_values.use_gdbstub);
 
     auto& system_instance = Core::System::GetInstance();
     if (system_instance.IsPoweredOn()) {
@@ -195,14 +196,14 @@ void LogSettings() {
     LogSetting("Audio_OutputEngine", Settings::values->sink_id);
     LogSetting("Audio_EnableAudioStretching", Settings::values->enable_audio_stretching);
     LogSetting("Audio_OutputDevice", Settings::values->audio_device_id);
-    LogSetting("DataStorage_UseVirtualSd", Settings::values->use_virtual_sd);
+    LogSetting("DataStorage_UseVirtualSd", Settings::base_values.use_virtual_sd);
     LogSetting("DataStorage_NandDir", FileUtil::GetUserPath(FileUtil::UserPath::NANDDir));
     LogSetting("DataStorage_SdmcDir", FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir));
-    LogSetting("Debugging_UseGdbstub", Settings::values->use_gdbstub);
-    LogSetting("Debugging_GdbstubPort", Settings::values->gdbstub_port);
-    LogSetting("Debugging_ProgramArgs", Settings::values->program_args);
-    LogSetting("Services_BCATBackend", Settings::values->bcat_backend);
-    LogSetting("Services_BCATBoxcatLocal", Settings::values->bcat_boxcat_local);
+    LogSetting("Debugging_UseGdbstub", Settings::base_values.use_gdbstub);
+    LogSetting("Debugging_GdbstubPort", Settings::base_values.gdbstub_port);
+    LogSetting("Debugging_ProgramArgs", Settings::base_values.program_args);
+    LogSetting("Services_BCATBackend", Settings::base_values.bcat_backend);
+    LogSetting("Services_BCATBoxcatLocal", Settings::base_values.bcat_boxcat_local);
 }
 
 float Volume() {

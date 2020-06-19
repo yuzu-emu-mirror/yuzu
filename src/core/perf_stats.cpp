@@ -30,7 +30,7 @@ namespace Core {
 PerfStats::PerfStats(u64 title_id) : title_id(title_id) {}
 
 PerfStats::~PerfStats() {
-    if (!Settings::values->record_frame_times || title_id == 0) {
+    if (!Settings::base_values.record_frame_times || title_id == 0) {
         return;
     }
 

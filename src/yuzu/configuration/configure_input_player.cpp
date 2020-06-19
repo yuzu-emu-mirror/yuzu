@@ -205,7 +205,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         ui->buttonScreenshot, ui->labelScreenshot,
     };
 
-    auto layout = Settings::config_values->players[player_index].type;
+    auto layout = Settings::base_values.players[player_index].type;
     if (debug)
         layout = Settings::ControllerType::DualJoycon;
 
@@ -432,9 +432,11 @@ ConfigureInputPlayer::~ConfigureInputPlayer() = default;
 
 void ConfigureInputPlayer::ApplyConfiguration() {
     auto& buttons =
-        debug ? Settings::config_values->debug_pad_buttons : Settings::config_values->players[player_index].buttons;
+        debug ? Settings::base_values.debug_pad_buttons :
+            Settings::base_values.players[player_index].buttons;
     auto& analogs =
-        debug ? Settings::config_values->debug_pad_analogs : Settings::config_values->players[player_index].analogs;
+        debug ? Settings::base_values.debug_pad_analogs :
+            Settings::base_values.players[player_index].analogs;
 
     std::transform(buttons_param.begin(), buttons_param.end(), buttons.begin(),
                    [](const Common::ParamPackage& param) { return param.Serialize(); });
@@ -448,10 +450,10 @@ void ConfigureInputPlayer::ApplyConfiguration() {
     std::transform(controller_colors.begin(), controller_colors.end(), colors.begin(),
                    [](QColor color) { return color.rgb(); });
 
-    Settings::config_values->players[player_index].body_color_left = colors[0];
-    Settings::config_values->players[player_index].button_color_left = colors[1];
-    Settings::config_values->players[player_index].body_color_right = colors[2];
-    Settings::config_values->players[player_index].button_color_right = colors[3];
+    Settings::base_values.players[player_index].body_color_left = colors[0];
+    Settings::base_values.players[player_index].button_color_left = colors[1];
+    Settings::base_values.players[player_index].body_color_right = colors[2];
+    Settings::base_values.players[player_index].button_color_right = colors[3];
 }
 
 void ConfigureInputPlayer::changeEvent(QEvent* event) {
@@ -478,18 +480,18 @@ void ConfigureInputPlayer::OnControllerButtonClick(int i) {
 
 void ConfigureInputPlayer::LoadConfiguration() {
     if (debug) {
-        std::transform(Settings::config_values->debug_pad_buttons.begin(),
-                       Settings::config_values->debug_pad_buttons.end(), buttons_param.begin(),
+        std::transform(Settings::base_values.debug_pad_buttons.begin(),
+                       Settings::base_values.debug_pad_buttons.end(), buttons_param.begin(),
                        [](const std::string& str) { return Common::ParamPackage(str); });
-        std::transform(Settings::config_values->debug_pad_analogs.begin(),
-                       Settings::config_values->debug_pad_analogs.end(), analogs_param.begin(),
+        std::transform(Settings::base_values.debug_pad_analogs.begin(),
+                       Settings::base_values.debug_pad_analogs.end(), analogs_param.begin(),
                        [](const std::string& str) { return Common::ParamPackage(str); });
     } else {
-        std::transform(Settings::config_values->players[player_index].buttons.begin(),
-                       Settings::config_values->players[player_index].buttons.end(), buttons_param.begin(),
+        std::transform(Settings::base_values.players[player_index].buttons.begin(),
+                       Settings::base_values.players[player_index].buttons.end(), buttons_param.begin(),
                        [](const std::string& str) { return Common::ParamPackage(str); });
-        std::transform(Settings::config_values->players[player_index].analogs.begin(),
-                       Settings::config_values->players[player_index].analogs.end(), analogs_param.begin(),
+        std::transform(Settings::base_values.players[player_index].analogs.begin(),
+                       Settings::base_values.players[player_index].analogs.end(), analogs_param.begin(),
                        [](const std::string& str) { return Common::ParamPackage(str); });
     }
 
@@ -499,10 +501,10 @@ void ConfigureInputPlayer::LoadConfiguration() {
         return;
 
     std::array<u32, 4> colors = {
-        Settings::config_values->players[player_index].body_color_left,
-        Settings::config_values->players[player_index].button_color_left,
-        Settings::config_values->players[player_index].body_color_right,
-        Settings::config_values->players[player_index].button_color_right,
+        Settings::base_values.players[player_index].body_color_left,
+        Settings::base_values.players[player_index].button_color_left,
+        Settings::base_values.players[player_index].body_color_right,
+        Settings::base_values.players[player_index].button_color_right,
     };
 
     std::transform(colors.begin(), colors.end(), controller_colors.begin(),

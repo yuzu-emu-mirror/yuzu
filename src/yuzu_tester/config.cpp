@@ -46,13 +46,13 @@ bool Config::LoadINI(const std::string& default_contents, bool retry) {
 
 void Config::ReadValues() {
     // Controls
-    for (std::size_t p = 0; p < Settings::values->players.size(); ++p) {
+    for (std::size_t p = 0; p < Settings::global_values.players.size(); ++p) {
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-            Settings::values->players[p].buttons[i] = "";
+            Settings::global_values.players[p].buttons[i] = "";
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
-            Settings::values->players[p].analogs[i] = "";
+            Settings::global_values.players[p].analogs[i] = "";
         }
     }
 

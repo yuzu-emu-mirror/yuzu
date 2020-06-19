@@ -271,7 +271,7 @@ void SynchronizeInternal(AM::Applets::AppletManager& applet_manager, DirectoryGe
                          std::optional<std::string> dir_name = {}) {
     progress.SetNeedHLELock(true);
 
-    if (Settings::values->bcat_boxcat_local) {
+    if (Settings::base_values.bcat_boxcat_local) {
         LOG_INFO(Service_BCAT, "Boxcat using local data by override, skipping download.");
         const auto dir = dir_getter(title.title_id);
         if (dir)
@@ -384,7 +384,7 @@ bool Boxcat::SynchronizeDirectory(TitleIDVersion title, std::string name,
 }
 
 bool Boxcat::Clear(u64 title_id) {
-    if (Settings::values->bcat_boxcat_local) {
+    if (Settings::base_values.bcat_boxcat_local) {
         LOG_INFO(Service_BCAT, "Boxcat using local data by override, skipping clear.");
         return true;
     }
@@ -412,7 +412,7 @@ void Boxcat::SetPassphrase(u64 title_id, const Passphrase& passphrase) {
 std::optional<std::vector<u8>> Boxcat::GetLaunchParameter(TitleIDVersion title) {
     const auto path{GetBINFilePath(title.title_id)};
 
-    if (Settings::values->bcat_boxcat_local) {
+    if (Settings::base_values.bcat_boxcat_local) {
         LOG_INFO(Service_BCAT, "Boxcat using local data by override, skipping download.");
     } else {
         Boxcat::Client client{path, title.title_id, title.build_id};

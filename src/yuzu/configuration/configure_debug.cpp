@@ -27,33 +27,33 @@ ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::Co
 ConfigureDebug::~ConfigureDebug() = default;
 
 void ConfigureDebug::SetConfiguration() {
-    ui->toggle_gdbstub->setChecked(Settings::config_values->use_gdbstub);
-    ui->gdbport_spinbox->setEnabled(Settings::config_values->use_gdbstub);
-    ui->gdbport_spinbox->setValue(Settings::config_values->gdbstub_port);
+    ui->toggle_gdbstub->setChecked(Settings::base_values.use_gdbstub);
+    ui->gdbport_spinbox->setEnabled(Settings::base_values.use_gdbstub);
+    ui->gdbport_spinbox->setValue(Settings::base_values.gdbstub_port);
     ui->toggle_console->setEnabled(!Core::System::GetInstance().IsPoweredOn());
     ui->toggle_console->setChecked(UISettings::values.show_console);
     ui->log_filter_edit->setText(QString::fromStdString(Settings::config_values->log_filter));
-    ui->homebrew_args_edit->setText(QString::fromStdString(Settings::config_values->program_args));
-    ui->reporting_services->setChecked(Settings::config_values->reporting_services);
-    ui->quest_flag->setChecked(Settings::config_values->quest_flag);
-    ui->disable_cpu_opt->setChecked(Settings::config_values->disable_cpu_opt);
+    ui->homebrew_args_edit->setText(QString::fromStdString(Settings::base_values.program_args));
+    ui->reporting_services->setChecked(Settings::base_values.reporting_services);
+    ui->quest_flag->setChecked(Settings::base_values.quest_flag);
+    ui->disable_cpu_opt->setChecked(Settings::base_values.disable_cpu_opt);
     ui->enable_graphics_debugging->setEnabled(!Core::System::GetInstance().IsPoweredOn());
     ui->enable_graphics_debugging->setChecked(Settings::config_values->renderer_debug);
     ui->disable_macro_jit->setEnabled(!Core::System::GetInstance().IsPoweredOn());
-    ui->disable_macro_jit->setChecked(Settings::config_values->disable_macro_jit);
+    ui->disable_macro_jit->setChecked(Settings::base_values.disable_macro_jit);
 }
 
 void ConfigureDebug::ApplyConfiguration() {
-    Settings::config_values->use_gdbstub = ui->toggle_gdbstub->isChecked();
-    Settings::config_values->gdbstub_port = ui->gdbport_spinbox->value();
+    Settings::base_values.use_gdbstub = ui->toggle_gdbstub->isChecked();
+    Settings::base_values.gdbstub_port = ui->gdbport_spinbox->value();
     UISettings::values.show_console = ui->toggle_console->isChecked();
     Settings::config_values->log_filter = ui->log_filter_edit->text().toStdString();
-    Settings::config_values->program_args = ui->homebrew_args_edit->text().toStdString();
-    Settings::config_values->reporting_services = ui->reporting_services->isChecked();
-    Settings::config_values->quest_flag = ui->quest_flag->isChecked();
-    Settings::config_values->disable_cpu_opt = ui->disable_cpu_opt->isChecked();
+    Settings::base_values.program_args = ui->homebrew_args_edit->text().toStdString();
+    Settings::base_values.reporting_services = ui->reporting_services->isChecked();
+    Settings::base_values.quest_flag = ui->quest_flag->isChecked();
+    Settings::base_values.disable_cpu_opt = ui->disable_cpu_opt->isChecked();
     Settings::config_values->renderer_debug = ui->enable_graphics_debugging->isChecked();
-    Settings::config_values->disable_macro_jit = ui->disable_macro_jit->isChecked();
+    Settings::base_values.disable_macro_jit = ui->disable_macro_jit->isChecked();
     Debugger::ToggleConsole();
     Log::Filter filter;
     filter.ParseFilterString(Settings::config_values->log_filter);

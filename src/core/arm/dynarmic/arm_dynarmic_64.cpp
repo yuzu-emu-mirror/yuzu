@@ -192,7 +192,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
     config.define_unpredictable_behaviour = true;
 
     // Optimizations
-    if (Settings::values->disable_cpu_opt) {
+    if (Settings::base_values.disable_cpu_opt) {
         config.enable_optimizations = false;
         config.enable_fast_dispatch = false;
     }

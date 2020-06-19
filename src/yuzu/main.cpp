@@ -162,7 +162,7 @@ void GMainWindow::ShowTelemetryCallout() {
            "data is collected</a> to help improve yuzu. "
            "<br/><br/>Would you like to share your usage data with us?");
     if (QMessageBox::question(this, tr("Telemetry"), telemetry_message) != QMessageBox::Yes) {
-        Settings::values->enable_telemetry = false;
+        Settings::base_values.enable_telemetry = false;
         Settings::Apply();
     }
 }
@@ -1850,7 +1850,7 @@ void GMainWindow::ErrorDisplayDisplayError(QString body) {
 }
 
 void GMainWindow::OnMenuReportCompatibility() {
-    if (!Settings::values->yuzu_token.empty() && !Settings::values->yuzu_username.empty()) {
+    if (!Settings::base_values.yuzu_token.empty() && !Settings::base_values.yuzu_username.empty()) {
         CompatDB compatdb{this};
         compatdb.exec();
     } else {

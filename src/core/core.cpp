@@ -241,12 +241,12 @@ struct System::Impl {
         main_process->Run(load_parameters->main_thread_priority,
                           load_parameters->main_thread_stack_size);
 
-        if (Settings::values->gamecard_inserted) {
-            if (Settings::values->gamecard_current_game) {
+        if (Settings::base_values.gamecard_inserted) {
+            if (Settings::base_values.gamecard_current_game) {
                 fs_controller.SetGameCard(GetGameFileFromPath(virtual_filesystem, filepath));
-            } else if (!Settings::values->gamecard_path.empty()) {
+            } else if (!Settings::base_values.gamecard_path.empty()) {
                 fs_controller.SetGameCard(
-                    GetGameFileFromPath(virtual_filesystem, Settings::values->gamecard_path));
+                    GetGameFileFromPath(virtual_filesystem, Settings::base_values.gamecard_path));
             }
         }
 

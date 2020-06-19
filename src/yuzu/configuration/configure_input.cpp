@@ -119,26 +119,26 @@ void ConfigureInput::ApplyConfiguration() {
     for (std::size_t i = 0; i < players_controller.size(); ++i) {
         const auto controller_type_index = players_controller[i]->currentIndex();
 
-        Settings::config_values->players[i].connected = controller_type_index != 0;
+        Settings::base_values.players[i].connected = controller_type_index != 0;
 
         if (controller_type_index > 0) {
-            Settings::config_values->players[i].type =
+            Settings::base_values.players[i].type =
                 static_cast<Settings::ControllerType>(controller_type_index - 1);
         } else {
-            Settings::config_values->players[i].type = Settings::ControllerType::DualJoycon;
+            Settings::base_values.players[i].type = Settings::ControllerType::DualJoycon;
         }
     }
 
     const bool pre_docked_mode = Settings::config_values->use_docked_mode;
     Settings::config_values->use_docked_mode = ui->use_docked_mode->isChecked();
     OnDockedModeChanged(pre_docked_mode, Settings::config_values->use_docked_mode);
-    Settings::values
-        ->players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]
+    Settings::base_values
+        .players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]
         .connected = ui->handheld_connected->isChecked();
-    Settings::config_values->debug_pad_enabled = ui->debug_enabled->isChecked();
-    Settings::config_values->mouse_enabled = ui->mouse_enabled->isChecked();
-    Settings::config_values->keyboard_enabled = ui->keyboard_enabled->isChecked();
-    Settings::config_values->touchscreen.enabled = ui->touchscreen_enabled->isChecked();
+    Settings::base_values.debug_pad_enabled = ui->debug_enabled->isChecked();
+    Settings::base_values.mouse_enabled = ui->mouse_enabled->isChecked();
+    Settings::base_values.keyboard_enabled = ui->keyboard_enabled->isChecked();
+    Settings::base_values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
 }
 
 void ConfigureInput::changeEvent(QEvent* event) {
@@ -194,8 +194,8 @@ void ConfigureInput::UpdateUIEnabled() {
 
 void ConfigureInput::LoadConfiguration() {
     std::stable_partition(
-        Settings::config_values->players.begin(),
-        Settings::config_values->players.begin() +
+        Settings::base_values.players.begin(),
+        Settings::base_values.players.begin() +
             Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD),
         [](const auto& player) { return player.connected; });
 
@@ -203,22 +203,22 @@ void ConfigureInput::LoadConfiguration() {
 
     ui->use_docked_mode->setChecked(Settings::config_values->use_docked_mode);
     ui->handheld_connected->setChecked(
-        Settings::values
-            ->players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]
+        Settings::base_values
+            .players[Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD)]
             .connected);
-    ui->debug_enabled->setChecked(Settings::config_values->debug_pad_enabled);
-    ui->mouse_enabled->setChecked(Settings::config_values->mouse_enabled);
-    ui->keyboard_enabled->setChecked(Settings::config_values->keyboard_enabled);
-    ui->touchscreen_enabled->setChecked(Settings::config_values->touchscreen.enabled);
+    ui->debug_enabled->setChecked(Settings::base_values.debug_pad_enabled);
+    ui->mouse_enabled->setChecked(Settings::base_values.mouse_enabled);
+    ui->keyboard_enabled->setChecked(Settings::base_values.keyboard_enabled);
+    ui->touchscreen_enabled->setChecked(Settings::base_values.touchscreen.enabled);
 
     UpdateUIEnabled();
 }
 
 void ConfigureInput::LoadPlayerControllerIndices() {
     for (std::size_t i = 0; i < players_controller.size(); ++i) {
-        const auto connected = Settings::config_values->players[i].connected;
+        const auto connected = Settings::base_values.players[i].connected;
         players_controller[i]->setCurrentIndex(
-            connected ? static_cast<u8>(Settings::config_values->players[i].type) + 1 : 0);
+            connected ? static_cast<u8>(Settings::base_values.players[i].type) + 1 : 0);
     }
 }
 

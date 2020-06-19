@@ -116,7 +116,7 @@ u64 RegenerateTelemetryId() {
 
 bool VerifyLogin(const std::string& username, const std::string& token) {
 #ifdef ENABLE_WEB_SERVICE
-    return WebService::VerifyLogin(Settings::values->web_api_url, username, token);
+    return WebService::VerifyLogin(Settings::base_values.web_api_url, username, token);
 #else
     return false;
 #endif
@@ -133,14 +133,15 @@ TelemetrySession::~TelemetrySession() {
 
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values->web_api_url, Settings::values->yuzu_username, Settings::values->yuzu_token);
+        Settings::base_values.web_api_url, Settings::base_values.yuzu_username,
+        Settings::base_values.yuzu_token);
 #else
     auto backend = std::make_unique<Telemetry::NullVisitor>();
 #endif
 
     // Complete the session, submitting to the web service backend if necessary
     field_collection.Accept(*backend);
-    if (Settings::values->enable_telemetry) {
+    if (Settings::base_values.enable_telemetry) {
         backend->Complete();
     }
 }
@@ -208,7 +209,8 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader) {
 bool TelemetrySession::SubmitTestcase() {
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values->web_api_url, Settings::values->yuzu_username, Settings::values->yuzu_token);
+        Settings::base_values.web_api_url, Settings::base_values.yuzu_username,
+        Settings::base_values.yuzu_token);
     field_collection.Accept(*backend);
     return backend->SubmitTestcase();
 #else

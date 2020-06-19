@@ -117,7 +117,7 @@ u64 BISFactory::GetSystemNANDFreeSpace() const {
 }
 
 u64 BISFactory::GetSystemNANDTotalSpace() const {
-    return static_cast<u64>(Settings::values->nand_system_size);
+    return static_cast<u64>(Settings::base_values.nand_system_size);
 }
 
 u64 BISFactory::GetUserNANDFreeSpace() const {
@@ -129,11 +129,11 @@ u64 BISFactory::GetUserNANDFreeSpace() const {
 }
 
 u64 BISFactory::GetUserNANDTotalSpace() const {
-    return static_cast<u64>(Settings::values->nand_user_size);
+    return static_cast<u64>(Settings::base_values.nand_user_size);
 }
 
 u64 BISFactory::GetFullNANDTotalSpace() const {
-    return static_cast<u64>(Settings::values->nand_total_size);
+    return static_cast<u64>(Settings::base_values.nand_total_size);
 }
 
 VirtualDir BISFactory::GetBCATDirectory(u64 title_id) const {
