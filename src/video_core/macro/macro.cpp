@@ -35,10 +35,19 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
         }
     } else {
         // Macro not compiled, check if it's uploaded and if so, compile it
+        std::pair<bool, u32> mid_method;
         auto macro_code = uploaded_macro_code.find(method);
         if (macro_code == uploaded_macro_code.end()) {
-            UNREACHABLE_MSG("Macro 0x{0:x} was not uploaded", method);
-            return;
+            for (const auto& [method_base, code] : uploaded_macro_code) {
+                if (method >= method_base && (method - method_base) < code.size()) {
+                    mid_method = {true, method_base};
+                    break;
+                }
+            }
+            if (!mid_method.first) {
+                UNREACHABLE_MSG("Macro 0x{0:x} was not uploaded", method);
+                return;
+            }
         }
         auto& cache_info = macro_cache[method];
         cache_info.hash = boost::hash_value(macro_code->second);
