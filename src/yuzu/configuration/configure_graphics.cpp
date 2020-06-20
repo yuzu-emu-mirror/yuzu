@@ -57,7 +57,8 @@ void ConfigureGraphics::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
 
     ui->api->setEnabled(runtime_lock);
-    ui->api->setCurrentIndex(static_cast<int>(Settings::config_values->renderer_backend));
+    ui->api->setCurrentIndex(static_cast<int>(
+                                 Settings::config_values->renderer_backend.GetValue()));
     ui->aspect_ratio_combobox->setCurrentIndex(Settings::config_values->aspect_ratio);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setChecked(Settings::config_values->use_disk_shader_cache);

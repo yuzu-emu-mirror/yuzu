@@ -19,7 +19,8 @@ ConfigureGraphicsAdvanced::~ConfigureGraphicsAdvanced() = default;
 
 void ConfigureGraphicsAdvanced::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
-    ui->gpu_accuracy->setCurrentIndex(static_cast<int>(Settings::config_values->gpu_accuracy));
+    ui->gpu_accuracy->setCurrentIndex(static_cast<int>(
+                                          Settings::config_values->gpu_accuracy.GetValue()));
     ui->use_vsync->setEnabled(runtime_lock);
     ui->use_vsync->setChecked(Settings::config_values->use_vsync);
     ui->use_assembly_shaders->setEnabled(runtime_lock);

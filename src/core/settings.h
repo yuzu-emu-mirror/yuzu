@@ -382,55 +382,99 @@ enum class GPUAccuracy : u32 {
     Extreme = 2,
 };
 
+template <typename Type>
+class Setting {
+public:
+    Setting() {
+        use_global = true;
+    }
+    ~Setting() = default;
+    void SetGlobal(bool to_global) {
+        use_global = to_global;
+    };
+    Type GetValue() {
+        if (use_global) {
+            return global;
+        }
+        return local;
+    };
+    void SetValue(Type value) {
+        if (use_global) {
+            global = value;
+        }
+        else {
+            local = value;
+        }
+    };
+    operator Type() const {
+        if (use_global)
+            return global;
+        return local;
+    };
+    Type operator=(const Type& b) {
+        if (use_global) {
+            global = b;
+        }
+        else {
+            local = b;
+        }
+        return b;
+    };
+private:
+    bool use_global;
+    Type global;
+    Type local;
+};
+
 struct Values {
     // Audio
-    std::string sink_id;
-    bool enable_audio_stretching;
-    std::string audio_device_id;
-    float volume;
+    Setting<std::string> sink_id;
+    Setting<bool> enable_audio_stretching;
+    Setting<std::string> audio_device_id;
+    Setting<float> volume;
 
     // Core
-    bool use_multi_core;
+    Setting<bool> use_multi_core;
 
     // Misceallaneous
-    std::string log_filter;
-    bool use_dev_keys;
-    bool use_global_values;
+    Setting<std::string> log_filter;
+    Setting<bool> use_dev_keys;
+    Setting<bool> use_global_values;
 
     // Renderer
-    RendererBackend renderer_backend;
-    bool renderer_debug;
-    int vulkan_device;
+    Setting<RendererBackend> renderer_backend;
+    Setting<bool> renderer_debug;
+    Setting<int> vulkan_device;
 
-    u16 resolution_factor{1};
-    int aspect_ratio;
-    int max_anisotropy;
-    bool use_frame_limit;
-    u16 frame_limit;
-    bool use_disk_shader_cache;
-    GPUAccuracy gpu_accuracy;
-    bool use_asynchronous_gpu_emulation;
-    bool use_vsync;
-    bool use_assembly_shaders;
-    bool force_30fps_mode;
-    bool use_fast_gpu_time;
+    Setting<u16> resolution_factor;
+    Setting<int> aspect_ratio;
+    Setting<int> max_anisotropy;
+    Setting<bool> use_frame_limit;
+    Setting<u16> frame_limit;
+    Setting<bool> use_disk_shader_cache;
+    Setting<GPUAccuracy> gpu_accuracy;
+    Setting<bool> use_asynchronous_gpu_emulation;
+    Setting<bool> use_vsync;
+    Setting<bool> use_assembly_shaders;
+    Setting<bool> force_30fps_mode;
+    Setting<bool> use_fast_gpu_time;
 
-    float bg_red;
-    float bg_green;
-    float bg_blue;
+    Setting<float> bg_red;
+    Setting<float> bg_green;
+    Setting<float> bg_blue;
 
     // System
-    std::optional<u32> rng_seed;
+    Setting<std::optional<u32>> rng_seed;
     // Measured in seconds since epoch
-    std::optional<std::chrono::seconds> custom_rtc;
+    Setting<std::optional<std::chrono::seconds>> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
-    std::chrono::seconds custom_rtc_differential;
+    Setting<std::chrono::seconds> custom_rtc_differential;
 
-    s32 current_user;
-    s32 language_index;
-    s32 region_index;
-    s32 time_zone_index;
-    s32 sound_index;
+    Setting<s32> current_user;
+    Setting<s32> language_index;
+    Setting<s32> region_index;
+    Setting<s32> time_zone_index;
+    Setting<s32> sound_index;
 };
 
 struct NonSwitchingValues {

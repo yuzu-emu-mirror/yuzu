@@ -77,7 +77,7 @@ static void PrintVersion() {
 
 static void InitializeLogging() {
     Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(Settings::values->log_filter);
+    log_filter.ParseFilterString(Settings::values->log_filter.GetValue());
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());

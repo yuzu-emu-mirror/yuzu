@@ -945,14 +945,14 @@ void Config::SaveAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
     WriteSetting(QStringLiteral("output_engine"),
-                 QString::fromStdString(Settings::config_values->sink_id),
+                 QString::fromStdString(Settings::config_values->sink_id.GetValue()),
                  QStringLiteral("auto"));
     WriteSetting(QStringLiteral("enable_audio_stretching"),
-                 Settings::config_values->enable_audio_stretching, true);
+                 Settings::config_values->enable_audio_stretching.GetValue(), true);
     WriteSetting(QStringLiteral("output_device"),
-                 QString::fromStdString(Settings::config_values->audio_device_id),
+                 QString::fromStdString(Settings::config_values->audio_device_id.GetValue()),
                  QStringLiteral("auto"));
-    WriteSetting(QStringLiteral("volume"), Settings::config_values->volume, 1.0f);
+    WriteSetting(QStringLiteral("volume"), Settings::config_values->volume.GetValue(), 1.0f);
 
     qt_config->endGroup();
 }
@@ -985,7 +985,8 @@ void Config::SaveControlValues() {
 void Config::SaveCoreValues() {
     qt_config->beginGroup(QStringLiteral("Core"));
 
-    WriteSetting(QStringLiteral("use_multi_core"), Settings::config_values->use_multi_core, false);
+    WriteSetting(QStringLiteral("use_multi_core"),
+                 Settings::config_values->use_multi_core.GetValue(), false);
 
     qt_config->endGroup();
 }
@@ -1089,10 +1090,12 @@ void Config::SaveMiscellaneousValues() {
     qt_config->beginGroup(QStringLiteral("Miscellaneous"));
 
     WriteSetting(QStringLiteral("log_filter"),
-                 QString::fromStdString(Settings::config_values->log_filter),
+                 QString::fromStdString(Settings::config_values->log_filter.GetValue()),
                  QStringLiteral("*:Info"));
-    WriteSetting(QStringLiteral("use_dev_keys"), Settings::config_values->use_dev_keys, false);
-    WriteSetting(QStringLiteral("use_global_values"), Settings::config_values->use_global_values,
+    WriteSetting(QStringLiteral("use_dev_keys"), Settings::config_values->use_dev_keys.GetValue(),
+                 false);
+    WriteSetting(QStringLiteral("use_global_values"),
+                 Settings::config_values->use_global_values.GetValue(),
                  true);
 
     qt_config->endGroup();
@@ -1122,26 +1125,32 @@ void Config::SaveRendererValues() {
     qt_config->beginGroup(QStringLiteral("Renderer"));
 
     WriteSetting(QStringLiteral("backend"),
-                 static_cast<int>(Settings::config_values->renderer_backend), 0);
-    WriteSetting(QStringLiteral("debug"), Settings::config_values->renderer_debug, false);
-    WriteSetting(QStringLiteral("vulkan_device"), Settings::config_values->vulkan_device, 0);
-    WriteSetting(QStringLiteral("aspect_ratio"), Settings::config_values->aspect_ratio, 0);
-    WriteSetting(QStringLiteral("max_anisotropy"), Settings::config_values->max_anisotropy, 0);
-    WriteSetting(QStringLiteral("use_frame_limit"), Settings::config_values->use_frame_limit, true);
-    WriteSetting(QStringLiteral("frame_limit"), Settings::config_values->frame_limit, 100);
+                 static_cast<int>(Settings::config_values->renderer_backend.GetValue()), 0);
+    WriteSetting(QStringLiteral("debug"),
+                 Settings::config_values->renderer_debug.GetValue(), false);
+    WriteSetting(QStringLiteral("vulkan_device"),
+                 Settings::config_values->vulkan_device.GetValue(), 0);
+    WriteSetting(QStringLiteral("aspect_ratio"), Settings::config_values->aspect_ratio.GetValue(),
+                 0);
+    WriteSetting(QStringLiteral("max_anisotropy"),
+                 Settings::config_values->max_anisotropy.GetValue(), 0);
+    WriteSetting(QStringLiteral("use_frame_limit"),
+                 Settings::config_values->use_frame_limit.GetValue(), true);
+    WriteSetting(QStringLiteral("frame_limit"), Settings::config_values->frame_limit.GetValue(),
+                 100);
     WriteSetting(QStringLiteral("use_disk_shader_cache"),
-                 Settings::config_values->use_disk_shader_cache, true);
+                 Settings::config_values->use_disk_shader_cache.GetValue(), true);
     WriteSetting(QStringLiteral("gpu_accuracy"),
-                 static_cast<int>(Settings::config_values->gpu_accuracy), 0);
+                 static_cast<int>(Settings::config_values->gpu_accuracy.GetValue()), 0);
     WriteSetting(QStringLiteral("use_asynchronous_gpu_emulation"),
-                 Settings::config_values->use_asynchronous_gpu_emulation, false);
-    WriteSetting(QStringLiteral("use_vsync"), Settings::config_values->use_vsync, true);
+                 Settings::config_values->use_asynchronous_gpu_emulation.GetValue(), false);
+    WriteSetting(QStringLiteral("use_vsync"), Settings::config_values->use_vsync.GetValue(), true);
     WriteSetting(QStringLiteral("use_assembly_shaders"),
-                 Settings::config_values->use_assembly_shaders, false);
+                 Settings::config_values->use_assembly_shaders.GetValue(), false);
     WriteSetting(QStringLiteral("use_fast_gpu_time"),
-                 Settings::config_values->use_fast_gpu_time, true);
+                 Settings::config_values->use_fast_gpu_time.GetValue(), true);
     WriteSetting(QStringLiteral("force_30fps_mode"),
-                 Settings::config_values->force_30fps_mode, false);
+                 Settings::config_values->force_30fps_mode.GetValue(), false);
 
     // Cast to double because Qt's written float values are not human-readable
     WriteSetting(QStringLiteral("bg_red"),
@@ -1177,23 +1186,30 @@ void Config::SaveShortcutValues() {
 void Config::SaveSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    WriteSetting(QStringLiteral("current_user"), Settings::config_values->current_user, 0);
-    WriteSetting(QStringLiteral("language_index"), Settings::config_values->language_index, 1);
-    WriteSetting(QStringLiteral("region_index"), Settings::config_values->region_index, 1);
-    WriteSetting(QStringLiteral("time_zone_index"), Settings::config_values->time_zone_index, 0);
+    WriteSetting(QStringLiteral("current_user"),
+                 Settings::config_values->current_user.GetValue(), 0);
+    WriteSetting(QStringLiteral("language_index"),
+                 Settings::config_values->language_index.GetValue(), 1);
+    WriteSetting(QStringLiteral("region_index"),
+                 Settings::config_values->region_index.GetValue(), 1);
+    WriteSetting(QStringLiteral("time_zone_index"),
+                 Settings::config_values->time_zone_index.GetValue(), 0);
 
-    WriteSetting(QStringLiteral("rng_seed_enabled"), Settings::config_values->rng_seed.has_value(),
+    WriteSetting(QStringLiteral("rng_seed_enabled"),
+                 Settings::config_values->rng_seed.GetValue().has_value(),
                  false);
-    WriteSetting(QStringLiteral("rng_seed"), Settings::config_values->rng_seed.value_or(0), 0);
+    WriteSetting(QStringLiteral("rng_seed"),
+                 Settings::config_values->rng_seed.GetValue().value_or(0), 0);
 
     WriteSetting(QStringLiteral("custom_rtc_enabled"),
-                 Settings::config_values->custom_rtc.has_value(), false);
+                 Settings::config_values->custom_rtc.GetValue().has_value(), false);
     WriteSetting(QStringLiteral("custom_rtc"),
                  QVariant::fromValue<long long>(
-                     Settings::config_values->custom_rtc.value_or(std::chrono::seconds{}).count()),
+                     Settings::config_values->custom_rtc.GetValue()
+                         .value_or(std::chrono::seconds{}).count()),
                  0);
 
-    WriteSetting(QStringLiteral("sound_index"), Settings::config_values->sound_index, 1);
+    WriteSetting(QStringLiteral("sound_index"), Settings::config_values->sound_index.GetValue(), 1);
 
     qt_config->endGroup();
 }

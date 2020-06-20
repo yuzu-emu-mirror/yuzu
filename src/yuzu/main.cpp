@@ -171,7 +171,7 @@ const int GMainWindow::max_recent_files_item;
 
 static void InitializeLogging() {
     Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values->log_filter);
+    log_filter.ParseFilterString(Settings::values->log_filter.GetValue());
     Log::SetGlobalFilter(log_filter);
 
     const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
@@ -735,14 +735,16 @@ void GMainWindow::InitializeHotkeys() {
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
             &QShortcut::activated, this, [&] {
                 if (Settings::values->frame_limit < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values->frame_limit += SPEED_LIMIT_STEP;
+                    Settings::values->frame_limit =
+                        SPEED_LIMIT_STEP + Settings::values->frame_limit;
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
             &QShortcut::activated, this, [&] {
                 if (Settings::values->frame_limit > SPEED_LIMIT_STEP) {
-                    Settings::values->frame_limit -= SPEED_LIMIT_STEP;
+                    Settings::values->frame_limit =
+                        Settings::values->frame_limit - SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });
@@ -769,7 +771,7 @@ void GMainWindow::InitializeHotkeys() {
             &QShortcut::activated, this,
             [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
 }
-
+-
 void GMainWindow::SetDefaultUIGeometry() {
     // geometry: 53% of the window contents are in the upper screen half, 47% in the lower half
     const QRect screenRect = QApplication::desktop()->screenGeometry(this);
@@ -1956,7 +1958,7 @@ void GMainWindow::ToggleWindowMode() {
 
 void GMainWindow::ResetWindowSize() {
     const auto aspect_ratio = Layout::EmulationAspectRatio(
-        static_cast<Layout::AspectRatio>(Settings::values->aspect_ratio),
+        static_cast<Layout::AspectRatio>(Settings::values->aspect_ratio.GetValue()),
         static_cast<float>(Layout::ScreenUndocked::Height) / Layout::ScreenUndocked::Width);
     if (!ui.action_Single_Window_Mode->isChecked()) {
         render_window->resize(Layout::ScreenUndocked::Height / aspect_ratio,

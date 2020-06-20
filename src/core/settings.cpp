@@ -177,7 +177,7 @@ void LogSetting(const std::string& name, const T& value) {
 void LogSettings() {
     LOG_INFO(Config, "yuzu Configuration:");
     LogSetting("System_UseDockedMode", Settings::base_values.use_docked_mode);
-    LogSetting("System_RngSeed", Settings::values->rng_seed.value_or(0));
+    LogSetting("System_RngSeed", Settings::values->rng_seed.GetValue().value_or(0));
     LogSetting("System_CurrentUser", Settings::values->current_user);
     LogSetting("System_LanguageIndex", Settings::values->language_index);
     LogSetting("System_RegionIndex", Settings::values->region_index);
@@ -187,15 +187,15 @@ void LogSettings() {
     LogSetting("Renderer_UseFrameLimit", Settings::values->use_frame_limit);
     LogSetting("Renderer_FrameLimit", Settings::values->frame_limit);
     LogSetting("Renderer_UseDiskShaderCache", Settings::values->use_disk_shader_cache);
-    LogSetting("Renderer_GPUAccuracyLevel", Settings::values->gpu_accuracy);
+    LogSetting("Renderer_GPUAccuracyLevel", Settings::values->gpu_accuracy.GetValue());
     LogSetting("Renderer_UseAsynchronousGpuEmulation",
                Settings::values->use_asynchronous_gpu_emulation);
     LogSetting("Renderer_UseVsync", Settings::values->use_vsync);
     LogSetting("Renderer_UseAssemblyShaders", Settings::values->use_assembly_shaders);
     LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values->max_anisotropy);
-    LogSetting("Audio_OutputEngine", Settings::values->sink_id);
+    LogSetting("Audio_OutputEngine", Settings::values->sink_id.GetValue());
     LogSetting("Audio_EnableAudioStretching", Settings::values->enable_audio_stretching);
-    LogSetting("Audio_OutputDevice", Settings::values->audio_device_id);
+    LogSetting("Audio_OutputDevice", Settings::values->audio_device_id.GetValue());
     LogSetting("DataStorage_UseVirtualSd", Settings::base_values.use_virtual_sd);
     LogSetting("DataStorage_NandDir", FileUtil::GetUserPath(FileUtil::UserPath::NANDDir));
     LogSetting("DataStorage_SdmcDir", FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir));

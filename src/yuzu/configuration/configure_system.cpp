@@ -64,19 +64,19 @@ void ConfigureSystem::SetConfiguration() {
     ui->combo_time_zone->setCurrentIndex(Settings::config_values->time_zone_index);
     ui->combo_sound->setCurrentIndex(Settings::config_values->sound_index);
 
-    ui->rng_seed_checkbox->setChecked(Settings::config_values->rng_seed.has_value());
-    ui->rng_seed_edit->setEnabled(Settings::config_values->rng_seed.has_value());
+    ui->rng_seed_checkbox->setChecked(Settings::config_values->rng_seed.GetValue().has_value());
+    ui->rng_seed_edit->setEnabled(Settings::config_values->rng_seed.GetValue().has_value());
 
     const auto rng_seed = QStringLiteral("%1")
-                              .arg(Settings::config_values->rng_seed.value_or(0), 8, 16,
+                              .arg(Settings::config_values->rng_seed.GetValue().value_or(0), 8, 16,
                                    QLatin1Char{'0'})
                               .toUpper();
     ui->rng_seed_edit->setText(rng_seed);
 
-    ui->custom_rtc_checkbox->setChecked(Settings::config_values->custom_rtc.has_value());
-    ui->custom_rtc_edit->setEnabled(Settings::config_values->custom_rtc.has_value());
+    ui->custom_rtc_checkbox->setChecked(Settings::config_values->custom_rtc.GetValue().has_value());
+    ui->custom_rtc_edit->setEnabled(Settings::config_values->custom_rtc.GetValue().has_value());
 
-    const auto rtc_time = Settings::config_values->custom_rtc.value_or(
+    const auto rtc_time = Settings::config_values->custom_rtc.GetValue().value_or(
         std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
     ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
 }

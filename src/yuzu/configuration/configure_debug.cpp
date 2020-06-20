@@ -56,7 +56,7 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::base_values.disable_macro_jit = ui->disable_macro_jit->isChecked();
     Debugger::ToggleConsole();
     Log::Filter filter;
-    filter.ParseFilterString(Settings::config_values->log_filter);
+    filter.ParseFilterString(Settings::config_values->log_filter.GetValue());
     Log::SetGlobalFilter(filter);
 }
 
