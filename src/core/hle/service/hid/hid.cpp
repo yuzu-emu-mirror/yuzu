@@ -110,7 +110,7 @@ void IAppletResource::GetSharedMemoryHandle(Kernel::HLERequestContext& ctx) {
 void IAppletResource::UpdateControllers(u64 userdata, s64 ns_late) {
     auto& core_timing = system.CoreTiming();
 
-    const bool should_reload = Settings::base_values.is_device_reload_pending.exchange(false);
+    const bool should_reload = Settings::values.is_device_reload_pending.exchange(false);
     for (const auto& controller : controllers) {
         if (should_reload) {
             controller->OnLoadInputDevices();
@@ -1281,7 +1281,7 @@ public:
 };
 
 void ReloadInputDevices() {
-    Settings::base_values.is_device_reload_pending.store(true);
+    Settings::values.is_device_reload_pending.store(true);
 }
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {

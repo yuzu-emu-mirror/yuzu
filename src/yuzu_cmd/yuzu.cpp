@@ -77,7 +77,7 @@ static void PrintVersion() {
 
 static void InitializeLogging() {
     Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(Settings::values->log_filter.GetValue());
+    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
     Log::SetGlobalFilter(log_filter);
 
     Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
@@ -96,8 +96,8 @@ int main(int argc, char** argv) {
     Config config;
 
     int option_index = 0;
-    bool use_gdbstub = Settings::base_values.use_gdbstub;
-    u32 gdb_port = static_cast<u32>(Settings::base_values.gdbstub_port);
+    bool use_gdbstub = Settings::values.use_gdbstub;
+    u32 gdb_port = static_cast<u32>(Settings::values.gdbstub_port);
 
     InitializeLogging();
 
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
                 PrintVersion();
                 return 0;
             case 'p':
-                Settings::base_values.program_args = argv[optind];
+                Settings::values.program_args = argv[optind];
                 ++optind;
                 break;
             }
@@ -174,14 +174,14 @@ int main(int argc, char** argv) {
     }
 
     // Apply the command line arguments
-    Settings::base_values.gdbstub_port = gdb_port;
-    Settings::base_values.use_gdbstub = use_gdbstub;
+    Settings::values.gdbstub_port = gdb_port;
+    Settings::values.use_gdbstub = use_gdbstub;
     Settings::Apply();
 
     Core::System& system{Core::System::GetInstance()};
 
     std::unique_ptr<EmuWindow_SDL2> emu_window;
-    switch (Settings::values->renderer_backend) {
+    switch (Settings::values.renderer_backend) {
     case Settings::RendererBackend::OpenGL:
         emu_window = std::make_unique<EmuWindow_SDL2_GL>(system, fullscreen);
         break;

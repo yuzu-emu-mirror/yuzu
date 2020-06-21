@@ -29,7 +29,7 @@
 
 ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()), title_id(title_id) {
-    Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
+    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
     game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
 
     ui->setupUi(this);
@@ -47,11 +47,11 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
 }
 
 ConfigurePerGame::~ConfigurePerGame() {
-    Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
+    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
 };
 
 void ConfigurePerGame::ApplyConfiguration() {
-    Settings::config_values->use_global_values = ui->check_global->isChecked();
+    Settings::values.use_global_values = ui->check_global->isChecked();
 
     ui->addonsTab->ApplyConfiguration();
     ui->generalTab->ApplyConfiguration();
@@ -62,7 +62,6 @@ void ConfigurePerGame::ApplyConfiguration() {
     //ui->inputTab->ApplyConfiguration();
 
     game_config->Save();
-    Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
 
     Settings::Apply();
     Settings::LogSettings();
@@ -90,7 +89,7 @@ void ConfigurePerGame::LoadConfiguration() {
         return;
     }
 
-    ui->check_global->setChecked(Settings::config_values->use_global_values);
+    ui->check_global->setChecked(Settings::values.use_global_values);
 
     ui->addonsTab->LoadFromFile(file);
 

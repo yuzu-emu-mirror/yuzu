@@ -80,7 +80,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (exefs == nullptr)
         return exefs;
 
-    if (Settings::base_values.dump_exefs) {
+    if (Settings::values.dump_exefs) {
         LOG_INFO(Loader, "Dumping ExeFS for title_id={:016X}", title_id);
         const auto dump_dir =
             Core::System::GetInstance().GetFileSystemController().GetModificationDumpRoot(title_id);
@@ -92,7 +92,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
 
     const auto& installed = Core::System::GetInstance().GetContentProvider();
 
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
     const auto update_disabled =
         std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
 
@@ -140,7 +140,7 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
 
 std::vector<VirtualFile> PatchManager::CollectPatches(const std::vector<VirtualDir>& patch_dirs,
                                                       const std::string& build_id) const {
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
 
     std::vector<VirtualFile> out;
     out.reserve(patch_dirs.size());
@@ -192,7 +192,7 @@ std::vector<u8> PatchManager::PatchNSO(const std::vector<u8>& nso, const std::st
     const auto build_id_raw = Common::HexToString(header.build_id);
     const auto build_id = build_id_raw.substr(0, build_id_raw.find_last_not_of('0') + 1);
 
-    if (Settings::base_values.dump_nso) {
+    if (Settings::values.dump_nso) {
         LOG_INFO(Loader, "Dumping NSO for name={}, build_id={}, title_id={:016X}", name, build_id,
                  title_id);
         const auto dump_dir =
@@ -302,7 +302,7 @@ std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(
         return {};
     }
 
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
     auto patch_dirs = load_dir->GetSubdirectories();
     std::sort(patch_dirs.begin(), patch_dirs.end(),
               [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
@@ -344,7 +344,7 @@ static void ApplyLayeredFS(VirtualFile& romfs, u64 title_id, ContentRecordType t
         return;
     }
 
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
     auto patch_dirs = load_dir->GetSubdirectories();
     std::sort(patch_dirs.begin(), patch_dirs.end(),
               [](const VirtualDir& l, const VirtualDir& r) { return l->GetName() < r->GetName(); });
@@ -409,7 +409,7 @@ VirtualFile PatchManager::PatchRomFS(VirtualFile romfs, u64 ivfc_offset, Content
     const auto update_tid = GetUpdateTitleID(title_id);
     const auto update = installed.GetEntryRaw(update_tid, type);
 
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
     const auto update_disabled =
         std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
 
@@ -453,7 +453,7 @@ std::map<std::string, std::string, std::less<>> PatchManager::GetPatchVersionNam
         return {};
     std::map<std::string, std::string, std::less<>> out;
     const auto& installed = Core::System::GetInstance().GetContentProvider();
-    const auto& disabled = Settings::base_values.disabled_addons[title_id];
+    const auto& disabled = Settings::values.disabled_addons[title_id];
 
     // Game Updates
     const auto update_tid = GetUpdateTitleID(title_id);

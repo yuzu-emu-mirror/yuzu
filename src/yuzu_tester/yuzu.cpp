@@ -73,7 +73,7 @@ static void PrintVersion() {
 
 static void InitializeLogging(bool console) {
     Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(Settings::values->log_filter.GetValue());
+    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
     Log::SetGlobalFilter(log_filter);
 
     if (console)
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    Settings::base_values.use_gdbstub = false;
+    Settings::values.use_gdbstub = false;
     Settings::Apply();
 
     std::unique_ptr<EmuWindow_SDL2_Hide> emu_window{std::make_unique<EmuWindow_SDL2_Hide>()};

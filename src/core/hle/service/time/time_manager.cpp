@@ -19,7 +19,7 @@ constexpr Clock::TimeSpanType standard_network_clock_accuracy{0x0009356907420000
 static std::chrono::seconds GetSecondsSinceEpoch() {
     return std::chrono::duration_cast<std::chrono::seconds>(
                std::chrono::system_clock::now().time_since_epoch()) +
-           Settings::values->custom_rtc_differential.GetValue();
+           Settings::values.custom_rtc_differential.GetValue();
 }
 
 static s64 GetExternalTimeZoneOffset() {

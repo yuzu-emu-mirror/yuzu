@@ -226,94 +226,94 @@ static const std::array<int, 8> keyboard_mods{
 
 void Config::ReadValues() {
     // Controls
-    for (std::size_t p = 0; p < Settings::base_values.players.size(); ++p) {
+    for (std::size_t p = 0; p < Settings::values.players.size(); ++p) {
         const auto group = fmt::format("ControlsP{}", p);
         for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
             std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-            Settings::base_values.players[p].buttons[i] =
+            Settings::values.players[p].buttons[i] =
                 sdl2_config->Get(group, Settings::NativeButton::mapping[i], default_param);
-            if (Settings::base_values.players[p].buttons[i].empty())
-                Settings::base_values.players[p].buttons[i] = default_param;
+            if (Settings::values.players[p].buttons[i].empty())
+                Settings::values.players[p].buttons[i] = default_param;
         }
 
         for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
             std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
                 default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
                 default_analogs[i][3], default_analogs[i][4], 0.5f);
-            Settings::base_values.players[p].analogs[i] =
+            Settings::values.players[p].analogs[i] =
                 sdl2_config->Get(group, Settings::NativeAnalog::mapping[i], default_param);
-            if (Settings::base_values.players[p].analogs[i].empty())
-                Settings::base_values.players[p].analogs[i] = default_param;
+            if (Settings::values.players[p].analogs[i].empty())
+                Settings::values.players[p].analogs[i] = default_param;
         }
     }
 
-    Settings::base_values.mouse_enabled =
+    Settings::values.mouse_enabled =
         sdl2_config->GetBoolean("ControlsGeneral", "mouse_enabled", false);
     for (int i = 0; i < Settings::NativeMouseButton::NumMouseButtons; ++i) {
         std::string default_param = InputCommon::GenerateKeyboardParam(default_mouse_buttons[i]);
-        Settings::base_values.mouse_buttons[i] = sdl2_config->Get(
+        Settings::values.mouse_buttons[i] = sdl2_config->Get(
             "ControlsGeneral", std::string("mouse_") + Settings::NativeMouseButton::mapping[i],
             default_param);
-        if (Settings::base_values.mouse_buttons[i].empty())
-            Settings::base_values.mouse_buttons[i] = default_param;
+        if (Settings::values.mouse_buttons[i].empty())
+            Settings::values.mouse_buttons[i] = default_param;
     }
 
-    Settings::base_values.motion_device = sdl2_config->Get(
+    Settings::values.motion_device = sdl2_config->Get(
         "ControlsGeneral", "motion_device", "engine:motion_emu,update_period:100,sensitivity:0.01");
 
-    Settings::base_values.keyboard_enabled =
+    Settings::values.keyboard_enabled =
         sdl2_config->GetBoolean("ControlsGeneral", "keyboard_enabled", false);
 
-    Settings::base_values.debug_pad_enabled =
+    Settings::values.debug_pad_enabled =
         sdl2_config->GetBoolean("ControlsGeneral", "debug_pad_enabled", false);
     for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
         std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
-        Settings::base_values.debug_pad_buttons[i] = sdl2_config->Get(
+        Settings::values.debug_pad_buttons[i] = sdl2_config->Get(
             "ControlsGeneral", std::string("debug_pad_") + Settings::NativeButton::mapping[i],
             default_param);
-        if (Settings::base_values.debug_pad_buttons[i].empty())
-            Settings::base_values.debug_pad_buttons[i] = default_param;
+        if (Settings::values.debug_pad_buttons[i].empty())
+            Settings::values.debug_pad_buttons[i] = default_param;
     }
 
     for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
         std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
             default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
             default_analogs[i][3], default_analogs[i][4], 0.5f);
-        Settings::base_values.debug_pad_analogs[i] = sdl2_config->Get(
+        Settings::values.debug_pad_analogs[i] = sdl2_config->Get(
             "ControlsGeneral", std::string("debug_pad_") + Settings::NativeAnalog::mapping[i],
             default_param);
-        if (Settings::base_values.debug_pad_analogs[i].empty())
-            Settings::base_values.debug_pad_analogs[i] = default_param;
+        if (Settings::values.debug_pad_analogs[i].empty())
+            Settings::values.debug_pad_analogs[i] = default_param;
     }
 
-    Settings::base_values.touchscreen.enabled =
+    Settings::values.touchscreen.enabled =
         sdl2_config->GetBoolean("ControlsGeneral", "touch_enabled", true);
-    Settings::base_values.touchscreen.device =
+    Settings::values.touchscreen.device =
         sdl2_config->Get("ControlsGeneral", "touch_device", "engine:emu_window");
-    Settings::base_values.touchscreen.finger =
+    Settings::values.touchscreen.finger =
         sdl2_config->GetInteger("ControlsGeneral", "touch_finger", 0);
-    Settings::base_values.touchscreen.rotation_angle =
+    Settings::values.touchscreen.rotation_angle =
         sdl2_config->GetInteger("ControlsGeneral", "touch_angle", 0);
-    Settings::base_values.touchscreen.diameter_x =
+    Settings::values.touchscreen.diameter_x =
         sdl2_config->GetInteger("ControlsGeneral", "touch_diameter_x", 15);
-    Settings::base_values.touchscreen.diameter_y =
+    Settings::values.touchscreen.diameter_y =
         sdl2_config->GetInteger("ControlsGeneral", "touch_diameter_y", 15);
-    Settings::base_values.udp_input_address =
+    Settings::values.udp_input_address =
         sdl2_config->Get("Controls", "udp_input_address", InputCommon::CemuhookUDP::DEFAULT_ADDR);
-    Settings::base_values.udp_input_port = static_cast<u16>(sdl2_config->GetInteger(
+    Settings::values.udp_input_port = static_cast<u16>(sdl2_config->GetInteger(
         "Controls", "udp_input_port", InputCommon::CemuhookUDP::DEFAULT_PORT));
 
     std::transform(keyboard_keys.begin(), keyboard_keys.end(),
-                   Settings::base_values.keyboard_keys.begin(), InputCommon::GenerateKeyboardParam);
+                   Settings::values.keyboard_keys.begin(), InputCommon::GenerateKeyboardParam);
     std::transform(keyboard_mods.begin(), keyboard_mods.end(),
-                   Settings::base_values.keyboard_keys.begin() +
+                   Settings::values.keyboard_keys.begin() +
                        Settings::NativeKeyboard::LeftControlKey,
                    InputCommon::GenerateKeyboardParam);
     std::transform(keyboard_mods.begin(), keyboard_mods.end(),
-                   Settings::base_values.keyboard_mods.begin(), InputCommon::GenerateKeyboardParam);
+                   Settings::values.keyboard_mods.begin(), InputCommon::GenerateKeyboardParam);
 
     // Data Storage
-    Settings::base_values.use_virtual_sd =
+    Settings::values.use_virtual_sd =
         sdl2_config->GetBoolean("Data Storage", "use_virtual_sd", true);
     FileUtil::GetUserPath(FileUtil::UserPath::NANDDir,
                           sdl2_config->Get("Data Storage", "nand_directory",
@@ -330,107 +330,107 @@ void Config::ReadValues() {
     FileUtil::GetUserPath(FileUtil::UserPath::CacheDir,
                           sdl2_config->Get("Data Storage", "cache_directory",
                                            FileUtil::GetUserPath(FileUtil::UserPath::CacheDir)));
-    Settings::base_values.gamecard_inserted =
+    Settings::values.gamecard_inserted =
         sdl2_config->GetBoolean("Data Storage", "gamecard_inserted", false);
-    Settings::base_values.gamecard_current_game =
+    Settings::values.gamecard_current_game =
         sdl2_config->GetBoolean("Data Storage", "gamecard_current_game", false);
-    Settings::base_values.gamecard_path = sdl2_config->Get("Data Storage", "gamecard_path", "");
-    Settings::base_values.nand_total_size = static_cast<Settings::NANDTotalSize>(sdl2_config->GetInteger(
+    Settings::values.gamecard_path = sdl2_config->Get("Data Storage", "gamecard_path", "");
+    Settings::values.nand_total_size = static_cast<Settings::NANDTotalSize>(sdl2_config->GetInteger(
         "Data Storage", "nand_total_size", static_cast<long>(Settings::NANDTotalSize::S29_1GB)));
-    Settings::base_values.nand_user_size = static_cast<Settings::NANDUserSize>(sdl2_config->GetInteger(
+    Settings::values.nand_user_size = static_cast<Settings::NANDUserSize>(sdl2_config->GetInteger(
         "Data Storage", "nand_user_size", static_cast<long>(Settings::NANDUserSize::S26GB)));
-    Settings::base_values.nand_system_size = static_cast<Settings::NANDSystemSize>(
+    Settings::values.nand_system_size = static_cast<Settings::NANDSystemSize>(
         sdl2_config->GetInteger("Data Storage", "nand_system_size",
                                 static_cast<long>(Settings::NANDSystemSize::S2_5GB)));
-    Settings::base_values.sdmc_size = static_cast<Settings::SDMCSize>(sdl2_config->GetInteger(
+    Settings::values.sdmc_size = static_cast<Settings::SDMCSize>(sdl2_config->GetInteger(
         "Data Storage", "sdmc_size", static_cast<long>(Settings::SDMCSize::S16GB)));
 
     // System
-    Settings::base_values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
+    Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
     const auto size = sdl2_config->GetInteger("System", "users_size", 0);
 
-    Settings::values->current_user = std::clamp<int>(
+    Settings::values.current_user = std::clamp<int>(
         sdl2_config->GetInteger("System", "current_user", 0), 0, Service::Account::MAX_USERS - 1);
 
     const auto rng_seed_enabled = sdl2_config->GetBoolean("System", "rng_seed_enabled", false);
     if (rng_seed_enabled) {
-        Settings::values->rng_seed = sdl2_config->GetInteger("System", "rng_seed", 0);
+        Settings::values.rng_seed = sdl2_config->GetInteger("System", "rng_seed", 0);
     } else {
-        Settings::values->rng_seed = std::nullopt;
+        Settings::values.rng_seed = std::nullopt;
     }
 
     const auto custom_rtc_enabled = sdl2_config->GetBoolean("System", "custom_rtc_enabled", false);
     if (custom_rtc_enabled) {
-        Settings::values->custom_rtc =
+        Settings::values.custom_rtc =
             std::chrono::seconds(sdl2_config->GetInteger("System", "custom_rtc", 0));
     } else {
-        Settings::values->custom_rtc = std::nullopt;
+        Settings::values.custom_rtc = std::nullopt;
     }
 
-    Settings::values->language_index = sdl2_config->GetInteger("System", "language_index", 1);
-    Settings::values->time_zone_index = sdl2_config->GetInteger("System", "time_zone_index", 0);
+    Settings::values.language_index = sdl2_config->GetInteger("System", "language_index", 1);
+    Settings::values.time_zone_index = sdl2_config->GetInteger("System", "time_zone_index", 0);
 
     // Core
-    Settings::values->use_multi_core = sdl2_config->GetBoolean("Core", "use_multi_core", false);
+    Settings::values.use_multi_core = sdl2_config->GetBoolean("Core", "use_multi_core", false);
 
     // Renderer
     const int renderer_backend = sdl2_config->GetInteger(
         "Renderer", "backend", static_cast<int>(Settings::RendererBackend::OpenGL));
-    Settings::values->renderer_backend = static_cast<Settings::RendererBackend>(renderer_backend);
-    Settings::values->renderer_debug = sdl2_config->GetBoolean("Renderer", "debug", false);
-    Settings::values->vulkan_device = sdl2_config->GetInteger("Renderer", "vulkan_device", 0);
+    Settings::values.renderer_backend = static_cast<Settings::RendererBackend>(renderer_backend);
+    Settings::values.renderer_debug = sdl2_config->GetBoolean("Renderer", "debug", false);
+    Settings::values.vulkan_device = sdl2_config->GetInteger("Renderer", "vulkan_device", 0);
 
-    Settings::values->aspect_ratio =
+    Settings::values.aspect_ratio =
         static_cast<int>(sdl2_config->GetInteger("Renderer", "aspect_ratio", 0));
-    Settings::values->max_anisotropy =
+    Settings::values.max_anisotropy =
         static_cast<int>(sdl2_config->GetInteger("Renderer", "max_anisotropy", 0));
-    Settings::values->use_frame_limit = sdl2_config->GetBoolean("Renderer", "use_frame_limit", true);
-    Settings::values->frame_limit =
+    Settings::values.use_frame_limit = sdl2_config->GetBoolean("Renderer", "use_frame_limit", true);
+    Settings::values.frame_limit =
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "frame_limit", 100));
-    Settings::values->use_disk_shader_cache =
+    Settings::values.use_disk_shader_cache =
         sdl2_config->GetBoolean("Renderer", "use_disk_shader_cache", false);
     const int gpu_accuracy_level = sdl2_config->GetInteger("Renderer", "gpu_accuracy", 0);
-    Settings::values->gpu_accuracy = static_cast<Settings::GPUAccuracy>(gpu_accuracy_level);
-    Settings::values->use_asynchronous_gpu_emulation =
+    Settings::values.gpu_accuracy = static_cast<Settings::GPUAccuracy>(gpu_accuracy_level);
+    Settings::values.use_asynchronous_gpu_emulation =
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", false);
-    Settings::values->use_vsync =
+    Settings::values.use_vsync =
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "use_vsync", 1));
-    Settings::values->use_assembly_shaders =
+    Settings::values.use_assembly_shaders =
         sdl2_config->GetBoolean("Renderer", "use_assembly_shaders", false);
-    Settings::values->use_fast_gpu_time =
+    Settings::values.use_fast_gpu_time =
         sdl2_config->GetBoolean("Renderer", "use_fast_gpu_time", true);
 
-    Settings::values->bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
-    Settings::values->bg_green =
+    Settings::values.bg_red = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_red", 0.0));
+    Settings::values.bg_green =
         static_cast<float>(sdl2_config->GetReal("Renderer", "bg_green", 0.0));
-    Settings::values->bg_blue = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_blue", 0.0));
+    Settings::values.bg_blue = static_cast<float>(sdl2_config->GetReal("Renderer", "bg_blue", 0.0));
 
     // Audio
-    Settings::values->sink_id = sdl2_config->Get("Audio", "output_engine", "auto");
-    Settings::values->enable_audio_stretching =
+    Settings::values.sink_id = sdl2_config->Get("Audio", "output_engine", "auto");
+    Settings::values.enable_audio_stretching =
         sdl2_config->GetBoolean("Audio", "enable_audio_stretching", true);
-    Settings::values->audio_device_id = sdl2_config->Get("Audio", "output_device", "auto");
-    Settings::values->volume = static_cast<float>(sdl2_config->GetReal("Audio", "volume", 1));
+    Settings::values.audio_device_id = sdl2_config->Get("Audio", "output_device", "auto");
+    Settings::values.volume = static_cast<float>(sdl2_config->GetReal("Audio", "volume", 1));
 
     // Miscellaneous
-    Settings::values->log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
-    Settings::values->use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
+    Settings::values.log_filter = sdl2_config->Get("Miscellaneous", "log_filter", "*:Trace");
+    Settings::values.use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
 
     // Debugging
-    Settings::base_values.record_frame_times =
+    Settings::values.record_frame_times =
         sdl2_config->GetBoolean("Debugging", "record_frame_times", false);
-    Settings::base_values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
-    Settings::base_values.gdbstub_port =
+    Settings::values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
+    Settings::values.gdbstub_port =
         static_cast<u16>(sdl2_config->GetInteger("Debugging", "gdbstub_port", 24689));
-    Settings::base_values.program_args = sdl2_config->Get("Debugging", "program_args", "");
-    Settings::base_values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
-    Settings::base_values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
-    Settings::base_values.reporting_services =
+    Settings::values.program_args = sdl2_config->Get("Debugging", "program_args", "");
+    Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
+    Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
+    Settings::values.reporting_services =
         sdl2_config->GetBoolean("Debugging", "reporting_services", false);
-    Settings::base_values.quest_flag = sdl2_config->GetBoolean("Debugging", "quest_flag", false);
-    Settings::base_values.disable_cpu_opt =
+    Settings::values.quest_flag = sdl2_config->GetBoolean("Debugging", "quest_flag", false);
+    Settings::values.disable_cpu_opt =
         sdl2_config->GetBoolean("Debugging", "disable_cpu_opt", false);
-    Settings::base_values.disable_macro_jit =
+    Settings::values.disable_macro_jit =
         sdl2_config->GetBoolean("Debugging", "disable_macro_jit", false);
 
     const auto title_list = sdl2_config->Get("AddOns", "title_ids", "");
@@ -447,20 +447,20 @@ void Config::ReadValues() {
             out.push_back(inner_line);
         }
 
-        Settings::base_values.disabled_addons.insert_or_assign(title_id, out);
+        Settings::values.disabled_addons.insert_or_assign(title_id, out);
     }
 
     // Web Service
-    Settings::base_values.enable_telemetry =
+    Settings::values.enable_telemetry =
         sdl2_config->GetBoolean("WebService", "enable_telemetry", true);
-    Settings::base_values.web_api_url =
+    Settings::values.web_api_url =
         sdl2_config->Get("WebService", "web_api_url", "https://api.yuzu-emu.org");
-    Settings::base_values.yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
-    Settings::base_values.yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
+    Settings::values.yuzu_username = sdl2_config->Get("WebService", "yuzu_username", "");
+    Settings::values.yuzu_token = sdl2_config->Get("WebService", "yuzu_token", "");
 
     // Services
-    Settings::base_values.bcat_backend = sdl2_config->Get("Services", "bcat_backend", "null");
-    Settings::base_values.bcat_boxcat_local =
+    Settings::values.bcat_backend = sdl2_config->Get("Services", "bcat_backend", "null");
+    Settings::values.bcat_boxcat_local =
         sdl2_config->GetBoolean("Services", "bcat_boxcat_local", false);
 }
 

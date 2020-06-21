@@ -30,7 +30,7 @@ namespace Core {
 PerfStats::PerfStats(u64 title_id) : title_id(title_id) {}
 
 PerfStats::~PerfStats() {
-    if (!Settings::base_values.record_frame_times || title_id == 0) {
+    if (!Settings::values.record_frame_times || title_id == 0) {
         return;
     }
 
@@ -119,13 +119,13 @@ double PerfStats::GetLastFrameTimeScale() {
 }
 
 void FrameLimiter::DoFrameLimiting(microseconds current_system_time_us) {
-    if (!Settings::values->use_frame_limit || Settings::values->use_multi_core) {
+    if (!Settings::values.use_frame_limit || Settings::values.use_multi_core) {
         return;
     }
 
     auto now = Clock::now();
 
-    const double sleep_scale = Settings::values->frame_limit / 100.0;
+    const double sleep_scale = Settings::values.frame_limit / 100.0;
 
     // Max lag caused by slow frames. Shouldn't be more than the length of a frame at the current
     // speed percent or it will clamp too much and prevent this from properly limiting to that

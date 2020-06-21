@@ -475,9 +475,7 @@ struct Values {
     Setting<s32> region_index;
     Setting<s32> time_zone_index;
     Setting<s32> sound_index;
-};
 
-struct NonSwitchingValues {
     // Controls
     std::array<PlayerInput, 10> players;
 
@@ -536,24 +534,9 @@ struct NonSwitchingValues {
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
-};
-
-extern NonSwitchingValues base_values;
-extern Values global_values;
-extern Values game_values;
-extern Values *values;
-extern Values *config_values;
+} extern values;
 
 float Volume();
-
-enum class ValuesSwapTarget {
-    ToGlobal,
-    ToGame,
-};
-
-void CopyValues(Values& dst, const Values& src);
-void SwapValues(ValuesSwapTarget target);
-void SwapConfigValues(ValuesSwapTarget target);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();

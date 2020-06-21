@@ -46,7 +46,7 @@ u64 SDMCFactory::GetSDMCFreeSpace() const {
 }
 
 u64 SDMCFactory::GetSDMCTotalSpace() const {
-    return static_cast<u64>(Settings::base_values.sdmc_size);
+    return static_cast<u64>(Settings::values.sdmc_size);
 }
 
 } // namespace FileSys

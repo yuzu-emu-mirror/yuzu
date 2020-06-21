@@ -71,12 +71,12 @@ void Controller_DebugPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, 
 }
 
 void Controller_DebugPad::OnLoadInputDevices() {
-    std::transform(Settings::base_values.debug_pad_buttons.begin(),
-                   Settings::base_values.debug_pad_buttons.begin() +
+    std::transform(Settings::values.debug_pad_buttons.begin(),
+                   Settings::values.debug_pad_buttons.begin() +
                        Settings::NativeButton::NUM_BUTTONS_HID,
                    buttons.begin(), Input::CreateDevice<Input::ButtonDevice>);
-    std::transform(Settings::base_values.debug_pad_analogs.begin(),
-                   Settings::base_values.debug_pad_analogs.end(), analogs.begin(),
+    std::transform(Settings::values.debug_pad_analogs.begin(),
+                   Settings::values.debug_pad_analogs.end(), analogs.begin(),
                    Input::CreateDevice<Input::AnalogDevice>);
 }
 } // namespace Service::HID

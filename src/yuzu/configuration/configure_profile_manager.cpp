@@ -165,7 +165,7 @@ void ConfigureProfileManager::PopulateUserList() {
 void ConfigureProfileManager::UpdateCurrentUser() {
     ui->pm_add->setEnabled(profile_manager->GetUserCount() < Service::Account::MAX_USERS);
 
-    const auto& current_user = profile_manager->GetUser(Settings::config_values->current_user);
+    const auto& current_user = profile_manager->GetUser(Settings::values.current_user);
     ASSERT(current_user);
     const auto username = GetAccountUsername(*profile_manager, *current_user);
 
@@ -184,7 +184,7 @@ void ConfigureProfileManager::ApplyConfiguration() {
 }
 
 void ConfigureProfileManager::SelectUser(const QModelIndex& index) {
-    Settings::config_values->current_user =
+    Settings::values.current_user =
         std::clamp<s32>(index.row(), 0, static_cast<s32>(profile_manager->GetUserCount() - 1));
 
     UpdateCurrentUser();
@@ -247,8 +247,8 @@ void ConfigureProfileManager::DeleteUser() {
     if (confirm == QMessageBox::No)
         return;
 
-    if (Settings::config_values->current_user == tree_view->currentIndex().row())
-        Settings::config_values->current_user = 0;
+    if (Settings::values.current_user == tree_view->currentIndex().row())
+        Settings::values.current_user = 0;
     UpdateCurrentUser();
 
     if (!profile_manager->RemoveUser(*uuid))

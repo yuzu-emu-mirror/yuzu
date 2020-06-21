@@ -14,8 +14,6 @@
 
 ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry)
     : QDialog(parent), ui(new Ui::ConfigureDialog), registry(registry) {
-    SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
-
     ui->setupUi(this);
     ui->hotkeysTab->Populate(registry);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -50,7 +48,6 @@ void ConfigureDialog::ApplyConfiguration() {
     ui->serviceTab->ApplyConfiguration();
     Settings::Apply();
     Settings::LogSettings();
-    Settings::CopyValues(Settings::game_values, Settings::global_values);
 }
 
 void ConfigureDialog::changeEvent(QEvent* event) {
