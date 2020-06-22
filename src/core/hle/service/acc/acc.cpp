@@ -590,7 +590,7 @@ public:
 };
 
 // 6.0.0+
-class IAsyncResult : public ServiceFramework<IAsyncResult> {
+class IAsyncResult final : public ServiceFramework<IAsyncResult> {
 public:
     explicit IAsyncResult(Common::UUID user_id) : ServiceFramework("IAsyncResult") {
         // clang-format off
