@@ -616,6 +616,9 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
         const GLint base_vertex = static_cast<GLint>(gpu.regs.vb_element_base);
         const GLsizei num_vertices = static_cast<GLsizei>(gpu.regs.index_array.count);
         const GLvoid* offset = reinterpret_cast<const GLvoid*>(index_buffer_offset);
+        if (offset == nullptr) {
+            return;
+        }
         const GLenum format = MaxwellToGL::IndexFormat(gpu.regs.index_array.format);
         if (num_instances == 1 && base_instance == 0 && base_vertex == 0) {
             glDrawElements(primitive_mode, num_vertices, format, offset);
