@@ -454,7 +454,7 @@ public:
     }
 };
 
-class ISessionObject final : ServiceFramework<ISessionObject> {
+class ISessionObject final : public ServiceFramework<ISessionObject> {
 public:
     explicit ISessionObject(Common::UUID user_id) : ServiceFramework("ISessionObject") {
         // clang-format off
