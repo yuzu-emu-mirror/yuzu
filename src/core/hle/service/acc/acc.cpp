@@ -222,7 +222,7 @@ public:
 };
 
 class IOAuthProcedureForNintendoAccountLinkage final
-    : ServiceFramework<IOAuthProcedureForNintendoAccountLinkage> {
+    : public ServiceFramework<IOAuthProcedureForNintendoAccountLinkage> {
 public:
     explicit IOAuthProcedureForNintendoAccountLinkage(Common::UUID user_id)
         : ServiceFramework("IOAuthProcedureForNintendoAccountLinkage") {
@@ -243,7 +243,7 @@ public:
     }
 };
 
-class INotifier final : ServiceFramework<INotifier> {
+class INotifier final : public ServiceFramework<INotifier> {
 public:
     explicit INotifier(Common::UUID user_id) : ServiceFramework("INotifier") {
         // clang-format off
@@ -438,7 +438,7 @@ public:
         : IProfileCommon("IProfileEditor", true, user_id, profile_manager) {}
 };
 
-class IAsyncContext final : ServiceFramework<IAsyncContext> {
+class IAsyncContext final : public ServiceFramework<IAsyncContext> {
 public:
     explicit IAsyncContext(Common::UUID user_id) : ServiceFramework("IAsyncContext") {
         // clang-format off
@@ -467,7 +467,7 @@ public:
     }
 };
 
-class IGuestLoginRequest final : ServiceFramework<IGuestLoginRequest> {
+class IGuestLoginRequest final : public ServiceFramework<IGuestLoginRequest> {
 public:
     explicit IGuestLoginRequest(Common::UUID) : ServiceFramework("IGuestLoginRequest") {
         // clang-format off
@@ -527,7 +527,7 @@ private:
 
 // 6.0.0+
 class IAsyncNetworkServiceLicenseKindContext final
-    : ServiceFramework<IAsyncNetworkServiceLicenseKindContext> {
+    : public ServiceFramework<IAsyncNetworkServiceLicenseKindContext> {
 public:
     explicit IAsyncNetworkServiceLicenseKindContext(Common::UUID user_id)
         : ServiceFramework("IAsyncNetworkServiceLicenseKindContext") {
@@ -547,7 +547,7 @@ public:
 
 // 8.0.0+
 class IOAuthProcedureForUserRegistration final
-    : ServiceFramework<IOAuthProcedureForUserRegistration> {
+    : public ServiceFramework<IOAuthProcedureForUserRegistration> {
 public:
     explicit IOAuthProcedureForUserRegistration(Common::UUID user_id)
         : ServiceFramework("IOAuthProcedureForUserRegistration") {
@@ -571,7 +571,7 @@ public:
     }
 };
 
-class DAUTH_O final : ServiceFramework<DAUTH_O> {
+class DAUTH_O final : public ServiceFramework<DAUTH_O> {
 public:
     explicit DAUTH_O(Common::UUID) : ServiceFramework("dauth:o") {
         // clang-format off
@@ -590,7 +590,7 @@ public:
 };
 
 // 6.0.0+
-class IAsyncResult : ServiceFramework<IAsyncResult> {
+class IAsyncResult : public ServiceFramework<IAsyncResult> {
 public:
     explicit IAsyncResult(Common::UUID user_id) : ServiceFramework("IAsyncResult") {
         // clang-format off
