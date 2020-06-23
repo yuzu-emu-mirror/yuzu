@@ -365,7 +365,8 @@ bool Boxcat::Synchronize(TitleIDVersion title, ProgressServiceBackend& progress)
 
     std::thread([this, title, &progress] {
         SynchronizeInternal(applet_manager, dir_getter, title, progress);
-    }).detach();
+    })
+        .detach();
 
     return true;
 }
@@ -376,7 +377,8 @@ bool Boxcat::SynchronizeDirectory(TitleIDVersion title, std::string name,
 
     std::thread([this, title, name, &progress] {
         SynchronizeInternal(applet_manager, dir_getter, title, progress, name);
-    }).detach();
+    })
+        .detach();
 
     return true;
 }
