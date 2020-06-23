@@ -24,8 +24,9 @@ Config::Config(const std::string& config_file, bool is_global) {
 }
 
 Config::~Config() {
-    if (global)
+    if (global) {
         Save();
+    }
 }
 
 const std::array<int, Settings::NativeButton::NumButtons> Config::default_buttons = {
@@ -640,7 +641,7 @@ void Config::ReadRendererValues() {
     Settings::values.max_anisotropy = ReadSetting(QStringLiteral("max_anisotropy"), 0).toInt();
     Settings::values.use_frame_limit =
         ReadSetting(QStringLiteral("use_frame_limit"), true).toBool();
-    Settings::values.frame_limit = ReadSetting(QStringLiteral("frame_limit"), 100).toInt();
+    Settings::values.frame_limit = ReadSetting(QStringLiteral("frame_limit"), 100).toUInt();
     Settings::values.use_disk_shader_cache =
         ReadSetting(QStringLiteral("use_disk_shader_cache"), true).toBool();
     const int gpu_accuracy_level = ReadSetting(QStringLiteral("gpu_accuracy"), 0).toInt();

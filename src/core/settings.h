@@ -390,6 +390,10 @@ public:
     Setting() {
         use_global = true;
     }
+    Setting(Type val) {
+        use_global = true;
+        global = val;
+    }
     ~Setting() = default;
     void SetGlobal(bool to_global) {
         use_global = to_global;
@@ -398,15 +402,17 @@ public:
         return use_global;
     };
     Type GetValue() const {
-        if (use_global)
+        if (use_global) {
             return global;
+        }
         return local;
     };
     void SetValue(const Type& value) {
-        if (use_global)
+        if (use_global) {
             global = value;
-        else
+        } else {
             local = value;
+        }
     };
     operator Type() const {
         return GetValue();
@@ -441,7 +447,7 @@ struct Values {
     Setting<bool> renderer_debug;
     Setting<int> vulkan_device;
 
-    Setting<u16> resolution_factor;
+    Setting<u16> resolution_factor = Setting(static_cast<u16>(1));
     Setting<int> aspect_ratio;
     Setting<int> max_anisotropy;
     Setting<bool> use_frame_limit;

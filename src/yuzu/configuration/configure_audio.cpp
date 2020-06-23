@@ -155,8 +155,9 @@ void ConfigureAudio::RetranslateUI() {
 }
 
 void ConfigureAudio::SetupPerGameUI() {
-    if (Settings::configuring_global)
+    if (Settings::configuring_global) {
         return;
+    }
 
     connect(ui->volume_combo_box, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated),
             this, [this](int index) { ui->volume_slider->setEnabled(index == 1); });

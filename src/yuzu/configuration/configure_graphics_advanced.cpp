@@ -96,8 +96,9 @@ void ConfigureGraphicsAdvanced::RetranslateUI() {
 }
 
 void ConfigureGraphicsAdvanced::SetupPerGameUI() {
-    if (Settings::configuring_global)
+    if (Settings::configuring_global) {
         return;
+    }
 
     ConfigurationShared::InsertGlobalItem(ui->gpu_accuracy);
     ui->use_vsync->setTristate(true);

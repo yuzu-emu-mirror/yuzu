@@ -9,9 +9,9 @@
 
 void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
                                               const QCheckBox* checkbox) {
-    if (checkbox->checkState() == Qt::PartiallyChecked)
+    if (checkbox->checkState() == Qt::PartiallyChecked) {
         setting->SetGlobal(true);
-    else {
+    } else {
         setting->SetGlobal(false);
         setting->SetValue(checkbox->checkState() == Qt::Checked);
     }
@@ -19,9 +19,9 @@ void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
 
 void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<int>* setting,
                                               const QComboBox* combobox) {
-    if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
+    if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
         setting->SetGlobal(true);
-    else {
+    } else {
         setting->SetGlobal(false);
         setting->SetValue(combobox->currentIndex() - ConfigurationShared::USE_GLOBAL_OFFSET);
     }
@@ -29,9 +29,9 @@ void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<int>* setting,
 
 void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<Settings::RendererBackend>* setting,
                                               const QComboBox* combobox) {
-    if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
+    if (combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
         setting->SetGlobal(true);
-    else {
+    } else {
         setting->SetGlobal(false);
         setting->SetValue(static_cast<Settings::RendererBackend>(
             combobox->currentIndex() - ConfigurationShared::USE_GLOBAL_OFFSET));
@@ -40,10 +40,11 @@ void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<Settings::Render
 
 void ConfigurationShared::SetPerGameSetting(QCheckBox* checkbox,
                                             const Settings::Setting<bool>* setting) {
-    if (setting->UsingGlobal())
+    if (setting->UsingGlobal()) {
         checkbox->setCheckState(Qt::PartiallyChecked);
-    else
+    } else {
         checkbox->setCheckState(setting->GetValue() ? Qt::Checked : Qt::Unchecked);
+    }
 }
 
 void ConfigurationShared::SetPerGameSetting(QComboBox* combobox,

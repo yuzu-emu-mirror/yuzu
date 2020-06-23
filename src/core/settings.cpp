@@ -2,8 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cstring>
-
 #include "common/file_util.h"
 #include "core/core.h"
 #include "core/gdbstub/gdbstub.h"
@@ -63,7 +61,7 @@ const std::array<const char*, NumMouseButtons> mapping = {{
 }};
 }
 
-Values values;
+Values values = {};
 bool configuring_global = true;
 
 std::string GetTimeZoneString() {

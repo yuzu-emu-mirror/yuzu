@@ -88,22 +88,24 @@ void ConfigureSystem::SetConfiguration() {
                                                &Settings::values.time_zone_index);
         ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
 
-        if (Settings::values.rng_seed.UsingGlobal())
+        if (Settings::values.rng_seed.UsingGlobal()) {
             ui->rng_seed_checkbox->setCheckState(Qt::PartiallyChecked);
-        else {
+        } else {
             ui->rng_seed_checkbox->setCheckState(
                 Settings::values.rng_seed.GetValue().has_value() ? Qt::Checked : Qt::Unchecked);
-            if (Settings::values.rng_seed.GetValue().has_value())
+            if (Settings::values.rng_seed.GetValue().has_value()) {
                 ui->rng_seed_edit->setText(rng_seed);
+            }
         }
 
-        if (Settings::values.custom_rtc.UsingGlobal())
+        if (Settings::values.custom_rtc.UsingGlobal()) {
             ui->custom_rtc_checkbox->setCheckState(Qt::PartiallyChecked);
-        else {
+        } else {
             ui->custom_rtc_checkbox->setCheckState(
                 Settings::values.custom_rtc.GetValue().has_value() ? Qt::Checked : Qt::Unchecked);
-            if (Settings::values.custom_rtc.GetValue().has_value())
+            if (Settings::values.custom_rtc.GetValue().has_value()) {
                 ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+            }
         }
     }
 }
@@ -190,8 +192,9 @@ void ConfigureSystem::RefreshConsoleID() {
 }
 
 void ConfigureSystem::SetupPerGameUI() {
-    if (Settings::configuring_global)
+    if (Settings::configuring_global) {
         return;
+    }
 
     ConfigurationShared::InsertGlobalItem(ui->combo_language);
     ConfigurationShared::InsertGlobalItem(ui->combo_region);

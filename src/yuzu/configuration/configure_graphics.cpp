@@ -183,8 +183,9 @@ void ConfigureGraphics::RetrieveVulkanDevices() {
 }
 
 Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
-    if (Settings::configuring_global)
+    if (Settings::configuring_global) {
         return static_cast<Settings::RendererBackend>(ui->api->currentIndex());
+    }
 
     if (ui->api->currentIndex() == 0) {
         Settings::values.renderer_backend.SetGlobal(true);
@@ -195,8 +196,9 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
 }
 
 void ConfigureGraphics::SetupPerGameUI() {
-    if (Settings::configuring_global)
+    if (Settings::configuring_global) {
         return;
+    }
 
     connect(ui->bg_combobox, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this,
             [this](int index) { ui->bg_button->setEnabled(index == 1); });

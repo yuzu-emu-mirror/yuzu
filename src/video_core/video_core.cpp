@@ -52,7 +52,7 @@ std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Cor
 u16 GetResolutionScaleFactor(const RendererBase& renderer) {
     return static_cast<u16>(
         Settings::values.resolution_factor != 0
-            ? Settings::values.resolution_factor
+            ? Settings::values.resolution_factor.GetValue()
             : renderer.GetRenderWindow().GetFramebufferLayout().GetScalingRatio());
 }
 
