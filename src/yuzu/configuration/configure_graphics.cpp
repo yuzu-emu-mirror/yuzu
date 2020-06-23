@@ -13,6 +13,7 @@
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_graphics.h"
+#include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_graphics.h"
 
 #ifdef HAS_VULKAN
@@ -26,6 +27,8 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
 
     ui->setupUi(this);
 
+    SetupPerGameUI();
+
     SetConfiguration();
 
     connect(ui->api, qOverload<int>(&QComboBox::currentIndexChanged), this,
@@ -33,13 +36,8 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     connect(ui->device, qOverload<int>(&QComboBox::activated), this,
             [this](int device) { UpdateDeviceSelection(device); });
 
-    connect(ui->bg_button, &QPushButton::clicked, this, [this] {
-        const QColor new_bg_color = QColorDialog::getColor(bg_color);
-        if (!new_bg_color.isValid()) {
-            return;
-        }
-        UpdateBackgroundColorButton(new_bg_color);
-    });
+    ui->bg_label->setVisible(Settings::configuring_global);
+    ui->bg_combobox->setVisible(!Settings::configuring_global);
 }
 
 void ConfigureGraphics::UpdateDeviceSelection(int device) {
@@ -57,14 +55,32 @@ void ConfigureGraphics::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
 
     ui->api->setEnabled(runtime_lock);
-    ui->api->setCurrentIndex(static_cast<int>(
-                                 Settings::values.renderer_backend.GetValue()));
-    ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio);
-    ui->use_disk_shader_cache->setEnabled(runtime_lock);
-    ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache);
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
-    ui->use_asynchronous_gpu_emulation->setChecked(
-        Settings::values.use_asynchronous_gpu_emulation);
+    ui->use_disk_shader_cache->setEnabled(runtime_lock);
+
+    if (Settings::configuring_global) {
+        ui->api->setCurrentIndex(static_cast<int>(
+                                     Settings::values.renderer_backend.GetValue()));
+        ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio);
+        ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache);
+        ui->use_asynchronous_gpu_emulation->setChecked(
+            Settings::values.use_asynchronous_gpu_emulation);
+    }
+    else {
+        ConfigurationShared::SetPerGameSetting(ui->use_disk_shader_cache,
+                                               &Settings::values.use_disk_shader_cache);
+        ConfigurationShared::SetPerGameSetting(ui->use_asynchronous_gpu_emulation,
+                                               &Settings::values.use_asynchronous_gpu_emulation);
+
+        ConfigurationShared::SetPerGameSetting(ui->api,
+                                               &Settings::values.renderer_backend);
+        ConfigurationShared::SetPerGameSetting(ui->aspect_ratio_combobox,
+                                               &Settings::values.aspect_ratio);
+
+        ui->bg_combobox->setCurrentIndex(Settings::values.bg_red.UsingGlobal() ? 0 : 1);
+        ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
+    }
+
     UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red,
                                                  Settings::values.bg_green,
                                                  Settings::values.bg_blue));
@@ -72,25 +88,54 @@ void ConfigureGraphics::SetConfiguration() {
 }
 
 void ConfigureGraphics::ApplyConfiguration() {
-<<<<<<< HEAD
-    Settings::config_values->renderer_backend = GetCurrentGraphicsBackend();
-    Settings::config_values->vulkan_device = vulkan_device;
-    Settings::config_values->aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
-    Settings::config_values->use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
-    Settings::config_values->use_asynchronous_gpu_emulation =
-=======
-    Settings::values.renderer_backend = GetCurrentGraphicsBackend();
-    Settings::values.vulkan_device = vulkan_device;
-    Settings::values.resolution_factor =
-        ToResolutionFactor(static_cast<Resolution>(ui->resolution_factor_combobox->currentIndex()));
-    Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
-    Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
-    Settings::values.use_asynchronous_gpu_emulation =
->>>>>>> 6759bfacb... settings: restore old values struct
-        ui->use_asynchronous_gpu_emulation->isChecked();
-    Settings::values.bg_red = static_cast<float>(bg_color.redF());
-    Settings::values.bg_green = static_cast<float>(bg_color.greenF());
-    Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+    if (Settings::configuring_global) {
+        Settings::values.renderer_backend = GetCurrentGraphicsBackend();
+        Settings::values.vulkan_device = vulkan_device;
+        Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
+        Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
+        Settings::values.use_asynchronous_gpu_emulation =
+            ui->use_asynchronous_gpu_emulation->isChecked();
+        Settings::values.bg_red = static_cast<float>(bg_color.redF());
+        Settings::values.bg_green = static_cast<float>(bg_color.greenF());
+        Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+    }
+    else {
+        if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
+            Settings::values.renderer_backend.SetGlobal(true);
+        else {
+            Settings::values.renderer_backend.SetGlobal(false);
+            Settings::values.renderer_backend = GetCurrentGraphicsBackend();
+            if (GetCurrentGraphicsBackend() == Settings::RendererBackend::Vulkan) {
+                Settings::values.vulkan_device.SetGlobal(false);
+                Settings::values.vulkan_device = vulkan_device;
+            }
+            else {
+                Settings::values.vulkan_device.SetGlobal(true);
+            }
+        }
+
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.aspect_ratio,
+                                                 ui->aspect_ratio_combobox);
+
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_disk_shader_cache,
+                                                 ui->use_disk_shader_cache);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_gpu_emulation,
+                                                 ui->use_asynchronous_gpu_emulation);
+
+        if (ui->bg_combobox->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.bg_red.SetGlobal(true);
+            Settings::values.bg_green.SetGlobal(true);
+            Settings::values.bg_blue.SetGlobal(true);
+        }
+        else {
+            Settings::values.bg_red.SetGlobal(false);
+            Settings::values.bg_green.SetGlobal(false);
+            Settings::values.bg_blue.SetGlobal(false);
+            Settings::values.bg_red = static_cast<float>(bg_color.redF());
+            Settings::values.bg_green = static_cast<float>(bg_color.greenF());
+            Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+        }
+    }
 }
 
 void ConfigureGraphics::changeEvent(QEvent* event) {
@@ -145,5 +190,34 @@ void ConfigureGraphics::RetrieveVulkanDevices() {
 }
 
 Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
-    return static_cast<Settings::RendererBackend>(ui->api->currentIndex());
+    if (Settings::configuring_global)
+        return static_cast<Settings::RendererBackend>(ui->api->currentIndex());
+
+    if (ui->api->currentIndex() == 0) {
+        Settings::values.renderer_backend.SetGlobal(true);
+        return Settings::values.renderer_backend;
+    }
+    Settings::values.renderer_backend.SetGlobal(false);
+    return static_cast<Settings::RendererBackend>(ui->api->currentIndex() - 2);
+}
+
+void ConfigureGraphics::SetupPerGameUI() {
+    if (Settings::configuring_global)
+        return;
+
+    connect(ui->bg_combobox, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this,
+            [this](int index) { ui->bg_button->setEnabled(index == 1); });
+
+    connect(ui->bg_button, &QPushButton::clicked, this, [this] {
+        const QColor new_bg_color = QColorDialog::getColor(bg_color);
+        if (!new_bg_color.isValid()) {
+            return;
+        }
+        UpdateBackgroundColorButton(new_bg_color);
+    });
+
+    ui->use_disk_shader_cache->setTristate(true);
+    ui->use_asynchronous_gpu_emulation->setTristate(true);
+    ConfigurationShared::InsertGlobalItem(ui->aspect_ratio_combobox);
+    ConfigurationShared::InsertGlobalItem(ui->api);
 }

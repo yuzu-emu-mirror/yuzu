@@ -382,6 +382,8 @@ enum class GPUAccuracy : u32 {
     Extreme = 2,
 };
 
+extern bool configuring_global;
+
 template <typename Type>
 class Setting {
 public:
@@ -392,32 +394,25 @@ public:
     void SetGlobal(bool to_global) {
         use_global = to_global;
     };
-    Type GetValue() {
-        if (use_global) {
-            return global;
-        }
-        return local;
+    bool UsingGlobal() const {
+        return use_global;
     };
-    void SetValue(Type value) {
-        if (use_global) {
-            global = value;
-        }
-        else {
-            local = value;
-        }
-    };
-    operator Type() const {
+    Type GetValue() const {
         if (use_global)
             return global;
         return local;
     };
+    void SetValue(const Type& value) {
+        if (use_global)
+            global = value;
+        else
+            local = value;
+    };
+    operator Type() const {
+        return GetValue();
+    };
     Type operator=(const Type& b) {
-        if (use_global) {
-            global = b;
-        }
-        else {
-            local = b;
-        }
+        SetValue(b);
         return b;
     };
 private:
@@ -428,9 +423,9 @@ private:
 
 struct Values {
     // Audio
-    Setting<std::string> sink_id;
+    std::string sink_id;
     Setting<bool> enable_audio_stretching;
-    Setting<std::string> audio_device_id;
+    std::string audio_device_id;
     Setting<float> volume;
 
     // Core
@@ -439,7 +434,6 @@ struct Values {
     // Misceallaneous
     Setting<std::string> log_filter;
     Setting<bool> use_dev_keys;
-    Setting<bool> use_global_values;
 
     // Renderer
     Setting<RendererBackend> renderer_backend;

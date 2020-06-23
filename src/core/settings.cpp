@@ -64,6 +64,7 @@ const std::array<const char*, NumMouseButtons> mapping = {{
 }
 
 Values values;
+bool configuring_global = true;
 
 std::string GetTimeZoneString() {
     static constexpr std::array<const char*, 46> timezones{{
@@ -116,9 +117,9 @@ void LogSettings() {
     LogSetting("Renderer_UseVsync", Settings::values.use_vsync);
     LogSetting("Renderer_UseAssemblyShaders", Settings::values.use_assembly_shaders);
     LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values.max_anisotropy);
-    LogSetting("Audio_OutputEngine", Settings::values.sink_id.GetValue());
+    LogSetting("Audio_OutputEngine", Settings::values.sink_id);
     LogSetting("Audio_EnableAudioStretching", Settings::values.enable_audio_stretching);
-    LogSetting("Audio_OutputDevice", Settings::values.audio_device_id.GetValue());
+    LogSetting("Audio_OutputDevice", Settings::values.audio_device_id);
     LogSetting("DataStorage_UseVirtualSd", Settings::values.use_virtual_sd);
     LogSetting("DataStorage_NandDir", FileUtil::GetUserPath(FileUtil::UserPath::NANDDir));
     LogSetting("DataStorage_SdmcDir", FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir));

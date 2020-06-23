@@ -204,16 +204,6 @@
         <layout class="QVBoxLayout" name="verticalLayout_2"/>
        </item>
        <item>
-        <widget class="QCheckBox" name="check_global">
-         <property name="text">
-          <string>Use global configuration</string>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="enabled">
           <bool>true</bool>

@@ -24,6 +24,8 @@ add_executable(yuzu
     compatibility_list.h
     configuration/config.cpp
     configuration/config.h
+    configuration/configuration_shared.cpp
+    configuration/configuration_shared.h
     configuration/configure.ui
     configuration/configure_audio.cpp
     configuration/configure_audio.h

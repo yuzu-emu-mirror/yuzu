@@ -41,7 +41,7 @@ private:
 
     void LoadConfiguration();
 
-    void UpdateVisibleTabs();
+    void UpdateVisibleTabs(bool visible);
 
     std::unique_ptr<Ui::ConfigurePerGame> ui;
     FileSys::VirtualFile file;

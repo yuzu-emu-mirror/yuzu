@@ -1059,14 +1059,6 @@ void GMainWindow::BootGame(const QString& filename) {
     Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
     // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
 
-    if (Settings::values.use_global_values) {
-        LOG_INFO(Frontend, "Using global configuration");
-    }
-    else {
-        // REMOVE: Settings::SwapValues(Settings::ValuesSwapTarget::ToGame);
-        LOG_INFO(Frontend, "Using game-specific configuration");
-    }
-
     UpdateStatusButtons();
 
     Settings::LogSettings();

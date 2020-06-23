@@ -14,9 +14,14 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGeneral) {
     ui->setupUi(this);
 
+    SetupPerGameUI();
+
     SetConfiguration();
 
-    connect(ui->toggle_frame_limit, &QCheckBox::toggled, ui->frame_limit, &QSpinBox::setEnabled);
+    connect(ui->toggle_frame_limit, &QCheckBox::stateChanged, ui->frame_limit,
+        [this]() {
+            ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked);
+        });
 }
 
 ConfigureGeneral::~ConfigureGeneral() = default;
@@ -27,33 +32,41 @@ void ConfigureGeneral::SetConfiguration() {
     ui->use_multi_core->setEnabled(runtime_lock);
     ui->use_multi_core->setChecked(Settings::values.use_multi_core);
 
-    // REMOVE: if (Settings::config_values == &Settings::values. {
-        ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
-        ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot);
-        ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background);
-        ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse);
-    // REMOVE: }
-    // REMOVE: ui->toggle_check_exit->setVisible(Settings::config_values == &Settings::values.;
-    // REMOVE: ui->toggle_user_on_boot->setVisible(Settings::config_values == &Settings::values.;
-    // REMOVE: ui->toggle_background_pause->setVisible(Settings::config_values == &Settings::values.;
-    // REMOVE: ui->toggle_hide_mouse->setVisible(Settings::config_values == &Settings::values.;
+    ui->toggle_check_exit->setChecked(UISettings::values.confirm_before_closing);
+    ui->toggle_user_on_boot->setChecked(UISettings::values.select_user_on_boot);
+    ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background);
+    ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse);
 
     ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit);
-    ui->frame_limit->setEnabled(ui->toggle_frame_limit->isChecked());
     ui->frame_limit->setValue(Settings::values.frame_limit);
+
+    if (!Settings::configuring_global && Settings::values.use_frame_limit.UsingGlobal())
+        ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
+
+    ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked);
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
-    // REMOVE: if (Settings::config_values == &Settings::values. {
+    if (Settings::configuring_global) {
         UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
-    // REMOVE: }
+    }
 
     Settings::values.use_multi_core = ui->use_multi_core->isChecked();
-    Settings::values.use_frame_limit = ui->toggle_frame_limit->isChecked();
-    Settings::values.frame_limit = ui->frame_limit->value();
+    if (ui->toggle_frame_limit->checkState() != Qt::PartiallyChecked) {
+        if (!Settings::configuring_global) {
+            Settings::values.use_frame_limit.SetGlobal(false);
+            Settings::values.frame_limit.SetGlobal(false);
+        }
+        Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
+        Settings::values.frame_limit = ui->frame_limit->value();
+    }
+    else {
+        Settings::values.use_frame_limit.SetGlobal(true);
+        Settings::values.frame_limit.SetGlobal(true);
+    }
 }
 
 void ConfigureGeneral::changeEvent(QEvent* event) {
@@ -66,4 +79,16 @@ void ConfigureGeneral::changeEvent(QEvent* event) {
 
 void ConfigureGeneral::RetranslateUI() {
     ui->retranslateUi(this);
+}
+
+void ConfigureGeneral::SetupPerGameUI() {
+    if (Settings::configuring_global)
+        return;
+
+    ui->toggle_check_exit->setVisible(false);
+    ui->toggle_user_on_boot->setVisible(false);
+    ui->toggle_background_pause->setVisible(false);
+    ui->toggle_hide_mouse->setVisible(false);
+
+    ui->toggle_frame_limit->setTristate(true);
 }

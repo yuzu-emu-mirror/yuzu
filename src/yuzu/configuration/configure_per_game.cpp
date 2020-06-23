@@ -32,6 +32,8 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
     game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
 
+    Settings::configuring_global = false;
+
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
@@ -41,8 +43,6 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     scene = new QGraphicsScene;
     ui->icon_view->setScene(scene);
 
-    connect(ui->check_global, &QCheckBox::stateChanged, this, &ConfigurePerGame::UpdateVisibleTabs);
-
     LoadConfiguration();
 }
 
@@ -51,8 +51,6 @@ ConfigurePerGame::~ConfigurePerGame() {
 };
 
 void ConfigurePerGame::ApplyConfiguration() {
-    Settings::values.use_global_values = ui->check_global->isChecked();
-
     ui->addonsTab->ApplyConfiguration();
     ui->generalTab->ApplyConfiguration();
     ui->systemTab->ApplyConfiguration();
@@ -88,8 +86,6 @@ void ConfigurePerGame::LoadConfiguration() {
     if (file == nullptr) {
         return;
     }
-
-    ui->check_global->setChecked(Settings::values.use_global_values);
 
     ui->addonsTab->LoadFromFile(file);
 
@@ -145,15 +141,14 @@ void ConfigurePerGame::LoadConfiguration() {
     const auto valueText = ReadableByteSize(file->GetSize());
     ui->display_size->setText(valueText);
 
-    UpdateVisibleTabs();
+    // FIXME: UpdateVisibleTabs();
 }
 
-void ConfigurePerGame::UpdateVisibleTabs() {
-    bool visible = !ui->check_global->isChecked();
+void ConfigurePerGame::UpdateVisibleTabs(bool visible) {
     ui->generalTab->setEnabled(visible);
     ui->systemTab->setEnabled(visible);
     ui->graphicsTab->setEnabled(visible);
     ui->graphicsAdvancedTab->setEnabled(visible);
     ui->audioTab->setEnabled(visible);
-    //ui->inputTab->setEnabled(visible);
+    // FIXME: ui->inputTab->setEnabled(visible);
 }
