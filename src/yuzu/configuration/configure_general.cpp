@@ -18,10 +18,9 @@ ConfigureGeneral::ConfigureGeneral(QWidget* parent)
 
     SetConfiguration();
 
-    connect(ui->toggle_frame_limit, &QCheckBox::stateChanged, ui->frame_limit,
-        [this]() {
-            ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked);
-        });
+    connect(ui->toggle_frame_limit, &QCheckBox::stateChanged, ui->frame_limit, [this]() {
+        ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked);
+    });
 }
 
 ConfigureGeneral::~ConfigureGeneral() = default;
@@ -62,8 +61,7 @@ void ConfigureGeneral::ApplyConfiguration() {
         }
         Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
         Settings::values.frame_limit = ui->frame_limit->value();
-    }
-    else {
+    } else {
         Settings::values.use_frame_limit.SetGlobal(true);
         Settings::values.frame_limit.SetGlobal(true);
     }

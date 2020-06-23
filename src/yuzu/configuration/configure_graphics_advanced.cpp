@@ -28,15 +28,14 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
 
     if (Settings::configuring_global) {
-        ui->gpu_accuracy->setCurrentIndex(static_cast<int>(
-                                              Settings::values.gpu_accuracy.GetValue()));
+        ui->gpu_accuracy->setCurrentIndex(
+            static_cast<int>(Settings::values.gpu_accuracy.GetValue()));
         ui->use_vsync->setChecked(Settings::values.use_vsync);
         ui->use_assembly_shaders->setChecked(Settings::values.use_assembly_shaders);
         ui->use_fast_gpu_time->setChecked(Settings::values.use_fast_gpu_time);
         ui->force_30fps_mode->setChecked(Settings::values.force_30fps_mode);
         ui->anisotropic_filtering_combobox->setCurrentIndex(Settings::values.max_anisotropy);
-    }
-    else {
+    } else {
         ConfigurationShared::SetPerGameSetting(ui->gpu_accuracy, &Settings::values.gpu_accuracy);
         ConfigurationShared::SetPerGameSetting(ui->use_vsync, &Settings::values.use_vsync);
         ConfigurationShared::SetPerGameSetting(ui->use_assembly_shaders,
@@ -52,8 +51,8 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
 
 void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     // Subtract 2 if configuring per-game (separator and "use global configuration" take 2 slots)
-    auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(ui->gpu_accuracy->currentIndex() -
-                        ((Settings::configuring_global) ? 0 : 2));
+    auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
+        ui->gpu_accuracy->currentIndex() - ((Settings::configuring_global) ? 0 : 2));
 
     if (Settings::configuring_global) {
         Settings::values.gpu_accuracy = gpu_accuracy;
@@ -62,8 +61,7 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
         Settings::values.use_fast_gpu_time = ui->use_fast_gpu_time->isChecked();
         Settings::values.force_30fps_mode = ui->force_30fps_mode->isChecked();
         Settings::values.max_anisotropy = ui->anisotropic_filtering_combobox->currentIndex();
-    }
-    else {
+    } else {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                                  ui->anisotropic_filtering_combobox);
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vsync, ui->use_vsync);
@@ -78,8 +76,7 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
 
         if (ui->gpu_accuracy->currentIndex() == 0) {
             Settings::values.gpu_accuracy.SetGlobal(true);
-        }
-        else {
+        } else {
             Settings::values.gpu_accuracy.SetGlobal(false);
             Settings::values.gpu_accuracy = gpu_accuracy;
         }

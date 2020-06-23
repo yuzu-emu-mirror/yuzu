@@ -19,16 +19,16 @@ const QString use_global_text = QString::fromUtf8("Use global configuration");
 void ApplyPerGameSetting(Settings::Setting<bool>* setting, const QCheckBox* checkbox);
 void ApplyPerGameSetting(Settings::Setting<int>* setting, const QComboBox* combobox);
 void ApplyPerGameSetting(Settings::Setting<Settings::RendererBackend>* setting,
-                                              const QComboBox* combobox);
+                         const QComboBox* combobox);
 void ApplyPerGameSetting(Settings::Setting<Settings::GPUAccuracy>* setting,
-                                              const QComboBox* combobox);
+                         const QComboBox* combobox);
 
 void SetPerGameSetting(QCheckBox* checkbox, const Settings::Setting<bool>* setting);
 void SetPerGameSetting(QComboBox* combobox, const Settings::Setting<int>* setting);
 void SetPerGameSetting(QComboBox* combobox,
-    const Settings::Setting<Settings::RendererBackend>* setting);
+                       const Settings::Setting<Settings::RendererBackend>* setting);
 void SetPerGameSetting(QComboBox* combobox,
-    const Settings::Setting<Settings::GPUAccuracy>* setting);
+                       const Settings::Setting<Settings::GPUAccuracy>* setting);
 
 void InsertGlobalItem(QComboBox* combobox);
 

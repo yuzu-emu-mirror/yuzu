@@ -46,7 +46,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     LoadConfiguration();
 }
 
-ConfigurePerGame::~ConfigurePerGame() {
+ConfigurePerGame::~ConfigurePerGame(){
     // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
 };
 
@@ -57,7 +57,7 @@ void ConfigurePerGame::ApplyConfiguration() {
     ui->graphicsTab->ApplyConfiguration();
     ui->graphicsAdvancedTab->ApplyConfiguration();
     ui->audioTab->ApplyConfiguration();
-    //ui->inputTab->ApplyConfiguration();
+    // ui->inputTab->ApplyConfiguration();
 
     game_config->Save();
 

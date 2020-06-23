@@ -281,24 +281,25 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
         button->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(button, &QPushButton::clicked, [=] {
-            HandleClick(button_map[button_id],
-                        [=](Common::ParamPackage params) {
-                            // Workaround for ZL & ZR for analog triggers like on XBOX controllors.
-                            // Analog triggers (from controllers like the XBOX controller) would not
-                            // work due to a different range of their signals (from 0 to 255 on
-                            // analog triggers instead of -32768 to 32768 on analog joysticks). The
-                            // SDL driver misinterprets analog triggers as analog joysticks.
-                            // TODO: reinterpret the signal range for analog triggers to map the
-                            // values correctly. This is required for the correct emulation of the
-                            // analog triggers of the GameCube controller.
-                            if (button_id == Settings::NativeButton::ZL ||
-                                button_id == Settings::NativeButton::ZR) {
-                                params.Set("direction", "+");
-                                params.Set("threshold", "0.5");
-                            }
-                            buttons_param[button_id] = std::move(params);
-                        },
-                        InputCommon::Polling::DeviceType::Button);
+            HandleClick(
+                button_map[button_id],
+                [=](Common::ParamPackage params) {
+                    // Workaround for ZL & ZR for analog triggers like on XBOX controllors.
+                    // Analog triggers (from controllers like the XBOX controller) would not
+                    // work due to a different range of their signals (from 0 to 255 on
+                    // analog triggers instead of -32768 to 32768 on analog joysticks). The
+                    // SDL driver misinterprets analog triggers as analog joysticks.
+                    // TODO: reinterpret the signal range for analog triggers to map the
+                    // values correctly. This is required for the correct emulation of the
+                    // analog triggers of the GameCube controller.
+                    if (button_id == Settings::NativeButton::ZL ||
+                        button_id == Settings::NativeButton::ZR) {
+                        params.Set("direction", "+");
+                        params.Set("threshold", "0.5");
+                    }
+                    buttons_param[button_id] = std::move(params);
+                },
+                InputCommon::Polling::DeviceType::Button);
         });
         connect(button, &QPushButton::customContextMenuRequested, [=](const QPoint& menu_location) {
             QMenu context_menu;
@@ -324,12 +325,13 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
             analog_button->setContextMenuPolicy(Qt::CustomContextMenu);
             connect(analog_button, &QPushButton::clicked, [=]() {
-                HandleClick(analog_map_buttons[analog_id][sub_button_id],
-                            [=](const Common::ParamPackage& params) {
-                                SetAnalogButton(params, analogs_param[analog_id],
-                                                analog_sub_buttons[sub_button_id]);
-                            },
-                            InputCommon::Polling::DeviceType::Button);
+                HandleClick(
+                    analog_map_buttons[analog_id][sub_button_id],
+                    [=](const Common::ParamPackage& params) {
+                        SetAnalogButton(params, analogs_param[analog_id],
+                                        analog_sub_buttons[sub_button_id]);
+                    },
+                    InputCommon::Polling::DeviceType::Button);
             });
             connect(analog_button, &QPushButton::customContextMenuRequested,
                     [=](const QPoint& menu_location) {
@@ -432,11 +434,9 @@ ConfigureInputPlayer::~ConfigureInputPlayer() = default;
 
 void ConfigureInputPlayer::ApplyConfiguration() {
     auto& buttons =
-        debug ? Settings::values.debug_pad_buttons :
-            Settings::values.players[player_index].buttons;
+        debug ? Settings::values.debug_pad_buttons : Settings::values.players[player_index].buttons;
     auto& analogs =
-        debug ? Settings::values.debug_pad_analogs :
-            Settings::values.players[player_index].analogs;
+        debug ? Settings::values.debug_pad_analogs : Settings::values.players[player_index].analogs;
 
     std::transform(buttons_param.begin(), buttons_param.end(), buttons.begin(),
                    [](const Common::ParamPackage& param) { return param.Serialize(); });

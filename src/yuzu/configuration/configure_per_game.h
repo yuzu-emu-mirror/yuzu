@@ -10,8 +10,8 @@
 #include <QDialog>
 #include <QList>
 
-#include "yuzu/configuration/config.h"
 #include "core/file_sys/vfs_types.h"
+#include "yuzu/configuration/config.h"
 
 class QGraphicsScene;
 class QStandardItem;

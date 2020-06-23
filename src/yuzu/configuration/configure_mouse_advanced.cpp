@@ -134,8 +134,7 @@ void ConfigureMouseAdvanced::ApplyConfiguration() {
 }
 
 void ConfigureMouseAdvanced::LoadConfiguration() {
-    std::transform(Settings::values.mouse_buttons.begin(),
-                   Settings::values.mouse_buttons.end(),
+    std::transform(Settings::values.mouse_buttons.begin(), Settings::values.mouse_buttons.end(),
                    buttons_param.begin(),
                    [](const std::string& str) { return Common::ParamPackage(str); });
     UpdateButtonLabels();

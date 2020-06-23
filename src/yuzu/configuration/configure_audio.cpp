@@ -51,15 +51,13 @@ void ConfigureAudio::SetConfiguration() {
 
     if (Settings::configuring_global) {
         ui->toggle_audio_stretching->setChecked(Settings::values.enable_audio_stretching);
-    }
-    else {
+    } else {
         ConfigurationShared::SetPerGameSetting(ui->toggle_audio_stretching,
                                                &Settings::values.enable_audio_stretching);
         if (Settings::values.volume.UsingGlobal()) {
             ui->volume_combo_box->setCurrentIndex(0);
             ui->volume_slider->setEnabled(false);
-        }
-        else {
+        } else {
             ui->volume_combo_box->setCurrentIndex(1);
             ui->volume_slider->setEnabled(true);
         }
@@ -111,18 +109,15 @@ void ConfigureAudio::ApplyConfiguration() {
                 .toStdString();
         Settings::values.volume =
             static_cast<float>(ui->volume_slider->sliderPosition()) / ui->volume_slider->maximum();
-    }
-    else {
+    } else {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_audio_stretching,
                                                  ui->toggle_audio_stretching);
         if (ui->volume_combo_box->currentIndex() == 0) {
             Settings::values.volume.SetGlobal(true);
-        }
-        else {
+        } else {
             Settings::values.volume.SetGlobal(false);
-            Settings::values.volume =
-                static_cast<float>(ui->volume_slider->sliderPosition()) /
-                ui->volume_slider->maximum();
+            Settings::values.volume = static_cast<float>(ui->volume_slider->sliderPosition()) /
+                                      ui->volume_slider->maximum();
         }
     }
 }
@@ -163,8 +158,8 @@ void ConfigureAudio::SetupPerGameUI() {
     if (Settings::configuring_global)
         return;
 
-    connect(ui->volume_combo_box, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this,
-            [this](int index) { ui->volume_slider->setEnabled(index == 1); });
+    connect(ui->volume_combo_box, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated),
+            this, [this](int index) { ui->volume_slider->setEnabled(index == 1); });
 
     ui->output_sink_combo_box->setVisible(false);
     ui->output_sink_label->setVisible(false);

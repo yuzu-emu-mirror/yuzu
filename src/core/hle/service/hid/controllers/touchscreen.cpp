@@ -62,7 +62,6 @@ void Controller_Touchscreen::OnUpdate(const Core::Timing::CoreTiming& core_timin
 }
 
 void Controller_Touchscreen::OnLoadInputDevices() {
-    touch_device = Input::CreateDevice<Input::TouchDevice>(
-        Settings::values.touchscreen.device);
+    touch_device = Input::CreateDevice<Input::TouchDevice>(Settings::values.touchscreen.device);
 }
 } // namespace Service::HID

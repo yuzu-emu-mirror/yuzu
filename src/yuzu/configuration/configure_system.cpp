@@ -60,10 +60,10 @@ void ConfigureSystem::RetranslateUI() {
 
 void ConfigureSystem::SetConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
-    const auto rng_seed = QStringLiteral("%1")
-                              .arg(Settings::values.rng_seed.GetValue().value_or(0), 8, 16,
-                                   QLatin1Char{'0'})
-                              .toUpper();
+    const auto rng_seed =
+        QStringLiteral("%1")
+            .arg(Settings::values.rng_seed.GetValue().value_or(0), 8, 16, QLatin1Char{'0'})
+            .toUpper();
     const auto rtc_time = Settings::values.custom_rtc.GetValue().value_or(
         std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
 
@@ -80,16 +80,13 @@ void ConfigureSystem::SetConfiguration() {
         ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.GetValue().has_value());
         ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.GetValue().has_value());
         ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
-    }
-    else {
+    } else {
         ConfigurationShared::SetPerGameSetting(ui->combo_language,
                                                &Settings::values.language_index);
-        ConfigurationShared::SetPerGameSetting(ui->combo_region,
-                                               &Settings::values.region_index);
+        ConfigurationShared::SetPerGameSetting(ui->combo_region, &Settings::values.region_index);
         ConfigurationShared::SetPerGameSetting(ui->combo_time_zone,
                                                &Settings::values.time_zone_index);
-        ConfigurationShared::SetPerGameSetting(ui->combo_sound,
-                                               &Settings::values.sound_index);
+        ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
 
         if (Settings::values.rng_seed.UsingGlobal())
             ui->rng_seed_checkbox->setCheckState(Qt::PartiallyChecked);
@@ -136,42 +133,39 @@ void ConfigureSystem::ApplyConfiguration() {
         } else {
             Settings::values.custom_rtc = std::nullopt;
         }
-    }
-    else {
+    } else {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.language_index,
                                                  ui->combo_language);
-        ConfigurationShared::ApplyPerGameSetting(&Settings::values.region_index,
-                                                 ui->combo_region);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.region_index, ui->combo_region);
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.time_zone_index,
                                                  ui->combo_time_zone);
-        ConfigurationShared::ApplyPerGameSetting(&Settings::values.sound_index,
-                                                 ui->combo_sound);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.sound_index, ui->combo_sound);
 
         switch (ui->rng_seed_checkbox->checkState()) {
-            case Qt::Checked:
-                Settings::values.rng_seed.SetGlobal(false);
-                Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
-                break;
-            case Qt::Unchecked:
-                Settings::values.rng_seed.SetGlobal(false);
-                Settings::values.rng_seed = std::nullopt;
-                break;
-            case Qt::PartiallyChecked:
-                Settings::values.rng_seed.SetGlobal(true);
+        case Qt::Checked:
+            Settings::values.rng_seed.SetGlobal(false);
+            Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
+            break;
+        case Qt::Unchecked:
+            Settings::values.rng_seed.SetGlobal(false);
+            Settings::values.rng_seed = std::nullopt;
+            break;
+        case Qt::PartiallyChecked:
+            Settings::values.rng_seed.SetGlobal(true);
         }
 
         switch (ui->custom_rtc_checkbox->checkState()) {
-            case Qt::Checked:
-                Settings::values.custom_rtc.SetGlobal(false);
-                Settings::values.custom_rtc =
-                    std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
-                break;
-            case Qt::Unchecked:
-                Settings::values.custom_rtc.SetGlobal(false);
-                Settings::values.custom_rtc = std::nullopt;
-                break;
-            case Qt::PartiallyChecked:
-                Settings::values.custom_rtc.SetGlobal(true);
+        case Qt::Checked:
+            Settings::values.custom_rtc.SetGlobal(false);
+            Settings::values.custom_rtc =
+                std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
+            break;
+        case Qt::Unchecked:
+            Settings::values.custom_rtc.SetGlobal(false);
+            Settings::values.custom_rtc = std::nullopt;
+            break;
+        case Qt::PartiallyChecked:
+            Settings::values.custom_rtc.SetGlobal(true);
         }
     }
 

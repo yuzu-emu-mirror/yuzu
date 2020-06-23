@@ -133,8 +133,7 @@ TelemetrySession::~TelemetrySession() {
 
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values.web_api_url, Settings::values.yuzu_username,
-        Settings::values.yuzu_token);
+        Settings::values.web_api_url, Settings::values.yuzu_username, Settings::values.yuzu_token);
 #else
     auto backend = std::make_unique<Telemetry::NullVisitor>();
 #endif
@@ -214,8 +213,7 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader) {
 bool TelemetrySession::SubmitTestcase() {
 #ifdef ENABLE_WEB_SERVICE
     auto backend = std::make_unique<WebService::TelemetryJson>(
-        Settings::values.web_api_url, Settings::values.yuzu_username,
-        Settings::values.yuzu_token);
+        Settings::values.web_api_url, Settings::values.yuzu_username, Settings::values.yuzu_token);
     field_collection.Accept(*backend);
     return backend->SubmitTestcase();
 #else

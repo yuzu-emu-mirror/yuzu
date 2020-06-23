@@ -142,8 +142,7 @@ bool IsGPULevelExtreme() {
 }
 
 bool IsGPULevelHigh() {
-    return values.gpu_accuracy == GPUAccuracy::Extreme ||
-           values.gpu_accuracy == GPUAccuracy::High;
+    return values.gpu_accuracy == GPUAccuracy::Extreme || values.gpu_accuracy == GPUAccuracy::High;
 }
 
 } // namespace Settings

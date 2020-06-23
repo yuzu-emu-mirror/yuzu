@@ -59,21 +59,18 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
 
     if (Settings::configuring_global) {
-        ui->api->setCurrentIndex(static_cast<int>(
-                                     Settings::values.renderer_backend.GetValue()));
+        ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio);
         ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache);
         ui->use_asynchronous_gpu_emulation->setChecked(
             Settings::values.use_asynchronous_gpu_emulation);
-    }
-    else {
+    } else {
         ConfigurationShared::SetPerGameSetting(ui->use_disk_shader_cache,
                                                &Settings::values.use_disk_shader_cache);
         ConfigurationShared::SetPerGameSetting(ui->use_asynchronous_gpu_emulation,
                                                &Settings::values.use_asynchronous_gpu_emulation);
 
-        ConfigurationShared::SetPerGameSetting(ui->api,
-                                               &Settings::values.renderer_backend);
+        ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
         ConfigurationShared::SetPerGameSetting(ui->aspect_ratio_combobox,
                                                &Settings::values.aspect_ratio);
 
@@ -81,8 +78,7 @@ void ConfigureGraphics::SetConfiguration() {
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
     }
 
-    UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red,
-                                                 Settings::values.bg_green,
+    UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red, Settings::values.bg_green,
                                                  Settings::values.bg_blue));
     UpdateDeviceComboBox();
 }
@@ -98,8 +94,7 @@ void ConfigureGraphics::ApplyConfiguration() {
         Settings::values.bg_red = static_cast<float>(bg_color.redF());
         Settings::values.bg_green = static_cast<float>(bg_color.greenF());
         Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
-    }
-    else {
+    } else {
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
             Settings::values.renderer_backend.SetGlobal(true);
         else {
@@ -108,8 +103,7 @@ void ConfigureGraphics::ApplyConfiguration() {
             if (GetCurrentGraphicsBackend() == Settings::RendererBackend::Vulkan) {
                 Settings::values.vulkan_device.SetGlobal(false);
                 Settings::values.vulkan_device = vulkan_device;
-            }
-            else {
+            } else {
                 Settings::values.vulkan_device.SetGlobal(true);
             }
         }
@@ -126,8 +120,7 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_red.SetGlobal(true);
             Settings::values.bg_green.SetGlobal(true);
             Settings::values.bg_blue.SetGlobal(true);
-        }
-        else {
+        } else {
             Settings::values.bg_red.SetGlobal(false);
             Settings::values.bg_green.SetGlobal(false);
             Settings::values.bg_blue.SetGlobal(false);

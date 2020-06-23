@@ -519,8 +519,7 @@ void GMainWindow::InitializeWidgets() {
     connect(dock_status_button, &QPushButton::clicked, [&] {
         Settings::values.use_docked_mode = !Settings::values.use_docked_mode;
         dock_status_button->setChecked(Settings::values.use_docked_mode);
-        OnDockedModeChanged(!Settings::values.use_docked_mode,
-                            Settings::values.use_docked_mode);
+        OnDockedModeChanged(!Settings::values.use_docked_mode, Settings::values.use_docked_mode);
     });
     dock_status_button->setText(tr("DOCK"));
     dock_status_button->setCheckable(true);
@@ -735,16 +734,14 @@ void GMainWindow::InitializeHotkeys() {
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
             &QShortcut::activated, this, [&] {
                 if (Settings::values.frame_limit < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit =
-                        SPEED_LIMIT_STEP + Settings::values.frame_limit;
+                    Settings::values.frame_limit = SPEED_LIMIT_STEP + Settings::values.frame_limit;
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
             &QShortcut::activated, this, [&] {
                 if (Settings::values.frame_limit > SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit =
-                        Settings::values.frame_limit - SPEED_LIMIT_STEP;
+                    Settings::values.frame_limit = Settings::values.frame_limit - SPEED_LIMIT_STEP;
                     UpdateStatusBar();
                 }
             });

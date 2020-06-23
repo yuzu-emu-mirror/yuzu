@@ -96,8 +96,7 @@ void ConfigureWeb::SetConfiguration() {
 
     ui->toggle_telemetry->setChecked(Settings::values.enable_telemetry);
     ui->edit_token->setText(QString::fromStdString(
-        GenerateDisplayToken(Settings::values.yuzu_username,
-                             Settings::values.yuzu_token)));
+        GenerateDisplayToken(Settings::values.yuzu_username, Settings::values.yuzu_token)));
 
     // Connect after setting the values, to avoid calling OnLoginChanged now
     connect(ui->edit_token, &QLineEdit::textChanged, this, &ConfigureWeb::OnLoginChanged);
@@ -113,8 +112,7 @@ void ConfigureWeb::ApplyConfiguration() {
     if (user_verified) {
         Settings::values.yuzu_username =
             UsernameFromDisplayToken(ui->edit_token->text().toStdString());
-        Settings::values.yuzu_token =
-            TokenFromDisplayToken(ui->edit_token->text().toStdString());
+        Settings::values.yuzu_token = TokenFromDisplayToken(ui->edit_token->text().toStdString());
     } else {
         QMessageBox::warning(
             this, tr("Token not verified"),

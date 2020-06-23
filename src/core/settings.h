@@ -415,6 +415,7 @@ public:
         SetValue(b);
         return b;
     };
+
 private:
     bool use_global;
     Type global;
