@@ -2,8 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <boost/container_hash/hash.hpp>
 #include <optional>
+#include <boost/container_hash/hash.hpp>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/settings.h"
@@ -37,7 +37,7 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
     } else {
         // Macro not compiled, check if it's uploaded and if so, compile it
         std::optional<u32> mid_method = std::nullopt;
-        auto macro_code = uploaded_macro_code.find(method);
+        const auto macro_code = uploaded_macro_code.find(method);
         if (macro_code == uploaded_macro_code.end()) {
             for (const auto& [method_base, code] : uploaded_macro_code) {
                 if (method >= method_base && (method - method_base) < code.size()) {
@@ -51,32 +51,25 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
             }
         }
         auto& cache_info = macro_cache[method];
-        cache_info.hash = boost::hash_value(macro_code->second);
-        cache_info.lle_program = Compile(macro_code->second);
+
+        if (!mid_method.has_value()) {
+            cache_info.lle_program = Compile(macro_code->second);
+            cache_info.hash = boost::hash_value(macro_code->second);
+        } else {
+            const auto& macro_cached = uploaded_macro_code[mid_method.value()];
+            const auto rebased_method = method - macro_code->first;
+            auto& code = uploaded_macro_code[method];
+            code.resize(macro_cached.size() - rebased_method);
+            std::memcpy(code.data(), macro_cached.data() + rebased_method,
+                        code.size() * sizeof(u32));
+            cache_info.hash = boost::hash_value(code);
+            cache_info.lle_program = Compile(code);
+        }
 
         auto hle_program = hle_macros->GetHLEProgram(cache_info.hash);
         if (hle_program.has_value()) {
             cache_info.has_hle_program = true;
             cache_info.hle_program = std::move(hle_program.value());
-        }
-        if (cache_info.has_hle_program) {
-            cache_info.hle_program->Execute(parameters, method);
-        } else {
-            cache_info.lle_program->Execute(parameters, method);
-        }
-        if (mid_method.has_value()) {
-            const auto& macro_cached = uploaded_macro_code[mid_method.value()];
-            const auto rebased_method = method - mid_method.value();
-            auto& code = uploaded_macro_code[method];
-            code.resize(macro_cached.size() - rebased_method);
-            std::memcpy(code.data(), macro_cached.data() + rebased_method,
-                        code.size() * sizeof(u32));
-            macro_cache[method] = Compile(code);
-        } else {
-            macro_cache[method] = Compile(macro_code->second);
-        }
-
-        if (cache_info.has_hle_program) {
             cache_info.hle_program->Execute(parameters, method);
         } else {
             cache_info.lle_program->Execute(parameters, method);
