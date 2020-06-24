@@ -430,17 +430,13 @@ private:
 
 struct Values {
     // Audio
+    std::string audio_device_id;
     std::string sink_id;
     Setting<bool> enable_audio_stretching;
-    std::string audio_device_id;
     Setting<float> volume;
 
     // Core
     Setting<bool> use_multi_core;
-
-    // Misceallaneous
-    Setting<std::string> log_filter;
-    Setting<bool> use_dev_keys;
 
     // Renderer
     Setting<RendererBackend> renderer_backend;
@@ -522,6 +518,10 @@ struct Values {
     bool quest_flag;
     bool disable_cpu_opt;
     bool disable_macro_jit;
+
+    // Misceallaneous
+    std::string log_filter;
+    bool use_dev_keys;
 
     // Services
     std::string bcat_backend;

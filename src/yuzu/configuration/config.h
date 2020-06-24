@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <QMetaType>
 #include <QVariant>
 #include "core/settings.h"
 #include "yuzu/uisettings.h"
@@ -82,11 +83,29 @@ private:
 
     QVariant ReadSetting(const QString& name) const;
     QVariant ReadSetting(const QString& name, const QVariant& default_value) const;
+    template <typename Type>
+    void ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& name);
+    template <typename Type>
+    void ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& name,
+                           const QVariant& default_value);
+    template <typename Type>
+    void ReadSettingGlobal(Type& setting, const QString& name, const QVariant& default_value) const;
     void WriteSetting(const QString& name, const QVariant& value);
     void WriteSetting(const QString& name, const QVariant& value, const QVariant& default_value);
+    template <typename Type>
+    void WriteSettingGlobal(const QString& name, const Settings::Setting<Type>& setting);
+    template <typename Type>
+    void WriteSettingGlobal(const QString& name, const Settings::Setting<Type>& setting,
+                            const QVariant& default_value);
+    void WriteSettingGlobal(const QString& name, const QVariant& value, bool use_global,
+                            const QVariant& default_value);
 
     std::unique_ptr<QSettings> qt_config;
     std::string qt_config_loc;
 
     bool global;
 };
+
+// These metatype declarations cannot be in core/settings.h because core is devoid of QT
+Q_DECLARE_METATYPE(Settings::RendererBackend);
+Q_DECLARE_METATYPE(Settings::GPUAccuracy);

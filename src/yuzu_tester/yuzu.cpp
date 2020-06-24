@@ -73,7 +73,7 @@ static void PrintVersion() {
 
 static void InitializeLogging(bool console) {
     Log::Filter log_filter(Log::Level::Debug);
-    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
     if (console)

@@ -171,7 +171,7 @@ const int GMainWindow::max_recent_files_item;
 
 static void InitializeLogging() {
     Log::Filter log_filter;
-    log_filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
     const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
