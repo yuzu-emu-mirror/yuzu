@@ -15,6 +15,7 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
+#include "core/core.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/xts_archive.h"
 #include "core/loader/loader.h"
@@ -56,6 +57,8 @@ ConfigurePerGameAddons::ConfigurePerGameAddons(QWidget* parent)
     layout->addWidget(tree_view);
 
     ui->scrollArea->setLayout(layout);
+
+    ui->scrollArea->setEnabled(!Core::System::GetInstance().IsPoweredOn());
 
     connect(item_model, &QStandardItemModel::itemChanged,
             [] { UISettings::values.is_game_list_reload_pending.exchange(true); });

@@ -144,6 +144,11 @@ bool IsGPULevelHigh() {
 }
 
 void RestoreGlobalState() {
+    // If a game is running, DO NOT restore the global settings state
+    if (!Core::System::GetInstance().IsPoweredOn()) {
+        return;
+    }
+
     // Audio
     Settings::values.enable_audio_stretching.SetGlobal(true);
     Settings::values.volume.SetGlobal(true);

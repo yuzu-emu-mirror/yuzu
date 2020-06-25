@@ -1550,11 +1550,13 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
             game_list->PopulateAsync(UISettings::values.game_dirs);
         }
 
-        config->Save();
-    }
+        // Do not cause the global config to write local settings
+        Settings::RestoreGlobalState();
 
-    // If a game is running, DO NOT restore the global settings state
-    if (!Core::System::GetInstance().IsPoweredOn()) {
+        if (!Core::System::GetInstance().IsPoweredOn()) {
+            config->Save();
+        }
+    } else {
         Settings::RestoreGlobalState();
     }
 }

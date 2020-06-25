@@ -39,8 +39,10 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_frame_limit->setChecked(Settings::values.use_frame_limit);
     ui->frame_limit->setValue(Settings::values.frame_limit);
 
-    if (!Settings::configuring_global && Settings::values.use_frame_limit.UsingGlobal()) {
-        ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
+    if (!Settings::configuring_global) {
+        if (Settings::values.use_frame_limit.UsingGlobal()) {
+            ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
+        }
     }
 
     ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked &&
@@ -67,12 +69,13 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.frame_limit = ui->frame_limit->value();
         }
     } else {
-        Settings::values.use_frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() ==
-                                                   Qt::PartiallyChecked);
-        Settings::values.frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() ==
-                                               Qt::PartiallyChecked);
-        Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
-        Settings::values.frame_limit = ui->frame_limit->value();
+        bool global_frame_limit = ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked;
+        Settings::values.use_frame_limit.SetGlobal(global_frame_limit);
+        Settings::values.frame_limit.SetGlobal(global_frame_limit);
+        if (!global_frame_limit) {
+            Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
+            Settings::values.frame_limit = ui->frame_limit->value();
+        }
     }
 }
 

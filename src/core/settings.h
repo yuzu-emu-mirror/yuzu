@@ -423,9 +423,9 @@ public:
     };
 
 private:
-    bool use_global;
-    Type global;
-    Type local;
+    bool use_global{};
+    Type global{};
+    Type local{};
 };
 
 struct Values {
