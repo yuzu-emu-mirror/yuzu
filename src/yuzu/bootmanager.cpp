@@ -8,6 +8,10 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMessageBox>
+#ifndef __APPLE__
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#endif
 #include <QPainter>
 #include <QScreen>
 #include <QStringList>

@@ -40,11 +40,20 @@
 #include <vulkan/vulkan_win32.h>
 #endif
 
+#ifdef __APPLE__
+#define VK_USE_PLATFORM_METAL_EXT
+#include "vulkan/vulkan_macos.h"
+#include "vulkan/vulkan_metal.h"
+#include <objc/message.h>
+#include "common/file_util.h"
+#endif
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <X11/Xlib.h>
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
 #endif
+
 
 namespace Vulkan {
 
@@ -118,6 +127,11 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
         extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
         break;
 #endif
+#ifdef __APPLE__
+    case Core::Frontend::WindowSystemType::MacOS:
+        extensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        break;
+#endif
 #if !defined(_WIN32) && !defined(__APPLE__)
     case Core::Frontend::WindowSystemType::X11:
         extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
@@ -137,7 +151,7 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
+    extensions.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     const std::optional properties = vk::EnumerateInstanceExtensionProperties(dld);
     if (!properties) {
         LOG_ERROR(Render_Vulkan, "Failed to query extension properties");
@@ -155,7 +169,7 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
         }
     }
 
-    static constexpr std::array layers_data{"VK_LAYER_LUNARG_standard_validation"};
+    static constexpr std::array layers_data{"VK_LAYER_KHRONOS_validation"};
     vk::Span<const char*> layers = layers_data;
     if (!enable_layers) {
         layers = {};
@@ -264,7 +278,43 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
     return true;
 }
 
+void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal layer.
+    id view = reinterpret_cast<id>(wsi.render_surface);
+    Class clsCAMetalLayer = objc_getClass("CAMetalLayer");
+    if (!clsCAMetalLayer) {
+        LOG_ERROR(Render_Vulkan, "Failed to get CAMetalLayer class.");
+        return;
+    }
+
+    // [CAMetalLayer layer]
+    id layer = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("CAMetalLayer"),
+                                                        sel_getUid("layer"));
+    if (!layer) {
+        LOG_ERROR(Render_Vulkan, "Failed to create Metal layer.");
+        return;
+    }
+    // [view setWantsLayer:YES]
+    reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)(view, sel_getUid("setWantsLayer:"), YES);
+    // [view setLayer:layer]
+    reinterpret_cast<void (*)(id, SEL, id)>(objc_msgSend)(view, sel_getUid("setLayer:"), layer);
+    // NSScreen* screen = [NSScreen mainScreen]
+    id screen = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("NSScreen"),
+                                                         sel_getUid("mainScreen"));
+    // CGFloat factor = [screen backingScaleFactor]
+    double factor =
+    reinterpret_cast<double (*)(id, SEL)>(objc_msgSend)(screen, sel_getUid("backingScaleFactor"));
+    // layer.contentsScale = factor
+    reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(layer, sel_getUid("setContentsScale:"),
+                                                    factor);
+    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main thread.
+    wsi.render_surface = layer;
+#endif
+}
+
 bool RendererVulkan::Init() {
+    PrepareWindow(render_window.GetWindowInfoRef());
     library = OpenVulkanLibrary();
     instance = CreateInstance(library, dld, render_window.GetWindowInfo().type,
                               Settings::values.renderer_debug);
@@ -369,6 +419,21 @@ bool RendererVulkan::CreateSurface() {
             vkCreateWaylandSurfaceKHR(*instance, &wayland_ci, nullptr, &unsafe_surface) !=
                 VK_SUCCESS) {
             LOG_ERROR(Render_Vulkan, "Failed to initialize Wayland surface");
+            return false;
+        }
+    }
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    if (window_info.type == Core::Frontend::WindowSystemType::MacOS) {
+        VkMetalSurfaceCreateInfoEXT surface_create_info = {
+            VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT, nullptr, 0,
+            static_cast<const CAMetalLayer*>(window_info.render_surface)};
+        const auto vkCreateMetalSurfaceEXT = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
+            dld.vkGetInstanceProcAddr(*instance, "vkCreateMetalSurfaceEXT"));
+        if (!vkCreateMetalSurfaceEXT ||
+            vkCreateMetalSurfaceEXT(*instance, &surface_create_info, nullptr, &unsafe_surface) !=
+                VK_SUCCESS) {
+            LOG_ERROR(Render_Vulkan, "Failed to initialize Metal surface");
             return false;
         }
     }

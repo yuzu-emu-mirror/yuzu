@@ -33,12 +33,16 @@ constexpr std::array REQUIRED_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
-    VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+#ifndef __APPLE__
+    VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+    VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
+    VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
+#endif
 };
 
 template <typename T>
@@ -180,7 +184,11 @@ bool VKDevice::Create() {
     features.fullDrawIndexUint32 = false;
     features.imageCubeArray = false;
     features.independentBlend = true;
+#ifdef __APPLE__
+    features.geometryShader = false;
+#else
     features.geometryShader = true;
+#endif
     features.tessellationShader = true;
     features.sampleRateShading = false;
     features.dualSrcBlend = false;
@@ -495,13 +503,15 @@ bool VKDevice::IsSuitable(vk::PhysicalDevice physical, VkSurfaceKHR surface) {
         std::make_pair(features.largePoints, "largePoints"),
         std::make_pair(features.multiViewport, "multiViewport"),
         std::make_pair(features.depthBiasClamp, "depthBiasClamp"),
-        std::make_pair(features.geometryShader, "geometryShader"),
         std::make_pair(features.tessellationShader, "tessellationShader"),
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),
         std::make_pair(features.shaderImageGatherExtended, "shaderImageGatherExtended"),
         std::make_pair(features.shaderStorageImageWriteWithoutFormat,
                        "shaderStorageImageWriteWithoutFormat"),
+#ifndef __APPLE__
+        std::make_pair(features.geometryShader, "geometryShader"),
+#endif
     };
     for (const auto& [supported, name] : feature_report) {
         if (supported) {

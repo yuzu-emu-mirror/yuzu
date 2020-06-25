@@ -16,6 +16,10 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+#ifdef __APPLE__
+#include <MoltenVK/vk_mvk_moltenvk.h>
+#endif
+
 #include "common/common_types.h"
 
 namespace Vulkan::vk {

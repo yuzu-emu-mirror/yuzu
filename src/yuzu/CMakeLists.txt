@@ -216,3 +216,47 @@ if (ENABLE_VULKAN)
     target_include_directories(yuzu PRIVATE ../../externals/Vulkan-Headers/include)
     target_compile_definitions(yuzu PRIVATE HAS_VULKAN)
 endif()
+
+if(APPLE)
+  target_include_directories(yuzu PRIVATE ../../externals/MoltenVK/include)
+
+  #include(BundleUtilities)
+  set(BUNDLE_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/yuzu.app)
+
+  # Ask for an application bundle.
+  set_target_properties(yuzu PROPERTIES
+    MACOSX_BUNDLE true
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+  )
+
+  # Copy Qt plugins into the bundle
+  get_target_property(qtcocoa_location Qt5::QCocoaIntegrationPlugin LOCATION)
+  target_sources(yuzu PRIVATE "${qtcocoa_location}")
+  set_source_files_properties("${qtcocoa_location}" PROPERTIES MACOSX_PACKAGE_LOCATION MacOS/platforms)
+
+  get_target_property(qtmacstyle_location Qt5::QMacStylePlugin LOCATION)
+  target_sources(yuzu PRIVATE "${qtmacstyle_location}")
+  set_source_files_properties("${qtmacstyle_location}" PROPERTIES MACOSX_PACKAGE_LOCATION MacOS/styles)
+
+  # Copy MoltenVK into the bundle
+  target_sources(yuzu PRIVATE "${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libMoltenVK.dylib")
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libMoltenVK.dylib" PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
+  target_sources(yuzu PRIVATE "${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libvulkan.dylib")
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libvulkan.dylib" PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
+
+  # Copy validation layers as well
+  target_sources(yuzu PRIVATE "${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libVkLayer_khronos_validation.dylib")
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/externals/MoltenVK/lib/libVkLayer_khronos_validation.dylib" PROPERTIES MACOSX_PACKAGE_LOCATION Frameworks)
+  target_sources(yuzu PRIVATE "${CMAKE_SOURCE_DIR}/externals/MoltenVK/Resources/vulkan/icd.d/MoltenVK_icd.json")
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/externals/MoltenVK/Resources/vulkan/icd.d/MoltenVK_icd.json" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/vulkan/icd.d")
+
+
+  # Update library references to make the bundle portable
+  include(PostprocessBundle)
+  #postprocess_bundle(yuzu)
+  # Fix rpath
+  add_custom_command(TARGET yuzu
+    POST_BUILD COMMAND
+    ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/../Frameworks/"
+    $<TARGET_FILE:yuzu>)
+endif()

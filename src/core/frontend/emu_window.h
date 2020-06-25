@@ -19,6 +19,7 @@ enum class WindowSystemType {
     Windows,
     X11,
     Wayland,
+    MacOS
 };
 
 /**
@@ -153,6 +154,14 @@ public:
      * Returns system information about the drawing area.
      */
     const WindowSystemInfo& GetWindowInfo() const {
+        return window_info;
+    }
+
+    /**
+     * Returns system information about the drawing area.
+     * Unsafe version of above for MoltenVK to get pointer
+     */
+    WindowSystemInfo& GetWindowInfoRef() {
         return window_info;
     }
 
