@@ -54,18 +54,17 @@ else()
 
     if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
         add_compile_options("-stdlib=libc++")
-    else()
-        add_compile_options(
-            -Wall
-            -Werror=implicit-fallthrough
-            -Werror=missing-declarations
-            -Werror=reorder
-            -Wextra
-            -Wmissing-declarations
-            -Wno-attributes
-            -Wno-unused-parameter
-        )
     endif()
+    add_compile_options(
+        -Wall
+        -Werror=implicit-fallthrough
+        -Werror=missing-declarations
+        -Werror=reorder
+        -Wextra
+        -Wmissing-declarations
+        -Wno-attributes
+        -Wno-unused-parameter
+    )
 
     # Set file offset size to 64 bits.
     #
