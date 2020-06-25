@@ -1094,7 +1094,7 @@ void Config::SaveRendererValues() {
     qt_config->beginGroup(QStringLiteral("Renderer"));
 
     WriteSettingGlobal(QStringLiteral("backend"),
-                       static_cast<int>(Settings::values.renderer_backend.GetValue()),
+                       static_cast<int>(Settings::values.renderer_backend.GetValue(global)),
                        Settings::values.renderer_backend.UsingGlobal(), 0);
     WriteSettingGlobal(QStringLiteral("debug"), Settings::values.renderer_debug, false);
     WriteSettingGlobal(QStringLiteral("vulkan_device"), Settings::values.vulkan_device, 0);
@@ -1105,7 +1105,7 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("use_disk_shader_cache"),
                        Settings::values.use_disk_shader_cache, true);
     WriteSettingGlobal(QStringLiteral("gpu_accuracy"),
-                       static_cast<int>(Settings::values.gpu_accuracy.GetValue()),
+                       static_cast<int>(Settings::values.gpu_accuracy.GetValue(global)),
                        Settings::values.gpu_accuracy.UsingGlobal(), 0);
     WriteSettingGlobal(QStringLiteral("use_asynchronous_gpu_emulation"),
                        Settings::values.use_asynchronous_gpu_emulation, false);
@@ -1154,18 +1154,18 @@ void Config::SaveSystemValues() {
     WriteSettingGlobal(QStringLiteral("time_zone_index"), Settings::values.time_zone_index, 0);
 
     WriteSettingGlobal(QStringLiteral("rng_seed_enabled"),
-                       Settings::values.rng_seed.GetValue().has_value(),
+                       Settings::values.rng_seed.GetValue(global).has_value(),
                        Settings::values.rng_seed.UsingGlobal(), false);
-    WriteSettingGlobal(QStringLiteral("rng_seed"), Settings::values.rng_seed.GetValue().value_or(0),
+    WriteSettingGlobal(QStringLiteral("rng_seed"), Settings::values.rng_seed.GetValue(global).value_or(0),
                        Settings::values.rng_seed.UsingGlobal(), 0);
 
     WriteSettingGlobal(QStringLiteral("custom_rtc_enabled"),
-                       Settings::values.custom_rtc.GetValue().has_value(),
+                       Settings::values.custom_rtc.GetValue(global).has_value(),
                        Settings::values.custom_rtc.UsingGlobal(), false);
     WriteSettingGlobal(
         QStringLiteral("custom_rtc"),
         QVariant::fromValue<long long>(
-            Settings::values.custom_rtc.GetValue().value_or(std::chrono::seconds{}).count()),
+            Settings::values.custom_rtc.GetValue(global).value_or(std::chrono::seconds{}).count()),
         Settings::values.custom_rtc.UsingGlobal(), 0);
 
     WriteSettingGlobal(QStringLiteral("sound_index"), Settings::values.sound_index, 1);
@@ -1309,7 +1309,7 @@ void Config::WriteSettingGlobal(const QString& name, const Settings::Setting<Typ
         qt_config->setValue(name + QStringLiteral("/use_global"), setting.UsingGlobal());
     }
     if (global || !setting.UsingGlobal()) {
-        qt_config->setValue(name, setting.GetValue());
+        qt_config->setValue(name, setting.GetValue(global));
     }
 }
 
@@ -1321,8 +1321,8 @@ void Config::WriteSettingGlobal(const QString& name, const Settings::Setting<Typ
     }
     if (global || !setting.UsingGlobal()) {
         qt_config->setValue(name + QStringLiteral("/default"),
-                            setting.GetValue() == default_value.value<Type>());
-        qt_config->setValue(name, setting.GetValue());
+                            setting.GetValue(global) == default_value.value<Type>());
+        qt_config->setValue(name, setting.GetValue(global));
     }
 }
 
