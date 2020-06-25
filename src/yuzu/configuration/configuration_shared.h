@@ -16,6 +16,8 @@ constexpr int USE_GLOBAL_SEPARATOR_INDEX = 1;
 constexpr int USE_GLOBAL_OFFSET = 2;
 const QString use_global_text = QString::fromUtf8("Use global configuration");
 
+// Global-aware apply and set functions
+
 void ApplyPerGameSetting(Settings::Setting<bool>* setting, const QCheckBox* checkbox);
 void ApplyPerGameSetting(Settings::Setting<int>* setting, const QComboBox* combobox);
 void ApplyPerGameSetting(Settings::Setting<Settings::RendererBackend>* setting,

@@ -1156,7 +1156,8 @@ void Config::SaveSystemValues() {
     WriteSettingGlobal(QStringLiteral("rng_seed_enabled"),
                        Settings::values.rng_seed.GetValue(global).has_value(),
                        Settings::values.rng_seed.UsingGlobal(), false);
-    WriteSettingGlobal(QStringLiteral("rng_seed"), Settings::values.rng_seed.GetValue(global).value_or(0),
+    WriteSettingGlobal(QStringLiteral("rng_seed"),
+                       Settings::values.rng_seed.GetValue(global).value_or(0),
                        Settings::values.rng_seed.UsingGlobal(), 0);
 
     WriteSettingGlobal(QStringLiteral("custom_rtc_enabled"),

@@ -61,6 +61,7 @@ void ConfigurePerGame::ApplyConfiguration() {
     Settings::Apply();
     Settings::LogSettings();
 
+    // If a game is running, DO NOT restore the global settings state
     if (!Core::System::GetInstance().IsPoweredOn()) {
         Settings::RestoreGlobalState();
     }

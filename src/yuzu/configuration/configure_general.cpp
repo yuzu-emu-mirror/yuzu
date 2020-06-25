@@ -43,7 +43,8 @@ void ConfigureGeneral::SetConfiguration() {
         ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
     }
 
-    ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked && ui->toggle_frame_limit->isEnabled());
+    ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked &&
+                                ui->toggle_frame_limit->isEnabled());
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
@@ -60,14 +61,16 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.use_frame_limit.SetGlobal(false);
             Settings::values.frame_limit.SetGlobal(false);
         }
-        if (ui->toggle_frame_limit->isEnabled()) {
+        // Guard if during game and set to game-specific value
+        if (!Settings::values.use_frame_limit.UsingGlobal()) {
             Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
             Settings::values.frame_limit = ui->frame_limit->value();
         }
-    }
-    else {
-        Settings::values.use_frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked);
-        Settings::values.frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked);
+    } else {
+        Settings::values.use_frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() ==
+                                                   Qt::PartiallyChecked);
+        Settings::values.frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() ==
+                                               Qt::PartiallyChecked);
         Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
         Settings::values.frame_limit = ui->frame_limit->value();
     }

@@ -52,27 +52,27 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
 void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     // Subtract 2 if configuring per-game (separator and "use global configuration" take 2 slots)
     auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
-        ui->gpu_accuracy->currentIndex() - ((Settings::configuring_global) ? 0 : 2));
+        ui->gpu_accuracy->currentIndex() -
+        ((Settings::configuring_global) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
 
     if (Settings::configuring_global) {
-        // Must guard if they aren't enabled in case of a in-game configuration of settings while
-        // already set to be game-specific.
-        if (ui->gpu_accuracy->isEnabled()) {
+        // Must guard in case of a during-game configuration when set to be game-specific.
+        if (!Settings::values.gpu_accuracy.UsingGlobal()) {
             Settings::values.gpu_accuracy = gpu_accuracy;
         }
-        if (ui->use_vsync->isEnabled()) {
+        if (!Settings::values.use_vsync.UsingGlobal()) {
             Settings::values.use_vsync = ui->use_vsync->isChecked();
         }
-        if (ui->use_assembly_shaders->isEnabled()) {
+        if (!Settings::values.use_assembly_shaders.UsingGlobal()) {
             Settings::values.use_assembly_shaders = ui->use_assembly_shaders->isChecked();
         }
-        if (ui->use_fast_gpu_time->isEnabled()) {
+        if (!Settings::values.use_fast_gpu_time.UsingGlobal()) {
             Settings::values.use_fast_gpu_time = ui->use_fast_gpu_time->isChecked();
         }
-        if (ui->force_30fps_mode->isEnabled()) {
+        if (!Settings::values.force_30fps_mode.UsingGlobal()) {
             Settings::values.force_30fps_mode = ui->force_30fps_mode->isChecked();
         }
-        if (ui->anisotropic_filtering_combobox->isEnabled()) {
+        if (!Settings::values.max_anisotropy.UsingGlobal()) {
             Settings::values.max_anisotropy = ui->anisotropic_filtering_combobox->currentIndex();
         }
     } else {
@@ -88,7 +88,7 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                                  ui->anisotropic_filtering_combobox);
 
-        if (ui->gpu_accuracy->currentIndex() == 0) {
+        if (ui->gpu_accuracy->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.gpu_accuracy.SetGlobal(true);
         } else {
             Settings::values.gpu_accuracy.SetGlobal(false);
@@ -117,7 +117,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
         ui->use_assembly_shaders->setEnabled(Settings::values.use_assembly_shaders.UsingGlobal());
         ui->use_fast_gpu_time->setEnabled(Settings::values.use_fast_gpu_time.UsingGlobal());
         ui->force_30fps_mode->setEnabled(Settings::values.force_30fps_mode.UsingGlobal());
-        ui->anisotropic_filtering_combobox->setEnabled(Settings::values.max_anisotropy.UsingGlobal());
+        ui->anisotropic_filtering_combobox->setEnabled(
+            Settings::values.max_anisotropy.UsingGlobal());
 
         return;
     }

@@ -85,23 +85,24 @@ void ConfigureGraphics::SetConfiguration() {
 
 void ConfigureGraphics::ApplyConfiguration() {
     if (Settings::configuring_global) {
-        if (ui->api->isEnabled()) {
+        // Guard if during game and set to game-specific value
+        if (!Settings::values.renderer_backend.UsingGlobal()) {
             Settings::values.renderer_backend = GetCurrentGraphicsBackend();
         }
-        if (ui->device->isEnabled()) {
+        if (!Settings::values.vulkan_device.UsingGlobal()) {
             Settings::values.vulkan_device = vulkan_device;
         }
-        if (ui->aspect_ratio_combobox->isEnabled()) {
+        if (!Settings::values.aspect_ratio.UsingGlobal()) {
             Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
         }
-        if (ui->use_disk_shader_cache->isEnabled()) {
+        if (!Settings::values.use_disk_shader_cache.UsingGlobal()) {
             Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
         }
-        if (ui->use_asynchronous_gpu_emulation->isEnabled()) {
+        if (!Settings::values.use_asynchronous_gpu_emulation.UsingGlobal()) {
             Settings::values.use_asynchronous_gpu_emulation =
                 ui->use_asynchronous_gpu_emulation->isChecked();
         }
-        if (ui->bg_button->isEnabled()) {
+        if (!Settings::values.bg_red.UsingGlobal()) {
             Settings::values.bg_red = static_cast<float>(bg_color.redF());
             Settings::values.bg_green = static_cast<float>(bg_color.greenF());
             Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
@@ -212,7 +213,8 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->api->setEnabled(Settings::values.renderer_backend.UsingGlobal());
         ui->device->setEnabled(Settings::values.renderer_backend.UsingGlobal());
         ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
-        ui->use_asynchronous_gpu_emulation->setEnabled(Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
+        ui->use_asynchronous_gpu_emulation->setEnabled(
+            Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
         ui->use_disk_shader_cache->setEnabled(Settings::values.use_disk_shader_cache.UsingGlobal());
         ui->bg_button->setEnabled(Settings::values.bg_red.UsingGlobal());
 

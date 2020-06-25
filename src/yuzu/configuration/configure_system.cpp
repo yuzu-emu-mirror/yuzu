@@ -74,11 +74,13 @@ void ConfigureSystem::SetConfiguration() {
         ui->combo_sound->setCurrentIndex(Settings::values.sound_index);
 
         ui->rng_seed_checkbox->setChecked(Settings::values.rng_seed.GetValue().has_value());
-        ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.GetValue().has_value() && Settings::values.rng_seed.UsingGlobal());
+        ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.GetValue().has_value() &&
+                                      Settings::values.rng_seed.UsingGlobal());
         ui->rng_seed_edit->setText(rng_seed);
 
         ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.GetValue().has_value());
-        ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.GetValue().has_value() && Settings::values.rng_seed.UsingGlobal());
+        ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.GetValue().has_value() &&
+                                        Settings::values.rng_seed.UsingGlobal());
         ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
     } else {
         ConfigurationShared::SetPerGameSetting(ui->combo_language,
@@ -120,20 +122,21 @@ void ConfigureSystem::ApplyConfiguration() {
     }
 
     if (Settings::configuring_global) {
-        if (ui->combo_language->isEnabled()) {
+        // Guard if during game and set to game-specific value
+        if (!Settings::values.language_index.UsingGlobal()) {
             Settings::values.language_index = ui->combo_language->currentIndex();
         }
-        if (ui->combo_region->isEnabled()) {
+        if (!Settings::values.region_index.UsingGlobal()) {
             Settings::values.region_index = ui->combo_region->currentIndex();
         }
-        if (ui->combo_time_zone->isEnabled()) {
+        if (!Settings::values.time_zone_index.UsingGlobal()) {
             Settings::values.time_zone_index = ui->combo_time_zone->currentIndex();
         }
-        if (ui->combo_sound->isEnabled()) {
+        if (!Settings::values.sound_index.UsingGlobal()) {
             Settings::values.sound_index = ui->combo_sound->currentIndex();
         }
 
-        if (ui->rng_seed_checkbox->isEnabled()) {
+        if (!Settings::values.rng_seed.UsingGlobal()) {
             if (ui->rng_seed_checkbox->isChecked()) {
                 Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
             } else {
@@ -141,7 +144,7 @@ void ConfigureSystem::ApplyConfiguration() {
             }
         }
 
-        if (ui->custom_rtc_checkbox->isEnabled()) {
+        if (!Settings::values.custom_rtc.UsingGlobal()) {
             if (ui->custom_rtc_checkbox->isChecked()) {
                 Settings::values.custom_rtc =
                     std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());

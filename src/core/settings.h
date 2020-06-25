@@ -547,6 +547,7 @@ std::string GetTimeZoneString();
 void Apply();
 void LogSettings();
 
+// Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState();
 
 } // namespace Settings

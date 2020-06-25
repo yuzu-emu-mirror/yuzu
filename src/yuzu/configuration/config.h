@@ -83,6 +83,8 @@ private:
 
     QVariant ReadSetting(const QString& name) const;
     QVariant ReadSetting(const QString& name, const QVariant& default_value) const;
+    // Templated ReadSettingGlobal functions will also look for the use_global setting and set
+    // both the value and the global state properly
     template <typename Type>
     void ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& name);
     template <typename Type>
@@ -90,6 +92,8 @@ private:
                            const QVariant& default_value);
     template <typename Type>
     void ReadSettingGlobal(Type& setting, const QString& name, const QVariant& default_value) const;
+    // Templated WriteSettingGlobal functions will also write the global state if needed and will
+    // skip writing the actual setting if it defers to the global value
     void WriteSetting(const QString& name, const QVariant& value);
     void WriteSetting(const QString& name, const QVariant& value, const QVariant& default_value);
     template <typename Type>

@@ -103,12 +103,18 @@ void ConfigureAudio::ApplyConfiguration() {
         Settings::values.sink_id =
             ui->output_sink_combo_box->itemText(ui->output_sink_combo_box->currentIndex())
                 .toStdString();
-        Settings::values.enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
         Settings::values.audio_device_id =
             ui->audio_device_combo_box->itemText(ui->audio_device_combo_box->currentIndex())
                 .toStdString();
-        Settings::values.volume =
-            static_cast<float>(ui->volume_slider->sliderPosition()) / ui->volume_slider->maximum();
+
+        // Guard if during game and set to game-specific value
+        if (!Settings::values.enable_audio_stretching.UsingGlobal()) {
+            Settings::values.enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
+        }
+        if (!Settings::values.volume.UsingGlobal()) {
+            Settings::values.volume = static_cast<float>(ui->volume_slider->sliderPosition()) /
+                                      ui->volume_slider->maximum();
+        }
     } else {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_audio_stretching,
                                                  ui->toggle_audio_stretching);
@@ -157,7 +163,8 @@ void ConfigureAudio::RetranslateUI() {
 void ConfigureAudio::SetupPerGameUI() {
     if (Settings::configuring_global) {
         ui->volume_slider->setEnabled(Settings::values.volume.UsingGlobal());
-        ui->toggle_audio_stretching->setEnabled(Settings::values.enable_audio_stretching.UsingGlobal());
+        ui->toggle_audio_stretching->setEnabled(
+            Settings::values.enable_audio_stretching.UsingGlobal());
 
         return;
     }
