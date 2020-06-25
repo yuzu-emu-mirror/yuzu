@@ -16,7 +16,6 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
-#include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/xts_archive.h"
@@ -60,11 +59,6 @@ void ConfigurePerGame::ApplyConfiguration() {
 
     Settings::Apply();
     Settings::LogSettings();
-
-    // If a game is running, DO NOT restore the global settings state
-    if (!Core::System::GetInstance().IsPoweredOn()) {
-        Settings::RestoreGlobalState();
-    }
 }
 
 void ConfigurePerGame::changeEvent(QEvent* event) {
