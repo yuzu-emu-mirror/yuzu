@@ -277,7 +277,7 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
     return true;
 }
 
-void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
+void PrepareWindow([[maybe_unused]] Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     // This is kinda messy, but it avoids having to write Objective C++ just to create a metal
     // layer.
