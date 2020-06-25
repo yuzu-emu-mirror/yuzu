@@ -169,6 +169,7 @@ void ConfigureAudio::SetupPerGameUI() {
         return;
     }
 
+    ui->toggle_audio_stretching->setTristate(true);
     connect(ui->volume_combo_box, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated),
             this, [this](int index) { ui->volume_slider->setEnabled(index == 1); });
 
