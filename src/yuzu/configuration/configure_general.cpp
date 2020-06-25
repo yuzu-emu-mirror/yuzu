@@ -62,7 +62,7 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.frame_limit.SetGlobal(false);
         }
         // Guard if during game and set to game-specific value
-        if (!Settings::values.use_frame_limit.UsingGlobal()) {
+        if (Settings::values.use_frame_limit.UsingGlobal()) {
             Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
             Settings::values.frame_limit = ui->frame_limit->value();
         }

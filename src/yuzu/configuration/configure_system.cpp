@@ -123,16 +123,16 @@ void ConfigureSystem::ApplyConfiguration() {
 
     if (Settings::configuring_global) {
         // Guard if during game and set to game-specific value
-        if (!Settings::values.language_index.UsingGlobal()) {
+        if (Settings::values.language_index.UsingGlobal()) {
             Settings::values.language_index = ui->combo_language->currentIndex();
         }
-        if (!Settings::values.region_index.UsingGlobal()) {
+        if (Settings::values.region_index.UsingGlobal()) {
             Settings::values.region_index = ui->combo_region->currentIndex();
         }
-        if (!Settings::values.time_zone_index.UsingGlobal()) {
+        if (Settings::values.time_zone_index.UsingGlobal()) {
             Settings::values.time_zone_index = ui->combo_time_zone->currentIndex();
         }
-        if (!Settings::values.sound_index.UsingGlobal()) {
+        if (Settings::values.sound_index.UsingGlobal()) {
             Settings::values.sound_index = ui->combo_sound->currentIndex();
         }
 

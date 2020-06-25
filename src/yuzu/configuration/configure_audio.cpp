@@ -108,10 +108,10 @@ void ConfigureAudio::ApplyConfiguration() {
                 .toStdString();
 
         // Guard if during game and set to game-specific value
-        if (!Settings::values.enable_audio_stretching.UsingGlobal()) {
+        if (Settings::values.enable_audio_stretching.UsingGlobal()) {
             Settings::values.enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
         }
-        if (!Settings::values.volume.UsingGlobal()) {
+        if (Settings::values.volume.UsingGlobal()) {
             Settings::values.volume = static_cast<float>(ui->volume_slider->sliderPosition()) /
                                       ui->volume_slider->maximum();
         }
