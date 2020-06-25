@@ -10,15 +10,15 @@
 # module as a post-build step.
 
 if(CMAKE_GENERATOR)
-	# Being called as include(PostprocessBundle), so define a helper function.
-	set(_POSTPROCESS_BUNDLE_MODULE_LOCATION "${CMAKE_CURRENT_LIST_FILE}")
-	function(postprocess_bundle target)
-		add_custom_command(TARGET ${target} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -DBUNDLE_PATH="$<TARGET_FILE_DIR:${target}>/../.."
-				-P "${_POSTPROCESS_BUNDLE_MODULE_LOCATION}"
-		)
-	endfunction()
-	return()
+    # Being called as include(PostprocessBundle), so define a helper function.
+    set(_POSTPROCESS_BUNDLE_MODULE_LOCATION "${CMAKE_CURRENT_LIST_FILE}")
+    function(postprocess_bundle target)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -DBUNDLE_PATH="$<TARGET_FILE_DIR:${target}>/../.."
+                -P "${_POSTPROCESS_BUNDLE_MODULE_LOCATION}"
+        )
+    endfunction()
+    return()
 endif()
 
 get_filename_component(BUNDLE_PATH "${BUNDLE_PATH}" REALPATH)
@@ -36,9 +36,9 @@ set(extra_dirs "/usr/local/lib" "/lib" "/usr/lib")
 
 # BundleUtilities is overly verbose, so disable most of its messages
 function(message)
-	if(NOT ARGV MATCHES "^STATUS;")
-		_message(${ARGV})
-	endif()
+    if(NOT ARGV MATCHES "^STATUS;")
+        _message(${ARGV})
+    endif()
 endfunction()
 
 include(BundleUtilities)
