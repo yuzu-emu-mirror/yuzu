@@ -1550,7 +1550,7 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
             game_list->PopulateAsync(UISettings::values.game_dirs);
         }
 
-        // Do not cause the global config to write local settings
+        // Do not cause the global config to write local settings into the config file
         Settings::RestoreGlobalState();
 
         if (!Core::System::GetInstance().IsPoweredOn()) {

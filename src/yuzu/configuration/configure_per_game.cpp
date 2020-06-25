@@ -55,10 +55,10 @@ void ConfigurePerGame::ApplyConfiguration() {
     ui->graphicsAdvancedTab->ApplyConfiguration();
     ui->audioTab->ApplyConfiguration();
 
-    game_config->Save();
-
     Settings::Apply();
     Settings::LogSettings();
+
+    game_config->Save();
 }
 
 void ConfigurePerGame::changeEvent(QEvent* event) {
