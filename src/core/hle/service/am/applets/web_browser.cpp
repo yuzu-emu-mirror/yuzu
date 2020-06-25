@@ -551,8 +551,7 @@ void WebBrowser::ExecuteShop() {
 }
 
 void WebBrowser::ExecuteOffline() {
-    frontend.OpenPageLocal(
-        filename, [this] { UnpackRomFS(); }, [this] { Finalize(); });
+    frontend.OpenPageLocal(filename, [this] { UnpackRomFS(); }, [this] { Finalize(); });
 }
 
 } // namespace Service::AM::Applets

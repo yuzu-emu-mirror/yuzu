@@ -852,12 +852,11 @@ ResultCode PageTable::LockForDeviceAddressSpace(VAddr addr, std::size_t size) {
         return result;
     }
 
-    block_manager->UpdateLock(
-        addr, size / PageSize,
-        [](MemoryBlockManager::iterator block, MemoryPermission perm) {
-            block->ShareToDevice(perm);
-        },
-        perm);
+    block_manager->UpdateLock(addr, size / PageSize,
+                              [](MemoryBlockManager::iterator block, MemoryPermission perm) {
+                                  block->ShareToDevice(perm);
+                              },
+                              perm);
 
     return RESULT_SUCCESS;
 }
@@ -875,12 +874,11 @@ ResultCode PageTable::UnlockForDeviceAddressSpace(VAddr addr, std::size_t size) 
         return result;
     }
 
-    block_manager->UpdateLock(
-        addr, size / PageSize,
-        [](MemoryBlockManager::iterator block, MemoryPermission perm) {
-            block->UnshareToDevice(perm);
-        },
-        perm);
+    block_manager->UpdateLock(addr, size / PageSize,
+                              [](MemoryBlockManager::iterator block, MemoryPermission perm) {
+                                  block->UnshareToDevice(perm);
+                              },
+                              perm);
 
     return RESULT_SUCCESS;
 }
