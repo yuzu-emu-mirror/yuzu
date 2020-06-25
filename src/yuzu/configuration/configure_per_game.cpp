@@ -16,6 +16,7 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
+#include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/xts_archive.h"
@@ -29,7 +30,6 @@
 
 ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()), title_id(title_id) {
-    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
     game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
 
     Settings::configuring_global = false;
@@ -46,9 +46,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     LoadConfiguration();
 }
 
-ConfigurePerGame::~ConfigurePerGame(){
-    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
-};
+ConfigurePerGame::~ConfigurePerGame() = default;
 
 void ConfigurePerGame::ApplyConfiguration() {
     ui->addonsTab->ApplyConfiguration();
@@ -57,12 +55,15 @@ void ConfigurePerGame::ApplyConfiguration() {
     ui->graphicsTab->ApplyConfiguration();
     ui->graphicsAdvancedTab->ApplyConfiguration();
     ui->audioTab->ApplyConfiguration();
-    // ui->inputTab->ApplyConfiguration();
 
     game_config->Save();
 
     Settings::Apply();
     Settings::LogSettings();
+
+    if (!Core::System::GetInstance().IsPoweredOn()) {
+        Settings::RestoreGlobalState();
+    }
 }
 
 void ConfigurePerGame::changeEvent(QEvent* event) {
@@ -140,15 +141,4 @@ void ConfigurePerGame::LoadConfiguration() {
 
     const auto valueText = ReadableByteSize(file->GetSize());
     ui->display_size->setText(valueText);
-
-    // FIXME: UpdateVisibleTabs();
-}
-
-void ConfigurePerGame::UpdateVisibleTabs(bool visible) {
-    ui->generalTab->setEnabled(visible);
-    ui->systemTab->setEnabled(visible);
-    ui->graphicsTab->setEnabled(visible);
-    ui->graphicsAdvancedTab->setEnabled(visible);
-    ui->audioTab->setEnabled(visible);
-    // FIXME: ui->inputTab->setEnabled(visible);
 }

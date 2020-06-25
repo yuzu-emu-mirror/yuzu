@@ -85,15 +85,27 @@ void ConfigureGraphics::SetConfiguration() {
 
 void ConfigureGraphics::ApplyConfiguration() {
     if (Settings::configuring_global) {
-        Settings::values.renderer_backend = GetCurrentGraphicsBackend();
-        Settings::values.vulkan_device = vulkan_device;
-        Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
-        Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
-        Settings::values.use_asynchronous_gpu_emulation =
-            ui->use_asynchronous_gpu_emulation->isChecked();
-        Settings::values.bg_red = static_cast<float>(bg_color.redF());
-        Settings::values.bg_green = static_cast<float>(bg_color.greenF());
-        Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+        if (ui->api->isEnabled()) {
+            Settings::values.renderer_backend = GetCurrentGraphicsBackend();
+        }
+        if (ui->device->isEnabled()) {
+            Settings::values.vulkan_device = vulkan_device;
+        }
+        if (ui->aspect_ratio_combobox->isEnabled()) {
+            Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
+        }
+        if (ui->use_disk_shader_cache->isEnabled()) {
+            Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
+        }
+        if (ui->use_asynchronous_gpu_emulation->isEnabled()) {
+            Settings::values.use_asynchronous_gpu_emulation =
+                ui->use_asynchronous_gpu_emulation->isChecked();
+        }
+        if (ui->bg_button->isEnabled()) {
+            Settings::values.bg_red = static_cast<float>(bg_color.redF());
+            Settings::values.bg_green = static_cast<float>(bg_color.greenF());
+            Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+        }
     } else {
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
             Settings::values.renderer_backend.SetGlobal(true);
@@ -197,6 +209,13 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
 
 void ConfigureGraphics::SetupPerGameUI() {
     if (Settings::configuring_global) {
+        ui->api->setEnabled(Settings::values.renderer_backend.UsingGlobal());
+        ui->device->setEnabled(Settings::values.renderer_backend.UsingGlobal());
+        ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
+        ui->use_asynchronous_gpu_emulation->setEnabled(Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
+        ui->use_disk_shader_cache->setEnabled(Settings::values.use_disk_shader_cache.UsingGlobal());
+        ui->bg_button->setEnabled(Settings::values.bg_red.UsingGlobal());
+
         return;
     }
 

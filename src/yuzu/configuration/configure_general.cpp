@@ -43,7 +43,7 @@ void ConfigureGeneral::SetConfiguration() {
         ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
     }
 
-    ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked);
+    ui->frame_limit->setEnabled(ui->toggle_frame_limit->checkState() == Qt::Checked && ui->toggle_frame_limit->isEnabled());
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
@@ -60,11 +60,16 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.use_frame_limit.SetGlobal(false);
             Settings::values.frame_limit.SetGlobal(false);
         }
+        if (ui->toggle_frame_limit->isEnabled()) {
+            Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
+            Settings::values.frame_limit = ui->frame_limit->value();
+        }
+    }
+    else {
+        Settings::values.use_frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked);
+        Settings::values.frame_limit.SetGlobal(ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked);
         Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
         Settings::values.frame_limit = ui->frame_limit->value();
-    } else {
-        Settings::values.use_frame_limit.SetGlobal(true);
-        Settings::values.frame_limit.SetGlobal(true);
     }
 }
 
@@ -82,6 +87,9 @@ void ConfigureGeneral::RetranslateUI() {
 
 void ConfigureGeneral::SetupPerGameUI() {
     if (Settings::configuring_global) {
+        ui->toggle_frame_limit->setEnabled(Settings::values.use_frame_limit.UsingGlobal());
+        ui->frame_limit->setEnabled(Settings::values.frame_limit.UsingGlobal());
+
         return;
     }
 

@@ -156,6 +156,9 @@ void ConfigureAudio::RetranslateUI() {
 
 void ConfigureAudio::SetupPerGameUI() {
     if (Settings::configuring_global) {
+        ui->volume_slider->setEnabled(Settings::values.volume.UsingGlobal());
+        ui->toggle_audio_stretching->setEnabled(Settings::values.enable_audio_stretching.UsingGlobal());
+
         return;
     }
 
