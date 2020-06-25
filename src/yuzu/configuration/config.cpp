@@ -698,23 +698,27 @@ void Config::ReadSystemValues() {
 
     bool rng_seed_enabled;
     ReadSettingGlobal(rng_seed_enabled, QStringLiteral("rng_seed_enabled"), false);
-    Settings::values.rng_seed.SetGlobal(
-        global || qt_config->value(QStringLiteral("rng_seed/use_global"), true).toBool());
-    if (rng_seed_enabled) {
-        Settings::values.rng_seed = ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong();
-    } else {
-        Settings::values.rng_seed = std::nullopt;
+    bool rng_seed_global = global || qt_config->value(QStringLiteral("rng_seed/use_global"), true).toBool();
+    Settings::values.rng_seed.SetGlobal(rng_seed_global);
+    if (global || !rng_seed_global) {
+        if (rng_seed_enabled) {
+            Settings::values.rng_seed = ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong();
+        } else {
+            Settings::values.rng_seed = std::nullopt;
+        }
     }
 
     bool custom_rtc_enabled;
     ReadSettingGlobal(custom_rtc_enabled, QStringLiteral("custom_rtc_enabled"), false);
-    Settings::values.custom_rtc.SetGlobal(
-        global || qt_config->value(QStringLiteral("custom_rtc/use_global"), true).toBool());
-    if (custom_rtc_enabled) {
-        Settings::values.custom_rtc =
-            std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong());
-    } else {
-        Settings::values.custom_rtc = std::nullopt;
+    bool custom_rtc_global = global || qt_config->value(QStringLiteral("custom_rtc/use_global"), true).toBool();
+    Settings::values.custom_rtc.SetGlobal(custom_rtc_global);
+    if (global || !custom_rtc_global) {
+        if (custom_rtc_enabled) {
+            Settings::values.custom_rtc =
+                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong());
+        } else {
+            Settings::values.custom_rtc = std::nullopt;
+        }
     }
 
     ReadSettingGlobal(Settings::values.sound_index, QStringLiteral("sound_index"), 1);
