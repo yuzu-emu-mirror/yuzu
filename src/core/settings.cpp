@@ -143,4 +143,41 @@ bool IsGPULevelHigh() {
     return values.gpu_accuracy == GPUAccuracy::Extreme || values.gpu_accuracy == GPUAccuracy::High;
 }
 
+void RestoreGlobalState() {
+    // Audio
+    Settings::values.enable_audio_stretching.SetGlobal(true);
+    Settings::values.volume.SetGlobal(true);
+
+    // Core
+    Settings::values.use_multi_core.SetGlobal(true);
+
+    // Renderer
+    Settings::values.renderer_backend.SetGlobal(true);
+    Settings::values.renderer_debug.SetGlobal(true);
+    Settings::values.vulkan_device.SetGlobal(true);
+    Settings::values.aspect_ratio.SetGlobal(true);
+    Settings::values.max_anisotropy.SetGlobal(true);
+    Settings::values.use_frame_limit.SetGlobal(true);
+    Settings::values.frame_limit.SetGlobal(true);
+    Settings::values.use_disk_shader_cache.SetGlobal(true);
+    Settings::values.gpu_accuracy.SetGlobal(true);
+    Settings::values.use_asynchronous_gpu_emulation.SetGlobal(true);
+    Settings::values.use_vsync.SetGlobal(true);
+    Settings::values.use_assembly_shaders.SetGlobal(true);
+    Settings::values.use_fast_gpu_time.SetGlobal(true);
+    Settings::values.force_30fps_mode.SetGlobal(true);
+    Settings::values.bg_red.SetGlobal(true);
+    Settings::values.bg_green.SetGlobal(true);
+    Settings::values.bg_blue.SetGlobal(true);
+
+    // System
+    Settings::values.current_user.SetGlobal(true);
+    Settings::values.language_index.SetGlobal(true);
+    Settings::values.region_index.SetGlobal(true);
+    Settings::values.time_zone_index.SetGlobal(true);
+    Settings::values.rng_seed.SetGlobal(true);
+    Settings::values.custom_rtc.SetGlobal(true);
+    Settings::values.sound_index.SetGlobal(true);
+}
+
 } // namespace Settings

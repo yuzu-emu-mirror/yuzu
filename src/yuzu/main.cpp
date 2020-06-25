@@ -1049,12 +1049,8 @@ void GMainWindow::BootGame(const QString& filename) {
         return;
     }
 
-    //~ const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
-
-    // Swap settings to use game configuration if need be
-    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGame);
+    // Load per game settings
     Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
-    // REMOVE: Settings::SwapConfigValues(Settings::ValuesSwapTarget::ToGlobal);
 
     UpdateStatusButtons();
 
@@ -1148,6 +1144,9 @@ void GMainWindow::ShutdownGame() {
 
     // The emulation is stopped, so closing the window or not does not matter anymore
     disconnect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
+
+    // If any settings are set to use their per-game counterparts, switch back to global
+    Settings::RestoreGlobalState();
 
     // Update the GUI
     ui.action_Start->setEnabled(false);

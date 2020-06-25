@@ -401,8 +401,8 @@ public:
     bool UsingGlobal() const {
         return use_global;
     };
-    Type GetValue() const {
-        if (use_global) {
+    Type GetValue(bool need_global = false) const {
+        if (use_global || need_global) {
             return global;
         }
         return local;
@@ -546,5 +546,7 @@ std::string GetTimeZoneString();
 
 void Apply();
 void LogSettings();
+
+void RestoreGlobalState();
 
 } // namespace Settings
