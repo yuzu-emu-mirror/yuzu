@@ -1,4 +1,4 @@
-// Copyright 2020 yuzu emulator team
+// Copyright 2020 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -58,19 +58,23 @@ void CAPS_U::GetAlbumContentsFileListForApplication(Kernel::HLERequestContext& c
     // u8 ContentType, two s64s, and an u64 AppletResourceUserId. Returns an output u64 for total
     // output entries (which is copied to a s32 by official SW).
     IPC::RequestParser rp{ctx};
-    [[maybe_unused]] const auto application_album_file_entries = rp.PopRaw<std::array<u8, 0x30>>();
-    const auto pid = rp.Pop<s32>();
-    const auto content_type = rp.PopRaw<ContentType>();
-    [[maybe_unused]] const auto start_datetime = rp.PopRaw<AlbumFileDateTime>();
-    [[maybe_unused]] const auto end_datetime = rp.PopRaw<AlbumFileDateTime>();
-    const auto applet_resource_user_id = rp.Pop<u64>();
-    LOG_WARNING(Service_Capture,
-                "(STUBBED) called. pid={}, content_type={}, applet_resource_user_id={}", pid,
-                content_type, applet_resource_user_id);
+    const auto application_album_file_entries{ctx.ReadBuffer()};
+    const auto pid{rp.Pop<s32>()};
+    const auto content_type{rp.PopRaw<ContentType>()};
+    [[maybe_unused]] const auto start_datetime{rp.PopRaw<AlbumFileDateTime>()};
+    [[maybe_unused]] const auto end_datetime{rp.PopRaw<AlbumFileDateTime>()};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+
+    const auto total_entries = static_cast<s32>(application_album_file_entries.size());
+
+    LOG_WARNING(
+        Service_Capture,
+        "(STUBBED) called. total_entries={}, pid={}, content_type={}, applet_resource_user_id={}",
+        total_entries, pid, content_type, applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push<s32>(0);
+    rb.Push<s32>(total_entries);
 }
 
 } // namespace Service::Capture
