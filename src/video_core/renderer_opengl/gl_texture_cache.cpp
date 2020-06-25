@@ -538,14 +538,14 @@ void TextureCacheOpenGL::ImageCopy(Surface& src_surface, Surface& dst_surface,
                                    const VideoCommon::CopyParams& copy_params) {
     const auto& src_params = src_surface->GetSurfaceParams();
     const auto& dst_params = dst_surface->GetSurfaceParams();
-    if (src_params.type != dst_params.type) {
+    if (src_params.pixel_format != dst_params.pixel_format) {
         // A fallback is needed
         return;
     }
-    const auto src_handle = src_surface->GetTexture();
-    const auto src_target = src_surface->GetTarget();
-    const auto dst_handle = dst_surface->GetTexture();
-    const auto dst_target = dst_surface->GetTarget();
+    const GLuint src_handle = src_surface->GetTexture();
+    const GLenum src_target = src_surface->GetTarget();
+    const GLuint dst_handle = dst_surface->GetTexture();
+    const GLenum dst_target = dst_surface->GetTarget();
     glCopyImageSubData(src_handle, src_target, copy_params.source_level, copy_params.source_x,
                        copy_params.source_y, copy_params.source_z, dst_handle, dst_target,
                        copy_params.dest_level, copy_params.dest_x, copy_params.dest_y,
