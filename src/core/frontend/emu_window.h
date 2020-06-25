@@ -14,13 +14,7 @@ namespace Core::Frontend {
 
 /// Information for the Graphics Backends signifying what type of screen pointer is in
 /// WindowInformation
-enum class WindowSystemType {
-    Headless,
-    Windows,
-    X11,
-    Wayland,
-    MacOS
-};
+enum class WindowSystemType { Headless, Windows, X11, Wayland, MacOS };
 
 /**
  * Represents a drawing context that supports graphics operations.

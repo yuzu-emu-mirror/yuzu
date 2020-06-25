@@ -52,15 +52,8 @@ if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/DEBUG /MANIFEST:NO /INCREMENTAL:NO /OPT:REF,ICF" CACHE STRING "" FORCE)
 else()
 
-    if (APPLE)
-        add_compile_options(
-            -stdlib=libc++
-            -Wall
-            -Werror=missing-declarations
-            -Werror=reorder
-            -Wmissing-declarations
-            -Wno-attributes
-        )
+    if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+        add_compile_options("-stdlib=libc++")
     else()
         add_compile_options(
             -Wall
