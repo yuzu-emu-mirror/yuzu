@@ -152,11 +152,11 @@ public:
     }
 
     /**
-     * Returns system information about the drawing area.
-     * Unsafe version of above for MoltenVK to get pointer
+     * Returns drawing area raw pointer
+     * Unsafe version for MoltenVK to modify pointer
      */
-    WindowSystemInfo& GetWindowInfoRef() {
-        return window_info;
+    void* GetRenderSurface() {
+        return window_info.render_surface;
     }
 
     /**

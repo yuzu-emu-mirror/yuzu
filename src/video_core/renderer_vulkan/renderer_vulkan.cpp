@@ -277,11 +277,11 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
     return true;
 }
 
-void PrepareWindow([[maybe_unused]] Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
+void PrepareWindow([[maybe_unused]] void* render_surface) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     // This is kinda messy, but it avoids having to write Objective C++ just to create a metal
     // layer.
-    id view = reinterpret_cast<id>(wsi.render_surface);
+    id view = reinterpret_cast<id>(render_surface);
     Class clsCAMetalLayer = objc_getClass("CAMetalLayer");
     if (!clsCAMetalLayer) {
         LOG_ERROR(Render_Vulkan, "Failed to get CAMetalLayer class.");
@@ -311,12 +311,12 @@ void PrepareWindow([[maybe_unused]] Core::Frontend::EmuWindow::WindowSystemInfo&
         layer, sel_getUid("setContentsScale:"), factor);
     // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main
     // thread.
-    wsi.render_surface = layer;
+    render_surface = layer;
 #endif
 }
 
 bool RendererVulkan::Init() {
-    PrepareWindow(render_window.GetWindowInfoRef());
+    PrepareWindow(render_window.GetRenderSurface());
     library = OpenVulkanLibrary();
     instance = CreateInstance(library, dld, render_window.GetWindowInfo().type,
                               Settings::values.renderer_debug);
