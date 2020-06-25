@@ -46,7 +46,8 @@ std::unique_ptr<Tegra::GPU> CreateGPU(Core::Frontend::EmuWindow& emu_window, Cor
         return std::make_unique<VideoCommon::GPUAsynch>(system, std::move(renderer),
                                                         std::move(context));
     }
-    auto res = std::make_unique<VideoCommon::GPUSynch>(system, std::move(renderer), std::move(context));
+    auto res =
+        std::make_unique<VideoCommon::GPUSynch>(system, std::move(renderer), std::move(context));
     return res;
 }
 

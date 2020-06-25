@@ -42,10 +42,10 @@
 
 #ifdef __APPLE__
 #define VK_USE_PLATFORM_METAL_EXT
-#include "vulkan/vulkan_macos.h"
-#include "vulkan/vulkan_metal.h"
 #include <objc/message.h>
 #include "common/file_util.h"
+#include "vulkan/vulkan_macos.h"
+#include "vulkan/vulkan_metal.h"
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -53,7 +53,6 @@
 #include <vulkan/vulkan_wayland.h>
 #include <vulkan/vulkan_xlib.h>
 #endif
-
 
 namespace Vulkan {
 
@@ -280,7 +279,8 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
 
 void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal layer.
+    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal
+    // layer.
     id view = reinterpret_cast<id>(wsi.render_surface);
     Class clsCAMetalLayer = objc_getClass("CAMetalLayer");
     if (!clsCAMetalLayer) {
@@ -290,25 +290,27 @@ void PrepareWindow(Core::Frontend::EmuWindow::WindowSystemInfo& wsi) {
 
     // [CAMetalLayer layer]
     id layer = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("CAMetalLayer"),
-                                                        sel_getUid("layer"));
+                                                                  sel_getUid("layer"));
     if (!layer) {
         LOG_ERROR(Render_Vulkan, "Failed to create Metal layer.");
         return;
     }
     // [view setWantsLayer:YES]
-    reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)(view, sel_getUid("setWantsLayer:"), YES);
+    reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)(view, sel_getUid("setWantsLayer:"),
+                                                            YES);
     // [view setLayer:layer]
     reinterpret_cast<void (*)(id, SEL, id)>(objc_msgSend)(view, sel_getUid("setLayer:"), layer);
     // NSScreen* screen = [NSScreen mainScreen]
     id screen = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(objc_getClass("NSScreen"),
-                                                         sel_getUid("mainScreen"));
+                                                                   sel_getUid("mainScreen"));
     // CGFloat factor = [screen backingScaleFactor]
-    double factor =
-    reinterpret_cast<double (*)(id, SEL)>(objc_msgSend)(screen, sel_getUid("backingScaleFactor"));
+    double factor = reinterpret_cast<double (*)(id, SEL)>(objc_msgSend)(
+        screen, sel_getUid("backingScaleFactor"));
     // layer.contentsScale = factor
-    reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(layer, sel_getUid("setContentsScale:"),
-                                                    factor);
-    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main thread.
+    reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(
+        layer, sel_getUid("setContentsScale:"), factor);
+    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main
+    // thread.
     wsi.render_surface = layer;
 #endif
 }
