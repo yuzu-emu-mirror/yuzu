@@ -51,18 +51,18 @@ AOC_U::AOC_U(Core::System& system)
     : ServiceFramework("aoc:u"), add_on_content(AccumulateAOCTitleIDs(system)), system(system) {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "CountAddOnContentByApplicationId"}, // 1.0.0 - 6.2.0
-        {1, nullptr, "ListAddOnContentByApplicationId"}, // 1.0.0 - 6.2.0
+        {0, nullptr, "CountAddOnContentByApplicationId"},
+        {1, nullptr, "ListAddOnContentByApplicationId"},
         {2, &AOC_U::CountAddOnContent, "CountAddOnContent"},
         {3, &AOC_U::ListAddOnContent, "ListAddOnContent"},
-        {4, nullptr, "GetAddOnContentBaseIdByApplicationId"}, // 1.0.0 - 6.2.0
+        {4, nullptr, "GetAddOnContentBaseIdByApplicationId"},
         {5, &AOC_U::GetAddOnContentBaseId, "GetAddOnContentBaseId"},
-        {6, nullptr, "PrepareAddOnContentByApplicationId"}, // 1.0.0 - 6.2.0
+        {6, nullptr, "PrepareAddOnContentByApplicationId"},
         {7, &AOC_U::PrepareAddOnContent, "PrepareAddOnContent"},
-        {8, &AOC_U::GetAddOnContentListChangedEvent, "GetAddOnContentListChangedEvent"}, // 4.0.0+
-        {9, nullptr, "GetAddOnContentLostErrorCode"}, // 10.0.0+
-        {100, nullptr, "CreateEcPurchasedEventManager"}, // 7.0.0+
-        {101, nullptr, "CreatePermanentEcPurchasedEventManager"}, // 9.0.0+
+        {8, &AOC_U::GetAddOnContentListChangedEvent, "GetAddOnContentListChangedEvent"},
+        {9, nullptr, "GetAddOnContentLostErrorCode"},
+        {100, nullptr, "CreateEcPurchasedEventManager"},
+        {101, nullptr, "CreatePermanentEcPurchasedEventManager"},
     };
     // clang-format on
 
