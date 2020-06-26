@@ -17,26 +17,26 @@ OMM::OMM() : ServiceFramework{"omm"} {
         {5, nullptr, "GetCradleStatus"},
         {6, nullptr, "FadeInDisplay"},
         {7, nullptr, "FadeOutDisplay"},
-        {8, nullptr, "GetCradleFwVersion"}, // 2.0.0+
-        {9, nullptr, "NotifyCecSettingsChanged"}, // 2.0.0+
-        {10, nullptr, "SetOperationModePolicy"}, // 3.0.0+
-        {11, nullptr, "GetDefaultDisplayResolution"}, // 3.0.0+
-        {12, nullptr, "GetDefaultDisplayResolutionChangeEvent"}, // 3.0.0+
-        {13, nullptr, "UpdateDefaultDisplayResolution"}, // 3.0.0+
-        {14, nullptr, "ShouldSleepOnBoot"}, // 3.0.0+
-        {15, nullptr, "NotifyHdcpApplicationExecutionStarted"}, // 4.0.0+
-        {16, nullptr, "NotifyHdcpApplicationExecutionFinished"}, // 4.0.0+
-        {17, nullptr, "NotifyHdcpApplicationDrawingStarted"}, // 4.0.0+
-        {18, nullptr, "NotifyHdcpApplicationDrawingFinished"}, // 4.0.0+
-        {19, nullptr, "GetHdcpAuthenticationFailedEvent"}, // 4.0.0+
-        {20, nullptr, "GetHdcpAuthenticationFailedEmulationEnabled"}, // 4.0.0+
-        {21, nullptr, "SetHdcpAuthenticationFailedEmulation"}, // 4.0.0+
-        {22, nullptr, "GetHdcpStateChangeEvent"}, // 4.0.0+
-        {23, nullptr, "GetHdcpState"}, // 4.0.0+
-        {24, nullptr, "ShowCardUpdateProcessing"}, // 5.0.0+
-        {25, nullptr, "SetApplicationCecSettingsAndNotifyChanged"}, // 5.0.0+
-        {26, nullptr, "GetOperationModeSystemInfo"}, // 7.0.0+
-        {27, nullptr, "GetAppletFullAwakingSystemEvent"}, // 9.0.0+
+        {8, nullptr, "GetCradleFwVersion"},
+        {9, nullptr, "NotifyCecSettingsChanged"},
+        {10, nullptr, "SetOperationModePolicy"},
+        {11, nullptr, "GetDefaultDisplayResolution"},
+        {12, nullptr, "GetDefaultDisplayResolutionChangeEvent"},
+        {13, nullptr, "UpdateDefaultDisplayResolution"},
+        {14, nullptr, "ShouldSleepOnBoot"},
+        {15, nullptr, "NotifyHdcpApplicationExecutionStarted"},
+        {16, nullptr, "NotifyHdcpApplicationExecutionFinished"},
+        {17, nullptr, "NotifyHdcpApplicationDrawingStarted"},
+        {18, nullptr, "NotifyHdcpApplicationDrawingFinished"},
+        {19, nullptr, "GetHdcpAuthenticationFailedEvent"},
+        {20, nullptr, "GetHdcpAuthenticationFailedEmulationEnabled"},
+        {21, nullptr, "SetHdcpAuthenticationFailedEmulation"},
+        {22, nullptr, "GetHdcpStateChangeEvent"},
+        {23, nullptr, "GetHdcpState"},
+        {24, nullptr, "ShowCardUpdateProcessing"},
+        {25, nullptr, "SetApplicationCecSettingsAndNotifyChanged"},
+        {26, nullptr, "GetOperationModeSystemInfo"},
+        {27, nullptr, "GetAppletFullAwakingSystemEvent"},
     };
     // clang-format on
 
