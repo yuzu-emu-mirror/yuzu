@@ -28,7 +28,7 @@ public:
             {10, &ILibraryAppletProxy::GetProcessWindingController, "GetProcessWindingController"},
             {11, &ILibraryAppletProxy::GetLibraryAppletCreator, "GetLibraryAppletCreator"},
             {20, &ILibraryAppletProxy::GetApplicationFunctions, "GetApplicationFunctions"},
-            {21, nullptr, "GetAppletCommonFunctions"}, // 7.0.0+
+            {21, nullptr, "GetAppletCommonFunctions"},
             {1000, &ILibraryAppletProxy::GetDebugFunctions, "GetDebugFunctions"},
         };
         // clang-format on
@@ -132,7 +132,7 @@ public:
             {20, &ISystemAppletProxy::GetHomeMenuFunctions, "GetHomeMenuFunctions"},
             {21, &ISystemAppletProxy::GetGlobalStateController, "GetGlobalStateController"},
             {22, &ISystemAppletProxy::GetApplicationCreator, "GetApplicationCreator"},
-            {23, nullptr, "GetAppletCommonFunctions"}, // 7.0.0+
+            {23, nullptr, "GetAppletCommonFunctions"},
             {1000, &ISystemAppletProxy::GetDebugFunctions, "GetDebugFunctions"},
         };
         // clang-format on
@@ -257,12 +257,12 @@ AppletAE::AppletAE(std::shared_ptr<NVFlinger::NVFlinger> nvflinger,
     static const FunctionInfo functions[] = {
         {100, &AppletAE::OpenSystemAppletProxy, "OpenSystemAppletProxy"},
         {200, &AppletAE::OpenLibraryAppletProxyOld, "OpenLibraryAppletProxyOld"},
-        {201, &AppletAE::OpenLibraryAppletProxy, "OpenLibraryAppletProxy"}, // 3.0.0+
+        {201, &AppletAE::OpenLibraryAppletProxy, "OpenLibraryAppletProxy"},
         {300, nullptr, "OpenOverlayAppletProxy"},
         {350, nullptr, "OpenSystemApplicationProxy"},
         {400, nullptr, "CreateSelfLibraryAppletCreatorForDevelop"},
-        {410, nullptr, "GetSystemAppletControllerForDebug"}, // 6.0.0+
-        {1000, nullptr, "GetDebugFunctions"}, // 6.0.0+
+        {410, nullptr, "GetSystemAppletControllerForDebug"},
+        {1000, nullptr, "GetDebugFunctions"},
     };
     // clang-format on
 
