@@ -20,7 +20,7 @@ SPSM::SPSM() : ServiceFramework{"spsm"} {
         {8, nullptr, "AnalyzePerformanceLogForLastSleepWakeSequence"},
         {9, nullptr, "ChangeHomeButtonLongPressingTime"},
         {10, nullptr, "PutErrorState"},
-        {11, nullptr, "InvalidateCurrentHomeButtonPressing"}, // 1.0.0 - 3.0.2
+        {11, nullptr, "InvalidateCurrentHomeButtonPressing"},
     };
     // clang-format on
 
