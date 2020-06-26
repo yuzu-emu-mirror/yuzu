@@ -68,12 +68,12 @@ IWindowController::IWindowController(Core::System& system_)
     static const FunctionInfo functions[] = {
         {0, nullptr, "CreateWindow"},
         {1, &IWindowController::GetAppletResourceUserId, "GetAppletResourceUserId"},
-        {2, nullptr, "GetAppletResourceUserIdOfCallerApplet"}, // 6.0.0+
+        {2, nullptr, "GetAppletResourceUserIdOfCallerApplet"},
         {10, &IWindowController::AcquireForegroundRights, "AcquireForegroundRights"},
         {11, nullptr, "ReleaseForegroundRights"},
         {12, nullptr, "RejectToChangeIntoBackground"},
-        {20, nullptr, "SetAppletWindowVisibility"}, // 7.0.0+
-        {21, nullptr, "SetAppletGpuTimeSlice"}, // 7.0.0+
+        {20, nullptr, "SetAppletWindowVisibility"},
+        {21, nullptr, "SetAppletGpuTimeSlice"},
     };
     // clang-format on
 
@@ -190,8 +190,8 @@ IDisplayController::IDisplayController() : ServiceFramework("IDisplayController"
         {5, nullptr, "GetLastForegroundCaptureImageEx"},
         {6, nullptr, "GetLastApplicationCaptureImageEx"},
         {7, nullptr, "GetCallerAppletCaptureImageEx"},
-        {8, nullptr, "TakeScreenShotOfOwnLayer"},  // 2.0.0+
-        {9, nullptr, "CopyBetweenCaptureBuffers"}, // 5.0.0+
+        {8, nullptr, "TakeScreenShotOfOwnLayer"},
+        {9, nullptr, "CopyBetweenCaptureBuffers"},
         {10, nullptr, "AcquireLastApplicationCaptureBuffer"},
         {11, nullptr, "ReleaseLastApplicationCaptureBuffer"},
         {12, nullptr, "AcquireLastForegroundCaptureBuffer"},
@@ -201,15 +201,15 @@ IDisplayController::IDisplayController() : ServiceFramework("IDisplayController"
         {16, nullptr, "AcquireLastApplicationCaptureBufferEx"},
         {17, nullptr, "AcquireLastForegroundCaptureBufferEx"},
         {18, nullptr, "AcquireCallerAppletCaptureBufferEx"},
-        {20, nullptr, "ClearCaptureBuffer"}, // 3.0.0+
-        {21, nullptr, "ClearAppletTransitionBuffer"}, // 3.0.0+
-        {22, nullptr, "AcquireLastApplicationCaptureSharedBuffer"}, // 4.0.0+
-        {23, nullptr, "ReleaseLastApplicationCaptureSharedBuffer"}, // 4.0.0+
-        {24, nullptr, "AcquireLastForegroundCaptureSharedBuffer"}, // 4.0.0+
-        {25, nullptr, "ReleaseLastForegroundCaptureSharedBuffer"}, // 4.0.0+
-        {26, nullptr, "AcquireCallerAppletCaptureSharedBuffer"}, // 4.0.0+
-        {27, nullptr, "ReleaseCallerAppletCaptureSharedBuffer"}, // 4.0.0+
-        {28, nullptr, "TakeScreenShotOfOwnLayerEx"}, // 6.0.0+
+        {20, nullptr, "ClearCaptureBuffer"},
+        {21, nullptr, "ClearAppletTransitionBuffer"},
+        {22, nullptr, "AcquireLastApplicationCaptureSharedBuffer"},
+        {23, nullptr, "ReleaseLastApplicationCaptureSharedBuffer"},
+        {24, nullptr, "AcquireLastForegroundCaptureSharedBuffer"},
+        {25, nullptr, "ReleaseLastForegroundCaptureSharedBuffer"},
+        {26, nullptr, "AcquireCallerAppletCaptureSharedBuffer"},
+        {27, nullptr, "ReleaseCallerAppletCaptureSharedBuffer"},
+        {28, nullptr, "TakeScreenShotOfOwnLayerEx"},
     };
     // clang-format on
 
@@ -222,21 +222,21 @@ IDebugFunctions::IDebugFunctions() : ServiceFramework{"IDebugFunctions"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, nullptr, "NotifyMessageToHomeMenuForDebug"},
-        {1, nullptr, "OpenMainApplication"}, // 1.0.0 - 9.2.0
+        {1, nullptr, "OpenMainApplication"},
         {10, nullptr, "PerformSystemButtonPressing"},
         {20, nullptr, "InvalidateTransitionLayer"},
-        {30, nullptr, "RequestLaunchApplicationWithUserAndArgumentForDebug"}, // 6.0.0+
-        {40, nullptr, "GetAppletResourceUsageInfo"}, // 6.0.0+
-        {100, nullptr, "SetCpuBoostModeForApplet"}, // 7.0.0+
-        {101, nullptr, "CancelCpuBoostModeForApplet"}, // 10.0.0+
-        {110, nullptr, "PushToAppletBoundChannelForDebug"}, // 9.0.0+
-        {111, nullptr, "TryPopFromAppletBoundChannelForDebug"}, // 9.0.0+
-        {120, nullptr, "AlarmSettingNotificationEnableAppEventReserve"}, // 9.0.0+
-        {121, nullptr, "AlarmSettingNotificationDisableAppEventReserve"},// 9.0.0+
-        {122, nullptr, "AlarmSettingNotificationPushAppEventNotify"}, // 9.0.0+
-        {130, nullptr, "FriendInvitationSetApplicationParameter"}, // 9.0.0+
-        {131, nullptr, "FriendInvitationClearApplicationParameter"}, // 9.0.0+
-        {132, nullptr, "FriendInvitationPushApplicationParameter"}, // 9.0.0+
+        {30, nullptr, "RequestLaunchApplicationWithUserAndArgumentForDebug"},
+        {40, nullptr, "GetAppletResourceUsageInfo"},
+        {100, nullptr, "SetCpuBoostModeForApplet"},
+        {101, nullptr, "CancelCpuBoostModeForApplet"},
+        {110, nullptr, "PushToAppletBoundChannelForDebug"},
+        {111, nullptr, "TryPopFromAppletBoundChannelForDebug"},
+        {120, nullptr, "AlarmSettingNotificationEnableAppEventReserve"},
+        {121, nullptr, "AlarmSettingNotificationDisableAppEventReserve"},
+        {122, nullptr, "AlarmSettingNotificationPushAppEventNotify"},
+        {130, nullptr, "FriendInvitationSetApplicationParameter"},
+        {131, nullptr, "FriendInvitationClearApplicationParameter"},
+        {132, nullptr, "FriendInvitationPushApplicationParameter"},
     };
     // clang-format on
 
@@ -253,26 +253,26 @@ ISelfController::ISelfController(Core::System& system,
         {0, &ISelfController::Exit, "Exit"},
         {1, &ISelfController::LockExit, "LockExit"},
         {2, &ISelfController::UnlockExit, "UnlockExit"},
-        {3, &ISelfController::EnterFatalSection, "EnterFatalSection"}, // 2.0.0+
-        {4, &ISelfController::LeaveFatalSection, "LeaveFatalSection"}, // 2.0.0+
+        {3, &ISelfController::EnterFatalSection, "EnterFatalSection"},
+        {4, &ISelfController::LeaveFatalSection, "LeaveFatalSection"},
         {9, &ISelfController::GetLibraryAppletLaunchableEvent, "GetLibraryAppletLaunchableEvent"},
         {10, &ISelfController::SetScreenShotPermission, "SetScreenShotPermission"},
         {11, &ISelfController::SetOperationModeChangedNotification, "SetOperationModeChangedNotification"},
         {12, &ISelfController::SetPerformanceModeChangedNotification, "SetPerformanceModeChangedNotification"},
         {13, &ISelfController::SetFocusHandlingMode, "SetFocusHandlingMode"},
         {14, &ISelfController::SetRestartMessageEnabled, "SetRestartMessageEnabled"},
-        {15, nullptr, "SetScreenShotAppletIdentityInfo"}, // 2.0.0+
-        {16, &ISelfController::SetOutOfFocusSuspendingEnabled, "SetOutOfFocusSuspendingEnabled"}, // 2.0.0+
-        {17, nullptr, "SetControllerFirmwareUpdateSection"}, // 3.0.0+
-        {18, nullptr, "SetRequiresCaptureButtonShortPressedMessage"}, // 3.0.0+
-        {19, &ISelfController::SetAlbumImageOrientation, "SetAlbumImageOrientation"}, // 3.0.0+
-        {20, nullptr, "SetDesirableKeyboardLayout"}, // 4.0.0+
+        {15, nullptr, "SetScreenShotAppletIdentityInfo"},
+        {16, &ISelfController::SetOutOfFocusSuspendingEnabled, "SetOutOfFocusSuspendingEnabled"},
+        {17, nullptr, "SetControllerFirmwareUpdateSection"},
+        {18, nullptr, "SetRequiresCaptureButtonShortPressedMessage"},
+        {19, &ISelfController::SetAlbumImageOrientation, "SetAlbumImageOrientation"},
+        {20, nullptr, "SetDesirableKeyboardLayout"},
         {40, &ISelfController::CreateManagedDisplayLayer, "CreateManagedDisplayLayer"},
-        {41, nullptr, "IsSystemBufferSharingEnabled"}, // 4.0.0+
-        {42, nullptr, "GetSystemSharedLayerHandle"}, // 4.0.0+
-        {43, nullptr, "GetSystemSharedBufferHandle"}, // 5.0.0+
-        {44, nullptr, "CreateManagedDisplaySeparableLayer"}, // 10.0.0+
-        {45, nullptr, "SetManagedDisplayLayerSeparationMode"}, // 10.0.0+
+        {41, nullptr, "IsSystemBufferSharingEnabled"},
+        {42, nullptr, "GetSystemSharedLayerHandle"},
+        {43, nullptr, "GetSystemSharedBufferHandle"},
+        {44, nullptr, "CreateManagedDisplaySeparableLayer"},
+        {45, nullptr, "SetManagedDisplayLayerSeparationMode"},
         {50, &ISelfController::SetHandlesRequestToDisplay, "SetHandlesRequestToDisplay"},
         {51, nullptr, "ApproveToDisplay"},
         {60, nullptr, "OverrideAutoSleepTimeAndDimmingTime"},
@@ -280,20 +280,20 @@ ISelfController::ISelfController(Core::System& system,
         {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
         {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
-        {65, nullptr, "ReportUserIsActive"}, // 2.0.0+
-        {66, nullptr, "GetCurrentIlluminance"}, // 3.0.0+
-        {67, nullptr, "IsIlluminanceAvailable"}, // 3.0.0+
-        {68, &ISelfController::SetAutoSleepDisabled, "SetAutoSleepDisabled"}, // 5.0.0+
-        {69, &ISelfController::IsAutoSleepDisabled, "IsAutoSleepDisabled"}, // 5.0.0+
-        {70, nullptr, "ReportMultimediaError"}, // 4.0.0+
-        {71, nullptr, "GetCurrentIlluminanceEx"}, // 5.0.0+
-        {72, nullptr, "SetInputDetectionPolicy"}, // 9.0.0+
-        {80, nullptr, "SetWirelessPriorityMode"}, // 4.0.0+
-        {90, &ISelfController::GetAccumulatedSuspendedTickValue, "GetAccumulatedSuspendedTickValue"}, // 6.0.0+
-        {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"}, // 6.0.0+
-        {100, nullptr, "SetAlbumImageTakenNotificationEnabled"}, // 7.0.0+
-        {110, nullptr, "SetApplicationAlbumUserData"}, // 8.0.0+
-        {1000, nullptr, "GetDebugStorageChannel"}, // 7.0.0+
+        {65, nullptr, "ReportUserIsActive"},
+        {66, nullptr, "GetCurrentIlluminance"},
+        {67, nullptr, "IsIlluminanceAvailable"},
+        {68, &ISelfController::SetAutoSleepDisabled, "SetAutoSleepDisabled"},
+        {69, &ISelfController::IsAutoSleepDisabled, "IsAutoSleepDisabled"},
+        {70, nullptr, "ReportMultimediaError"},
+        {71, nullptr, "GetCurrentIlluminanceEx"},
+        {72, nullptr, "SetInputDetectionPolicy"},
+        {80, nullptr, "SetWirelessPriorityMode"},
+        {90, &ISelfController::GetAccumulatedSuspendedTickValue, "GetAccumulatedSuspendedTickValue"},
+        {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
+        {100, nullptr, "SetAlbumImageTakenNotificationEnabled"},
+        {110, nullptr, "SetApplicationAlbumUserData"},
+        {1000, nullptr, "GetDebugStorageChannel"},
     };
     // clang-format on
 
@@ -604,31 +604,31 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system,
         {13, nullptr, "GetAcquiredSleepLockEvent"},
         {20, nullptr, "PushToGeneralChannel"},
         {30, nullptr, "GetHomeButtonReaderLockAccessor"},
-        {31, nullptr, "GetReaderLockAccessorEx"}, // 2.0.0+
-        {32, nullptr, "GetWriterLockAccessorEx"}, // 7.0.0+
-        {40, nullptr, "GetCradleFwVersion"}, // 2.0.0+
-        {50, &ICommonStateGetter::IsVrModeEnabled, "IsVrModeEnabled"}, // 3.0.0+
-        {51, &ICommonStateGetter::SetVrModeEnabled, "SetVrModeEnabled"}, // 3.0.0+
-        {52, &ICommonStateGetter::SetLcdBacklighOffEnabled, "SetLcdBacklighOffEnabled"}, // 4.0.0+
-        {53, nullptr, "BeginVrModeEx"}, // 7.0.0+
-        {54, &ICommonStateGetter::EndVrModeEx, "EndVrModeEx"}, // 7.0.0+
-        {55, nullptr, "IsInControllerFirmwareUpdateSection"}, // 3.0.0+
-        {60, &ICommonStateGetter::GetDefaultDisplayResolution, "GetDefaultDisplayResolution"}, // 3.0.0+
-        {61, &ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent, "GetDefaultDisplayResolutionChangeEvent"}, // 3.0.0+
-        {62, nullptr, "GetHdcpAuthenticationState"}, // 4.0.0+
-        {63, nullptr, "GetHdcpAuthenticationStateChangeEvent"}, // 4.0.0+
-        {64, nullptr, "SetTvPowerStateMatchingMode"}, // 5.0.0+
-        {65, nullptr, "GetApplicationIdByContentActionName"}, // 5.1.0+
-        {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"}, // 6.0.0+
-        {67, nullptr, "CancelCpuBoostMode"}, // 10.0.0+
-        {80, nullptr, "PerformSystemButtonPressingIfInFocus"}, // 6.0.0+
-        {90, nullptr, "SetPerformanceConfigurationChangedNotification"}, // 7.0.0+
-        {91, nullptr, "GetCurrentPerformanceConfiguration"}, // 7.0.0+
-        {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"}, // 9.1.0+
-        {200, nullptr, "GetOperationModeSystemInfo"}, // 7.0.0+
-        {300, nullptr, "GetSettingsPlatformRegion"}, // 9.0.0+
-        {400, nullptr, "ActivateMigrationService"}, // 10.0.0+
-        {401, nullptr, "DeactivateMigrationService"}, // 10.0.0+
+        {31, nullptr, "GetReaderLockAccessorEx"},
+        {32, nullptr, "GetWriterLockAccessorEx"},
+        {40, nullptr, "GetCradleFwVersion"},
+        {50, &ICommonStateGetter::IsVrModeEnabled, "IsVrModeEnabled"},
+        {51, &ICommonStateGetter::SetVrModeEnabled, "SetVrModeEnabled"},
+        {52, &ICommonStateGetter::SetLcdBacklighOffEnabled, "SetLcdBacklighOffEnabled"},
+        {53, nullptr, "BeginVrModeEx"},
+        {54, &ICommonStateGetter::EndVrModeEx, "EndVrModeEx"},
+        {55, nullptr, "IsInControllerFirmwareUpdateSection"},
+        {60, &ICommonStateGetter::GetDefaultDisplayResolution, "GetDefaultDisplayResolution"},
+        {61, &ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent, "GetDefaultDisplayResolutionChangeEvent"},
+        {62, nullptr, "GetHdcpAuthenticationState"},
+        {63, nullptr, "GetHdcpAuthenticationStateChangeEvent"},
+        {64, nullptr, "SetTvPowerStateMatchingMode"},
+        {65, nullptr, "GetApplicationIdByContentActionName"},
+        {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"},
+        {67, nullptr, "CancelCpuBoostMode"},
+        {80, nullptr, "PerformSystemButtonPressingIfInFocus"},
+        {90, nullptr, "SetPerformanceConfigurationChangedNotification"},
+        {91, nullptr, "GetCurrentPerformanceConfiguration"},
+        {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
+        {200, nullptr, "GetOperationModeSystemInfo"},
+        {300, nullptr, "GetSettingsPlatformRegion"},
+        {400, nullptr, "ActivateMigrationService"},
+        {401, nullptr, "DeactivateMigrationService"},
     };
     // clang-format on
 
@@ -782,7 +782,7 @@ void IStorage::Register() {
     // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IStorage::Open, "Open"},
-            {1, nullptr, "OpenTransferStorage"}, // 2.0.0+
+            {1, nullptr, "OpenTransferStorage"},
         };
     // clang-format on
 
@@ -830,7 +830,7 @@ public:
             {25, nullptr, "Terminate"},
             {30, &ILibraryAppletAccessor::GetResult, "GetResult"},
             {50, nullptr, "SetOutOfFocusApplicationSuspendingEnabled"},
-            {60, nullptr, "PresetLibraryAppletGpuTimeSliceZero"}, // 10.0.0+
+            {60, nullptr, "PresetLibraryAppletGpuTimeSliceZero"},
             {100, &ILibraryAppletAccessor::PushInData, "PushInData"},
             {101, &ILibraryAppletAccessor::PopOutData, "PopOutData"},
             {102, nullptr, "PushExtraStorage"},
@@ -841,7 +841,7 @@ public:
             {110, nullptr, "NeedsToExitProcess"},
             {120, nullptr, "GetLibraryAppletInfo"},
             {150, nullptr, "RequestForAppletToGetForeground"},
-            {160, nullptr, "GetIndirectLayerConsumerHandle"}, // 2.0.0+
+            {160, nullptr, "GetIndirectLayerConsumerHandle"},
         };
         // clang-format on
 
@@ -1042,7 +1042,7 @@ ILibraryAppletCreator::ILibraryAppletCreator(Core::System& system_)
         {2, nullptr, "AreAnyLibraryAppletsLeft"},
         {10, &ILibraryAppletCreator::CreateStorage, "CreateStorage"},
         {11, &ILibraryAppletCreator::CreateTransferMemoryStorage, "CreateTransferMemoryStorage"},
-        {12, nullptr, "CreateHandleStorage"}, // 2.0.0+
+        {12, nullptr, "CreateHandleStorage"},
     };
     RegisterHandlers(functions);
 }
@@ -1119,56 +1119,56 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
     static const FunctionInfo functions[] = {
         {1, &IApplicationFunctions::PopLaunchParameter, "PopLaunchParameter"},
         {10, nullptr, "CreateApplicationAndPushAndRequestToStart"},
-        {11, nullptr, "CreateApplicationAndPushAndRequestToStartForQuest"}, // 3.0.0+
-        {12, nullptr, "CreateApplicationAndRequestToStart"}, // 4.0.0+
-        {13, &IApplicationFunctions::CreateApplicationAndRequestToStartForQuest, "CreateApplicationAndRequestToStartForQuest"}, // 4.0.0+
-        {14, nullptr, "CreateApplicationWithAttributeAndPushAndRequestToStartForQuest"}, // 7.0.0+
-        {15, nullptr, "CreateApplicationWithAttributeAndRequestToStartForQuest"}, // 7.0.0+
+        {11, nullptr, "CreateApplicationAndPushAndRequestToStartForQuest"},
+        {12, nullptr, "CreateApplicationAndRequestToStart"},
+        {13, &IApplicationFunctions::CreateApplicationAndRequestToStartForQuest, "CreateApplicationAndRequestToStartForQuest"},
+        {14, nullptr, "CreateApplicationWithAttributeAndPushAndRequestToStartForQuest"},
+        {15, nullptr, "CreateApplicationWithAttributeAndRequestToStartForQuest"},
         {20, &IApplicationFunctions::EnsureSaveData, "EnsureSaveData"},
         {21, &IApplicationFunctions::GetDesiredLanguage, "GetDesiredLanguage"},
         {22, &IApplicationFunctions::SetTerminateResult, "SetTerminateResult"},
         {23, &IApplicationFunctions::GetDisplayVersion, "GetDisplayVersion"},
-        {24, nullptr, "GetLaunchStorageInfoForDebug"}, // 2.0.0+
-        {25, &IApplicationFunctions::ExtendSaveData, "ExtendSaveData"}, // 3.0.0+
-        {26, &IApplicationFunctions::GetSaveDataSize, "GetSaveDataSize"}, // 3.0.0+
-        {27, nullptr, "CreateCacheStorage"}, // 5.0.0+
+        {24, nullptr, "GetLaunchStorageInfoForDebug"},
+        {25, &IApplicationFunctions::ExtendSaveData, "ExtendSaveData"},
+        {26, &IApplicationFunctions::GetSaveDataSize, "GetSaveDataSize"},
+        {27, nullptr, "CreateCacheStorage"},
         {30, &IApplicationFunctions::BeginBlockingHomeButtonShortAndLongPressed, "BeginBlockingHomeButtonShortAndLongPressed"},
         {31, &IApplicationFunctions::EndBlockingHomeButtonShortAndLongPressed, "EndBlockingHomeButtonShortAndLongPressed"},
         {32, &IApplicationFunctions::BeginBlockingHomeButton, "BeginBlockingHomeButton"},
         {33, &IApplicationFunctions::EndBlockingHomeButton, "EndBlockingHomeButton"},
-        {34, nullptr, "SelectApplicationLicense"}, // 10.0.0+
+        {34, nullptr, "SelectApplicationLicense"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
-        {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"}, // 2.0.0+
-        {60, nullptr, "SetMediaPlaybackStateForApplication"}, // 2.0.0+
-        {65, nullptr, "IsGamePlayRecordingSupported"}, // 3.0.0+
-        {66, &IApplicationFunctions::InitializeGamePlayRecording, "InitializeGamePlayRecording"}, // 3.0.0+
-        {67, &IApplicationFunctions::SetGamePlayRecordingState, "SetGamePlayRecordingState"}, // 3.0.0+
-        {68, nullptr, "RequestFlushGamePlayingMovieForDebug"}, // 4.0.0+
-        {70, nullptr, "RequestToShutdown"}, // 3.0.0+
-        {71, nullptr, "RequestToReboot"}, // 3.0.0+
-        {72, nullptr, "RequestToSleep"}, // 10.0.0+
-        {80, nullptr, "ExitAndRequestToShowThanksMessage"}, // 4.0.0+
-        {90, &IApplicationFunctions::EnableApplicationCrashReport, "EnableApplicationCrashReport"}, // 4.0.0+
-        {100, &IApplicationFunctions::InitializeApplicationCopyrightFrameBuffer, "InitializeApplicationCopyrightFrameBuffer"}, // 5.0.0+
-        {101, &IApplicationFunctions::SetApplicationCopyrightImage, "SetApplicationCopyrightImage"}, // 5.0.0+
-        {102, &IApplicationFunctions::SetApplicationCopyrightVisibility, "SetApplicationCopyrightVisibility"}, // 5.0.0+
-        {110, &IApplicationFunctions::QueryApplicationPlayStatistics, "QueryApplicationPlayStatistics"}, // 5.0.0+
-        {111, &IApplicationFunctions::QueryApplicationPlayStatisticsByUid, "QueryApplicationPlayStatisticsByUid"}, // 6.0.0+
-        {120, nullptr, "ExecuteProgram"}, // 5.0.0+
-        {121, nullptr, "ClearUserChannel"}, // 5.0.0+
-        {122, nullptr, "UnpopToUserChannel"}, // 5.0.0+
-        {123, nullptr, "GetPreviousProgramIndex"}, // 5.0.0+
-        {124, nullptr, "EnableApplicationAllThreadDumpOnCrash"}, // 6.0.0+
-        {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"}, // 8.0.0+
-        {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"}, // 9.0.0+
-        {141, nullptr, "TryPopFromFriendInvitationStorageChannel"}, // 9.0.0+
-        {150, nullptr, "GetNotificationStorageChannelEvent"}, // 9.0.0+
-        {151, nullptr, "TryPopFromNotificationStorageChannel"}, // 9.0.0+
-        {160, nullptr, "GetHealthWarningDisappearedSystemEvent"}, // 9.0.0+
-        {170, nullptr, "SetHdcpAuthenticationActivated"}, // 9.0.0+
-        {500, nullptr, "StartContinuousRecordingFlushForDebug"}, // 5.0.0+
-        {1000, nullptr, "CreateMovieMaker"}, // 5.0.0+
-        {1001, nullptr, "PrepareForJit"}, // 5.0.0+
+        {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
+        {60, nullptr, "SetMediaPlaybackStateForApplication"},
+        {65, nullptr, "IsGamePlayRecordingSupported"},
+        {66, &IApplicationFunctions::InitializeGamePlayRecording, "InitializeGamePlayRecording"},
+        {67, &IApplicationFunctions::SetGamePlayRecordingState, "SetGamePlayRecordingState"},
+        {68, nullptr, "RequestFlushGamePlayingMovieForDebug"},
+        {70, nullptr, "RequestToShutdown"},
+        {71, nullptr, "RequestToReboot"},
+        {72, nullptr, "RequestToSleep"},
+        {80, nullptr, "ExitAndRequestToShowThanksMessage"},
+        {90, &IApplicationFunctions::EnableApplicationCrashReport, "EnableApplicationCrashReport"},
+        {100, &IApplicationFunctions::InitializeApplicationCopyrightFrameBuffer, "InitializeApplicationCopyrightFrameBuffer"},
+        {101, &IApplicationFunctions::SetApplicationCopyrightImage, "SetApplicationCopyrightImage"},
+        {102, &IApplicationFunctions::SetApplicationCopyrightVisibility, "SetApplicationCopyrightVisibility"},
+        {110, &IApplicationFunctions::QueryApplicationPlayStatistics, "QueryApplicationPlayStatistics"},
+        {111, &IApplicationFunctions::QueryApplicationPlayStatisticsByUid, "QueryApplicationPlayStatisticsByUid"},
+        {120, nullptr, "ExecuteProgram"},
+        {121, nullptr, "ClearUserChannel"},
+        {122, nullptr, "UnpopToUserChannel"},
+        {123, nullptr, "GetPreviousProgramIndex"},
+        {124, nullptr, "EnableApplicationAllThreadDumpOnCrash"},
+        {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"},
+        {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"},
+        {141, nullptr, "TryPopFromFriendInvitationStorageChannel"},
+        {150, nullptr, "GetNotificationStorageChannelEvent"},
+        {151, nullptr, "TryPopFromNotificationStorageChannel"},
+        {160, nullptr, "GetHealthWarningDisappearedSystemEvent"},
+        {170, nullptr, "SetHdcpAuthenticationActivated"},
+        {500, nullptr, "StartContinuousRecordingFlushForDebug"},
+        {1000, nullptr, "CreateMovieMaker"},
+        {1001, nullptr, "PrepareForJit"},
     };
     // clang-format on
 
@@ -1537,10 +1537,10 @@ IHomeMenuFunctions::IHomeMenuFunctions(Kernel::KernelCore& kernel)
         {20, nullptr, "PopFromGeneralChannel"},
         {21, &IHomeMenuFunctions::GetPopFromGeneralChannelEvent, "GetPopFromGeneralChannelEvent"},
         {30, nullptr, "GetHomeButtonWriterLockAccessor"},
-        {31, nullptr, "GetWriterLockAccessorEx"}, // 2.0.0+
-        {100, nullptr, "PopRequestLaunchApplicationForDebug"}, // 6.0.0+
-        {110, nullptr, "IsForceTerminateApplicationDisabledForDebug"}, // 9.0.0+
-        {200, nullptr, "LaunchDevMenu"}, // 8.0.0+
+        {31, nullptr, "GetWriterLockAccessorEx"},
+        {100, nullptr, "PopRequestLaunchApplicationForDebug"},
+        {110, nullptr, "IsForceTerminateApplicationDisabledForDebug"},
+        {200, nullptr, "LaunchDevMenu"},
     };
     // clang-format on
 
@@ -1575,13 +1575,13 @@ IGlobalStateController::IGlobalStateController() : ServiceFramework("IGlobalStat
         {2, nullptr, "StartSleepSequence"},
         {3, nullptr, "StartShutdownSequence"},
         {4, nullptr, "StartRebootSequence"},
-        {9, nullptr, "IsAutoPowerDownRequested"}, // 7.0.0+
+        {9, nullptr, "IsAutoPowerDownRequested"},
         {10, nullptr, "LoadAndApplyIdlePolicySettings"},
-        {11, nullptr, "NotifyCecSettingsChanged"}, // 2.0.0+
-        {12, nullptr, "SetDefaultHomeButtonLongPressTime"}, // 3.0.0+
-        {13, nullptr, "UpdateDefaultDisplayResolution"}, // 3.0.0+
-        {14, nullptr, "ShouldSleepOnBoot"}, // 3.0.0+
-        {15, nullptr, "GetHdcpAuthenticationFailedEvent"}, // 4.0.0+
+        {11, nullptr, "NotifyCecSettingsChanged"},
+        {12, nullptr, "SetDefaultHomeButtonLongPressTime"},
+        {13, nullptr, "UpdateDefaultDisplayResolution"},
+        {14, nullptr, "ShouldSleepOnBoot"},
+        {15, nullptr, "GetHdcpAuthenticationFailedEvent"},
     };
     // clang-format on
 
@@ -1616,7 +1616,7 @@ IProcessWindingController::IProcessWindingController()
         {23, nullptr, "CancelWindingReservation"},
         {30, nullptr, "WindAndDoReserved"},
         {40, nullptr, "ReserveToStartAndWaitAndUnwindThis"},
-        {41, nullptr, "ReserveToStartAndWait"}, // 4.0.0+
+        {41, nullptr, "ReserveToStartAndWait"},
     };
     // clang-format on
 
@@ -1631,7 +1631,7 @@ ILockAccessor::ILockAccessor() : ServiceFramework("ILockAccessor") {
         {1, nullptr, "TryLock"},
         {2, nullptr, "Unlock"},
         {3, nullptr, "GetEvent"},
-        {4, nullptr, "IsLocked"}, // 10.0.0+
+        {4, nullptr, "IsLocked"},
     };
     // clang-format on
 
@@ -1656,19 +1656,19 @@ IApplicationAccessor::IApplicationAccessor() : ServiceFramework("IApplicationAcc
         {120, nullptr, "GetApplicationId"},
         {121, nullptr, "PushLaunchParameter"},
         {122, nullptr, "GetApplicationControlProperty"},
-        {123, nullptr, "GetApplicationLaunchProperty"}, // 2.0.0+
-        {124, nullptr, "GetApplicationLaunchRequestInfo"}, // 6.0.0+
-        {130, nullptr, "SetUsers"}, // 6.0.0+
-        {131, nullptr, "CheckRightsEnvironmentAvailable"}, // 6.0.0+
-        {132, nullptr, "CheckNsRightsEnvironmentHandle"}, // 6.0.0+
-        {140, nullptr, "GetDesirableUids"}, // 6.0.0+
-        {150, nullptr, "ReportApplicationExitTimeout"}, // 6.0.0+
-        {160, nullptr, "SetApplicationAttribute"}, // 8.0.0+
-        {170, nullptr, "HasSaveDataAccessPermission"}, // 8.0.0+
-        {180, nullptr, "PushToFriendInvitationStorageChannel"}, // 9.0.0+
-        {190, nullptr, "PushToNotificationStorageChannel"}, // 9.0.0+
-        {200, nullptr, "RequestApplicationSoftReset"}, // 10.0.0+
-        {201, nullptr, "RestartApplicationTimer"}, // 10.0.0+
+        {123, nullptr, "GetApplicationLaunchProperty"},
+        {124, nullptr, "GetApplicationLaunchRequestInfo"},
+        {130, nullptr, "SetUsers"},
+        {131, nullptr, "CheckRightsEnvironmentAvailable"},
+        {132, nullptr, "CheckNsRightsEnvironmentHandle"},
+        {140, nullptr, "GetDesirableUids"},
+        {150, nullptr, "ReportApplicationExitTimeout"},
+        {160, nullptr, "SetApplicationAttribute"},
+        {170, nullptr, "HasSaveDataAccessPermission"},
+        {180, nullptr, "PushToFriendInvitationStorageChannel"},
+        {190, nullptr, "PushToNotificationStorageChannel"},
+        {200, nullptr, "RequestApplicationSoftReset"},
+        {201, nullptr, "RestartApplicationTimer"},
     };
     // clang-format on
 
@@ -1698,16 +1698,16 @@ IAppletAccessor::~IAppletAccessor() = default;
 IAppletCommonFunctions::IAppletCommonFunctions() : ServiceFramework("IAppletCommonFunctions") {
     // clang-format off
     static const FunctionInfo functions[] = {
-        {0, nullptr, "SetTerminateResult"}, // 9.0.0+
+        {0, nullptr, "SetTerminateResult"},
         {10, nullptr, "ReadThemeStorage"},
         {11, nullptr, "WriteThemeStorage"},
-        {20, nullptr, "PushToAppletBoundChannel"}, // 9.0.0+
-        {21, nullptr, "TryPopFromAppletBoundChannel"}, // 9.0.0+
-        {40, nullptr, "GetDisplayLogicalResolution"}, // 8.0.0+
-        {42, nullptr, "SetDisplayMagnification"}, // 8.0.0+
-        {50, nullptr, "SetHomeButtonDoubleClickEnabled"}, // 8.0.0+
-        {51, nullptr, "GetHomeButtonDoubleClickEnabled"}, // 8.0.0+
-        {52, nullptr, "IsHomeButtonShortPressedBlocked"}, // 10.0.0+
+        {20, nullptr, "PushToAppletBoundChannel"},
+        {21, nullptr, "TryPopFromAppletBoundChannel"},
+        {40, nullptr, "GetDisplayLogicalResolution"},
+        {42, nullptr, "SetDisplayMagnification"},
+        {50, nullptr, "SetHomeButtonDoubleClickEnabled"},
+        {51, nullptr, "GetHomeButtonDoubleClickEnabled"},
+        {52, nullptr, "IsHomeButtonShortPressedBlocked"},
     };
     // clang-format on
 
@@ -1731,30 +1731,30 @@ ILibraryAppletSelfAccessor::ILibraryAppletSelfAccessor()
         {12, nullptr, "GetMainAppletIdentityInfo"},
         {13, nullptr, "CanUseApplicationCore"},
         {14, nullptr, "GetCallerAppletIdentityInfo"},
-        {15, nullptr, "GetMainAppletApplicationControlProperty"}, // 2.0.0+
-        {16, nullptr, "GetMainAppletStorageId"}, // 2.0.0+
-        {17, nullptr, "GetCallerAppletIdentityInfoStack"}, // 3.0.0+
-        {18, nullptr, "GetNextReturnDestinationAppletIdentityInfo"}, // 4.0.0+
-        {19, nullptr, "GetDesirableKeyboardLayout"}, // 4.0.0+
+        {15, nullptr, "GetMainAppletApplicationControlProperty"},
+        {16, nullptr, "GetMainAppletStorageId"},
+        {17, nullptr, "GetCallerAppletIdentityInfoStack"},
+        {18, nullptr, "GetNextReturnDestinationAppletIdentityInfo"},
+        {19, nullptr, "GetDesirableKeyboardLayout"},
         {20, nullptr, "PopExtraStorage"},
         {25, nullptr, "GetPopExtraStorageEvent"},
         {30, nullptr, "UnpopInData"},
         {31, nullptr, "UnpopExtraStorage"},
-        {40, nullptr, "GetIndirectLayerProducerHandle"}, // 2.0.0+
-        {50, nullptr, "ReportVisibleError"}, // 3.0.0+
-        {51, nullptr, "ReportVisibleErrorWithErrorContext"}, // 4.0.0+
-        {60, nullptr, "GetMainAppletApplicationDesiredLanguage"}, // 4.0.0+
-        {70, nullptr, "GetCurrentApplicationId"}, // 8.0.0+
-        {80, nullptr, "RequestExitToSelf"}, // 6.0.0+
-        {90, nullptr, "CreateApplicationAndPushAndRequestToLaunch"}, // 5.0.0+
-        {100, nullptr, "CreateGameMovieTrimmer"}, // 4.0.0+
-        {101, nullptr, "ReserveResourceForMovieOperation"}, // 5.0.0+
-        {102, nullptr, "UnreserveResourceForMovieOperation"}, // 5.0.0+
-        {110, nullptr, "GetMainAppletAvailableUsers"}, // 6.0.0+
-        {120, nullptr, "GetLaunchStorageInfoForDebug"}, // 9.0.0+
-        {130, nullptr, "GetGpuErrorDetectedSystemEvent"}, // 9.0.0+
-        {140, nullptr, "SetApplicationMemoryReservation"}, // 10.0.0+
-        {150, nullptr, "ShouldSetGpuTimeSliceManually"}, // 10.0.0+
+        {40, nullptr, "GetIndirectLayerProducerHandle"},
+        {50, nullptr, "ReportVisibleError"},
+        {51, nullptr, "ReportVisibleErrorWithErrorContext"},
+        {60, nullptr, "GetMainAppletApplicationDesiredLanguage"},
+        {70, nullptr, "GetCurrentApplicationId"},
+        {80, nullptr, "RequestExitToSelf"},
+        {90, nullptr, "CreateApplicationAndPushAndRequestToLaunch"},
+        {100, nullptr, "CreateGameMovieTrimmer"},
+        {101, nullptr, "ReserveResourceForMovieOperation"},
+        {102, nullptr, "UnreserveResourceForMovieOperation"},
+        {110, nullptr, "GetMainAppletAvailableUsers"},
+        {120, nullptr, "GetLaunchStorageInfoForDebug"},
+        {130, nullptr, "GetGpuErrorDetectedSystemEvent"},
+        {140, nullptr, "SetApplicationMemoryReservation"},
+        {150, nullptr, "ShouldSetGpuTimeSliceManually"},
     };
     // clang-format on
 
@@ -1774,7 +1774,7 @@ IOverlayAppletProxy::IOverlayAppletProxy() : ServiceFramework("IOverlayAppletPro
         {10, nullptr, "GetProcessWindingController"},
         {11, nullptr, "GetLibraryAppletCreator"},
         {20, nullptr, "GetOverlayFunctions"},
-        {21, nullptr, "GetAppletCommonFunctions"}, // 7.0.0+
+        {21, nullptr, "GetAppletCommonFunctions"},
         {1000, nullptr, "GetDebugFunctions"},
     };
     // clang-format on
@@ -1791,16 +1791,16 @@ IOverlayFunctions::IOverlayFunctions() : ServiceFramework("IOverlayFunctions") {
         {1, nullptr, "EndToWatchShortHomeButtonMessage"},
         {2, nullptr, "GetApplicationIdForLogo"},
         {3, nullptr, "SetGpuTimeSliceBoost"},
-        {4, nullptr, "SetAutoSleepTimeAndDimmingTimeEnabled"}, // 2.0.0+
-        {5, nullptr, "TerminateApplicationAndSetReason"}, // 2.0.0+
-        {6, nullptr, "SetScreenShotPermissionGlobally"}, // 3.0.0+
-        {10, nullptr, "StartShutdownSequenceForOverlay"}, // 6.0.0+
-        {11, nullptr, "StartRebootSequenceForOverlay"}, // 6.0.0+
-        {20, nullptr, "SetHandlingHomeButtonShortPressedEnabled"}, // 8.0.0+
-        {30, nullptr, "SetHealthWarningShowingState"}, // 9.0.0+
-        {31, nullptr, "IsHealthWarningRequired"}, // 10.0.0+
-        {90, nullptr, "SetRequiresGpuResourceUse"}, // 7.0.0+
-        {101, nullptr, "BeginToObserveHidInputForDevelop"}, // 5.0.0+
+        {4, nullptr, "SetAutoSleepTimeAndDimmingTimeEnabled"},
+        {5, nullptr, "TerminateApplicationAndSetReason"},
+        {6, nullptr, "SetScreenShotPermissionGlobally"},
+        {10, nullptr, "StartShutdownSequenceForOverlay"},
+        {11, nullptr, "StartRebootSequenceForOverlay"},
+        {20, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
+        {30, nullptr, "SetHealthWarningShowingState"},
+        {31, nullptr, "IsHealthWarningRequired"},
+        {90, nullptr, "SetRequiresGpuResourceUse"},
+        {101, nullptr, "BeginToObserveHidInputForDevelop"},
     };
     // clang-format on
 
@@ -1844,8 +1844,8 @@ ISystemAppletControllerForDebug::ISystemAppletControllerForDebug()
     // clang-format off
     static const FunctionInfo functions[] = {
         {1, nullptr, "RequestLaunchApplicationForDebug"},
-        {2, nullptr, "GetDebugStorageChannel"}, // 7.0.0+
-        {3, nullptr, "CreateStorageForDebug"}, // 7.0.0+
+        {2, nullptr, "GetDebugStorageChannel"},
+        {3, nullptr, "CreateStorageForDebug"},
     };
     // clang-format on
 
