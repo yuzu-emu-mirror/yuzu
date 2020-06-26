@@ -16,7 +16,7 @@ public:
         static const FunctionInfo functions[] = {
             {0, &ISession::SetPerformanceConfiguration, "SetPerformanceConfiguration"},
             {1, &ISession::GetPerformanceConfiguration, "GetPerformanceConfiguration"},
-            {2, nullptr, "SetCpuOverclockEnabled"},
+            {2, nullptr, "SetCpuOverclockEnabled"}, // 8.0.0+
         };
         RegisterHandlers(functions);
     }
@@ -55,7 +55,7 @@ APM::APM(std::shared_ptr<Module> apm, Controller& controller, const char* name)
     static const FunctionInfo functions[] = {
         {0, &APM::OpenSession, "OpenSession"},
         {1, &APM::GetPerformanceMode, "GetPerformanceMode"},
-        {6, nullptr, "IsCpuOverclockEnabled"},
+        {6, nullptr, "IsCpuOverclockEnabled"}, // 7.0.0+
     };
     RegisterHandlers(functions);
 }
@@ -85,9 +85,9 @@ APM_Sys::APM_Sys(Controller& controller) : ServiceFramework{"apm:sys"}, controll
         {2, nullptr, "GetThrottlingState"},
         {3, nullptr, "GetLastThrottlingState"},
         {4, nullptr, "ClearLastThrottlingState"},
-        {5, nullptr, "LoadAndApplySettings"},
-        {6, &APM_Sys::SetCpuBoostMode, "SetCpuBoostMode"},
-        {7, &APM_Sys::GetCurrentPerformanceConfiguration, "GetCurrentPerformanceConfiguration"},
+        {5, nullptr, "LoadAndApplySettings"}, // 5.0.0+
+        {6, &APM_Sys::SetCpuBoostMode, "SetCpuBoostMode"}, // 7.0.0+
+        {7, &APM_Sys::GetCurrentPerformanceConfiguration, "GetCurrentPerformanceConfiguration"}, // 7.0.0+
     };
     // clang-format on
 
