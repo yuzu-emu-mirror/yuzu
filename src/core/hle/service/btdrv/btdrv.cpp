@@ -94,69 +94,69 @@ public:
             {37, nullptr, "RegisterHidReportEvent"},
             {38, nullptr, "GetHidReportEventInfo"},
             {39, nullptr, "GetLatestPlr"},
-            {40, nullptr, "GetPendingConnections"}, // 3.0.0+
-            {41, nullptr, "GetChannelMap"}, // 3.0.0+
-            {42, nullptr, "EnableTxPowerBoostSetting"}, // 3.0.0+
-            {43, nullptr, "IsTxPowerBoostSettingEnabled"}, // 3.0.0+
-            {44, nullptr, "EnableAfhSetting"}, // 3.0.0+
+            {40, nullptr, "GetPendingConnections"},
+            {41, nullptr, "GetChannelMap"},
+            {42, nullptr, "EnableTxPowerBoostSetting"},
+            {43, nullptr, "IsTxPowerBoostSettingEnabled"},
+            {44, nullptr, "EnableAfhSetting"},
             {45, nullptr, "IsAfhSettingEnabled"},
-            {46, nullptr, "InitializeBle"}, // 5.0.0+
-            {47, nullptr, "EnableBle"}, // 5.0.0+
-            {48, nullptr, "DisableBle"}, // 5.0.0+
-            {49, nullptr, "FinalizeBle"}, // 5.0.0+
-            {50, nullptr, "SetBleVisibility"}, // 5.0.0+
-            {51, nullptr, "SetBleConnectionParameter"}, // 5.0.0+
-            {52, nullptr, "SetBleDefaultConnectionParameter"}, // 5.0.0+
-            {53, nullptr, "SetBleAdvertiseData"}, // 5.0.0+
-            {54, nullptr, "SetBleAdvertiseParameter"}, // 5.0.0+
-            {55, nullptr, "StartBleScan"}, // 5.0.0+
-            {56, nullptr, "StopBleScan"}, // 5.0.0+
-            {57, nullptr, "AddBleScanFilterCondition"}, // 5.0.0+
-            {58, nullptr, "DeleteBleScanFilterCondition"}, // 5.0.0+
-            {59, nullptr, "DeleteBleScanFilter"}, // 5.0.0+
-            {60, nullptr, "ClearBleScanFilters"}, // 5.0.0+
-            {61, nullptr, "EnableBleScanFilter"}, // 5.0.0+
-            {62, nullptr, "RegisterGattClient"}, // 5.0.0+
-            {63, nullptr, "UnregisterGattClient"}, // 5.0.0+
-            {64, nullptr, "UnregisterAllGattClients"}, // 5.0.0+
-            {65, nullptr, "ConnectGattServer"}, // 5.0.0+
-            {66, nullptr, "CancelConnectGattServer"}, // 5.1.0+
-            {67, nullptr, "DisconnectGattServer"}, // In 5.0.0 - 5.0.2 this was no. 66
-            {68, nullptr, "GetGattAttribute"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 67
-            {69, nullptr, "GetGattService"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 68
-            {70, nullptr, "ConfigureAttMtu"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 69
-            {71, nullptr, "RegisterGattServer"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 70
-            {72, nullptr, "UnregisterGattServer"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 71
-            {73, nullptr, "ConnectGattClient"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 72
-            {74, nullptr, "DisconnectGattClient"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 73
-            {75, nullptr, "AddGattService"}, // 5.0.0+
-            {76, nullptr, "EnableGattService"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 74
-            {77, nullptr, "AddGattCharacteristic"}, // 5.0.0+
-            {78, nullptr, "AddGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 76
-            {79, nullptr, "GetBleManagedEventInfo"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 78
-            {80, nullptr, "GetGattFirstCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 79
-            {81, nullptr, "GetGattNextCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 80
-            {82, nullptr, "GetGattFirstDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 81
-            {83, nullptr, "GetGattNextDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 82
-            {84, nullptr, "RegisterGattManagedDataPath"}, // 5.0.0+
-            {85, nullptr, "UnregisterGattManagedDataPath"}, // 5.0.0+
-            {86, nullptr, "RegisterGattHidDataPath"}, // 5.0.0+
-            {87, nullptr, "UnregisterGattHidDataPath"}, // 5.0.0+
-            {88, nullptr, "RegisterGattDataPath"}, // 5.0.0+
-            {89, nullptr, "UnregisterGattDataPath"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 83
-            {90, nullptr, "ReadGattCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 89
-            {91, nullptr, "ReadGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 90
-            {92, nullptr, "WriteGattCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 91
-            {93, nullptr, "WriteGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 92
-            {94, nullptr, "RegisterGattNotification"}, // 5.0.0+
-            {95, nullptr, "UnregisterGattNotification"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 93
-            {96, nullptr, "GetLeHidEventInfo"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 95
-            {97, nullptr, "RegisterBleHidEvent"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 96
-            {98, nullptr, "SetBleScanParameter"}, // 5.1.0+
-            {99, nullptr, "MoveToSecondaryPiconet"}, // 10.0.0+
-            {256, nullptr, "IsManufacturingMode"}, // 5.0.0+
-            {257, nullptr, "EmulateBluetoothCrash"}, // 7.0.0+
-            {258, nullptr, "GetBleChannelMap"}, // 9.0.0+
+            {46, nullptr, "InitializeBle"},
+            {47, nullptr, "EnableBle"},
+            {48, nullptr, "DisableBle"},
+            {49, nullptr, "FinalizeBle"},
+            {50, nullptr, "SetBleVisibility"},
+            {51, nullptr, "SetBleConnectionParameter"},
+            {52, nullptr, "SetBleDefaultConnectionParameter"},
+            {53, nullptr, "SetBleAdvertiseData"},
+            {54, nullptr, "SetBleAdvertiseParameter"},
+            {55, nullptr, "StartBleScan"},
+            {56, nullptr, "StopBleScan"},
+            {57, nullptr, "AddBleScanFilterCondition"},
+            {58, nullptr, "DeleteBleScanFilterCondition"},
+            {59, nullptr, "DeleteBleScanFilter"},
+            {60, nullptr, "ClearBleScanFilters"},
+            {61, nullptr, "EnableBleScanFilter"},
+            {62, nullptr, "RegisterGattClient"},
+            {63, nullptr, "UnregisterGattClient"},
+            {64, nullptr, "UnregisterAllGattClients"},
+            {65, nullptr, "ConnectGattServer"},
+            {66, nullptr, "CancelConnectGattServer"},
+            {67, nullptr, "DisconnectGattServer"},
+            {68, nullptr, "GetGattAttribute"},
+            {69, nullptr, "GetGattService"},
+            {70, nullptr, "ConfigureAttMtu"},
+            {71, nullptr, "RegisterGattServer"},
+            {72, nullptr, "UnregisterGattServer"},
+            {73, nullptr, "ConnectGattClient"},
+            {74, nullptr, "DisconnectGattClient"},
+            {75, nullptr, "AddGattService"},
+            {76, nullptr, "EnableGattService"},
+            {77, nullptr, "AddGattCharacteristic"},
+            {78, nullptr, "AddGattDescriptor"},
+            {79, nullptr, "GetBleManagedEventInfo"},
+            {80, nullptr, "GetGattFirstCharacteristic"},
+            {81, nullptr, "GetGattNextCharacteristic"},
+            {82, nullptr, "GetGattFirstDescriptor"},
+            {83, nullptr, "GetGattNextDescriptor"},
+            {84, nullptr, "RegisterGattManagedDataPath"},
+            {85, nullptr, "UnregisterGattManagedDataPath"},
+            {86, nullptr, "RegisterGattHidDataPath"},
+            {87, nullptr, "UnregisterGattHidDataPath"},
+            {88, nullptr, "RegisterGattDataPath"},
+            {89, nullptr, "UnregisterGattDataPath"},
+            {90, nullptr, "ReadGattCharacteristic"},
+            {91, nullptr, "ReadGattDescriptor"},
+            {92, nullptr, "WriteGattCharacteristic"},
+            {93, nullptr, "WriteGattDescriptor"},
+            {94, nullptr, "RegisterGattNotification"},
+            {95, nullptr, "UnregisterGattNotification"},
+            {96, nullptr, "GetLeHidEventInfo"},
+            {97, nullptr, "RegisterBleHidEvent"},
+            {98, nullptr, "SetBleScanParameter"},
+            {99, nullptr, "MoveToSecondaryPiconet"},
+            {256, nullptr, "IsManufacturingMode"},
+            {257, nullptr, "EmulateBluetoothCrash"},
+            {258, nullptr, "GetBleChannelMap"},
         };
         // clang-format on
 
