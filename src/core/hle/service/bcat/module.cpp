@@ -85,6 +85,7 @@ struct DeliveryCacheDirectoryEntry {
     BCATDigest digest;
 };
 
+// 2.0.0+
 class IDeliveryCacheProgressService final : public ServiceFramework<IDeliveryCacheProgressService> {
 public:
     IDeliveryCacheProgressService(std::shared_ptr<Kernel::ReadableEvent> event,
@@ -122,6 +123,7 @@ private:
     const DeliveryCacheProgressImpl& impl;
 };
 
+// 2.0.0+
 class IBcatService final : public ServiceFramework<IBcatService> {
 public:
     explicit IBcatService(Core::System& system_, Backend& backend_)
@@ -133,26 +135,29 @@ public:
         // clang-format off
         static const FunctionInfo functions[] = {
             {10100, &IBcatService::RequestSyncDeliveryCache, "RequestSyncDeliveryCache"},
-            {10101, &IBcatService::RequestSyncDeliveryCacheWithDirectoryName, "RequestSyncDeliveryCacheWithDirectoryName"},
-            {10200, nullptr, "CancelSyncDeliveryCacheRequest"},
+            {10101, &IBcatService::RequestSyncDeliveryCacheWithDirectoryName, "RequestSyncDeliveryCacheWithDirectoryName"}, // 5.0.0+
+            {10200, nullptr, "CancelSyncDeliveryCacheRequest"}, // 5.0.0+
             {20100, nullptr, "RequestSyncDeliveryCacheWithApplicationId"},
-            {20101, nullptr, "RequestSyncDeliveryCacheWithApplicationIdAndDirectoryName"},
-            {20300, nullptr, "GetDeliveryCacheStorageUpdateNotifier"},
-            {20301, nullptr, "RequestSuspendDeliveryTask"},
-            {20400, nullptr, "RegisterSystemApplicationDeliveryTask"},
-            {20401, nullptr, "UnregisterSystemApplicationDeliveryTask"},
-            {20410, nullptr, "SetSystemApplicationDeliveryTaskTimer"},
+            {20101, nullptr, "RequestSyncDeliveryCacheWithApplicationIdAndDirectoryName"}, // 5.0.0+
+            {20300, nullptr, "GetDeliveryCacheStorageUpdateNotifier"}, // 8.0.0+
+            {20301, nullptr, "RequestSuspendDeliveryTask"}, // 8.0.0+
+            {20400, nullptr, "RegisterSystemApplicationDeliveryTask"}, // 9.0.0+
+            {20401, nullptr, "UnregisterSystemApplicationDeliveryTask"}, // 9.0.0+
+            {20410, nullptr, "SetSystemApplicationDeliveryTaskTimer"}, // 9.1.0+
             {30100, &IBcatService::SetPassphrase, "SetPassphrase"},
-            {30200, nullptr, "RegisterBackgroundDeliveryTask"},
-            {30201, nullptr, "UnregisterBackgroundDeliveryTask"},
-            {30202, nullptr, "BlockDeliveryTask"},
-            {30203, nullptr, "UnblockDeliveryTask"},
-            {30300, nullptr, "RegisterSystemApplicationDeliveryTasks"},
+            {30101, nullptr, "Unknown"}, // 2.0.0 - 2.3.0
+            {30102, nullptr, "Unknown2"}, // 2.0.0 - 2.3.0
+            {30200, nullptr, "RegisterBackgroundDeliveryTask"}, // 3.0.0+
+            {30201, nullptr, "UnregisterBackgroundDeliveryTask"}, // 3.0.0+
+            {30202, nullptr, "BlockDeliveryTask"}, // 3.0.0+
+            {30203, nullptr, "UnblockDeliveryTask"}, // 3.0.0+
+            {30210, nullptr, "SetDeliveryTaskTimer"}, // 9.1.0+
+            {30300, nullptr, "RegisterSystemApplicationDeliveryTasks"}, // 8.0.0+
             {90100, nullptr, "EnumerateBackgroundDeliveryTask"},
             {90200, nullptr, "GetDeliveryList"},
-            {90201, &IBcatService::ClearDeliveryCacheStorage, "ClearDeliveryCacheStorage"},
-            {90202, nullptr, "ClearDeliveryTaskSubscriptionStatus"},
-            {90300, nullptr, "GetPushNotificationLog"},
+            {90201, &IBcatService::ClearDeliveryCacheStorage, "ClearDeliveryCacheStorage"}, // 3.0.0+
+            {90202, nullptr, "ClearDeliveryTaskSubscriptionStatus"}, // 8.0.0+
+            {90300, nullptr, "GetPushNotificationLog"}, // 3.0.0+
         };
         // clang-format on
         RegisterHandlers(functions);
@@ -271,6 +276,7 @@ void Module::Interface::CreateBcatService(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface<IBcatService>(system, *backend);
 }
 
+// 2.0.0+
 class IDeliveryCacheFileService final : public ServiceFramework<IDeliveryCacheFileService> {
 public:
     IDeliveryCacheFileService(FileSys::VirtualDir root_)
@@ -387,6 +393,7 @@ private:
     FileSys::VirtualFile current_file;
 };
 
+// 2.0.0+
 class IDeliveryCacheDirectoryService final
     : public ServiceFramework<IDeliveryCacheDirectoryService> {
 public:
@@ -486,6 +493,7 @@ private:
     FileSys::VirtualDir current_dir;
 };
 
+// 2.0.0+
 class IDeliveryCacheStorageService final : public ServiceFramework<IDeliveryCacheStorageService> {
 public:
     IDeliveryCacheStorageService(FileSys::VirtualDir root_)
@@ -542,6 +550,34 @@ private:
     FileSys::VirtualDir root;
     std::vector<DirectoryName> entries;
     u64 next_read_index = 0;
+};
+
+// 8.0.0+
+class INotifierService final : public ServiceFramework<INotifierService> {
+public:
+    INotifierService() : ServiceFramework("INotifierService") {
+        // clang-format off
+        static const FunctionInfo functions[] = {
+            {0, nullptr, "GetEvent"},
+        };
+        // clang-format on
+
+        RegisterHandlers(functions);
+    }
+};
+
+// 8.0.0+
+class IDeliveryTaskSuspensionService final
+    : public ServiceFramework<IDeliveryTaskSuspensionService> {
+    IDeliveryTaskSuspensionService() : ServiceFramework("IDeliveryTaskSuspensionService") {
+        // clang-format off
+        static const FunctionInfo functions[] = {
+            {0, nullptr, "GetEvent"},
+        };
+        // clang-format on
+
+        RegisterHandlers(functions);
+    }
 };
 
 void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx) {
