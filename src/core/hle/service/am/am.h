@@ -138,7 +138,7 @@ private:
     void SetFocusHandlingMode(Kernel::HLERequestContext& ctx);
     void SetRestartMessageEnabled(Kernel::HLERequestContext& ctx);
     void SetOutOfFocusSuspendingEnabled(Kernel::HLERequestContext& ctx);
-    void SetScreenShotImageOrientation(Kernel::HLERequestContext& ctx);
+    void SetAlbumImageOrientation(Kernel::HLERequestContext& ctx);
     void CreateManagedDisplayLayer(Kernel::HLERequestContext& ctx);
     void SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx);
     void SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
@@ -319,6 +319,73 @@ class IProcessWindingController final : public ServiceFramework<IProcessWindingC
 public:
     IProcessWindingController();
     ~IProcessWindingController() override;
+};
+
+class ILockAccessor final : public ServiceFramework<ILockAccessor> {
+public:
+    ILockAccessor();
+    ~ILockAccessor() override;
+};
+
+class IApplicationAccessor final : public ServiceFramework<IApplicationAccessor> {
+public:
+    IApplicationAccessor();
+    ~IApplicationAccessor() override;
+};
+
+class IAppletAccessor final : public ServiceFramework<IAppletAccessor> {
+public:
+    IAppletAccessor();
+    ~IAppletAccessor() override;
+};
+
+class IAppletCommonFunctions final : public ServiceFramework<IAppletCommonFunctions> {
+public:
+    IAppletCommonFunctions();
+    ~IAppletCommonFunctions() override;
+};
+
+class ILibraryAppletSelfAccessor final : public ServiceFramework<ILibraryAppletSelfAccessor> {
+public:
+    ILibraryAppletSelfAccessor();
+    ~ILibraryAppletSelfAccessor() override;
+};
+
+class IOverlayAppletProxy final : public ServiceFramework<IOverlayAppletProxy> {
+public:
+    IOverlayAppletProxy();
+    ~IOverlayAppletProxy() override;
+};
+
+class IOverlayFunctions final : public ServiceFramework<IOverlayFunctions> {
+public:
+    IOverlayFunctions();
+    ~IOverlayFunctions() override;
+};
+
+class IMovieMaker final : public ServiceFramework<IMovieMaker> {
+public:
+    IMovieMaker();
+    ~IMovieMaker() override;
+};
+
+class IStorageChannel final : public ServiceFramework<IStorageChannel> {
+public:
+    IStorageChannel();
+    ~IStorageChannel() override;
+};
+
+class ISystemAppletControllerForDebug final
+    : public ServiceFramework<ISystemAppletControllerForDebug> {
+public:
+    ISystemAppletControllerForDebug();
+    ~ISystemAppletControllerForDebug() override;
+};
+
+class ITransferStorageAccessor final : public ServiceFramework<ITransferStorageAccessor> {
+public:
+    ITransferStorageAccessor();
+    ~ITransferStorageAccessor() override;
 };
 
 /// Registers all AM services with the specified service manager.

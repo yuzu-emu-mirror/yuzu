@@ -10,8 +10,8 @@ IdleSys::IdleSys() : ServiceFramework{"idle:sys"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, nullptr, "GetAutoPowerDownEvent"},
-        {1, nullptr, "IsAutoPowerDownRequested"},
-        {2, nullptr, "Unknown2"},
+        {1, nullptr, "IsAutoPowerDownRequested"}, // 7.0.0+; In 1.0.0 - 3.0.2 this was unknown.
+        {2, nullptr, "Unknown2"}, // 1.0.0 - 3.0.2
         {3, nullptr, "SetHandlingContext"},
         {4, nullptr, "LoadAndApplySettings"},
         {5, nullptr, "ReportUserIsActive"},
