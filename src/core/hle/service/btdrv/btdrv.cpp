@@ -58,104 +58,105 @@ public:
             {1, nullptr, "InitializeBluetooth"},
             {2, nullptr, "EnableBluetooth"},
             {3, nullptr, "DisableBluetooth"},
-            {4, nullptr, "CleanupBluetooth"},
+            {4, nullptr, "FinalizeBluetooth"},
             {5, nullptr, "GetAdapterProperties"},
             {6, nullptr, "GetAdapterProperty"},
             {7, nullptr, "SetAdapterProperty"},
-            {8, nullptr, "StartDiscovery"},
-            {9, nullptr, "CancelDiscovery"},
+            {8, nullptr, "StartInquiry"},
+            {9, nullptr, "StopInquiry"},
             {10, nullptr, "CreateBond"},
             {11, nullptr, "RemoveBond"},
             {12, nullptr, "CancelBond"},
-            {13, nullptr, "PinReply"},
-            {14, nullptr, "SspReply"},
+            {13, nullptr, "RespondToPinRequest"},
+            {14, nullptr, "RespondToSspRequest"},
             {15, nullptr, "GetEventInfo"},
             {16, nullptr, "InitializeHid"},
-            {17, nullptr, "HidConnect"},
-            {18, nullptr, "HidDisconnect"},
-            {19, nullptr, "HidSendData"},
-            {20, nullptr, "HidSendData2"},
-            {21, nullptr, "HidSetReport"},
-            {22, nullptr, "HidGetReport"},
-            {23, nullptr, "HidWakeController"},
-            {24, nullptr, "HidAddPairedDevice"},
-            {25, nullptr, "HidGetPairedDevice"},
-            {26, nullptr, "CleanupHid"},
-            {27, nullptr, "HidGetEventInfo"},
-            {28, nullptr, "ExtSetTsi"},
-            {29, nullptr, "ExtSetBurstMode"},
-            {30, nullptr, "ExtSetZeroRetran"},
-            {31, nullptr, "ExtSetMcMode"},
-            {32, nullptr, "ExtStartLlrMode"},
-            {33, nullptr, "ExtExitLlrMode"},
-            {34, nullptr, "ExtSetRadio"},
-            {35, nullptr, "ExtSetVisibility"},
-            {36, nullptr, "ExtSetTbfcScan"},
+            {17, nullptr, "OpenHidConnection"},
+            {18, nullptr, "CloseHidConnection"},
+            {19, nullptr, "WriteHidData"},
+            {20, nullptr, "WriteHidData2"},
+            {21, nullptr, "SetHidReport"},
+            {22, nullptr, "GetHidReport"},
+            {23, nullptr, "TriggerConnection"},
+            {24, nullptr, "AddPairedDeviceInfo"},
+            {25, nullptr, "GetPairedDeviceInfo"},
+            {26, nullptr, "FinalizeHid"},
+            {27, nullptr, "GetHidEventInfo"},
+            {28, nullptr, "SetTsi"},
+            {29, nullptr, "EnableBurstMode"},
+            {30, nullptr, "SetZeroRetransmission"},
+            {31, nullptr, "EnableMcMode"},
+            {32, nullptr, "EnableLlrScan"},
+            {33, nullptr, "DisableLlrScan"},
+            {34, nullptr, "EnableRadio"},
+            {35, nullptr, "SetVisibility"},
+            {36, nullptr, "EnableTbfcScan"},
             {37, nullptr, "RegisterHidReportEvent"},
-            {38, nullptr, "HidGetReportEventInfo"},
+            {38, nullptr, "GetHidReportEventInfo"},
             {39, nullptr, "GetLatestPlr"},
-            {40, nullptr, "ExtGetPendingConnections"},
-            {41, nullptr, "GetChannelMap"},
-            {42, nullptr, "EnableBluetoothBoostSetting"},
-            {43, nullptr, "IsBluetoothBoostSettingEnabled"},
-            {44, nullptr, "EnableBluetoothAfhSetting"},
-            {45, nullptr, "IsBluetoothAfhSettingEnabled"},
-            {46, nullptr, "InitializeBluetoothLe"},
-            {47, nullptr, "EnableBluetoothLe"},
-            {48, nullptr, "DisableBluetoothLe"},
-            {49, nullptr, "CleanupBluetoothLe"},
-            {50, nullptr, "SetLeVisibility"},
-            {51, nullptr, "SetLeConnectionParameter"},
-            {52, nullptr, "SetLeDefaultConnectionParameter"},
-            {53, nullptr, "SetLeAdvertiseData"},
-            {54, nullptr, "SetLeAdvertiseParameter"},
-            {55, nullptr, "StartLeScan"},
-            {56, nullptr, "StopLeScan"},
-            {57, nullptr, "AddLeScanFilterCondition"},
-            {58, nullptr, "DeleteLeScanFilterCondition"},
-            {59, nullptr, "DeleteLeScanFilter"},
-            {60, nullptr, "ClearLeScanFilters"},
-            {61, nullptr, "EnableLeScanFilter"},
-            {62, nullptr, "RegisterLeClient"},
-            {63, nullptr, "UnregisterLeClient"},
-            {64, nullptr, "UnregisterLeClientAll"},
-            {65, nullptr, "LeClientConnect"},
-            {66, nullptr, "LeClientCancelConnection"},
-            {67, nullptr, "LeClientDisconnect"},
-            {68, nullptr, "LeClientGetAttributes"},
-            {69, nullptr, "LeClientDiscoverService"},
-            {70, nullptr, "LeClientConfigureMtu"},
-            {71, nullptr, "RegisterLeServer"},
-            {72, nullptr, "UnregisterLeServer"},
-            {73, nullptr, "LeServerConnect"},
-            {74, nullptr, "LeServerDisconnect"},
-            {75, nullptr, "CreateLeService"},
-            {76, nullptr, "StartLeService"},
-            {77, nullptr, "AddLeCharacteristic"},
-            {78, nullptr, "AddLeDescriptor"},
-            {79, nullptr, "GetLeCoreEventInfo"},
-            {80, nullptr, "LeGetFirstCharacteristic"},
-            {81, nullptr, "LeGetNextCharacteristic"},
-            {82, nullptr, "LeGetFirstDescriptor"},
-            {83, nullptr, "LeGetNextDescriptor"},
-            {84, nullptr, "RegisterLeCoreDataPath"},
-            {85, nullptr, "UnregisterLeCoreDataPath"},
-            {86, nullptr, "RegisterLeHidDataPath"},
-            {87, nullptr, "UnregisterLeHidDataPath"},
-            {88, nullptr, "RegisterLeDataPath"},
-            {89, nullptr, "UnregisterLeDataPath"},
-            {90, nullptr, "LeClientReadCharacteristic"},
-            {91, nullptr, "LeClientReadDescriptor"},
-            {92, nullptr, "LeClientWriteCharacteristic"},
-            {93, nullptr, "LeClientWriteDescriptor"},
-            {94, nullptr, "LeClientRegisterNotification"},
-            {95, nullptr, "LeClientDeregisterNotification"},
-            {96, nullptr, "GetLeHidEventInfo"},
-            {97, nullptr, "RegisterBleHidEvent"},
-            {98, nullptr, "SetLeScanParameter"},
-            {256, nullptr, "GetIsManufacturingMode"},
-            {257, nullptr, "EmulateBluetoothCrash"},
-            {258, nullptr, "GetBleChannelMap"},
+            {40, nullptr, "GetPendingConnections"}, // 3.0.0+
+            {41, nullptr, "GetChannelMap"}, // 3.0.0+
+            {42, nullptr, "EnableTxPowerBoostSetting"}, // 3.0.0+
+            {43, nullptr, "IsTxPowerBoostSettingEnabled"}, // 3.0.0+
+            {44, nullptr, "EnableAfhSetting"}, // 3.0.0+
+            {45, nullptr, "IsAfhSettingEnabled"},
+            {46, nullptr, "InitializeBle"}, // 5.0.0+
+            {47, nullptr, "EnableBle"}, // 5.0.0+
+            {48, nullptr, "DisableBle"}, // 5.0.0+
+            {49, nullptr, "FinalizeBle"}, // 5.0.0+
+            {50, nullptr, "SetBleVisibility"}, // 5.0.0+
+            {51, nullptr, "SetBleConnectionParameter"}, // 5.0.0+
+            {52, nullptr, "SetBleDefaultConnectionParameter"}, // 5.0.0+
+            {53, nullptr, "SetBleAdvertiseData"}, // 5.0.0+
+            {54, nullptr, "SetBleAdvertiseParameter"}, // 5.0.0+
+            {55, nullptr, "StartBleScan"}, // 5.0.0+
+            {56, nullptr, "StopBleScan"}, // 5.0.0+
+            {57, nullptr, "AddBleScanFilterCondition"}, // 5.0.0+
+            {58, nullptr, "DeleteBleScanFilterCondition"}, // 5.0.0+
+            {59, nullptr, "DeleteBleScanFilter"}, // 5.0.0+
+            {60, nullptr, "ClearBleScanFilters"}, // 5.0.0+
+            {61, nullptr, "EnableBleScanFilter"}, // 5.0.0+
+            {62, nullptr, "RegisterGattClient"}, // 5.0.0+
+            {63, nullptr, "UnregisterGattClient"}, // 5.0.0+
+            {64, nullptr, "UnregisterAllGattClients"}, // 5.0.0+
+            {65, nullptr, "ConnectGattServer"}, // 5.0.0+
+            {66, nullptr, "CancelConnectGattServer"}, // 5.1.0+
+            {67, nullptr, "DisconnectGattServer"}, // In 5.0.0 - 5.0.2 this was no. 66
+            {68, nullptr, "GetGattAttribute"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 67
+            {69, nullptr, "GetGattService"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 68
+            {70, nullptr, "ConfigureAttMtu"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 69
+            {71, nullptr, "RegisterGattServer"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 70
+            {72, nullptr, "UnregisterGattServer"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 71
+            {73, nullptr, "ConnectGattClient"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 72
+            {74, nullptr, "DisconnectGattClient"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 73
+            {75, nullptr, "AddGattService"}, // 5.0.0+
+            {76, nullptr, "EnableGattService"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 74
+            {77, nullptr, "AddGattCharacteristic"}, // 5.0.0+
+            {78, nullptr, "AddGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 76
+            {79, nullptr, "GetBleManagedEventInfo"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 78
+            {80, nullptr, "GetGattFirstCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 79
+            {81, nullptr, "GetGattNextCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 80
+            {82, nullptr, "GetGattFirstDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 81
+            {83, nullptr, "GetGattNextDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 82
+            {84, nullptr, "RegisterGattManagedDataPath"}, // 5.0.0+
+            {85, nullptr, "UnregisterGattManagedDataPath"}, // 5.0.0+
+            {86, nullptr, "RegisterGattHidDataPath"}, // 5.0.0+
+            {87, nullptr, "UnregisterGattHidDataPath"}, // 5.0.0+
+            {88, nullptr, "RegisterGattDataPath"}, // 5.0.0+
+            {89, nullptr, "UnregisterGattDataPath"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 83
+            {90, nullptr, "ReadGattCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 89
+            {91, nullptr, "ReadGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 90
+            {92, nullptr, "WriteGattCharacteristic"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 91
+            {93, nullptr, "WriteGattDescriptor"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 92
+            {94, nullptr, "RegisterGattNotification"}, // 5.0.0+
+            {95, nullptr, "UnregisterGattNotification"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 93
+            {96, nullptr, "GetLeHidEventInfo"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 95
+            {97, nullptr, "RegisterBleHidEvent"}, // 5.0.0+; In 5.0.0 - 5.0.2 this was no. 96
+            {98, nullptr, "SetBleScanParameter"}, // 5.1.0+
+            {99, nullptr, "MoveToSecondaryPiconet"}, // 10.0.0+
+            {256, nullptr, "IsManufacturingMode"}, // 5.0.0+
+            {257, nullptr, "EmulateBluetoothCrash"}, // 7.0.0+
+            {258, nullptr, "GetBleChannelMap"}, // 9.0.0+
         };
         // clang-format on
 
