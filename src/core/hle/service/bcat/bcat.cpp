@@ -6,7 +6,6 @@
 
 namespace Service::BCAT {
 
-// 2.0.0+
 BCAT::BCAT(Core::System& system, std::shared_ptr<Module> module,
            FileSystem::FileSystemController& fsc, const char* name)
     : Interface(system, std::move(module), fsc, name) {
@@ -15,8 +14,8 @@ BCAT::BCAT(Core::System& system, std::shared_ptr<Module> module,
         {0, &BCAT::CreateBcatService, "CreateBcatService"},
         {1, &BCAT::CreateDeliveryCacheStorageService, "CreateDeliveryCacheStorageService"},
         {2, &BCAT::CreateDeliveryCacheStorageServiceWithApplicationId, "CreateDeliveryCacheStorageServiceWithApplicationId"},
-        {3, nullptr, "CreateDeliveryCacheProgressService"}, // 2.0.0 - 2.3.0
-        {4, nullptr, "CreateDeliveryCacheProgressServiceWithApplicationId"}, // 2.0.0 - 2.3.0
+        {3, nullptr, "CreateDeliveryCacheProgressService"},
+        {4, nullptr, "CreateDeliveryCacheProgressServiceWithApplicationId"},
     };
     // clang-format on
     RegisterHandlers(functions);
