@@ -36,6 +36,8 @@ struct VKScreenInfo {
     bool is_srgb{};
 };
 
+void PrepareWindow([[maybe_unused]] void* render_surface);
+
 class RendererVulkan final : public VideoCore::RendererBase {
 public:
     explicit RendererVulkan(Core::Frontend::EmuWindow& window, Core::System& system);
