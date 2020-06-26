@@ -547,32 +547,6 @@ private:
     u64 next_read_index = 0;
 };
 
-class INotifierService final : public ServiceFramework<INotifierService> {
-public:
-    INotifierService() : ServiceFramework("INotifierService") {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "GetEvent"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
-class IDeliveryTaskSuspensionService final
-    : public ServiceFramework<IDeliveryTaskSuspensionService> {
-    IDeliveryTaskSuspensionService() : ServiceFramework("IDeliveryTaskSuspensionService") {
-        // clang-format off
-        static const FunctionInfo functions[] = {
-            {0, nullptr, "GetEvent"},
-        };
-        // clang-format on
-
-        RegisterHandlers(functions);
-    }
-};
-
 void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
 
