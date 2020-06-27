@@ -155,7 +155,7 @@ public:
      * Returns drawing area raw pointer
      * Unsafe version for MoltenVK to modify pointer
      */
-    void* GetRenderSurface() {
+    void* &GetRenderSurface() {
         return window_info.render_surface;
     }
 

@@ -43,7 +43,6 @@
 #ifdef __APPLE__
 #define VK_USE_PLATFORM_METAL_EXT
 #include <objc/message.h>
-#include "common/file_util.h"
 #include "vulkan/vulkan_macos.h"
 #include "vulkan/vulkan_metal.h"
 #endif
@@ -277,10 +276,9 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
     return true;
 }
 
-void PrepareWindow([[maybe_unused]] void* render_surface) {
+void PrepareMetalWindow([[maybe_unused]] void* &render_surface) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
-    // This is kinda messy, but it avoids having to write Objective C++ just to create a metal
-    // layer.
+    // Hackish: avoids having to write Objective C++ just to create a metal layer.
     id view = reinterpret_cast<id>(render_surface);
     Class clsCAMetalLayer = objc_getClass("CAMetalLayer");
     if (!clsCAMetalLayer) {
@@ -309,27 +307,25 @@ void PrepareWindow([[maybe_unused]] void* render_surface) {
     // layer.contentsScale = factor
     reinterpret_cast<void (*)(id, SEL, double)>(objc_msgSend)(
         layer, sel_getUid("setContentsScale:"), factor);
-    // Store the layer pointer, that way MoltenVK doesn't call [NSView layer] outside the main
-    // thread.
+    // Store layer ptr, so MoltenVK doesn't call [NSView layer] outside main thread.
     render_surface = layer;
 #endif
 }
 
 bool RendererVulkan::Init() {
-    PrepareWindow(render_window.GetRenderSurface());
+#ifdef __APPLE__
+    PrepareMetalWindow(render_window.GetRenderSurface());
+#endif
     library = OpenVulkanLibrary();
     instance = CreateInstance(library, dld, render_window.GetWindowInfo().type,
                               Settings::values.renderer_debug);
     if (!instance || !CreateDebugCallback() || !CreateSurface() || !PickDevices()) {
         return false;
     }
-
     Report();
 
     memory_manager = std::make_unique<VKMemoryManager>(*device);
-
     resource_manager = std::make_unique<VKResourceManager>(*device);
-
     const auto& framebuffer = render_window.GetFramebufferLayout();
     swapchain = std::make_unique<VKSwapchain>(*surface, *device);
     swapchain->Create(framebuffer.width, framebuffer.height, false);
@@ -381,7 +377,6 @@ bool RendererVulkan::CreateDebugCallback() {
 bool RendererVulkan::CreateSurface() {
     [[maybe_unused]] const auto& window_info = render_window.GetWindowInfo();
     VkSurfaceKHR unsafe_surface = nullptr;
-
 #ifdef _WIN32
     if (window_info.type == Core::Frontend::WindowSystemType::Windows) {
         const HWND hWnd = static_cast<HWND>(window_info.render_surface);
@@ -444,7 +439,6 @@ bool RendererVulkan::CreateSurface() {
         LOG_ERROR(Render_Vulkan, "Presentation not supported on this platform");
         return false;
     }
-
     surface = vk::SurfaceKHR(unsafe_surface, *instance, dld);
     return true;
 }
