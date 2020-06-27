@@ -36,7 +36,7 @@ struct VKScreenInfo {
     bool is_srgb{};
 };
 
-void PrepareMetalWindow([[maybe_unused]] void* &render_surface);
+void PrepareMetalWindow([[maybe_unused]] void*& render_surface);
 
 class RendererVulkan final : public VideoCore::RendererBase {
 public:

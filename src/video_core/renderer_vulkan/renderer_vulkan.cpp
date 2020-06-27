@@ -276,7 +276,7 @@ bool RendererVulkan::TryPresent(int /*timeout_ms*/) {
     return true;
 }
 
-void PrepareMetalWindow([[maybe_unused]] void* &render_surface) {
+void PrepareMetalWindow([[maybe_unused]] void*& render_surface) {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     // Hackish: avoids having to write Objective C++ just to create a metal layer.
     id view = reinterpret_cast<id>(render_surface);
