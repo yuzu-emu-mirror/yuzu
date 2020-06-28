@@ -57,7 +57,7 @@ void MacroEngine::Execute(Engines::Maxwell3D& maxwell3d, u32 method,
             cache_info.hash = boost::hash_value(macro_code->second);
         } else {
             const auto& macro_cached = uploaded_macro_code[mid_method.value()];
-            const auto rebased_method = method - macro_code->first;
+            const auto rebased_method = method - mid_method.value();
             auto& code = uploaded_macro_code[method];
             code.resize(macro_cached.size() - rebased_method);
             std::memcpy(code.data(), macro_cached.data() + rebased_method,
