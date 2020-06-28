@@ -447,7 +447,7 @@ void Config::ReadValues() {
             out.push_back(inner_line);
         }
 
-        Settings::values->disabled_addons.insert_or_assign(title_id, out);
+        Settings::global_values.disabled_addons.insert_or_assign(title_id, out);
     }
 
     // Web Service

@@ -499,7 +499,14 @@ extern Values game_values;
 extern Values *values;
 
 float Volume();
-void SwapValues(bool global);
+void CopyValues(Values& dst, const Values& src);
+
+enum class ValuesSwapTarget {
+    ToGlobal,
+    ToGame,
+};
+
+void SwapValues(ValuesSwapTarget target);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();

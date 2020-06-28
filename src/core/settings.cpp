@@ -67,12 +67,50 @@ Values global_values;
 Values game_values;
 Values *values = &global_values;
 
-void SwapValues(bool global) {
-    if (global) {
+void CopyValues(Values& dst, const Values& src) {
+    dst.udp_input_address = src.udp_input_address;
+    dst.udp_input_port = src.udp_input_port;
+    dst.udp_pad_index = src.udp_pad_index;
+
+    dst.use_virtual_sd = src.use_virtual_sd;
+    dst.gamecard_inserted = src.gamecard_inserted;
+    dst.gamecard_current_game = src.gamecard_current_game;
+    dst.gamecard_path = src.gamecard_path;
+    dst.nand_total_size = src.nand_total_size;
+    dst.nand_system_size = src.nand_system_size;
+    dst.nand_user_size = src.nand_user_size;
+    dst.sdmc_size = src.sdmc_size;
+
+    dst.log_filter = src.log_filter;
+
+    dst.use_dev_keys = src.use_dev_keys;
+
+    dst.record_frame_times = src.record_frame_times;
+    dst.use_gdbstub = src.use_gdbstub;
+    dst.gdbstub_port = src.gdbstub_port;
+    dst.program_args = src.program_args;
+    dst.dump_exefs = src.dump_exefs;
+    dst.dump_nso = src.dump_nso;
+    dst.reporting_services = src.reporting_services;
+    dst.quest_flag = src.quest_flag;
+    dst.disable_cpu_opt = src.disable_cpu_opt;
+    dst.disable_macro_jit = src.disable_macro_jit;
+
+    dst.bcat_backend = src.bcat_backend;
+    dst.bcat_boxcat_local = src.bcat_boxcat_local;
+
+    dst.enable_telemetry = src.enable_telemetry;
+    dst.web_api_url = src.web_api_url;
+    dst.yuzu_username = src.yuzu_username;
+    dst.yuzu_token = src.yuzu_token;
+}
+
+void SwapValues(ValuesSwapTarget target) {
+    if (target == ValuesSwapTarget::ToGlobal) {
         values = &global_values;
     }
     else {
-        std::memcpy(&game_values, &global_values, sizeof(global_values));
+        CopyValues(game_values, global_values);
         values = &game_values;
     }
 }

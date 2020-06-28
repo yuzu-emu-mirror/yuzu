@@ -55,6 +55,9 @@ void ConfigureSystem::RetranslateUI() {
 void ConfigureSystem::SetConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
 
+    ui->label_console_id->setVisible(Settings::values == &Settings::global_values);
+    ui->button_regenerate_console_id->setVisible(Settings::values == &Settings::global_values);
+
     ui->combo_language->setCurrentIndex(Settings::values->language_index);
     ui->combo_region->setCurrentIndex(Settings::values->region_index);
     ui->combo_time_zone->setCurrentIndex(Settings::values->time_zone_index);

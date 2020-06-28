@@ -24,7 +24,8 @@ Config::Config(const std::string& config_file, bool is_global) {
 }
 
 Config::~Config() {
-    Save();
+    if (global)
+        Save();
 }
 
 const std::array<int, Settings::NativeButton::NumButtons> Config::default_buttons = {
@@ -566,7 +567,7 @@ void Config::ReadDisabledAddOnValues() {
                 ReadSetting(QStringLiteral("d"), QStringLiteral("")).toString().toStdString());
         }
         qt_config->endArray();
-        Settings::values->disabled_addons.insert_or_assign(title_id, out);
+        Settings::global_values.disabled_addons.insert_or_assign(title_id, out);
     }
 
     qt_config->endArray();
@@ -581,8 +582,7 @@ void Config::ReadMiscellaneousValues() {
             .toStdString();
     Settings::values->use_dev_keys = ReadSetting(QStringLiteral("use_dev_keys"), false).toBool();
     Settings::values->use_global_values =
-        ReadSetting(QStringLiteral("use_global_values"), true).toBool() ||
-        Settings::values == &Settings::global_values;
+        ReadSetting(QStringLiteral("use_global_values"), true).toBool();
 
     qt_config->endGroup();
 }
@@ -1037,7 +1037,7 @@ void Config::SaveDisabledAddOnValues() {
     qt_config->beginWriteArray(QStringLiteral("DisabledAddOns"));
 
     int i = 0;
-    for (const auto& elem : Settings::values->disabled_addons) {
+    for (const auto& elem : Settings::global_values.disabled_addons) {
         qt_config->setArrayIndex(i);
         WriteSetting(QStringLiteral("title_id"), QVariant::fromValue<u64>(elem.first), 0);
         qt_config->beginWriteArray(QStringLiteral("disabled"));
@@ -1059,8 +1059,7 @@ void Config::SaveMiscellaneousValues() {
     WriteSetting(QStringLiteral("log_filter"), QString::fromStdString(Settings::values->log_filter),
                  QStringLiteral("*:Info"));
     WriteSetting(QStringLiteral("use_dev_keys"), Settings::values->use_dev_keys, false);
-    WriteSetting(QStringLiteral("use_global_values"), Settings::values->use_global_values ||
-                 Settings::values == &Settings::global_values, true);
+    WriteSetting(QStringLiteral("use_global_values"), Settings::values->use_global_values, true);
 
     qt_config->endGroup();
 }

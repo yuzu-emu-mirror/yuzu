@@ -91,7 +91,7 @@ void AOC_U::CountAddOnContent(Kernel::HLERequestContext& ctx) {
 
     const auto current = system.CurrentProcess()->GetTitleID();
 
-    const auto& disabled = Settings::values->disabled_addons[current];
+    const auto& disabled = Settings::global_values.disabled_addons[current];
     if (std::find(disabled.begin(), disabled.end(), "DLC") != disabled.end()) {
         rb.Push<u32>(0);
         return;
@@ -119,7 +119,7 @@ void AOC_U::ListAddOnContent(Kernel::HLERequestContext& ctx) {
     const auto current = system.CurrentProcess()->GetTitleID();
 
     std::vector<u32> out;
-    const auto& disabled = Settings::values->disabled_addons[current];
+    const auto& disabled = Settings::global_values.disabled_addons[current];
     if (std::find(disabled.begin(), disabled.end(), "DLC") == disabled.end()) {
         for (u64 content_id : add_on_content) {
             if ((content_id & DLC_BASE_TITLE_ID_MASK) != current) {

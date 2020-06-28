@@ -30,27 +30,30 @@
 ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()), title_id(title_id) {
 
+    Settings::SwapValues(Settings::ValuesSwapTarget::ToGame);
+    game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
+
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
     setWindowTitle(tr("Properties"));
-
-    Settings::SwapValues(true);
-    game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
 
     ui->addonsTab->SetTitleId(title_id);
 
     scene = new QGraphicsScene;
     ui->icon_view->setScene(scene);
 
-    connect(ui->checkGlobal, &QCheckBox::stateChanged, this, &ConfigurePerGame::UpdateVisibleTabs);
+    connect(ui->check_global, &QCheckBox::stateChanged, this, &ConfigurePerGame::UpdateVisibleTabs);
 
     LoadConfiguration();
 }
 
 ConfigurePerGame::~ConfigurePerGame() {
-}
+    Settings::SwapValues(Settings::ValuesSwapTarget::ToGlobal);
+};
 
 void ConfigurePerGame::ApplyConfiguration() {
+    Settings::values->use_global_values = ui->check_global->isChecked();
+
     ui->addonsTab->ApplyConfiguration();
     ui->generalTab->ApplyConfiguration();
     ui->systemTab->ApplyConfiguration();
@@ -58,6 +61,10 @@ void ConfigurePerGame::ApplyConfiguration() {
     ui->graphicsAdvancedTab->ApplyConfiguration();
     ui->audioTab->ApplyConfiguration();
     ui->inputTab->ApplyConfiguration();
+
+    game_config->Save();
+    Settings::SwapValues(Settings::ValuesSwapTarget::ToGlobal);
+
     Settings::Apply();
     Settings::LogSettings();
 }
@@ -84,7 +91,7 @@ void ConfigurePerGame::LoadConfiguration() {
         return;
     }
 
-    ui->checkGlobal->setChecked(Settings::values->use_global_values);
+    ui->check_global->setChecked(Settings::values->use_global_values);
 
     ui->addonsTab->LoadFromFile(file);
 
@@ -144,7 +151,7 @@ void ConfigurePerGame::LoadConfiguration() {
 }
 
 void ConfigurePerGame::UpdateVisibleTabs() {
-    bool visible = !ui->checkGlobal->isChecked();
+    bool visible = !ui->check_global->isChecked();
     ui->generalTab->setEnabled(visible);
     ui->systemTab->setEnabled(visible);
     ui->graphicsTab->setEnabled(visible);
