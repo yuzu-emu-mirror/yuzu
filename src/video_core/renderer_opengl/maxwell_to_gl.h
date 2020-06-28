@@ -24,7 +24,7 @@ namespace MaxwellToGL {
 
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
-inline GLenum VertexType(Maxwell::VertexAttribute attrib) {
+inline GLenum VertexType(const Maxwell::VertexAttribute& attrib) {
     switch (attrib.type) {
     case Maxwell::VertexAttribute::Type::UnsignedInt:
     case Maxwell::VertexAttribute::Type::UnsignedNorm:

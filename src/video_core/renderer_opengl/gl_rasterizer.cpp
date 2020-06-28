@@ -200,7 +200,7 @@ void RasterizerOpenGL::SetupVertexFormat() {
         }
         flags[Dirty::VertexFormat0 + index] = false;
 
-        const auto attrib = gpu.regs.vertex_attrib_format[index];
+        const auto& attrib = gpu.regs.vertex_attrib_format[index];
         const auto gl_index = static_cast<GLuint>(index);
 
         // Disable constant attributes.
