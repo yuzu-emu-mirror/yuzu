@@ -36,6 +36,14 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     connect(ui->device, qOverload<int>(&QComboBox::activated), this,
             [this](int device) { UpdateDeviceSelection(device); });
 
+    connect(ui->bg_button, &QPushButton::clicked, this, [this] {
+        const QColor new_bg_color = QColorDialog::getColor(bg_color);
+        if (!new_bg_color.isValid()) {
+            return;
+        }
+        UpdateBackgroundColorButton(new_bg_color);
+    });
+
     ui->bg_label->setVisible(Settings::configuring_global);
     ui->bg_combobox->setVisible(!Settings::configuring_global);
 }
@@ -223,14 +231,6 @@ void ConfigureGraphics::SetupPerGameUI() {
 
     connect(ui->bg_combobox, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this,
             [this](int index) { ui->bg_button->setEnabled(index == 1); });
-
-    connect(ui->bg_button, &QPushButton::clicked, this, [this] {
-        const QColor new_bg_color = QColorDialog::getColor(bg_color);
-        if (!new_bg_color.isValid()) {
-            return;
-        }
-        UpdateBackgroundColorButton(new_bg_color);
-    });
 
     ui->use_disk_shader_cache->setTristate(true);
     ui->use_asynchronous_gpu_emulation->setTristate(true);

@@ -543,7 +543,6 @@ void GMainWindow::InitializeWidgets() {
     async_status_button->setText(tr("ASYNC"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-    statusBar()->insertPermanentWidget(0, async_status_button);
 
     // Setup Multicore button
     multicore_status_button = new QPushButton();
@@ -565,6 +564,7 @@ void GMainWindow::InitializeWidgets() {
     multicore_status_button->setCheckable(true);
     multicore_status_button->setChecked(Settings::values.use_multi_core);
     statusBar()->insertPermanentWidget(0, multicore_status_button);
+    statusBar()->insertPermanentWidget(0, async_status_button);
 
     // Setup Renderer API button
     renderer_status_button = new QPushButton();
