@@ -67,7 +67,8 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.use_multi_core = ui->use_multi_core->isChecked();
         }
     } else {
-        ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core,
+                                                 ui->use_multi_core);
 
         bool global_frame_limit = ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked;
         Settings::values.use_frame_limit.SetGlobal(global_frame_limit);
