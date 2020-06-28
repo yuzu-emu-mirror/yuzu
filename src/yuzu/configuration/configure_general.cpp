@@ -7,6 +7,7 @@
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_general.h"
+#include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_general.h"
 #include "yuzu/uisettings.h"
 
@@ -40,6 +41,9 @@ void ConfigureGeneral::SetConfiguration() {
     ui->frame_limit->setValue(Settings::values.frame_limit);
 
     if (!Settings::configuring_global) {
+        if (Settings::values.use_multi_core.UsingGlobal()) {
+            ui->use_multi_core->setCheckState(Qt::PartiallyChecked);
+        }
         if (Settings::values.use_frame_limit.UsingGlobal()) {
             ui->toggle_frame_limit->setCheckState(Qt::PartiallyChecked);
         }
@@ -55,20 +59,16 @@ void ConfigureGeneral::ApplyConfiguration() {
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
-    }
 
-    Settings::values.use_multi_core = ui->use_multi_core->isChecked();
-    if (ui->toggle_frame_limit->checkState() != Qt::PartiallyChecked) {
-        if (!Settings::configuring_global) {
-            Settings::values.use_frame_limit.SetGlobal(false);
-            Settings::values.frame_limit.SetGlobal(false);
-        }
         // Guard if during game and set to game-specific value
         if (Settings::values.use_frame_limit.UsingGlobal()) {
             Settings::values.use_frame_limit = ui->toggle_frame_limit->checkState() == Qt::Checked;
             Settings::values.frame_limit = ui->frame_limit->value();
+            Settings::values.use_multi_core = ui->use_multi_core->isChecked();
         }
     } else {
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core);
+
         bool global_frame_limit = ui->toggle_frame_limit->checkState() == Qt::PartiallyChecked;
         Settings::values.use_frame_limit.SetGlobal(global_frame_limit);
         Settings::values.frame_limit.SetGlobal(global_frame_limit);
@@ -105,4 +105,5 @@ void ConfigureGeneral::SetupPerGameUI() {
     ui->toggle_hide_mouse->setVisible(false);
 
     ui->toggle_frame_limit->setTristate(true);
+    ui->use_multi_core->setTristate(true);
 }

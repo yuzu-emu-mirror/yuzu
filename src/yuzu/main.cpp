@@ -2129,14 +2129,10 @@ void GMainWindow::UpdateStatusBar() {
 }
 
 void GMainWindow::UpdateStatusButtons() {
-<<<<<<< HEAD
-    dock_status_button->setChecked(Settings::base_values.use_docked_mode);
+    dock_status_button->setChecked(Settings::values.use_docked_mode);
     multicore_status_button->setChecked(Settings::values.use_multi_core);
     Settings::values.use_asynchronous_gpu_emulation =
         Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-=======
-    dock_status_button->setChecked(Settings::values.use_docked_mode);
->>>>>>> 45c9ccc6a... settings: restore old values struct
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 #ifdef HAS_VULKAN
     renderer_status_button->setChecked(Settings::values.renderer_backend ==
