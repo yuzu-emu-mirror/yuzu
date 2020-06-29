@@ -276,28 +276,38 @@ class SPIRVDecompiler final : public Sirit::Module {
 public:
     explicit SPIRVDecompiler(const VKDevice& device, const ShaderIR& ir, ShaderType stage,
                              const Registry& registry, const Specialization& specialization)
-        : Module(0x00010300), device{device}, ir{ir}, stage{stage}, header{ir.GetHeader()},
+        :
+#ifdef __APPLE__
+        Module(0x00010000),
+#else
+        Module(0x00010300),
+#endif
+        device{device}, ir{ir}, stage{stage}, header{ir.GetHeader()},
           registry{registry}, specialization{specialization} {
         if (stage != ShaderType::Compute) {
             transform_feedback = BuildTransformFeedback(registry.GetGraphicsInfo());
         }
 
         AddCapability(spv::Capability::Shader);
-        AddCapability(spv::Capability::UniformAndStorageBuffer16BitAccess);
         AddCapability(spv::Capability::ImageQuery);
         AddCapability(spv::Capability::Image1D);
         AddCapability(spv::Capability::ImageBuffer);
         AddCapability(spv::Capability::ImageGatherExtended);
         AddCapability(spv::Capability::SampledBuffer);
         AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
+#ifndef __APPLE__
+        // Not sure why Draw Parameters not supported when it should be
         AddCapability(spv::Capability::DrawParameters);
+        // These can be added back when MoltenVK finally supports vk 1.1
         AddCapability(spv::Capability::SubgroupBallotKHR);
         AddCapability(spv::Capability::SubgroupVoteKHR);
+        AddCapability(spv::Capability::UniformAndStorageBuffer16BitAccess);
         AddExtension("SPV_KHR_shader_ballot");
         AddExtension("SPV_KHR_subgroup_vote");
+        AddExtension("SPV_KHR_shader_draw_parameters");
+#endif
         AddExtension("SPV_KHR_storage_buffer_storage_class");
         AddExtension("SPV_KHR_variable_pointers");
-        AddExtension("SPV_KHR_shader_draw_parameters");
 
         if (!transform_feedback.empty()) {
             if (device.IsExtTransformFeedbackSupported()) {
@@ -514,6 +524,8 @@ private:
     }
 
     void DeclareCommon() {
+#ifndef __APPLE__
+//subgrouplocalinvocationId requires VK_EXT_shader_subgroup_ballot - isn't in metal yet
         thread_id =
             DeclareInputBuiltIn(spv::BuiltIn::SubgroupLocalInvocationId, t_in_uint, "thread_id");
         thread_masks[0] =
@@ -526,6 +538,7 @@ private:
             DeclareInputBuiltIn(spv::BuiltIn::SubgroupLeMask, t_in_uint4, "thread_le_mask");
         thread_masks[4] =
             DeclareInputBuiltIn(spv::BuiltIn::SubgroupLtMask, t_in_uint4, "thread_lt_mask");
+#endif
     }
 
     void DeclareVertex() {
@@ -631,7 +644,11 @@ private:
 
     void DeclareRegisters() {
         for (const u32 gpr : ir.GetRegisters()) {
+#ifdef __APPLE__
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+#else
             const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
+#endif
             Name(id, fmt::format("gpr_{}", gpr));
             registers.emplace(gpr, AddGlobalVariable(id));
         }
@@ -640,7 +657,11 @@ private:
     void DeclareCustomVariables() {
         const u32 num_custom_variables = ir.GetNumCustomVariables();
         for (u32 i = 0; i < num_custom_variables; ++i) {
+#ifdef __APPLE__
+            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private);
+#else
             const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
+#endif
             Name(id, fmt::format("custom_var_{}", i));
             custom_variables.emplace(i, AddGlobalVariable(id));
         }
@@ -648,7 +669,11 @@ private:
 
     void DeclarePredicates() {
         for (const auto pred : ir.GetPredicates()) {
+#ifdef __APPLE__
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+#else
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+#endif
             Name(id, fmt::format("pred_{}", static_cast<u32>(pred)));
             predicates.emplace(pred, AddGlobalVariable(id));
         }
@@ -656,7 +681,11 @@ private:
 
     void DeclareFlowVariables() {
         for (u32 i = 0; i < ir.GetASTNumVariables(); i++) {
+#ifdef __APPLE__
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+#else
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+#endif
             Name(id, fmt::format("flow_var_{}", static_cast<u32>(i)));
             flow_variables.emplace(i, AddGlobalVariable(id));
         }
@@ -703,7 +732,11 @@ private:
         constexpr std::array names = {"zero", "sign", "carry", "overflow"};
         for (std::size_t flag = 0; flag < INTERNAL_FLAGS_COUNT; ++flag) {
             const auto flag_code = static_cast<InternalFlag>(flag);
+#ifdef __APPLE__
+            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+#else
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
+#endif
             internal_flags[flag] = AddGlobalVariable(Name(id, names[flag]));
         }
     }
@@ -1327,10 +1360,11 @@ private:
         }
 
         if (const auto comment = std::get_if<CommentNode>(&*node)) {
+#ifndef __APPLE__ // This doesn't work at all on moltenVK
             Name(OpUndef(t_void), comment->GetText());
+#endif
             return {};
         }
-
         UNREACHABLE();
         return {};
     }

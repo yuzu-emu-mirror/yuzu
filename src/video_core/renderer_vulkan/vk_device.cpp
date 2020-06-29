@@ -38,8 +38,11 @@ constexpr std::array REQUIRED_EXTENSIONS = {
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
 #ifndef __APPLE__
     VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+    // Subgroup ballot/vote will be supported by MoltenVK shortly
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
+    // Apparently shader draw params can be a missing feature
+    VK_KHR_SHADER_DRAW_PARAMETERS
 #endif
 };
 
@@ -242,7 +245,11 @@ bool VKDevice::Create() {
     bit16_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR;
     bit16_storage.pNext = nullptr;
     bit16_storage.storageBuffer16BitAccess = false;
+#ifdef __APPLE__
+    bit16_storage.uniformAndStorageBuffer16BitAccess = false;
+#else
     bit16_storage.uniformAndStorageBuffer16BitAccess = true;
+#endif
     bit16_storage.storagePushConstant16 = false;
     bit16_storage.storageInputOutput16 = false;
     SetNext(next, bit16_storage);
