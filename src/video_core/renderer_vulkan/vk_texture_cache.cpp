@@ -244,10 +244,10 @@ void CachedSurface::DownloadTexture(std::vector<u8>& staging_buffer) {
     FullTransition(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT,
                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    const auto& buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
+    const Buffer& buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
     // TODO(Rodrigo): Do this in a single copy
     for (u32 level = 0; level < params.num_levels; ++level) {
-        scheduler.Record([image = *image->GetHandle(), buffer = *buffer.handle,
+        scheduler.Record([image = *image->GetHandle(), buffer = buffer.Handle(),
                           copy = GetBufferImageCopy(level)](vk::CommandBuffer cmdbuf) {
             cmdbuf.CopyImageToBuffer(image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, copy);
         });
@@ -255,7 +255,7 @@ void CachedSurface::DownloadTexture(std::vector<u8>& staging_buffer) {
     scheduler.Finish();
 
     // TODO(Rodrigo): Use an intern buffer for staging buffers and avoid this unnecessary memcpy.
-    std::memcpy(staging_buffer.data(), buffer.commit->Map(host_memory_size), host_memory_size);
+    std::memcpy(staging_buffer.data(), buffer.Map(host_memory_size), host_memory_size);
 }
 
 void CachedSurface::DecorateSurfaceName() {
@@ -268,10 +268,10 @@ View CachedSurface::CreateView(const ViewParams& params) {
 }
 
 void CachedSurface::UploadBuffer(const std::vector<u8>& staging_buffer) {
-    const auto& src_buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
-    std::memcpy(src_buffer.commit->Map(host_memory_size), staging_buffer.data(), host_memory_size);
+    const Buffer& src_buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
+    std::memcpy(src_buffer.Map(host_memory_size), staging_buffer.data(), host_memory_size);
 
-    scheduler.Record([src_buffer = *src_buffer.handle, dst_buffer = *buffer,
+    scheduler.Record([src_buffer = src_buffer.Handle(), dst_buffer = *buffer,
                       size = host_memory_size](vk::CommandBuffer cmdbuf) {
         VkBufferCopy copy;
         copy.srcOffset = 0;
@@ -295,8 +295,8 @@ void CachedSurface::UploadBuffer(const std::vector<u8>& staging_buffer) {
 }
 
 void CachedSurface::UploadImage(const std::vector<u8>& staging_buffer) {
-    const auto& src_buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
-    std::memcpy(src_buffer.commit->Map(host_memory_size), staging_buffer.data(), host_memory_size);
+    const Buffer& src_buffer = staging_pool.GetUnusedBuffer(host_memory_size, true);
+    std::memcpy(src_buffer.Map(host_memory_size), staging_buffer.data(), host_memory_size);
 
     FullTransition(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -304,7 +304,7 @@ void CachedSurface::UploadImage(const std::vector<u8>& staging_buffer) {
     for (u32 level = 0; level < params.num_levels; ++level) {
         const VkBufferImageCopy copy = GetBufferImageCopy(level);
         if (image->GetAspectMask() == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-            scheduler.Record([buffer = *src_buffer.handle, image = *image->GetHandle(),
+            scheduler.Record([buffer = src_buffer.Handle(), image = *image->GetHandle(),
                               copy](vk::CommandBuffer cmdbuf) {
                 std::array<VkBufferImageCopy, 2> copies = {copy, copy};
                 copies[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -313,7 +313,7 @@ void CachedSurface::UploadImage(const std::vector<u8>& staging_buffer) {
                                          copies);
             });
         } else {
-            scheduler.Record([buffer = *src_buffer.handle, image = *image->GetHandle(),
+            scheduler.Record([buffer = src_buffer.Handle(), image = *image->GetHandle(),
                               copy](vk::CommandBuffer cmdbuf) {
                 cmdbuf.CopyBufferToImage(buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copy);
             });

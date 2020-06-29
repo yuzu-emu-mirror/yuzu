@@ -17,9 +17,17 @@ namespace Vulkan {
 class VKDevice;
 class VKScheduler;
 
-struct VKBuffer final {
+struct Buffer {
     vk::Buffer handle;
     VKMemoryCommit commit;
+
+    VkBuffer Handle() const noexcept {
+        return *handle;
+    }
+
+    MemoryMap Map(u64 size, u64 offset = 0) const {
+        return commit->Map(size, offset);
+    }
 };
 
 class VKStagingBufferPool final {
@@ -28,19 +36,17 @@ public:
                                  VKScheduler& scheduler);
     ~VKStagingBufferPool();
 
-    VKBuffer& GetUnusedBuffer(std::size_t size, bool host_visible);
+    Buffer& GetUnusedBuffer(std::size_t size, bool host_visible);
 
     void TickFrame();
 
 private:
-    struct StagingBuffer final {
-        explicit StagingBuffer(std::unique_ptr<VKBuffer> buffer);
-
-        std::unique_ptr<VKBuffer> buffer;
-        u64 tick = 0;
+    struct StagingBuffer {
+        Buffer buffer;
+        u64 tick;
     };
 
-    struct StagingBuffers final {
+    struct StagingBuffers {
         std::vector<StagingBuffer> entries;
         std::size_t delete_index = 0;
     };
@@ -48,9 +54,9 @@ private:
     static constexpr std::size_t NumLevels = sizeof(std::size_t) * CHAR_BIT;
     using StagingBuffersCache = std::array<StagingBuffers, NumLevels>;
 
-    VKBuffer* TryGetReservedBuffer(std::size_t size, bool host_visible);
+    Buffer* TryGetReservedBuffer(std::size_t size, bool host_visible);
 
-    VKBuffer& CreateStagingBuffer(std::size_t size, bool host_visible);
+    Buffer& CreateStagingBuffer(std::size_t size, bool host_visible);
 
     StagingBuffersCache& GetCache(bool host_visible);
 

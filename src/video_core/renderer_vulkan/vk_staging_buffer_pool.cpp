@@ -16,17 +16,14 @@
 
 namespace Vulkan {
 
-VKStagingBufferPool::StagingBuffer::StagingBuffer(std::unique_ptr<VKBuffer> buffer_)
-    : buffer{std::move(buffer_)} {}
-
 VKStagingBufferPool::VKStagingBufferPool(const VKDevice& device_, VKMemoryManager& memory_manager_,
                                          VKScheduler& scheduler_)
     : device{device_}, memory_manager{memory_manager_}, scheduler{scheduler_} {}
 
 VKStagingBufferPool::~VKStagingBufferPool() = default;
 
-VKBuffer& VKStagingBufferPool::GetUnusedBuffer(std::size_t size, bool host_visible) {
-    if (const auto buffer = TryGetReservedBuffer(size, host_visible)) {
+Buffer& VKStagingBufferPool::GetUnusedBuffer(std::size_t size, bool host_visible) {
+    if (Buffer* const buffer = TryGetReservedBuffer(size, host_visible)) {
         return *buffer;
     }
     return CreateStagingBuffer(size, host_visible);
@@ -39,22 +36,22 @@ void VKStagingBufferPool::TickFrame() {
     ReleaseCache(false);
 }
 
-VKBuffer* VKStagingBufferPool::TryGetReservedBuffer(std::size_t size, bool host_visible) {
+Buffer* VKStagingBufferPool::TryGetReservedBuffer(std::size_t size, bool host_visible) {
     for (StagingBuffer& entry : GetCache(host_visible)[Common::Log2Ceil64(size)].entries) {
         if (!scheduler.IsFree(entry.tick)) {
             continue;
         }
         entry.tick = scheduler.CurrentTick();
-        return &*entry.buffer;
+        return &entry.buffer;
     }
     return nullptr;
 }
 
-VKBuffer& VKStagingBufferPool::CreateStagingBuffer(std::size_t size, bool host_visible) {
+Buffer& VKStagingBufferPool::CreateStagingBuffer(std::size_t size, bool host_visible) {
     const u32 log2 = Common::Log2Ceil64(size);
 
-    auto buffer = std::make_unique<VKBuffer>();
-    buffer->handle = device.GetLogical().CreateBuffer({
+    Buffer buffer;
+    buffer.handle = device.GetLogical().CreateBuffer({
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
@@ -65,13 +62,15 @@ VKBuffer& VKStagingBufferPool::CreateStagingBuffer(std::size_t size, bool host_v
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
-    });
-    buffer->commit = memory_manager.Commit(buffer->handle, host_visible);
+    }),
+    buffer.commit = memory_manager.Commit(buffer.handle, host_visible);
 
     std::vector<StagingBuffer>& entries = GetCache(host_visible)[log2].entries;
-    StagingBuffer& entry = entries.emplace_back(std::move(buffer));
-    entry.tick = scheduler.CurrentTick();
-    return *entry.buffer;
+    StagingBuffer& entry = entries.emplace_back(StagingBuffer{
+        .buffer = std::move(buffer),
+        .tick = scheduler.CurrentTick(),
+    });
+    return entry.buffer;
 }
 
 VKStagingBufferPool::StagingBuffersCache& VKStagingBufferPool::GetCache(bool host_visible) {
