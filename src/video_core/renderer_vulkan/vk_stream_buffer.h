@@ -63,8 +63,9 @@ private:
     vk::DeviceMemory memory;  ///< Memory allocation.
     u64 stream_buffer_size{}; ///< Stream buffer size.
 
-    u64 offset{};      ///< Buffer iterator.
-    u64 mapped_size{}; ///< Size reserved for the current copy.
+    u8* persistent_map{}; ///< Address of the persistently mapped pointer.
+    u64 offset{};         ///< Buffer iterator.
+    u64 mapped_size{};    ///< Size reserved for the current copy.
 
     std::vector<Watch> current_watches;           ///< Watches recorded in the current iteration.
     std::size_t current_watch_cursor{};           ///< Count of watches, reset on invalidation.

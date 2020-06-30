@@ -63,31 +63,33 @@ public:
     ~VKMemoryCommitImpl();
 
     /// Maps a memory region and returns a pointer to it.
-    /// It's illegal to have more than one memory map at the same time.
+    /// @note It's illegal to have more than one memory map at the same time.
     MemoryMap Map(u64 size, u64 offset = 0) const;
 
     /// Maps the whole commit and returns a pointer to it.
-    /// It's illegal to have more than one memory map at the same time.
+    /// @note It's illegal to have more than one memory map at the same time.
     MemoryMap Map() const;
 
     /// Returns the Vulkan memory handler.
-    VkDeviceMemory GetMemory() const {
+    VkDeviceMemory Memory() const {
         return *memory;
     }
 
     /// Returns the start position of the commit relative to the allocation.
-    VkDeviceSize GetOffset() const {
+    VkDeviceSize Offset() const {
         return static_cast<VkDeviceSize>(interval.first);
     }
 
 private:
     /// Unmaps memory.
-    void Unmap() const;
+    /// @note Currently a no-op because all memory maps are persistent
+    void Unmap() const {}
 
     const VKDevice& device;           ///< Vulkan device.
     const vk::DeviceMemory& memory;   ///< Vulkan device memory handler.
     std::pair<u64, u64> interval{};   ///< Interval where the commit exists.
     VKMemoryAllocation* allocation{}; ///< Pointer to the large memory allocation.
+    u8* persistent_map{};             ///< Pointer to a persistently mapped address.
 };
 
 /// Holds ownership of a memory map.

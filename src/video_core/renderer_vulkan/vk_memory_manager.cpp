@@ -29,10 +29,21 @@ u64 GetAllocationChunkSize(u64 required_size) {
 
 class VKMemoryAllocation final {
 public:
-    explicit VKMemoryAllocation(const VKDevice& device, vk::DeviceMemory memory,
-                                VkMemoryPropertyFlags properties, u64 allocation_size, u32 type)
-        : device{device}, memory{std::move(memory)}, properties{properties},
-          allocation_size{allocation_size}, shifted_type{ShiftType(type)} {}
+    explicit VKMemoryAllocation(const VKDevice& device_, vk::DeviceMemory memory_,
+                                VkMemoryPropertyFlags properties_, u64 allocation_size_, u32 type)
+        : device{device_}, memory{std::move(memory_)}, properties{properties_},
+          allocation_size{allocation_size_}, shifted_type{ShiftType(type)} {
+        if ((properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) {
+            // Only map memory when it's host visible
+            persistent_map = memory.Map(0, allocation_size);
+        }
+    }
+
+    ~VKMemoryAllocation() {
+        if (persistent_map) {
+            memory.Unmap();
+        }
+    }
 
     VKMemoryCommit Commit(VkDeviceSize commit_size, VkDeviceSize alignment) {
         auto found = TryFindFreeSection(free_iterator, allocation_size,
@@ -69,6 +80,12 @@ public:
     /// Returns whether this allocation is compatible with the arguments.
     bool IsCompatible(VkMemoryPropertyFlags wanted_properties, u32 type_mask) const {
         return (wanted_properties & properties) && (type_mask & shifted_type) != 0;
+    }
+
+    /// Returns the base pointer to a persistently mapped pointer
+    /// @note It will be nullptr when the memory allocation is not host visible
+    u8* PersistentMap() const noexcept {
+        return persistent_map;
     }
 
 private:
@@ -109,6 +126,7 @@ private:
     const VkMemoryPropertyFlags properties; ///< Vulkan properties.
     const u64 allocation_size;              ///< Size of this allocation.
     const u32 shifted_type;                 ///< Stored Vulkan type of this allocation, shifted.
+    u8* persistent_map{};                   ///< Persistently mapped pointer.
 
     /// Hints where the next free region is likely going to be.
     u64 free_iterator{};
@@ -153,13 +171,13 @@ VKMemoryCommit VKMemoryManager::Commit(const VkMemoryRequirements& requirements,
 
 VKMemoryCommit VKMemoryManager::Commit(const vk::Buffer& buffer, bool host_visible) {
     auto commit = Commit(device.GetLogical().GetBufferMemoryRequirements(*buffer), host_visible);
-    buffer.BindMemory(commit->GetMemory(), commit->GetOffset());
+    buffer.BindMemory(commit->Memory(), commit->Offset());
     return commit;
 }
 
 VKMemoryCommit VKMemoryManager::Commit(const vk::Image& image, bool host_visible) {
     auto commit = Commit(device.GetLogical().GetImageMemoryRequirements(*image), host_visible);
-    image.BindMemory(commit->GetMemory(), commit->GetOffset());
+    image.BindMemory(commit->Memory(), commit->Offset());
     return commit;
 }
 
@@ -209,18 +227,15 @@ VKMemoryCommit VKMemoryManager::TryAllocCommit(const VkMemoryRequirements& requi
 
 VKMemoryCommitImpl::VKMemoryCommitImpl(const VKDevice& device, VKMemoryAllocation* allocation,
                                        const vk::DeviceMemory& memory, u64 begin, u64 end)
-    : device{device}, memory{memory}, interval{begin, end}, allocation{allocation} {}
+    : device{device}, memory{memory}, interval{begin, end}, allocation{allocation},
+      persistent_map{allocation->PersistentMap() + interval.first} {}
 
 VKMemoryCommitImpl::~VKMemoryCommitImpl() {
     allocation->Free(this);
 }
 
-MemoryMap VKMemoryCommitImpl::Map(u64 size, u64 offset_) const {
-    return MemoryMap{this, memory.Map(interval.first + offset_, size)};
-}
-
-void VKMemoryCommitImpl::Unmap() const {
-    memory.Unmap();
+MemoryMap VKMemoryCommitImpl::Map([[maybe_unused]] u64 size, u64 offset) const {
+    return MemoryMap{this, persistent_map + offset};
 }
 
 MemoryMap VKMemoryCommitImpl::Map() const {

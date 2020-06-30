@@ -64,7 +64,11 @@ VKStreamBuffer::VKStreamBuffer(const VKDevice& device_, VKScheduler& scheduler_,
     ReserveWatches(previous_watches, WATCHES_INITIAL_RESERVE);
 }
 
-VKStreamBuffer::~VKStreamBuffer() = default;
+VKStreamBuffer::~VKStreamBuffer() {
+    if (persistent_map) {
+        memory.Unmap();
+    }
+}
 
 std::tuple<u8*, u64, bool> VKStreamBuffer::Map(u64 size, u64 alignment) {
     ASSERT(size <= stream_buffer_size);
@@ -94,13 +98,11 @@ std::tuple<u8*, u64, bool> VKStreamBuffer::Map(u64 size, u64 alignment) {
         invalidated = true;
     }
 
-    return {memory.Map(offset, size), offset, invalidated};
+    return {persistent_map + offset, offset, invalidated};
 }
 
 void VKStreamBuffer::Unmap(u64 size) {
     ASSERT_MSG(size <= mapped_size, "Reserved size is too small");
-
-    memory.Unmap();
 
     offset += size;
 
@@ -137,13 +139,16 @@ void VKStreamBuffer::CreateBuffers(VkBufferUsageFlags usage) {
     const u32 required_flags = requirements.memoryTypeBits;
     stream_buffer_size = static_cast<u64>(requirements.size);
 
-    memory = device.GetLogical().AllocateMemory({
+    const VkMemoryAllocateInfo memory_ai{
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = nullptr,
         .allocationSize = requirements.size,
         .memoryTypeIndex = GetMemoryType(memory_properties, required_flags),
-    });
+    };
+    memory = device.GetLogical().AllocateMemory(memory_ai);
     buffer.BindMemory(*memory, 0);
+
+    persistent_map = memory.Map(0, memory_ai.allocationSize);
 }
 
 void VKStreamBuffer::ReserveWatches(std::vector<Watch>& watches, std::size_t grow_size) {
