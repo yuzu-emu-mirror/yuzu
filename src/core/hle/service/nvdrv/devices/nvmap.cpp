@@ -200,8 +200,13 @@ u32 nvmap::IocParam(const std::vector<u8>& input, std::vector<u8>& output) {
     case ParamTypes::Kind:
         params.result = object->kind;
         break;
+    case ParamTypes::Compr:
+        params.result = 0;
+        break;
+    case ParamTypes::Base:
     default:
-        UNIMPLEMENTED();
+        return static_cast<u32>(NvErrCodes::InvalidValue);
+        break;
     }
 
     std::memcpy(output.data(), &params, sizeof(params));
