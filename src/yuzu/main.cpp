@@ -8,6 +8,7 @@
 #include <thread>
 #ifdef __APPLE__
 #include <unistd.h> // for chdir
+#include <stdlib.h> // for setenv
 #endif
 
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
@@ -2442,6 +2443,9 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setApplicationName(QStringLiteral("yuzu"));
 
 #ifdef __APPLE__
+    // Set MoltenVK Environment Variable. Done before anything else so before graphics backend init
+    // This avoids a nightmare of calling vk_mvk_moltenvk to set config settings
+    setenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1", 1);
     // If you start a bundle (binary) on OSX without the Terminal, the working directory is "/".
     // But since we require the working directory to be the executable path for the location of the
     // user folder in the Qt Frontend, we need to cd into that working directory
