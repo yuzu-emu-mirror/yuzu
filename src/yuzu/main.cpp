@@ -1148,6 +1148,8 @@ void GMainWindow::ShutdownGame() {
     // If any settings are set to use their per-game counterparts, switch back to global
     Settings::RestoreGlobalState();
 
+    UpdateStatusButtons();
+
     // Update the GUI
     ui.action_Start->setEnabled(false);
     ui.action_Start->setText(tr("Start"));
