@@ -1039,18 +1039,14 @@ void GMainWindow::BootGame(const QString& filename) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
-    u64 title_id;
+    u64 title_id{0Ul};
 
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
     const auto loader = Loader::GetLoader(v_file);
-    if (loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
-        QMessageBox::information(this, tr("Properties"),
-                                 tr("The game properties could not be loaded."));
-        return;
+    if (!(loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success)) {
+        // Load per game settings
+        Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
     }
-
-    // Load per game settings
-    Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
 
     UpdateStatusButtons();
 
