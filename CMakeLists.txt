@@ -7,13 +7,15 @@ include(DownloadExternals)
 include(CMakeDependentOption)
 
 if (APPLE)
-    set(CMAKE_OSX_ARCHITECTURES "x86_64")
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14.0" CACHE STRING "")
     project(yuzu C CXX ASM)
     option(OSX_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
 else()
     project(yuzu)
 endif()
+
+# Pin build to minimum supported OSX version.
+# 10.15 supports metal 3 so has additional unsupported MVK extensions
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14.0" CACHE STRING "")
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON

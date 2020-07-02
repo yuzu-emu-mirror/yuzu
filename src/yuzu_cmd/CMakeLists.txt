@@ -44,6 +44,6 @@ if (MSVC)
     copy_yuzu_unicorn_deps(yuzu-cmd)
 endif()
 
-if (APPLE)
+if (APPLE AND ENABLE_VULKAN)
     target_include_directories(yuzu-cmd PRIVATE ../../externals/MoltenVK/include)
 endif()
