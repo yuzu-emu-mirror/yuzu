@@ -1039,7 +1039,7 @@ void GMainWindow::BootGame(const QString& filename) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
-    u64 title_id{0Ul};
+    u64 title_id{0};
 
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
     const auto loader = Loader::GetLoader(v_file);
