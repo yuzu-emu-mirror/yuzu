@@ -14,7 +14,7 @@ namespace ConfigurationShared {
 constexpr int USE_GLOBAL_INDEX = 0;
 constexpr int USE_GLOBAL_SEPARATOR_INDEX = 1;
 constexpr int USE_GLOBAL_OFFSET = 2;
-const QString use_global_text = QString::fromUtf8("Use global configuration");
+static const QString use_global_text = QString::fromUtf8("Use global configuration");
 
 // Global-aware apply and set functions
 

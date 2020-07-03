@@ -385,7 +385,7 @@ enum class GPUAccuracy : u32 {
 extern bool configuring_global;
 
 template <typename Type>
-class Setting {
+class Setting final {
 public:
     Setting() {
         use_global = true;

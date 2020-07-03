@@ -1269,7 +1269,7 @@ QVariant Config::ReadSetting(const QString& name, const QVariant& default_value)
 
 template <typename Type>
 void Config::ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& name) {
-    bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
+    const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     setting.SetGlobal(use_global);
     if (global || !use_global) {
         setting.SetValue(ReadSetting(name).value<Type>());
@@ -1279,7 +1279,7 @@ void Config::ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& 
 template <typename Type>
 void Config::ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& name,
                                const QVariant& default_value) {
-    bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
+    const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     setting.SetGlobal(use_global);
     if (global || !use_global) {
         setting.SetValue(ReadSetting(name, default_value).value<Type>());
@@ -1289,7 +1289,7 @@ void Config::ReadSettingGlobal(Settings::Setting<Type>& setting, const QString& 
 template <typename Type>
 void Config::ReadSettingGlobal(Type& setting, const QString& name,
                                const QVariant& default_value) const {
-    bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
+    const bool use_global = qt_config->value(name + QStringLiteral("/use_global"), true).toBool();
     if (global || !use_global) {
         setting = ReadSetting(name, default_value).value<Type>();
     }

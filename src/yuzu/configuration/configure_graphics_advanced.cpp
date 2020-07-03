@@ -51,7 +51,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
 
 void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     // Subtract 2 if configuring per-game (separator and "use global configuration" take 2 slots)
-    auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
+    const auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
         ui->gpu_accuracy->currentIndex() -
         ((Settings::configuring_global) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
 
