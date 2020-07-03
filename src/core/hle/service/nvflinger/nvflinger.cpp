@@ -35,6 +35,10 @@ void NVFlinger::VSyncThread(NVFlinger& nv_flinger) {
     nv_flinger.SplitVSync();
 }
 
+void NVFlinger::WaitForBuffersThread(NVFlinger& nv_flinger) {
+    nv_flinger.WaitForBuffers();
+}
+
 void NVFlinger::SplitVSync() {
     system.RegisterHostThread();
     std::string name = "yuzu:VSyncThread";
@@ -43,19 +47,99 @@ void NVFlinger::SplitVSync() {
     Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
     s64 delay = 0;
     while (is_running) {
-        guard->lock();
         const s64 time_start = system.CoreTiming().GetGlobalTimeNs().count();
-        Compose();
+        for (auto& display : displays) {
+            // Trigger vsync for this display at the end of drawing
+            SCOPE_EXIT({ display.SignalVSyncEvent(); });
+
+            // Don't do anything for displays without layers.
+            if (!display.HasLayers())
+                continue;
+
+            // TODO(Subv): Support more than 1 layer.
+            VI::Layer& layer = display.GetLayer(0);
+            auto& buffer_queue = layer.GetBufferQueue();
+
+            guard->lock();
+            // Search for a queued buffer and acquire it
+            auto buffer = buffer_queue.ObtainPresentBuffer();
+            guard->unlock();
+
+            if (!buffer) {
+                continue;
+            }
+
+            MicroProfileFlip();
+
+            swap_interval = buffer->get().swap_interval;
+            buffer_queue.ReleaseBuffer(buffer->get().slot);
+        }
         const auto ticks = GetNextTicks();
         const s64 time_end = system.CoreTiming().GetGlobalTimeNs().count();
         const s64 time_passed = time_end - time_start;
         const s64 next_time = std::max<s64>(0, ticks - time_passed - delay);
-        guard->unlock();
         if (next_time > 0) {
             wait_event->WaitFor(std::chrono::nanoseconds{next_time});
         }
         delay = (system.CoreTiming().GetGlobalTimeNs().count() - time_end) - next_time;
     }
+}
+
+void NVFlinger::WaitForBuffers() {
+    system.RegisterHostThread();
+    std::string name = "yuzu:WaitBufferQueueThread";
+    MicroProfileOnThreadCreate(name.c_str());
+    Common::SetCurrentThreadName(name.c_str());
+    Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
+    s64 delay = 0;
+    while (is_running) {
+        for (auto& display : displays) {
+            // Don't do anything for displays without layers.
+            if (!display.HasLayers())
+                continue;
+
+            // TODO(Subv): Support more than 1 layer.
+            VI::Layer& layer = display.GetLayer(0);
+            auto& buffer_queue = layer.GetBufferQueue();
+
+            guard->lock();
+
+            // Search for a queued buffer and acquire it
+            auto buffer = buffer_queue.AcquireBuffer();
+
+            guard->unlock();
+            if (!buffer) {
+
+                continue;
+            }
+
+            const auto& igbp_buffer = buffer->get().igbp_buffer;
+            // Now send the buffer to the GPU for drawing.
+            // TODO(Subv): Support more than just disp0. The display device selection is probably
+            // based on which display we're drawing (Default, Internal, External, etc)
+            auto nvdisp = nvdrv->GetDevice<Nvidia::Devices::nvdisp_disp0>("/dev/nvdisp_disp0");
+            ASSERT(nvdisp);
+
+            nvdisp->flip(igbp_buffer.gpu_buffer_id, igbp_buffer.offset, igbp_buffer.format,
+                         igbp_buffer.width, igbp_buffer.height, igbp_buffer.stride,
+                         buffer->get().transform, buffer->get().crop_rect);
+
+            auto& gpu = system.GPU();
+            const auto& multi_fence = buffer->get().multi_fence;
+
+            for (u32 fence_id = 0; fence_id < multi_fence.num_fences; fence_id++) {
+                const auto& fence = multi_fence.fences[fence_id];
+                gpu.WaitFence(fence.id, fence.value);
+            }
+
+            buffer_queue.SetToPresentBuffer(buffer->get().slot);
+        }
+        queue_event->Wait();
+    }
+}
+
+void NVFlinger::NotifyQueue() {
+    queue_event->Set();
 }
 
 NVFlinger::NVFlinger(Core::System& system) : system(system) {
@@ -78,7 +162,9 @@ NVFlinger::NVFlinger(Core::System& system) : system(system) {
     if (system.IsMulticore()) {
         is_running = true;
         wait_event = std::make_unique<Common::Event>();
+        queue_event = std::make_unique<Common::Event>();
         vsync_thread = std::make_unique<std::thread>(VSyncThread, std::ref(*this));
+        buffer_thread = std::make_unique<std::thread>(WaitForBuffersThread, std::ref(*this));
     } else {
         system.CoreTiming().ScheduleEvent(frame_ticks, composition_event);
     }
@@ -88,9 +174,13 @@ NVFlinger::~NVFlinger() {
     if (system.IsMulticore()) {
         is_running = false;
         wait_event->Set();
+        queue_event->Set();
         vsync_thread->join();
+        buffer_thread->join();
         vsync_thread.reset();
+        buffer_thread.reset();
         wait_event.reset();
+        queue_event.reset();
     } else {
         system.CoreTiming().UnscheduleEvent(composition_event, 0);
     }

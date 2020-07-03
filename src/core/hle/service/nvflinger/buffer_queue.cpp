@@ -115,11 +115,36 @@ std::optional<std::reference_wrapper<const BufferQueue::Buffer>> BufferQueue::Ac
     return *itr;
 }
 
-void BufferQueue::ReleaseBuffer(u32 slot) {
+std::optional<std::reference_wrapper<const BufferQueue::Buffer>>
+BufferQueue::ObtainPresentBuffer() {
+    auto itr = queue.end();
+    // Iterate to find a queued buffer matching the requested slot.
+    while (itr == queue.end() && !presenting_sequence.empty()) {
+        u32 slot = presenting_sequence.front();
+        itr = std::find_if(queue.begin(), queue.end(), [&slot](const Buffer& buffer) {
+            return buffer.status == Buffer::Status::Presenting && buffer.slot == slot;
+        });
+        presenting_sequence.pop_front();
+    }
+    if (itr == queue.end())
+        return {};
+    return *itr;
+}
+
+void BufferQueue::SetToPresentBuffer(u32 slot) {
     auto itr = std::find_if(queue.begin(), queue.end(),
                             [&](const Buffer& buffer) { return buffer.slot == slot; });
     ASSERT(itr != queue.end());
     ASSERT(itr->status == Buffer::Status::Acquired);
+    itr->status = Buffer::Status::Presenting;
+    presenting_sequence.push_back(slot);
+}
+
+void BufferQueue::ReleaseBuffer(u32 slot) {
+    auto itr = std::find_if(queue.begin(), queue.end(),
+                            [&](const Buffer& buffer) { return buffer.slot == slot; });
+    ASSERT(itr != queue.end());
+    ASSERT(itr->status == Buffer::Status::Presenting || itr->status == Buffer::Status::Acquired);
     itr->status = Buffer::Status::Free;
     free_buffers.push_back(slot);
 

@@ -77,7 +77,7 @@ public:
     };
 
     struct Buffer {
-        enum class Status { Free = 0, Queued = 1, Dequeued = 2, Acquired = 3 };
+        enum class Status { Free = 0, Queued = 1, Dequeued = 2, Acquired = 3, Presenting = 4 };
 
         u32 slot;
         Status status = Status::Free;
@@ -96,6 +96,8 @@ public:
                      const Common::Rectangle<int>& crop_rect, u32 swap_interval,
                      Service::Nvidia::MultiFence& multi_fence);
     std::optional<std::reference_wrapper<const Buffer>> AcquireBuffer();
+    std::optional<std::reference_wrapper<const Buffer>> ObtainPresentBuffer();
+    void SetToPresentBuffer(u32 slot);
     void ReleaseBuffer(u32 slot);
     void Disconnect();
     u32 Query(QueryType type);
@@ -115,6 +117,7 @@ private:
     std::list<u32> free_buffers;
     std::vector<Buffer> queue;
     std::list<u32> queue_sequence;
+    std::list<u32> presenting_sequence;
     Kernel::EventPair buffer_wait_event;
 };
 

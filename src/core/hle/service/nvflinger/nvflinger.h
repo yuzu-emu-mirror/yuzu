@@ -80,6 +80,9 @@ public:
     /// Obtains a buffer queue identified by the ID.
     const BufferQueue& FindBufferQueue(u32 id) const;
 
+    /// On queueing buffer for rendering
+    void NotifyQueue();
+
     /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
     /// finished.
     void Compose();
@@ -104,8 +107,10 @@ private:
     const VI::Layer* FindLayer(u64 display_id, u64 layer_id) const;
 
     static void VSyncThread(NVFlinger& nv_flinger);
+    static void WaitForBuffersThread(NVFlinger& nv_flinger);
 
     void SplitVSync();
+    void WaitForBuffers();
 
     std::shared_ptr<Nvidia::Module> nvdrv;
 
@@ -128,7 +133,9 @@ private:
     Core::System& system;
 
     std::unique_ptr<std::thread> vsync_thread;
+    std::unique_ptr<std::thread> buffer_thread;
     std::unique_ptr<Common::Event> wait_event;
+    std::unique_ptr<Common::Event> queue_event;
     std::atomic<bool> is_running{};
 };
 
