@@ -116,9 +116,10 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
         }
     } else {
-        if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX)
+        if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.renderer_backend.SetGlobal(true);
-        else {
+            Settings::values.vulkan_device.SetGlobal(true);
+        } else {
             Settings::values.renderer_backend.SetGlobal(false);
             Settings::values.renderer_backend = GetCurrentGraphicsBackend();
             if (GetCurrentGraphicsBackend() == Settings::RendererBackend::Vulkan) {
@@ -178,6 +179,11 @@ void ConfigureGraphics::UpdateDeviceComboBox() {
     ui->device->clear();
 
     bool enabled = false;
+
+    if (!Settings::configuring_global &&
+        ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+        vulkan_device = Settings::values.vulkan_device;
+    }
     switch (GetCurrentGraphicsBackend()) {
     case Settings::RendererBackend::OpenGL:
         ui->device->addItem(tr("OpenGL Graphics Device"));
@@ -191,6 +197,9 @@ void ConfigureGraphics::UpdateDeviceComboBox() {
         enabled = !vulkan_devices.empty();
         break;
     }
+    // If in per-game config and use global is selected, don't enable.
+    enabled &= !(!Settings::configuring_global &&
+                 ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX);
     ui->device->setEnabled(enabled && !Core::System::GetInstance().IsPoweredOn());
 }
 
@@ -208,12 +217,13 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
         return static_cast<Settings::RendererBackend>(ui->api->currentIndex());
     }
 
-    if (ui->api->currentIndex() == 0) {
+    if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
         Settings::values.renderer_backend.SetGlobal(true);
         return Settings::values.renderer_backend;
     }
     Settings::values.renderer_backend.SetGlobal(false);
-    return static_cast<Settings::RendererBackend>(ui->api->currentIndex() - 2);
+    return static_cast<Settings::RendererBackend>(ui->api->currentIndex() -
+                                                  ConfigurationShared::USE_GLOBAL_OFFSET);
 }
 
 void ConfigureGraphics::SetupPerGameUI() {
