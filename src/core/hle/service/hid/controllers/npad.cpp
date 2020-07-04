@@ -355,7 +355,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             const auto& last_entry =
                 sixaxis_sensor->sixaxis[sixaxis_sensor->common.last_entry_index];
 
-            sixaxis_sensor->common.timestamp = core_timing.GetTicks();
+            sixaxis_sensor->common.timestamp = core_timing.GetCPUTicks();
             sixaxis_sensor->common.last_entry_index =
                 (sixaxis_sensor->common.last_entry_index + 1) % 17;
 
