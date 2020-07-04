@@ -7,6 +7,7 @@
 #include <dynarmic/A32/a32.h>
 #include <dynarmic/A32/config.h>
 #include <dynarmic/A32/context.h>
+#include <dynarmic/optimization_flags.h>
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "core/arm/cpu_interrupt_handler.h"
@@ -144,8 +145,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& 
 
     // Optimizations
     if (Settings::values.disable_cpu_opt) {
-        config.enable_optimizations = false;
-        config.enable_fast_dispatch = false;
+        config.optimizations = Dynarmic::no_optimizations;
     }
 
     return std::make_unique<Dynarmic::A32::Jit>(config);

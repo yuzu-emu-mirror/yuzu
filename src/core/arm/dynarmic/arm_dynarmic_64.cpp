@@ -6,6 +6,7 @@
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
+#include <dynarmic/optimization_flags.h>
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "core/arm/cpu_interrupt_handler.h"
@@ -193,8 +194,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
 
     // Optimizations
     if (Settings::values.disable_cpu_opt) {
-        config.enable_optimizations = false;
-        config.enable_fast_dispatch = false;
+        config.optimizations = Dynarmic::no_optimizations;
     }
 
     // Timing
