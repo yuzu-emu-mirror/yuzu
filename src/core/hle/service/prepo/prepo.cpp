@@ -23,8 +23,8 @@ public:
             {10101, &PlayReport::SaveReportWithUser<Core::Reporter::PlayReportType::Old>, "SaveReportWithUserOld"},
             {10102, &PlayReport::SaveReport<Core::Reporter::PlayReportType::Old2>, "SaveReportOld2"},
             {10103, &PlayReport::SaveReportWithUser<Core::Reporter::PlayReportType::Old2>, "SaveReportWithUserOld2"},
-            {10104, nullptr, "SaveReport"},
-            {10105, nullptr, "SaveReportWithUser"},
+            {10104, &PlayReport::SaveReport<Core::Reporter::PlayReportType::New>, "SaveReport"},
+            {10105, &PlayReport::SaveReportWithUser<Core::Reporter::PlayReportType::New>, "SaveReportWithUser"},
             {10200, nullptr, "RequestImmediateTransmission"},
             {10300, nullptr, "GetTransmissionStatus"},
             {10400, nullptr, "GetSystemSessionId"},
@@ -76,7 +76,8 @@ private:
         const auto process_id = rp.PopRaw<u64>();
         std::vector<std::vector<u8>> data{ctx.ReadBuffer(0)};
 
-        if constexpr (Type == Core::Reporter::PlayReportType::Old2) {
+        if constexpr (Type == Core::Reporter::PlayReportType::Old2 ||
+                      Type == Core::Reporter::PlayReportType::New) {
             const auto read_buffer_count =
                 ctx.BufferDescriptorX().size() + ctx.BufferDescriptorA().size();
             if (read_buffer_count > 1) {
