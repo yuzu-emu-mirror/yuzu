@@ -55,7 +55,8 @@ private:
         const auto process_id = rp.PopRaw<u64>();
 
         std::vector<std::vector<u8>> data{ctx.ReadBuffer(0)};
-        if constexpr (Type == Core::Reporter::PlayReportType::Old2) {
+        if constexpr (Type == Core::Reporter::PlayReportType::Old2 ||
+                      Type == Core::Reporter::PlayReportType::New) {
             data.emplace_back(ctx.ReadBuffer(1));
         }
 
