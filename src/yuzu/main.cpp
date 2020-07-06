@@ -684,8 +684,12 @@ void GMainWindow::InitializeHotkeys() {
     ui.action_Show_Status_Bar->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, toggle_status_bar));
 
+    // This is a hack which should be removed if and when a
+    // proper solution is found
+    /*
     ui.action_Capture_Screenshot->setShortcut(
         hotkey_registry.GetKeySequence(main_window, capture_screenshot));
+    */
     ui.action_Capture_Screenshot->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, capture_screenshot));
 
