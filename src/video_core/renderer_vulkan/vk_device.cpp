@@ -36,13 +36,13 @@ constexpr std::array REQUIRED_EXTENSIONS = {
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+    // If device doesn't support draw_parameters there's no chance it runs anything
+    VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
 #ifndef __APPLE__
     VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
     // Subgroup ballot/vote will be supported by MoltenVK shortly
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
-    // Apparently shader draw params can be a missing feature
-    VK_KHR_SHADER_DRAW_PARAMETERS
 #endif
 };
 

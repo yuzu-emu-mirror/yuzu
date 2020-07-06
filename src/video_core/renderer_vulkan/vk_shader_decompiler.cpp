@@ -295,17 +295,17 @@ public:
         AddCapability(spv::Capability::ImageGatherExtended);
         AddCapability(spv::Capability::SampledBuffer);
         AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
-#ifndef __APPLE__
         // Not sure why Draw Parameters not supported when it should be
         AddCapability(spv::Capability::DrawParameters);
+#ifndef __APPLE__
         // These can be added back when MoltenVK finally supports vk 1.1
         AddCapability(spv::Capability::SubgroupBallotKHR);
         AddCapability(spv::Capability::SubgroupVoteKHR);
         AddCapability(spv::Capability::UniformAndStorageBuffer16BitAccess);
         AddExtension("SPV_KHR_shader_ballot");
         AddExtension("SPV_KHR_subgroup_vote");
-        AddExtension("SPV_KHR_shader_draw_parameters");
 #endif
+        AddExtension("SPV_KHR_shader_draw_parameters");
         AddExtension("SPV_KHR_storage_buffer_storage_class");
         AddExtension("SPV_KHR_variable_pointers");
 
