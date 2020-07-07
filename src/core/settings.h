@@ -437,7 +437,7 @@ struct Values {
     bool renderer_debug;
     int vulkan_device;
 
-    float resolution_factor;
+    u16 resolution_factor{1};
     int aspect_ratio;
     int max_anisotropy;
     bool use_frame_limit;
@@ -459,6 +459,7 @@ struct Values {
     bool use_dev_keys;
 
     // Audio
+    bool audio_muted;
     std::string sink_id;
     bool enable_audio_stretching;
     std::string audio_device_id;
@@ -474,6 +475,7 @@ struct Values {
     bool reporting_services;
     bool quest_flag;
     bool disable_cpu_opt;
+    bool disable_macro_jit;
 
     // BCAT
     std::string bcat_backend;
@@ -488,6 +490,8 @@ struct Values {
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
 } extern values;
+
+float Volume();
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();

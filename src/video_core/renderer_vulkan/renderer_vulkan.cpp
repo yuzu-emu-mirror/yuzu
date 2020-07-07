@@ -13,6 +13,7 @@
 #include <fmt/format.h>
 
 #include "common/dynamic_library.h"
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "common/telemetry.h"
 #include "core/core.h"
@@ -76,7 +77,8 @@ Common::DynamicLibrary OpenVulkanLibrary() {
     char* libvulkan_env = getenv("LIBVULKAN_PATH");
     if (!libvulkan_env || !library.Open(libvulkan_env)) {
         // Use the libvulkan.dylib from the application bundle.
-        std::string filename = File::GetBundleDirectory() + "/Contents/Frameworks/libvulkan.dylib";
+        const std::string filename =
+            FileUtil::GetBundleDirectory() + "/Contents/Frameworks/libvulkan.dylib";
         library.Open(filename.c_str());
     }
 #else
@@ -153,11 +155,31 @@ vk::Instance CreateInstance(Common::DynamicLibrary& library, vk::InstanceDispatc
         }
     }
 
-    static constexpr std::array layers_data{"VK_LAYER_LUNARG_standard_validation"};
-    vk::Span<const char*> layers = layers_data;
-    if (!enable_layers) {
-        layers = {};
+    std::vector<const char*> layers;
+    layers.reserve(1);
+    if (enable_layers) {
+        layers.push_back("VK_LAYER_KHRONOS_validation");
     }
+
+    const std::optional layer_properties = vk::EnumerateInstanceLayerProperties(dld);
+    if (!layer_properties) {
+        LOG_ERROR(Render_Vulkan, "Failed to query layer properties, disabling layers");
+        layers.clear();
+    }
+
+    for (auto layer_it = layers.begin(); layer_it != layers.end();) {
+        const char* const layer = *layer_it;
+        const auto it = std::find_if(
+            layer_properties->begin(), layer_properties->end(),
+            [layer](const VkLayerProperties& prop) { return !std::strcmp(layer, prop.layerName); });
+        if (it == layer_properties->end()) {
+            LOG_ERROR(Render_Vulkan, "Layer {} not available, removing it", layer);
+            layer_it = layers.erase(layer_it);
+        } else {
+            ++layer_it;
+        }
+    }
+
     vk::Instance instance = vk::Instance::Create(layers, extensions, dld);
     if (!instance) {
         LOG_ERROR(Render_Vulkan, "Failed to create Vulkan instance");

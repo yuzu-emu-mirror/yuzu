@@ -3,6 +3,8 @@ add_library(video_core STATIC
     buffer_cache/buffer_cache.h
     buffer_cache/map_interval.cpp
     buffer_cache/map_interval.h
+    compatible_formats.cpp
+    compatible_formats.h
     dirty_flags.cpp
     dirty_flags.h
     dma_pusher.cpp
@@ -25,6 +27,14 @@ add_library(video_core STATIC
     engines/shader_bytecode.h
     engines/shader_header.h
     engines/shader_type.h
+    macro/macro.cpp
+    macro/macro.h
+    macro/macro_hle.cpp
+    macro/macro_hle.h
+    macro/macro_interpreter.cpp
+    macro/macro_interpreter.h
+    macro/macro_jit_x64.cpp
+    macro/macro_jit_x64.h
     fence_manager.h
     gpu.cpp
     gpu.h
@@ -36,8 +46,6 @@ add_library(video_core STATIC
     gpu_thread.h
     guest_driver.cpp
     guest_driver.h
-    macro_interpreter.cpp
-    macro_interpreter.h
     memory_manager.cpp
     memory_manager.h
     morton.cpp
@@ -45,11 +53,11 @@ add_library(video_core STATIC
     query_cache.h
     rasterizer_accelerated.cpp
     rasterizer_accelerated.h
-    rasterizer_cache.cpp
-    rasterizer_cache.h
     rasterizer_interface.h
     renderer_base.cpp
     renderer_base.h
+    renderer_opengl/gl_arb_decompiler.cpp
+    renderer_opengl/gl_arb_decompiler.h
     renderer_opengl/gl_buffer_cache.cpp
     renderer_opengl/gl_buffer_cache.h
     renderer_opengl/gl_device.cpp
@@ -89,6 +97,7 @@ add_library(video_core STATIC
     renderer_opengl/utils.h
     sampler_cache.cpp
     sampler_cache.h
+    shader_cache.h
     shader/decode/arithmetic.cpp
     shader/decode/arithmetic_immediate.cpp
     shader/decode/bfe.cpp

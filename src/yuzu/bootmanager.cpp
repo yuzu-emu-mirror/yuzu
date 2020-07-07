@@ -8,12 +8,15 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMessageBox>
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
 #include <QPainter>
 #include <QScreen>
 #include <QStringList>
 #include <QWindow>
+
+#ifdef HAS_OPENGL
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#endif
 
 #if !defined(WIN32) && HAS_VULKAN
 #include <qpa/qplatformnativeinterface.h>
@@ -41,20 +44,32 @@ EmuThread::EmuThread() = default;
 EmuThread::~EmuThread() = default;
 
 void EmuThread::run() {
-    MicroProfileOnThreadCreate("EmuThread");
+    std::string name = "yuzu:EmuControlThread";
+    MicroProfileOnThreadCreate(name.c_str());
+    Common::SetCurrentThreadName(name.c_str());
+
+    auto& system = Core::System::GetInstance();
+
+    system.RegisterHostThread();
+
+    auto& gpu = system.GPU();
 
     // Main process has been loaded. Make the context current to this thread and begin GPU and CPU
     // execution.
-    Core::System::GetInstance().GPU().Start();
+    gpu.Start();
+
+    gpu.ObtainContext();
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
 
-    Core::System::GetInstance().Renderer().Rasterizer().LoadDiskResources(
+    system.Renderer().Rasterizer().LoadDiskResources(
         stop_run, [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
             emit LoadProgress(stage, value, total);
         });
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
+
+    gpu.ReleaseContext();
 
     // Holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
@@ -62,28 +77,32 @@ void EmuThread::run() {
     bool was_active = false;
     while (!stop_run) {
         if (running) {
-            if (!was_active)
+            if (was_active) {
                 emit DebugModeLeft();
-
-            Core::System::ResultStatus result = Core::System::GetInstance().RunLoop();
-            if (result != Core::System::ResultStatus::Success) {
-                this->SetRunning(false);
-                emit ErrorThrown(result, Core::System::GetInstance().GetStatusDetails());
             }
 
-            was_active = running || exec_step;
-            if (!was_active && !stop_run)
+            running_guard = true;
+            Core::System::ResultStatus result = system.Run();
+            if (result != Core::System::ResultStatus::Success) {
+                running_guard = false;
+                this->SetRunning(false);
+                emit ErrorThrown(result, system.GetStatusDetails());
+            }
+            running_wait.Wait();
+            result = system.Pause();
+            if (result != Core::System::ResultStatus::Success) {
+                running_guard = false;
+                this->SetRunning(false);
+                emit ErrorThrown(result, system.GetStatusDetails());
+            }
+            running_guard = false;
+
+            if (!stop_run) {
+                was_active = true;
                 emit DebugModeEntered();
+            }
         } else if (exec_step) {
-            if (!was_active)
-                emit DebugModeLeft();
-
-            exec_step = false;
-            Core::System::GetInstance().SingleStep();
-            emit DebugModeEntered();
-            yieldCurrentThread();
-
-            was_active = false;
+            UNIMPLEMENTED();
         } else {
             std::unique_lock lock{running_mutex};
             running_cv.wait(lock, [this] { return IsRunning() || exec_step || stop_run; });
@@ -91,13 +110,14 @@ void EmuThread::run() {
     }
 
     // Shutdown the core emulation
-    Core::System::GetInstance().Shutdown();
+    system.Shutdown();
 
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();
 #endif
 }
 
+#ifdef HAS_OPENGL
 class OpenGLSharedContext : public Core::Frontend::GraphicsContext {
 public:
     /// Create the original context that should be shared from
@@ -106,6 +126,9 @@ public:
         format.setVersion(4, 3);
         format.setProfile(QSurfaceFormat::CompatibilityProfile);
         format.setOption(QSurfaceFormat::FormatOption::DeprecatedFunctions);
+        if (Settings::values.renderer_debug) {
+            format.setOption(QSurfaceFormat::FormatOption::DebugContext);
+        }
         // TODO: expose a setting for buffer value (ie default/single/double/triple)
         format.setSwapBehavior(QSurfaceFormat::DefaultSwapBehavior);
         format.setSwapInterval(0);
@@ -180,6 +203,7 @@ private:
     std::unique_ptr<QOffscreenSurface> offscreen_surface{};
     QSurface* surface;
 };
+#endif
 
 class DummyContext : public Core::Frontend::GraphicsContext {};
 
@@ -352,7 +376,7 @@ QByteArray GRenderWindow::saveGeometry() {
 }
 
 qreal GRenderWindow::windowPixelRatio() const {
-    return devicePixelRatio();
+    return devicePixelRatioF();
 }
 
 std::pair<u32, u32> GRenderWindow::ScaleTouch(const QPointF& pos) const {
@@ -470,6 +494,7 @@ void GRenderWindow::resizeEvent(QResizeEvent* event) {
 }
 
 std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedContext() const {
+#ifdef HAS_OPENGL
     if (Settings::values.renderer_backend == Settings::RendererBackend::OpenGL) {
         auto c = static_cast<OpenGLSharedContext*>(main_context.get());
         // Bind the shared contexts to the main surface in case the backend wants to take over
@@ -477,6 +502,7 @@ std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedCont
         return std::make_unique<OpenGLSharedContext>(c->GetShareContext(),
                                                      child_widget->windowHandle());
     }
+#endif
     return std::make_unique<DummyContext>();
 }
 
@@ -557,6 +583,7 @@ void GRenderWindow::OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal
 }
 
 bool GRenderWindow::InitializeOpenGL() {
+#ifdef HAS_OPENGL
     // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
     // WA_DontShowOnScreen, WA_DeleteOnClose
     auto child = new OpenGLRenderWidget(this);
@@ -568,6 +595,11 @@ bool GRenderWindow::InitializeOpenGL() {
         std::make_unique<OpenGLSharedContext>(context->GetShareContext(), child->windowHandle()));
 
     return true;
+#else
+    QMessageBox::warning(this, tr("OpenGL not available!"),
+                         tr("yuzu has not been compiled with OpenGL support."));
+    return false;
+#endif
 }
 
 bool GRenderWindow::InitializeVulkan() {

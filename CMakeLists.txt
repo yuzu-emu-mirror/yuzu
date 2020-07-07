@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.15)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
@@ -13,7 +13,7 @@ project(yuzu)
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
-CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" OFF "ENABLE_QT;MSVC" OFF)
+CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" ON "ENABLE_QT;MSVC" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
@@ -152,13 +152,10 @@ macro(yuzu_find_packages)
         "Boost             1.71        boost/1.72.0"
         "Catch2            2.11        catch2/2.11.0"
         "fmt               6.2         fmt/6.2.0"
-        "OpenSSL           1.1         openssl/1.1.1f"
     # can't use until https://github.com/bincrafters/community/issues/1173
         #"libzip            1.5         libzip/1.5.2@bincrafters/stable"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.7         nlohmann_json/3.7.3"
-    # we need to be careful as the version check might be broken https://github.com/xiph/opus/issues/110
-        "opus              1.3         opus/1.3.1"
         "ZLIB              1.2         zlib/1.2.11"
         "zstd              1.4         zstd/1.4.4"
     )
@@ -215,6 +212,9 @@ if(ENABLE_QT)
         set(QT_PREFIX_HINT HINTS "${QT_PREFIX}")
     endif()
     find_package(Qt5 5.9 COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
+    if (YUZU_USE_QT_WEB_ENGINE)
+        find_package(Qt5 COMPONENTS WebEngineCore WebEngineWidgets)
+    endif()
     if (NOT Qt5_FOUND)
         list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
     endif()
@@ -312,15 +312,6 @@ elseif (TARGET Boost::boost)
     add_library(boost ALIAS Boost::boost)
 endif()
 
-if (NOT TARGET OpenSSL::SSL)
-    set_target_properties(OpenSSL::OpenSSL PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(OpenSSL::SSL ALIAS OpenSSL::OpenSSL)
-endif()
-if (NOT TARGET OpenSSL::Crypto)
-    set_target_properties(OpenSSL::OpenSSL PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(OpenSSL::Crypto ALIAS OpenSSL::OpenSSL)
-endif()
-
 if (TARGET sdl2::sdl2)
     # imported from the conan generated sdl2Config.cmake
     set_target_properties(sdl2::sdl2 PROPERTIES IMPORTED_GLOBAL TRUE)
@@ -337,6 +328,12 @@ elseif(SDL2_FOUND)
     add_library(SDL2 INTERFACE)
     target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARIES}")
 endif()
+
+# Ensure libusb is properly configured (based on dolphin libusb include)
+find_package(LibUSB)
+add_subdirectory(externals/libusb)
+set(LIBUSB_LIBRARIES usb)
+
 
 # Prefer the -pthread flag on Linux.
 set(THREADS_PREFER_PTHREAD_FLAG ON)

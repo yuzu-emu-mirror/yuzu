@@ -159,7 +159,10 @@ private:
 
     void FlushWork();
 
-    Texceptions UpdateAttachments();
+    /// @brief Updates the currently bound attachments
+    /// @param is_clear True when the framebuffer is updated as a clear
+    /// @return Bitfield of attachments being used as sampled textures
+    Texceptions UpdateAttachments(bool is_clear);
 
     std::tuple<VkFramebuffer, VkExtent2D> ConfigureFramebuffers(VkRenderPass renderpass);
 
@@ -168,7 +171,7 @@ private:
                                  bool is_indexed, bool is_instanced);
 
     /// Setup descriptors in the graphics pipeline.
-    void SetupShaderDescriptors(const std::array<Shader, Maxwell::MaxShaderProgram>& shaders);
+    void SetupShaderDescriptors(const std::array<Shader*, Maxwell::MaxShaderProgram>& shaders);
 
     void SetupImageTransitions(Texceptions texceptions,
                                const std::array<View, Maxwell::NumRenderTargets>& color_attachments,
@@ -182,8 +185,7 @@ private:
 
     bool WalkAttachmentOverlaps(const CachedSurfaceView& attachment);
 
-    void SetupVertexArrays(FixedPipelineState::VertexInput& vertex_input,
-                           BufferBindings& buffer_bindings);
+    void SetupVertexArrays(BufferBindings& buffer_bindings);
 
     void SetupIndexBuffer(BufferBindings& buffer_bindings, DrawParameters& params, bool is_indexed);
 
@@ -193,11 +195,14 @@ private:
     /// Setup global buffers in the graphics pipeline.
     void SetupGraphicsGlobalBuffers(const ShaderEntries& entries, std::size_t stage);
 
-    /// Setup texel buffers in the graphics pipeline.
-    void SetupGraphicsTexelBuffers(const ShaderEntries& entries, std::size_t stage);
+    /// Setup uniform texels in the graphics pipeline.
+    void SetupGraphicsUniformTexels(const ShaderEntries& entries, std::size_t stage);
 
     /// Setup textures in the graphics pipeline.
     void SetupGraphicsTextures(const ShaderEntries& entries, std::size_t stage);
+
+    /// Setup storage texels in the graphics pipeline.
+    void SetupGraphicsStorageTexels(const ShaderEntries& entries, std::size_t stage);
 
     /// Setup images in the graphics pipeline.
     void SetupGraphicsImages(const ShaderEntries& entries, std::size_t stage);
@@ -209,10 +214,13 @@ private:
     void SetupComputeGlobalBuffers(const ShaderEntries& entries);
 
     /// Setup texel buffers in the compute pipeline.
-    void SetupComputeTexelBuffers(const ShaderEntries& entries);
+    void SetupComputeUniformTexels(const ShaderEntries& entries);
 
     /// Setup textures in the compute pipeline.
     void SetupComputeTextures(const ShaderEntries& entries);
+
+    /// Setup storage texels in the compute pipeline.
+    void SetupComputeStorageTexels(const ShaderEntries& entries);
 
     /// Setup images in the compute pipeline.
     void SetupComputeImages(const ShaderEntries& entries);
@@ -222,9 +230,11 @@ private:
 
     void SetupGlobalBuffer(const GlobalBufferEntry& entry, GPUVAddr address);
 
-    void SetupTexelBuffer(const Tegra::Texture::TICEntry& image, const TexelBufferEntry& entry);
+    void SetupUniformTexels(const Tegra::Texture::TICEntry& image, const UniformTexelEntry& entry);
 
     void SetupTexture(const Tegra::Texture::FullTextureInfo& texture, const SamplerEntry& entry);
+
+    void SetupStorageTexel(const Tegra::Texture::TICEntry& tic, const StorageTexelEntry& entry);
 
     void SetupImage(const Tegra::Texture::TICEntry& tic, const ImageEntry& entry);
 
@@ -234,6 +244,16 @@ private:
     void UpdateBlendConstants(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateDepthBounds(Tegra::Engines::Maxwell3D::Regs& regs);
     void UpdateStencilFaces(Tegra::Engines::Maxwell3D::Regs& regs);
+
+    void UpdateCullMode(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthBoundsTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthWriteEnable(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateDepthCompareOp(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateFrontFace(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdatePrimitiveTopology(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateStencilOp(Tegra::Engines::Maxwell3D::Regs& regs);
+    void UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& regs);
 
     std::size_t CalculateGraphicsStreamBufferSize(bool is_indexed) const;
 
