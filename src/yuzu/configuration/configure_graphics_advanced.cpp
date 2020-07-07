@@ -12,9 +12,6 @@ ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(QWidget* parent)
 
     ui->setupUi(this);
 
-    // TODO: Remove this after assembly shaders are fully integrated
-    ui->use_assembly_shaders->setVisible(false);
-
     SetConfiguration();
 }
 
@@ -28,8 +25,6 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->use_assembly_shaders->setEnabled(runtime_lock);
     ui->use_assembly_shaders->setChecked(Settings::values.use_assembly_shaders);
     ui->use_fast_gpu_time->setChecked(Settings::values.use_fast_gpu_time);
-    ui->force_30fps_mode->setEnabled(runtime_lock);
-    ui->force_30fps_mode->setChecked(Settings::values.force_30fps_mode);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setCurrentIndex(Settings::values.max_anisotropy);
 }
@@ -40,7 +35,6 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     Settings::values.use_vsync = ui->use_vsync->isChecked();
     Settings::values.use_assembly_shaders = ui->use_assembly_shaders->isChecked();
     Settings::values.use_fast_gpu_time = ui->use_fast_gpu_time->isChecked();
-    Settings::values.force_30fps_mode = ui->force_30fps_mode->isChecked();
     Settings::values.max_anisotropy = ui->anisotropic_filtering_combobox->currentIndex();
 }
 
