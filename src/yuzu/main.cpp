@@ -1084,7 +1084,16 @@ void GMainWindow::BootGame(const QString& filename) {
     std::string title_version;
     const auto res = Core::System::GetInstance().GetGameName(title_name);
 
-    const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
+    const auto metadata = [title_id] {
+        FileSys::PatchManager pm{title_id};
+        auto res = pm.GetControlMetadata();
+        if (res.first != nullptr) {
+            return res;
+        }
+
+        FileSys::PatchManager pm_update{FileSys::GetUpdateTitleID(title_id)};
+        return pm_update.GetControlMetadata();
+    }();
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
         title_name = metadata.first->GetApplicationName();
