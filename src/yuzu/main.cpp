@@ -1048,8 +1048,6 @@ void GMainWindow::BootGame(const QString& filename) {
         Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
     }
 
-    UpdateStatusButtons();
-
     Settings::LogSettings();
 
     if (UISettings::values.select_user_on_boot) {
@@ -1076,6 +1074,7 @@ void GMainWindow::BootGame(const QString& filename) {
             &LoadingScreen::OnLoadProgress, Qt::QueuedConnection);
 
     // Update the GUI
+    UpdateStatusButtons();
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
         game_list_placeholder->hide();
@@ -1140,11 +1139,6 @@ void GMainWindow::ShutdownGame() {
 
     // The emulation is stopped, so closing the window or not does not matter anymore
     disconnect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
-
-    // If any settings are set to use their per-game counterparts, switch back to global
-    Settings::RestoreGlobalState();
-
-    UpdateStatusButtons();
 
     // Update the GUI
     ui.action_Start->setEnabled(false);
@@ -1842,6 +1836,9 @@ void GMainWindow::OnStopGame() {
     }
 
     ShutdownGame();
+
+    Settings::RestoreGlobalState();
+    UpdateStatusButtons();
 }
 
 void GMainWindow::OnLoadComplete() {
@@ -2221,6 +2218,9 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
     if (answer == QMessageBox::Yes) {
         if (emu_thread) {
             ShutdownGame();
+
+            Settings::RestoreGlobalState();
+            UpdateStatusButtons();
         }
     } else {
         // Only show the message if the game is still running.
@@ -2383,8 +2383,12 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     hotkey_registry.SaveHotkeys();
 
     // Shutdown session if the emu thread is active...
-    if (emu_thread != nullptr)
+    if (emu_thread != nullptr) {
         ShutdownGame();
+
+        Settings::RestoreGlobalState();
+        UpdateStatusButtons();
+    }
 
     render_window->close();
 
