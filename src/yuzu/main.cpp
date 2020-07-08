@@ -1039,6 +1039,13 @@ void GMainWindow::BootGame(const QString& filename) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
+    if (UISettings::values.select_user_on_boot) {
+        SelectAndSetCurrentUser();
+    }
+
+    if (!LoadROM(filename))
+        return;
+
     u64 title_id{0};
 
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
@@ -1048,16 +1055,7 @@ void GMainWindow::BootGame(const QString& filename) {
         Config per_game_config(fmt::format("{:016X}", title_id) + ".ini", false);
     }
 
-    UpdateStatusButtons();
-
     Settings::LogSettings();
-
-    if (UISettings::values.select_user_on_boot) {
-        SelectAndSetCurrentUser();
-    }
-
-    if (!LoadROM(filename))
-        return;
 
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>();
@@ -1076,6 +1074,7 @@ void GMainWindow::BootGame(const QString& filename) {
             &LoadingScreen::OnLoadProgress, Qt::QueuedConnection);
 
     // Update the GUI
+    UpdateStatusButtons();
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
         game_list_placeholder->hide();
@@ -1144,8 +1143,6 @@ void GMainWindow::ShutdownGame() {
     // If any settings are set to use their per-game counterparts, switch back to global
     Settings::RestoreGlobalState();
 
-    UpdateStatusButtons();
-
     // Update the GUI
     ui.action_Start->setEnabled(false);
     ui.action_Start->setText(tr("Start"));
@@ -1170,6 +1167,7 @@ void GMainWindow::ShutdownGame() {
     UpdateWindowTitle();
 
     // Disable status bar updates
+    UpdateStatusButtons();
     status_bar_update_timer.stop();
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
