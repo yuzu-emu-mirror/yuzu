@@ -387,43 +387,31 @@ extern bool configuring_global;
 template <typename Type>
 class Setting final {
 public:
-    Setting() {
-        use_global = true;
-    }
-    Setting(Type val) {
-        use_global = true;
-        global = val;
-    }
+    Setting() = default;
+    explicit Setting(Type val) : global{val} {}
     ~Setting() = default;
     void SetGlobal(bool to_global) {
         use_global = to_global;
-    };
+    }
     bool UsingGlobal() const {
         return use_global;
-    };
+    }
     Type GetValue(bool need_global = false) const {
         if (use_global || need_global) {
             return global;
         }
         return local;
-    };
+    }
     void SetValue(const Type& value) {
         if (use_global) {
             global = value;
         } else {
             local = value;
         }
-    };
-    operator Type() const {
-        return GetValue();
-    };
-    Type operator=(const Type& b) {
-        SetValue(b);
-        return b;
-    };
+    }
 
 private:
-    bool use_global{};
+    bool use_global = true;
     Type global{};
     Type local{};
 };

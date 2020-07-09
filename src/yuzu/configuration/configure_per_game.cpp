@@ -29,7 +29,7 @@
 
 ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
     : QDialog(parent), ui(std::make_unique<Ui::ConfigurePerGame>()), title_id(title_id) {
-    game_config = std::make_unique<Config>(fmt::format("{:016X}", title_id) + ".ini", false);
+    game_config = std::make_unique<Config>(fmt::format("{:016X}.ini", title_id), false);
 
     Settings::configuring_global = false;
 
@@ -85,7 +85,7 @@ void ConfigurePerGame::LoadConfiguration() {
 
     ui->addonsTab->LoadFromFile(file);
 
-    ui->display_title_id->setText(QString::fromStdString(fmt::format("{:016X}", title_id)));
+    ui->display_title_id->setText(QStringLiteral("%1").arg(title_id, 16, 16, 0).toUpper());
 
     FileSys::PatchManager pm{title_id};
     const auto control = pm.GetControlMetadata();
