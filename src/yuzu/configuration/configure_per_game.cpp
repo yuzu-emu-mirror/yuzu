@@ -85,7 +85,7 @@ void ConfigurePerGame::LoadConfiguration() {
 
     ui->addonsTab->LoadFromFile(file);
 
-    ui->display_title_id->setText(QStringLiteral("%1").arg(title_id, 16, 16, 0).toUpper());
+    ui->display_title_id->setText(QString::fromStdString(fmt::format("{:016X}", title_id)));
 
     FileSys::PatchManager pm{title_id};
     const auto control = pm.GetControlMetadata();

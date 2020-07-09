@@ -22,7 +22,7 @@
 
 ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     : QWidget(parent), ui(new Ui::ConfigureGraphics) {
-    vulkan_device = Settings::values.vulkan_device;
+    vulkan_device = Settings::values.vulkan_device.GetValue();
     RetrieveVulkanDevices();
 
     ui->setupUi(this);
@@ -68,10 +68,10 @@ void ConfigureGraphics::SetConfiguration() {
 
     if (Settings::configuring_global) {
         ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
-        ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio);
-        ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache);
+        ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
+        ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache.GetValue());
         ui->use_asynchronous_gpu_emulation->setChecked(
-            Settings::values.use_asynchronous_gpu_emulation);
+            Settings::values.use_asynchronous_gpu_emulation.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->use_disk_shader_cache,
                                                &Settings::values.use_disk_shader_cache);
@@ -86,8 +86,9 @@ void ConfigureGraphics::SetConfiguration() {
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
     }
 
-    UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red, Settings::values.bg_green,
-                                                 Settings::values.bg_blue));
+    UpdateBackgroundColorButton(QColor::fromRgbF(Settings::values.bg_red.GetValue(),
+                                                 Settings::values.bg_green.GetValue(),
+                                                 Settings::values.bg_blue.GetValue()));
     UpdateDeviceComboBox();
 }
 
@@ -95,25 +96,25 @@ void ConfigureGraphics::ApplyConfiguration() {
     if (Settings::configuring_global) {
         // Guard if during game and set to game-specific value
         if (Settings::values.renderer_backend.UsingGlobal()) {
-            Settings::values.renderer_backend = GetCurrentGraphicsBackend();
+            Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
         }
         if (Settings::values.vulkan_device.UsingGlobal()) {
-            Settings::values.vulkan_device = vulkan_device;
+            Settings::values.vulkan_device.SetValue(vulkan_device);
         }
         if (Settings::values.aspect_ratio.UsingGlobal()) {
-            Settings::values.aspect_ratio = ui->aspect_ratio_combobox->currentIndex();
+            Settings::values.aspect_ratio.SetValue(ui->aspect_ratio_combobox->currentIndex());
         }
         if (Settings::values.use_disk_shader_cache.UsingGlobal()) {
-            Settings::values.use_disk_shader_cache = ui->use_disk_shader_cache->isChecked();
+            Settings::values.use_disk_shader_cache.SetValue(ui->use_disk_shader_cache->isChecked());
         }
         if (Settings::values.use_asynchronous_gpu_emulation.UsingGlobal()) {
-            Settings::values.use_asynchronous_gpu_emulation =
-                ui->use_asynchronous_gpu_emulation->isChecked();
+            Settings::values.use_asynchronous_gpu_emulation.SetValue(
+                ui->use_asynchronous_gpu_emulation->isChecked());
         }
         if (Settings::values.bg_red.UsingGlobal()) {
-            Settings::values.bg_red = static_cast<float>(bg_color.redF());
-            Settings::values.bg_green = static_cast<float>(bg_color.greenF());
-            Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+            Settings::values.bg_red.SetValue(static_cast<float>(bg_color.redF()));
+            Settings::values.bg_green.SetValue(static_cast<float>(bg_color.greenF()));
+            Settings::values.bg_blue.SetValue(static_cast<float>(bg_color.blueF()));
         }
     } else {
         if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
@@ -121,10 +122,10 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.vulkan_device.SetGlobal(true);
         } else {
             Settings::values.renderer_backend.SetGlobal(false);
-            Settings::values.renderer_backend = GetCurrentGraphicsBackend();
+            Settings::values.renderer_backend.SetValue(GetCurrentGraphicsBackend());
             if (GetCurrentGraphicsBackend() == Settings::RendererBackend::Vulkan) {
                 Settings::values.vulkan_device.SetGlobal(false);
-                Settings::values.vulkan_device = vulkan_device;
+                Settings::values.vulkan_device.SetValue(vulkan_device);
             } else {
                 Settings::values.vulkan_device.SetGlobal(true);
             }
@@ -146,9 +147,9 @@ void ConfigureGraphics::ApplyConfiguration() {
             Settings::values.bg_red.SetGlobal(false);
             Settings::values.bg_green.SetGlobal(false);
             Settings::values.bg_blue.SetGlobal(false);
-            Settings::values.bg_red = static_cast<float>(bg_color.redF());
-            Settings::values.bg_green = static_cast<float>(bg_color.greenF());
-            Settings::values.bg_blue = static_cast<float>(bg_color.blueF());
+            Settings::values.bg_red.SetValue(static_cast<float>(bg_color.redF()));
+            Settings::values.bg_green.SetValue(static_cast<float>(bg_color.greenF()));
+            Settings::values.bg_blue.SetValue(static_cast<float>(bg_color.blueF()));
         }
     }
 }
@@ -182,7 +183,7 @@ void ConfigureGraphics::UpdateDeviceComboBox() {
 
     if (!Settings::configuring_global &&
         ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
-        vulkan_device = Settings::values.vulkan_device;
+        vulkan_device = Settings::values.vulkan_device.GetValue();
     }
     switch (GetCurrentGraphicsBackend()) {
     case Settings::RendererBackend::OpenGL:
@@ -219,7 +220,7 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
 
     if (ui->api->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
         Settings::values.renderer_backend.SetGlobal(true);
-        return Settings::values.renderer_backend;
+        return Settings::values.renderer_backend.GetValue();
     }
     Settings::values.renderer_backend.SetGlobal(false);
     return static_cast<Settings::RendererBackend>(ui->api->currentIndex() -

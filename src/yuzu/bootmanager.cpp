@@ -495,7 +495,7 @@ void GRenderWindow::resizeEvent(QResizeEvent* event) {
 
 std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedContext() const {
 #ifdef HAS_OPENGL
-    if (Settings::values.renderer_backend == Settings::RendererBackend::OpenGL) {
+    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL) {
         auto c = static_cast<OpenGLSharedContext*>(main_context.get());
         // Bind the shared contexts to the main surface in case the backend wants to take over
         // presentation
@@ -511,7 +511,7 @@ bool GRenderWindow::InitRenderTarget() {
 
     first_frame = false;
 
-    switch (Settings::values.renderer_backend) {
+    switch (Settings::values.renderer_backend.GetValue()) {
     case Settings::RendererBackend::OpenGL:
         if (!InitializeOpenGL()) {
             return false;
@@ -538,7 +538,7 @@ bool GRenderWindow::InitRenderTarget() {
     OnFramebufferSizeChanged();
     BackupGeometry();
 
-    if (Settings::values.renderer_backend == Settings::RendererBackend::OpenGL) {
+    if (Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::OpenGL) {
         if (!LoadOpenGL()) {
             return false;
         }

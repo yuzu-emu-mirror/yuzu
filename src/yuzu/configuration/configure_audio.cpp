@@ -47,10 +47,11 @@ void ConfigureAudio::SetConfiguration() {
 
     SetAudioDeviceFromDeviceID();
 
-    ui->volume_slider->setValue(Settings::values.volume * ui->volume_slider->maximum());
+    ui->volume_slider->setValue(Settings::values.volume.GetValue() * ui->volume_slider->maximum());
 
     if (Settings::configuring_global) {
-        ui->toggle_audio_stretching->setChecked(Settings::values.enable_audio_stretching);
+        ui->toggle_audio_stretching->setChecked(
+            Settings::values.enable_audio_stretching.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->toggle_audio_stretching,
                                                &Settings::values.enable_audio_stretching);
@@ -109,11 +110,13 @@ void ConfigureAudio::ApplyConfiguration() {
 
         // Guard if during game and set to game-specific value
         if (Settings::values.enable_audio_stretching.UsingGlobal()) {
-            Settings::values.enable_audio_stretching = ui->toggle_audio_stretching->isChecked();
+            Settings::values.enable_audio_stretching.SetValue(
+                ui->toggle_audio_stretching->isChecked());
         }
         if (Settings::values.volume.UsingGlobal()) {
-            Settings::values.volume = static_cast<float>(ui->volume_slider->sliderPosition()) /
-                                      ui->volume_slider->maximum();
+            Settings::values.volume.SetValue(
+                static_cast<float>(ui->volume_slider->sliderPosition()) /
+                ui->volume_slider->maximum());
         }
     } else {
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_audio_stretching,
@@ -122,8 +125,9 @@ void ConfigureAudio::ApplyConfiguration() {
             Settings::values.volume.SetGlobal(true);
         } else {
             Settings::values.volume.SetGlobal(false);
-            Settings::values.volume = static_cast<float>(ui->volume_slider->sliderPosition()) /
-                                      ui->volume_slider->maximum();
+            Settings::values.volume.SetValue(
+                static_cast<float>(ui->volume_slider->sliderPosition()) /
+                ui->volume_slider->maximum());
         }
     }
 }

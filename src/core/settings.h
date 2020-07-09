@@ -429,7 +429,7 @@ struct Values {
 
     // Renderer
     Setting<RendererBackend> renderer_backend;
-    Setting<bool> renderer_debug;
+    bool renderer_debug;
     Setting<int> vulkan_device;
 
     Setting<u16> resolution_factor = Setting(static_cast<u16>(1));
@@ -454,9 +454,9 @@ struct Values {
     // Measured in seconds since epoch
     Setting<std::optional<std::chrono::seconds>> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
-    Setting<std::chrono::seconds> custom_rtc_differential;
+    std::chrono::seconds custom_rtc_differential;
 
-    Setting<s32> current_user;
+    s32 current_user;
     Setting<s32> language_index;
     Setting<s32> region_index;
     Setting<s32> time_zone_index;

@@ -74,9 +74,9 @@ std::string GetTimeZoneString() {
         "UCT",       "Universal", "UTC", "W-SU",    "WET",     "Zulu",
     }};
 
-    ASSERT(Settings::values.time_zone_index < timezones.size());
+    ASSERT(Settings::values.time_zone_index.GetValue() < timezones.size());
 
-    return timezones[Settings::values.time_zone_index];
+    return timezones[Settings::values.time_zone_index.GetValue()];
 }
 
 void Apply() {
@@ -101,22 +101,22 @@ void LogSettings() {
     LogSetting("Controls_UseDockedMode", Settings::values.use_docked_mode);
     LogSetting("System_RngSeed", Settings::values.rng_seed.GetValue().value_or(0));
     LogSetting("System_CurrentUser", Settings::values.current_user);
-    LogSetting("System_LanguageIndex", Settings::values.language_index);
-    LogSetting("System_RegionIndex", Settings::values.region_index);
-    LogSetting("System_TimeZoneIndex", Settings::values.time_zone_index);
-    LogSetting("Core_UseMultiCore", Settings::values.use_multi_core);
-    LogSetting("Renderer_UseResolutionFactor", Settings::values.resolution_factor);
-    LogSetting("Renderer_UseFrameLimit", Settings::values.use_frame_limit);
-    LogSetting("Renderer_FrameLimit", Settings::values.frame_limit);
-    LogSetting("Renderer_UseDiskShaderCache", Settings::values.use_disk_shader_cache);
+    LogSetting("System_LanguageIndex", Settings::values.language_index.GetValue());
+    LogSetting("System_RegionIndex", Settings::values.region_index.GetValue());
+    LogSetting("System_TimeZoneIndex", Settings::values.time_zone_index.GetValue());
+    LogSetting("Core_UseMultiCore", Settings::values.use_multi_core.GetValue());
+    LogSetting("Renderer_UseResolutionFactor", Settings::values.resolution_factor.GetValue());
+    LogSetting("Renderer_UseFrameLimit", Settings::values.use_frame_limit.GetValue());
+    LogSetting("Renderer_FrameLimit", Settings::values.frame_limit.GetValue());
+    LogSetting("Renderer_UseDiskShaderCache", Settings::values.use_disk_shader_cache.GetValue());
     LogSetting("Renderer_GPUAccuracyLevel", Settings::values.gpu_accuracy.GetValue());
     LogSetting("Renderer_UseAsynchronousGpuEmulation",
-               Settings::values.use_asynchronous_gpu_emulation);
-    LogSetting("Renderer_UseVsync", Settings::values.use_vsync);
-    LogSetting("Renderer_UseAssemblyShaders", Settings::values.use_assembly_shaders);
-    LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values.max_anisotropy);
+               Settings::values.use_asynchronous_gpu_emulation.GetValue());
+    LogSetting("Renderer_UseVsync", Settings::values.use_vsync.GetValue());
+    LogSetting("Renderer_UseAssemblyShaders", Settings::values.use_assembly_shaders.GetValue());
+    LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values.max_anisotropy.GetValue());
     LogSetting("Audio_OutputEngine", Settings::values.sink_id);
-    LogSetting("Audio_EnableAudioStretching", Settings::values.enable_audio_stretching);
+    LogSetting("Audio_EnableAudioStretching", Settings::values.enable_audio_stretching.GetValue());
     LogSetting("Audio_OutputDevice", Settings::values.audio_device_id);
     LogSetting("DataStorage_UseVirtualSd", Settings::values.use_virtual_sd);
     LogSetting("DataStorage_NandDir", FileUtil::GetUserPath(FileUtil::UserPath::NANDDir));
@@ -132,15 +132,16 @@ float Volume() {
     if (values.audio_muted) {
         return 0.0f;
     }
-    return values.volume;
+    return values.volume.GetValue();
 }
 
 bool IsGPULevelExtreme() {
-    return values.gpu_accuracy == GPUAccuracy::Extreme;
+    return values.gpu_accuracy.GetValue() == GPUAccuracy::Extreme;
 }
 
 bool IsGPULevelHigh() {
-    return values.gpu_accuracy == GPUAccuracy::Extreme || values.gpu_accuracy == GPUAccuracy::High;
+    return values.gpu_accuracy.GetValue() == GPUAccuracy::Extreme ||
+           values.gpu_accuracy.GetValue() == GPUAccuracy::High;
 }
 
 void RestoreGlobalState() {
@@ -158,7 +159,6 @@ void RestoreGlobalState() {
 
     // Renderer
     values.renderer_backend.SetGlobal(true);
-    values.renderer_debug.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
     values.aspect_ratio.SetGlobal(true);
     values.max_anisotropy.SetGlobal(true);
@@ -176,7 +176,6 @@ void RestoreGlobalState() {
     values.bg_blue.SetGlobal(true);
 
     // System
-    values.current_user.SetGlobal(true);
     values.language_index.SetGlobal(true);
     values.region_index.SetGlobal(true);
     values.time_zone_index.SetGlobal(true);

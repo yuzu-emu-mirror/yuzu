@@ -703,9 +703,10 @@ void Config::ReadSystemValues() {
     Settings::values.rng_seed.SetGlobal(rng_seed_global);
     if (global || !rng_seed_global) {
         if (rng_seed_enabled) {
-            Settings::values.rng_seed = ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong();
+            Settings::values.rng_seed.SetValue(
+                ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong());
         } else {
-            Settings::values.rng_seed = std::nullopt;
+            Settings::values.rng_seed.SetValue(std::nullopt);
         }
     }
 
@@ -716,10 +717,10 @@ void Config::ReadSystemValues() {
     Settings::values.custom_rtc.SetGlobal(custom_rtc_global);
     if (global || !custom_rtc_global) {
         if (custom_rtc_enabled) {
-            Settings::values.custom_rtc =
-                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong());
+            Settings::values.custom_rtc.SetValue(
+                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong()));
         } else {
-            Settings::values.custom_rtc = std::nullopt;
+            Settings::values.custom_rtc.SetValue(std::nullopt);
         }
     }
 
@@ -1102,7 +1103,7 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("backend"),
                        static_cast<int>(Settings::values.renderer_backend.GetValue(global)),
                        Settings::values.renderer_backend.UsingGlobal(), 0);
-    WriteSettingGlobal(QStringLiteral("debug"), Settings::values.renderer_debug, false);
+    WriteSetting(QStringLiteral("debug"), Settings::values.renderer_debug, false);
     WriteSettingGlobal(QStringLiteral("vulkan_device"), Settings::values.vulkan_device, 0);
     WriteSettingGlobal(QStringLiteral("aspect_ratio"), Settings::values.aspect_ratio, 0);
     WriteSettingGlobal(QStringLiteral("max_anisotropy"), Settings::values.max_anisotropy, 0);
@@ -1154,7 +1155,7 @@ void Config::SaveShortcutValues() {
 void Config::SaveSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    WriteSettingGlobal(QStringLiteral("current_user"), Settings::values.current_user, 0);
+    WriteSetting(QStringLiteral("current_user"), Settings::values.current_user, 0);
     WriteSettingGlobal(QStringLiteral("language_index"), Settings::values.language_index, 1);
     WriteSettingGlobal(QStringLiteral("region_index"), Settings::values.region_index, 1);
     WriteSettingGlobal(QStringLiteral("time_zone_index"), Settings::values.time_zone_index, 0);

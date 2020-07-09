@@ -534,15 +534,15 @@ void GMainWindow::InitializeWidgets() {
         if (emulation_running) {
             return;
         }
-        bool is_async =
-            !Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-        Settings::values.use_asynchronous_gpu_emulation = is_async;
-        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+        bool is_async = !Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
+                        Settings::values.use_multi_core.GetValue();
+        Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
+        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
         Settings::Apply();
     });
     async_status_button->setText(tr("ASYNC"));
     async_status_button->setCheckable(true);
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
 
     // Setup Multicore button
     multicore_status_button = new QPushButton();
@@ -552,17 +552,17 @@ void GMainWindow::InitializeWidgets() {
         if (emulation_running) {
             return;
         }
-        Settings::values.use_multi_core = !Settings::values.use_multi_core;
-        bool is_async =
-            Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-        Settings::values.use_asynchronous_gpu_emulation = is_async;
-        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-        multicore_status_button->setChecked(Settings::values.use_multi_core);
+        Settings::values.use_multi_core.SetValue(!Settings::values.use_multi_core.GetValue());
+        bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
+                        Settings::values.use_multi_core.GetValue();
+        Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
+        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
+        multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
         Settings::Apply();
     });
     multicore_status_button->setText(tr("MULTICORE"));
     multicore_status_button->setCheckable(true);
-    multicore_status_button->setChecked(Settings::values.use_multi_core);
+    multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
     statusBar()->insertPermanentWidget(0, multicore_status_button);
     statusBar()->insertPermanentWidget(0, async_status_button);
 
@@ -581,16 +581,16 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setCheckable(false);
     renderer_status_button->setDisabled(true);
 #else
-    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+    renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
     connect(renderer_status_button, &QPushButton::clicked, [=] {
         if (emulation_running) {
             return;
         }
         if (renderer_status_button->isChecked()) {
-            Settings::values.renderer_backend = Settings::RendererBackend::Vulkan;
+            Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
         } else {
-            Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+            Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
         }
 
         Settings::Apply();
@@ -727,21 +727,24 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                Settings::values.use_frame_limit = !Settings::values.use_frame_limit;
+                Settings::values.use_frame_limit.SetValue(
+                    !Settings::values.use_frame_limit.GetValue());
                 UpdateStatusBar();
             });
     constexpr u16 SPEED_LIMIT_STEP = 5;
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit = SPEED_LIMIT_STEP + Settings::values.frame_limit;
+                if (Settings::values.frame_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
+                    Settings::values.frame_limit.SetValue(SPEED_LIMIT_STEP +
+                                                          Settings::values.frame_limit.GetValue());
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit > SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit = Settings::values.frame_limit - SPEED_LIMIT_STEP;
+                if (Settings::values.frame_limit.GetValue() > SPEED_LIMIT_STEP) {
+                    Settings::values.frame_limit.SetValue(Settings::values.frame_limit.GetValue() -
+                                                          SPEED_LIMIT_STEP);
                     UpdateStatusBar();
                 }
             });
@@ -2108,29 +2111,30 @@ void GMainWindow::UpdateStatusBar() {
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
 
-    if (Settings::values.use_frame_limit) {
+    if (Settings::values.use_frame_limit.GetValue()) {
         emu_speed_label->setText(tr("Speed: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
-                                     .arg(Settings::values.frame_limit));
+                                     .arg(Settings::values.frame_limit.GetValue()));
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
     game_fps_label->setText(tr("Game: %1 FPS").arg(results.game_fps, 0, 'f', 0));
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
-    emu_speed_label->setVisible(!Settings::values.use_multi_core);
+    emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
     game_fps_label->setVisible(true);
     emu_frametime_label->setVisible(true);
 }
 
 void GMainWindow::UpdateStatusButtons() {
     dock_status_button->setChecked(Settings::values.use_docked_mode);
-    multicore_status_button->setChecked(Settings::values.use_multi_core);
-    Settings::values.use_asynchronous_gpu_emulation =
-        Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
+    multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
+    Settings::values.use_asynchronous_gpu_emulation.SetValue(
+        Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
+        Settings::values.use_multi_core.GetValue());
+    async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
 #ifdef HAS_VULKAN
-    renderer_status_button->setChecked(Settings::values.renderer_backend ==
+    renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
 #endif
 }

@@ -69,8 +69,7 @@ void ConfigurationShared::SetPerGameSetting(
 }
 
 void ConfigurationShared::InsertGlobalItem(QComboBox* combobox) {
-    const QString use_global_text = tr("Use global configuration");
-    combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX,
-                         ConfigurationShared::use_global_text);
+    const QString use_global_text = QStringLiteral("Use global configuration");
+    combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX, use_global_text);
     combobox->insertSeparator(ConfigurationShared::USE_GLOBAL_SEPARATOR_INDEX);
 }
