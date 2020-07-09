@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include "core/settings.h"
 #include "yuzu/configuration/configuration_shared.h"
+#include "yuzu/configuration/configure_per_game.h"
 
 void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
                                               const QCheckBox* checkbox) {
@@ -69,7 +70,7 @@ void ConfigurationShared::SetPerGameSetting(
 }
 
 void ConfigurationShared::InsertGlobalItem(QComboBox* combobox) {
-    const QString use_global_text = QStringLiteral("Use global configuration");
+    const QString use_global_text = ConfigurePerGame::tr("Use global configuration");
     combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX, use_global_text);
     combobox->insertSeparator(ConfigurationShared::USE_GLOBAL_SEPARATOR_INDEX);
 }
