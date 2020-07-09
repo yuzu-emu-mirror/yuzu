@@ -137,6 +137,28 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
+namespace {
+
+QString GetAccountUsername() {
+    const QString nouser = QString::fromStdString("No User");
+    Service::Account::ProfileManager manager;
+    const auto current_user = manager.GetUser(Settings::values.current_user);
+    if (!current_user.has_value() || (current_user == Common::UUID{})) {
+        return nouser;
+    }
+    Service::Account::ProfileBase profile;
+    if (!manager.GetProfileBase(*current_user, profile)) {
+        return nouser;
+    }
+
+    const auto text = Common::StringFromFixedZeroTerminatedBuffer(
+        reinterpret_cast<const char*>(profile.username.data()), profile.username.size());
+
+    return text.empty() ? nouser : QString::fromStdString(text);
+}
+
+} // Anonymous namespace
+
 constexpr int default_mouse_timeout = 2500;
 
 constexpr u64 DLC_BASE_TITLE_ID_MASK = 0xFFFFFFFFFFFFE000;
@@ -511,6 +533,48 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label);
     }
+
+    // Setup Profile button
+    profile_status_button = new QPushButton();
+    profile_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    profile_status_button->setCheckable(true);
+    profile_status_button->setChecked(true);
+    profile_status_button->setFocusPolicy(Qt::NoFocus);
+    const auto username = GetAccountUsername();
+    profile_status_button->setText(username);
+    connect(profile_status_button, &QPushButton::clicked, [=] {
+        profile_status_button->setChecked(true);
+
+        if (emulation_running) {
+            return;
+        }
+
+        // User save data
+        const auto select_profile = [this] {
+            QtProfileSelectionDialog dialog(this);
+            dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                                  Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+            dialog.setWindowModality(Qt::WindowModal);
+
+            if (dialog.exec() == QDialog::Rejected) {
+                return -1;
+            }
+
+            return dialog.GetIndex();
+        };
+
+        const auto index = select_profile();
+        if (index == -1) {
+            return;
+        }
+
+        Settings::values.current_user = index;
+        Settings::Apply();
+
+        const auto username = GetAccountUsername();
+        profile_status_button->setText(username);
+    });
+    statusBar()->insertPermanentWidget(0, profile_status_button);
 
     // Setup Dock button
     dock_status_button = new QPushButton();
@@ -1974,6 +2038,8 @@ void GMainWindow::OnConfigure() {
         ui.centralwidget->setMouseTracking(false);
     }
 
+    const auto username = GetAccountUsername();
+    profile_status_button->setText(username);
     dock_status_button->setChecked(Settings::values.use_docked_mode);
     multicore_status_button->setChecked(Settings::values.use_multi_core);
     Settings::values.use_asynchronous_gpu_emulation =
