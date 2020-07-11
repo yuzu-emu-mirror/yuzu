@@ -1894,16 +1894,15 @@ void GMainWindow::OnOpenFAQ() {
 }
 
 void GMainWindow::OpenFolderSpecifyingFile(const QString& file) {
-
     // Windows supports opening a folder with selecting a specified file in explorer. On every other
     // OS we just open the folder without preselecting the file.
 #if defined(Q_OS_WIN)
     const QString explorer = QStringLiteral("explorer");
     QStringList param;
     if (!QFileInfo(file).isDir()) {
-        param << QStringLiteral("/select,");
+        param.push_back(QStringLiteral("/select,"));
     }
-    param << QDir::toNativeSeparators(file);
+    param.push_back(QDir::toNativeSeparators(file));
     QProcess::startDetached(explorer, param);
 #else
     QDesktopServices::openUrl(QUrl::fromLocalFile(file));
