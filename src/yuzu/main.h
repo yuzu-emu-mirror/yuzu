@@ -225,6 +225,7 @@ private:
     void HideMouseCursor();
     void ShowMouseCursor();
     void OpenURL(const QUrl& url);
+    void OpenFolderSpecifyingFile(const QString& file);
 
     Ui::MainWindow ui;
 

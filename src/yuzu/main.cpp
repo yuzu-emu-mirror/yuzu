@@ -835,6 +835,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
     connect(game_list, &GameList::OpenTransferableShaderCacheRequested, this,
             &GMainWindow::OnTransferableShaderCacheOpenFile);
+    connect(game_list, &GameList::OpenConfigurationRequested, this,
+            &GMainWindow::OnConfigurationOpenFile);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
     connect(game_list, &GameList::CopyTIDRequested, this, &GMainWindow::OnGameListCopyTID);
     connect(game_list, &GameList::NavigateToGamedbEntryRequested, this,
@@ -1322,20 +1324,24 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
         return;
     }
 
-    // Windows supports opening a folder with selecting a specified file in explorer. On every other
-    // OS we just open the transferable shader cache folder without preselecting the transferable
-    // shader cache file for the selected game.
-#if defined(Q_OS_WIN)
-    const QString explorer = QStringLiteral("explorer");
-    QStringList param;
-    if (!QFileInfo(transferable_shader_cache_file_path).isDir()) {
-        param << QStringLiteral("/select,");
+    OpenFolderSpecifyingFile(tranferable_shader_cache_folder_path);
+}
+
+void GMainWindow::OnConfigurationOpenFile(u64 program_id) {
+    ASSERT(program_id != 0);
+
+    const QString config_dir =
+        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir));
+    const QString config_file_path =
+        config_dir + QString::fromStdString(fmt::format("{:016X}.ini", program_id));
+
+    if (!QFile::exists(config_file_path)) {
+        QMessageBox::warning(this, tr("Error Opening Configuration"),
+                             tr("A configuration file for this title does not exist."));
+        return;
     }
-    param << QDir::toNativeSeparators(transferable_shader_cache_file_path);
-    QProcess::startDetached(explorer, param);
-#else
-    QDesktopServices::openUrl(QUrl::fromLocalFile(tranferable_shader_cache_folder_path));
-#endif
+
+    OpenFolderSpecifyingFile(config_file_path);
 }
 
 static std::size_t CalculateRomFSEntrySize(const FileSys::VirtualDir& dir, bool full) {
@@ -1885,6 +1891,23 @@ void GMainWindow::OnOpenQuickstartGuide() {
 
 void GMainWindow::OnOpenFAQ() {
     OpenURL(QUrl(QStringLiteral("https://yuzu-emu.org/wiki/faq/")));
+}
+
+void GMainWindow::OpenFolderSpecifyingFile(const QString& file) {
+
+    // Windows supports opening a folder with selecting a specified file in explorer. On every other
+    // OS we just open the folder without preselecting the file.
+#if defined(Q_OS_WIN)
+    const QString explorer = QStringLiteral("explorer");
+    QStringList param;
+    if (!QFileInfo(file).isDir()) {
+        param << QStringLiteral("/select,");
+    }
+    param << QDir::toNativeSeparators(file);
+    QProcess::startDetached(explorer, param);
+#else
+    QDesktopServices::openUrl(QUrl::fromLocalFile(file));
+#endif
 }
 
 void GMainWindow::ToggleFullscreen() {
