@@ -477,7 +477,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, std::string pat
     QAction* open_lfs_location = context_menu.addAction(tr("Open Mod Data Location"));
     QAction* open_transferable_shader_cache =
         context_menu.addAction(tr("Open Transferable Shader Cache"));
-    QAction* open_configuration = context_menu.addAction(tr("Open Configuration"));
+    QAction* open_configuration = context_menu.addAction(tr("Open Config Location"));
     context_menu.addSeparator();
     QAction* dump_romfs = context_menu.addAction(tr("Dump RomFS"));
     QAction* copy_tid = context_menu.addAction(tr("Copy Title ID to Clipboard"));
