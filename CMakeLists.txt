@@ -379,7 +379,7 @@ if (YUZU_USE_BUNDLED_UNICORN)
         set(LIBUNICORN_INCLUDE_DIR "${UNICORN_PREFIX}/include" CACHE PATH "Path to Unicorn headers" FORCE)
         set(UNICORN_DLL_DIR "${UNICORN_PREFIX}/" CACHE PATH "Path to unicorn dynamic library" FORCE)
 
-        find_package(PythonInterp 2.7 REQUIRED)
+        find_package(PythonInterp 3.5 REQUIRED)
 
         if (MINGW)
             # Intentionally call the unicorn makefile directly instead of using make.sh so that we can override the
