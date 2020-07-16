@@ -504,7 +504,7 @@ void Controller_NPad::VibrateController(const std::vector<u32>& controller_ids,
                                         const std::vector<Vibration>& vibrations) {
     LOG_DEBUG(Service_HID, "(STUBBED) called");
 
-    if (!can_controllers_vibrate) {
+    if (!Settings::values.vibration_enabled || !can_controllers_vibrate) {
         return;
     }
     for (std::size_t i = 0; i < controller_ids.size(); i++) {

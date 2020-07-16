@@ -845,8 +845,7 @@ void Hid::CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
 void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto can_vibrate{rp.Pop<bool>()};
-    applet_resource->GetController<Controller_NPad>(HidController::NPad)
-        .SetVibrationEnabled(can_vibrate);
+    Settings::values.vibration_enabled = can_vibrate;
 
     LOG_DEBUG(Service_HID, "called, can_vibrate={}", can_vibrate);
 
@@ -859,8 +858,7 @@ void Hid::IsVibrationPermitted(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
-    rb.Push(
-        applet_resource->GetController<Controller_NPad>(HidController::NPad).IsVibrationEnabled());
+    rb.Push(Settings::values.vibration_enabled);
 }
 
 void Hid::ActivateConsoleSixAxisSensor(Kernel::HLERequestContext& ctx) {

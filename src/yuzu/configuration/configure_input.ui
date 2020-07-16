@@ -337,14 +337,15 @@
         <string>Other</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="1">
+         <widget class="QCheckBox" name="mouse_enabled">
+          <property name="text">
+           <string>Mouse</string>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="1">
          <widget class="QCheckBox" name="keyboard_enabled">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>23</height>
-           </size>
-          </property>
           <property name="text">
            <string>Keyboard</string>
           </property>
@@ -358,22 +359,16 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QCheckBox" name="touchscreen_enabled">
+         <widget class="QCheckBox" name="vibration_enabled">
           <property name="text">
-           <string>Touchscreen</string>
+           <string>Controller Vibration</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="mouse_enabled">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>23</height>
-           </size>
-          </property>
+        <item row="4" column="1">
+         <widget class="QCheckBox" name="touchscreen_enabled">
           <property name="text">
-           <string>Mouse</string>
+           <string>Touchscreen</string>
           </property>
          </widget>
         </item>
@@ -419,7 +414,7 @@
           </property>
          </spacer>
         </item>
-        <item row="3" column="3">
+        <item row="4" column="3">
          <widget class="QPushButton" name="touchscreen_advanced">
           <property name="text">
            <string>Advanced</string>

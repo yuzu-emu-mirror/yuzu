@@ -74,6 +74,7 @@ void Config::ReadValues() {
         Settings::values.debug_pad_analogs[i] = "";
     }
 
+    Settings::values.vibration_enabled = true;
     Settings::values.touchscreen.enabled = "";
     Settings::values.touchscreen.device = "";
     Settings::values.touchscreen.finger = 0;

@@ -431,6 +431,8 @@ void Config::ReadControlValues() {
     ReadMouseValues();
     ReadTouchscreenValues();
 
+    Settings::values.vibration_enabled =
+        ReadSetting(QStringLiteral("vibration_enabled"), true).toBool();
     Settings::values.motion_device =
         ReadSetting(QStringLiteral("motion_device"),
                     QStringLiteral("engine:motion_emu,update_period:100,sensitivity:0.01"))
@@ -988,6 +990,7 @@ void Config::SaveControlValues() {
     SaveMouseValues();
     SaveTouchscreenValues();
 
+    WriteSetting(QStringLiteral("vibration_enabled"), Settings::values.vibration_enabled, true);
     WriteSetting(QStringLiteral("motion_device"),
                  QString::fromStdString(Settings::values.motion_device),
                  QStringLiteral("engine:motion_emu,update_period:100,sensitivity:0.01"));
