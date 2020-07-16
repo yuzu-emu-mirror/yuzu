@@ -680,4 +680,9 @@ private:
     std::string name;
 };
 
+/**
+ * Gets the current thread
+ */
+Thread* GetCurrentThread();
+
 } // namespace Kernel
