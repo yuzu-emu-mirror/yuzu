@@ -346,31 +346,6 @@ struct TouchscreenInput {
     u32 rotation_angle;
 };
 
-enum class NANDTotalSize : u64 {
-    S29_1GB = 0x747C00000ULL,
-};
-
-enum class NANDUserSize : u64 {
-    S26GB = 0x680000000ULL,
-};
-
-enum class NANDSystemSize : u64 {
-    S2_5GB = 0xA0000000,
-};
-
-enum class SDMCSize : u64 {
-    S1GB = 0x40000000,
-    S2GB = 0x80000000,
-    S4GB = 0x100000000ULL,
-    S8GB = 0x200000000ULL,
-    S16GB = 0x400000000ULL,
-    S32GB = 0x800000000ULL,
-    S64GB = 0x1000000000ULL,
-    S128GB = 0x2000000000ULL,
-    S256GB = 0x4000000000ULL,
-    S1TB = 0x10000000000ULL,
-};
-
 enum class RendererBackend {
     OpenGL = 0,
     Vulkan = 1,
@@ -380,6 +355,11 @@ enum class GPUAccuracy : u32 {
     Normal = 0,
     High = 1,
     Extreme = 2,
+};
+
+enum class CPUAccuracy {
+    Accurate = 0,
+    DebugMode = 1,
 };
 
 extern bool configuring_global;
@@ -427,6 +407,18 @@ struct Values {
     // Core
     Setting<bool> use_multi_core;
 
+    // Cpu
+    CPUAccuracy cpu_accuracy;
+
+    bool cpuopt_page_tables;
+    bool cpuopt_block_linking;
+    bool cpuopt_return_stack_buffer;
+    bool cpuopt_fast_dispatcher;
+    bool cpuopt_context_elimination;
+    bool cpuopt_const_prop;
+    bool cpuopt_misc_ir;
+    bool cpuopt_reduce_misalign_checks;
+
     // Renderer
     Setting<RendererBackend> renderer_backend;
     bool renderer_debug;
@@ -442,6 +434,7 @@ struct Values {
     Setting<bool> use_asynchronous_gpu_emulation;
     Setting<bool> use_vsync;
     Setting<bool> use_assembly_shaders;
+    Setting<bool> use_asynchronous_shaders;
     Setting<bool> force_30fps_mode;
     Setting<bool> use_fast_gpu_time;
 
@@ -491,10 +484,6 @@ struct Values {
     bool gamecard_inserted;
     bool gamecard_current_game;
     std::string gamecard_path;
-    NANDTotalSize nand_total_size;
-    NANDSystemSize nand_system_size;
-    NANDUserSize nand_user_size;
-    SDMCSize sdmc_size;
 
     // Debugging
     bool record_frame_times;
@@ -505,7 +494,6 @@ struct Values {
     bool dump_nso;
     bool reporting_services;
     bool quest_flag;
-    bool disable_cpu_opt;
     bool disable_macro_jit;
 
     // Misceallaneous
@@ -538,5 +526,8 @@ void LogSettings();
 
 // Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState();
+
+// Fixes settings that are known to cause issues with the emulator
+void Sanitize();
 
 } // namespace Settings

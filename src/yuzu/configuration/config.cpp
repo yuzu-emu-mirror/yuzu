@@ -505,22 +505,6 @@ void Config::ReadDataStorageValues() {
         ReadSetting(QStringLiteral("gamecard_current_game"), false).toBool();
     Settings::values.gamecard_path =
         ReadSetting(QStringLiteral("gamecard_path"), QStringLiteral("")).toString().toStdString();
-    Settings::values.nand_total_size = static_cast<Settings::NANDTotalSize>(
-        ReadSetting(QStringLiteral("nand_total_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDTotalSize::S29_1GB)))
-            .toULongLong());
-    Settings::values.nand_user_size = static_cast<Settings::NANDUserSize>(
-        ReadSetting(QStringLiteral("nand_user_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDUserSize::S26GB)))
-            .toULongLong());
-    Settings::values.nand_system_size = static_cast<Settings::NANDSystemSize>(
-        ReadSetting(QStringLiteral("nand_system_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDSystemSize::S2_5GB)))
-            .toULongLong());
-    Settings::values.sdmc_size = static_cast<Settings::SDMCSize>(
-        ReadSetting(QStringLiteral("sdmc_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::SDMCSize::S16GB)))
-            .toULongLong());
 
     qt_config->endGroup();
 }
@@ -540,8 +524,6 @@ void Config::ReadDebuggingValues() {
     Settings::values.reporting_services =
         ReadSetting(QStringLiteral("reporting_services"), false).toBool();
     Settings::values.quest_flag = ReadSetting(QStringLiteral("quest_flag"), false).toBool();
-    Settings::values.disable_cpu_opt =
-        ReadSetting(QStringLiteral("disable_cpu_opt"), false).toBool();
     Settings::values.disable_macro_jit =
         ReadSetting(QStringLiteral("disable_macro_jit"), false).toBool();
 
@@ -629,6 +611,35 @@ void Config::ReadPathValues() {
         }
     }
     UISettings::values.recent_files = ReadSetting(QStringLiteral("recentFiles")).toStringList();
+    UISettings::values.language = ReadSetting(QStringLiteral("language"), QString{}).toString();
+
+    qt_config->endGroup();
+}
+
+void Config::ReadCpuValues() {
+    qt_config->beginGroup(QStringLiteral("Cpu"));
+
+    if (global) {
+        Settings::values.cpu_accuracy = static_cast<Settings::CPUAccuracy>(
+            ReadSetting(QStringLiteral("cpu_accuracy"), 0).toInt());
+
+        Settings::values.cpuopt_page_tables =
+            ReadSetting(QStringLiteral("cpuopt_page_tables"), true).toBool();
+        Settings::values.cpuopt_block_linking =
+            ReadSetting(QStringLiteral("cpuopt_block_linking"), true).toBool();
+        Settings::values.cpuopt_return_stack_buffer =
+            ReadSetting(QStringLiteral("cpuopt_return_stack_buffer"), true).toBool();
+        Settings::values.cpuopt_fast_dispatcher =
+            ReadSetting(QStringLiteral("cpuopt_fast_dispatcher"), true).toBool();
+        Settings::values.cpuopt_context_elimination =
+            ReadSetting(QStringLiteral("cpuopt_context_elimination"), true).toBool();
+        Settings::values.cpuopt_const_prop =
+            ReadSetting(QStringLiteral("cpuopt_const_prop"), true).toBool();
+        Settings::values.cpuopt_misc_ir =
+            ReadSetting(QStringLiteral("cpuopt_misc_ir"), true).toBool();
+        Settings::values.cpuopt_reduce_misalign_checks =
+            ReadSetting(QStringLiteral("cpuopt_reduce_misalign_checks"), true).toBool();
+    }
 
     qt_config->endGroup();
 }
@@ -651,6 +662,8 @@ void Config::ReadRendererValues() {
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
     ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
                       false);
+    ReadSettingGlobal(Settings::values.use_asynchronous_shaders,
+                      QStringLiteral("use_asynchronous_shaders"), false);
     ReadSettingGlobal(Settings::values.use_fast_gpu_time, QStringLiteral("use_fast_gpu_time"),
                       true);
     ReadSettingGlobal(Settings::values.force_30fps_mode, QStringLiteral("force_30fps_mode"), false);
@@ -829,6 +842,7 @@ void Config::ReadValues() {
         ReadMiscellaneousValues();
     }
     ReadCoreValues();
+    ReadCpuValues();
     ReadRendererValues();
     ReadAudioValues();
     ReadSystemValues();
@@ -929,6 +943,7 @@ void Config::SaveValues() {
         SaveMiscellaneousValues();
     }
     SaveCoreValues();
+    SaveCpuValues();
     SaveRendererValues();
     SaveAudioValues();
     SaveSystemValues();
@@ -1006,18 +1021,7 @@ void Config::SaveDataStorageValues() {
                  false);
     WriteSetting(QStringLiteral("gamecard_path"),
                  QString::fromStdString(Settings::values.gamecard_path), QStringLiteral(""));
-    WriteSetting(QStringLiteral("nand_total_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_total_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDTotalSize::S29_1GB)));
-    WriteSetting(QStringLiteral("nand_user_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_user_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDUserSize::S26GB)));
-    WriteSetting(QStringLiteral("nand_system_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_system_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDSystemSize::S2_5GB)));
-    WriteSetting(QStringLiteral("sdmc_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.sdmc_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::SDMCSize::S16GB)));
+
     qt_config->endGroup();
 }
 
@@ -1033,7 +1037,6 @@ void Config::SaveDebuggingValues() {
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
     WriteSetting(QStringLiteral("dump_nso"), Settings::values.dump_nso, false);
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
-    WriteSetting(QStringLiteral("disable_cpu_opt"), Settings::values.disable_cpu_opt, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);
 
     qt_config->endGroup();
@@ -1093,6 +1096,33 @@ void Config::SavePathValues() {
     }
     qt_config->endArray();
     WriteSetting(QStringLiteral("recentFiles"), UISettings::values.recent_files);
+    WriteSetting(QStringLiteral("language"), UISettings::values.language, QString{});
+
+    qt_config->endGroup();
+}
+
+void Config::SaveCpuValues() {
+    qt_config->beginGroup(QStringLiteral("Cpu"));
+
+    if (global) {
+        WriteSetting(QStringLiteral("cpu_accuracy"),
+                     static_cast<int>(Settings::values.cpu_accuracy), 0);
+
+        WriteSetting(QStringLiteral("cpuopt_page_tables"), Settings::values.cpuopt_page_tables,
+                     true);
+        WriteSetting(QStringLiteral("cpuopt_block_linking"), Settings::values.cpuopt_block_linking,
+                     true);
+        WriteSetting(QStringLiteral("cpuopt_return_stack_buffer"),
+                     Settings::values.cpuopt_return_stack_buffer, true);
+        WriteSetting(QStringLiteral("cpuopt_fast_dispatcher"),
+                     Settings::values.cpuopt_fast_dispatcher, true);
+        WriteSetting(QStringLiteral("cpuopt_context_elimination"),
+                     Settings::values.cpuopt_context_elimination, true);
+        WriteSetting(QStringLiteral("cpuopt_const_prop"), Settings::values.cpuopt_const_prop, true);
+        WriteSetting(QStringLiteral("cpuopt_misc_ir"), Settings::values.cpuopt_misc_ir, true);
+        WriteSetting(QStringLiteral("cpuopt_reduce_misalign_checks"),
+                     Settings::values.cpuopt_reduce_misalign_checks, true);
+    }
 
     qt_config->endGroup();
 }
@@ -1119,6 +1149,8 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
     WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
                        Settings::values.use_assembly_shaders, false);
+    WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
+                       Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
                        true);
     WriteSettingGlobal(QStringLiteral("force_30fps_mode"), Settings::values.force_30fps_mode,
@@ -1342,11 +1374,13 @@ void Config::WriteSettingGlobal(const QString& name, const QVariant& value, bool
 
 void Config::Reload() {
     ReadValues();
+    Settings::Sanitize();
     // To apply default value changes
     SaveValues();
     Settings::Apply();
 }
 
 void Config::Save() {
+    Settings::Sanitize();
     SaveValues();
 }

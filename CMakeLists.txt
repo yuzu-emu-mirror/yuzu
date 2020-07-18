@@ -13,6 +13,7 @@ project(yuzu)
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
+option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
 CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" ON "ENABLE_QT;MSVC" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
@@ -118,8 +119,17 @@ message(STATUS "Target architecture: ${ARCHITECTURE}")
 # Configure C++ standard
 # ===========================
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# boost asio's concept usage doesn't play nicely with some compilers yet.
+add_definitions(-DBOOST_ASIO_DISABLE_CONCEPTS)
+if (MSVC)
+    add_compile_options(/std:c++latest)
+
+    # cubeb and boost still make use of deprecated result_of.
+    add_definitions(-D_HAS_DEPRECATED_RESULT_OF)
+else()
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
 # Output binaries to bin/
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -214,6 +224,10 @@ if(ENABLE_QT)
     find_package(Qt5 5.9 COMPONENTS Widgets ${QT_PREFIX_HINT})
     if (YUZU_USE_QT_WEB_ENGINE)
         find_package(Qt5 COMPONENTS WebEngineCore WebEngineWidgets)
+    endif()
+	
+    if (ENABLE_QT_TRANSLATION)
+        find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
     endif()
     if (NOT Qt5_FOUND)
         list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
@@ -330,13 +344,15 @@ elseif(SDL2_FOUND)
 endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
-include(FindPkgConfig)
-find_package(LibUSB)
+if(NOT APPLE)
+    include(FindPkgConfig)
+    find_package(LibUSB)
+endif()
 if (NOT LIBUSB_FOUND)
     add_subdirectory(externals/libusb)
+    set(LIBUSB_INCLUDE_DIR "")
     set(LIBUSB_LIBRARIES usb)
 endif()
-
 
 # Prefer the -pthread flag on Linux.
 set(THREADS_PREFER_PTHREAD_FLAG ON)

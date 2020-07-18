@@ -13,16 +13,8 @@
 #include "common/logging/log.h"
 #include "common/thread_queue_list.h"
 #include "core/arm/arm_interface.h"
-#ifdef ARCHITECTURE_x86_64
-#include "core/arm/dynarmic/arm_dynarmic_32.h"
-#include "core/arm/dynarmic/arm_dynarmic_64.h"
-#endif
-#include "core/arm/cpu_interrupt_handler.h"
-#include "core/arm/exclusive_monitor.h"
 #include "core/arm/unicorn/arm_unicorn.h"
 #include "core/core.h"
-#include "core/core_timing.h"
-#include "core/core_timing_util.h"
 #include "core/cpu_manager.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/errors.h"
@@ -35,6 +27,11 @@
 #include "core/hle/kernel/time_manager.h"
 #include "core/hle/result.h"
 #include "core/memory.h"
+
+#ifdef ARCHITECTURE_x86_64
+#include "core/arm/dynarmic/arm_dynarmic_32.h"
+#include "core/arm/dynarmic/arm_dynarmic_64.h"
+#endif
 
 namespace Kernel {
 
@@ -158,7 +155,7 @@ ResultVal<std::shared_ptr<Thread>> Thread::Create(Core::System& system, ThreadTy
                                                   std::string name, VAddr entry_point, u32 priority,
                                                   u64 arg, s32 processor_id, VAddr stack_top,
                                                   Process* owner_process) {
-    std::function<void(void*)> init_func = system.GetCpuManager().GetGuestThreadStartFunc();
+    std::function<void(void*)> init_func = Core::CpuManager::GetGuestThreadStartFunc();
     void* init_func_parameter = system.GetCpuManager().GetStartFuncParamater();
     return Create(system, type_flags, name, entry_point, priority, arg, processor_id, stack_top,
                   owner_process, std::move(init_func), init_func_parameter);
@@ -538,15 +535,6 @@ ResultCode Thread::SetCoreAndAffinityMask(s32 new_core, u64 new_affinity_mask) {
         }
     }
     return RESULT_SUCCESS;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Gets the current thread
- */
-Thread* GetCurrentThread() {
-    return Core::System::GetInstance().CurrentScheduler().GetCurrentThread();
 }
 
 } // namespace Kernel

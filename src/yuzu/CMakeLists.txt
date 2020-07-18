@@ -30,6 +30,12 @@ add_executable(yuzu
     configuration/configure_audio.cpp
     configuration/configure_audio.h
     configuration/configure_audio.ui
+    configuration/configure_cpu.cpp
+    configuration/configure_cpu.h
+    configuration/configure_cpu.ui
+    configuration/configure_cpu_debug.cpp
+    configuration/configure_cpu_debug.h
+    configuration/configure_cpu_debug.ui
     configuration/configure_debug.cpp
     configuration/configure_debug.h
     configuration/configure_debug.ui
@@ -98,11 +104,13 @@ add_executable(yuzu
     game_list_p.h
     game_list_worker.cpp
     game_list_worker.h
+    hotkeys.cpp
+    hotkeys.h
+    install_dialog.cpp
+    install_dialog.h
     loading_screen.cpp
     loading_screen.h
     loading_screen.ui
-    hotkeys.cpp
-    hotkeys.h
     main.cpp
     main.h
     main.ui
@@ -125,11 +133,44 @@ file(GLOB COMPAT_LIST
 file(GLOB_RECURSE ICONS ${PROJECT_SOURCE_DIR}/dist/icons/*)
 file(GLOB_RECURSE THEMES ${PROJECT_SOURCE_DIR}/dist/qt_themes/*)
 
+if (ENABLE_QT_TRANSLATION)
+    set(YUZU_QT_LANGUAGES "${PROJECT_SOURCE_DIR}/dist/languages" CACHE PATH "Path to the translation bundle for the Qt frontend")
+    option(GENERATE_QT_TRANSLATION "Generate en.ts as the translation source file" OFF)
+
+    # Update source TS file if enabled
+    if (GENERATE_QT_TRANSLATION)
+        get_target_property(SRCS yuzu SOURCES)
+        qt5_create_translation(QM_FILES ${SRCS} ${UIS} ${YUZU_QT_LANGUAGES}/en.ts)
+        add_custom_target(translation ALL DEPENDS ${YUZU_QT_LANGUAGES}/en.ts)
+    endif()
+
+    # Find all TS files except en.ts
+    file(GLOB_RECURSE LANGUAGES_TS ${YUZU_QT_LANGUAGES}/*.ts)
+    list(REMOVE_ITEM LANGUAGES_TS ${YUZU_QT_LANGUAGES}/en.ts)
+
+    # Compile TS files to QM files
+    qt5_add_translation(LANGUAGES_QM ${LANGUAGES_TS})
+
+    # Build a QRC file from the QM file list
+    set(LANGUAGES_QRC ${CMAKE_CURRENT_BINARY_DIR}/languages.qrc)
+    file(WRITE ${LANGUAGES_QRC} "<RCC><qresource prefix=\"languages\">\n")
+    foreach (QM ${LANGUAGES_QM})
+        get_filename_component(QM_FILE ${QM} NAME)
+        file(APPEND ${LANGUAGES_QRC} "<file>${QM_FILE}</file>\n")
+    endforeach (QM)
+    file(APPEND ${LANGUAGES_QRC} "</qresource></RCC>")
+
+    # Add the QRC file to package in all QM files
+    qt5_add_resources(LANGUAGES ${LANGUAGES_QRC})
+else()
+    set(LANGUAGES)
+endif()
 
 target_sources(yuzu
     PRIVATE
         ${COMPAT_LIST}
         ${ICONS}
+        ${LANGUAGES}
         ${THEMES}
 )
 

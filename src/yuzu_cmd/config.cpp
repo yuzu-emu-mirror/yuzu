@@ -335,15 +335,6 @@ void Config::ReadValues() {
     Settings::values.gamecard_current_game =
         sdl2_config->GetBoolean("Data Storage", "gamecard_current_game", false);
     Settings::values.gamecard_path = sdl2_config->Get("Data Storage", "gamecard_path", "");
-    Settings::values.nand_total_size = static_cast<Settings::NANDTotalSize>(sdl2_config->GetInteger(
-        "Data Storage", "nand_total_size", static_cast<long>(Settings::NANDTotalSize::S29_1GB)));
-    Settings::values.nand_user_size = static_cast<Settings::NANDUserSize>(sdl2_config->GetInteger(
-        "Data Storage", "nand_user_size", static_cast<long>(Settings::NANDUserSize::S26GB)));
-    Settings::values.nand_system_size = static_cast<Settings::NANDSystemSize>(
-        sdl2_config->GetInteger("Data Storage", "nand_system_size",
-                                static_cast<long>(Settings::NANDSystemSize::S2_5GB)));
-    Settings::values.sdmc_size = static_cast<Settings::SDMCSize>(sdl2_config->GetInteger(
-        "Data Storage", "sdmc_size", static_cast<long>(Settings::SDMCSize::S16GB)));
 
     // System
     Settings::values.use_docked_mode = sdl2_config->GetBoolean("System", "use_docked_mode", false);
@@ -403,6 +394,10 @@ void Config::ReadValues() {
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "use_vsync", 1)));
     Settings::values.use_assembly_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_assembly_shaders", false));
+    Settings::values.use_asynchronous_shaders.SetValue(
+        sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
+    Settings::values.use_asynchronous_shaders.SetValue(
+        sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
     Settings::values.use_fast_gpu_time.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_fast_gpu_time", true));
 
@@ -437,8 +432,6 @@ void Config::ReadValues() {
     Settings::values.reporting_services =
         sdl2_config->GetBoolean("Debugging", "reporting_services", false);
     Settings::values.quest_flag = sdl2_config->GetBoolean("Debugging", "quest_flag", false);
-    Settings::values.disable_cpu_opt =
-        sdl2_config->GetBoolean("Debugging", "disable_cpu_opt", false);
     Settings::values.disable_macro_jit =
         sdl2_config->GetBoolean("Debugging", "disable_macro_jit", false);
 
