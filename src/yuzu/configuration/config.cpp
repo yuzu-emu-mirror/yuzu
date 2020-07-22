@@ -5,6 +5,7 @@
 #include <array>
 #include <QKeySequence>
 #include <QSettings>
+#include "common/common_paths.h"
 #include "common/file_util.h"
 #include "configure_input_simple.h"
 #include "core/hle/service/acc/profile_manager.h"
@@ -13,10 +14,28 @@
 #include "input_common/udp/client.h"
 #include "yuzu/configuration/config.h"
 
-Config::Config(const std::string& config_file, bool is_global) {
+Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
-    qt_config_loc = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + config_file;
+    qt_config_loc = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir) + "qt-config.ini";
     FileUtil::CreateFullPath(qt_config_loc);
+    qt_config =
+        std::make_unique<QSettings>(QString::fromStdString(qt_config_loc), QSettings::IniFormat);
+    Reload();
+}
+
+Config::Config(u64 title_id, bool is_global) {
+    // TODO: Ditto
+    std::string old_filename = fmt::format(
+        "{}{:016X}.ini", FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir), title_id);
+    qt_config_loc = fmt::format("{}custom" DIR_SEP "{:016X}" DIR_SEP "qt-config.ini",
+                                FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir), title_id);
+    FileUtil::CreateFullPath(qt_config_loc);
+    if (FileUtil::Exists(old_filename)) {
+        FileUtil::Copy(old_filename, qt_config_loc);
+        if (FileUtil::Exists(qt_config_loc)) {
+            FileUtil::Delete(old_filename);
+        }
+    }
     qt_config =
         std::make_unique<QSettings>(QString::fromStdString(qt_config_loc), QSettings::IniFormat);
     global = is_global;

@@ -16,7 +16,8 @@ class QSettings;
 
 class Config {
 public:
-    explicit Config(const std::string& config_loc = "qt-config.ini", bool is_global = true);
+    explicit Config();
+    explicit Config(u64 title_id, bool is_global);
     ~Config();
 
     void Reload();
@@ -109,7 +110,7 @@ private:
     std::unique_ptr<QSettings> qt_config;
     std::string qt_config_loc;
 
-    bool global;
+    bool global{true};
 };
 
 // These metatype declarations cannot be in core/settings.h because core is devoid of QT

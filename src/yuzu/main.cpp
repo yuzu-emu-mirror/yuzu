@@ -1063,7 +1063,7 @@ void GMainWindow::BootGame(const QString& filename) {
     const auto loader = Loader::GetLoader(v_file);
     if (!(loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success)) {
         // Load per game settings
-        Config per_game_config(fmt::format("{:016X}.ini", title_id), false);
+        Config per_game_config(title_id, false);
     }
 
     Settings::LogSettings();
