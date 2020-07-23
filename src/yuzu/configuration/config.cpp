@@ -25,7 +25,7 @@ Config::Config() {
 
 Config::Config(u64 title_id, bool is_global) {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
-    qt_config_loc = fmt::format("{}custom" DIR_SEP "{:016X}" DIR_SEP "qt-config.ini",
+    qt_config_loc = fmt::format("{}custom" DIR_SEP "{:016X}.ini",
                                 FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir), title_id);
     FileUtil::CreateFullPath(qt_config_loc);
 
