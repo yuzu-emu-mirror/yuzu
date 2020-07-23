@@ -47,6 +47,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -274,6 +275,8 @@ GMainWindow::GMainWindow()
     if (args.length() >= 2) {
         BootGame(args[1]);
     }
+
+    MigrateConfigFiles();
 }
 
 GMainWindow::~GMainWindow() {
@@ -2165,6 +2168,28 @@ void GMainWindow::OnCaptureScreenshot() {
         }
     }
     OnStartGame();
+}
+
+// TODO: Written 2020-07-23: Remove per-game config migration code when it is irrelevant
+void GMainWindow::MigrateConfigFiles() {
+    const std::string& config_dir_s = FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir);
+    const QDir config_dir = QDir(QString::fromStdString(config_dir_s));
+    const QStringList config_dir_list = config_dir.entryList(QStringList(QStringLiteral("*.ini")));
+
+    FileUtil::CreateFullPath(fmt::format("{}custom" DIR_SEP, config_dir_s));
+    for (QStringList::const_iterator it = config_dir_list.constBegin();
+         it != config_dir_list.constEnd(); it++) {
+        const auto filename = it->toStdString();
+        if (filename.find_first_not_of("0123456789abcdefACBDEF", 0) < 16) {
+            continue;
+        }
+        const auto origin = fmt::format("{}{}", config_dir_s, filename);
+        const auto destination = fmt::format("{}custom" DIR_SEP "{}", config_dir_s, filename);
+        LOG_INFO(Frontend, "Migrating config file from {} to {}", origin, destination);
+        if (FileUtil::Copy(origin, destination)) {
+            FileUtil::Delete(origin);
+        }
+    }
 }
 
 void GMainWindow::UpdateWindowTitle(const std::string& title_name,
