@@ -6,6 +6,8 @@
 
 namespace Common {
 
+#include <type_traits>
+
 // Check if type is like an STL container
 template <typename T>
 concept IsSTLContainer = requires(T t) {
@@ -19,6 +21,12 @@ concept IsSTLContainer = requires(T t) {
     t.cend();
     t.data();
     t.size();
+};
+
+// Check if type T is derived from T2
+template <typename T, typename T2>
+concept IsBaseOf = requires {
+    std::is_base_of_v<T, T2>;
 };
 
 } // namespace Common
