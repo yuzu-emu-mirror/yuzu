@@ -194,15 +194,15 @@ public:
 
     /* Helper function to write a buffer using the appropriate buffer descriptor
      *
-     * @tparam ContiguousContainer an arbitrary container that satisfies the
-     *         ContiguousContainer concept in the C++ standard library.
+     * @tparam T an arbitrary container that satisfies the
+     *         ContiguousContainer concept in the C++ standard library or a trivially copyable type.
      *
-     * @param container    The container to write the data of into a buffer.
+     * @param data         The container/data to write into a buffer.
      * @param buffer_index The buffer in particular to write to.
      */
     template <typename T, typename = std::enable_if_t<!std::is_pointer_v<T>>>
     std::size_t WriteBuffer(const T& data, std::size_t buffer_index = 0) const {
-        if constexpr (IsSTLContainer<T>) {
+        if constexpr (Common::IsSTLContainer<T>) {
             using ContiguousType = typename T::value_type;
             static_assert(std::is_trivially_copyable_v<ContiguousType>,
                           "Container to WriteBuffer must contain trivially copyable objects");

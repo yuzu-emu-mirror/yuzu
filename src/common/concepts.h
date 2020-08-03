@@ -4,6 +4,8 @@
 
 #pragma once
 
+namespace Common {
+
 // Check if type is like an STL container
 template <typename T>
 concept IsSTLContainer = requires(T t) {
@@ -18,3 +20,5 @@ concept IsSTLContainer = requires(T t) {
     t.data();
     t.size();
 };
+
+} // namespace Common
