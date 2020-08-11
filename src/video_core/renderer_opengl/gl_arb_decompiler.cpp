@@ -1574,8 +1574,7 @@ std::string ARBDecompiler::Select(Operation operation) {
 }
 
 std::string ARBDecompiler::FClamp(Operation operation) {
-    // 1.0f in hex, replace with std::bit_cast on C++20
-    static constexpr u32 POSITIVE_ONE = 0x3f800000;
+    static constexpr u32 POSITIVE_ONE = std::bit_cast<u32>(1.0f);
 
     std::string temporary = AllocTemporary();
     const Node& value = operation[0];
