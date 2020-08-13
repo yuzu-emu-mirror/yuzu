@@ -115,7 +115,10 @@ void IAppletResource::UpdateControllers(u64 userdata, s64 ns_late) {
         if (should_reload) {
             controller->OnLoadInputDevices();
         }
-        controller->OnUpdate(core_timing, shared_mem->GetPointer(), SHARED_MEMORY_SIZE);
+        // TODO(german77): Sync this function with the emulator to remove 'loop'
+        for (std::size_t loop = 0; loop < 17; ++loop) {
+            controller->OnUpdate(core_timing, shared_mem->GetPointer(), SHARED_MEMORY_SIZE);
+        }
     }
 
     core_timing.ScheduleEvent(pad_update_ticks - ns_late, pad_update_event);
