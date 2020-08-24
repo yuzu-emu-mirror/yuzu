@@ -253,20 +253,20 @@ enum class MetaStackClass {
     Pbk,
 };
 
-class OperationNode;
-class ConditionalNode;
-class GprNode;
-class CustomVarNode;
-class ImmediateNode;
-class InternalFlagNode;
-class PredicateNode;
 class AbufNode;
 class CbufNode;
-class LmemNode;
-class PatchNode;
-class SmemNode;
-class GmemNode;
 class CommentNode;
+class ConditionalNode;
+class CustomVarNode;
+class GmemNode;
+class GprNode;
+class ImmediateNode;
+class InternalFlagNode;
+class LmemNode;
+class OperationNode;
+class PatchNode;
+class PredicateNode;
+class SmemNode;
 
 using NodeData = std::variant<OperationNode, ConditionalNode, GprNode, CustomVarNode, ImmediateNode,
                               InternalFlagNode, PredicateNode, AbufNode, PatchNode, CbufNode,
