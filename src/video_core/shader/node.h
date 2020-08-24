@@ -377,9 +377,7 @@ struct GlobalMemoryBase {
     u32 cbuf_index = 0;
     u32 cbuf_offset = 0;
 
-    bool operator<(const GlobalMemoryBase& rhs) const {
-        return std::tie(cbuf_index, cbuf_offset) < std::tie(rhs.cbuf_index, rhs.cbuf_offset);
-    }
+    auto operator<=>(const GlobalMemoryBase& rhs) const = default;
 };
 
 /// Parameters describing an arithmetic operation
