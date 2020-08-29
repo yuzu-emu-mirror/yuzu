@@ -610,11 +610,6 @@ void GMainWindow::InitializeWidgets() {
     });
     renderer_status_button->toggle();
 
-#ifndef HAS_VULKAN
-    renderer_status_button->setChecked(false);
-    renderer_status_button->setCheckable(false);
-    renderer_status_button->setDisabled(true);
-#else
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
     connect(renderer_status_button, &QPushButton::clicked, [this] {
@@ -629,7 +624,6 @@ void GMainWindow::InitializeWidgets() {
 
         Settings::Apply();
     });
-#endif // HAS_VULKAN
     statusBar()->insertPermanentWidget(0, renderer_status_button);
 
     statusBar()->setVisible(true);
@@ -1218,9 +1212,7 @@ void GMainWindow::ShutdownGame() {
     emu_frametime_label->setVisible(false);
     async_status_button->setEnabled(true);
     multicore_status_button->setEnabled(true);
-#ifdef HAS_VULKAN
     renderer_status_button->setEnabled(true);
-#endif
 
     emulation_running = false;
 
@@ -2459,10 +2451,8 @@ void GMainWindow::UpdateStatusButtons() {
         Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
         Settings::values.use_multi_core.GetValue());
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
-#ifdef HAS_VULKAN
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
-#endif
 }
 
 void GMainWindow::HideMouseCursor() {
