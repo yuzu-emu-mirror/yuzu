@@ -135,8 +135,7 @@ Client::Client(std::shared_ptr<DeviceStatus> status, const std::string& host, u1
                u8 pad_index, u32 client_id)
     : status(std::move(status)) {
     StartCommunication(host, port, pad_index, client_id);
-    motion = new InputCommon::MotionInput(0.3f, 0.005f, 0.0f);
-    motion->SetGyroThreshold(0.0006f);
+    motion.SetGyroThreshold(0.0006f);
 }
 
 Client::~Client() {
@@ -174,15 +173,15 @@ void Client::OnPadData(Response::PadData data) {
     u64 time_difference =
         std::chrono::duration_cast<std::chrono::microseconds>(now - last_motion_update).count();
     last_motion_update = now;
-    Common::Vec3f rawgyroscope = {data.gyro.pitch, data.gyro.roll, -data.gyro.yaw};
-    motion->SetAcceleration({data.accel.x, -data.accel.z, data.accel.y});
-    motion->SetGyroscope(rawgyroscope / 312.0f);
-    motion->UpdateRotation(time_difference);
-    motion->UpdateOrientation(time_difference);
-    Common::Vec3f gyroscope = motion->GetGyroscope();
-    Common::Vec3f accelerometer = motion->GetAcceleration();
-    Common::Vec3f rotation = motion->GetRotations();
-    std::array<Common::Vec3f, 3> orientation = motion->GetOrientation();
+    Common::Vec3f raw_gyroscope = {data.gyro.pitch, data.gyro.roll, -data.gyro.yaw};
+    motion.SetAcceleration({data.accel.x, -data.accel.z, data.accel.y});
+    motion.SetGyroscope(raw_gyroscope / 312.0f);
+    motion.UpdateRotation(time_difference);
+    motion.UpdateOrientation(time_difference);
+    Common::Vec3f gyroscope = motion.GetGyroscope();
+    Common::Vec3f accelerometer = motion.GetAcceleration();
+    Common::Vec3f rotation = motion.GetRotations();
+    std::array<Common::Vec3f, 3> orientation = motion.GetOrientation();
     {
         std::lock_guard guard(status->update_mutex);
         status->motion_status = {accelerometer, gyroscope, rotation, orientation};

@@ -60,7 +60,7 @@ private:
     void OnPadData(Response::PadData);
     void StartCommunication(const std::string& host, u16 port, u8 pad_index, u32 client_id);
 
-    InputCommon::MotionInput* motion = nullptr;
+    InputCommon::MotionInput motion{0.3f, 0.005f, 0.0f};
     std::chrono::time_point<std::chrono::system_clock> last_motion_update;
     std::unique_ptr<Socket> socket;
     std::shared_ptr<DeviceStatus> status;
