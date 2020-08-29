@@ -14,6 +14,7 @@
 #include "common/common_types.h"
 #include "common/thread.h"
 #include "common/vector_math.h"
+#include "input_common/motion_input.h"
 
 namespace InputCommon::CemuhookUDP {
 
@@ -30,7 +31,9 @@ struct Version;
 
 struct DeviceStatus {
     std::mutex update_mutex;
-    std::tuple<Common::Vec3<float>, Common::Vec3<float>> motion_status;
+    std::tuple<Common::Vec3<float>, Common::Vec3<float>, Common::Vec3<float>,
+               std::array<Common::Vec3f, 3>>
+        motion_status;
     std::tuple<float, float, bool> touch_status;
 
     // calibration data for scaling the device's touch area to 3ds
@@ -57,6 +60,8 @@ private:
     void OnPadData(Response::PadData);
     void StartCommunication(const std::string& host, u16 port, u8 pad_index, u32 client_id);
 
+    InputCommon::MotionInput* motion = nullptr;
+    std::chrono::time_point<std::chrono::system_clock> last_motion_update;
     std::unique_ptr<Socket> socket;
     std::shared_ptr<DeviceStatus> status;
     std::thread thread;

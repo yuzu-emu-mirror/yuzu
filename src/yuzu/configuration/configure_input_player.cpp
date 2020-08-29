@@ -173,6 +173,14 @@ QString ButtonToText(const Common::ParamPackage& param) {
         return {};
     }
 
+    if (param.Get("engine", "") == "cemuhookudp") {
+        if (param.Has("pad_index")) {
+            const QString motion_str = QString::fromStdString(param.Get("pad_index", ""));
+            return QObject::tr("UDP Motion %1").arg(motion_str);
+        }
+        return GetKeyName(param.Get("code", 0));
+    }
+
     return QObject::tr("[unknown]");
 }
 

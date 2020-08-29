@@ -26,10 +26,12 @@ private:
     std::shared_ptr<DeviceStatus> status;
 };
 
-class UDPMotionDevice final : public Input::MotionDevice {
+class UDPMotionDevice final : public Input::RealMotionDevice {
 public:
     explicit UDPMotionDevice(std::shared_ptr<DeviceStatus> status_) : status(std::move(status_)) {}
-    std::tuple<Common::Vec3<float>, Common::Vec3<float>> GetStatus() const override {
+    std::tuple<Common::Vec3<float>, Common::Vec3<float>, Common::Vec3<float>,
+               std::array<Common::Vec3f, 3>>
+    GetStatus() const override {
         std::lock_guard guard(status->update_mutex);
         return status->motion_status;
     }
@@ -59,11 +61,11 @@ private:
     std::shared_ptr<DeviceStatus> status;
 };
 
-class UDPMotionFactory final : public Input::Factory<Input::MotionDevice> {
+class UDPMotionFactory final : public Input::Factory<Input::RealMotionDevice> {
 public:
     explicit UDPMotionFactory(std::shared_ptr<DeviceStatus> status_) : status(std::move(status_)) {}
 
-    std::unique_ptr<Input::MotionDevice> Create(const Common::ParamPackage& params) override {
+    std::unique_ptr<Input::RealMotionDevice> Create(const Common::ParamPackage& params) override {
         return std::make_unique<UDPMotionDevice>(status);
     }
 
@@ -80,13 +82,13 @@ State::State() {
     motion_factory = std::make_shared<UDPMotionFactory>(status);
     touch_factory = std::make_shared<UDPTouchFactory>(status);
 
-    Input::RegisterFactory<Input::MotionDevice>("cemuhookudp", motion_factory);
+    Input::RegisterFactory<Input::RealMotionDevice>("cemuhookudp", motion_factory);
     Input::RegisterFactory<Input::TouchDevice>("cemuhookudp", touch_factory);
 }
 
 State::~State() {
     Input::UnregisterFactory<Input::TouchDevice>("cemuhookudp");
-    Input::UnregisterFactory<Input::MotionDevice>("cemuhookudp");
+    Input::UnregisterFactory<Input::RealMotionDevice>("cemuhookudp");
 }
 
 std::vector<Common::ParamPackage> State::GetInputDevices() const {
