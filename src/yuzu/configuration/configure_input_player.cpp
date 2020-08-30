@@ -17,6 +17,7 @@
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/sm/sm.h"
 #include "input_common/gcadapter/gc_poller.h"
+#include "input_common/udp/udp.h"
 #include "input_common/main.h"
 #include "ui_configure_input_player.h"
 #include "yuzu/configuration/config.h"
@@ -425,6 +426,13 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                 return;
             }
         }
+        if (input_subsystem->GetUDPMotions()->IsPolling()) {
+            params = input_subsystem->GetUDPMotions()->GetNextInput();
+            if (params.Has("engine")) {
+                SetPollingResult(params, false);
+                return;
+            }
+        }
         for (auto& poller : device_pollers) {
             params = poller->GetNextInput();
             if (params.Has("engine")) {
@@ -691,6 +699,10 @@ void ConfigureInputPlayer::HandleClick(
         input_subsystem->GetGCAnalogs()->BeginConfiguration();
     }
 
+    if (type == InputCommon::Polling::DeviceType::Motion) {
+        input_subsystem->GetUDPMotions()->BeginConfiguration();
+    }
+
     timeout_timer->start(2500); // Cancel after 2.5 seconds
     poll_timer->start(50);      // Check for new inputs every 50ms
 }
@@ -707,6 +719,8 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
 
     input_subsystem->GetGCButtons()->EndConfiguration();
     input_subsystem->GetGCAnalogs()->EndConfiguration();
+
+    input_subsystem->GetUDPMotions()->EndConfiguration();
 
     if (!abort) {
         (*input_setter)(params);
