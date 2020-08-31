@@ -69,23 +69,27 @@ struct SockAddrIn {
     std::array<u8, 8> zeroes;
 };
 
+enum class PollEvents : u16 {
+    IN = 1 << 0,
+    PRI = 1 << 1,
+    OUT = 1 << 2,
+    ERR = 1 << 3,
+    HUP = 1 << 4,
+    NVAL = 1 << 5,
+};
+
+DECLARE_ENUM_FLAG_OPERATORS(PollEvents);
+
 struct PollFD {
     s32 fd;
-    u16 events;
-    u16 revents;
+    PollEvents events;
+    PollEvents revents;
 };
 
 struct Linger {
     u32 onoff;
     u32 linger;
 };
-
-constexpr u16 POLL_IN = 0x01;
-constexpr u16 POLL_PRI = 0x02;
-constexpr u16 POLL_OUT = 0x04;
-constexpr u16 POLL_ERR = 0x08;
-constexpr u16 POLL_HUP = 0x10;
-constexpr u16 POLL_NVAL = 0x20;
 
 constexpr u32 FLAG_MSG_DONTWAIT = 0x80;
 
