@@ -871,8 +871,9 @@ Common::ParamPackage BuildParamPackageForBinding(int port, const std::string& gu
     case SDL_CONTROLLER_BINDTYPE_HAT:
         return BuildHatParamPackageForButton(port, guid, binding.value.hat.hat,
                                              binding.value.hat.hat_mask);
+    default:
+        return {};
     }
-    return {};
 }
 
 Common::ParamPackage BuildParamPackageForAnalog(int port, const std::string& guid, int axis_x,

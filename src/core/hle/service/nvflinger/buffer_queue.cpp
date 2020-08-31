@@ -158,9 +158,10 @@ u32 BufferQueue::Query(QueryType type) {
     switch (type) {
     case QueryType::NativeWindowFormat:
         return static_cast<u32>(PixelFormat::RGBA8888);
+    default:
+        UNIMPLEMENTED();
     }
 
-    UNIMPLEMENTED();
     return 0;
 }
 

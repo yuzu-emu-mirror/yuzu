@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/settings.h"
 #include "input_common/main.h"
@@ -49,6 +50,8 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
             case CalibrationConfigurationJob::Status::Completed:
                 text = tr("Configuration completed!");
                 break;
+            case CalibrationConfigurationJob::Status::Initialized:
+                UNREACHABLE();
             }
             QMetaObject::invokeMethod(this, "UpdateLabelText", Q_ARG(QString, text));
             if (status == CalibrationConfigurationJob::Status::Completed) {
