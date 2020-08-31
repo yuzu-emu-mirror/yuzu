@@ -72,8 +72,8 @@ public:
 
     struct RenderEnable {
         enum class Mode : u32 {
-            FALSE = 0,
-            TRUE = 1,
+            _FALSE = 0,
+            _TRUE = 1,
             CONDITIONAL = 2,
             RENDER_IF_EQUAL = 3,
             RENDER_IF_NOT_EQUAL = 4,
