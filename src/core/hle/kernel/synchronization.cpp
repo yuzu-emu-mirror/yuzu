@@ -41,11 +41,10 @@ std::pair<ResultCode, Handle> Synchronization::WaitFor(
     Handle event_handle = InvalidHandle;
     {
         SchedulerLockAndSleep lock(kernel, event_handle, thread, nano_seconds);
-        const auto itr =
-            std::find_if(sync_objects.begin(), sync_objects.end(),
-                         [thread](const std::shared_ptr<SynchronizationObject>& object) {
-                             return object->IsSignaled();
-                         });
+        const auto itr = std::find_if(sync_objects.begin(), sync_objects.end(),
+                                      [](const std::shared_ptr<SynchronizationObject>& object) {
+                                          return object->IsSignaled();
+                                      });
 
         if (itr != sync_objects.end()) {
             // We found a ready object, acquire it and set the result value

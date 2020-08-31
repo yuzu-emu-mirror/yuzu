@@ -178,7 +178,7 @@ u32 ShaderIR::DecodeTexture(NodeBlock& bb, u32 pc) {
                                                    : GetSampler(instr.sampler, info);
         Node4 values;
         if (!sampler) {
-            std::generate(values.begin(), values.end(), [this] { return Immediate(0); });
+            std::generate(values.begin(), values.end(), [] { return Immediate(0); });
             WriteTexInstructionFloat(bb, instr, values);
             break;
         }

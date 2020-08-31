@@ -25,7 +25,7 @@ u32 ShaderIR::DecodeRegisterSetPredicate(NodeBlock& bb, u32 pc) {
     const Instruction instr = {program_code[pc]};
     const auto opcode = OpCode::Decode(instr);
 
-    Node apply_mask = [this, opcode, instr] {
+    Node apply_mask = [opcode, instr] {
         switch (opcode->get().GetId()) {
         case OpCode::Id::R2P_IMM:
         case OpCode::Id::P2R_IMM:

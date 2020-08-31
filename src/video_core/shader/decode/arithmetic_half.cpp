@@ -77,7 +77,7 @@ u32 ShaderIR::DecodeArithmeticHalf(NodeBlock& bb, u32 pc) {
     op_b = UnpackHalfFloat(op_b, type_b);
     op_b = GetOperandAbsNegHalf(op_b, absolute_b, negate_b);
 
-    Node value = [this, opcode, op_a, op_b = op_b] {
+    Node value = [opcode, op_a, op_b = op_b] {
         switch (opcode->get().GetId()) {
         case OpCode::Id::HADD2_C:
         case OpCode::Id::HADD2_R:
