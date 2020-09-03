@@ -138,8 +138,8 @@ Client::Client() {
                            Settings::values.udp_input_port, pad, 24872);
         // Set motion parameters
         // SetGyroThreshold value should be dependent on GyroscopeZeroDriftMode
-        // Real HW values are unkown, 0.0006 is an aproximate to Standard
-        clients[client].motion.SetGyroThreshold(0.0006f);
+        // Real HW values are unkown, 0.00005 is an aproximate to Standard
+        clients[client].motion.SetGyroThreshold(0.00005f);
     }
 }
 
