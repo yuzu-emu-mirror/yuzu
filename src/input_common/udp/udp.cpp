@@ -13,7 +13,7 @@
 
 namespace InputCommon {
 
-class UDPMotion final : public Input::RealMotionDevice {
+class UDPMotion final : public Input::MotionDevice {
 public:
     UDPMotion(std::string ip_, int port_, int pad_, InputCommon::CemuhookUDP::Client* client_)
         : ip(ip_), port(port_), pad(pad_), client(client_) {}
@@ -21,7 +21,7 @@ public:
     std::tuple<Common::Vec3<float>, Common::Vec3<float>, Common::Vec3<float>,
                std::array<Common::Vec3f, 3>>
     GetStatus() const override {
-        return client->GetPadState(ip, port, pad).motion_status;
+        return client->GetPadState(pad).motion_status;
     }
 
 private:
@@ -41,8 +41,7 @@ UDPMotionFactory::UDPMotionFactory(std::shared_ptr<InputCommon::CemuhookUDP::Cli
  * @param params contains parameters for creating the device:
  *     - "port": the nth jcpad on the adapter
  */
-std::unique_ptr<Input::RealMotionDevice> UDPMotionFactory::Create(
-    const Common::ParamPackage& params) {
+std::unique_ptr<Input::MotionDevice> UDPMotionFactory::Create(const Common::ParamPackage& params) {
     const std::string ip = params.Get("ip", "127.0.0.1");
     const int port = params.Get("port", 26760);
     const int pad = params.Get("pad_index", 0);
@@ -84,10 +83,10 @@ Common::ParamPackage UDPMotionFactory::GetNextInput() {
 class UDPTouch final : public Input::TouchDevice {
 public:
     UDPTouch(std::string ip_, int port_, int pad_, InputCommon::CemuhookUDP::Client* client_)
-        : ip(ip_), port(port_), pad(pad_), client(client_) {}
+        : ip(std::move(ip_)), port(port_), pad(pad_), client(client_) {}
 
     std::tuple<float, float, bool> GetStatus() const override {
-        return client->GetPadState(ip, port, pad).touch_status;
+        return client->GetPadState(pad).touch_status;
     }
 
 private:

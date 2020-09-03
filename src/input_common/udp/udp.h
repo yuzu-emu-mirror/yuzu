@@ -11,11 +11,11 @@
 namespace InputCommon {
 
 /// A motion device factory that creates motion devices from udp clients
-class UDPMotionFactory final : public Input::Factory<Input::RealMotionDevice> {
+class UDPMotionFactory final : public Input::Factory<Input::MotionDevice> {
 public:
     explicit UDPMotionFactory(std::shared_ptr<InputCommon::CemuhookUDP::Client> client_);
 
-    std::unique_ptr<Input::RealMotionDevice> Create(const Common::ParamPackage& params) override;
+    std::unique_ptr<Input::MotionDevice> Create(const Common::ParamPackage& params) override;
 
     Common::ParamPackage GetNextInput();
 

@@ -41,7 +41,7 @@ struct InputSubsystem::Impl {
         sdl = SDL::Init();
 #endif
 
-        auto udp = std::make_shared<InputCommon::CemuhookUDP::Client>();
+        udp = std::make_shared<InputCommon::CemuhookUDP::Client>();
         udpmotion = std::make_shared<UDPMotionFactory>(udp);
         Input::RegisterFactory<Input::RealMotionDevice>("cemuhookudp", udpmotion);
         udptouch = std::make_shared<UDPTouchFactory>(udp);
@@ -80,8 +80,8 @@ struct InputSubsystem::Impl {
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
 #endif
-        //auto udp_devices = udp->GetInputDevices();
-        //devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
+        auto udp_devices = udp->GetInputDevices();
+        devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
         return devices;
     }
 
@@ -128,6 +128,7 @@ struct InputSubsystem::Impl {
     std::shared_ptr<GCAnalogFactory> gcanalog;
     std::shared_ptr<UDPMotionFactory> udpmotion;
     std::shared_ptr<UDPTouchFactory> udptouch;
+    std::shared_ptr<InputCommon::CemuhookUDP::Client> udp;
 };
 
 InputSubsystem::InputSubsystem() : impl{std::make_unique<Impl>()} {}

@@ -8,6 +8,7 @@
 #include <thread>
 #include <boost/asio.hpp>
 #include "common/logging/log.h"
+#include "core/settings.h"
 #include "input_common/udp/client.h"
 #include "input_common/udp/protocol.h"
 
@@ -133,7 +134,8 @@ Client::Client() {
     LOG_INFO(Input, "Udp Initialization started");
     for (std::size_t client = 0; client < clients.size(); client++) {
         u8 pad = client % 4;
-        StartCommunication(client, DEFAULT_ADDR, DEFAULT_PORT, pad, 24872);
+        StartCommunication(client, Settings::values.udp_input_address,
+                           Settings::values.udp_input_port, pad, 24872);
         // Set motion parameters
         // SetGyroThreshold value should be dependent on GyroscopeZeroDriftMode
         // Real HW values are unkown, 0.0006 is an aproximate to Standard
@@ -145,6 +147,37 @@ Client::~Client() {
     Reset();
 }
 
+std::vector<Common::ParamPackage> Client::GetInputDevices() const {
+    std::vector<Common::ParamPackage> devices;
+    for (std::size_t client = 0; client < clients.size(); client++) {
+        if (!DeviceConnected(client)) {
+            continue;
+        }
+        std::string name = fmt::format("UDP Controller{} {} {}", clients[client].active,
+                                       clients[client].active == 1, client);
+        devices.emplace_back(Common::ParamPackage{
+            {"class", "cemuhookudp"},
+            {"display", std::move(name)},
+            {"port", std::to_string(client)},
+        });
+    }
+    return devices;
+}
+
+bool Client::DeviceConnected(std::size_t pad) const {
+    // Use last timestamp to detect if the socket has stopped sending data
+    const auto now = std::chrono::system_clock::now();
+    u64 time_difference =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - clients[pad].last_motion_update)
+            .count();
+    return time_difference < 1000 && clients[pad].active == 1;
+}
+
+void Client::ReloadUDPClient() {
+    for (std::size_t client = 0; client < clients.size(); client++) {
+        ReloadSocket(Settings::values.udp_input_address, Settings::values.udp_input_port, client);
+    }
+}
 void Client::ReloadSocket(const std::string& host, u16 port, u8 pad_index, u32 client_id) {
     // client number must be determined from host / port and pad index
     std::size_t client = pad_index;
@@ -172,6 +205,7 @@ void Client::OnPadData(Response::PadData data) {
             clients[client].packet_sequence, data.packet_counter);
         return;
     }
+    clients[client].active = data.info.is_pad_active;
     clients[client].packet_sequence = data.packet_counter;
     const auto now = std::chrono::system_clock::now();
     u64 time_difference = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -239,8 +273,8 @@ void Client::Reset() {
     }
 }
 
-void Client::UpdateYuzuSettings(std::size_t client, Common::Vec3<float> acc,
-                                Common::Vec3<float> gyro, bool touch) {
+void Client::UpdateYuzuSettings(std::size_t client, const Common::Vec3<float>& acc,
+                                const Common::Vec3<float>& gyro, bool touch) {
     if (configuring) {
         UDPPadStatus pad;
         if (touch) {
@@ -276,11 +310,11 @@ void Client::EndConfiguration() {
     configuring = false;
 }
 
-DeviceStatus& Client::GetPadState(std::string ip, std::size_t port, std::size_t pad) {
+DeviceStatus& Client::GetPadState(std::size_t pad) {
     return clients[pad].status;
 }
 
-const DeviceStatus& Client::GetPadState(std::string ip, std::size_t port, std::size_t pad) const {
+const DeviceStatus& Client::GetPadState(std::size_t pad) const {
     return clients[pad].status;
 }
 

@@ -12,6 +12,7 @@
 #include <thread>
 #include <tuple>
 #include "common/common_types.h"
+#include "common/param_package.h"
 #include "common/thread.h"
 #include "common/threadsafe_queue.h"
 #include "common/vector_math.h"
@@ -31,9 +32,9 @@ struct Version;
 } // namespace Response
 
 enum class PadMotion {
-    GyrX,
-    GyrY,
-    GyrZ,
+    GyroX,
+    GyroY,
+    GyroZ,
     AccX,
     AccY,
     AccZ,
@@ -70,30 +71,36 @@ struct DeviceStatus {
 
 class Client {
 public:
-    /// Initialize the UDP client capture and read sequence
+    // Initialize the UDP client capture and read sequence
     Client();
 
-    /// Close and relase the client
+    // Close and release the client
     ~Client();
-    /// Used for polling
+
+    // Used for polling
     void BeginConfiguration();
     void EndConfiguration();
 
+    std::vector<Common::ParamPackage> GetInputDevices() const;
+
+    bool DeviceConnected(std::size_t pad) const;
+    void ReloadUDPClient();
     void ReloadSocket(const std::string& host = "127.0.0.1", u16 port = 26760, u8 pad_index = 0,
                       u32 client_id = 24872);
 
     std::array<Common::SPSCQueue<UDPPadStatus>, 4>& GetPadQueue();
     const std::array<Common::SPSCQueue<UDPPadStatus>, 4>& GetPadQueue() const;
 
-    DeviceStatus& GetPadState(std::string ip, std::size_t port, std::size_t pad);
-    const DeviceStatus& GetPadState(std::string ip, std::size_t port, std::size_t pad) const;
+    DeviceStatus& GetPadState(std::size_t pad);
+    const DeviceStatus& GetPadState(std::size_t pad) const;
 
 private:
-    struct Clients {
+    struct ClientData {
         std::unique_ptr<Socket> socket;
         DeviceStatus status;
         std::thread thread;
         u64 packet_sequence = 0;
+        u8 active;
 
         // Realtime values
         // motion is initalized with PID values for drift correction on joycons
@@ -101,21 +108,20 @@ private:
         std::chrono::time_point<std::chrono::system_clock> last_motion_update;
     };
 
-    /// For shutting down, clear all data, join all threads, release usb
+    // For shutting down, clear all data, join all threads, release usb
     void Reset();
 
-    // void UpdateOrientation(Joycon& jc, u64 time, std::size_t iteration);
     void OnVersion(Response::Version);
     void OnPortInfo(Response::PortInfo);
     void OnPadData(Response::PadData);
     void StartCommunication(std::size_t client, const std::string& host, u16 port, u8 pad_index,
                             u32 client_id);
-    void UpdateYuzuSettings(std::size_t client, Common::Vec3<float> acc, Common::Vec3<float> gyro,
-                            bool touch);
+    void UpdateYuzuSettings(std::size_t client, const Common::Vec3<float>& acc,
+                            const Common::Vec3<float>& gyro, bool touch);
 
     bool configuring = false;
 
-    std::array<Clients, 4> clients;
+    std::array<ClientData, 4> clients;
     std::array<Common::SPSCQueue<UDPPadStatus>, 4> pad_queue;
 };
 
