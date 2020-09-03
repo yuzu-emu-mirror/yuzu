@@ -18,9 +18,7 @@ public:
     UDPMotion(std::string ip_, int port_, int pad_, InputCommon::CemuhookUDP::Client* client_)
         : ip(ip_), port(port_), pad(pad_), client(client_) {}
 
-    std::tuple<Common::Vec3<float>, Common::Vec3<float>, Common::Vec3<float>,
-               std::array<Common::Vec3f, 3>>
-    GetStatus() const override {
+    Input::MotionStatus GetStatus() const override {
         return client->GetPadState(pad).motion_status;
     }
 
