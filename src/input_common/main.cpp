@@ -43,7 +43,7 @@ struct InputSubsystem::Impl {
 
         udp = std::make_shared<InputCommon::CemuhookUDP::Client>();
         udpmotion = std::make_shared<UDPMotionFactory>(udp);
-        Input::RegisterFactory<Input::RealMotionDevice>("cemuhookudp", udpmotion);
+        Input::RegisterFactory<Input::MotionDevice>("cemuhookudp", udpmotion);
         udptouch = std::make_shared<UDPTouchFactory>(udp);
         Input::RegisterFactory<Input::TouchDevice>("cemuhookudp", udptouch);
     }
@@ -64,7 +64,7 @@ struct InputSubsystem::Impl {
         gcbuttons.reset();
         gcanalog.reset();
 
-        Input::UnregisterFactory<Input::RealMotionDevice>("cemuhookudp");
+        Input::UnregisterFactory<Input::MotionDevice>("cemuhookudp");
         Input::UnregisterFactory<Input::TouchDevice>("cemuhookudp");
 
         udpmotion.reset();
