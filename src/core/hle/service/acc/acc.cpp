@@ -786,7 +786,7 @@ void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ct
 void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_ACC, "(STUBBED) called");
 
-    //TODO(ZiggyDev): Research and implement function. This should do for now.
+    // TODO(ZiggyDev): Research and implement function. This should do for now.
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
 }
