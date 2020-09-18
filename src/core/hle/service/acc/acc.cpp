@@ -783,6 +783,14 @@ void Module::Interface::ListOpenContextStoredUsers(Kernel::HLERequestContext& ct
     rb.Push(RESULT_SUCCESS);
 }
 
+void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
+
+    // TODO(ZiggyDev): Research and implement function. This should do for now.
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 void Module::Interface::TrySelectUserWithoutInteraction(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
     // A u8 is passed into this function which we can safely ignore. It's to determine if we have

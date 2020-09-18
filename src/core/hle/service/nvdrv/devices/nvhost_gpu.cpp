@@ -46,13 +46,15 @@ u32 nvhost_gpu::ioctl(Ioctl command, const std::vector<u8>& input, const std::ve
         return ChannelSetTimeout(input, output);
     case IoctlCommand::IocChannelSetTimeslice:
         return ChannelSetTimeslice(input, output);
+    case IoctlCommand::IocSubmitGPFIFOExCommand:
+        return SubmitGPFIFO(input, output, input2, version);
     default:
         break;
     }
 
     if (command.group == NVGPU_IOCTL_MAGIC) {
         if (command.cmd == NVGPU_IOCTL_CHANNEL_SUBMIT_GPFIFO) {
-            return SubmitGPFIFO(input, output);
+            return SubmitGPFIFO(input, output, input2, version);
         }
         if (command.cmd == NVGPU_IOCTL_CHANNEL_KICKOFF_PB) {
             return KickoffPB(input, output, input2, version);
@@ -145,7 +147,8 @@ u32 nvhost_gpu::AllocateObjectContext(const std::vector<u8>& input, std::vector<
     return 0;
 }
 
-u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output) {
+u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output,
+                             const std::vector<u8>& input2, IoctlVersion version) {
     if (input.size() < sizeof(IoctlSubmitGpfifo)) {
         UNIMPLEMENTED();
     }
@@ -154,20 +157,27 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     LOG_TRACE(Service_NVDRV, "called, gpfifo={:X}, num_entries={:X}, flags={:X}", params.address,
               params.num_entries, params.flags.raw);
 
-    ASSERT_MSG(input.size() == sizeof(IoctlSubmitGpfifo) +
-                                   params.num_entries * sizeof(Tegra::CommandListHeader),
-               "Incorrect input size");
-
     Tegra::CommandList entries(params.num_entries);
-    std::memcpy(entries.data(), &input[sizeof(IoctlSubmitGpfifo)],
-                params.num_entries * sizeof(Tegra::CommandListHeader));
+    if (version == IoctlVersion::Version2) {
+        ASSERT_MSG((input.size() + input2.size()) == sizeof(IoctlSubmitGpfifo) +
+                                       params.num_entries * sizeof(Tegra::CommandListHeader),
+                   "Incorrect input size");
+        std::memcpy(entries.data(), input2.data(),
+                    params.num_entries * sizeof(Tegra::CommandListHeader));
+    } else {
+        ASSERT_MSG(input.size() == sizeof(IoctlSubmitGpfifo) +
+                                       params.num_entries * sizeof(Tegra::CommandListHeader),
+                   "Incorrect input size");
+        std::memcpy(entries.data(), &input[sizeof(IoctlSubmitGpfifo)],
+                    params.num_entries * sizeof(Tegra::CommandListHeader));
+    }
 
     UNIMPLEMENTED_IF(params.flags.add_wait.Value() != 0);
-    UNIMPLEMENTED_IF(params.flags.add_increment.Value() != 0);
+    // UNIMPLEMENTED_IF(params.flags.add_increment.Value() != 0);
 
     auto& gpu = system.GPU();
     u32 current_syncpoint_value = gpu.GetSyncpointValue(params.fence_out.id);
-    if (params.flags.increment.Value()) {
+    if (params.flags.increment.Value() || params.flags.add_increment.Value()) {
         params.fence_out.value += current_syncpoint_value;
     } else {
         params.fence_out.value = current_syncpoint_value;
