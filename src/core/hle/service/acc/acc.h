@@ -35,7 +35,6 @@ public:
         void GetProfileEditor(Kernel::HLERequestContext& ctx);
         void ListQualifiedUsers(Kernel::HLERequestContext& ctx);
         void ListOpenContextStoredUsers(Kernel::HLERequestContext& ctx);
-        void LoadOpenContext(Kernel::HLERequestContext& ctx);
 
     private:
         ResultCode InitializeApplicationInfoBase();
