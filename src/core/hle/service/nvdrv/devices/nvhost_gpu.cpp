@@ -173,11 +173,11 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
     }
 
     UNIMPLEMENTED_IF(params.flags.add_wait.Value() != 0);
-    // UNIMPLEMENTED_IF(params.flags.add_increment.Value() != 0);
+    UNIMPLEMENTED_IF(params.flags.add_increment.Value() != 0);
 
     auto& gpu = system.GPU();
     u32 current_syncpoint_value = gpu.GetSyncpointValue(params.fence_out.id);
-    if (params.flags.increment.Value() || params.flags.add_increment.Value()) {
+    if (params.flags.increment.Value()) {
         params.fence_out.value += current_syncpoint_value;
     } else {
         params.fence_out.value = current_syncpoint_value;
