@@ -139,7 +139,7 @@ struct InputSubsystem::Impl {
         }
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetAnalogMappingForDevice(params);
-		}
+        }
         if (params.Get("class", "") == "jcpad") {
             return jcadapter->GetAnalogMappingForDevice(params);
         }
@@ -158,7 +158,7 @@ struct InputSubsystem::Impl {
         }
         if (params.Get("class", "") == "gcpad") {
             return gcadapter->GetButtonMappingForDevice(params);
-		}
+        }
         if (params.Get("class", "") == "jcpad") {
             return jcadapter->GetButtonMappingForDevice(params);
         }

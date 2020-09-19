@@ -76,11 +76,11 @@ private:
     bool trigger_if_greater;
     JCAdapter::Joycons* jcadapter;
 };
-//Motion buttons are a temporary way to test motion
+// Motion buttons are a temporary way to test motion
 class JCMotionButton final : public Input::ButtonDevice {
 public:
     explicit JCMotionButton(int port_, int axis_, float threshold_, bool trigger_if_greater_,
-                          JCAdapter::Joycons* adapter)
+                            JCAdapter::Joycons* adapter)
         : port(port_), axis(axis_), threshold(threshold_), trigger_if_greater(trigger_if_greater_),
           jcadapter(adapter) {}
 
@@ -163,7 +163,7 @@ std::unique_ptr<Input::ButtonDevice> JCButtonFactory::Create(const Common::Param
             LOG_ERROR(Input, "Unknown direction {}", direction_name);
         }
         return std::make_unique<JCMotionButton>(port, axis, threshold, trigger_if_greater,
-                                              adapter.get());
+                                                adapter.get());
     }
 
     UNREACHABLE();
@@ -240,7 +240,7 @@ public:
             if (axis < 10) {
                 return jcadapter->GetPadState(port).axes.at(axis);
             } else {
-                return jcadapter->GetPadState(port).motion.at(axis-10);
+                return jcadapter->GetPadState(port).motion.at(axis - 10);
             }
         }
         return 0.0f;
@@ -343,7 +343,7 @@ Common::ParamPackage JCAnalogFactory::GetNextInput() {
                            controller_number == port) {
                     analog_y_axis = axis;
                 }
-            }else if (pad.motion != JCAdapter::PadMotion::Undefined &&
+            } else if (pad.motion != JCAdapter::PadMotion::Undefined &&
                        std::abs(pad.motion_value) > 1) {
                 const u16 axis = 10 + static_cast<u16>(pad.motion);
                 if (analog_x_axis == -1) {
@@ -376,8 +376,7 @@ public:
 
     std::tuple<Common::Vec3<float>, Common::Vec3<float>, Common::Vec3<float>,
                std::array<Common::Vec3f, 3>>
-    GetStatus()
-        const override {
+    GetStatus() const override {
         auto motion = jcadapter->GetPadState(port).motion;
         if (motion.size() == 18) {
             auto gyroscope = Common::MakeVec(motion.at(0), motion.at(1), motion.at(2));
@@ -407,8 +406,7 @@ JCMotionFactory::JCMotionFactory(std::shared_ptr<JCAdapter::Joycons> adapter_)
  * @param params contains parameters for creating the device:
  *     - "port": the nth jcpad on the adapter
  */
-std::unique_ptr<Input::MotionDevice> JCMotionFactory::Create(
-    const Common::ParamPackage& params) {
+std::unique_ptr<Input::MotionDevice> JCMotionFactory::Create(const Common::ParamPackage& params) {
     const int port = params.Get("port", 0);
 
     return std::make_unique<JCMotion>(port, adapter.get());

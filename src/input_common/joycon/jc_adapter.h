@@ -11,14 +11,12 @@
 #include <thread>
 #include <unordered_map>
 #include <hidapi.h>
-#include "common/quaternion.h"
 #include "common/param_package.h"
 #include "common/threadsafe_queue.h"
 #include "common/vector_math.h"
+#include "input_common/main.h"
 #include "input_common/motion_input.h"
 #include "input_common/settings.h"
-#include "input_common/main.h"
-
 
 namespace JCAdapter {
 
