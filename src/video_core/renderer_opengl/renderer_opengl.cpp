@@ -60,20 +60,7 @@ struct ScreenRectVertex {
 
 /// Returns true if any debug tool is attached
 bool HasDebugTool() {
-    const bool nsight = std::getenv("NVTX_INJECTION64_PATH") || std::getenv("NSIGHT_LAUNCHED");
-    if (nsight) {
-        return true;
-    }
-
-    GLint num_extensions;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
-    for (GLuint index = 0; index < static_cast<GLuint>(num_extensions); ++index) {
-        const auto name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, index));
-        if (!std::strcmp(name, "GL_EXT_debug_tool")) {
-            return true;
-        }
-    }
-    return false;
+    return true;
 }
 
 /**
