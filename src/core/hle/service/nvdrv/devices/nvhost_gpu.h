@@ -49,6 +49,7 @@ private:
         IocChannelGetWaitbaseCommand = 0xC0080003,
         IocChannelSetTimeoutCommand = 0x40044803,
         IocChannelSetTimeslice = 0xC004481D,
+        IocSubmitGPFIFOExCommand = 0xC018481B,
     };
 
     enum class CtxObjects : u32_le {
@@ -190,7 +191,8 @@ private:
     u32 SetChannelPriority(const std::vector<u8>& input, std::vector<u8>& output);
     u32 AllocGPFIFOEx2(const std::vector<u8>& input, std::vector<u8>& output);
     u32 AllocateObjectContext(const std::vector<u8>& input, std::vector<u8>& output);
-    u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output);
+    u32 SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& output,
+                     const std::vector<u8>& input2, IoctlVersion version);
     u32 KickoffPB(const std::vector<u8>& input, std::vector<u8>& output,
                   const std::vector<u8>& input2, IoctlVersion version);
     u32 GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output);
