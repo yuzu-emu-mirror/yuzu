@@ -164,17 +164,16 @@ u32 nvhost_gpu::SubmitGPFIFO(const std::vector<u8>& input, std::vector<u8>& outp
         ASSERT_MSG((input.size() + input2.size()) ==
                        sizeof(IoctlSubmitGpfifo) +
                            params.num_entries * sizeof(Tegra::CommandListHeader),
-                    "Incorrect input size");
-        std::memcpy(entries.data(), input2,
-                    params.num_entries * sizeof(Tegra::CommandListHeader));
+                   "Incorrect input size");
+        std::memcpy(entries.data(), input2, params.num_entries * sizeof(Tegra::CommandListHeader));
     } else {
         ASSERT_MSG(input.size() == sizeof(IoctlSubmitGpfifo) +
-                       params.num_entries * sizeof(Tegra::CommandListHeader),
+                                       params.num_entries * sizeof(Tegra::CommandListHeader),
                    "Incorrect input size");
         std::memcpy(entries.data(), &input[sizeof(IoctlSubmitGpfifo)],
                     params.num_entries * sizeof(Tegra::CommandListHeader));
     }
-    
+
     UNIMPLEMENTED_IF(params.flags.add_wait.Value() != 0);
     UNIMPLEMENTED_IF(params.flags.add_increment.Value() != 0);
 
