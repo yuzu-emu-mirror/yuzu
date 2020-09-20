@@ -438,7 +438,7 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const RenderPassParams& renderpa
         stage_ci.pNext = nullptr;
         stage_ci.flags = 0;
         stage_ci.stage = MaxwellToVK::ShaderStage(static_cast<Tegra::Engines::ShaderType>(stage));
-        stage_ci.module = *modules[module_index++];
+        stage_ci.shader_module = *modules[module_index++];
         stage_ci.pName = "main";
         stage_ci.pSpecializationInfo = nullptr;
 
