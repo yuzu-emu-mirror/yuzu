@@ -270,11 +270,9 @@ void CommandGenerator::GenerateBiquadFilterCommandForVoice(ServerVoiceInfo& voic
         }
 
         // Generate biquad filter
-        //        GenerateBiquadFilterCommand(mix_buffer_count, biquad_filter,
-        //        dsp_state.biquad_filter_state,
-        //                                    mix_buffer_count + channel, mix_buffer_count +
-        //                                    channel, worker_params.sample_count,
-        //                                    voice_info.GetInParams().node_id);
+        GenerateBiquadFilterCommand(mix_buffer_count, biquad_filter, dsp_state.biquad_filter_state,
+                                    mix_buffer_count + channel, mix_buffer_count + channel,
+                                    worker_params.sample_count, voice_info.GetInParams().node_id);
     }
 }
 
@@ -302,8 +300,9 @@ void AudioCore::CommandGenerator::GenerateBiquadFilterCommand(
 
     for (int i = 0; i < sample_count; ++i) {
         const auto sample = static_cast<s64>(input[i]);
-        const auto f = (sample * n0 + s0 + 0x4000) >> 15;
-        const auto y = std::clamp(f, int32_min, int32_max);
+        const auto f = (sample * n0 + s0 + 0x2000) >> 14;
+        const auto y = static_cast<s64>(std::clamp(f, int32_min, int32_max));
+
         s0 = sample * n1 + y * d0 + s1;
         s1 = sample * n2 + y * d1;
         output[i] = static_cast<s32>(y);
