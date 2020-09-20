@@ -14,7 +14,9 @@
 #include <vector>
 
 #define VK_NO_PROTOTYPES
+#define module vkModule
 #include <vulkan/vulkan.h>
+#undef module
 
 #include "common/common_types.h"
 

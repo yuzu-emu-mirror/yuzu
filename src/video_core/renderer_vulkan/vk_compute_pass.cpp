@@ -436,7 +436,7 @@ VKComputePass::VKComputePass(const VKDevice& device, VKDescriptorPool& descripto
                 .pNext = nullptr,
                 .flags = 0,
                 .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-                .shader_module = *shader_module,
+                .vkModule = *shader_module,
                 .pName = "main",
                 .pSpecializationInfo = nullptr,
             },
