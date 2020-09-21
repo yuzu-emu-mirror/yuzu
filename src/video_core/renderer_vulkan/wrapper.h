@@ -14,6 +14,9 @@
 #include <vector>
 
 #define VK_NO_PROTOTYPES
+// As "module" is defined in various structs as members in the vulkan library, this would be a
+// specification breaking change. To combat this, we rename the use of "module" to vkModule since
+// we're targeting C++20
 #define module vkModule
 #include <vulkan/vulkan.h>
 #undef module
