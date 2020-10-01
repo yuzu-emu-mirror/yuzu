@@ -681,8 +681,9 @@ void Controller_NPad::VibrateController(const std::vector<u32>& controllers,
         const auto& button_state = buttons[i];
         if (button_state[A - BUTTON_HID_BEGIN]) {
             if (button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(
-                    vibrations[0].amp_high, vibrations[0].amp_low, vibrations[0].freq_high,
-                    vibrations[0].freq_low)) {
+                    vibrations[0].amp_high * Settings::values.vibration_strength,
+                    vibrations[0].amp_low * Settings::values.vibration_strength,
+                    vibrations[0].freq_high, vibrations[0].freq_low)) {
                 success = false;
             }
         }

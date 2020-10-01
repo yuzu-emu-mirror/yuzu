@@ -176,6 +176,7 @@ void ConfigureInput::ApplyConfiguration() {
     OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode);
 
     Settings::values.vibration_enabled = ui->vibrationGroup->isChecked();
+    Settings::values.vibration_strength = ui->vibrationSpin->value() * 0.01f;
     Settings::values.motion_enabled = ui->motionGroup->isChecked();
 }
 
@@ -196,6 +197,7 @@ void ConfigureInput::LoadConfiguration() {
     UpdateDockedState(Settings::values.players[8].connected);
 
     ui->vibrationGroup->setChecked(Settings::values.vibration_enabled);
+    ui->vibrationSpin->setValue(Settings::values.vibration_strength * 100);
     ui->motionGroup->setChecked(Settings::values.motion_enabled);
 }
 
@@ -223,6 +225,7 @@ void ConfigureInput::RestoreDefaults() {
     ui->radioDocked->setChecked(true);
     ui->radioUndocked->setChecked(false);
     ui->vibrationGroup->setChecked(true);
+    ui->vibrationSpin->setValue(100);
     ui->motionGroup->setChecked(true);
 }
 

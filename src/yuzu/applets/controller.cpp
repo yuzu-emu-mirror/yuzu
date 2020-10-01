@@ -254,6 +254,7 @@ void QtControllerSelectorDialog::ApplyConfiguration() {
     OnDockedModeChanged(pre_docked_mode, Settings::values.use_docked_mode);
 
     Settings::values.vibration_enabled = ui->vibrationGroup->isChecked();
+    Settings::values.vibration_strength = ui->vibrationSpin->value() * 0.01f;
 }
 
 void QtControllerSelectorDialog::LoadConfiguration() {
@@ -269,6 +270,7 @@ void QtControllerSelectorDialog::LoadConfiguration() {
     UpdateDockedState(Settings::values.players[8].connected);
 
     ui->vibrationGroup->setChecked(Settings::values.vibration_enabled);
+    ui->vibrationSpin->setValue(Settings::values.vibration_strength * 100);
 }
 
 void QtControllerSelectorDialog::CallConfigureInputDialog() {

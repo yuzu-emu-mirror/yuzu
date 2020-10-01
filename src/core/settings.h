@@ -151,6 +151,7 @@ struct Values {
     AnalogsRaw debug_pad_analogs;
 
     bool vibration_enabled;
+    f32 vibration_strength;
 
     bool motion_enabled;
     std::string motion_device;

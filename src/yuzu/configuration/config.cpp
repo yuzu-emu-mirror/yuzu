@@ -445,6 +445,8 @@ void Config::ReadControlValues() {
 
     Settings::values.vibration_enabled =
         ReadSetting(QStringLiteral("vibration_enabled"), true).toBool();
+    Settings::values.vibration_strength =
+        ReadSetting(QStringLiteral("vibration_strength"), 100).toInt() * 0.01f;
     Settings::values.motion_enabled = ReadSetting(QStringLiteral("motion_enabled"), true).toBool();
     Settings::values.use_docked_mode =
         ReadSetting(QStringLiteral("use_docked_mode"), false).toBool();
@@ -1092,6 +1094,8 @@ void Config::SaveControlValues() {
     SaveMotionTouchValues();
 
     WriteSetting(QStringLiteral("vibration_enabled"), Settings::values.vibration_enabled, true);
+    WriteSetting(QStringLiteral("vibration_strength"), Settings::values.vibration_strength * 100,
+                 true);
     WriteSetting(QStringLiteral("motion_enabled"), Settings::values.motion_enabled, true);
     WriteSetting(QStringLiteral("motion_device"),
                  QString::fromStdString(Settings::values.motion_device),
