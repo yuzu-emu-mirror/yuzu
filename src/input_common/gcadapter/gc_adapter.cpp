@@ -123,11 +123,10 @@ void Adapter::Read() {
                                   sizeof(adapter_payload), &payload_size, 16);
 
         if (payload_size != sizeof(adapter_payload) || adapter_payload[0] != LIBUSB_DT_HID) {
+            // This can occur for a few frames on initialization.
             LOG_ERROR(Input,
                       "Error reading payload (size: {}, type: {:02x}) Is the adapter connected?",
                       payload_size, adapter_payload[0]);
-            adapter_thread_running = false; // error reading from adapter, stop reading.
-            break;
         }
         for (std::size_t port = 0; port < pads.size(); ++port) {
             pads[port] = GetPadStatus(port, adapter_payload);
@@ -216,6 +215,13 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
             LOG_ERROR(Input, "libusb_detach_kernel_driver failed with error = {}",
                       kernel_driver_error);
         }
+    }
+
+    // This fixes payload problems from offbrand GCAdapters
+    const int control_transfer_error =
+        libusb_control_transfer(usb_adapter_handle, 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
+    if (control_transfer_error < 0) {
+        LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
     }
 
     if (kernel_driver_error && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
