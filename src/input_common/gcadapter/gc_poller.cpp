@@ -15,7 +15,7 @@ namespace InputCommon {
 
 class GCButton final : public Input::ButtonDevice {
 public:
-    explicit GCButton(int port_, int button_, const GCAdapter::Adapter* adapter)
+    explicit GCButton(int port_, int button_, GCAdapter::Adapter* adapter)
         : port(port_), button(button_), gcadapter(adapter) {}
 
     ~GCButton() override;
@@ -27,10 +27,17 @@ public:
         return false;
     }
 
+    bool SetRumblePlay(f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) const override {
+        const f32 amplitude = amp_high + amp_low > 2 ? 1.0f : (amp_high + amp_low) * 0.5f;
+        const f32 new_amp = pow(amplitude, 0.5f) * (3.0f - 2.0f * pow(amplitude, 0.15f));
+
+        return gcadapter->RumblePlay(port, new_amp);
+    }
+
 private:
     const int port;
     const int button;
-    const GCAdapter::Adapter* gcadapter;
+    GCAdapter::Adapter* gcadapter;
 };
 
 class GCAxisButton final : public Input::ButtonDevice {

@@ -91,6 +91,8 @@ public:
 
     int GetOriginValue(int port, int axis) const;
 
+    bool RumblePlay(int port, f32 amplitude);
+
 private:
     GCPadStatus GetPadStatus(std::size_t port, const std::array<u8, 37>& adapter_payload);
 
@@ -113,6 +115,9 @@ private:
     /// For use in initialization, querying devices to find the adapter
     void Setup();
 
+    // Updates vibration state of all controllers
+    void vibrate(bool p1, bool p2, bool p3, bool p4);
+
     libusb_device_handle* usb_adapter_handle = nullptr;
 
     std::thread adapter_input_thread;
@@ -122,10 +127,12 @@ private:
 
     u8 input_endpoint = 0;
     u8 output_endpoint = 0;
+    u8 vibration_counter = 0;
 
     bool configuring = false;
 
     std::array<GCState, 4> state;
+    std::array<u8, 4> rumble;
     std::array<bool, 4> get_origin;
     std::array<GCPadStatus, 4> origin_status;
     std::array<Common::SPSCQueue<GCPadStatus>, 4> pad_queue;
