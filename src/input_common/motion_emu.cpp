@@ -11,7 +11,9 @@
 #include "common/quaternion.h"
 #include "common/thread.h"
 #include "common/vector_math.h"
+#include "core/settings.h"
 #include "input_common/motion_emu.h"
+#include "input_common/motion_input.h"
 
 namespace InputCommon {
 
@@ -41,18 +43,19 @@ public:
         if (is_tilting) {
             std::lock_guard guard{tilt_mutex};
             if (mouse_move.x == 0 && mouse_move.y == 0) {
-                tilt_angle = 0;
+                tilt_speed = 0;
             } else {
                 tilt_direction = mouse_move.Cast<float>();
-                tilt_angle =
+                tilt_speed =
                     std::clamp(tilt_direction.Normalize() * sensitivity, 0.0f, Common::PI * 0.5f);
+                mouse_origin = Common::MakeVec(x, y);
             }
         }
     }
 
     void EndTilt() {
         std::lock_guard guard{tilt_mutex};
-        tilt_angle = 0;
+        tilt_speed = 0;
         is_tilting = false;
     }
 
@@ -70,7 +73,7 @@ private:
 
     std::mutex tilt_mutex;
     Common::Vec2<float> tilt_direction;
-    float tilt_angle = 0;
+    float tilt_speed = 0;
 
     bool is_tilting = false;
 
@@ -85,47 +88,29 @@ private:
 
     void MotionEmuThread() {
         auto update_time = std::chrono::steady_clock::now();
-        Common::Quaternion<float> q = Common::MakeQuaternion(Common::Vec3<float>(), 0);
+        // motion is initalized without PID values because mouse input does not need any correction
+        InputCommon::MotionInput motion{0.0f, 0.0f, 0.0f};
         Common::Quaternion<float> old_q;
 
         while (!shutdown_event.WaitUntil(update_time)) {
             update_time += update_duration;
-            old_q = q;
+            old_q = motion.GetQuaternion();
 
             {
                 std::lock_guard guard{tilt_mutex};
-
                 // Find the quaternion describing current 3DS tilting
-                q = Common::MakeQuaternion(
-                    Common::MakeVec(-tilt_direction.y, 0.0f, tilt_direction.x), tilt_angle);
+                Common::Vec3f angular_direction = {-tilt_direction.y, 0.0f, -tilt_direction.x};
+
+                motion.SetGyroscope(angular_direction * tilt_speed);
+                motion.UpdateRotation(update_duration.count() * 0.001);
+                motion.UpdateOrientation(update_duration.count() * 0.001);
+                tilt_speed = 0;
             }
-
-            auto inv_q = q.Inverse();
-
-            // Set the gravity vector in world space
-            auto gravity = Common::MakeVec(0.0f, -1.0f, 0.0f);
-
-            // Find the angular rate vector in world space
-            auto angular_rate = ((q - old_q) * inv_q).xyz * 2;
-            angular_rate *= 1000 / update_millisecond / Common::PI * 180;
-
-            // Transform the two vectors from world space to 3DS space
-            gravity = QuaternionRotate(inv_q, gravity);
-            angular_rate = QuaternionRotate(inv_q, angular_rate);
-
-            // TODO: Calculate the correct rotation vector and orientation matrix
-            const auto matrix4x4 = q.ToMatrix();
-            const auto rotation = Common::MakeVec(0.0f, 0.0f, 0.0f);
-            const std::array orientation{
-                Common::Vec3f(matrix4x4[0], matrix4x4[1], -matrix4x4[2]),
-                Common::Vec3f(matrix4x4[4], matrix4x4[5], -matrix4x4[6]),
-                Common::Vec3f(-matrix4x4[8], -matrix4x4[9], matrix4x4[10]),
-            };
 
             // Update the sensor state
             {
                 std::lock_guard guard{status_mutex};
-                status = std::make_tuple(gravity, angular_rate, rotation, orientation);
+                status = motion.GetMotion();
             }
         }
     }
@@ -148,8 +133,9 @@ public:
 };
 
 std::unique_ptr<Input::MotionDevice> MotionEmu::Create(const Common::ParamPackage& params) {
-    int update_period = params.Get("update_period", 100);
-    float sensitivity = params.Get("sensitivity", 0.01f);
+    const Common::ParamPackage configuration(Settings::values.motion_device);
+    int update_period = params.Get("update_period", 15);
+    float sensitivity = configuration.Get("sensitivity", 0.1f);
     auto device_wrapper = std::make_unique<MotionEmuDeviceWrapper>(update_period, sensitivity);
     // Previously created device is disconnected here. Having two motion devices for 3DS is not
     // expected.
