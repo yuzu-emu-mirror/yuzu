@@ -138,12 +138,12 @@ void Adapter::Read() {
             const bool p2 = rumble[1] > vibration_counter;
             const bool p3 = rumble[2] > vibration_counter;
             const bool p4 = rumble[3] > vibration_counter;
-            vibrate(p1, p2, p3, p4);
+            Vibrate(p1, p2, p3, p4);
         } else {
             // stop all onging vibrations
             if (vibration_counter != 8) {
                 vibration_counter = 8;
-                vibrate(false, false, false, false);
+                Vibrate(false, false, false, false);
             }
         }
 
@@ -236,12 +236,6 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
             LOG_ERROR(Input, "libusb_detach_kernel_driver failed with error = {}",
                       kernel_driver_error);
         }
-    }
-
-    int control_transfer_error =
-        libusb_control_transfer(usb_adapter_handle, 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
-    if (control_transfer_error < 0) {
-        LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
     }
 
     if (kernel_driver_error && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
@@ -406,10 +400,10 @@ InputCommon::AnalogMapping Adapter::GetAnalogMappingForDevice(
     return mapping;
 }
 
-void Adapter::vibrate(bool p1, bool p2, bool p3, bool p4) {
+void Adapter::Vibrate(bool p1, bool p2, bool p3, bool p4) {
     int size = 0;
-    u8 payload[5] = {0x11, p1, p2, p3, p4};
-    const int err = libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, payload,
+    std::array<u8, 5> payload = {0x11, p1, p2, p3, p4};
+    const int err = libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, payload.data(),
                                               sizeof(payload), &size, 16);
     if (err) {
         LOG_ERROR(Input, "Adapter libusb write failed: {}", libusb_error_name(err));

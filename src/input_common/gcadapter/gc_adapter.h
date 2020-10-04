@@ -116,7 +116,7 @@ private:
     void Setup();
 
     // Updates vibration state of all controllers
-    void vibrate(bool p1, bool p2, bool p3, bool p4);
+    void Vibrate(bool p1, bool p2, bool p3, bool p4);
 
     libusb_device_handle* usb_adapter_handle = nullptr;
 
