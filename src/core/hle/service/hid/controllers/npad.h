@@ -128,7 +128,7 @@ public:
     void VibrateController(const std::vector<u32>& controllers,
                            const std::vector<Vibration>& vibrations);
 
-    // Called from VibrateController and Vibrates a specific controller
+    // Vibrates a specific controller
     bool VibratePhysicalController(std::size_t controllers, Vibration vibrations);
 
     Vibration GetLastVibration() const;

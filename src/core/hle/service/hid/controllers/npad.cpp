@@ -675,12 +675,12 @@ void Controller_NPad::VibrateController(const std::vector<u32>& controllers,
     bool success = true;
     if (vibrations.size() == 1) {
         for (std::size_t i = 0; i < controllers.size(); ++i) {
-            std::size_t controller = (controllers[i] >> 8) & 0x7;
+            const std::size_t controller = (controllers[i] >> 8) & 0x7;
             success = success && VibratePhysicalController(controller, vibrations[0]);
         }
     } else {
         for (std::size_t i = 0; i < vibrations.size(); ++i) {
-            std::size_t controller = i >> 1;
+            const std::size_t controller = i / 2;
             success = success && VibratePhysicalController(controller, vibrations[i]);
         }
     }
@@ -696,11 +696,7 @@ bool Controller_NPad::VibratePhysicalController(std::size_t controller, Vibratio
     using namespace Settings::NativeButton;
     const auto& button_state = buttons[controller];
     const auto controller_type = connected_controllers[controller].type;
-    auto use_button = A;
-    switch (controller_type) {
-    case NPadControllerType::JoyLeft:
-        use_button = DDown;
-    }
+    const auto use_button = controller_type == NPadControllerType::JoyLeft ? DDown : A;
     if (button_state[use_button - BUTTON_HID_BEGIN]) {
         return !button_state[use_button - BUTTON_HID_BEGIN]->SetRumblePlay(
             vibration.amp_high, vibration.amp_low, vibration.freq_high, vibration.freq_low);
