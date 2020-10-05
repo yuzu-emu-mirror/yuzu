@@ -128,6 +128,9 @@ public:
     void VibrateController(const std::vector<u32>& controllers,
                            const std::vector<Vibration>& vibrations);
 
+    // Called from VibrateController and Vibrates a specific controller
+    bool VibratePhysicalController(std::size_t controllers, Vibration vibrations);
+
     Vibration GetLastVibration() const;
 
     std::shared_ptr<Kernel::ReadableEvent> GetStyleSetChangedEvent(u32 npad_id) const;

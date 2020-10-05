@@ -673,23 +673,39 @@ void Controller_NPad::VibrateController(const std::vector<u32>& controllers,
         return;
     }
     bool success = true;
-    for (std::size_t i = 0; i < controllers.size(); ++i) {
-        if (!connected_controllers[i].is_connected) {
-            continue;
+    if (vibrations.size() == 1) {
+        for (std::size_t i = 0; i < controllers.size(); ++i) {
+            std::size_t controller = (controllers[i] >> 8) & 0x7;
+            success = success && VibratePhysicalController(controller, vibrations[0]);
         }
-        using namespace Settings::NativeButton;
-        const auto& button_state = buttons[i];
-        if (button_state[A - BUTTON_HID_BEGIN]) {
-            if (button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(
-                    vibrations[0].amp_high, vibrations[0].amp_low, vibrations[0].freq_high,
-                    vibrations[0].freq_low)) {
-                success = false;
-            }
+    } else {
+        for (std::size_t i = 0; i < vibrations.size(); ++i) {
+            std::size_t controller = i >> 1;
+            success = success && VibratePhysicalController(controller, vibrations[i]);
         }
     }
     if (success) {
         last_processed_vibration = vibrations.back();
     }
+}
+
+bool Controller_NPad::VibratePhysicalController(std::size_t controller, Vibration vibration) {
+    if (!connected_controllers[controller].is_connected) {
+        return true;
+    }
+    using namespace Settings::NativeButton;
+    const auto& button_state = buttons[controller];
+    const auto controller_type = connected_controllers[controller].type;
+    auto use_button = A;
+    switch (controller_type) {
+    case NPadControllerType::JoyLeft:
+        use_button = DDown;
+    }
+    if (button_state[use_button - BUTTON_HID_BEGIN]) {
+        return !button_state[use_button - BUTTON_HID_BEGIN]->SetRumblePlay(
+            vibration.amp_high, vibration.amp_low, vibration.freq_high, vibration.freq_low);
+    }
+    return true;
 }
 
 Controller_NPad::Vibration Controller_NPad::GetLastVibration() const {
