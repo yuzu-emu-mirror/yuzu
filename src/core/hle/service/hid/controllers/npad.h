@@ -129,7 +129,7 @@ public:
                            const std::vector<Vibration>& vibrations);
 
     // Vibrates a specific controller
-    bool VibratePhysicalController(std::size_t controllers, Vibration vibrations);
+    bool VibratePhysicalController(std::size_t controller, Vibration vibration);
 
     Vibration GetLastVibration() const;
 
