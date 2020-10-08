@@ -52,9 +52,9 @@ std::string FormatTitleVersion(u32 version,
     }
 
     if (format == TitleVersionFormat::FourElements) {
-        return fmt::format("v{}.{}.{}.{}", bytes[3], bytes[2], bytes[1], bytes[0]);
+        return fmt::format("v{}.{}.{}.{}", bytes[0], bytes[1], bytes[2], bytes[3]);
     }
-    return fmt::format("v{}.{}.{}", bytes[3], bytes[2], bytes[1]);
+    return fmt::format("v{}.{}.{}", bytes[0], bytes[1], bytes[2]);
 }
 
 // Returns a directory with name matching name case-insensitive. Returns nullptr if directory
