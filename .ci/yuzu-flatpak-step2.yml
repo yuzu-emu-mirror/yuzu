@@ -2,7 +2,9 @@ trigger:
 - master
 
 variables:
-  DisplayVersion: $[counter(variables['DisplayPrefix'], 1)]
+  - group: flatpak-variables
+  - name: DisplayVersion
+    value: $[counter(variables['DisplayPrefix'], 1)]
 
 stages:
 - stage: format
