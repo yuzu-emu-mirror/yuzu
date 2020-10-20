@@ -471,16 +471,9 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
 #else
 
 void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view additional_args) {
-    QMessageBox::warning(
-        this, tr("Web Applet"),
-        tr("This version of yuzu was built without QtWebEngine support, meaning that yuzu cannot "
-           "properly display the game manual or web page requested."),
-        QMessageBox::Ok, QMessageBox::Ok);
-
-    LOG_INFO(Frontend,
-             "(STUBBED) called - Missing QtWebEngine dependency needed to open website page at "
-             "'{}' with arguments '{}'!",
-             filename, additional_args);
+    LOG_WARNING(Frontend,
+                "(STUBBED) called - Trying to open website page at '{}' with arguments '{}'!",
+                filename, additional_args);
 
     emit WebBrowserFinishedBrowsing();
 }
@@ -990,7 +983,11 @@ bool GMainWindow::LoadROM(const QString& filename) {
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
         std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard
-        std::make_unique<QtWebBrowser>(*this),         // Web Browser
+#ifdef YUZU_USE_QT_WEB_ENGINE
+        std::make_unique<QtWebBrowser>(*this), // Web Browser
+#else
+        nullptr, // Web Browser (fallback to default implementation)
+#endif
     });
 
     system.RegisterHostThread();
