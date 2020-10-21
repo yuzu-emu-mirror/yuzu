@@ -610,18 +610,21 @@ endif()
 
 if (MSVC)
     target_compile_options(core PRIVATE
-        # 'expression' : signed/unsigned mismatch
-        /we4018
-        # 'argument' : conversion from 'type1' to 'type2', possible loss of data (floating-point)
-        /we4244
-        # 'conversion' : conversion from 'type1' to 'type2', signed/unsigned mismatch
-        /we4245
-        # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
-        /we4254
-        # 'var' : conversion from 'size_t' to 'type', possible loss of data
-        /we4267
-        # 'context' : truncation from 'type1' to 'type2'
-        /we4305
+        /we4018 # 'expression' : signed/unsigned mismatch
+        /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
+        /we4244 # 'argument' : conversion from 'type1' to 'type2', possible loss of data (floating-point)
+        /we4245 # 'conversion' : conversion from 'type1' to 'type2', signed/unsigned mismatch
+        /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /we4267 # 'var' : conversion from 'size_t' to 'type', possible loss of data
+        /we4305 # 'context' : truncation from 'type1' to 'type2'
+        /we4365 # 'action': conversion from 'type_1' to 'type_2', signed/unsigned mismatch
+        /we4388 # signed/unsigned mismatch
+        /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
+        /we4548 # expression before comma has no effect; expected expression with side-effect
+        /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
+        /we4555 # expression has no effect; expected expression with side-effect
+        /we4838 # conversion from 'type_1' to 'type_2' requires a narrowing conversion
+        /we4946 # reinterpret_cast used between related classes: 'class1' and 'class2'
     )
 else()
     target_compile_options(core PRIVATE
