@@ -79,7 +79,7 @@ Common::DynamicLibrary OpenVulkanLibrary() {
         // Use the libvulkan.dylib from the application bundle.
         const std::string filename =
             Common::FS::GetBundleDirectory() + "/Contents/Frameworks/libvulkan.dylib";
-        library.Open(filename.c_str());
+        (void)library.Open(filename.c_str());
     }
 #else
     std::string filename = Common::DynamicLibrary::GetVersionedFilename("vulkan", 1);
