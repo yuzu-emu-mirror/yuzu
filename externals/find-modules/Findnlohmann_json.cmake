@@ -36,9 +36,8 @@ if(nlohmann_json_FOUND)
 endif()
 
 if(nlohmann_json_FOUND AND NOT TARGET nlohmann_json::nlohmann_json)
-  add_library(nlohmann_json::nlohmann_json UNKNOWN IMPORTED)
+  add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
   set_target_properties(nlohmann_json::nlohmann_json PROPERTIES
-    IMPORTED_LOCATION "${nlohmann_json_LIBRARY}"
     INTERFACE_COMPILE_OPTIONS "${PC_nlohmann_json_CFLAGS_OTHER}"
     INTERFACE_INCLUDE_DIRECTORIES "${nlohmann_json_INCLUDE_DIR}"
   )

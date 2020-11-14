@@ -3,9 +3,8 @@ find_package(PkgConfig QUIET)
 pkg_check_modules(PC_fmt QUIET fmt)
 
 find_path(fmt_INCLUDE_DIR
-  NAMES format.h
+  NAMES fmt/format.h
   PATHS ${PC_fmt_INCLUDE_DIRS} ${CONAN_INCLUDE_DIRS_fmt}
-  PATH_SUFFIXES fmt
 )
 
 find_library(fmt_LIBRARY
@@ -14,9 +13,9 @@ find_library(fmt_LIBRARY
 )
 
 if(fmt_INCLUDE_DIR)
-  set(_fmt_version_file "${fmt_INCLUDE_DIR}/core.h")
+  set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/core.h")
   if(NOT EXISTS "${_fmt_version_file}")
-    set(_fmt_version_file "${fmt_INCLUDE_DIR}/format.h")
+    set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/format.h")
   endif()
   if(EXISTS "${_fmt_version_file}")
     # parse "#define FMT_VERSION 60200" to 6.2.0

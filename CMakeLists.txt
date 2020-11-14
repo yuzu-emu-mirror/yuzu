@@ -136,7 +136,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # If not found, download any missing through Conan
 # =======================================================================
 set(CONAN_CMAKE_SILENT_OUTPUT TRUE)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
 if (YUZU_CONAN_INSTALLED)
     if (IS_MULTI_CONFIG)
         include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
