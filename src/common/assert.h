@@ -54,8 +54,9 @@ assert_noinline_call(const Fn& fn) {
 #define DEBUG_ASSERT_MSG(_a_, _desc_, ...)
 #endif
 
-#define UNIMPLEMENTED() ASSERT_MSG(false, "Unimplemented code!")
-#define UNIMPLEMENTED_MSG(...) ASSERT_MSG(false, __VA_ARGS__)
+#define UNIMPLEMENTED() assert_noinline_call([] { LOG_CRITICAL(Debug, "Unimplemented code!"); })
+#define UNIMPLEMENTED_MSG(...)                                                                     \
+    assert_noinline_call([&] { LOG_CRITICAL(Debug, "Unimplemented code!\n" __VA_ARGS__); })
 
 #define UNIMPLEMENTED_IF(cond) ASSERT_MSG(!(cond), "Unimplemented code!")
 #define UNIMPLEMENTED_IF_MSG(cond, ...) ASSERT_MSG(!(cond), __VA_ARGS__)
