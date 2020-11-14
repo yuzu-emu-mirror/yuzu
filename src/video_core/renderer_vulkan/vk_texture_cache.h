@@ -96,7 +96,7 @@ private:
     VkImageSubresourceRange GetImageSubresourceRange() const;
 
     const VKDevice& device;
-    VKMemoryManager& memory_manager;
+    [[maybe_unused]] VKMemoryManager& memory_manager;
     VKScheduler& scheduler;
     VKStagingBufferPool& staging_pool;
 

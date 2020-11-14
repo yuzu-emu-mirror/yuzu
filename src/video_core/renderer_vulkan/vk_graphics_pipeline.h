@@ -93,7 +93,7 @@ private:
                                 const SPIRVProgram& program) const;
 
     const VKDevice& device;
-    VKScheduler& scheduler;
+    [[maybe_unused]] VKScheduler& scheduler;
     const GraphicsPipelineCacheKey cache_key;
     const u64 hash;
 

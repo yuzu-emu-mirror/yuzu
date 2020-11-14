@@ -136,7 +136,7 @@ public:
     const std::array<float, AudioCommon::MAX_MIX_BUFFERS>& GetLastMixVolume() const;
 
 private:
-    s32 id{};
+    [[maybe_unused]] s32 id{};
     std::array<float, AudioCommon::MAX_MIX_BUFFERS> mix_volume{};
     std::array<float, AudioCommon::MAX_MIX_BUFFERS> last_mix_volume{};
     bool in_use{};

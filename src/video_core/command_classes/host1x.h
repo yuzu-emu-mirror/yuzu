@@ -72,7 +72,7 @@ private:
 
     u32 syncpoint_value{};
     Host1xClassRegisters state{};
-    GPU& gpu;
+    [[maybe_unused]] GPU& gpu;
 };
 
 } // namespace Tegra

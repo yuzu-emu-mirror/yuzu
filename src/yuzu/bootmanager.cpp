@@ -224,7 +224,7 @@ public:
     }
 
 private:
-    GRenderWindow* render_window;
+    [[maybe_unused]] GRenderWindow* render_window;
 };
 
 class OpenGLRenderWidget : public RenderWidget {

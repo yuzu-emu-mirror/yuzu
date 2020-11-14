@@ -22,7 +22,7 @@ public:
 
 private:
     const std::string ip;
-    const int port;
+    [[maybe_unused]] const int port;
     const u32 pad;
     CemuhookUDP::Client* client;
     mutable std::mutex mutex;
@@ -86,7 +86,7 @@ public:
 
 private:
     const std::string ip;
-    const int port;
+    [[maybe_unused]] const int port;
     const u32 pad;
     CemuhookUDP::Client* client;
     mutable std::mutex mutex;

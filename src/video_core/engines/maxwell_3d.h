@@ -1500,8 +1500,6 @@ private:
 
     bool execute_on{true};
 
-    std::array<u8, Regs::NUM_REGS> dirty_pointers{};
-
     /// Retrieves information about a specific TIC entry from the TIC buffer.
     Texture::TICEntry GetTICEntry(u32 tic_index) const;
 

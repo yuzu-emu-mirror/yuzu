@@ -266,8 +266,6 @@ private:
 
     static constexpr std::size_t STREAM_BUFFER_SIZE = 128 * 1024 * 1024;
 
-    GLint vertex_binding = 0;
-
     std::array<OGLBuffer, Tegra::Engines::Maxwell3D::Regs::NumTransformFeedbackBuffers>
         transform_feedback_buffers;
     std::bitset<Tegra::Engines::Maxwell3D::Regs::NumTransformFeedbackBuffers>

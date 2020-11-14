@@ -115,7 +115,7 @@ private:
     /// Write arguments value to the ThiRegisters member at the specified offset
     void ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments);
 
-    GPU& gpu;
+    [[maybe_unused]] GPU& gpu;
 
     std::shared_ptr<Tegra::Nvdec> nvdec_processor;
     std::unique_ptr<Tegra::Vic> vic_processor;

@@ -64,7 +64,7 @@ public:
 
 private:
     std::shared_ptr<Kernel::SharedMemory> shared_memory_holder;
-    Core::System& system;
+    [[maybe_unused]] Core::System& system;
     Format shared_memory_format{};
 };
 

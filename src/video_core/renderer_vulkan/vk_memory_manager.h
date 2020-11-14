@@ -84,10 +84,10 @@ private:
     /// Unmaps memory.
     void Unmap() const;
 
-    const VKDevice& device;           ///< Vulkan device.
-    const vk::DeviceMemory& memory;   ///< Vulkan device memory handler.
-    std::pair<u64, u64> interval{};   ///< Interval where the commit exists.
-    VKMemoryAllocation* allocation{}; ///< Pointer to the large memory allocation.
+    [[maybe_unused]] const VKDevice& device; ///< Vulkan device.
+    const vk::DeviceMemory& memory;          ///< Vulkan device memory handler.
+    std::pair<u64, u64> interval{};          ///< Interval where the commit exists.
+    VKMemoryAllocation* allocation{};        ///< Pointer to the large memory allocation.
 };
 
 /// Holds ownership of a memory map.

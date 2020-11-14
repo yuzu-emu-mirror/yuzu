@@ -49,7 +49,7 @@ private:
     vk::Pipeline CreatePipeline() const;
 
     const VKDevice& device;
-    VKScheduler& scheduler;
+    [[maybe_unused]] VKScheduler& scheduler;
     ShaderEntries entries;
 
     vk::DescriptorSetLayout descriptor_set_layout;
