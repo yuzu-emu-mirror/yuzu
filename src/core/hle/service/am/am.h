@@ -310,7 +310,7 @@ private:
     void GetPopFromGeneralChannelEvent(Kernel::HLERequestContext& ctx);
 
     Kernel::EventPair pop_from_general_channel_event;
-    Kernel::KernelCore& kernel;
+    [[maybe_unused]] Kernel::KernelCore& kernel;
 };
 
 class IGlobalStateController final : public ServiceFramework<IGlobalStateController> {
