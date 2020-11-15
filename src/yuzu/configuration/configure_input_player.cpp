@@ -73,7 +73,7 @@ constexpr Settings::ControllerType GetControllerTypeFromIndex(int index) {
 }
 
 /// Maps the Controller Type enum to controller type combobox index
-constexpr int GetIndexFromControllerType(Settings::ControllerType type) {
+[[maybe_unused]] constexpr int GetIndexFromControllerType(Settings::ControllerType type) {
     switch (type) {
     case Settings::ControllerType::ProController:
     default:
