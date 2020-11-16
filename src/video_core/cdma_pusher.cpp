@@ -59,9 +59,11 @@ void CDmaPusher::Step() {
         if (mask != 0) {
             const u32 lbs = Common::CountTrailingZeroes32(mask);
             mask &= ~(1U << lbs);
-            ExecuteCommand(static_cast<u32>(offset + lbs), value);
+            ExecuteCommand(static_cast<u32>(offset) + lbs, value);
             continue;
-        } else if (count != 0) {
+        }
+
+        if (count != 0) {
             --count;
             ExecuteCommand(static_cast<u32>(offset), value);
             if (incrementing) {
@@ -69,27 +71,28 @@ void CDmaPusher::Step() {
             }
             continue;
         }
+
         const auto mode = static_cast<ChSubmissionMode>((value >> 28) & 0xf);
         switch (mode) {
         case ChSubmissionMode::SetClass: {
             mask = value & 0x3f;
-            offset = (value >> 16) & 0xfff;
+            offset = static_cast<s32>((value >> 16) & 0xfff);
             current_class = static_cast<ChClassId>((value >> 6) & 0x3ff);
             break;
         }
         case ChSubmissionMode::Incrementing:
         case ChSubmissionMode::NonIncrementing:
             count = value & 0xffff;
-            offset = (value >> 16) & 0xfff;
+            offset = static_cast<s32>((value >> 16) & 0xfff);
             incrementing = mode == ChSubmissionMode::Incrementing;
             break;
         case ChSubmissionMode::Mask:
             mask = value & 0xffff;
-            offset = (value >> 16) & 0xfff;
+            offset = static_cast<s32>((value >> 16) & 0xfff);
             break;
         case ChSubmissionMode::Immediate: {
             const u32 data = value & 0xfff;
-            offset = (value >> 16) & 0xfff;
+            offset = static_cast<s32>((value >> 16) & 0xfff);
             ExecuteCommand(static_cast<u32>(offset), data);
             break;
         }
