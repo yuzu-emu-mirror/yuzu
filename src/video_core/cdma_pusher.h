@@ -67,8 +67,8 @@ struct ChCommand {
     std::vector<u32> arguments;
 };
 
-using ChCommandHeaderList = std::vector<Tegra::ChCommandHeader>;
-using ChCommandList = std::vector<Tegra::ChCommand>;
+using ChCommandHeaderList = std::vector<ChCommandHeader>;
+using ChCommandList = std::vector<ChCommand>;
 
 struct ThiRegisters {
     u32_le increment_syncpt{};

@@ -52,10 +52,9 @@ void CDmaPusher::Step() {
     const auto entries{cdma_queue.front()};
     cdma_queue.pop();
 
-    std::vector<u32> values(entries.size());
-    std::memcpy(values.data(), entries.data(), entries.size() * sizeof(u32));
+    for (const auto entry : entries) {
+        const u32 value = entry.raw;
 
-    for (const u32 value : values) {
         if (mask != 0) {
             const u32 lbs = Common::CountTrailingZeroes32(mask);
             mask &= ~(1U << lbs);
@@ -72,7 +71,7 @@ void CDmaPusher::Step() {
             continue;
         }
 
-        const auto mode = static_cast<ChSubmissionMode>((value >> 28) & 0xf);
+        const auto mode = entry.submission_mode.Value();
         switch (mode) {
         case ChSubmissionMode::SetClass: {
             mask = value & 0x3f;
