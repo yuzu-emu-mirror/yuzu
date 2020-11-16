@@ -15,9 +15,9 @@
 namespace Tegra {
 
 class GPU;
+class Host1x;
 class Nvdec;
 class Vic;
-class Host1x;
 
 enum class ChSubmissionMode : u32 {
     SetClass = 0,
@@ -116,9 +116,9 @@ private:
 
     GPU& gpu;
 
-    std::shared_ptr<Tegra::Nvdec> nvdec_processor;
-    std::unique_ptr<Tegra::Vic> vic_processor;
-    std::unique_ptr<Tegra::Host1x> host1x_processor;
+    std::shared_ptr<Nvdec> nvdec_processor;
+    std::unique_ptr<Vic> vic_processor;
+    std::unique_ptr<Host1x> host1x_processor;
     std::unique_ptr<SyncptIncrManager> nvdec_sync;
     std::unique_ptr<SyncptIncrManager> vic_sync;
     ChClassId current_class{};
