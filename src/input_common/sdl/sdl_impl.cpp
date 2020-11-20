@@ -697,6 +697,10 @@ SDLState::SDLState() {
     RegisterFactory<VibrationDevice>("sdl", vibration_factory);
     RegisterFactory<MotionDevice>("sdl", motion_factory);
 
+    // This hint allows for the detection of more than 4 XInput devices by
+    // detecting the rest of the devices as RawInput or DirectInput devices.
+    SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+
     // If the frontend is going to manage the event loop, then we don't start one here
     start_thread = SDL_WasInit(SDL_INIT_JOYSTICK) == 0;
     if (start_thread && SDL_Init(SDL_INIT_JOYSTICK) < 0) {
