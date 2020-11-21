@@ -260,7 +260,7 @@ static Core::Frontend::WindowSystemType GetWindowSystemType() {
     else if (platform_name == QStringLiteral("wayland"))
         return Core::Frontend::WindowSystemType::Wayland;
 
-    LOG_CRITICAL(Frontend, "Unknown Qt platform!");
+    LOG_CRITICAL(Frontend, "Unknown Qt platform {}!", platform_name.toStdString());
     return Core::Frontend::WindowSystemType::Windows;
 }
 
