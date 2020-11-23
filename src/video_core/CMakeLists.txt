@@ -301,7 +301,7 @@ if (MSVC)
 else()
     target_compile_options(video_core PRIVATE
         -Werror=conversion
-        -Wno-error=sign-conversion
+        -Wno-sign-conversion
         -Werror=pessimizing-move
         -Werror=redundant-move
         -Werror=switch
