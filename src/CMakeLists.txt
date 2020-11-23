@@ -67,6 +67,7 @@ else()
         -Wmissing-declarations
         -Wno-attributes
         -Wno-unused-parameter
+        -Wno-invalid-offsetof
     )
 
     # TODO: Remove when we update to a GCC compiler that enables this
