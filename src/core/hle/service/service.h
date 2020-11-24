@@ -191,7 +191,7 @@ private:
  */
 class Services final {
 public:
-    Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system);
+    explicit Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system);
     ~Services();
 
 private:
