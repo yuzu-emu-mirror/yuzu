@@ -16,6 +16,7 @@
 #include "core/settings.h"
 
 namespace {
+static constexpr std::size_t MAX_QUEUED_AUDIO_BUFFERS = 16;
 [[nodiscard]] static constexpr s16 ClampToS16(s32 value) {
     return static_cast<s16>(std::clamp(value, s32{std::numeric_limits<s16>::min()},
                                        s32{std::numeric_limits<s16>::max()}));
@@ -91,10 +92,9 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory
                               [=]() { buffer_event->Signal(); });
     audio_out->StartStream(stream);
 
-    QueueMixedBuffer(0);
-    QueueMixedBuffer(1);
-    QueueMixedBuffer(2);
-    QueueMixedBuffer(3);
+    for (std::size_t i = 0; i < MAX_QUEUED_AUDIO_BUFFERS; i++) {
+        QueueMixedBuffer(i);
+    }
 }
 
 AudioRenderer::~AudioRenderer() = default;
