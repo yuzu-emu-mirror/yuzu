@@ -16,7 +16,8 @@
 #include "core/settings.h"
 
 namespace {
-static constexpr std::size_t MAX_QUEUED_AUDIO_BUFFERS = 16;
+constexpr std::size_t MAX_QUEUED_AUDIO_BUFFERS = 16;
+
 [[nodiscard]] static constexpr s16 ClampToS16(s32 value) {
     return static_cast<s16>(std::clamp(value, s32{std::numeric_limits<s16>::min()},
                                        s32{std::numeric_limits<s16>::max()}));
