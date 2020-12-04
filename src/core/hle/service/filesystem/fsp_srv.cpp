@@ -717,8 +717,8 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {201, nullptr, "OpenDataStorageByProgramId"},
         {202, &FSP_SRV::OpenDataStorageByDataId, "OpenDataStorageByDataId"},
         {203, &FSP_SRV::OpenPatchDataStorageByCurrentProcess, "OpenPatchDataStorageByCurrentProcess"},
-        {204, nullptr, "OpenDataFileSystemByProgramIndex"},
-        {205, nullptr, "OpenDataStorageByProgramIndex"},
+        {204, nullptr, "OpenDataFileSystemWithProgramIndex"},
+        {205, &FSP_SRV::OpenDataStorageWithProgramIndex, "OpenDataStorageWithProgramIndex"},
         {400, nullptr, "OpenDeviceOperator"},
         {500, nullptr, "OpenSdCardDetectionEventNotifier"},
         {501, nullptr, "OpenGameCardDetectionEventNotifier"},
@@ -995,6 +995,35 @@ void FSP_SRV::OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ct
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(FileSys::ERROR_ENTITY_NOT_FOUND);
+}
+
+void FSP_SRV::OpenDataStorageWithProgramIndex(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto program_index = rp.PopRaw<u8>();
+
+    LOG_DEBUG(Service_FS, "called with program_index={:02X}", program_index);
+
+    // TODO: use program_index
+    if (program_index != 0) {
+        UNIMPLEMENTED();
+        return;
+    }
+
+    // Ignore storage index and proceed with current process
+    auto romfs = fsc.OpenRomFSCurrentProcess();
+    if (romfs.Failed()) {
+        // TODO (bunnei): Find the right error code to use here
+        LOG_ERROR(Service_FS, "no file system interface available!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
+
+    auto storage = std::make_shared<IStorage>(system, std::move(romfs.Unwrap()));
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface(std::move(storage));
 }
 
 void FSP_SRV::SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx) {
