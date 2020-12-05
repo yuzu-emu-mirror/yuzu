@@ -352,16 +352,16 @@ RealVfsDirectory::RealVfsDirectory(RealVfsFilesystem& base_, const std::string& 
 
 RealVfsDirectory::~RealVfsDirectory() = default;
 
-VirtualFile RealVfsDirectory::GetFileRelative(std::string_view path) const {
-    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(path));
+VirtualFile RealVfsDirectory::GetFileRelative(std::string_view path_) const {
+    const auto full_path = FS::SanitizePath(path + DIR_SEP + std::string(path_));
     if (!FS::Exists(full_path) || FS::IsDirectory(full_path)) {
         return nullptr;
     }
     return base.OpenFile(full_path, perms);
 }
 
-VirtualDir RealVfsDirectory::GetDirectoryRelative(std::string_view path) const {
-    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(path));
+VirtualDir RealVfsDirectory::GetDirectoryRelative(std::string_view path_) const {
+    const auto full_path = FS::SanitizePath(path + DIR_SEP + std::string(path_));
     if (!FS::Exists(full_path) || !FS::IsDirectory(full_path)) {
         return nullptr;
     }
@@ -376,18 +376,23 @@ VirtualDir RealVfsDirectory::GetSubdirectory(std::string_view name) const {
     return GetDirectoryRelative(name);
 }
 
-VirtualFile RealVfsDirectory::CreateFileRelative(std::string_view path) {
-    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(path));
+VirtualFile RealVfsDirectory::CreateFileRelative(std::string_view path_) {
+    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(path_));
     return base.CreateFile(full_path, perms);
 }
 
-VirtualDir RealVfsDirectory::CreateDirectoryRelative(std::string_view path) {
-    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(path));
+std::shared_ptr<VfsFile> RealVfsDirectory::CreateFileRelative(std::string_view file_path) {
+    const auto full_path = FS::SanitizePath(path + DIR_SEP + std::string(file_path));
+    return base.CreateFile(full_path, perms);
+}
+
+std::shared_ptr<VfsDirectory> RealVfsDirectory::CreateDirectoryRelative(std::string_view dir_path_) {
+    const auto full_path = FS::SanitizePath(path + DIR_SEP + std::string(dir_path_));
     return base.CreateDirectory(full_path, perms);
 }
 
-bool RealVfsDirectory::DeleteSubdirectoryRecursive(std::string_view name) {
-    const auto full_path = FS::SanitizePath(this->path + DIR_SEP + std::string(name));
+bool RealVfsDirectory::DeleteSubdirectoryRecursive(std::string_view dir_path) {
+    const auto full_path = FS::SanitizePath(path + DIR_SEP + std::string(dir_path));
     return base.DeleteDirectory(full_path);
 }
 

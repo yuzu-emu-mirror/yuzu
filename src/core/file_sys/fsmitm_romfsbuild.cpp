@@ -126,7 +126,7 @@ static u64 romfs_get_hash_table_count(u64 num_entries) {
     return count;
 }
 
-void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
+void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir extension,
                                        std::shared_ptr<RomFSBuildDirectoryContext> parent) {
     std::vector<std::shared_ptr<RomFSBuildDirectoryContext>> child_dirs;
 
@@ -147,7 +147,8 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
             child->path_len = child->cur_path_ofs + static_cast<u32>(kv.first.size());
             child->path = parent->path + "/" + kv.first;
 
-            if (ext != nullptr && ext->GetFileRelative(child->path + ".stub") != nullptr)
+            if (extension != nullptr &&
+                extension->GetFileRelative(child->path + ".stub") != nullptr)
                 continue;
 
             // Sanity check on path_len
@@ -163,7 +164,8 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
             child->path_len = child->cur_path_ofs + static_cast<u32>(kv.first.size());
             child->path = parent->path + "/" + kv.first;
 
-            if (ext != nullptr && ext->GetFileRelative(child->path + ".stub") != nullptr)
+            if (extension != nullptr &&
+                extension->GetFileRelative(child->path + ".stub") != nullptr)
                 continue;
 
             // Sanity check on path_len
@@ -171,8 +173,8 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
 
             child->source = root_romfs->GetFileRelative(child->path);
 
-            if (ext != nullptr) {
-                const auto ips = ext->GetFileRelative(child->path + ".ips");
+            if (extension != nullptr) {
+                const auto ips = extension->GetFileRelative(child->path + ".ips");
 
                 if (ips != nullptr) {
                     auto patched = PatchIPS(child->source, ips);
@@ -188,7 +190,7 @@ void RomFSBuildContext::VisitDirectory(VirtualDir root_romfs, VirtualDir ext,
     }
 
     for (auto& child : child_dirs) {
-        this->VisitDirectory(root_romfs, ext, child);
+        this->VisitDirectory(root_romfs, extension, child);
     }
 }
 

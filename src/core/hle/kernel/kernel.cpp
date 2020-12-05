@@ -52,8 +52,8 @@ struct KernelCore::Impl {
         : synchronization{system}, time_manager{system}, global_handle_table{kernel}, system{
                                                                                           system} {}
 
-    void SetMulticore(bool is_multicore) {
-        this->is_multicore = is_multicore;
+    void SetMulticore(bool multicore_state) {
+        is_multicore = multicore_state;
     }
 
     void Initialize(KernelCore& kernel) {

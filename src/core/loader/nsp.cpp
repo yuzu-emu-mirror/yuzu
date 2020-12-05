@@ -121,15 +121,15 @@ AppLoader_NSP::LoadResult AppLoader_NSP::Load(Kernel::Process& process, Core::Sy
     return result;
 }
 
-ResultStatus AppLoader_NSP::ReadRomFS(FileSys::VirtualFile& file) {
-    return secondary_loader->ReadRomFS(file);
+ResultStatus AppLoader_NSP::ReadRomFS(FileSys::VirtualFile& nsp_file) {
+    return secondary_loader->ReadRomFS(nsp_file);
 }
 
 u64 AppLoader_NSP::ReadRomFSIVFCOffset() const {
     return secondary_loader->ReadRomFSIVFCOffset();
 }
 
-ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& file) {
+ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& nsp_file) {
     if (nsp->IsExtractedType())
         return ResultStatus::ErrorNoPackedUpdate;
 
@@ -143,7 +143,7 @@ ResultStatus AppLoader_NSP::ReadUpdateRaw(FileSys::VirtualFile& file) {
     if (nca_test->GetStatus() != ResultStatus::ErrorMissingBKTRBaseRomFS)
         return nca_test->GetStatus();
 
-    file = read;
+    nsp_file = read;
     return ResultStatus::Success;
 }
 
@@ -175,13 +175,13 @@ ResultStatus AppLoader_NSP::ReadControlData(FileSys::NACP& nacp) {
     return ResultStatus::Success;
 }
 
-ResultStatus AppLoader_NSP::ReadManualRomFS(FileSys::VirtualFile& file) {
+ResultStatus AppLoader_NSP::ReadManualRomFS(FileSys::VirtualFile& romfs_file) {
     const auto nca =
         nsp->GetNCA(nsp->GetProgramTitleID(), FileSys::ContentRecordType::HtmlDocument);
     if (nsp->GetStatus() != ResultStatus::Success || nca == nullptr)
         return ResultStatus::ErrorNoRomFS;
-    file = nca->GetRomFS();
-    return file == nullptr ? ResultStatus::ErrorNoRomFS : ResultStatus::Success;
+    romfs_file = nca->GetRomFS();
+    return romfs_file == nullptr ? ResultStatus::ErrorNoRomFS : ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NSP::ReadBanner(std::vector<u8>& buffer) {

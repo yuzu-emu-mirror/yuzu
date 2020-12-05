@@ -179,8 +179,8 @@ u32 XCI::GetSystemUpdateVersion() {
     if (update == nullptr)
         return 0;
 
-    for (const auto& file : update->GetFiles()) {
-        NCA nca{file, nullptr, 0};
+    for (const auto& update_file : update->GetFiles()) {
+        NCA nca{update_file, nullptr, 0};
 
         if (nca.GetStatus() != Loader::ResultStatus::Success)
             continue;
@@ -262,8 +262,8 @@ VirtualDir XCI::ConcatenatedPseudoDirectory() {
         if (part == nullptr)
             continue;
 
-        for (const auto& file : part->GetFiles())
-            out->AddFile(file);
+        for (const auto& xci_file : part->GetFiles())
+            out->AddFile(xci_file);
     }
 
     return out;
@@ -283,12 +283,12 @@ Loader::ResultStatus XCI::AddNCAFromPartition(XCIPartition part) {
         return Loader::ResultStatus::ErrorXCIMissingPartition;
     }
 
-    for (const VirtualFile& file : partition->GetFiles()) {
-        if (file->GetExtension() != "nca") {
+    for (const VirtualFile& part_file : partition->GetFiles()) {
+        if (part_file->GetExtension() != "nca") {
             continue;
         }
 
-        auto nca = std::make_shared<NCA>(file, nullptr, 0);
+        auto nca = std::make_shared<NCA>(part_file, nullptr, 0);
         if (nca->IsUpdate()) {
             continue;
         }

@@ -35,13 +35,13 @@ public:
     CpuManager& operator=(CpuManager&&) = delete;
 
     /// Sets if emulation is multicore or single core, must be set before Initialize
-    void SetMulticore(bool is_multicore) {
-        this->is_multicore = is_multicore;
+    void SetMulticore(bool multicore_state) {
+        is_multicore = multicore_state;
     }
 
     /// Sets if emulation is using an asynchronous GPU.
-    void SetAsyncGpu(bool is_async_gpu) {
-        this->is_async_gpu = is_async_gpu;
+    void SetAsyncGpu(bool async_gpu_state) {
+        is_async_gpu = async_gpu_state;
     }
 
     void Initialize();

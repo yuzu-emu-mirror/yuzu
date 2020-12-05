@@ -132,9 +132,9 @@ void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
     }
 }
 
-void CoreTiming::AddTicks(u64 ticks) {
-    this->ticks += ticks;
-    downcount -= static_cast<s64>(ticks);
+void CoreTiming::AddTicks(u64 ticks_) {
+    ticks += ticks_;
+    downcount -= static_cast<s64>(ticks_);
 }
 
 void CoreTiming::Idle() {

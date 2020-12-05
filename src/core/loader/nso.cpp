@@ -183,8 +183,8 @@ AppLoader_NSO::LoadResult AppLoader_NSO::Load(Kernel::Process& process, Core::Sy
             LoadParameters{Kernel::THREADPRIO_DEFAULT, Core::Memory::DEFAULT_STACK_SIZE}};
 }
 
-ResultStatus AppLoader_NSO::ReadNSOModules(Modules& modules) {
-    modules = this->modules;
+ResultStatus AppLoader_NSO::ReadNSOModules(Modules& modules_) {
+    modules_ = modules;
     return ResultStatus::Success;
 }
 

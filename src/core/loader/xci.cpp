@@ -87,15 +87,15 @@ AppLoader_XCI::LoadResult AppLoader_XCI::Load(Kernel::Process& process, Core::Sy
     return result;
 }
 
-ResultStatus AppLoader_XCI::ReadRomFS(FileSys::VirtualFile& file) {
-    return nca_loader->ReadRomFS(file);
+ResultStatus AppLoader_XCI::ReadRomFS(FileSys::VirtualFile& xci_file) {
+    return nca_loader->ReadRomFS(xci_file);
 }
 
 u64 AppLoader_XCI::ReadRomFSIVFCOffset() const {
     return nca_loader->ReadRomFSIVFCOffset();
 }
 
-ResultStatus AppLoader_XCI::ReadUpdateRaw(FileSys::VirtualFile& file) {
+ResultStatus AppLoader_XCI::ReadUpdateRaw(FileSys::VirtualFile& xci_update) {
     u64 program_id{};
     nca_loader->ReadProgramId(program_id);
     if (program_id == 0)
@@ -111,7 +111,7 @@ ResultStatus AppLoader_XCI::ReadUpdateRaw(FileSys::VirtualFile& file) {
     if (nca_test->GetStatus() != ResultStatus::ErrorMissingBKTRBaseRomFS)
         return nca_test->GetStatus();
 
-    file = read;
+    xci_update = read;
     return ResultStatus::Success;
 }
 
@@ -140,13 +140,13 @@ ResultStatus AppLoader_XCI::ReadControlData(FileSys::NACP& control) {
     return ResultStatus::Success;
 }
 
-ResultStatus AppLoader_XCI::ReadManualRomFS(FileSys::VirtualFile& file) {
+ResultStatus AppLoader_XCI::ReadManualRomFS(FileSys::VirtualFile& xci_manual) {
     const auto nca = xci->GetSecurePartitionNSP()->GetNCA(xci->GetProgramTitleID(),
                                                           FileSys::ContentRecordType::HtmlDocument);
     if (xci->GetStatus() != ResultStatus::Success || nca == nullptr)
         return ResultStatus::ErrorXCIMissingPartition;
-    file = nca->GetRomFS();
-    return file == nullptr ? ResultStatus::ErrorNoRomFS : ResultStatus::Success;
+    xci_manual = nca->GetRomFS();
+    return xci_manual == nullptr ? ResultStatus::ErrorNoRomFS : ResultStatus::Success;
 }
 
 ResultStatus AppLoader_XCI::ReadBanner(std::vector<u8>& buffer) {

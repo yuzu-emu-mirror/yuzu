@@ -200,8 +200,8 @@ static bool LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
     return true;
 }
 
-bool AppLoader_NRO::LoadNro(Kernel::Process& process, const FileSys::VfsFile& file) {
-    return LoadNroImpl(process, file.ReadAllBytes(), file.GetName());
+bool AppLoader_NRO::LoadNro(Kernel::Process& process, const FileSys::VfsFile& nro_file) {
+    return LoadNroImpl(process, nro_file.ReadAllBytes(), nro_file.GetName());
 }
 
 AppLoader_NRO::LoadResult AppLoader_NRO::Load(Kernel::Process& process, Core::System& system) {

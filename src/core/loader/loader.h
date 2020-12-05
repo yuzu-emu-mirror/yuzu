@@ -218,7 +218,7 @@ public:
      * @param file The directory containing the RomFS
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadRomFS(FileSys::VirtualFile& file) {
+    virtual ResultStatus ReadRomFS(FileSys::VirtualFile& file_) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -227,7 +227,7 @@ public:
      * @param file The raw update NCA file (Program-type
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadUpdateRaw(FileSys::VirtualFile& file) {
+    virtual ResultStatus ReadUpdateRaw(FileSys::VirtualFile& file_) {
         return ResultStatus::ErrorNotImplemented;
     }
 
@@ -273,7 +273,7 @@ public:
      * @param file The raw manual RomFS of the game
      * @return ResultStatus result of function
      */
-    virtual ResultStatus ReadManualRomFS(FileSys::VirtualFile& file) {
+    virtual ResultStatus ReadManualRomFS(FileSys::VirtualFile& file_) {
         return ResultStatus::ErrorNotImplemented;
     }
 

@@ -280,14 +280,14 @@ NcaID PlaceholderCache::Generate() {
     return out;
 }
 
-VirtualFile RegisteredCache::OpenFileOrDirectoryConcat(const VirtualDir& dir,
+VirtualFile RegisteredCache::OpenFileOrDirectoryConcat(const VirtualDir& directory,
                                                        std::string_view path) const {
-    const auto file = dir->GetFileRelative(path);
+    const auto file = directory->GetFileRelative(path);
     if (file != nullptr) {
         return file;
     }
 
-    const auto nca_dir = dir->GetDirectoryRelative(path);
+    const auto nca_dir = directory->GetDirectoryRelative(path);
     if (nca_dir == nullptr) {
         return nullptr;
     }
@@ -430,11 +430,11 @@ void RegisteredCache::ProcessFiles(const std::vector<NcaID>& ids) {
 }
 
 void RegisteredCache::AccumulateYuzuMeta() {
-    const auto dir = this->dir->GetSubdirectory("yuzu_meta");
-    if (dir == nullptr)
+    const auto directory = dir->GetSubdirectory("yuzu_meta");
+    if (directory == nullptr)
         return;
 
-    for (const auto& file : dir->GetFiles()) {
+    for (const auto& file : directory->GetFiles()) {
         if (file->GetExtension() != "cnmt")
             continue;
 
@@ -565,7 +565,7 @@ InstallResult RegisteredCache::InstallEntry(const NSP& nsp, bool overwrite_if_ex
     }
 
     const auto meta_id_raw = (*meta_iter)->GetName().substr(0, 32);
-    const auto meta_id = Common::HexStringToArray<16>(meta_id_raw);
+    const auto hex_meta_id = Common::HexStringToArray<16>(meta_id_raw);
 
     if ((*meta_iter)->GetSubdirectories().empty()) {
         LOG_ERROR(Loader,
@@ -590,7 +590,7 @@ InstallResult RegisteredCache::InstallEntry(const NSP& nsp, bool overwrite_if_ex
     const auto result = RemoveExistingEntry(title_id);
 
     // Install Metadata File
-    const auto res = RawInstallNCA(**meta_iter, copy, overwrite_if_exists, meta_id);
+    const auto res = RawInstallNCA(**meta_iter, copy, overwrite_if_exists, hex_meta_id);
     if (res != InstallResult::Success) {
         return res;
     }
@@ -740,15 +740,15 @@ InstallResult RegisteredCache::RawInstallNCA(const NCA& nca, const VfsCopyFuncti
 
 bool RegisteredCache::RawInstallYuzuMeta(const CNMT& cnmt) {
     // Reasoning behind this method can be found in the comment for InstallEntry, NCA overload.
-    const auto dir = this->dir->CreateDirectoryRelative("yuzu_meta");
+    const auto directory = dir->CreateDirectoryRelative("yuzu_meta");
     const auto filename = GetCNMTName(cnmt.GetType(), cnmt.GetTitleID());
-    if (dir->GetFile(filename) == nullptr) {
-        auto out = dir->CreateFile(filename);
+    if (directory->GetFile(filename) == nullptr) {
+        auto out = directory->CreateFile(filename);
         const auto buffer = cnmt.Serialize();
         out->Resize(buffer.size());
         out->WriteBytes(buffer);
     } else {
-        auto out = dir->GetFile(filename);
+        auto out = directory->GetFile(filename);
         CNMT old_cnmt(out);
         // Returns true on change
         if (old_cnmt.UnionRecords(cnmt)) {

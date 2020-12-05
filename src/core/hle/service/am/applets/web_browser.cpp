@@ -457,7 +457,7 @@ void WebBrowser::InitializeOffline() {
                                  Common::FS::DirectorySeparator::PlatformDefault);
     Common::FS::DeleteDirRecursively(temporary_dir);
 
-    u64 title_id = 0; // 0 corresponds to current process
+    u64 tid = 0; // 0 corresponds to current process
     ASSERT(args[WebArgTLVType::ApplicationID].size() >= 0x8);
     std::memcpy(&title_id, args[WebArgTLVType::ApplicationID].data(), sizeof(u64));
     FileSys::ContentRecordType type = FileSys::ContentRecordType::Data;
@@ -465,7 +465,7 @@ void WebBrowser::InitializeOffline() {
     switch (source) {
     case OfflineWebSource::OfflineHtmlPage:
         // While there is an AppID TLV field, in official SW this is always ignored.
-        title_id = 0;
+        tid = 0;
         type = FileSys::ContentRecordType::HtmlDocument;
         break;
     case OfflineWebSource::ApplicationLegalInformation:
@@ -476,11 +476,11 @@ void WebBrowser::InitializeOffline() {
         break;
     }
 
-    if (title_id == 0) {
-        title_id = system.CurrentProcess()->GetTitleID();
+    if (tid == 0) {
+        tid = system.CurrentProcess()->GetTitleID();
     }
 
-    offline_romfs = GetApplicationRomFS(system, title_id, type);
+    offline_romfs = GetApplicationRomFS(system, tid, type);
     if (offline_romfs == nullptr) {
         status = RESULT_UNKNOWN;
         LOG_ERROR(Service_AM, "Failed to find offline data for request!");

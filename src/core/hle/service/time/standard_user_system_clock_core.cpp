@@ -34,21 +34,21 @@ ResultCode StandardUserSystemClockCore::SetAutomaticCorrectionEnabled(Core::Syst
 }
 
 ResultCode StandardUserSystemClockCore::GetClockContext(Core::System& system,
-                                                        SystemClockContext& context) const {
+                                                        SystemClockContext& ctx) const {
     if (const ResultCode result{ApplyAutomaticCorrection(system, false)};
         result != RESULT_SUCCESS) {
         return result;
     }
 
-    return local_system_clock_core.GetClockContext(system, context);
+    return local_system_clock_core.GetClockContext(system, ctx);
 }
 
-ResultCode StandardUserSystemClockCore::Flush(const SystemClockContext& context) {
+ResultCode StandardUserSystemClockCore::Flush(const SystemClockContext& ctx) {
     UNREACHABLE();
     return ERROR_NOT_IMPLEMENTED;
 }
 
-ResultCode StandardUserSystemClockCore::SetClockContext(const SystemClockContext& context) {
+ResultCode StandardUserSystemClockCore::SetClockContext(const SystemClockContext& ctx) {
     UNREACHABLE();
     return ERROR_NOT_IMPLEMENTED;
 }
@@ -63,13 +63,13 @@ ResultCode StandardUserSystemClockCore::ApplyAutomaticCorrection(Core::System& s
         return ERROR_UNINITIALIZED_CLOCK;
     }
 
-    SystemClockContext context{};
-    if (const ResultCode result{network_system_clock_core.GetClockContext(system, context)};
+    SystemClockContext ctx{};
+    if (const ResultCode result{network_system_clock_core.GetClockContext(system, ctx)};
         result != RESULT_SUCCESS) {
         return result;
     }
 
-    local_system_clock_core.SetClockContext(context);
+    local_system_clock_core.SetClockContext(ctx);
 
     return RESULT_SUCCESS;
 }

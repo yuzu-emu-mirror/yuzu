@@ -45,12 +45,12 @@ VirtualDir LayeredVfsDirectory::GetDirectoryRelative(std::string_view path) cons
     return MakeLayeredDirectory(std::move(out));
 }
 
-VirtualFile LayeredVfsDirectory::GetFile(std::string_view name) const {
-    return GetFileRelative(name);
+VirtualFile LayeredVfsDirectory::GetFile(std::string_view name_) const {
+    return GetFileRelative(name_);
 }
 
-VirtualDir LayeredVfsDirectory::GetSubdirectory(std::string_view name) const {
-    return GetDirectoryRelative(name);
+VirtualDir LayeredVfsDirectory::GetSubdirectory(std::string_view name_) const {
+    return GetDirectoryRelative(name_);
 }
 
 std::string LayeredVfsDirectory::GetFullPath() const {
@@ -105,19 +105,19 @@ VirtualDir LayeredVfsDirectory::GetParentDirectory() const {
     return dirs[0]->GetParentDirectory();
 }
 
-VirtualDir LayeredVfsDirectory::CreateSubdirectory(std::string_view name) {
+VirtualDir LayeredVfsDirectory::CreateSubdirectory(std::string_view name_) {
     return nullptr;
 }
 
-VirtualFile LayeredVfsDirectory::CreateFile(std::string_view name) {
+VirtualFile LayeredVfsDirectory::CreateFile(std::string_view name_) {
     return nullptr;
 }
 
-bool LayeredVfsDirectory::DeleteSubdirectory(std::string_view name) {
+bool LayeredVfsDirectory::DeleteSubdirectory(std::string_view name_) {
     return false;
 }
 
-bool LayeredVfsDirectory::DeleteFile(std::string_view name) {
+bool LayeredVfsDirectory::DeleteFile(std::string_view name_) {
     return false;
 }
 

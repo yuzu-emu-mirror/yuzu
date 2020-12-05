@@ -103,12 +103,12 @@ static bool FindAndRemoveVectorElement(std::vector<T>& vec, std::string_view nam
     return true;
 }
 
-bool VectorVfsDirectory::DeleteSubdirectory(std::string_view name) {
-    return FindAndRemoveVectorElement(dirs, name);
+bool VectorVfsDirectory::DeleteSubdirectory(std::string_view name_) {
+    return FindAndRemoveVectorElement(dirs, name_);
 }
 
-bool VectorVfsDirectory::DeleteFile(std::string_view name) {
-    return FindAndRemoveVectorElement(files, name);
+bool VectorVfsDirectory::DeleteFile(std::string_view name_) {
+    return FindAndRemoveVectorElement(files, name_);
 }
 
 bool VectorVfsDirectory::Rename(std::string_view name_) {
@@ -116,11 +116,15 @@ bool VectorVfsDirectory::Rename(std::string_view name_) {
     return true;
 }
 
-VirtualDir VectorVfsDirectory::CreateSubdirectory(std::string_view name) {
+VirtualDir VectorVfsDirectory::CreateSubdirectory(std::string_view name_) {
     return nullptr;
 }
 
-VirtualFile VectorVfsDirectory::CreateFile(std::string_view name) {
+std::shared_ptr<VfsDirectory> VectorVfsDirectory::CreateSubdirectory(std::string_view name_) {
+    return nullptr;
+}
+
+std::shared_ptr<VfsFile> VectorVfsDirectory::CreateFile(std::string_view name_) {
     return nullptr;
 }
 
