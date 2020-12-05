@@ -179,12 +179,12 @@ void Process::InsertConditionVariableThread(std::shared_ptr<Thread> thread) {
 
 void Process::RemoveConditionVariableThread(std::shared_ptr<Thread> thread) {
     VAddr cond_var_addr = thread->GetCondVarWaitAddress();
-    std::list<std::shared_ptr<Thread>>& thread_list = cond_var_threads[cond_var_addr];
-    auto it = thread_list.begin();
-    while (it != thread_list.end()) {
+    std::list<std::shared_ptr<Thread>>& convar_thread_list = cond_var_threads[cond_var_addr];
+    auto it = convar_thread_list.begin();
+    while (it != convar_thread_list.end()) {
         const std::shared_ptr<Thread> current_thread = *it;
         if (current_thread.get() == thread.get()) {
-            thread_list.erase(it);
+            convar_thread_list.erase(it);
             return;
         }
         ++it;
@@ -194,9 +194,9 @@ void Process::RemoveConditionVariableThread(std::shared_ptr<Thread> thread) {
 std::vector<std::shared_ptr<Thread>> Process::GetConditionVariableThreads(
     const VAddr cond_var_addr) {
     std::vector<std::shared_ptr<Thread>> result{};
-    std::list<std::shared_ptr<Thread>>& thread_list = cond_var_threads[cond_var_addr];
-    auto it = thread_list.begin();
-    while (it != thread_list.end()) {
+    std::list<std::shared_ptr<Thread>>& convar_thread_list = cond_var_threads[cond_var_addr];
+    auto it = convar_thread_list.begin();
+    while (it != convar_thread_list.end()) {
         std::shared_ptr<Thread> current_thread = *it;
         result.push_back(current_thread);
         ++it;
