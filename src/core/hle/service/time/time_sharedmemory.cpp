@@ -26,11 +26,11 @@ std::shared_ptr<Kernel::SharedMemory> SharedMemory::GetSharedMemoryHolder() cons
     return shared_memory_holder;
 }
 
-void SharedMemory::SetupStandardSteadyClock(Core::System& system,
+void SharedMemory::SetupStandardSteadyClock(Core::System& system_,
                                             const Common::UUID& clock_source_id,
                                             Clock::TimeSpanType current_time_point) {
     const Clock::TimeSpanType ticks_time_span{Clock::TimeSpanType::FromTicks(
-        system.CoreTiming().GetClockTicks(), Core::Hardware::CNTFREQ)};
+        system_.CoreTiming().GetClockTicks(), Core::Hardware::CNTFREQ)};
     const Clock::SteadyClockContext context{
         static_cast<u64>(current_time_point.nanoseconds - ticks_time_span.nanoseconds),
         clock_source_id};

@@ -95,12 +95,12 @@ Manager::Manager(Core::Reporter& reporter) : reporter(reporter) {}
 
 Manager::~Manager() = default;
 
-void Manager::SetEnabled(bool enabled) {
-    this->enabled = enabled;
+void Manager::SetEnabled(bool is_enabled) {
+    enabled = is_enabled;
 }
 
-void Manager::SetDestination(DestinationFlag destination) {
-    this->destination = destination;
+void Manager::SetDestination(DestinationFlag destination_flag) {
+    destination = destination_flag;
 }
 
 void Manager::Log(LogMessage message) {

@@ -164,17 +164,17 @@ u64 Process::GetTotalPhysicalMemoryUsedWithoutSystemResource() const {
 
 void Process::InsertConditionVariableThread(std::shared_ptr<Thread> thread) {
     VAddr cond_var_addr = thread->GetCondVarWaitAddress();
-    std::list<std::shared_ptr<Thread>>& thread_list = cond_var_threads[cond_var_addr];
-    auto it = thread_list.begin();
-    while (it != thread_list.end()) {
+    std::list<std::shared_ptr<Thread>>& condvar_thread_list = cond_var_threads[cond_var_addr];
+    auto it = condvar_thread_list.begin();
+    while (it != condvar_thread_list.end()) {
         const std::shared_ptr<Thread> current_thread = *it;
         if (current_thread->GetPriority() > thread->GetPriority()) {
-            thread_list.insert(it, thread);
+            condvar_thread_list.insert(it, thread);
             return;
         }
         ++it;
     }
-    thread_list.push_back(thread);
+    condvar_thread_list.push_back(thread);
 }
 
 void Process::RemoveConditionVariableThread(std::shared_ptr<Thread> thread) {

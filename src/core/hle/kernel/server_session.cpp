@@ -106,23 +106,23 @@ ResultCode ServerSession::HandleDomainSyncRequest(Kernel::HLERequestContext& con
 
     // If there is a DomainMessageHeader, then this is CommandType "Request"
     const auto& domain_message_header = context.GetDomainMessageHeader();
-    const u32 object_id{domain_message_header.object_id};
+    const u32 domain_object_id{domain_message_header.object_id};
     switch (domain_message_header.command) {
     case IPC::DomainMessageHeader::CommandType::SendMessage:
-        if (object_id > domain_request_handlers.size()) {
+        if (domain_object_id > domain_request_handlers.size()) {
             LOG_CRITICAL(IPC,
                          "object_id {} is too big! This probably means a recent service call "
                          "to {} needed to return a new interface!",
-                         object_id, name);
+                         domain_object_id, name);
             UNREACHABLE();
             return RESULT_SUCCESS; // Ignore error if asserts are off
         }
-        return domain_request_handlers[object_id - 1]->HandleSyncRequest(context);
+        return domain_request_handlers[domain_object_id - 1]->HandleSyncRequest(context);
 
     case IPC::DomainMessageHeader::CommandType::CloseVirtualHandle: {
-        LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", object_id);
+        LOG_DEBUG(IPC, "CloseVirtualHandle, object_id=0x{:08X}", domain_object_id);
 
-        domain_request_handlers[object_id - 1] = nullptr;
+        domain_request_handlers[domain_object_id - 1] = nullptr;
 
         IPC::ResponseBuilder rb{context, 2};
         rb.Push(RESULT_SUCCESS);

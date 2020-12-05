@@ -35,9 +35,9 @@ std::shared_ptr<SharedMemory> SharedMemory::Create(
     return shared_memory;
 }
 
-ResultCode SharedMemory::Map(Process& target_process, VAddr address, std::size_t size,
+ResultCode SharedMemory::Map(Process& target_process, VAddr address, std::size_t map_size,
                              Memory::MemoryPermission permissions) {
-    const u64 page_count{(size + Memory::PageSize - 1) / Memory::PageSize};
+    const u64 page_count{(map_size + Memory::PageSize - 1) / Memory::PageSize};
 
     if (page_list.GetNumPages() != page_count) {
         UNIMPLEMENTED_MSG("Page count does not match");

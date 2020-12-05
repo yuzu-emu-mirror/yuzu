@@ -334,12 +334,12 @@ public:
         const std::string name = Common::StringFromBuffer(file_buffer);
 
         const u64 mode = rp.Pop<u64>();
-        const u32 size = rp.Pop<u32>();
+        const u32 file_size = rp.Pop<u32>();
 
-        LOG_DEBUG(Service_FS, "called. file={}, mode=0x{:X}, size=0x{:08X}", name, mode, size);
+        LOG_DEBUG(Service_FS, "called. file={}, mode=0x{:X}, size=0x{:08X}", name, mode, file_size);
 
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(backend.CreateFile(name, size));
+        rb.Push(backend.CreateFile(name, file_size));
     }
 
     void DeleteFile(Kernel::HLERequestContext& ctx) {
@@ -926,8 +926,8 @@ void FSP_SRV::ReadSaveDataFileSystemExtraDataWithMaskBySaveDataAttribute(
 void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_FS, "called");
 
-    auto romfs = fsc.OpenRomFSCurrentProcess();
-    if (romfs.Failed()) {
+    auto cur_romfs = fsc.OpenRomFSCurrentProcess();
+    if (cur_romfs.Failed()) {
         // TODO (bunnei): Find the right error code to use here
         LOG_CRITICAL(Service_FS, "no file system interface available!");
         IPC::ResponseBuilder rb{ctx, 2};
@@ -935,7 +935,7 @@ void FSP_SRV::OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    auto storage = std::make_shared<IStorage>(system, std::move(romfs.Unwrap()));
+    auto storage = std::make_shared<IStorage>(system, std::move(cur_romfs.Unwrap()));
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);

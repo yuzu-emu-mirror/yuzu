@@ -17,8 +17,8 @@ MemoryBlockManager::MemoryBlockManager(VAddr start_addr, VAddr end_addr)
 MemoryBlockManager::iterator MemoryBlockManager::FindIterator(VAddr addr) {
     auto node{memory_block_tree.begin()};
     while (node != end()) {
-        const VAddr end_addr{node->GetNumPages() * PageSize + node->GetAddress()};
-        if (node->GetAddress() <= addr && end_addr - 1 >= addr) {
+        const VAddr node_end_addr{node->GetNumPages() * PageSize + node->GetAddress()};
+        if (node->GetAddress() <= addr && node_end_addr - 1 >= addr) {
             return node;
         }
         node = std::next(node);
@@ -67,7 +67,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState p
                                 MemoryPermission prev_perm, MemoryAttribute prev_attribute,
                                 MemoryState state, MemoryPermission perm,
                                 MemoryAttribute attribute) {
-    const VAddr end_addr{addr + num_pages * PageSize};
+    const VAddr block_end_addr{addr + num_pages * PageSize};
     iterator node{memory_block_tree.begin()};
 
     prev_attribute |= MemoryAttribute::IpcAndDeviceMapped;
@@ -78,7 +78,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState p
         const VAddr cur_addr{block->GetAddress()};
         const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
 
-        if (addr < cur_end_addr && cur_addr < end_addr) {
+        if (addr < cur_end_addr && cur_addr < block_end_addr) {
             if (!block->HasProperties(prev_state, prev_perm, prev_attribute)) {
                 node = next_node;
                 continue;
@@ -89,8 +89,8 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState p
                 memory_block_tree.insert(node, block->Split(addr));
             }
 
-            if (end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(end_addr));
+            if (block_end_addr < cur_end_addr) {
+                new_node = memory_block_tree.insert(node, block->Split(block_end_addr));
             }
 
             new_node->Update(state, perm, attribute);
@@ -98,7 +98,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState p
             MergeAdjacent(new_node, next_node);
         }
 
-        if (cur_end_addr - 1 >= end_addr - 1) {
+        if (cur_end_addr - 1 >= block_end_addr - 1) {
             break;
         }
 
@@ -108,7 +108,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState p
 
 void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState state,
                                 MemoryPermission perm, MemoryAttribute attribute) {
-    const VAddr end_addr{addr + num_pages * PageSize};
+    const VAddr block_end_addr{addr + num_pages * PageSize};
     iterator node{memory_block_tree.begin()};
 
     while (node != memory_block_tree.end()) {
@@ -117,15 +117,15 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState s
         const VAddr cur_addr{block->GetAddress()};
         const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
 
-        if (addr < cur_end_addr && cur_addr < end_addr) {
+        if (addr < cur_end_addr && cur_addr < block_end_addr) {
             iterator new_node{node};
 
             if (addr > cur_addr) {
                 memory_block_tree.insert(node, block->Split(addr));
             }
 
-            if (end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(end_addr));
+            if (block_end_addr < cur_end_addr) {
+                new_node = memory_block_tree.insert(node, block->Split(block_end_addr));
             }
 
             new_node->Update(state, perm, attribute);
@@ -133,7 +133,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState s
             MergeAdjacent(new_node, next_node);
         }
 
-        if (cur_end_addr - 1 >= end_addr - 1) {
+        if (cur_end_addr - 1 >= block_end_addr - 1) {
             break;
         }
 
@@ -143,7 +143,7 @@ void MemoryBlockManager::Update(VAddr addr, std::size_t num_pages, MemoryState s
 
 void MemoryBlockManager::UpdateLock(VAddr addr, std::size_t num_pages, LockFunc&& lock_func,
                                     MemoryPermission perm) {
-    const VAddr end_addr{addr + num_pages * PageSize};
+    const VAddr block_end_addr{addr + num_pages * PageSize};
     iterator node{memory_block_tree.begin()};
 
     while (node != memory_block_tree.end()) {
@@ -152,15 +152,15 @@ void MemoryBlockManager::UpdateLock(VAddr addr, std::size_t num_pages, LockFunc&
         const VAddr cur_addr{block->GetAddress()};
         const VAddr cur_end_addr{block->GetNumPages() * PageSize + cur_addr};
 
-        if (addr < cur_end_addr && cur_addr < end_addr) {
+        if (addr < cur_end_addr && cur_addr < block_end_addr) {
             iterator new_node{node};
 
             if (addr > cur_addr) {
                 memory_block_tree.insert(node, block->Split(addr));
             }
 
-            if (end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(end_addr));
+            if (block_end_addr < cur_end_addr) {
+                new_node = memory_block_tree.insert(node, block->Split(block_end_addr));
             }
 
             lock_func(new_node, perm);
@@ -168,7 +168,7 @@ void MemoryBlockManager::UpdateLock(VAddr addr, std::size_t num_pages, LockFunc&
             MergeAdjacent(new_node, next_node);
         }
 
-        if (cur_end_addr - 1 >= end_addr - 1) {
+        if (cur_end_addr - 1 >= block_end_addr - 1) {
             break;
         }
 

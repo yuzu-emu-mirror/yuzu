@@ -172,9 +172,9 @@ private:
     };
 
     std::shared_ptr<IDeliveryCacheProgressService> CreateProgressService(SyncType type) {
-        auto& backend{progress.at(static_cast<std::size_t>(type))};
-        return std::make_shared<IDeliveryCacheProgressService>(system, backend.GetEvent(),
-                                                               backend.GetImpl());
+        auto& bcat_backend{progress.at(static_cast<std::size_t>(type))};
+        return std::make_shared<IDeliveryCacheProgressService>(system, bcat_backend.GetEvent(),
+                                                               bcat_backend.GetImpl());
     }
 
     void RequestSyncDeliveryCache(Kernel::HLERequestContext& ctx) {
