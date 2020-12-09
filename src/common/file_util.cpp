@@ -218,9 +218,9 @@ bool CreateEmptyFile(const std::string& filename) {
     return true;
 }
 
-bool ForeachDirectoryEntry(u64* num_entries_out, const std::string& directory,
-                           DirectoryEntryCallable callback) {
-    LOG_TRACE(Common_Filesystem, "directory {}", directory);
+bool ForeachDirectoryEntry(u64* num_entries_out, const fs::path& directory,
+                           const DirectoryEntryCallable& callback) {
+    LOG_TRACE(Common_Filesystem, "directory {}", directory.string());
 
     // How many files + directories we found
     u64 found_entries = 0;
@@ -228,52 +228,31 @@ bool ForeachDirectoryEntry(u64* num_entries_out, const std::string& directory,
     // Save the status of callback function
     bool callback_error = false;
 
-#ifdef _WIN32
-    // Find the first file in the directory.
-    WIN32_FIND_DATAW ffd;
-
-    HANDLE handle_find = FindFirstFileW(Common::UTF8ToUTF16W(directory + "\\*").c_str(), &ffd);
-    if (handle_find == INVALID_HANDLE_VALUE) {
-        FindClose(handle_find);
-        return false;
-    }
-    // windows loop
-    do {
-        const std::string virtual_name = std::filesystem::path(ffd.cFileName).string();
-#else
-    DIR* dirp = opendir(directory.c_str());
-    if (!dirp)
-        return false;
-
-    // non windows loop
-    while (struct dirent* result = readdir(dirp)) {
-        const std::string virtual_name(result->d_name);
-#endif
-
-        if (virtual_name == "." || virtual_name == "..")
-            continue;
-
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(directory, ec)) {
         u64 ret_entries = 0;
-        if (!callback(&ret_entries, directory, virtual_name)) {
+        if (!callback(&ret_entries, directory, entry.path().filename())) {
             callback_error = true;
             break;
         }
         found_entries += ret_entries;
-
-#ifdef _WIN32
-    } while (FindNextFileW(handle_find, &ffd) != 0);
-    FindClose(handle_find);
-#else
     }
-    closedir(dirp);
-#endif
 
-    if (callback_error)
+    if (ec) {
+        LOG_ERROR(Common_Filesystem, "Unable to completely enumerate directory {}: {}",
+                  directory.string(), ec.message());
         return false;
+    }
+
+    if (callback_error) {
+        return false;
+    }
 
     // num_entries_out is allowed to be specified nullptr, in which case we shouldn't try to set it
-    if (num_entries_out != nullptr)
+    if (num_entries_out != nullptr) {
         *num_entries_out = found_entries;
+    }
+
     return true;
 }
 

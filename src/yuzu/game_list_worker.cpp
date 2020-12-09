@@ -283,17 +283,18 @@ void GameListWorker::AddTitlesToGameList(GameListDir* parent_dir) {
 
 void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_path,
                                     unsigned int recursion, GameListDir* parent_dir) {
-    auto& system = Core::System::GetInstance();
+    namespace stdfs = std::filesystem;
 
+    auto& system = Core::System::GetInstance();
     const auto callback = [this, target, recursion, parent_dir,
-                           &system](u64* num_entries_out, const std::string& directory,
-                                    const std::string& virtual_name) -> bool {
+                           &system](u64*, const stdfs::path& directory,
+                                    const stdfs::path& virtual_name) -> bool {
         if (stop_processing) {
             // Breaks the callback loop.
             return false;
         }
 
-        const std::string physical_name = directory + DIR_SEP + virtual_name;
+        const auto physical_name = (directory / virtual_name).string();
         const bool is_dir = Common::FS::IsDirectory(physical_name);
         if (!is_dir &&
             (HasSupportedFileExtension(physical_name) || IsExtractedNCAMain(physical_name))) {

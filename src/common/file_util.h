@@ -84,20 +84,23 @@ bool CreateEmptyFile(const std::string& filename);
  * @param virtual_name the entry name, without any preceding directory info
  * @return whether handling the entry succeeded
  */
-using DirectoryEntryCallable = std::function<bool(
-    u64* num_entries_out, const std::string& directory, const std::string& virtual_name)>;
+using DirectoryEntryCallable =
+    std::function<bool(u64* num_entries_out, const std::filesystem::path& directory,
+                       const std::filesystem::path& virtual_name)>;
 
 /**
  * Scans a directory, calling the callback for each file/directory contained within.
  * If the callback returns failure, scanning halts and this function returns failure as well
- * @param num_entries_out assigned by the function with the number of iterated directory entries,
- * can be null
- * @param directory the directory to scan
- * @param callback The callback which will be called for each entry
+ *
+ * @param num_entries_out Assigned by the function with the number of iterated directory entries,
+ *                        can be null
+ * @param directory       The directory to scan
+ * @param callback        The callback which will be called for each entry
+ *
  * @return whether scanning the directory succeeded
  */
-bool ForeachDirectoryEntry(u64* num_entries_out, const std::string& directory,
-                           DirectoryEntryCallable callback);
+bool ForeachDirectoryEntry(u64* num_entries_out, const std::filesystem::path& directory,
+                           const DirectoryEntryCallable& callback);
 
 // Deletes the given path and anything under it. Returns true on success.
 bool DeleteDirRecursively(const std::filesystem::path& path);

@@ -10,6 +10,7 @@
 #include "yuzu/configuration/input_profiles.h"
 
 namespace FS = Common::FS;
+namespace stdfs = std::filesystem;
 
 namespace {
 
@@ -18,40 +19,27 @@ bool ProfileExistsInFilesystem(std::string_view profile_name) {
                                   FS::GetUserPath(FS::UserPath::ConfigDir), profile_name));
 }
 
-bool IsINI(std::string_view filename) {
-    const std::size_t index = filename.rfind('.');
-
-    if (index == std::string::npos) {
-        return false;
-    }
-
-    return filename.substr(index) == ".ini";
+bool IsINI(const stdfs::path& filename) {
+    return filename.extension() == ".ini";
 }
 
-std::string GetNameWithoutExtension(const std::string& filename) {
-    const std::size_t index = filename.rfind('.');
-
-    if (index == std::string::npos) {
-        return filename;
-    }
-
-    return filename.substr(0, index);
+stdfs::path GetNameWithoutExtension(stdfs::path filename) {
+    return filename.replace_extension();
 }
-
-} // namespace
+} // Anonymous namespace
 
 InputProfiles::InputProfiles() {
     const std::string input_profile_loc =
         fmt::format("{}input", FS::GetUserPath(FS::UserPath::ConfigDir));
 
     FS::ForeachDirectoryEntry(
-        nullptr, input_profile_loc,
-        [this](u64* entries_out, const std::string& directory, const std::string& filename) {
-            if (IsINI(filename) && IsProfileNameValid(GetNameWithoutExtension(filename))) {
+        nullptr, input_profile_loc, [this](u64*, const stdfs::path&, const stdfs::path& filename) {
+            const auto name_without_ext = GetNameWithoutExtension(filename).string();
+
+            if (IsINI(filename) && IsProfileNameValid(name_without_ext)) {
                 map_profiles.insert_or_assign(
-                    GetNameWithoutExtension(filename),
-                    std::make_unique<Config>(GetNameWithoutExtension(filename),
-                                             Config::ConfigType::InputProfile));
+                    name_without_ext,
+                    std::make_unique<Config>(name_without_ext, Config::ConfigType::InputProfile));
             }
             return true;
         });

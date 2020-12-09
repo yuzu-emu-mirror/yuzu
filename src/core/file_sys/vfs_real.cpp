@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <iterator>
 #include <utility>
 #include "common/assert.h"
@@ -15,6 +16,7 @@
 namespace FileSys {
 
 namespace FS = Common::FS;
+namespace stdfs = std::filesystem;
 
 static std::string ModeFlagsToString(Mode mode) {
     std::string mode_str;
@@ -313,10 +315,10 @@ std::vector<VirtualFile> RealVfsDirectory::IterateEntries<RealVfsFile, VfsFile>(
     std::vector<VirtualFile> out;
     FS::ForeachDirectoryEntry(
         nullptr, path,
-        [&out, this](u64* entries_out, const std::string& directory, const std::string& filename) {
-            const std::string full_path = directory + DIR_SEP + filename;
+        [&out, this](u64*, const stdfs::path& directory, const stdfs::path& filename) {
+            const auto full_path = directory / filename;
             if (!FS::IsDirectory(full_path)) {
-                out.emplace_back(base.OpenFile(full_path, perms));
+                out.emplace_back(base.OpenFile(full_path.string(), perms));
             }
             return true;
         });
@@ -333,10 +335,10 @@ std::vector<VirtualDir> RealVfsDirectory::IterateEntries<RealVfsDirectory, VfsDi
     std::vector<VirtualDir> out;
     FS::ForeachDirectoryEntry(
         nullptr, path,
-        [&out, this](u64* entries_out, const std::string& directory, const std::string& filename) {
-            const std::string full_path = directory + DIR_SEP + filename;
+        [&out, this](u64*, const stdfs::path& directory, const stdfs::path& filename) {
+            const auto full_path = directory / filename;
             if (FS::IsDirectory(full_path)) {
-                out.emplace_back(base.OpenDirectory(full_path, perms));
+                out.emplace_back(base.OpenDirectory(full_path.string(), perms));
             }
             return true;
         });
@@ -461,10 +463,9 @@ std::map<std::string, VfsEntryType, std::less<>> RealVfsDirectory::GetEntries() 
 
     std::map<std::string, VfsEntryType, std::less<>> out;
     FS::ForeachDirectoryEntry(
-        nullptr, path,
-        [&out](u64* entries_out, const std::string& directory, const std::string& filename) {
-            const std::string full_path = directory + DIR_SEP + filename;
-            out.emplace(filename,
+        nullptr, path, [&out](u64*, const stdfs::path& directory, const stdfs::path& filename) {
+            const auto full_path = directory / filename;
+            out.emplace(filename.string(),
                         FS::IsDirectory(full_path) ? VfsEntryType::Directory : VfsEntryType::File);
             return true;
         });
