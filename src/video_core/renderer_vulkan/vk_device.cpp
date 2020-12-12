@@ -245,11 +245,7 @@ bool VKDevice::Create() {
     bit16_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR;
     bit16_storage.pNext = nullptr;
     bit16_storage.storageBuffer16BitAccess = false;
-#ifdef __APPLE__
-    bit16_storage.uniformAndStorageBuffer16BitAccess = false;
-#else
     bit16_storage.uniformAndStorageBuffer16BitAccess = true;
-#endif
     bit16_storage.storagePushConstant16 = false;
     bit16_storage.storageInputOutput16 = false;
     SetNext(next, bit16_storage);

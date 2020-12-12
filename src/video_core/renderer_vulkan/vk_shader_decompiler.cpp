@@ -295,18 +295,19 @@ public:
         AddCapability(spv::Capability::ImageGatherExtended);
         AddCapability(spv::Capability::SampledBuffer);
         AddCapability(spv::Capability::StorageImageWriteWithoutFormat);
-        // Not sure why Draw Parameters not supported when it should be
         AddCapability(spv::Capability::DrawParameters);
+        AddCapability(spv::Capability::UniformAndStorageBuffer16BitAccess);
 #ifndef __APPLE__
         // These can be added back when MoltenVK finally supports vk 1.1
         AddCapability(spv::Capability::SubgroupBallotKHR);
         AddCapability(spv::Capability::SubgroupVoteKHR);
-        AddCapability(spv::Capability::UniformAndStorageBuffer16BitAccess);
         AddExtension("SPV_KHR_shader_ballot");
         AddExtension("SPV_KHR_subgroup_vote");
 #endif
-        AddExtension("SPV_KHR_shader_draw_parameters");
-        AddExtension("SPV_KHR_storage_buffer_storage_class");
+        // Uniform 16bit Storage should only be added if version < 1.1
+        AddExtension(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+        AddExtension(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+        AddExtension(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
         AddExtension("SPV_KHR_variable_pointers");
 
         if (!transform_feedback.empty()) {
@@ -645,7 +646,7 @@ private:
     void DeclareRegisters() {
         for (const u32 gpr : ir.GetRegisters()) {
 #ifdef __APPLE__
-            const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private);
+            const Id id = OpVariable(t_prv_float, spv::StorageClass::Private);
 #else
             const Id id = OpVariable(t_prv_float, spv::StorageClass::Private, v_float_zero);
 #endif
