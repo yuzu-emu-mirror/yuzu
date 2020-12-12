@@ -1199,7 +1199,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {124, nullptr, "EnableApplicationAllThreadDumpOnCrash"},
         {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"},
         {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"},
-        {141, nullptr, "TryPopFromFriendInvitationStorageChannel"},
+        {141, &IApplicationfunctions::TryPopFromFriendInvitationStorageChannel, "TryPopFromFriendInvitationStorageChannel"},
         {150, nullptr, "GetNotificationStorageChannelEvent"},
         {151, nullptr, "TryPopFromNotificationStorageChannel"},
         {160, nullptr, "GetHealthWarningDisappearedSystemEvent"},
@@ -1273,6 +1273,13 @@ void IApplicationFunctions::EndBlockingHomeButtonShortAndLongPressed(
 }
 
 void IApplicationFunctions::BeginBlockingHomeButton(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void IApplicationFunctions::EndBlockingHomeButton(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 2};
