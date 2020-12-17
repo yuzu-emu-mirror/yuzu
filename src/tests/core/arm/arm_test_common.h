@@ -13,7 +13,7 @@
 #include "core/hle/kernel/kernel.h"
 
 namespace Common {
-struct PageTable;
+class PageTable;
 }
 
 namespace ArmTests {

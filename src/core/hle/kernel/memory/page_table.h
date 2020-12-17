@@ -211,8 +211,9 @@ public:
     constexpr bool IsInsideASLRRegion(VAddr address, std::size_t size) const {
         return !IsOutsideASLRRegion(address, size);
     }
-    constexpr PAddr GetPhysicalAddr(VAddr addr) {
-        return page_table_impl.backing_addr[addr >> Memory::PageBits] + addr;
+
+    PAddr GetPhysicalAddr(VAddr addr) {
+        return page_table_impl.GetBackingAddr(addr >> Memory::PageBits) + addr;
     }
 
 private:

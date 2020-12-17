@@ -150,7 +150,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
     config.callbacks = cb.get();
 
     // Memory
-    config.page_table = reinterpret_cast<void**>(page_table.pointers.data());
+    config.page_table = reinterpret_cast<void**>(page_table.GetPointers().data());
     config.page_table_address_space_bits = address_space_bits;
     config.silently_mirror_page_table = false;
     config.absolute_offset_page_table = true;

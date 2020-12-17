@@ -131,7 +131,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& 
     static constexpr std::size_t PAGE_BITS = 12;
     static constexpr std::size_t NUM_PAGE_TABLE_ENTRIES = 1 << (32 - PAGE_BITS);
     config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
-        page_table.pointers.data());
+        page_table.GetPointers().data());
     config.absolute_offset_page_table = true;
     config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
     config.only_detect_misalignment_via_page_table_on_page_boundary = true;

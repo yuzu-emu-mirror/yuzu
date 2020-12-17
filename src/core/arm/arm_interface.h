@@ -10,7 +10,7 @@
 #include "core/hardware_properties.h"
 
 namespace Common {
-struct PageTable;
+class PageTable;
 }
 
 namespace Kernel {

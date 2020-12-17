@@ -11,7 +11,7 @@
 #include "common/memory_hook.h"
 
 namespace Common {
-struct PageTable;
+class PageTable;
 }
 
 namespace Core {
@@ -128,7 +128,7 @@ public:
      *
      * @returns True if the given virtual address is valid, false otherwise.
      */
-    bool IsValidVirtualAddress(const Kernel::Process& process, VAddr vaddr) const;
+    bool IsValidVirtualAddress(Kernel::Process& process, VAddr vaddr) const;
 
     /**
      * Checks whether or not the supplied address is a valid virtual
@@ -343,8 +343,7 @@ public:
      * @post The range [dest_buffer, size) contains the read bytes from the
      *       process' address space.
      */
-    void ReadBlock(const Kernel::Process& process, VAddr src_addr, void* dest_buffer,
-                   std::size_t size);
+    void ReadBlock(Kernel::Process& process, VAddr src_addr, void* dest_buffer, std::size_t size);
 
     /**
      * Reads a contiguous block of bytes from a specified process' address space.
@@ -364,7 +363,7 @@ public:
      * @post The range [dest_buffer, size) contains the read bytes from the
      *       process' address space.
      */
-    void ReadBlockUnsafe(const Kernel::Process& process, VAddr src_addr, void* dest_buffer,
+    void ReadBlockUnsafe(Kernel::Process& process, VAddr src_addr, void* dest_buffer,
                          std::size_t size);
 
     /**
@@ -424,7 +423,7 @@ public:
      *       and will mark that region as invalidated to caches that the active
      *       graphics backend may be maintaining over the course of execution.
      */
-    void WriteBlock(const Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
+    void WriteBlock(Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
                     std::size_t size);
 
     /**
@@ -444,7 +443,7 @@ public:
      *       will be ignored and an error will be logged.
      *
      */
-    void WriteBlockUnsafe(const Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
+    void WriteBlockUnsafe(Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
                           std::size_t size);
 
     /**
@@ -496,7 +495,7 @@ public:
      * @post The range [dest_addr, size) within the process' address space is
      *       filled with zeroes.
      */
-    void ZeroBlock(const Kernel::Process& process, VAddr dest_addr, std::size_t size);
+    void ZeroBlock(Kernel::Process& process, VAddr dest_addr, std::size_t size);
 
     /**
      * Fills the specified address range within the current process' address space with zeroes.
@@ -521,8 +520,7 @@ public:
      * @post The range [dest_addr, size) within the process' address space contains the
      *       same data within the range [src_addr, size).
      */
-    void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr,
-                   std::size_t size);
+    void CopyBlock(Kernel::Process& process, VAddr dest_addr, VAddr src_addr, std::size_t size);
 
     /**
      * Copies data within the current process' address space to another location within the

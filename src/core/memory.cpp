@@ -65,31 +65,30 @@ struct Memory::Impl {
         UNIMPLEMENTED();
     }
 
-    bool IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr) const {
-        const auto& page_table = process.PageTable().PageTableImpl();
+    bool IsValidVirtualAddress(Kernel::Process& process, const VAddr vaddr) {
+        const auto entry = process.PageTable().PageTableImpl().GetEntry(vaddr >> PAGE_BITS);
 
-        const u8* const page_pointer = page_table.pointers[vaddr >> PAGE_BITS];
-        if (page_pointer != nullptr) {
+        if (entry.pointer != nullptr) {
             return true;
         }
 
-        if (page_table.attributes[vaddr >> PAGE_BITS] == Common::PageType::RasterizerCachedMemory) {
+        if (entry.attribute == Common::PageType::RasterizerCachedMemory) {
             return true;
         }
 
-        if (page_table.attributes[vaddr >> PAGE_BITS] != Common::PageType::Special) {
+        if (entry.attribute != Common::PageType::Special) {
             return false;
         }
 
         return false;
     }
 
-    bool IsValidVirtualAddress(VAddr vaddr) const {
+    bool IsValidVirtualAddress(VAddr vaddr) {
         return IsValidVirtualAddress(*system.CurrentProcess(), vaddr);
     }
 
     u8* GetPointerFromRasterizerCachedMemory(VAddr vaddr) const {
-        const PAddr paddr{current_page_table->backing_addr[vaddr >> PAGE_BITS]};
+        const PAddr paddr{current_page_table->GetBackingAddr(vaddr >> PAGE_BITS)};
 
         if (!paddr) {
             return {};
@@ -99,13 +98,12 @@ struct Memory::Impl {
     }
 
     u8* GetPointer(const VAddr vaddr) const {
-        u8* const page_pointer{current_page_table->pointers[vaddr >> PAGE_BITS]};
-        if (page_pointer) {
-            return page_pointer + vaddr;
+        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        if (entry.pointer) {
+            return entry.pointer + vaddr;
         }
 
-        if (current_page_table->attributes[vaddr >> PAGE_BITS] ==
-            Common::PageType::RasterizerCachedMemory) {
+        if (entry.attribute == Common::PageType::RasterizerCachedMemory) {
             return GetPointerFromRasterizerCachedMemory(vaddr);
         }
 
@@ -208,9 +206,9 @@ struct Memory::Impl {
         return string;
     }
 
-    void ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
+    void ReadBlock(Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
                    const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+        auto& page_table = process.PageTable().PageTableImpl();
 
         std::size_t remaining_size = size;
         std::size_t page_index = src_addr >> PAGE_BITS;
@@ -220,8 +218,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped ReadBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -232,8 +231,7 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
 
-                const u8* const src_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                const u8* const src_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 std::memcpy(dest_buffer, src_ptr, copy_amount);
                 break;
             }
@@ -254,9 +252,9 @@ struct Memory::Impl {
         }
     }
 
-    void ReadBlockUnsafe(const Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
+    void ReadBlockUnsafe(Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
                          const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+        auto& page_table = process.PageTable().PageTableImpl();
 
         std::size_t remaining_size = size;
         std::size_t page_index = src_addr >> PAGE_BITS;
@@ -266,8 +264,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped ReadBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -278,8 +277,7 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
 
-                const u8* const src_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                const u8* const src_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 std::memcpy(dest_buffer, src_ptr, copy_amount);
                 break;
             }
@@ -307,9 +305,9 @@ struct Memory::Impl {
         ReadBlockUnsafe(*system.CurrentProcess(), src_addr, dest_buffer, size);
     }
 
-    void WriteBlock(const Kernel::Process& process, const VAddr dest_addr, const void* src_buffer,
+    void WriteBlock(Kernel::Process& process, const VAddr dest_addr, const void* src_buffer,
                     const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+        auto& page_table = process.PageTable().PageTableImpl();
         std::size_t remaining_size = size;
         std::size_t page_index = dest_addr >> PAGE_BITS;
         std::size_t page_offset = dest_addr & PAGE_MASK;
@@ -318,8 +316,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped WriteBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -329,8 +328,7 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
 
-                u8* const dest_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                u8* const dest_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 std::memcpy(dest_ptr, src_buffer, copy_amount);
                 break;
             }
@@ -351,9 +349,9 @@ struct Memory::Impl {
         }
     }
 
-    void WriteBlockUnsafe(const Kernel::Process& process, const VAddr dest_addr,
-                          const void* src_buffer, const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+    void WriteBlockUnsafe(Kernel::Process& process, const VAddr dest_addr, const void* src_buffer,
+                          const std::size_t size) {
+        auto& page_table = process.PageTable().PageTableImpl();
         std::size_t remaining_size = size;
         std::size_t page_index = dest_addr >> PAGE_BITS;
         std::size_t page_offset = dest_addr & PAGE_MASK;
@@ -362,8 +360,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped WriteBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -373,8 +372,7 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
 
-                u8* const dest_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                u8* const dest_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 std::memcpy(dest_ptr, src_buffer, copy_amount);
                 break;
             }
@@ -402,8 +400,8 @@ struct Memory::Impl {
         WriteBlockUnsafe(*system.CurrentProcess(), dest_addr, src_buffer, size);
     }
 
-    void ZeroBlock(const Kernel::Process& process, const VAddr dest_addr, const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+    void ZeroBlock(Kernel::Process& process, const VAddr dest_addr, const std::size_t size) {
+        auto& page_table = process.PageTable().PageTableImpl();
         std::size_t remaining_size = size;
         std::size_t page_index = dest_addr >> PAGE_BITS;
         std::size_t page_offset = dest_addr & PAGE_MASK;
@@ -412,8 +410,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped ZeroBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -423,8 +422,7 @@ struct Memory::Impl {
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
 
-                u8* dest_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                u8* dest_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 std::memset(dest_ptr, 0, copy_amount);
                 break;
             }
@@ -448,9 +446,9 @@ struct Memory::Impl {
         ZeroBlock(*system.CurrentProcess(), dest_addr, size);
     }
 
-    void CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr,
+    void CopyBlock(Kernel::Process& process, VAddr dest_addr, VAddr src_addr,
                    const std::size_t size) {
-        const auto& page_table = process.PageTable().PageTableImpl();
+        auto& page_table = process.PageTable().PageTableImpl();
         std::size_t remaining_size = size;
         std::size_t page_index = src_addr >> PAGE_BITS;
         std::size_t page_offset = src_addr & PAGE_MASK;
@@ -459,8 +457,9 @@ struct Memory::Impl {
             const std::size_t copy_amount =
                 std::min(static_cast<std::size_t>(PAGE_SIZE) - page_offset, remaining_size);
             const auto current_vaddr = static_cast<VAddr>((page_index << PAGE_BITS) + page_offset);
+            const auto entry = page_table.GetEntry(page_index);
 
-            switch (page_table.attributes[page_index]) {
+            switch (entry.attribute) {
             case Common::PageType::Unmapped: {
                 LOG_ERROR(HW_Memory,
                           "Unmapped CopyBlock @ 0x{:016X} (start address = 0x{:016X}, size = {})",
@@ -470,8 +469,7 @@ struct Memory::Impl {
             }
             case Common::PageType::Memory: {
                 DEBUG_ASSERT(page_table.pointers[page_index]);
-                const u8* src_ptr =
-                    page_table.pointers[page_index] + page_offset + (page_index << PAGE_BITS);
+                const u8* src_ptr = entry.pointer + page_offset + (page_index << PAGE_BITS);
                 WriteBlock(process, dest_addr, src_ptr, copy_amount);
                 break;
             }
@@ -509,18 +507,21 @@ struct Memory::Impl {
 
         u64 num_pages = ((vaddr + size - 1) >> PAGE_BITS) - (vaddr >> PAGE_BITS) + 1;
         for (unsigned i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
-            Common::PageType& page_type{current_page_table->attributes[vaddr >> PAGE_BITS]};
+            auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+            const auto base = vaddr >> PAGE_BITS;
 
             if (cached) {
                 // Switch page type to cached if now cached
-                switch (page_type) {
+                switch (entry.attribute) {
                 case Common::PageType::Unmapped:
                     // It is not necessary for a process to have this region mapped into its address
                     // space, for example, a system module need not have a VRAM mapping.
                     break;
                 case Common::PageType::Memory:
-                    page_type = Common::PageType::RasterizerCachedMemory;
-                    current_page_table->pointers[vaddr >> PAGE_BITS] = nullptr;
+                    current_page_table->SetEntry(
+                        base, {.pointer = nullptr,
+                               .backing_addr = entry.backing_addr,
+                               .attribute = Common::PageType::RasterizerCachedMemory});
                     break;
                 case Common::PageType::RasterizerCachedMemory:
                     // There can be more than one GPU region mapped per CPU region, so it's common
@@ -531,7 +532,7 @@ struct Memory::Impl {
                 }
             } else {
                 // Switch page type to uncached if now uncached
-                switch (page_type) {
+                switch (entry.attribute) {
                 case Common::PageType::Unmapped:
                     // It is not necessary for a process to have this region mapped into its address
                     // space, for example, a system module need not have a VRAM mapping.
@@ -546,11 +547,15 @@ struct Memory::Impl {
                         // It's possible that this function has been called while updating the
                         // pagetable after unmapping a VMA. In that case the underlying VMA will no
                         // longer exist, and we should just leave the pagetable entry blank.
-                        page_type = Common::PageType::Unmapped;
+                        current_page_table->SetEntry(base,
+                                                     {.pointer = nullptr,
+                                                      .backing_addr = entry.backing_addr,
+                                                      .attribute = Common::PageType::Unmapped});
                     } else {
-                        current_page_table->pointers[vaddr >> PAGE_BITS] =
-                            pointer - (vaddr & ~PAGE_MASK);
-                        page_type = Common::PageType::Memory;
+                        current_page_table->SetEntry(base,
+                                                     {.pointer = pointer - (vaddr & ~PAGE_MASK),
+                                                      .backing_addr = entry.backing_addr,
+                                                      .attribute = Common::PageType::Memory});
                     }
                     break;
                 }
@@ -580,37 +585,29 @@ struct Memory::Impl {
             auto& gpu = system.GPU();
             for (u64 i = 0; i < size; i++) {
                 const auto page = base + i;
-                if (page_table.attributes[page] == Common::PageType::RasterizerCachedMemory) {
+                if (page_table.GetEntry(page).attribute ==
+                    Common::PageType::RasterizerCachedMemory) {
                     gpu.FlushAndInvalidateRegion(page << PAGE_BITS, PAGE_SIZE);
                 }
             }
         }
 
         const VAddr end = base + size;
-        ASSERT_MSG(end <= page_table.pointers.size(), "out of range mapping at {:016X}",
-                   base + page_table.pointers.size());
-
         if (!target) {
             ASSERT_MSG(type != Common::PageType::Memory,
                        "Mapping memory page without a pointer @ {:016x}", base * PAGE_SIZE);
 
             while (base != end) {
-                page_table.attributes[base] = type;
-                page_table.pointers[base] = nullptr;
-                page_table.backing_addr[base] = 0;
-
+                page_table.SetEntry(base,
+                                    {.pointer = nullptr, .backing_addr = 0, .attribute = type});
                 base += 1;
             }
         } else {
             while (base != end) {
-                page_table.pointers[base] =
-                    system.DeviceMemory().GetPointer(target) - (base << PAGE_BITS);
-                page_table.attributes[base] = type;
-                page_table.backing_addr[base] = target - (base << PAGE_BITS);
-
-                ASSERT_MSG(page_table.pointers[base],
-                           "memory mapping base yield a nullptr within the table");
-
+                page_table.SetEntry(base, {.pointer = system.DeviceMemory().GetPointer(target) -
+                                                      (base << PAGE_BITS),
+                                           .backing_addr = target - (base << PAGE_BITS),
+                                           .attribute = type});
                 base += 1;
                 target += PAGE_SIZE;
             }
@@ -630,16 +627,15 @@ struct Memory::Impl {
      */
     template <typename T>
     T Read(const VAddr vaddr) {
-        const u8* const page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        if (page_pointer != nullptr) {
+        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
             T value;
-            std::memcpy(&value, &page_pointer[vaddr], sizeof(T));
+            std::memcpy(&value, &entry.pointer[vaddr], sizeof(T));
             return value;
         }
 
-        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
-        switch (type) {
+        switch (entry.attribute) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:08X}", sizeof(T) * 8, vaddr);
             return 0;
@@ -670,15 +666,15 @@ struct Memory::Impl {
      */
     template <typename T>
     void Write(const VAddr vaddr, const T data) {
-        u8* const page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        if (page_pointer != nullptr) {
+        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+
+        if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
-            std::memcpy(&page_pointer[vaddr], &data, sizeof(T));
+            std::memcpy(&entry.pointer[vaddr], &data, sizeof(T));
             return;
         }
 
-        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
-        switch (type) {
+        switch (entry.attribute) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Write{} 0x{:08X} @ 0x{:016X}", sizeof(data) * 8,
                       static_cast<u32>(data), vaddr);
@@ -699,15 +695,15 @@ struct Memory::Impl {
 
     template <typename T>
     bool WriteExclusive(const VAddr vaddr, const T data, const T expected) {
-        u8* page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        if (page_pointer != nullptr) {
+        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+
+        if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
-            auto* pointer = reinterpret_cast<volatile T*>(&page_pointer[vaddr]);
+            auto* pointer = reinterpret_cast<volatile T*>(&entry.pointer[vaddr]);
             return Common::AtomicCompareAndSwap(pointer, data, expected);
         }
 
-        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
-        switch (type) {
+        switch (entry.attribute) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Write{} 0x{:08X} @ 0x{:016X}", sizeof(data) * 8,
                       static_cast<u32>(data), vaddr);
@@ -728,15 +724,14 @@ struct Memory::Impl {
     }
 
     bool WriteExclusive128(const VAddr vaddr, const u128 data, const u128 expected) {
-        u8* const page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
-        if (page_pointer != nullptr) {
+        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
-            auto* pointer = reinterpret_cast<volatile u64*>(&page_pointer[vaddr]);
+            auto* pointer = reinterpret_cast<volatile u64*>(&entry.pointer[vaddr]);
             return Common::AtomicCompareAndSwap(pointer, data, expected);
         }
 
-        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
-        switch (type) {
+        switch (entry.attribute) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Write{} 0x{:08X} @ 0x{:016X}{:016X}", sizeof(data) * 8,
                       static_cast<u64>(data[1]), static_cast<u64>(data[0]), vaddr);
@@ -790,7 +785,7 @@ void Memory::RemoveDebugHook(Common::PageTable& page_table, VAddr base, u64 size
     impl->RemoveDebugHook(page_table, base, size, std::move(hook));
 }
 
-bool Memory::IsValidVirtualAddress(const Kernel::Process& process, const VAddr vaddr) const {
+bool Memory::IsValidVirtualAddress(Kernel::Process& process, const VAddr vaddr) const {
     return impl->IsValidVirtualAddress(process, vaddr);
 }
 
@@ -862,7 +857,7 @@ std::string Memory::ReadCString(VAddr vaddr, std::size_t max_length) {
     return impl->ReadCString(vaddr, max_length);
 }
 
-void Memory::ReadBlock(const Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
+void Memory::ReadBlock(Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
                        const std::size_t size) {
     impl->ReadBlock(process, src_addr, dest_buffer, size);
 }
@@ -871,8 +866,8 @@ void Memory::ReadBlock(const VAddr src_addr, void* dest_buffer, const std::size_
     impl->ReadBlock(src_addr, dest_buffer, size);
 }
 
-void Memory::ReadBlockUnsafe(const Kernel::Process& process, const VAddr src_addr,
-                             void* dest_buffer, const std::size_t size) {
+void Memory::ReadBlockUnsafe(Kernel::Process& process, const VAddr src_addr, void* dest_buffer,
+                             const std::size_t size) {
     impl->ReadBlockUnsafe(process, src_addr, dest_buffer, size);
 }
 
@@ -880,7 +875,7 @@ void Memory::ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std:
     impl->ReadBlockUnsafe(src_addr, dest_buffer, size);
 }
 
-void Memory::WriteBlock(const Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
+void Memory::WriteBlock(Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
                         std::size_t size) {
     impl->WriteBlock(process, dest_addr, src_buffer, size);
 }
@@ -889,8 +884,8 @@ void Memory::WriteBlock(const VAddr dest_addr, const void* src_buffer, const std
     impl->WriteBlock(dest_addr, src_buffer, size);
 }
 
-void Memory::WriteBlockUnsafe(const Kernel::Process& process, VAddr dest_addr,
-                              const void* src_buffer, std::size_t size) {
+void Memory::WriteBlockUnsafe(Kernel::Process& process, VAddr dest_addr, const void* src_buffer,
+                              std::size_t size) {
     impl->WriteBlockUnsafe(process, dest_addr, src_buffer, size);
 }
 
@@ -899,7 +894,7 @@ void Memory::WriteBlockUnsafe(const VAddr dest_addr, const void* src_buffer,
     impl->WriteBlockUnsafe(dest_addr, src_buffer, size);
 }
 
-void Memory::ZeroBlock(const Kernel::Process& process, VAddr dest_addr, std::size_t size) {
+void Memory::ZeroBlock(Kernel::Process& process, VAddr dest_addr, std::size_t size) {
     impl->ZeroBlock(process, dest_addr, size);
 }
 
@@ -907,7 +902,7 @@ void Memory::ZeroBlock(VAddr dest_addr, std::size_t size) {
     impl->ZeroBlock(dest_addr, size);
 }
 
-void Memory::CopyBlock(const Kernel::Process& process, VAddr dest_addr, VAddr src_addr,
+void Memory::CopyBlock(Kernel::Process& process, VAddr dest_addr, VAddr src_addr,
                        const std::size_t size) {
     impl->CopyBlock(process, dest_addr, src_addr, size);
 }
