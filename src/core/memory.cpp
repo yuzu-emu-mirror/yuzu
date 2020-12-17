@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <mutex>
 #include <optional>
 #include <utility>
 
@@ -31,11 +32,17 @@ struct Memory::Impl {
     explicit Impl(Core::System& system_) : system{system_} {}
 
     void SetCurrentPageTable(Kernel::Process& process, u32 core_id) {
+        std::lock_guard<std::mutex> lock(page_table_guard);
         current_page_table = &process.PageTable().PageTableImpl();
 
         const std::size_t address_space_width = process.PageTable().GetAddressSpaceWidth();
 
         system.ArmInterface(core_id).PageTableChanged(*current_page_table, address_space_width);
+    }
+
+    Common::PageTable& CurrentPageTable() {
+        std::lock_guard<std::mutex> lock(page_table_guard);
+        return *current_page_table;
     }
 
     void MapMemoryRegion(Common::PageTable& page_table, VAddr base, u64 size, PAddr target) {
@@ -87,7 +94,17 @@ struct Memory::Impl {
         return IsValidVirtualAddress(*system.CurrentProcess(), vaddr);
     }
 
-    u8* GetPointerFromRasterizerCachedMemory(VAddr vaddr) const {
+    u8* GetPointerFromRasterizerCachedMemory(VAddr vaddr) {
+        const PAddr paddr{CurrentPageTable().GetBackingAddr(vaddr >> PAGE_BITS)};
+
+        if (!paddr) {
+            return {};
+        }
+
+        return system.DeviceMemory().GetPointer(paddr) + vaddr;
+    }
+
+    u8* GetPointerFromRasterizerCachedMemoryUnsafe(VAddr vaddr) {
         const PAddr paddr{current_page_table->GetBackingAddr(vaddr >> PAGE_BITS)};
 
         if (!paddr) {
@@ -97,8 +114,8 @@ struct Memory::Impl {
         return system.DeviceMemory().GetPointer(paddr) + vaddr;
     }
 
-    u8* GetPointer(const VAddr vaddr) const {
-        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+    u8* GetPointer(const VAddr vaddr) {
+        const auto entry = CurrentPageTable().GetEntry(vaddr >> PAGE_BITS);
         if (entry.pointer) {
             return entry.pointer + vaddr;
         }
@@ -505,10 +522,12 @@ struct Memory::Impl {
         // granularity of CPU pages, hence why we iterate on a CPU page basis (note: GPU page size
         // is different). This assumes the specified GPU address region is contiguous as well.
 
-        u64 num_pages = ((vaddr + size - 1) >> PAGE_BITS) - (vaddr >> PAGE_BITS) + 1;
+        const u64 num_pages = ((vaddr + size - 1) >> PAGE_BITS) - (vaddr >> PAGE_BITS) + 1;
+        std::lock_guard<std::mutex> lock(page_table_guard);
+
         for (unsigned i = 0; i < num_pages; ++i, vaddr += PAGE_SIZE) {
-            auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
             const auto base = vaddr >> PAGE_BITS;
+            auto entry = current_page_table->GetEntry(base);
 
             if (cached) {
                 // Switch page type to cached if now cached
@@ -542,7 +561,7 @@ struct Memory::Impl {
                     // that this area is already unmarked as cached.
                     break;
                 case Common::PageType::RasterizerCachedMemory: {
-                    u8* pointer{GetPointerFromRasterizerCachedMemory(vaddr & ~PAGE_MASK)};
+                    u8* pointer{GetPointerFromRasterizerCachedMemoryUnsafe(vaddr & ~PAGE_MASK)};
                     if (pointer == nullptr) {
                         // It's possible that this function has been called while updating the
                         // pagetable after unmapping a VMA. In that case the underlying VMA will no
@@ -627,7 +646,7 @@ struct Memory::Impl {
      */
     template <typename T>
     T Read(const VAddr vaddr) {
-        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        const auto entry = CurrentPageTable().GetEntry(vaddr >> PAGE_BITS);
         if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
             T value;
@@ -666,7 +685,7 @@ struct Memory::Impl {
      */
     template <typename T>
     void Write(const VAddr vaddr, const T data) {
-        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        const auto entry = CurrentPageTable().GetEntry(vaddr >> PAGE_BITS);
 
         if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
@@ -695,7 +714,7 @@ struct Memory::Impl {
 
     template <typename T>
     bool WriteExclusive(const VAddr vaddr, const T data, const T expected) {
-        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        const auto entry = CurrentPageTable().GetEntry(vaddr >> PAGE_BITS);
 
         if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
@@ -724,7 +743,7 @@ struct Memory::Impl {
     }
 
     bool WriteExclusive128(const VAddr vaddr, const u128 data, const u128 expected) {
-        const auto entry = current_page_table->GetEntry(vaddr >> PAGE_BITS);
+        const auto entry = CurrentPageTable().GetEntry(vaddr >> PAGE_BITS);
         if (entry.pointer != nullptr) {
             // NOTE: Avoid adding any extra logic to this fast-path block
             auto* pointer = reinterpret_cast<volatile u64*>(&entry.pointer[vaddr]);
@@ -752,6 +771,7 @@ struct Memory::Impl {
     }
 
     Common::PageTable* current_page_table = nullptr;
+    std::mutex page_table_guard;
     Core::System& system;
 };
 
