@@ -646,7 +646,7 @@ struct Memory::Impl {
     template <typename T>
     T Read(const VAddr vaddr) {
         // Avoid adding any extra logic to this fast-path block
-        if (const u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]; pointer) {
+        if (const u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]) {
             T value;
             std::memcpy(&value, &pointer[vaddr], sizeof(T));
             return value;
