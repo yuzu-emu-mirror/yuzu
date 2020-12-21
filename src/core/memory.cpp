@@ -692,7 +692,7 @@ struct Memory::Impl {
     template <typename T>
     void Write(const VAddr vaddr, const T data) {
         // Avoid adding any extra logic to this fast-path block
-        if (u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]; pointer) {
+        if (u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]) {
             std::memcpy(&pointer[vaddr], &data, sizeof(T));
             return;
         }
