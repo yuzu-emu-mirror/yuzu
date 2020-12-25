@@ -5,6 +5,7 @@
 #pragma once
 
 #include <functional>
+#include <span>
 
 #include "common/common_types.h"
 
@@ -23,9 +24,9 @@ struct ControllerParameters {
     bool keep_controllers_connected{};
     bool enable_single_mode{};
     bool enable_border_color{};
-    std::vector<BorderColor> border_colors{};
+    std::span<BorderColor> border_colors{};
     bool enable_explain_text{};
-    std::vector<ExplainText> explain_text{};
+    std::span<ExplainText> explain_text{};
     bool allow_pro_controller{};
     bool allow_handheld{};
     bool allow_dual_joycons{};

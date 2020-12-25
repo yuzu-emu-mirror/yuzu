@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <span>
 
 #include "common/assert.h"
 #include "common/logging/log.h"
@@ -24,7 +25,7 @@ namespace Service::AM::Applets {
 
 static Core::Frontend::ControllerParameters ConvertToFrontendParameters(
     ControllerSupportArgPrivate private_arg, ControllerSupportArgHeader header, bool enable_text,
-    std::vector<IdentificationColor> identification_colors, std::vector<ExplainText> text) {
+    std::span<IdentificationColor> identification_colors, std::span<ExplainText> text) {
     HID::Controller_NPad::NpadStyleSet npad_style_set;
     npad_style_set.raw = private_arg.style_set;
 
@@ -169,24 +170,18 @@ void Controller::Execute() {
             case ControllerAppletVersion::Version3:
             case ControllerAppletVersion::Version4:
             case ControllerAppletVersion::Version5:
-                return ConvertToFrontendParameters(
-                    controller_private_arg, controller_user_arg_old.header,
-                    controller_user_arg_old.enable_explain_text,
-                    std::vector<IdentificationColor>(
-                        controller_user_arg_old.identification_colors.begin(),
-                        controller_user_arg_old.identification_colors.end()),
-                    std::vector<ExplainText>(controller_user_arg_old.explain_text.begin(),
-                                             controller_user_arg_old.explain_text.end()));
+                return ConvertToFrontendParameters(controller_private_arg,
+                                                   controller_user_arg_old.header,
+                                                   controller_user_arg_old.enable_explain_text,
+                                                   controller_user_arg_old.identification_colors,
+                                                   controller_user_arg_old.explain_text);
             case ControllerAppletVersion::Version7:
             default:
-                return ConvertToFrontendParameters(
-                    controller_private_arg, controller_user_arg_new.header,
-                    controller_user_arg_new.enable_explain_text,
-                    std::vector<IdentificationColor>(
-                        controller_user_arg_new.identification_colors.begin(),
-                        controller_user_arg_new.identification_colors.end()),
-                    std::vector<ExplainText>(controller_user_arg_new.explain_text.begin(),
-                                             controller_user_arg_new.explain_text.end()));
+                return ConvertToFrontendParameters(controller_private_arg,
+                                                   controller_user_arg_new.header,
+                                                   controller_user_arg_new.enable_explain_text,
+                                                   controller_user_arg_new.identification_colors,
+                                                   controller_user_arg_new.explain_text);
             }
         }();
 
