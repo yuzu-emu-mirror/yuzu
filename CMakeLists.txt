@@ -13,7 +13,7 @@ project(yuzu)
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
-option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
+option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" ON)
 CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" ON "ENABLE_QT;MSVC" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
