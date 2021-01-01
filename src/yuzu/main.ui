@@ -303,6 +303,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="yuzu.qrc"/>
+ </resources>
  <connections/>
 </ui>
