@@ -147,6 +147,7 @@ add_executable(yuzu
     util/util.h
     compatdb.cpp
     compatdb.h
+    yuzu.qrc
     yuzu.rc
 )
 
