@@ -93,13 +93,15 @@ struct ProgramControl {
 
 struct CFGRebuildState {
     explicit CFGRebuildState(ProgramControl& control, const ProgramCode& program_code_, u32 start_,
-                             Registry& registry_)
-        : control{control}, program_code{program_code_}, registry{registry_}, start{start_} {}
+                             u32 base_start_, Registry& registry_)
+        : control{control}, program_code{program_code_}, registry{registry_}, start{start_},
+          base_start{base_start_} {}
 
     ProgramControl& control;
     const ProgramCode& program_code;
     Registry& registry;
     u32 start{};
+    u32 base_start{};
     std::vector<BlockInfo> block_info;
     std::list<u32> inspect_queries;
     std::list<Query> queries;
@@ -180,7 +182,7 @@ template <typename Result, typename TestCallable, typename PackCallable>
 std::optional<Result> TrackInstruction(const CFGRebuildState& state, u32& pos, TestCallable test,
                                        PackCallable pack) {
     for (; pos >= state.start; --pos) {
-        if (IsSchedInstruction(pos, state.start)) {
+        if (IsSchedInstruction(pos, state.base_start)) {
             continue;
         }
         const Instruction instr = state.program_code[pos];
@@ -287,7 +289,7 @@ std::pair<ParseResult, ParseInfo> ParseCode(CFGRebuildState& state, u32 address)
             single_branch.ignore = true;
             break;
         }
-        if (IsSchedInstruction(offset, state.start)) {
+        if (IsSchedInstruction(offset, state.base_start)) {
             offset++;
             continue;
         }
@@ -299,6 +301,7 @@ std::pair<ParseResult, ParseInfo> ParseCode(CFGRebuildState& state, u32 address)
         }
 
         switch (opcode->get().GetId()) {
+        case OpCode::Id::RET:
         case OpCode::Id::EXIT: {
             const auto pred_index = static_cast<u32>(instr.pred.pred_index);
             single_branch.condition.predicate = GetPredicate(pred_index, instr.negate_pred != 0);
@@ -445,6 +448,11 @@ std::pair<ParseResult, ParseInfo> ParseCode(CFGRebuildState& state, u32 address)
             insert_label(state, target);
             JumpItem it = {JumpLabel::PBKClass, target};
             state.jump_labels.emplace(offset, it);
+            break;
+        }
+        case OpCode::Id::CAL: {
+            const u32 target = offset + instr.bra.GetBranchTarget();
+            state.control.RegisterFunction(target);
             break;
         }
         case OpCode::Id::BRX: {
@@ -681,7 +689,7 @@ void DecompileShader(CFGRebuildState& state) {
 } // Anonymous namespace
 
 ShaderFunction ScanFunction(ProgramControl& control, const ProgramCode& program_code,
-                            u32 start_address, const CompilerSettings& settings,
+                            u32 start_address, u32 base_start, const CompilerSettings& settings,
                             Registry& registry) {
     ShaderFunction result_out{};
     if (settings.depth == CompileDepth::BruteForce) {
@@ -689,7 +697,7 @@ ShaderFunction ScanFunction(ProgramControl& control, const ProgramCode& program_
         return result_out;
     }
 
-    CFGRebuildState state{control, program_code, start_address, registry};
+    CFGRebuildState state{control, program_code, start_address, base_start, registry};
     // Inspect Code and generate blocks
     state.labels.clear();
     state.labels.emplace(start_address);
@@ -784,10 +792,11 @@ std::unique_ptr<ShaderProgram> ScanFlow(const ProgramCode& program_code, u32 sta
                                         const CompilerSettings& settings, Registry& registry) {
     ProgramControl control{};
     auto result_out = std::make_unique<ShaderProgram>();
-    result_out->main = ScanFunction(control, program_code, start_address, settings, registry);
+    result_out->main =
+        ScanFunction(control, program_code, start_address, start_address, settings, registry);
     while (!control.pending_functions.empty()) {
         u32 address = control.pending_functions.front();
-        auto fun = ScanFunction(control, program_code, address, settings, registry);
+        auto fun = ScanFunction(control, program_code, address, start_address, settings, registry);
         result_out->subfunctions.emplace(address, std::move(fun));
         control.pending_functions.pop_front();
     }

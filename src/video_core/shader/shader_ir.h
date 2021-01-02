@@ -26,7 +26,7 @@ namespace VideoCommon::Shader {
 
 struct ShaderBlock;
 
-constexpr u32 MAX_PROGRAM_LENGTH = 0x1000;
+constexpr u32 MAX_PROGRAM_LENGTH = 0x8000;
 
 struct ConstBuffer {
     constexpr explicit ConstBuffer(u32 max_offset_, bool is_indirect_)
