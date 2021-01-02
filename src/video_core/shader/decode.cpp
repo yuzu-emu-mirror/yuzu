@@ -132,7 +132,7 @@ void ShaderIR::Decode() {
 
     decompiled = false;
     auto info = ScanFlow(program_code, main_offset, settings, registry);
-    auto& shader_info = *info;
+    auto& shader_info = info->main;
     coverage_begin = shader_info.start;
     coverage_end = shader_info.end;
     switch (shader_info.settings.depth) {

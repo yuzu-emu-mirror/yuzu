@@ -7,6 +7,7 @@
 #include <set>
 #include <stack>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "common/assert.h"
@@ -27,17 +28,17 @@ using Tegra::Shader::OpCode;
 constexpr s32 unassigned_branch = -2;
 
 enum class JumpLabel : u32 {
-  SSYClass = 0,
-  PBKClass = 1,
+    SSYClass = 0,
+    PBKClass = 1,
 };
 
 struct JumpItem {
-  JumpLabel type;
-  u32 address;
+    JumpLabel type;
+    u32 address;
 
-  bool operator==(const JumpItem& other) const {
-      return std::tie(type, address) == std::tie(other.type, other.address);
-  }
+    bool operator==(const JumpItem& other) const {
+        return std::tie(type, address) == std::tie(other.type, other.address);
+    }
 };
 
 struct Query {
@@ -77,10 +78,25 @@ struct BlockInfo {
     }
 };
 
-struct CFGRebuildState {
-    explicit CFGRebuildState(const ProgramCode& program_code_, u32 start_, Registry& registry_)
-        : program_code{program_code_}, registry{registry_}, start{start_} {}
+struct ProgramControl {
+    std::unordered_set<u32> found_functions{};
+    std::list<u32> pending_functions{};
 
+    void RegisterFunction(u32 address) {
+        if (found_functions.count(address) != 0) {
+            return;
+        }
+        found_functions.insert(address);
+        pending_functions.emplace_back(address);
+    }
+};
+
+struct CFGRebuildState {
+    explicit CFGRebuildState(ProgramControl& control, const ProgramCode& program_code_, u32 start_,
+                             Registry& registry_)
+        : control{control}, program_code{program_code_}, registry{registry_}, start{start_} {}
+
+    ProgramControl& control;
     const ProgramCode& program_code;
     Registry& registry;
     u32 start{};
@@ -198,26 +214,24 @@ std::optional<std::pair<BufferInfo, u64>> TrackLDC(const CFGRebuildState& state,
 
 std::optional<u64> TrackSHLRegister(const CFGRebuildState& state, u32& pos,
                                     u64 ldc_tracked_register) {
-    return TrackInstruction<u64>(
-        state, pos,
-        [ldc_tracked_register](auto instr, const auto& opcode) {
-            return opcode.GetId() == OpCode::Id::SHL_IMM &&
-                   instr.gpr0.Value() == ldc_tracked_register;
-        },
-        [](auto instr, const auto&) { return instr.gpr8.Value(); });
+    return TrackInstruction<u64>(state, pos,
+                                 [ldc_tracked_register](auto instr, const auto& opcode) {
+                                     return opcode.GetId() == OpCode::Id::SHL_IMM &&
+                                            instr.gpr0.Value() == ldc_tracked_register;
+                                 },
+                                 [](auto instr, const auto&) { return instr.gpr8.Value(); });
 }
 
 std::optional<u32> TrackIMNMXValue(const CFGRebuildState& state, u32& pos,
                                    u64 shl_tracked_register) {
-    return TrackInstruction<u32>(
-        state, pos,
-        [shl_tracked_register](auto instr, const auto& opcode) {
-            return opcode.GetId() == OpCode::Id::IMNMX_IMM &&
-                   instr.gpr0.Value() == shl_tracked_register;
-        },
-        [](auto instr, const auto&) {
-            return static_cast<u32>(instr.alu.GetSignedImm20_20() + 1);
-        });
+    return TrackInstruction<u32>(state, pos,
+                                 [shl_tracked_register](auto instr, const auto& opcode) {
+                                     return opcode.GetId() == OpCode::Id::IMNMX_IMM &&
+                                            instr.gpr0.Value() == shl_tracked_register;
+                                 },
+                                 [](auto instr, const auto&) {
+                                     return static_cast<u32>(instr.alu.GetSignedImm20_20() + 1);
+                                 });
 }
 
 std::optional<BranchIndirectInfo> TrackBranchIndirectInfo(const CFGRebuildState& state, u32 pos) {
@@ -536,17 +550,17 @@ bool TryQuery(CFGRebuildState& state) {
         }
     };
     const auto pop_labels = [](JumpLabel type, SingleBranch* branch, Query& query) -> bool {
-      while (!query.stack.empty() && query.stack.top().type != type) {
+        while (!query.stack.empty() && query.stack.top().type != type) {
+            query.stack.pop();
+        }
+        if (query.stack.empty()) {
+            return false;
+        }
+        if (branch->address == unassigned_branch) {
+            branch->address = query.stack.top().address;
+        }
         query.stack.pop();
-      }
-      if (query.stack.empty()) {
-        return false;
-      }
-      if (branch->address == unassigned_branch) {
-          branch->address = query.stack.top().address;
-      }
-      query.stack.pop();
-      return true;
+        return true;
     };
     if (state.queries.empty()) {
         return false;
@@ -666,23 +680,23 @@ void DecompileShader(CFGRebuildState& state) {
 
 } // Anonymous namespace
 
-std::unique_ptr<ShaderCharacteristics> ScanFlow(const ProgramCode& program_code, u32 start_address,
-                                                const CompilerSettings& settings,
-                                                Registry& registry) {
-    auto result_out = std::make_unique<ShaderCharacteristics>();
+ShaderFunction ScanFunction(ProgramControl& control, const ProgramCode& program_code,
+                            u32 start_address, const CompilerSettings& settings,
+                            Registry& registry) {
+    ShaderFunction result_out{};
     if (settings.depth == CompileDepth::BruteForce) {
-        result_out->settings.depth = CompileDepth::BruteForce;
+        result_out.settings.depth = CompileDepth::BruteForce;
         return result_out;
     }
 
-    CFGRebuildState state{program_code, start_address, registry};
+    CFGRebuildState state{control, program_code, start_address, registry};
     // Inspect Code and generate blocks
     state.labels.clear();
     state.labels.emplace(start_address);
     state.inspect_queries.push_back(state.start);
     while (!state.inspect_queries.empty()) {
         if (!TryInspectAddress(state)) {
-            result_out->settings.depth = CompileDepth::BruteForce;
+            result_out.settings.depth = CompileDepth::BruteForce;
             return result_out;
         }
     }
@@ -723,19 +737,18 @@ std::unique_ptr<ShaderCharacteristics> ScanFlow(const ProgramCode& program_code,
             state.manager->ShowCurrentState("Of Shader");
             state.manager->Clear();
         } else {
-            auto characteristics = std::make_unique<ShaderCharacteristics>();
-            characteristics->start = start_address;
-            characteristics->settings.depth = settings.depth;
-            characteristics->manager = std::move(manager);
-            characteristics->end = state.block_info.back().end + 1;
-            return characteristics;
+            result_out.start = start_address;
+            result_out.settings.depth = settings.depth;
+            result_out.manager = std::move(manager);
+            result_out.end = state.block_info.back().end + 1;
+            return result_out;
         }
     }
 
-    result_out->start = start_address;
-    result_out->settings.depth =
+    result_out.start = start_address;
+    result_out.settings.depth =
         use_flow_stack ? CompileDepth::FlowStack : CompileDepth::NoFlowStack;
-    result_out->blocks.clear();
+    result_out.blocks.clear();
     for (auto& block : state.block_info) {
         ShaderBlock new_block{};
         new_block.start = block.start;
@@ -744,20 +757,20 @@ std::unique_ptr<ShaderCharacteristics> ScanFlow(const ProgramCode& program_code,
         if (!new_block.ignore_branch) {
             new_block.branch = block.branch;
         }
-        result_out->end = std::max(result_out->end, block.end);
-        result_out->blocks.push_back(new_block);
+        result_out.end = std::max(result_out.end, block.end);
+        result_out.blocks.push_back(new_block);
     }
     if (!use_flow_stack) {
-        result_out->labels = std::move(state.labels);
+        result_out.labels = std::move(state.labels);
         return result_out;
     }
 
-    auto back = result_out->blocks.begin();
+    auto back = result_out.blocks.begin();
     auto next = std::next(back);
-    while (next != result_out->blocks.end()) {
+    while (next != result_out.blocks.end()) {
         if (!state.labels.contains(next->start) && next->start == back->end + 1) {
             back->end = next->end;
-            next = result_out->blocks.erase(next);
+            next = result_out.blocks.erase(next);
             continue;
         }
         back = next;
@@ -766,4 +779,19 @@ std::unique_ptr<ShaderCharacteristics> ScanFlow(const ProgramCode& program_code,
 
     return result_out;
 }
+
+std::unique_ptr<ShaderProgram> ScanFlow(const ProgramCode& program_code, u32 start_address,
+                                        const CompilerSettings& settings, Registry& registry) {
+    ProgramControl control{};
+    auto result_out = std::make_unique<ShaderProgram>();
+    result_out->main = ScanFunction(control, program_code, start_address, settings, registry);
+    while (!control.pending_functions.empty()) {
+        u32 address = control.pending_functions.front();
+        auto fun = ScanFunction(control, program_code, address, settings, registry);
+        result_out->subfunctions.emplace(address, std::move(fun));
+        control.pending_functions.pop_front();
+    }
+    return result_out;
+}
+
 } // namespace VideoCommon::Shader
