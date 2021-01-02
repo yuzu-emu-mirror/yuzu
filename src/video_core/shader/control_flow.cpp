@@ -26,17 +26,29 @@ using Tegra::Shader::OpCode;
 
 constexpr s32 unassigned_branch = -2;
 
+enum class JumpLabel : u32 {
+  SSYClass = 0,
+  PBKClass = 1,
+};
+
+struct JumpItem {
+  JumpLabel type;
+  u32 address;
+
+  bool operator==(const JumpItem& other) const {
+      return std::tie(type, address) == std::tie(other.type, other.address);
+  }
+};
+
 struct Query {
     u32 address{};
-    std::stack<u32> ssy_stack{};
-    std::stack<u32> pbk_stack{};
+    std::stack<JumpItem> stack{};
 };
 
 struct BlockStack {
     BlockStack() = default;
-    explicit BlockStack(const Query& q) : ssy_stack{q.ssy_stack}, pbk_stack{q.pbk_stack} {}
-    std::stack<u32> ssy_stack{};
-    std::stack<u32> pbk_stack{};
+    explicit BlockStack(const Query& q) : stack{q.stack} {}
+    std::stack<JumpItem> stack{};
 };
 
 template <typename T, typename... Args>
@@ -77,8 +89,7 @@ struct CFGRebuildState {
     std::list<Query> queries;
     std::unordered_map<u32, u32> registered;
     std::set<u32> labels;
-    std::map<u32, u32> ssy_labels;
-    std::map<u32, u32> pbk_labels;
+    std::map<u32, JumpItem> jump_labels;
     std::unordered_map<u32, BlockStack> stacks;
     ASTManager* manager{};
 };
@@ -411,13 +422,15 @@ std::pair<ParseResult, ParseInfo> ParseCode(CFGRebuildState& state, u32 address)
         case OpCode::Id::SSY: {
             const u32 target = offset + instr.bra.GetBranchTarget();
             insert_label(state, target);
-            state.ssy_labels.emplace(offset, target);
+            JumpItem it = {JumpLabel::SSYClass, target};
+            state.jump_labels.emplace(offset, it);
             break;
         }
         case OpCode::Id::PBK: {
             const u32 target = offset + instr.bra.GetBranchTarget();
             insert_label(state, target);
-            state.pbk_labels.emplace(offset, target);
+            JumpItem it = {JumpLabel::PBKClass, target};
+            state.jump_labels.emplace(offset, it);
             break;
         }
         case OpCode::Id::BRX: {
@@ -513,7 +526,7 @@ bool TryInspectAddress(CFGRebuildState& state) {
 }
 
 bool TryQuery(CFGRebuildState& state) {
-    const auto gather_labels = [](std::stack<u32>& cc, std::map<u32, u32>& labels,
+    const auto gather_labels = [](std::stack<JumpItem>& cc, std::map<u32, JumpItem>& labels,
                                   BlockInfo& block) {
         auto gather_start = labels.lower_bound(block.start);
         const auto gather_end = labels.upper_bound(block.end);
@@ -521,6 +534,19 @@ bool TryQuery(CFGRebuildState& state) {
             cc.push(gather_start->second);
             ++gather_start;
         }
+    };
+    const auto pop_labels = [](JumpLabel type, SingleBranch* branch, Query& query) -> bool {
+      while (!query.stack.empty() && query.stack.top().type != type) {
+        query.stack.pop();
+      }
+      if (query.stack.empty()) {
+        return false;
+      }
+      if (branch->address == unassigned_branch) {
+          branch->address = query.stack.top().address;
+      }
+      query.stack.pop();
+      return true;
     };
     if (state.queries.empty()) {
         return false;
@@ -534,8 +560,7 @@ bool TryQuery(CFGRebuildState& state) {
     // consumes a label. Schedule new queries accordingly
     if (block.visited) {
         BlockStack& stack = state.stacks[q.address];
-        const bool all_okay = (stack.ssy_stack.empty() || q.ssy_stack == stack.ssy_stack) &&
-                              (stack.pbk_stack.empty() || q.pbk_stack == stack.pbk_stack);
+        const bool all_okay = (stack.stack.empty() || q.stack == stack.stack);
         state.queries.pop_front();
         return all_okay;
     }
@@ -544,8 +569,7 @@ bool TryQuery(CFGRebuildState& state) {
 
     Query q2(q);
     state.queries.pop_front();
-    gather_labels(q2.ssy_stack, state.ssy_labels, block);
-    gather_labels(q2.pbk_stack, state.pbk_labels, block);
+    gather_labels(q2.stack, state.jump_labels, block);
     if (std::holds_alternative<SingleBranch>(*block.branch)) {
         auto* branch = std::get_if<SingleBranch>(block.branch.get());
         if (!branch->condition.IsUnconditional()) {
@@ -555,16 +579,10 @@ bool TryQuery(CFGRebuildState& state) {
 
         auto& conditional_query = state.queries.emplace_back(q2);
         if (branch->is_sync) {
-            if (branch->address == unassigned_branch) {
-                branch->address = conditional_query.ssy_stack.top();
-            }
-            conditional_query.ssy_stack.pop();
+            pop_labels(JumpLabel::SSYClass, branch, conditional_query);
         }
         if (branch->is_brk) {
-            if (branch->address == unassigned_branch) {
-                branch->address = conditional_query.pbk_stack.top();
-            }
-            conditional_query.pbk_stack.pop();
+            pop_labels(JumpLabel::PBKClass, branch, conditional_query);
         }
         conditional_query.address = branch->address;
         return true;
@@ -675,7 +693,7 @@ std::unique_ptr<ShaderCharacteristics> ScanFlow(const ProgramCode& program_code,
 
     if (settings.depth != CompileDepth::FlowStack) {
         // Decompile Stacks
-        state.queries.push_back(Query{state.start, {}, {}});
+        state.queries.push_back(Query{state.start, {}});
         decompiled = true;
         while (!state.queries.empty()) {
             if (!TryQuery(state)) {
