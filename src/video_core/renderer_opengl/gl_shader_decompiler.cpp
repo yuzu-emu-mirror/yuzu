@@ -435,6 +435,25 @@ public:
         DeclareCustomVariables();
         DeclarePhysicalAttributeReader();
 
+        const auto& subfunctions = ir.GetSubFunctions();
+        auto it = subfunctions.rbegin();
+        while (it != subfunctions.rend()) {
+            context_func = *it;
+            code.AddLine("void func_{}() {{", context_func->GetId());
+            ++code.scope;
+
+            if (context_func->IsDecompiled()) {
+                DecompileAST();
+            } else {
+                DecompileBranchMode();
+            }
+
+            --code.scope;
+            code.AddLine("}}");
+
+            it++;
+        }
+
         context_func = ir.GetMainFunction();
 
         code.AddLine("void main() {{");
@@ -1130,6 +1149,11 @@ private:
 
             --code.scope;
             code.AddLine("}}");
+            return {};
+        }
+
+        if (const auto func_call = std::get_if<FunctionCallNode>(&*node)) {
+            code.AddLine("func_{}();", func_call->GetFuncId());
             return {};
         }
 
@@ -2269,7 +2293,9 @@ private:
     }
 
     Expression Exit(Operation operation) {
-        PreExit();
+        if (context_func->IsMain()) {
+            PreExit();
+        }
         code.AddLine("return;");
         return {};
     }

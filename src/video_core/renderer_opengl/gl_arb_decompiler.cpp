@@ -1178,11 +1178,7 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
         if (ast_return->kills) {
             AddLine("KIL TR;");
         } else {
-            if (context_func->IsMain()) {
-                Exit();
-            } else {
-                AddLine("RET;");
-            }
+            Exit();
         }
         if (!is_true) {
             AddLine("ENDIF;");
@@ -1487,7 +1483,7 @@ std::string ARBDecompiler::GlobalMemoryPointer(const GmemNode& gmem) {
 }
 
 void ARBDecompiler::Exit() {
-    if (stage != ShaderType::Fragment) {
+    if (!context_func->IsMain() || stage != ShaderType::Fragment) {
         AddLine("RET;");
         return;
     }

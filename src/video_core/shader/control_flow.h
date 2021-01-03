@@ -5,6 +5,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <optional>
 #include <set>
 #include <variant>
@@ -112,12 +113,10 @@ struct ShaderFunction {
 
 struct ShaderProgram {
     ShaderFunction main;
-    std::unordered_map<u32, ShaderFunction> subfunctions;
+    std::map<u32, ShaderFunction> subfunctions;
 };
 
 std::unique_ptr<ShaderProgram> ScanFlow(const ProgramCode& program_code, u32 start_address,
-                                                const CompilerSettings& settings,
-                                                Registry& registry);
-
+                                        const CompilerSettings& settings, Registry& registry);
 
 } // namespace VideoCommon::Shader

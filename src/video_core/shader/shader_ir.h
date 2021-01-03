@@ -69,7 +69,7 @@ public:
     explicit ShaderFunctionIR(std::map<u32, NodeBlock>&& basic_blocks_, bool disable_flow_stack_,
                               u32 id_, u32 coverage_begin_, u32 coverage_end_)
         : basic_blocks{std::move(basic_blocks_)}, decompiled{false},
-          disable_flow_stack{disable_flow_stack}, id{id_}, coverage_begin{coverage_begin_},
+          disable_flow_stack{disable_flow_stack_}, id{id_}, coverage_begin{coverage_begin_},
           coverage_end{coverage_end_} {}
     explicit ShaderFunctionIR(ASTManager&& program_manager_, u32 id_, u32 coverage_begin_,
                               u32 coverage_end_)
@@ -80,11 +80,11 @@ public:
         return basic_blocks;
     }
 
-    bool IsFlowStackDisabled() const {
+    [[nodiscard]] bool IsFlowStackDisabled() const {
         return disable_flow_stack;
     }
 
-    bool IsDecompiled() const {
+    [[nodiscard]] bool IsDecompiled() const {
         return decompiled;
     }
 
@@ -100,11 +100,11 @@ public:
         return program_manager.GetVariables();
     }
 
-    bool IsMain() const {
+    [[nodiscard]] bool IsMain() const {
         return id == 0;
     }
 
-    u32 GetId() const {
+    [[nodiscard]] u32 GetId() const {
         return id;
     }
 
@@ -224,6 +224,10 @@ public:
 
     std::shared_ptr<ShaderFunctionIR> GetMainFunction() const {
         return main_function;
+    }
+
+    const std::vector<std::shared_ptr<ShaderFunctionIR>>& GetSubFunctions() const {
+        return subfunctions;
     }
 
 private:
@@ -491,6 +495,7 @@ private:
 
     std::shared_ptr<ShaderFunctionIR> main_function;
     std::vector<std::shared_ptr<ShaderFunctionIR>> subfunctions;
+    std::unordered_map<u32, u32> func_map;
 
     std::set<u32> used_registers;
     std::set<Tegra::Shader::Pred> used_predicates;

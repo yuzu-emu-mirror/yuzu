@@ -2177,7 +2177,9 @@ private:
     }
 
     Expression Exit(Operation operation) {
-        PreExit();
+        if (context_func->IsMain()) {
+            PreExit();
+        }
         inside_branch = true;
         if (conditional_branch_set) {
             OpReturn();
@@ -3066,7 +3068,9 @@ public:
             if (ast.kills) {
                 decomp.OpKill();
             } else {
-                decomp.PreExit();
+                if (decomp.context_func->IsMain()) {
+                    decomp.PreExit();
+                }
                 decomp.OpReturn();
             }
             decomp.AddLabel(decomp.OpLabel());

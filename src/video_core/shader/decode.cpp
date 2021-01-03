@@ -216,10 +216,22 @@ void ShaderIR::Decode() {
 
     decompiled = false;
     auto info = ScanFlow(program_code, main_offset, settings, registry);
+    u32 id_start = 1;
+    for (auto& pair : info->subfunctions) {
+        func_map.emplace(pair.first, id_start);
+        id_start++;
+    }
     coverage_begin = info->main.start;
     coverage_end = 0;
     decode_function(info->main);
     main_function = gen_function(info->main, 0);
+    subfunctions.resize(info->subfunctions.size());
+    for (auto& pair : info->subfunctions) {
+        auto& func_info = pair.second;
+        decode_function(func_info);
+        u32 id = func_map[pair.first];
+        subfunctions[id - 1] = gen_function(func_info, id);
+    }
 }
 
 NodeBlock ShaderIR::DecodeRange(u32 begin, u32 end) {
