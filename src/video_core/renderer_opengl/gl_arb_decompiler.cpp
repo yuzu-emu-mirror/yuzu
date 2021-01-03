@@ -491,6 +491,8 @@ private:
     const Registry& registry;
     const ShaderType stage;
 
+    std::shared_ptr<ShaderFunctionIR> context_func;
+
     std::size_t num_temporaries = 0;
     std::size_t max_temporaries = 0;
 
@@ -807,10 +809,12 @@ ARBDecompiler::ARBDecompiler(const Device& device_, const ShaderIR& ir_, const R
     : device{device_}, ir{ir_}, registry{registry_}, stage{stage_} {
     DefineGlobalMemory();
 
+    context_func = ir.GetMainFunction();
+
     AddLine("TEMP RC;");
     AddLine("TEMP FSWZA[4];");
     AddLine("TEMP FSWZB[4];");
-    if (ir.IsDecompiled()) {
+    if (context_func->IsDecompiled()) {
         DecompileAST();
     } else {
         DecompileBranchMode();
@@ -1060,7 +1064,7 @@ void ARBDecompiler::InitializeVariables() {
 }
 
 void ARBDecompiler::DecompileAST() {
-    const u32 num_flow_variables = ir.GetASTNumVariables();
+    const u32 num_flow_variables = context_func->GetASTNumVariables();
     for (u32 i = 0; i < num_flow_variables; ++i) {
         AddLine("TEMP F{};", i);
     }
@@ -1070,12 +1074,12 @@ void ARBDecompiler::DecompileAST() {
 
     InitializeVariables();
 
-    VisitAST(ir.GetASTProgram());
+    VisitAST(context_func->GetASTProgram());
 }
 
 void ARBDecompiler::DecompileBranchMode() {
     static constexpr u32 FLOW_STACK_SIZE = 20;
-    if (!ir.IsFlowStackDisabled()) {
+    if (!context_func->IsFlowStackDisabled()) {
         AddLine("TEMP SSY[{}];", FLOW_STACK_SIZE);
         AddLine("TEMP PBK[{}];", FLOW_STACK_SIZE);
         AddLine("TEMP SSY_TOP;");
@@ -1084,15 +1088,15 @@ void ARBDecompiler::DecompileBranchMode() {
 
     AddLine("TEMP PC;");
 
-    if (!ir.IsFlowStackDisabled()) {
+    if (!context_func->IsFlowStackDisabled()) {
         AddLine("MOV.U SSY_TOP.x, 0;");
         AddLine("MOV.U PBK_TOP.x, 0;");
     }
 
     InitializeVariables();
 
-    const auto basic_block_end = ir.GetBasicBlocks().end();
-    auto basic_block_it = ir.GetBasicBlocks().begin();
+    const auto basic_block_end = context_func->GetBasicBlocks().end();
+    auto basic_block_it = context_func->GetBasicBlocks().begin();
     const u32 first_address = basic_block_it->first;
     AddLine("MOV.U PC.x, {};", first_address);
 
@@ -1174,7 +1178,11 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
         if (ast_return->kills) {
             AddLine("KIL TR;");
         } else {
-            Exit();
+            if (context_func->IsMain()) {
+                Exit();
+            } else {
+                AddLine("RET;");
+            }
         }
         if (!is_true) {
             AddLine("ENDIF;");

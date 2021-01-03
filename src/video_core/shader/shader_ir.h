@@ -64,15 +64,67 @@ struct GlobalMemoryUsage {
     bool is_written{};
 };
 
+class ShaderFunctionIR final {
+public:
+    explicit ShaderFunctionIR(std::map<u32, NodeBlock>&& basic_blocks_, bool disable_flow_stack_,
+                              u32 id_, u32 coverage_begin_, u32 coverage_end_)
+        : basic_blocks{std::move(basic_blocks_)}, decompiled{false},
+          disable_flow_stack{disable_flow_stack}, id{id_}, coverage_begin{coverage_begin_},
+          coverage_end{coverage_end_} {}
+    explicit ShaderFunctionIR(ASTManager&& program_manager_, u32 id_, u32 coverage_begin_,
+                              u32 coverage_end_)
+        : program_manager{std::move(program_manager_)}, decompiled{true}, disable_flow_stack{true},
+          id{id_}, coverage_begin{coverage_begin_}, coverage_end{coverage_end_} {}
+
+    const std::map<u32, NodeBlock>& GetBasicBlocks() const {
+        return basic_blocks;
+    }
+
+    bool IsFlowStackDisabled() const {
+        return disable_flow_stack;
+    }
+
+    bool IsDecompiled() const {
+        return decompiled;
+    }
+
+    const ASTManager& GetASTManager() const {
+        return program_manager;
+    }
+
+    [[nodiscard]] ASTNode GetASTProgram() const {
+        return program_manager.GetProgram();
+    }
+
+    [[nodiscard]] u32 GetASTNumVariables() const {
+        return program_manager.GetVariables();
+    }
+
+    bool IsMain() const {
+        return id == 0;
+    }
+
+    u32 GetId() const {
+        return id;
+    }
+
+private:
+    std::map<u32, NodeBlock> basic_blocks;
+    ASTManager program_manager{true, true};
+
+    bool decompiled{};
+    bool disable_flow_stack{};
+    u32 id{};
+
+    u32 coverage_begin{};
+    u32 coverage_end{};
+};
+
 class ShaderIR final {
 public:
     explicit ShaderIR(const ProgramCode& program_code_, u32 main_offset_,
                       CompilerSettings settings_, Registry& registry_);
     ~ShaderIR();
-
-    const std::map<u32, NodeBlock>& GetBasicBlocks() const {
-        return basic_blocks;
-    }
 
     const std::set<u32>& GetRegisters() const {
         return used_registers;
@@ -155,26 +207,6 @@ public:
         return header;
     }
 
-    bool IsFlowStackDisabled() const {
-        return disable_flow_stack;
-    }
-
-    bool IsDecompiled() const {
-        return decompiled;
-    }
-
-    const ASTManager& GetASTManager() const {
-        return program_manager;
-    }
-
-    ASTNode GetASTProgram() const {
-        return program_manager.GetProgram();
-    }
-
-    u32 GetASTNumVariables() const {
-        return program_manager.GetVariables();
-    }
-
     u32 ConvertAddressToNvidiaSpace(u32 address) const {
         return (address - main_offset) * static_cast<u32>(sizeof(Tegra::Shader::Instruction));
     }
@@ -188,6 +220,10 @@ public:
 
     u32 GetNumCustomVariables() const {
         return num_custom_variables;
+    }
+
+    std::shared_ptr<ShaderFunctionIR> GetMainFunction() const {
+        return main_function;
     }
 
 private:
@@ -452,6 +488,9 @@ private:
     ASTManager program_manager{true, true};
     std::vector<Node> amend_code;
     u32 num_custom_variables{};
+
+    std::shared_ptr<ShaderFunctionIR> main_function;
+    std::vector<std::shared_ptr<ShaderFunctionIR>> subfunctions;
 
     std::set<u32> used_registers;
     std::set<Tegra::Shader::Pred> used_predicates;

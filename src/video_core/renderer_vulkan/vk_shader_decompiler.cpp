@@ -406,10 +406,12 @@ private:
         binding = DeclareStorageTexels(binding);
         binding = DeclareImages(binding);
 
+        context_func = ir.GetMainFunction();
+
         const Id main = OpFunction(t_void, {}, TypeFunction(t_void));
         AddLabel();
 
-        if (ir.IsDecompiled()) {
+        if (context_func->IsDecompiled()) {
             DeclareFlowVariables();
             DecompileAST();
         } else {
@@ -441,7 +443,7 @@ private:
     void DecompileAST();
 
     void DecompileBranchMode() {
-        const u32 first_address = ir.GetBasicBlocks().begin()->first;
+        const u32 first_address = context_func->GetBasicBlocks().begin()->first;
         const Id loop_label = OpLabel("loop");
         const Id merge_label = OpLabel("merge");
         const Id dummy_label = OpLabel();
@@ -484,7 +486,7 @@ private:
         AddLabel(default_branch);
         OpReturn();
 
-        for (const auto& [address, bb] : ir.GetBasicBlocks()) {
+        for (const auto& [address, bb] : context_func->GetBasicBlocks()) {
             AddLabel(labels.at(address));
 
             VisitBasicBlock(bb);
@@ -508,7 +510,7 @@ private:
     static constexpr auto INTERNAL_FLAGS_COUNT = static_cast<std::size_t>(InternalFlag::Amount);
 
     void AllocateLabels() {
-        for (const auto& pair : ir.GetBasicBlocks()) {
+        for (const auto& pair : context_func->GetBasicBlocks()) {
             const u32 address = pair.first;
             labels.emplace(address, OpLabel(fmt::format("label_0x{:x}", address)));
         }
@@ -656,7 +658,7 @@ private:
     }
 
     void DeclareFlowVariables() {
-        for (u32 i = 0; i < ir.GetASTNumVariables(); i++) {
+        for (u32 i = 0; i < context_func->GetASTNumVariables(); i++) {
             const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
             Name(id, fmt::format("flow_var_{}", static_cast<u32>(i)));
             flow_variables.emplace(i, AddGlobalVariable(id));
@@ -2276,7 +2278,7 @@ private:
     }
 
     Expression Barrier(Operation) {
-        if (!ir.IsDecompiled()) {
+        if (!context_func->IsDecompiled()) {
             LOG_ERROR(Render_Vulkan, "OpBarrier used by shader is not decompiled");
             return {};
         }
@@ -2770,6 +2772,8 @@ private:
     const Specialization& specialization;
     std::unordered_map<u8, VaryingTFB> transform_feedback;
 
+    std::shared_ptr<ShaderFunctionIR> context_func;
+
     const Id t_void = Name(TypeVoid(), "void");
 
     const Id t_bool = Name(TypeBool(), "bool");
@@ -3049,7 +3053,9 @@ public:
             if (ast.kills) {
                 decomp.OpKill();
             } else {
-                decomp.PreExit();
+                if (decomp.context_func->IsMain()) {
+                    decomp.PreExit();
+                }
                 decomp.OpReturn();
             }
             decomp.AddLabel(endif_label);
@@ -3097,7 +3103,7 @@ private:
 };
 
 void SPIRVDecompiler::DecompileAST() {
-    const u32 num_flow_variables = ir.GetASTNumVariables();
+    const u32 num_flow_variables = context_func->GetASTNumVariables();
     for (u32 i = 0; i < num_flow_variables; i++) {
         const Id id = OpVariable(t_prv_bool, spv::StorageClass::Private, v_false);
         Name(id, fmt::format("flow_var_{}", i));
@@ -3106,7 +3112,7 @@ void SPIRVDecompiler::DecompileAST() {
 
     DefinePrologue();
 
-    const ASTNode program = ir.GetASTProgram();
+    const ASTNode program = context_func->GetASTProgram();
     ASTDecompiler decompiler{*this};
     decompiler.Visit(program);
 
