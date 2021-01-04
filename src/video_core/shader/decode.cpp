@@ -64,9 +64,52 @@ std::optional<u32> TryDeduceSamplerSize(const SamplerEntry& sampler_to_deduce,
 
 } // Anonymous namespace
 
+class ExprDecoder {
+public:
+    explicit ExprDecoder(ShaderIR& ir_) : ir(ir_) {}
+
+    void operator()(const ExprAnd& expr) {
+        Visit(expr.operand1);
+        Visit(expr.operand2);
+    }
+
+    void operator()(const ExprOr& expr) {
+        Visit(expr.operand1);
+        Visit(expr.operand2);
+    }
+
+    void operator()(const ExprNot& expr) {
+        Visit(expr.operand1);
+    }
+
+    void operator()(const ExprPredicate& expr) {
+        const auto pred = static_cast<Tegra::Shader::Pred>(expr.predicate);
+        if (pred != Pred::UnusedIndex && pred != Pred::NeverExecute) {
+            ir.used_predicates.insert(pred);
+        }
+    }
+
+    void operator()(const ExprCondCode& expr) {}
+
+    void operator()(const ExprVar& expr) {}
+
+    void operator()(const ExprBoolean& expr) {}
+
+    void operator()(const ExprGprEqual& expr) {
+        ir.used_registers.insert(expr.gpr);
+    }
+
+    void Visit(const Expr& node) {
+        return std::visit(*this, *node);
+    }
+
+private:
+    ShaderIR& ir;
+};
+
 class ASTDecoder {
 public:
-    explicit ASTDecoder(ShaderIR& ir_) : ir(ir_) {}
+    explicit ASTDecoder(ShaderIR& ir_) : ir(ir_), decoder(ir_) {}
 
     void operator()(ASTProgram& ast) {
         ASTNode current = ast.nodes.GetFirst();
@@ -77,6 +120,7 @@ public:
     }
 
     void operator()(ASTIfThen& ast) {
+        decoder.Visit(ast.condition);
         ASTNode current = ast.nodes.GetFirst();
         while (current) {
             Visit(current);
@@ -96,13 +140,18 @@ public:
 
     void operator()(ASTBlockDecoded& ast) {}
 
-    void operator()(ASTVarSet& ast) {}
+    void operator()(ASTVarSet& ast) {
+        decoder.Visit(ast.condition);
+    }
 
     void operator()(ASTLabel& ast) {}
 
-    void operator()(ASTGoto& ast) {}
+    void operator()(ASTGoto& ast) {
+        decoder.Visit(ast.condition);
+    }
 
     void operator()(ASTDoWhile& ast) {
+        decoder.Visit(ast.condition);
         ASTNode current = ast.nodes.GetFirst();
         while (current) {
             Visit(current);
@@ -110,9 +159,13 @@ public:
         }
     }
 
-    void operator()(ASTReturn& ast) {}
+    void operator()(ASTReturn& ast) {
+        decoder.Visit(ast.condition);
+    }
 
-    void operator()(ASTBreak& ast) {}
+    void operator()(ASTBreak& ast) {
+        decoder.Visit(ast.condition);
+    }
 
     void Visit(ASTNode& node) {
         std::visit(*this, *node->GetInnerData());
@@ -125,6 +178,7 @@ public:
 
 private:
     ShaderIR& ir;
+    ExprDecoder decoder;
 };
 
 void ShaderIR::Decode() {

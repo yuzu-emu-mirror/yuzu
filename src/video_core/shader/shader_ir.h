@@ -231,6 +231,7 @@ public:
     }
 
 private:
+    friend class ExprDecoder;
     friend class ASTDecoder;
 
     struct SamplerInfo {
