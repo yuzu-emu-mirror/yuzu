@@ -1193,7 +1193,11 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
             ResetTemporaries();
         }
         if (ast_return->kills) {
-            AddLine("KIL TR;");
+            if (stage == ShaderType::Fragment) {
+                AddLine("KIL TR;");
+            } else {
+                AddLine("RET;");
+            }
         } else {
             Exit();
         }
@@ -2082,6 +2086,10 @@ std::string ARBDecompiler::Exit(Operation) {
 }
 
 std::string ARBDecompiler::Discard(Operation) {
+    if (stage != ShaderType::Fragment) {
+        AddLine("RET;");
+        return {};
+    }
     AddLine("KIL TR;");
     return {};
 }

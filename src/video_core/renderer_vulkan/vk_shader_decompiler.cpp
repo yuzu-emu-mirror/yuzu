@@ -591,6 +591,14 @@ private:
         DeclareOutputVertex();
     }
 
+    void SafeKill() {
+      if (stage != ShaderType::Fragment) {
+          OpReturn();
+          return;
+      }
+      OpKill();
+    }
+
     void DeclareFragment() {
         if (stage != ShaderType::Fragment) {
             return;
@@ -2126,7 +2134,7 @@ private:
 
         OpBranchConditional(condition, true_label, discard_label);
         AddLabel(discard_label);
-        OpKill();
+        SafeKill();
         AddLabel(true_label);
     }
 
@@ -2196,12 +2204,12 @@ private:
     Expression Discard(Operation operation) {
         inside_branch = true;
         if (conditional_branch_set) {
-            OpKill();
+            SafeKill();
         } else {
             const Id dummy = OpLabel();
             OpBranch(dummy);
             AddLabel(dummy);
-            OpKill();
+            SafeKill();
             AddLabel();
         }
         return {};
@@ -3053,7 +3061,7 @@ public:
             decomp.OpBranchConditional(condition, then_label, endif_label);
             decomp.AddLabel(then_label);
             if (ast.kills) {
-                decomp.OpKill();
+                decomp.SafeKill();
             } else {
                 if (decomp.context_func->IsMain()) {
                     decomp.PreExit();
@@ -3066,7 +3074,7 @@ public:
             decomp.OpBranch(next_block);
             decomp.AddLabel(next_block);
             if (ast.kills) {
-                decomp.OpKill();
+                decomp.SafeKill();
             } else {
                 if (decomp.context_func->IsMain()) {
                     decomp.PreExit();

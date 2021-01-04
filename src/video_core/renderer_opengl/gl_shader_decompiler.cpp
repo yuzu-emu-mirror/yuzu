@@ -2305,7 +2305,11 @@ private:
         // about unexecuted instructions that may follow this.
         code.AddLine("if (true) {{");
         ++code.scope;
-        code.AddLine("discard;");
+        if (stage != ShaderType::Fragment) {
+            code.AddLine("return;");
+        } else {
+            code.AddLine("discard;");
+        }
         --code.scope;
         code.AddLine("}}");
         return {};
@@ -2932,7 +2936,11 @@ public:
             decomp.code.scope++;
         }
         if (ast.kills) {
-            decomp.code.AddLine("discard;");
+            if (decomp.stage != ShaderType::Fragment) {
+                decomp.code.AddLine("return;");
+            } else {
+                decomp.code.AddLine("discard;");
+            }
         } else {
             if (decomp.context_func->IsMain()) {
                 decomp.PreExit();
