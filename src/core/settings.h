@@ -106,6 +106,13 @@ struct TouchFromButtonMap {
     std::vector<std::string> buttons;
 };
 
+struct InputProfile {
+    ControllerType controller_type;
+    ButtonsRaw buttons;
+    AnalogsRaw analogs;
+    MotionsRaw motions;
+};
+
 struct Values {
     // Audio
     std::string audio_device_id;

@@ -129,6 +129,12 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
                 &ConfigureInput::UpdateAllInputDevices);
         connect(player_controllers[i], &ConfigureInputPlayer::RefreshInputProfiles, this,
                 &ConfigureInput::UpdateAllInputProfiles, Qt::QueuedConnection);
+        connect(player_controllers[i], &ConfigureInputPlayer::InputProfileDeleted, this,
+                &ConfigureInput::LoadAllProfiles);
+        connect(player_controllers[i], &ConfigureInputPlayer::InputProfileRenamed, this,
+                &ConfigureInput::RenameInputProfile, Qt::QueuedConnection);
+        connect(player_controllers[i], &ConfigureInputPlayer::PlayerTabSelected, this,
+                &ConfigureInput::TabWindowChanged);
         connect(player_connected[i], &QCheckBox::stateChanged, [this, i](int state) {
             player_controllers[i]->ConnectPlayer(state == Qt::Checked);
         });
@@ -182,7 +188,11 @@ QList<QWidget*> ConfigureInput::GetSubTabs() const {
 }
 
 void ConfigureInput::ApplyConfiguration() {
+    player_controllers[current_tab]->SaveProfile(
+        player_controllers[current_tab]->GetCurrentProfile());
+
     for (auto* controller : player_controllers) {
+        controller->LoadProfile();
         controller->ApplyConfiguration();
         controller->TryDisconnectSelectedController();
     }
@@ -195,6 +205,7 @@ void ConfigureInput::ApplyConfiguration() {
     for (auto* controller : player_controllers) {
         controller->TryConnectSelectedController();
     }
+    profiles->SaveAllProfiles();
 
     advanced->ApplyConfiguration();
 
@@ -273,12 +284,28 @@ void ConfigureInput::UpdateAllInputDevices() {
     }
 }
 
-void ConfigureInput::UpdateAllInputProfiles(std::size_t player_index) {
-    for (std::size_t i = 0; i < player_controllers.size(); ++i) {
-        if (i == player_index) {
-            continue;
-        }
-
-        player_controllers[i]->UpdateInputProfiles();
+void ConfigureInput::UpdateAllInputProfiles() {
+    for (const auto& player : player_controllers) {
+        player->UpdateInputProfiles();
     }
+}
+
+void ConfigureInput::LoadAllProfiles() {
+    for (const auto& player : player_controllers) {
+        player->LoadProfile();
+    }
+}
+
+void ConfigureInput::RenameInputProfile(const QString& old_name, const QString& new_name) {
+    for (const auto& player : player_controllers) {
+        player->RenameSpecifiedProfile(old_name.toStdString(), new_name.toStdString());
+    }
+}
+
+void ConfigureInput::TabWindowChanged(std::size_t new_tab) {
+    player_controllers[current_tab]->SaveProfile(
+        player_controllers[current_tab]->GetCurrentProfile());
+    player_controllers[new_tab]->LoadProfile();
+
+    current_tab = new_tab;
 }

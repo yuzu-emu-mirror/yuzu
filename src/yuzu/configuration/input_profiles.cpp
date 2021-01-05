@@ -48,13 +48,20 @@ InputProfiles::InputProfiles() {
         nullptr, input_profile_loc,
         [this](u64* entries_out, const std::string& directory, const std::string& filename) {
             if (IsINI(filename) && IsProfileNameValid(GetNameWithoutExtension(filename))) {
-                map_profiles.insert_or_assign(
+                map_profiles_old.insert_or_assign(
                     GetNameWithoutExtension(filename),
                     std::make_unique<Config>(GetNameWithoutExtension(filename),
                                              Config::ConfigType::InputProfile));
             }
             return true;
         });
+
+    for (const auto& profile : map_profiles_old) {
+        Settings::InputProfile new_profile;
+        profile.second->ReadToProfileStruct(new_profile);
+
+        map_profiles.insert_or_assign(profile.first, new_profile);
+    }
 }
 
 InputProfiles::~InputProfiles() = default;
@@ -63,13 +70,8 @@ std::vector<std::string> InputProfiles::GetInputProfileNames() {
     std::vector<std::string> profile_names;
     profile_names.reserve(map_profiles.size());
 
-    for (const auto& [profile_name, config] : map_profiles) {
-        if (!ProfileExistsInFilesystem(profile_name)) {
-            DeleteProfile(profile_name);
-            continue;
-        }
-
-        profile_names.push_back(profile_name);
+    for (const auto& profile : map_profiles) {
+        profile_names.push_back(profile.first);
     }
 
     return profile_names;
@@ -79,53 +81,21 @@ bool InputProfiles::IsProfileNameValid(std::string_view profile_name) {
     return profile_name.find_first_of("<>:;\"/\\|,.!?*") == std::string::npos;
 }
 
-bool InputProfiles::CreateProfile(const std::string& profile_name, std::size_t player_index) {
-    if (ProfileExistsInMap(profile_name)) {
-        return false;
+void InputProfiles::SaveAllProfiles() {
+    for (const auto& old_profile : map_profiles_old) {
+        if (!map_profiles.contains(old_profile.first)) {
+            FS::Delete(old_profile.second->GetConfigFilePath());
+        }
     }
 
-    map_profiles.insert_or_assign(
-        profile_name, std::make_unique<Config>(profile_name, Config::ConfigType::InputProfile));
+    for (const auto& profile : map_profiles) {
+        const auto& config_profile =
+            std::make_unique<Config>(profile.first, Config::ConfigType::InputProfile);
 
-    return SaveProfile(profile_name, player_index);
-}
-
-bool InputProfiles::DeleteProfile(const std::string& profile_name) {
-    if (!ProfileExistsInMap(profile_name)) {
-        return false;
+        config_profile->WriteFromProfileStruct(profile.second);
     }
-
-    if (!ProfileExistsInFilesystem(profile_name) ||
-        FS::Delete(map_profiles[profile_name]->GetConfigFilePath())) {
-        map_profiles.erase(profile_name);
-    }
-
-    return !ProfileExistsInMap(profile_name) && !ProfileExistsInFilesystem(profile_name);
-}
-
-bool InputProfiles::LoadProfile(const std::string& profile_name, std::size_t player_index) {
-    if (!ProfileExistsInMap(profile_name)) {
-        return false;
-    }
-
-    if (!ProfileExistsInFilesystem(profile_name)) {
-        map_profiles.erase(profile_name);
-        return false;
-    }
-
-    map_profiles[profile_name]->ReadControlPlayerValue(player_index);
-    return true;
-}
-
-bool InputProfiles::SaveProfile(const std::string& profile_name, std::size_t player_index) {
-    if (!ProfileExistsInMap(profile_name)) {
-        return false;
-    }
-
-    map_profiles[profile_name]->SaveControlPlayerValue(player_index);
-    return true;
 }
 
 bool InputProfiles::ProfileExistsInMap(const std::string& profile_name) const {
-    return map_profiles.find(profile_name) != map_profiles.end();
+    return map_profiles.contains(profile_name);
 }

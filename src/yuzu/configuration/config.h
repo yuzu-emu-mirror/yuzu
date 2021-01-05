@@ -31,6 +31,8 @@ public:
 
     void ReadControlPlayerValue(std::size_t player_index);
     void SaveControlPlayerValue(std::size_t player_index);
+    void ReadToProfileStruct(Settings::InputProfile& profile);
+    void WriteFromProfileStruct(const Settings::InputProfile& profile);
 
     const std::string& GetConfigFilePath() const;
 

@@ -8,6 +8,8 @@
 #include <string_view>
 #include <unordered_map>
 
+#include "core/settings.h"
+
 class Config;
 
 class InputProfiles {
@@ -16,17 +18,15 @@ public:
     explicit InputProfiles();
     virtual ~InputProfiles();
 
+    std::unordered_map<std::string, Settings::InputProfile> map_profiles;
+
     std::vector<std::string> GetInputProfileNames();
 
+    bool ProfileExistsInMap(const std::string& profile_name) const;
     static bool IsProfileNameValid(std::string_view profile_name);
 
-    bool CreateProfile(const std::string& profile_name, std::size_t player_index);
-    bool DeleteProfile(const std::string& profile_name);
-    bool LoadProfile(const std::string& profile_name, std::size_t player_index);
-    bool SaveProfile(const std::string& profile_name, std::size_t player_index);
+    void SaveAllProfiles();
 
 private:
-    bool ProfileExistsInMap(const std::string& profile_name) const;
-
-    std::unordered_map<std::string, std::unique_ptr<Config>> map_profiles;
+    std::unordered_map<std::string, std::unique_ptr<Config>> map_profiles_old;
 };

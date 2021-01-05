@@ -295,6 +295,11 @@ void Config::ReadPlayerValue(std::size_t player_index) {
             ReadSetting(QStringLiteral("%1connected").arg(player_prefix), player_index == 0)
                 .toBool();
 
+        player.input_profile =
+            qt_config->value(QStringLiteral("%1input_profile").arg(player_prefix), QString{})
+                .toString()
+                .toStdString();
+
         player.controller_type = static_cast<Settings::ControllerType>(
             qt_config
                 ->value(QStringLiteral("%1type").arg(player_prefix),
@@ -1006,6 +1011,8 @@ void Config::SavePlayerValue(std::size_t player_index) {
 
     if (!player_prefix.isEmpty()) {
         WriteSetting(QStringLiteral("%1connected").arg(player_prefix), player.connected, false);
+        WriteSetting(QStringLiteral("%1input_profile").arg(player_prefix),
+                     QString::fromStdString(player.input_profile), QString{});
         WriteSetting(QStringLiteral("%1vibration_enabled").arg(player_prefix),
                      player.vibration_enabled, true);
         WriteSetting(QStringLiteral("%1vibration_strength").arg(player_prefix),
@@ -1616,4 +1623,89 @@ void Config::SaveControlPlayerValue(std::size_t player_index) {
 
 const std::string& Config::GetConfigFilePath() const {
     return qt_config_loc;
+}
+
+void Config::ReadToProfileStruct(Settings::InputProfile& profile) {
+    qt_config->beginGroup(QStringLiteral("Controls"));
+
+    profile.controller_type = static_cast<Settings::ControllerType>(
+        qt_config
+            ->value(QStringLiteral("type"),
+                    static_cast<u8>(Settings::ControllerType::ProController))
+            .toUInt());
+
+    for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
+        const std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
+        auto& player_buttons = profile.buttons[i];
+
+        player_buttons = qt_config
+                             ->value(QString::fromUtf8(Settings::NativeButton::mapping[i]),
+                                     QString::fromStdString(default_param))
+                             .toString()
+                             .toStdString();
+        if (player_buttons.empty()) {
+            player_buttons = default_param;
+        }
+    }
+
+    for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
+        const std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
+            default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
+            default_analogs[i][3], default_stick_mod[i], 0.5f);
+        auto& player_analogs = profile.analogs[i];
+
+        player_analogs = qt_config
+                             ->value(QString::fromUtf8(Settings::NativeAnalog::mapping[i]),
+                                     QString::fromStdString(default_param))
+                             .toString()
+                             .toStdString();
+        if (player_analogs.empty()) {
+            player_analogs = default_param;
+        }
+    }
+
+    for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
+        const std::string default_param = InputCommon::GenerateKeyboardParam(default_motions[i]);
+        auto& player_motions = profile.motions[i];
+
+        player_motions = qt_config
+                             ->value(QString::fromUtf8(Settings::NativeMotion::mapping[i]),
+                                     QString::fromStdString(default_param))
+                             .toString()
+                             .toStdString();
+        if (player_motions.empty()) {
+            player_motions = default_param;
+        }
+    }
+
+    qt_config->endGroup();
+}
+
+void Config::WriteFromProfileStruct(const Settings::InputProfile& profile) {
+    qt_config->beginGroup(QStringLiteral("Controls"));
+
+    WriteSetting(QStringLiteral("type"), static_cast<u8>(profile.controller_type),
+                 static_cast<u8>(Settings::ControllerType::ProController));
+    for (int i = 0; i < Settings::NativeButton::NumButtons; ++i) {
+        const std::string default_param = InputCommon::GenerateKeyboardParam(default_buttons[i]);
+        WriteSetting(QString::fromStdString(Settings::NativeButton::mapping[i]),
+                     QString::fromStdString(profile.buttons[i]),
+                     QString::fromStdString(default_param));
+    }
+    for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
+        const std::string default_param = InputCommon::GenerateAnalogParamFromKeys(
+            default_analogs[i][0], default_analogs[i][1], default_analogs[i][2],
+            default_analogs[i][3], default_stick_mod[i], 0.5f);
+        WriteSetting(QString::fromStdString(Settings::NativeAnalog::mapping[i]),
+                     QString::fromStdString(profile.analogs[i]),
+                     QString::fromStdString(default_param));
+    }
+    for (int i = 0; i < Settings::NativeMotion::NumMotions; ++i) {
+        const std::string default_param = InputCommon::GenerateKeyboardParam(default_motions[i]);
+        WriteSetting(QString::fromStdString(Settings::NativeMotion::mapping[i]),
+                     QString::fromStdString(profile.motions[i]),
+                     QString::fromStdString(default_param));
+    }
+
+    qt_config->endGroup();
 }

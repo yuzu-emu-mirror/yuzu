@@ -542,12 +542,12 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
     connect(ui->buttonProfilesNew, &QPushButton::clicked, this,
             &ConfigureInputPlayer::CreateProfile);
+    connect(ui->buttonProfilesRename, &QPushButton::clicked, this,
+            &ConfigureInputPlayer::RenameProfile);
     connect(ui->buttonProfilesDelete, &QPushButton::clicked, this,
             &ConfigureInputPlayer::DeleteProfile);
     connect(ui->comboProfiles, qOverload<int>(&QComboBox::activated), this,
-            &ConfigureInputPlayer::LoadProfile);
-    connect(ui->buttonProfilesSave, &QPushButton::clicked, this,
-            &ConfigureInputPlayer::SaveProfile);
+            &ConfigureInputPlayer::ProfileChanged);
 
     LoadConfiguration();
 
@@ -570,6 +570,8 @@ void ConfigureInputPlayer::ApplyConfiguration() {
     if (debug) {
         return;
     }
+
+    player.input_profile = current_profile;
 
     auto& motions = player.motions;
 
@@ -637,6 +639,7 @@ void ConfigureInputPlayer::showEvent(QShowEvent* event) {
     }
     QWidget::showEvent(event);
     ui->main->addWidget(bottom_row);
+    emit PlayerTabSelected(player_index);
 }
 
 void ConfigureInputPlayer::changeEvent(QEvent* event) {
@@ -681,6 +684,13 @@ void ConfigureInputPlayer::LoadConfiguration() {
     ui->groupConnectedController->setChecked(
         player.connected ||
         (player_index == 0 && Settings::values.players.GetValue()[HANDHELD_INDEX].connected));
+
+    current_profile = player.input_profile;
+    if (!profiles->ProfileExistsInMap(current_profile)) {
+        current_profile = unselected_profile;
+    }
+    ui->comboProfiles->setCurrentText(QString::fromStdString(current_profile));
+    LoadProfile();
 }
 
 void ConfigureInputPlayer::ConnectPlayer(bool connected) {
@@ -1223,9 +1233,13 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
     SetPollingResult({}, true);
 }
 
+std::string ConfigureInputPlayer::GetCurrentProfile() const {
+    return current_profile;
+}
+
 void ConfigureInputPlayer::CreateProfile() {
-    const auto profile_name =
-        LimitableInputDialog::GetText(this, tr("New Profile"), tr("Enter a profile name:"), 1, 20);
+    const auto profile_name = LimitableInputDialog::GetText(this, tr("Create Input Profile"),
+                                                            tr("Enter a profile name:"), 1, 20);
 
     if (profile_name.isEmpty()) {
         return;
@@ -1237,87 +1251,123 @@ void ConfigureInputPlayer::CreateProfile() {
         return;
     }
 
-    ApplyConfiguration();
-
-    if (!profiles->CreateProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("Create Input Profile"),
-                              tr("Failed to create the input profile \"%1\"").arg(profile_name));
-        UpdateInputProfiles();
-        emit RefreshInputProfiles(player_index);
+    if (profiles->ProfileExistsInMap(profile_name.toStdString())) {
+        QMessageBox::critical(this, tr("Create Input Profile"), tr("This profile already exists!"));
         return;
     }
 
-    emit RefreshInputProfiles(player_index);
-
-    ui->comboProfiles->addItem(profile_name);
-    ui->comboProfiles->setCurrentIndex(ui->comboProfiles->count() - 1);
+    SaveProfile(current_profile);
+    current_profile = profile_name.toStdString();
+    SaveProfile(current_profile);
+    emit RefreshInputProfiles();
 }
 
 void ConfigureInputPlayer::DeleteProfile() {
-    const QString profile_name = ui->comboProfiles->itemText(ui->comboProfiles->currentIndex());
-
-    if (profile_name.isEmpty()) {
+    if (ui->comboProfiles->currentIndex() <= 0) {
         return;
     }
 
-    if (!profiles->DeleteProfile(profile_name.toStdString())) {
-        QMessageBox::critical(this, tr("Delete Input Profile"),
-                              tr("Failed to delete the input profile \"%1\"").arg(profile_name));
-        UpdateInputProfiles();
-        emit RefreshInputProfiles(player_index);
-        return;
-    }
-
-    emit RefreshInputProfiles(player_index);
-
-    ui->comboProfiles->removeItem(ui->comboProfiles->currentIndex());
-    ui->comboProfiles->setCurrentIndex(-1);
+    SaveProfile(current_profile);
+    emit InputProfileDeleted();
+    profiles->map_profiles.erase(current_profile);
+    emit RefreshInputProfiles();
 }
 
 void ConfigureInputPlayer::LoadProfile() {
-    const QString profile_name = ui->comboProfiles->itemText(ui->comboProfiles->currentIndex());
-
-    if (profile_name.isEmpty()) {
+    if (ui->comboProfiles->currentIndex() <= 0) {
         return;
     }
 
-    ApplyConfiguration();
+    const QString profile_name = ui->comboProfiles->currentText();
+    Settings::InputProfile& profile = profiles->map_profiles[profile_name.toStdString()];
 
-    if (!profiles->LoadProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("Load Input Profile"),
-                              tr("Failed to load the input profile \"%1\"").arg(profile_name));
-        UpdateInputProfiles();
-        emit RefreshInputProfiles(player_index);
-        return;
-    }
+    ui->comboControllerType->setCurrentIndex(GetIndexFromControllerType(profile.controller_type));
+    std::transform(profile.buttons.begin(), profile.buttons.end(), buttons_param.begin(),
+                   [](const std::string& str) { return Common::ParamPackage(str); });
+    std::transform(profile.analogs.begin(), profile.analogs.end(), analogs_param.begin(),
+                   [](const std::string& str) { return Common::ParamPackage(str); });
+    std::transform(profile.motions.begin(), profile.motions.end(), motions_param.begin(),
+                   [](const std::string& str) { return Common::ParamPackage(str); });
 
-    LoadConfiguration();
+    UpdateUI();
+    UpdateInputDeviceCombobox();
 }
 
-void ConfigureInputPlayer::SaveProfile() {
-    const QString profile_name = ui->comboProfiles->itemText(ui->comboProfiles->currentIndex());
+void ConfigureInputPlayer::SaveProfile(const std::string& profile_name) {
+    if (profile_name.empty() || profile_name == unselected_profile) {
+        return;
+    }
+
+    Settings::InputProfile profile;
+
+    profile.controller_type = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
+    std::transform(buttons_param.begin(), buttons_param.end(), profile.buttons.begin(),
+                   [](const Common::ParamPackage& param) { return param.Serialize(); });
+    std::transform(analogs_param.begin(), analogs_param.end(), profile.analogs.begin(),
+                   [](const Common::ParamPackage& param) { return param.Serialize(); });
+    std::transform(motions_param.begin(), motions_param.end(), profile.motions.begin(),
+                   [](const Common::ParamPackage& param) { return param.Serialize(); });
+
+    profiles->map_profiles.insert_or_assign(profile_name, profile);
+}
+
+void ConfigureInputPlayer::RenameProfile() {
+    if (ui->comboProfiles->currentIndex() <= 0) {
+        return;
+    }
+
+    const auto profile_name = LimitableInputDialog::GetText(
+        this, tr("Rename Input Profile"), tr("Enter the new profile name:"), 1, 20);
 
     if (profile_name.isEmpty()) {
         return;
     }
 
-    ApplyConfiguration();
-
-    if (!profiles->SaveProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("Save Input Profile"),
-                              tr("Failed to save the input profile \"%1\"").arg(profile_name));
-        UpdateInputProfiles();
-        emit RefreshInputProfiles(player_index);
+    if (!InputProfiles::IsProfileNameValid(profile_name.toStdString())) {
+        QMessageBox::critical(this, tr("Rename Input Profile"),
+                              tr("The given profile name is not valid!"));
         return;
     }
+
+    if (profiles->ProfileExistsInMap(profile_name.toStdString())) {
+        QMessageBox::critical(this, tr("Rename Input Profile"), tr("This profile already exists!"));
+        return;
+    }
+
+    profiles->map_profiles.insert_or_assign(profile_name.toStdString(),
+                                            profiles->map_profiles[current_profile]);
+    profiles->map_profiles.erase(current_profile);
+    emit InputProfileRenamed(QString::fromStdString(current_profile), profile_name);
+}
+
+void ConfigureInputPlayer::ProfileChanged() {
+    // The input profile combobox will have the new profile selected, so save the previous one which
+    // is stored in current_profile.
+    SaveProfile(current_profile);
+    LoadProfile();
+
+    current_profile = ui->comboProfiles->currentText().toStdString();
 }
 
 void ConfigureInputPlayer::UpdateInputProfiles() {
     ui->comboProfiles->clear();
 
+    ui->comboProfiles->addItem(QString::fromStdString(unselected_profile));
     for (const auto& profile_name : profiles->GetInputProfileNames()) {
         ui->comboProfiles->addItem(QString::fromStdString(profile_name));
     }
 
-    ui->comboProfiles->setCurrentIndex(-1);
+    if (ui->comboProfiles->findText(QString::fromStdString(current_profile)) < 0) {
+        current_profile = unselected_profile;
+    }
+    ui->comboProfiles->setCurrentText(QString::fromStdString(current_profile));
+}
+
+void ConfigureInputPlayer::RenameSpecifiedProfile(const std::string& old_name,
+                                                  const std::string& new_name) {
+    if (current_profile == old_name) {
+        current_profile = new_name;
+    }
+
+    UpdateInputProfiles();
 }

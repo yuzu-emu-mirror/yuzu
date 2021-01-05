@@ -75,6 +75,18 @@ public:
     /// Updates the list of controller profiles.
     void UpdateInputProfiles();
 
+    /// Renames the specified input profile.
+    void RenameSpecifiedProfile(const std::string& old_name, const std::string& new_name);
+
+    /// Returns the current profile.
+    std::string GetCurrentProfile() const;
+
+    /// Loads the selected controller profile.
+    void LoadProfile();
+
+    /// Saves the current controller configuration into a selected controller profile.
+    void SaveProfile(const std::string& profile_name);
+
     /// Restore all buttons to their default values.
     void RestoreDefaults();
 
@@ -88,12 +100,14 @@ signals:
     void HandheldStateChanged(bool is_handheld);
     /// Emitted when the input devices combobox is being refreshed.
     void RefreshInputDevices();
-    /**
-     * Emitted when the input profiles combobox is being refreshed.
-     * The player_index represents the current player's index, and the profile combobox
-     * will not be updated for this index as they are already updated by other mechanisms.
-     */
-    void RefreshInputProfiles(std::size_t player_index);
+    /// Emitted when the input profiles combobox is being refreshed.
+    void RefreshInputProfiles();
+    /// Emitted when an input profile has been deleted.
+    void InputProfileDeleted();
+    /// Emitted when an input profile has been renamed.
+    void InputProfileRenamed(QString old_name, QString new_name);
+    /// Emitted when a new player tab is selected.
+    void PlayerTabSelected(std::size_t player_index);
 
 protected:
     void showEvent(QShowEvent* event) override;
@@ -155,11 +169,11 @@ private:
     /// Deletes the selected controller profile.
     void DeleteProfile();
 
-    /// Loads the selected controller profile.
-    void LoadProfile();
+    /// Renames the selected input profile.
+    void RenameProfile();
 
-    /// Saves the current controller configuration into a selected controller profile.
-    void SaveProfile();
+    /// Saves the previous controller profile and then loads the new one selected.
+    void ProfileChanged();
 
     std::unique_ptr<Ui::ConfigureInputPlayer> ui;
 
@@ -169,6 +183,8 @@ private:
     InputCommon::InputSubsystem* input_subsystem;
 
     InputProfiles* profiles;
+    std::string current_profile;
+    const std::string unselected_profile = "[none]";
 
     std::unique_ptr<QTimer> timeout_timer;
     std::unique_ptr<QTimer> poll_timer;

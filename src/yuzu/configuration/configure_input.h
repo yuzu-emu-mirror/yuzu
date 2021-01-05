@@ -52,7 +52,10 @@ private:
 
     void UpdateDockedState(bool is_handheld);
     void UpdateAllInputDevices();
-    void UpdateAllInputProfiles(std::size_t player_index);
+    void UpdateAllInputProfiles();
+    void LoadAllProfiles();
+    void RenameInputProfile(const QString& old_name, const QString& new_name);
+    void TabWindowChanged(std::size_t new_tab);
 
     /// Load configuration settings.
     void LoadConfiguration();
@@ -64,6 +67,7 @@ private:
     std::unique_ptr<Ui::ConfigureInput> ui;
 
     std::unique_ptr<InputProfiles> profiles;
+    std::size_t current_tab = 0;
 
     std::array<ConfigureInputPlayer*, 8> player_controllers;
     std::array<QWidget*, 8> player_tabs;

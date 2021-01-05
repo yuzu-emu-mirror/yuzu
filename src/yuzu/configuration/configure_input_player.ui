@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>780</width>
+    <width>923</width>
     <height>487</height>
    </rect>
   </property>
@@ -220,22 +220,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="buttonProfilesSave">
-            <property name="maximumSize">
-             <size>
-              <width>68</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">min-width: 68px;</string>
-            </property>
-            <property name="text">
-             <string>Save</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="buttonProfilesNew">
             <property name="maximumSize">
              <size>
@@ -248,6 +232,22 @@
             </property>
             <property name="text">
              <string>New</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="buttonProfilesRename">
+            <property name="maximumSize">
+             <size>
+              <width>68</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">min-width: 68px;</string>
+            </property>
+            <property name="text">
+             <string>Rename</string>
             </property>
            </widget>
           </item>
@@ -412,7 +412,7 @@
                      <widget class="QPushButton" name="buttonLStickUp">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -482,7 +482,7 @@
                     <widget class="QPushButton" name="buttonLStickLeft">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -531,7 +531,7 @@
                     <widget class="QPushButton" name="buttonLStickRight">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -613,7 +613,7 @@
                      <widget class="QPushButton" name="buttonLStickDown">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -683,7 +683,7 @@
                     <widget class="QPushButton" name="buttonLStick">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -732,7 +732,7 @@
                     <widget class="QPushButton" name="buttonLStickMod">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -985,7 +985,7 @@
                      <widget class="QPushButton" name="buttonDpadUp">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -1055,7 +1055,7 @@
                     <widget class="QPushButton" name="buttonDpadLeft">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1104,7 +1104,7 @@
                     <widget class="QPushButton" name="buttonDpadRight">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1186,7 +1186,7 @@
                      <widget class="QPushButton" name="buttonDpadDown">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -1311,7 +1311,7 @@
                     <widget class="QPushButton" name="buttonL">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1360,7 +1360,7 @@
                     <widget class="QPushButton" name="buttonZL">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1464,7 +1464,7 @@
                     <widget class="QPushButton" name="buttonMinus">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1513,7 +1513,7 @@
                     <widget class="QPushButton" name="buttonScreenshot">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1583,7 +1583,7 @@
                     <widget class="QPushButton" name="buttonPlus">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1632,7 +1632,7 @@
                     <widget class="QPushButton" name="buttonHome">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1736,7 +1736,7 @@
                     <widget class="QPushButton" name="buttonR">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1785,7 +1785,7 @@
                     <widget class="QPushButton" name="buttonZR">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1889,7 +1889,7 @@
                     <widget class="QPushButton" name="buttonSL">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -1938,7 +1938,7 @@
                     <widget class="QPushButton" name="buttonSR">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2046,7 +2046,7 @@
                  <widget class="QPushButton" name="buttonMotionLeft">
                   <property name="minimumSize">
                    <size>
-                    <width>68</width>
+                    <width>70</width>
                     <height>0</height>
                    </size>
                   </property>
@@ -2095,7 +2095,7 @@
                  <widget class="QPushButton" name="buttonMotionRight">
                   <property name="minimumSize">
                    <size>
-                    <width>68</width>
+                    <width>70</width>
                     <height>0</height>
                    </size>
                   </property>
@@ -2244,7 +2244,7 @@
                      <widget class="QPushButton" name="buttonX">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -2314,7 +2314,7 @@
                     <widget class="QPushButton" name="buttonY">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2363,7 +2363,7 @@
                     <widget class="QPushButton" name="buttonA">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2445,7 +2445,7 @@
                      <widget class="QPushButton" name="buttonB">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -2599,7 +2599,7 @@
                      <widget class="QPushButton" name="buttonRStickUp">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -2669,7 +2669,7 @@
                     <widget class="QPushButton" name="buttonRStickLeft">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2718,7 +2718,7 @@
                     <widget class="QPushButton" name="buttonRStickRight">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2800,7 +2800,7 @@
                      <widget class="QPushButton" name="buttonRStickDown">
                       <property name="minimumSize">
                        <size>
-                        <width>68</width>
+                        <width>70</width>
                         <height>0</height>
                        </size>
                       </property>
@@ -2870,7 +2870,7 @@
                     <widget class="QPushButton" name="buttonRStick">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -2919,7 +2919,7 @@
                     <widget class="QPushButton" name="buttonRStickMod">
                      <property name="minimumSize">
                       <size>
-                       <width>68</width>
+                       <width>70</width>
                        <height>0</height>
                       </size>
                      </property>
