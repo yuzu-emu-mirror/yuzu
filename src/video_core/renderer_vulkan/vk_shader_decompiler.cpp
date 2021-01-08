@@ -406,6 +406,32 @@ private:
         binding = DeclareStorageTexels(binding);
         binding = DeclareImages(binding);
 
+        const auto& subfunctions = ir.GetSubFunctions();
+
+        labels.resize(subfunctions.size() + 1);
+        other_functions.resize(subfunctions.size());
+
+        auto it = subfunctions.rbegin();
+        while (it != subfunctions.rend()) {
+            context_func = *it;
+            other_functions[context_func->GetId() - 1] =
+                OpFunction(t_void, {}, TypeFunction(t_void));
+            AddLabel();
+
+            if (context_func->IsDecompiled()) {
+                DeclareFlowVariables();
+                DecompileAST();
+            } else {
+                AllocateLabels();
+                DecompileBranchMode();
+            }
+
+            OpReturn();
+            OpFunctionEnd();
+
+            it++;
+        }
+
         context_func = ir.GetMainFunction();
 
         const Id main = OpFunction(t_void, {}, TypeFunction(t_void));
@@ -444,15 +470,17 @@ private:
 
     void DecompileBranchMode() {
         const u32 first_address = context_func->GetBasicBlocks().begin()->first;
-        const Id loop_label = OpLabel("loop");
-        const Id merge_label = OpLabel("merge");
+        const u32 func_id = context_func->GetId();
+        const std::string func_id_msg = std::to_string(func_id);
+        const Id loop_label = OpLabel("loop_" + func_id_msg);
+        const Id merge_label = OpLabel("merge_" + func_id_msg);
         const Id dummy_label = OpLabel();
         const Id jump_label = OpLabel();
-        continue_label = OpLabel("continue");
+        continue_label = OpLabel("continue_" + func_id_msg);
 
         std::vector<Sirit::Literal> literals;
         std::vector<Id> branch_labels;
-        for (const auto& [literal, label] : labels) {
+        for (const auto& [literal, label] : labels[func_id]) {
             literals.push_back(literal);
             branch_labels.push_back(label);
         }
@@ -464,11 +492,11 @@ private:
         std::tie(ssy_flow_stack, ssy_flow_stack_top) = CreateFlowStack();
         std::tie(pbk_flow_stack, pbk_flow_stack_top) = CreateFlowStack();
 
-        Name(jmp_to, "jmp_to");
-        Name(ssy_flow_stack, "ssy_flow_stack");
-        Name(ssy_flow_stack_top, "ssy_flow_stack_top");
-        Name(pbk_flow_stack, "pbk_flow_stack");
-        Name(pbk_flow_stack_top, "pbk_flow_stack_top");
+        Name(jmp_to, "jmp_to_" + func_id_msg);
+        Name(ssy_flow_stack, "ssy_flow_stack_" + func_id_msg);
+        Name(ssy_flow_stack_top, "ssy_flow_stack_top_" + func_id_msg);
+        Name(pbk_flow_stack, "pbk_flow_stack_" + func_id_msg);
+        Name(pbk_flow_stack_top, "pbk_flow_stack_top_" + func_id_msg);
 
         DefinePrologue();
 
@@ -487,12 +515,13 @@ private:
         OpReturn();
 
         for (const auto& [address, bb] : context_func->GetBasicBlocks()) {
-            AddLabel(labels.at(address));
+            AddLabel(labels[func_id].at(address));
 
             VisitBasicBlock(bb);
 
-            const auto next_it = labels.lower_bound(address + 1);
-            const Id next_label = next_it != labels.end() ? next_it->second : default_branch;
+            const auto next_it = labels[func_id].lower_bound(address + 1);
+            const Id next_label =
+                next_it != labels[func_id].end() ? next_it->second : default_branch;
             OpBranch(next_label);
         }
 
@@ -510,9 +539,10 @@ private:
     static constexpr auto INTERNAL_FLAGS_COUNT = static_cast<std::size_t>(InternalFlag::Amount);
 
     void AllocateLabels() {
+        const u32 func_id = context_func->GetId();
         for (const auto& pair : context_func->GetBasicBlocks()) {
             const u32 address = pair.first;
-            labels.emplace(address, OpLabel(fmt::format("label_0x{:x}", address)));
+            labels[func_id].emplace(address, OpLabel(fmt::format("label_0x{:x}", address)));
         }
     }
 
@@ -592,11 +622,11 @@ private:
     }
 
     void SafeKill() {
-      if (stage != ShaderType::Fragment) {
-          OpReturn();
-          return;
-      }
-      OpKill();
+        if (stage != ShaderType::Fragment) {
+            OpReturn();
+            return;
+        }
+        OpKill();
     }
 
     void DeclareFragment() {
@@ -1340,6 +1370,12 @@ private:
                 inside_branch = false;
             }
             AddLabel(skip_label);
+            return {};
+        }
+
+        if (const auto func_call = std::get_if<FunctionCallNode>(&*node)) {
+            const u32 func_id = func_call->GetFuncId();
+            OpFunctionCall(t_void, other_functions[func_id - 1]);
             return {};
         }
 
@@ -2910,7 +2946,8 @@ private:
     Id ssy_flow_stack{};
     Id pbk_flow_stack{};
     Id continue_label{};
-    std::map<u32, Id> labels;
+    std::vector<std::map<u32, Id>> labels;
+    std::vector<Id> other_functions;
 
     bool conditional_branch_set{};
     bool inside_branch{};
