@@ -2709,7 +2709,7 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
                     .arg(errors));
         }
 
-        QProgressDialog prog;
+        QProgressDialog prog(this);
         prog.setRange(0, 0);
         prog.setLabelText(tr("Deriving keys...\nThis may take up to a minute depending \non your "
                              "system's performance."));
