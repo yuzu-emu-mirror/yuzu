@@ -11,8 +11,8 @@
 #include "input_common/main.h"
 #include "input_common/mouse/mouse_input.h"
 #include "input_common/sdl/sdl.h"
-#include "yuzu_cmd/yuzu_icon.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
+#include "yuzu_cmd/yuzu_icon.h"
 
 EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_)
     : input_subsystem{input_subsystem_} {
@@ -194,8 +194,8 @@ void EmuWindow_SDL2::WaitEvent() {
     }
 }
 
-void EmuWindow_SDL2::SetWindowIcon(){
- 	SDL_RWops* const yuzu_icon_stream = SDL_RWFromMem((void*) yuzu_icon, yuzu_icon_size);
+void EmuWindow_SDL2::SetWindowIcon() {
+    SDL_RWops* const yuzu_icon_stream = SDL_RWFromMem((void*)yuzu_icon, yuzu_icon_size);
     SDL_Surface* const window_icon = SDL_LoadBMP_RW(yuzu_icon_stream, 1);
     // The icon is attached to the window pointer
     SDL_SetWindowIcon(render_window, windowIcon);
