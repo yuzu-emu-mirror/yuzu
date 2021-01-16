@@ -1,5 +1,16 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMakeModules)
 
+function(create_resource file output filename)
+    # Read hex data from file
+    file(READ ${file} filedata HEX)
+    # Convert hex data for C compatibility
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," filedata ${filedata})
+    # Write data to output file
+    file(WRITE ${output} "const unsigned char ${filename}[] = {${filedata}};\nconst unsigned ${filename}_size = sizeof(${filename});\n")
+endfunction()
+
+create_resource("../../dist/yuzu.bmp" "yuzu_icon.h" "yuzu_icon")
+
 add_executable(yuzu-cmd
     config.cpp
     config.h
@@ -13,6 +24,7 @@ add_executable(yuzu-cmd
     resource.h
     yuzu.cpp
     yuzu.rc
+    yuzu_icon.h
 )
 
 create_target_directory_groups(yuzu-cmd)
