@@ -195,7 +195,7 @@ void EmuWindow_SDL2::WaitEvent() {
 }
 
 void EmuWindow_SDL2::SetWindowIcon(){
- 	SDL_RWops* yuzu_icon_stream = SDL_RWFromMem((void*) yuzu_icon, yuzu_icon_size);
+ 	SDL_RWops* const yuzu_icon_stream = SDL_RWFromMem((void*) yuzu_icon, yuzu_icon_size);
     SDL_Surface* const window_icon = SDL_LoadBMP_RW(yuzu_icon_stream, 1);
     // The icon is attached to the window pointer
     SDL_SetWindowIcon(render_window, windowIcon);
