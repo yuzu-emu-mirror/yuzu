@@ -1,5 +1,0 @@
-steps:
-  - script: mkdir artifacts || echo 'X' > artifacts/T1.txt
-  - publish: artifacts
-    artifact: 'yuzu-$(BuildName)-mock'
-    displayName: 'Upload Artifacts'
