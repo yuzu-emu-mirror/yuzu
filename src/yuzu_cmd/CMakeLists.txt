@@ -6,10 +6,9 @@ function(create_resource file output filename)
     # Convert hex data for C compatibility
     string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," filedata ${filedata})
     # Write data to output file
-    file(WRITE ${output} "const unsigned char ${filename}[] = {${filedata}};\nconst unsigned ${filename}_size = sizeof(${filename});\n")
+    set(RESOURCES_DIR "${PROJECT_BINARY_DIR}/dist" PARENT_SCOPE)
+    file(WRITE "${PROJECT_BINARY_DIR}/dist/${output}" "const unsigned char ${filename}[] = {${filedata}};\nconst unsigned ${filename}_size = sizeof(${filename});\n")
 endfunction()
-
-create_resource("../../dist/yuzu.bmp" "yuzu_icon.h" "yuzu_icon")
 
 add_executable(yuzu-cmd
     config.cpp
@@ -24,7 +23,6 @@ add_executable(yuzu-cmd
     resource.h
     yuzu.cpp
     yuzu.rc
-    yuzu_icon.h
 )
 
 create_target_directory_groups(yuzu-cmd)
@@ -35,6 +33,9 @@ if (MSVC)
     target_link_libraries(yuzu-cmd PRIVATE getopt)
 endif()
 target_link_libraries(yuzu-cmd PRIVATE ${PLATFORM_LIBRARIES} SDL2 Threads::Threads)
+
+create_resource("../../dist/yuzu.bmp" "yuzu_cmd/yuzu_icon.h" "yuzu_icon")
+target_include_directories(yuzu-cmd PRIVATE ${RESOURCES_DIR})
 
 target_include_directories(yuzu-cmd PRIVATE ../../externals/Vulkan-Headers/include)
 
