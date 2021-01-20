@@ -286,6 +286,8 @@ target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
 target_include_directories(video_core PRIVATE sirit ../../externals/Vulkan-Headers/include)
 target_link_libraries(video_core PRIVATE sirit)
 
+option(ENABLE_NSIGHT_AFTERMATH "Enable Nvidia Nsight Aftermath" OFF)
+
 if (ENABLE_NSIGHT_AFTERMATH)
     if (NOT DEFINED ENV{NSIGHT_AFTERMATH_SDK})
         message(ERROR "Environment variable NSIGHT_AFTERMATH_SDK has to be provided")
