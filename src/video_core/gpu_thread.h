@@ -11,6 +11,7 @@
 #include <thread>
 #include <variant>
 
+#include "common/common_types.h"
 #include "common/threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 
@@ -32,9 +33,6 @@ class RendererBase;
 } // namespace VideoCore
 
 namespace VideoCommon::GPUThread {
-
-/// Command to signal to the GPU thread that processing has ended
-struct EndProcessingCommand final {};
 
 /// Command to signal to the GPU thread that a command list is ready for processing
 struct SubmitListCommand final {
@@ -83,7 +81,7 @@ struct OnCommandListEndCommand final {};
 struct GPUTickCommand final {};
 
 using CommandData =
-    std::variant<EndProcessingCommand, SubmitListCommand, SwapBuffersCommand, FlushRegionCommand,
+    std::variant<std::monostate, SubmitListCommand, SwapBuffersCommand, FlushRegionCommand,
                  InvalidateRegionCommand, FlushAndInvalidateRegionCommand, OnCommandListEndCommand,
                  GPUTickCommand>;
 
@@ -100,14 +98,12 @@ struct CommandDataContainer {
 
 /// Struct used to synchronize the GPU thread
 struct SynchState final {
-    std::atomic_bool is_running{true};
-
-    using CommandQueue = Common::SPSCQueue<CommandDataContainer>;
+    using CommandQueue = Common::SPSCQueue<CommandDataContainer, true>;
     std::mutex write_lock;
     CommandQueue queue;
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
-    std::condition_variable cv;
+    std::condition_variable_any cv;
 };
 
 /// Class used to manage the GPU thread
@@ -149,7 +145,7 @@ private:
     VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     SynchState state;
-    std::thread thread;
+    std::jthread thread;
 };
 
 } // namespace VideoCommon::GPUThread
