@@ -431,6 +431,13 @@ void ShaderIR::SearchOperands(NodeBlock& nb, Node var) {
                 SetInternalFlag(nb, InternalFlag::Zero, std::move(zerop));
             }
             break;
+        case 4: // Immediate Node
+            if (const auto* imm = std::get_if<ImmediateNode>(operand.get())) {
+                LOG_INFO(HW_GPU, "Child ImmediateNode: value={}", imm->GetValue());
+                Node zerop = Operation(OperationCode::LogicalIEqual, std::move(operand));
+                SetInternalFlag(nb, InternalFlag::Zero, std::move(zerop));
+            }
+            break;
         default:
             LOG_WARNING(HW_GPU, "Child Node Type: {}", operand->index());
             break;
