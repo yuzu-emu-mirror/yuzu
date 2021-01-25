@@ -124,6 +124,7 @@ FileSys::VirtualFile GetOfflineRomFS(Core::System& system, u64 title_id,
     }
 }
 
+#ifdef YUZU_USE_QT_WEB_ENGINE
 void ExtractSharedFonts(Core::System& system) {
     static constexpr std::array<const char*, 7> DECRYPTED_SHARED_FONTS{
         "FontStandard.ttf",
@@ -205,6 +206,7 @@ void ExtractSharedFonts(Core::System& system) {
         FileSys::VfsRawCopy(decrypted_font, out_file);
     }
 }
+#endif
 
 } // namespace
 
@@ -238,7 +240,9 @@ void WebBrowser::Initialize() {
     LOG_DEBUG(Service_AM, "WebArgHeader: total_tlv_entries={}, shim_kind={}",
               web_arg_header.total_tlv_entries, web_arg_header.shim_kind);
 
+#ifdef YUZU_USE_QT_WEB_ENGINE
     ExtractSharedFonts(system);
+#endif
 
     switch (web_arg_header.shim_kind) {
     case ShimKind::Shop:
