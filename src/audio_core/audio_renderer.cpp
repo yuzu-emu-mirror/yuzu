@@ -220,7 +220,7 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
         mix_context.SortInfo();
     }
     
-     queueMixedThreadFence.push_back(std::async(std::launch::async, [&] {   
+    queueMixedThreadFence.push_back(std::async(std::launch::async, [&] {   
     // Sort our voices
     voice_context.SortInfo();
 
@@ -336,11 +336,9 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
     queueMixedThreadFence.resize(0); //instead of passing a s16 to the queue mixed buffer to control, pushing values to a vector seemed about as fast
     
     for (const auto& tag : released_buffers) {
-    
         keepThreadReady2 = std::async(std::launch::async, [&]{    
             QueueMixedBuffer(tag);
         });
-    
         keepThreadReady2.get();
     }
 
