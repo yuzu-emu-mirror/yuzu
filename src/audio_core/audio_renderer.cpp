@@ -205,7 +205,7 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
         ReleaseAndQueueBuffers(); 
     });
 
-    QueueAudioBufferFence1.get();
+    keepThreadReady1.get();
 
     return RESULT_SUCCESS;
 }
