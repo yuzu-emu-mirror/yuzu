@@ -243,6 +243,22 @@ cat > /tmp/org.yuzu.$REPO_NAME.json <<EOF
             ]
         },
         {
+            "name": "glslang",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
+            "config-opts": [
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DENABLE_SPVREMAPPER=OFF",
+                "-DENABLE_GLSLANG_JS=OFF"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/KhronosGroup/glslang.git"
+                }
+            ]
+        },
+        {
             "name": "yuzu",
             "buildsystem": "cmake-ninja",
             "builddir": true,
