@@ -202,7 +202,7 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
     }
 
     keepThreadReady1 = std::async(std::launch::async, [&] { 
-    ReleaseAndQueueBuffers(); 
+        ReleaseAndQueueBuffers(); 
     });
 
     QueueAudioBufferFence1.get();
@@ -337,10 +337,11 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
     
     for (const auto& tag : released_buffers) {
     
-    keepThreadReady2 = std::async(std::launch::async, [&]{    
-        QueueMixedBuffer(tag);
-    });
-    keepThreadReady2.get();
+        keepThreadReady2 = std::async(std::launch::async, [&]{    
+            QueueMixedBuffer(tag);
+        });
+    
+        keepThreadReady2.get();
     }
 
 }
