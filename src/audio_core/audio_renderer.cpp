@@ -1,9 +1,10 @@
-// Copyright 2018 yuzu Emulator Project
+// Copyright 2020 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
 #include <limits>
 #include <vector>
+#include <future>
 
 #include "audio_core/audio_out.h"
 #include "audio_core/audio_renderer.h"
@@ -68,6 +69,11 @@ namespace {
 } // namespace
 
 namespace AudioCore {
+
+std::vector <std::future<void>> queueMixedThreadFence;
+std::future<void> keepThreadReady1;
+std::future<void> keepThreadReady2;
+    
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,
                              Stream::ReleaseCallback&& release_callback,
@@ -195,7 +201,11 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
         return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
     }
 
-    ReleaseAndQueueBuffers();
+    keepThreadReady1 = std::async(std::launch::async, [&] { 
+    ReleaseAndQueueBuffers(); 
+    });
+
+    QueueAudioBufferFence1.get();
 
     return RESULT_SUCCESS;
 }
@@ -209,6 +219,8 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     if (!splitter_context.UsingSplitter()) {
         mix_context.SortInfo();
     }
+    
+     queueMixedThreadFence.push_back(std::async(std::launch::async, [&] {   
     // Sort our voices
     voice_context.SortInfo();
 
@@ -218,6 +230,8 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     command_generator.GenerateFinalMixCommands();
 
     command_generator.PostCommand();
+    }));
+
     // Base sample size
     std::size_t BUFFER_SIZE{worker_params.sample_count};
     // Samples
@@ -236,6 +250,7 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
             mix_buffers[i] =
                 command_generator.GetMixBuffer(in_params.buffer_offset + buffer_offsets[i]);
         }
+        queueMixedThreadFence[queueMixedThreadFence.size() - 1].get();
 
         for (std::size_t i = 0; i < BUFFER_SIZE; i++) {
             if (channel_count == 1) {
@@ -315,10 +330,19 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
 }
 
 void AudioRenderer::ReleaseAndQueueBuffers() {
+
     const auto released_buffers{audio_out->GetTagsAndReleaseBuffers(stream)};
+    
+    queueMixedThreadFence.resize(0); //instead of passing a s16 to the queue mixed buffer to control, pushing values to a vector seemed about as fast
+    
     for (const auto& tag : released_buffers) {
+    
+    keepThreadReady2 = std::async(std::launch::async, [&]{    
         QueueMixedBuffer(tag);
+    });
+    keepThreadReady2.get();
     }
+
 }
 
 } // namespace AudioCore
