@@ -2,9 +2,9 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <future>
 #include <limits>
 #include <vector>
-#include <future>
 
 #include "audio_core/audio_out.h"
 #include "audio_core/audio_renderer.h"
@@ -70,10 +70,10 @@ namespace {
 
 namespace AudioCore {
 
-std::vector <std::future<void>> queueMixedThreadFence;
+std::vector<std::future<void>> queueMixedThreadFence;
 std::future<void> keepThreadReady1;
 std::future<void> keepThreadReady2;
-    
+
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,
                              Stream::ReleaseCallback&& release_callback,
@@ -201,9 +201,7 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
         return AudioCommon::Audren::ERR_INVALID_PARAMETERS;
     }
 
-    keepThreadReady1 = std::async(std::launch::async, [&] { 
-        ReleaseAndQueueBuffers(); 
-    });
+    keepThreadReady1 = std::async(std::launch::async, [&] { ReleaseAndQueueBuffers(); });
 
     keepThreadReady1.get();
 
@@ -219,17 +217,17 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     if (!splitter_context.UsingSplitter()) {
         mix_context.SortInfo();
     }
-    
-    queueMixedThreadFence.push_back(std::async(std::launch::async, [&] {   
-    // Sort our voices
-    voice_context.SortInfo();
 
-    // Handle samples
-    command_generator.GenerateVoiceCommands();
-    command_generator.GenerateSubMixCommands();
-    command_generator.GenerateFinalMixCommands();
+    queueMixedThreadFence.push_back(std::async(std::launch::async, [&] {
+        // Sort our voices
+        voice_context.SortInfo();
 
-    command_generator.PostCommand();
+        // Handle samples
+        command_generator.GenerateVoiceCommands();
+        command_generator.GenerateSubMixCommands();
+        command_generator.GenerateFinalMixCommands();
+
+        command_generator.PostCommand();
     }));
 
     // Base sample size
@@ -328,20 +326,17 @@ void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     elapsed_frame_count++;
     voice_context.UpdateStateByDspShared();
 }
-
 void AudioRenderer::ReleaseAndQueueBuffers() {
 
     const auto released_buffers{audio_out->GetTagsAndReleaseBuffers(stream)};
-    
-    queueMixedThreadFence.resize(0); //instead of passing a s16 to the queue mixed buffer to control, pushing values to a vector seemed about as fast
-    
+
+    queueMixedThreadFence.resize(0); // instead of passing a s16 to the queue mixed buffer to
+                                     // control, pushing values to a vector seemed about as fast
+
     for (const auto& tag : released_buffers) {
-        keepThreadReady2 = std::async(std::launch::async, [&]{    
-            QueueMixedBuffer(tag);
-        });
+        keepThreadReady2 = std::async(std::launch::async, [&] { QueueMixedBuffer(tag); });
         keepThreadReady2.get();
     }
-
 }
 
 } // namespace AudioCore
