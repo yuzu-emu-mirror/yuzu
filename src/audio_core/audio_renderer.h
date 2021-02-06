@@ -47,7 +47,7 @@ public:
 
     [[nodiscard]] ResultCode UpdateAudioRenderer(const std::vector<u8>& input_params,
                                                  std::vector<u8>& output_params);
-    void QueueMixedBuffer(Buffer::Tag tag, s16 buffer_max, s16 current_thread);
+    void QueueMixedBuffer(Buffer::Tag tag);
     void ReleaseAndQueueBuffers();
     [[nodiscard]] u32 GetSampleRate() const;
     [[nodiscard]] u32 GetSampleCount() const;
