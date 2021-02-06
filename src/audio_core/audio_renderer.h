@@ -5,10 +5,10 @@
 #pragma once
 
 #include <array>
-#include <memory>
-#include <vector>
 #include <future>
+#include <memory>
 #include <mutex>
+#include <vector>
 
 #include "audio_core/behavior_info.h"
 #include "audio_core/command_generator.h"
