@@ -2,8 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <limits>
 #include <future>
+#include <limits>
 #include <mutex>
 #include <vector>
 
