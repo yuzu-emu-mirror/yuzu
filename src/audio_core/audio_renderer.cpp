@@ -3,9 +3,9 @@
 // Refer to the license.txt file included.
 
 #include <limits>
-#include <vector>
 #include <future>
 #include <mutex>
+#include <vector>
 
 #include "audio_core/audio_out.h"
 #include "audio_core/audio_renderer.h"
@@ -324,7 +324,7 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
         queue_mixed_multithread[thread_counter] = std::async(
             std::launch::async, [=, voice_context = voice_context, 
                                  splitter_context = splitter_context, mix_context = mix_context] { 
-                QueueMixedBuffer(tag, released_buffers.size(), thread_counter+1);
+                QueueMixedBuffer(tag, released_buffers.size(), thread_counter + 1);
             });
         thread_counter++;
     }
