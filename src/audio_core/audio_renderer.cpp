@@ -90,10 +90,10 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory
         fmt::format("AudioRenderer-Instance{}", instance_number), std::move(release_callback));
     audio_out->StartStream(stream);
 
-    QueueMixedBuffer(0, 0, 0);
-    QueueMixedBuffer(1, 0, 0);
-    QueueMixedBuffer(2, 0, 0);
-    QueueMixedBuffer(3, 0, 0);
+    QueueMixedBuffer(0);
+    QueueMixedBuffer(1);
+    QueueMixedBuffer(2);
+    QueueMixedBuffer(3);
 }
 
 AudioRenderer::~AudioRenderer() = default;
@@ -202,7 +202,7 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
     return RESULT_SUCCESS;
 }
 
-void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag, s16 buffer_max, s16 current_thread) {
+void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag) {
     command_generator.PreCommand();
     // Clear mix buffers before our next operation
     command_generator.ClearMixBuffers();
@@ -324,7 +324,7 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
         queue_mixed_multithread[thread_counter] = std::async(
             std::launch::async, [=, voice_context = voice_context,
                                  splitter_context = splitter_context, mix_context = mix_context] {
-                QueueMixedBuffer(tag, released_buffers.size(), thread_counter + 1);
+                QueueMixedBuffer(tag);
             });
         thread_counter++;
     }
