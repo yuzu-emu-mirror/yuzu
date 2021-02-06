@@ -202,8 +202,7 @@ ResultCode AudioRenderer::UpdateAudioRenderer(const std::vector<u8>& input_param
     return RESULT_SUCCESS;
 }
 
-void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag, s16 buffer_max,
-                                     s16 current_thread) {
+void AudioRenderer::QueueMixedBuffer(Buffer::Tag tag, s16 buffer_max, s16 current_thread) {
     command_generator.PreCommand();
     // Clear mix buffers before our next operation
     command_generator.ClearMixBuffers();
