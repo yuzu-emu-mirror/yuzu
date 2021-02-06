@@ -322,10 +322,8 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
     queue_mixed_multithread.resize(released_buffers.size());
     for (const auto& tag : released_buffers) {
         queue_mixed_multithread[thread_counter] = std::async(
-            std::launch::async, [=, voice_context = voice_context,
-                                 splitter_context = splitter_context, mix_context = mix_context] {
-                QueueMixedBuffer(tag);
-            });
+            std::launch::async, [=, voice_context = voice_context, splitter_context = splitter_context,
+                                 mix_context = mix_context] { QueueMixedBuffer(tag); });
         thread_counter++;
     }
     for (std::size_t thread = 0; thread < released_buffers.size(); thread++) {
