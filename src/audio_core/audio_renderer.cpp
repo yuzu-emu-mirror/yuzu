@@ -328,7 +328,7 @@ void AudioRenderer::ReleaseAndQueueBuffers() {
         });
         thread_counter++;
     }
-    for (std::size_t thread_to_refrence = 0; thread_to_refrence < released_buffers.size(); thread_to_refrence++) {
+    for (std::size_t thread = 0; thread < released_buffers.size(); thread++) {
         queue_mixed_multithread[thread_to_refrence].wait();
     }
 }
