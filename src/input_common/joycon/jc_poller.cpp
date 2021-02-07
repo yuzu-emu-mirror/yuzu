@@ -231,8 +231,10 @@ void JCButtonFactory::EndConfiguration() {
 
 class JCAnalog final : public Input::AnalogDevice {
 public:
-    JCAnalog(int port_, int axis_x_, int axis_y_, float deadzone_, JCAdapter::Joycons* adapter)
-        : port(port_), axis_x(axis_x_), axis_y(axis_y_), deadzone(deadzone_), jcadapter(adapter) {}
+    JCAnalog(int port_, int axis_x_, int axis_y_, bool invert_x_, bool invert_y_, float deadzone_,
+             float range_, JCAdapter::Joycons* adapter)
+        : port(port_), axis_x(axis_x_), axis_y(axis_y_), invert_x(invert_x_), invert_y(invert_y_),
+          deadzone(deadzone_), range(range_), jcadapter(adapter) {}
 
     float GetAxis(int axis) const {
         if (jcadapter->DeviceConnected(port)) {
@@ -246,10 +248,15 @@ public:
         return 0.0f;
     }
 
-    std::pair<float, float> GetAnalog(int axis_x, int axis_y) const {
-        float x = GetAxis(axis_x);
-        float y = GetAxis(axis_y);
-
+    std::pair<float, float> GetAnalog(u32 analog_axis_x, u32 analog_axis_y) const {
+        float x = GetAxis(analog_axis_x);
+        float y = GetAxis(analog_axis_y);
+        if (invert_x) {
+            x = -x;
+        }
+        if (invert_y) {
+            y = -y;
+        }
         // Make sure the coordinates are in the unit circle,
         // otherwise normalize it.
         float r = x * x + y * y;
@@ -292,7 +299,10 @@ private:
     const int port;
     const int axis_x;
     const int axis_y;
+    const bool invert_x;
+    const bool invert_y;
     const float deadzone;
+    const float range;
     JCAdapter::Joycons* jcadapter;
     mutable std::mutex mutex;
 };
@@ -309,12 +319,18 @@ JCAnalogFactory::JCAnalogFactory(std::shared_ptr<JCAdapter::Joycons> adapter_)
  *     - "axis_y": the index of the axis to be bind as y-axis
  */
 std::unique_ptr<Input::AnalogDevice> JCAnalogFactory::Create(const Common::ParamPackage& params) {
-    const int port = params.Get("port", 0);
-    const int axis_x = params.Get("axis_x", 0);
-    const int axis_y = params.Get("axis_y", 1);
-    const float deadzone = std::clamp(params.Get("deadzone", 0.0f), 0.0f, .99f);
+    const auto port = static_cast<u32>(params.Get("port", 0));
+    const auto axis_x = static_cast<u32>(params.Get("axis_x", 0));
+    const auto axis_y = static_cast<u32>(params.Get("axis_y", 1));
+    const auto deadzone = std::clamp(params.Get("deadzone", 0.0f), 0.0f, 1.0f);
+    const auto range = std::clamp(params.Get("range", 1.0f), 0.50f, 1.50f);
+    const std::string invert_x_value = params.Get("invert_x", "+");
+    const std::string invert_y_value = params.Get("invert_y", "+");
+    const bool invert_x = invert_x_value == "-";
+    const bool invert_y = invert_y_value == "-";
 
-    return std::make_unique<JCAnalog>(port, axis_x, axis_y, deadzone, adapter.get());
+    return std::make_unique<JCAnalog>(port, axis_x, axis_y, invert_x, invert_y, deadzone, range,
+                                      adapter.get());
 }
 
 void JCAnalogFactory::BeginConfiguration() {
@@ -340,7 +356,7 @@ Common::ParamPackage JCAnalogFactory::GetNextInput() {
                     analog_x_axis = axis;
                     controller_number = static_cast<int>(port);
                 } else if (analog_y_axis == -1 && analog_x_axis != axis &&
-                           controller_number == port) {
+                           controller_number == static_cast<int>(port)) {
                     analog_y_axis = axis;
                 }
             } else if (pad.motion != JCAdapter::PadMotion::Undefined &&
@@ -350,7 +366,7 @@ Common::ParamPackage JCAnalogFactory::GetNextInput() {
                     analog_x_axis = axis;
                     controller_number = static_cast<int>(port);
                 } else if (analog_y_axis == -1 && analog_x_axis != axis &&
-                           controller_number == port) {
+                           controller_number == static_cast<int>(port)) {
                     analog_y_axis = axis;
                 }
             }

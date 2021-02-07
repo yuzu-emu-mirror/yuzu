@@ -112,7 +112,7 @@ void Joycons::SetJoyStickCal(std::vector<u8> buffer, JoyStick& axis1, JoyStick& 
 }
 
 void Joycons::SetImuCal(Joycon& jc, std::vector<u8> buffer) {
-    for (size_t i = 0; i < jc.imu.size(); ++i) {
+    for (std::size_t i = 0; i < jc.imu.size(); ++i) {
         jc.imu[i].acc.offset = (u16)(buffer[0 + (i * 2)] | (buffer[1 + (i * 2)] << 8));
         jc.imu[i].acc.scale = (u16)(buffer[0 + 6 + (i * 2)] | (buffer[1 + 6 + (i * 2)] << 8));
         jc.imu[i].gyr.offset = (u16)(buffer[0 + 12 + (i * 2)] | (buffer[1 + 12 + (i * 2)] << 8));
@@ -138,6 +138,8 @@ void Joycons::GetUserCalibrationData(Joycon& jc) {
         SetJoyStickCal(buffer, jc.axis[0], jc.axis[1], true);
         buffer = ReadSPI(jc.handle, CalAddr::USER_RIGHT_DATA, 9);
         SetJoyStickCal(buffer, jc.axis[2], jc.axis[3], false);
+        break;
+    case JoyControllerTypes::None:
         break;
     }
 
@@ -165,6 +167,8 @@ void Joycons::GetFactoryCalibrationData(Joycon& jc) {
         buffer = ReadSPI(jc.handle, CalAddr::FACT_RIGHT_DATA, 9);
         SetJoyStickCal(buffer, jc.axis[2], jc.axis[3], false);
         break;
+    case JoyControllerTypes::None:
+        break;
     }
 
     buffer = ReadSPI(jc.handle, CalAddr::FACT_IMU_DATA, 24);
@@ -172,7 +176,7 @@ void Joycons::GetFactoryCalibrationData(Joycon& jc) {
     hid_set_nonblocking(jc.handle, 1);
 }
 
-s16 Joycons::GetRawIMUValues(size_t sensor, size_t axis, std::vector<u8> buffer) {
+s16 Joycons::GetRawIMUValues(std::size_t sensor, size_t axis, std::vector<u8> buffer) {
     const size_t offset = (sensor * 6) + (axis * 2);
     return static_cast<s16>(buffer[13 + offset] | (buffer[14 + offset] << 8));
 }
@@ -210,12 +214,12 @@ f32 Joycons::TransformGyrValue(s16 raw, ImuData cal, GyrSensitivity sen) {
 }
 
 void Joycons::GetIMUValues(Joycon& jc, std::vector<u8> buffer) {
-    for (size_t i = 0; i < jc.imu.size(); ++i) {
+    for (std::size_t i = 0; i < jc.imu.size(); ++i) {
         jc.imu[i].gyr.value = 0;
         jc.imu[i].acc.value = 0;
     }
-    for (size_t i = 0; i < jc.imu.size(); ++i) {
-        for (size_t sample = 0; sample < 3; ++sample) {
+    for (std::size_t i = 0; i < jc.imu.size(); ++i) {
+        for (std::size_t sample = 0; sample < 3; ++sample) {
             const s16 raw_gyr = GetRawIMUValues((sample * 2) + 1, i, buffer);
             const s16 raw_acc = GetRawIMUValues(sample * 2, i, buffer);
             switch (i) {
@@ -276,7 +280,7 @@ void Joycons::GetProPadInput(Joycon& jc, std::vector<u8> buffer) {
     jc.axis[3].value = static_cast<u16>((buffer[10] >> 4) | (buffer[11] << 4));
 }
 
-void Joycons::SetRumble(int port, f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) {
+void Joycons::SetRumble(std::size_t port, f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) {
     if (!DeviceConnected(port) || !joycon[port].rumble_enabled) {
         return;
     }
@@ -295,7 +299,7 @@ void Joycons::SetRumble(int port, f32 amp_high, f32 amp_low, f32 freq_high, f32 
     }
 }
 
-void Joycons::SendRumble(int port) {
+void Joycons::SendRumble(std::size_t port) {
     std::vector<u8> buffer(max_resp_size);
 
     buffer[port] = static_cast<u8>(Output::RUMBLE_ONLY);
@@ -314,7 +318,7 @@ void Joycons::SendRumble(int port) {
         u8 encoded_lamp =
             static_cast<u8>(EncodeRumbleAmplification(joycon[port].hd_rumble.amp_low));
 
-        for (int i = 0; i < 2; ++i) {
+        for (u8 i = 0; i < 2; ++i) {
             const u8 amplitude = i == 0 ? encoded_lamp : encoded_hamp;
             const u8 offset = i * 4;
             u32 encoded_amp = amplitude >> 1;
@@ -347,76 +351,76 @@ const f32 Joycons::EncodeRumbleAmplification(f32 amplification) {
     return roundf((log2f(amplification) * 64) + 200);
 }
 
-const f32 Joycons::GetTemperatureCelcius(int port) {
+const f32 Joycons::GetTemperatureCelcius(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0.0f;
     }
     return 25.0f + joycon[port].temperature * 0.0625f;
 }
 
-const f32 Joycons::GetTemperatureFahrenheit(int port) {
+const f32 Joycons::GetTemperatureFahrenheit(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0.0f;
     }
     return GetTemperatureCelcius(port) * 1.8f + 32;
 }
 
-const u8 Joycons::GetBatteryLevel(int port) {
+const u8 Joycons::GetBatteryLevel(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
     return joycon[port].battery;
 }
 
-const std::array<u8, 15> Joycons::GetSerialNumber(int port) {
+const std::array<u8, 15> Joycons::GetSerialNumber(std::size_t port) {
     if (!DeviceConnected(port)) {
         return {};
     }
     return joycon[port].serial_number;
 }
 
-const f32 Joycons::GetVersion(int port) {
+const f32 Joycons::GetVersion(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
     return joycon[port].version;
 }
 
-const JoyControllerTypes Joycons::GetDeviceType(int port) {
+const JoyControllerTypes Joycons::GetDeviceType(std::size_t port) {
     if (!DeviceConnected(port)) {
         return JoyControllerTypes::None;
     }
     return joycon[port].type;
 }
 
-const std::array<u8, 6> Joycons::GetMac(int port) {
+const std::array<u8, 6> Joycons::GetMac(std::size_t port) {
     if (!DeviceConnected(port)) {
         return {};
     }
     return joycon[port].mac;
 }
 
-const u32 Joycons::GetBodyColor(int port) {
+const u32 Joycons::GetBodyColor(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
     return joycon[port].color.body;
 }
 
-const u32 Joycons::GetButtonColor(int port) {
+const u32 Joycons::GetButtonColor(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
     return joycon[port].color.buttons;
 }
 
-const u32 Joycons::GetLeftGripColor(int port) {
+const u32 Joycons::GetLeftGripColor(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
     return joycon[port].color.left_grip;
 }
-const u32 Joycons::GetRightGripColor(int port) {
+const u32 Joycons::GetRightGripColor(std::size_t port) {
     if (!DeviceConnected(port)) {
         return 0x0;
     }
@@ -427,7 +431,7 @@ void Joycons::SetSerialNumber(Joycon& jc) {
     std::vector<u8> buffer;
     hid_set_nonblocking(jc.handle, 0);
     buffer = ReadSPI(jc.handle, CalAddr::SERIAL_NUMBER, 16);
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 15; ++i) {
         jc.serial_number[i] = buffer[i + 1];
     }
     hid_set_nonblocking(jc.handle, 1);
@@ -457,7 +461,7 @@ void Joycons::SetMac(Joycon& jc) {
     hid_get_serial_number_string(jc.handle, mac, std::size(mac));
     for (int i = 0; i < 6; ++i) {
         wchar_t value[3] = {mac[i * 2], mac[(i * 2) + 1]};
-        jc.mac[i] = std::stoi(value, 0, 16);
+        jc.mac[i] = static_cast<u8>(std::stoi(value, 0, 16));
     }
 }
 
@@ -532,6 +536,8 @@ void Joycons::UpdateJoyconData(Joycon& jc, std::vector<u8> buffer) {
             jc.imu[2].acc.value = -jc.imu[2].acc.value;
         }
         break;
+    case JoyControllerTypes::None:
+        break;
     }
     const auto now = std::chrono::system_clock::now();
     u64 difference =
@@ -540,7 +546,7 @@ void Joycons::UpdateJoyconData(Joycon& jc, std::vector<u8> buffer) {
     Common::Vec3f acceleration =
         Common::Vec3f(jc.imu[0].acc.value, jc.imu[1].acc.value, jc.imu[2].acc.value);
     jc.motion->SetAcceleration(acceleration);
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; ++i) {
         jc.motion->SetGyroscope(jc.gyro[i]);
         jc.motion->UpdateRotation(difference / 3);
         jc.motion->UpdateOrientation(difference / 3);
@@ -548,14 +554,14 @@ void Joycons::UpdateJoyconData(Joycon& jc, std::vector<u8> buffer) {
     jc.battery = buffer[2] >> 4;
 }
 
-void Joycons::UpdateYuzuSettings(Joycon& jc, int port) {
+void Joycons::UpdateYuzuSettings(Joycon& jc, std::size_t port) {
     if (DeviceConnected(port) && configuring) {
         JCPadStatus pad;
         if (jc.button != 0) {
             pad.button = jc.button;
             pad_queue[port].Push(pad);
         }
-        for (size_t i = 0; i < jc.axis.size(); ++i) {
+        for (std::size_t i = 0; i < jc.axis.size(); ++i) {
             const u16 value = jc.axis[i].value;
             const u16 origin = jc.axis[i].center;
             if (value != 0) {
@@ -566,7 +572,7 @@ void Joycons::UpdateYuzuSettings(Joycon& jc, int port) {
                 }
             }
         }
-        for (size_t i = 0; i < jc.imu.size(); ++i) {
+        for (std::size_t i = 0; i < jc.imu.size(); ++i) {
             const f32 value = jc.imu[i].gyr.value;
             const f32 value2 = jc.imu[i].acc.value;
             if (value > 6.0f || value < -6.0f) {
@@ -589,8 +595,8 @@ void Joycons::JoyconToState(Joycon& jc, JCState& state) {
         state.buttons.insert_or_assign(button_value, jc.button & button_value);
     }
 
-    for (size_t i = 0; i < jc.axis.size(); ++i) {
-        f32 axis_value = jc.axis[i].value - jc.axis[i].center;
+    for (std::size_t i = 0; i < jc.axis.size(); ++i) {
+        f32 axis_value = static_cast<f32>(jc.axis[i].value - jc.axis[i].center);
         if (axis_value > 0) {
             axis_value = axis_value / jc.axis[i].max;
         } else {
@@ -639,7 +645,7 @@ void Joycons::ReadLoop() {
     std::vector<u8> buffer(max_resp_size);
 
     while (adapter_thread_running) {
-        for (int port = 0; port < joycon.size(); ++port) {
+        for (std::size_t port = 0; port < joycon.size(); ++port) {
             if (joycon[port].type != JoyControllerTypes::None) {
 
                 const int status =
@@ -665,7 +671,7 @@ void Joycons::ReadLoop() {
                            joycon[port].imu[1].acc.value, joycon[port].imu[2].acc.value,
                            joycon[port].imu[0].gyr.value, joycon[port].imu[1].gyr.value,
                            joycon[port].imu[2].gyr.value);
-                    for (int i = 0; i < 7; i++) {
+                    for (int i = 0; i < 7; ++i) {
                         printf("%02hx ", buffer[i]);
                     }
                     printf("\n");*/
@@ -678,12 +684,12 @@ void Joycons::ReadLoop() {
 
 void Joycons::Setup() {
     // Initialize all controllers as unplugged
-    for (size_t port = 0; port < joycon.size(); ++port) {
+    for (std::size_t port = 0; port < joycon.size(); ++port) {
         joycon[port].type = JoyControllerTypes::None;
-        for (size_t i = 0; i < joycon[port].axis.size(); ++i) {
+        for (std::size_t i = 0; i < joycon[port].axis.size(); ++i) {
             joycon[port].axis[i].value = 0;
         }
-        for (size_t i = 0; i < joycon[port].imu.size(); ++i) {
+        for (std::size_t i = 0; i < joycon[port].imu.size(); ++i) {
             joycon[port].imu[i].acc.value = 0;
             joycon[port].imu[i].gyr.value = 0;
         }
@@ -692,7 +698,7 @@ void Joycons::Setup() {
         joycon[port].hd_rumble.freq_high = 160.0f;
         joycon[port].hd_rumble.freq_low = 80.0f;
     }
-    int port = 0;
+    std::size_t port = 0;
 
     hid_device_info* devs = hid_enumerate(0x057e, 0x2006);
     hid_device_info* cur_dev = devs;
@@ -760,7 +766,7 @@ void Joycons::Setup() {
     GetJCEndpoint();
 }
 
-bool Joycons::CheckDeviceAccess(int port, hid_device_info* device) {
+bool Joycons::CheckDeviceAccess(std::size_t port, hid_device_info* device) {
     if (device->vendor_id != 0x057e ||
         !(device->product_id == 0x2006 || device->product_id == 0x2007 ||
           device->product_id == 0x2009)) {
@@ -841,10 +847,16 @@ std::string Joycons::JoyconName(std::size_t port) const {
     switch (joycon[port].type) {
     case JoyControllerTypes::Left:
         return "Left Joycon";
+        break;
     case JoyControllerTypes::Right:
         return "Right Joycon";
+        break;
     case JoyControllerTypes::Pro:
         return "Pro Controller";
+        break;
+    case JoyControllerTypes::None:
+        return "Unknow Joycon";
+        break;
     }
     return "Unknow Joycon";
 }

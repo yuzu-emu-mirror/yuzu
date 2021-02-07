@@ -197,19 +197,19 @@ public:
 
     bool DeviceConnected(std::size_t port) const;
 
-    void SetRumble(int port, f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low);
+    void SetRumble(std::size_t port, f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low);
 
-    const f32 GetTemperatureCelcius(int port);
-    const f32 GetTemperatureFahrenheit(int port);
-    const u8 GetBatteryLevel(int port);
-    const std::array<u8, 15> GetSerialNumber(int port);
-    const f32 GetVersion(int port);
-    const JoyControllerTypes GetDeviceType(int port);
-    const std::array<u8, 6> GetMac(int port);
-    const u32 GetBodyColor(int port);
-    const u32 GetButtonColor(int port);
-    const u32 GetLeftGripColor(int port);
-    const u32 GetRightGripColor(int port);
+    const f32 GetTemperatureCelcius(std::size_t port);
+    const f32 GetTemperatureFahrenheit(std::size_t port);
+    const u8 GetBatteryLevel(std::size_t port);
+    const std::array<u8, 15> GetSerialNumber(std::size_t port);
+    const f32 GetVersion(std::size_t port);
+    const JoyControllerTypes GetDeviceType(std::size_t port);
+    const std::array<u8, 6> GetMac(std::size_t port);
+    const u32 GetBodyColor(std::size_t port);
+    const u32 GetButtonColor(std::size_t port);
+    const u32 GetLeftGripColor(std::size_t port);
+    const u32 GetRightGripColor(std::size_t port);
 
     std::array<Common::SPSCQueue<JCPadStatus>, 4>& GetPadQueue();
     const std::array<Common::SPSCQueue<JCPadStatus>, 4>& GetPadQueue() const;
@@ -314,7 +314,7 @@ private:
                       AccPerformance afrec);
 
     // Sends rumble state
-    void SendRumble(int port);
+    void SendRumble(std::size_t port);
     const f32 EncodeRumbleAmplification(f32 amplification);
 
     // Reads color values
@@ -333,7 +333,7 @@ private:
     void SetReportMode(Joycon& jc, ReportMode mode);
 
     void UpdateJoyconData(Joycon& jc, std::vector<u8> buffer);
-    void UpdateYuzuSettings(Joycon& jc, int port);
+    void UpdateYuzuSettings(Joycon& jc, std::size_t port);
     void JoyconToState(Joycon& jc, JCState& state);
     std::string JoyconName(std::size_t port) const;
     void ReadLoop();
@@ -342,7 +342,7 @@ private:
     void ResetDeviceType(std::size_t port);
 
     /// Returns true if we successfully gain access to JC Adapter
-    bool CheckDeviceAccess(int port, hid_device_info* device);
+    bool CheckDeviceAccess(std::size_t port, hid_device_info* device);
 
     /// Captures JC Adapter endpoint address,
     void GetJCEndpoint();

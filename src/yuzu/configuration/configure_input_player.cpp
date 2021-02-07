@@ -906,10 +906,9 @@ void ConfigureInputPlayer::UpdateUI() {
 
         int slider_value;
         auto& param = analogs_param[analog_id];
-        const bool is_controller = param.Get("engine", "") == "sdl" ||
-                                   param.Get("engine", "") == "gcpad" ||
-                                   param.Get("engine", "") == "mouse" ||
-                                   param.Get("engine", "") == "jcpad";
+        const bool is_controller =
+            param.Get("engine", "") == "sdl" || param.Get("engine", "") == "gcpad" ||
+            param.Get("engine", "") == "mouse" || param.Get("engine", "") == "jcpad";
 
         if (is_controller) {
             if (!param.Has("deadzone")) {
@@ -1270,7 +1269,7 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
     input_subsystem->GetJCButtons()->EndConfiguration();
     input_subsystem->GetJCAnalogs()->EndConfiguration();
     input_subsystem->GetJCMotions()->EndConfiguration();
-	
+
     if (!abort) {
         (*input_setter)(params);
     }
