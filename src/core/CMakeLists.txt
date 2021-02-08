@@ -148,7 +148,7 @@ add_library(core STATIC
     hle/kernel/client_session.h
     hle/kernel/code_set.cpp
     hle/kernel/code_set.h
-    hle/kernel/errors.h
+    hle/kernel/svc_results.h
     hle/kernel/global_scheduler_context.cpp
     hle/kernel/global_scheduler_context.h
     hle/kernel/handle_table.cpp

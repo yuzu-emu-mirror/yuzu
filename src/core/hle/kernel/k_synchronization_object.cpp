@@ -4,12 +4,12 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 

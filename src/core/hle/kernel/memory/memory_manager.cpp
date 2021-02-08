@@ -8,9 +8,9 @@
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/scope_exit.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/memory/memory_manager.h"
 #include "core/hle/kernel/memory/page_linked_list.h"
+#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel::Memory {
 

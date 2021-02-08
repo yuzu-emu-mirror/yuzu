@@ -6,10 +6,10 @@
 
 #include "common/bit_util.h"
 #include "common/logging/log.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
 #include "core/hle/kernel/memory/page_table.h"
 #include "core/hle/kernel/process_capability.h"
+#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 namespace {

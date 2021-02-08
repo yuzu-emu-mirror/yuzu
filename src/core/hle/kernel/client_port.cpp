@@ -4,11 +4,11 @@
 
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/object.h"
 #include "core/hle/kernel/server_port.h"
 #include "core/hle/kernel/session.h"
+#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 

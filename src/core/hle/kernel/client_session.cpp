@@ -3,11 +3,11 @@
 // Refer to the license.txt file included.
 
 #include "core/hle/kernel/client_session.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/server_session.h"
 #include "core/hle/kernel/session.h"
+#include "core/hle/kernel/svc_results.h"
 #include "core/hle/result.h"
 
 namespace Kernel {

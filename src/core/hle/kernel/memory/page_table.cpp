@@ -6,7 +6,6 @@
 #include "common/assert.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/memory/address_space_info.h"
@@ -16,6 +15,7 @@
 #include "core/hle/kernel/memory/page_table.h"
 #include "core/hle/kernel/memory/system_control.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/svc_results.h"
 #include "core/memory.h"
 
 namespace Kernel::Memory {

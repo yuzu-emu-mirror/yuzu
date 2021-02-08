@@ -6,7 +6,6 @@
 
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_condition_variable.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
@@ -15,6 +14,7 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/svc_common.h"
+#include "core/hle/kernel/svc_results.h"
 #include "core/memory.h"
 
 namespace Kernel {

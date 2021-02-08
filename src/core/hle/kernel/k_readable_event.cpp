@@ -6,12 +6,12 @@
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/logging/log.h"
-#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/object.h"
+#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 
