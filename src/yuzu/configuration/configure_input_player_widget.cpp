@@ -2273,34 +2273,37 @@ void PlayerControlPreview::DrawJoystickSideview(QPainter& p, const QPointF cente
     p.drawLine(p2.at(32), p2.at(71));
 }
 
-void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, const QPointF offset, float scalar, bool pressed) {
+void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, const QPointF offset, float offset_scalar, bool pressed) {
     const float radius1 = 24.0f;
     const float radius2 = 17.0f;
 
-    const QPointF offsetCenter = center + offset * scalar;
+    const QPointF offset_center = center + offset * offset_scalar;
 
-    const float amplitude = 1 - sqrt(pow(offset.x(), 2) + pow(offset.y(), 2)) * 0.1;
+    const auto amplitude = static_cast<float>(
+        1.0 - std::sqrt((offset.x() * offset.x()) + (offset.y() * offset.y())) * 0.1f);
+
     const float rotation =
         ((offset.x() == 0) ? atan(1) * 2 : atan(offset.y() / offset.x())) * (180 / (atan(1) * 4));
 
-    QPointF zeroPoint;
 
     p.save();
-    p.translate(offsetCenter);
+    p.translate(offset_center);
     p.rotate(rotation);
 
     // Outer circle
     p.setPen(colors.outline);
     p.setBrush(pressed ? colors.highlight : colors.button);
-    p.drawEllipse(zeroPoint, radius1 * amplitude, radius1);
+    p.drawEllipse(QPointF(0,0) , radius1 * amplitude, radius1);
+
 
     // Inner circle
     p.setBrush(pressed ? colors.highlight2 : colors.button2);
-    p.drawEllipse(
-        zeroPoint +
-            QPointF((offset.x() < 0) ? (radius1 - radius2) * -0.4 : (radius1 - radius2) * 0.4, 0) *
-                ((1 - amplitude) / 0.1),
-        radius2 * amplitude, radius2);
+
+    const float inner_offset = (radius1 - radius2) * 0.4;
+    const float offset_factor = (1 - amplitude) / 0.1;
+
+    p.drawEllipse(QPointF((offset.x() < 0) ? -inner_offset : inner_offset, 0) * offset_factor,
+                  radius2 * amplitude, radius2);
 
     p.restore();
 }
