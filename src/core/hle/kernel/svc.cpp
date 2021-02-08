@@ -1974,22 +1974,21 @@ static ResultCode SetThreadCoreMask(Core::System& system, Handle thread_handle, 
                 return ResultInvalidCoreId;
             }
         }
+    }
 
-        // Get the thread from its handle.
-        const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
-        const std::shared_ptr<KThread> thread = handle_table.Get<KThread>(thread_handle);
-        if (!thread) {
-            LOG_ERROR(Kernel_SVC, "Invalid thread handle (handle={:08X})", thread_handle);
-            return ResultInvalidHandle;
-        }
+    // Get the thread from its handle.
+    const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const std::shared_ptr<KThread> thread = handle_table.Get<KThread>(thread_handle);
+    if (!thread) {
+        LOG_ERROR(Kernel_SVC, "Invalid thread handle (handle={:08X})", thread_handle);
+        return ResultInvalidHandle;
+    }
 
-        // Set the core mask.
-        const auto set_result = thread->SetCoreMask(core_id, affinity_mask);
-        if (set_result.IsError()) {
-            LOG_ERROR(Kernel_SVC, "Unable to successfully set core mask (result={})",
-                      set_result.raw);
-            return set_result;
-        }
+    // Set the core mask.
+    const auto set_result = thread->SetCoreMask(core_id, affinity_mask);
+    if (set_result.IsError()) {
+        LOG_ERROR(Kernel_SVC, "Unable to successfully set core mask (result={})", set_result.raw);
+        return set_result;
     }
     return RESULT_SUCCESS;
 }
