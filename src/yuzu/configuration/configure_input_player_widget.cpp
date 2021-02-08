@@ -2273,7 +2273,8 @@ void PlayerControlPreview::DrawJoystickSideview(QPainter& p, const QPointF cente
     p.drawLine(p2.at(32), p2.at(71));
 }
 
-void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, const QPointF offset, float offset_scalar, bool pressed) {
+void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, const QPointF offset,
+                                           float offset_scalar, bool pressed) {
     const float radius1 = 24.0f;
     const float radius2 = 17.0f;
 
@@ -2285,7 +2286,6 @@ void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, co
     const float rotation =
         ((offset.x() == 0) ? atan(1) * 2 : atan(offset.y() / offset.x())) * (180 / (atan(1) * 4));
 
-
     p.save();
     p.translate(offset_center);
     p.rotate(rotation);
@@ -2293,8 +2293,7 @@ void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, co
     // Outer circle
     p.setPen(colors.outline);
     p.setBrush(pressed ? colors.highlight : colors.button);
-    p.drawEllipse(QPointF(0,0) , radius1 * amplitude, radius1);
-
+    p.drawEllipse(QPointF(0, 0), radius1 * amplitude, radius1);
 
     // Inner circle
     p.setBrush(pressed ? colors.highlight2 : colors.button2);
