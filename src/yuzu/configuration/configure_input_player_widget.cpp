@@ -2298,8 +2298,8 @@ void PlayerControlPreview::DrawProJoystick(QPainter& p, const QPointF center, co
     // Inner circle
     p.setBrush(pressed ? colors.highlight2 : colors.button2);
 
-    const float inner_offset = (radius1 - radius2) * 0.4;
-    const float offset_factor = (1 - amplitude) / 0.1;
+    const float inner_offset = (radius1 - radius2) * 0.4f;
+    const float offset_factor = (1.0f - amplitude) / 0.1f;
 
     p.drawEllipse(QPointF((offset.x() < 0) ? -inner_offset : inner_offset, 0) * offset_factor,
                   radius2 * amplitude, radius2);
