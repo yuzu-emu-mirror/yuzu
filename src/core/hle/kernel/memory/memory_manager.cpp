@@ -95,7 +95,7 @@ ResultCode MemoryManager::Allocate(PageLinkedList& page_list, std::size_t num_pa
     // Choose a heap based on our page size request
     const s32 heap_index{PageHeap::GetBlockIndex(num_pages)};
     if (heap_index < 0) {
-        return ERR_OUT_OF_MEMORY;
+        return ResultOutOfMemory;
     }
 
     // TODO (bunnei): Support multiple managers
@@ -140,7 +140,7 @@ ResultCode MemoryManager::Allocate(PageLinkedList& page_list, std::size_t num_pa
 
     // Only succeed if we allocated as many pages as we wanted
     if (num_pages) {
-        return ERR_OUT_OF_MEMORY;
+        return ResultOutOfMemory;
     }
 
     // We succeeded!

@@ -4,12 +4,12 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
+#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
-#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 
@@ -40,20 +40,20 @@ ResultCode KSynchronizationObject::Wait(KernelCore& kernel, s32* out_index,
         // Check if the timeout is zero.
         if (timeout == 0) {
             slp.CancelSleep();
-            return Svc::ResultTimedOut;
+            return ResultTimedOut;
         }
 
         // Check if the thread should terminate.
         if (thread->IsTerminationRequested()) {
             slp.CancelSleep();
-            return Svc::ResultTerminationRequested;
+            return ResultTerminationRequested;
         }
 
         // Check if waiting was canceled.
         if (thread->IsWaitCancelled()) {
             slp.CancelSleep();
             thread->ClearWaitCancelled();
-            return Svc::ResultCancelled;
+            return ResultCancelled;
         }
 
         // Add the waiters.
@@ -75,7 +75,7 @@ ResultCode KSynchronizationObject::Wait(KernelCore& kernel, s32* out_index,
 
         // Mark the thread as waiting.
         thread->SetCancellable();
-        thread->SetSyncedObject(nullptr, Svc::ResultTimedOut);
+        thread->SetSyncedObject(nullptr, ResultTimedOut);
         thread->SetState(ThreadState::Waiting);
         thread->SetWaitReasonForDebugging(ThreadWaitReasonForDebugging::Synchronization);
     }

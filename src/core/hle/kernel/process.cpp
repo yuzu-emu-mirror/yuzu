@@ -23,7 +23,6 @@
 #include "core/hle/kernel/memory/page_table.h"
 #include "core/hle/kernel/memory/slab_heap.h"
 #include "core/hle/kernel/process.h"
-#include "core/hle/kernel/svc_results.h"
 #include "core/hle/lock.h"
 #include "core/memory.h"
 #include "core/settings.h"
@@ -248,8 +247,8 @@ ResultCode Process::Reset() {
     KScopedSchedulerLock sl{kernel};
 
     // Validate that we're in a state that we can reset.
-    R_UNLESS(status != ProcessStatus::Exited, Svc::ResultInvalidState);
-    R_UNLESS(is_signaled, Svc::ResultInvalidState);
+    R_UNLESS(status != ProcessStatus::Exited, ResultInvalidState);
+    R_UNLESS(is_signaled, ResultInvalidState);
 
     // Clear signaled.
     is_signaled = false;

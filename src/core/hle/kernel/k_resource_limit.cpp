@@ -9,8 +9,8 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
+#include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/k_resource_limit.h"
-#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 constexpr s64 DefaultTimeout = 10000000000; // 10 seconds
@@ -75,7 +75,7 @@ s64 KResourceLimit::GetFreeValue(LimitableResource which) const {
 ResultCode KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
     const auto index = static_cast<std::size_t>(which);
     KScopedLightLock lk(lock);
-    R_UNLESS(current_values[index] <= value, Svc::ResultInvalidState);
+    R_UNLESS(current_values[index] <= value, ResultInvalidState);
 
     limit_values[index] = value;
 

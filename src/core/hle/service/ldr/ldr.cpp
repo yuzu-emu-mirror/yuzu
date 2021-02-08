@@ -330,7 +330,7 @@ public:
             const VAddr addr{GetRandomMapRegion(page_table, size)};
             const ResultCode result{page_table.MapProcessCodeMemory(addr, baseAddress, size)};
 
-            if (result == Kernel::ERR_INVALID_ADDRESS_STATE) {
+            if (result == Kernel::ResultInvalidCurrentMemory) {
                 continue;
             }
 
@@ -361,7 +361,7 @@ public:
                 const ResultCode result{
                     page_table.MapProcessCodeMemory(addr + nro_size, bss_addr, bss_size)};
 
-                if (result == Kernel::ERR_INVALID_ADDRESS_STATE) {
+                if (result == Kernel::ResultInvalidCurrentMemory) {
                     continue;
                 }
 

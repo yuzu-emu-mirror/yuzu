@@ -223,7 +223,6 @@ add_library(core STATIC
     hle/kernel/svc.cpp
     hle/kernel/svc.h
     hle/kernel/svc_common.h
-    hle/kernel/svc_results.h
     hle/kernel/svc_types.h
     hle/kernel/svc_wrap.h
     hle/kernel/time_manager.cpp

@@ -43,7 +43,7 @@ ResultCode ClientSession::SendSyncRequest(std::shared_ptr<KThread> thread,
                                           Core::Timing::CoreTiming& core_timing) {
     // Keep ServerSession alive until we're done working with it.
     if (!parent->Server()) {
-        return ERR_SESSION_CLOSED_BY_REMOTE;
+        return ResultSessionClosedByRemote;
     }
 
     // Signal the server session that new data is available

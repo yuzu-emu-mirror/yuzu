@@ -12,7 +12,6 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/object.h"
-#include "core/hle/kernel/svc_results.h"
 
 namespace Kernel {
 
@@ -47,7 +46,7 @@ ResultCode KReadableEvent::Reset() {
     KScopedSchedulerLock lk{kernel};
 
     if (!is_signaled) {
-        return Svc::ResultInvalidState;
+        return ResultInvalidState;
     }
 
     is_signaled = false;
