@@ -16,7 +16,7 @@ add_library(catch-single-include INTERFACE)
 target_include_directories(catch-single-include INTERFACE catch/single_include)
 
 # Dynarmic
-if (ARCHITECTURE_x86_64)
+if (ARCHITECTURE_x86_64 OR ARCHITECTURE_ARM64)
     set(DYNARMIC_TESTS OFF)
     set(DYNARMIC_NO_BUNDLED_FMT ON)
     add_subdirectory(dynarmic)
