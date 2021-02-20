@@ -40,3 +40,7 @@
 [submodule "ffmpeg"]
 	path = externals/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "xbyak_aarch64"]
+	path = xbyak_aarch64
+	url = https://github.com/herumi/xbyak_aarch64.git
+	branch = master
