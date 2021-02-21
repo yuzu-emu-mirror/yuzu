@@ -43,3 +43,6 @@
 [submodule "xbyak_aarch64"]
 	path =  externals/xbyak_aarch64
 	url = https://github.com/herumi/xbyak_aarch64.git
+[submodule "externals/xbyak_aarch64"]
+	path = externals/xbyak_aarch64
+	url = https://github.com/herumi/xbyak_aarch64.git
