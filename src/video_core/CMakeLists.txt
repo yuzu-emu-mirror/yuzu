@@ -275,7 +275,7 @@ target_link_libraries(video_core PRIVATE glad)
 if (ARCHITECTURE_x86_64)
     target_link_libraries(video_core PRIVATE xbyak)
 elseif(ARCHITECTURE_ARM64)
-    message(WARNING "Arm64 (aarch64) is a work in progress")
+    target_link_libraries(video_core PRIVATE xbyak_aarch64)
 endif()
 
 

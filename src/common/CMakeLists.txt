@@ -218,7 +218,7 @@ target_link_libraries(common PRIVATE lz4::lz4)
 if (ARCHITECTURE_x86_64)
     target_link_libraries(common PRIVATE xbyak)
 elseif(ARCHITECTURE_ARM64)
-    message(WARNING "Arm64 (aarch64) is a work in progress")
+    target_link_libraries(common PRIVATE xbyak_aarch64)
 endif()
 
 if (MSVC)
