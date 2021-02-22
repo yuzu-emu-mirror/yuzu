@@ -862,9 +862,12 @@ void RasterizerOpenGL::SyncViewport() {
         if (regs.screen_y_control.y_negate != 0) {
             flip_y = !flip_y;
         }
-        const bool is_zero_to_one = regs.depth_mode == Maxwell::DepthMode::ZeroToOne;
+
         const GLenum origin = flip_y ? GL_UPPER_LEFT : GL_LOWER_LEFT;
-        const GLenum depth = is_zero_to_one ? GL_ZERO_TO_ONE : GL_NEGATIVE_ONE_TO_ONE;
+        const GLenum depth = regs.view_volume_clip_control.depth_range_0_1 ||
+                                     regs.depth_mode == Maxwell::DepthMode::ZeroToOne
+                                 ? GL_ZERO_TO_ONE
+                                 : GL_NEGATIVE_ONE_TO_ONE;
         state_tracker.ClipControl(origin, depth);
         state_tracker.SetYNegate(regs.screen_y_control.y_negate != 0);
     }
@@ -889,6 +892,7 @@ void RasterizerOpenGL::SyncViewport() {
             const GLdouble reduce_z = regs.depth_mode == Maxwell::DepthMode::MinusOneToOne;
             const GLdouble near_depth = src.translate_z - src.scale_z * reduce_z;
             const GLdouble far_depth = src.translate_z + src.scale_z;
+
             glDepthRangeIndexed(static_cast<GLuint>(i), near_depth, far_depth);
 
             if (!GLAD_GL_NV_viewport_swizzle) {
