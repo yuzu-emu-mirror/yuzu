@@ -79,6 +79,11 @@ const float fswzadd_modifiers_a[] = float[4](-1.0f,  1.0f, -1.0f,  0.0f );
 const float fswzadd_modifiers_b[] = float[4](-1.0f, -1.0f,  1.0f, -1.0f );
 )";
 
+enum class HelperFunction {
+    SignedAtomic = 0,
+    Total,
+};
+
 class ShaderWriter final {
 public:
     void AddExpression(std::string_view text) {
@@ -434,6 +439,7 @@ public:
         DeclareInternalFlags();
         DeclareCustomVariables();
         DeclarePhysicalAttributeReader();
+        DeclareHelpersForward();
 
         code.AddLine("void main() {{");
         ++code.scope;
@@ -450,6 +456,9 @@ public:
 
         --code.scope;
         code.AddLine("}}");
+
+        code.AddNewLine();
+        DeclareHelpers();
     }
 
     std::string GetResult() {
@@ -599,7 +608,7 @@ private:
                 size = limit;
             }
 
-            code.AddLine("shared uint smem[{}];", size / 4);
+            code.AddLine("shared uint {}[{}];", GetSharedMemory(), size / 4);
             code.AddNewLine();
         }
         code.AddLine("layout (local_size_x = {}, local_size_y = {}, local_size_z = {}) in;",
@@ -983,6 +992,27 @@ private:
         }
     }
 
+    void DeclareHelpersForward() {
+        code.AddLine("int Helpers_AtomicShared(uint offset, int value, bool is_min);");
+        code.AddNewLine();
+    }
+
+    void DeclareHelpers() {
+        if (IsHelperEnabled(HelperFunction::SignedAtomic)) {
+            code.AddLine(
+                R"(int Helpers_AtomicShared(uint offset, int value, bool is_min) {{
+    uint oldValue, newValue;
+    do {{
+        oldValue = {}[offset];
+        newValue = is_min ? uint(min(int(oldValue), value)) : uint(max(int(oldValue), value));
+    }} while (atomicCompSwap({}[offset], newValue, oldValue) != oldValue);
+    return int(oldValue);
+}})",
+                GetSharedMemory(), GetSharedMemory());
+            code.AddNewLine();
+        }
+    }
+
     void VisitBlock(const NodeBlock& bb) {
         for (const auto& node : bb) {
             Visit(node).CheckVoid();
@@ -1109,7 +1139,9 @@ private:
         }
 
         if (const auto smem = std::get_if<SmemNode>(&*node)) {
-            return {fmt::format("smem[{} >> 2]", Visit(smem->GetAddress()).AsUint()), Type::Uint};
+            return {
+                fmt::format("{}[{} >> 2]", GetSharedMemory(), Visit(smem->GetAddress()).AsUint()),
+                Type::Uint};
         }
 
         if (const auto internal_flag = std::get_if<InternalFlagNode>(&*node)) {
@@ -1598,7 +1630,9 @@ private:
                 Type::Uint};
         } else if (const auto smem = std::get_if<SmemNode>(&*dest)) {
             ASSERT(stage == ShaderType::Compute);
-            target = {fmt::format("smem[{} >> 2]", Visit(smem->GetAddress()).AsUint()), Type::Uint};
+            target = {
+                fmt::format("{}[{} >> 2]", GetSharedMemory(), Visit(smem->GetAddress()).AsUint()),
+                Type::Uint};
         } else if (const auto gmem = std::get_if<GmemNode>(&*dest)) {
             const std::string real = Visit(gmem->GetRealAddress()).AsUint();
             const std::string base = Visit(gmem->GetBaseAddress()).AsUint();
@@ -2115,7 +2149,14 @@ private:
         UNIMPLEMENTED_IF(meta->sampler.is_array);
         const std::size_t count = operation.GetOperandsCount();
 
-        std::string expr = "texelFetch(";
+        std::string expr = "texelFetch";
+
+        if (!meta->aoffi.empty()) {
+            expr += "Offset";
+        }
+
+        expr += '(';
+
         expr += GetSampler(meta->sampler);
         expr += ", ";
 
@@ -2137,6 +2178,20 @@ private:
             expr += ", ";
             expr += Visit(meta->lod).AsInt();
         }
+
+        if (!meta->aoffi.empty()) {
+            expr += ", ";
+            expr += constructors.at(meta->aoffi.size() - 1);
+            expr += '(';
+            for (size_t i = 0; i < meta->aoffi.size(); ++i) {
+                if (i > 0) {
+                    expr += ", ";
+                }
+                expr += Visit(meta->aoffi[i]).AsInt();
+            }
+            expr += ')';
+        }
+
         expr += ')';
         expr += GetSwizzle(meta->element);
 
@@ -2183,8 +2238,11 @@ private:
     template <const std::string_view& opname, Type type>
     Expression Atomic(Operation operation) {
         if ((opname == Func::Min || opname == Func::Max) && type == Type::Int) {
-            UNIMPLEMENTED_MSG("Unimplemented Min & Max for atomic operations");
-            return {};
+            // Use a helper as a workaround due to memory being uint
+            SetHelperEnabled(HelperFunction::SignedAtomic, true);
+            return {fmt::format("Helpers_AtomicShared({}, {}, {})", Visit(operation[0]).AsInt(),
+                                Visit(operation[1]).AsInt(), opname == Func::Min),
+                    Type::Int};
         }
         return {fmt::format("atomic{}({}, {})", opname, Visit(operation[0]).GetCode(),
                             Visit(operation[1]).AsUint()),
@@ -2705,6 +2763,10 @@ private:
         }
     }
 
+    constexpr std::string_view GetSharedMemory() const {
+        return "shared_mem";
+    }
+
     std::string GetInternalFlag(InternalFlag flag) const {
         constexpr std::array InternalFlagNames = {"zero_flag", "sign_flag", "carry_flag",
                                                   "overflow_flag"};
@@ -2746,6 +2808,14 @@ private:
         return std::min<u32>(device.GetMaxVaryings(), Maxwell::NumVaryings);
     }
 
+    void SetHelperEnabled(HelperFunction hf, bool enabled) {
+        helper_functions_enabled[static_cast<size_t>(hf)] = enabled;
+    }
+
+    bool IsHelperEnabled(HelperFunction hf) const {
+        return helper_functions_enabled[static_cast<size_t>(hf)];
+    }
+
     const Device& device;
     const ShaderIR& ir;
     const Registry& registry;
@@ -2758,6 +2828,8 @@ private:
     ShaderWriter code;
 
     std::optional<u32> max_input_vertices;
+
+    std::array<bool, static_cast<size_t>(HelperFunction::Total)> helper_functions_enabled{};
 };
 
 std::string GetFlowVariable(u32 index) {
