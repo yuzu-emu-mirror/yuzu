@@ -210,6 +210,8 @@ Device::Device() {
     const bool is_amd = vendor == "ATI Technologies Inc.";
     const bool is_intel = vendor == "Intel";
 
+    const bool is_mesa = version.find("Mesa") != std::string_view::npos;
+
     bool disable_fast_buffer_sub_data = false;
     if (is_nvidia && version == "4.6.0 NVIDIA 443.24") {
         LOG_WARNING(
@@ -235,7 +237,7 @@ Device::Device() {
     has_variable_aoffi = TestVariableAoffi();
     has_component_indexing_bug = is_amd;
     has_precise_bug = TestPreciseBug();
-    has_broken_texture_view_formats = is_amd || is_intel;
+    has_broken_texture_view_formats = is_amd || (!is_mesa && is_intel);
     has_nv_viewport_array2 = GLAD_GL_NV_viewport_array2;
     has_vertex_buffer_unified_memory = GLAD_GL_NV_vertex_buffer_unified_memory;
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
