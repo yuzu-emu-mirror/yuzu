@@ -478,7 +478,7 @@ private:
                 }
                 page += empty_bits;
 
-                const int continuous_bits = std::countr_one(word >> page);
+                const int continuous_bits = std::countr_one(word >> (page % 64));
                 if (!on_going && continuous_bits != 0) {
                     current_base = word_index * PAGES_PER_WORD + page;
                     on_going = true;
