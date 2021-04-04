@@ -91,7 +91,7 @@ struct LevelInfo {
     if (shift == 0) {
         return 0;
     }
-    u32 x = unit_factor << (shift - 1);
+    u32 x = unit_factor << ((shift - 1) % 32);
     if (x >= dimension) {
         while (--shift) {
             x >>= 1;
@@ -254,9 +254,9 @@ template <u32 GOB_EXTENT>
     const Extent3D tile_shift = TileShift(info, level);
     const Extent2D gobs = NumGobs(info, level);
     return Extent3D{
-        .width = Common::DivCeilLog2(gobs.width, tile_shift.width),
-        .height = Common::DivCeilLog2(gobs.height, tile_shift.height),
-        .depth = Common::DivCeilLog2(blocks.depth, tile_shift.depth),
+        .width = Common::DivCeilLog2(gobs.width, tile_shift.width % 32),
+        .height = Common::DivCeilLog2(gobs.height, tile_shift.height % 32),
+        .depth = Common::DivCeilLog2(blocks.depth, tile_shift.depth % 32),
     };
 }
 
@@ -264,7 +264,8 @@ template <u32 GOB_EXTENT>
     const Extent3D tile_shift = TileShift(info, level);
     const Extent3D tiles = LevelTiles(info, level);
     const u32 num_tiles = tiles.width * tiles.height * tiles.depth;
-    const u32 shift = GOB_SIZE_SHIFT + tile_shift.width + tile_shift.height + tile_shift.depth;
+    const u32 shift =
+        (GOB_SIZE_SHIFT + tile_shift.width + tile_shift.height + tile_shift.depth) % 32;
     return num_tiles << shift;
 }
 
