@@ -120,6 +120,8 @@ add_library(common STATIC
     fiber.h
     file_util.cpp
     file_util.h
+    fs/file.cpp
+    fs/file.h
     fs/fs_types.h
     fs/fs_util.cpp
     fs/fs_util.h
