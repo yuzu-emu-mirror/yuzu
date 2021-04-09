@@ -123,6 +123,8 @@ add_library(common STATIC
     fs/fs_types.h
     fs/fs_util.cpp
     fs/fs_util.h
+    fs/path_util.cpp
+    fs/path_util.h
     hash.h
     hex_util.cpp
     hex_util.h
