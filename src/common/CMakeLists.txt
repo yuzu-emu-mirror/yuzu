@@ -120,6 +120,7 @@ add_library(common STATIC
     fiber.h
     file_util.cpp
     file_util.h
+    fs/fs_types.h
     hash.h
     hex_util.cpp
     hex_util.h
