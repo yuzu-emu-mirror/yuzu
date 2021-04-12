@@ -124,6 +124,7 @@ add_library(common STATIC
     fs/file.h
     fs/fs.cpp
     fs/fs.h
+    fs/fs_paths.h
     fs/fs_types.h
     fs/fs_util.cpp
     fs/fs_util.h
