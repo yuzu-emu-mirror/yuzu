@@ -109,7 +109,6 @@ add_library(common STATIC
     cityhash.cpp
     cityhash.h
     common_funcs.h
-    common_paths.h
     common_sizes.h
     common_types.h
     concepts.h
@@ -118,8 +117,6 @@ add_library(common STATIC
     dynamic_library.h
     fiber.cpp
     fiber.h
-    file_util.cpp
-    file_util.h
     fs/file.cpp
     fs/file.h
     fs/fs.cpp
