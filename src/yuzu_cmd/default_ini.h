@@ -91,11 +91,11 @@ touch_device=
 # from a controller device to the client program. Citra has a client that can connect and read
 # from any cemuhook compatible motion program.
 
-# IPv4 address of the udp input server (Default "127.0.0.1")
-udp_input_address=127.0.0.1
+# IPv4 address of the udp input server (Default "192.168.1.4")
+udp_input_address=192.168.1.4
 
-# Port of the udp input server. (Default 26760)
-udp_input_port=
+# Port of the udp input server. (Default 49999)
+udp_input_port=49999
 
 # The pad to request data on. Should be between 0 (Pad 1) and 3 (Pad 4). (Default 0)
 udp_pad_index=
