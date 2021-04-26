@@ -11,12 +11,20 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
-#include "core/settings.h"
+#include "common/settings.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2_vk.h"
 
 // Include these late to avoid polluting everything with Xlib macros
+// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#endif
 #include <SDL.h>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #include <SDL_syswm.h>
 
 EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem)

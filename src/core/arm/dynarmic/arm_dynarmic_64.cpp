@@ -9,6 +9,7 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
+#include "common/settings.h"
 #include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/arm_exclusive_monitor.h"
@@ -19,7 +20,6 @@
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
-#include "core/settings.h"
 
 namespace Core {
 
@@ -142,7 +142,7 @@ public:
     static constexpr u64 minimum_run_cycles = 1000U;
 };
 
-std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& page_table,
+std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* page_table,
                                                              std::size_t address_space_bits) const {
     Dynarmic::A64::UserConfig config;
 
@@ -150,13 +150,15 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
     config.callbacks = cb.get();
 
     // Memory
-    config.page_table = reinterpret_cast<void**>(page_table.pointers.data());
-    config.page_table_address_space_bits = address_space_bits;
-    config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
-    config.silently_mirror_page_table = false;
-    config.absolute_offset_page_table = true;
-    config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
-    config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+    if (page_table) {
+        config.page_table = reinterpret_cast<void**>(page_table->pointers.data());
+        config.page_table_address_space_bits = address_space_bits;
+        config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
+        config.silently_mirror_page_table = false;
+        config.absolute_offset_page_table = true;
+        config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
+        config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+    }
 
     // Multi-process state
     config.processor_id = core_index;
@@ -174,6 +176,10 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
 
     // Timing
     config.wall_clock_cntpct = uses_wall_clock;
+
+    // Code cache size
+    config.code_cache_size = 512 * 1024 * 1024;
+    config.far_code_offset = 256 * 1024 * 1024;
 
     // Safe optimizations
     if (Settings::values.cpu_accuracy == Settings::CPUAccuracy::DebugMode) {
@@ -237,7 +243,8 @@ ARM_Dynarmic_64::ARM_Dynarmic_64(System& system, CPUInterrupts& interrupt_handle
                                  std::size_t core_index)
     : ARM_Interface{system, interrupt_handlers, uses_wall_clock},
       cb(std::make_unique<DynarmicCallbacks64>(*this)), core_index{core_index},
-      exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)} {}
+      exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)},
+      jit(MakeJit(nullptr, 48)) {}
 
 ARM_Dynarmic_64::~ARM_Dynarmic_64() = default;
 
@@ -294,9 +301,6 @@ void ARM_Dynarmic_64::ChangeProcessorID(std::size_t new_core_id) {
 }
 
 void ARM_Dynarmic_64::SaveContext(ThreadContext64& ctx) {
-    if (!jit) {
-        return;
-    }
     ctx.cpu_registers = jit->GetRegisters();
     ctx.sp = jit->GetSP();
     ctx.pc = jit->GetPC();
@@ -308,9 +312,6 @@ void ARM_Dynarmic_64::SaveContext(ThreadContext64& ctx) {
 }
 
 void ARM_Dynarmic_64::LoadContext(const ThreadContext64& ctx) {
-    if (!jit) {
-        return;
-    }
     jit->SetRegisters(ctx.cpu_registers);
     jit->SetSP(ctx.sp);
     jit->SetPC(ctx.pc);
@@ -326,35 +327,31 @@ void ARM_Dynarmic_64::PrepareReschedule() {
 }
 
 void ARM_Dynarmic_64::ClearInstructionCache() {
-    if (!jit) {
-        return;
-    }
     jit->ClearCache();
 }
 
 void ARM_Dynarmic_64::InvalidateCacheRange(VAddr addr, std::size_t size) {
-    if (!jit) {
-        return;
-    }
     jit->InvalidateCacheRange(addr, size);
 }
 
 void ARM_Dynarmic_64::ClearExclusiveState() {
-    if (!jit) {
-        return;
-    }
     jit->ClearExclusiveState();
 }
 
 void ARM_Dynarmic_64::PageTableChanged(Common::PageTable& page_table,
                                        std::size_t new_address_space_size_in_bits) {
+    ThreadContext64 ctx{};
+    SaveContext(ctx);
+
     auto key = std::make_pair(&page_table, new_address_space_size_in_bits);
     auto iter = jit_cache.find(key);
     if (iter != jit_cache.end()) {
         jit = iter->second;
+        LoadContext(ctx);
         return;
     }
-    jit = MakeJit(page_table, new_address_space_size_in_bits);
+    jit = MakeJit(&page_table, new_address_space_size_in_bits);
+    LoadContext(ctx);
     jit_cache.emplace(key, jit);
 }
 

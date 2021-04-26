@@ -97,6 +97,7 @@ add_custom_command(OUTPUT scm_rev.cpp
 add_library(common STATIC
     algorithm.h
     alignment.h
+    assert.cpp
     assert.h
     atomic_ops.h
     detached_tasks.cpp
@@ -109,6 +110,7 @@ add_library(common STATIC
     cityhash.h
     common_funcs.h
     common_paths.h
+    common_sizes.h
     common_types.h
     concepts.h
     div_ceil.h
@@ -150,6 +152,10 @@ add_library(common STATIC
     scm_rev.cpp
     scm_rev.h
     scope_exit.h
+    settings.cpp
+    settings.h
+    settings_input.cpp
+    settings_input.h
     spin_lock.cpp
     spin_lock.h
     stream.cpp

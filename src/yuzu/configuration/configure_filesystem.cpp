@@ -6,7 +6,7 @@
 #include <QMessageBox>
 #include "common/common_paths.h"
 #include "common/file_util.h"
-#include "core/settings.h"
+#include "common/settings.h"
 #include "ui_configure_filesystem.h"
 #include "yuzu/configuration/configure_filesystem.h"
 #include "yuzu/uisettings.h"
@@ -103,7 +103,10 @@ void ConfigureFilesystem::SetDirectory(DirectoryTarget target, QLineEdit* edit) 
         str = QFileDialog::getOpenFileName(this, caption, QFileInfo(edit->text()).dir().path(),
                                            QStringLiteral("NX Gamecard;*.xci"));
     } else {
-        str = QFileDialog::getExistingDirectory(this, caption, edit->text()) + QDir::separator();
+        str = QFileDialog::getExistingDirectory(this, caption, edit->text());
+        if (!str.isNull() && str.back() != QDir::separator()) {
+            str.append(QDir::separator());
+        }
     }
 
     if (str.isEmpty())

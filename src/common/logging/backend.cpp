@@ -21,11 +21,11 @@
 #include "common/logging/backend.h"
 #include "common/logging/log.h"
 #include "common/logging/text_formatter.h"
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "common/threadsafe_queue.h"
-#include "core/settings.h"
 
-namespace Log {
+namespace Common::Log {
 
 /**
  * Static state as a singleton.
@@ -37,8 +37,11 @@ public:
         return backend;
     }
 
-    Impl(Impl const&) = delete;
-    const Impl& operator=(Impl const&) = delete;
+    Impl(const Impl&) = delete;
+    Impl& operator=(const Impl&) = delete;
+
+    Impl(Impl&&) = delete;
+    Impl& operator=(Impl&&) = delete;
 
     void PushEntry(Class log_class, Level log_level, const char* filename, unsigned int line_num,
                    const char* function, std::string message) {
@@ -53,10 +56,10 @@ public:
 
     void RemoveBackend(std::string_view backend_name) {
         std::lock_guard lock{writing_mutex};
-        const auto it =
-            std::remove_if(backends.begin(), backends.end(),
-                           [&backend_name](const auto& i) { return backend_name == i->GetName(); });
-        backends.erase(it, backends.end());
+
+        std::erase_if(backends, [&backend_name](const auto& backend) {
+            return backend_name == backend->GetName();
+        });
     }
 
     const Filter& GetGlobalFilter() const {
@@ -132,7 +135,7 @@ private:
     std::mutex writing_mutex;
     std::thread backend_thread;
     std::vector<std::unique_ptr<Backend>> backends;
-    Common::MPSCQueue<Log::Entry> message_queue;
+    MPSCQueue<Entry> message_queue;
     Filter filter;
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
 };
@@ -145,17 +148,19 @@ void ColorConsoleBackend::Write(const Entry& entry) {
     PrintColoredMessage(entry);
 }
 
-FileBackend::FileBackend(const std::string& filename) : bytes_written(0) {
-    if (Common::FS::Exists(filename + ".old.txt")) {
-        Common::FS::Delete(filename + ".old.txt");
+FileBackend::FileBackend(const std::string& filename) {
+    const auto old_filename = filename + ".old.txt";
+
+    if (FS::Exists(old_filename)) {
+        FS::Delete(old_filename);
     }
-    if (Common::FS::Exists(filename)) {
-        Common::FS::Rename(filename, filename + ".old.txt");
+    if (FS::Exists(filename)) {
+        FS::Rename(filename, old_filename);
     }
 
     // _SH_DENYWR allows read only access to the file for other programs.
     // It is #defined to 0 on other platforms
-    file = Common::FS::IOFile(filename, "w", _SH_DENYWR);
+    file = FS::IOFile(filename, "w", _SH_DENYWR);
 }
 
 void FileBackend::Write(const Entry& entry) {
@@ -182,7 +187,7 @@ void FileBackend::Write(const Entry& entry) {
 
 void DebuggerBackend::Write(const Entry& entry) {
 #ifdef _WIN32
-    ::OutputDebugStringW(Common::UTF8ToUTF16W(FormatLogMessage(entry).append(1, '\n')).c_str());
+    ::OutputDebugStringW(UTF8ToUTF16W(FormatLogMessage(entry).append(1, '\n')).c_str());
 #endif
 }
 
@@ -212,6 +217,7 @@ void DebuggerBackend::Write(const Entry& entry) {
     SUB(Service, ARP)                                                                              \
     SUB(Service, BCAT)                                                                             \
     SUB(Service, BPC)                                                                              \
+    SUB(Service, BGTC)                                                                             \
     SUB(Service, BTDRV)                                                                            \
     SUB(Service, BTM)                                                                              \
     SUB(Service, Capture)                                                                          \
@@ -341,4 +347,4 @@ void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
     instance.PushEntry(log_class, log_level, filename, line_num, function,
                        fmt::vformat(format, args));
 }
-} // namespace Log
+} // namespace Common::Log

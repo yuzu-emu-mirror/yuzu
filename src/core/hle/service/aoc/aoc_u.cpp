@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/common_funcs.h"
 #include "core/file_sys/content_archive.h"
@@ -21,7 +22,6 @@
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/aoc/aoc_u.h"
 #include "core/loader/loader.h"
-#include "core/settings.h"
 
 namespace Service::AOC {
 
@@ -118,8 +118,10 @@ AOC_U::AOC_U(Core::System& system_)
         {7, &AOC_U::PrepareAddOnContent, "PrepareAddOnContent"},
         {8, &AOC_U::GetAddOnContentListChangedEvent, "GetAddOnContentListChangedEvent"},
         {9, nullptr, "GetAddOnContentLostErrorCode"},
+        {10, nullptr, "GetAddOnContentListChangedEventWithProcessId"},
         {100, &AOC_U::CreateEcPurchasedEventManager, "CreateEcPurchasedEventManager"},
         {101, &AOC_U::CreatePermanentEcPurchasedEventManager, "CreatePermanentEcPurchasedEventManager"},
+        {110, nullptr, "CreateContentsServiceManager"},
     };
     // clang-format on
 

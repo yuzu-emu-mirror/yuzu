@@ -45,6 +45,11 @@ target_include_directories(microprofile INTERFACE ./microprofile)
 add_library(unicorn-headers INTERFACE)
 target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
 
+# SDL2
+if (NOT SDL2_FOUND AND ENABLE_SDL2)
+    add_subdirectory(SDL EXCLUDE_FROM_ALL)
+endif()
+
 # SoundTouch
 add_subdirectory(soundtouch)
 
@@ -64,8 +69,8 @@ endif()
 add_subdirectory(sirit)
 
 # libzip
-find_package(Libzip 1.5)
-if (NOT LIBZIP_FOUND)
+find_package(libzip 1.5)
+if (NOT libzip_FOUND)
     message(STATUS "libzip 1.5 or newer not found, falling back to externals")
     add_subdirectory(libzip EXCLUDE_FROM_ALL)
 endif()
@@ -97,4 +102,8 @@ if (ENABLE_WEB_SERVICE)
 endif()
 
 # Opus
-add_subdirectory(opus)
+find_package(opus 1.3)
+if (NOT opus_FOUND)
+    message(STATUS "opus 1.3 or newer not found, falling back to externals")
+    add_subdirectory(opus EXCLUDE_FROM_ALL)
+endif()

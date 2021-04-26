@@ -5,6 +5,7 @@
 #include <array>
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
@@ -18,12 +19,12 @@
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/transfer_memory.h"
 #include "core/hle/service/hid/errors.h"
 #include "core/hle/service/hid/hid.h"
 #include "core/hle/service/hid/irs.h"
 #include "core/hle/service/hid/xcd.h"
 #include "core/hle/service/service.h"
-#include "core/settings.h"
 
 #include "core/hle/service/hid/controllers/controller_base.h"
 #include "core/hle/service/hid/controllers/debug_pad.h"
@@ -263,7 +264,7 @@ Hid::Hid(Core::System& system_) : ServiceFramework{system_, "hid"} {
         {131, &Hid::IsUnintendedHomeButtonInputProtectionEnabled, "IsUnintendedHomeButtonInputProtectionEnabled"},
         {132, &Hid::EnableUnintendedHomeButtonInputProtection, "EnableUnintendedHomeButtonInputProtection"},
         {133, nullptr, "SetNpadJoyAssignmentModeSingleWithDestination"},
-        {134, nullptr, "SetNpadAnalogStickUseCenterClamp"},
+        {134, &Hid::SetNpadAnalogStickUseCenterClamp, "SetNpadAnalogStickUseCenterClamp"},
         {135, nullptr, "SetNpadCaptureButtonAssignment"},
         {136, nullptr, "ClearNpadCaptureButtonAssignment"},
         {200, &Hid::GetVibrationDeviceInfo, "GetVibrationDeviceInfo"},
@@ -278,6 +279,7 @@ Hid::Hid(Core::System& system_) : ServiceFramework{system_, "hid"} {
         {209, &Hid::BeginPermitVibrationSession, "BeginPermitVibrationSession"},
         {210, &Hid::EndPermitVibrationSession, "EndPermitVibrationSession"},
         {211, &Hid::IsVibrationDeviceMounted, "IsVibrationDeviceMounted"},
+        {212, nullptr, "SendVibrationValueInBool"},
         {300, &Hid::ActivateConsoleSixAxisSensor, "ActivateConsoleSixAxisSensor"},
         {301, &Hid::StartConsoleSixAxisSensor, "StartConsoleSixAxisSensor"},
         {302, &Hid::StopConsoleSixAxisSensor, "StopConsoleSixAxisSensor"},
@@ -1087,6 +1089,27 @@ void Hid::EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& c
     rb.Push(RESULT_SUCCESS);
 }
 
+void Hid::SetNpadAnalogStickUseCenterClamp(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    struct Parameters {
+        bool analog_stick_use_center_clamp;
+        u64 applet_resource_user_id;
+    };
+    static_assert(sizeof(Parameters) == 0x10, "Parameters has incorrect size.");
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+
+    applet_resource->GetController<Controller_NPad>(HidController::NPad)
+        .SetAnalogStickUseCenterClamp(parameters.analog_stick_use_center_clamp);
+
+    LOG_WARNING(Service_HID,
+                "(STUBBED) called, analog_stick_use_center_clamp={}, applet_resource_user_id={}",
+                parameters.analog_stick_use_center_clamp, parameters.applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 void Hid::GetVibrationDeviceInfo(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto vibration_device_handle{rp.PopRaw<Controller_NPad::DeviceHandle>()};
@@ -1462,7 +1485,43 @@ void Hid::StopSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
 }
 
 void Hid::InitializeSevenSixAxisSensor(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_HID, "(STUBBED) called");
+    IPC::RequestParser rp{ctx};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+    const auto t_mem_1_size{rp.Pop<u64>()};
+    const auto t_mem_2_size{rp.Pop<u64>()};
+    const auto t_mem_1_handle{ctx.GetCopyHandle(0)};
+    const auto t_mem_2_handle{ctx.GetCopyHandle(1)};
+
+    ASSERT_MSG(t_mem_1_size == 0x1000, "t_mem_1_size is not 0x1000 bytes");
+    ASSERT_MSG(t_mem_2_size == 0x7F000, "t_mem_2_size is not 0x7F000 bytes");
+
+    auto t_mem_1 =
+        system.CurrentProcess()->GetHandleTable().Get<Kernel::TransferMemory>(t_mem_1_handle);
+
+    if (t_mem_1 == nullptr) {
+        LOG_ERROR(Service_HID, "t_mem_1 is a nullptr for handle=0x{:08X}", t_mem_1_handle);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
+
+    auto t_mem_2 =
+        system.CurrentProcess()->GetHandleTable().Get<Kernel::TransferMemory>(t_mem_2_handle);
+
+    if (t_mem_2 == nullptr) {
+        LOG_ERROR(Service_HID, "t_mem_2 is a nullptr for handle=0x{:08X}", t_mem_2_handle);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
+
+    ASSERT_MSG(t_mem_1->GetSize() == 0x1000, "t_mem_1 has incorrect size");
+    ASSERT_MSG(t_mem_2->GetSize() == 0x7F000, "t_mem_2 has incorrect size");
+
+    LOG_WARNING(Service_HID,
+                "(STUBBED) called, t_mem_1_handle=0x{:08X}, t_mem_2_handle=0x{:08X}, "
+                "applet_resource_user_id={}",
+                t_mem_1_handle, t_mem_2_handle, applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -1553,6 +1612,7 @@ public:
             {11, nullptr, "SetTouchScreenAutoPilotState"},
             {12, nullptr, "UnsetTouchScreenAutoPilotState"},
             {13, nullptr, "GetTouchScreenConfiguration"},
+            {14, nullptr, "ProcessTouchScreenAutoTune"},
             {20, nullptr, "DeactivateMouse"},
             {21, nullptr, "SetMouseAutoPilotState"},
             {22, nullptr, "UnsetMouseAutoPilotState"},
@@ -1562,6 +1622,7 @@ public:
             {50, nullptr, "DeactivateXpad"},
             {51, nullptr, "SetXpadAutoPilotState"},
             {52, nullptr, "UnsetXpadAutoPilotState"},
+            {53, nullptr, "DeactivateJoyXpad"},
             {60, nullptr, "ClearNpadSystemCommonPolicy"},
             {61, nullptr, "DeactivateNpad"},
             {62, nullptr, "ForceDisconnectNpad"},
@@ -1632,6 +1693,11 @@ public:
             {244, nullptr, "RequestKuinaFirmwareVersion"},
             {245, nullptr, "GetKuinaFirmwareVersion"},
             {246, nullptr, "GetVidPid"},
+            {247, nullptr, "GetAnalogStickCalibrationValue"},
+            {248, nullptr, "GetUniquePadIdsFull"},
+            {249, nullptr, "ConnectUniquePad"},
+            {250, nullptr, "IsVirtual"},
+            {251, nullptr, "GetAnalogStickModuleParam"},
             {301, nullptr, "GetAbstractedPadHandles"},
             {302, nullptr, "GetAbstractedPadState"},
             {303, nullptr, "GetAbstractedPadsState"},
@@ -1652,12 +1718,16 @@ public:
             {401, nullptr, "DisableRailDeviceFiltering"},
             {402, nullptr, "EnableWiredPairing"},
             {403, nullptr, "EnableShipmentModeAutoClear"},
+            {404, nullptr, "SetRailEnabled"},
             {500, nullptr, "SetFactoryInt"},
             {501, nullptr, "IsFactoryBootEnabled"},
             {550, nullptr, "SetAnalogStickModelDataTemporarily"},
             {551, nullptr, "GetAnalogStickModelData"},
             {552, nullptr, "ResetAnalogStickModelData"},
             {600, nullptr, "ConvertPadState"},
+            {650, nullptr, "AddButtonPlayData"},
+            {651, nullptr, "StartButtonPlayData"},
+            {652, nullptr, "StopButtonPlayData"},
             {2000, nullptr, "DeactivateDigitizer"},
             {2001, nullptr, "SetDigitizerAutoPilotState"},
             {2002, nullptr, "UnsetDigitizerAutoPilotState"},
@@ -1689,6 +1759,8 @@ public:
             {215, nullptr, "IsNfcActivated"},
             {230, nullptr, "AcquireIrSensorEventHandle"},
             {231, nullptr, "ActivateIrSensor"},
+            {232, nullptr, "GetIrSensorState"},
+            {233, nullptr, "GetXcdHandleForNpadWithIrSensor"},
             {301, nullptr, "ActivateNpadSystem"},
             {303, nullptr, "ApplyNpadSystemCommonPolicy"},
             {304, nullptr, "EnableAssigningSingleOnSlSrPress"},
@@ -1703,9 +1775,16 @@ public:
             {313, nullptr, "GetNpadCaptureButtonAssignment"},
             {314, nullptr, "GetAppletFooterUiType"},
             {315, nullptr, "GetAppletDetailedUiType"},
+            {316, nullptr, "GetNpadInterfaceType"},
+            {317, nullptr, "GetNpadLeftRightInterfaceType"},
+            {318, nullptr, "HasBattery"},
+            {319, nullptr, "HasLeftRightBattery"},
             {321, nullptr, "GetUniquePadsFromNpad"},
             {322, nullptr, "GetIrSensorState"},
             {323, nullptr, "GetXcdHandleForNpadWithIrSensor"},
+            {324, nullptr, "GetUniquePadButtonSet"},
+            {325, nullptr, "GetUniquePadColor"},
+            {326, nullptr, "GetUniquePadAppletDetailedUiType"},
             {500, nullptr, "SetAppletResourceUserId"},
             {501, nullptr, "RegisterAppletResourceUserId"},
             {502, nullptr, "UnregisterAppletResourceUserId"},
@@ -1716,10 +1795,13 @@ public:
             {511, nullptr, "GetVibrationMasterVolume"},
             {512, nullptr, "BeginPermitVibrationSession"},
             {513, nullptr, "EndPermitVibrationSession"},
+            {514, nullptr, "Unknown514"},
             {520, nullptr, "EnableHandheldHids"},
             {521, nullptr, "DisableHandheldHids"},
             {522, nullptr, "SetJoyConRailEnabled"},
             {523, nullptr, "IsJoyConRailEnabled"},
+            {524, nullptr, "IsHandheldHidsEnabled"},
+            {525, nullptr, "IsJoyConAttachedOnAllRail"},
             {540, nullptr, "AcquirePlayReportControllerUsageUpdateEvent"},
             {541, nullptr, "GetPlayReportControllerUsages"},
             {542, nullptr, "AcquirePlayReportRegisteredDeviceUpdateEvent"},
@@ -1795,6 +1877,65 @@ public:
             {1154, nullptr, "IsFirmwareAvailableForNotification"},
             {1155, nullptr, "SetForceHandheldStyleVibration"},
             {1156, nullptr, "SendConnectionTriggerWithoutTimeoutEvent"},
+            {1157, nullptr, "CancelConnectionTrigger"},
+            {1200, nullptr, "IsButtonConfigSupported"},
+            {1201, nullptr, "IsButtonConfigEmbeddedSupported"},
+            {1202, nullptr, "DeleteButtonConfig"},
+            {1203, nullptr, "DeleteButtonConfigEmbedded"},
+            {1204, nullptr, "SetButtonConfigEnabled"},
+            {1205, nullptr, "SetButtonConfigEmbeddedEnabled"},
+            {1206, nullptr, "IsButtonConfigEnabled"},
+            {1207, nullptr, "IsButtonConfigEmbeddedEnabled"},
+            {1208, nullptr, "SetButtonConfigEmbedded"},
+            {1209, nullptr, "SetButtonConfigFull"},
+            {1210, nullptr, "SetButtonConfigLeft"},
+            {1211, nullptr, "SetButtonConfigRight"},
+            {1212, nullptr, "GetButtonConfigEmbedded"},
+            {1213, nullptr, "GetButtonConfigFull"},
+            {1214, nullptr, "GetButtonConfigLeft"},
+            {1215, nullptr, "GetButtonConfigRight"},
+            {1250, nullptr, "IsCustomButtonConfigSupported"},
+            {1251, nullptr, "IsDefaultButtonConfigEmbedded"},
+            {1252, nullptr, "IsDefaultButtonConfigFull"},
+            {1253, nullptr, "IsDefaultButtonConfigLeft"},
+            {1254, nullptr, "IsDefaultButtonConfigRight"},
+            {1255, nullptr, "IsButtonConfigStorageEmbeddedEmpty"},
+            {1256, nullptr, "IsButtonConfigStorageFullEmpty"},
+            {1257, nullptr, "IsButtonConfigStorageLeftEmpty"},
+            {1258, nullptr, "IsButtonConfigStorageRightEmpty"},
+            {1259, nullptr, "GetButtonConfigStorageEmbeddedDeprecated"},
+            {1260, nullptr, "GetButtonConfigStorageFullDeprecated"},
+            {1261, nullptr, "GetButtonConfigStorageLeftDeprecated"},
+            {1262, nullptr, "GetButtonConfigStorageRightDeprecated"},
+            {1263, nullptr, "SetButtonConfigStorageEmbeddedDeprecated"},
+            {1264, nullptr, "SetButtonConfigStorageFullDeprecated"},
+            {1265, nullptr, "SetButtonConfigStorageLeftDeprecated"},
+            {1266, nullptr, "SetButtonConfigStorageRightDeprecated"},
+            {1267, nullptr, "DeleteButtonConfigStorageEmbedded"},
+            {1268, nullptr, "DeleteButtonConfigStorageFull"},
+            {1269, nullptr, "DeleteButtonConfigStorageLeft"},
+            {1270, nullptr, "DeleteButtonConfigStorageRight"},
+            {1271, nullptr, "IsUsingCustomButtonConfig"},
+            {1272, nullptr, "IsAnyCustomButtonConfigEnabled"},
+            {1273, nullptr, "SetAllCustomButtonConfigEnabled"},
+            {1274, nullptr, "SetDefaultButtonConfig"},
+            {1275, nullptr, "SetAllDefaultButtonConfig"},
+            {1276, nullptr, "SetHidButtonConfigEmbedded"},
+            {1277, nullptr, "SetHidButtonConfigFull"},
+            {1278, nullptr, "SetHidButtonConfigLeft"},
+            {1279, nullptr, "SetHidButtonConfigRight"},
+            {1280, nullptr, "GetHidButtonConfigEmbedded"},
+            {1281, nullptr, "GetHidButtonConfigFull"},
+            {1282, nullptr, "GetHidButtonConfigLeft"},
+            {1283, nullptr, "GetHidButtonConfigRight"},
+            {1284, nullptr, "GetButtonConfigStorageEmbedded"},
+            {1285, nullptr, "GetButtonConfigStorageFull"},
+            {1286, nullptr, "GetButtonConfigStorageLeft"},
+            {1287, nullptr, "GetButtonConfigStorageRight"},
+            {1288, nullptr, "SetButtonConfigStorageEmbedded"},
+            {1289, nullptr, "SetButtonConfigStorageFull"},
+            {1290, nullptr, "DeleteButtonConfigStorageRight"},
+            {1291, nullptr, "DeleteButtonConfigStorageRight"},
         };
         // clang-format on
 

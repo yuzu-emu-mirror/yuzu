@@ -41,6 +41,12 @@ ARP_R::ARP_R(Core::System& system_, const ARPManager& manager_)
             {1, &ARP_R::GetApplicationLaunchPropertyWithApplicationId, "GetApplicationLaunchPropertyWithApplicationId"},
             {2, &ARP_R::GetApplicationControlProperty, "GetApplicationControlProperty"},
             {3, &ARP_R::GetApplicationControlPropertyWithApplicationId, "GetApplicationControlPropertyWithApplicationId"},
+            {4, nullptr, "GetApplicationInstanceUnregistrationNotifier"},
+            {5, nullptr, "ListApplicationInstanceId"},
+            {6, nullptr, "GetMicroApplicationInstanceId"},
+            {7, nullptr, "GetApplicationCertificate"},
+            {9998, nullptr, "GetPreomiaApplicationLaunchProperty"},
+            {9999, nullptr, "GetPreomiaApplicationControlProperty"},
         };
     // clang-format on
 
@@ -151,9 +157,9 @@ class IRegistrar final : public ServiceFramework<IRegistrar> {
     friend class ARP_W;
 
 public:
-    explicit IRegistrar(
-        Core::System& system_,
-        std::function<ResultCode(u64, ApplicationLaunchProperty, std::vector<u8>)> issuer)
+    using IssuerFn = std::function<ResultCode(u64, ApplicationLaunchProperty, std::vector<u8>)>;
+
+    explicit IRegistrar(Core::System& system_, IssuerFn&& issuer)
         : ServiceFramework{system_, "IRegistrar"}, issue_process_id{std::move(issuer)} {
         // clang-format off
         static const FunctionInfo functions[] = {
@@ -232,9 +238,9 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
-    std::function<ResultCode(u64, ApplicationLaunchProperty, std::vector<u8>)> issue_process_id;
+    IssuerFn issue_process_id;
     bool issued = false;
-    ApplicationLaunchProperty launch;
+    ApplicationLaunchProperty launch{};
     std::vector<u8> control;
 };
 
@@ -243,7 +249,8 @@ ARP_W::ARP_W(Core::System& system_, ARPManager& manager_)
     // clang-format off
         static const FunctionInfo functions[] = {
             {0, &ARP_W::AcquireRegistrar, "AcquireRegistrar"},
-            {1, &ARP_W::DeleteProperties, "DeleteProperties"},
+            {1, &ARP_W::UnregisterApplicationInstance , "UnregisterApplicationInstance "},
+            {2, nullptr, "AcquireUpdater"},
         };
     // clang-format on
 
@@ -270,7 +277,7 @@ void ARP_W::AcquireRegistrar(Kernel::HLERequestContext& ctx) {
     rb.PushIpcInterface(registrar);
 }
 
-void ARP_W::DeleteProperties(Kernel::HLERequestContext& ctx) {
+void ARP_W::UnregisterApplicationInstance(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto process_id = rp.PopRaw<u64>();
 

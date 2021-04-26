@@ -61,8 +61,9 @@ public:
     void PushMessage(AppletMessage msg);
     AppletMessage PopMessage();
     std::size_t GetMessageCount() const;
-    void OperationModeChanged();
     void RequestExit();
+    void FocusStateChanged();
+    void OperationModeChanged();
 
 private:
     std::queue<AppletMessage> messages;
@@ -146,6 +147,7 @@ private:
     void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx);
+    void SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx);
 
     enum class ScreenshotPermission : u32 {
         Inherit = 0,
@@ -194,6 +196,7 @@ private:
     void EndVrModeEx(Kernel::HLERequestContext& ctx);
     void GetDefaultDisplayResolution(Kernel::HLERequestContext& ctx);
     void SetCpuBoostMode(Kernel::HLERequestContext& ctx);
+    void SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<AppletMessageQueue> msg_queue;
     bool vr_mode_state{};
@@ -253,6 +256,7 @@ private:
     void CreateLibraryApplet(Kernel::HLERequestContext& ctx);
     void CreateStorage(Kernel::HLERequestContext& ctx);
     void CreateTransferMemoryStorage(Kernel::HLERequestContext& ctx);
+    void CreateHandleStorage(Kernel::HLERequestContext& ctx);
 };
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {

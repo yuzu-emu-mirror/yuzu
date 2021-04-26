@@ -25,7 +25,8 @@ enum class ErrorAppletMode : u8 {
 
 class Error final : public Applet {
 public:
-    explicit Error(Core::System& system_, const Core::Frontend::ErrorApplet& frontend_);
+    explicit Error(Core::System& system_, LibraryAppletMode applet_mode_,
+                   const Core::Frontend::ErrorApplet& frontend_);
     ~Error() override;
 
     void Initialize() override;

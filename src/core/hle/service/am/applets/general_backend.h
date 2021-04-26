@@ -20,7 +20,8 @@ enum class AuthAppletType : u32 {
 
 class Auth final : public Applet {
 public:
-    explicit Auth(Core::System& system_, Core::Frontend::ParentalControlsApplet& frontend_);
+    explicit Auth(Core::System& system_, LibraryAppletMode applet_mode_,
+                  Core::Frontend::ParentalControlsApplet& frontend_);
     ~Auth() override;
 
     void Initialize() override;
@@ -50,7 +51,8 @@ enum class PhotoViewerAppletMode : u8 {
 
 class PhotoViewer final : public Applet {
 public:
-    explicit PhotoViewer(Core::System& system_, const Core::Frontend::PhotoViewerApplet& frontend_);
+    explicit PhotoViewer(Core::System& system_, LibraryAppletMode applet_mode_,
+                         const Core::Frontend::PhotoViewerApplet& frontend_);
     ~PhotoViewer() override;
 
     void Initialize() override;
@@ -70,7 +72,7 @@ private:
 
 class StubApplet final : public Applet {
 public:
-    explicit StubApplet(Core::System& system_, AppletId id_);
+    explicit StubApplet(Core::System& system_, AppletId id_, LibraryAppletMode applet_mode_);
     ~StubApplet() override;
 
     void Initialize() override;

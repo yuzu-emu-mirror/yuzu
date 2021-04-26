@@ -219,8 +219,8 @@ public:
         return *shader_notify;
     }
 
-    // Waits for the GPU to finish working
-    void WaitIdle() const;
+    // Stops the GPU execution and waits for the GPU to finish working
+    void ShutDown();
 
     /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
     void WaitFence(u32 syncpoint_id, u32 value);
@@ -323,6 +323,9 @@ public:
 
     /// Push GPU command buffer entries to be processed
     void PushCommandBuffer(Tegra::ChCommandHeaderList& entries);
+
+    /// Frees the CDMAPusher instance to free up resources
+    void ClearCdmaInstance();
 
     /// Swap buffers (render frame)
     void SwapBuffers(const Tegra::FramebufferConfig* framebuffer);

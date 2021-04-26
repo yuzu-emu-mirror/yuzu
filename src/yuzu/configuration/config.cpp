@@ -29,9 +29,10 @@ Config::~Config() {
 }
 
 const std::array<int, Settings::NativeButton::NumButtons> Config::default_buttons = {
-    Qt::Key_A, Qt::Key_S, Qt::Key_Z, Qt::Key_X, Qt::Key_3, Qt::Key_4, Qt::Key_Q,
-    Qt::Key_W, Qt::Key_1, Qt::Key_2, Qt::Key_N, Qt::Key_M, Qt::Key_F, Qt::Key_T,
-    Qt::Key_H, Qt::Key_G, Qt::Key_D, Qt::Key_C, Qt::Key_B, Qt::Key_V,
+    Qt::Key_C,    Qt::Key_X, Qt::Key_V,    Qt::Key_Z,  Qt::Key_F,
+    Qt::Key_G,    Qt::Key_Q, Qt::Key_E,    Qt::Key_R,  Qt::Key_T,
+    Qt::Key_M,    Qt::Key_N, Qt::Key_Left, Qt::Key_Up, Qt::Key_Right,
+    Qt::Key_Down, Qt::Key_Q, Qt::Key_E,    0,          0,
 };
 
 const std::array<int, Settings::NativeMotion::NumMotions> Config::default_motions = {
@@ -41,10 +42,10 @@ const std::array<int, Settings::NativeMotion::NumMotions> Config::default_motion
 
 const std::array<std::array<int, 4>, Settings::NativeAnalog::NumAnalogs> Config::default_analogs{{
     {
-        Qt::Key_Up,
-        Qt::Key_Down,
-        Qt::Key_Left,
-        Qt::Key_Right,
+        Qt::Key_W,
+        Qt::Key_S,
+        Qt::Key_A,
+        Qt::Key_D,
     },
     {
         Qt::Key_I,
@@ -55,8 +56,8 @@ const std::array<std::array<int, 4>, Settings::NativeAnalog::NumAnalogs> Config:
 }};
 
 const std::array<int, 2> Config::default_stick_mod = {
-    Qt::Key_E,
-    Qt::Key_R,
+    Qt::Key_Shift,
+    0,
 };
 
 const std::array<int, Settings::NativeMouseButton::NumMouseButtons> Config::default_mouse_buttons =
@@ -641,6 +642,9 @@ void Config::ReadDebuggingValues() {
         ReadSetting(QStringLiteral("disable_macro_jit"), false).toBool();
     Settings::values.extended_logging =
         ReadSetting(QStringLiteral("extended_logging"), false).toBool();
+    Settings::values.use_debug_asserts =
+        ReadSetting(QStringLiteral("use_debug_asserts"), false).toBool();
+    Settings::values.use_auto_stub = ReadSetting(QStringLiteral("use_auto_stub"), false).toBool();
 
     qt_config->endGroup();
 }
@@ -770,6 +774,13 @@ void Config::ReadRendererValues() {
     ReadSettingGlobal(Settings::values.renderer_backend, QStringLiteral("backend"), 0);
     ReadSettingGlobal(Settings::values.renderer_debug, QStringLiteral("debug"), false);
     ReadSettingGlobal(Settings::values.vulkan_device, QStringLiteral("vulkan_device"), 0);
+#ifdef _WIN32
+    ReadSettingGlobal(Settings::values.fullscreen_mode, QStringLiteral("fullscreen_mode"), 0);
+#else
+    // *nix platforms may have issues with the borderless windowed fullscreen mode.
+    // Default to exclusive fullscreen on these platforms for now.
+    ReadSettingGlobal(Settings::values.fullscreen_mode, QStringLiteral("fullscreen_mode"), 1);
+#endif
     ReadSettingGlobal(Settings::values.aspect_ratio, QStringLiteral("aspect_ratio"), 0);
     ReadSettingGlobal(Settings::values.max_anisotropy, QStringLiteral("max_anisotropy"), 0);
     ReadSettingGlobal(Settings::values.use_frame_limit, QStringLiteral("use_frame_limit"), true);
@@ -926,6 +937,13 @@ void Config::ReadUIGamelistValues() {
     UISettings::values.row_2_text_id = ReadSetting(QStringLiteral("row_2_text_id"), 2).toUInt();
     UISettings::values.cache_game_list =
         ReadSetting(QStringLiteral("cache_game_list"), true).toBool();
+    const int favorites_size = qt_config->beginReadArray(QStringLiteral("favorites"));
+    for (int i = 0; i < favorites_size; i++) {
+        qt_config->setArrayIndex(i);
+        UISettings::values.favorited_ids.append(
+            ReadSetting(QStringLiteral("program_id")).toULongLong());
+    }
+    qt_config->endArray();
 
     qt_config->endGroup();
 }
@@ -1230,6 +1248,7 @@ void Config::SaveDebuggingValues() {
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
     WriteSetting(QStringLiteral("dump_nso"), Settings::values.dump_nso, false);
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
+    WriteSetting(QStringLiteral("use_debug_asserts"), Settings::values.use_debug_asserts, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);
 
     qt_config->endGroup();
@@ -1333,6 +1352,13 @@ void Config::SaveRendererValues() {
                        Settings::values.renderer_backend.UsingGlobal(), 0);
     WriteSetting(QStringLiteral("debug"), Settings::values.renderer_debug, false);
     WriteSettingGlobal(QStringLiteral("vulkan_device"), Settings::values.vulkan_device, 0);
+#ifdef _WIN32
+    WriteSettingGlobal(QStringLiteral("fullscreen_mode"), Settings::values.fullscreen_mode, 0);
+#else
+    // *nix platforms may have issues with the borderless windowed fullscreen mode.
+    // Default to exclusive fullscreen on these platforms for now.
+    WriteSettingGlobal(QStringLiteral("fullscreen_mode"), Settings::values.fullscreen_mode, 1);
+#endif
     WriteSettingGlobal(QStringLiteral("aspect_ratio"), Settings::values.aspect_ratio, 0);
     WriteSettingGlobal(QStringLiteral("max_anisotropy"), Settings::values.max_anisotropy, 0);
     WriteSettingGlobal(QStringLiteral("use_frame_limit"), Settings::values.use_frame_limit, true);
@@ -1461,6 +1487,13 @@ void Config::SaveUIGamelistValues() {
     WriteSetting(QStringLiteral("row_1_text_id"), UISettings::values.row_1_text_id, 3);
     WriteSetting(QStringLiteral("row_2_text_id"), UISettings::values.row_2_text_id, 2);
     WriteSetting(QStringLiteral("cache_game_list"), UISettings::values.cache_game_list, true);
+    qt_config->beginWriteArray(QStringLiteral("favorites"));
+    for (int i = 0; i < UISettings::values.favorited_ids.size(); i++) {
+        qt_config->setArrayIndex(i);
+        WriteSetting(QStringLiteral("program_id"),
+                     QVariant::fromValue(UISettings::values.favorited_ids[i]));
+    }
+    qt_config->endArray();
 
     qt_config->endGroup();
 }
@@ -1584,7 +1617,7 @@ void Config::Reload() {
     ReadValues();
     // To apply default value changes
     SaveValues();
-    Settings::Apply(Core::System::GetInstance());
+    Core::System::GetInstance().ApplySettings();
 }
 
 void Config::Save() {

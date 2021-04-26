@@ -610,12 +610,17 @@ public:
     explicit DAUTH_O(Core::System& system_, Common::UUID) : ServiceFramework{system_, "dauth:o"} {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "EnsureAuthenticationTokenCacheAsync"}, // [5.0.0-5.1.0] GeneratePostData
-            {1, nullptr, "LoadAuthenticationTokenCache"}, // 6.0.0+
-            {2, nullptr, "InvalidateAuthenticationTokenCache"}, // 6.0.0+
-            {10, nullptr, "EnsureEdgeTokenCacheAsync"}, // 6.0.0+
-            {11, nullptr, "LoadEdgeTokenCache"}, // 6.0.0+
-            {12, nullptr, "InvalidateEdgeTokenCache"}, // 6.0.0+
+            {0, nullptr, "EnsureAuthenticationTokenCacheAsync"},
+            {1, nullptr, "LoadAuthenticationTokenCache"},
+            {2, nullptr, "InvalidateAuthenticationTokenCache"},
+            {10, nullptr, "EnsureEdgeTokenCacheAsync"},
+            {11, nullptr, "LoadEdgeTokenCache"},
+            {12, nullptr, "InvalidateEdgeTokenCache"},
+            {20, nullptr, "EnsureApplicationAuthenticationCacheAsync"},
+            {21, nullptr, "LoadApplicationAuthenticationTokenCache"},
+            {22, nullptr, "LoadApplicationNetworkServiceClientConfigCache"},
+            {23, nullptr, "IsApplicationAuthenticationCacheAvailable"},
+            {24, nullptr, "InvalidateApplicationAuthenticationCache"},
         };
         // clang-format on
 
@@ -697,16 +702,12 @@ void Module::Interface::IsUserRegistrationRequestPermitted(Kernel::HLERequestCon
 }
 
 void Module::Interface::InitializeApplicationInfo(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ctx};
-
     LOG_DEBUG(Service_ACC, "called");
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(InitializeApplicationInfoBase());
 }
 
 void Module::Interface::InitializeApplicationInfoRestricted(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ctx};
-
     LOG_WARNING(Service_ACC, "(Partial implementation) called");
 
     // TODO(ogniK): We require checking if the user actually owns the title and what not. As of

@@ -11,6 +11,7 @@ project(yuzu)
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
 option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
+CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" ON "ENABLE_SDL2;MSVC" OFF)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
 option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
@@ -18,7 +19,9 @@ CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_QT "Download bundled Qt binaries" ON "EN
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
-CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled yuzu" ON "WIN32" OFF)
+option(YUZU_USE_BUNDLED_BOOST "Download bundled Boost" OFF)
+
+CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" ON "WIN32" OFF)
 
 option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
 
@@ -166,12 +169,12 @@ macro(yuzu_find_packages)
     #    Cmake Pkg Prefix  Version     Conan Pkg
         "Catch2            2.13        catch2/2.13.0"
         "fmt               7.1         fmt/7.1.2"
-    # can't use until https://github.com/bincrafters/community/issues/1173
-        #"libzip            1.5         libzip/1.5.2@bincrafters/stable"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.8         nlohmann_json/3.8.0"
         "ZLIB              1.2         zlib/1.2.11"
         "zstd              1.4         zstd/1.4.8"
+    # can't use opus until AVX check is fixed: https://github.com/yuzu-emu/yuzu/pull/4068
+        #"opus              1.3         opus/1.3.1"
     )
 
     foreach(PACKAGE ${REQUIRED_LIBS})
@@ -198,7 +201,9 @@ macro(yuzu_find_packages)
     unset(FN_FORCE_REQUIRED)
 endmacro()
 
-find_package(Boost 1.73.0 COMPONENTS context headers QUIET)
+if (NOT YUZU_USE_BUNDLED_BOOST)
+    find_package(Boost 1.73.0 COMPONENTS context headers QUIET)
+endif()
 if (Boost_FOUND)
     set(Boost_LIBRARIES Boost::boost)
     # Conditionally add Boost::context only if the active version of the Conan or system Boost package provides it
@@ -209,6 +214,20 @@ if (Boost_FOUND)
     if (TARGET Boost::context)
         list(APPEND Boost_LIBRARIES Boost::context)
     endif()
+elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR YUZU_USE_BUNDLED_BOOST)
+    message(STATUS "Boost 1.73.0 or newer not found, falling back to externals")
+    set(YUZU_USE_BUNDLED_BOOST ON CACHE BOOL "Download bundled Boost" FORCE)
+
+    # Use yuzu Boost binaries
+    set(Boost_EXT_NAME "boost_1_75_0")
+    set(Boost_PATH "${CMAKE_BINARY_DIR}/externals/${Boost_EXT_NAME}")
+    download_bundled_external("boost/" ${Boost_EXT_NAME} "")
+    set(Boost_USE_DEBUG_RUNTIME FALSE)
+    set(Boost_USE_STATIC_LIBS ON)
+    find_package(Boost 1.75.0 REQUIRED COMPONENTS context headers PATHS ${Boost_PATH} NO_DEFAULT_PATH)
+    # Manually set the include dirs since the find_package sets it incorrectly
+    set(Boost_INCLUDE_DIRS ${Boost_PATH}/include CACHE PATH "Path to Boost headers" FORCE)
+    include_directories(SYSTEM "${Boost_INCLUDE_DIRS}")
 else()
     message(STATUS "Boost 1.73.0 or newer not found, falling back to Conan")
     list(APPEND CONAN_REQUIRED_LIBS "boost/1.73.0")
@@ -249,21 +268,45 @@ if(ENABLE_QT)
     if (ENABLE_QT_TRANSLATION)
         find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
     endif()
-    if (NOT Qt5_FOUND)
-        list(APPEND CONAN_REQUIRED_LIBS "qt/5.14.1@bincrafters/stable")
-    endif()
 endif()
 # find SDL2 exports a bunch of variables that are needed, so its easier to do this outside of the yuzu_find_package
-if(ENABLE_SDL2)
-    if(EXISTS ${CMAKE_BINARY_DIR}/sdl2Config.cmake)
-        include(${CMAKE_BINARY_DIR}/sdl2Config.cmake)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-    endif()
-    find_package(SDL2)
-    if (NOT SDL2_FOUND)
-        # otherwise add this to the list of libraries to install
-        list(APPEND CONAN_REQUIRED_LIBS "sdl2/2.0.14@bincrafters/stable")
+if (ENABLE_SDL2)
+    if (YUZU_USE_BUNDLED_SDL2)
+        # Detect toolchain and platform
+        if ((MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1930) AND ARCHITECTURE_x86_64)
+            set(SDL2_VER "SDL2-2.0.14")
+        else()
+            message(FATAL_ERROR "No bundled SDL2 binaries for your toolchain. Disable YUZU_USE_BUNDLED_SDL2 and provide your own.")
+        endif()
+
+        if (DEFINED SDL2_VER)
+            download_bundled_external("sdl2/" ${SDL2_VER} SDL2_PREFIX)
+        endif()
+
+        set(SDL2_FOUND YES)
+        set(SDL2_INCLUDE_DIR "${SDL2_PREFIX}/include" CACHE PATH "Path to SDL2 headers")
+        set(SDL2_LIBRARY "${SDL2_PREFIX}/lib/x64/SDL2.lib" CACHE PATH "Path to SDL2 library")
+        set(SDL2_DLL_DIR "${SDL2_PREFIX}/lib/x64/" CACHE PATH "Path to SDL2.dll")
+
+        add_library(SDL2 INTERFACE)
+        target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARY}")
+        target_include_directories(SDL2 INTERFACE "${SDL2_INCLUDE_DIR}")
+    else()
+        find_package(SDL2 2.0.14 QUIET)
+
+        if (SDL2_FOUND)
+            # Some installations don't set SDL2_LIBRARIES
+            if("${SDL2_LIBRARIES}" STREQUAL "")
+                message(WARNING "SDL2_LIBRARIES wasn't set, manually setting to SDL2::SDL2")
+                set(SDL2_LIBRARIES "SDL2::SDL2")
+            endif()
+
+            include_directories(SYSTEM ${SDL2_INCLUDE_DIRS})
+            add_library(SDL2 INTERFACE)
+            target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARIES}")
+        else()
+            message(STATUS "SDL2 2.0.14 or newer not found, falling back to externals.")
+        endif()
     endif()
 endif()
 
@@ -285,9 +328,6 @@ if (CONAN_REQUIRED_LIBS)
     )
 
     conan_check(VERSION 1.24.0 REQUIRED)
-    # Add the bincrafters remote
-    conan_add_remote(NAME bincrafters
-                    URL https://api.bintray.com/conan/bincrafters/public-conan)
 
     # Manually add iconv to fix a dep conflict between qt and sdl2
     # We don't need to add it through find_package or anything since the other two can find it just fine
@@ -338,11 +378,6 @@ if (CONAN_REQUIRED_LIBS)
             find_package(Qt5 REQUIRED COMPONENTS WebEngineCore WebEngineWidgets)
         endif()
     endif()
-    if(ENABLE_SDL2)
-        list(APPEND CMAKE_MODULE_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-        list(APPEND CMAKE_PREFIX_PATH "${CONAN_SDL2_ROOT_RELEASE}")
-        find_package(SDL2 REQUIRED)
-    endif()
 
 endif()
 
@@ -356,23 +391,6 @@ if (TARGET Boost::Boost)
 elseif (TARGET Boost::boost)
     set_target_properties(Boost::boost PROPERTIES IMPORTED_GLOBAL TRUE)
     add_library(boost ALIAS Boost::boost)
-endif()
-
-if (TARGET sdl2::sdl2)
-    # imported from the conan generated sdl2Config.cmake
-    set_target_properties(sdl2::sdl2 PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(SDL2 ALIAS sdl2::sdl2)
-elseif(SDL2_FOUND)
-    # found through the system package manager
-    # Some installations don't set SDL2_LIBRARIES
-    if("${SDL2_LIBRARIES}" STREQUAL "")
-        message(WARNING "SDL2_LIBRARIES wasn't set, manually setting to SDL2::SDL2")
-        set(SDL2_LIBRARIES "SDL2::SDL2")
-    endif()
-
-    include_directories(SYSTEM ${SDL2_INCLUDE_DIRS})
-    add_library(SDL2 INTERFACE)
-    target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARIES}")
 endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
@@ -394,7 +412,7 @@ set(FFmpeg_COMPONENTS
 
 if (NOT YUZU_USE_BUNDLED_FFMPEG)
     # Use system installed FFmpeg
-    find_package(FFmpeg REQUIRED COMPONENTS ${FFmpeg_COMPONENTS})
+    find_package(FFmpeg QUIET COMPONENTS ${FFmpeg_COMPONENTS})
 
     if (FFmpeg_FOUND)
         # Overwrite aggregate defines from FFmpeg module to avoid over-linking libraries.
@@ -433,6 +451,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             set(FFmpeg_FOUND YES)
         endif()
 
+        unset(FFmpeg_LIBRARIES CACHE)
         foreach(COMPONENT ${FFmpeg_COMPONENTS})
             set(FFmpeg_${COMPONENT}_PREFIX "${FFmpeg_BUILD_DIR}/lib${COMPONENT}")
             set(FFmpeg_${COMPONENT}_LIB_NAME "lib${COMPONENT}.a")
@@ -445,7 +464,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
         endforeach()
 
         set(FFmpeg_INCLUDE_DIR
-            ${FFmpeg_PREFIX}
+            "${FFmpeg_PREFIX};${FFmpeg_BUILD_DIR}"
             CACHE PATH "Path to FFmpeg headers" FORCE)
 
         # `configure` parameters builds only exactly what yuzu needs from FFmpeg
@@ -492,13 +511,11 @@ if (YUZU_USE_BUNDLED_FFMPEG)
 
         # ALL makes this custom target build every time
         # but it won't actually build if the DEPENDS parameter is up to date
-        add_custom_target(ffmpeg-build ALL DEPENDS ${FFmpeg_LIBRARIES})
         add_custom_target(ffmpeg-configure ALL DEPENDS ${FFmpeg_MAKEFILE})
+        add_custom_target(ffmpeg-build ALL DEPENDS ${FFmpeg_LIBRARIES} ffmpeg-configure)
 
         if (FFmpeg_FOUND)
             message(STATUS "Found FFmpeg version ${FFmpeg_VERSION}")
-
-            add_dependencies(ffmpeg-build ffmpeg-configure)
         else()
             message(FATAL_ERROR "FFmpeg not found")
         endif()

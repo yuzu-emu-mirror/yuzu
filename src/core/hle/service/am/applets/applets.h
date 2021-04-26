@@ -62,9 +62,17 @@ enum class AppletId : u32 {
     MyPage = 0x1A,
 };
 
+enum class LibraryAppletMode : u32 {
+    AllForeground = 0,
+    Background = 1,
+    NoUI = 2,
+    BackgroundIndirectDisplay = 3,
+    AllForegroundInitiallyHidden = 4,
+};
+
 class AppletDataBroker final {
 public:
-    explicit AppletDataBroker(Kernel::KernelCore& kernel_);
+    explicit AppletDataBroker(Core::System& system_, LibraryAppletMode applet_mode_);
     ~AppletDataBroker();
 
     struct RawChannelData {
@@ -94,6 +102,9 @@ public:
     std::shared_ptr<Kernel::KReadableEvent> GetStateChangedEvent() const;
 
 private:
+    Core::System& system;
+    LibraryAppletMode applet_mode;
+
     // Queues are named from applet's perspective
 
     // PopNormalDataToApplet and PushNormalDataFromGame
@@ -119,7 +130,7 @@ private:
 
 class Applet {
 public:
-    explicit Applet(Kernel::KernelCore& kernel_);
+    explicit Applet(Core::System& system_, LibraryAppletMode applet_mode_);
     virtual ~Applet();
 
     virtual void Initialize();
@@ -129,16 +140,20 @@ public:
     virtual void ExecuteInteractive() = 0;
     virtual void Execute() = 0;
 
-    bool IsInitialized() const {
-        return initialized;
-    }
-
     AppletDataBroker& GetBroker() {
         return broker;
     }
 
     const AppletDataBroker& GetBroker() const {
         return broker;
+    }
+
+    LibraryAppletMode GetLibraryAppletMode() const {
+        return applet_mode;
+    }
+
+    bool IsInitialized() const {
+        return initialized;
     }
 
 protected:
@@ -154,6 +169,7 @@ protected:
 
     CommonArguments common_args{};
     AppletDataBroker broker;
+    LibraryAppletMode applet_mode;
     bool initialized = false;
 };
 
@@ -200,7 +216,7 @@ public:
     void SetDefaultAppletsIfMissing();
     void ClearAll();
 
-    std::shared_ptr<Applet> GetApplet(AppletId id) const;
+    std::shared_ptr<Applet> GetApplet(AppletId id, LibraryAppletMode mode) const;
 
 private:
     AppletFrontendSet frontend;

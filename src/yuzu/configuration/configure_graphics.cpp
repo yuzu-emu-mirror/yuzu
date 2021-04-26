@@ -11,8 +11,8 @@
 
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/core.h"
-#include "core/settings.h"
 #include "ui_configure_graphics.h"
 #include "video_core/vulkan_common/vulkan_instance.h"
 #include "video_core/vulkan_common/vulkan_library.h"
@@ -77,18 +77,25 @@ void ConfigureGraphics::SetConfiguration() {
 
     if (Settings::IsConfiguringGlobal()) {
         ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
+        ui->fullscreen_mode_combobox->setCurrentIndex(Settings::values.fullscreen_mode.GetValue());
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
         ConfigurationShared::SetHighlight(ui->api_layout,
                                           !Settings::values.renderer_backend.UsingGlobal());
+
+        ConfigurationShared::SetPerGameSetting(ui->fullscreen_mode_combobox,
+                                               &Settings::values.fullscreen_mode);
+        ConfigurationShared::SetHighlight(ui->fullscreen_mode_label,
+                                          !Settings::values.fullscreen_mode.UsingGlobal());
+
         ConfigurationShared::SetPerGameSetting(ui->aspect_ratio_combobox,
                                                &Settings::values.aspect_ratio);
+        ConfigurationShared::SetHighlight(ui->ar_label,
+                                          !Settings::values.aspect_ratio.UsingGlobal());
 
         ui->bg_combobox->setCurrentIndex(Settings::values.bg_red.UsingGlobal() ? 0 : 1);
         ui->bg_button->setEnabled(!Settings::values.bg_red.UsingGlobal());
-        ConfigurationShared::SetHighlight(ui->ar_label,
-                                          !Settings::values.aspect_ratio.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->bg_layout, !Settings::values.bg_red.UsingGlobal());
     }
 
@@ -106,6 +113,9 @@ void ConfigureGraphics::ApplyConfiguration() {
         }
         if (Settings::values.vulkan_device.UsingGlobal()) {
             Settings::values.vulkan_device.SetValue(vulkan_device);
+        }
+        if (Settings::values.fullscreen_mode.UsingGlobal()) {
+            Settings::values.fullscreen_mode.SetValue(ui->fullscreen_mode_combobox->currentIndex());
         }
         if (Settings::values.aspect_ratio.UsingGlobal()) {
             Settings::values.aspect_ratio.SetValue(ui->aspect_ratio_combobox->currentIndex());
@@ -140,6 +150,8 @@ void ConfigureGraphics::ApplyConfiguration() {
             }
         }
 
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.fullscreen_mode,
+                                                 ui->fullscreen_mode_combobox);
         ConfigurationShared::ApplyPerGameSetting(&Settings::values.aspect_ratio,
                                                  ui->aspect_ratio_combobox);
 
@@ -227,7 +239,7 @@ void ConfigureGraphics::RetrieveVulkanDevices() try {
     vulkan_devices.clear();
     vulkan_devices.reserve(physical_devices.size());
     for (const VkPhysicalDevice device : physical_devices) {
-        const char* const name = vk::PhysicalDevice(device, dld).GetProperties().deviceName;
+        const std::string name = vk::PhysicalDevice(device, dld).GetProperties().deviceName;
         vulkan_devices.push_back(QString::fromStdString(name));
     }
 
@@ -253,6 +265,7 @@ void ConfigureGraphics::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->api->setEnabled(Settings::values.renderer_backend.UsingGlobal());
         ui->device->setEnabled(Settings::values.renderer_backend.UsingGlobal());
+        ui->fullscreen_mode_combobox->setEnabled(Settings::values.fullscreen_mode.UsingGlobal());
         ui->aspect_ratio_combobox->setEnabled(Settings::values.aspect_ratio.UsingGlobal());
         ui->use_asynchronous_gpu_emulation->setEnabled(
             Settings::values.use_asynchronous_gpu_emulation.UsingGlobal());
@@ -278,6 +291,8 @@ void ConfigureGraphics::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredComboBox(ui->aspect_ratio_combobox, ui->ar_label,
                                             Settings::values.aspect_ratio.GetValue(true));
+    ConfigurationShared::SetColoredComboBox(ui->fullscreen_mode_combobox, ui->fullscreen_mode_label,
+                                            Settings::values.fullscreen_mode.GetValue(true));
     ConfigurationShared::InsertGlobalItem(
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
 }

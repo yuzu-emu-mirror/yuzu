@@ -2,7 +2,7 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
-#include "core/settings.h"
+#include "common/settings.h"
 #include "input_common/mouse/mouse_input.h"
 
 namespace MouseInput {
@@ -160,6 +160,42 @@ void Mouse::EndConfiguration() {
     last_button = MouseButton::Undefined;
     mouse_queue.Clear();
     configuring = false;
+}
+
+bool Mouse::ToggleButton(std::size_t button_) {
+    if (button_ >= mouse_info.size()) {
+        return false;
+    }
+    const auto button = 1U << button_;
+    const bool button_state = (toggle_buttons & button) != 0;
+    const bool button_lock = (lock_buttons & button) != 0;
+
+    if (button_lock) {
+        return button_state;
+    }
+
+    lock_buttons |= static_cast<u16>(button);
+
+    if (button_state) {
+        toggle_buttons &= static_cast<u16>(0xFF - button);
+    } else {
+        toggle_buttons |= static_cast<u16>(button);
+    }
+
+    return !button_state;
+}
+
+bool Mouse::UnlockButton(std::size_t button_) {
+    if (button_ >= mouse_info.size()) {
+        return false;
+    }
+
+    const auto button = 1U << button_;
+    const bool button_state = (toggle_buttons & button) != 0;
+
+    lock_buttons &= static_cast<u16>(0xFF - button);
+
+    return button_state;
 }
 
 Common::SPSCQueue<MouseStatus>& Mouse::GetMouseQueue() {

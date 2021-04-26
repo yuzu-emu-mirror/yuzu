@@ -33,7 +33,7 @@ static_assert(sizeof(UserSelectionOutput) == 0x18, "UserSelectionOutput has inco
 
 class ProfileSelect final : public Applet {
 public:
-    explicit ProfileSelect(Core::System& system_,
+    explicit ProfileSelect(Core::System& system_, LibraryAppletMode applet_mode_,
                            const Core::Frontend::ProfileSelectApplet& frontend_);
     ~ProfileSelect() override;
 

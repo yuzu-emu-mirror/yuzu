@@ -15,7 +15,7 @@ namespace Service::Nvidia::Devices {
 nvhost_ctrl_gpu::nvhost_ctrl_gpu(Core::System& system) : nvdevice(system) {}
 nvhost_ctrl_gpu::~nvhost_ctrl_gpu() = default;
 
-NvResult nvhost_ctrl_gpu::Ioctl1(Ioctl command, const std::vector<u8>& input,
+NvResult nvhost_ctrl_gpu::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  std::vector<u8>& output) {
     switch (command.group) {
     case 'G':
@@ -47,13 +47,13 @@ NvResult nvhost_ctrl_gpu::Ioctl1(Ioctl command, const std::vector<u8>& input,
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_ctrl_gpu::Ioctl2(Ioctl command, const std::vector<u8>& input,
+NvResult nvhost_ctrl_gpu::Ioctl2(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  const std::vector<u8>& inline_input, std::vector<u8>& output) {
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
 }
 
-NvResult nvhost_ctrl_gpu::Ioctl3(Ioctl command, const std::vector<u8>& input,
+NvResult nvhost_ctrl_gpu::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
                                  std::vector<u8>& output, std::vector<u8>& inline_output) {
     switch (command.group) {
     case 'G':
@@ -72,6 +72,9 @@ NvResult nvhost_ctrl_gpu::Ioctl3(Ioctl command, const std::vector<u8>& input,
     UNIMPLEMENTED_MSG("Unimplemented ioctl={:08X}", command.raw);
     return NvResult::NotImplemented;
 }
+
+void nvhost_ctrl_gpu::OnOpen(DeviceFD fd) {}
+void nvhost_ctrl_gpu::OnClose(DeviceFD fd) {}
 
 NvResult nvhost_ctrl_gpu::GetCharacteristics(const std::vector<u8>& input,
                                              std::vector<u8>& output) {
@@ -245,7 +248,13 @@ NvResult nvhost_ctrl_gpu::ZBCSetTable(const std::vector<u8>& input, std::vector<
     IoctlZbcSetTable params{};
     std::memcpy(&params, input.data(), input.size());
     // TODO(ogniK): What does this even actually do?
-    std::memcpy(output.data(), &params, output.size());
+
+    // Prevent null pointer being passed as arg 1
+    if (output.empty()) {
+        LOG_WARNING(Service_NVDRV, "Avoiding passing null pointer to memcpy");
+    } else {
+        std::memcpy(output.data(), &params, output.size());
+    }
     return NvResult::Success;
 }
 

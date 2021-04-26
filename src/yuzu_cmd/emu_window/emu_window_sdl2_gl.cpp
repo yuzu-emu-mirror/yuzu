@@ -5,16 +5,26 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
+
 #define SDL_MAIN_HANDLED
+// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#endif
 #include <SDL.h>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #include <fmt/format.h>
 #include <glad/glad.h>
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
-#include "core/settings.h"
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "video_core/renderer_base.h"

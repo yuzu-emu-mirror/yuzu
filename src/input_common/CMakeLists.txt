@@ -9,8 +9,6 @@ add_library(input_common STATIC
     motion_from_button.h
     motion_input.cpp
     motion_input.h
-    settings.cpp
-    settings.h
     touch_from_button.cpp
     touch_from_button.h
     gcadapter/gc_adapter.cpp
@@ -64,7 +62,7 @@ else()
     )
 endif()
 
-if(SDL2_FOUND)
+if (ENABLE_SDL2)
     target_sources(input_common PRIVATE
         sdl/sdl_impl.cpp
         sdl/sdl_impl.h

@@ -5,12 +5,12 @@
 #include <chrono>
 #include <ctime>
 
+#include "common/settings.h"
 #include "common/time_zone.h"
 #include "core/hle/service/time/ephemeral_network_system_clock_context_writer.h"
 #include "core/hle/service/time/local_system_clock_context_writer.h"
 #include "core/hle/service/time/network_system_clock_context_writer.h"
 #include "core/hle/service/time/time_manager.h"
-#include "core/settings.h"
 
 namespace Service::Time {
 
@@ -44,7 +44,11 @@ struct TimeManager::Impl final {
         const auto system_time{Clock::TimeSpanType::FromSeconds(GetExternalRtcValue())};
         SetupStandardSteadyClock(system, Common::UUID::Generate(), system_time, {}, {});
         SetupStandardLocalSystemClock(system, {}, system_time.ToSeconds());
-        SetupStandardNetworkSystemClock({}, standard_network_clock_accuracy);
+
+        Clock::SystemClockContext clock_context{};
+        standard_local_system_clock_core.GetClockContext(system, clock_context);
+
+        SetupStandardNetworkSystemClock(clock_context, standard_network_clock_accuracy);
         SetupStandardUserSystemClock(system, {}, Clock::SteadyClockTimePoint::GetRandom());
         SetupEphemeralNetworkSystemClock();
     }

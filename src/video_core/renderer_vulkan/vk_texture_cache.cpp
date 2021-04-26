@@ -7,9 +7,12 @@
 #include <span>
 #include <vector>
 
+#include "common/bit_cast.h"
+
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/renderer_vulkan/blit_image.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
+#include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
@@ -414,9 +417,20 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     };
 }
 
-[[nodiscard]] constexpr SwizzleSource ConvertGreenRed(SwizzleSource value) {
+[[nodiscard]] SwizzleSource ConvertGreenRed(SwizzleSource value) {
     switch (value) {
     case SwizzleSource::G:
+        return SwizzleSource::R;
+    default:
+        return value;
+    }
+}
+
+[[nodiscard]] SwizzleSource SwapBlueRed(SwizzleSource value) {
+    switch (value) {
+    case SwizzleSource::R:
+        return SwizzleSource::B;
+    case SwizzleSource::B:
         return SwizzleSource::R;
     default:
         return value;
@@ -538,6 +552,15 @@ void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage im
                 .depth = 1,
             },
     };
+}
+
+[[nodiscard]] bool IsFormatFlipped(PixelFormat format) {
+    switch (format) {
+    case PixelFormat::A1B5G5R5_UNORM:
+        return true;
+    default:
+        return false;
+    }
 }
 
 struct RangedBarrierRange {
@@ -807,13 +830,45 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         commit = runtime.memory_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
     }
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
-        flags |= VideoCommon::ImageFlagBits::Converted;
+        flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
     }
     if (runtime.device.HasDebuggingToolAttached()) {
         if (image) {
             image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
         } else {
             buffer.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
+        }
+    }
+    static constexpr VkImageViewUsageCreateInfo storage_image_view_usage_create_info{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .usage = VK_IMAGE_USAGE_STORAGE_BIT,
+    };
+    if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
+        const auto& device = runtime.device.GetLogical();
+        storage_image_views.reserve(info.resources.levels);
+        for (s32 level = 0; level < info.resources.levels; ++level) {
+            storage_image_views.push_back(device.CreateImageView(VkImageViewCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .pNext = &storage_image_view_usage_create_info,
+                .flags = 0,
+                .image = *image,
+                .viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                .format = VK_FORMAT_A8B8G8R8_UNORM_PACK32,
+                .components{
+                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+                },
+                .subresourceRange{
+                    .aspectMask = aspect_mask,
+                    .baseMipLevel = static_cast<u32>(level),
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = VK_REMAINING_ARRAY_LAYERS,
+                },
+            }));
         }
     }
 }
@@ -913,12 +968,14 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     };
     if (!info.IsRenderTarget()) {
         swizzle = info.Swizzle();
+        if (IsFormatFlipped(format)) {
+            std::ranges::transform(swizzle, swizzle.begin(), SwapBlueRed);
+        }
         if ((aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0) {
             std::ranges::transform(swizzle, swizzle.begin(), ConvertGreenRed);
         }
     }
     const auto format_info = MaxwellToVK::SurfaceFormat(*device, FormatType::Optimal, true, format);
-    const VkFormat vk_format = format_info.format;
     const VkImageViewUsageCreateInfo image_view_usage{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
         .pNext = nullptr,
@@ -930,7 +987,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         .flags = 0,
         .image = image.Handle(),
         .viewType = VkImageViewType{},
-        .format = vk_format,
+        .format = format_info.format,
         .components{
             .r = ComponentSwizzle(swizzle[0]),
             .g = ComponentSwizzle(swizzle[1]),
@@ -982,7 +1039,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
             .pNext = nullptr,
             .flags = 0,
             .buffer = image.Buffer(),
-            .format = vk_format,
+            .format = format_info.format,
             .offset = 0, // TODO: Redesign buffer cache to support this
             .range = image.guest_size_bytes,
         });
@@ -1030,14 +1087,13 @@ vk::ImageView ImageView::MakeDepthStencilView(VkImageAspectFlags aspect_mask) {
 Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& tsc) {
     const auto& device = runtime.device;
     const bool arbitrary_borders = runtime.device.IsExtCustomBorderColorSupported();
-    const std::array<float, 4> color = tsc.BorderColor();
-    // C++20 bit_cast
-    VkClearColorValue border_color;
-    std::memcpy(&border_color, &color, sizeof(color));
+    const auto color = tsc.BorderColor();
+
     const VkSamplerCustomBorderColorCreateInfoEXT border_ci{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT,
         .pNext = nullptr,
-        .customBorderColor = border_color,
+        // TODO: Make use of std::bit_cast once libc++ supports it.
+        .customBorderColor = Common::BitCast<VkClearColorValue>(color),
         .format = VK_FORMAT_UNDEFINED,
     };
     const void* pnext = nullptr;
@@ -1165,6 +1221,15 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
     if (runtime.device.HasDebuggingToolAttached()) {
         framebuffer.SetObjectNameEXT(VideoCommon::Name(key).c_str());
     }
+}
+
+void TextureCacheRuntime::AccelerateImageUpload(
+    Image& image, const StagingBufferRef& map,
+    std::span<const VideoCommon::SwizzleParameters> swizzles) {
+    if (IsPixelFormatASTC(image.info.format)) {
+        return astc_decoder_pass.Assemble(image, map, swizzles);
+    }
+    UNREACHABLE();
 }
 
 } // namespace Vulkan

@@ -10,6 +10,7 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
+#include "common/settings.h"
 #include "core/arm/cpu_interrupt_handler.h"
 #include "core/arm/dynarmic/arm_dynarmic_32.h"
 #include "core/arm/dynarmic/arm_dynarmic_cp15.h"
@@ -18,7 +19,6 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
-#include "core/settings.h"
 
 namespace Core {
 
@@ -114,18 +114,17 @@ public:
     static constexpr u64 minimum_run_cycles = 1000U;
 };
 
-std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& page_table,
-                                                             std::size_t address_space_bits) const {
+std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* page_table) const {
     Dynarmic::A32::UserConfig config;
     config.callbacks = cb.get();
-    // TODO(bunnei): Implement page table for 32-bit
-    // config.page_table = &page_table.pointers;
     config.coprocessors[15] = cp15;
     config.define_unpredictable_behaviour = true;
     static constexpr std::size_t PAGE_BITS = 12;
     static constexpr std::size_t NUM_PAGE_TABLE_ENTRIES = 1 << (32 - PAGE_BITS);
-    config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
-        page_table.pointers.data());
+    if (page_table) {
+        config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
+            page_table->pointers.data());
+    }
     config.absolute_offset_page_table = true;
     config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
     config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
@@ -137,6 +136,10 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable& 
 
     // Timing
     config.wall_clock_cntpct = uses_wall_clock;
+
+    // Code cache size
+    config.code_cache_size = 512 * 1024 * 1024;
+    config.far_code_offset = 256 * 1024 * 1024;
 
     // Safe optimizations
     if (Settings::values.cpu_accuracy == Settings::CPUAccuracy::DebugMode) {
@@ -201,7 +204,8 @@ ARM_Dynarmic_32::ARM_Dynarmic_32(System& system, CPUInterrupts& interrupt_handle
     : ARM_Interface{system, interrupt_handlers, uses_wall_clock},
       cb(std::make_unique<DynarmicCallbacks32>(*this)),
       cp15(std::make_shared<DynarmicCP15>(*this)), core_index{core_index},
-      exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)} {}
+      exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor)},
+      jit(MakeJit(nullptr)) {}
 
 ARM_Dynarmic_32::~ARM_Dynarmic_32() = default;
 
@@ -256,9 +260,6 @@ void ARM_Dynarmic_32::ChangeProcessorID(std::size_t new_core_id) {
 }
 
 void ARM_Dynarmic_32::SaveContext(ThreadContext32& ctx) {
-    if (!jit) {
-        return;
-    }
     Dynarmic::A32::Context context;
     jit->SaveContext(context);
     ctx.cpu_registers = context.Regs();
@@ -268,9 +269,6 @@ void ARM_Dynarmic_32::SaveContext(ThreadContext32& ctx) {
 }
 
 void ARM_Dynarmic_32::LoadContext(const ThreadContext32& ctx) {
-    if (!jit) {
-        return;
-    }
     Dynarmic::A32::Context context;
     context.Regs() = ctx.cpu_registers;
     context.ExtRegs() = ctx.extension_registers;
@@ -284,35 +282,31 @@ void ARM_Dynarmic_32::PrepareReschedule() {
 }
 
 void ARM_Dynarmic_32::ClearInstructionCache() {
-    if (!jit) {
-        return;
-    }
     jit->ClearCache();
 }
 
 void ARM_Dynarmic_32::InvalidateCacheRange(VAddr addr, std::size_t size) {
-    if (!jit) {
-        return;
-    }
     jit->InvalidateCacheRange(static_cast<u32>(addr), size);
 }
 
 void ARM_Dynarmic_32::ClearExclusiveState() {
-    if (!jit) {
-        return;
-    }
     jit->ClearExclusiveState();
 }
 
 void ARM_Dynarmic_32::PageTableChanged(Common::PageTable& page_table,
                                        std::size_t new_address_space_size_in_bits) {
+    ThreadContext32 ctx{};
+    SaveContext(ctx);
+
     auto key = std::make_pair(&page_table, new_address_space_size_in_bits);
     auto iter = jit_cache.find(key);
     if (iter != jit_cache.end()) {
         jit = iter->second;
+        LoadContext(ctx);
         return;
     }
-    jit = MakeJit(page_table, new_address_space_size_in_bits);
+    jit = MakeJit(&page_table);
+    LoadContext(ctx);
     jit_cache.emplace(key, jit);
 }
 

@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <cstring>
 #include "audio_core/audio_renderer.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
@@ -41,7 +42,6 @@
 #include "core/hle/service/set/set.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/vi/vi.h"
-#include "core/settings.h"
 
 namespace Service::AM {
 
@@ -231,6 +231,7 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {10, nullptr, "PerformSystemButtonPressing"},
         {20, nullptr, "InvalidateTransitionLayer"},
         {30, nullptr, "RequestLaunchApplicationWithUserAndArgumentForDebug"},
+        {31, nullptr, "RequestLaunchApplicationByApplicationLaunchInfoForDebug"},
         {40, nullptr, "GetAppletResourceUsageInfo"},
         {100, nullptr, "SetCpuBoostModeForApplet"},
         {101, nullptr, "CancelCpuBoostModeForApplet"},
@@ -242,6 +243,7 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {130, nullptr, "FriendInvitationSetApplicationParameter"},
         {131, nullptr, "FriendInvitationClearApplicationParameter"},
         {132, nullptr, "FriendInvitationPushApplicationParameter"},
+        {900, nullptr, "GetGrcProcessLaunchedSystemEvent"},
     };
     // clang-format on
 
@@ -295,8 +297,9 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {80, nullptr, "SetWirelessPriorityMode"},
         {90, &ISelfController::GetAccumulatedSuspendedTickValue, "GetAccumulatedSuspendedTickValue"},
         {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
-        {100, nullptr, "SetAlbumImageTakenNotificationEnabled"},
+        {100, &ISelfController::SetAlbumImageTakenNotificationEnabled, "SetAlbumImageTakenNotificationEnabled"},
         {110, nullptr, "SetApplicationAlbumUserData"},
+        {120, nullptr, "SaveCurrentScreenshot"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
     // clang-format on
@@ -560,6 +563,21 @@ void ISelfController::GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequest
     rb.PushCopyObjects(accumulated_suspended_tick_changed_event->GetReadableEvent());
 }
 
+void ISelfController::SetAlbumImageTakenNotificationEnabled(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    // This service call sets an internal flag whether a notification is shown when an image is
+    // captured. Currently we do not support capturing images via the capture button, so this can be
+    // stubbed for now.
+    const bool album_image_taken_notification_enabled = rp.Pop<bool>();
+
+    LOG_WARNING(Service_AM, "(STUBBED) called. album_image_taken_notification_enabled={}",
+                album_image_taken_notification_enabled);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 AppletMessageQueue::AppletMessageQueue(Kernel::KernelCore& kernel) {
     on_new_message = Kernel::KEvent::Create(kernel, "AMMessageQueue:OnMessageReceived");
     on_new_message->Initialize();
@@ -601,14 +619,18 @@ std::size_t AppletMessageQueue::GetMessageCount() const {
     return messages.size();
 }
 
+void AppletMessageQueue::RequestExit() {
+    PushMessage(AppletMessage::ExitRequested);
+}
+
+void AppletMessageQueue::FocusStateChanged() {
+    PushMessage(AppletMessage::FocusStateChanged);
+}
+
 void AppletMessageQueue::OperationModeChanged() {
     PushMessage(AppletMessage::OperationModeChanged);
     PushMessage(AppletMessage::PerformanceModeChanged);
     on_operation_mode_changed->GetWritableEvent()->Signal();
-}
-
-void AppletMessageQueue::RequestExit() {
-    PushMessage(AppletMessage::ExitRequested);
 }
 
 ICommonStateGetter::ICommonStateGetter(Core::System& system_,
@@ -630,6 +652,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {11, nullptr, "ReleaseSleepLock"},
         {12, nullptr, "ReleaseSleepLockTransiently"},
         {13, nullptr, "GetAcquiredSleepLockEvent"},
+        {14, nullptr, "GetWakeupCount"},
         {20, nullptr, "PushToGeneralChannel"},
         {30, nullptr, "GetHomeButtonReaderLockAccessor"},
         {31, nullptr, "GetReaderLockAccessorEx"},
@@ -641,6 +664,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {53, &ICommonStateGetter::BeginVrModeEx, "BeginVrModeEx"},
         {54, &ICommonStateGetter::EndVrModeEx, "EndVrModeEx"},
         {55, nullptr, "IsInControllerFirmwareUpdateSection"},
+        {59, nullptr, "SetVrPositionForDebug"},
         {60, &ICommonStateGetter::GetDefaultDisplayResolution, "GetDefaultDisplayResolution"},
         {61, &ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent, "GetDefaultDisplayResolutionChangeEvent"},
         {62, nullptr, "GetHdcpAuthenticationState"},
@@ -649,14 +673,21 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {65, nullptr, "GetApplicationIdByContentActionName"},
         {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"},
         {67, nullptr, "CancelCpuBoostMode"},
+        {68, nullptr, "GetBuiltInDisplayType"},
         {80, nullptr, "PerformSystemButtonPressingIfInFocus"},
         {90, nullptr, "SetPerformanceConfigurationChangedNotification"},
         {91, nullptr, "GetCurrentPerformanceConfiguration"},
         {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
+        {110, nullptr, "OpenMyGpuErrorHandler"},
         {200, nullptr, "GetOperationModeSystemInfo"},
         {300, nullptr, "GetSettingsPlatformRegion"},
         {400, nullptr, "ActivateMigrationService"},
         {401, nullptr, "DeactivateMigrationService"},
+        {500, nullptr, "DisableSleepTillShutdown"},
+        {501, nullptr, "SuppressDisablingSleepTemporarily"},
+        {502, nullptr, "IsSleepEnabled"},
+        {503, nullptr, "IsDisablingSleepSuppressed"},
+        {900, &ICommonStateGetter::SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled, "SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled"},
     };
     // clang-format on
 
@@ -784,6 +815,14 @@ void ICommonStateGetter::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
     ASSERT(apm_sys != nullptr);
 
     apm_sys->SetCpuBoostMode(ctx);
+}
+
+void ICommonStateGetter::SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(
+    Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 IStorageImpl::~IStorageImpl() = default;
@@ -944,7 +983,7 @@ private:
 
         auto storage = applet->GetBroker().PopNormalDataToGame();
         if (storage == nullptr) {
-            LOG_ERROR(Service_AM,
+            LOG_DEBUG(Service_AM,
                       "storage is a nullptr. There is no data in the current normal channel");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_NO_DATA_IN_CHANNEL);
@@ -975,7 +1014,7 @@ private:
 
         auto storage = applet->GetBroker().PopInteractiveDataToGame();
         if (storage == nullptr) {
-            LOG_ERROR(Service_AM,
+            LOG_DEBUG(Service_AM,
                       "storage is a nullptr. There is no data in the current interactive channel");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_NO_DATA_IN_CHANNEL);
@@ -1098,7 +1137,7 @@ ILibraryAppletCreator::ILibraryAppletCreator(Core::System& system_)
         {2, nullptr, "AreAnyLibraryAppletsLeft"},
         {10, &ILibraryAppletCreator::CreateStorage, "CreateStorage"},
         {11, &ILibraryAppletCreator::CreateTransferMemoryStorage, "CreateTransferMemoryStorage"},
-        {12, nullptr, "CreateHandleStorage"},
+        {12, &ILibraryAppletCreator::CreateHandleStorage, "CreateHandleStorage"},
     };
     RegisterHandlers(functions);
 }
@@ -1107,14 +1146,15 @@ ILibraryAppletCreator::~ILibraryAppletCreator() = default;
 
 void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
+
     const auto applet_id = rp.PopRaw<Applets::AppletId>();
-    const auto applet_mode = rp.PopRaw<u32>();
+    const auto applet_mode = rp.PopRaw<Applets::LibraryAppletMode>();
 
     LOG_DEBUG(Service_AM, "called with applet_id={:08X}, applet_mode={:08X}", applet_id,
               applet_mode);
 
     const auto& applet_manager{system.GetAppletManager()};
-    const auto applet = applet_manager.GetApplet(applet_id);
+    const auto applet = applet_manager.GetApplet(applet_id, applet_mode);
 
     if (applet == nullptr) {
         LOG_ERROR(Service_AM, "Applet doesn't exist! applet_id={}", applet_id);
@@ -1132,8 +1172,17 @@ void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) 
 
 void ILibraryAppletCreator::CreateStorage(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const u64 size{rp.Pop<u64>()};
+
+    const s64 size{rp.Pop<s64>()};
+
     LOG_DEBUG(Service_AM, "called, size={}", size);
+
+    if (size <= 0) {
+        LOG_ERROR(Service_AM, "size is less than or equal to 0");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
 
     std::vector<u8> buffer(size);
 
@@ -1143,18 +1192,65 @@ void ILibraryAppletCreator::CreateStorage(Kernel::HLERequestContext& ctx) {
 }
 
 void ILibraryAppletCreator::CreateTransferMemoryStorage(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_AM, "called");
-
     IPC::RequestParser rp{ctx};
 
-    rp.SetCurrentOffset(3);
-    const auto handle{rp.Pop<Kernel::Handle>()};
+    struct Parameters {
+        u8 permissions;
+        s64 size;
+    };
+
+    const auto parameters{rp.PopRaw<Parameters>()};
+    const auto handle{ctx.GetCopyHandle(0)};
+
+    LOG_DEBUG(Service_AM, "called, permissions={}, size={}, handle={:08X}", parameters.permissions,
+              parameters.size, handle);
+
+    if (parameters.size <= 0) {
+        LOG_ERROR(Service_AM, "size is less than or equal to 0");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
 
     auto transfer_mem =
         system.CurrentProcess()->GetHandleTable().Get<Kernel::TransferMemory>(handle);
 
     if (transfer_mem == nullptr) {
-        LOG_ERROR(Service_AM, "shared_mem is a nullpr for handle={:08X}", handle);
+        LOG_ERROR(Service_AM, "transfer_mem is a nullptr for handle={:08X}", handle);
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
+
+    const u8* const mem_begin = transfer_mem->GetPointer();
+    const u8* const mem_end = mem_begin + transfer_mem->GetSize();
+    std::vector<u8> memory{mem_begin, mem_end};
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IStorage>(system, std::move(memory));
+}
+
+void ILibraryAppletCreator::CreateHandleStorage(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const s64 size{rp.Pop<s64>()};
+    const auto handle{ctx.GetCopyHandle(0)};
+
+    LOG_DEBUG(Service_AM, "called, size={}, handle={:08X}", size, handle);
+
+    if (size <= 0) {
+        LOG_ERROR(Service_AM, "size is less than or equal to 0");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_UNKNOWN);
+        return;
+    }
+
+    auto transfer_mem =
+        system.CurrentProcess()->GetHandleTable().Get<Kernel::TransferMemory>(handle);
+
+    if (transfer_mem == nullptr) {
+        LOG_ERROR(Service_AM, "transfer_mem is a nullptr for handle={:08X}", handle);
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_UNKNOWN);
         return;
@@ -1188,11 +1284,14 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {25, &IApplicationFunctions::ExtendSaveData, "ExtendSaveData"},
         {26, &IApplicationFunctions::GetSaveDataSize, "GetSaveDataSize"},
         {27, nullptr, "CreateCacheStorage"},
+        {28, nullptr, "GetSaveDataSizeMax"},
+        {29, nullptr, "GetCacheStorageMax"},
         {30, &IApplicationFunctions::BeginBlockingHomeButtonShortAndLongPressed, "BeginBlockingHomeButtonShortAndLongPressed"},
         {31, &IApplicationFunctions::EndBlockingHomeButtonShortAndLongPressed, "EndBlockingHomeButtonShortAndLongPressed"},
         {32, &IApplicationFunctions::BeginBlockingHomeButton, "BeginBlockingHomeButton"},
         {33, &IApplicationFunctions::EndBlockingHomeButton, "EndBlockingHomeButton"},
         {34, nullptr, "SelectApplicationLicense"},
+        {35, nullptr, "GetDeviceSaveDataSizeMax"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
         {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
         {60, nullptr, "SetMediaPlaybackStateForApplication"},
@@ -1216,6 +1315,7 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {123, &IApplicationFunctions::GetPreviousProgramIndex, "GetPreviousProgramIndex"},
         {124, nullptr, "EnableApplicationAllThreadDumpOnCrash"},
         {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"},
+        {131, nullptr, "SetDelayTimeToAbortOnGpuError"},
         {140, &IApplicationFunctions::GetFriendInvitationStorageChannelEvent, "GetFriendInvitationStorageChannelEvent"},
         {141, &IApplicationFunctions::TryPopFromFriendInvitationStorageChannel, "TryPopFromFriendInvitationStorageChannel"},
         {150, nullptr, "GetNotificationStorageChannelEvent"},
@@ -1224,6 +1324,8 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {170, nullptr, "SetHdcpAuthenticationActivated"},
         {180, nullptr, "GetLaunchRequiredVersion"},
         {181, nullptr, "UpgradeLaunchRequiredVersion"},
+        {190, nullptr, "SendServerMaintenanceOverlayNotification"},
+        {200, nullptr, "GetLastApplicationExitReason"},
         {500, nullptr, "StartContinuousRecordingFlushForDebug"},
         {1000, nullptr, "CreateMovieMaker"},
         {1001, nullptr, "PrepareForJit"},
@@ -1690,9 +1792,12 @@ IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_)
         {21, &IHomeMenuFunctions::GetPopFromGeneralChannelEvent, "GetPopFromGeneralChannelEvent"},
         {30, nullptr, "GetHomeButtonWriterLockAccessor"},
         {31, nullptr, "GetWriterLockAccessorEx"},
+        {40, nullptr, "IsSleepEnabled"},
+        {41, nullptr, "IsRebootEnabled"},
         {100, nullptr, "PopRequestLaunchApplicationForDebug"},
         {110, nullptr, "IsForceTerminateApplicationDisabledForDebug"},
         {200, nullptr, "LaunchDevMenu"},
+        {1000, nullptr, "SetLastApplicationExitReason"},
     };
     // clang-format on
 
@@ -1736,6 +1841,7 @@ IGlobalStateController::IGlobalStateController(Core::System& system_)
         {13, nullptr, "UpdateDefaultDisplayResolution"},
         {14, nullptr, "ShouldSleepOnBoot"},
         {15, nullptr, "GetHdcpAuthenticationFailedEvent"},
+        {30, nullptr, "OpenCradleFirmwareUpdater"},
     };
     // clang-format on
 

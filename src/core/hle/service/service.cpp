@@ -6,6 +6,7 @@
 #include <fmt/format.h>
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
 #include "core/hle/ipc.h"
@@ -146,6 +147,11 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     system.GetReporter().SaveUnimplementedFunctionReport(ctx, ctx.GetCommand(), function_name,
                                                          service_name);
     UNIMPLEMENTED_MSG("Unknown / unimplemented {}", fmt::to_string(buf));
+    if (Settings::values.use_auto_stub) {
+        LOG_WARNING(Service, "Using auto stub fallback!");
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
 }
 
 void ServiceFrameworkBase::InvokeRequest(Kernel::HLERequestContext& ctx) {

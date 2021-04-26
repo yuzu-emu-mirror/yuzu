@@ -6,13 +6,13 @@
 
 #include "common/assert.h"
 #include "common/microprofile.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/core_timing_util.h"
 #include "core/frontend/emu_window.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/memory.h"
-#include "core/settings.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/kepler_memory.h"
@@ -480,11 +480,7 @@ void GPU::PushCommandBuffer(Tegra::ChCommandHeaderList& entries) {
     if (!use_nvdec) {
         return;
     }
-    // This condition fires when a video stream ends, clear all intermediary data
-    if (entries[0].raw == 0xDEADB33F) {
-        cdma_pusher.reset();
-        return;
-    }
+
     if (!cdma_pusher) {
         cdma_pusher = std::make_unique<Tegra::CDmaPusher>(*this);
     }
@@ -494,6 +490,10 @@ void GPU::PushCommandBuffer(Tegra::ChCommandHeaderList& entries) {
     // gpu_thread.SubmitCommandBuffer(std::move(entries));
 
     cdma_pusher->ProcessEntries(std::move(entries));
+}
+
+void GPU::ClearCdmaInstance() {
+    cdma_pusher.reset();
 }
 
 void GPU::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
@@ -517,8 +517,8 @@ void GPU::TriggerCpuInterrupt(const u32 syncpoint_id, const u32 value) const {
     interrupt_manager.GPUInterruptSyncpt(syncpoint_id, value);
 }
 
-void GPU::WaitIdle() const {
-    gpu_thread.WaitIdle();
+void GPU::ShutDown() {
+    gpu_thread.ShutDown();
 }
 
 void GPU::OnCommandListEnd() {

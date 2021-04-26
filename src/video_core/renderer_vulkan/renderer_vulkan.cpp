@@ -13,11 +13,11 @@
 #include <fmt/format.h>
 
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "common/telemetry.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
-#include "core/settings.h"
 #include "core/telemetry_session.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_vulkan/renderer_vulkan.h"
@@ -143,7 +143,10 @@ void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
 
         scheduler.WaitWorker();
 
-        swapchain.AcquireNextImage();
+        while (!swapchain.AcquireNextImage()) {
+            swapchain.Create(layout.width, layout.height, is_srgb);
+            blit_screen.Recreate();
+        }
         const VkSemaphore render_semaphore = blit_screen.Draw(*framebuffer, use_accelerated);
 
         scheduler.Flush(render_semaphore);

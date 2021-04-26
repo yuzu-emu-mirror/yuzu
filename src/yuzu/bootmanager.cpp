@@ -29,10 +29,10 @@
 #include "common/microprofile.h"
 #include "common/scm_rev.h"
 #include "common/scope_exit.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/hle/kernel/process.h"
-#include "core/settings.h"
 #include "input_common/keyboard.h"
 #include "input_common/main.h"
 #include "input_common/mouse/mouse_input.h"
@@ -376,11 +376,15 @@ void GRenderWindow::closeEvent(QCloseEvent* event) {
 }
 
 void GRenderWindow::keyPressEvent(QKeyEvent* event) {
-    input_subsystem->GetKeyboard()->PressKey(event->key());
+    if (!event->isAutoRepeat()) {
+        input_subsystem->GetKeyboard()->PressKey(event->key());
+    }
 }
 
 void GRenderWindow::keyReleaseEvent(QKeyEvent* event) {
-    input_subsystem->GetKeyboard()->ReleaseKey(event->key());
+    if (!event->isAutoRepeat()) {
+        input_subsystem->GetKeyboard()->ReleaseKey(event->key());
+    }
 }
 
 MouseInput::MouseButton GRenderWindow::QtButtonToMouseButton(Qt::MouseButton button) {

@@ -2,7 +2,16 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+// Ignore -Wimplicit-fallthrough due to https://github.com/libsdl-org/SDL/issues/4307
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#endif
 #include <SDL.h>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #include "common/logging/log.h"
 #include "common/scm_rev.h"
 #include "core/core.h"
@@ -229,6 +238,6 @@ void EmuWindow_SDL2::SetWindowIcon() {
     SDL_FreeSurface(window_icon);
 }
 
-void EmuWindow_SDL2::OnMinimalClientAreaChangeRequest(std::pair<unsigned, unsigned> minimal_size) {
+void EmuWindow_SDL2::OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) {
     SDL_SetWindowMinimumSize(render_window, minimal_size.first, minimal_size.second);
 }

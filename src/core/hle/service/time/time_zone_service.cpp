@@ -20,6 +20,7 @@ ITimeZoneService ::ITimeZoneService(Core::System& system_,
         {3, nullptr, "LoadLocationNameList"},
         {4, &ITimeZoneService::LoadTimeZoneRule, "LoadTimeZoneRule"},
         {5, nullptr, "GetTimeZoneRuleVersion"},
+        {6, nullptr, "GetDeviceLocationNameAndUpdatedTime"},
         {100, &ITimeZoneService::ToCalendarTime, "ToCalendarTime"},
         {101, &ITimeZoneService::ToCalendarTimeWithMyRule, "ToCalendarTimeWithMyRule"},
         {201, &ITimeZoneService::ToPosixTime, "ToPosixTime"},
@@ -139,11 +140,12 @@ void ITimeZoneService::ToPosixTime(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    ctx.WriteBuffer(posix_time);
+
     // TODO(bunnei): Handle multiple times
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.PushRaw<u32>(1); // Number of times we're returning
-    ctx.WriteBuffer(posix_time);
 }
 
 void ITimeZoneService::ToPosixTimeWithMyRule(Kernel::HLERequestContext& ctx) {
@@ -162,10 +164,11 @@ void ITimeZoneService::ToPosixTimeWithMyRule(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    ctx.WriteBuffer(posix_time);
+
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.PushRaw<u32>(1); // Number of times we're returning
-    ctx.WriteBuffer(posix_time);
 }
 
 } // namespace Service::Time

@@ -9,11 +9,11 @@
 #include <functional>
 #include <vector>
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/spl/csrng.h"
 #include "core/hle/service/spl/module.h"
 #include "core/hle/service/spl/spl.h"
-#include "core/settings.h"
 
 namespace Service::SPL {
 
@@ -43,6 +43,11 @@ void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system
     auto module = std::make_shared<Module>();
     std::make_shared<CSRNG>(system, module)->InstallAsService(service_manager);
     std::make_shared<SPL>(system, module)->InstallAsService(service_manager);
+    std::make_shared<SPL_MIG>(system, module)->InstallAsService(service_manager);
+    std::make_shared<SPL_FS>(system, module)->InstallAsService(service_manager);
+    std::make_shared<SPL_SSL>(system, module)->InstallAsService(service_manager);
+    std::make_shared<SPL_ES>(system, module)->InstallAsService(service_manager);
+    std::make_shared<SPL_MANU>(system, module)->InstallAsService(service_manager);
 }
 
 } // namespace Service::SPL

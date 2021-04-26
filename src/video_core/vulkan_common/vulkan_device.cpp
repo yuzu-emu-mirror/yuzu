@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "common/assert.h"
-#include "core/settings.h"
+#include "common/settings.h"
 #include "video_core/vulkan_common/nsight_aftermath_tracker.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -51,7 +51,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
 #ifdef _WIN32
     VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
 #endif
-#ifdef __linux__
+#ifdef __unix__
     VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
 #endif
 };
@@ -293,6 +293,15 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
         .storagePushConstant8 = false,
     };
     SetNext(next, bit8_storage);
+
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
+        .pNext = nullptr,
+        .robustBufferAccess2 = true,
+        .robustImageAccess2 = true,
+        .nullDescriptor = true,
+    };
+    SetNext(next, robustness2);
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT,

@@ -122,14 +122,16 @@ private:
 
 ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     Kernel::KThread* thread, Clock::SystemClockContext user_context,
-    Clock::SystemClockContext network_context, u8 type, Clock::ClockSnapshot& clock_snapshot) {
+    Clock::SystemClockContext network_context, Clock::TimeType type,
+    Clock::ClockSnapshot& clock_snapshot) {
 
     auto& time_manager{system.GetTimeManager()};
 
+    clock_snapshot.steady_clock_time_point =
+        time_manager.GetStandardSteadyClockCore().GetCurrentTimePoint(system);
     clock_snapshot.is_automatic_correction_enabled =
         time_manager.GetStandardUserSystemClockCore().IsAutomaticCorrectionEnabled();
-    clock_snapshot.user_context = user_context;
-    clock_snapshot.network_context = network_context;
+    clock_snapshot.type = type;
 
     if (const ResultCode result{
             time_manager.GetTimeZoneContentManager().GetTimeZoneManager().GetDeviceLocationName(
@@ -138,10 +140,11 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
         return result;
     }
 
-    const auto current_time_point{
-        time_manager.GetStandardSteadyClockCore().GetCurrentTimePoint(system)};
+    clock_snapshot.user_context = user_context;
+
     if (const ResultCode result{Clock::ClockSnapshot::GetCurrentTime(
-            clock_snapshot.user_time, current_time_point, clock_snapshot.user_context)};
+            clock_snapshot.user_time, clock_snapshot.steady_clock_time_point,
+            clock_snapshot.user_context)};
         result != RESULT_SUCCESS) {
         return result;
     }
@@ -155,9 +158,12 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     }
 
     clock_snapshot.user_calendar_time = userCalendarInfo.time;
-    clock_snapshot.user_calendar_additional_time = userCalendarInfo.additiona_info;
+    clock_snapshot.user_calendar_additional_time = userCalendarInfo.additional_info;
 
-    if (Clock::ClockSnapshot::GetCurrentTime(clock_snapshot.network_time, current_time_point,
+    clock_snapshot.network_context = network_context;
+
+    if (Clock::ClockSnapshot::GetCurrentTime(clock_snapshot.network_time,
+                                             clock_snapshot.steady_clock_time_point,
                                              clock_snapshot.network_context) != RESULT_SUCCESS) {
         clock_snapshot.network_time = 0;
     }
@@ -171,8 +177,7 @@ ResultCode Module::Interface::GetClockSnapshotFromSystemClockContextInternal(
     }
 
     clock_snapshot.network_calendar_time = networkCalendarInfo.time;
-    clock_snapshot.network_calendar_additional_time = networkCalendarInfo.additiona_info;
-    clock_snapshot.type = type;
+    clock_snapshot.network_calendar_additional_time = networkCalendarInfo.additional_info;
 
     return RESULT_SUCCESS;
 }
@@ -255,9 +260,10 @@ void Module::Interface::CalculateMonotonicSystemClockBaseTimePoint(Kernel::HLERe
 }
 
 void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_Time, "called");
     IPC::RequestParser rp{ctx};
-    const auto type{rp.PopRaw<u8>()};
+    const auto type{rp.PopEnum<Clock::TimeType>()};
+
+    LOG_DEBUG(Service_Time, "called, type={}", type);
 
     Clock::SystemClockContext user_context{};
     if (const ResultCode result{
@@ -268,6 +274,7 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
         rb.Push(result);
         return;
     }
+
     Clock::SystemClockContext network_context{};
     if (const ResultCode result{
             system.GetTimeManager().GetStandardNetworkSystemClockCore().GetClockContext(
@@ -287,19 +294,22 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
         return;
     }
 
+    ctx.WriteBuffer(clock_snapshot);
+
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    ctx.WriteBuffer(clock_snapshot);
 }
 
 void Module::Interface::GetClockSnapshotFromSystemClockContext(Kernel::HLERequestContext& ctx) {
-    LOG_DEBUG(Service_Time, "called");
     IPC::RequestParser rp{ctx};
-    const auto type{rp.PopRaw<u8>()};
-    rp.AlignWithPadding();
+    const auto type{rp.PopEnum<Clock::TimeType>()};
+
+    rp.Skip(1, false);
 
     const Clock::SystemClockContext user_context{rp.PopRaw<Clock::SystemClockContext>()};
     const Clock::SystemClockContext network_context{rp.PopRaw<Clock::SystemClockContext>()};
+
+    LOG_DEBUG(Service_Time, "called, type={}", type);
 
     Clock::ClockSnapshot clock_snapshot{};
     if (const ResultCode result{GetClockSnapshotFromSystemClockContextInternal(
@@ -310,18 +320,24 @@ void Module::Interface::GetClockSnapshotFromSystemClockContext(Kernel::HLEReques
         return;
     }
 
+    ctx.WriteBuffer(clock_snapshot);
+
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
-    ctx.WriteBuffer(clock_snapshot);
 }
 
 void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(
     Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
-    IPC::RequestParser rp{ctx};
-    const auto snapshot_a = rp.PopRaw<Clock::ClockSnapshot>();
-    const auto snapshot_b = rp.PopRaw<Clock::ClockSnapshot>();
+    Clock::ClockSnapshot snapshot_a;
+    Clock::ClockSnapshot snapshot_b;
+
+    const auto snapshot_a_data = ctx.ReadBuffer(0);
+    const auto snapshot_b_data = ctx.ReadBuffer(1);
+
+    std::memcpy(&snapshot_a, snapshot_a_data.data(), sizeof(Clock::ClockSnapshot));
+    std::memcpy(&snapshot_b, snapshot_b_data.data(), sizeof(Clock::ClockSnapshot));
 
     auto time_span_type{Clock::TimeSpanType::FromSeconds(snapshot_b.user_context.offset -
                                                          snapshot_a.user_context.offset)};
@@ -341,12 +357,18 @@ void Module::Interface::CalculateStandardUserSystemClockDifferenceByUser(
 void Module::Interface::CalculateSpanBetween(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_Time, "called");
 
-    IPC::RequestParser rp{ctx};
-    const auto snapshot_a = rp.PopRaw<Clock::ClockSnapshot>();
-    const auto snapshot_b = rp.PopRaw<Clock::ClockSnapshot>();
+    Clock::ClockSnapshot snapshot_a;
+    Clock::ClockSnapshot snapshot_b;
+
+    const auto snapshot_a_data = ctx.ReadBuffer(0);
+    const auto snapshot_b_data = ctx.ReadBuffer(1);
+
+    std::memcpy(&snapshot_a, snapshot_a_data.data(), sizeof(Clock::ClockSnapshot));
+    std::memcpy(&snapshot_b, snapshot_b_data.data(), sizeof(Clock::ClockSnapshot));
 
     Clock::TimeSpanType time_span_type{};
     s64 span{};
+
     if (const ResultCode result{snapshot_a.steady_clock_time_point.GetSpanBetween(
             snapshot_b.steady_clock_time_point, span)};
         result != RESULT_SUCCESS) {
