@@ -121,6 +121,8 @@ add_library(common STATIC
     file_util.cpp
     file_util.h
     fs/fs_types.h
+    fs/fs_util.cpp
+    fs/fs_util.h
     hash.h
     hex_util.cpp
     hex_util.h
