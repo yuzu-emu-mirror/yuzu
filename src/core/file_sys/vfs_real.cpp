@@ -94,9 +94,23 @@ VirtualFile RealVfsFilesystem::OpenFile(std::string_view path_, Mode perms) {
 
 VirtualFile RealVfsFilesystem::CreateFile(std::string_view path_, Mode perms) {
     const auto path = FS::SanitizePath(path_, FS::DirectorySeparator::PlatformDefault);
+    // Current usages of CreateFile expect to delete the contents of an existing file.
+    if (FS::IsFile(path)) {
+        FS::IOFile temp{path, FS::FileAccessMode::Write, FS::FileType::BinaryFile};
+
+        if (!temp.IsOpen()) {
+            return nullptr;
+        }
+
+        temp.Close();
+
+        return OpenFile(path, perms);
+    }
+
     if (!FS::NewFile(path)) {
         return nullptr;
     }
+
     return OpenFile(path, perms);
 }
 
