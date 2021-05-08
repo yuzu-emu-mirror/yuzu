@@ -31,6 +31,10 @@ std::filesystem::path GetNameWithoutExtension(std::filesystem::path filename) {
 InputProfiles::InputProfiles() {
     const auto input_profile_loc = FS::GetYuzuPath(FS::YuzuPath::ConfigDir) / "input";
 
+    if (!FS::IsDir(input_profile_loc)) {
+        return;
+    }
+
     FS::IterateDirEntries(
         input_profile_loc,
         [this](const std::filesystem::path& full_path) {
