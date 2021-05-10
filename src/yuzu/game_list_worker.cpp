@@ -302,6 +302,10 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
         if (!is_dir &&
             (HasSupportedFileExtension(physical_name) || IsExtractedNCAMain(physical_name))) {
             const auto file = vfs->OpenFile(physical_name, FileSys::Mode::Read);
+            if (!file) {
+                return true;
+            }
+
             auto loader = Loader::GetLoader(system, file);
             if (!loader) {
                 return true;
