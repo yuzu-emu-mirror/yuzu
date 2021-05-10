@@ -14,8 +14,8 @@ namespace fs = std::filesystem;
 // File Operations
 
 bool NewFile(const fs::path& path, u64 size) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -52,8 +52,8 @@ bool NewFile(const fs::path& path, u64 size) {
 }
 
 bool RemoveFile(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -86,8 +86,9 @@ bool RemoveFile(const fs::path& path) {
 }
 
 bool RenameFile(const fs::path& old_path, const fs::path& new_path) {
-    if (old_path.empty() || new_path.empty()) {
-        LOG_ERROR(Common_Filesystem, "One or both input path(s) is empty, old_path={}, new_path={}",
+    if (!ValidatePath(old_path) || !ValidatePath(new_path)) {
+        LOG_ERROR(Common_Filesystem,
+                  "One or both input path(s) is not valid, old_path={}, new_path={}",
                   PathToUTF8String(old_path), PathToUTF8String(new_path));
         return false;
     }
@@ -129,8 +130,8 @@ bool RenameFile(const fs::path& old_path, const fs::path& new_path) {
 
 std::shared_ptr<IOFile> FileOpen(const fs::path& path, FileAccessMode mode, FileType type,
                                  FileShareFlag flag) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return nullptr;
     }
 
@@ -162,8 +163,8 @@ std::shared_ptr<IOFile> FileOpen(const fs::path& path, FileAccessMode mode, File
 // Directory Operations
 
 bool CreateDir(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -196,8 +197,8 @@ bool CreateDir(const fs::path& path) {
 }
 
 bool CreateDirs(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -232,8 +233,8 @@ bool CreateParentDirs(const fs::path& path) {
 }
 
 bool RemoveDir(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -266,8 +267,8 @@ bool RemoveDir(const fs::path& path) {
 }
 
 bool RemoveDirRecursively(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -301,8 +302,8 @@ bool RemoveDirRecursively(const fs::path& path) {
 }
 
 bool RemoveDirContentsRecursively(const fs::path& path) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return false;
     }
 
@@ -353,8 +354,9 @@ bool RemoveDirContentsRecursively(const fs::path& path) {
 }
 
 bool RenameDir(const fs::path& old_path, const fs::path& new_path) {
-    if (old_path.empty() || new_path.empty()) {
-        LOG_ERROR(Common_Filesystem, "One or both input path(s) is empty, old_path={}, new_path={}",
+    if (!ValidatePath(old_path) || !ValidatePath(new_path)) {
+        LOG_ERROR(Common_Filesystem,
+                  "One or both input path(s) is not valid, old_path={}, new_path={}",
                   PathToUTF8String(old_path), PathToUTF8String(new_path));
         return false;
     }
@@ -396,8 +398,8 @@ bool RenameDir(const fs::path& old_path, const fs::path& new_path) {
 
 void IterateDirEntries(const std::filesystem::path& path, const DirEntryCallable& callback,
                        DirEntryFilter filter) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return;
     }
 
@@ -452,8 +454,8 @@ void IterateDirEntries(const std::filesystem::path& path, const DirEntryCallable
 
 void IterateDirEntriesRecursively(const std::filesystem::path& path,
                                   const DirEntryCallable& callback, DirEntryFilter filter) {
-    if (path.empty()) {
-        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+    if (!ValidatePath(path)) {
+        LOG_ERROR(Common_Filesystem, "Input path is not valid, path={}", PathToUTF8String(path));
         return;
     }
 

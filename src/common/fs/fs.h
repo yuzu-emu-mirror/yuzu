@@ -20,7 +20,7 @@ class IOFile;
  * Creates a new file at path with the specified size.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - The input path's parent directory does not exist
  * - Filesystem object at path exists
  * - Filesystem at path is read only
@@ -47,7 +47,7 @@ template <typename Path>
  * Removes a file at path.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a file
  * - Filesystem at path is read only
  *
@@ -72,7 +72,7 @@ template <typename Path>
  * Renames a file from old_path to new_path.
  *
  * Failures occur when:
- * - One or both input path(s) is empty
+ * - One or both input path(s) is not valid
  * - Filesystem object at old_path does not exist
  * - Filesystem object at old_path is not a file
  * - Filesystem object at new_path exists
@@ -109,7 +109,7 @@ template <typename Path1, typename Path2>
  * These behaviors are documented in each enum value of FileAccessMode.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a file
  * - The file is not opened
  *
@@ -147,7 +147,7 @@ template <typename Path>
  * If you intend to create the parent directory of a file, use CreateParentDir instead.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - The input path's parent directory does not exist
  * - Filesystem at path is read only
  *
@@ -176,7 +176,7 @@ template <typename Path>
  * Unlike CreateDir, this creates all of input path's parent directories if they do not exist.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem at path is read only
  *
  * @param path Filesystem path
@@ -242,7 +242,7 @@ template <typename Path>
  * Removes a directory at path.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a directory
  * - The given directory is not empty
  * - Filesystem at path is read only
@@ -268,7 +268,7 @@ template <typename Path>
  * Removes all the contents within the given directory and removes the directory itself.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a directory
  * - Filesystem at path is read only
  *
@@ -293,7 +293,7 @@ template <typename Path>
  * Removes all the contents within the given directory without removing the directory itself.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a directory
  * - Filesystem at path is read only
  *
@@ -318,7 +318,7 @@ template <typename Path>
  * Renames a directory from old_path to new_path.
  *
  * Failures occur when:
- * - One or both input path(s) is empty
+ * - One or both input path(s) is not valid
  * - Filesystem object at old_path does not exist
  * - Filesystem object at old_path is not a directory
  * - Filesystem object at new_path exists
@@ -358,7 +358,7 @@ template <typename Path1, typename Path2>
  * If the callback returns false or there is an error, the iteration is immediately halted.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path is not a directory
  *
  * @param path Filesystem path
@@ -388,7 +388,7 @@ void IterateDirEntries(const Path& path, const DirEntryCallable& callback,
  * If the callback returns false or there is an error, the iteration is immediately halted.
  *
  * Failures occur when:
- * - Input path is empty
+ * - Input path is not valid
  * - Filesystem object at path does not exist
  * - Filesystem object at path is not a directory
  *

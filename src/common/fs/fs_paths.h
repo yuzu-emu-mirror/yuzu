@@ -4,10 +4,6 @@
 
 #pragma once
 
-#ifndef MAX_PATH
-#define MAX_PATH 260
-#endif
-
 // yuzu data directories
 
 #define YUZU_DIR "yuzu"

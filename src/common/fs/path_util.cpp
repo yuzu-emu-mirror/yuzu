@@ -37,6 +37,16 @@
 #endif
 #endif
 
+#ifndef MAX_PATH
+#ifdef _WIN32
+// This is the maximum number of UTF-16 code units permissible in Windows file paths
+#define MAX_PATH 260
+#else
+// This is the maximum number of UTF-8 code units permissible in all other OSes' file paths
+#define MAX_PATH 1024
+#endif
+#endif
+
 namespace Common::FS {
 
 namespace fs = std::filesystem;
@@ -123,6 +133,27 @@ std::string PathToUTF8String(const fs::path& path) {
     const auto utf8_string = path.u8string();
 
     return std::string{utf8_string.begin(), utf8_string.end()};
+}
+
+bool ValidatePath(const fs::path& path) {
+    if (path.empty()) {
+        LOG_ERROR(Common_Filesystem, "Input path is empty, path={}", PathToUTF8String(path));
+        return false;
+    }
+
+#ifdef _WIN32
+    if (path.u16string().size() >= MAX_PATH) {
+        LOG_ERROR(Common_Filesystem, "Input path is too long, path={}", PathToUTF8String(path));
+        return false;
+    }
+#else
+    if (path.u8string().size() >= MAX_PATH) {
+        LOG_ERROR(Common_Filesystem, "Input path is too long, path={}", PathToUTF8String(path));
+        return false;
+    }
+#endif
+
+    return true;
 }
 
 fs::path ConcatPath(const fs::path& first, const fs::path& second) {

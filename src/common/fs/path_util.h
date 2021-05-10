@@ -35,6 +35,30 @@ enum class YuzuPath {
 [[nodiscard]] std::string PathToUTF8String(const std::filesystem::path& path);
 
 /**
+ * Validates a given path.
+ *
+ * A given path is valid if it meets these conditions:
+ * - The path is not empty
+ * - The path is not too long
+ *
+ * @param path Filesystem path
+ *
+ * @returns True if the path is valid, false otherwise.
+ */
+[[nodiscard]] bool ValidatePath(const std::filesystem::path& path);
+
+#ifdef _WIN32
+template <typename Path>
+[[nodiscard]] bool ValidatePath(const Path& path) {
+    if constexpr (IsChar<typename Path::value_type>) {
+        return ValidatePath(ToU8String(path));
+    } else {
+        return ValidatePath(std::filesystem::path{path});
+    }
+}
+#endif
+
+/**
  * Concatenates two filesystem paths together.
  *
  * This is needed since the following occurs when using std::filesystem::path's operator/:
