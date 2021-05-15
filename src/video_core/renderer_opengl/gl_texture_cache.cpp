@@ -824,6 +824,13 @@ void Image::CopyBufferToImage(const VideoCommon::BufferImageCopy& copy, size_t b
     const bool is_compressed = gl_format == GL_NONE;
     const void* const offset = reinterpret_cast<const void*>(copy.buffer_offset + buffer_offset);
 
+    if (is_compressed && !IsPixelFormatASTC(info.format) &&
+        (copy.image_extent.width < 4 || copy.image_extent.height < 4)) {
+        // Per the documentation for the BPTC, S3TC, and RGTC formats, INVALID_OPERATION will be
+        // generated if either of the dimensions are not a multiple of four. This mainly occurs on
+        // small levels of mip-mapped textures, which this condition will catch.
+        return;
+    }
     switch (info.type) {
     case ImageType::e1D:
         if (is_compressed) {
