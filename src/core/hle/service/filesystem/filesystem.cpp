@@ -736,7 +736,7 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     auto sd_directory =
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::SDMCDir), rw_mode);
     auto load_directory =
-        vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::LoadDir), rw_mode);
+        vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::LoadDir), FileSys::Mode::Read);
     auto dump_directory =
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::DumpDir), rw_mode);
 
