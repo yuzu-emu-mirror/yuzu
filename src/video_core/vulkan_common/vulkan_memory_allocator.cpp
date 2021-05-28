@@ -146,6 +146,23 @@ public:
         return (flags & property_flags) == property_flags && (type_mask & shifted_memory_type) != 0;
     }
 
+    [[nodiscard]] size_t GetCommitCount() const noexcept {
+        return commits.size();
+    }
+
+    [[nodiscard]] std::chrono::time_point<std::chrono::steady_clock> GetLastCommitTime()
+        const noexcept {
+        return last_commit_time;
+    }
+
+    void SetLastCommitTime(std::chrono::time_point<std::chrono::steady_clock> time) noexcept {
+        last_commit_time = time;
+    }
+
+    [[nodiscard]] u64 AllocationSize() const noexcept {
+        return allocation_size;
+    }
+
 private:
     [[nodiscard]] static constexpr u32 ShiftType(u32 type) {
         return 1U << type;
@@ -177,6 +194,7 @@ private:
     const u32 shifted_memory_type;              ///< Shifted Vulkan memory type.
     std::vector<Range> commits;                 ///< All commit ranges done from this allocation.
     std::span<u8> memory_mapped_span; ///< Memory mapped span. Empty if not queried before.
+    std::chrono::time_point<std::chrono::steady_clock> last_commit_time;
 #if defined(_WIN32) || defined(__unix__)
     u32 owning_opengl_handle{}; ///< Owning OpenGL memory object handle.
 #endif
@@ -223,7 +241,7 @@ void MemoryCommit::Release() {
 
 MemoryAllocator::MemoryAllocator(const Device& device_, bool export_allocations_)
     : device{device_}, properties{device_.GetPhysical().GetMemoryProperties()},
-      export_allocations{export_allocations_} {}
+      export_allocations{export_allocations_}, gc_timer{std::chrono::steady_clock::now()} {}
 
 MemoryAllocator::~MemoryAllocator() = default;
 
@@ -286,6 +304,7 @@ std::optional<MemoryCommit> MemoryAllocator::TryCommit(const VkMemoryRequirement
             continue;
         }
         if (auto commit = allocation->Commit(requirements.size, requirements.alignment)) {
+            allocation->SetLastCommitTime(gc_timer);
             return commit;
         }
     }
@@ -324,6 +343,25 @@ std::optional<u32> MemoryAllocator::FindType(VkMemoryPropertyFlags flags, u32 ty
     }
     // Failed to find index
     return std::nullopt;
+}
+
+void MemoryAllocator::TickFrame() {
+    const auto now{std::chrono::steady_clock::now()};
+    if (now - gc_timer >= ALLOCATION_TICK) {
+        size_t memory_freed = 0;
+        for (s64 x = allocations.size() - 1; x > 0; --x) {
+            const auto& allocation = allocations[x];
+            if (allocation->GetCommitCount() == 0 &&
+                allocation->GetLastCommitTime() + ALLOCATION_EXPIRATION < now) {
+                memory_freed += allocation->AllocationSize();
+                allocations.erase(allocations.begin() + x);
+            }
+        }
+        if (memory_freed > 0) {
+            LOG_INFO(HW_Memory, "Freed {}MB VRAM", memory_freed / 1024 / 1024);
+        }
+        gc_timer = now;
+    }
 }
 
 bool IsHostVisible(MemoryUsage usage) noexcept {

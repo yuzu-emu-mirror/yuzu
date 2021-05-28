@@ -63,6 +63,11 @@ class TextureCache {
     /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_BITS = 20;
 
+    /// Time since last access that images are removed from the cache
+    static constexpr auto TEXTURE_EXPIRATION = std::chrono::minutes(3);
+    /// Time between checking for expired images
+    static constexpr auto TEXTURE_TICK = std::chrono::minutes(1);
+
     /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
     /// Implement blits as copies between framebuffers
@@ -340,6 +345,8 @@ private:
     SlotVector<Sampler> slot_samplers;
     SlotVector<Framebuffer> slot_framebuffers;
 
+    std::vector<ImageId> images_in_cache;
+
     // TODO: This data structure is not optimal and it should be reworked
     std::vector<ImageId> uncommitted_downloads;
     std::queue<std::vector<ImageId>> committed_downloads;
@@ -353,6 +360,8 @@ private:
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
+
+    std::chrono::time_point<std::chrono::steady_clock> gc_timer;
 };
 
 template <class P>
@@ -361,7 +370,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::Engines::KeplerCompute& kepler_compute_,
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_} {
+      kepler_compute{kepler_compute_},
+      gpu_memory{gpu_memory_}, gc_timer{std::chrono::steady_clock::now()} {
     // Configure null sampler
     TSCEntry sampler_descriptor{};
     sampler_descriptor.min_filter.Assign(Tegra::Texture::TextureFilter::Linear);
@@ -381,6 +391,26 @@ void TextureCache<P>::TickFrame() {
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
+
+    const auto now{std::chrono::steady_clock::now()};
+    if (now - gc_timer >= TEXTURE_TICK) {
+        size_t num_removed = 0;
+        for (s64 x = images_in_cache.size() - 1; x > 0; --x) {
+            const ImageId id = images_in_cache[x];
+            const Image& image = slot_images[id];
+            if (image.last_access_time + TEXTURE_EXPIRATION < now) {
+                UnmapMemory(image.cpu_addr, image.guest_size_bytes);
+                images_in_cache.erase(images_in_cache.begin() + x);
+                ++num_removed;
+            }
+        }
+        if (num_removed > 0) {
+            LOG_INFO(HW_Memory, "Removed {} images from texture cache, new cache size: {}.", num_removed,
+                     images_in_cache.size());
+        }
+        gc_timer = now;
+    }
+
     ++frame_tick;
 }
 
@@ -609,7 +639,9 @@ void TextureCache<P>::UnmapMemory(VAddr cpu_addr, size_t size) {
         if (True(image.flags & ImageFlagBits::Tracked)) {
             UntrackImage(image);
         }
-        UnregisterImage(id);
+        if (True(image.flags & ImageFlagBits::Registered)) {
+            UnregisterImage(id);
+        }
         DeleteImage(id);
     }
 }
@@ -998,6 +1030,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         }
     });
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
+    images_in_cache.push_back(new_image_id);
     Image& new_image = slot_images[new_image_id];
 
     // TODO: Only upload what we need
@@ -1372,6 +1405,7 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
         MarkModification(image);
     }
     image.frame_tick = frame_tick;
+    image.last_access_time = std::chrono::steady_clock::now();
 }
 
 template <class P>

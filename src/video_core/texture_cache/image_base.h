@@ -62,6 +62,7 @@ struct ImageBase {
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
+    std::chrono::time_point<std::chrono::steady_clock> last_access_time;
 
     std::array<u32, MAX_MIP_LEVELS> mip_level_offsets{};
 

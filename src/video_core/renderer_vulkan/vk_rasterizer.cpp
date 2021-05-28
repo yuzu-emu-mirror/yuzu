@@ -631,6 +631,7 @@ void RasterizerVulkan::TickFrame() {
         std::scoped_lock lock{buffer_cache.mutex};
         buffer_cache.TickFrame();
     }
+    memory_allocator.TickFrame();
 }
 
 bool RasterizerVulkan::AccelerateSurfaceCopy(const Tegra::Engines::Fermi2D::Surface& src,
