@@ -405,8 +405,8 @@ void TextureCache<P>::TickFrame() {
             }
         }
         if (num_removed > 0) {
-            LOG_INFO(HW_Memory, "Removed {} images from texture cache, new cache size: {}.", num_removed,
-                     images_in_cache.size());
+            LOG_INFO(HW_Memory, "Removed {} images from texture cache, new cache size: {}.",
+                     num_removed, images_in_cache.size());
         }
         gc_timer = now;
     }
