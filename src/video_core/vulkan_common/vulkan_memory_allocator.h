@@ -73,7 +73,7 @@ class MemoryAllocator {
     /// Time since last commit was made that allocations are removed
     static constexpr auto ALLOCATION_EXPIRATION = std::chrono::minutes(4);
     /// Time between checking for expired allocations
-    static constexpr auto ALLOCATION_TICK = std::chrono::minutes(2);
+    static constexpr auto ALLOCATION_TICK = std::chrono::seconds(10);
 
 public:
     /**

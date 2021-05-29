@@ -348,17 +348,12 @@ std::optional<u32> MemoryAllocator::FindType(VkMemoryPropertyFlags flags, u32 ty
 void MemoryAllocator::TickFrame() {
     const auto now{std::chrono::steady_clock::now()};
     if (now - gc_timer >= ALLOCATION_TICK) {
-        size_t memory_freed = 0;
         for (s64 x = allocations.size() - 1; x > 0; --x) {
             const auto& allocation = allocations[x];
             if (allocation->GetCommitCount() == 0 &&
                 allocation->GetLastCommitTime() + ALLOCATION_EXPIRATION < now) {
-                memory_freed += allocation->AllocationSize();
                 allocations.erase(allocations.begin() + x);
             }
-        }
-        if (memory_freed > 0) {
-            LOG_INFO(HW_Memory, "Freed {}MB VRAM", memory_freed / 1024 / 1024);
         }
         gc_timer = now;
     }

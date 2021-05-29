@@ -65,9 +65,19 @@ class TextureCache {
     static constexpr u64 PAGE_BITS = 20;
 
     /// Time since last access that images are removed from the cache
-    static constexpr auto TEXTURE_EXPIRATION = std::chrono::minutes(2);
+    static constexpr auto GC_IMAGE_EXPIRATION = std::chrono::minutes(4);
     /// Time between checking for expired images
-    static constexpr auto TEXTURE_TICK = std::chrono::minutes(1);
+    static constexpr auto GC_IMAGE_REMOVAL = std::chrono::seconds(10);
+    /// Time between updating framebuffer references.
+    // This may be slow with a lot of framebuffers, so limit it to twice per expiry.
+    static constexpr auto GC_UPDATE_FRAMEBUFFER_REFS = GC_IMAGE_EXPIRATION / 2;
+
+    /// Number of past cache sizes to keep
+    static constexpr size_t NUM_CACHE_HISTORY = 12;
+    /// Number of past cache sizes to keep
+    static constexpr size_t CACHE_REMOVAL_MIN_MB = 16;
+    /// Number of past cache sizes to keep
+    static constexpr size_t CACHE_REMOVAL_MAX_MB = 1024;
 
     /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
@@ -349,7 +359,6 @@ private:
     SlotVector<Sampler> slot_samplers;
     SlotVector<Framebuffer> slot_framebuffers;
 
-    std::unordered_set<ImageId> images_in_cache;
     std::unordered_set<ImageViewId> active_framebuffer_imageviews;
 
     // TODO: This data structure is not optimal and it should be reworked
@@ -367,6 +376,13 @@ private:
     u64 frame_tick = 0;
 
     std::chrono::time_point<std::chrono::steady_clock> gc_timer;
+    std::chrono::time_point<std::chrono::steady_clock> gc_framebuffer_timer;
+    size_t gc_ticks;
+    std::chrono::time_point<std::chrono::steady_clock> current_time;
+    size_t current_cache_size_bytes = 0;
+    size_t current_cache_removal_size_mb = CACHE_REMOVAL_MIN_MB;
+    std::array<s64, NUM_CACHE_HISTORY> cache_size_history_mb;
+    size_t current_cache_index = 0;
 };
 
 template <class P>
@@ -375,8 +391,9 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::Engines::KeplerCompute& kepler_compute_,
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-      kepler_compute{kepler_compute_},
-      gpu_memory{gpu_memory_}, gc_timer{std::chrono::steady_clock::now()} {
+      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_},
+      gc_timer{std::chrono::steady_clock::now()}, gc_framebuffer_timer{gc_timer}, current_time{
+                                                                                      gc_timer} {
     // Configure null sampler
     TSCEntry sampler_descriptor{};
     sampler_descriptor.min_filter.Assign(Tegra::Texture::TextureFilter::Linear);
@@ -388,37 +405,88 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // This way the null resource becomes a compile time constant
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
+
+    std::ranges::fill(cache_size_history_mb, CACHE_REMOVAL_MAX_MB / 2);
 }
 
 template <class P>
 void TextureCache<P>::TickFrame() {
+    current_time = std::chrono::steady_clock::now();
+
     // Tick sentenced resources in this order to ensure they are destroyed in the right order
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
 
-    const auto now{std::chrono::steady_clock::now()};
-    if (now - gc_timer >= TEXTURE_TICK) {
-        // If any image view attached to this image is currently
-        // used in a framebuffer, do not remove it.
+    if (current_time - gc_framebuffer_timer >= GC_UPDATE_FRAMEBUFFER_REFS) {
         UpdateFramebufferReferences();
+        gc_framebuffer_timer = current_time;
+    }
 
-        size_t num_removed = images_in_cache.size();
-        for (auto& id : images_in_cache) {
-            Image& image = slot_images[id];
-            if (image.last_access_time + TEXTURE_EXPIRATION < now) {
+    if (current_time - gc_timer >= GC_IMAGE_REMOVAL) {
+        size_t num_removed = 0;
+        size_t removed_mb = 0;
+        bool gc_capped = false;
+        for (u32 i = 0; i < slot_images.Size(); ++i) {
+            const SlotId id{static_cast<u32>(current_cache_index)};
+            ++current_cache_index;
+            current_cache_index %= slot_images.Size();
 
-                UnmapMemory(image.cpu_addr, image.guest_size_bytes);
-                images_in_cache.erase(id);
+            if (slot_images.IsIndexFree(id)) {
+                const Image& image = slot_images[id];
+                if (image.last_access_time + GC_IMAGE_EXPIRATION < current_time) {
+                    removed_mb += image.guest_size_bytes / 1024 / 1024;
+                    current_cache_size_bytes -= image.guest_size_bytes;
+                    UnmapMemory(image.cpu_addr, image.guest_size_bytes);
+                    ++num_removed;
+                    if (removed_mb > current_cache_removal_size_mb) {
+                        gc_capped = true;
+                        break;
+                    }
+                }
             }
         }
-        num_removed -= images_in_cache.size();
 
         if (num_removed > 0) {
-            LOG_INFO(HW_Memory, "Removed {} images from texture cache, new cache size: {}.",
-                     num_removed, images_in_cache.size());
+            LOG_INFO(HW_Memory, "Removed {} images ({}MB) from texture cache. GC removal cap: {}MB",
+                     num_removed, removed_mb, current_cache_removal_size_mb);
         }
-        gc_timer = now;
+
+        size_t current_average_cache_size_mb =
+            std::accumulate(cache_size_history_mb.begin(), cache_size_history_mb.end(), (size_t)0);
+        current_average_cache_size_mb /= NUM_CACHE_HISTORY * 2;
+        f32 removal_sizef = static_cast<f32>(current_cache_removal_size_mb);
+        f32 current_averagef = static_cast<f32>(current_average_cache_size_mb);
+
+        if (gc_capped) {
+            // GC has capped out, so increase the cache removal
+            // for the next tick, up to CACHE_REMOVAL_MAX_MB
+            f32 ratio =
+                std::max<float>(0.0f, (1 + (current_averagef / removal_sizef)) / NUM_CACHE_HISTORY);
+            current_cache_removal_size_mb += std::llround(removal_sizef * ratio);
+            current_cache_removal_size_mb =
+                std::min<size_t>(CACHE_REMOVAL_MAX_MB, current_cache_removal_size_mb);
+            if (current_cache_removal_size_mb == CACHE_REMOVAL_MAX_MB) {
+                LOG_WARNING(HW_Memory, "Texture cache GC has maxed out at {}MB per tick!",
+                            current_cache_removal_size_mb);
+            }
+        } else {
+            // GC removed less than the current cap, so decrease the cache removal
+            // for the next tick, down to CACHE_REMOVAL_MIN_MB
+            f32 ratio =
+                std::max<float>(0.0f, (1 / (removal_sizef / current_averagef)) / NUM_CACHE_HISTORY);
+            current_cache_removal_size_mb -= std::llround(removal_sizef * ratio);
+            // Can underflow
+            if (current_cache_removal_size_mb > CACHE_REMOVAL_MAX_MB) {
+                current_cache_removal_size_mb = 0;
+            }
+            current_cache_removal_size_mb =
+                std::max<size_t>(CACHE_REMOVAL_MIN_MB, current_cache_removal_size_mb);
+        }
+
+        gc_timer = current_time;
+        cache_size_history_mb[gc_ticks++ % NUM_CACHE_HISTORY] =
+            current_cache_size_bytes / 1024 / 1024;
     }
 
     ++frame_tick;
@@ -1052,8 +1120,8 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         }
     });
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
-    images_in_cache.insert(new_image_id);
     Image& new_image = slot_images[new_image_id];
+    current_cache_size_bytes += new_image.guest_size_bytes;
 
     // TODO: Only upload what we need
     RefreshContents(new_image);
@@ -1430,7 +1498,7 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
         MarkModification(image);
     }
     image.frame_tick = frame_tick;
-    image.last_access_time = std::chrono::steady_clock::now();
+    image.last_access_time = current_time;
 }
 
 template <class P>
@@ -1553,22 +1621,25 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
 
 template <class P>
 void TextureCache<P>::UpdateFramebufferReferences() {
-    for (auto& id : images_in_cache) {
-        Image& image = slot_images[id];
-        const bool in_use = std::ranges::any_of(image.image_view_ids, [this](ImageViewId view) {
-            return active_framebuffer_imageviews.contains(view);
-        });
+    for (u32 i = 0; i < slot_images.Size(); ++i) {
+        const SlotId id{i};
+        if (slot_images.IsIndexFree(id)) {
+            Image& image = slot_images[id];
+            const bool in_use =
+                std::ranges::any_of(image.image_view_ids, [this](ImageViewId& view) {
+                    return active_framebuffer_imageviews.contains(view);
+                });
 
-        if (in_use) {
-            // Update the times for the aliases and views for this image,
-            // as they may not be directly referenced otherwise (i.e pause menus)
-            image.last_access_time = std::chrono::steady_clock::now();
-            std::ranges::for_each(image.image_view_ids, [this](ImageViewId view) {
-                slot_images[slot_image_views[view].image_id].last_access_time =
-                    std::chrono::steady_clock::now();
-            });
-            for (auto& alias : image.aliased_images) {
-                slot_images[alias.id].last_access_time = std::chrono::steady_clock::now();
+            if (in_use) {
+                // Update the times for the aliases and views for this image,
+                // as they may not be directly referenced otherwise (i.e pause menus)
+                image.last_access_time = current_time;
+                std::ranges::for_each(image.image_view_ids, [this](ImageViewId& view) {
+                    slot_images[slot_image_views[view].image_id].last_access_time = current_time;
+                });
+                for (auto& alias : image.aliased_images) {
+                    slot_images[alias.id].last_access_time = current_time;
+                }
             }
         }
     }
