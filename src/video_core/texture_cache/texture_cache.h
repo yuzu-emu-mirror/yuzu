@@ -13,6 +13,7 @@
 #include <span>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -64,7 +65,7 @@ class TextureCache {
     static constexpr u64 PAGE_BITS = 20;
 
     /// Time since last access that images are removed from the cache
-    static constexpr auto TEXTURE_EXPIRATION = std::chrono::minutes(3);
+    static constexpr auto TEXTURE_EXPIRATION = std::chrono::minutes(2);
     /// Time between checking for expired images
     static constexpr auto TEXTURE_TICK = std::chrono::minutes(1);
 
@@ -313,6 +314,9 @@ private:
     /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
 
+    /// Update image expiration times from current framebuffers
+    void UpdateFramebufferReferences();
+
     Runtime& runtime;
     VideoCore::RasterizerInterface& rasterizer;
     Tegra::Engines::Maxwell3D& maxwell3d;
@@ -345,7 +349,8 @@ private:
     SlotVector<Sampler> slot_samplers;
     SlotVector<Framebuffer> slot_framebuffers;
 
-    std::vector<ImageId> images_in_cache;
+    std::unordered_set<ImageId> images_in_cache;
+    std::unordered_set<ImageViewId> active_framebuffer_imageviews;
 
     // TODO: This data structure is not optimal and it should be reworked
     std::vector<ImageId> uncommitted_downloads;
@@ -394,16 +399,21 @@ void TextureCache<P>::TickFrame() {
 
     const auto now{std::chrono::steady_clock::now()};
     if (now - gc_timer >= TEXTURE_TICK) {
-        size_t num_removed = 0;
-        for (s64 x = images_in_cache.size() - 1; x > 0; --x) {
-            const ImageId id = images_in_cache[x];
-            const Image& image = slot_images[id];
+        // If any image view attached to this image is currently
+        // used in a framebuffer, do not remove it.
+        UpdateFramebufferReferences();
+
+        size_t num_removed = images_in_cache.size();
+        for (auto& id : images_in_cache) {
+            Image& image = slot_images[id];
             if (image.last_access_time + TEXTURE_EXPIRATION < now) {
+
                 UnmapMemory(image.cpu_addr, image.guest_size_bytes);
-                images_in_cache.erase(images_in_cache.begin() + x);
-                ++num_removed;
+                images_in_cache.erase(id);
             }
         }
+        num_removed -= images_in_cache.size();
+
         if (num_removed > 0) {
             LOG_INFO(HW_Memory, "Removed {} images from texture cache, new cache size: {}.",
                      num_removed, images_in_cache.size());
@@ -570,6 +580,16 @@ ImageViewId TextureCache<P>::VisitImageView(DescriptorTable<TICEntry>& table,
 template <class P>
 FramebufferId TextureCache<P>::GetFramebufferId(const RenderTargets& key) {
     const auto [pair, is_new] = framebuffers.try_emplace(key);
+
+    std::ranges::for_each(pair->first.color_buffer_ids, [this](ImageViewId id) {
+        if (id) {
+            active_framebuffer_imageviews.insert(id);
+        }
+    });
+    if (pair->first.depth_buffer_id) {
+        active_framebuffer_imageviews.insert(pair->first.depth_buffer_id);
+    }
+
     FramebufferId& framebuffer_id = pair->second;
     if (!is_new) {
         return framebuffer_id;
@@ -750,6 +770,7 @@ void TextureCache<P>::InvalidateColorBuffer(size_t index) {
     image.flags &= ~ImageFlagBits::CpuModified;
     image.flags &= ~ImageFlagBits::GpuModified;
 
+    active_framebuffer_imageviews.erase(color_buffer_id);
     runtime.InvalidateColorBuffer(color_buffer, index);
 }
 
@@ -766,6 +787,7 @@ void TextureCache<P>::InvalidateDepthBuffer() {
     image.flags &= ~ImageFlagBits::CpuModified;
     image.flags &= ~ImageFlagBits::GpuModified;
 
+    active_framebuffer_imageviews.erase(depth_buffer_id);
     ImageView& depth_buffer = slot_image_views[depth_buffer_id];
     runtime.InvalidateDepthBuffer(depth_buffer);
 }
@@ -1030,7 +1052,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         }
     });
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
-    images_in_cache.push_back(new_image_id);
+    images_in_cache.insert(new_image_id);
     Image& new_image = slot_images[new_image_id];
 
     // TODO: Only upload what we need
@@ -1048,7 +1070,9 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         if (True(overlap.flags & ImageFlagBits::Tracked)) {
             UntrackImage(overlap);
         }
-        UnregisterImage(overlap_id);
+        if (True(overlap.flags & ImageFlagBits::Registered)) {
+            UnregisterImage(overlap_id);
+        }
         DeleteImage(overlap_id);
     }
     ImageBase& new_image_base = new_image;
@@ -1350,6 +1374,7 @@ void TextureCache<P>::RemoveFramebuffers(std::span<const ImageViewId> removed_vi
     auto it = framebuffers.begin();
     while (it != framebuffers.end()) {
         if (it->first.Contains(removed_views)) {
+            sentenced_framebuffers.Push(std::move(slot_framebuffers[it->second]));
             it = framebuffers.erase(it);
         } else {
             ++it;
@@ -1524,6 +1549,29 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
     // Make sure the clear covers all texels in the subresource
     return scissor.min_x == 0 && scissor.min_y == 0 && scissor.max_x >= size.width &&
            scissor.max_y >= size.height;
+}
+
+template <class P>
+void TextureCache<P>::UpdateFramebufferReferences() {
+    for (auto& id : images_in_cache) {
+        Image& image = slot_images[id];
+        const bool in_use = std::ranges::any_of(image.image_view_ids, [this](ImageViewId view) {
+            return active_framebuffer_imageviews.contains(view);
+        });
+
+        if (in_use) {
+            // Update the times for the aliases and views for this image,
+            // as they may not be directly referenced otherwise (i.e pause menus)
+            image.last_access_time = std::chrono::steady_clock::now();
+            std::ranges::for_each(image.image_view_ids, [this](ImageViewId view) {
+                slot_images[slot_image_views[view].image_id].last_access_time =
+                    std::chrono::steady_clock::now();
+            });
+            for (auto& alias : image.aliased_images) {
+                slot_images[alias.id].last_access_time = std::chrono::steady_clock::now();
+            }
+        }
+    }
 }
 
 } // namespace VideoCommon

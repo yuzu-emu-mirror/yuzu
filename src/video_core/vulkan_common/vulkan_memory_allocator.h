@@ -71,7 +71,7 @@ private:
 /// Allocates and releases memory allocations on demand.
 class MemoryAllocator {
     /// Time since last commit was made that allocations are removed
-    static constexpr auto ALLOCATION_EXPIRATION = std::chrono::minutes(5);
+    static constexpr auto ALLOCATION_EXPIRATION = std::chrono::minutes(4);
     /// Time between checking for expired allocations
     static constexpr auto ALLOCATION_TICK = std::chrono::minutes(2);
 
