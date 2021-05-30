@@ -65,7 +65,7 @@ class TextureCache {
     static constexpr u64 PAGE_BITS = 20;
 
     /// Time since last access that images are removed from the cache
-    static constexpr auto GC_IMAGE_EXPIRATION = std::chrono::minutes(4);
+    static constexpr auto GC_IMAGE_EXPIRATION = std::chrono::minutes(2);
     /// Time between checking for expired images
     static constexpr auto GC_IMAGE_REMOVAL = std::chrono::seconds(10);
     /// Time between updating framebuffer references.
