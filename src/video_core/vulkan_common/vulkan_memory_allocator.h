@@ -106,6 +106,7 @@ public:
     /// Commits memory required by the image and binds it.
     MemoryCommit Commit(const vk::Image& image, MemoryUsage usage);
 
+    /// Tick the allocator to free memory
     void TickFrame();
 
 private:

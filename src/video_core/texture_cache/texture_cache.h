@@ -324,6 +324,9 @@ private:
     /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
 
+    /// Tick the garbage collector to free up unused images
+    void TickGC();
+
     /// Update image expiration times from current framebuffers
     void UpdateFramebufferReferences();
 
@@ -405,8 +408,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // This way the null resource becomes a compile time constant
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
-
-    std::ranges::fill(cache_size_history_mb, CACHE_REMOVAL_MAX_MB / 2);
+    // Fill the cache with the average to start with
+    cache_size_history_mb.fill((CACHE_REMOVAL_MIN_MB + CACHE_REMOVAL_MAX_MB) / 2);
 }
 
 template <class P>
@@ -418,76 +421,8 @@ void TextureCache<P>::TickFrame() {
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
 
-    if (current_time - gc_framebuffer_timer >= GC_UPDATE_FRAMEBUFFER_REFS) {
-        UpdateFramebufferReferences();
-        gc_framebuffer_timer = current_time;
-    }
-
-    if (current_time - gc_timer >= GC_IMAGE_REMOVAL) {
-        size_t num_removed = 0;
-        size_t removed_mb = 0;
-        bool gc_capped = false;
-        for (u32 i = 0; i < slot_images.Size(); ++i) {
-            const SlotId id{static_cast<u32>(current_cache_index)};
-            ++current_cache_index;
-            current_cache_index %= slot_images.Size();
-
-            if (slot_images.IsIndexFree(id)) {
-                const Image& image = slot_images[id];
-                if (image.last_access_time + GC_IMAGE_EXPIRATION < current_time) {
-                    removed_mb += image.guest_size_bytes / 1024 / 1024;
-                    current_cache_size_bytes -= image.guest_size_bytes;
-                    UnmapMemory(image.cpu_addr, image.guest_size_bytes);
-                    ++num_removed;
-                    if (removed_mb > current_cache_removal_size_mb) {
-                        gc_capped = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (num_removed > 0) {
-            LOG_INFO(HW_Memory, "Removed {} images ({}MB) from texture cache. GC removal cap: {}MB",
-                     num_removed, removed_mb, current_cache_removal_size_mb);
-        }
-
-        size_t current_average_cache_size_mb =
-            std::accumulate(cache_size_history_mb.begin(), cache_size_history_mb.end(), (size_t)0);
-        current_average_cache_size_mb /= NUM_CACHE_HISTORY * 2;
-        f32 removal_sizef = static_cast<f32>(current_cache_removal_size_mb);
-        f32 current_averagef = static_cast<f32>(current_average_cache_size_mb);
-
-        if (gc_capped) {
-            // GC has capped out, so increase the cache removal
-            // for the next tick, up to CACHE_REMOVAL_MAX_MB
-            f32 ratio =
-                std::max<float>(0.0f, (1 + (current_averagef / removal_sizef)) / NUM_CACHE_HISTORY);
-            current_cache_removal_size_mb += std::llround(removal_sizef * ratio);
-            current_cache_removal_size_mb =
-                std::min<size_t>(CACHE_REMOVAL_MAX_MB, current_cache_removal_size_mb);
-            if (current_cache_removal_size_mb == CACHE_REMOVAL_MAX_MB) {
-                LOG_WARNING(HW_Memory, "Texture cache GC has maxed out at {}MB per tick!",
-                            current_cache_removal_size_mb);
-            }
-        } else {
-            // GC removed less than the current cap, so decrease the cache removal
-            // for the next tick, down to CACHE_REMOVAL_MIN_MB
-            f32 ratio =
-                std::max<float>(0.0f, (1 / (removal_sizef / current_averagef)) / NUM_CACHE_HISTORY);
-            current_cache_removal_size_mb -= std::llround(removal_sizef * ratio);
-            // Can underflow
-            if (current_cache_removal_size_mb > CACHE_REMOVAL_MAX_MB) {
-                current_cache_removal_size_mb = 0;
-            }
-            current_cache_removal_size_mb =
-                std::max<size_t>(CACHE_REMOVAL_MIN_MB, current_cache_removal_size_mb);
-        }
-
-        gc_timer = current_time;
-        cache_size_history_mb[gc_ticks++ % NUM_CACHE_HISTORY] =
-            current_cache_size_bytes / 1024 / 1024;
-    }
+    UpdateFramebufferReferences();
+    TickGC();
 
     ++frame_tick;
 }
@@ -649,11 +584,12 @@ template <class P>
 FramebufferId TextureCache<P>::GetFramebufferId(const RenderTargets& key) {
     const auto [pair, is_new] = framebuffers.try_emplace(key);
 
-    std::ranges::for_each(pair->first.color_buffer_ids, [this](ImageViewId id) {
-        if (id) {
-            active_framebuffer_imageviews.insert(id);
+    for (const auto& id : pair->first.color_buffer_ids) {
+        if (!id) {
+            break;
         }
-    });
+        active_framebuffer_imageviews.insert(id);
+    }
     if (pair->first.depth_buffer_id) {
         active_framebuffer_imageviews.insert(pair->first.depth_buffer_id);
     }
@@ -1620,29 +1556,107 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
 }
 
 template <class P>
+void TextureCache<P>::TickGC() {
+    if (current_time - gc_timer < GC_IMAGE_REMOVAL) {
+        return;
+    }
+
+    size_t num_removed = 0;
+    size_t removed_mb = 0;
+    bool gc_capped = false;
+    for (u32 i = 0; i < slot_images.Size(); ++i) {
+        const SlotId id{static_cast<u32>(current_cache_index)};
+        ++current_cache_index;
+        current_cache_index %= slot_images.Size();
+
+        if (!slot_images.IsIndexFree(id)) {
+            continue;
+        }
+
+        const Image& image = slot_images[id];
+        if (image.last_access_time + GC_IMAGE_EXPIRATION >= current_time) {
+            continue;
+        }
+
+        removed_mb += image.guest_size_bytes / 1024 / 1024;
+        current_cache_size_bytes -= image.guest_size_bytes;
+        UnmapMemory(image.cpu_addr, image.guest_size_bytes);
+        ++num_removed;
+        if (removed_mb > current_cache_removal_size_mb) {
+            gc_capped = true;
+            break;
+        }
+    }
+
+    if (num_removed > 0) {
+        LOG_INFO(HW_Memory, "Removed {} images ({}MB) from texture cache. GC removal cap: {}MB",
+                 num_removed, removed_mb, current_cache_removal_size_mb);
+    }
+
+    size_t current_average_cache_size_mb =
+        std::accumulate(cache_size_history_mb.begin(), cache_size_history_mb.end(), size_t{0});
+    current_average_cache_size_mb /= NUM_CACHE_HISTORY * 2;
+    f32 removal_sizef = static_cast<f32>(current_cache_removal_size_mb);
+    f32 current_averagef = static_cast<f32>(current_average_cache_size_mb);
+
+    if (gc_capped) {
+        // GC has capped out, so increase the cache removal
+        // for the next tick, up to CACHE_REMOVAL_MAX_MB
+        f32 ratio = std::max(0.0f, (1 + (current_averagef / removal_sizef)) / NUM_CACHE_HISTORY);
+        current_cache_removal_size_mb += std::llround(removal_sizef * ratio);
+        current_cache_removal_size_mb =
+            std::min(CACHE_REMOVAL_MAX_MB, current_cache_removal_size_mb);
+        if (current_cache_removal_size_mb == CACHE_REMOVAL_MAX_MB) {
+            LOG_WARNING(HW_Memory, "Texture cache GC has maxed out at {}MB per tick!",
+                        current_cache_removal_size_mb);
+        }
+    } else {
+        // GC removed less than the current cap, so decrease the cache removal
+        // for the next tick, down to CACHE_REMOVAL_MIN_MB
+        f32 ratio = std::max(0.0f, (1 / (removal_sizef / current_averagef)) / NUM_CACHE_HISTORY);
+        current_cache_removal_size_mb -= std::llround(removal_sizef * ratio);
+        // Can underflow
+        if (current_cache_removal_size_mb > CACHE_REMOVAL_MAX_MB) {
+            current_cache_removal_size_mb = 0;
+        }
+        current_cache_removal_size_mb =
+            std::max(CACHE_REMOVAL_MIN_MB, current_cache_removal_size_mb);
+    }
+
+    gc_timer = current_time;
+    cache_size_history_mb[gc_ticks++ % NUM_CACHE_HISTORY] = current_cache_size_bytes / 1024 / 1024;
+}
+
+template <class P>
 void TextureCache<P>::UpdateFramebufferReferences() {
+    if (current_time - gc_framebuffer_timer < GC_UPDATE_FRAMEBUFFER_REFS) {
+        return;
+    }
+
     for (u32 i = 0; i < slot_images.Size(); ++i) {
         const SlotId id{i};
-        if (slot_images.IsIndexFree(id)) {
-            Image& image = slot_images[id];
-            const bool in_use =
-                std::ranges::any_of(image.image_view_ids, [this](ImageViewId& view) {
-                    return active_framebuffer_imageviews.contains(view);
-                });
+        if (!slot_images.IsIndexFree(id)) {
+            continue;
+        }
 
-            if (in_use) {
-                // Update the times for the aliases and views for this image,
-                // as they may not be directly referenced otherwise (i.e pause menus)
-                image.last_access_time = current_time;
-                std::ranges::for_each(image.image_view_ids, [this](ImageViewId& view) {
-                    slot_images[slot_image_views[view].image_id].last_access_time = current_time;
-                });
-                for (auto& alias : image.aliased_images) {
-                    slot_images[alias.id].last_access_time = current_time;
-                }
+        Image& image = slot_images[id];
+        const bool in_use = std::ranges::any_of(image.image_view_ids, [this](ImageViewId& view) {
+            return active_framebuffer_imageviews.contains(view);
+        });
+
+        if (in_use) {
+            // Update the times for the aliases and views for this image,
+            // as they may not be directly referenced otherwise (i.e pause menus)
+            image.last_access_time = current_time;
+            for (auto& view : image.image_view_ids) {
+                slot_images[slot_image_views[view].image_id].last_access_time = current_time;
+            }
+            for (const auto& alias : image.aliased_images) {
+                slot_images[alias.id].last_access_time = current_time;
             }
         }
     }
+    gc_framebuffer_timer = current_time;
 }
 
 } // namespace VideoCommon
