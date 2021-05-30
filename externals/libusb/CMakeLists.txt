@@ -27,20 +27,24 @@ if(WIN32)
         target_include_directories(usb BEFORE PRIVATE libusb/msvc)
     endif()
 
-    # Works around other libraries providing their own definition of USB GUIDs (e.g. SDL2)
-    target_compile_definitions(usb PRIVATE "-DGUID_DEVINTERFACE_USB_DEVICE=(GUID){ 0xA5DCBF10, 0x6530, 0x11D2, {0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED}}")
+    # Use platform-specific Windows APIs on MSVC and MINGW, and work around
+    # other libraries providing their own definition of USB GUIDs (e.g. SDL2)
+    target_compile_definitions(usb PRIVATE "-DPLATFORM_WINDOWS=1 -DGUID_DEVINTERFACE_USB_DEVICE=(GUID){ 0xA5DCBF10, 0x6530, 0x11D2, {0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED}}")
 else()
-target_include_directories(usb
-    # turns out other projects also have "config.h", so make sure the
-    # LibUSB one comes first
-    BEFORE
+    target_include_directories(usb
+        # turns out other projects also have "config.h", so make sure the
+        # LibUSB one comes first
+        BEFORE
 
-    PUBLIC
-      libusb/libusb
+        PUBLIC
+          libusb/libusb
 
-    PRIVATE
-      "${CMAKE_CURRENT_BINARY_DIR}"
-)
+        PRIVATE
+          "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+
+    # Not on Windows, use POSIX APIs.
+    target_compile_definitions(usb PRIVATE "-DPLATFORM_POSIX=1")
 endif()
 
 if(WIN32 OR CYGWIN)
