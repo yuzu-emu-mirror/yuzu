@@ -135,3 +135,4 @@ private:
 Q_DECLARE_METATYPE(Settings::CPUAccuracy);
 Q_DECLARE_METATYPE(Settings::RendererBackend);
 Q_DECLARE_METATYPE(Settings::GPUAccuracy);
+Q_DECLARE_METATYPE(Settings::GCLevel);

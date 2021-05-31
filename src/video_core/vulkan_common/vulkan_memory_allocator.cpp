@@ -241,7 +241,8 @@ void MemoryCommit::Release() {
 
 MemoryAllocator::MemoryAllocator(const Device& device_, bool export_allocations_)
     : device{device_}, properties{device_.GetPhysical().GetMemoryProperties()},
-      export_allocations{export_allocations_}, gc_timer{std::chrono::steady_clock::now()} {}
+      export_allocations{export_allocations_}, GC_DISABLED{Settings::UseGarbageCollect()},
+      GC_EXPIRATION_TIME{Settings::GarbageCollectTimer()}, GC_TIMER{Clock::now()} {}
 
 MemoryAllocator::~MemoryAllocator() = default;
 
@@ -304,7 +305,7 @@ std::optional<MemoryCommit> MemoryAllocator::TryCommit(const VkMemoryRequirement
             continue;
         }
         if (auto commit = allocation->Commit(requirements.size, requirements.alignment)) {
-            allocation->SetLastCommitTime(gc_timer);
+            allocation->SetLastCommitTime(GC_TIMER);
             return commit;
         }
     }
@@ -346,18 +347,18 @@ std::optional<u32> MemoryAllocator::FindType(VkMemoryPropertyFlags flags, u32 ty
 }
 
 void MemoryAllocator::TickFrame() {
-    const auto now{std::chrono::steady_clock::now()};
-    if (now - gc_timer < ALLOCATION_TICK) {
+    const auto now{Clock::now()};
+    if (GC_DISABLED || now - GC_TIMER < GC_TICK_TIME) {
         return;
     }
     for (s64 x = static_cast<s64>(allocations.size() - 1); x > 0; --x) {
         const auto& allocation = allocations[x];
         if (allocation->GetCommitCount() == 0 &&
-            allocation->GetLastCommitTime() + ALLOCATION_EXPIRATION < now) {
+            allocation->GetLastCommitTime() + GC_EXPIRATION_TIME < now) {
             allocations.erase(allocations.begin() + x);
         }
     }
-    gc_timer = now;
+    GC_TIMER = now;
 }
 
 bool IsHostVisible(MemoryUsage usage) noexcept {

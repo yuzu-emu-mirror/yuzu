@@ -52,7 +52,6 @@ void ConfigureGeneral::SetConfiguration() {
 void ConfigureGeneral::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core,
                                              use_multi_core);
-
     if (Settings::IsConfiguringGlobal()) {
         UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();
@@ -66,7 +65,7 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.frame_limit.SetValue(ui->frame_limit->value());
         }
     } else {
-        bool global_frame_limit = use_frame_limit == ConfigurationShared::CheckState::Global;
+        const bool global_frame_limit = use_frame_limit == ConfigurationShared::CheckState::Global;
         Settings::values.use_frame_limit.SetGlobal(global_frame_limit);
         Settings::values.frame_limit.SetGlobal(global_frame_limit);
         if (!global_frame_limit) {

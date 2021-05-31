@@ -194,6 +194,16 @@ use_disk_shader_cache =
 # 0 (Normal), 1 (High), 2 (Extreme)
 gpu_accuracy =
 
+# Enable the garbage collector?
+# 0: Off, 1: On (default)
+use_garbage_collect =
+
+# How quickly the garbage collector removes images from the texture cache
+# 0 (Aggressive): 1 minute
+# 1 (Normal): 4 minutes
+# 2 (Relaxed): 10 minutes
+garbage_collect_level =
+
 # Whether to use asynchronous GPU emulation
 # 0 : Off (slow), 1 (default): On (fast)
 use_asynchronous_gpu_emulation =

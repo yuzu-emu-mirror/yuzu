@@ -799,6 +799,11 @@ void Config::ReadRendererValues() {
     ReadSettingGlobal(Settings::values.use_disk_shader_cache,
                       QStringLiteral("use_disk_shader_cache"), true);
     ReadSettingGlobal(Settings::values.gpu_accuracy, QStringLiteral("gpu_accuracy"), 1);
+    ReadSettingGlobal(Settings::values.use_garbage_collect, QStringLiteral("use_garbage_collect"),
+                      true);
+    ReadSettingGlobal(Settings::values.garbage_collect_level,
+                      QStringLiteral("garbage_collect_level"),
+                      static_cast<int>(Settings::GCLevel::Normal));
     ReadSettingGlobal(Settings::values.use_asynchronous_gpu_emulation,
                       QStringLiteral("use_asynchronous_gpu_emulation"), true);
     ReadSettingGlobal(Settings::values.use_nvdec_emulation, QStringLiteral("use_nvdec_emulation"),
@@ -1377,6 +1382,12 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("gpu_accuracy"),
                        static_cast<int>(Settings::values.gpu_accuracy.GetValue(global)),
                        Settings::values.gpu_accuracy.UsingGlobal(), 1);
+    WriteSettingGlobal(QStringLiteral("use_garbage_collect"), Settings::values.use_garbage_collect,
+                       true);
+    WriteSettingGlobal(QStringLiteral("garbage_collect_level"),
+                       static_cast<int>(Settings::values.garbage_collect_level.GetValue(global)),
+                       Settings::values.garbage_collect_level.UsingGlobal(),
+                       static_cast<int>(Settings::GCLevel::Normal));
     WriteSettingGlobal(QStringLiteral("use_asynchronous_gpu_emulation"),
                        Settings::values.use_asynchronous_gpu_emulation, true);
     WriteSettingGlobal(QStringLiteral("use_nvdec_emulation"), Settings::values.use_nvdec_emulation,

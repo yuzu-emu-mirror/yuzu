@@ -22,11 +22,14 @@ ConfigureGraphicsAdvanced::~ConfigureGraphicsAdvanced() = default;
 
 void ConfigureGraphicsAdvanced::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
+    ui->use_garbage_collect->setEnabled(runtime_lock);
+    ui->garbage_collect_level->setEnabled(runtime_lock);
     ui->use_vsync->setEnabled(runtime_lock);
     ui->use_assembly_shaders->setEnabled(runtime_lock);
     ui->use_asynchronous_shaders->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
 
+    ui->use_garbage_collect->setChecked(Settings::values.use_garbage_collect.GetValue());
     ui->use_vsync->setChecked(Settings::values.use_vsync.GetValue());
     ui->use_assembly_shaders->setChecked(Settings::values.use_assembly_shaders.GetValue());
     ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
@@ -35,10 +38,14 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setCurrentIndex(
             static_cast<int>(Settings::values.gpu_accuracy.GetValue()));
+        ui->garbage_collect_level->setCurrentIndex(
+            static_cast<int>(Settings::values.garbage_collect_level.GetValue()));
         ui->anisotropic_filtering_combobox->setCurrentIndex(
             Settings::values.max_anisotropy.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->gpu_accuracy, &Settings::values.gpu_accuracy);
+        ConfigurationShared::SetPerGameSetting(ui->garbage_collect_level,
+                                               &Settings::values.garbage_collect_level);
         ConfigurationShared::SetPerGameSetting(ui->anisotropic_filtering_combobox,
                                                &Settings::values.max_anisotropy);
         ConfigurationShared::SetHighlight(ui->label_gpu_accuracy,
@@ -53,7 +60,12 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     const auto gpu_accuracy = static_cast<Settings::GPUAccuracy>(
         ui->gpu_accuracy->currentIndex() -
         ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
+    const auto gc_level = static_cast<Settings::GCLevel>(
+        ui->garbage_collect_level->currentIndex() -
+        ((Settings::IsConfiguringGlobal()) ? 0 : ConfigurationShared::USE_GLOBAL_OFFSET));
 
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_garbage_collect,
+                                             ui->use_garbage_collect, use_garbage_collect);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                              ui->anisotropic_filtering_combobox);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vsync, ui->use_vsync, use_vsync);
@@ -70,12 +82,21 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
         if (Settings::values.gpu_accuracy.UsingGlobal()) {
             Settings::values.gpu_accuracy.SetValue(gpu_accuracy);
         }
+        if (Settings::values.garbage_collect_level.UsingGlobal()) {
+            Settings::values.garbage_collect_level.SetValue(gc_level);
+        }
     } else {
         if (ui->gpu_accuracy->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
             Settings::values.gpu_accuracy.SetGlobal(true);
         } else {
             Settings::values.gpu_accuracy.SetGlobal(false);
             Settings::values.gpu_accuracy.SetValue(gpu_accuracy);
+        }
+        if (ui->garbage_collect_level->currentIndex() == ConfigurationShared::USE_GLOBAL_INDEX) {
+            Settings::values.garbage_collect_level.SetGlobal(true);
+        } else {
+            Settings::values.garbage_collect_level.SetGlobal(false);
+            Settings::values.garbage_collect_level.SetValue(gc_level);
         }
     }
 }
@@ -96,6 +117,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     // Disable if not global (only happens during game)
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setEnabled(Settings::values.gpu_accuracy.UsingGlobal());
+        ui->use_garbage_collect->setEnabled(Settings::values.use_garbage_collect.UsingGlobal());
+        ui->garbage_collect_level->setEnabled(Settings::values.garbage_collect_level.UsingGlobal());
         ui->use_vsync->setEnabled(Settings::values.use_vsync.UsingGlobal());
         ui->use_assembly_shaders->setEnabled(Settings::values.use_assembly_shaders.UsingGlobal());
         ui->use_asynchronous_shaders->setEnabled(
@@ -107,6 +130,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
         return;
     }
 
+    ConfigurationShared::SetColoredTristate(
+        ui->use_garbage_collect, Settings::values.use_garbage_collect, use_garbage_collect);
     ConfigurationShared::SetColoredTristate(ui->use_vsync, Settings::values.use_vsync, use_vsync);
     ConfigurationShared::SetColoredTristate(
         ui->use_assembly_shaders, Settings::values.use_assembly_shaders, use_assembly_shaders);
@@ -118,6 +143,9 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     ConfigurationShared::SetColoredComboBox(
         ui->gpu_accuracy, ui->label_gpu_accuracy,
         static_cast<int>(Settings::values.gpu_accuracy.GetValue(true)));
+    ConfigurationShared::SetColoredComboBox(
+        ui->garbage_collect_level, ui->garbage_collect_level,
+        static_cast<int>(Settings::values.garbage_collect_level.GetValue(true)));
     ConfigurationShared::SetColoredComboBox(
         ui->anisotropic_filtering_combobox, ui->af_label,
         static_cast<int>(Settings::values.max_anisotropy.GetValue(true)));

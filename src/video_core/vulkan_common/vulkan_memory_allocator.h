@@ -10,7 +10,10 @@
 #include <utility>
 #include <vector>
 #include "common/common_types.h"
+#include "common/settings.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
+
+using Clock = std::chrono::steady_clock;
 
 namespace Vulkan {
 
@@ -70,10 +73,8 @@ private:
 /// Memory allocator container.
 /// Allocates and releases memory allocations on demand.
 class MemoryAllocator {
-    /// Time since last commit was made that allocations are removed
-    static constexpr auto ALLOCATION_EXPIRATION = std::chrono::minutes(2);
     /// Time between checking for expired allocations
-    static constexpr auto ALLOCATION_TICK = std::chrono::seconds(10);
+    static constexpr auto GC_TICK_TIME = std::chrono::seconds(10);
 
 public:
     /**
@@ -127,7 +128,11 @@ private:
     const VkPhysicalDeviceMemoryProperties properties; ///< Physical device properties.
     const bool export_allocations; ///< True when memory allocations have to be exported.
     std::vector<std::unique_ptr<MemoryAllocation>> allocations; ///< Current allocations.
-    std::chrono::time_point<std::chrono::steady_clock> gc_timer;
+
+    const bool GC_DISABLED;
+    /// Time since last commit was made that allocations are removed
+    const std::chrono::minutes GC_EXPIRATION_TIME;
+    std::chrono::time_point<std::chrono::steady_clock> GC_TIMER;
 };
 
 /// Returns true when a memory usage is guaranteed to be host visible.

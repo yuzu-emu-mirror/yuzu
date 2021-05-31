@@ -154,7 +154,7 @@ struct System::Impl {
     }
 
     ResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
-        LOG_DEBUG(Core, "initialized OK");
+        LOG_DEBUG(Core, "Initializing...");
 
         device_memory = std::make_unique<Core::DeviceMemory>();
 

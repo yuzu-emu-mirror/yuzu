@@ -34,6 +34,7 @@ private:
 
     std::unique_ptr<Ui::ConfigureGraphicsAdvanced> ui;
 
+    ConfigurationShared::CheckState use_garbage_collect;
     ConfigurationShared::CheckState use_vsync;
     ConfigurationShared::CheckState use_assembly_shaders;
     ConfigurationShared::CheckState use_asynchronous_shaders;

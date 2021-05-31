@@ -23,6 +23,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
@@ -58,19 +59,15 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 using VideoCore::Surface::SurfaceType;
+using Clock = std::chrono::steady_clock;
 
 template <class P>
 class TextureCache {
     /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_BITS = 20;
 
-    /// Time since last access that images are removed from the cache
-    static constexpr auto GC_IMAGE_EXPIRATION = std::chrono::minutes(2);
     /// Time between checking for expired images
-    static constexpr auto GC_IMAGE_REMOVAL = std::chrono::seconds(10);
-    /// Time between updating framebuffer references.
-    // This may be slow with a lot of framebuffers, so limit it to twice per expiry.
-    static constexpr auto GC_UPDATE_FRAMEBUFFER_REFS = GC_IMAGE_EXPIRATION / 2;
+    static constexpr std::chrono::seconds GC_TICK_TIME = std::chrono::seconds(10);
 
     /// Number of past cache sizes to keep
     static constexpr size_t NUM_CACHE_HISTORY = 12;
@@ -378,8 +375,12 @@ private:
     u64 modification_tick = 0;
     u64 frame_tick = 0;
 
-    std::chrono::time_point<std::chrono::steady_clock> gc_timer;
-    std::chrono::time_point<std::chrono::steady_clock> gc_framebuffer_timer;
+    const bool GC_DISABLED;
+    /// Time between checking for expired images
+    const std::chrono::minutes GC_EXPIRATION_TIME;
+
+    std::chrono::time_point<std::chrono::steady_clock> GC_TIMER;
+    std::chrono::time_point<std::chrono::steady_clock> GC_FRAMEBUFF_TIMER;
     size_t gc_ticks;
     std::chrono::time_point<std::chrono::steady_clock> current_time;
     size_t current_cache_size_bytes = 0;
@@ -395,8 +396,9 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_},
-      gc_timer{std::chrono::steady_clock::now()}, gc_framebuffer_timer{gc_timer}, current_time{
-                                                                                      gc_timer} {
+      GC_DISABLED{Settings::UseGarbageCollect()},
+      GC_EXPIRATION_TIME{Settings::GarbageCollectTimer()}, GC_TIMER{Clock::now()},
+      GC_FRAMEBUFF_TIMER{GC_TIMER}, current_time{GC_TIMER} {
     // Configure null sampler
     TSCEntry sampler_descriptor{};
     sampler_descriptor.min_filter.Assign(Tegra::Texture::TextureFilter::Linear);
@@ -408,13 +410,14 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // This way the null resource becomes a compile time constant
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
+
     // Fill the cache with the average to start with
     cache_size_history_mb.fill((CACHE_REMOVAL_MIN_MB + CACHE_REMOVAL_MAX_MB) / 2);
 }
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    current_time = std::chrono::steady_clock::now();
+    current_time = Clock::now();
 
     // Tick sentenced resources in this order to ensure they are destroyed in the right order
     sentenced_images.Tick();
@@ -1557,7 +1560,7 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
 
 template <class P>
 void TextureCache<P>::TickGC() {
-    if (current_time - gc_timer < GC_IMAGE_REMOVAL) {
+    if (GC_DISABLED || current_time - GC_TIMER < GC_TICK_TIME) {
         return;
     }
 
@@ -1574,7 +1577,7 @@ void TextureCache<P>::TickGC() {
         }
 
         const Image& image = slot_images[id];
-        if (image.last_access_time + GC_IMAGE_EXPIRATION >= current_time) {
+        if (image.last_access_time + GC_EXPIRATION_TIME >= current_time) {
             continue;
         }
 
@@ -1623,13 +1626,13 @@ void TextureCache<P>::TickGC() {
             std::max(CACHE_REMOVAL_MIN_MB, current_cache_removal_size_mb);
     }
 
-    gc_timer = current_time;
+    GC_TIMER = current_time;
     cache_size_history_mb[gc_ticks++ % NUM_CACHE_HISTORY] = current_cache_size_bytes / 1024 / 1024;
 }
 
 template <class P>
 void TextureCache<P>::UpdateFramebufferReferences() {
-    if (current_time - gc_framebuffer_timer < GC_UPDATE_FRAMEBUFFER_REFS) {
+    if (GC_DISABLED || current_time - GC_FRAMEBUFF_TIMER < GC_EXPIRATION_TIME / 2) {
         return;
     }
 
@@ -1656,7 +1659,7 @@ void TextureCache<P>::UpdateFramebufferReferences() {
             }
         }
     }
-    gc_framebuffer_timer = current_time;
+    GC_FRAMEBUFF_TIMER = current_time;
 }
 
 } // namespace VideoCommon
