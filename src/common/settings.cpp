@@ -93,7 +93,7 @@ bool IsGPULevelHigh() {
 }
 
 bool UseGarbageCollect() {
-    return !values.use_garbage_collect.GetValue();
+    return values.use_garbage_collect.GetValue();
 }
 
 std::chrono::minutes GarbageCollectTimer() {

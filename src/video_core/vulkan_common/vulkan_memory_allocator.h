@@ -129,7 +129,7 @@ private:
     const bool export_allocations; ///< True when memory allocations have to be exported.
     std::vector<std::unique_ptr<MemoryAllocation>> allocations; ///< Current allocations.
 
-    const bool GC_DISABLED;
+    const bool GC_ENABLED;
     /// Time since last commit was made that allocations are removed
     const std::chrono::minutes GC_EXPIRATION_TIME;
     std::chrono::time_point<std::chrono::steady_clock> GC_TIMER;

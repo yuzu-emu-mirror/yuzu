@@ -375,7 +375,7 @@ private:
     u64 modification_tick = 0;
     u64 frame_tick = 0;
 
-    const bool GC_DISABLED;
+    const bool GC_ENABLED;
     /// Time between checking for expired images
     const std::chrono::minutes GC_EXPIRATION_TIME;
 
@@ -396,7 +396,7 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_},
-      GC_DISABLED{Settings::UseGarbageCollect()},
+      GC_ENABLED{Settings::UseGarbageCollect()},
       GC_EXPIRATION_TIME{Settings::GarbageCollectTimer()}, GC_TIMER{Clock::now()},
       GC_FRAMEBUFF_TIMER{GC_TIMER}, current_time{GC_TIMER} {
     // Configure null sampler
@@ -1560,7 +1560,7 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
 
 template <class P>
 void TextureCache<P>::TickGC() {
-    if (GC_DISABLED || current_time - GC_TIMER < GC_TICK_TIME) {
+    if (!GC_ENABLED || current_time - GC_TIMER < GC_TICK_TIME) {
         return;
     }
 
@@ -1632,7 +1632,7 @@ void TextureCache<P>::TickGC() {
 
 template <class P>
 void TextureCache<P>::UpdateFramebufferReferences() {
-    if (GC_DISABLED || current_time - GC_FRAMEBUFF_TIMER < GC_EXPIRATION_TIME / 2) {
+    if (!GC_ENABLED || current_time - GC_FRAMEBUFF_TIMER < GC_EXPIRATION_TIME / 2) {
         return;
     }
 

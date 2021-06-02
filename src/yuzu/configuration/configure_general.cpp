@@ -65,7 +65,7 @@ void ConfigureGeneral::ApplyConfiguration() {
             Settings::values.frame_limit.SetValue(ui->frame_limit->value());
         }
     } else {
-        const bool global_frame_limit = use_frame_limit == ConfigurationShared::CheckState::Global;
+        bool global_frame_limit = use_frame_limit == ConfigurationShared::CheckState::Global;
         Settings::values.use_frame_limit.SetGlobal(global_frame_limit);
         Settings::values.frame_limit.SetGlobal(global_frame_limit);
         if (!global_frame_limit) {

@@ -74,7 +74,7 @@
              <string>Enable periodic removal of textures from memory, reducing VRAM usage. Lower settings work more often, lowering VRAM usage but potentially causes hitching. Set to a shorter duration if you experience out of memory crashes.</string>
             </property>
             <property name="text">
-             <string>Garbage Collect:</string>
+             <string>Garbage Collector:</string>
             </property>
            </widget>
           </item>
