@@ -355,6 +355,7 @@ GameList::GameList(FileSys::VirtualFilesystem vfs, FileSys::ManualContentProvide
     layout->addWidget(tree_view);
     layout->addWidget(search_field);
     setLayout(layout);
+    is_initializing = false;
 }
 
 GameList::~GameList() {
@@ -730,7 +731,9 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
 }
 
 void GameList::SaveInterfaceLayout() {
-    UISettings::values.gamelist_header_state = tree_view->header()->saveState();
+    if (!is_initializing) {
+        UISettings::values.gamelist_header_state = tree_view->header()->saveState();
+    }
 }
 
 void GameList::LoadInterfaceLayout() {
