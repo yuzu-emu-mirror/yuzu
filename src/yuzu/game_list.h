@@ -133,7 +133,6 @@ private:
     GameListWorker* current_worker = nullptr;
     QFileSystemWatcher* watcher = nullptr;
     CompatibilityList compatibility_list;
-    bool is_initializing = true;
 
     friend class GameListSearchField;
 };
