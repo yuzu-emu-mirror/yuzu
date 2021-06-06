@@ -130,6 +130,8 @@ add_library(common STATIC
     hash.h
     hex_util.cpp
     hex_util.h
+    idle_inhibitor.cpp
+    idle_inhibitor.h
     intrusive_red_black_tree.h
     logging/backend.cpp
     logging/backend.h
