@@ -124,7 +124,7 @@ void IdleInhibitor::InhibitIdle() {
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 }
 
-void AllowIdle() {
+void IdleInhibitor::AllowIdle() {
     inhibiting_idle = false;
     SetThreadExecutionState(ES_CONTINUOUS);
 }
