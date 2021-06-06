@@ -12,7 +12,7 @@
 // NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-#include "idle_inhibitor.h"
+#include "common/idle_inhibitor.h"
 
 #include <cstdlib>
 
@@ -27,22 +27,26 @@
 struct DBusConnection;
 struct DBusError;
 struct DBusMessage;
-typedef uint32_t dbus_bool_t;
-typedef uint32_t dbus_uint32_t;
+using dbus_bool_t = uint32_t;
+using dbus_uint32_t = uint32_t;
 #endif
 
 namespace {
 #if defined(__unix__)
-const char* g_app = "yuzu";
-const char* g_reason = "Emulation is running";
+constexpr char g_app[] = "yuzu";
+constexpr char g_reason[] = "Emulation is running";
 #endif
 
 #if defined(__unix__)
-const int DBUS_TYPE_INVALID = '\0';
-const int DBUS_TYPE_STRING = 's';
-const int DBUS_TYPE_UINT32 = 'u';
-const int DBUS_TIMEOUT_USE_DEFAULT = -1;
-enum DBusBusType { DBUS_BUS_SESSION, DBUS_BUS_SYSTEM, DBUS_BUS_STARTER };
+constexpr int DBUS_TYPE_INVALID = '\0';
+constexpr int DBUS_TYPE_STRING = 's';
+constexpr int DBUS_TYPE_UINT32 = 'u';
+constexpr int DBUS_TIMEOUT_USE_DEFAULT = -1;
+enum DBusBusType {
+    DBUS_BUS_SESSION,
+    DBUS_BUS_SYSTEM,
+    DBUS_BUS_STARTER,
+};
 
 struct DBus {
     DBusConnection* (*bus_get)(DBusBusType type, DBusError* error);
@@ -86,8 +90,9 @@ struct DBus {
     }
 
     ~DBus() {
-        if (handle)
+        if (handle) {
             dlclose(handle);
+        }
     }
 };
 
@@ -103,11 +108,13 @@ IdleInhibitor::IdleInhibitor() {
 }
 
 IdleInhibitor::~IdleInhibitor() {
-    if (inhibiting_idle)
+    if (inhibiting_idle) {
         AllowIdle();
+    }
 #ifdef __unix__
-    if (dbus_connection)
+    if (dbus_connection) {
         g_dbus.connection_unref(dbus_connection);
+    }
 #endif
 }
 
@@ -125,32 +132,37 @@ void AllowIdle() {
 #elif defined(__unix__)
 void IdleInhibitor::ResetScreensaver() {
     auto poll_time = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    for (;;) {
+    while (true) {
         std::unique_lock<std::mutex> lk(cond_mutex);
         poll_cond.wait_until(lk, poll_time, [this]() { return !inhibiting_idle; });
-        if (!inhibiting_idle)
+        if (!inhibiting_idle) {
             return;
+        }
 
-        if (fork() == 0)
+        if (fork() == 0) {
             execlp("xdg-screensaver", "xdg-screensaver", "reset", nullptr);
+        }
 
         poll_time += std::chrono::seconds(10);
     }
 }
 
 void IdleInhibitor::ConnectDBus() {
-    if (g_dbus.initialized) {
-        dbus_connection = g_dbus.bus_get(DBUS_BUS_SESSION, nullptr);
+    if (!g_dbus.initialized) {
+        return;
+    }
 
-        if (!dbus_connection) {
-            LOG_WARNING(Common, "Failed to connect to session bus");
-        }
+    dbus_connection = g_dbus.bus_get(DBUS_BUS_SESSION, nullptr);
+
+    if (!dbus_connection) {
+        LOG_WARNING(Common, "Failed to connect to session bus");
     }
 }
 
 void IdleInhibitor::InhibitIdle() {
-    if (inhibiting_idle)
+    if (inhibiting_idle) {
         return;
+    }
 
     inhibiting_idle = true;
 
@@ -163,8 +175,11 @@ void IdleInhibitor::InhibitIdle() {
             return;
         }
 
-        if (!g_dbus.message_append_args(inhibit_call, DBUS_TYPE_STRING, &g_app, DBUS_TYPE_STRING,
-                                        &g_reason, DBUS_TYPE_INVALID)) {
+        // dbus_message_append_args() takes char** for string arguments
+        const char* app_ptr = &g_app[0];
+        const char* reason_ptr = &g_reason[0];
+        if (!g_dbus.message_append_args(inhibit_call, DBUS_TYPE_STRING, &app_ptr, DBUS_TYPE_STRING,
+                                        &reason_ptr, DBUS_TYPE_INVALID)) {
             g_dbus.message_unref(inhibit_call);
             LOG_ERROR(Common, "Failed to append args to Inhibit call");
             return;
@@ -191,17 +206,19 @@ void IdleInhibitor::InhibitIdle() {
 }
 
 void IdleInhibitor::AllowIdle() {
-    if (!inhibiting_idle)
+    if (!inhibiting_idle) {
         return;
+    }
 
-    cond_mutex.lock();
+    {
+    std::lock_guard lock{cond_mutex};
     inhibiting_idle = false;
-    cond_mutex.unlock();
+    }
 
     if (poll_thread && poll_thread->joinable()) {
         poll_cond.notify_all();
         poll_thread->join();
-        poll_thread = nullptr;
+        poll_thread.reset();
     }
 
     if (dbus_connection && inhibit_cookie != 0) {
