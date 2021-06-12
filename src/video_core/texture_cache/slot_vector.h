@@ -70,6 +70,14 @@ public:
         ResetStorageBit(id.index);
     }
 
+    [[nodiscard]] size_t Size() const noexcept {
+        return stored_bitset.size() * 64;
+    }
+
+    [[nodiscard]] bool IsIndexFree(SlotId id) noexcept {
+        return ReadStorageBit(id.index);
+    }
+
 private:
     struct NonTrivialDummy {
         NonTrivialDummy() noexcept {}

@@ -67,6 +67,42 @@
          </widget>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="garbage_collect_layout">
+          <item>
+           <widget class="QCheckBox" name="use_garbage_collect">
+            <property name="toolTip">
+             <string>Enable periodic removal of textures from memory, reducing VRAM usage. Lower settings work more often, lowering VRAM usage but potentially causes hitching. Set to a shorter duration if you experience out of memory crashes.</string>
+            </property>
+            <property name="text">
+             <string>Garbage Collector:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="garbage_collect_level">
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <item>
+             <property name="text">
+              <string notr="true">Aggressive</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">Normal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">Relaxed</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
          <widget class="QCheckBox" name="use_vsync">
           <property name="toolTip">
            <string>VSync prevents the screen from tearing, but some graphics cards have lower performance with VSync enabled. Keep it enabled if you don't notice a performance difference.</string>

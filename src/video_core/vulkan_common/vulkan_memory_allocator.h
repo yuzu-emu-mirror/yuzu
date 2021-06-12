@@ -4,12 +4,16 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <span>
 #include <utility>
 #include <vector>
 #include "common/common_types.h"
+#include "common/settings.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
+
+using Clock = std::chrono::steady_clock;
 
 namespace Vulkan {
 
@@ -69,6 +73,9 @@ private:
 /// Memory allocator container.
 /// Allocates and releases memory allocations on demand.
 class MemoryAllocator {
+    /// Time between checking for expired allocations
+    static constexpr auto GC_TICK_TIME = std::chrono::seconds(10);
+
 public:
     /**
      * Construct memory allocator
@@ -100,6 +107,9 @@ public:
     /// Commits memory required by the image and binds it.
     MemoryCommit Commit(const vk::Image& image, MemoryUsage usage);
 
+    /// Tick the allocator to free memory
+    void TickFrame();
+
 private:
     /// Tries to allocate a chunk of memory.
     bool TryAllocMemory(VkMemoryPropertyFlags flags, u32 type_mask, u64 size);
@@ -118,6 +128,11 @@ private:
     const VkPhysicalDeviceMemoryProperties properties; ///< Physical device properties.
     const bool export_allocations; ///< True when memory allocations have to be exported.
     std::vector<std::unique_ptr<MemoryAllocation>> allocations; ///< Current allocations.
+
+    const bool GC_ENABLED;
+    /// Time since last commit was made that allocations are removed
+    const std::chrono::minutes GC_EXPIRATION_TIME;
+    std::chrono::time_point<std::chrono::steady_clock> GC_TIMER;
 };
 
 /// Returns true when a memory usage is guaranteed to be host visible.

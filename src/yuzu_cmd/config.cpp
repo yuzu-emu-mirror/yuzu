@@ -439,6 +439,12 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_disk_shader_cache", false));
     const int gpu_accuracy_level = sdl2_config->GetInteger("Renderer", "gpu_accuracy", 1);
     Settings::values.gpu_accuracy.SetValue(static_cast<Settings::GPUAccuracy>(gpu_accuracy_level));
+    Settings::values.use_garbage_collect.SetValue(
+        sdl2_config->GetBoolean("Renderer", "use_garbage_collect", true));
+    const int garbage_collect_level = sdl2_config->GetInteger(
+        "Renderer", "garbage_collect_level", static_cast<int>(Settings::GCLevel::Normal));
+    Settings::values.garbage_collect_level.SetValue(
+        static_cast<Settings::GCLevel>(garbage_collect_level));
     Settings::values.use_asynchronous_gpu_emulation.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", true));
     Settings::values.use_vsync.SetValue(

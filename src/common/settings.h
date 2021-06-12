@@ -34,6 +34,12 @@ enum class CPUAccuracy : u32 {
     DebugMode = 2,
 };
 
+enum class GCLevel : u32 {
+    Aggressive = 0,
+    Normal = 1,
+    Relaxed = 2,
+};
+
 template <typename Type>
 class Setting final {
 public:
@@ -145,6 +151,8 @@ struct Values {
     Setting<u16> frame_limit;
     Setting<bool> use_disk_shader_cache;
     Setting<GPUAccuracy> gpu_accuracy;
+    Setting<bool> use_garbage_collect;
+    Setting<GCLevel> garbage_collect_level;
     Setting<bool> use_asynchronous_gpu_emulation;
     Setting<bool> use_nvdec_emulation;
     Setting<bool> use_vsync;
@@ -252,6 +260,9 @@ bool IsGPULevelExtreme();
 bool IsGPULevelHigh();
 
 bool IsFastmemEnabled();
+
+bool UseGarbageCollect();
+std::chrono::minutes GarbageCollectTimer();
 
 float Volume();
 

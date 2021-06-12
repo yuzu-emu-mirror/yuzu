@@ -80,7 +80,6 @@ void ConfigureGeneral::ResetDefaults() {
 void ConfigureGeneral::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core,
                                              use_multi_core);
-
     if (Settings::IsConfiguringGlobal()) {
         UISettings::values.confirm_before_closing = ui->toggle_check_exit->isChecked();
         UISettings::values.select_user_on_boot = ui->toggle_user_on_boot->isChecked();

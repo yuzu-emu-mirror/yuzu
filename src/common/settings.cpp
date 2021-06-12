@@ -52,6 +52,8 @@ void LogSettings() {
     log_setting("Renderer_FrameLimit", values.frame_limit.GetValue());
     log_setting("Renderer_UseDiskShaderCache", values.use_disk_shader_cache.GetValue());
     log_setting("Renderer_GPUAccuracyLevel", values.gpu_accuracy.GetValue());
+    log_setting("Renderer_UseGarbageCollect", values.use_garbage_collect.GetValue());
+    log_setting("Renderer_GarbageCollectLevel", values.garbage_collect_level.GetValue());
     log_setting("Renderer_UseAsynchronousGpuEmulation",
                 values.use_asynchronous_gpu_emulation.GetValue());
     log_setting("Renderer_UseNvdecEmulation", values.use_nvdec_emulation.GetValue());
@@ -95,6 +97,24 @@ bool IsFastmemEnabled() {
         return values.cpuopt_fastmem;
     }
     return true;
+
+bool UseGarbageCollect() {
+    return values.use_garbage_collect.GetValue();
+}
+
+std::chrono::minutes GarbageCollectTimer() {
+    switch (values.garbage_collect_level.GetValue()) {
+    case Settings::GCLevel::Aggressive:
+        return std::chrono::minutes(1);
+    case Settings::GCLevel::Normal:
+        return std::chrono::minutes(4);
+    case Settings::GCLevel::Relaxed:
+        return std::chrono::minutes(10);
+    }
+    UNREACHABLE_MSG("Garbage collection set to unknown value!",
+                    static_cast<int>(values.garbage_collect_level.GetValue()));
+    values.use_garbage_collect.SetValue(false);
+    return {};
 }
 
 float Volume() {
@@ -133,6 +153,8 @@ void RestoreGlobalState(bool is_powered_on) {
     values.frame_limit.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
+    values.use_garbage_collect.SetGlobal(true);
+    values.garbage_collect_level.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
     values.use_nvdec_emulation.SetGlobal(true);
     values.use_vsync.SetGlobal(true);

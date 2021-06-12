@@ -72,6 +72,18 @@ static const char* TranslateGPUAccuracyLevel(Settings::GPUAccuracy backend) {
     return "Unknown";
 }
 
+static const char* TranslateGarbageCollectLevel(Settings::GCLevel backend) {
+    switch (backend) {
+    case Settings::GCLevel::Aggressive:
+        return "Aggressive";
+    case Settings::GCLevel::Normal:
+        return "Normal";
+    case Settings::GCLevel::Relaxed:
+        return "Relaxed";
+    }
+    return "Unknown";
+}
+
 u64 GetTelemetryId() {
     u64 telemetry_id{};
     const auto filename = Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir) / "telemetry_id";
@@ -226,6 +238,10 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
              Settings::values.use_disk_shader_cache.GetValue());
     AddField(field_type, "Renderer_GPUAccuracyLevel",
              TranslateGPUAccuracyLevel(Settings::values.gpu_accuracy.GetValue()));
+    AddField(field_type, "Renderer_UseGarbageCollect",
+             Settings::values.use_garbage_collect.GetValue());
+    AddField(field_type, "Renderer_GarbageCollectLevel",
+             TranslateGarbageCollectLevel(Settings::values.garbage_collect_level.GetValue()));
     AddField(field_type, "Renderer_UseAsynchronousGpuEmulation",
              Settings::values.use_asynchronous_gpu_emulation.GetValue());
     AddField(field_type, "Renderer_UseNvdecEmulation",

@@ -62,7 +62,8 @@ ImageBase::ImageBase(const ImageInfo& info_, GPUVAddr gpu_addr_, VAddr cpu_addr_
       unswizzled_size_bytes{CalculateUnswizzledSizeBytes(info)},
       converted_size_bytes{CalculateConvertedSizeBytes(info)}, gpu_addr{gpu_addr_},
       cpu_addr{cpu_addr_}, cpu_addr_end{cpu_addr + guest_size_bytes},
-      mip_level_offsets{CalculateMipLevelOffsets(info)} {
+      last_access_time{std::chrono::steady_clock::now()}, mip_level_offsets{
+                                                              CalculateMipLevelOffsets(info)} {
     if (info.type == ImageType::e3D) {
         slice_offsets = CalculateSliceOffsets(info);
         slice_subresources = CalculateSliceSubresources(info);

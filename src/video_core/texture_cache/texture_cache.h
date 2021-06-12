@@ -13,6 +13,7 @@
 #include <span>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
@@ -57,11 +59,22 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::PixelFormatFromDepthFormat;
 using VideoCore::Surface::PixelFormatFromRenderTargetFormat;
 using VideoCore::Surface::SurfaceType;
+using Clock = std::chrono::steady_clock;
 
 template <class P>
 class TextureCache {
     /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_BITS = 20;
+
+    /// Time between checking for expired images
+    static constexpr std::chrono::seconds GC_TICK_TIME = std::chrono::seconds(10);
+
+    /// Number of past cache sizes to keep
+    static constexpr size_t NUM_CACHE_HISTORY = 12;
+    /// Number of past cache sizes to keep
+    static constexpr size_t CACHE_REMOVAL_MIN_MB = 16;
+    /// Number of past cache sizes to keep
+    static constexpr size_t CACHE_REMOVAL_MAX_MB = 1024;
 
     /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
@@ -308,6 +321,12 @@ private:
     /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
 
+    /// Tick the garbage collector to free up unused images
+    void TickGC();
+
+    /// Update image expiration times from current framebuffers
+    void UpdateFramebufferReferences();
+
     Runtime& runtime;
     VideoCore::RasterizerInterface& rasterizer;
     Tegra::Engines::Maxwell3D& maxwell3d;
@@ -340,6 +359,8 @@ private:
     SlotVector<Sampler> slot_samplers;
     SlotVector<Framebuffer> slot_framebuffers;
 
+    std::unordered_set<ImageViewId> active_framebuffer_imageviews;
+
     // TODO: This data structure is not optimal and it should be reworked
     std::vector<ImageId> uncommitted_downloads;
     std::queue<std::vector<ImageId>> committed_downloads;
@@ -353,6 +374,19 @@ private:
 
     u64 modification_tick = 0;
     u64 frame_tick = 0;
+
+    const bool GC_ENABLED;
+    /// Time between checking for expired images
+    const std::chrono::minutes GC_EXPIRATION_TIME;
+
+    std::chrono::time_point<std::chrono::steady_clock> GC_TIMER;
+    std::chrono::time_point<std::chrono::steady_clock> GC_FRAMEBUFF_TIMER;
+    size_t gc_ticks;
+    std::chrono::time_point<std::chrono::steady_clock> current_time;
+    size_t current_cache_size_bytes = 0;
+    size_t current_cache_removal_size_mb = CACHE_REMOVAL_MIN_MB;
+    std::array<s64, NUM_CACHE_HISTORY> cache_size_history_mb;
+    size_t current_cache_index = 0;
 };
 
 template <class P>
@@ -361,7 +395,10 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::Engines::KeplerCompute& kepler_compute_,
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_} {
+      kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_},
+      GC_ENABLED{Settings::UseGarbageCollect()},
+      GC_EXPIRATION_TIME{Settings::GarbageCollectTimer()}, GC_TIMER{Clock::now()},
+      GC_FRAMEBUFF_TIMER{GC_TIMER}, current_time{GC_TIMER} {
     // Configure null sampler
     TSCEntry sampler_descriptor{};
     sampler_descriptor.min_filter.Assign(Tegra::Texture::TextureFilter::Linear);
@@ -373,14 +410,23 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     // This way the null resource becomes a compile time constant
     void(slot_image_views.insert(runtime, NullImageParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
+
+    // Fill the cache with the average to start with
+    cache_size_history_mb.fill((CACHE_REMOVAL_MIN_MB + CACHE_REMOVAL_MAX_MB) / 2);
 }
 
 template <class P>
 void TextureCache<P>::TickFrame() {
+    current_time = Clock::now();
+
     // Tick sentenced resources in this order to ensure they are destroyed in the right order
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
+
+    UpdateFramebufferReferences();
+    TickGC();
+
     ++frame_tick;
 }
 
@@ -540,6 +586,17 @@ ImageViewId TextureCache<P>::VisitImageView(DescriptorTable<TICEntry>& table,
 template <class P>
 FramebufferId TextureCache<P>::GetFramebufferId(const RenderTargets& key) {
     const auto [pair, is_new] = framebuffers.try_emplace(key);
+
+    for (const auto& id : pair->first.color_buffer_ids) {
+        if (!id) {
+            break;
+        }
+        active_framebuffer_imageviews.insert(id);
+    }
+    if (pair->first.depth_buffer_id) {
+        active_framebuffer_imageviews.insert(pair->first.depth_buffer_id);
+    }
+
     FramebufferId& framebuffer_id = pair->second;
     if (!is_new) {
         return framebuffer_id;
@@ -609,7 +666,9 @@ void TextureCache<P>::UnmapMemory(VAddr cpu_addr, size_t size) {
         if (True(image.flags & ImageFlagBits::Tracked)) {
             UntrackImage(image);
         }
-        UnregisterImage(id);
+        if (True(image.flags & ImageFlagBits::Registered)) {
+            UnregisterImage(id);
+        }
         DeleteImage(id);
     }
 }
@@ -718,6 +777,7 @@ void TextureCache<P>::InvalidateColorBuffer(size_t index) {
     image.flags &= ~ImageFlagBits::CpuModified;
     image.flags &= ~ImageFlagBits::GpuModified;
 
+    active_framebuffer_imageviews.erase(color_buffer_id);
     runtime.InvalidateColorBuffer(color_buffer, index);
 }
 
@@ -734,6 +794,7 @@ void TextureCache<P>::InvalidateDepthBuffer() {
     image.flags &= ~ImageFlagBits::CpuModified;
     image.flags &= ~ImageFlagBits::GpuModified;
 
+    active_framebuffer_imageviews.erase(depth_buffer_id);
     ImageView& depth_buffer = slot_image_views[depth_buffer_id];
     runtime.InvalidateDepthBuffer(depth_buffer);
 }
@@ -999,6 +1060,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     });
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
     Image& new_image = slot_images[new_image_id];
+    current_cache_size_bytes += new_image.guest_size_bytes;
 
     // TODO: Only upload what we need
     RefreshContents(new_image);
@@ -1015,7 +1077,9 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         if (True(overlap.flags & ImageFlagBits::Tracked)) {
             UntrackImage(overlap);
         }
-        UnregisterImage(overlap_id);
+        if (True(overlap.flags & ImageFlagBits::Registered)) {
+            UnregisterImage(overlap_id);
+        }
         DeleteImage(overlap_id);
     }
     ImageBase& new_image_base = new_image;
@@ -1317,6 +1381,7 @@ void TextureCache<P>::RemoveFramebuffers(std::span<const ImageViewId> removed_vi
     auto it = framebuffers.begin();
     while (it != framebuffers.end()) {
         if (it->first.Contains(removed_views)) {
+            sentenced_framebuffers.Push(std::move(slot_framebuffers[it->second]));
             it = framebuffers.erase(it);
         } else {
             ++it;
@@ -1372,6 +1437,7 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
         MarkModification(image);
     }
     image.frame_tick = frame_tick;
+    image.last_access_time = current_time;
 }
 
 template <class P>
@@ -1490,6 +1556,110 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
     // Make sure the clear covers all texels in the subresource
     return scissor.min_x == 0 && scissor.min_y == 0 && scissor.max_x >= size.width &&
            scissor.max_y >= size.height;
+}
+
+template <class P>
+void TextureCache<P>::TickGC() {
+    if (!GC_ENABLED || current_time - GC_TIMER < GC_TICK_TIME) {
+        return;
+    }
+
+    size_t num_removed = 0;
+    size_t removed_mb = 0;
+    bool gc_capped = false;
+    for (u32 i = 0; i < slot_images.Size(); ++i) {
+        const SlotId id{static_cast<u32>(current_cache_index)};
+        ++current_cache_index;
+        current_cache_index %= slot_images.Size();
+
+        if (!slot_images.IsIndexFree(id)) {
+            continue;
+        }
+
+        const Image& image = slot_images[id];
+        if (image.last_access_time + GC_EXPIRATION_TIME >= current_time) {
+            continue;
+        }
+
+        removed_mb += image.guest_size_bytes / 1024 / 1024;
+        current_cache_size_bytes -= image.guest_size_bytes;
+        UnmapMemory(image.cpu_addr, image.guest_size_bytes);
+        ++num_removed;
+        if (removed_mb > current_cache_removal_size_mb) {
+            gc_capped = true;
+            break;
+        }
+    }
+
+    if (num_removed > 0) {
+        LOG_INFO(HW_Memory, "Removed {} images ({}MB) from texture cache. GC removal cap: {}MB",
+                 num_removed, removed_mb, current_cache_removal_size_mb);
+    }
+
+    size_t current_average_cache_size_mb =
+        std::accumulate(cache_size_history_mb.begin(), cache_size_history_mb.end(), size_t{0});
+    current_average_cache_size_mb /= NUM_CACHE_HISTORY * 2;
+    f32 removal_sizef = static_cast<f32>(current_cache_removal_size_mb);
+    f32 current_averagef = static_cast<f32>(current_average_cache_size_mb);
+
+    if (gc_capped) {
+        // GC has capped out, so increase the cache removal
+        // for the next tick, up to CACHE_REMOVAL_MAX_MB
+        f32 ratio = std::max(0.0f, (1 + (current_averagef / removal_sizef)) / NUM_CACHE_HISTORY);
+        current_cache_removal_size_mb += std::llround(removal_sizef * ratio);
+        current_cache_removal_size_mb =
+            std::min(CACHE_REMOVAL_MAX_MB, current_cache_removal_size_mb);
+        if (current_cache_removal_size_mb == CACHE_REMOVAL_MAX_MB) {
+            LOG_WARNING(HW_Memory, "Texture cache GC has maxed out at {}MB per tick!",
+                        current_cache_removal_size_mb);
+        }
+    } else {
+        // GC removed less than the current cap, so decrease the cache removal
+        // for the next tick, down to CACHE_REMOVAL_MIN_MB
+        f32 ratio = std::max(0.0f, (1 / (removal_sizef / current_averagef)) / NUM_CACHE_HISTORY);
+        current_cache_removal_size_mb -= std::llround(removal_sizef * ratio);
+        // Can underflow
+        if (current_cache_removal_size_mb > CACHE_REMOVAL_MAX_MB) {
+            current_cache_removal_size_mb = 0;
+        }
+        current_cache_removal_size_mb =
+            std::max(CACHE_REMOVAL_MIN_MB, current_cache_removal_size_mb);
+    }
+
+    GC_TIMER = current_time;
+    cache_size_history_mb[gc_ticks++ % NUM_CACHE_HISTORY] = current_cache_size_bytes / 1024 / 1024;
+}
+
+template <class P>
+void TextureCache<P>::UpdateFramebufferReferences() {
+    if (!GC_ENABLED || current_time - GC_FRAMEBUFF_TIMER < GC_EXPIRATION_TIME / 2) {
+        return;
+    }
+
+    for (u32 i = 0; i < slot_images.Size(); ++i) {
+        const SlotId id{i};
+        if (!slot_images.IsIndexFree(id)) {
+            continue;
+        }
+
+        Image& image = slot_images[id];
+        const bool in_use = std::ranges::any_of(image.image_view_ids, [this](ImageViewId& view) {
+            return active_framebuffer_imageviews.contains(view);
+        });
+
+        if (in_use) {
+            // Update the times for the aliases and views for this image,
+            // as they may not be directly referenced otherwise (i.e pause menus)
+            image.last_access_time = current_time;
+            for (auto& view : image.image_view_ids) {
+                slot_images[slot_image_views[view].image_id].last_access_time = current_time;
+            }
+            for (const auto& alias : image.aliased_images) {
+                slot_images[alias.id].last_access_time = current_time;
+            }
+        }
+    }
+    GC_FRAMEBUFF_TIMER = current_time;
 }
 
 } // namespace VideoCommon
