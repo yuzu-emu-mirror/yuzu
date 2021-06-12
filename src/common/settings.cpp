@@ -97,6 +97,7 @@ bool IsFastmemEnabled() {
         return values.cpuopt_fastmem;
     }
     return true;
+}
 
 bool UseGarbageCollect() {
     return values.use_garbage_collect.GetValue();
