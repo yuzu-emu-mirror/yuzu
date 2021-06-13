@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iterator>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1061,6 +1062,8 @@ void FSP_SRV::OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx) {
     const auto raw = ctx.ReadBuffer();
     auto log = Common::StringFromFixedZeroTerminatedBuffer(
         reinterpret_cast<const char*>(raw.data()), raw.size());
+
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
 
     LOG_DEBUG(Service_FS, "called, log='{}'", log);
 
