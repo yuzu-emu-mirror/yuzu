@@ -135,9 +135,13 @@ std::shared_ptr<IOFile> FileOpen(const fs::path& path, FileAccessMode mode, File
         return nullptr;
     }
 
-    if (!IsFile(path)) {
-        LOG_ERROR(Common_Filesystem, "Filesystem object at path={} is not a file",
-                  PathToUTF8String(path));
+    const bool needs_existing_file =
+        mode == FileAccessMode::Read || mode == FileAccessMode::ReadWrite;
+    if (needs_existing_file && !IsFile(path)) {
+        LOG_ERROR(Common_Filesystem,
+                  "Filesystem object at path={} is not a file."
+                  "FileAccessMode={} requires a file to exist in order to be accessed",
+                  PathToUTF8String(path), mode);
         return nullptr;
     }
 

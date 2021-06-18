@@ -172,23 +172,13 @@ std::string ReadStringFromFile(const std::filesystem::path& path, FileType type)
 
 size_t WriteStringToFile(const std::filesystem::path& path, FileType type,
                          std::string_view string) {
-    if (!IsFile(path)) {
-        return 0;
-    }
-
     IOFile io_file{path, FileAccessMode::Write, type};
-
     return io_file.WriteString(string);
 }
 
 size_t AppendStringToFile(const std::filesystem::path& path, FileType type,
                           std::string_view string) {
-    if (!IsFile(path)) {
-        return 0;
-    }
-
     IOFile io_file{path, FileAccessMode::Append, type};
-
     return io_file.WriteString(string);
 }
 
