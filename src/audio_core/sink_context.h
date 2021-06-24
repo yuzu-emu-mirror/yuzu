@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <vector>
 #include "audio_core/common.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
