@@ -221,7 +221,7 @@ const std::array<int, Settings::NativeKeyboard::NumKeyboardMods> Config::default
 // This must be in alphabetical order according to action name as it must have the same order as
 // UISetting::values.shortcuts, which is alphabetically ordered.
 // clang-format off
-const std::array<UISettings::Shortcut, 17> Config::default_hotkeys{{
+const std::array<UISettings::Shortcut, 18> Config::default_hotkeys{{
     {QStringLiteral("Capture Screenshot"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+P"), Qt::WidgetWithChildrenShortcut}},
     {QStringLiteral("Change Docked Mode"),       QStringLiteral("Main Window"), {QStringLiteral("F10"), Qt::ApplicationShortcut}},
     {QStringLiteral("Continue/Pause Emulation"), QStringLiteral("Main Window"), {QStringLiteral("F4"), Qt::WindowShortcut}},
@@ -236,6 +236,7 @@ const std::array<UISettings::Shortcut, 17> Config::default_hotkeys{{
     {QStringLiteral("Restart Emulation"),        QStringLiteral("Main Window"), {QStringLiteral("F6"), Qt::WindowShortcut}},
     {QStringLiteral("Stop Emulation"),           QStringLiteral("Main Window"), {QStringLiteral("F5"), Qt::WindowShortcut}},
     {QStringLiteral("Toggle Filter Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F"), Qt::WindowShortcut}},
+    {QStringLiteral("Toggle Framerate Limit"),   QStringLiteral("Main Window"), {QStringLiteral("Ctrl+U"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Mouse Panning"),     QStringLiteral("Main Window"), {QStringLiteral("Ctrl+F9"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Speed Limit"),       QStringLiteral("Main Window"), {QStringLiteral("Ctrl+Z"), Qt::ApplicationShortcut}},
     {QStringLiteral("Toggle Status Bar"),        QStringLiteral("Main Window"), {QStringLiteral("Ctrl+S"), Qt::WindowShortcut}},
@@ -647,6 +648,8 @@ void Config::ReadDebuggingValues() {
         ReadSetting(QStringLiteral("program_args"), QString{}).toString().toStdString();
     Settings::values.dump_exefs = ReadSetting(QStringLiteral("dump_exefs"), false).toBool();
     Settings::values.dump_nso = ReadSetting(QStringLiteral("dump_nso"), false).toBool();
+    Settings::values.enable_fs_access_log =
+        ReadSetting(QStringLiteral("enable_fs_access_log"), false).toBool();
     Settings::values.reporting_services =
         ReadSetting(QStringLiteral("reporting_services"), false).toBool();
     Settings::values.quest_flag = ReadSetting(QStringLiteral("quest_flag"), false).toBool();
@@ -754,8 +757,12 @@ void Config::ReadCpuValues() {
                       QStringLiteral("cpuopt_unsafe_unfuse_fma"), true);
     ReadSettingGlobal(Settings::values.cpuopt_unsafe_reduce_fp_error,
                       QStringLiteral("cpuopt_unsafe_reduce_fp_error"), true);
+    ReadSettingGlobal(Settings::values.cpuopt_unsafe_ignore_standard_fpcr,
+                      QStringLiteral("cpuopt_unsafe_ignore_standard_fpcr"), true);
     ReadSettingGlobal(Settings::values.cpuopt_unsafe_inaccurate_nan,
                       QStringLiteral("cpuopt_unsafe_inaccurate_nan"), true);
+    ReadSettingGlobal(Settings::values.cpuopt_unsafe_fastmem_check,
+                      QStringLiteral("cpuopt_unsafe_fastmem_check"), true);
 
     if (global) {
         Settings::values.cpuopt_page_tables =
@@ -774,6 +781,8 @@ void Config::ReadCpuValues() {
             ReadSetting(QStringLiteral("cpuopt_misc_ir"), true).toBool();
         Settings::values.cpuopt_reduce_misalign_checks =
             ReadSetting(QStringLiteral("cpuopt_reduce_misalign_checks"), true).toBool();
+        Settings::values.cpuopt_fastmem =
+            ReadSetting(QStringLiteral("cpuopt_fastmem"), true).toBool();
     }
 
     qt_config->endGroup();
@@ -803,13 +812,17 @@ void Config::ReadRendererValues() {
                       QStringLiteral("use_asynchronous_gpu_emulation"), true);
     ReadSettingGlobal(Settings::values.use_nvdec_emulation, QStringLiteral("use_nvdec_emulation"),
                       true);
+    ReadSettingGlobal(Settings::values.accelerate_astc, QStringLiteral("accelerate_astc"), true);
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
+    ReadSettingGlobal(Settings::values.disable_fps_limit, QStringLiteral("disable_fps_limit"),
+                      false);
     ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
                       false);
     ReadSettingGlobal(Settings::values.use_asynchronous_shaders,
                       QStringLiteral("use_asynchronous_shaders"), false);
     ReadSettingGlobal(Settings::values.use_fast_gpu_time, QStringLiteral("use_fast_gpu_time"),
                       true);
+    ReadSettingGlobal(Settings::values.use_caches_gc, QStringLiteral("use_caches_gc"), false);
     ReadSettingGlobal(Settings::values.bg_red, QStringLiteral("bg_red"), 0.0);
     ReadSettingGlobal(Settings::values.bg_green, QStringLiteral("bg_green"), 0.0);
     ReadSettingGlobal(Settings::values.bg_blue, QStringLiteral("bg_blue"), 0.0);
@@ -1254,6 +1267,8 @@ void Config::SaveDebuggingValues() {
                  QString::fromStdString(Settings::values.program_args), QString{});
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
     WriteSetting(QStringLiteral("dump_nso"), Settings::values.dump_nso, false);
+    WriteSetting(QStringLiteral("enable_fs_access_log"), Settings::values.enable_fs_access_log,
+                 false);
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
     WriteSetting(QStringLiteral("use_debug_asserts"), Settings::values.use_debug_asserts, false);
     WriteSetting(QStringLiteral("disable_macro_jit"), Settings::values.disable_macro_jit, false);
@@ -1330,8 +1345,12 @@ void Config::SaveCpuValues() {
                        Settings::values.cpuopt_unsafe_unfuse_fma, true);
     WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_reduce_fp_error"),
                        Settings::values.cpuopt_unsafe_reduce_fp_error, true);
+    WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_ignore_standard_fpcr"),
+                       Settings::values.cpuopt_unsafe_ignore_standard_fpcr, true);
     WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_inaccurate_nan"),
                        Settings::values.cpuopt_unsafe_inaccurate_nan, true);
+    WriteSettingGlobal(QStringLiteral("cpuopt_unsafe_fastmem_check"),
+                       Settings::values.cpuopt_unsafe_fastmem_check, true);
 
     if (global) {
         WriteSetting(QStringLiteral("cpuopt_page_tables"), Settings::values.cpuopt_page_tables,
@@ -1348,6 +1367,7 @@ void Config::SaveCpuValues() {
         WriteSetting(QStringLiteral("cpuopt_misc_ir"), Settings::values.cpuopt_misc_ir, true);
         WriteSetting(QStringLiteral("cpuopt_reduce_misalign_checks"),
                      Settings::values.cpuopt_reduce_misalign_checks, true);
+        WriteSetting(QStringLiteral("cpuopt_fastmem"), Settings::values.cpuopt_fastmem, true);
     }
 
     qt_config->endGroup();
@@ -1381,13 +1401,17 @@ void Config::SaveRendererValues() {
                        Settings::values.use_asynchronous_gpu_emulation, true);
     WriteSettingGlobal(QStringLiteral("use_nvdec_emulation"), Settings::values.use_nvdec_emulation,
                        true);
+    WriteSettingGlobal(QStringLiteral("accelerate_astc"), Settings::values.accelerate_astc, true);
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
+    WriteSettingGlobal(QStringLiteral("disable_fps_limit"), Settings::values.disable_fps_limit,
+                       false);
     WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
                        Settings::values.use_assembly_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
                        Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
                        true);
+    WriteSettingGlobal(QStringLiteral("use_caches_gc"), Settings::values.use_caches_gc, false);
     // Cast to double because Qt's written float values are not human-readable
     WriteSettingGlobal(QStringLiteral("bg_red"), Settings::values.bg_red, 0.0);
     WriteSettingGlobal(QStringLiteral("bg_green"), Settings::values.bg_green, 0.0);

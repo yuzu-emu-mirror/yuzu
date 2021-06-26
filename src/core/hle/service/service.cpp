@@ -93,8 +93,8 @@ namespace Service {
 
 ServiceFrameworkBase::ServiceFrameworkBase(Core::System& system_, const char* service_name_,
                                            u32 max_sessions_, InvokerFn* handler_invoker_)
-    : system{system_}, service_name{service_name_}, max_sessions{max_sessions_},
-      handler_invoker{handler_invoker_} {}
+    : SessionRequestHandler(system_.Kernel(), service_name_), system{system_},
+      service_name{service_name_}, max_sessions{max_sessions_}, handler_invoker{handler_invoker_} {}
 
 ServiceFrameworkBase::~ServiceFrameworkBase() {
     // Wait for other threads to release access before destroying
@@ -111,7 +111,7 @@ void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager)
     port_installed = true;
 }
 
-Kernel::KClientPort& ServiceFrameworkBase::CreatePort(Kernel::KernelCore& kernel) {
+Kernel::KClientPort& ServiceFrameworkBase::CreatePort() {
     const auto guard = LockService();
 
     ASSERT(!port_installed);
@@ -149,10 +149,10 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     std::string function_name = info == nullptr ? fmt::format("{}", ctx.GetCommand()) : info->name;
 
     fmt::memory_buffer buf;
-    fmt::format_to(buf, "function '{}': port='{}' cmd_buf={{[0]=0x{:X}", function_name,
-                   service_name, cmd_buf[0]);
+    fmt::format_to(std::back_inserter(buf), "function '{}': port='{}' cmd_buf={{[0]=0x{:X}",
+                   function_name, service_name, cmd_buf[0]);
     for (int i = 1; i <= 8; ++i) {
-        fmt::format_to(buf, ", [{}]=0x{:X}", i, cmd_buf[i]);
+        fmt::format_to(std::back_inserter(buf), ", [{}]=0x{:X}", i, cmd_buf[i]);
     }
     buf.push_back('}');
 

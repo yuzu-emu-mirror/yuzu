@@ -7,6 +7,7 @@
 #include <dynarmic/interface/A64/a64.h>
 #include <dynarmic/interface/A64/config.h>
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "common/settings.h"
@@ -24,6 +25,7 @@
 namespace Core {
 
 using Vector = Dynarmic::A64::Vector;
+using namespace Common::Literals;
 
 class DynarmicCallbacks64 : public Dynarmic::A64::UserCallbacks {
 public:
@@ -160,6 +162,10 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         config.absolute_offset_page_table = true;
         config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
         config.only_detect_misalignment_via_page_table_on_page_boundary = true;
+
+        config.fastmem_pointer = page_table->fastmem_arena;
+        config.fastmem_address_space_bits = address_space_bits;
+        config.silently_mirror_fastmem = false;
     }
 
     // Multi-process state
@@ -180,8 +186,8 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
     config.wall_clock_cntpct = uses_wall_clock;
 
     // Code cache size
-    config.code_cache_size = 512 * 1024 * 1024;
-    config.far_code_offset = 256 * 1024 * 1024;
+    config.code_cache_size = 512_MiB;
+    config.far_code_offset = 400_MiB;
 
     // Safe optimizations
     if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::DebugMode) {
@@ -209,6 +215,9 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         if (!Settings::values.cpuopt_reduce_misalign_checks) {
             config.only_detect_misalignment_via_page_table_on_page_boundary = false;
         }
+        if (!Settings::values.cpuopt_fastmem) {
+            config.fastmem_pointer = nullptr;
+        }
     }
 
     // Unsafe optimizations
@@ -222,6 +231,9 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* 
         }
         if (Settings::values.cpuopt_unsafe_inaccurate_nan.GetValue()) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
+        }
+        if (Settings::values.cpuopt_unsafe_fastmem_check.GetValue()) {
+            config.fastmem_address_space_bits = 64;
         }
     }
 

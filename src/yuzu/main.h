@@ -40,6 +40,11 @@ class GameListPlaceholder;
 
 class QtSoftwareKeyboardDialog;
 
+enum class StartGameType {
+    Normal, // Can use custom configuration
+    Global, // Only uses global configuration
+};
+
 namespace Core::Frontend {
 struct ControllerParameters;
 struct InlineAppearParameters;
@@ -183,7 +188,8 @@ private:
     void ConnectMenuEvents();
 
     bool LoadROM(const QString& filename, std::size_t program_index);
-    void BootGame(const QString& filename, std::size_t program_index = 0);
+    void BootGame(const QString& filename, std::size_t program_index = 0,
+                  StartGameType with_config = StartGameType::Normal);
     void ShutdownGame();
 
     void ShowTelemetryCallout();

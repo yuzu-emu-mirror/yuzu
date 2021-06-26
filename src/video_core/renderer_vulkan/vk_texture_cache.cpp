@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "common/bit_cast.h"
+#include "common/settings.h"
 
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/renderer_vulkan/blit_image.h"
@@ -817,6 +818,10 @@ void TextureCacheRuntime::CopyImage(Image& dst, Image& src,
     });
 }
 
+u64 TextureCacheRuntime::GetDeviceLocalMemory() const {
+    return device.GetDeviceLocalMemory();
+}
+
 Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_addr_,
              VAddr cpu_addr_)
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},
@@ -828,7 +833,11 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         commit = runtime.memory_allocator.Commit(buffer, MemoryUsage::DeviceLocal);
     }
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
-        flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
+        if (Settings::values.accelerate_astc.GetValue()) {
+            flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
+        } else {
+            flags |= VideoCommon::ImageFlagBits::Converted;
+        }
     }
     if (runtime.device.HasDebuggingToolAttached()) {
         if (image) {
@@ -870,6 +879,8 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         }
     }
 }
+
+Image::~Image() = default;
 
 void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
     // TODO: Move this to another API

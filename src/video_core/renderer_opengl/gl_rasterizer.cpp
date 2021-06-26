@@ -351,7 +351,7 @@ void RasterizerOpenGL::SetupShaders(bool is_indexed) {
     }
 }
 
-void RasterizerOpenGL::LoadDiskResources(u64 title_id, const std::atomic_bool& stop_loading,
+void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                                          const VideoCore::DiskResourceLoadCallback& callback) {
     shader_cache.LoadDiskCache(title_id, stop_loading, callback);
 }
@@ -524,6 +524,10 @@ void RasterizerOpenGL::BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAd
                                                  u32 size) {
     std::scoped_lock lock{buffer_cache.mutex};
     buffer_cache.BindGraphicsUniformBuffer(stage, index, gpu_addr, size);
+}
+
+void RasterizerOpenGL::DisableGraphicsUniformBuffer(size_t stage, u32 index) {
+    buffer_cache.DisableGraphicsUniformBuffer(stage, index);
 }
 
 void RasterizerOpenGL::FlushAll() {}

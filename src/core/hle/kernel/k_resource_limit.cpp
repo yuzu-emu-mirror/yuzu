@@ -79,6 +79,7 @@ ResultCode KResourceLimit::SetLimitValue(LimitableResource which, s64 value) {
     R_UNLESS(current_values[index] <= value, ResultInvalidState);
 
     limit_values[index] = value;
+    peak_values[index] = current_values[index];
 
     return ResultSuccess;
 }
@@ -117,7 +118,7 @@ bool KResourceLimit::Reserve(LimitableResource which, s64 value, s64 timeout) {
         if (current_hints[index] + value <= limit_values[index] &&
             (timeout < 0 || core_timing->GetGlobalTimeNs().count() < timeout)) {
             waiter_count++;
-            cond_var.Wait(&lock, timeout);
+            cond_var.Wait(&lock, timeout, false);
             waiter_count--;
         } else {
             break;

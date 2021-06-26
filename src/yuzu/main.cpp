@@ -195,10 +195,10 @@ static void RemoveCachedContents() {
     const auto offline_legal_information = cache_dir / "offline_web_applet_legal_information";
     const auto offline_system_data = cache_dir / "offline_web_applet_system_data";
 
-    void(Common::FS::RemoveDirRecursively(offline_fonts));
-    void(Common::FS::RemoveDirRecursively(offline_manual));
-    void(Common::FS::RemoveDirRecursively(offline_legal_information));
-    void(Common::FS::RemoveDirRecursively(offline_system_data));
+    Common::FS::RemoveDirRecursively(offline_fonts);
+    Common::FS::RemoveDirRecursively(offline_manual);
+    Common::FS::RemoveDirRecursively(offline_legal_information);
+    Common::FS::RemoveDirRecursively(offline_system_data);
 }
 
 GMainWindow::GMainWindow()
@@ -238,7 +238,8 @@ GMainWindow::GMainWindow()
     const auto build_id = std::string(Common::g_build_id);
 
     const auto yuzu_build = fmt::format("yuzu Development Build | {}-{}", branch_name, description);
-    const auto override_build = fmt::format(std::string(Common::g_title_bar_format_idle), build_id);
+    const auto override_build =
+        fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     LOG_INFO(Frontend, "yuzu Version: {}", yuzu_build_version);
@@ -1027,7 +1028,11 @@ void GMainWindow::InitializeHotkeys() {
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
             &QShortcut::activated, this,
             [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
-
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Framerate Limit"), this),
+            &QShortcut::activated, this, [] {
+                Settings::values.disable_fps_limit.SetValue(
+                    !Settings::values.disable_fps_limit.GetValue());
+            });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Mouse Panning"), this),
             &QShortcut::activated, this, [&] {
                 Settings::values.mouse_panning = !Settings::values.mouse_panning;
@@ -1096,6 +1101,7 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
 }
 
 void GMainWindow::ConnectWidgetEvents() {
+    connect(game_list, &GameList::BootGame, this, &GMainWindow::BootGame);
     connect(game_list, &GameList::GameChosen, this, &GMainWindow::OnGameListLoadFile);
     connect(game_list, &GameList::OpenDirectory, this, &GMainWindow::OnGameListOpenDirectory);
     connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
@@ -1310,7 +1316,7 @@ void GMainWindow::SelectAndSetCurrentUser() {
     Settings::values.current_user = dialog.GetIndex();
 }
 
-void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
+void GMainWindow::BootGame(const QString& filename, std::size_t program_index, StartGameType type) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
@@ -1322,7 +1328,8 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
     const auto loader = Loader::GetLoader(system, v_file, program_index);
 
-    if (!(loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success)) {
+    if (loader != nullptr && loader->ReadProgramId(title_id) == Loader::ResultStatus::Success &&
+        type == StartGameType::Normal) {
         // Load per game settings
         const auto file_path = std::filesystem::path{filename.toStdU16String()};
         const auto config_file_name = title_id == 0
@@ -1727,8 +1734,8 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
         RemoveAddOnContent(program_id, entry_type);
         break;
     }
-    void(Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
-                                          "game_list"));
+    Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
+                                     "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
 }
 
@@ -1933,6 +1940,18 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
 
     const auto full = res == selections.constFirst();
     const auto entry_size = CalculateRomFSEntrySize(extracted, full);
+
+    // The minimum required space is the size of the extracted RomFS + 1 GiB
+    const auto minimum_free_space = extracted->GetSize() + 0x40000000;
+
+    if (full && Common::FS::GetFreeSpaceSize(path) < minimum_free_space) {
+        QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
+                             tr("There is not enough free space at %1 to extract the RomFS. Please "
+                                "free up space or select a different dump directory at "
+                                "Emulation > Configure > System > Filesystem > Dump Root")
+                                 .arg(QString::fromStdString(path)));
+        return;
+    }
 
     QProgressDialog progress(tr("Extracting RomFS..."), tr("Cancel"), 0,
                              static_cast<s32>(entry_size), this);
@@ -2185,8 +2204,8 @@ void GMainWindow::OnMenuInstallToNAND() {
                                 : tr("%n file(s) failed to install\n", "", failed_files.size()));
 
     QMessageBox::information(this, tr("Install Results"), install_results);
-    void(Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
-                                          "game_list"));
+    Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
+                                     "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
     ui.action_Install_File_NAND->setEnabled(true);
 }
@@ -2818,7 +2837,7 @@ void GMainWindow::MigrateConfigFiles() {
         LOG_INFO(Frontend, "Migrating config file from {} to {}", origin, destination);
         if (!Common::FS::RenameFile(origin, destination)) {
             // Delete the old config file if one already exists in the new location.
-            void(Common::FS::RemoveFile(origin));
+            Common::FS::RemoveFile(origin);
         }
     }
 }
@@ -2830,7 +2849,8 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
     const auto build_id = std::string(Common::g_build_id);
 
     const auto yuzu_title = fmt::format("yuzu | {}-{}", branch_name, description);
-    const auto override_title = fmt::format(std::string(Common::g_title_bar_format_idle), build_id);
+    const auto override_title =
+        fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
     const auto window_title = override_title.empty() ? yuzu_title : override_title;
 
     if (title_name.empty()) {
@@ -3012,9 +3032,9 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
 
         const auto keys_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::KeysDir);
 
-        void(Common::FS::RemoveFile(keys_dir / "prod.keys_autogenerated"));
-        void(Common::FS::RemoveFile(keys_dir / "console.keys_autogenerated"));
-        void(Common::FS::RemoveFile(keys_dir / "title.keys_autogenerated"));
+        Common::FS::RemoveFile(keys_dir / "prod.keys_autogenerated");
+        Common::FS::RemoveFile(keys_dir / "console.keys_autogenerated");
+        Common::FS::RemoveFile(keys_dir / "title.keys_autogenerated");
     }
 
     Core::Crypto::KeyManager& keys = Core::Crypto::KeyManager::Instance();

@@ -19,7 +19,6 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/hex_util.h"
-#include "common/logging/backend.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "core/core.h"
@@ -314,7 +313,7 @@ void SynchronizeInternal(AM::Applets::AppletManager& applet_manager, DirectoryGe
         LOG_ERROR(Service_BCAT, "Boxcat synchronization failed with error '{}'!", res);
 
         if (res == DownloadResult::NoMatchBuildId || res == DownloadResult::NoMatchTitleId) {
-            void(Common::FS::RemoveFile(zip_path));
+            Common::FS::RemoveFile(zip_path);
         }
 
         HandleDownloadDisplayResult(applet_manager, res);
@@ -446,7 +445,7 @@ std::optional<std::vector<u8>> Boxcat::GetLaunchParameter(TitleIDVersion title) 
             LOG_ERROR(Service_BCAT, "Boxcat synchronization failed with error '{}'!", res);
 
             if (res == DownloadResult::NoMatchBuildId || res == DownloadResult::NoMatchTitleId) {
-                void(Common::FS::RemoveFile(bin_file_path));
+                Common::FS::RemoveFile(bin_file_path);
             }
 
             HandleDownloadDisplayResult(applet_manager, res);

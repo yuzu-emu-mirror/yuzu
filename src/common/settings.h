@@ -125,10 +125,13 @@ struct Values {
     bool cpuopt_const_prop;
     bool cpuopt_misc_ir;
     bool cpuopt_reduce_misalign_checks;
+    bool cpuopt_fastmem;
 
     Setting<bool> cpuopt_unsafe_unfuse_fma;
     Setting<bool> cpuopt_unsafe_reduce_fp_error;
+    Setting<bool> cpuopt_unsafe_ignore_standard_fpcr;
     Setting<bool> cpuopt_unsafe_inaccurate_nan;
+    Setting<bool> cpuopt_unsafe_fastmem_check;
 
     // Renderer
     Setting<RendererBackend> renderer_backend;
@@ -145,10 +148,13 @@ struct Values {
     Setting<GPUAccuracy> gpu_accuracy;
     Setting<bool> use_asynchronous_gpu_emulation;
     Setting<bool> use_nvdec_emulation;
+    Setting<bool> accelerate_astc;
     Setting<bool> use_vsync;
+    Setting<bool> disable_fps_limit;
     Setting<bool> use_assembly_shaders;
     Setting<bool> use_asynchronous_shaders;
     Setting<bool> use_fast_gpu_time;
+    Setting<bool> use_caches_gc;
 
     Setting<float> bg_red;
     Setting<float> bg_green;
@@ -216,6 +222,7 @@ struct Values {
     std::string program_args;
     bool dump_exefs;
     bool dump_nso;
+    bool enable_fs_access_log;
     bool reporting_services;
     bool quest_flag;
     bool disable_macro_jit;
@@ -248,6 +255,8 @@ void SetConfiguringGlobal(bool is_global);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();
+
+bool IsFastmemEnabled();
 
 float Volume();
 

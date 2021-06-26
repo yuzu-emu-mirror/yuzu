@@ -72,6 +72,7 @@ public:
     void ResetCounter(VideoCore::QueryType type) override;
     void Query(GPUVAddr gpu_addr, VideoCore::QueryType type, std::optional<u64> timestamp) override;
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size) override;
+    void DisableGraphicsUniformBuffer(size_t stage, u32 index) override;
     void FlushAll() override;
     void FlushRegion(VAddr addr, u64 size) override;
     bool MustFlushRegion(VAddr addr, u64 size) override;
@@ -93,7 +94,7 @@ public:
                                const Tegra::Engines::Fermi2D::Config& copy_config) override;
     bool AccelerateDisplay(const Tegra::FramebufferConfig& config, VAddr framebuffer_addr,
                            u32 pixel_stride) override;
-    void LoadDiskResources(u64 title_id, const std::atomic_bool& stop_loading,
+    void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                            const VideoCore::DiskResourceLoadCallback& callback) override;
 
     /// Returns true when there are commands queued to the OpenGL server.

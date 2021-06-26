@@ -172,7 +172,7 @@ std::string ReadStringFromFile(const std::filesystem::path& path, FileType type)
 
 size_t WriteStringToFile(const std::filesystem::path& path, FileType type,
                          std::string_view string) {
-    if (!IsFile(path)) {
+    if (Exists(path) && !IsFile(path)) {
         return 0;
     }
 
@@ -183,11 +183,7 @@ size_t WriteStringToFile(const std::filesystem::path& path, FileType type,
 
 size_t AppendStringToFile(const std::filesystem::path& path, FileType type,
                           std::string_view string) {
-    if (!Exists(path)) {
-        return WriteStringToFile(path, type, string);
-    }
-
-    if (!IsFile(path)) {
+    if (Exists(path) && !IsFile(path)) {
         return 0;
     }
 
@@ -309,7 +305,11 @@ bool IOFile::Flush() const {
 
     errno = 0;
 
-    const auto flush_result = std::fflush(file) == 0;
+#ifdef _WIN32
+    const auto flush_result = std::fflush(file) == 0 && _commit(fileno(file)) == 0;
+#else
+    const auto flush_result = std::fflush(file) == 0 && fsync(fileno(file)) == 0;
+#endif
 
     if (!flush_result) {
         const auto ec = std::error_code{errno, std::generic_category()};

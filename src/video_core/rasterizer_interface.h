@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include <atomic>
 #include <functional>
 #include <optional>
 #include <span>
+#include <stop_token>
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"
@@ -53,6 +53,9 @@ public:
     /// Signal an uniform buffer binding
     virtual void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr,
                                            u32 size) = 0;
+
+    /// Signal disabling of a uniform buffer
+    virtual void DisableGraphicsUniformBuffer(size_t stage, u32 index) = 0;
 
     /// Signal a GPU based semaphore as a fence
     virtual void SignalSemaphore(GPUVAddr addr, u32 value) = 0;
@@ -120,7 +123,7 @@ public:
     virtual void UpdatePagesCachedCount(VAddr addr, u64 size, int delta) {}
 
     /// Initialize disk cached resources for the game being emulated
-    virtual void LoadDiskResources(u64 title_id, const std::atomic_bool& stop_loading,
+    virtual void LoadDiskResources(u64 title_id, std::stop_token stop_loading,
                                    const DiskResourceLoadCallback& callback) {}
 
     /// Grant access to the Guest Driver Profile for recording/obtaining info on the guest driver.

@@ -34,7 +34,7 @@
             &lt;br&gt;
             If you're not sure what these do, keep all of these enabled.
             &lt;br&gt;
-            These settings only take effect when CPU Accuracy is "Debug Mode".
+            These settings, when disabled, only take effect when CPU Accuracy is "Debug Mode".
             &lt;/div&gt;
            </string>
           </property>
@@ -135,6 +135,20 @@
            <string>
             &lt;div style="white-space: nowrap"&gt;When enabled, a misalignment is only triggered when an access crosses a page boundary.&lt;/div&gt;
             &lt;div style="white-space: nowrap"&gt;When disabled, a misalignment is triggered on all misaligned accesses.&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_fastmem">
+          <property name="text">
+           <string>Enable Host MMU Emulation</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;This optimization speeds up memory accesses by the guest program.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Enabling it causes guest memory reads/writes to be done directly into memory and make use of Host's MMU.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;Disabling this forces all memory accesses to use Software MMU Emulation.&lt;/div&gt;
            </string>
           </property>
          </widget>

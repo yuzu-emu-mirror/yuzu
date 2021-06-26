@@ -8,6 +8,7 @@
 #include <dynarmic/interface/A32/config.h>
 #include <dynarmic/interface/A32/context.h>
 #include "common/assert.h"
+#include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "common/settings.h"
@@ -21,6 +22,8 @@
 #include "core/memory.h"
 
 namespace Core {
+
+using namespace Common::Literals;
 
 class DynarmicCallbacks32 : public Dynarmic::A32::UserCallbacks {
 public:
@@ -128,6 +131,7 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     if (page_table) {
         config.page_table = reinterpret_cast<std::array<std::uint8_t*, NUM_PAGE_TABLE_ENTRIES>*>(
             page_table->pointers.data());
+        config.fastmem_pointer = page_table->fastmem_arena;
     }
     config.absolute_offset_page_table = true;
     config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
@@ -142,8 +146,8 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
     config.wall_clock_cntpct = uses_wall_clock;
 
     // Code cache size
-    config.code_cache_size = 512 * 1024 * 1024;
-    config.far_code_offset = 256 * 1024 * 1024;
+    config.code_cache_size = 512_MiB;
+    config.far_code_offset = 400_MiB;
 
     // Safe optimizations
     if (Settings::values.cpu_accuracy.GetValue() == Settings::CPUAccuracy::DebugMode) {
@@ -171,6 +175,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         if (!Settings::values.cpuopt_reduce_misalign_checks) {
             config.only_detect_misalignment_via_page_table_on_page_boundary = false;
         }
+        if (!Settings::values.cpuopt_fastmem) {
+            config.fastmem_pointer = nullptr;
+        }
     }
 
     // Unsafe optimizations
@@ -181,6 +188,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
         }
         if (Settings::values.cpuopt_unsafe_reduce_fp_error.GetValue()) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
+        }
+        if (Settings::values.cpuopt_unsafe_ignore_standard_fpcr.GetValue()) {
+            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_IgnoreStandardFPCRValue;
         }
         if (Settings::values.cpuopt_unsafe_inaccurate_nan.GetValue()) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;

@@ -55,9 +55,11 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousGpuEmulation",
                 values.use_asynchronous_gpu_emulation.GetValue());
     log_setting("Renderer_UseNvdecEmulation", values.use_nvdec_emulation.GetValue());
+    log_setting("Renderer_AccelerateASTC", values.accelerate_astc.GetValue());
     log_setting("Renderer_UseVsync", values.use_vsync.GetValue());
     log_setting("Renderer_UseAssemblyShaders", values.use_assembly_shaders.GetValue());
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
+    log_setting("Renderer_UseGarbageCollection", values.use_caches_gc.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id);
     log_setting("Audio_EnableAudioStretching", values.enable_audio_stretching.GetValue());
@@ -90,6 +92,13 @@ bool IsGPULevelHigh() {
            values.gpu_accuracy.GetValue() == GPUAccuracy::High;
 }
 
+bool IsFastmemEnabled() {
+    if (values.cpu_accuracy.GetValue() == CPUAccuracy::DebugMode) {
+        return values.cpuopt_fastmem;
+    }
+    return true;
+}
+
 float Volume() {
     if (values.audio_muted) {
         return 0.0f;
@@ -114,7 +123,9 @@ void RestoreGlobalState(bool is_powered_on) {
     values.cpu_accuracy.SetGlobal(true);
     values.cpuopt_unsafe_unfuse_fma.SetGlobal(true);
     values.cpuopt_unsafe_reduce_fp_error.SetGlobal(true);
+    values.cpuopt_unsafe_ignore_standard_fpcr.SetGlobal(true);
     values.cpuopt_unsafe_inaccurate_nan.SetGlobal(true);
+    values.cpuopt_unsafe_fastmem_check.SetGlobal(true);
 
     // Renderer
     values.renderer_backend.SetGlobal(true);
@@ -127,10 +138,12 @@ void RestoreGlobalState(bool is_powered_on) {
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
     values.use_nvdec_emulation.SetGlobal(true);
+    values.accelerate_astc.SetGlobal(true);
     values.use_vsync.SetGlobal(true);
     values.use_assembly_shaders.SetGlobal(true);
     values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
+    values.use_caches_gc.SetGlobal(true);
     values.bg_red.SetGlobal(true);
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);

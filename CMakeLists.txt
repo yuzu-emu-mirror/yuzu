@@ -23,6 +23,8 @@ option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
 option(YUZU_USE_BUNDLED_BOOST "Download bundled Boost" OFF)
 
+option(YUZU_USE_BUNDLED_LIBUSB "Compile bundled libusb" OFF)
+
 CMAKE_DEPENDENT_OPTION(YUZU_USE_BUNDLED_FFMPEG "Download/Build bundled FFmpeg" ON "WIN32" OFF)
 
 option(YUZU_USE_QT_WEB_ENGINE "Use QtWebEngine for web applet implementation" OFF)
@@ -170,7 +172,7 @@ macro(yuzu_find_packages)
     set(REQUIRED_LIBS
     #    Cmake Pkg Prefix  Version     Conan Pkg
         "Catch2            2.13        catch2/2.13.0"
-        "fmt               7.1         fmt/7.1.2"
+        "fmt               8.0         fmt/8.0.0"
         "lz4               1.8         lz4/1.9.2"
         "nlohmann_json     3.8         nlohmann_json/3.8.0"
         "ZLIB              1.2         zlib/1.2.11"
@@ -420,14 +422,22 @@ elseif (TARGET Boost::boost)
 endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
-if(NOT APPLE)
+if(NOT APPLE AND NOT YUZU_USE_BUNDLED_LIBUSB)
     include(FindPkgConfig)
-    find_package(LibUSB)
-endif()
-if (NOT LIBUSB_FOUND)
-    add_subdirectory(externals/libusb)
-    set(LIBUSB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/externals/libusb/libusb/libusb")
-    set(LIBUSB_LIBRARIES usb)
+    if (PKG_CONFIG_FOUND)
+        pkg_check_modules(LIBUSB QUIET libusb-1.0>=1.0.24)
+    else()
+        find_package(LibUSB)
+    endif()
+
+    if (LIBUSB_FOUND)
+        add_library(usb INTERFACE)
+        target_include_directories(usb INTERFACE "${LIBUSB_INCLUDE_DIRS}")
+        target_link_libraries(usb INTERFACE "${LIBUSB_LIBRARIES}")
+    else()
+        message(WARNING "libusb not found, falling back to externals")
+        set(YUZU_USE_BUNDLED_LIBUSB ON)
+    endif()
 endif()
 
 # List of all FFmpeg components required

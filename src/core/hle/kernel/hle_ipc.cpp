@@ -30,16 +30,38 @@
 
 namespace Kernel {
 
-SessionRequestHandler::SessionRequestHandler() = default;
+SessionRequestHandler::SessionRequestHandler(KernelCore& kernel_, const char* service_name_)
+    : kernel{kernel_}, service_thread{kernel.CreateServiceThread(service_name_)} {}
 
-SessionRequestHandler::~SessionRequestHandler() = default;
+SessionRequestHandler::~SessionRequestHandler() {
+    kernel.ReleaseServiceThread(service_thread);
+}
+
+SessionRequestManager::SessionRequestManager(KernelCore& kernel_) : kernel{kernel_} {}
+
+SessionRequestManager::~SessionRequestManager() = default;
+
+bool SessionRequestManager::HasSessionRequestHandler(const HLERequestContext& context) const {
+    if (IsDomain() && context.HasDomainMessageHeader()) {
+        const auto& message_header = context.GetDomainMessageHeader();
+        const auto object_id = message_header.object_id;
+
+        if (object_id > DomainHandlerCount()) {
+            LOG_CRITICAL(IPC, "object_id {} is too big!", object_id);
+            return false;
+        }
+        return DomainHandler(object_id - 1) != nullptr;
+    } else {
+        return session_handler != nullptr;
+    }
+}
 
 void SessionRequestHandler::ClientConnected(KServerSession* session) {
-    session->SetSessionHandler(shared_from_this());
+    session->ClientConnected(shared_from_this());
 }
 
 void SessionRequestHandler::ClientDisconnected(KServerSession* session) {
-    session->SetSessionHandler(nullptr);
+    session->ClientDisconnected();
 }
 
 HLERequestContext::HLERequestContext(KernelCore& kernel_, Core::Memory::Memory& memory_,

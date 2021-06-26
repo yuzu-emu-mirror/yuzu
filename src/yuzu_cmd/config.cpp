@@ -443,12 +443,16 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_gpu_emulation", true));
     Settings::values.use_vsync.SetValue(
         static_cast<u16>(sdl2_config->GetInteger("Renderer", "use_vsync", 1)));
+    Settings::values.disable_fps_limit.SetValue(
+        sdl2_config->GetBoolean("Renderer", "disable_fps_limit", false));
     Settings::values.use_assembly_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_assembly_shaders", true));
     Settings::values.use_asynchronous_shaders.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
-    Settings::values.use_asynchronous_shaders.SetValue(
-        sdl2_config->GetBoolean("Renderer", "use_asynchronous_shaders", false));
+    Settings::values.use_nvdec_emulation.SetValue(
+        sdl2_config->GetBoolean("Renderer", "use_nvdec_emulation", true));
+    Settings::values.accelerate_astc.SetValue(
+        sdl2_config->GetBoolean("Renderer", "accelerate_astc", true));
     Settings::values.use_fast_gpu_time.SetValue(
         sdl2_config->GetBoolean("Renderer", "use_fast_gpu_time", true));
 
@@ -477,6 +481,8 @@ void Config::ReadValues() {
     Settings::values.program_args = sdl2_config->Get("Debugging", "program_args", "");
     Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
     Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);
+    Settings::values.enable_fs_access_log =
+        sdl2_config->GetBoolean("Debugging", "enable_fs_access_log", false);
     Settings::values.reporting_services =
         sdl2_config->GetBoolean("Debugging", "reporting_services", false);
     Settings::values.quest_flag = sdl2_config->GetBoolean("Debugging", "quest_flag", false);

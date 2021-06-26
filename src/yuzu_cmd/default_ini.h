@@ -150,6 +150,10 @@ cpuopt_misc_ir =
 # 0: Disabled, 1 (default): Enabled
 cpuopt_reduce_misalign_checks =
 
+# Enable Host MMU Emulation (faster guest memory access)
+# 0: Disabled, 1 (default): Enabled
+cpuopt_fastmem =
+
 [Renderer]
 # Which backend API to use.
 # 0 (default): OpenGL, 1: Vulkan
@@ -190,6 +194,14 @@ use_assembly_shaders =
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =
 
+# Enable NVDEC emulation.
+# 0: Off, 1 (default): On
+use_nvdec_emulation =
+
+# Accelerate ASTC texture decoding.
+# 0: Off, 1 (default): On
+accelerate_astc =
+
 # Turns on the frame limiter, which will limit frames output to the target game speed
 # 0: Off, 1: On (default)
 use_frame_limit =
@@ -214,6 +226,10 @@ use_asynchronous_gpu_emulation =
 # so only turn this off if you notice a speed difference.
 # 0: Off, 1 (default): On
 use_vsync =
+
+# Whether to use garbage collection or not for GPU caches.
+# 0 (default): Off, 1: On
+use_caches_gc =
 
 # The clear color for the renderer. What shows up on the sides of the bottom screen.
 # Must be in range of 0.0-1.0. Defaults to 1.0 for all.
@@ -248,7 +264,10 @@ swap_screen =
 
 [Audio]
 # Which audio output engine to use.
-# auto (default): Auto-select, null: No audio output, cubeb: Cubeb audio engine (if available)
+# auto (default): Auto-select
+# cubeb: Cubeb audio engine (if available)
+# sdl2: SDL2 audio engine (if available)
+# null: No audio output
 output_engine =
 
 # Whether or not to enable the audio-stretching post-processing effect.
@@ -334,6 +353,8 @@ record_frame_times =
 dump_exefs=false
 # Determines whether or not yuzu will dump all NSOs it attempts to load while loading them
 dump_nso=false
+# Determines whether or not yuzu will save the filesystem access log.
+enable_fs_access_log=false
 # Determines whether or not yuzu will report to the game that the emulated console is in Kiosk Mode
 # false: Retail/Normal Mode (default), true: Kiosk Mode
 quest_flag =
@@ -345,6 +366,9 @@ use_debug_asserts =
 use_auto_stub =
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
+# Presents guest frames as they become available. Experimental.
+# false: Disabled (default), true: Enabled
+disable_fps_limit=false
 
 [WebService]
 # Whether or not to enable telemetry

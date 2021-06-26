@@ -18,6 +18,7 @@
 
 #include "common/common_types.h"
 #include "common/div_ceil.h"
+#include "common/literals.h"
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
@@ -47,8 +48,11 @@ constexpr u32 NUM_COMPUTE_UNIFORM_BUFFERS = 8;
 constexpr u32 NUM_STORAGE_BUFFERS = 16;
 constexpr u32 NUM_STAGES = 5;
 
+using namespace Common::Literals;
+
 template <typename P>
 class BufferCache {
+
     // Page size for caching purposes.
     // This is unrelated to the CPU page size and it can be changed as it seems optimal.
     static constexpr u32 PAGE_BITS = 16;
@@ -64,6 +68,9 @@ class BufferCache {
     static constexpr bool USE_MEMORY_MAPS = P::USE_MEMORY_MAPS;
 
     static constexpr BufferId NULL_BUFFER_ID{0};
+
+    static constexpr u64 EXPECTED_MEMORY = 512_MiB;
+    static constexpr u64 CRITICAL_MEMORY = 1_GiB;
 
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
@@ -92,7 +99,7 @@ class BufferCache {
     };
 
 public:
-    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = 4096;
+    static constexpr u32 DEFAULT_SKIP_CACHE_SIZE = 4_KiB;
 
     explicit BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                          Tegra::Engines::Maxwell3D& maxwell3d_,
@@ -102,6 +109,8 @@ public:
 
     void TickFrame();
 
+    void RunGarbageCollector();
+
     void WriteMemory(VAddr cpu_addr, u64 size);
 
     void CachedWriteMemory(VAddr cpu_addr, u64 size);
@@ -109,6 +118,8 @@ public:
     void DownloadMemory(VAddr cpu_addr, u64 size);
 
     void BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr, u32 size);
+
+    void DisableGraphicsUniformBuffer(size_t stage, u32 index);
 
     void UpdateGraphicsBuffers(bool is_indexed);
 
@@ -241,6 +252,8 @@ private:
     template <bool insert>
     void ChangeRegister(BufferId buffer_id);
 
+    void TouchBuffer(Buffer& buffer) const noexcept;
+
     bool SynchronizeBuffer(Buffer& buffer, VAddr cpu_addr, u32 size);
 
     bool SynchronizeBufferImpl(Buffer& buffer, VAddr cpu_addr, u32 size);
@@ -252,6 +265,10 @@ private:
                                std::span<const BufferCopy> copies);
 
     void MappedUploadMemory(Buffer& buffer, u64 total_size_bytes, std::span<BufferCopy> copies);
+
+    void DownloadBufferMemory(Buffer& buffer_id);
+
+    void DownloadBufferMemory(Buffer& buffer_id, VAddr cpu_addr, u64 size);
 
     void DeleteBuffer(BufferId buffer_id);
 
@@ -317,6 +334,10 @@ private:
     size_t immediate_buffer_capacity = 0;
     std::unique_ptr<u8[]> immediate_buffer_alloc;
 
+    typename SlotVector<Buffer>::Iterator deletion_iterator;
+    u64 frame_tick = 0;
+    u64 total_used_memory = 0;
+
     std::array<BufferId, ((1ULL << 39) >> PAGE_BITS)> page_table;
 };
 
@@ -330,6 +351,28 @@ BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
       gpu_memory{gpu_memory_}, cpu_memory{cpu_memory_}, runtime{runtime_} {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
+    deletion_iterator = slot_buffers.end();
+}
+
+template <class P>
+void BufferCache<P>::RunGarbageCollector() {
+    const bool aggressive_gc = total_used_memory >= CRITICAL_MEMORY;
+    const u64 ticks_to_destroy = aggressive_gc ? 60 : 120;
+    int num_iterations = aggressive_gc ? 64 : 32;
+    for (; num_iterations > 0; --num_iterations) {
+        if (deletion_iterator == slot_buffers.end()) {
+            deletion_iterator = slot_buffers.begin();
+        }
+        ++deletion_iterator;
+        if (deletion_iterator == slot_buffers.end()) {
+            break;
+        }
+        const auto [buffer_id, buffer] = *deletion_iterator;
+        if (buffer->FrameTick() + ticks_to_destroy < frame_tick) {
+            DownloadBufferMemory(*buffer);
+            DeleteBuffer(buffer_id);
+        }
+    }
 }
 
 template <class P>
@@ -347,6 +390,10 @@ void BufferCache<P>::TickFrame() {
     const bool skip_preferred = hits * 256 < shots * 251;
     uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
+    if (Settings::values.use_caches_gc.GetValue() && total_used_memory >= EXPECTED_MEMORY) {
+        RunGarbageCollector();
+    }
+    ++frame_tick;
     delayed_destruction_ring.Tick();
 }
 
@@ -369,66 +416,25 @@ void BufferCache<P>::CachedWriteMemory(VAddr cpu_addr, u64 size) {
 
 template <class P>
 void BufferCache<P>::DownloadMemory(VAddr cpu_addr, u64 size) {
-    ForEachBufferInRange(cpu_addr, size, [&](BufferId, Buffer& buffer) {
-        boost::container::small_vector<BufferCopy, 1> copies;
-        u64 total_size_bytes = 0;
-        u64 largest_copy = 0;
-        buffer.ForEachDownloadRange(cpu_addr, size, [&](u64 range_offset, u64 range_size) {
-            copies.push_back(BufferCopy{
-                .src_offset = range_offset,
-                .dst_offset = total_size_bytes,
-                .size = range_size,
-            });
-            total_size_bytes += range_size;
-            largest_copy = std::max(largest_copy, range_size);
-        });
-        if (total_size_bytes == 0) {
-            return;
-        }
-        MICROPROFILE_SCOPE(GPU_DownloadMemory);
-
-        if constexpr (USE_MEMORY_MAPS) {
-            auto download_staging = runtime.DownloadStagingBuffer(total_size_bytes);
-            const u8* const mapped_memory = download_staging.mapped_span.data();
-            const std::span<BufferCopy> copies_span(copies.data(), copies.data() + copies.size());
-            for (BufferCopy& copy : copies) {
-                // Modify copies to have the staging offset in mind
-                copy.dst_offset += download_staging.offset;
-            }
-            runtime.CopyBuffer(download_staging.buffer, buffer, copies_span);
-            runtime.Finish();
-            for (const BufferCopy& copy : copies) {
-                const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
-                // Undo the modified offset
-                const u64 dst_offset = copy.dst_offset - download_staging.offset;
-                const u8* copy_mapped_memory = mapped_memory + dst_offset;
-                cpu_memory.WriteBlockUnsafe(copy_cpu_addr, copy_mapped_memory, copy.size);
-            }
-        } else {
-            const std::span<u8> immediate_buffer = ImmediateBuffer(largest_copy);
-            for (const BufferCopy& copy : copies) {
-                buffer.ImmediateDownload(copy.src_offset, immediate_buffer.subspan(0, copy.size));
-                const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
-                cpu_memory.WriteBlockUnsafe(copy_cpu_addr, immediate_buffer.data(), copy.size);
-            }
-        }
-    });
+    ForEachBufferInRange(cpu_addr, size,
+                         [&](BufferId, Buffer& buffer) { DownloadBufferMemory(buffer); });
 }
 
 template <class P>
 void BufferCache<P>::BindGraphicsUniformBuffer(size_t stage, u32 index, GPUVAddr gpu_addr,
                                                u32 size) {
     const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
-    if (!cpu_addr) {
-        uniform_buffers[stage][index] = NULL_BINDING;
-        return;
-    }
     const Binding binding{
         .cpu_addr = *cpu_addr,
         .size = size,
         .buffer_id = BufferId{},
     };
     uniform_buffers[stage][index] = binding;
+}
+
+template <class P>
+void BufferCache<P>::DisableGraphicsUniformBuffer(size_t stage, u32 index) {
+    uniform_buffers[stage][index] = NULL_BINDING;
 }
 
 template <class P>
@@ -637,6 +643,7 @@ bool BufferCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
 template <class P>
 void BufferCache<P>::BindHostIndexBuffer() {
     Buffer& buffer = slot_buffers[index_buffer.buffer_id];
+    TouchBuffer(buffer);
     const u32 offset = buffer.Offset(index_buffer.cpu_addr);
     const u32 size = index_buffer.size;
     SynchronizeBuffer(buffer, index_buffer.cpu_addr, size);
@@ -655,6 +662,7 @@ void BufferCache<P>::BindHostVertexBuffers() {
     for (u32 index = 0; index < NUM_VERTEX_BUFFERS; ++index) {
         const Binding& binding = vertex_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer);
         SynchronizeBuffer(buffer, binding.cpu_addr, binding.size);
         if (!flags[Dirty::VertexBuffer0 + index]) {
             continue;
@@ -690,6 +698,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     const VAddr cpu_addr = binding.cpu_addr;
     const u32 size = binding.size;
     Buffer& buffer = slot_buffers[binding.buffer_id];
+    TouchBuffer(buffer);
     const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
                                  size <= uniform_buffer_skip_cache_size &&
                                  !buffer.IsRegionGpuModified(cpu_addr, size);
@@ -741,6 +750,7 @@ void BufferCache<P>::BindHostGraphicsStorageBuffers(size_t stage) {
     ForEachEnabledBit(enabled_storage_buffers[stage], [&](u32 index) {
         const Binding& binding = storage_buffers[stage][index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -763,6 +773,7 @@ void BufferCache<P>::BindHostTransformFeedbackBuffers() {
     for (u32 index = 0; index < NUM_TRANSFORM_FEEDBACK_BUFFERS; ++index) {
         const Binding& binding = transform_feedback_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -781,6 +792,7 @@ void BufferCache<P>::BindHostComputeUniformBuffers() {
     ForEachEnabledBit(enabled_compute_uniform_buffers, [&](u32 index) {
         const Binding& binding = compute_uniform_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -800,6 +812,7 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
     ForEachEnabledBit(enabled_compute_storage_buffers, [&](u32 index) {
         const Binding& binding = compute_storage_buffers[index];
         Buffer& buffer = slot_buffers[binding.buffer_id];
+        TouchBuffer(buffer);
         const u32 size = binding.size;
         SynchronizeBuffer(buffer, binding.cpu_addr, size);
 
@@ -1098,6 +1111,7 @@ BufferId BufferCache<P>::CreateBuffer(VAddr cpu_addr, u32 wanted_size) {
     const OverlapResult overlap = ResolveOverlaps(cpu_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
     const BufferId new_buffer_id = slot_buffers.insert(runtime, rasterizer, overlap.begin, size);
+    TouchBuffer(slot_buffers[new_buffer_id]);
     for (const BufferId overlap_id : overlap.ids) {
         JoinOverlap(new_buffer_id, overlap_id, !overlap.has_stream_leap);
     }
@@ -1119,8 +1133,14 @@ template <class P>
 template <bool insert>
 void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
     const Buffer& buffer = slot_buffers[buffer_id];
+    const auto size = buffer.SizeBytes();
+    if (insert) {
+        total_used_memory += Common::AlignUp(size, 1024);
+    } else {
+        total_used_memory -= Common::AlignUp(size, 1024);
+    }
     const VAddr cpu_addr_begin = buffer.CpuAddr();
-    const VAddr cpu_addr_end = cpu_addr_begin + buffer.SizeBytes();
+    const VAddr cpu_addr_end = cpu_addr_begin + size;
     const u64 page_begin = cpu_addr_begin / PAGE_SIZE;
     const u64 page_end = Common::DivCeil(cpu_addr_end, PAGE_SIZE);
     for (u64 page = page_begin; page != page_end; ++page) {
@@ -1130,6 +1150,11 @@ void BufferCache<P>::ChangeRegister(BufferId buffer_id) {
             page_table[page] = BufferId{};
         }
     }
+}
+
+template <class P>
+void BufferCache<P>::TouchBuffer(Buffer& buffer) const noexcept {
+    buffer.SetFrameTick(frame_tick);
 }
 
 template <class P>
@@ -1209,6 +1234,57 @@ void BufferCache<P>::MappedUploadMemory(Buffer& buffer, u64 total_size_bytes,
 }
 
 template <class P>
+void BufferCache<P>::DownloadBufferMemory(Buffer& buffer) {
+    DownloadBufferMemory(buffer, buffer.CpuAddr(), buffer.SizeBytes());
+}
+
+template <class P>
+void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 size) {
+    boost::container::small_vector<BufferCopy, 1> copies;
+    u64 total_size_bytes = 0;
+    u64 largest_copy = 0;
+    buffer.ForEachDownloadRange(cpu_addr, size, [&](u64 range_offset, u64 range_size) {
+        copies.push_back(BufferCopy{
+            .src_offset = range_offset,
+            .dst_offset = total_size_bytes,
+            .size = range_size,
+        });
+        total_size_bytes += range_size;
+        largest_copy = std::max(largest_copy, range_size);
+    });
+    if (total_size_bytes == 0) {
+        return;
+    }
+    MICROPROFILE_SCOPE(GPU_DownloadMemory);
+
+    if constexpr (USE_MEMORY_MAPS) {
+        auto download_staging = runtime.DownloadStagingBuffer(total_size_bytes);
+        const u8* const mapped_memory = download_staging.mapped_span.data();
+        const std::span<BufferCopy> copies_span(copies.data(), copies.data() + copies.size());
+        for (BufferCopy& copy : copies) {
+            // Modify copies to have the staging offset in mind
+            copy.dst_offset += download_staging.offset;
+        }
+        runtime.CopyBuffer(download_staging.buffer, buffer, copies_span);
+        runtime.Finish();
+        for (const BufferCopy& copy : copies) {
+            const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
+            // Undo the modified offset
+            const u64 dst_offset = copy.dst_offset - download_staging.offset;
+            const u8* copy_mapped_memory = mapped_memory + dst_offset;
+            cpu_memory.WriteBlockUnsafe(copy_cpu_addr, copy_mapped_memory, copy.size);
+        }
+    } else {
+        const std::span<u8> immediate_buffer = ImmediateBuffer(largest_copy);
+        for (const BufferCopy& copy : copies) {
+            buffer.ImmediateDownload(copy.src_offset, immediate_buffer.subspan(0, copy.size));
+            const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
+            cpu_memory.WriteBlockUnsafe(copy_cpu_addr, immediate_buffer.data(), copy.size);
+        }
+    }
+}
+
+template <class P>
 void BufferCache<P>::DeleteBuffer(BufferId buffer_id) {
     const auto scalar_replace = [buffer_id](Binding& binding) {
         if (binding.buffer_id == buffer_id) {
@@ -1233,6 +1309,7 @@ void BufferCache<P>::DeleteBuffer(BufferId buffer_id) {
 
     Unregister(buffer_id);
     delayed_destruction_ring.Push(std::move(slot_buffers[buffer_id]));
+    slot_buffers.erase(buffer_id);
 
     NotifyBufferDeletion();
 }

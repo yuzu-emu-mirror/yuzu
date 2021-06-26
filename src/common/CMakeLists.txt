@@ -21,14 +21,14 @@ find_package(Git QUIET)
 
 add_custom_command(OUTPUT scm_rev.cpp
     COMMAND ${CMAKE_COMMAND}
-      -DSRC_DIR="${CMAKE_SOURCE_DIR}"
-      -DBUILD_REPOSITORY="${BUILD_REPOSITORY}"
-      -DTITLE_BAR_FORMAT_IDLE="${TITLE_BAR_FORMAT_IDLE}"
-      -DTITLE_BAR_FORMAT_RUNNING="${TITLE_BAR_FORMAT_RUNNING}"
-      -DBUILD_TAG="${BUILD_TAG}"
-      -DBUILD_ID="${DISPLAY_VERSION}"
-      -DGIT_EXECUTABLE="${GIT_EXECUTABLE}"
-      -P "${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake"
+      -DSRC_DIR=${CMAKE_SOURCE_DIR}
+      -DBUILD_REPOSITORY=${BUILD_REPOSITORY}
+      -DTITLE_BAR_FORMAT_IDLE=${TITLE_BAR_FORMAT_IDLE}
+      -DTITLE_BAR_FORMAT_RUNNING=${TITLE_BAR_FORMAT_RUNNING}
+      -DBUILD_TAG=${BUILD_TAG}
+      -DBUILD_ID=${DISPLAY_VERSION}
+      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+      -P ${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake
     DEPENDS
       # WARNING! It was too much work to try and make a common location for this list,
       # so if you need to change it, please update CMakeModules/GenerateSCMRev.cmake as well
@@ -92,6 +92,7 @@ add_custom_command(OUTPUT scm_rev.cpp
       "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.h"
       # technically we should regenerate if the git version changed, but its not worth the effort imo
       "${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake"
+    VERBATIM
 )
 
 add_library(common STATIC
@@ -109,7 +110,6 @@ add_library(common STATIC
     cityhash.cpp
     cityhash.h
     common_funcs.h
-    common_sizes.h
     common_types.h
     concepts.h
     div_ceil.h
@@ -132,7 +132,10 @@ add_library(common STATIC
     hex_util.h
     idle_inhibitor.cpp
     idle_inhibitor.h
+    host_memory.cpp
+    host_memory.h
     intrusive_red_black_tree.h
+    literals.h
     logging/backend.cpp
     logging/backend.h
     logging/filter.cpp
@@ -140,6 +143,7 @@ add_library(common STATIC
     logging/log.h
     logging/text_formatter.cpp
     logging/text_formatter.h
+    logging/types.h
     lz4_compression.cpp
     lz4_compression.h
     math_util.h

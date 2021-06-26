@@ -47,6 +47,7 @@
 #include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/samples_helper.h"
 #include "video_core/texture_cache/util.h"
+#include "video_core/textures/astc.h"
 #include "video_core/textures/decoders.h"
 
 namespace VideoCommon {
@@ -580,6 +581,8 @@ void SwizzleBlockLinearImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr
 
     for (s32 layer = 0; layer < info.resources.layers; ++layer) {
         const std::span<const u8> src = input.subspan(host_offset);
+        gpu_memory.ReadBlockUnsafe(gpu_addr + guest_offset, dst.data(), dst.size_bytes());
+
         SwizzleTexture(dst, src, bytes_per_block, num_tiles.width, num_tiles.height,
                        num_tiles.depth, block.height, block.depth);
 
@@ -647,6 +650,9 @@ u32 CalculateLayerSize(const ImageInfo& info) noexcept {
 }
 
 LevelArray CalculateMipLevelOffsets(const ImageInfo& info) noexcept {
+    if (info.type == ImageType::Linear) {
+        return {};
+    }
     ASSERT(info.resources.levels <= static_cast<s32>(MAX_MIP_LEVELS));
     const LevelInfo level_info = MakeLevelInfo(info);
     LevelArray offsets{};
@@ -881,8 +887,16 @@ void ConvertImage(std::span<const u8> input, const ImageInfo& info, std::span<u8
         ASSERT(copy.image_extent == mip_size);
         ASSERT(copy.buffer_row_length == Common::AlignUp(mip_size.width, tile_size.width));
         ASSERT(copy.buffer_image_height == Common::AlignUp(mip_size.height, tile_size.height));
-        DecompressBC4(input.subspan(copy.buffer_offset), copy.image_extent,
-                      output.subspan(output_offset));
+        if (IsPixelFormatASTC(info.format)) {
+            ASSERT(copy.image_extent.depth == 1);
+            Tegra::Texture::ASTC::Decompress(input.subspan(copy.buffer_offset),
+                                             copy.image_extent.width, copy.image_extent.height,
+                                             copy.image_subresource.num_layers, tile_size.width,
+                                             tile_size.height, output.subspan(output_offset));
+        } else {
+            DecompressBC4(input.subspan(copy.buffer_offset), copy.image_extent,
+                          output.subspan(output_offset));
+        }
         copy.buffer_offset = output_offset;
         copy.buffer_row_length = mip_size.width;
         copy.buffer_image_height = mip_size.height;
@@ -1084,7 +1098,15 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
         return std::nullopt;
     }
     const ImageInfo& existing = image.info;
-    if (False(options & RelaxedOptions::Format)) {
+    if (True(options & RelaxedOptions::Format)) {
+        // Format checking is relaxed, but we still have to check for matching bytes per block.
+        // This avoids creating a view for blits on UE4 titles where formats with different bytes
+        // per block are aliased.
+        if (BytesPerBlock(existing.format) != BytesPerBlock(candidate.format)) {
+            return std::nullopt;
+        }
+    } else {
+        // Format comaptibility is not relaxed, ensure we are creating a view on a compatible format
         if (!IsViewCompatible(existing.format, candidate.format, broken_views, native_bgr)) {
             return std::nullopt;
         }

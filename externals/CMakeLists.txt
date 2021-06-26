@@ -45,13 +45,18 @@ target_include_directories(microprofile INTERFACE ./microprofile)
 add_library(unicorn-headers INTERFACE)
 target_include_directories(unicorn-headers INTERFACE ./unicorn/include)
 
+# libusb
+if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
+    add_subdirectory(libusb)
+endif()
+
 # SDL2
 if (NOT SDL2_FOUND AND ENABLE_SDL2)
     if (NOT WIN32)
-        # Yuzu itself needs: Events Joystick Haptic Sensor Timers
+        # Yuzu itself needs: Events Joystick Haptic Sensor Timers Audio
         # Yuzu-cmd also needs: Video (depends on Loadso/Dlopen)
         set(SDL_UNUSED_SUBSYSTEMS
-            Atomic Audio Render Power Threads
+            Atomic Render Power Threads
             File CPUinfo Filesystem Locale)
         foreach(_SUB ${SDL_UNUSED_SUBSYSTEMS})
           string(TOUPPER ${_SUB} _OPT)
@@ -110,7 +115,7 @@ if (ENABLE_WEB_SERVICE)
 
     # httplib
     add_library(httplib INTERFACE)
-    target_include_directories(httplib INTERFACE ./httplib)
+    target_include_directories(httplib INTERFACE ./cpp-httplib)
     target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
     target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
     if (WIN32)
