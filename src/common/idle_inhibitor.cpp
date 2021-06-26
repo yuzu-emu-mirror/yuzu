@@ -211,8 +211,8 @@ void IdleInhibitor::AllowIdle() {
     }
 
     {
-    std::lock_guard lock{cond_mutex};
-    inhibiting_idle = false;
+        std::lock_guard lock{cond_mutex};
+        inhibiting_idle = false;
     }
 
     if (poll_thread && poll_thread->joinable()) {
