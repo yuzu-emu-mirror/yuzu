@@ -62,13 +62,12 @@ XCI::XCI(VirtualFile file_, std::size_t program_index)
     }
 
     secure_partition = std::make_shared<NSP>(
-        main_hfs.GetFile(partition_names[static_cast<std::size_t>(XCIPartition::Secure)]),
-        program_index);
+        main_hfs.GetFile(partition_names[static_cast<std::size_t>(XCIPartition::Secure)]));
 
     ncas = secure_partition->GetNCAsCollapsed();
-    program =
-        secure_partition->GetNCA(secure_partition->GetProgramTitleID(), ContentRecordType::Program);
-    program_nca_status = secure_partition->GetProgramStatus(secure_partition->GetProgramTitleID());
+    const auto title_id = secure_partition->GetProgramTitleID(program_index);
+    program = secure_partition->GetNCA(title_id, ContentRecordType::Program);
+    program_nca_status = secure_partition->GetProgramStatus(title_id);
     if (program_nca_status == Loader::ResultStatus::ErrorNSPMissingProgramNCA) {
         program_nca_status = Loader::ResultStatus::ErrorXCIMissingProgramNCA;
     }

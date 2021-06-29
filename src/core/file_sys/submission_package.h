@@ -27,14 +27,14 @@ enum class ContentRecordType : u8;
 
 class NSP : public ReadOnlyVfsDirectory {
 public:
-    explicit NSP(VirtualFile file_, std::size_t program_index_ = 0);
+    explicit NSP(VirtualFile file_);
     ~NSP() override;
 
     Loader::ResultStatus GetStatus() const;
     Loader::ResultStatus GetProgramStatus(u64 title_id) const;
     // Should only be used when one title id can be assured.
     u64 GetFirstTitleID() const;
-    u64 GetProgramTitleID() const;
+    u64 GetProgramTitleID(std::size_t program_index = 0) const;
     std::vector<u64> GetTitleIDs() const;
 
     bool IsExtractedType() const;
@@ -68,8 +68,6 @@ private:
     void ReadNCAs(const std::vector<VirtualFile>& files);
 
     VirtualFile file;
-
-    const std::size_t program_index;
 
     bool extracted = false;
     Loader::ResultStatus status;

@@ -25,8 +25,8 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
                              const Service::FileSystem::FileSystemController& fsc,
                              const FileSys::ContentProvider& content_provider,
                              std::size_t program_index)
-    : AppLoader(file_), nsp(std::make_unique<FileSys::NSP>(file_, program_index)),
-      title_id(nsp->GetProgramTitleID()) {
+    : AppLoader(file_), nsp(std::make_unique<FileSys::NSP>(file_)),
+      title_id(nsp->GetProgramTitleID(program_index)) {
 
     if (nsp->GetStatus() != ResultStatus::Success) {
         return;

@@ -20,8 +20,8 @@
 
 namespace FileSys {
 
-NSP::NSP(VirtualFile file_, std::size_t program_index_)
-    : file(std::move(file_)), program_index(program_index_), status{Loader::ResultStatus::Success},
+NSP::NSP(VirtualFile file_)
+    : file(std::move(file_)), status{Loader::ResultStatus::Success},
       pfs(std::make_shared<PartitionFilesystem>(file)), keys{Core::Crypto::KeyManager::Instance()} {
     if (pfs->GetStatus() != Loader::ResultStatus::Success) {
         status = pfs->GetStatus();
@@ -62,12 +62,14 @@ u64 NSP::GetFirstTitleID() const {
         return GetProgramTitleID();
     }
 
-    if (program_status.empty())
+    const auto ids = GetTitleIDs();
+    if (ids.empty())
         return 0;
-    return program_status.begin()->first;
+
+    return ids[0];
 }
 
-u64 NSP::GetProgramTitleID() const {
+u64 NSP::GetProgramTitleID(std::size_t index) const {
     if (IsExtractedType()) {
         if (GetExeFS() == nullptr || !IsDirectoryExeFS(GetExeFS())) {
             return 0;
@@ -81,11 +83,15 @@ u64 NSP::GetProgramTitleID() const {
         }
     }
 
-    const auto out = GetFirstTitleID();
+    const auto ids = GetTitleIDs();
+    if (index > ids.size()) {
+        return 0;
+    }
+
+    const auto out = ids[index];
     if ((out & 0x800) == 0)
         return out;
 
-    const auto ids = GetTitleIDs();
     const auto iter =
         std::find_if(ids.begin(), ids.end(), [](u64 tid) { return (tid & 0x800) == 0; });
     return iter == ids.end() ? out : *iter;
@@ -146,7 +152,7 @@ std::shared_ptr<NCA> NSP::GetNCA(u64 title_id, ContentRecordType type, TitleType
     if (extracted)
         LOG_WARNING(Service_FS, "called on an NSP that is of type extracted.");
 
-    const auto title_id_iter = ncas.find(title_id + program_index);
+    const auto title_id_iter = ncas.find(title_id);
     if (title_id_iter == ncas.end())
         return nullptr;
 
