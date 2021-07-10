@@ -53,7 +53,7 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
 AppLoader_NSP::~AppLoader_NSP() = default;
 
 FileType AppLoader_NSP::IdentifyType(const FileSys::VirtualFile& nsp_file) {
-    const FileSys::NSP nsp(nsp_file, 0, 0);
+    const FileSys::NSP nsp(nsp_file);
 
     if (nsp.GetStatus() == ResultStatus::Success) {
         // Extracted Type case

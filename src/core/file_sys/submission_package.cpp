@@ -21,7 +21,7 @@
 namespace FileSys {
 
 NSP::NSP(VirtualFile file_, u64 title_id_, std::size_t program_index_)
-    : file(std::move(file_)), expect_program_id(title_id_),
+    : file(std::move(file_)), expected_program_id(title_id_),
       program_index(program_index_), status{Loader::ResultStatus::Success},
       pfs(std::make_shared<PartitionFilesystem>(file)), keys{Core::Crypto::KeyManager::Instance()} {
     if (pfs->GetStatus() != Loader::ResultStatus::Success) {
@@ -63,7 +63,7 @@ u64 NSP::GetProgramTitleID() const {
         return GetExtractedTitleID();
     }
 
-    auto program_id = expect_program_id;
+    auto program_id = expected_program_id;
     if (program_id == 0) {
         if (!program_status.empty()) {
             program_id = program_status.begin()->first;
@@ -99,10 +99,7 @@ std::vector<u64> NSP::GetProgramTitleIDs() const {
         return {GetExtractedTitleID()};
     }
 
-    std::vector<u64> out;
-    out.reserve(program_ids.size());
-    for (const auto& title : program_ids)
-        out.push_back(title);
+    std::vector<u64> out{program_ids.cbegin(), program_ids.cend()};
     return out;
 }
 

@@ -70,7 +70,7 @@ private:
 
     VirtualFile file;
 
-    const u64 expect_program_id;
+    const u64 expected_program_id;
     const std::size_t program_index;
 
     bool extracted = false;

@@ -341,8 +341,8 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
 
                 if (res2 == Loader::ResultStatus::Success && program_ids.size() > 1 &&
                     (file_type == Loader::FileType::XCI || file_type == Loader::FileType::NSP)) {
-                    for (const auto program_id : program_ids) {
-                        loader = Loader::GetLoader(system, file, program_id);
+                    for (const auto id : program_ids) {
+                        loader = Loader::GetLoader(system, file, id);
                         if (!loader) {
                             continue;
                         }
@@ -353,12 +353,11 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
                         std::string name = " ";
                         [[maybe_unused]] const auto res3 = loader->ReadTitle(name);
 
-                        const FileSys::PatchManager patch{program_id,
-                                                          system.GetFileSystemController(),
+                        const FileSys::PatchManager patch{id, system.GetFileSystemController(),
                                                           system.GetContentProvider()};
 
-                        emit EntryReady(MakeGameListEntry(physical_name, name, icon, *loader,
-                                                          program_id, compatibility_list, patch),
+                        emit EntryReady(MakeGameListEntry(physical_name, name, icon, *loader, id,
+                                                          compatibility_list, patch),
                                         parent_dir);
                     }
                 } else {

@@ -44,7 +44,7 @@ AppLoader_XCI::AppLoader_XCI(FileSys::VirtualFile file_,
 AppLoader_XCI::~AppLoader_XCI() = default;
 
 FileType AppLoader_XCI::IdentifyType(const FileSys::VirtualFile& xci_file) {
-    const FileSys::XCI xci(xci_file, 0, 0);
+    const FileSys::XCI xci(xci_file);
 
     if (xci.GetStatus() == ResultStatus::Success &&
         xci.GetNCAByType(FileSys::NCAContentType::Program) != nullptr &&

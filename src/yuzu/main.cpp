@@ -360,7 +360,7 @@ GMainWindow::GMainWindow()
     }
 
     if (!game_path.isEmpty()) {
-        BootGame(game_path, 0);
+        BootGame(game_path);
     }
 }
 
