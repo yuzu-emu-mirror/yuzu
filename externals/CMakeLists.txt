@@ -64,6 +64,7 @@ if (YUZU_USE_EXTERNAL_SDL2)
         endforeach()
 
         option(HIDAPI "" ON)
+        set(WAYLAND_LIBDECOR OFF CACHE BOOL "" FORCE)
     endif()
     set(SDL_STATIC ON)
     set(SDL_SHARED OFF)
