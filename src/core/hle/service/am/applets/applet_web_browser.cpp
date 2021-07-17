@@ -21,7 +21,7 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/result.h"
 #include "core/hle/service/am/am.h"
-#include "core/hle/service/am/applets/web_browser.h"
+#include "core/hle/service/am/applets/applet_web_browser.h"
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ns/pl_u.h"
 
@@ -56,6 +56,16 @@ std::string GetMainURL(const std::string& url) {
     }
 
     return url.substr(0, index);
+}
+
+std::string ResolveURL(const std::string& url) {
+    const auto index = url.find_first_of('%');
+
+    if (index == std::string::npos) {
+        return url;
+    }
+
+    return url.substr(0, index) + "lp1" + url.substr(index + 1);
 }
 
 WebArgInputTLVMap ReadWebArgs(const std::vector<u8>& web_arg, WebArgHeader& web_arg_header) {
@@ -407,6 +417,9 @@ void WebBrowser::InitializeShare() {}
 
 void WebBrowser::InitializeWeb() {
     external_url = ParseStringValue(GetInputTLVData(WebArgInputTLVType::InitialURL).value());
+
+    // Resolve Nintendo CDN URLs.
+    external_url = ResolveURL(external_url);
 }
 
 void WebBrowser::InitializeWifi() {}
