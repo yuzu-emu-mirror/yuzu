@@ -12,8 +12,6 @@
 #include <QWebEngineUrlScheme>
 #endif
 
-#include <iostream>
-
 #include "common/fs/path_util.h"
 #include "core/core.h"
 #include "core/frontend/input_interpreter.h"
@@ -124,11 +122,10 @@ void QtNXWebEngineView::LoadLocalWebPage(const std::string& main_url,
     SetExitReason(Service::AM::Applets::WebExitReason::EndButtonPressed);
     SetLastURL("http://localhost/");
     StartInputThread();
+    highlightFirstLink();
 
     load(QUrl(QUrl::fromLocalFile(QString::fromStdString(main_url)).toString() +
               QString::fromStdString(additional_args)));
-    highlightFirstLink();
-
 }
 
 void QtNXWebEngineView::LoadExternalWebPage(const std::string& main_url,
@@ -207,14 +204,12 @@ void QtNXWebEngineView::hide() {
 }
 
 void QtNXWebEngineView::keyPressEvent(QKeyEvent* event) {
-
     if (is_local) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }
 }
 
 void QtNXWebEngineView::keyReleaseEvent(QKeyEvent* event) {
-
     if (is_local) {
         input_subsystem->GetKeyboard()->ReleaseKey(event->key());
     }
@@ -224,26 +219,21 @@ template <HIDButton... T>
 void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
     const auto f = [this](HIDButton button) {
         if (input_interpreter->IsButtonPressedOnce(button)) {
-            int btn = (int)button; //Using this to hold onto that value so whatever's changing button
-            page()->runJavaScript( //can't interfere with a presses
+            page()->runJavaScript(
                 QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(static_cast<u8>(button)),
                 [&](const QVariant& variant) {
                     if (variant.toBool()) {
-                        switch ((HIDButton)btn) {
+                        switch (button) {
                         case HIDButton::A:
-
                             SendMultipleKeyPressEvents<Qt::Key_A, Qt::Key_Space, Qt::Key_Return>();
                             break;
                         case HIDButton::B:
-
                             SendKeyPressEvent(Qt::Key_B);
                             break;
                         case HIDButton::X:
-
                             SendKeyPressEvent(Qt::Key_X);
                             break;
                         case HIDButton::Y:
-
                             SendKeyPressEvent(Qt::Key_Y);
                             break;
                         default:
@@ -288,7 +278,6 @@ void QtNXWebEngineView::SendKeyPressEvent(int key) {
         return;
     }
 
-
     QCoreApplication::postEvent(focusProxy(),
                                 new QKeyEvent(QKeyEvent::KeyPress, key, Qt::NoModifier));
     QCoreApplication::postEvent(focusProxy(),
@@ -299,7 +288,6 @@ void QtNXWebEngineView::StartInputThread() {
     if (input_thread_running) {
         return;
     }
-
 
     input_thread_running = true;
     input_thread = std::thread(&QtNXWebEngineView::InputThread, this);
@@ -387,7 +375,6 @@ void QtNXWebEngineView::LoadExtractedFonts() {
             page()->runJavaScript(QString::fromStdString(LOAD_NX_FONT));
         },
         Qt::QueuedConnection);
-
 }
 
 #endif
@@ -403,10 +390,6 @@ QtWebBrowser::QtWebBrowser(GMainWindow& main_window) {
 
 QtWebBrowser::~QtWebBrowser() = default;
 
-//TODO: Figure out how to tell when the DOM content has loaded or if you can just add some js to fire
-//the stuff after waiting for it to happen
-//use qwebenginescript to create and run?
-
 void QtWebBrowser::OpenLocalWebPage(
     const std::string& local_url, std::function<void()> extract_romfs_callback_,
     std::function<void(Service::AM::Applets::WebExitReason, std::string)> callback_) const {
@@ -420,9 +403,6 @@ void QtWebBrowser::OpenLocalWebPage(
     } else {
         emit MainWindowOpenWebPage(local_url.substr(0, index), local_url.substr(index), true);
     }
-
-
-
 }
 
 void QtWebBrowser::OpenExternalWebPage(
@@ -438,7 +418,6 @@ void QtWebBrowser::OpenExternalWebPage(
         emit MainWindowOpenWebPage(external_url.substr(0, index), external_url.substr(index),
                                    false);
     }
-
 }
 
 void QtWebBrowser::MainWindowExtractOfflineRomFS() {
