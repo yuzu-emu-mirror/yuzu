@@ -161,6 +161,9 @@ private:
     /// Loads the extracted fonts using JavaScript.
     void LoadExtractedFonts();
 
+    /// Focuses input on the first available link to permit controller input on linux.
+    void highlightFirstLink();
+
     InputCommon::InputSubsystem* input_subsystem;
 
     std::unique_ptr<UrlRequestInterceptor> url_interceptor;
