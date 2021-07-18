@@ -103,7 +103,9 @@ QtNXWebEngineView::~QtNXWebEngineView() {
 }
 
 void QtNXWebEngineView::highlightFirstLink() {
+
     QWebEngineScript highlight_element;
+
     highlight_element.setName(QStringLiteral("highlight_element.js"));
     highlight_element.setSourceCode(QString::fromStdString("document.getElementsByTagName(\"a\")[0].focus();"));
     highlight_element.setWorldId(QWebEngineScript::MainWorld);
@@ -219,11 +221,12 @@ template <HIDButton... T>
 void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
     const auto f = [this](HIDButton button) {
         if (input_interpreter->IsButtonPressedOnce(button)) {
+            int btn = (int)button; // button's getting changed somewhere so save the value
             page()->runJavaScript(
                 QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(static_cast<u8>(button)),
                 [&](const QVariant& variant) {
                     if (variant.toBool()) {
-                        switch (button) {
+                        switch ((HIDButton)btn) { // to use here
                         case HIDButton::A:
                             SendMultipleKeyPressEvents<Qt::Key_A, Qt::Key_Space, Qt::Key_Return>();
                             break;
