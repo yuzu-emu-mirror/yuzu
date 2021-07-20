@@ -64,9 +64,8 @@ VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKSchedul
     if (device_.GetDriverID() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA &&
         Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal) {
         manually_wait_semaphores = true;
-        LOG_WARNING(
-            Render_Vulkan,
-            "Will manually wait for semaphores separately from present to avoid Intel Mesa device loss");
+        LOG_WARNING(Render_Vulkan, "Will manually wait for semaphores separately from present to "
+                                   "avoid Intel Mesa device loss");
     }
 #endif
     Create(width, height, srgb);
@@ -116,15 +115,15 @@ bool VKSwapchain::Present(VkSemaphore render_semaphore) {
 
         const std::array<u64, 2> semaphore_values{0, 0};
         const VkSemaphoreWaitInfoKHR wait_info{
-                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR,
-                .pNext = nullptr,
-                .flags = 0,
-                .semaphoreCount = render_semaphore ? 2U : 1U,
-                .pSemaphores = semaphores.data(),
-                .pValues = semaphore_values.data(),
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR,
+            .pNext = nullptr,
+            .flags = 0,
+            .semaphoreCount = render_semaphore ? 2U : 1U,
+            .pSemaphores = semaphores.data(),
+            .pValues = semaphore_values.data(),
         };
         const VkResult waitres = device.GetDispatchLoader().vkWaitSemaphoresKHR(
-                *device.GetLogical(), &wait_info, std::numeric_limits<u64>::max());
+            *device.GetLogical(), &wait_info, std::numeric_limits<u64>::max());
         if (waitres != VK_SUCCESS) {
             LOG_WARNING(Render_Vulkan, "Manual semaphore wait failed {}", waitres);
         }
