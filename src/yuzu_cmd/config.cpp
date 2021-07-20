@@ -453,6 +453,7 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.use_disk_shader_cache);
     ReadSetting("Renderer", Settings::values.gpu_accuracy);
     ReadSetting("Renderer", Settings::values.use_asynchronous_gpu_emulation);
+    ReadSetting("Renderer", Settings::values.enable_preemptive_downloads);
     ReadSetting("Renderer", Settings::values.use_vsync);
     ReadSetting("Renderer", Settings::values.disable_fps_limit);
     ReadSetting("Renderer", Settings::values.use_assembly_shaders);

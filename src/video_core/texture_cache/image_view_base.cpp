@@ -29,7 +29,7 @@ ImageViewBase::ImageViewBase(const ImageViewInfo& info, const ImageInfo& image_i
                image_info.format);
     const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue();
     if (image_info.type == ImageType::Linear && is_async) {
-        flags |= ImageViewFlagBits::PreemtiveDownload;
+        flags |= ImageViewFlagBits::PreemptiveDownload;
     }
     if (image_info.type == ImageType::e3D && info.type != ImageViewType::e3D) {
         flags |= ImageViewFlagBits::Slice;

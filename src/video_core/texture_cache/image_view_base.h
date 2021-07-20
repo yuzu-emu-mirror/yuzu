@@ -18,7 +18,7 @@ struct ImageInfo;
 struct NullImageParams {};
 
 enum class ImageViewFlagBits : u16 {
-    PreemtiveDownload = 1 << 0,
+    PreemptiveDownload = 1 << 0,
     Strong = 1 << 1,
     Slice = 1 << 2,
 };

@@ -54,6 +54,8 @@ void LogSettings() {
     log_setting("Renderer_GPUAccuracyLevel", values.gpu_accuracy.GetValue());
     log_setting("Renderer_UseAsynchronousGpuEmulation",
                 values.use_asynchronous_gpu_emulation.GetValue());
+    log_setting("Renderer_EnablePreemptiveDownloads",
+                values.enable_preemptive_downloads.GetValue());
     log_setting("Renderer_UseNvdecEmulation", values.use_nvdec_emulation.GetValue());
     log_setting("Renderer_AccelerateASTC", values.accelerate_astc.GetValue());
     log_setting("Renderer_UseVsync", values.use_vsync.GetValue());
@@ -137,6 +139,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
+    values.enable_preemptive_downloads.SetGlobal(true);
     values.use_nvdec_emulation.SetGlobal(true);
     values.accelerate_astc.SetGlobal(true);
     values.use_vsync.SetGlobal(true);

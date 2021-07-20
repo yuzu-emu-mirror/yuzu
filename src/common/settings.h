@@ -327,6 +327,7 @@ struct Values {
     Setting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
     Setting<GPUAccuracy> gpu_accuracy{GPUAccuracy::High, "gpu_accuracy"};
     Setting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
+    Setting<bool> enable_preemptive_downloads{true, "enable_preemptive_downloads"};
     Setting<bool> use_nvdec_emulation{true, "use_nvdec_emulation"};
     Setting<bool> accelerate_astc{true, "accelerate_astc"};
     Setting<bool> use_vsync{true, "use_vsync"};

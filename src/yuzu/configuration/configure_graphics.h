@@ -50,6 +50,7 @@ private:
     ConfigurationShared::CheckState accelerate_astc;
     ConfigurationShared::CheckState use_disk_shader_cache;
     ConfigurationShared::CheckState use_asynchronous_gpu_emulation;
+    ConfigurationShared::CheckState enable_preemptive_downloads;
 
     std::vector<QString> vulkan_devices;
     u32 vulkan_device{};

@@ -811,6 +811,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.gpu_accuracy);
     ReadGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
+    ReadGlobalSetting(Settings::values.enable_preemptive_downloads);
     ReadGlobalSetting(Settings::values.use_nvdec_emulation);
     ReadGlobalSetting(Settings::values.accelerate_astc);
     ReadGlobalSetting(Settings::values.use_vsync);
@@ -1340,6 +1341,7 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.gpu_accuracy.GetDefault()),
                  Settings::values.gpu_accuracy.UsingGlobal());
     WriteGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
+    WriteGlobalSetting(Settings::values.enable_preemptive_downloads);
     WriteGlobalSetting(Settings::values.use_nvdec_emulation);
     WriteGlobalSetting(Settings::values.accelerate_astc);
     WriteGlobalSetting(Settings::values.use_vsync);

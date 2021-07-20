@@ -335,7 +335,7 @@ private:
     /// Execute copies from one image to the other, even if they are incompatible
     void CopyImage(ImageId dst_id, ImageId src_id, std::span<const ImageCopy> copies);
 
-    /// Bind an image view as render target, downloading resources preemtively if needed
+    /// Bind an image view as render target, downloading resources preemptively if needed
     void BindRenderTarget(ImageViewId* old_id, ImageViewId new_id);
 
     /// Create a render target from a given image and image view parameters
@@ -391,6 +391,7 @@ private:
     // TODO: This data structure is not optimal and it should be reworked
     std::vector<ImageId> uncommitted_downloads;
     std::queue<std::vector<ImageId>> committed_downloads;
+    bool enable_preemptive_downloads;
 
     static constexpr size_t TICKS_TO_DESTROY = 6;
     DelayedDestructionRing<Image, TICKS_TO_DESTROY> sentenced_images;
@@ -438,6 +439,8 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         critical_memory = DEFAULT_CRITICAL_MEMORY + 1_GiB;
         minimum_memory = expected_memory;
     }
+
+    enable_preemptive_downloads = Settings::values.enable_preemptive_downloads.GetValue();
 }
 
 template <class P>
@@ -1861,9 +1864,9 @@ void TextureCache<P>::BindRenderTarget(ImageViewId* old_id, ImageViewId new_id) 
     if (*old_id == new_id) {
         return;
     }
-    if (*old_id) {
+    if (enable_preemptive_downloads && *old_id) {
         const ImageViewBase& old_view = slot_image_views[*old_id];
-        if (True(old_view.flags & ImageViewFlagBits::PreemtiveDownload)) {
+        if (True(old_view.flags & ImageViewFlagBits::PreemptiveDownload)) {
             uncommitted_downloads.push_back(old_view.image_id);
         }
     }

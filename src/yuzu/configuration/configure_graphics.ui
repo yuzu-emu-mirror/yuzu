@@ -98,6 +98,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="enable_preemptive_downloads">
+          <property name="text">
+           <string>Enable preemptive texture downloads from asynchronous GPU</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="use_nvdec_emulation">
           <property name="text">
            <string>Use NVDEC emulation</string>

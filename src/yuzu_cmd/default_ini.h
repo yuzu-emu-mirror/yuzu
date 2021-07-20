@@ -244,6 +244,10 @@ use_assembly_shaders =
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =
 
+# Enable preemptive texture downloads from asynchronous GPU.
+# 0: Off, 1 (default): On
+enable_preemptive_downloads =
+
 # Enable NVDEC emulation.
 # 0: Off, 1 (default): On
 use_nvdec_emulation =
