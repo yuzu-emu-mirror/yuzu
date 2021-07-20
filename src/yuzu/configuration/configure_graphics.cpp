@@ -75,7 +75,8 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_disk_shader_cache->setChecked(Settings::values.use_disk_shader_cache.GetValue());
     ui->use_asynchronous_gpu_emulation->setChecked(
         Settings::values.use_asynchronous_gpu_emulation.GetValue());
-    ui->enable_preemptive_downloads->setChecked(Settings::values.enable_preemptive_downloads.GetValue());
+    ui->enable_preemptive_downloads->setChecked(
+        Settings::values.enable_preemptive_downloads.GetValue());
     ui->use_nvdec_emulation->setChecked(Settings::values.use_nvdec_emulation.GetValue());
     ui->accelerate_astc->setChecked(Settings::values.accelerate_astc.GetValue());
 
@@ -279,8 +280,6 @@ void ConfigureGraphics::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredTristate(
         ui->use_disk_shader_cache, Settings::values.use_disk_shader_cache, use_disk_shader_cache);
-    ConfigurationShared::SetColoredTristate(ui->enable_preemptive_downloads,
-        Settings::values.enable_preemptive_downloads, enable_preemptive_downloads);
     ConfigurationShared::SetColoredTristate(
         ui->use_nvdec_emulation, Settings::values.use_nvdec_emulation, use_nvdec_emulation);
     ConfigurationShared::SetColoredTristate(ui->accelerate_astc, Settings::values.accelerate_astc,
@@ -288,6 +287,9 @@ void ConfigureGraphics::SetupPerGameUI() {
     ConfigurationShared::SetColoredTristate(ui->use_asynchronous_gpu_emulation,
                                             Settings::values.use_asynchronous_gpu_emulation,
                                             use_asynchronous_gpu_emulation);
+    ConfigurationShared::SetColoredTristate(ui->enable_preemptive_downloads,
+                                            Settings::values.enable_preemptive_downloads,
+                                            enable_preemptive_downloads);
 
     ConfigurationShared::SetColoredComboBox(ui->aspect_ratio_combobox, ui->ar_label,
                                             Settings::values.aspect_ratio.GetValue(true));
