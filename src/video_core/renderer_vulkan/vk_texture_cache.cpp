@@ -608,7 +608,10 @@ void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst
     const VkImageAspectFlags aspect_mask = ImageAspectMask(src.format);
     const bool is_dst_msaa = dst.Samples() != VK_SAMPLE_COUNT_1_BIT;
     const bool is_src_msaa = src.Samples() != VK_SAMPLE_COUNT_1_BIT;
-    ASSERT(aspect_mask == ImageAspectMask(dst.format));
+    if (aspect_mask != ImageAspectMask(dst.format)) {
+        UNIMPLEMENTED_MSG("Incompatible blit from format {} to {}", src.format, dst.format);
+        return;
+    }
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT && !is_src_msaa && !is_dst_msaa) {
         blit_image_helper.BlitColor(dst_framebuffer, src, dst_region, src_region, filter,
                                     operation);
@@ -911,6 +914,7 @@ void Image::UploadMemory(const StagingBufferRef& map,
 
 void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
     std::vector vk_copies = TransformBufferImageCopies(copies, map.offset, aspect_mask);
+    scheduler->RequestOutsideRenderPassOperationContext();
     scheduler->Record([buffer = map.buffer, image = *image, aspect_mask = aspect_mask,
                        vk_copies](vk::CommandBuffer cmdbuf) {
         const VkImageMemoryBarrier read_barrier{
