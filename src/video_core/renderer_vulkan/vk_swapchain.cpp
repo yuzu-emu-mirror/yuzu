@@ -62,7 +62,7 @@ VKSwapchain::VKSwapchain(VkSurfaceKHR surface_, const Device& device_, VKSchedul
     : surface{surface_}, device{device_}, scheduler{scheduler_} {
 #if defined(__linux__)
     if (device_.GetDriverID() == VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA &&
-        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal || true) {
+        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal) {
         manually_wait_semaphores = true;
         LOG_WARNING(
             Render_Vulkan,
