@@ -85,6 +85,9 @@ private:
     std::vector<vk::Framebuffer> framebuffers;
     std::vector<u64> resource_ticks;
     std::vector<vk::Semaphore> present_semaphores;
+#if defined(__linux__)
+    bool manually_wait_semaphores{};
+#endif
 
     u32 image_index{};
     u32 frame_index{};
