@@ -114,7 +114,7 @@ void ConfigureGraphics::SetConfiguration() {
         ConfigurationShared::SetHighlight(ui->nvdec_emulation_widget,
                                           !Settings::values.nvdec_emulation.UsingGlobal());
 
-         ConfigurationShared::SetPerGameSetting(ui->fullscreen_mode_combobox,
+        ConfigurationShared::SetPerGameSetting(ui->fullscreen_mode_combobox,
                                                &Settings::values.fullscreen_mode);
         ConfigurationShared::SetHighlight(ui->fullscreen_mode_label,
                                           !Settings::values.fullscreen_mode.UsingGlobal());
@@ -345,5 +345,4 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->nvdec_emulation, static_cast<int>(Settings::values.nvdec_emulation.GetValue(true)));
-
 }
