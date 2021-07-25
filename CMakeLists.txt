@@ -584,7 +584,17 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             CACHE PATH "Path to FFmpeg headers" FORCE)
 
         # `configure` parameters builds only exactly what yuzu needs from FFmpeg
-        # `--disable-{vaapi,vdpau}` is needed to avoid linking issues
+        # `--disable-vdpau` is needed to avoid linking issues
+
+        if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+            pkg_check_modules(LIBVA REQUIRED)
+            pkg_check_modules(LIBVA-DRM REQUIRED)
+            pkg_check_modules(LIBVA-X11 REQUIRED)
+            link_libraries(va va-drm va-x11)
+            set(FFmpeg-hwaccel-flags --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
+        else()
+            set(FFmpeg-hwaccel-flags --disable-vaapi)
+        endif()
         add_custom_command(
             OUTPUT
                 ${FFmpeg_MAKEFILE}
@@ -595,18 +605,18 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-avformat
                     --disable-doc
                     --disable-everything
-                    --disable-ffmpeg
                     --disable-ffprobe
                     --disable-network
                     --disable-postproc
                     --disable-swresample
-                    --disable-vaapi
                     --disable-vdpau
                     --enable-decoder=h264
                     --enable-decoder=vp9
+                    ${FFmpeg-hwaccel-flags}
             WORKING_DIRECTORY
                 ${FFmpeg_BUILD_DIR}
         )
+        unset(FFmpeg-hwaccel-flags)
 
         # Workaround for Ubuntu 18.04's older version of make not being able to call make as a child
         # with context of the jobserver. Also helps ninja users.

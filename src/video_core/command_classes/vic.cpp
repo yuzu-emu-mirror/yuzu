@@ -68,6 +68,14 @@ void Vic::Execute() {
     if (!frame || frame->width == 0 || frame->height == 0) {
         return;
     }
+    switch (frame->format) {
+    case AV_PIX_FMT_YUV420P:
+    case AV_PIX_FMT_NV12:
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unknown video format from host graphics: {}", frame->format);
+        return;
+    }
     const VideoPixelFormat pixel_format =
         static_cast<VideoPixelFormat>(config.pixel_format.Value());
     switch (pixel_format) {
@@ -83,10 +91,11 @@ void Vic::Execute() {
             sws_freeContext(scaler_ctx);
             scaler_ctx = nullptr;
 
-            // FFmpeg returns all frames in YUV420, convert it into expected format
-            scaler_ctx =
-                sws_getContext(frame->width, frame->height, AV_PIX_FMT_YUV420P, frame->width,
-                               frame->height, target_format, 0, nullptr, nullptr, nullptr);
+            // Software return YUV420 and VA-API returns NV12
+            // Convert it to RGB
+            scaler_ctx = sws_getContext(frame->width, frame->height,
+                                        static_cast<AVPixelFormat>(frame->format), frame->width,
+                                        frame->height, target_format, 0, nullptr, nullptr, nullptr);
 
             scaler_width = frame->width;
             scaler_height = frame->height;
@@ -131,38 +140,61 @@ void Vic::Execute() {
         const std::size_t surface_height = config.surface_height_minus1 + 1;
         const auto frame_width = std::min(surface_width, static_cast<size_t>(frame->width));
         const auto frame_height = std::min(surface_height, static_cast<size_t>(frame->height));
-        const std::size_t half_width = frame_width / 2;
-        const std::size_t half_height = frame_height / 2;
         const std::size_t aligned_width = (surface_width + 0xff) & ~0xff;
 
-        const auto* luma_ptr = frame->data[0];
-        const auto* chroma_b_ptr = frame->data[1];
-        const auto* chroma_r_ptr = frame->data[2];
         const auto stride = static_cast<size_t>(frame->linesize[0]);
-        const auto half_stride = static_cast<size_t>(frame->linesize[1]);
 
         luma_buffer.resize(aligned_width * surface_height);
         chroma_buffer.resize(aligned_width * surface_height / 2);
 
         // Populate luma buffer
-        for (std::size_t y = 0; y < frame_height; ++y) {
-            const std::size_t src = y * stride;
-            const std::size_t dst = y * aligned_width;
-            for (std::size_t x = 0; x < frame_width; ++x) {
-                luma_buffer[dst + x] = luma_ptr[src + x];
+        {
+            const unsigned char* luma_ptr = frame->data[0];
+            const unsigned char* src = &luma_ptr[frame_height * stride];
+            unsigned char* dst = &luma_buffer[frame_height * aligned_width];
+            for (std::size_t y = frame_height; y--;) {
+                src -= stride;
+                dst -= aligned_width;
+                memcpy(dst, src, frame_width);
             }
         }
         gpu.MemoryManager().WriteBlock(output_surface_luma_address, luma_buffer.data(),
                                        luma_buffer.size());
 
-        // Populate chroma buffer from both channels with interleaving.
-        for (std::size_t y = 0; y < half_height; ++y) {
-            const std::size_t src = y * half_stride;
-            const std::size_t dst = y * aligned_width;
+        // Chroma
+        {
+            const std::size_t half_height = frame_height / 2;
+            const auto half_stride = static_cast<size_t>(frame->linesize[1]);
+            unsigned char* dst = &chroma_buffer[half_height * aligned_width];
 
-            for (std::size_t x = 0; x < half_width; ++x) {
-                chroma_buffer[dst + x * 2] = chroma_b_ptr[src + x];
-                chroma_buffer[dst + x * 2 + 1] = chroma_r_ptr[src + x];
+            LOG_CRITICAL(Debug, "Target");
+            if (frame->format == AV_PIX_FMT_YUV420P) {
+                // Frame from FFmpeg software
+                // Populate chroma buffer from both channels with interleaving.
+                const std::size_t half_width = frame_width / 2;
+                const unsigned char* chroma_r_ptr = frame->data[2];
+                const unsigned char* chroma_b_ptr = frame->data[1];
+                const unsigned char* src_r = &chroma_r_ptr[half_height * half_stride];
+                const unsigned char* src_b = &chroma_b_ptr[half_height * half_stride];
+                for (std::size_t y = half_height; y--;) {
+                    dst -= aligned_width;
+                    src_r -= half_stride;
+                    src_b -= half_stride;
+                    for (std::size_t x = half_width; x--;) {
+                        dst[x * 2 + 1] = src_r[x];
+                        dst[x * 2] = src_b[x];
+                    }
+                }
+            } else {
+                // Frame from VA-API hardware
+                // This is already interleaved so just copy
+                const unsigned char* chroma_ptr = frame->data[1];
+                const unsigned char* src = &chroma_ptr[half_height * half_stride];
+                for (std::size_t y = half_height; y--;) {
+                    src -= half_stride;
+                    dst -= aligned_width;
+                    memcpy(dst, src, frame_width);
+                }
             }
         }
         gpu.MemoryManager().WriteBlock(output_surface_chroma_u_address, chroma_buffer.data(),
