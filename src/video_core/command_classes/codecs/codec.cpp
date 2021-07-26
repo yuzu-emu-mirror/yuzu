@@ -151,7 +151,7 @@ void Codec::Decode() {
         AVFrame* sw_frame = hw_frame;
         ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
         ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
-        ASSERT_MSG(ret, "avcodec_receive_frame error {}", ret);
+        ASSERT_MSG(!ret, "avcodec_receive_frame error {}", ret);
 #if defined(__linux__)
         if (hw_frame->format == AV_PIX_FMT_VAAPI) {
             sw_frame = av_frame_alloc();
