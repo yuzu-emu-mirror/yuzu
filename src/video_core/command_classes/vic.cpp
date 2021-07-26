@@ -167,7 +167,6 @@ void Vic::Execute() {
             const auto half_stride = static_cast<size_t>(frame->linesize[1]);
             unsigned char* dst = &chroma_buffer[half_height * aligned_width];
 
-            LOG_CRITICAL(Debug, "Target");
             if (frame->format == AV_PIX_FMT_YUV420P) {
                 // Frame from FFmpeg software
                 // Populate chroma buffer from both channels with interleaving.
