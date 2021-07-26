@@ -2817,8 +2817,9 @@ void GMainWindow::OnCaptureScreenshot() {
     OnPauseGame();
 
     if (Settings::values.renderer_backend.GetValue() != Settings::RendererBackend::OpenGL) {
-        QMessageBox::warning(this, tr("Failed to capture screenshot."),
-                             tr("The screenshot feature is only available in OpenGL mode for now."));
+        QMessageBox::warning(
+            this, tr("Failed to capture screenshot."),
+            tr("The screenshot feature is only available in OpenGL mode for now."));
         OnStartGame();
         return;
     }
