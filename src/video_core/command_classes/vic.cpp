@@ -152,9 +152,9 @@ void Vic::Execute() {
             const u8* src = frame->data[0];
             u8* dst = luma_buffer.data();
             for (std::size_t y = frame_height; y--;) {
+                memcpy(dst, src, frame_width);
                 src += stride;
                 dst += aligned_width;
-                memcpy(dst, src, frame_width);
             }
         }
         gpu.MemoryManager().WriteBlock(output_surface_luma_address, luma_buffer.data(),
@@ -187,9 +187,9 @@ void Vic::Execute() {
                 const u8* src = frame->data[1];
                 u8* dst = chroma_buffer.data();
                 for (std::size_t y = half_height; y--;) {
+                    memcpy(dst, src, frame_width);
                     src += half_stride;
                     dst += aligned_width;
-                    memcpy(dst, src, frame_width);
                 }
             }
         }
