@@ -2816,6 +2816,13 @@ void GMainWindow::OnToggleFilterBar() {
 void GMainWindow::OnCaptureScreenshot() {
     OnPauseGame();
 
+    if (Settings::values.renderer_backend.GetValue() != Settings::RendererBackend::OpenGL) {
+        QMessageBox::warning(this, tr("Failed to capture screenshot."),
+                             tr("The screenshot feature is only available in OpenGL mode for now."));
+        OnStartGame();
+        return;
+    }
+
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
