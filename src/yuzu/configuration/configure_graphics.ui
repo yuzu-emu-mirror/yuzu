@@ -210,7 +210,7 @@
              </item>
              <item>
               <property name="text">
-               <string>VA-API</string>
+               <string>VA-API (Intel or AMD only)</string>
               </property>
              </item>
             </widget>
