@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include <QWidget>
+#include <QScrollArea>
 
 #include "common/param_package.h"
 #include "common/settings.h"
@@ -42,7 +42,7 @@ namespace Ui {
 class ConfigureInputPlayer;
 }
 
-class ConfigureInputPlayer : public QWidget {
+class ConfigureInputPlayer : public QScrollArea {
     Q_OBJECT
 
 public:

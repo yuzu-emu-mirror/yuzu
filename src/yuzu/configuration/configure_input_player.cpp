@@ -219,10 +219,10 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                                            QWidget* bottom_row,
                                            InputCommon::InputSubsystem* input_subsystem_,
                                            InputProfiles* profiles_, bool debug)
-    : QWidget(parent), ui(std::make_unique<Ui::ConfigureInputPlayer>()), player_index(player_index),
-      debug(debug), input_subsystem{input_subsystem_}, profiles(profiles_),
-      timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
-      bottom_row(bottom_row) {
+    : QScrollArea(parent), ui(std::make_unique<Ui::ConfigureInputPlayer>()),
+      player_index(player_index), debug(debug), input_subsystem{input_subsystem_},
+      profiles(profiles_), timeout_timer(std::make_unique<QTimer>()),
+      poll_timer(std::make_unique<QTimer>()), bottom_row(bottom_row) {
     ui->setupUi(this);
 
     setFocusPolicy(Qt::ClickFocus);

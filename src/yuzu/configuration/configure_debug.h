@@ -5,13 +5,13 @@
 #pragma once
 
 #include <memory>
-#include <QWidget>
+#include <QScrollArea>
 
 namespace Ui {
 class ConfigureDebug;
 }
 
-class ConfigureDebug : public QWidget {
+class ConfigureDebug : public QScrollArea {
     Q_OBJECT
 
 public:

@@ -14,7 +14,7 @@
 #include "yuzu/debugger/console.h"
 #include "yuzu/uisettings.h"
 
-ConfigureDebug::ConfigureDebug(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureDebug) {
+ConfigureDebug::ConfigureDebug(QWidget* parent) : QScrollArea(parent), ui(new Ui::ConfigureDebug) {
     ui->setupUi(this);
     SetConfiguration();
 
