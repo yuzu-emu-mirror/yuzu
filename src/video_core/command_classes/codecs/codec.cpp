@@ -48,8 +48,8 @@ Codec::~Codec() {
 // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c
 // under MIT license
 #if defined(__linux__)
-static enum AVPixelFormat get_hw_format(AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts) {
-    for (const enum AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
+static AVPixelFormat GetHwFormat(AVCodecContext* ctx, const AVPixelFormat* pix_fmts) {
+    for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
         if (*p == AV_PIX_FMT_VAAPI) {
             return AV_PIX_FMT_VAAPI;
         }
@@ -69,18 +69,14 @@ void Codec::InitializeHwdec() {
         av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI, nullptr, nullptr, 0);
     if (hwdevice_error < 0) {
         LOG_ERROR(Service_NVDRV, "av_hwdevice_ctx_create failed {}", hwdevice_error);
-        goto fail;
+        return;
     }
     if (!(av_codec_ctx->hw_device_ctx = av_buffer_ref(av_hw_device))) {
         LOG_ERROR(Service_NVDRV, "av_buffer_ref failed");
-        goto fail;
+        av_buffer_unref(&av_hw_device);
+        return;
     }
-    av_codec_ctx->get_format = get_hw_format;
-    return;
-
-fail:
-    av_codec_ctx->hw_device_ctx = nullptr;
-    av_hw_device = nullptr;
+    av_codec_ctx->get_format = GetHwFormat;
 #else
     UNIMPLEMENTED_MSG("Hardware acceleration without Linux");
 #endif
@@ -142,16 +138,16 @@ void Codec::Decode() {
     packet.data = frame_data.data();
     packet.size = static_cast<s32>(frame_data.size());
 
-    int ret = avcodec_send_packet(av_codec_ctx, &packet);
-    ASSERT_MSG(!ret, "avcodec_send_packet error {}", ret);
+    const int send_packet_ret = avcodec_send_packet(av_codec_ctx, &packet);
+    ASSERT_MSG(!send_packet_ret, "avcodec_send_packet error {}", send_packet_ret);
 
     if (!vp9_hidden_frame) {
         // Only receive/store visible frames
         AVFrame* hw_frame = av_frame_alloc();
         AVFrame* sw_frame = hw_frame;
         ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
-        ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
-        ASSERT_MSG(!ret, "avcodec_receive_frame error {}", ret);
+        const int receive_frame_ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
+        ASSERT_MSG(!receive_frame_ret, "avcodec_receive_frame error {}", receive_frame_ret);
 #if defined(__linux__)
         if (hw_frame->format == AV_PIX_FMT_VAAPI) {
             sw_frame = av_frame_alloc();
@@ -159,8 +155,8 @@ void Codec::Decode() {
             // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
             // because Intel drivers crash unless using AV_PIX_FMT_NV12
             sw_frame->format = AV_PIX_FMT_NV12;
-            ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
-            ASSERT_MSG(!ret, "av_hwframe_transfer_data error {}", ret);
+            const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
+            ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
             av_frame_free(&hw_frame);
             ASSERT_MSG(sw_frame->format == AV_PIX_FMT_NV12,
                        "av_hwframe_transfer_data overwrote AV_PIX_FMT_NV12 to {}",
