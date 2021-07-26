@@ -591,9 +591,9 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             pkg_check_modules(LIBVA-DRM REQUIRED)
             pkg_check_modules(LIBVA-X11 REQUIRED)
             link_libraries(va va-drm va-x11)
-            set(FFmpeg-hwaccel-flags --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
+            set(FFmpeg-HWACCEL-FLAGS --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
         else()
-            set(FFmpeg-hwaccel-flags --disable-vaapi)
+            set(FFmpeg-HWACCEL-FLAGS --disable-vaapi)
         endif()
         add_custom_command(
             OUTPUT
@@ -605,6 +605,7 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-avformat
                     --disable-doc
                     --disable-everything
+                    --disable-ffmpeg
                     --disable-ffprobe
                     --disable-network
                     --disable-postproc
@@ -612,11 +613,11 @@ if (YUZU_USE_BUNDLED_FFMPEG)
                     --disable-vdpau
                     --enable-decoder=h264
                     --enable-decoder=vp9
-                    ${FFmpeg-hwaccel-flags}
+                    ${FFmpeg-HWACCEL-FLAGS}
             WORKING_DIRECTORY
                 ${FFmpeg_BUILD_DIR}
         )
-        unset(FFmpeg-hwaccel-flags)
+        unset(FFmpeg-HWACCEL-FLAGS)
 
         # Workaround for Ubuntu 18.04's older version of make not being able to call make as a child
         # with context of the jobserver. Also helps ninja users.
