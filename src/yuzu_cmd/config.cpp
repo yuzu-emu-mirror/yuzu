@@ -444,8 +444,11 @@ void Config::ReadValues() {
     // Renderer
     ReadSetting("Renderer", Settings::values.renderer_backend);
     ReadSetting("Renderer", Settings::values.renderer_debug);
+    ReadSetting("Renderer", Settings::values.enable_nsight_aftermath);
+    ReadSetting("Renderer", Settings::values.disable_shader_loop_safety_checks);
     ReadSetting("Renderer", Settings::values.vulkan_device);
 
+    ReadSetting("Renderer", Settings::values.fullscreen_mode);
     ReadSetting("Renderer", Settings::values.aspect_ratio);
     ReadSetting("Renderer", Settings::values.max_anisotropy);
     ReadSetting("Renderer", Settings::values.use_frame_limit);
@@ -454,8 +457,9 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.gpu_accuracy);
     ReadSetting("Renderer", Settings::values.use_asynchronous_gpu_emulation);
     ReadSetting("Renderer", Settings::values.use_vsync);
+    ReadSetting("Renderer", Settings::values.fps_cap);
     ReadSetting("Renderer", Settings::values.disable_fps_limit);
-    ReadSetting("Renderer", Settings::values.use_assembly_shaders);
+    ReadSetting("Renderer", Settings::values.shader_backend);
     ReadSetting("Renderer", Settings::values.use_asynchronous_shaders);
     ReadSetting("Renderer", Settings::values.use_nvdec_emulation);
     ReadSetting("Renderer", Settings::values.accelerate_astc);

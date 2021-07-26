@@ -221,8 +221,20 @@ backend =
 # 0 (default): Disabled, 1: Enabled
 debug =
 
+# Enable Nsight Aftermath crash dumps
+# 0 (default): Disabled, 1: Enabled
+nsight_aftermath =
+
+# Disable shader loop safety checks, executing the shader without loop logic changes
+# 0 (default): Disabled, 1: Enabled
+disable_shader_loop_safety_checks =
+
 # Which Vulkan physical device to use (defaults to 0)
 vulkan_device =
+
+# Whether to use fullscreen or borderless window mode
+# 0 (Windows default): Borderless window, 1 (All other default): Exclusive fullscreen
+fullscreen_mode =
 
 # Aspect ratio
 # 0: Default (16:9), 1: Force 4:3, 2: Force 21:9, 3: Stretch to Window
@@ -236,9 +248,10 @@ max_anisotropy =
 # 0 (default): Off, 1: On
 use_vsync =
 
-# Whether to use OpenGL assembly shaders or not. NV_gpu_program5 is required.
-# 0: Off, 1 (default): On
-use_assembly_shaders =
+# Selects the OpenGL shader backend. NV_gpu_program5 is required for GLASM. If NV_gpu_program5 is
+# not available and GLASM is selected, GLSL will be used.
+# 0: GLSL, 1 (default): GLASM, 2: SPIR-V
+shader_backend =
 
 # Whether to allow asynchronous shader building.
 # 0 (default): Off, 1: On
@@ -285,6 +298,10 @@ use_caches_gc =
 bg_red =
 bg_blue =
 bg_green =
+
+# Caps the unlocked framerate to a multiple of the title's target FPS.
+# 1 - 1000: Target FPS multiple cap. 1000 (default)
+fps_cap =
 
 [Audio]
 # Which audio output engine to use.

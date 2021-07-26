@@ -814,7 +814,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.use_nvdec_emulation);
     ReadGlobalSetting(Settings::values.accelerate_astc);
     ReadGlobalSetting(Settings::values.use_vsync);
-    ReadGlobalSetting(Settings::values.use_assembly_shaders);
+    ReadGlobalSetting(Settings::values.shader_backend);
     ReadGlobalSetting(Settings::values.use_asynchronous_shaders);
     ReadGlobalSetting(Settings::values.use_fast_gpu_time);
     ReadGlobalSetting(Settings::values.use_caches_gc);
@@ -823,7 +823,10 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.bg_blue);
 
     if (global) {
+        ReadBasicSetting(Settings::values.fps_cap);
         ReadBasicSetting(Settings::values.renderer_debug);
+        ReadBasicSetting(Settings::values.enable_nsight_aftermath);
+        ReadBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }
 
     qt_config->endGroup();
@@ -1343,7 +1346,10 @@ void Config::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.use_nvdec_emulation);
     WriteGlobalSetting(Settings::values.accelerate_astc);
     WriteGlobalSetting(Settings::values.use_vsync);
-    WriteGlobalSetting(Settings::values.use_assembly_shaders);
+    WriteSetting(QString::fromStdString(Settings::values.shader_backend.GetLabel()),
+                 static_cast<u32>(Settings::values.shader_backend.GetValue(global)),
+                 static_cast<u32>(Settings::values.shader_backend.GetDefault()),
+                 Settings::values.shader_backend.UsingGlobal());
     WriteGlobalSetting(Settings::values.use_asynchronous_shaders);
     WriteGlobalSetting(Settings::values.use_fast_gpu_time);
     WriteGlobalSetting(Settings::values.use_caches_gc);
@@ -1352,7 +1358,10 @@ void Config::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.bg_blue);
 
     if (global) {
+        WriteBasicSetting(Settings::values.fps_cap);
         WriteBasicSetting(Settings::values.renderer_debug);
+        WriteBasicSetting(Settings::values.enable_nsight_aftermath);
+        WriteBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }
 
     qt_config->endGroup();

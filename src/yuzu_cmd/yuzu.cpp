@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
         emu_window = std::make_unique<EmuWindow_SDL2_GL>(&input_subsystem, fullscreen);
         break;
     case Settings::RendererBackend::Vulkan:
-        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem);
+        emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem, fullscreen);
         break;
     }
 
@@ -218,9 +218,11 @@ int main(int argc, char** argv) {
     // Core is loaded, start the GPU (makes the GPU contexts current to this thread)
     system.GPU().Start();
 
-    system.Renderer().ReadRasterizer()->LoadDiskResources(
-        system.CurrentProcess()->GetTitleID(), std::stop_token{},
-        [](VideoCore::LoadCallbackStage, size_t value, size_t total) {});
+    if (Settings::values.use_disk_shader_cache.GetValue()) {
+        system.Renderer().ReadRasterizer()->LoadDiskResources(
+            system.CurrentProcess()->GetTitleID(), std::stop_token{},
+            [](VideoCore::LoadCallbackStage, size_t value, size_t total) {});
+    }
 
     void(system.Run());
     while (emu_window->IsOpen()) {
