@@ -149,12 +149,11 @@ void Vic::Execute() {
 
         // Populate luma buffer
         {
-            const unsigned char* luma_ptr = frame->data[0];
-            const unsigned char* src = &luma_ptr[frame_height * stride];
-            unsigned char* dst = &luma_buffer[frame_height * aligned_width];
+            const u8* src = frame->data[0];
+            u8* dst = luma_buffer.data();
             for (std::size_t y = frame_height; y--;) {
-                src -= stride;
-                dst -= aligned_width;
+                src += stride;
+                dst += aligned_width;
                 memcpy(dst, src, frame_width);
             }
         }
@@ -165,16 +164,14 @@ void Vic::Execute() {
         {
             const std::size_t half_height = frame_height / 2;
             const auto half_stride = static_cast<size_t>(frame->linesize[1]);
-            unsigned char* dst = &chroma_buffer[half_height * aligned_width];
 
             if (frame->format == AV_PIX_FMT_YUV420P) {
                 // Frame from FFmpeg software
                 // Populate chroma buffer from both channels with interleaving.
                 const std::size_t half_width = frame_width / 2;
-                const unsigned char* chroma_r_ptr = frame->data[2];
-                const unsigned char* chroma_b_ptr = frame->data[1];
-                const unsigned char* src_r = &chroma_r_ptr[half_height * half_stride];
-                const unsigned char* src_b = &chroma_b_ptr[half_height * half_stride];
+                const u8* src_r = &frame->data[2][half_height * half_stride];
+                const u8* src_b = &frame->data[1][half_height * half_stride];
+                u8* dst = &chroma_buffer[half_height * aligned_width];
                 for (std::size_t y = half_height; y--;) {
                     dst -= aligned_width;
                     src_r -= half_stride;
@@ -187,11 +184,11 @@ void Vic::Execute() {
             } else {
                 // Frame from VA-API hardware
                 // This is already interleaved so just copy
-                const unsigned char* chroma_ptr = frame->data[1];
-                const unsigned char* src = &chroma_ptr[half_height * half_stride];
+                const u8* src = frame->data[1];
+                u8* dst = chroma_buffer.data();
                 for (std::size_t y = half_height; y--;) {
-                    src -= half_stride;
-                    dst -= aligned_width;
+                    src += half_stride;
+                    dst += aligned_width;
                     memcpy(dst, src, frame_width);
                 }
             }
