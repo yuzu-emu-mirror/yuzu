@@ -156,7 +156,8 @@ void Codec::Decode() {
         if (hw_frame->format == AV_PIX_FMT_VAAPI) {
             sw_frame = av_frame_alloc();
             ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
-            // Hardware rescale doesn't work because too many broken drivers :(
+            // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
+            // because Intel drivers crash unless using AV_PIX_FMT_NV12
             sw_frame->format = AV_PIX_FMT_NV12;
             ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
             ASSERT_MSG(!ret, "av_hwframe_transfer_data error {}", ret);
