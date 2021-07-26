@@ -82,7 +82,7 @@ fail:
     av_codec_ctx->hw_device_ctx = nullptr;
     av_hw_device = nullptr;
 #else
-    UNIMPLEMENTED_MSG("Hardware acceleration without Linux")
+    UNIMPLEMENTED_MSG("Hardware acceleration without Linux");
 #endif
 }
 
