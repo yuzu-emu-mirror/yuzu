@@ -69,6 +69,7 @@ void Codec::InitializeHwdec() {
     }
 
 #if defined(__linux__)
+    LOG_INFO(Service_NVDRV, "Using VA-API");
     const int hwdevice_error =
         av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI, nullptr, nullptr, 0);
     if (hwdevice_error < 0) {
@@ -160,6 +161,9 @@ void Codec::Initialize() {
     av_opt_set(av_codec_ctx->priv_data, "tune", "zerolatency", 0);
 
     InitializeHwdec();
+    if (!av_codec_ctx->hw_device_ctx) {
+        LOG_INFO(Service_NVDRV, "Using FFmpeg software decoding");
+    }
 
     const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
     if (av_error < 0) {
@@ -169,7 +173,8 @@ void Codec::Initialize() {
         return;
     }
 
-    if (Settings::values.use_asynchronous_gpu_emulation) {
+    if (Settings::values.use_asynchronous_gpu_emulation.GetValue()) {
+        LOG_INFO(Service_NVDRV, "Using a worker thread for NVDEC");
         worker_running = true;
         worker = std::thread([this] {
             Common::SetCurrentThreadName("yuzu:VideoCodec");
