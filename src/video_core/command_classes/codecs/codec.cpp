@@ -2,7 +2,6 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
-#include <cstring>
 #include <fstream>
 #include <vector>
 #include "common/assert.h"
@@ -20,8 +19,7 @@ extern "C" {
 namespace Tegra {
 
 void AVFrameDeleter(AVFrame* ptr) {
-    av_frame_unref(ptr);
-    av_free(ptr);
+    av_frame_free(&ptr);
 }
 
 Codec::Codec(GPU& gpu_, const NvdecCommon::NvdecRegisters& regs)
@@ -32,8 +30,15 @@ Codec::~Codec() {
     if (!initialized) {
         return;
     }
+
+    if (worker_running) {
+        worker_running = false;
+        worker_waker.notify_one();
+        worker.join();
+    }
+
     // Free libav memory
-    AVFrame* av_frame{nullptr};
+    AVFrame* av_frame;
     avcodec_send_packet(av_codec_ctx, nullptr);
     av_frame = av_frame_alloc();
     avcodec_receive_frame(av_codec_ctx, av_frame);
@@ -45,8 +50,7 @@ Codec::~Codec() {
     av_buffer_unref(&av_hw_device);
 }
 
-// Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c
-// under MIT license
+// Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
 #if defined(__linux__)
 static AVPixelFormat GetHwFormat(AVCodecContext* ctx, const AVPixelFormat* pix_fmts) {
     for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
@@ -82,8 +86,64 @@ void Codec::InitializeHwdec() {
 #endif
 }
 
+void Codec::ActuallyDecode(RawFrame& raw_frame) {
+    AVPacket packet{};
+    av_init_packet(&packet);
+    packet.data = raw_frame.frame_data.data();
+    packet.size = static_cast<s32>(raw_frame.frame_data.size());
+
+    const int send_packet_ret = avcodec_send_packet(av_codec_ctx, &packet);
+    ASSERT_MSG(!send_packet_ret, "avcodec_send_packet error {}", send_packet_ret);
+
+    // Only receive/store visible frames
+    if (raw_frame.vp9_hidden_frame) {
+        return;
+    }
+
+    AVFrame* hw_frame = av_frame_alloc();
+    AVFrame* sw_frame = hw_frame;
+    ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
+    const int receive_frame_ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
+    ASSERT_MSG(!receive_frame_ret, "avcodec_receive_frame error {}", receive_frame_ret);
+
+    if (!hw_frame->width || !hw_frame->height) {
+        LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
+        av_frame_free(&hw_frame);
+        return;
+    }
+
+#if defined(__linux__)
+    // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
+    if (hw_frame->format == AV_PIX_FMT_VAAPI) {
+        sw_frame = av_frame_alloc();
+        ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
+        // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
+        // because Intel drivers crash unless using AV_PIX_FMT_NV12
+        sw_frame->format = AV_PIX_FMT_NV12;
+        const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
+        ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
+        av_frame_free(&hw_frame);
+    }
+#endif
+
+    switch (sw_frame->format) {
+    case AV_PIX_FMT_YUV420P:
+    case AV_PIX_FMT_NV12:
+        break;
+    default:
+        UNIMPLEMENTED_MSG("Unknown video format from host graphics: {}", sw_frame->format);
+        av_frame_free(&sw_frame);
+        return;
+    }
+
+    if (!av_frames.push(sw_frame)) {
+        LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
+        av_frame_free(&sw_frame);
+    }
+}
+
 void Codec::Initialize() {
-    AVCodecID codec{AV_CODEC_ID_NONE};
+    AVCodecID codec;
     switch (current_codec) {
     case NvdecCommon::VideoCodec::H264:
         codec = AV_CODEC_ID_H264;
@@ -92,6 +152,7 @@ void Codec::Initialize() {
         codec = AV_CODEC_ID_VP9;
         break;
     default:
+        UNIMPLEMENTED_MSG("Unknown codec {}", current_codec);
         return;
     }
     av_codec = avcodec_find_decoder(codec);
@@ -107,6 +168,23 @@ void Codec::Initialize() {
         av_buffer_unref(&av_hw_device);
         return;
     }
+
+    if (Settings::values.use_asynchronous_gpu_emulation) {
+        worker_running = true;
+        worker = std::thread([this] {
+            Common::SetCurrentThreadName("yuzu:VideoCodec");
+            std::mutex mutex;
+            std::unique_lock<std::mutex> lock(mutex);
+            while (worker_running) {
+                worker_waker.wait(lock);
+                while (!raw_frames.empty()) {
+                    ActuallyDecode(raw_frames.front());
+                    raw_frames.pop();
+                }
+            }
+        });
+    }
+
     initialized = true;
 }
 
@@ -119,13 +197,11 @@ void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
 
 void Codec::Decode() {
     const bool is_first_frame = !initialized;
-    if (!initialized) {
+    if (is_first_frame) {
         Initialize();
     }
 
     bool vp9_hidden_frame = false;
-    AVPacket packet{};
-    av_init_packet(&packet);
     std::vector<u8> frame_data;
 
     if (current_codec == NvdecCommon::VideoCodec::H264) {
@@ -135,53 +211,26 @@ void Codec::Decode() {
         vp9_hidden_frame = vp9_decoder->WasFrameHidden();
     }
 
-    packet.data = frame_data.data();
-    packet.size = static_cast<s32>(frame_data.size());
-
-    const int send_packet_ret = avcodec_send_packet(av_codec_ctx, &packet);
-    ASSERT_MSG(!send_packet_ret, "avcodec_send_packet error {}", send_packet_ret);
-
-    if (!vp9_hidden_frame) {
-        // Only receive/store visible frames
-        AVFrame* hw_frame = av_frame_alloc();
-        AVFrame* sw_frame = hw_frame;
-        ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
-        const int receive_frame_ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
-        ASSERT_MSG(!receive_frame_ret, "avcodec_receive_frame error {}", receive_frame_ret);
-#if defined(__linux__)
-        if (hw_frame->format == AV_PIX_FMT_VAAPI) {
-            sw_frame = av_frame_alloc();
-            ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
-            // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
-            // because Intel drivers crash unless using AV_PIX_FMT_NV12
-            sw_frame->format = AV_PIX_FMT_NV12;
-            const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
-            ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
-            av_frame_free(&hw_frame);
-            ASSERT_MSG(sw_frame->format == AV_PIX_FMT_NV12,
-                       "av_hwframe_transfer_data overwrote AV_PIX_FMT_NV12 to {}",
-                       sw_frame->format);
+    RawFrame raw_frame{
+        .frame_data = frame_data,
+        .vp9_hidden_frame = vp9_hidden_frame,
+    };
+    if (worker_running) {
+        if (!raw_frames.push(raw_frame)) {
+            LOG_WARNING(Service_NVDRV, "raw_frames.push overflow dropped frame");
         }
-#endif
-        AVFramePtr frame = AVFramePtr{sw_frame, AVFrameDeleter};
-        av_frames.push(std::move(frame));
-        // Limit queue to 10 frames. Workaround for ZLA decode and queue spam
-        if (av_frames.size() > 10) {
-            av_frames.pop();
-        }
+        worker_waker.notify_one();
+    } else {
+        ActuallyDecode(raw_frame);
     }
 }
 
 AVFramePtr Codec::GetCurrentFrame() {
     // Sometimes VIC will request more frames than have been decoded.
     // in this case, return a nullptr and don't overwrite previous frame data
-    if (av_frames.empty()) {
-        return AVFramePtr{nullptr, AVFrameDeleter};
-    }
-
-    AVFramePtr frame = std::move(av_frames.front());
-    av_frames.pop();
-    return frame;
+    AVFrame* frame{nullptr};
+    av_frames.pop(frame);
+    return AVFramePtr{frame, AVFrameDeleter};
 }
 
 NvdecCommon::VideoCodec Codec::GetCurrentCodec() const {

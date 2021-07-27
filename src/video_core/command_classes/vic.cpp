@@ -65,19 +65,10 @@ void Vic::Execute() {
     const VicConfig config{gpu.MemoryManager().Read<u64>(config_struct_address + 0x20)};
     const AVFramePtr frame_ptr = nvdec_processor->GetFrame();
     const auto* frame = frame_ptr.get();
-    if (!frame || frame->width == 0 || frame->height == 0) {
+    if (!frame) {
         return;
     }
-    switch (frame->format) {
-    case AV_PIX_FMT_YUV420P:
-    case AV_PIX_FMT_NV12:
-        break;
-    default:
-        UNIMPLEMENTED_MSG("Unknown video format from host graphics: {}", frame->format);
-        return;
-    }
-    const VideoPixelFormat pixel_format =
-        static_cast<VideoPixelFormat>(config.pixel_format.Value());
+    const auto pixel_format = static_cast<VideoPixelFormat>(config.pixel_format.Value());
     switch (pixel_format) {
     case VideoPixelFormat::BGRA8:
     case VideoPixelFormat::RGBA8: {
