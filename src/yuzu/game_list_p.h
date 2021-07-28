@@ -234,7 +234,7 @@ public:
         setData(QVariant(UISettings::values.game_dirs.indexOf(directory)), GameDirRole);
 
         const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 18);
         switch (dir_type) {
         case GameListItemType::SdmcDir:
             setData(
@@ -296,7 +296,7 @@ public:
         setData(type(), TypeRole);
 
         const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 18);
         setData(QIcon::fromTheme(QStringLiteral("plus"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
@@ -319,7 +319,7 @@ public:
         setData(type(), TypeRole);
 
         const int icon_size =
-            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 64);
+            std::min(static_cast<int>(UISettings::values.icon_size.GetValue()), 18);
         setData(QIcon::fromTheme(QStringLiteral("star"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
