@@ -31,12 +31,6 @@ Codec::~Codec() {
         return;
     }
 
-    if (worker_running) {
-        worker_running = false;
-        worker_waker.notify_one();
-        worker.join();
-    }
-
     // Free libav memory
     AVFrame* av_frame;
     avcodec_send_packet(av_codec_ctx, nullptr);
@@ -52,7 +46,7 @@ Codec::~Codec() {
 
 // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
 #if defined(__linux__)
-static AVPixelFormat GetHwFormat(AVCodecContext* ctx, const AVPixelFormat* pix_fmts) {
+static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
     for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
         if (*p == AV_PIX_FMT_VAAPI) {
             return AV_PIX_FMT_VAAPI;
@@ -173,23 +167,6 @@ void Codec::Initialize() {
         return;
     }
 
-    if (Settings::values.use_asynchronous_gpu_emulation.GetValue()) {
-        LOG_INFO(Service_NVDRV, "Using a worker thread for NVDEC");
-        worker_running = true;
-        worker = std::thread([this] {
-            Common::SetCurrentThreadName("yuzu:VideoCodec");
-            std::mutex mutex;
-            std::unique_lock<std::mutex> lock(mutex);
-            while (worker_running) {
-                worker_waker.wait(lock);
-                while (!raw_frames.empty()) {
-                    ActuallyDecode(raw_frames.front());
-                    raw_frames.pop();
-                }
-            }
-        });
-    }
-
     initialized = true;
 }
 
@@ -220,14 +197,8 @@ void Codec::Decode() {
         .frame_data = frame_data,
         .vp9_hidden_frame = vp9_hidden_frame,
     };
-    if (worker_running) {
-        if (!raw_frames.push(raw_frame)) {
-            LOG_WARNING(Service_NVDRV, "raw_frames.push overflow dropped frame");
-        }
-        worker_waker.notify_one();
-    } else {
-        ActuallyDecode(raw_frame);
-    }
+    // TODO async
+    ActuallyDecode(raw_frame);
 }
 
 AVFramePtr Codec::GetCurrentFrame() {
@@ -257,6 +228,6 @@ std::string_view Codec::GetCurrentCodecName() const {
     default:
         return "Unknown";
     }
-};
+}
 
 } // namespace Tegra

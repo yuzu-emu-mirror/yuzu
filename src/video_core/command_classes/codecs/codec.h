@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <condition_variable>
 #include <memory>
-#include <thread>
 #include <boost/lockfree/spsc_queue.hpp>
 #include "common/common_types.h"
 #include "video_core/command_classes/nvdec_common.h"
@@ -76,11 +74,7 @@ private:
     std::unique_ptr<Decoder::H264> h264_decoder;
     std::unique_ptr<Decoder::VP9> vp9_decoder;
 
-    std::thread worker;
-    std::atomic<bool> worker_running;
-    std::condition_variable worker_waker;
-    boost::lockfree::spsc_queue<RawFrame, boost::lockfree::capacity<10>> raw_frames{};
-    boost::lockfree::spsc_queue<AVFrame*, boost::lockfree::capacity<50>> av_frames{};
+    boost::lockfree::spsc_queue<AVFrame*, boost::lockfree::capacity<10>> av_frames{};
 };
 
 } // namespace Tegra
