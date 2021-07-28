@@ -294,7 +294,7 @@ public:
     explicit GameListAddDir() {
         setData(type(), TypeRole);
 
-        const int icon_size =  24;
+        const int icon_size = 24;
         setData(QIcon::fromTheme(QStringLiteral("plus"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
