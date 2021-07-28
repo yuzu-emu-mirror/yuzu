@@ -31,7 +31,7 @@ ConfigureGraphics::ConfigureGraphics(QWidget* parent)
     }
 
     ui->backend->addItem(QStringLiteral("GLSL"));
-    ui->backend->addItem(tr("GLASM (NVIDIA Only)"));
+    ui->backend->addItem(tr("GLASM (Assembly Shaders, NVIDIA Only)"));
     ui->backend->addItem(QStringLiteral("SPIR-V (Experimental, Mesa Only)"));
 
     SetupPerGameUI();
@@ -102,7 +102,8 @@ void ConfigureGraphics::SetConfiguration() {
         ui->api->setCurrentIndex(static_cast<int>(Settings::values.renderer_backend.GetValue()));
         ui->nvdec_emulation->setCurrentIndex(
             static_cast<int>(Settings::values.nvdec_emulation.GetValue()));
-        ui->fullscreen_mode_combobox->setCurrentIndex(Settings::values.fullscreen_mode.GetValue());
+        ui->fullscreen_mode_combobox->setCurrentIndex(
+            static_cast<int>(Settings::values.fullscreen_mode.GetValue()));
         ui->aspect_ratio_combobox->setCurrentIndex(Settings::values.aspect_ratio.GetValue());
     } else {
         ConfigurationShared::SetPerGameSetting(ui->api, &Settings::values.renderer_backend);
@@ -339,8 +340,9 @@ void ConfigureGraphics::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredComboBox(ui->aspect_ratio_combobox, ui->ar_label,
                                             Settings::values.aspect_ratio.GetValue(true));
-    ConfigurationShared::SetColoredComboBox(ui->fullscreen_mode_combobox, ui->fullscreen_mode_label,
-                                            Settings::values.fullscreen_mode.GetValue(true));
+    ConfigurationShared::SetColoredComboBox(
+        ui->fullscreen_mode_combobox, ui->fullscreen_mode_label,
+        static_cast<int>(Settings::values.fullscreen_mode.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
