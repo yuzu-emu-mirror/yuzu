@@ -52,8 +52,8 @@ static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts)
             return AV_PIX_FMT_VAAPI;
         }
     }
-    LOG_ERROR(Service_NVDRV, "Unable to decode this file using VA-API.");
-    return AV_PIX_FMT_NONE;
+    LOG_ERROR(Service_NVDRV, "VA-API does not support this format, falling back to CPU");
+    return *pix_fmts;
 }
 #endif
 
