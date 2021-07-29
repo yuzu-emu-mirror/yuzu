@@ -295,7 +295,7 @@ public:
         setData(type(), TypeRole);
 
         const int icon_size = UISettings::values.folder_icon_size.GetValue();
-        ;
+
         setData(QIcon::fromTheme(QStringLiteral("plus"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
@@ -318,7 +318,7 @@ public:
         setData(type(), TypeRole);
 
         const int icon_size = UISettings::values.folder_icon_size.GetValue();
-        ;
+
         setData(QIcon::fromTheme(QStringLiteral("star"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
