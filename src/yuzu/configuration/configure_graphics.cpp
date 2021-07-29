@@ -89,7 +89,7 @@ void ConfigureGraphics::SetConfiguration() {
     ui->use_asynchronous_gpu_emulation->setEnabled(runtime_lock);
     ui->use_disk_shader_cache->setEnabled(runtime_lock);
     ui->nvdec_emulation_widget->setEnabled(runtime_lock);
-#if !defined(__linux__)
+#if !defined(LIBVA_FOUND)
     ui->nvdec_emulation->removeItem(static_cast<int>(Settings::NvdecEmulation::Vaapi));
 #endif
     ui->accelerate_astc->setEnabled(runtime_lock);

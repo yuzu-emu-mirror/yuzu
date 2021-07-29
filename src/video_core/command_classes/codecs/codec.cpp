@@ -45,7 +45,7 @@ Codec::~Codec() {
 }
 
 // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
-#if defined(__linux__)
+#if defined(LIBVA_FOUND)
 static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
     for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
         if (*p == AV_PIX_FMT_VAAPI) {
@@ -62,7 +62,7 @@ void Codec::InitializeHwdec() {
         return;
     }
 
-#if defined(__linux__)
+#if defined(LIBVA_FOUND)
     LOG_INFO(Service_NVDRV, "Using VA-API");
     const int hwdevice_error =
         av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI, nullptr, nullptr, 0);
@@ -107,7 +107,7 @@ void Codec::ActuallyDecode(RawFrame& raw_frame) {
         return;
     }
 
-#if defined(__linux__)
+#if defined(LIBVA_FOUND)
     // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
     if (hw_frame->format == AV_PIX_FMT_VAAPI) {
         sw_frame = av_frame_alloc();

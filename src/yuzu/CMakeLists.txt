@@ -10,6 +10,11 @@ if (YUZU_USE_BUNDLED_QT AND (${CMAKE_SYSTEM_NAME} STREQUAL "Linux"))
     set(CMAKE_BUILD_RPATH "${CMAKE_BINARY_DIR}/bin/lib/")
 endif()
 
+if(LIBVA_FOUND)
+    set_source_files_properties(configuration/configure_graphics.cpp PROPERTIES COMPILE_DEFINITIONS
+        LIBVA_FOUND=1)
+endif()
+
 add_executable(yuzu
     Info.plist
     about_dialog.cpp

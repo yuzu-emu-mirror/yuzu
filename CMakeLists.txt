@@ -583,24 +583,27 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             "${FFmpeg_PREFIX};${FFmpeg_BUILD_DIR}"
             CACHE PATH "Path to FFmpeg headers" FORCE)
 
-        # `configure` parameters builds only exactly what yuzu needs from FFmpeg
-        # `--disable-vdpau` is needed to avoid linking issues
-
         if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
             Include(FindPkgConfig REQUIRED)
-            pkg_check_modules(LIBVA libva REQUIRED)
+            pkg_check_modules(LIBVA libva)
+        endif()
+        if(LIBVA_FOUND)
+            find_package(X11 REQUIRED)
             pkg_check_modules(LIBVA-DRM libva-drm REQUIRED)
             pkg_check_modules(LIBVA-X11 libva-x11 REQUIRED)
-            find_package(X11 REQUIRED)
             set(FFmpeg_LIBVA_LIBRARIES
-                ${LIBVA-DRM_LIBRARIES}
                 ${X11_LIBRARIES}
+                ${LIBVA-DRM_LIBRARIES}
                 ${LIBVA-X11_LIBRARIES}
                 ${LIBVA_LIBRARIES})
             set(FFmpeg_HWACCEL_FLAGS --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
+            message(STATUS "VA-API found")
         else()
             set(FFmpeg_HWACCEL_FLAGS --disable-vaapi)
         endif()
+
+        # `configure` parameters builds only exactly what yuzu needs from FFmpeg
+        # `--disable-vdpau` is needed to avoid linking issues
         add_custom_command(
             OUTPUT
                 ${FFmpeg_MAKEFILE}
