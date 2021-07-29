@@ -587,10 +587,16 @@ if (YUZU_USE_BUNDLED_FFMPEG)
         # `--disable-vdpau` is needed to avoid linking issues
 
         if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-            pkg_check_modules(LIBVA REQUIRED)
-            pkg_check_modules(LIBVA-DRM REQUIRED)
-            pkg_check_modules(LIBVA-X11 REQUIRED)
-            link_libraries(va va-drm va-x11)
+            Include(FindPkgConfig REQUIRED)
+            pkg_check_modules(LIBVA libva REQUIRED)
+            pkg_check_modules(LIBVA-DRM libva-drm REQUIRED)
+            pkg_check_modules(LIBVA-X11 libva-x11 REQUIRED)
+            find_package(X11 REQUIRED)
+            set(FFmpeg_LIBVA_LIBRARIES
+                ${LIBVA-DRM_LIBRARIES}
+                ${X11_LIBRARIES}
+                ${LIBVA-X11_LIBRARIES}
+                ${LIBVA_LIBRARIES})
             set(FFmpeg_HWACCEL_FLAGS --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
         else()
             set(FFmpeg_HWACCEL_FLAGS --disable-vaapi)
@@ -627,9 +633,10 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             OUTPUT_VARIABLE
                 SYSTEM_THREADS)
 
+        set(FFmpeg_BUILD_LIBRARIES ${FFmpeg_LIBRARIES})
         add_custom_command(
             OUTPUT
-                ${FFmpeg_LIBRARIES}
+                ${FFmpeg_BUILD_LIBRARIES}
             COMMAND
                 make -j${SYSTEM_THREADS}
             WORKING_DIRECTORY
@@ -639,7 +646,12 @@ if (YUZU_USE_BUNDLED_FFMPEG)
         # ALL makes this custom target build every time
         # but it won't actually build if the DEPENDS parameter is up to date
         add_custom_target(ffmpeg-configure ALL DEPENDS ${FFmpeg_MAKEFILE})
-        add_custom_target(ffmpeg-build ALL DEPENDS ${FFmpeg_LIBRARIES} ffmpeg-configure)
+        add_custom_target(ffmpeg-build ALL DEPENDS ${FFmpeg_BUILD_LIBRARIES} ffmpeg-configure)
+        link_libraries(${FFmpeg_LIBVA_LIBRARIES})
+        set(FFmpeg_LIBRARIES ${FFmpeg_LIBVA_LIBRARIES} ${FFmpeg_BUILD_LIBRARIES}
+            CACHE PATH "Paths to FFmpeg libraries" FORCE)
+        unset(FFmpeg_BUILD_LIBRARIES)
+        unset(FFmpeg_LIBVA_LIBRARIES)
 
         if (FFmpeg_FOUND)
             message(STATUS "Found FFmpeg version ${FFmpeg_VERSION}")
