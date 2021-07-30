@@ -79,8 +79,7 @@ void Vic::Execute() {
             sws_freeContext(scaler_ctx);
             scaler_ctx = nullptr;
 
-            // Software return YUV420 and VA-API returns NV12
-            // Convert it to RGB
+            // Frames are decoded into either YUV420 or NV12 formats. Convert to desired format
             scaler_ctx = sws_getContext(frame->width, frame->height,
                                         static_cast<AVPixelFormat>(frame->format), frame->width,
                                         frame->height, target_format, 0, nullptr, nullptr, nullptr);

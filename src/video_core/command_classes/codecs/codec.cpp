@@ -52,7 +52,7 @@ static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts)
             return AV_PIX_FMT_VAAPI;
         }
     }
-    LOG_ERROR(Service_NVDRV, "VA-API does not support this format, falling back to CPU");
+    LOG_INFO(Service_NVDRV, "Could not find compatible GPU AV format, falling back to CPU");
     return *pix_fmts;
 }
 
@@ -75,7 +75,7 @@ static void CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
         }
         LOG_DEBUG(Service_NVDRV, "av_hwdevice_ctx_create failed {}", hwdevice_error);
     }
-    LOG_ERROR(Service_NVDRV, "av_hwdevice_ctx_create failed for all drivers");
+    LOG_WARNING(Service_NVDRV, "av_hwdevice_ctx_create failed for all drivers");
     av_dict_free(&hwdevice_options);
 }
 #endif
