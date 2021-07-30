@@ -151,7 +151,8 @@ void Vic::Execute() {
         const std::size_t half_height = frame_height / 2;
         const auto half_stride = static_cast<size_t>(frame->linesize[1]);
 
-        if (frame->format == AV_PIX_FMT_YUV420P) {
+        switch (frame->format) {
+        case AV_PIX_FMT_YUV420P: {
             // Frame from FFmpeg software
             // Populate chroma buffer from both channels with interleaving.
             const std::size_t half_width = frame_width / 2;
@@ -166,7 +167,9 @@ void Vic::Execute() {
                     chroma_buffer[dst + x * 2 + 1] = chroma_r_src[src + x];
                 }
             }
-        } else {
+            break;
+        }
+        case AV_PIX_FMT_NV12: {
             // Frame from VA-API hardware
             // This is already interleaved so just copy
             const u8* chroma_src = frame->data[1];
@@ -177,6 +180,11 @@ void Vic::Execute() {
                     chroma_buffer[dst + x] = chroma_src[src + x];
                 }
             }
+            break;
+        }
+        default:
+            UNREACHABLE();
+            break;
         }
         gpu.MemoryManager().WriteBlock(output_surface_chroma_address, chroma_buffer.data(),
                                        chroma_buffer.size());

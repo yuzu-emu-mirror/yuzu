@@ -19,11 +19,11 @@ class Vic {
 public:
     enum class Method : u32 {
         Execute = 0xc0,
-        // SetControlParams = 0x1c1,
+        SetControlParams = 0x1c1,
         SetConfigStructOffset = 0x1c2,
         SetOutputSurfaceLumaOffset = 0x1c8,
         SetOutputSurfaceChromaOffset = 0x1c9,
-        // SetOutputSurfaceChromaUnusedOffset = 0x1ca
+        SetOutputSurfaceChromaUnusedOffset = 0x1ca
     };
 
     explicit Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor);
@@ -44,8 +44,8 @@ private:
     union VicConfig {
         u64_le raw{};
         BitField<0, 7, u64_le> pixel_format;
-        // BitField<7, 2, u64_le> chroma_loc_horiz;
-        // BitField<9, 2, u64_le> chroma_loc_vert;
+        BitField<7, 2, u64_le> chroma_loc_horiz;
+        BitField<9, 2, u64_le> chroma_loc_vert;
         BitField<11, 4, u64_le> block_linear_kind;
         BitField<15, 4, u64_le> block_linear_height_log2;
         BitField<32, 14, u64_le> surface_width_minus1;

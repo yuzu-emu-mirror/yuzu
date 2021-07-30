@@ -5,7 +5,7 @@
 #pragma once
 
 #include <memory>
-#include <boost/lockfree/spsc_queue.hpp>
+#include <queue>
 #include "common/common_types.h"
 #include "video_core/command_classes/nvdec_common.h"
 
@@ -59,8 +59,11 @@ private:
         bool vp9_hidden_frame;
     };
 
+#if defined(LIBVA_FOUND)
+    void CreateVaapiHwdevice();
+#endif
     void InitializeHwdec();
-    void ActuallyDecode(RawFrame&);
+    AVFrame* DecodeImpl(RawFrame&);
 
     bool initialized{};
     NvdecCommon::VideoCodec current_codec{NvdecCommon::VideoCodec::None};
@@ -74,7 +77,7 @@ private:
     std::unique_ptr<Decoder::H264> h264_decoder;
     std::unique_ptr<Decoder::VP9> vp9_decoder;
 
-    boost::lockfree::spsc_queue<AVFrame*, boost::lockfree::capacity<10>> av_frames{};
+    std::queue<AVFramePtr> av_frames{};
 };
 
 } // namespace Tegra

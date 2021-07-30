@@ -61,12 +61,12 @@ static constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
     "amdgpu",
 };
 
-static void CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
+void Codec::CreateVaapiHwdevice() {
     AVDictionary* hwdevice_options = nullptr;
     av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
     for (auto driver : VAAPI_DRIVERS) {
         av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
-        const int hwdevice_error = av_hwdevice_ctx_create(av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
+        const int hwdevice_error = av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
                                                           nullptr, hwdevice_options, 0);
         if (hwdevice_error >= 0) {
             LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
@@ -86,7 +86,7 @@ void Codec::InitializeHwdec() {
     }
 
 #if defined(LIBVA_FOUND)
-    CreateVaapiHwdevice(&av_hw_device);
+    CreateVaapiHwdevice();
     if (!(av_codec_ctx->hw_device_ctx = av_buffer_ref(av_hw_device))) {
         LOG_ERROR(Service_NVDRV, "av_buffer_ref failed");
         av_buffer_unref(&av_hw_device);
@@ -98,30 +98,34 @@ void Codec::InitializeHwdec() {
 #endif
 }
 
-void Codec::ActuallyDecode(RawFrame& raw_frame) {
+[[nodiscard]] AVFrame* Codec::DecodeImpl(RawFrame& raw_frame) {
     AVPacket packet{};
     av_init_packet(&packet);
     packet.data = raw_frame.frame_data.data();
     packet.size = static_cast<s32>(raw_frame.frame_data.size());
 
-    const int send_packet_ret = avcodec_send_packet(av_codec_ctx, &packet);
-    ASSERT_MSG(!send_packet_ret, "avcodec_send_packet error {}", send_packet_ret);
+    if (const int ret = avcodec_send_packet(av_codec_ctx, &packet); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", ret);
+        return nullptr;
+    }
 
     // Only receive/store visible frames
     if (raw_frame.vp9_hidden_frame) {
-        return;
+        return nullptr;
     }
-
     AVFrame* hw_frame = av_frame_alloc();
     AVFrame* sw_frame = hw_frame;
     ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
-    const int receive_frame_ret = avcodec_receive_frame(av_codec_ctx, hw_frame);
-    ASSERT_MSG(!receive_frame_ret, "avcodec_receive_frame error {}", receive_frame_ret);
+    if (const int ret = avcodec_receive_frame(av_codec_ctx, hw_frame); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_receive_frame error {}", ret);
+        av_frame_free(&hw_frame);
+        return nullptr;
+    }
 
     if (!hw_frame->width || !hw_frame->height) {
         LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
         av_frame_free(&hw_frame);
-        return;
+        return nullptr;
     }
 
 #if defined(LIBVA_FOUND)
@@ -143,15 +147,12 @@ void Codec::ActuallyDecode(RawFrame& raw_frame) {
     case AV_PIX_FMT_NV12:
         break;
     default:
-        UNIMPLEMENTED_MSG("Unknown video format from host graphics: {}", sw_frame->format);
+        UNIMPLEMENTED_MSG("Unexpected video format from host graphics: {}", sw_frame->format);
         av_frame_free(&sw_frame);
-        return;
+        return nullptr;
     }
 
-    if (!av_frames.push(sw_frame)) {
-        LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
-        av_frame_free(&sw_frame);
-    }
+    return sw_frame;
 }
 
 void Codec::Initialize() {
@@ -215,15 +216,24 @@ void Codec::Decode() {
         .vp9_hidden_frame = vp9_hidden_frame,
     };
     // TODO async
-    ActuallyDecode(raw_frame);
+    AVFrame* sw_frame = DecodeImpl(raw_frame);
+    if (sw_frame) {
+        if (av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter}); av_frames.size() > 10) {
+            LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
+        }
+    }
 }
 
 AVFramePtr Codec::GetCurrentFrame() {
     // Sometimes VIC will request more frames than have been decoded.
     // in this case, return a nullptr and don't overwrite previous frame data
-    AVFrame* frame{nullptr};
-    av_frames.pop(frame);
-    return AVFramePtr{frame, AVFrameDeleter};
+    if (av_frames.empty()) {
+        return AVFramePtr{nullptr, AVFrameDeleter};
+    }
+
+    AVFramePtr frame = std::move(av_frames.front());
+    av_frames.pop();
+    return frame;
 }
 
 NvdecCommon::VideoCodec Codec::GetCurrentCodec() const {
