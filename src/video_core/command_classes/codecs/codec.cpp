@@ -46,7 +46,8 @@ Codec::~Codec() {
 
 // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
 #if defined(LIBVA_FOUND)
-static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
+namespace {
+AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts) {
     for (const AVPixelFormat* p = pix_fmts; *p != AV_PIX_FMT_NONE; ++p) {
         if (*p == AV_PIX_FMT_VAAPI) {
             return AV_PIX_FMT_VAAPI;
@@ -56,10 +57,11 @@ static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts)
     return *pix_fmts;
 }
 
-static constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
+constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
     "i915",
     "amdgpu",
 };
+} // namespace
 
 void Codec::CreateVaapiHwdevice() {
     AVDictionary* hwdevice_options = nullptr;
