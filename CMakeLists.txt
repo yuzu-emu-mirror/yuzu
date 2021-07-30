@@ -145,7 +145,7 @@ else()
 endif()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    add_compile_options(-fno-pie -no-pie)
+    add_compile_options(-fno-pie)
     add_link_options(-no-pie)
 endif()
 
