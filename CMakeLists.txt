@@ -144,6 +144,11 @@ else()
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    add_compile_options(-fno-pie -no-pie)
+    add_link_options(-no-pie)
+endif()
+
 # Output binaries to bin/
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
