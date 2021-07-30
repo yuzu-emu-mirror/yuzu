@@ -55,6 +55,29 @@ static AVPixelFormat GetHwFormat(AVCodecContext*, const AVPixelFormat* pix_fmts)
     LOG_ERROR(Service_NVDRV, "VA-API does not support this format, falling back to CPU");
     return *pix_fmts;
 }
+
+static constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
+    "i915",
+    "amdgpu",
+};
+
+static void CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
+    AVDictionary* hwdevice_options = nullptr;
+    av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
+    for (auto driver : VAAPI_DRIVERS) {
+        av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
+        const int hwdevice_error = av_hwdevice_ctx_create(av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
+                                                          nullptr, hwdevice_options, 0);
+        if (hwdevice_error >= 0) {
+            LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
+            av_dict_free(&hwdevice_options);
+            return;
+        }
+        LOG_DEBUG(Service_NVDRV, "av_hwdevice_ctx_create failed {}", hwdevice_error);
+    }
+    LOG_ERROR(Service_NVDRV, "av_hwdevice_ctx_create failed for all drivers");
+    av_dict_free(&hwdevice_options);
+}
 #endif
 
 void Codec::InitializeHwdec() {
@@ -63,13 +86,7 @@ void Codec::InitializeHwdec() {
     }
 
 #if defined(LIBVA_FOUND)
-    LOG_INFO(Service_NVDRV, "Using VA-API");
-    const int hwdevice_error =
-        av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI, nullptr, nullptr, 0);
-    if (hwdevice_error < 0) {
-        LOG_ERROR(Service_NVDRV, "av_hwdevice_ctx_create failed {}", hwdevice_error);
-        return;
-    }
+    CreateVaapiHwdevice(&av_hw_device);
     if (!(av_codec_ctx->hw_device_ctx = av_buffer_ref(av_hw_device))) {
         LOG_ERROR(Service_NVDRV, "av_buffer_ref failed");
         av_buffer_unref(&av_hw_device);

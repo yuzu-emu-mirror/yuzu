@@ -588,15 +588,20 @@ if (YUZU_USE_BUNDLED_FFMPEG)
             pkg_check_modules(LIBVA libva)
         endif()
         if(LIBVA_FOUND)
+            pkg_check_modules(LIBDRM libdrm REQUIRED)
             find_package(X11 REQUIRED)
             pkg_check_modules(LIBVA-DRM libva-drm REQUIRED)
             pkg_check_modules(LIBVA-X11 libva-x11 REQUIRED)
             set(FFmpeg_LIBVA_LIBRARIES
+                ${LIBDRM_LIBRARIES}
                 ${X11_LIBRARIES}
                 ${LIBVA-DRM_LIBRARIES}
                 ${LIBVA-X11_LIBRARIES}
                 ${LIBVA_LIBRARIES})
-            set(FFmpeg_HWACCEL_FLAGS --enable-hwaccel=h264_vaapi --enable-hwaccel=vp9_vaapi)
+            set(FFmpeg_HWACCEL_FLAGS
+                --enable-hwaccel=h264_vaapi
+                --enable-hwaccel=vp9_vaapi
+                --enable-libdrm)
             message(STATUS "VA-API found")
         else()
             set(FFmpeg_HWACCEL_FLAGS --disable-vaapi)
