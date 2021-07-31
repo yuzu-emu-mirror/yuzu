@@ -468,12 +468,12 @@ void GMainWindow::SoftwareKeyboardInitialize(
         return;
     }
 
-    software_keyboard = new QtSoftwareKeyboardDialog(render_window, Core::System::GetInstance(),
-                                                     is_inline, std::move(initialize_parameters));
+    software_keyboard = std::make_unique<QtSoftwareKeyboardDialog>(
+        render_window, Core::System::GetInstance(), is_inline, std::move(initialize_parameters));
 
     if (is_inline) {
         connect(
-            software_keyboard, &QtSoftwareKeyboardDialog::SubmitInlineText, this,
+            software_keyboard.get(), &QtSoftwareKeyboardDialog::SubmitInlineText, this,
             [this](Service::AM::Applets::SwkbdReplyType reply_type, std::u16string submitted_text,
                    s32 cursor_position) {
                 emit SoftwareKeyboardSubmitInlineText(reply_type, submitted_text, cursor_position);
@@ -481,7 +481,7 @@ void GMainWindow::SoftwareKeyboardInitialize(
             Qt::QueuedConnection);
     } else {
         connect(
-            software_keyboard, &QtSoftwareKeyboardDialog::SubmitNormalText, this,
+            software_keyboard.get(), &QtSoftwareKeyboardDialog::SubmitNormalText, this,
             [this](Service::AM::Applets::SwkbdResult result, std::u16string submitted_text) {
                 emit SoftwareKeyboardSubmitNormalText(result, submitted_text);
             },
@@ -566,7 +566,7 @@ void GMainWindow::SoftwareKeyboardExit() {
 
     software_keyboard->ExitKeyboard();
 
-    software_keyboard = nullptr;
+    software_keyboard.reset();
 }
 
 void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,

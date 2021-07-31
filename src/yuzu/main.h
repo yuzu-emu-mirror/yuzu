@@ -363,7 +363,7 @@ private:
     bool disable_web_applet{};
 
     // Applets
-    QtSoftwareKeyboardDialog* software_keyboard = nullptr;
+    std::unique_ptr<QtSoftwareKeyboardDialog> software_keyboard;
 
 protected:
     void dropEvent(QDropEvent* event) override;
