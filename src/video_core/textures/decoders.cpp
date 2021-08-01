@@ -90,17 +90,26 @@ void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixe
     case 2:
         return SwizzleImpl<TO_LINEAR, 2>(output, input, width, height, depth, block_height,
                                          block_depth, stride_alignment);
+    case 3:
+        return SwizzleImpl<TO_LINEAR, 3>(output, input, width, height, depth, block_height,
+                                         block_depth, stride_alignment);
     case 4:
         return SwizzleImpl<TO_LINEAR, 4>(output, input, width, height, depth, block_height,
+                                         block_depth, stride_alignment);
+    case 6:
+        return SwizzleImpl<TO_LINEAR, 6>(output, input, width, height, depth, block_height,
                                          block_depth, stride_alignment);
     case 8:
         return SwizzleImpl<TO_LINEAR, 8>(output, input, width, height, depth, block_height,
                                          block_depth, stride_alignment);
+    case 12:
+        return SwizzleImpl<TO_LINEAR, 12>(output, input, width, height, depth, block_height,
+                                          block_depth, stride_alignment);
     case 16:
         return SwizzleImpl<TO_LINEAR, 16>(output, input, width, height, depth, block_height,
                                           block_depth, stride_alignment);
     default:
-        UNIMPLEMENTED_MSG("Unknown bytes_per_pixel {}", bytes_per_pixel);
+        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 } // Anonymous namespace
