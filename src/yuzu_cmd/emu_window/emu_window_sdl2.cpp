@@ -16,8 +16,8 @@
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 #include "yuzu_cmd/yuzu_icon.h"
 
-EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_)
-    : input_subsystem{input_subsystem_} {
+EmuWindow_SDL2::EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem_, Core::System& system_)
+    : input_subsystem{input_subsystem_}, system{system_} {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
         LOG_CRITICAL(Frontend, "Failed to initialize SDL2! Exiting...");
         exit(1);
@@ -124,7 +124,7 @@ void EmuWindow_SDL2::OnResize() {
 
 void EmuWindow_SDL2::Fullscreen() {
     switch (Settings::values.fullscreen_mode.GetValue()) {
-    case 1: // Exclusive fullscreen
+    case Settings::FullscreenMode::Exclusive:
         // Set window size to render size before entering fullscreen -- SDL does not resize to
         // display dimensions in this mode.
         // TODO: Multiply the window size by resolution_factor (for both docked modes)
@@ -140,7 +140,7 @@ void EmuWindow_SDL2::Fullscreen() {
         LOG_ERROR(Frontend, "Fullscreening failed: {}", SDL_GetError());
         LOG_INFO(Frontend, "Attempting to use borderless fullscreen...");
         [[fallthrough]];
-    case 0: // Borderless window
+    case Settings::FullscreenMode::Borderless:
         if (SDL_SetWindowFullscreen(render_window, SDL_WINDOW_FULLSCREEN_DESKTOP) == 0) {
             return;
         }
@@ -218,7 +218,7 @@ void EmuWindow_SDL2::WaitEvent() {
 
     const u32 current_time = SDL_GetTicks();
     if (current_time > last_time + 2000) {
-        const auto results = Core::System::GetInstance().GetAndResetPerfStats();
+        const auto results = system.GetAndResetPerfStats();
         const auto title =
             fmt::format("yuzu {} | {}-{} | FPS: {:.0f} ({:.0f}%)", Common::g_build_fullname,
                         Common::g_scm_branch, Common::g_scm_desc, results.average_game_fps,

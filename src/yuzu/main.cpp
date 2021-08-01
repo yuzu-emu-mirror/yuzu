@@ -972,23 +972,23 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                Settings::values.use_frame_limit.SetValue(
-                    !Settings::values.use_frame_limit.GetValue());
+                Settings::values.use_speed_limit.SetValue(
+                    !Settings::values.use_speed_limit.GetValue());
                 UpdateStatusBar();
             });
     constexpr u16 SPEED_LIMIT_STEP = 5;
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Increase Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit.SetValue(SPEED_LIMIT_STEP +
-                                                          Settings::values.frame_limit.GetValue());
+                if (Settings::values.speed_limit.GetValue() < 9999 - SPEED_LIMIT_STEP) {
+                    Settings::values.speed_limit.SetValue(SPEED_LIMIT_STEP +
+                                                          Settings::values.speed_limit.GetValue());
                     UpdateStatusBar();
                 }
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Decrease Speed Limit"), this),
             &QShortcut::activated, this, [&] {
-                if (Settings::values.frame_limit.GetValue() > SPEED_LIMIT_STEP) {
-                    Settings::values.frame_limit.SetValue(Settings::values.frame_limit.GetValue() -
+                if (Settings::values.speed_limit.GetValue() > SPEED_LIMIT_STEP) {
+                    Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() -
                                                           SPEED_LIMIT_STEP);
                     UpdateStatusBar();
                 }
@@ -2513,7 +2513,7 @@ void GMainWindow::ShowFullscreen() {
         ui.menubar->hide();
         statusBar()->hide();
 
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             showFullScreen();
             return;
         }
@@ -2528,7 +2528,7 @@ void GMainWindow::ShowFullscreen() {
     } else {
         UISettings::values.renderwindow_geometry = render_window->saveGeometry();
 
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             render_window->showFullScreen();
             return;
         }
@@ -2545,7 +2545,7 @@ void GMainWindow::ShowFullscreen() {
 
 void GMainWindow::HideFullscreen() {
     if (ui.action_Single_Window_Mode->isChecked()) {
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             showNormal();
             restoreGeometry(UISettings::values.geometry);
         } else {
@@ -2559,7 +2559,7 @@ void GMainWindow::HideFullscreen() {
         statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
         ui.menubar->show();
     } else {
-        if (Settings::values.fullscreen_mode.GetValue() == 1) {
+        if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             render_window->showNormal();
             render_window->restoreGeometry(UISettings::values.renderwindow_geometry);
         } else {
@@ -2910,10 +2910,10 @@ void GMainWindow::UpdateStatusBar() {
         shader_building_label->setVisible(false);
     }
 
-    if (Settings::values.use_frame_limit.GetValue()) {
+    if (Settings::values.use_speed_limit.GetValue()) {
         emu_speed_label->setText(tr("Speed: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
-                                     .arg(Settings::values.frame_limit.GetValue()));
+                                     .arg(Settings::values.speed_limit.GetValue()));
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }

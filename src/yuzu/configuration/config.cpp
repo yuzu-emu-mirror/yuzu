@@ -806,8 +806,8 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.fullscreen_mode);
     ReadGlobalSetting(Settings::values.aspect_ratio);
     ReadGlobalSetting(Settings::values.max_anisotropy);
-    ReadGlobalSetting(Settings::values.use_frame_limit);
-    ReadGlobalSetting(Settings::values.frame_limit);
+    ReadGlobalSetting(Settings::values.use_speed_limit);
+    ReadGlobalSetting(Settings::values.speed_limit);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
     ReadGlobalSetting(Settings::values.gpu_accuracy);
     ReadGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
@@ -825,6 +825,7 @@ void Config::ReadRendererValues() {
     if (global) {
         ReadBasicSetting(Settings::values.fps_cap);
         ReadBasicSetting(Settings::values.renderer_debug);
+        ReadBasicSetting(Settings::values.renderer_shader_feedback);
         ReadBasicSetting(Settings::values.enable_nsight_aftermath);
         ReadBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }
@@ -1332,11 +1333,14 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.renderer_backend.GetDefault()),
                  Settings::values.renderer_backend.UsingGlobal());
     WriteGlobalSetting(Settings::values.vulkan_device);
-    WriteGlobalSetting(Settings::values.fullscreen_mode);
+    WriteSetting(QString::fromStdString(Settings::values.fullscreen_mode.GetLabel()),
+                 static_cast<u32>(Settings::values.fullscreen_mode.GetValue(global)),
+                 static_cast<u32>(Settings::values.fullscreen_mode.GetDefault()),
+                 Settings::values.fullscreen_mode.UsingGlobal());
     WriteGlobalSetting(Settings::values.aspect_ratio);
     WriteGlobalSetting(Settings::values.max_anisotropy);
-    WriteGlobalSetting(Settings::values.use_frame_limit);
-    WriteGlobalSetting(Settings::values.frame_limit);
+    WriteGlobalSetting(Settings::values.use_speed_limit);
+    WriteGlobalSetting(Settings::values.speed_limit);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);
     WriteSetting(QString::fromStdString(Settings::values.gpu_accuracy.GetLabel()),
                  static_cast<u32>(Settings::values.gpu_accuracy.GetValue(global)),
@@ -1360,6 +1364,7 @@ void Config::SaveRendererValues() {
     if (global) {
         WriteBasicSetting(Settings::values.fps_cap);
         WriteBasicSetting(Settings::values.renderer_debug);
+        WriteBasicSetting(Settings::values.renderer_shader_feedback);
         WriteBasicSetting(Settings::values.enable_nsight_aftermath);
         WriteBasicSetting(Settings::values.disable_shader_loop_safety_checks);
     }

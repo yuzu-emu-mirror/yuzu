@@ -339,13 +339,16 @@ std::optional<ApplicationLanguage> ConvertToApplicationLanguage(
     case Set::LanguageCode::FR_CA:
         return ApplicationLanguage::CanadianFrench;
     case Set::LanguageCode::PT:
+    case Set::LanguageCode::PT_BR:
         return ApplicationLanguage::Portuguese;
     case Set::LanguageCode::RU:
         return ApplicationLanguage::Russian;
     case Set::LanguageCode::KO:
         return ApplicationLanguage::Korean;
+    case Set::LanguageCode::ZH_TW:
     case Set::LanguageCode::ZH_HANT:
         return ApplicationLanguage::TraditionalChinese;
+    case Set::LanguageCode::ZH_CN:
     case Set::LanguageCode::ZH_HANS:
         return ApplicationLanguage::SimplifiedChinese;
     default:

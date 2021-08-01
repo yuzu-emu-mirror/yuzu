@@ -221,6 +221,10 @@ backend =
 # 0 (default): Disabled, 1: Enabled
 debug =
 
+# Enable shader feedback.
+# 0 (default): Disabled, 1: Enabled
+renderer_shader_feedback =
+
 # Enable Nsight Aftermath crash dumps
 # 0 (default): Disabled, 1: Enabled
 nsight_aftermath =
@@ -265,13 +269,13 @@ use_nvdec_emulation =
 # 0: Off, 1 (default): On
 accelerate_astc =
 
-# Turns on the frame limiter, which will limit frames output to the target game speed
+# Turns on the speed limiter, which will limit the emulation speed to the desired speed limit value
 # 0: Off, 1: On (default)
-use_frame_limit =
+use_speed_limit =
 
 # Limits the speed of the game to run no faster than this value as a percentage of target speed
 # 1 - 9999: Speed limit as a percentage of target game speed. 100 (default)
-frame_limit =
+speed_limit =
 
 # Whether to use disk based shader cache
 # 0: Off, 1 (default): On
@@ -363,7 +367,7 @@ custom_rtc =
 # Sets the systems language index
 # 0: Japanese, 1: English (default), 2: French, 3: German, 4: Italian, 5: Spanish, 6: Chinese,
 # 7: Korean, 8: Dutch, 9: Portuguese, 10: Russian, 11: Taiwanese, 12: British English, 13: Canadian French,
-# 14: Latin American Spanish, 15: Simplified Chinese, 16: Traditional Chinese
+# 14: Latin American Spanish, 15: Simplified Chinese, 16: Traditional Chinese, 17: Brazilian Portuguese
 language_index =
 
 # The system region that yuzu will use during emulation
