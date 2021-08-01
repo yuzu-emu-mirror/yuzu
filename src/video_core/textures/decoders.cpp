@@ -18,9 +18,9 @@
 
 namespace Tegra::Texture {
 namespace {
-template <bool TO_LINEAR>
-void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixel, u32 width,
-             u32 height, u32 depth, u32 block_height, u32 block_depth, u32 stride_alignment) {
+template <bool TO_LINEAR, u32 BYTES_PER_PIXEL>
+void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32 height, u32 depth,
+                 u32 block_height, u32 block_depth, u32 stride_alignment) {
     // The origin of the transformation can be configured here, leave it as zero as the current API
     // doesn't expose it.
     static constexpr u32 origin_x = 0;
@@ -28,9 +28,9 @@ void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixe
     static constexpr u32 origin_z = 0;
 
     // We can configure here a custom pitch
-    // As it's not exposed 'width * bpp' will be the expected pitch.
-    const u32 pitch = width * bytes_per_pixel;
-    const u32 stride = Common::AlignUpLog2(width, stride_alignment) * bytes_per_pixel;
+    // As it's not exposed 'width * BYTES_PER_PIXEL' will be the expected pitch.
+    const u32 pitch = width * BYTES_PER_PIXEL;
+    const u32 stride = Common::AlignUpLog2(width, stride_alignment) * BYTES_PER_PIXEL;
 
     const u32 gobs_in_x = Common::DivCeilLog2(stride, GOB_SIZE_X_SHIFT);
     const u32 block_size = gobs_in_x << (GOB_SIZE_SHIFT + block_height + block_depth);
@@ -54,14 +54,14 @@ void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixe
                                  ((block_y & block_height_mask) << GOB_SIZE_SHIFT);
 
             for (u32 column = 0; column < width; ++column) {
-                const u32 x = (column + origin_x) * bytes_per_pixel;
+                const u32 x = (column + origin_x) * BYTES_PER_PIXEL;
                 const u32 offset_x = (x >> GOB_SIZE_X_SHIFT) << x_shift;
 
                 const u32 base_swizzled_offset = offset_z + offset_y + offset_x;
                 const u32 swizzled_offset = base_swizzled_offset + table[x % GOB_SIZE_X];
 
                 const u32 unswizzled_offset =
-                    slice * pitch * height + line * pitch + column * bytes_per_pixel;
+                    slice * pitch * height + line * pitch + column * BYTES_PER_PIXEL;
 
                 if (const auto offset = (TO_LINEAR ? unswizzled_offset : swizzled_offset);
                     offset >= input.size()) {
@@ -73,9 +73,77 @@ void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixe
 
                 u8* const dst = &output[TO_LINEAR ? swizzled_offset : unswizzled_offset];
                 const u8* const src = &input[TO_LINEAR ? unswizzled_offset : swizzled_offset];
-                std::memcpy(dst, src, bytes_per_pixel);
+
+                switch (BYTES_PER_PIXEL) {
+                case 1: {
+                    *dst = *src;
+                    break;
+                }
+                case 2: {
+                    const auto dst2 = reinterpret_cast<u16* const>(dst);
+                    const auto src2 = reinterpret_cast<const u16* const>(src);
+                    *dst2 = *src2;
+                    break;
+                }
+                case 4: {
+                    const auto dst4 = reinterpret_cast<u32* const>(dst);
+                    const auto src4 = reinterpret_cast<const u32* const>(src);
+                    *dst4 = *src4;
+                    break;
+                }
+                case 8: {
+                    const auto dst8 = reinterpret_cast<u64* const>(dst);
+                    const auto src8 = reinterpret_cast<const u64* const>(src);
+                    *dst8 = *src8;
+                    break;
+                }
+                case 16: {
+                    const auto dst16 = reinterpret_cast<u128* const>(dst);
+                    const auto src16 = reinterpret_cast<const u128* const>(src);
+                    *dst16 = *src16;
+                    break;
+                }
+                default: {
+                    UNREACHABLE();
+                }
+                }
             }
         }
+    }
+}
+
+template <bool TO_LINEAR>
+void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixel, u32 width,
+             u32 height, u32 depth, u32 block_height, u32 block_depth, u32 stride_alignment) {
+    switch (bytes_per_pixel) {
+    case 1: {
+        SwizzleImpl<TO_LINEAR, 1>(output, input, width, height, depth, block_height, block_depth,
+                                  stride_alignment);
+        break;
+    }
+    case 2: {
+        SwizzleImpl<TO_LINEAR, 2>(output, input, width, height, depth, block_height, block_depth,
+                                  stride_alignment);
+        break;
+    }
+    case 4: {
+        SwizzleImpl<TO_LINEAR, 4>(output, input, width, height, depth, block_height, block_depth,
+                                  stride_alignment);
+        break;
+    }
+    case 8: {
+        SwizzleImpl<TO_LINEAR, 8>(output, input, width, height, depth, block_height, block_depth,
+                                  stride_alignment);
+        break;
+    }
+    case 16: {
+        SwizzleImpl<TO_LINEAR, 16>(output, input, width, height, depth, block_height, block_depth,
+                                   stride_alignment);
+        break;
+    }
+    default: {
+        UNIMPLEMENTED_MSG("Unknown bytes_per_pixel {}", bytes_per_pixel);
+    }
     }
 }
 } // Anonymous namespace
