@@ -59,9 +59,6 @@ private:
         bool vp9_hidden_frame;
     };
 
-#if defined(LIBVA_FOUND)
-    void CreateVaapiHwdevice();
-#endif
     void InitializeHwdec();
     AVFrame* DecodeImpl(RawFrame&);
 

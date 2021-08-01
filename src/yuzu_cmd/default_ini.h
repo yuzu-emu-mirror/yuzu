@@ -257,9 +257,9 @@ shader_backend =
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =
 
-# NVDEC emulation.
-# 0: Off, 1 (default): Software, 2: VA-API
-nvdec_emulation =
+# Enable NVDEC emulation.
+# 0: Off, 1 (default): On
+use_nvdec_emulation =
 
 # Accelerate ASTC texture decoding.
 # 0: Off, 1 (default): On

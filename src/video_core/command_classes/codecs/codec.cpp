@@ -5,7 +5,6 @@
 #include <fstream>
 #include <vector>
 #include "common/assert.h"
-#include "common/settings.h"
 #include "video_core/command_classes/codecs/codec.h"
 #include "video_core/command_classes/codecs/h264.h"
 #include "video_core/command_classes/codecs/vp9.h"
@@ -61,43 +60,40 @@ constexpr std::array<const char*, 2> VAAPI_DRIVERS = {
     "i915",
     "amdgpu",
 };
-} // namespace
 
-void Codec::CreateVaapiHwdevice() {
+bool CreateVaapiHwdevice(AVBufferRef** av_hw_device) {
     AVDictionary* hwdevice_options = nullptr;
     av_dict_set(&hwdevice_options, "connection_type", "drm", 0);
     for (auto driver : VAAPI_DRIVERS) {
         av_dict_set(&hwdevice_options, "kernel_driver", driver, 0);
-        const int hwdevice_error = av_hwdevice_ctx_create(&av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
+        const int hwdevice_error = av_hwdevice_ctx_create(av_hw_device, AV_HWDEVICE_TYPE_VAAPI,
                                                           nullptr, hwdevice_options, 0);
         if (hwdevice_error >= 0) {
             LOG_INFO(Service_NVDRV, "Using VA-API with {}", driver);
             av_dict_free(&hwdevice_options);
-            return;
+            return true;
         }
-        LOG_DEBUG(Service_NVDRV, "av_hwdevice_ctx_create failed {}", hwdevice_error);
+        LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed {}", hwdevice_error);
     }
-    LOG_WARNING(Service_NVDRV, "av_hwdevice_ctx_create failed for all drivers");
+    LOG_DEBUG(Service_NVDRV, "VA-API av_hwdevice_ctx_create failed for all drivers");
     av_dict_free(&hwdevice_options);
+    return false;
 }
+} // namespace
 #endif
 
 void Codec::InitializeHwdec() {
-    if (Settings::values.nvdec_emulation.GetValue() != Settings::NvdecEmulation::Vaapi) {
-        return;
-    }
-
 #if defined(LIBVA_FOUND)
-    CreateVaapiHwdevice();
-    if (!(av_codec_ctx->hw_device_ctx = av_buffer_ref(av_hw_device))) {
-        LOG_ERROR(Service_NVDRV, "av_buffer_ref failed");
-        av_buffer_unref(&av_hw_device);
+    if (CreateVaapiHwdevice(&av_hw_device)) {
+        const auto hw_device_ctx = av_buffer_ref(av_hw_device);
+        ASSERT_MSG(hw_device_ctx, "av_buffer_ref failed");
+        av_codec_ctx->hw_device_ctx = hw_device_ctx;
+        av_codec_ctx->get_format = GetHwFormat;
         return;
     }
-    av_codec_ctx->get_format = GetHwFormat;
-#else
-    UNIMPLEMENTED_MSG("Hardware acceleration without Linux");
 #endif
+
+    // TODO NVDEC, but integrated GPU should be used first to avoid PCI
 }
 
 [[nodiscard]] AVFrame* Codec::DecodeImpl(RawFrame& raw_frame) {
@@ -222,6 +218,7 @@ void Codec::Decode() {
     if (sw_frame) {
         if (av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter}); av_frames.size() > 10) {
             LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
+            av_frames.pop();
         }
     }
 }
