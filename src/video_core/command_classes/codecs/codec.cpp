@@ -91,53 +91,6 @@ void Codec::InitializeHwdec() {
     // TODO more GPU accelerated decoders
 }
 
-[[nodiscard]] AVFrame* Codec::DecodeImpl(RawFrame& raw_frame) {
-    AVPacket packet{};
-    av_init_packet(&packet);
-    packet.data = raw_frame.frame_data.data();
-    packet.size = static_cast<s32>(raw_frame.frame_data.size());
-    if (const int ret = avcodec_send_packet(av_codec_ctx, &packet); ret) {
-        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", ret);
-        return nullptr;
-    }
-    // Only receive/store visible frames
-    if (raw_frame.vp9_hidden_frame) {
-        return nullptr;
-    }
-    AVFrame* hw_frame = av_frame_alloc();
-    AVFrame* sw_frame = hw_frame;
-    ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
-    if (const int ret = avcodec_receive_frame(av_codec_ctx, hw_frame); ret) {
-        LOG_DEBUG(Service_NVDRV, "avcodec_receive_frame error {}", ret);
-        av_frame_free(&hw_frame);
-        return nullptr;
-    }
-    if (!hw_frame->width || !hw_frame->height) {
-        LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
-        av_frame_free(&hw_frame);
-        return nullptr;
-    }
-#if defined(LIBVA_FOUND)
-    // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
-    if (hw_frame->format == AV_PIX_FMT_VAAPI) {
-        sw_frame = av_frame_alloc();
-        ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
-        // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
-        // because Intel drivers crash unless using AV_PIX_FMT_NV12
-        sw_frame->format = AV_PIX_FMT_NV12;
-        const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
-        ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
-        av_frame_free(&hw_frame);
-    }
-#endif
-    if (sw_frame->format != AV_PIX_FMT_YUV420P && sw_frame->format != AV_PIX_FMT_NV12) {
-        UNIMPLEMENTED_MSG("Unexpected video format from host graphics: {}", sw_frame->format);
-        av_frame_free(&sw_frame);
-        return nullptr;
-    }
-    return sw_frame;
-}
-
 void Codec::Initialize() {
     AVCodecID codec;
     switch (current_codec) {
@@ -188,18 +141,53 @@ void Codec::Decode() {
         frame_data = vp9_decoder->ComposeFrameHeader(state);
         vp9_hidden_frame = vp9_decoder->WasFrameHidden();
     }
-    RawFrame raw_frame{
-        .frame_data = frame_data,
-        .vp9_hidden_frame = vp9_hidden_frame,
-    };
-    // TODO async NVDEC thread
-    AVFrame* sw_frame = DecodeImpl(raw_frame);
-    if (sw_frame) {
-        av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter});
-        if (av_frames.size() > 10) {
-            LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
-            av_frames.pop();
-        }
+    AVPacket packet{};
+    av_init_packet(&packet);
+    packet.data = frame_data.data();
+    packet.size = static_cast<s32>(frame_data.size());
+    if (const int ret = avcodec_send_packet(av_codec_ctx, &packet); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_send_packet error {}", ret);
+        return;
+    }
+    // Only receive/store visible frames
+    if (vp9_hidden_frame) {
+        return;
+    }
+    AVFrame* hw_frame = av_frame_alloc();
+    AVFrame* sw_frame = hw_frame;
+    ASSERT_MSG(hw_frame, "av_frame_alloc hw_frame failed");
+    if (const int ret = avcodec_receive_frame(av_codec_ctx, hw_frame); ret) {
+        LOG_DEBUG(Service_NVDRV, "avcodec_receive_frame error {}", ret);
+        av_frame_free(&hw_frame);
+        return;
+    }
+    if (!hw_frame->width || !hw_frame->height) {
+        LOG_WARNING(Service_NVDRV, "Zero width or height in frame");
+        av_frame_free(&hw_frame);
+        return;
+    }
+#if defined(LIBVA_FOUND)
+    // Hardware acceleration code from FFmpeg/doc/examples/hw_decode.c under MIT license
+    if (hw_frame->format == AV_PIX_FMT_VAAPI) {
+        sw_frame = av_frame_alloc();
+        ASSERT_MSG(sw_frame, "av_frame_alloc sw_frame failed");
+        // Can't use AV_PIX_FMT_YUV420P and share code with software decoding in vic.cpp
+        // because Intel drivers crash unless using AV_PIX_FMT_NV12
+        sw_frame->format = AV_PIX_FMT_NV12;
+        const int transfer_data_ret = av_hwframe_transfer_data(sw_frame, hw_frame, 0);
+        ASSERT_MSG(!transfer_data_ret, "av_hwframe_transfer_data error {}", transfer_data_ret);
+        av_frame_free(&hw_frame);
+    }
+#endif
+    if (sw_frame->format != AV_PIX_FMT_YUV420P && sw_frame->format != AV_PIX_FMT_NV12) {
+        UNIMPLEMENTED_MSG("Unexpected video format from host graphics: {}", sw_frame->format);
+        av_frame_free(&sw_frame);
+        return;
+    }
+    av_frames.push(AVFramePtr{sw_frame, AVFrameDeleter});
+    if (av_frames.size() > 10) {
+        LOG_TRACE(Service_NVDRV, "av_frames.push overflow dropped frame");
+        av_frames.pop();
     }
 }
 
