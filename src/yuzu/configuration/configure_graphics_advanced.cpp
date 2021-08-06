@@ -74,7 +74,7 @@ void ConfigureGraphicsAdvanced::RetranslateUI() {
 }
 
 void ConfigureGraphicsAdvanced::SetupPerGameUI() {
-    // Disable if not global (only happens during game)
+    //Disable if not global (only happens during game)
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setEnabled(Settings::values.gpu_accuracy.UsingGlobal());
         ui->use_vsync->setEnabled(Settings::values.use_vsync.UsingGlobal());
