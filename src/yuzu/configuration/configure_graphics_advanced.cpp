@@ -23,11 +23,11 @@ ConfigureGraphicsAdvanced::~ConfigureGraphicsAdvanced() = default;
 void ConfigureGraphicsAdvanced::SetConfiguration() {
     const bool runtime_lock = !Core::System::GetInstance().IsPoweredOn();
     ui->use_vsync->setEnabled(runtime_lock);
-    ui->use_asynchronous_shaders->setEnabled(runtime_lock);
+    //ui->use_asynchronous_shaders->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
 
     ui->use_vsync->setChecked(Settings::values.use_vsync.GetValue());
-    ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
+    //ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
     ui->use_caches_gc->setChecked(Settings::values.use_caches_gc.GetValue());
     ui->use_fast_gpu_time->setChecked(Settings::values.use_fast_gpu_time.GetValue());
 
@@ -52,9 +52,9 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.max_anisotropy,
                                              ui->anisotropic_filtering_combobox);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vsync, ui->use_vsync, use_vsync);
-    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_shaders,
-                                             ui->use_asynchronous_shaders,
-                                             use_asynchronous_shaders);
+    //ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_shaders,
+                                             //ui->use_asynchronous_shaders,
+                                             //use_asynchronous_shaders);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_caches_gc, ui->use_caches_gc,
                                              use_caches_gc);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_fast_gpu_time,
@@ -78,8 +78,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setEnabled(Settings::values.gpu_accuracy.UsingGlobal());
         ui->use_vsync->setEnabled(Settings::values.use_vsync.UsingGlobal());
-        ui->use_asynchronous_shaders->setEnabled(
-            Settings::values.use_asynchronous_shaders.UsingGlobal());
+        //ui->use_asynchronous_shaders->setEnabled(
+            //Settings::values.use_asynchronous_shaders.UsingGlobal());
         ui->use_fast_gpu_time->setEnabled(Settings::values.use_fast_gpu_time.UsingGlobal());
         ui->use_caches_gc->setEnabled(Settings::values.use_caches_gc.UsingGlobal());
         ui->anisotropic_filtering_combobox->setEnabled(
@@ -89,9 +89,9 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     }
 
     ConfigurationShared::SetColoredTristate(ui->use_vsync, Settings::values.use_vsync, use_vsync);
-    ConfigurationShared::SetColoredTristate(ui->use_asynchronous_shaders,
-                                            Settings::values.use_asynchronous_shaders,
-                                            use_asynchronous_shaders);
+    //ConfigurationShared::SetColoredTristate(ui->use_asynchronous_shaders,
+                                            //Settings::values.use_asynchronous_shaders,
+                                            //use_asynchronous_shaders);
     ConfigurationShared::SetColoredTristate(ui->use_fast_gpu_time,
                                             Settings::values.use_fast_gpu_time, use_fast_gpu_time);
     ConfigurationShared::SetColoredTristate(ui->use_caches_gc, Settings::values.use_caches_gc,
