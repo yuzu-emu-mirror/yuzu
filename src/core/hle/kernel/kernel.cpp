@@ -1027,6 +1027,9 @@ void KernelCore::Suspend(bool in_suspention) {
             impl->suspend_threads[core_id]->SetState(state);
             impl->suspend_threads[core_id]->SetWaitReasonForDebugging(
                 ThreadWaitReasonForDebugging::Suspended);
+            if (!should_suspend) {
+                impl->suspend_threads[core_id]->DisableDispatch();
+            }
         }
     }
 }
