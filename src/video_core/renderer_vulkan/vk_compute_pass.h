@@ -10,12 +10,14 @@
 #include "common/common_types.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
+#include "video_core/renderer_vulkan/vk_host_memory.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace VideoCommon {
 struct SwizzleParameters;
-}
+struct UnswizzlePushConstants;
+} // namespace VideoCommon
 
 namespace Vulkan {
 
@@ -87,9 +89,7 @@ class ASTCDecoderPass final : public ComputePass {
 public:
     explicit ASTCDecoderPass(const Device& device_, VKScheduler& scheduler_,
                              DescriptorPool& descriptor_pool_,
-                             StagingBufferPool& staging_buffer_pool_,
-                             VKUpdateDescriptorQueue& update_descriptor_queue_,
-                             MemoryAllocator& memory_allocator_);
+                             VKUpdateDescriptorQueue& update_descriptor_queue_);
     ~ASTCDecoderPass();
 
     void Assemble(Image& image, const StagingBufferRef& map,
@@ -97,9 +97,31 @@ public:
 
 private:
     VKScheduler& scheduler;
-    StagingBufferPool& staging_buffer_pool;
     VKUpdateDescriptorQueue& update_descriptor_queue;
-    MemoryAllocator& memory_allocator;
+};
+
+class UnswizzlePass final : public ComputePass {
+public:
+    explicit UnswizzlePass(const Device& device_, VKScheduler& scheduler_,
+                           DescriptorPool& descriptor_pool_,
+                           VKUpdateDescriptorQueue& update_descriptor_queue_,
+                           VulkanHostMemory& vulkan_host_memory_);
+    ~UnswizzlePass();
+
+    void Begin(Image& image);
+
+    void Assemble(Image& image, VideoCommon::UnswizzlePushConstants& swizzle, u64 ptr, u32 size,
+                  u32 so_far, s32 level, s32 layer, bool aspect);
+
+    void Finish(Image& image);
+
+private:
+    VKScheduler& scheduler;
+    VKUpdateDescriptorQueue& update_descriptor_queue;
+    VulkanHostMemory& vulkan_host_memory;
+    u32 last_page;
+    s32 last_level;
+    s32 last_layer;
 };
 
 } // namespace Vulkan

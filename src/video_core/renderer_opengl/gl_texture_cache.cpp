@@ -671,8 +671,11 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, 
 
 Image::~Image() = default;
 
-void Image::UploadMemory(const ImageBufferMap& map,
-                         std::span<const VideoCommon::BufferImageCopy> copies) {
+void Image::UploadMemory(const ImageBufferMap& map, Tegra::MemoryManager& gpu_memory,
+                         std::array<u8, VideoCommon::MAX_GUEST_SIZE>& scratch) {
+    const std::span<u8> mapped_span = map.mapped_span;
+    const auto copies =
+        VideoCommon::UnswizzleImage(gpu_memory, gpu_addr, info, scratch, mapped_span);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, map.buffer);
     glFlushMappedBufferRange(GL_PIXEL_UNPACK_BUFFER, map.offset, unswizzled_size_bytes);
 

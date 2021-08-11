@@ -23,6 +23,9 @@ struct StagingBufferRef {
     std::span<u8> mapped_span;
 };
 
+u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask,
+                        bool try_device_local);
+
 class StagingBufferPool {
 public:
     static constexpr size_t NUM_SYNCS = 16;

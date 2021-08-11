@@ -11,6 +11,7 @@
 #include "common/dynamic_library.h"
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
+#include "video_core/renderer_vulkan/vk_host_memory.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
@@ -70,6 +71,7 @@ private:
     VKScreenInfo screen_info;
 
     Device device;
+    VulkanHostMemory host_memory;
     MemoryAllocator memory_allocator;
     StateTracker state_tracker;
     VKScheduler scheduler;

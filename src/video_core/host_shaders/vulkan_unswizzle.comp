@@ -1,0 +1,100 @@
+// Copyright 2021 yuzu Emulator Project
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
+#version 460 core
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_8bit_storage : require
+
+layout (local_size_x = 64) in;
+
+//layout (constant_id = 0) const int BYTES_PER_PIXEL = 1;
+
+layout(binding = 0, std430) readonly buffer InputBufferU8 { uint8_t u8data[]; };
+layout(binding = 0, std430) readonly buffer InputBufferU16 { uint16_t u16data[]; };
+layout(binding = 0, std430) readonly buffer InputBufferU32 { uint u32data[]; };
+layout(binding = 0, std430) readonly buffer InputBufferU64 { uvec2 u64data[]; };
+layout(binding = 0, std430) readonly buffer InputBufferU128 { uvec4 u128data[]; };
+
+layout(binding = 1) writeonly uniform image2DArray output_image;
+
+layout (push_constant) uniform constants {
+    uint size;
+    uint ptr;
+    uint so_far;
+    uint bytes_per_pixel;
+    uint pitch;
+    uint height;
+    uint depth;
+    uint block_height;
+    uint block_depth;
+    uint gobs_in_x;
+    uint dcl2;
+};
+
+const uint GiB = 0x40000000U;
+
+uvec4 ReadTexel(uint offset) {
+    if (offset >= GiB) {
+        return uvec4(0);
+    }
+    switch (bytes_per_pixel) {
+    case 1:
+//        return uvec4(0xFF, 0, 0, 0);
+        return uvec4(u8data[offset], 0, 0, 0);
+    case 2:
+        return uvec4(u16data[offset / 2], 0, 0, 0);
+    case 4:
+//        return uvec4(0xFF, 0xFF, 0, 0xFF);
+        uint data4 = u32data[offset / 4];
+//        return uvec4(data4 & 0xffu, (data4 >> 8) & 0xffu, (data4 >> 16) & 0xffu, (data4 >> 24) & 0xffu);
+        return uvec4((data4 >> 24) & 0xffu, (data4 >> 16) & 0xffu, (data4 >> 8) & 0xffu, data4 & 0xffu);
+//        return uvec4(u32data[offset / 4], 0, 0, 0);
+    case 8:
+        return uvec4(u64data[offset / 8], 0, 0);
+    case 16:
+        return u128data[offset / 16];
+    }
+    return uvec4(0);
+}
+
+void main() {
+    if (gl_GlobalInvocationID.x >= size) {
+        return;
+    }
+    const uint swizzled_offset = gl_GlobalInvocationID.x + so_far;
+//    const uint swizzled_offset = 0;
+    const uint lesser_x_shift = block_height + block_depth;
+    const uint lesser_slice_size = dcl2 * gobs_in_x;
+    const uint block_height_mask = (1U << block_height) - 1;
+    const uint block_depth_mask = (1U << block_depth) - 1;
+    const uint entry = swizzled_offset & 511U;
+    const uint y_table = ((entry >> 5) & 6U) | ((entry >> 4) & 1U);
+    const uint x_entry = ((entry >> 3) & 32U) | ((entry >> 1) & 16U) | (entry & 15U);
+    const uint base_swizzled_offset = swizzled_offset >> 9;
+    const uint set_y = (base_swizzled_offset & block_height_mask) << 3;
+    const uint set_z = (base_swizzled_offset >> block_height) & block_depth_mask;
+    const uint inner_swizzled = base_swizzled_offset >> lesser_x_shift;
+    const uint sli = inner_swizzled / lesser_slice_size;
+    const uint gb = inner_swizzled % lesser_slice_size;
+    const uint x_inner = (gb % gobs_in_x) << 6;
+    const uint y_inner = (gb / gobs_in_x) << (block_height + 3);
+    const uint z_inner = sli << block_depth;
+    const uint x = x_inner + x_entry;
+    const uint y = y_inner + set_y + y_table;
+    const uint z = z_inner + set_z;
+    if (x >= pitch || y >= height || z >= depth) {
+        return;
+    }
+    if (z != 0) {
+        return; // TODO
+    }
+    const uvec4 texel = ReadTexel(ptr + swizzled_offset);
+//    const uvec4 texel = ReadTexel(0);
+//    imageStore(output_image, ivec3(x, y, z), texel);
+    imageStore(output_image, ivec3(x, y, z), vec4(texel)/255);
+//    imageStore(output_image, ivec3(x, y, z), uvec4(1, 1, 1, 1) * ((ptr >> 12) & 0xFF));
+//    imageStore(output_image, ivec3(x * 4, y * 4, z), texel);
+//    imageStore(output_image, ivec3(x * 4, y * 4, z), uvec4(255, 0, 255, 255));
+//    imageStore(output_image, ivec3(x, y, z), uvec4(255, 0, 255, 255));
+}

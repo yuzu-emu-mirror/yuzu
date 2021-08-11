@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <iostream>
 #include <span>
 #include <vector>
 
@@ -21,6 +23,7 @@
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/texture_cache/formatter.h"
 #include "video_core/texture_cache/samples_helper.h"
+#include "video_core/textures/decoders.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -106,9 +109,9 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
             UNREACHABLE_MSG("Invalid surface type");
         }
     }
-    if (info.storage) {
-        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-    }
+    //    if (info.storage) {
+    usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    //    }
     return usage;
 }
 
@@ -416,59 +419,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     }
 }
 
-void CopyBufferToImage(vk::CommandBuffer cmdbuf, VkBuffer src_buffer, VkImage image,
-                       VkImageAspectFlags aspect_mask, bool is_initialized,
-                       std::span<const VkBufferImageCopy> copies) {
-    static constexpr VkAccessFlags WRITE_ACCESS_FLAGS =
-        VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    static constexpr VkAccessFlags READ_ACCESS_FLAGS = VK_ACCESS_SHADER_READ_BIT |
-                                                       VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-    const VkImageMemoryBarrier read_barrier{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext = nullptr,
-        .srcAccessMask = WRITE_ACCESS_FLAGS,
-        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .oldLayout = is_initialized ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = image,
-        .subresourceRange{
-            .aspectMask = aspect_mask,
-            .baseMipLevel = 0,
-            .levelCount = VK_REMAINING_MIP_LEVELS,
-            .baseArrayLayer = 0,
-            .layerCount = VK_REMAINING_ARRAY_LAYERS,
-        },
-    };
-    const VkImageMemoryBarrier write_barrier{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext = nullptr,
-        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .dstAccessMask = WRITE_ACCESS_FLAGS | READ_ACCESS_FLAGS,
-        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = image,
-        .subresourceRange{
-            .aspectMask = aspect_mask,
-            .baseMipLevel = 0,
-            .levelCount = VK_REMAINING_MIP_LEVELS,
-            .baseArrayLayer = 0,
-            .layerCount = VK_REMAINING_ARRAY_LAYERS,
-        },
-    };
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                           read_barrier);
-    cmdbuf.CopyBufferToImage(src_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copies);
-    // TODO: Move this to another API
-    cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                           write_barrier);
-}
-
 [[nodiscard]] VkImageBlit MakeImageBlit(const Region2D& dst_region, const Region2D& src_region,
                                         const VkImageSubresourceLayers& dst_layers,
                                         const VkImageSubresourceLayers& src_layers) {
@@ -625,7 +575,7 @@ void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst
             return;
         }
     }
-    ASSERT(src.format == dst.format);
+    // ASSERT(src.format == dst.format);
     ASSERT(!(is_dst_msaa && !is_src_msaa));
     ASSERT(operation == Fermi2D::Operation::SrcCopy);
 
@@ -844,7 +794,8 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
     : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},
       image(MakeImage(runtime.device, info)),
       commit(runtime.memory_allocator.Commit(image, MemoryUsage::DeviceLocal)),
-      aspect_mask(ImageAspectMask(info.format)) {
+      aspect_mask(ImageAspectMask(info.format)), unswizzle_pass{&runtime.unswizzle_pass},
+      read_pointers{&runtime.read_pointers} {
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
         if (Settings::values.accelerate_astc.GetValue()) {
             flags |= VideoCommon::ImageFlagBits::AcceleratedUpload;
@@ -860,49 +811,197 @@ Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_
         .pNext = nullptr,
         .usage = VK_IMAGE_USAGE_STORAGE_BIT,
     };
+    const auto& device = runtime.device.GetLogical();
+    VkImageViewCreateInfo create_info{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = &storage_image_view_usage_create_info,
+        .flags = 0,
+        .image = *image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+        .format = VK_FORMAT_A8B8G8R8_UNORM_PACK32,
+        .components{
+            .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+        },
+        .subresourceRange{
+            .aspectMask = aspect_mask,
+            .baseMipLevel = ~0U,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = VK_REMAINING_ARRAY_LAYERS,
+        },
+    };
+    const u32 levels = static_cast<u32>(info.resources.levels);
+    const u32 layers = static_cast<u32>(info.resources.layers);
     if (IsPixelFormatASTC(info.format) && !runtime.device.IsOptimalAstcSupported()) {
-        const auto& device = runtime.device.GetLogical();
-        storage_image_views.reserve(info.resources.levels);
-        for (s32 level = 0; level < info.resources.levels; ++level) {
-            storage_image_views.push_back(device.CreateImageView(VkImageViewCreateInfo{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                .pNext = &storage_image_view_usage_create_info,
-                .flags = 0,
-                .image = *image,
-                .viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-                .format = VK_FORMAT_A8B8G8R8_UNORM_PACK32,
-                .components{
-                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,
-                },
-                .subresourceRange{
-                    .aspectMask = aspect_mask,
-                    .baseMipLevel = static_cast<u32>(level),
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = VK_REMAINING_ARRAY_LAYERS,
-                },
-            }));
+        storage_image_views.reserve(levels);
+        for (u32 level = 0; level < levels; ++level) {
+            create_info.subresourceRange.baseMipLevel = level;
+            storage_image_views.push_back(device.CreateImageView(create_info));
+        }
+        LOG_CRITICAL(Debug, "astc");
+        abort();
+    } else {
+        switch (info.type) {
+        case ImageType::e2D:
+        case ImageType::e3D:
+            break;
+        default:
+            LOG_CRITICAL(Debug, "info.type {}", info.type);
+//            abort();
+            return;
+        }
+        create_info.subresourceRange.layerCount = 1;
+        const bool depth_stencil_aspect =
+            aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+        storage_image_views.reserve(levels * layers * (1 + depth_stencil_aspect));
+        for (u32 level = 0; level < levels; ++level) {
+            create_info.subresourceRange.baseMipLevel = level;
+            for (u32 layer = 0; layer < layers; ++layer) {
+                create_info.subresourceRange.baseArrayLayer = layer;
+                if (depth_stencil_aspect) {
+                    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    storage_image_views.push_back(device.CreateImageView(create_info));
+                    create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
+                storage_image_views.push_back(device.CreateImageView(create_info));
+            }
         }
     }
 }
 
 Image::~Image() = default;
 
-void Image::UploadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {
-    // TODO: Move this to another API
-    scheduler->RequestOutsideRenderPassOperationContext();
-    std::vector vk_copies = TransformBufferImageCopies(copies, map.offset, aspect_mask);
-    const VkBuffer src_buffer = map.buffer;
-    const VkImage vk_image = *image;
-    const VkImageAspectFlags vk_aspect_mask = aspect_mask;
-    const bool is_initialized = std::exchange(initialized, true);
-    scheduler->Record([src_buffer, vk_image, vk_aspect_mask, is_initialized,
-                       vk_copies](vk::CommandBuffer cmdbuf) {
-        CopyBufferToImage(cmdbuf, src_buffer, vk_image, vk_aspect_mask, is_initialized, vk_copies);
-    });
+// static int uploadmemorycount = 0;
+
+void Image::UploadMemory(const StagingBufferRef&, Tegra::MemoryManager& gpu_memory,
+                         std::array<u8, VideoCommon::MAX_GUEST_SIZE>&) {
+    const auto t1 = std::chrono::high_resolution_clock::now();
+    //    const int debug_id = uploadmemorycount++;
+    //    LOG_CRITICAL(Debug, "UploadMemory Starting {}", debug_id);
+    unswizzle_pass->Begin(*this);
+    //    LOG_CRITICAL(Debug, "UploadMemory Begun {}", debug_id);
+    using namespace VideoCommon;
+    const size_t actual_guest_size_bytes = CalculateGuestSizeInBytes(info);
+//    if (actual_guest_size_bytes >= VideoCommon::MAX_GUEST_SIZE) {
+//        LOG_CRITICAL(Debug, "guest_size {}", actual_guest_size_bytes);
+//        abort();
+//    }
+    const u32 bpp_log2 = BytesPerBlockLog2(info.format);
+    const Extent3D size = info.size;
+    if (info.type == ImageType::Linear) {
+        //        abort(); // TODO
+        LOG_CRITICAL(Debug, "Linear???");
+        return;
+    }
+    read_pointers->tail = &read_pointers->data.back();
+    //    LOG_CRITICAL(Debug, "actually {}", actual_guest_size_bytes);
+    const auto t2 = std::chrono::high_resolution_clock::now();
+    gpu_memory.ReadBlockPointersUnsafe(gpu_addr, *read_pointers, actual_guest_size_bytes);
+    const auto t3 = std::chrono::high_resolution_clock::now();
+    const LevelInfo level_info = MakeLevelInfo(info);
+    const s32 num_levels = info.resources.levels;
+    const Extent2D tile_size = DefaultBlockSize(info.format);
+    const std::array level_sizes = CalculateLevelSizes(level_info, num_levels);
+    const Extent2D gob = GobSize(bpp_log2, info.block.height, info.tile_width_spacing);
+    const u32 layer_size = CalculateLevelBytes(level_sizes, num_levels);
+    const u32 layer_stride = AlignLayerSize(layer_size, size, level_info.block, tile_size.height,
+                                            info.tile_width_spacing);
+    const bool depth_stencil_aspect =
+        aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    UnswizzlePushConstants unswizzle{};
+    const auto guest_end = read_pointers->tail;
+    const auto advance_tail = [guest_end](Core::Memory::ReadPointers::ReadPointer*& tail,
+                                          u32& offset, u32 size_, auto action) {
+        if (tail == guest_end) {
+            LOG_CRITICAL(Debug, "tail guest already");
+            return;
+        }
+        while (size_ && size_ + offset >= tail->copy_amount) {
+            const auto ptr_size = tail->copy_amount - offset;
+            if (!ptr_size) {
+                LOG_CRITICAL(Debug, "ptr???size {} {} {}", size_, offset, tail->copy_amount);
+                abort();
+            }
+            action(tail->backing_offset + offset, ptr_size);
+            size_ -= ptr_size;
+            offset = 0;
+            --tail;
+            if (tail == guest_end) {
+//                LOG_CRITICAL(Debug, "tail guest end");
+                ++tail;
+                //                abort();
+                offset = 0;
+                return;
+            }
+        }
+        if (size_) {
+            action(tail->backing_offset + offset, size_);
+        }
+        offset += size_;
+    };
+    auto guest_tail = &read_pointers->data.back();
+    u32 guest_offset = 0;
+    for (s32 level = 0; level < num_levels; ++level) {
+        //        if (const auto levelsz = level_sizes[level]; true) {
+        //            LOG_CRITICAL(Debug, "levelsz {} layersz {}", levelsz, layer_stride);
+        //        }
+        const Extent3D level_size = AdjustMipSize(size, level);
+        const Extent3D num_tiles = AdjustTileSize(level_size, tile_size);
+        const Extent3D block = AdjustMipBlockSize(num_tiles, level_info.block, level);
+        const u32 stride_alignment = StrideAlignment(num_tiles, info.block, gob, bpp_log2);
+        Tegra::Texture::CalculateUnswizzle(unswizzle, 1U << bpp_log2, num_tiles.width,
+                                           num_tiles.height, num_tiles.depth, block.height,
+                                           block.depth, stride_alignment);
+        auto guest_layer_tail = guest_tail;
+        u32 guest_layer_offset = 0;
+        const auto level_advance_size = level_sizes[level];
+        for (s32 layer = 0; layer < info.resources.layers; ++layer) {
+            const auto assemble = [this, &unswizzle, level, layer, guest_layer_tail,
+                                   guest_layer_offset, level_advance_size,
+                                   advance_tail](bool aspect) {
+                auto assemble_tail = guest_layer_tail;
+                auto assemble_offset = guest_layer_offset;
+                u32 so_far = 0;
+                advance_tail(
+                    assemble_tail, assemble_offset, level_advance_size,
+                    [this, &unswizzle, level, layer, aspect, &so_far](u64 ptr, u32 ptr_size) {
+                        //                                 LOG_CRITICAL(Debug, "ptr_size
+                        //                                 {}", ptr_size);
+                        unswizzle_pass->Assemble(*this, unswizzle, ptr, ptr_size, so_far, level,
+                                                 layer, aspect);
+                        so_far += ptr_size;
+                    });
+                //                LOG_CRITICAL(Debug, "total so_far {}", so_far);
+            };
+            assemble(false);
+            if (depth_stencil_aspect) {
+                assemble(true);
+            }
+            advance_tail(guest_layer_tail, guest_layer_offset, layer_stride, [](u64, u32) {});
+        }
+        advance_tail(guest_tail, guest_offset, level_advance_size, [](u64, u32) {});
+    }
+    //    LOG_CRITICAL(Debug, "UploadMemory Finishing {}", debug_id);
+    const auto t4 = std::chrono::high_resolution_clock::now();
+    unswizzle_pass->Finish(*this);
+    const auto t5 = std::chrono::high_resolution_clock::now();
+//    const auto count0 = std::chrono::duration_cast<std::chrono::microseconds>(t5 - t1).count();
+    const auto count1 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+    const auto count2 = std::chrono::duration_cast<std::chrono::microseconds>(t3 - t2).count();
+    const auto count3 = std::chrono::duration_cast<std::chrono::microseconds>(t4 - t3).count();
+    const auto count4 = std::chrono::duration_cast<std::chrono::microseconds>(t5 - t4).count();
+//    if (count0 > 1) {
+        LOG_CRITICAL(Debug, "{} {} {} {} bpp {}", count1, count2, count3, count4, 1U << bpp_log2);
+//    }
+    //    LOG_CRITICAL(Debug, "UploadMemory Done {}", debug_id);
+    //    sleep(1);
+    //        if (debug_id == 23) {
+    //            __asm__("int3");
+    // abort();
+    //        }
 }
 
 void Image::DownloadMemory(const StagingBufferRef& map, std::span<const BufferImageCopy> copies) {

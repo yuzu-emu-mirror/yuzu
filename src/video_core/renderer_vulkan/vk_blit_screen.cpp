@@ -155,73 +155,7 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     std::memcpy(mapped_span.data(), &data, sizeof(data));
 
     if (!use_accelerated) {
-        const u64 image_offset = GetRawImageOffset(framebuffer, image_index);
-
-        const VAddr framebuffer_addr = framebuffer.address + framebuffer.offset;
-        const u8* const host_ptr = cpu_memory.GetPointer(framebuffer_addr);
-        const size_t size_bytes = GetSizeInBytes(framebuffer);
-
-        // TODO(Rodrigo): Read this from HLE
-        constexpr u32 block_height_log2 = 4;
-        const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
-        Tegra::Texture::UnswizzleTexture(
-            mapped_span.subspan(image_offset, size_bytes), std::span(host_ptr, size_bytes),
-            bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0);
-
-        const VkBufferImageCopy copy{
-            .bufferOffset = image_offset,
-            .bufferRowLength = 0,
-            .bufferImageHeight = 0,
-            .imageSubresource =
-                {
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .mipLevel = 0,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
-                },
-            .imageOffset = {.x = 0, .y = 0, .z = 0},
-            .imageExtent =
-                {
-                    .width = framebuffer.width,
-                    .height = framebuffer.height,
-                    .depth = 1,
-                },
-        };
-        scheduler.Record([this, copy, image_index](vk::CommandBuffer cmdbuf) {
-            const VkImage image = *raw_images[image_index];
-            const VkImageMemoryBarrier base_barrier{
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                .pNext = nullptr,
-                .srcAccessMask = 0,
-                .dstAccessMask = 0,
-                .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
-                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                .image = image,
-                .subresourceRange{
-                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .baseMipLevel = 0,
-                    .levelCount = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount = 1,
-                },
-            };
-            VkImageMemoryBarrier read_barrier = base_barrier;
-            read_barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-            read_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            read_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            VkImageMemoryBarrier write_barrier = base_barrier;
-            write_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            write_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                                   read_barrier);
-            cmdbuf.CopyBufferToImage(*buffer, image, VK_IMAGE_LAYOUT_GENERAL, copy);
-            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, write_barrier);
-        });
+        // This seems unused
     }
     scheduler.Record(
         [this, host_framebuffer, image_index, size = render_area](vk::CommandBuffer cmdbuf) {

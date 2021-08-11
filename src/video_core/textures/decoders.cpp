@@ -18,15 +18,113 @@
 
 namespace Tegra::Texture {
 namespace {
+[[maybe_unused]] u32 CalcUnswiz(u32 swizzled_offset, u32 block_height_mask, u32 block_height,
+                                u32 block_depth_mask, u32 lesser_x_shift, u32 lesser_slice_size,
+                                u32 gobs_in_x, u32 block_depth, u32 pitch, u32 height, u32 depth,
+                                u32 pitch_height, size_t output_size) {
+    const u32 entry = swizzled_offset & 0b111111111;
+    const u32 y_table = ((entry >> 5) & 6) | ((entry >> 4) & 1);
+    const u32 x_entry = ((entry >> 3) & 32) | ((entry >> 1) & 16) | (entry & 15);
+    const u32 base_swizzled_offset = swizzled_offset >> 9;
+    const u32 set_y = (base_swizzled_offset & block_height_mask) << 3;
+    const u32 set_z = (base_swizzled_offset >> block_height) & block_depth_mask;
+    const u32 inner_swizzled = base_swizzled_offset >> lesser_x_shift;
+    const u32 sli = inner_swizzled / lesser_slice_size;
+    const u32 gb = inner_swizzled % lesser_slice_size;
+    const u32 x_inner = (gb % gobs_in_x) << 6;
+    const u32 y_inner = (gb / gobs_in_x) << (block_height + 3);
+    const u32 z_inner = sli << block_depth;
+    const u32 x = x_inner + x_entry;
+    const u32 y = y_inner + set_y + y_table;
+    const u32 z = z_inner + set_z;
+    if (x >= pitch || y >= height || z >= depth) {
+        return ~0U;
+    }
+    const u32 z_pitch_height = z * pitch_height;
+    const u32 z_pitch_height_y_pitch = z_pitch_height + y * pitch;
+    const u32 unswizzled_offset = z_pitch_height_y_pitch + x;
+    if (unswizzled_offset >= output_size) {
+        return ~0U;
+    }
+    return unswizzled_offset;
+}
+
+template <u32 BYTES_PER_PIXEL>
+void UnswizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32 height,
+                   u32 depth, u32 block_height, u32 block_depth, u32 stride_alignment) {
+    const u32 pitch = width * BYTES_PER_PIXEL;
+    const u32 stride = Common::AlignUpLog2(width, stride_alignment) * BYTES_PER_PIXEL;
+    const u32 gobs_in_x = Common::DivCeilLog2(stride, 6U);
+    const u32 lesser_x_shift = block_height + block_depth;
+    const u32 x_shift = 9 + lesser_x_shift;
+    [[maybe_unused]] const u32 block_size = gobs_in_x << x_shift;
+    const u32 dcl2 = Common::DivCeilLog2(height, block_height + 3);
+    const u32 lesser_slice_size = dcl2 * gobs_in_x;
+    [[maybe_unused]] const u32 slice_size = lesser_slice_size << x_shift;
+    const u32 block_height_mask = (1U << block_height) - 1;
+    const u32 block_depth_mask = (1U << block_depth) - 1;
+    [[maybe_unused]] const u32 pitch_height = pitch * height;
+    //    for (u32 swizzled_offset = 0; swizzled_offset < input.size();
+    //         swizzled_offset += BYTES_PER_PIXEL) {
+    //        u32 unswizzled_offset =
+    //            CalcUnswiz(swizzled_offset, block_height_mask, block_height, block_depth_mask,
+    //                       lesser_x_shift, lesser_slice_size, gobs_in_x, block_depth, pitch,
+    //                       height, depth, pitch_height, output.size());
+    //        if (!~unswizzled_offset) {
+    //            continue;
+    //        }
+    //        u8* const dst = &output[unswizzled_offset];
+    //        const u8* const src = &input[swizzled_offset];
+    //        std::memcpy(dst, src, BYTES_PER_PIXEL);
+    //    }
+    for (u32 unswizzled_offset = 0; unswizzled_offset < output.size();
+         unswizzled_offset += BYTES_PER_PIXEL) {
+        const u32 unswizzled_offset_pitch = unswizzled_offset / pitch;
+        const u32 z = unswizzled_offset_pitch / height;
+        const u32 y = unswizzled_offset_pitch % height;
+        const u32 x = unswizzled_offset % pitch;
+        const u32 offset_z =
+            (z >> block_depth) * slice_size + ((z & block_depth_mask) << (9 + block_height));
+        const u32 block_y = y >> GOB_SIZE_Y_SHIFT;
+        const u32 offset_y =
+            (block_y >> block_height) * block_size + ((block_y & block_height_mask) << 9);
+        const u32 offset_x = (x >> GOB_SIZE_X_SHIFT) << x_shift;
+        const u32 base_swizzled_offset = offset_z + offset_y + offset_x;
+        const u32 table = ((y & 6) << 5) | ((y & 1) << 4);
+        const u32 entry = ((x & 32) << 3) | ((x & 16) << 1) | (x & 15) | table;
+        const u32 swizzled_offset = base_swizzled_offset | entry;
+        u32 other = CalcUnswiz(swizzled_offset, block_height_mask, block_height, block_depth_mask,
+                               lesser_x_shift, lesser_slice_size, gobs_in_x, block_depth, pitch,
+                               height, depth, pitch_height, output.size());
+        if (swizzled_offset >= input.size()) {
+            continue;
+        }
+        if (x >= pitch || y >= height || z >= depth) {
+            //            if (~other) {
+            //                LOG_CRITICAL(Debug, "E2 {} != {}", unswizzled_offset, other);
+            //                abort();
+            //            }
+            continue;
+        }
+        //        if (z != 0) {
+        //            continue;
+        //        }
+        if (other != unswizzled_offset) {
+            LOG_CRITICAL(Debug, "E3 {} != {} | {} {} {} {} {} {} {} {} {} {} {} {} | {} {} {}",
+                         unswizzled_offset, other, swizzled_offset, block_height_mask, block_height,
+                         block_depth_mask, lesser_x_shift, lesser_slice_size, gobs_in_x,
+                         block_depth, pitch, height, depth, pitch_height, x, y, z);
+            abort();
+        }
+        u8* const dst = &output[unswizzled_offset];
+        const u8* const src = &input[swizzled_offset];
+        std::memcpy(dst, src, BYTES_PER_PIXEL);
+    }
+}
+
 template <bool TO_LINEAR, u32 BYTES_PER_PIXEL>
 void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32 height, u32 depth,
                  u32 block_height, u32 block_depth, u32 stride_alignment) {
-    // The origin of the transformation can be configured here, leave it as zero as the current API
-    // doesn't expose it.
-    static constexpr u32 origin_x = 0;
-    static constexpr u32 origin_y = 0;
-    static constexpr u32 origin_z = 0;
-
     // We can configure here a custom pitch
     // As it's not exposed 'width * BYTES_PER_PIXEL' will be the expected pitch.
     const u32 pitch = width * BYTES_PER_PIXEL;
@@ -42,32 +140,34 @@ void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32
     const u32 x_shift = GOB_SIZE_SHIFT + block_height + block_depth;
 
     for (u32 slice = 0; slice < depth; ++slice) {
-        const u32 z = slice + origin_z;
+        const u32 z = slice;
         const u32 offset_z = (z >> block_depth) * slice_size +
                              ((z & block_depth_mask) << (GOB_SIZE_SHIFT + block_height));
+        const u32 slice_pitch_height = slice * pitch * height;
         for (u32 line = 0; line < height; ++line) {
-            const u32 y = line + origin_y;
-            const auto& table = SWIZZLE_TABLE[y % GOB_SIZE_Y];
+            const u32 y = line;
+            const u32 table = ((y & 6) << 5) | ((y & 1) << 4);
 
             const u32 block_y = y >> GOB_SIZE_Y_SHIFT;
             const u32 offset_y = (block_y >> block_height) * block_size +
                                  ((block_y & block_height_mask) << GOB_SIZE_SHIFT);
+            const u32 line_pitch = line * pitch;
 
             for (u32 column = 0; column < width; ++column) {
-                const u32 x = (column + origin_x) * BYTES_PER_PIXEL;
+                const u32 x = column * BYTES_PER_PIXEL;
                 const u32 offset_x = (x >> GOB_SIZE_X_SHIFT) << x_shift;
 
                 const u32 base_swizzled_offset = offset_z + offset_y + offset_x;
-                const u32 swizzled_offset = base_swizzled_offset + table[x % GOB_SIZE_X];
+                const u32 entry = ((x & 32) << 3) | ((x & 16) << 1) | (x & 15) | table;
+                const u32 swizzled_offset = base_swizzled_offset | entry;
 
-                const u32 unswizzled_offset =
-                    slice * pitch * height + line * pitch + column * BYTES_PER_PIXEL;
+                const u32 unswizzled_offset = slice_pitch_height + line_pitch + x;
 
                 if (const auto offset = (TO_LINEAR ? unswizzled_offset : swizzled_offset);
                     offset >= input.size()) {
                     // TODO(Rodrigo): This is an out of bounds access that should never happen. To
                     // avoid crashing the emulator, break.
-                    ASSERT_MSG(false, "offset {} exceeds input size {}!", offset, input.size());
+                    // ASSERT_MSG(false, "offset {} exceeds input size {}!", offset, input.size());
                     break;
                 }
 
@@ -84,35 +184,60 @@ template <bool TO_LINEAR>
 void Swizzle(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixel, u32 width,
              u32 height, u32 depth, u32 block_height, u32 block_depth, u32 stride_alignment) {
     switch (bytes_per_pixel) {
-    case 1:
-        return SwizzleImpl<TO_LINEAR, 1>(output, input, width, height, depth, block_height,
+#define BPP_CASE(x)                                                                                \
+    case x:                                                                                        \
+        return SwizzleImpl<TO_LINEAR, x>(output, input, width, height, depth, block_height,        \
                                          block_depth, stride_alignment);
-    case 2:
-        return SwizzleImpl<TO_LINEAR, 2>(output, input, width, height, depth, block_height,
-                                         block_depth, stride_alignment);
-    case 3:
-        return SwizzleImpl<TO_LINEAR, 3>(output, input, width, height, depth, block_height,
-                                         block_depth, stride_alignment);
-    case 4:
-        return SwizzleImpl<TO_LINEAR, 4>(output, input, width, height, depth, block_height,
-                                         block_depth, stride_alignment);
-    case 6:
-        return SwizzleImpl<TO_LINEAR, 6>(output, input, width, height, depth, block_height,
-                                         block_depth, stride_alignment);
-    case 8:
-        return SwizzleImpl<TO_LINEAR, 8>(output, input, width, height, depth, block_height,
-                                         block_depth, stride_alignment);
-    case 12:
-        return SwizzleImpl<TO_LINEAR, 12>(output, input, width, height, depth, block_height,
-                                          block_depth, stride_alignment);
-    case 16:
-        return SwizzleImpl<TO_LINEAR, 16>(output, input, width, height, depth, block_height,
-                                          block_depth, stride_alignment);
+        BPP_CASE(1)
+        BPP_CASE(2)
+        BPP_CASE(3)
+        BPP_CASE(4)
+        BPP_CASE(6)
+        BPP_CASE(8)
+        BPP_CASE(12)
+        BPP_CASE(16)
+#undef BPP_CASE
+    default:
+        UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
+    }
+}
+
+[[maybe_unused]] void Unswizzle(std::span<u8> output, std::span<const u8> input,
+                                u32 bytes_per_pixel, u32 width, u32 height, u32 depth,
+                                u32 block_height, u32 block_depth, u32 stride_alignment) {
+    switch (bytes_per_pixel) {
+#define BPP_CASE(x)                                                                                \
+    case x:                                                                                        \
+        return UnswizzleImpl<x>(output, input, width, height, depth, block_height, block_depth,    \
+                                stride_alignment);
+        BPP_CASE(1)
+        BPP_CASE(2)
+        BPP_CASE(3)
+        BPP_CASE(4)
+        BPP_CASE(6)
+        BPP_CASE(8)
+        BPP_CASE(12)
+        BPP_CASE(16)
+#undef BPP_CASE
     default:
         UNREACHABLE_MSG("Invalid bytes_per_pixel={}", bytes_per_pixel);
     }
 }
 } // Anonymous namespace
+
+void CalculateUnswizzle(VideoCommon::UnswizzlePushConstants& result, u32 bytes_per_pixel, u32 width,
+                        u32 height, u32 depth, u32 block_height, u32 block_depth,
+                        u32 stride_alignment) {
+    const u32 stride = Common::AlignUpLog2(width, stride_alignment) * bytes_per_pixel;
+    result.bytes_per_pixel = bytes_per_pixel;
+    result.pitch = width * bytes_per_pixel;
+    result.height = height;
+    result.depth = depth;
+    result.block_height = block_height;
+    result.block_depth = block_depth;
+    result.gobs_in_x = Common::DivCeilLog2(stride, 6U);
+    result.dcl2 = Common::DivCeilLog2(stride, 6U);
+}
 
 void UnswizzleTexture(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixel,
                       u32 width, u32 height, u32 depth, u32 block_height, u32 block_depth,

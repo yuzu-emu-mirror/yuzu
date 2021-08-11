@@ -145,4 +145,18 @@ struct SwizzleParameters {
     s32 level;
 };
 
+struct UnswizzlePushConstants {
+    u32 size;
+    u32 ptr;
+    u32 so_far;
+    u32 bytes_per_pixel;
+    u32 pitch;
+    u32 height;
+    u32 depth;
+    u32 block_height;
+    u32 block_depth;
+    u32 gobs_in_x;
+    u32 dcl2;
+};
+
 } // namespace VideoCommon

@@ -7,6 +7,7 @@
 #include <span>
 
 #include "common/common_types.h"
+#include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
 
 namespace Tegra::Texture {
@@ -39,6 +40,10 @@ constexpr SwizzleTable MakeSwizzleTable() {
     return table;
 }
 constexpr SwizzleTable SWIZZLE_TABLE = MakeSwizzleTable();
+
+void CalculateUnswizzle(VideoCommon::UnswizzlePushConstants& result, u32 bytes_per_pixel, u32 width,
+                        u32 height, u32 depth, u32 block_height, u32 block_depth,
+                        u32 stride_alignment);
 
 /// Unswizzles a block linear texture into linear memory.
 void UnswizzleTexture(std::span<u8> output, std::span<const u8> input, u32 bytes_per_pixel,

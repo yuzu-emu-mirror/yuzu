@@ -295,6 +295,7 @@ struct DeviceDispatch : InstanceDispatch {
 #ifdef _WIN32
     PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR{};
 #endif
+    PFN_vkGetMemoryHostPointerPropertiesEXT vkGetMemoryHostPointerPropertiesEXT{};
     PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR{};
     PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR{};
     PFN_vkGetQueryPoolResults vkGetQueryPoolResults{};
@@ -880,6 +881,8 @@ public:
                                                      void* pnext = nullptr) const noexcept;
 
     VkMemoryRequirements GetImageMemoryRequirements(VkImage image) const noexcept;
+
+    u32 GetMemoryHostPointerProperties(const void* ptr) const noexcept;
 
     std::vector<VkPipelineExecutablePropertiesKHR> GetPipelineExecutablePropertiesKHR(
         VkPipeline pipeline) const;

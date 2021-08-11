@@ -77,7 +77,7 @@ private:
 
     DescriptorUpdateEntry* payload_cursor = nullptr;
     const DescriptorUpdateEntry* upload_start = nullptr;
-    std::array<DescriptorUpdateEntry, 0x10000> payload;
+    std::array<DescriptorUpdateEntry, 0x100000> payload;
 };
 
 } // namespace Vulkan

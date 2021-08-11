@@ -14,6 +14,7 @@
 
 #include "common/assert.h"
 #include "common/settings.h"
+#include "core/device_memory.h"
 #include "video_core/vulkan_common/nsight_aftermath_tracker.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -42,6 +43,7 @@ enum class NvidiaArchitecture {
 
 constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE3_EXTENSION_NAME,
     VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
@@ -63,6 +65,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
 #endif
 #ifdef __unix__
     VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+    VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME,
 #endif
 };
 
@@ -754,6 +757,7 @@ void Device::CheckSuitability(bool requires_swapchain) const {
     const VkPhysicalDeviceLimits& limits{properties.limits};
     const std::array limits_report{
         LimitTuple{65536, limits.maxUniformBufferRange, "maxUniformBufferRange"},
+        LimitTuple{134217728, limits.maxStorageBufferRange, "maxUniformBufferRange"},
         LimitTuple{16, limits.maxViewports, "maxViewports"},
         LimitTuple{8, limits.maxColorAttachments, "maxColorAttachments"},
         LimitTuple{8, limits.maxClipDistances, "maxClipDistances"},
@@ -900,6 +904,27 @@ std::vector<const char*> Device::LoadExtensions(bool requires_surface) {
 
     VkPhysicalDeviceProperties2KHR physical_properties;
     physical_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2_KHR;
+    {
+        VkPhysicalDeviceMaintenance3Properties properties3{};
+        properties3.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES;
+        properties3.pNext = nullptr;
+        VkPhysicalDeviceExternalMemoryHostPropertiesEXT host_properties{};
+        host_properties.sType =
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT;
+        host_properties.pNext = &properties3;
+        physical_properties.pNext = &host_properties;
+        physical.GetProperties2KHR(physical_properties);
+        if (properties3.maxMemoryAllocationSize < Core::DramMemoryMap::GiB) {
+            LOG_CRITICAL(Render_Vulkan, "Not enough memory for Vulkan host memory {} < {}",
+                         properties3.maxMemoryAllocationSize, Core::DramMemoryMap::GiB);
+            abort();
+        }
+        if (host_properties.minImportedHostPointerAlignment > 4096) {
+            LOG_CRITICAL(Render_Vulkan, "Unexpected minImportedHostPointerAlignment {}",
+                         host_properties.minImportedHostPointerAlignment);
+            abort();
+        }
+    }
 
     if (has_khr_shader_float16_int8) {
         VkPhysicalDeviceFloat16Int8FeaturesKHR float16_int8_features;

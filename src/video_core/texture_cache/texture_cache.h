@@ -272,6 +272,7 @@ void TextureCache<P>::FillImageViews(DescriptorTable<TICEntry>& table,
                                      std::span<ImageViewId> cached_image_view_ids,
                                      std::span<const u32> indices,
                                      std::span<ImageViewId> image_view_ids) {
+    //    auto t1 = std::chrono::high_resolution_clock::now();
     ASSERT(indices.size() <= image_view_ids.size());
     do {
         has_deleted_images = false;
@@ -279,24 +280,40 @@ void TextureCache<P>::FillImageViews(DescriptorTable<TICEntry>& table,
             return VisitImageView(table, cached_image_view_ids, index);
         });
     } while (has_deleted_images);
+    //    auto t2 = std::chrono::high_resolution_clock::now();
+    //    auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    //    if (count1 > 1) {
+    //        LOG_CRITICAL(Debug, "{}", count1);
+    //    }
 }
 
 template <class P>
 ImageViewId TextureCache<P>::VisitImageView(DescriptorTable<TICEntry>& table,
                                             std::span<ImageViewId> cached_image_view_ids,
                                             u32 index) {
+    //    auto t1 = std::chrono::high_resolution_clock::now();
     if (index > table.Limit()) {
         LOG_DEBUG(HW_GPU, "Invalid image view index={}", index);
         return NULL_IMAGE_VIEW_ID;
     }
     const auto [descriptor, is_new] = table.Read(index);
     ImageViewId& image_view_id = cached_image_view_ids[index];
+    //    auto t2 = std::chrono::high_resolution_clock::now();
     if (is_new) {
         image_view_id = FindImageView(descriptor);
     }
+    //    auto t3 = std::chrono::high_resolution_clock::now();
     if (image_view_id != NULL_IMAGE_VIEW_ID) {
         PrepareImageView(image_view_id, false, false);
     }
+    //    auto t4 = std::chrono::high_resolution_clock::now();
+    //    auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    //    auto count2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    //    auto count3 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
+    //    auto count4 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
+    //    if (count4 > 1) {
+    //        LOG_CRITICAL(Debug, "{} {} {} {}", count1, count2, count3, count4);
+    //    }
     return image_view_id;
 }
 
@@ -539,29 +556,26 @@ void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
         LOG_WARNING(HW_GPU, "MSAA image uploads are not implemented");
         return;
     }
-    auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
-    UploadImageContents(image, staging);
+    UploadImageContents(image);
     runtime.InsertUploadMemoryBarrier();
 }
 
 template <class P>
-template <typename StagingBuffer>
-void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) {
-    const std::span<u8> mapped_span = staging.mapped_span;
-    const GPUVAddr gpu_addr = image.gpu_addr;
-
+void TextureCache<P>::UploadImageContents(Image& image) {
+    auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
     if (True(image.flags & ImageFlagBits::AcceleratedUpload)) {
-        gpu_memory.ReadBlockUnsafe(gpu_addr, mapped_span.data(), mapped_span.size_bytes());
-        const auto uploads = FullUploadSwizzles(image.info);
-        runtime.AccelerateImageUpload(image, staging, uploads);
+        //        gpu_memory.ReadBlockUnsafe(gpu_addr, mapped_span.data(),
+        //        mapped_span.size_bytes()); const auto uploads = FullUploadSwizzles(image.info);
+        //        runtime.AccelerateImageUpload(image, staging, uploads);
+        abort();
     } else if (True(image.flags & ImageFlagBits::Converted)) {
-        std::vector<u8> unswizzled_data(image.unswizzled_size_bytes);
-        auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, unswizzled_data);
-        ConvertImage(unswizzled_data, image.info, mapped_span, copies);
-        image.UploadMemory(staging, copies);
+        //        std::vector<u8> unswizzled_data(image.unswizzled_size_bytes);
+        //        auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, unswizzled_data);
+        //        ConvertImage(unswizzled_data, image.info, mapped_span, copies);
+        //        image.UploadMemory(staging, copies);
+        abort();
     } else {
-        const auto copies = UnswizzleImage(gpu_memory, gpu_addr, image.info, mapped_span);
-        image.UploadMemory(staging, copies);
+        image.UploadMemory(staging, gpu_memory, unswizzle_scratch);
     }
 }
 
@@ -1378,8 +1392,14 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
             TrackImage(image, image_id);
         }
     } else {
+        //        auto t1 = std::chrono::high_resolution_clock::now();
         RefreshContents(image, image_id);
         SynchronizeAliases(image_id);
+        //        auto t2 = std::chrono::high_resolution_clock::now();
+        //        auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 -
+        //        t1).count(); if (count1 > 1) {
+        //            LOG_CRITICAL(Debug, "{}", count1);
+        //        }
     }
     if (is_modification) {
         MarkModification(image);

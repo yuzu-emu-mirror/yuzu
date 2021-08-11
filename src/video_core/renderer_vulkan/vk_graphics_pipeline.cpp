@@ -458,6 +458,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 }
 
 void GraphicsPipeline::ConfigureDraw() {
+    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
@@ -469,7 +470,6 @@ void GraphicsPipeline::ConfigureDraw() {
         });
     }
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
-    const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data, bind_pipeline](vk::CommandBuffer cmdbuf) {
         if (bind_pipeline) {
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);

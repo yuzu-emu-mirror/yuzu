@@ -16,6 +16,7 @@ set(SHADER_FILES
     vulkan_present.vert
     vulkan_quad_indexed.comp
     vulkan_uint8.comp
+    vulkan_unswizzle.comp
 )
 
 find_program(GLSLANGVALIDATOR "glslangValidator")
