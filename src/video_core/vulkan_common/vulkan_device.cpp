@@ -1161,7 +1161,8 @@ void Device::CollectPhysicalMemoryInfo() {
 }
 
 void Device::CollectToolingInfo() {
-    if (!ext_tooling_info) {
+    if (!ext_tooling_info || true) {
+        // Disabled to work around https://github.com/yuzu-emu/yuzu/issues/6835
         return;
     }
     const auto vkGetPhysicalDeviceToolPropertiesEXT =
