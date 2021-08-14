@@ -65,7 +65,11 @@ struct Memory::Impl {
             return {};
         }
 
-        return system.DeviceMemory().GetPointer(paddr) + vaddr;
+        u8* test = system.DeviceMemory().GetPointer(paddr);
+        //        LOG_CRITICAL(Debug, "{:016X} {:016X} {:016X} va {:016X} {:016X}",
+        //                     (size_t)system.DeviceMemory().buffer.BackingBasePointer(),
+        //                     (size_t)test, paddr, vaddr, (size_t)(test + vaddr));
+        return test + vaddr;
     }
 
     u8 Read8(const VAddr addr) {
@@ -238,6 +242,42 @@ struct Memory::Impl {
 
     void ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std::size_t size) {
         ReadBlockImpl<true>(*system.CurrentProcess(), src_addr, dest_buffer, size);
+    }
+
+    void ReadBlockPointersUnsafe(const Kernel::KProcess& process, const VAddr src_addr,
+                                 ReadPointers& result, const std::size_t size) {
+        const auto end = &result.data[0];
+        const auto base_ptr = system.DeviceMemory().buffer.BackingBasePointer();
+        auto& tail = result.tail;
+        WalkBlock(
+            process, src_addr, size,
+            [src_addr, size, &tail](const std::size_t copy_amount, const VAddr current_vaddr) {
+                LOG_ERROR(
+                    HW_Memory,
+                    "Unmapped ReadBlockPointers @ 0x{:016X} (start address = 0x{:016X}, size = {})",
+                    current_vaddr, src_addr, size);
+                tail->backing_offset = DramMemoryMap::Size;
+            },
+            [&tail, base_ptr](const std::size_t copy_amount, const u8* const src_ptr) {
+                tail->backing_offset = src_ptr - base_ptr;
+            },
+            [&tail, base_ptr](const VAddr current_vaddr, const std::size_t copy_amount,
+                      const u8* const host_ptr) {
+                tail->backing_offset = host_ptr - base_ptr;
+            },
+            [&tail, end](const std::size_t copy_amount) {
+                tail->copy_amount = static_cast<u32>(copy_amount);
+                if (tail == end) {
+                    LOG_CRITICAL(Debug, "Trying to read too much???");
+                    abort();
+                }
+                --tail;
+            });
+    }
+
+    void ReadBlockPointersUnsafe(const VAddr src_addr, ReadPointers& result,
+                                 const std::size_t size) {
+        ReadBlockPointersUnsafe(*system.CurrentProcess(), src_addr, result, size);
     }
 
     template <bool UNSAFE>
@@ -668,6 +708,11 @@ void Memory::ReadBlockUnsafe(const VAddr src_addr, void* dest_buffer, const std:
     impl->ReadBlockUnsafe(src_addr, dest_buffer, size);
 }
 
+void Memory::ReadBlockPointersUnsafe(const VAddr src_addr, ReadPointers& result,
+                                     const std::size_t size) {
+    impl->ReadBlockPointersUnsafe(src_addr, result, size);
+}
+
 void Memory::WriteBlock(const Kernel::KProcess& process, VAddr dest_addr, const void* src_buffer,
                         std::size_t size) {
     impl->WriteBlockImpl<false>(process, dest_addr, src_buffer, size);
@@ -689,6 +734,10 @@ void Memory::CopyBlock(const Kernel::KProcess& process, VAddr dest_addr, VAddr s
 
 void Memory::RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
     impl->RasterizerMarkRegionCached(vaddr, size, cached);
+}
+
+Core::DeviceMemory& Memory::GetDeviceMemory() {
+    return system.DeviceMemory();
 }
 
 } // namespace Core::Memory

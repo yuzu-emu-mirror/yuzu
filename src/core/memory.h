@@ -14,8 +14,9 @@ struct PageTable;
 }
 
 namespace Core {
+class DeviceMemory;
 class System;
-}
+} // namespace Core
 
 namespace Kernel {
 class PhysicalMemory;
@@ -39,6 +40,17 @@ enum : VAddr {
 
     /// Application stack
     DEFAULT_STACK_SIZE = 0x100000,
+};
+
+constexpr u32 MAX_READ_POINTERS = 100000;
+
+struct ReadPointers {
+    struct ReadPointer {
+        u32 copy_amount;
+        u64 backing_offset;
+    };
+    std::array<ReadPointer, MAX_READ_POINTERS> data;
+    ReadPointer* tail;
 };
 
 /// Central class that handles all memory operations and state.
@@ -348,6 +360,8 @@ public:
      */
     void ReadBlockUnsafe(VAddr src_addr, void* dest_buffer, std::size_t size);
 
+    void ReadBlockPointersUnsafe(VAddr src_addr, ReadPointers& result, std::size_t size);
+
     /**
      * Writes a range of bytes into a given process' address space at the specified
      * virtual address.
@@ -434,6 +448,8 @@ public:
      *               marked as cached or uncached.
      */
     void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached);
+
+    Core::DeviceMemory& GetDeviceMemory();
 
 private:
     Core::System& system;

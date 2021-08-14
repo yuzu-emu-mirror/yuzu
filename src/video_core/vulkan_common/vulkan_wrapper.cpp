@@ -180,6 +180,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
 #ifdef _WIN32
     X(vkGetMemoryWin32HandleKHR);
 #endif
+    X(vkGetMemoryHostPointerPropertiesEXT);
     X(vkGetQueryPoolResults);
     X(vkGetPipelineExecutablePropertiesKHR);
     X(vkGetPipelineExecutableStatisticsKHR);
@@ -809,6 +810,17 @@ VkMemoryRequirements Device::GetImageMemoryRequirements(VkImage image) const noe
     VkMemoryRequirements requirements;
     dld->vkGetImageMemoryRequirements(handle, image, &requirements);
     return requirements;
+}
+
+u32 Device::GetMemoryHostPointerProperties(const void* ptr) const noexcept {
+    VkMemoryHostPointerPropertiesEXT properties{
+        .sType = VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT,
+        .pNext = nullptr,
+        .memoryTypeBits = 0,
+    };
+    Check(dld->vkGetMemoryHostPointerPropertiesEXT(
+        handle, VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT, ptr, &properties));
+    return properties.memoryTypeBits;
 }
 
 std::vector<VkPipelineExecutablePropertiesKHR> Device::GetPipelineExecutablePropertiesKHR(

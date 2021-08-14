@@ -61,6 +61,11 @@ std::optional<u32> FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& p
     return std::nullopt;
 }
 
+size_t Region(size_t iterator) noexcept {
+    return iterator / REGION_SIZE;
+}
+} // Anonymous namespace
+
 u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_mask,
                         bool try_device_local) {
     std::optional<u32> type;
@@ -79,11 +84,6 @@ u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_
     // This should never happen, and in case it does, signal it as an out of memory situation
     throw vk::Exception(VK_ERROR_OUT_OF_DEVICE_MEMORY);
 }
-
-size_t Region(size_t iterator) noexcept {
-    return iterator / REGION_SIZE;
-}
-} // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
                                      VKScheduler& scheduler_)

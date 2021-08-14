@@ -217,9 +217,8 @@ private:
     /// Refresh the contents (pixel data) of an image
     void RefreshContents(Image& image, ImageId image_id);
 
-    /// Upload data from guest to an image
-    template <typename StagingBuffer>
-    void UploadImageContents(Image& image, StagingBuffer& staging_buffer);
+    /// Upload data from guest to an imag
+    void UploadImageContents(Image& image);
 
     /// Find or create an image view from a guest descriptor
     [[nodiscard]] ImageViewId FindImageView(const TICEntry& config);
@@ -328,6 +327,7 @@ private:
     Tegra::Engines::Maxwell3D& maxwell3d;
     Tegra::Engines::KeplerCompute& kepler_compute;
     Tegra::MemoryManager& gpu_memory;
+    std::array<u8, MAX_GUEST_SIZE> unswizzle_scratch;
 
     DescriptorTable<TICEntry> graphics_image_table{gpu_memory};
     DescriptorTable<TSCEntry> graphics_sampler_table{gpu_memory};

@@ -151,8 +151,8 @@ public:
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
 
-    void UploadMemory(const ImageBufferMap& map,
-                      std::span<const VideoCommon::BufferImageCopy> copies);
+    void UploadMemory(const ImageBufferMap& map, Tegra::MemoryManager& gpu_memory,
+                      std::array<u8, VideoCommon::MAX_GUEST_SIZE>& scratch);
 
     void DownloadMemory(ImageBufferMap& map, std::span<const VideoCommon::BufferImageCopy> copies);
 

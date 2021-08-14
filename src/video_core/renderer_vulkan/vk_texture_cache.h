@@ -7,6 +7,7 @@
 #include <compare>
 #include <span>
 
+#include "core/memory.h"
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/texture_cache/texture_cache_base.h"
@@ -29,6 +30,7 @@ class ImageView;
 class Framebuffer;
 class RenderPassCache;
 class StagingBufferPool;
+class UnswizzlePass;
 class VKScheduler;
 
 struct TextureCacheRuntime {
@@ -38,7 +40,9 @@ struct TextureCacheRuntime {
     StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
     ASTCDecoderPass& astc_decoder_pass;
+    UnswizzlePass& unswizzle_pass;
     RenderPassCache& render_pass_cache;
+    Core::Memory::ReadPointers read_pointers;
 
     void Finish();
 
@@ -90,8 +94,8 @@ public:
     Image(Image&&) = default;
     Image& operator=(Image&&) = default;
 
-    void UploadMemory(const StagingBufferRef& map,
-                      std::span<const VideoCommon::BufferImageCopy> copies);
+    void UploadMemory(const StagingBufferRef& map, Tegra::MemoryManager& gpu_memory,
+                      std::array<u8, VideoCommon::MAX_GUEST_SIZE>& scratch);
 
     void DownloadMemory(const StagingBufferRef& map,
                         std::span<const VideoCommon::BufferImageCopy> copies);
@@ -104,8 +108,15 @@ public:
         return aspect_mask;
     }
 
-    [[nodiscard]] VkImageView StorageImageView(s32 level) const noexcept {
-        return *storage_image_views[level];
+    [[nodiscard]] VkImageView StorageImageView(s32 level, s32 layer = 0,
+                                               bool aspect = false) const noexcept {
+        const auto idx = static_cast<u32>(layer + info.resources.layers *
+                                                      (level + aspect * info.resources.levels));
+        if (idx >= storage_image_views.size()) {
+            LOG_CRITICAL(Debug, "{} {} {}", idx, storage_image_views.size(), aspect);
+            abort();
+        }
+        return *storage_image_views[idx];
     }
 
     /// Returns true when the image is already initialized and mark it as initialized
@@ -121,6 +132,8 @@ private:
     std::vector<vk::ImageView> storage_image_views;
     VkImageAspectFlags aspect_mask = 0;
     bool initialized = false;
+    UnswizzlePass* unswizzle_pass;
+    Core::Memory::ReadPointers* read_pointers;
 };
 
 class ImageView : public VideoCommon::ImageViewBase {

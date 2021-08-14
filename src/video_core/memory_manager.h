@@ -16,6 +16,9 @@ class RasterizerInterface;
 
 namespace Core {
 class System;
+namespace Memory {
+struct ReadPointers;
+}
 }
 
 namespace Tegra {
@@ -111,6 +114,8 @@ public:
      * being flushed.
      */
     void ReadBlockUnsafe(GPUVAddr gpu_src_addr, void* dest_buffer, std::size_t size) const;
+    void ReadBlockPointersUnsafe(GPUVAddr gpu_src_addr, Core::Memory::ReadPointers& result,
+                                 std::size_t size) const;
     void WriteBlockUnsafe(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size);
 
     /**

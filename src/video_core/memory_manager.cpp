@@ -6,6 +6,7 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
+#include "core/device_memory.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/memory.h"
@@ -308,6 +309,37 @@ void MemoryManager::ReadBlockUnsafe(GPUVAddr gpu_src_addr, void* dest_buffer,
         page_index++;
         page_offset = 0;
         dest_buffer = static_cast<u8*>(dest_buffer) + copy_amount;
+        remaining_size -= copy_amount;
+    }
+}
+
+void MemoryManager::ReadBlockPointersUnsafe(GPUVAddr gpu_src_addr,
+                                            Core::Memory::ReadPointers& result,
+                                            const std::size_t size) const {
+    std::size_t remaining_size{size};
+    std::size_t page_index{gpu_src_addr >> page_bits};
+    std::size_t page_offset{gpu_src_addr & page_mask};
+
+    while (remaining_size > 0) {
+        const std::size_t copy_amount{
+            std::min(static_cast<std::size_t>(page_size) - page_offset, remaining_size)};
+
+        if (const auto page_addr{GpuToCpuAddress(page_index << page_bits)}; page_addr) {
+            const auto src_addr{*page_addr + page_offset};
+            system.Memory().ReadBlockPointersUnsafe(src_addr, result, copy_amount);
+        } else {
+            auto& tail = result.tail;
+            tail->backing_offset = Core::DramMemoryMap::Size;
+            tail->copy_amount = static_cast<u32>(copy_amount);
+            if (tail == &result.data[0]) {
+                LOG_CRITICAL(Debug, "Trying to read too much???");
+                abort();
+            }
+            --tail;
+        }
+
+        page_index++;
+        page_offset = 0;
         remaining_size -= copy_amount;
     }
 }

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -125,7 +126,8 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
                                    Tegra::MemoryManager& gpu_memory_,
                                    Core::Memory::Memory& cpu_memory_, VKScreenInfo& screen_info_,
                                    const Device& device_, MemoryAllocator& memory_allocator_,
-                                   StateTracker& state_tracker_, VKScheduler& scheduler_)
+                                   StateTracker& state_tracker_, VKScheduler& scheduler_,
+                                   VulkanHostMemory& host_memory_)
     : RasterizerAccelerated{cpu_memory_}, gpu{gpu_},
       gpu_memory{gpu_memory_}, maxwell3d{gpu.Maxwell3D()}, kepler_compute{gpu.KeplerCompute()},
       screen_info{screen_info_}, device{device_}, memory_allocator{memory_allocator_},
@@ -133,12 +135,13 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       staging_pool(device, memory_allocator, scheduler), descriptor_pool(device, scheduler),
       update_descriptor_queue(device, scheduler),
       blit_image(device, scheduler, state_tracker, descriptor_pool),
-      astc_decoder_pass(device, scheduler, descriptor_pool, staging_pool, update_descriptor_queue,
-                        memory_allocator),
+      astc_decoder_pass(device, scheduler, descriptor_pool, update_descriptor_queue),
+      unswizzle_pass(device, scheduler, descriptor_pool, update_descriptor_queue, host_memory_),
       render_pass_cache(device), texture_cache_runtime{device,           scheduler,
                                                        memory_allocator, staging_pool,
                                                        blit_image,       astc_decoder_pass,
-                                                       render_pass_cache},
+                                                       unswizzle_pass,
+                                                       render_pass_cache, {}},
       texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
       buffer_cache_runtime(device, memory_allocator, scheduler, staging_pool,
                            update_descriptor_queue, descriptor_pool),
@@ -155,6 +158,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
 RasterizerVulkan::~RasterizerVulkan() = default;
 
 void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
+    //    auto t1 = std::chrono::high_resolution_clock::now();
     MICROPROFILE_SCOPE(Vulkan_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
@@ -168,9 +172,11 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
     pipeline->Configure(is_indexed);
+    //    auto t2 = std::chrono::high_resolution_clock::now();
 
     BeginTransformFeedback();
 
+    //    auto t3 = std::chrono::high_resolution_clock::now();
     UpdateDynamicStates();
 
     const auto& regs{maxwell3d.regs};
@@ -187,6 +193,14 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
         }
     });
     EndTransformFeedback();
+    //    auto t4 = std::chrono::high_resolution_clock::now();
+    //    auto count1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+    //    auto count2 = std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count();
+    //    auto count3 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
+    //    auto count4 = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t1).count();
+    //    if (count4 > 1) {
+    //        LOG_CRITICAL(Debug, "{} {} {}", count1, count2, count3);
+    //    }
 }
 
 void RasterizerVulkan::Clear() {

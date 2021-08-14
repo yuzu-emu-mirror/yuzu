@@ -107,6 +107,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
       debug_callback(Settings::values.renderer_debug ? CreateDebugCallback(instance) : nullptr),
       surface(CreateSurface(instance, render_window)),
       device(CreateDevice(instance, dld, *surface)),
+      host_memory(cpu_memory.GetDeviceMemory(), device),
       memory_allocator(device, false),
       state_tracker(gpu),
       scheduler(device, state_tracker),
@@ -115,7 +116,7 @@ RendererVulkan::RendererVulkan(Core::TelemetrySession& telemetry_session_,
       blit_screen(cpu_memory, render_window, device, memory_allocator, swapchain, scheduler,
                   screen_info),
       rasterizer(render_window, gpu, gpu.MemoryManager(), cpu_memory, screen_info, device,
-                 memory_allocator, state_tracker, scheduler) {
+                 memory_allocator, state_tracker, scheduler, host_memory) {
     Report();
 } catch (const vk::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "Vulkan initialization failed with error: {}", exception.what());
