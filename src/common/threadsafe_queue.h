@@ -14,7 +14,6 @@ namespace Common {
 /// a more foolproof multiple reader, multiple writer queue
 template <typename T>
 class MPMCQueue {
-#define PLACEHOLDER reinterpret_cast<Node*>(1)
 public:
     ~MPMCQueue() {
         Clear();
@@ -179,6 +178,7 @@ private:
     static constexpr auto ACQUIRE = std::memory_order_acquire;
     static constexpr auto RELEASE = std::memory_order_release;
     static constexpr auto ACQ_REL = std::memory_order_acq_rel;
+    static inline const auto PLACEHOLDER = reinterpret_cast<Node*>(1);
 
     std::atomic<Node*> head{nullptr};
     std::atomic<Node*> tail{nullptr};
@@ -186,7 +186,6 @@ private:
     std::atomic_size_t waiting{0};
     std::condition_variable condition{};
     std::mutex mutex{};
-#undef PLACEHOLDER
 };
 
 /// a simple lockless thread-safe,
