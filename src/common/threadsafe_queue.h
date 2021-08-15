@@ -19,7 +19,7 @@ public:
     ~MPMCQueue() {
         Clear();
         if (waiting || head || tail) {
-            // All the abort() after 1 month merged without problems
+            // Remove all the abort() after 1 month merged without problems
             abort();
         }
     }
@@ -116,7 +116,7 @@ private:
         while (true) {
             Node* const node = head.load(ACQUIRE);
             if (!node) {
-                if (!WAIT) {
+                if constexpr (!WAIT) {
                     return false;
                 }
                 if (!lock) {
@@ -164,8 +164,11 @@ private:
         template <typename Arg>
         explicit Node(Arg&& t) : value{std::forward<Arg>(t)} {}
 
-        Node(Node&) = delete;
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
+
         Node(Node&&) = delete;
+        Node& operator=(Node&&) = delete;
 
         const T value;
         std::atomic<Node*> next{nullptr};
