@@ -161,14 +161,14 @@ void GMainWindow::ShowTelemetryCallout() {
         return;
     }
 
-    UISettings::values.callout_flags =
-        UISettings::values.callout_flags.GetValue() | static_cast<uint32_t>(CalloutFlag::Telemetry);
+    UISettings::values.callout_flags.SetValue(UISettings::values.callout_flags.GetValue() |
+                                              static_cast<uint32_t>(CalloutFlag::Telemetry));
     const QString telemetry_message =
         tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'>Anonymous "
            "data is collected</a> to help improve yuzu. "
            "<br/><br/>Would you like to share your usage data with us?");
     if (QMessageBox::question(this, tr("Telemetry"), telemetry_message) != QMessageBox::Yes) {
-        Settings::values.enable_telemetry = false;
+        Settings::values.enable_telemetry.SetValue(false);
         Core::System::GetInstance().ApplySettings();
     }
 }
@@ -328,7 +328,7 @@ GMainWindow::GMainWindow()
                 continue;
             }
 
-            Settings::values.current_user = static_cast<s32>(selected_user);
+            Settings::values.current_user.SetValue(static_cast<s32>(selected_user));
             continue;
         }
 
@@ -998,8 +998,9 @@ void GMainWindow::InitializeHotkeys() {
                 dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
-            &QShortcut::activated, this,
-            [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
+            &QShortcut::activated, this, [] {
+                Settings::values.audio_muted.SetValue(!Settings::values.audio_muted.GetValue());
+            });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Framerate Limit"), this),
             &QShortcut::activated, this, [] {
                 Settings::values.disable_fps_limit.SetValue(
@@ -1007,8 +1008,8 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Toggle Mouse Panning"), this),
             &QShortcut::activated, this, [&] {
-                Settings::values.mouse_panning = !Settings::values.mouse_panning;
-                if (Settings::values.mouse_panning) {
+                Settings::values.mouse_panning.SetValue(!Settings::values.mouse_panning.GetValue());
+                if (Settings::values.mouse_panning.GetValue()) {
                     render_window->installEventFilter(render_window);
                     render_window->setAttribute(Qt::WA_Hover, true);
                 }
@@ -1056,7 +1057,7 @@ void GMainWindow::RestoreUIState() {
 }
 
 void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
-    if (!UISettings::values.pause_when_in_background) {
+    if (!UISettings::values.pause_when_in_background.GetValue()) {
         return;
     }
     if (state != Qt::ApplicationHidden && state != Qt::ApplicationInactive &&
@@ -1223,8 +1224,8 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     if (result == Core::System::ResultStatus::Success &&
         system.GetAppLoader().GetFileType() == Loader::FileType::DeconstructedRomDirectory &&
         drd_callout) {
-        UISettings::values.callout_flags = UISettings::values.callout_flags.GetValue() |
-                                           static_cast<u32>(CalloutFlag::DRDDeprecation);
+        UISettings::values.callout_flags.SetValue(UISettings::values.callout_flags.GetValue() |
+                                                  static_cast<u32>(CalloutFlag::DRDDeprecation));
         QMessageBox::warning(
             this, tr("Warning Outdated Game Format"),
             tr("You are using the deconstructed ROM directory format for this game, which is an "
@@ -1299,7 +1300,7 @@ void GMainWindow::SelectAndSetCurrentUser() {
         return;
     }
 
-    Settings::values.current_user = dialog.GetIndex();
+    Settings::values.current_user.SetValue(dialog.GetIndex());
 }
 
 void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t program_index,
@@ -1337,7 +1338,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     Settings::LogSettings();
 
-    if (UISettings::values.select_user_on_boot) {
+    if (UISettings::values.select_user_on_boot.GetValue()) {
         SelectAndSetCurrentUser();
     }
 
@@ -1374,12 +1375,12 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     status_bar_update_timer.start(500);
     renderer_status_button->setDisabled(true);
 
-    if (UISettings::values.hide_mouse || Settings::values.mouse_panning) {
+    if (UISettings::values.hide_mouse.GetValue() || Settings::values.mouse_panning.GetValue()) {
         render_window->installEventFilter(render_window);
         render_window->setAttribute(Qt::WA_Hover, true);
     }
 
-    if (UISettings::values.hide_mouse) {
+    if (UISettings::values.hide_mouse.GetValue()) {
         mouse_hide_timer.start();
     }
 
@@ -2682,7 +2683,8 @@ void GMainWindow::OnConfigure() {
 
     config->Save();
 
-    if ((UISettings::values.hide_mouse || Settings::values.mouse_panning) && emulation_running) {
+    if ((UISettings::values.hide_mouse.GetValue() || Settings::values.mouse_panning.GetValue()) &&
+        emulation_running) {
         render_window->installEventFilter(render_window);
         render_window->setAttribute(Qt::WA_Hover, true);
     } else {
@@ -2690,7 +2692,7 @@ void GMainWindow::OnConfigure() {
         render_window->setAttribute(Qt::WA_Hover, false);
     }
 
-    if (UISettings::values.hide_mouse) {
+    if (UISettings::values.hide_mouse.GetValue()) {
         mouse_hide_timer.start();
     }
 
@@ -2813,7 +2815,7 @@ void GMainWindow::OnCaptureScreenshot() {
     }
 
 #ifdef _WIN32
-    if (UISettings::values.enable_screenshot_save_as) {
+    if (UISettings::values.enable_screenshot_save_as.GetValue()) {
         OnPauseGame();
         filename = QFileDialog::getSaveFileName(this, tr("Capture Screenshot"), filename,
                                                 tr("PNG Image (*.png)"));
@@ -2898,7 +2900,7 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    if (Settings::values.disable_fps_limit) {
+    if (Settings::values.disable_fps_limit.GetValue()) {
         game_fps_label->setText(
             tr("Game: %1 FPS (Unlocked)").arg(results.average_game_fps, 0, 'f', 0));
     } else {
@@ -2961,7 +2963,7 @@ void GMainWindow::UpdateUISettings() {
 }
 
 void GMainWindow::HideMouseCursor() {
-    if (emu_thread == nullptr && UISettings::values.hide_mouse) {
+    if (emu_thread == nullptr && UISettings::values.hide_mouse.GetValue()) {
         mouse_hide_timer.stop();
         ShowMouseCursor();
         return;
@@ -2971,13 +2973,13 @@ void GMainWindow::HideMouseCursor() {
 
 void GMainWindow::ShowMouseCursor() {
     render_window->unsetCursor();
-    if (emu_thread != nullptr && UISettings::values.hide_mouse) {
+    if (emu_thread != nullptr && UISettings::values.hide_mouse.GetValue()) {
         mouse_hide_timer.start();
     }
 }
 
 void GMainWindow::OnMouseActivity() {
-    if (!Settings::values.mouse_panning) {
+    if (!Settings::values.mouse_panning.GetValue()) {
         ShowMouseCursor();
     }
 }
@@ -3174,7 +3176,7 @@ std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProv
 }
 
 bool GMainWindow::ConfirmClose() {
-    if (emu_thread == nullptr || !UISettings::values.confirm_before_closing)
+    if (emu_thread == nullptr || !UISettings::values.confirm_before_closing.GetValue())
         return true;
 
     QMessageBox::StandardButton answer =

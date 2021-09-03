@@ -165,7 +165,7 @@ public:
     }
 
     std::tuple<float, float> GetStatus() const override {
-        if (Settings::values.emulate_analog_keyboard) {
+        if (Settings::values.emulate_analog_keyboard.GetValue()) {
             const auto now = std::chrono::steady_clock::now();
             float angle_ = GetAngle(now);
             return std::make_tuple(std::cos(angle_) * amplitude, std::sin(angle_) * amplitude);

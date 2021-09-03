@@ -31,7 +31,7 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
             info.motion.UpdateOrientation(update_time * 1000);
             info.tilt_speed = 0;
             info.data.motion = info.motion.GetMotion();
-            if (Settings::values.mouse_panning) {
+            if (Settings::values.mouse_panning.GetValue()) {
                 info.last_mouse_change *= 0.96f;
                 info.data.axis = {static_cast<int>(16 * info.last_mouse_change.x),
                                   static_cast<int>(16 * -info.last_mouse_change.y)};
@@ -74,7 +74,7 @@ void Mouse::PressButton(int x, int y, MouseButton button_) {
 
 void Mouse::StopPanning() {
     for (MouseInfo& info : mouse_info) {
-        if (Settings::values.mouse_panning) {
+        if (Settings::values.mouse_panning.GetValue()) {
             info.data.axis = {};
             info.tilt_speed = 0;
             info.last_mouse_change = {};
@@ -84,7 +84,7 @@ void Mouse::StopPanning() {
 
 void Mouse::MouseMove(int x, int y, int center_x, int center_y) {
     for (MouseInfo& info : mouse_info) {
-        if (Settings::values.mouse_panning) {
+        if (Settings::values.mouse_panning.GetValue()) {
             auto mouse_change =
                 (Common::MakeVec(x, y) - Common::MakeVec(center_x, center_y)).Cast<float>();
             mouse_panning_timout = 0;

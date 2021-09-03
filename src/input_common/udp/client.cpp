@@ -201,7 +201,7 @@ bool Client::DeviceConnected(std::size_t pad) const {
 void Client::ReloadSockets() {
     Reset();
 
-    std::stringstream servers_ss(static_cast<std::string>(Settings::values.udp_input_servers));
+    std::stringstream servers_ss(Settings::values.udp_input_servers.GetValue());
     std::string server_token;
     std::size_t client = 0;
     while (std::getline(servers_ss, server_token, ',')) {

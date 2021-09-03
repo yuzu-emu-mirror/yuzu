@@ -130,7 +130,7 @@ public:
         format.setVersion(4, 6);
         format.setProfile(QSurfaceFormat::CompatibilityProfile);
         format.setOption(QSurfaceFormat::FormatOption::DeprecatedFunctions);
-        if (Settings::values.renderer_debug) {
+        if (Settings::values.renderer_debug.GetValue()) {
             format.setOption(QSurfaceFormat::FormatOption::DebugContext);
         }
         // TODO: expose a setting for buffer value (ie default/single/double/triple)
@@ -440,7 +440,7 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     input_subsystem->GetMouse()->MouseMove(x, y, center_x, center_y);
     this->TouchMoved(x, y, 0);
 
-    if (Settings::values.mouse_panning) {
+    if (Settings::values.mouse_panning.GetValue()) {
         QCursor::setPos(mapToGlobal({center_x, center_y}));
     }
 
@@ -756,7 +756,7 @@ void GRenderWindow::showEvent(QShowEvent* event) {
 
 bool GRenderWindow::eventFilter(QObject* object, QEvent* event) {
     if (event->type() == QEvent::HoverMove) {
-        if (Settings::values.mouse_panning) {
+        if (Settings::values.mouse_panning.GetValue()) {
             auto* hover_event = static_cast<QMouseEvent*>(event);
             mouseMoveEvent(hover_event);
             return false;
