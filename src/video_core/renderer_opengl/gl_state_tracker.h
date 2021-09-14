@@ -112,6 +112,22 @@ public:
         glClipControl(origin, depth);
     }
 
+    void SetOrigin(GLenum new_origin) {
+        if (new_origin == origin) {
+            return;
+        }
+        origin = new_origin;
+        glClipControl(origin, depth);
+    }
+
+    void SetDepthMode(GLenum new_depth) {
+        if (new_depth == depth) {
+            return;
+        }
+        depth = new_depth;
+        glClipControl(origin, depth);
+    }
+
     void SetYNegate(bool new_y_negate) {
         if (new_y_negate == y_negate) {
             return;
