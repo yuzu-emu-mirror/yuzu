@@ -30,9 +30,14 @@ if (NOT TARGET inih::INIReader)
     add_subdirectory(inih)
 endif()
 
-# mbedtls
-add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
-target_include_directories(mbedtls PUBLIC ./mbedtls/include)
+# MbedTLS
+find_package(MbedTLS 2.16)
+if(NOT MbedTLS_FOUND)
+    message(STATUS "MbedTLS not found, falling back to externals")
+    add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
+    target_include_directories(mbedcrypto PUBLIC ./mbedtls/include)
+    add_library(MbedTLS::mbedcrypto ALIAS mbedcrypto)
+endif()
 
 # MicroProfile
 add_library(microprofile INTERFACE)
