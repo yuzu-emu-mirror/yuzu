@@ -15,15 +15,11 @@
 namespace Common {
 
 [[nodiscard]] constexpr u8 ToHexNibble(char c) {
-    if (c >= 65 && c <= 70) {
-        return static_cast<u8>(c - 55);
-    }
-
-    if (c >= 97 && c <= 102) {
-        return static_cast<u8>(c - 87);
-    }
-
-    return static_cast<u8>(c - 48);
+    c ^= '0'; // cut of high nibble for only '0' <= c <= '9'
+    // if c > 9 keep low nibble and add 9.
+    // 'A' = 0x41. 0x41 & 7 = 1. 1 + 9 = 0xA
+    // 'a' = 0x61. 0x61 & 7 = 1. 1 + 9 = 0xA
+    return c & ~0xf ? (c & 7) + 9 : c;
 }
 
 [[nodiscard]] std::vector<u8> HexStringToVector(std::string_view str, bool little_endian);
