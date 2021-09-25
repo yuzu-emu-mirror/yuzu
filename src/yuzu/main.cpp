@@ -2947,8 +2947,12 @@ void GMainWindow::UpdateStatusBar() {
 
     auto& system = Core::System::GetInstance();
     auto results = system.GetAndResetPerfStats();
-    auto& shader_notify = system.GPU().ShaderNotify();
-    const int shaders_building = shader_notify.ShadersBuilding();
+
+    int shaders_building = 0;
+    if (system.IsPoweredOn()) {
+        auto& shader_notify = system.GPU().ShaderNotify();
+        shaders_building = shader_notify.ShadersBuilding();
+    }
 
     if (shaders_building > 0) {
         shader_building_label->setText(tr("Building: %n shader(s)", "", shaders_building));
