@@ -11,7 +11,6 @@
 #include <array>
 #include <cctype>
 #include <cstring>
-#include <mbedtls/sha256.h>
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -19,6 +18,7 @@
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "common/swap.h"
+#include "core/crypto/crypto.h"
 #include "core/crypto/key_manager.h"
 #include "core/crypto/partition_data_manager.h"
 #include "core/crypto/xts_encryption_layer.h"
@@ -180,7 +180,7 @@ std::array<u8, key_size> FindKeyFromHex(const std::vector<u8>& binary,
 
     std::array<u8, 0x20> temp{};
     for (size_t i = 0; i < binary.size() - key_size; ++i) {
-        mbedtls_sha256_ret(binary.data() + i, key_size, temp.data(), 0);
+        CalculateSHA256(binary.data() + i, key_size, temp.data());
 
         if (temp != hash)
             continue;
@@ -208,7 +208,7 @@ static std::array<Key128, 0x20> FindEncryptedMasterKeyFromHex(const std::vector<
     AESCipher<Key128> cipher(key, Mode::ECB);
     for (size_t i = 0; i < binary.size() - 0x10; ++i) {
         cipher.Transcode(binary.data() + i, dec_temp.size(), dec_temp.data(), Op::Decrypt);
-        mbedtls_sha256_ret(dec_temp.data(), dec_temp.size(), temp.data(), 0);
+        CalculateSHA256(dec_temp.data(), dec_temp.size(), temp.data());
 
         for (size_t k = 0; k < out.size(); ++k) {
             if (temp == master_key_hashes[k]) {

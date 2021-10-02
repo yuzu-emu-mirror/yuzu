@@ -4,9 +4,6 @@
 
 #include <array>
 
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/entropy.h>
-
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/fs/file.h"
@@ -15,6 +12,7 @@
 #include "common/logging/log.h"
 
 #include "common/settings.h"
+#include "core/crypto/crypto.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/loader/loader.h"
@@ -31,22 +29,11 @@ namespace Telemetry = Common::Telemetry;
 
 static u64 GenerateTelemetryId() {
     u64 telemetry_id{};
-
-    mbedtls_entropy_context entropy;
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_context ctr_drbg;
     constexpr std::array<char, 18> personalization{{"yuzu Telemetry ID"}};
 
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    ASSERT(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                 reinterpret_cast<const unsigned char*>(personalization.data()),
-                                 personalization.size()) == 0);
-    ASSERT(mbedtls_ctr_drbg_random(&ctr_drbg, reinterpret_cast<unsigned char*>(&telemetry_id),
-                                   sizeof(u64)) == 0);
-
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
-
+    GenerateRandomBytesWithSeed((u8*)&telemetry_id, sizeof(u64),
+                                reinterpret_cast<const u8*>(personalization.data()),
+                                personalization.size());
     return telemetry_id;
 }
 

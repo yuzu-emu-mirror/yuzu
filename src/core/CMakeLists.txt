@@ -22,8 +22,12 @@ add_library(core STATIC
     core_timing_util.h
     cpu_manager.cpp
     cpu_manager.h
-    crypto/aes_util.cpp
+    crypto/aes_util_mbedtls.cpp
+    crypto/aes_util_openssl.cpp
     crypto/aes_util.h
+    crypto/crypto.h
+    crypto/crypto_mbedtls.cpp
+    crypto/crypto_openssl.cpp
     crypto/encryption_layer.cpp
     crypto/encryption_layer.h
     crypto/key_manager.cpp
@@ -682,7 +686,9 @@ endif()
 create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
-target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus)
+target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json ${YUZU_CRYPTO_BACKEND} Opus::Opus)
+
+target_compile_definitions(core PRIVATE ${YUZU_CRYPTO_DEFINITION})
 
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE)

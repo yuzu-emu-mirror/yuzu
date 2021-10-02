@@ -4,12 +4,12 @@
 
 #include <memory>
 #include <fmt/format.h>
-#include <mbedtls/sha256.h>
 
 #include "common/alignment.h"
 #include "common/hex_util.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
+#include "core/crypto/crypto.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
@@ -469,7 +469,7 @@ public:
         system.Memory().ReadBlock(nro_address, nro_data.data(), nro_size);
 
         SHA256Hash hash{};
-        mbedtls_sha256_ret(nro_data.data(), nro_data.size(), hash.data(), 0);
+        CalculateSHA256(nro_data.data(), nro_data.size(), hash.data());
 
         // NRO Hash is already loaded
         if (std::any_of(nro.begin(), nro.end(), [&hash](const std::pair<VAddr, NROInfo>& info) {
