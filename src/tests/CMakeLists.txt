@@ -7,6 +7,7 @@ add_executable(tests
     common/ring_buffer.cpp
     common/unique_function.cpp
     core/core_timing.cpp
+    core/crypto.cpp
     core/network/network.cpp
     tests.cpp
     video_core/buffer_base.cpp
