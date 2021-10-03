@@ -1,6 +1,7 @@
 
 #include <catch2/catch.hpp>
 
+#include <array>
 #include <cstring>
 
 #include "common/common_types.h"
@@ -51,4 +52,48 @@ TEST_CASE("CMAC-AES", "[core]") {
     CalculateCMAC(cmac_msg2, sizeof(cmac_msg2) - 1, cmac_key, cmac_md2);
     REQUIRE(std::memcmp(cmac_md1, cmac_hash1, 16) == 0);
     REQUIRE(std::memcmp(cmac_md2, cmac_hash2, 16) == 0);
+}
+
+constexpr static std::array<u8, 16> aes_key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                               0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+constexpr static std::array<u8, 16> aes_iv = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                              0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+
+constexpr static u8 aes_plain[] =
+    "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+    "\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04\x03\x02\x01\x00";
+
+TEST_CASE("AES-128-CTR", "[core]") {
+    constexpr u8 aes_cipher[] = "\x0a\x95\x09\xb6\x45\x6b\xf6\x42\xf9\xca\x9e\x53\xca\x5e\xe4\x55"
+                                "\x0d\x6d\xe1\x98\x6d\x12\x7b\x9e\x9d\xdc\xf8\x0b\x48\xa6\x0e\xdc";
+    u8 aes_encrypted[32];
+
+    Core::Crypto::AESCipher cipher(aes_key, Core::Crypto::Mode::CTR);
+    cipher.SetIV(aes_iv);
+    cipher.Transcode(aes_plain, 32, aes_encrypted, Core::Crypto::Op::Encrypt);
+    REQUIRE(std::memcmp(aes_encrypted, aes_cipher, 32) == 0);
+}
+
+TEST_CASE("AES-128-ECB", "[core]") {
+    constexpr u8 aes_cipher[] = "\x0a\x94\x0b\xb5\x41\x6e\xf0\x45\xf1\xc3\x94\x58\xc6\x53\xea\x5a"
+                                "\x20\xa9\xf9\x92\xb4\x4c\x5b\xe8\x04\x1f\xfc\xdc\x6c\xae\x99\x6a";
+    u8 aes_encrypted[32];
+
+    Core::Crypto::AESCipher cipher(aes_key, Core::Crypto::Mode::ECB);
+    cipher.Transcode(aes_plain, 32, aes_encrypted, Core::Crypto::Op::Encrypt);
+    REQUIRE(std::memcmp(aes_encrypted, aes_cipher, 32) == 0);
+}
+
+constexpr static std::array<u8, 32> aes_xts_key = {
+    0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+    0xf, 0xe, 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0};
+
+TEST_CASE("AES-128-XTS", "[core]") {
+    constexpr u8 aes_cipher[] = "\x25\x06\xfe\xf2\x0b\x39\xfa\xec\x5a\x69\x93\x41\x60\x95\xb5\xef"
+                                "\x00\x75\xdd\x61\xb9\x9e\x5f\xeb\xbe\xdf\xb3\x2e\x04\xb5\x0c\xa7";
+    u8 aes_encrypted[32];
+
+    Core::Crypto::AESCipher cipher(aes_xts_key, Core::Crypto::Mode::XTS);
+    cipher.XTSTranscode(aes_plain, 32, aes_encrypted, 0, 16, Core::Crypto::Op::Encrypt);
+    REQUIRE(std::memcmp(aes_encrypted, aes_cipher, 32) == 0);
 }

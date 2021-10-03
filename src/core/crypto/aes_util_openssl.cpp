@@ -38,7 +38,7 @@ Crypto::AESCipher<Key, KeySize>::AESCipher(Key key, Mode mode)
     ctx->ctx = EVP_CIPHER_CTX_new();
     ASSERT_MSG((ctx->ctx != NULL), "Failed to initialize OpenSSL ciphers.");
     ctx->cipher = cipher_map.at(mode)();
-    ctx->key.resize(key.size());
+    ctx->key.resize(KeySize);
     std::memcpy(ctx->key.data(), key.data(), KeySize);
 }
 
