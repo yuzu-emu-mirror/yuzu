@@ -23,7 +23,13 @@ NintendoTweak CalculateNintendoTweak(std::size_t sector_id) {
 }
 } // Anonymous namespace
 
-using EvpCipherContext = std::unique_ptr<EVP_CIPHER_CTX, decltype(&EVP_CIPHER_CTX_free)>;
+struct EvpCipherContextFree {
+    void operator()(EVP_CIPHER_CTX* ctx) {
+        EVP_CIPHER_CTX_free(ctx);
+    }
+};
+
+using EvpCipherContext = std::unique_ptr<EVP_CIPHER_CTX, EvpCipherContextFree>;
 
 struct CipherContext {
     const EVP_CIPHER* cipher;
@@ -31,7 +37,7 @@ struct CipherContext {
     std::vector<u8> key;
     std::vector<u8> iv;
 
-    CipherContext(EVP_CIPHER_CTX* ctx_in) : ctx(ctx_in, EVP_CIPHER_CTX_free) {}
+    CipherContext(EVP_CIPHER_CTX* ctx_in) : ctx(ctx_in) {}
 };
 
 const static std::map<Mode, decltype(&EVP_aes_128_ctr)> cipher_map = {
@@ -71,7 +77,7 @@ void AESCipher<Key, KeySize>::Transcode(const u8* src, std::size_t size, u8* des
             std::vector<u8> block(block_size);
             std::memcpy(block.data(), src + size - remain, remain);
             EVP_CipherUpdate(ctx->ctx.get(), dest + written, &last_written, block.data(),
-                             block_size);
+                             (int)block_size);
             written += last_written;
         }
         if (written != (int)size) {

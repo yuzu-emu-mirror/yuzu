@@ -686,9 +686,7 @@ endif()
 create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
-target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json ${YUZU_CRYPTO_BACKEND} Opus::Opus)
-
-target_compile_definitions(core PRIVATE ${YUZU_CRYPTO_DEFINITION})
+target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json Opus::Opus crypto-backend)
 
 if (ENABLE_WEB_SERVICE)
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE)
