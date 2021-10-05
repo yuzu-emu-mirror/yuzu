@@ -68,13 +68,18 @@ void Vic::Execute() {
     const auto pixel_format = static_cast<VideoPixelFormat>(config.pixel_format.Value());
     switch (pixel_format) {
     case VideoPixelFormat::BGRA8:
+    case VideoPixelFormat::XBGR32:
     case VideoPixelFormat::RGBA8: {
         LOG_TRACE(Service_NVDRV, "Writing RGB Frame");
 
         if (scaler_ctx == nullptr || frame->width != scaler_width ||
             frame->height != scaler_height) {
-            const AVPixelFormat target_format =
-                (pixel_format == VideoPixelFormat::RGBA8) ? AV_PIX_FMT_RGBA : AV_PIX_FMT_BGRA;
+            AVPixelFormat target_format = AV_PIX_FMT_RGBA;
+            if (pixel_format == VideoPixelFormat::BGRA8) {
+                target_format = AV_PIX_FMT_BGRA;
+            } else if (pixel_format == VideoPixelFormat::XBGR32) {
+                target_format = AV_PIX_FMT_0BGR32;
+            }
 
             sws_freeContext(scaler_ctx);
             scaler_ctx = nullptr;
