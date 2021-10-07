@@ -74,17 +74,17 @@ void Vic::Execute() {
 
         if (scaler_ctx == nullptr || frame->width != scaler_width ||
             frame->height != scaler_height) {
-            AVPixelFormat target_format = AV_PIX_FMT_RGBA;
+            AVPixelFormat target_format;
             switch (pixel_format) {
-                case VideoPixelFormat::BGRA8:
-                    target_format = AV_PIX_FMT_BGRA;
-                    break;
-                case VideoPixelFormat::XBGR32:
-                    target_format = AV_PIX_FMT_0BGR32;
-                    break;
-                default:
-                    //Unreachable
-                    break;
+            case VideoPixelFormat::BGRA8:
+                target_format = AV_PIX_FMT_BGRA;
+                break;
+            case VideoPixelFormat::XBGR32:
+                target_format = AV_PIX_FMT_0BGR32;
+                break;
+            default:
+                target_format = AV_PIX_FMT_RGBA;
+                break;
             }
 
             sws_freeContext(scaler_ctx);
