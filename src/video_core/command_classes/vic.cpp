@@ -82,6 +82,9 @@ void Vic::Execute() {
                 case VideoPixelFormat::XBGR32:
                     target_format = AV_PIX_FMT_0BGR32;
                     break;
+                default:
+                    //Unreachable
+                    break;
             }
 
             sws_freeContext(scaler_ctx);
