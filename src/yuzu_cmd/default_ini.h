@@ -430,7 +430,8 @@ yuzu_token =
 
 [Network]
 # Name of the network interface device to use with yuzu LAN play.
-# e.g. 'enp7s0', 'lo', 'ztbtoqhcy5', etc.
+# e.g. On *nix: 'enp7s0', 'wlp6s0u1u3u3', 'lo'
+# e.g. On Windows: 'Ethernet', 'Wi-Fi'
 network_interface =
 
 [AddOns]
