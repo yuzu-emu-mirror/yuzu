@@ -35,10 +35,10 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
                 if (Settings::values.mouse_as_joystick) {
                     float axis_x = 0.0f;
                     float axis_y = 0.0f;
-                    float max_mouse_movement =
+                    const float max_mouse_movement =
                         static_cast<float>(Settings::values.max_mouse_movement.GetValue());
-                    float deadzone = Settings::values.mouse_as_joystick_deadzone.GetValue() /
-                                     100.0f * max_mouse_movement;
+                    const float deadzone = Settings::values.mouse_as_joystick_deadzone.GetValue() /
+                                           100.0f * max_mouse_movement;
                     if (fabs(info.last_mouse_change.x) > deadzone) {
                         axis_x = info.last_mouse_change.x -
                                  (info.last_mouse_change.x > 0 ? deadzone : -deadzone);
@@ -121,11 +121,11 @@ void Mouse::MouseMove(int x, int y, int center_x, int center_y) {
             if (Settings::values.mouse_as_joystick) {
                 info.last_mouse_change += mouse_change;
 
-                float max_movement =
+                const float max_mouse_movement =
                     static_cast<float>(Settings::values.max_mouse_movement.GetValue());
                 info.last_mouse_change = {
-                    std::clamp(info.last_mouse_change.x, -max_movement, max_movement),
-                    std::clamp(info.last_mouse_change.y, -max_movement, max_movement)};
+                    std::clamp(info.last_mouse_change.x, -max_mouse_movement, max_mouse_movement),
+                    std::clamp(info.last_mouse_change.y, -max_mouse_movement, max_mouse_movement)};
 
                 info.tilt_direction = info.last_mouse_change;
                 info.tilt_speed = info.tilt_direction.Normalize() * info.sensitivity;
