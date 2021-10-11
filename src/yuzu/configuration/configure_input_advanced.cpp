@@ -73,6 +73,8 @@ ConfigureInputAdvanced::ConfigureInputAdvanced(QWidget* parent)
         }
     }
 
+    connect(ui->mouse_panning, &QCheckBox::stateChanged, this,
+            &ConfigureInputAdvanced::UpdateUIEnabled);
     connect(ui->mouse_enabled, &QCheckBox::stateChanged, this,
             &ConfigureInputAdvanced::UpdateUIEnabled);
     connect(ui->debug_enabled, &QCheckBox::stateChanged, this,
@@ -189,4 +191,7 @@ void ConfigureInputAdvanced::UpdateUIEnabled() {
     ui->mouse_advanced->setEnabled(ui->mouse_enabled->isChecked());
     ui->debug_configure->setEnabled(ui->debug_enabled->isChecked());
     ui->touchscreen_advanced->setEnabled(ui->touchscreen_enabled->isChecked());
+    ui->mouse_as_joystick->setEnabled(ui->mouse_panning->isChecked());
+    ui->max_mouse_movement->setEnabled(ui->mouse_panning->isChecked());
+    ui->mouse_as_joystick_deadzone->setEnabled(ui->mouse_panning->isChecked());
 }
