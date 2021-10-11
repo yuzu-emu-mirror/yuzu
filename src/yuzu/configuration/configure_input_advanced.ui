@@ -2688,6 +2688,63 @@
                    </property>
                  </widget>
                </item>
+                <item row="10" column="0">
+                  <widget class="QCheckBox" name="mouse_as_joystick">
+                    <property name="minimumSize">
+                      <size>
+                        <width>0</width>
+                        <height>23</height>
+                      </size>
+                    </property>
+                    <property name="text">
+                      <string>Enable mouse-as-joystick (requires mouse panning)</string>
+                    </property>
+                  </widget>
+                </item>
+                <item row="10" column="1">
+                    <widget class="QSpinBox" name="max_mouse_movement">
+                      <property name="toolTip">
+                        <string>Max mouse movement</string>
+                      </property>
+                      <property name="alignment">
+                        <set>Qt::AlignCenter</set>
+                      </property>
+                      <property name="suffix">
+                        <string>M</string>
+                      </property>
+                      <property name="minimum">
+                        <number>1</number>
+                      </property>
+                      <property name="maximum">
+                        <number>65536</number>
+                      </property>
+                      <property name="value">
+                        <number>500</number>
+                      </property>
+                    </widget>
+                </item>
+                <item row="10" column="2">
+                    <widget class="QSpinBox" name="mouse_as_joystick_deadzone">
+                      <property name="toolTip">
+                        <string>Mouse joystick deadzone</string>
+                      </property>
+                      <property name="alignment">
+                        <set>Qt::AlignCenter</set>
+                      </property>
+                      <property name="suffix">
+                        <string>%</string>
+                      </property>
+                      <property name="minimum">
+                        <number>1</number>
+                      </property>
+                      <property name="maximum">
+                        <number>100</number>
+                      </property>
+                      <property name="value">
+                        <number>20</number>
+                      </property>
+                    </widget>
+                </item>
               </layout>
              </widget>
             </item>

@@ -129,6 +129,10 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.mouse_panning = ui->mouse_panning->isChecked();
     Settings::values.mouse_panning_sensitivity =
         static_cast<float>(ui->mouse_panning_sensitivity->value());
+    Settings::values.mouse_as_joystick = ui->mouse_as_joystick->isChecked();
+    Settings::values.max_mouse_movement = static_cast<float>(ui->max_mouse_movement->value());
+    Settings::values.mouse_as_joystick_deadzone =
+        static_cast<float>(ui->mouse_as_joystick_deadzone->value());
     Settings::values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
     Settings::values.enable_raw_input = ui->enable_raw_input->isChecked();
 }
@@ -159,6 +163,10 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->emulate_analog_keyboard->setChecked(Settings::values.emulate_analog_keyboard.GetValue());
     ui->mouse_panning->setChecked(Settings::values.mouse_panning.GetValue());
     ui->mouse_panning_sensitivity->setValue(Settings::values.mouse_panning_sensitivity.GetValue());
+    ui->mouse_as_joystick->setChecked(Settings::values.mouse_as_joystick.GetValue());
+    ui->max_mouse_movement->setValue(Settings::values.max_mouse_movement.GetValue());
+    ui->mouse_as_joystick_deadzone->setValue(
+        Settings::values.mouse_as_joystick_deadzone.GetValue());
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
     ui->enable_raw_input->setChecked(Settings::values.enable_raw_input.GetValue());
 

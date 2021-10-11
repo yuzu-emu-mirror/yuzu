@@ -122,6 +122,18 @@ mouse_panning =
 # Default: 1.0
 mouse_panning_sensitivity =
 
+# Mouse-controlled axis moves like a joystick (requires mouse_panning)
+# 0 (default): Off, 1: On
+mouse_as_joystick =
+
+# Maximum surface area mouse-as-joystick can move
+# Default: 500.0
+max_mouse_movement =
+
+# Size of mouse center area where controlled axis is set to 0
+# Default: 0.2
+mouse_as_joystick_deadzone =
+
 # Emulate an analog control stick from keyboard inputs.
 # 0 (default): Disabled, 1: Enabled
 emulate_analog_keyboard =

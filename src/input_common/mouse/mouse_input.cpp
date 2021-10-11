@@ -32,6 +32,30 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
             info.tilt_speed = 0;
             info.data.motion = info.motion.GetMotion();
             if (Settings::values.mouse_panning) {
+                if (Settings::values.mouse_as_joystick) {
+                    float axis_x = 0.0f;
+                    float axis_y = 0.0f;
+                    float max_mouse_movement =
+                        static_cast<float>(Settings::values.max_mouse_movement.GetValue());
+                    float deadzone = Settings::values.mouse_as_joystick_deadzone.GetValue() /
+                                     100.0f * max_mouse_movement;
+                    if (fabs(info.last_mouse_change.x) > deadzone) {
+                        axis_x = info.last_mouse_change.x -
+                                 (info.last_mouse_change.x > 0 ? deadzone : -deadzone);
+                        axis_x /= max_mouse_movement;
+                        axis_x *= 8;
+                    }
+
+                    if (fabs(info.last_mouse_change.y) > deadzone) {
+                        axis_y = info.last_mouse_change.y -
+                                 (info.last_mouse_change.y > 0 ? deadzone : -deadzone);
+                        axis_y /= max_mouse_movement;
+                        axis_y *= 8;
+                    }
+                    info.data.axis = {static_cast<int>(16 * axis_x),
+                                      static_cast<int>(16 * -axis_y)};
+                    continue;
+                }
                 info.last_mouse_change *= 0.96f;
                 info.data.axis = {static_cast<int>(16 * info.last_mouse_change.x),
                                   static_cast<int>(16 * -info.last_mouse_change.y)};
@@ -40,8 +64,10 @@ void Mouse::UpdateThread(std::stop_token stop_token) {
         if (configuring) {
             UpdateYuzuSettings();
         }
-        if (mouse_panning_timout++ > 20) {
-            StopPanning();
+        if (!Settings::values.mouse_as_joystick) {
+            if (mouse_panning_timout++ > 20) {
+                StopPanning();
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(update_time));
     }
@@ -90,6 +116,19 @@ void Mouse::MouseMove(int x, int y, int center_x, int center_y) {
             mouse_panning_timout = 0;
 
             if (mouse_change.y == 0 && mouse_change.x == 0) {
+                continue;
+            }
+            if (Settings::values.mouse_as_joystick) {
+                info.last_mouse_change += mouse_change;
+
+                float max_movement =
+                    static_cast<float>(Settings::values.max_mouse_movement.GetValue());
+                info.last_mouse_change = {
+                    std::clamp(info.last_mouse_change.x, -max_movement, max_movement),
+                    std::clamp(info.last_mouse_change.y, -max_movement, max_movement)};
+
+                info.tilt_direction = info.last_mouse_change;
+                info.tilt_speed = info.tilt_direction.Normalize() * info.sensitivity;
                 continue;
             }
             const auto mouse_change_length = mouse_change.Length();

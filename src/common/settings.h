@@ -519,6 +519,9 @@ struct Values {
 
     BasicSetting<bool> mouse_panning{false, "mouse_panning"};
     BasicRangedSetting<u8> mouse_panning_sensitivity{10, 1, 100, "mouse_panning_sensitivity"};
+    BasicSetting<bool> mouse_as_joystick{false, "mouse_as_joystick"};
+    BasicRangedSetting<u16> max_mouse_movement{500, 0, 65535, "max_mouse_movement"};
+    BasicRangedSetting<u8> mouse_as_joystick_deadzone{20, 1, 100, "mouse_as_joystick_deadzone"};
     BasicSetting<bool> mouse_enabled{false, "mouse_enabled"};
     std::string mouse_device;
     MouseButtonsRaw mouse_buttons;
