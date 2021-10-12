@@ -205,12 +205,12 @@
              </item>
              <item>
               <property name="text">
-               <string>CPU Video Rendering</string>
+               <string>CPU Video Decoding</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>GPU Video Rendering (Best Performance)</string>
+               <string>GPU Video Decoding (Default)</string>
               </property>
              </item>
             </widget>
