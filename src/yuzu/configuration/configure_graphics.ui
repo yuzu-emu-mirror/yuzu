@@ -210,7 +210,7 @@
              </item>
              <item>
               <property name="text">
-               <string>GPU Video Rendering</string>
+               <string>GPU Video Rendering (Best Performance)</string>
               </property>
              </item>
             </widget>
