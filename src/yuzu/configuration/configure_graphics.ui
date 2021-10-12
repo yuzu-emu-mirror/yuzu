@@ -200,7 +200,7 @@
             <widget class="QComboBox" name="nvdec_emulation">
              <item>
               <property name="text">
-               <string>No Video Rendering</string>
+               <string>No Video Output</string>
               </property>
              </item>
              <item>
