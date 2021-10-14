@@ -146,8 +146,8 @@ Device::Device() {
     max_glasm_storage_buffer_blocks = GetInteger<u32>(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
     has_warp_intrinsics = GLAD_GL_NV_gpu_shader5 && GLAD_GL_NV_shader_thread_group &&
                           GLAD_GL_NV_shader_thread_shuffle;
-    has_shader_ballot = HasExtension(extensions, "GLAD_GL_ARB_shader_ballot");
-    has_vertex_viewport_layer = HasExtension(extensions, "GLAD_GL_ARB_shader_viewport_layer_array");
+    has_shader_ballot = GLAD_GL_ARB_shader_ballot;
+    has_vertex_viewport_layer = GLAD_GL_ARB_shader_viewport_layer_array;
     has_image_load_formatted = HasExtension(extensions, "GL_EXT_shader_image_load_formatted");
     has_texture_shadow_lod = HasExtension(extensions, "GL_EXT_texture_shadow_lod");
     has_astc = IsASTCSupported();
@@ -155,18 +155,17 @@ Device::Device() {
     has_component_indexing_bug = is_amd;
     has_precise_bug = TestPreciseBug();
     has_broken_texture_view_formats = is_amd || (!is_linux && is_intel);
-    has_nv_viewport_array2 = HasExtension(extensions, "GLAD_GL_NV_viewport_array2");
-    has_derivative_control = HasExtension(extensions, "GLAD_GL_ARB_derivative_control");
+    has_nv_viewport_array2 = GLAD_GL_NV_viewport_array2;
+    has_derivative_control = GLAD_GL_ARB_derivative_control;
     has_vertex_buffer_unified_memory =
         HasExtension(extensions, "GLAD_GL_NV_vertex_buffer_unified_memory");
     has_debugging_tool_attached = IsDebugToolAttached(extensions);
     has_depth_buffer_float = HasExtension(extensions, "GL_NV_depth_buffer_float");
-    has_geometry_shader_passthrough =
-        HasExtension(extensions, "GLAD_GL_NV_geometry_shader_passthrough");
-    has_nv_gpu_shader_5 = HasExtension(extensions, "GLAD_GL_NV_gpu_shader5");
+    has_geometry_shader_passthrough = GLAD_GL_NV_geometry_shader_passthrough;
+    has_nv_gpu_shader_5 = GLAD_GL_NV_gpu_shader5;
     has_shader_int64 = HasExtension(extensions, "GL_ARB_gpu_shader_int64");
-    has_amd_shader_half_float = HasExtension(extensions, "GLAD_GL_AMD_gpu_shader_half_float");
-    has_sparse_texture_2 = HasExtension(extensions, "GLAD_GL_ARB_sparse_texture2");
+    has_amd_shader_half_float = GLAD_GL_AMD_gpu_shader_half_float;
+    has_sparse_texture_2 = GLAD_GL_ARB_sparse_texture2;
     warp_size_potentially_larger_than_guest = !is_nvidia && !is_intel;
     need_fastmath_off = is_nvidia;
 
@@ -184,7 +183,7 @@ Device::Device() {
     }
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
     use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
-                              !(is_amd || (is_intel && !is_linux));
+                               !(is_amd || (is_intel && !is_linux));
     use_driver_cache = is_nvidia;
 
     LOG_INFO(Render_OpenGL, "Renderer_VariableAOFFI: {}", has_variable_aoffi);
