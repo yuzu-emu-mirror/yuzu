@@ -183,8 +183,8 @@ Device::Device() {
         shader_backend = Settings::ShaderBackend::GLSL;
     }
     // Blocks AMD and Intel OpenGL drivers on Windows from using asynchronous shader compilation.
-    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue();
-                              !(is_amd || (is_intel && !is_linux)) &&
+    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue() &&
+                              !(is_amd || (is_intel && !is_linux));
     use_driver_cache = is_nvidia;
 
     LOG_INFO(Render_OpenGL, "Renderer_VariableAOFFI: {}", has_variable_aoffi);
