@@ -2381,15 +2381,16 @@ InstallResult GMainWindow::InstallNCA(const QString& filename) {
                  static_cast<size_t>(FileSys::TitleType::FirmwarePackageB);
     }
 
-    FileSys::InstallResult res;
-    if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
-        res = system.GetFileSystemController().GetUserNANDContents()->InstallEntry(
-            *nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
-    } else {
-        res = system.GetFileSystemController().GetSystemNANDContents()->InstallEntry(
-            *nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
-    }
+    auto registered_cache = [this, index]() {
+        if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
+            return system.GetFileSystemController().GetUserNANDContents();
+        } else {
+            return system.GetFileSystemController().GetSystemNANDContents();
+        }
+    }();
 
+    const auto res = registered_cache->InstallEntry(*nca, static_cast<FileSys::TitleType>(index),
+                                                    true, qt_raw_copy);
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
     } else if (res == FileSys::InstallResult::OverwriteExisting) {
