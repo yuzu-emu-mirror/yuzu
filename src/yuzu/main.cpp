@@ -2381,13 +2381,10 @@ InstallResult GMainWindow::InstallNCA(const QString& filename) {
                  static_cast<size_t>(FileSys::TitleType::FirmwarePackageB);
     }
 
-    auto registered_cache = [this, index]() {
-        if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
-            return system.GetFileSystemController().GetUserNANDContents();
-        } else {
-            return system.GetFileSystemController().GetSystemNANDContents();
-        }
-    }();
+    const bool is_application = index >= static_cast<s32>(FileSys::TitleType::Application);
+    const auto& fs_controller = system.GetFileSystemController();
+    auto* registered_cache = is_application ? fs_controller.GetUserNANDContents()
+                                            : fs_controller.GetSystemNANDContents();
 
     const auto res = registered_cache->InstallEntry(*nca, static_cast<FileSys::TitleType>(index),
                                                     true, qt_raw_copy);
