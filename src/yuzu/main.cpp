@@ -104,6 +104,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/telemetry_session.h"
 #include "input_common/main.h"
 #include "input_common/tas/tas_input.h"
+#include "ui_main.h"
 #include "util/overlay_dialog.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_base.h"
@@ -171,7 +172,7 @@ void GMainWindow::ShowTelemetryCallout() {
            "<br/><br/>Would you like to share your usage data with us?");
     if (QMessageBox::question(this, tr("Telemetry"), telemetry_message) != QMessageBox::Yes) {
         Settings::values.enable_telemetry = false;
-        Core::System::GetInstance().ApplySettings();
+        system->ApplySettings();
     }
 }
 
@@ -191,14 +192,16 @@ static void RemoveCachedContents() {
 }
 
 GMainWindow::GMainWindow()
-    : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
-      config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
+    : ui{std::make_unique<Ui::MainWindow>()}, system{std::make_unique<Core::System>()},
+      input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
+      config{std::make_unique<Config>(*system)},
+      vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
     Common::Log::Initialize();
     LoadTranslation();
 
     setAcceptDrops(true);
-    ui.setupUi(this);
+    ui->setupUi(this);
     statusBar()->hide();
 
     default_theme_paths = QIcon::themeSearchPaths();
@@ -255,11 +258,10 @@ GMainWindow::GMainWindow()
 
     show();
 
-    Core::System::GetInstance().SetContentProvider(
-        std::make_unique<FileSys::ContentProviderUnion>());
-    Core::System::GetInstance().RegisterContentProvider(
-        FileSys::ContentProviderUnionSlot::FrontendManual, provider.get());
-    Core::System::GetInstance().GetFileSystemController().CreateFactories(*vfs);
+    system->SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
+    system->RegisterContentProvider(FileSys::ContentProviderUnionSlot::FrontendManual,
+                                    provider.get());
+    system->GetFileSystemController().CreateFactories(*vfs);
 
     // Remove cached contents generated during the previous session
     RemoveCachedContents();
@@ -274,16 +276,16 @@ GMainWindow::GMainWindow()
     ShowTelemetryCallout();
 
     // make sure menubar has the arrow cursor instead of inheriting from this
-    ui.menubar->setCursor(QCursor());
+    ui->menubar->setCursor(QCursor());
     statusBar()->setCursor(QCursor());
 
     mouse_hide_timer.setInterval(default_mouse_timeout);
     connect(&mouse_hide_timer, &QTimer::timeout, this, &GMainWindow::HideMouseCursor);
-    connect(ui.menubar, &QMenuBar::hovered, this, &GMainWindow::ShowMouseCursor);
+    connect(ui->menubar, &QMenuBar::hovered, this, &GMainWindow::ShowMouseCursor);
 
     MigrateConfigFiles();
 
-    ui.action_Fullscreen->setChecked(false);
+    ui->action_Fullscreen->setChecked(false);
 
     QStringList args = QApplication::arguments();
 
@@ -302,7 +304,7 @@ GMainWindow::GMainWindow()
 
         // Launch game in fullscreen mode
         if (args[i] == QStringLiteral("-f")) {
-            ui.action_Fullscreen->setChecked(true);
+            ui->action_Fullscreen->setChecked(true);
             continue;
         }
 
@@ -405,12 +407,12 @@ void GMainWindow::RegisterMetaTypes() {
     qRegisterMetaType<Service::AM::Applets::WebExitReason>("Service::AM::Applets::WebExitReason");
 
     // Register loader types
-    qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
+    qRegisterMetaType<Core::SystemResultStatus>("Core::SystemResultStatus");
 }
 
 void GMainWindow::ControllerSelectorReconfigureControllers(
     const Core::Frontend::ControllerParameters& parameters) {
-    QtControllerSelectorDialog dialog(this, parameters, input_subsystem.get());
+    QtControllerSelectorDialog dialog(this, parameters, input_subsystem.get(), *system);
 
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
                           Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
@@ -420,7 +422,7 @@ void GMainWindow::ControllerSelectorReconfigureControllers(
     emit ControllerSelectorReconfigureFinished();
 
     // Don't forget to apply settings.
-    Core::System::GetInstance().ApplySettings();
+    system->ApplySettings();
     config->Save();
 
     UpdateStatusButtons();
@@ -454,8 +456,8 @@ void GMainWindow::SoftwareKeyboardInitialize(
         return;
     }
 
-    software_keyboard = new QtSoftwareKeyboardDialog(render_window, Core::System::GetInstance(),
-                                                     is_inline, std::move(initialize_parameters));
+    software_keyboard = new QtSoftwareKeyboardDialog(render_window, *system, is_inline,
+                                                     std::move(initialize_parameters));
 
     if (is_inline) {
         connect(
@@ -566,11 +568,11 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
         return;
     }
 
-    QtNXWebEngineView web_browser_view(this, Core::System::GetInstance(), input_subsystem.get());
+    QtNXWebEngineView web_browser_view(this, *system, input_subsystem.get());
 
-    ui.action_Pause->setEnabled(false);
-    ui.action_Restart->setEnabled(false);
-    ui.action_Stop->setEnabled(false);
+    ui->action_Pause->setEnabled(false);
+    ui->action_Restart->setEnabled(false);
+    ui->action_Stop->setEnabled(false);
 
     {
         QProgressDialog loading_progress(this);
@@ -634,7 +636,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
             web_browser_view.SetFinished(true);
         }
     });
-    ui.menubar->addAction(exit_action);
+    ui->menubar->addAction(exit_action);
 
     while (!web_browser_view.IsFinished()) {
         QCoreApplication::processEvents();
@@ -676,11 +678,11 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
         render_window->show();
     }
 
-    ui.action_Pause->setEnabled(true);
-    ui.action_Restart->setEnabled(true);
-    ui.action_Stop->setEnabled(true);
+    ui->action_Pause->setEnabled(true);
+    ui->action_Restart->setEnabled(true);
+    ui->action_Stop->setEnabled(true);
 
-    ui.menubar->removeAction(exit_action);
+    ui->menubar->removeAction(exit_action);
 
     QCoreApplication::processEvents();
 
@@ -696,21 +698,21 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 
 void GMainWindow::InitializeWidgets() {
 #ifdef YUZU_ENABLE_COMPATIBILITY_REPORTING
-    ui.action_Report_Compatibility->setVisible(true);
+    ui->action_Report_Compatibility->setVisible(true);
 #endif
-    render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem);
+    render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem, *system);
     render_window->hide();
 
-    game_list = new GameList(vfs, provider.get(), this);
-    ui.horizontalLayout->addWidget(game_list);
+    game_list = new GameList(vfs, provider.get(), *system, this);
+    ui->horizontalLayout->addWidget(game_list);
 
     game_list_placeholder = new GameListPlaceholder(this);
-    ui.horizontalLayout->addWidget(game_list_placeholder);
+    ui->horizontalLayout->addWidget(game_list_placeholder);
     game_list_placeholder->setVisible(false);
 
     loading_screen = new LoadingScreen(this);
     loading_screen->hide();
-    ui.horizontalLayout->addWidget(loading_screen);
+    ui->horizontalLayout->addWidget(loading_screen);
     connect(loading_screen, &LoadingScreen::Hidden, [&] {
         loading_screen->Clear();
         if (emulation_running) {
@@ -767,14 +769,14 @@ void GMainWindow::InitializeWidgets() {
                                  tr("Handheld controller can't be used on docked mode. Pro "
                                     "controller will be selected."));
             controller_type = Settings::ControllerType::ProController;
-            ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get());
+            ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system);
             configure_dialog.ApplyConfiguration();
             controller_dialog->refreshConfiguration();
         }
 
         Settings::values.use_docked_mode.SetValue(!is_docked);
         dock_status_button->setChecked(!is_docked);
-        OnDockedModeChanged(is_docked, !is_docked);
+        OnDockedModeChanged(is_docked, !is_docked, *system);
     });
     dock_status_button->setText(tr("DOCK"));
     dock_status_button->setCheckable(true);
@@ -798,7 +800,7 @@ void GMainWindow::InitializeWidgets() {
         }
         }
 
-        Core::System::GetInstance().ApplySettings();
+        system->ApplySettings();
         UpdateGPUAccuracyButton();
     });
     UpdateGPUAccuracyButton();
@@ -826,7 +828,7 @@ void GMainWindow::InitializeWidgets() {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
         }
 
-        Core::System::GetInstance().ApplySettings();
+        system->ApplySettings();
     });
     statusBar()->insertPermanentWidget(0, renderer_status_button);
 
@@ -835,7 +837,7 @@ void GMainWindow::InitializeWidgets() {
 }
 
 void GMainWindow::InitializeDebugWidgets() {
-    QMenu* debug_menu = ui.menu_View_Debugging;
+    QMenu* debug_menu = ui->menu_View_Debugging;
 
 #if MICROPROFILE_ENABLED
     microProfileDialog = new MicroProfileDialog(this);
@@ -843,7 +845,7 @@ void GMainWindow::InitializeDebugWidgets() {
     debug_menu->addAction(microProfileDialog->toggleViewAction());
 #endif
 
-    waitTreeWidget = new WaitTreeWidget(this);
+    waitTreeWidget = new WaitTreeWidget(*system, this);
     addDockWidget(Qt::LeftDockWidgetArea, waitTreeWidget);
     waitTreeWidget->hide();
     debug_menu->addAction(waitTreeWidget->toggleViewAction());
@@ -864,16 +866,16 @@ void GMainWindow::InitializeRecentFileMenuActions() {
         actions_recent_files[i]->setVisible(false);
         connect(actions_recent_files[i], &QAction::triggered, this, &GMainWindow::OnMenuRecentFile);
 
-        ui.menu_recent_files->addAction(actions_recent_files[i]);
+        ui->menu_recent_files->addAction(actions_recent_files[i]);
     }
-    ui.menu_recent_files->addSeparator();
+    ui->menu_recent_files->addSeparator();
     QAction* action_clear_recent_files = new QAction(this);
     action_clear_recent_files->setText(tr("&Clear Recent Files"));
     connect(action_clear_recent_files, &QAction::triggered, this, [this] {
         UISettings::values.recent_files.clear();
         UpdateRecentFiles();
     });
-    ui.menu_recent_files->addAction(action_clear_recent_files);
+    ui->menu_recent_files->addAction(action_clear_recent_files);
 
     UpdateRecentFiles();
 }
@@ -892,43 +894,43 @@ void GMainWindow::InitializeHotkeys() {
     const QString fullscreen = QStringLiteral("Fullscreen");
     const QString capture_screenshot = QStringLiteral("Capture Screenshot");
 
-    ui.action_Load_File->setShortcut(hotkey_registry.GetKeySequence(main_window, load_file));
-    ui.action_Load_File->setShortcutContext(
+    ui->action_Load_File->setShortcut(hotkey_registry.GetKeySequence(main_window, load_file));
+    ui->action_Load_File->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, load_file));
 
-    ui.action_Load_Amiibo->setShortcut(hotkey_registry.GetKeySequence(main_window, load_amiibo));
-    ui.action_Load_Amiibo->setShortcutContext(
+    ui->action_Load_Amiibo->setShortcut(hotkey_registry.GetKeySequence(main_window, load_amiibo));
+    ui->action_Load_Amiibo->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, load_amiibo));
 
-    ui.action_Exit->setShortcut(hotkey_registry.GetKeySequence(main_window, exit_yuzu));
-    ui.action_Exit->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, exit_yuzu));
+    ui->action_Exit->setShortcut(hotkey_registry.GetKeySequence(main_window, exit_yuzu));
+    ui->action_Exit->setShortcutContext(hotkey_registry.GetShortcutContext(main_window, exit_yuzu));
 
-    ui.action_Restart->setShortcut(hotkey_registry.GetKeySequence(main_window, restart_emulation));
-    ui.action_Restart->setShortcutContext(
+    ui->action_Restart->setShortcut(hotkey_registry.GetKeySequence(main_window, restart_emulation));
+    ui->action_Restart->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, restart_emulation));
 
-    ui.action_Stop->setShortcut(hotkey_registry.GetKeySequence(main_window, stop_emulation));
-    ui.action_Stop->setShortcutContext(
+    ui->action_Stop->setShortcut(hotkey_registry.GetKeySequence(main_window, stop_emulation));
+    ui->action_Stop->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, stop_emulation));
 
-    ui.action_Show_Filter_Bar->setShortcut(
+    ui->action_Show_Filter_Bar->setShortcut(
         hotkey_registry.GetKeySequence(main_window, toggle_filter_bar));
-    ui.action_Show_Filter_Bar->setShortcutContext(
+    ui->action_Show_Filter_Bar->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, toggle_filter_bar));
 
-    ui.action_Show_Status_Bar->setShortcut(
+    ui->action_Show_Status_Bar->setShortcut(
         hotkey_registry.GetKeySequence(main_window, toggle_status_bar));
-    ui.action_Show_Status_Bar->setShortcutContext(
+    ui->action_Show_Status_Bar->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, toggle_status_bar));
 
-    ui.action_Capture_Screenshot->setShortcut(
+    ui->action_Capture_Screenshot->setShortcut(
         hotkey_registry.GetKeySequence(main_window, capture_screenshot));
-    ui.action_Capture_Screenshot->setShortcutContext(
+    ui->action_Capture_Screenshot->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, capture_screenshot));
 
-    ui.action_Fullscreen->setShortcut(
+    ui->action_Fullscreen->setShortcut(
         hotkey_registry.GetHotkey(main_window, fullscreen, this)->key());
-    ui.action_Fullscreen->setShortcutContext(
+    ui->action_Fullscreen->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, fullscreen));
 
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load File"), this),
@@ -946,19 +948,19 @@ void GMainWindow::InitializeHotkeys() {
         });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Restart Emulation"), this),
             &QShortcut::activated, this, [this] {
-                if (!Core::System::GetInstance().IsPoweredOn()) {
+                if (!system->IsPoweredOn()) {
                     return;
                 }
                 BootGame(game_path);
             });
     connect(hotkey_registry.GetHotkey(main_window, fullscreen, render_window),
-            &QShortcut::activated, ui.action_Fullscreen, &QAction::trigger);
+            &QShortcut::activated, ui->action_Fullscreen, &QAction::trigger);
     connect(hotkey_registry.GetHotkey(main_window, fullscreen, render_window),
-            &QShortcut::activatedAmbiguously, ui.action_Fullscreen, &QAction::trigger);
+            &QShortcut::activatedAmbiguously, ui->action_Fullscreen, &QAction::trigger);
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Exit Fullscreen"), this),
             &QShortcut::activated, this, [&] {
                 if (emulation_running) {
-                    ui.action_Fullscreen->setChecked(false);
+                    ui->action_Fullscreen->setChecked(false);
                     ToggleFullscreen();
                 }
             });
@@ -987,7 +989,7 @@ void GMainWindow::InitializeHotkeys() {
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load Amiibo"), this),
             &QShortcut::activated, this, [&] {
-                if (ui.action_Load_Amiibo->isEnabled()) {
+                if (ui->action_Load_Amiibo->isEnabled()) {
                     OnLoadAmiibo();
                 }
             });
@@ -1002,7 +1004,7 @@ void GMainWindow::InitializeHotkeys() {
                 Settings::values.use_docked_mode.SetValue(
                     !Settings::values.use_docked_mode.GetValue());
                 OnDockedModeChanged(!Settings::values.use_docked_mode.GetValue(),
-                                    Settings::values.use_docked_mode.GetValue());
+                                    Settings::values.use_docked_mode.GetValue(), *system);
                 dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
             });
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
@@ -1068,20 +1070,20 @@ void GMainWindow::RestoreUIState() {
 
     game_list->LoadInterfaceLayout();
 
-    ui.action_Single_Window_Mode->setChecked(UISettings::values.single_window_mode.GetValue());
+    ui->action_Single_Window_Mode->setChecked(UISettings::values.single_window_mode.GetValue());
     ToggleWindowMode();
 
-    ui.action_Fullscreen->setChecked(UISettings::values.fullscreen.GetValue());
+    ui->action_Fullscreen->setChecked(UISettings::values.fullscreen.GetValue());
 
-    ui.action_Display_Dock_Widget_Headers->setChecked(
+    ui->action_Display_Dock_Widget_Headers->setChecked(
         UISettings::values.display_titlebar.GetValue());
-    OnDisplayTitleBars(ui.action_Display_Dock_Widget_Headers->isChecked());
+    OnDisplayTitleBars(ui->action_Display_Dock_Widget_Headers->isChecked());
 
-    ui.action_Show_Filter_Bar->setChecked(UISettings::values.show_filter_bar.GetValue());
-    game_list->SetFilterVisible(ui.action_Show_Filter_Bar->isChecked());
+    ui->action_Show_Filter_Bar->setChecked(UISettings::values.show_filter_bar.GetValue());
+    game_list->SetFilterVisible(ui->action_Show_Filter_Bar->isChecked());
 
-    ui.action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar.GetValue());
-    statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
+    ui->action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar.GetValue());
+    statusBar()->setVisible(ui->action_Show_Status_Bar->isChecked());
     Debugger::ToggleConsole();
 }
 
@@ -1093,11 +1095,11 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
         state != Qt::ApplicationActive) {
         LOG_DEBUG(Frontend, "ApplicationState unusual flag: {} ", state);
     }
-    if (ui.action_Pause->isEnabled() &&
+    if (ui->action_Pause->isEnabled() &&
         (state & (Qt::ApplicationHidden | Qt::ApplicationInactive))) {
         auto_paused = true;
         OnPauseGame();
-    } else if (ui.action_Start->isEnabled() && auto_paused && state == Qt::ApplicationActive) {
+    } else if (ui->action_Start->isEnabled() && auto_paused && state == Qt::ApplicationActive) {
         auto_paused = false;
         OnStartGame();
     }
@@ -1142,59 +1144,60 @@ void GMainWindow::ConnectWidgetEvents() {
 
 void GMainWindow::ConnectMenuEvents() {
     // File
-    connect(ui.action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
-    connect(ui.action_Load_Folder, &QAction::triggered, this, &GMainWindow::OnMenuLoadFolder);
-    connect(ui.action_Install_File_NAND, &QAction::triggered, this,
+    connect(ui->action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
+    connect(ui->action_Load_Folder, &QAction::triggered, this, &GMainWindow::OnMenuLoadFolder);
+    connect(ui->action_Install_File_NAND, &QAction::triggered, this,
             &GMainWindow::OnMenuInstallToNAND);
-    connect(ui.action_Exit, &QAction::triggered, this, &QMainWindow::close);
-    connect(ui.action_Load_Amiibo, &QAction::triggered, this, &GMainWindow::OnLoadAmiibo);
+    connect(ui->action_Exit, &QAction::triggered, this, &QMainWindow::close);
+    connect(ui->action_Load_Amiibo, &QAction::triggered, this, &GMainWindow::OnLoadAmiibo);
 
     // Emulation
-    connect(ui.action_Start, &QAction::triggered, this, &GMainWindow::OnStartGame);
-    connect(ui.action_Pause, &QAction::triggered, this, &GMainWindow::OnPauseGame);
-    connect(ui.action_Stop, &QAction::triggered, this, &GMainWindow::OnStopGame);
-    connect(ui.action_Report_Compatibility, &QAction::triggered, this,
+    connect(ui->action_Start, &QAction::triggered, this, &GMainWindow::OnStartGame);
+    connect(ui->action_Pause, &QAction::triggered, this, &GMainWindow::OnPauseGame);
+    connect(ui->action_Stop, &QAction::triggered, this, &GMainWindow::OnStopGame);
+    connect(ui->action_Report_Compatibility, &QAction::triggered, this,
             &GMainWindow::OnMenuReportCompatibility);
-    connect(ui.action_Open_Mods_Page, &QAction::triggered, this, &GMainWindow::OnOpenModsPage);
-    connect(ui.action_Open_Quickstart_Guide, &QAction::triggered, this,
+    connect(ui->action_Open_Mods_Page, &QAction::triggered, this, &GMainWindow::OnOpenModsPage);
+    connect(ui->action_Open_Quickstart_Guide, &QAction::triggered, this,
             &GMainWindow::OnOpenQuickstartGuide);
-    connect(ui.action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
-    connect(ui.action_Restart, &QAction::triggered, this, [this] { BootGame(QString(game_path)); });
-    connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
-    connect(ui.action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
-    connect(ui.action_Configure_Current_Game, &QAction::triggered, this,
+    connect(ui->action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
+    connect(ui->action_Restart, &QAction::triggered, this,
+            [this] { BootGame(QString(game_path)); });
+    connect(ui->action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
+    connect(ui->action_Configure_Tas, &QAction::triggered, this, &GMainWindow::OnConfigureTas);
+    connect(ui->action_Configure_Current_Game, &QAction::triggered, this,
             &GMainWindow::OnConfigurePerGame);
 
     // View
-    connect(ui.action_Single_Window_Mode, &QAction::triggered, this,
+    connect(ui->action_Single_Window_Mode, &QAction::triggered, this,
             &GMainWindow::ToggleWindowMode);
-    connect(ui.action_Display_Dock_Widget_Headers, &QAction::triggered, this,
+    connect(ui->action_Display_Dock_Widget_Headers, &QAction::triggered, this,
             &GMainWindow::OnDisplayTitleBars);
-    connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
-    connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
+    connect(ui->action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
+    connect(ui->action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
 
-    connect(ui.action_Reset_Window_Size_720, &QAction::triggered, this,
+    connect(ui->action_Reset_Window_Size_720, &QAction::triggered, this,
             &GMainWindow::ResetWindowSize720);
-    connect(ui.action_Reset_Window_Size_900, &QAction::triggered, this,
+    connect(ui->action_Reset_Window_Size_900, &QAction::triggered, this,
             &GMainWindow::ResetWindowSize900);
-    connect(ui.action_Reset_Window_Size_1080, &QAction::triggered, this,
+    connect(ui->action_Reset_Window_Size_1080, &QAction::triggered, this,
             &GMainWindow::ResetWindowSize1080);
-    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_720);
-    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_900);
-    ui.menu_Reset_Window_Size->addAction(ui.action_Reset_Window_Size_1080);
+    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_720);
+    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_900);
+    ui->menu_Reset_Window_Size->addAction(ui->action_Reset_Window_Size_1080);
 
     // Fullscreen
-    connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
+    connect(ui->action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
 
     // Movie
-    connect(ui.action_Capture_Screenshot, &QAction::triggered, this,
+    connect(ui->action_Capture_Screenshot, &QAction::triggered, this,
             &GMainWindow::OnCaptureScreenshot);
 
     // Help
-    connect(ui.action_Open_yuzu_Folder, &QAction::triggered, this, &GMainWindow::OnOpenYuzuFolder);
-    connect(ui.action_Rederive, &QAction::triggered, this,
+    connect(ui->action_Open_yuzu_Folder, &QAction::triggered, this, &GMainWindow::OnOpenYuzuFolder);
+    connect(ui->action_Rederive, &QAction::triggered, this,
             std::bind(&GMainWindow::OnReinitializeKeys, this, ReinitializeKeyBehavior::Warning));
-    connect(ui.action_About, &QAction::triggered, this, &GMainWindow::OnAbout);
+    connect(ui->action_About, &QAction::triggered, this, &GMainWindow::OnAbout);
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -1238,10 +1241,9 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         return false;
     }
 
-    Core::System& system{Core::System::GetInstance()};
-    system.SetFilesystem(vfs);
+    system->SetFilesystem(vfs);
 
-    system.SetAppletFrontendSet({
+    system->SetAppletFrontendSet({
         std::make_unique<QtControllerSelector>(*this), // Controller Selector
         std::make_unique<QtErrorDisplay>(*this),       // Error Display
         nullptr,                                       // Parental Controls
@@ -1251,14 +1253,14 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
         std::make_unique<QtWebBrowser>(*this),         // Web Browser
     });
 
-    const Core::System::ResultStatus result{
-        system.Load(*render_window, filename.toStdString(), program_id, program_index)};
+    const Core::SystemResultStatus result{
+        system->Load(*render_window, filename.toStdString(), program_id, program_index)};
 
     const auto drd_callout = (UISettings::values.callout_flags.GetValue() &
                               static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
 
-    if (result == Core::System::ResultStatus::Success &&
-        system.GetAppLoader().GetFileType() == Loader::FileType::DeconstructedRomDirectory &&
+    if (result == Core::SystemResultStatus::Success &&
+        system->GetAppLoader().GetFileType() == Loader::FileType::DeconstructedRomDirectory &&
         drd_callout) {
         UISettings::values.callout_flags = UISettings::values.callout_flags.GetValue() |
                                            static_cast<u32>(CalloutFlag::DRDDeprecation);
@@ -1272,14 +1274,14 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
                "wiki</a>. This message will not be shown again."));
     }
 
-    if (result != Core::System::ResultStatus::Success) {
+    if (result != Core::SystemResultStatus::Success) {
         switch (result) {
-        case Core::System::ResultStatus::ErrorGetLoader:
+        case Core::SystemResultStatus::ErrorGetLoader:
             LOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filename.toStdString());
             QMessageBox::critical(this, tr("Error while loading ROM!"),
                                   tr("The ROM format is not supported."));
             break;
-        case Core::System::ResultStatus::ErrorVideoCore:
+        case Core::SystemResultStatus::ErrorVideoCore:
             QMessageBox::critical(
                 this, tr("An error occurred initializing the video core."),
                 tr("yuzu has encountered an error while running the video core, please see the "
@@ -1293,8 +1295,8 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
             break;
 
         default:
-            if (result > Core::System::ResultStatus::ErrorLoader) {
-                const u16 loader_id = static_cast<u16>(Core::System::ResultStatus::ErrorLoader);
+            if (result > Core::SystemResultStatus::ErrorLoader) {
+                const u16 loader_id = static_cast<u16>(Core::SystemResultStatus::ErrorLoader);
                 const u16 error_id = static_cast<u16>(result) - loader_id;
                 const std::string error_code = fmt::format("({:04X}-{:04X})", loader_id, error_id);
                 LOG_CRITICAL(Frontend, "Failed to load ROM! {}", error_code);
@@ -1322,7 +1324,7 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     }
     game_path = filename;
 
-    system.TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "Qt");
+    system->TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "Qt");
     return true;
 }
 
@@ -1348,9 +1350,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     last_filename_booted = filename;
 
-    auto& system = Core::System::GetInstance();
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
-    const auto loader = Loader::GetLoader(system, v_file, program_id, program_index);
+    const auto loader = Loader::GetLoader(*system, v_file, program_id, program_index);
 
     if (loader != nullptr && loader->ReadProgramId(title_id) == Loader::ResultStatus::Success &&
         type == StartGameType::Normal) {
@@ -1359,7 +1360,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         const auto config_file_name = title_id == 0
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
-        Config per_game_config(config_file_name, Config::ConfigType::PerGameConfig);
+        Config per_game_config(*system, config_file_name, Config::ConfigType::PerGameConfig);
     }
 
     ConfigureVibration::SetAllVibrationDevices();
@@ -1382,16 +1383,16 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         return;
 
     // Create and start the emulation thread
-    emu_thread = std::make_unique<EmuThread>();
+    emu_thread = std::make_unique<EmuThread>(*system);
     emit EmulationStarting(emu_thread.get());
     emu_thread->start();
 
     // Register an ExecuteProgram callback such that Core can execute a sub-program
-    system.RegisterExecuteProgramCallback(
+    system->RegisterExecuteProgramCallback(
         [this](std::size_t program_index) { render_window->ExecuteProgram(program_index); });
 
     // Register an Exit callback such that Core can exit the currently running application.
-    system.RegisterExitCallback([this]() { render_window->Exit(); });
+    system->RegisterExitCallback([this]() { render_window->Exit(); });
 
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     connect(render_window, &GRenderWindow::MouseActivity, this, &GMainWindow::OnMouseActivity);
@@ -1407,7 +1408,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     // Update the GUI
     UpdateStatusButtons();
-    if (ui.action_Single_Window_Mode->isChecked()) {
+    if (ui->action_Single_Window_Mode->isChecked()) {
         game_list->hide();
         game_list_placeholder->hide();
     }
@@ -1425,11 +1426,11 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
 
     std::string title_name;
     std::string title_version;
-    const auto res = system.GetGameName(title_name);
+    const auto res = system->GetGameName(title_name);
 
-    const auto metadata = [&system, title_id] {
-        const FileSys::PatchManager pm(title_id, system.GetFileSystemController(),
-                                       system.GetContentProvider());
+    const auto metadata = [this, title_id] {
+        const FileSys::PatchManager pm(title_id, system->GetFileSystemController(),
+                                       system->GetContentProvider());
         return pm.GetControlMetadata();
     }();
     if (metadata.first != nullptr) {
@@ -1440,20 +1441,20 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         title_name = Common::FS::PathToUTF8String(
             std::filesystem::path{filename.toStdU16String()}.filename());
     }
-    const bool is_64bit = system.Kernel().CurrentProcess()->Is64BitProcess();
+    const bool is_64bit = system->Kernel().CurrentProcess()->Is64BitProcess();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")
                      .arg(QString::fromStdString(title_name), instruction_set_suffix)
                      .toStdString();
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
-    const auto gpu_vendor = system.GPU().Renderer().GetDeviceVendor();
+    const auto gpu_vendor = system->GPU().Renderer().GetDeviceVendor();
     UpdateWindowTitle(title_name, title_version, gpu_vendor);
 
-    loading_screen->Prepare(system.GetAppLoader());
+    loading_screen->Prepare(system->GetAppLoader());
     loading_screen->show();
 
     emulation_running = true;
-    if (ui.action_Fullscreen->isChecked()) {
+    if (ui->action_Fullscreen->isChecked()) {
         ShowFullscreen();
     }
     OnStartGame();
@@ -1464,7 +1465,7 @@ void GMainWindow::ShutdownGame() {
         return;
     }
 
-    if (ui.action_Fullscreen->isChecked()) {
+    if (ui->action_Fullscreen->isChecked()) {
         HideFullscreen();
     }
 
@@ -1485,15 +1486,15 @@ void GMainWindow::ShutdownGame() {
     disconnect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
 
     // Update the GUI
-    ui.action_Start->setEnabled(false);
-    ui.action_Start->setText(tr("Start"));
-    ui.action_Pause->setEnabled(false);
-    ui.action_Stop->setEnabled(false);
-    ui.action_Restart->setEnabled(false);
-    ui.action_Configure_Current_Game->setEnabled(false);
-    ui.action_Report_Compatibility->setEnabled(false);
-    ui.action_Load_Amiibo->setEnabled(false);
-    ui.action_Capture_Screenshot->setEnabled(false);
+    ui->action_Start->setEnabled(false);
+    ui->action_Start->setText(tr("Start"));
+    ui->action_Pause->setEnabled(false);
+    ui->action_Stop->setEnabled(false);
+    ui->action_Restart->setEnabled(false);
+    ui->action_Configure_Current_Game->setEnabled(false);
+    ui->action_Report_Compatibility->setEnabled(false);
+    ui->action_Load_Amiibo->setEnabled(false);
+    ui->action_Capture_Screenshot->setEnabled(false);
     render_window->hide();
     loading_screen->hide();
     loading_screen->Clear();
@@ -1555,7 +1556,7 @@ void GMainWindow::UpdateRecentFiles() {
     }
 
     // Enable the recent files menu if the list isn't empty
-    ui.menu_recent_files->setEnabled(num_recent_files != 0);
+    ui->menu_recent_files->setEnabled(num_recent_files != 0);
 }
 
 void GMainWindow::OnGameListLoadFile(QString game_path, u64 program_id) {
@@ -1566,18 +1567,17 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
                                        const std::string& game_path) {
     std::filesystem::path path;
     QString open_target;
-    auto& system = Core::System::GetInstance();
 
-    const auto [user_save_size, device_save_size] = [this, &game_path, &program_id, &system] {
-        const FileSys::PatchManager pm{program_id, system.GetFileSystemController(),
-                                       system.GetContentProvider()};
+    const auto [user_save_size, device_save_size] = [this, &game_path, &program_id] {
+        const FileSys::PatchManager pm{program_id, system->GetFileSystemController(),
+                                       system->GetContentProvider()};
         const auto control = pm.GetControlMetadata().first;
         if (control != nullptr) {
             return std::make_pair(control->GetDefaultNormalSaveSize(),
                                   control->GetDeviceSaveDataSize());
         } else {
             const auto file = Core::GetGameFileFromPath(vfs, game_path);
-            const auto loader = Loader::GetLoader(system, file);
+            const auto loader = Loader::GetLoader(*system, file);
 
             FileSys::NACP nacp{};
             loader->ReadControlData(nacp);
@@ -1620,14 +1620,14 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
             ASSERT(user_id);
 
             const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
+                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
                 program_id, user_id->uuid, 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
         } else {
             // Device save data
             const auto device_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
+                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
                 program_id, {}, 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, device_save_data_path);
@@ -1754,7 +1754,7 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
 }
 
 void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
-    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
+    const auto& fs_controller = system->GetFileSystemController();
     const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(program_id) ||
                      fs_controller.GetSDMCContents()->RemoveExistingEntry(program_id);
 
@@ -1770,7 +1770,7 @@ void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
 
 void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type) {
     const auto update_id = program_id | 0x800;
-    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
+    const auto& fs_controller = system->GetFileSystemController();
     const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(update_id) ||
                      fs_controller.GetSDMCContents()->RemoveExistingEntry(update_id);
 
@@ -1785,8 +1785,8 @@ void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type)
 
 void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) {
     u32 count{};
-    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
-    const auto dlc_entries = Core::System::GetInstance().GetContentProvider().ListEntriesFilter(
+    const auto& fs_controller = system->GetFileSystemController();
+    const auto dlc_entries = system->GetContentProvider().ListEntriesFilter(
         FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
 
     for (const auto& entry : dlc_entries) {
@@ -1924,8 +1924,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
                                 "cancelled the operation."));
     };
 
-    auto& system = Core::System::GetInstance();
-    const auto loader = Loader::GetLoader(system, vfs->OpenFile(game_path, FileSys::Mode::Read));
+    const auto loader = Loader::GetLoader(*system, vfs->OpenFile(game_path, FileSys::Mode::Read));
     if (loader == nullptr) {
         failed();
         return;
@@ -1937,7 +1936,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
         return;
     }
 
-    const auto& installed = system.GetContentProvider();
+    const auto& installed = system->GetContentProvider();
     const auto romfs_title_id = SelectRomFSDumpTarget(installed, program_id);
 
     if (!romfs_title_id) {
@@ -1957,7 +1956,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
 
     if (*romfs_title_id == program_id) {
         const u64 ivfc_offset = loader->ReadRomFSIVFCOffset();
-        const FileSys::PatchManager pm{program_id, system.GetFileSystemController(), installed};
+        const FileSys::PatchManager pm{program_id, system->GetFileSystemController(), installed};
         romfs =
             pm.PatchRomFS(file, ivfc_offset, FileSys::ContentRecordType::Program, nullptr, false);
     } else {
@@ -2083,7 +2082,7 @@ void GMainWindow::OnGameListAddDirectory() {
 }
 
 void GMainWindow::OnGameListShowList(bool show) {
-    if (emulation_running && ui.action_Single_Window_Mode->isChecked())
+    if (emulation_running && ui->action_Single_Window_Mode->isChecked())
         return;
     game_list->setVisible(show);
     game_list_placeholder->setVisible(!show);
@@ -2092,7 +2091,7 @@ void GMainWindow::OnGameListShowList(bool show) {
 void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
     u64 title_id{};
     const auto v_file = Core::GetGameFileFromPath(vfs, file);
-    const auto loader = Loader::GetLoader(Core::System::GetInstance(), v_file);
+    const auto loader = Loader::GetLoader(*system, v_file);
 
     if (loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
         QMessageBox::information(this, tr("Properties"),
@@ -2185,7 +2184,7 @@ void GMainWindow::OnMenuInstallToNAND() {
     QStringList failed_files{};      // Files that failed to install due to errors
     bool detected_base_install{};    // Whether a base game was attempted to be installed
 
-    ui.action_Install_File_NAND->setEnabled(false);
+    ui->action_Install_File_NAND->setEnabled(false);
 
     install_progress = new QProgressDialog(QString{}, tr("Cancel"), 0, total_size, this);
     install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
@@ -2261,7 +2260,7 @@ void GMainWindow::OnMenuInstallToNAND() {
     Common::FS::RemoveDirRecursively(Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir) /
                                      "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
-    ui.action_Install_File_NAND->setEnabled(true);
+    ui->action_Install_File_NAND->setEnabled(true);
 }
 
 InstallResult GMainWindow::InstallNSPXCI(const QString& filename) {
@@ -2306,9 +2305,8 @@ InstallResult GMainWindow::InstallNSPXCI(const QString& filename) {
     if (nsp->GetStatus() != Loader::ResultStatus::Success) {
         return InstallResult::Failure;
     }
-    const auto res =
-        Core::System::GetInstance().GetFileSystemController().GetUserNANDContents()->InstallEntry(
-            *nsp, true, qt_raw_copy);
+    const auto res = system->GetFileSystemController().GetUserNANDContents()->InstallEntry(
+        *nsp, true, qt_raw_copy);
     switch (res) {
     case FileSys::InstallResult::Success:
         return InstallResult::Success;
@@ -2386,19 +2384,13 @@ InstallResult GMainWindow::InstallNCA(const QString& filename) {
                  static_cast<size_t>(FileSys::TitleType::FirmwarePackageB);
     }
 
-    FileSys::InstallResult res;
-    if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
-        res = Core::System::GetInstance()
-                  .GetFileSystemController()
-                  .GetUserNANDContents()
-                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
-    } else {
-        res = Core::System::GetInstance()
-                  .GetFileSystemController()
-                  .GetSystemNANDContents()
-                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
-    }
+    const bool is_application = index >= static_cast<s32>(FileSys::TitleType::Application);
+    const auto& fs_controller = system->GetFileSystemController();
+    auto* registered_cache = is_application ? fs_controller.GetUserNANDContents()
+                                            : fs_controller.GetSystemNANDContents();
 
+    const auto res = registered_cache->InstallEntry(*nca, static_cast<FileSys::TitleType>(index),
+                                                    true, qt_raw_copy);
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
     } else if (res == FileSys::InstallResult::OverwriteExisting) {
@@ -2432,40 +2424,39 @@ void GMainWindow::OnStartGame() {
 
     connect(emu_thread.get(), &EmuThread::ErrorThrown, this, &GMainWindow::OnCoreError);
 
-    ui.action_Start->setEnabled(false);
-    ui.action_Start->setText(tr("&Continue"));
+    ui->action_Start->setEnabled(false);
+    ui->action_Start->setText(tr("&Continue"));
 
-    ui.action_Pause->setEnabled(true);
-    ui.action_Stop->setEnabled(true);
-    ui.action_Restart->setEnabled(true);
-    ui.action_Configure_Current_Game->setEnabled(true);
-    ui.action_Report_Compatibility->setEnabled(true);
+    ui->action_Pause->setEnabled(true);
+    ui->action_Stop->setEnabled(true);
+    ui->action_Restart->setEnabled(true);
+    ui->action_Configure_Current_Game->setEnabled(true);
+    ui->action_Report_Compatibility->setEnabled(true);
 
     discord_rpc->Update();
-    ui.action_Load_Amiibo->setEnabled(true);
-    ui.action_Capture_Screenshot->setEnabled(true);
+    ui->action_Load_Amiibo->setEnabled(true);
+    ui->action_Capture_Screenshot->setEnabled(true);
 }
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
 
-    ui.action_Start->setEnabled(true);
-    ui.action_Pause->setEnabled(false);
-    ui.action_Stop->setEnabled(true);
-    ui.action_Capture_Screenshot->setEnabled(false);
+    ui->action_Start->setEnabled(true);
+    ui->action_Pause->setEnabled(false);
+    ui->action_Stop->setEnabled(true);
+    ui->action_Capture_Screenshot->setEnabled(false);
 
     AllowOSSleep();
 }
 
 void GMainWindow::OnStopGame() {
-    auto& system{Core::System::GetInstance()};
-    if (system.GetExitLock() && !ConfirmForceLockedExit()) {
+    if (system->GetExitLock() && !ConfirmForceLockedExit()) {
         return;
     }
 
     ShutdownGame();
 
-    Settings::RestoreGlobalState(system.IsPoweredOn());
+    Settings::RestoreGlobalState(system->IsPoweredOn());
     UpdateStatusButtons();
 }
 
@@ -2483,8 +2474,8 @@ void GMainWindow::OnExit() {
 }
 
 void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_text) {
-    OverlayDialog dialog(render_window, Core::System::GetInstance(), error_code, error_text,
-                         QString{}, tr("OK"), Qt::AlignLeft | Qt::AlignVCenter);
+    OverlayDialog dialog(render_window, *system, error_code, error_text, QString{}, tr("OK"),
+                         Qt::AlignLeft | Qt::AlignVCenter);
     dialog.exec();
 
     emit ErrorDisplayFinished();
@@ -2493,7 +2484,7 @@ void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_tex
 void GMainWindow::OnMenuReportCompatibility() {
     if (!Settings::values.yuzu_token.GetValue().empty() &&
         !Settings::values.yuzu_username.GetValue().empty()) {
-        CompatDB compatdb{this};
+        CompatDB compatdb{system->TelemetrySession(), this};
         compatdb.exec();
     } else {
         QMessageBox::critical(
@@ -2529,7 +2520,7 @@ void GMainWindow::ToggleFullscreen() {
     if (!emulation_running) {
         return;
     }
-    if (ui.action_Fullscreen->isChecked()) {
+    if (ui->action_Fullscreen->isChecked()) {
         ShowFullscreen();
     } else {
         HideFullscreen();
@@ -2537,10 +2528,10 @@ void GMainWindow::ToggleFullscreen() {
 }
 
 void GMainWindow::ShowFullscreen() {
-    if (ui.action_Single_Window_Mode->isChecked()) {
+    if (ui->action_Single_Window_Mode->isChecked()) {
         UISettings::values.geometry = saveGeometry();
 
-        ui.menubar->hide();
+        ui->menubar->hide();
         statusBar()->hide();
 
         if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
@@ -2574,7 +2565,7 @@ void GMainWindow::ShowFullscreen() {
 }
 
 void GMainWindow::HideFullscreen() {
-    if (ui.action_Single_Window_Mode->isChecked()) {
+    if (ui->action_Single_Window_Mode->isChecked()) {
         if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             showNormal();
             restoreGeometry(UISettings::values.geometry);
@@ -2586,8 +2577,8 @@ void GMainWindow::HideFullscreen() {
             show();
         }
 
-        statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
-        ui.menubar->show();
+        statusBar()->setVisible(ui->action_Show_Status_Bar->isChecked());
+        ui->menubar->show();
     } else {
         if (Settings::values.fullscreen_mode.GetValue() == Settings::FullscreenMode::Exclusive) {
             render_window->showNormal();
@@ -2603,10 +2594,10 @@ void GMainWindow::HideFullscreen() {
 }
 
 void GMainWindow::ToggleWindowMode() {
-    if (ui.action_Single_Window_Mode->isChecked()) {
+    if (ui->action_Single_Window_Mode->isChecked()) {
         // Render in the main window...
         render_window->BackupGeometry();
-        ui.horizontalLayout->addWidget(render_window);
+        ui->horizontalLayout->addWidget(render_window);
         render_window->setFocusPolicy(Qt::StrongFocus);
         if (emulation_running) {
             render_window->setVisible(true);
@@ -2616,7 +2607,7 @@ void GMainWindow::ToggleWindowMode() {
 
     } else {
         // Render in a separate window...
-        ui.horizontalLayout->removeWidget(render_window);
+        ui->horizontalLayout->removeWidget(render_window);
         render_window->setParent(nullptr);
         render_window->setFocusPolicy(Qt::NoFocus);
         if (emulation_running) {
@@ -2631,10 +2622,10 @@ void GMainWindow::ResetWindowSize(u32 width, u32 height) {
     const auto aspect_ratio = Layout::EmulationAspectRatio(
         static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio.GetValue()),
         static_cast<float>(height) / width);
-    if (!ui.action_Single_Window_Mode->isChecked()) {
+    if (!ui->action_Single_Window_Mode->isChecked()) {
         render_window->resize(height / aspect_ratio, height);
     } else {
-        const bool show_status_bar = ui.action_Show_Status_Bar->isChecked();
+        const bool show_status_bar = ui->action_Show_Status_Bar->isChecked();
         const auto status_bar_height = show_status_bar ? statusBar()->height() : 0;
         resize(height / aspect_ratio, height + menuBar()->height() + status_bar_height);
     }
@@ -2656,7 +2647,8 @@ void GMainWindow::OnConfigure() {
     const auto old_theme = UISettings::values.theme;
     const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
 
-    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get());
+    Settings::SetConfiguringGlobal(true);
+    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system);
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
             &GMainWindow::OnLanguageChanged);
 
@@ -2692,7 +2684,7 @@ void GMainWindow::OnConfigure() {
 
         Settings::values.disabled_addons.clear();
 
-        config = std::make_unique<Config>();
+        config = std::make_unique<Config>(*system);
         UISettings::values.reset_to_defaults = false;
 
         UISettings::values.game_dirs = std::move(old_game_dirs);
@@ -2741,12 +2733,11 @@ void GMainWindow::OnConfigure() {
 }
 
 void GMainWindow::OnConfigureTas() {
-    const auto& system = Core::System::GetInstance();
     ConfigureTasDialog dialog(this);
     const auto result = dialog.exec();
 
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied) {
-        Settings::RestoreGlobalState(system.IsPoweredOn());
+        Settings::RestoreGlobalState(system->IsPoweredOn());
         return;
     } else if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();
@@ -2754,20 +2745,20 @@ void GMainWindow::OnConfigureTas() {
 }
 
 void GMainWindow::OnConfigurePerGame() {
-    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    const u64 title_id = system->CurrentProcess()->GetTitleID();
     OpenPerGameConfiguration(title_id, game_path.toStdString());
 }
 
 void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_name) {
     const auto v_file = Core::GetGameFileFromPath(vfs, file_name);
-    const auto& system = Core::System::GetInstance();
 
-    ConfigurePerGame dialog(this, title_id, file_name);
+    Settings::SetConfiguringGlobal(false);
+    ConfigurePerGame dialog(this, title_id, file_name, *system);
     dialog.LoadFromFile(v_file);
     const auto result = dialog.exec();
 
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied) {
-        Settings::RestoreGlobalState(system.IsPoweredOn());
+        Settings::RestoreGlobalState(system->IsPoweredOn());
         return;
     } else if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();
@@ -2779,7 +2770,7 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
     }
 
     // Do not cause the global config to write local settings into the config file
-    const bool is_powered_on = system.IsPoweredOn();
+    const bool is_powered_on = system->IsPoweredOn();
     Settings::RestoreGlobalState(is_powered_on);
 
     UISettings::values.configuration_applied = false;
@@ -2802,8 +2793,7 @@ void GMainWindow::OnLoadAmiibo() {
 }
 
 void GMainWindow::LoadAmiibo(const QString& filename) {
-    Core::System& system{Core::System::GetInstance()};
-    Service::SM::ServiceManager& sm = system.ServiceManager();
+    Service::SM::ServiceManager& sm = system->ServiceManager();
     auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
     if (nfc == nullptr) {
         return;
@@ -2845,8 +2835,8 @@ void GMainWindow::OnAbout() {
 }
 
 void GMainWindow::OnToggleFilterBar() {
-    game_list->SetFilterVisible(ui.action_Show_Filter_Bar->isChecked());
-    if (ui.action_Show_Filter_Bar->isChecked()) {
+    game_list->SetFilterVisible(ui->action_Show_Filter_Bar->isChecked());
+    if (ui->action_Show_Filter_Bar->isChecked()) {
         game_list->SetFilterFocus();
     } else {
         game_list->ClearFilter();
@@ -2854,7 +2844,7 @@ void GMainWindow::OnToggleFilterBar() {
 }
 
 void GMainWindow::OnCaptureScreenshot() {
-    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    const u64 title_id = system->CurrentProcess()->GetTitleID();
     const auto screenshot_path =
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir));
     const auto date =
@@ -2960,9 +2950,8 @@ void GMainWindow::UpdateStatusBar() {
         tas_label->clear();
     }
 
-    auto& system = Core::System::GetInstance();
-    auto results = system.GetAndResetPerfStats();
-    auto& shader_notify = system.GPU().ShaderNotify();
+    auto results = system->GetAndResetPerfStats();
+    auto& shader_notify = system->GPU().ShaderNotify();
     const int shaders_building = shader_notify.ShadersBuilding();
 
     if (shaders_building > 0) {
@@ -3024,7 +3013,7 @@ void GMainWindow::UpdateStatusButtons() {
 }
 
 void GMainWindow::UpdateUISettings() {
-    if (!ui.action_Fullscreen->isChecked()) {
+    if (!ui->action_Fullscreen->isChecked()) {
         UISettings::values.geometry = saveGeometry();
         UISettings::values.renderwindow_geometry = render_window->saveGeometry();
     }
@@ -3033,11 +3022,11 @@ void GMainWindow::UpdateUISettings() {
     UISettings::values.microprofile_geometry = microProfileDialog->saveGeometry();
     UISettings::values.microprofile_visible = microProfileDialog->isVisible();
 #endif
-    UISettings::values.single_window_mode = ui.action_Single_Window_Mode->isChecked();
-    UISettings::values.fullscreen = ui.action_Fullscreen->isChecked();
-    UISettings::values.display_titlebar = ui.action_Display_Dock_Widget_Headers->isChecked();
-    UISettings::values.show_filter_bar = ui.action_Show_Filter_Bar->isChecked();
-    UISettings::values.show_status_bar = ui.action_Show_Status_Bar->isChecked();
+    UISettings::values.single_window_mode = ui->action_Single_Window_Mode->isChecked();
+    UISettings::values.fullscreen = ui->action_Fullscreen->isChecked();
+    UISettings::values.display_titlebar = ui->action_Display_Dock_Widget_Headers->isChecked();
+    UISettings::values.show_filter_bar = ui->action_Show_Filter_Bar->isChecked();
+    UISettings::values.show_status_bar = ui->action_Show_Status_Bar->isChecked();
     UISettings::values.first_start = false;
 }
 
@@ -3063,7 +3052,7 @@ void GMainWindow::OnMouseActivity() {
     }
 }
 
-void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string details) {
+void GMainWindow::OnCoreError(Core::SystemResultStatus result, std::string details) {
     QMessageBox::StandardButton answer;
     QString status_message;
     const QString common_message =
@@ -3078,7 +3067,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
            "back to the game list? Continuing emulation may result in crashes, corrupted save "
            "data, or other bugs.");
     switch (result) {
-    case Core::System::ResultStatus::ErrorSystemFiles: {
+    case Core::SystemResultStatus::ErrorSystemFiles: {
         QString message;
         if (details.empty()) {
             message =
@@ -3094,7 +3083,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
         break;
     }
 
-    case Core::System::ResultStatus::ErrorSharedFont: {
+    case Core::SystemResultStatus::ErrorSharedFont: {
         const QString message =
             tr("yuzu was unable to locate the Switch shared fonts. %1").arg(common_message);
         answer = QMessageBox::question(this, tr("Shared Fonts Not Found"), message,
@@ -3123,7 +3112,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
         if (emu_thread) {
             ShutdownGame();
 
-            Settings::RestoreGlobalState(Core::System::GetInstance().IsPoweredOn());
+            Settings::RestoreGlobalState(system->IsPoweredOn());
             UpdateStatusButtons();
         }
     } else {
@@ -3165,9 +3154,8 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
         const auto function = [this, &keys, &pdm] {
             keys.PopulateFromPartitionData(pdm);
 
-            auto& system = Core::System::GetInstance();
-            system.GetFileSystemController().CreateFactories(*vfs);
-            keys.DeriveETicket(pdm, system.GetContentProvider());
+            system->GetFileSystemController().CreateFactories(*vfs);
+            keys.DeriveETicket(pdm, system->GetContentProvider());
         };
 
         QString errors;
@@ -3209,7 +3197,7 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
         prog.close();
     }
 
-    Core::System::GetInstance().GetFileSystemController().CreateFactories(*vfs);
+    system->GetFileSystemController().CreateFactories(*vfs);
 
     if (behavior == ReinitializeKeyBehavior::Warning) {
         game_list->PopulateAsync(UISettings::values.game_dirs);
@@ -3277,7 +3265,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     if (emu_thread != nullptr) {
         ShutdownGame();
 
-        Settings::RestoreGlobalState(Core::System::GetInstance().IsPoweredOn());
+        Settings::RestoreGlobalState(system->IsPoweredOn());
         UpdateStatusButtons();
     }
 
@@ -3352,7 +3340,7 @@ bool GMainWindow::ConfirmForceLockedExit() {
 }
 
 void GMainWindow::RequestGameExit() {
-    auto& sm{Core::System::GetInstance().ServiceManager()};
+    auto& sm{system->ServiceManager()};
     auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
     auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
     bool has_signalled = false;
@@ -3368,7 +3356,7 @@ void GMainWindow::RequestGameExit() {
 }
 
 void GMainWindow::filterBarSetChecked(bool state) {
-    ui.action_Show_Filter_Bar->setChecked(state);
+    ui->action_Show_Filter_Bar->setChecked(state);
     emit(OnToggleFilterBar());
 }
 
@@ -3436,17 +3424,17 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
 
     UISettings::values.language = locale;
     LoadTranslation();
-    ui.retranslateUi(this);
+    ui->retranslateUi(this);
     UpdateWindowTitle();
 
     if (emulation_running)
-        ui.action_Start->setText(tr("&Continue"));
+        ui->action_Start->setText(tr("&Continue"));
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #ifdef USE_DISCORD_PRESENCE
     if (state) {
-        discord_rpc = std::make_unique<DiscordRPC::DiscordImpl>();
+        discord_rpc = std::make_unique<DiscordRPC::DiscordImpl>(*system);
     } else {
         discord_rpc = std::make_unique<DiscordRPC::NullImpl>();
     }
@@ -3500,8 +3488,7 @@ int main(int argc, char* argv[]) {
     // generating shaders
     setlocale(LC_ALL, "C");
 
-    Core::System::InitializeGlobalInstance();
-    GMainWindow main_window;
+    GMainWindow main_window{};
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 

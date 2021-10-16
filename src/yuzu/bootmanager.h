@@ -16,13 +16,17 @@
 #include <QWindow>
 
 #include "common/thread.h"
-#include "core/core.h"
 #include "core/frontend/emu_window.h"
 
 class GRenderWindow;
 class GMainWindow;
 class QKeyEvent;
 class QStringList;
+
+namespace Core {
+enum class SystemResultStatus : u32;
+class System;
+} // namespace Core
 
 namespace InputCommon {
 class InputSubsystem;
@@ -34,13 +38,14 @@ enum class MouseButton;
 
 namespace VideoCore {
 enum class LoadCallbackStage;
-}
+class RendererBase;
+} // namespace VideoCore
 
 class EmuThread final : public QThread {
     Q_OBJECT
 
 public:
-    explicit EmuThread();
+    explicit EmuThread(Core::System& system_);
     ~EmuThread() override;
 
     /**
@@ -101,6 +106,7 @@ private:
     std::condition_variable_any running_cv;
     Common::Event running_wait{};
     std::atomic_bool running_guard{false};
+    Core::System& system;
 
 signals:
     /**
@@ -121,7 +127,7 @@ signals:
      */
     void DebugModeLeft();
 
-    void ErrorThrown(Core::System::ResultStatus, std::string);
+    void ErrorThrown(Core::SystemResultStatus, std::string);
 
     void LoadProgress(VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total);
 };
@@ -131,7 +137,8 @@ class GRenderWindow : public QWidget, public Core::Frontend::EmuWindow {
 
 public:
     explicit GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
-                           std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_);
+                           std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_,
+                           Core::System& system_);
     ~GRenderWindow() override;
 
     // EmuWindow implementation.
@@ -231,6 +238,8 @@ private:
     bool first_frame = false;
 
     std::array<std::size_t, 16> touch_ids{};
+
+    Core::System& system;
 
 protected:
     void showEvent(QShowEvent* event) override;
