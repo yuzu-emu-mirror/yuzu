@@ -20,8 +20,8 @@ struct Entry {
     Level log_level{};
     const char* filename = nullptr;
     unsigned int line_num = 0;
-    std::string function;
-    std::string message;
+    const char* function;
+    const char* message;
     bool final_entry = false;
 };
 

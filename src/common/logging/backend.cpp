@@ -206,7 +206,7 @@ public:
             return;
         const Entry& entry =
             CreateEntry(log_class, log_level, filename, line_num, function, std::move(message));
-        message_queue.Push(entry);
+        message_queue.push(entry);
     }
 
 private:
@@ -218,7 +218,9 @@ private:
                   ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
               };
               while (true) {
-                  entry = message_queue.PopWait();
+                  if (!message_queue.try_pop(entry)) {
+                      continue;
+                  }
                   if (entry.final_entry) {
                       break;
                   }
@@ -227,7 +229,7 @@ private:
               // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
               // case where a system is repeatedly spamming logs even on close.
               int max_logs_to_write = filter.IsDebug() ? INT_MAX : 100;
-              while (max_logs_to_write-- && message_queue.Pop(entry)) {
+              while (max_logs_to_write-- && message_queue.try_pop(entry)) {
                   write_logs();
               }
           })} {}
@@ -239,7 +241,7 @@ private:
     void StopBackendThread() {
         Entry stop_entry{};
         stop_entry.final_entry = true;
-        message_queue.Push(stop_entry);
+        message_queue.push(stop_entry);
         backend_thread.join();
     }
 
@@ -256,7 +258,7 @@ private:
             .filename = filename,
             .line_num = line_nr,
             .function = function,
-            .message = std::move(message),
+            .message = message.c_str(),
             .final_entry = false,
         };
     }
@@ -279,7 +281,7 @@ private:
     FileBackend file_backend;
 
     std::thread backend_thread;
-    MPSCQueue<Entry> message_queue{};
+    MPMCQueue<Entry> message_queue{100000};
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
 };
 } // namespace

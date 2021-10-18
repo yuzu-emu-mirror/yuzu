@@ -85,8 +85,8 @@ public:
     void BeginConfiguration();
     void EndConfiguration();
 
-    Common::SPSCQueue<GCPadStatus>& GetPadQueue();
-    const Common::SPSCQueue<GCPadStatus>& GetPadQueue() const;
+    Common::MPMCQueue<GCPadStatus>& GetPadQueue();
+    const Common::MPMCQueue<GCPadStatus>& GetPadQueue() const;
 
     GCController& GetPadState(std::size_t port);
     const GCController& GetPadState(std::size_t port) const;
@@ -145,7 +145,7 @@ private:
 
     libusb_device_handle* usb_adapter_handle = nullptr;
     std::array<GCController, 4> pads;
-    Common::SPSCQueue<GCPadStatus> pad_queue;
+    Common::MPMCQueue<GCPadStatus> pad_queue{1024};
 
     std::thread adapter_input_thread;
     std::thread adapter_scan_thread;

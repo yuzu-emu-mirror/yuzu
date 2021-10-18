@@ -32,7 +32,8 @@ static void RunThread(std::stop_token stop_token, Core::System& system,
     VideoCore::RasterizerInterface* const rasterizer = renderer.ReadRasterizer();
 
     while (!stop_token.stop_requested()) {
-        CommandDataContainer next = state.queue.PopWait(stop_token);
+        CommandDataContainer next;
+        state.queue.pop(next);
         if (stop_token.stop_requested()) {
             break;
         }
@@ -119,7 +120,7 @@ u64 ThreadManager::PushCommand(CommandData&& command_data, bool block) {
 
     std::unique_lock lk(state.write_lock);
     const u64 fence{++state.last_fence};
-    state.queue.Push(CommandDataContainer(std::move(command_data), fence, block));
+    state.queue.push(CommandDataContainer(std::move(command_data), fence, block));
 
     if (block) {
         state.cv.wait(lk, thread.get_stop_token(), [this, fence] {

@@ -103,7 +103,7 @@ Common::ParamPackage GCButtonFactory::GetNextInput() const {
     Common::ParamPackage params;
     GCAdapter::GCPadStatus pad;
     auto& queue = adapter->GetPadQueue();
-    while (queue.Pop(pad)) {
+    while (queue.try_pop(pad)) {
         // This while loop will break on the earliest detected button
         params.Set("engine", "gcpad");
         params.Set("port", static_cast<s32>(pad.port));
@@ -263,7 +263,7 @@ Common::ParamPackage GCAnalogFactory::GetNextInput() {
     GCAdapter::GCPadStatus pad;
     Common::ParamPackage params;
     auto& queue = adapter->GetPadQueue();
-    while (queue.Pop(pad)) {
+    while (queue.try_pop(pad)) {
         if (pad.button != GCAdapter::PadButton::Undefined) {
             params.Set("engine", "gcpad");
             params.Set("port", static_cast<s32>(pad.port));
