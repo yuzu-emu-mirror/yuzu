@@ -205,11 +205,11 @@ public:
     }
 
     void PushEntry(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                   const char* function, fmt::string_view&& message) {
+                   const char* function, const char* message) {
         if (!filter.CheckMessage(log_class, log_level))
             return;
         const Entry& entry =
-            CreateEntry(log_class, log_level, filename, line_num, function, std::move(message));
+            CreateEntry(log_class, log_level, filename, line_num, function, message);
         message_queue.push(entry);
     }
 
@@ -254,15 +254,10 @@ private:
     }
 
     Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
-                      const char* function, fmt::string_view&& message) const {
+                      const char* function, const char* message) const {
         using std::chrono::duration_cast;
         using std::chrono::microseconds;
         using std::chrono::steady_clock;
-
-        auto len = message.size() + 1;
-        char* msg = new char[len];
-        memcpy(msg, message.data(), len);
-
         return {
             .timestamp = duration_cast<microseconds>(steady_clock::now() - time_origin),
             .log_class = log_class,
@@ -270,7 +265,7 @@ private:
             .filename = filename,
             .line_num = line_nr,
             .function = function,
-            .message = msg,
+            .message = message,
             .final_entry = false,
         };
     }
@@ -321,9 +316,12 @@ void SetColorConsoleBackendEnabled(bool enabled) {
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
                        unsigned int line_num, const char* function, fmt::string_view format,
                        const fmt::format_args& args) {
+    std::string message = fmt::vformat(format, args);
+    auto len = message.size() + 1;
+    char* msg = new char[len];
+    memcpy(msg, message.data(), len);
     if (!initialization_in_progress_suppress_logging) {
-        Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function,
-                                   fmt::vformat(format, args));
+        Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function, msg);
     }
 }
 } // namespace Common::Log
