@@ -316,11 +316,11 @@ void SetColorConsoleBackendEnabled(bool enabled) {
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
                        unsigned int line_num, const char* function, fmt::string_view format,
                        const fmt::format_args& args) {
-    std::string message = fmt::vformat(format, args);
-    auto len = message.size() + 1;
-    char* msg = new char[len];
-    memcpy(msg, message.data(), len);
     if (!initialization_in_progress_suppress_logging) {
+        std::string message = fmt::vformat(format, args);
+        auto len = message.size() + 1;
+        char* msg = new char[len];
+        memcpy(msg, message.data(), len);
         Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function, msg);
     }
 }
