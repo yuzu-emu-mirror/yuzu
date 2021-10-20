@@ -287,6 +287,8 @@ GMainWindow::GMainWindow()
 
     ui->action_Fullscreen->setChecked(false);
 
+    Common::Log::Start();
+
     QStringList args = QApplication::arguments();
 
     if (args.size() < 2) {

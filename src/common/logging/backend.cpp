@@ -186,6 +186,10 @@ public:
         initialization_in_progress_suppress_logging = false;
     }
 
+    static void Start() {
+        instance->StartBackendThread();
+    }
+
     Impl(const Impl&) = delete;
     Impl& operator=(const Impl&) = delete;
 
@@ -201,7 +205,7 @@ public:
     }
 
     void PushEntry(Class log_class, Level log_level, const char* filename, unsigned int line_num,
-                   const char* function, std::string message) {
+                   const char* function, fmt::string_view&& message) {
         if (!filter.CheckMessage(log_class, log_level))
             return;
         const Entry& entry =
@@ -211,31 +215,35 @@ public:
 
 private:
     Impl(const std::filesystem::path& file_backend_filename, const Filter& filter_)
-        : filter{filter_}, file_backend{file_backend_filename}, backend_thread{std::thread([this] {
-              Common::SetCurrentThreadName("yuzu:Log");
-              Entry entry;
-              const auto write_logs = [this, &entry]() {
-                  ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
-              };
-              while (true) {
-                  if (!message_queue.try_pop(entry)) {
-                      continue;
-                  }
-                  if (entry.final_entry) {
-                      break;
-                  }
-                  write_logs();
-              }
-              // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
-              // case where a system is repeatedly spamming logs even on close.
-              int max_logs_to_write = filter.IsDebug() ? INT_MAX : 100;
-              while (max_logs_to_write-- && message_queue.try_pop(entry)) {
-                  write_logs();
-              }
-          })} {}
+        : filter{filter_}, file_backend{file_backend_filename} {}
 
     ~Impl() {
         StopBackendThread();
+    }
+
+    void StartBackendThread() {
+        backend_thread = std::thread([this] {
+            Common::SetCurrentThreadName("yuzu:Log");
+            Entry entry;
+            const auto write_logs = [this, &entry]() {
+                ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
+            };
+            while (true) {
+                if (!message_queue.try_pop(entry)) {
+                    continue;
+                }
+                if (entry.final_entry) {
+                    break;
+                }
+                write_logs();
+            }
+            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
+            // case where a system is repeatedly spamming logs even on close.
+            int max_logs_to_write = filter.IsDebug() ? INT_MAX : 100;
+            while (max_logs_to_write-- && message_queue.try_pop(entry)) {
+                write_logs();
+            }
+        });
     }
 
     void StopBackendThread() {
@@ -246,10 +254,14 @@ private:
     }
 
     Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsigned int line_nr,
-                      const char* function, std::string message) const {
+                      const char* function, fmt::string_view&& message) const {
         using std::chrono::duration_cast;
         using std::chrono::microseconds;
         using std::chrono::steady_clock;
+
+        auto len = message.size() + 1;
+        char* msg = new char[len];
+        memcpy(msg, message.data(), len);
 
         return {
             .timestamp = duration_cast<microseconds>(steady_clock::now() - time_origin),
@@ -258,7 +270,7 @@ private:
             .filename = filename,
             .line_num = line_nr,
             .function = function,
-            .message = message.c_str(),
+            .message = msg,
             .final_entry = false,
         };
     }
@@ -290,6 +302,10 @@ void Initialize() {
     Impl::Initialize();
 }
 
+void Start() {
+    Impl::Start();
+}
+
 void DisableLoggingInTests() {
     initialization_in_progress_suppress_logging = true;
 }
@@ -303,7 +319,7 @@ void SetColorConsoleBackendEnabled(bool enabled) {
 }
 
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
-                       unsigned int line_num, const char* function, const char* format,
+                       unsigned int line_num, const char* function, fmt::string_view format,
                        const fmt::format_args& args) {
     if (!initialization_in_progress_suppress_logging) {
         Impl::Instance().PushEntry(log_class, log_level, filename, line_num, function,
