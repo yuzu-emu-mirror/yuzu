@@ -46,6 +46,11 @@ static constexpr size_t hardwareInterferenceSize = std::hardware_destructive_int
 static constexpr size_t hardwareInterferenceSize = 64;
 #endif
 
+#if defined(_MSC_VER)
+// Disables "structure was padded due to alignment specifier" warnings.
+#pragma warning(suppress : 4324)
+#endif
+
 #if defined(__cpp_aligned_new)
 template <typename T>
 using AlignedAllocator = std::allocator<T>;
