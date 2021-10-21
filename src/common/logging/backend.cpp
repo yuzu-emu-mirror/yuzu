@@ -223,15 +223,17 @@ private:
     }
 
     void StartBackendThread() {
-        backend_thread{std::thread([this] {
+        backend_thread = std::thread([this] {
             Common::SetCurrentThreadName("yuzu:Log");
             Entry entry;
             const auto write_logs = [this, &entry]() {
                 ForEachBackend([&entry](Backend& backend) { backend.Write(entry); });
             };
             while (!stop.stop_requested()) {
-                entry = message_queue.PopWait();
-                write_logs();
+                entry = message_queue.PopWait(stop.get_token());
+                if (entry.filename != nullptr) {
+                    write_logs();
+                }
             }
             // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a
             // case where a system is repeatedly spamming logs even on close.
@@ -239,7 +241,7 @@ private:
             while (max_logs_to_write-- && message_queue.Pop(entry)) {
                 write_logs();
             }
-        })};
+        });
     }
 
     void StopBackendThread() {
@@ -283,7 +285,7 @@ private:
 
     std::stop_source stop;
     std::thread backend_thread;
-    MPSCQueue<Entry> message_queue{};
+    MPSCQueue<Entry, true> message_queue{};
     std::chrono::steady_clock::time_point time_origin{std::chrono::steady_clock::now()};
 };
 } // namespace
