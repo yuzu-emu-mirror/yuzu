@@ -21,26 +21,19 @@ SOFTWARE.
  */
 
 #pragma once
+#pragma warning(push)
+#pragma warning(disable : 4324)
 
 #include <atomic>
 #include <cassert>
 #include <cstddef> // offsetof
 #include <memory>
-#include <new> // std::hardware_destructive_interference_size
+#include <new>
 #include <stdexcept>
 
 namespace Common {
 namespace mpmc {
-#ifdef __cpp_lib_hardware_interference_size
-static constexpr size_t hardwareInterferenceSize = std::hardware_destructive_interference_size;
-#else
 static constexpr size_t hardwareInterferenceSize = 64;
-#endif
-
-#if defined(_MSC_VER)
-// Disables "structure was padded due to alignment specifier" warnings.
-#pragma warning(suppress : 4324)
-#endif
 
 template <typename T>
 using AlignedAllocator = std::allocator<T>;
@@ -239,3 +232,7 @@ template <typename T, typename Allocator = mpmc::AlignedAllocator<mpmc::Slot<T>>
 using MPMCQueue = mpmc::Queue<T, Allocator>;
 
 } // namespace Common
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
