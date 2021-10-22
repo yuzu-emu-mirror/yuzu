@@ -64,23 +64,23 @@ void AESCipher<Key, KeySize>::Transcode(const u8* src, std::size_t size, u8* des
 
     int written, last_written;
     if (EVP_CIPHER_mode(ctx->cipher) == EVP_CIPH_XTS_MODE) {
-        EVP_CipherUpdate(ctx->ctx.get(), dest, &written, src, (int)size);
-        if (written != (int)size) {
+        EVP_CipherUpdate(ctx->ctx.get(), dest, &written, src, static_cast<int>(size));
+        if (written != static_cast<int>(size)) {
             LOG_WARNING(Crypto, "Not all data was decrypted requested={:016X}, actual={:016X}.",
                         size, written);
         }
     } else {
         std::size_t block_size = EVP_CIPHER_block_size(ctx->cipher);
         std::size_t remain = size % block_size;
-        EVP_CipherUpdate(ctx->ctx.get(), dest, &written, src, (int)(size - remain));
+        EVP_CipherUpdate(ctx->ctx.get(), dest, &written, src, static_cast<int>(size - remain));
         if (remain != 0) {
             std::vector<u8> block(block_size);
             std::memcpy(block.data(), src + size - remain, remain);
             EVP_CipherUpdate(ctx->ctx.get(), dest + written, &last_written, block.data(),
-                             (int)block_size);
+                             static_cast<int>(block_size));
             written += last_written;
         }
-        if (written != (int)size) {
+        if (written != static_cast<int>(size)) {
             LOG_WARNING(Crypto, "Not all data was decrypted requested={:016X}, actual={:016X}.",
                         size, written + last_written);
         }

@@ -11,7 +11,7 @@
 
 bool CalculateHMACSHA256(u8* out, const u8* key, std::size_t key_length, const u8* data,
                          std::size_t data_length) {
-    HMAC(EVP_sha256(), key, (int)key_length, data, data_length, out, NULL);
+    HMAC(EVP_sha256(), key, static_cast<int>(key_length), data, data_length, out, NULL);
     return true;
 }
 
@@ -40,9 +40,9 @@ void CalculateModExp(const u8* d, std::size_t d_length, const u8* n, std::size_t
     BIGNUM* N = BN_CTX_get(ctx);
     BIGNUM* S = BN_CTX_get(ctx);
     BIGNUM* M = BN_CTX_get(ctx);
-    BN_bin2bn(d, (int)d_length, D);
-    BN_bin2bn(n, (int)n_length, N);
-    BN_bin2bn(s, (int)s_length, S);
+    BN_bin2bn(d, static_cast<int>(d_length), D);
+    BN_bin2bn(n, static_cast<int>(n_length), N);
+    BN_bin2bn(s, static_cast<int>(s_length), S);
     BN_mod_exp(M, S, D, N, ctx);
     BN_bn2bin(M, m);
     BN_CTX_end(ctx);
@@ -51,8 +51,8 @@ void CalculateModExp(const u8* d, std::size_t d_length, const u8* n, std::size_t
 
 void GenerateRandomBytesWithSeed(u8* out, std::size_t out_length, const u8* seed,
                                  std::size_t seed_length) {
-    RAND_seed((const void*)seed, (int)seed_length);
-    ASSERT(RAND_bytes(out, (int)out_length) == 1);
+    RAND_seed(static_cast<const void*>(seed), static_cast<int>(seed_length));
+    ASSERT(RAND_bytes(out, static_cast<int>(out_length)) == 1);
 }
 
 #endif
