@@ -234,6 +234,6 @@ using MPMCQueue = mpmc::Queue<T, Allocator>;
 
 } // namespace Common
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
