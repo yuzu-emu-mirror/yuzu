@@ -1,3 +1,7 @@
+// Copyright 2021 yuzu emulator team
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
 #ifdef YUZU_USE_OPENSSL_CRYPTO
 
 #include <openssl/bn.h>

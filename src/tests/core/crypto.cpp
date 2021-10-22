@@ -1,3 +1,6 @@
+// Copyright 2021 yuzu emulator team
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
 
 #include <catch2/catch.hpp>
 
