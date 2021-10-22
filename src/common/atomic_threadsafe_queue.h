@@ -21,8 +21,9 @@ SOFTWARE.
  */
 
 #pragma once
-#pragma warning(push)
+#ifdef _MSC_VER
 #pragma warning(disable : 4324)
+#endif
 
 #include <atomic>
 #include <cassert>
