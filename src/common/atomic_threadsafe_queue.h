@@ -25,18 +25,9 @@ SOFTWARE.
 #include <atomic>
 #include <cassert>
 #include <cstddef> // offsetof
-#include <limits>
 #include <memory>
 #include <new> // std::hardware_destructive_interference_size
 #include <stdexcept>
-
-#ifndef __cpp_aligned_new
-#ifdef _WIN32
-#include <malloc.h> // _aligned_malloc
-#else
-#include <stdlib.h> // posix_memalign
-#endif
-#endif
 
 namespace Common {
 namespace mpmc {
@@ -51,41 +42,8 @@ static constexpr size_t hardwareInterferenceSize = 64;
 #pragma warning(suppress : 4324)
 #endif
 
-#if defined(__cpp_aligned_new)
 template <typename T>
 using AlignedAllocator = std::allocator<T>;
-#else
-template <typename T>
-struct AlignedAllocator {
-    using value_type = T;
-
-    T* allocate(std::size_t n) {
-        if (n > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
-            throw std::bad_array_new_length();
-        }
-#ifdef _WIN32
-        auto* p = static_cast<T*>(_aligned_malloc(sizeof(T) * n, alignof(T)));
-        if (p == nullptr) {
-            throw std::bad_alloc();
-        }
-#else
-        T* p;
-        if (posix_memalign(reinterpret_cast<void**>(&p), alignof(T), sizeof(T) * n) != 0) {
-            throw std::bad_alloc();
-        }
-#endif
-        return p;
-    }
-
-    void deallocate(T* p, std::size_t) {
-#ifdef _WIN32
-        _aligned_free(p);
-#else
-        free(p);
-#endif
-    }
-};
-#endif
 
 template <typename T>
 struct Slot {
@@ -269,11 +227,7 @@ private:
 private:
     const size_t capacity_;
     Slot<T>* slots_;
-#if defined(__has_cpp_attribute) && __has_cpp_attribute(no_unique_address)
-    Allocator allocator_ [[no_unique_address]];
-#else
-    Allocator allocator_;
-#endif
+    [[no_unique_address]] Allocator allocator_;
 
     // Align to avoid false sharing between head_ and tail_
     alignas(hardwareInterferenceSize) std::atomic<size_t> head_;
