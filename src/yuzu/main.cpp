@@ -756,7 +756,7 @@ void GMainWindow::InitializeWidgets() {
     tas_label->setFocusPolicy(Qt::NoFocus);
     statusBar()->insertPermanentWidget(0, tas_label);
 
-    // Setup Mute button
+    // Setup Audio Mute button
     renderer_mute_button = new QPushButton();
     renderer_mute_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
     renderer_mute_button->setCheckable(true);
