@@ -756,6 +756,27 @@ void GMainWindow::InitializeWidgets() {
     tas_label->setFocusPolicy(Qt::NoFocus);
     statusBar()->insertPermanentWidget(0, tas_label);
 
+    // Setup Mute button
+    renderer_mute_button = new QPushButton();
+    renderer_mute_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+    renderer_mute_button->setCheckable(true);
+    renderer_mute_button->setFocusPolicy(Qt::NoFocus);
+    connect(renderer_mute_button, &QPushButton::toggled, [this](bool checked) {
+    renderer_mute_button->setText(checked ? tr("AUDIO ON") : tr("AUDIO OFF"));
+    });
+    renderer_mute_button->toggle();
+
+    connect(renderer_mute_button, &QPushButton::clicked, [this] {
+        if (renderer_mute_button->isChecked()) {
+            Settings::values.volume.SetValue(100);
+        } else {
+            Settings::values.volume.SetValue(0);
+        }
+        system->ApplySettings();
+    });
+    statusBar()->insertPermanentWidget(0, renderer_mute_button);
+    statusBar()->setVisible(true);
+
     // Setup Dock button
     dock_status_button = new QPushButton();
     dock_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
@@ -1519,6 +1540,7 @@ void GMainWindow::ShutdownGame() {
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
     renderer_status_button->setEnabled(true);
+    renderer_mute_button->setVisible(true);
 
     emulation_running = false;
 
