@@ -38,6 +38,8 @@ NvResult nvhost_ctrl::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& 
             return IocCtrlEventRegister(input, output);
         case 0x20:
             return IocCtrlEventUnregister(input, output);
+        case 0x21:
+            return IocCtrlEventKill(input, output);
         }
         break;
     default:
@@ -217,6 +219,24 @@ NvResult nvhost_ctrl::IocCtrlClearEventWait(const std::vector<u8>& input, std::v
     events_interface.failed[event_id] = true;
 
     syncpoint_manager.RefreshSyncpoint(events_interface.events[event_id].fence.id);
+
+    return NvResult::Success;
+}
+
+NvResult nvhost_ctrl::IocCtrlEventKill(const std::vector<u8>& input, std::vector<u8>& output) {
+    IocCtrlEventKillParams params{};
+    std::memcpy(&params, input.data(), sizeof(params));
+
+    LOG_WARNING(Service_NVDRV, "called, user_events={}", params.user_events);
+
+    for (u32 event_id = 0; event_id < MaxNvEvents; ++event_id) {
+        if ((params.user_events & (1ULL << (int)event_id)) != 0) {
+            if (!events_interface.registered[event_id]) {
+                continue;
+            }
+            events_interface.UnregisterEvent(event_id);
+        }
+    }
 
     return NvResult::Success;
 }
