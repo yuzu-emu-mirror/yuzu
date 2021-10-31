@@ -1,4 +1,5 @@
-// Copyright 2018 yuzu emulator team
+// Copyright 2021 yuzu emulator team
+// Copyright 2021 Skyline Team and Contributors (https://github.com/skyline-emu/)
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -7,6 +8,7 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_writable_event.h"
@@ -72,54 +74,52 @@ NvResult nvhost_ctrl::NvOsGetConfigU32(const std::vector<u8>& input, std::vector
 }
 
 NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector<u8>& output,
-                                       bool is_async) {
+                                       bool is_allocation) {
     IocCtrlEventWaitParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
-    LOG_DEBUG(Service_NVDRV, "syncpt_id={}, threshold={}, timeout={}, is_async={}",
-              params.syncpt_id, params.threshold, params.timeout, is_async);
+    LOG_DEBUG(Service_NVDRV, "syncpt_id={}, threshold={}, timeout={}, is_allocation={}",
+              params.fence.id, params.fence.value, params.timeout, is_allocation);
 
-    if (params.syncpt_id >= MaxSyncPoints) {
+    bool must_unmark_fail = !is_allocation;
+    const u32 event_id = params.value.raw;
+    SCOPE_EXIT({
+        std::memcpy(output.data(), &params, sizeof(params));
+        if (must_unmark_fail) {
+            events_interface.fails[event_id] = 0;
+        }
+    });
+
+    const u32 fence_id = static_cast<u32>(params.fence.id);
+
+    if (fence_id >= MaxSyncPoints) {
         return NvResult::BadParameter;
     }
 
-    u32 event_id = params.value & 0x00FF;
-
-    if (event_id >= MaxNvEvents) {
-        std::memcpy(output.data(), &params, sizeof(params));
-        return NvResult::BadParameter;
-    }
-
-    if (syncpoint_manager.IsSyncpointExpired(params.syncpt_id, params.threshold)) {
-        params.value = syncpoint_manager.GetSyncpointMin(params.syncpt_id);
-        std::memcpy(output.data(), &params, sizeof(params));
-        events_interface.fails[event_id] = 0;
+    if (params.fence.value == 0) {
         return NvResult::Success;
     }
 
-    if (const auto new_value = syncpoint_manager.RefreshSyncpoint(params.syncpt_id);
-        syncpoint_manager.IsSyncpointExpired(params.syncpt_id, params.threshold)) {
-        params.value = new_value;
-        std::memcpy(output.data(), &params, sizeof(params));
-        events_interface.fails[event_id] = 0;
+    if (syncpoint_manager.IsSyncpointExpired(fence_id, params.fence.value)) {
+        params.value.raw = syncpoint_manager.GetSyncpointMin(fence_id);
+        return NvResult::Success;
+    }
+
+    if (const auto new_value = syncpoint_manager.RefreshSyncpoint(fence_id);
+        syncpoint_manager.IsSyncpointExpired(fence_id, params.fence.value)) {
+        params.value.raw = new_value;
         return NvResult::Success;
     }
 
     auto& gpu = system.GPU();
-    const u32 target_value = syncpoint_manager.GetSyncpointMax(params.syncpt_id);
-
-    if (!is_async) {
-        params.value = 0;
-    }
+    const u32 target_value = params.fence.value;
 
     const auto check_failing = [&]() {
-        if (events_interface.fails[event_id] > 1) {
+        if (!is_allocation && events_interface.fails[event_id] > 1) {
             {
                 auto lk = system.StallCPU();
-                gpu.WaitFence(params.syncpt_id, target_value);
+                gpu.WaitFence(fence_id, target_value);
                 system.UnstallCPU();
             }
-            std::memcpy(output.data(), &params, sizeof(params));
-            events_interface.fails[event_id] = 0;
             return true;
         }
         return false;
@@ -132,27 +132,67 @@ NvResult nvhost_ctrl::IocCtrlEventWait(const std::vector<u8>& input, std::vector
         return NvResult::Timeout;
     }
 
-    EventState status = events_interface.status[event_id];
-    const bool bad_parameter = status != EventState::Free && status != EventState::Registered;
-    if (bad_parameter) {
-        std::memcpy(output.data(), &params, sizeof(params));
+    auto lock = events_interface.Lock();
+
+    u32 slot = [&]() {
+        if (is_allocation) {
+            params.value.raw = 0;
+            return events_interface.FindFreeEvent(fence_id);
+        } else {
+            return params.value.raw;
+        }
+    }();
+
+    if (slot >= MaxNvEvents) {
         return NvResult::BadParameter;
     }
-    events_interface.SetEventStatus(event_id, EventState::Waiting);
-    events_interface.assigned_syncpt[event_id] = params.syncpt_id;
-    events_interface.assigned_value[event_id] = target_value;
-    if (is_async) {
-        params.value = params.syncpt_id << 4;
-    } else {
-        params.value = ((params.syncpt_id & 0xfff) << 16) | 0x10000000;
+
+    auto* event = events_interface.events[slot].event;
+
+    if (!event) {
+        return NvResult::BadParameter;
     }
-    params.value |= event_id;
+
+    if (events_interface.IsBeingUsed(slot)) {
+        return NvResult::BadParameter;
+    }
+
     if (check_failing()) {
         return NvResult::Success;
     }
-    gpu.RegisterSyncptInterrupt(params.syncpt_id, target_value);
-    std::memcpy(output.data(), &params, sizeof(params));
+
+    params.value.raw = 0;
+
+    events_interface.status[slot].store(EventState::Waiting, std::memory_order_relaxed);
+    events_interface.assigned_syncpt[slot] = fence_id;
+    events_interface.assigned_value[slot] = target_value;
+    if (is_allocation) {
+        params.value.syncpoint_id_for_allocation.Assign(static_cast<u16>(fence_id));
+        params.value.event_allocated.Assign(1);
+    } else {
+        params.value.syncpoint_id.Assign(fence_id);
+    }
+    params.value.raw |= slot;
+
+    gpu.RegisterSyncptInterrupt(fence_id, target_value);
     return NvResult::Timeout;
+}
+
+NvResult nvhost_ctrl::FreeEvent(u32 slot) {
+    if (slot >= MaxNvEvents) {
+        return NvResult::BadParameter;
+    }
+
+    if (!events_interface.registered[slot]) {
+        return NvResult::Success;
+    }
+
+    if (events_interface.IsBeingUsed(slot)) {
+        return NvResult::Busy;
+    }
+
+    events_interface.Free(slot);
+    return NvResult::Success;
 }
 
 NvResult nvhost_ctrl::IocCtrlEventRegister(const std::vector<u8>& input, std::vector<u8>& output) {
@@ -163,16 +203,16 @@ NvResult nvhost_ctrl::IocCtrlEventRegister(const std::vector<u8>& input, std::ve
     if (event_id >= MaxNvEvents) {
         return NvResult::BadParameter;
     }
+
+    auto lock = events_interface.Lock();
+
     if (events_interface.registered[event_id]) {
-        const auto event_state = events_interface.status[event_id];
-        if (event_state != EventState::Free) {
-            LOG_WARNING(Service_NVDRV, "Event already registered! Unregistering previous event");
-            events_interface.UnregisterEvent(event_id);
-        } else {
-            return NvResult::BadParameter;
+        const auto result = FreeEvent(event_id);
+        if (result != NvResult::Success) {
+            return result;
         }
     }
-    events_interface.RegisterEvent(event_id);
+    events_interface.Create(event_id);
     return NvResult::Success;
 }
 
@@ -182,32 +222,33 @@ NvResult nvhost_ctrl::IocCtrlEventUnregister(const std::vector<u8>& input,
     std::memcpy(&params, input.data(), sizeof(params));
     const u32 event_id = params.user_event_id & 0x00FF;
     LOG_DEBUG(Service_NVDRV, " called, user_event_id: {:X}", event_id);
-    if (event_id >= MaxNvEvents) {
-        return NvResult::BadParameter;
-    }
-    if (!events_interface.registered[event_id]) {
-        return NvResult::BadParameter;
-    }
-    events_interface.UnregisterEvent(event_id);
-    return NvResult::Success;
+
+    auto lock = events_interface.Lock();
+    return FreeEvent(event_id);
 }
 
 NvResult nvhost_ctrl::IocCtrlClearEventWait(const std::vector<u8>& input, std::vector<u8>& output) {
-    IocCtrlEventSignalParams params{};
+    IocCtrlEventClearParams params{};
     std::memcpy(&params, input.data(), sizeof(params));
 
-    u32 event_id = params.event_id & 0x00FF;
-    LOG_WARNING(Service_NVDRV, "cleared event wait on, event_id: {:X}", event_id);
+    u32 event_id = params.event_id.slot;
+    LOG_DEBUG(Service_NVDRV, "cleared event wait on, event_id: {:X}", event_id);
 
     if (event_id >= MaxNvEvents) {
         return NvResult::BadParameter;
     }
-    if (events_interface.status[event_id] == EventState::Waiting) {
-        events_interface.LiberateEvent(event_id);
+
+    auto lock = events_interface.Lock();
+
+    if (events_interface.status[event_id].exchange(
+            EventState::Cancelling, std::memory_order_acq_rel) == EventState::Waiting) {
+        system.GPU().CancelSyncptInterrupt(events_interface.assigned_syncpt[event_id],
+                                           events_interface.assigned_value[event_id]);
+        syncpoint_manager.RefreshSyncpoint(events_interface.events[event_id].fence.id);
     }
     events_interface.fails[event_id]++;
-
-    syncpoint_manager.RefreshSyncpoint(events_interface.events[event_id].fence.id);
+    events_interface.status[event_id].store(EventState::Cancelled, std::memory_order_release);
+    events_interface.events[event_id].event->GetWritableEvent().Clear();
 
     return NvResult::Success;
 }
