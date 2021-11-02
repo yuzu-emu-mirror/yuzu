@@ -414,7 +414,7 @@ static ResultCode WaitSynchronization(Core::System& system, s32* index, VAddr ha
               handles_address, num_handles, nano_seconds);
 
     // Ensure number of handles is valid.
-    R_UNLESS(0 <= num_handles && num_handles <= ArgumentHandleCountMax, ResultOutOfRange);
+    R_UNLESS(num_handles <= ArgumentHandleCountMax, ResultOutOfRange);
 
     auto& kernel = system.Kernel();
     std::vector<KSynchronizationObject*> objs(num_handles);
