@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#ifdef YUZU_USE_MBEDTLS_CRYPTO
+
 #include <array>
 #include <mbedtls/cipher.h>
 #include "common/assert.h"
@@ -128,3 +130,5 @@ void AESCipher<Key, KeySize>::SetIV(std::span<const u8> data) {
 template class AESCipher<Key128>;
 template class AESCipher<Key256>;
 } // namespace Core::Crypto
+
+#endif

@@ -36,10 +36,6 @@ add_subdirectory(glad)
 # inih
 add_subdirectory(inih)
 
-# mbedtls
-add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
-target_include_directories(mbedtls PUBLIC ./mbedtls/include)
-
 # MicroProfile
 add_library(microprofile INTERFACE)
 target_include_directories(microprofile INTERFACE ./microprofile)
@@ -93,10 +89,11 @@ endif()
 # Sirit
 add_subdirectory(sirit)
 
-if (ENABLE_WEB_SERVICE)
+if (ENABLE_WEB_SERVICE OR YUZU_USE_OPENSSL_CRYPTO)
     find_package(OpenSSL 1.1)
     if (OPENSSL_FOUND)
         set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+        set(YUZU_CRYPTO_BACKEND OpenSSL::Crypto)
     else()
         # LibreSSL
         set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
@@ -107,7 +104,10 @@ if (ENABLE_WEB_SERVICE)
         get_directory_property(OPENSSL_LIBRARIES
             DIRECTORY libressl
             DEFINITION OPENSSL_LIBS)
+        target_include_directories(crypto INTERFACE ./libressl/include)
+        set(YUZU_CRYPTO_BACKEND crypto)
     endif()
+    set(YUZU_CRYPTO_DEFINITION -DYUZU_USE_OPENSSL_CRYPTO)
 
     # httplib
     add_library(httplib INTERFACE)
@@ -117,7 +117,17 @@ if (ENABLE_WEB_SERVICE)
     if (WIN32)
         target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
     endif()
+else()
+    # mbedtls
+    add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
+    target_include_directories(mbedtls PUBLIC ./mbedtls/include)
+    set(YUZU_CRYPTO_BACKEND mbedtls)
+    set(YUZU_CRYPTO_DEFINITION -DYUZU_USE_MBEDTLS_CRYPTO)
 endif()
+
+add_library(crypto-backend INTERFACE)
+target_compile_definitions(crypto-backend INTERFACE ${YUZU_CRYPTO_DEFINITION})
+target_link_libraries(crypto-backend INTERFACE ${YUZU_CRYPTO_BACKEND})
 
 # Opus
 find_package(opus 1.3)

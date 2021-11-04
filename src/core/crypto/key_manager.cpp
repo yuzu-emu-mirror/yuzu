@@ -13,10 +13,6 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
-#include <mbedtls/bignum.h>
-#include <mbedtls/cipher.h>
-#include <mbedtls/cmac.h>
-#include <mbedtls/sha256.h>
 #include "common/common_funcs.h"
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
@@ -26,6 +22,7 @@
 #include "common/settings.h"
 #include "common/string_util.h"
 #include "core/crypto/aes_util.h"
+#include "core/crypto/crypto.h"
 #include "core/crypto/key_manager.h"
 #include "core/crypto/partition_data_manager.h"
 #include "core/file_sys/content_archive.h"
@@ -485,7 +482,7 @@ static std::array<u8, target_size> MGF1(const std::array<u8, in_size>& seed) {
     while (out.size() < target_size) {
         out.resize(out.size() + 0x20);
         seed_exp[in_size + 3] = static_cast<u8>(i);
-        mbedtls_sha256_ret(seed_exp.data(), seed_exp.size(), out.data() + out.size() - 0x20, 0);
+        CalculateSHA256(seed_exp.data(), seed_exp.size(), out.data() + out.size() - 0x20);
         ++i;
     }
 
@@ -530,24 +527,10 @@ std::optional<std::pair<Key128, Key128>> ParseTicket(const Ticket& ticket,
         return std::make_pair(rights_id, ticket.GetData().title_key_common);
     }
 
-    mbedtls_mpi D; // RSA Private Exponent
-    mbedtls_mpi N; // RSA Modulus
-    mbedtls_mpi S; // Input
-    mbedtls_mpi M; // Output
-
-    mbedtls_mpi_init(&D);
-    mbedtls_mpi_init(&N);
-    mbedtls_mpi_init(&S);
-    mbedtls_mpi_init(&M);
-
-    mbedtls_mpi_read_binary(&D, key.decryption_key.data(), key.decryption_key.size());
-    mbedtls_mpi_read_binary(&N, key.modulus.data(), key.modulus.size());
-    mbedtls_mpi_read_binary(&S, ticket.GetData().title_key_block.data(), 0x100);
-
-    mbedtls_mpi_exp_mod(&M, &S, &D, &N, nullptr);
-
     std::array<u8, 0x100> rsa_step;
-    mbedtls_mpi_write_binary(&M, rsa_step.data(), rsa_step.size());
+    CalculateModExp(key.decryption_key.data(), key.decryption_key.size(), key.modulus.data(),
+                    key.modulus.size(), ticket.GetData().title_key_block.data(), 0x100,
+                    rsa_step.data(), rsa_step.size());
 
     u8 m_0 = rsa_step[0];
     std::array<u8, 0x20> m_1;
@@ -895,14 +878,6 @@ void KeyManager::DeriveSDSeedLazy() {
     }
 }
 
-static Key128 CalculateCMAC(const u8* source, size_t size, const Key128& key) {
-    Key128 out{};
-
-    mbedtls_cipher_cmac(mbedtls_cipher_info_from_type(MBEDTLS_CIPHER_AES_128_ECB), key.data(),
-                        key.size() * 8, source, size, out.data());
-    return out;
-}
-
 void KeyManager::DeriveBase() {
     if (!BaseDeriveNecessary()) {
         return;
@@ -968,7 +943,8 @@ void KeyManager::DeriveBase() {
             key, GetKey(S128KeyType::Source, static_cast<u64>(SourceKeyType::KeyblobMAC)));
         SetKey(S128KeyType::KeyblobMAC, mac_key, i);
 
-        Key128 cmac = CalculateCMAC(encrypted_keyblobs[i].data() + 0x10, 0xA0, mac_key);
+        Key128 cmac;
+        CalculateCMAC(encrypted_keyblobs[i].data() + 0x10, 0xA0, mac_key.data(), cmac.data());
         if (std::memcmp(cmac.data(), encrypted_keyblobs[i].data(), cmac.size()) != 0) {
             continue;
         }

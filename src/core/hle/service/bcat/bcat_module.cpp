@@ -3,12 +3,12 @@
 // Refer to the license.txt file included.
 
 #include <cctype>
-#include <mbedtls/md5.h>
 #include "common/hex_util.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
 #include "common/string_util.h"
 #include "core/core.h"
+#include "core/crypto/crypto.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_process.h"
@@ -46,7 +46,7 @@ u64 GetCurrentBuildID(const Core::System::CurrentBuildProcessID& id) {
 BCATDigest DigestFile(const FileSys::VirtualFile& file) {
     BCATDigest out{};
     const auto bytes = file->ReadAllBytes();
-    mbedtls_md5_ret(bytes.data(), bytes.size(), out.data());
+    CalculateMD5(bytes.data(), bytes.size(), out.data());
     return out;
 }
 
