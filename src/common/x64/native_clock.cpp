@@ -58,7 +58,8 @@ u64 NativeClock::GetRTSC() {
     TimePoint new_time_point{};
     TimePoint current_time_point{};
     do {
-        current_time_point.pack = time_point.pack;
+        std::ignore = Common::AtomicCompareAndSwap(current_time_point.pack.data(), time_point.pack,
+                                                   u128{0}); // comparison value doesn't matter
         _mm_mfence();
         const u64 current_measure = __rdtsc();
         u64 diff = current_measure - current_time_point.inner.last_measure;
@@ -78,7 +79,9 @@ void NativeClock::Pause(bool is_paused) {
         TimePoint current_time_point{};
         TimePoint new_time_point{};
         do {
-            current_time_point.pack = time_point.pack;
+            std::ignore =
+                Common::AtomicCompareAndSwap(current_time_point.pack.data(), time_point.pack,
+                                             u128{0}); // comparison value doesn't matter
             new_time_point.pack = current_time_point.pack;
             _mm_mfence();
             new_time_point.inner.last_measure = __rdtsc();

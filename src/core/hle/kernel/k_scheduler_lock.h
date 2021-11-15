@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <atomic>
 #include "common/assert.h"
 #include "core/hle/kernel/k_spin_lock.h"
 #include "core/hle/kernel/k_thread.h"
@@ -19,7 +20,7 @@ public:
     explicit KAbstractSchedulerLock(KernelCore& kernel_) : kernel{kernel_} {}
 
     bool IsLockedByCurrentThread() const {
-        return owner_thread == GetCurrentThreadPointer(kernel);
+        return owner_thread.load(std::memory_order::consume) == GetCurrentThreadPointer(kernel);
     }
 
     void Lock() {
@@ -38,7 +39,7 @@ public:
 
             // Increment count, take ownership.
             lock_count = 1;
-            owner_thread = GetCurrentThreadPointer(kernel);
+            owner_thread.store(GetCurrentThreadPointer(kernel), std::memory_order::release);
         }
     }
 
@@ -53,7 +54,7 @@ public:
                 SchedulerType::UpdateHighestPriorityThreads(kernel);
 
             // Note that we no longer hold the lock, and unlock the spinlock.
-            owner_thread = nullptr;
+            owner_thread.store(nullptr, std::memory_order::release);
             spin_lock.Unlock();
 
             // Enable scheduling, and perform a rescheduling operation.
@@ -65,7 +66,7 @@ private:
     KernelCore& kernel;
     KAlignedSpinLock spin_lock{};
     s32 lock_count{};
-    KThread* owner_thread{};
+    std::atomic<KThread*> owner_thread{};
 };
 
 } // namespace Kernel
