@@ -86,7 +86,8 @@ struct ProgramHeader {
 
             std::array<u8, 16> imap_generic_vector;
 
-            INSERT_PADDING_BYTES_NOINIT(2); // ImapColor
+            std::array<u8, 2> imap_color;
+
             union {
                 BitField<0, 8, u16> clip_distances;
                 BitField<8, 1, u16> point_sprite_s;
@@ -96,8 +97,10 @@ struct ProgramHeader {
                 BitField<13, 1, u16> tessellation_eval_point_v;
                 BitField<14, 1, u16> instance_id;
                 BitField<15, 1, u16> vertex_id;
-            };
-            INSERT_PADDING_BYTES_NOINIT(5); // ImapFixedFncTexture[10]
+            } imap_systemc;
+
+            std::array<u8, 5> imap_texture;
+
             INSERT_PADDING_BYTES_NOINIT(1); // ImapReserved
             INSERT_PADDING_BYTES_NOINIT(3); // OmapSystemValuesA
 
@@ -115,7 +118,7 @@ struct ProgramHeader {
 
             std::array<u8, 16> omap_generic_vector;
 
-            INSERT_PADDING_BYTES_NOINIT(2); // OmapColor
+            std::array<u8, 2> omap_color;
 
             union {
                 BitField<0, 8, u16> clip_distances;
@@ -128,21 +131,13 @@ struct ProgramHeader {
                 BitField<15, 1, u16> vertex_id;
             } omap_systemc;
 
-            INSERT_PADDING_BYTES_NOINIT(5); // OmapFixedFncTexture[10]
+            std::array<u8, 5> omap_texture;
+
             INSERT_PADDING_BYTES_NOINIT(1); // OmapReserved
 
-            [[nodiscard]] std::array<bool, 4> InputGeneric(size_t index) const noexcept {
-                const int data{imap_generic_vector[index >> 1] >> ((index % 2) * 4)};
-                return {
-                    (data & 1) != 0,
-                    (data & 2) != 0,
-                    (data & 4) != 0,
-                    (data & 8) != 0,
-                };
-            }
-
-            [[nodiscard]] std::array<bool, 4> OutputGeneric(size_t index) const noexcept {
-                const int data{omap_generic_vector[index >> 1] >> ((index % 2) * 4)};
+            template <typename T>
+            [[nodiscard]] std::array<bool, 4> Mask(const T& attr, size_t index) const noexcept {
+                const int data{attr[index >> 1] >> ((index % 2) * 4)};
                 return {
                     (data & 1) != 0,
                     (data & 2) != 0,

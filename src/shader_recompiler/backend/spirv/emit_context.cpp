@@ -18,8 +18,6 @@
 
 namespace Shader::Backend::SPIRV {
 namespace {
-constexpr size_t NUM_FIXEDFNCTEXTURE = 10;
-
 enum class Operation {
     Increment,
     Decrement,
@@ -1445,7 +1443,7 @@ void EmitContext::DefineInputs(const IR::Program& program) {
     if (loads.AnyComponent(IR::Attribute::FogCoordinate)) {
         input_fog_frag_coord = DefineLegacyInput(*this, used_locations, previous_unused_location);
     }
-    for (size_t index = 0; index < NUM_FIXEDFNCTEXTURE; ++index) {
+    for (size_t index = 0; index < IR::NUM_TEXTURES; ++index) {
         if (loads.AnyComponent(IR::Attribute::FixedFncTexture0S + index * 4)) {
             input_fixed_fnc_textures[index] =
                 DefineLegacyInput(*this, used_locations, previous_unused_location);
@@ -1529,7 +1527,7 @@ void EmitContext::DefineOutputs(const IR::Program& program) {
         output_fog_frag_coord =
             DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);
     }
-    for (size_t index = 0; index < NUM_FIXEDFNCTEXTURE; ++index) {
+    for (size_t index = 0; index < IR::NUM_TEXTURES; ++index) {
         if (info.stores.AnyComponent(IR::Attribute::FixedFncTexture0S + index * 4)) {
             output_fixed_fnc_textures[index] =
                 DefineLegacyOutput(*this, used_locations, previous_unused_location, invocations);

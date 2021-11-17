@@ -839,14 +839,28 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
     if (info.loads_indexed_attributes) {
         for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
             const IR::Attribute attribute{IR::Attribute::Generic0X + index * 4};
-            const auto mask = header.vtg.InputGeneric(index);
+            const auto mask = header.vtg.Mask(header.vtg.imap_generic_vector, index);
             for (size_t i = 0; i < 4; ++i) {
                 info.loads.Set(attribute + i, mask[i]);
             }
         }
         for (size_t index = 0; index < 8; ++index) {
-            const u16 mask{header.vtg.clip_distances};
+            const u16 mask{header.vtg.imap_systemc.clip_distances};
             info.loads.Set(IR::Attribute::ClipDistance0 + index, ((mask >> index) & 1) != 0);
+        }
+        for (size_t index = 0; index < 4; ++index) {
+            const IR::Attribute attribute{IR::Attribute::ColorFrontDiffuseR + index * 4};
+            const auto mask{header.vtg.Mask(header.vtg.imap_color, index)};
+            for (size_t i = 0; i < 4; ++i) {
+                info.loads.Set(attribute + i, mask[i]);
+            }
+        }
+        for (size_t index = 0; index < IR::NUM_TEXTURES; ++index) {
+            const IR::Attribute attribute{IR::Attribute::FixedFncTexture0S + index * 4};
+            const auto mask = header.vtg.Mask(header.vtg.imap_texture, index);
+            for (size_t i = 0; i < 4; ++i) {
+                info.loads.Set(attribute + i, mask[i]);
+            }
         }
         info.loads.Set(IR::Attribute::PrimitiveId, header.vtg.imap_systemb.primitive_array_id != 0);
         info.loads.Set(IR::Attribute::Layer, header.vtg.imap_systemb.rt_array_index != 0);
@@ -856,21 +870,21 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
         info.loads.Set(IR::Attribute::PositionY, header.vtg.imap_systemb.position_y != 0);
         info.loads.Set(IR::Attribute::PositionZ, header.vtg.imap_systemb.position_z != 0);
         info.loads.Set(IR::Attribute::PositionW, header.vtg.imap_systemb.position_w != 0);
-        info.loads.Set(IR::Attribute::PointSpriteS, header.vtg.point_sprite_s != 0);
-        info.loads.Set(IR::Attribute::PointSpriteT, header.vtg.point_sprite_t != 0);
-        info.loads.Set(IR::Attribute::FogCoordinate, header.vtg.fog_coordinate != 0);
+        info.loads.Set(IR::Attribute::PointSpriteS, header.vtg.imap_systemc.point_sprite_s != 0);
+        info.loads.Set(IR::Attribute::PointSpriteT, header.vtg.imap_systemc.point_sprite_t != 0);
+        info.loads.Set(IR::Attribute::FogCoordinate, header.vtg.imap_systemc.fog_coordinate != 0);
         info.loads.Set(IR::Attribute::TessellationEvaluationPointU,
-                       header.vtg.tessellation_eval_point_u != 0);
+                       header.vtg.imap_systemc.tessellation_eval_point_u != 0);
         info.loads.Set(IR::Attribute::TessellationEvaluationPointV,
-                       header.vtg.tessellation_eval_point_v != 0);
-        info.loads.Set(IR::Attribute::InstanceId, header.vtg.instance_id != 0);
-        info.loads.Set(IR::Attribute::VertexId, header.vtg.vertex_id != 0);
-        // TODO: Legacy varyings
+                       header.vtg.imap_systemc.tessellation_eval_point_v != 0);
+        info.loads.Set(IR::Attribute::InstanceId, header.vtg.imap_systemc.instance_id != 0);
+        info.loads.Set(IR::Attribute::VertexId, header.vtg.imap_systemc.vertex_id != 0);
+        info.loads.Set(IR::Attribute::FogCoordinate, header.vtg.imap_systemc.fog_coordinate != 0);
     }
     if (info.stores_indexed_attributes) {
         for (size_t index = 0; index < IR::NUM_GENERICS; ++index) {
             const IR::Attribute attribute{IR::Attribute::Generic0X + index * 4};
-            const auto mask{header.vtg.OutputGeneric(index)};
+            const auto mask{header.vtg.Mask(header.vtg.omap_generic_vector, index)};
             for (size_t i = 0; i < 4; ++i) {
                 info.stores.Set(attribute + i, mask[i]);
             }
@@ -878,6 +892,20 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
         for (size_t index = 0; index < 8; ++index) {
             const u16 mask{header.vtg.omap_systemc.clip_distances};
             info.stores.Set(IR::Attribute::ClipDistance0 + index, ((mask >> index) & 1) != 0);
+        }
+        for (size_t index = 0; index < 4; ++index) {
+            const IR::Attribute attribute{IR::Attribute::ColorFrontDiffuseR + index * 4};
+            const auto mask{header.vtg.Mask(header.vtg.omap_color, index)};
+            for (size_t i = 0; i < 4; ++i) {
+                info.stores.Set(attribute + i, mask[i]);
+            }
+        }
+        for (size_t index = 0; index < IR::NUM_TEXTURES; ++index) {
+            const IR::Attribute attribute{IR::Attribute::FixedFncTexture0S + index * 4};
+            const auto mask = header.vtg.Mask(header.vtg.omap_texture, index);
+            for (size_t i = 0; i < 4; ++i) {
+                info.stores.Set(attribute + i, mask[i]);
+            }
         }
         info.stores.Set(IR::Attribute::PrimitiveId,
                         header.vtg.omap_systemb.primitive_array_id != 0);
@@ -897,7 +925,7 @@ void GatherInfoFromHeader(Environment& env, Info& info) {
                         header.vtg.omap_systemc.tessellation_eval_point_v != 0);
         info.stores.Set(IR::Attribute::InstanceId, header.vtg.omap_systemc.instance_id != 0);
         info.stores.Set(IR::Attribute::VertexId, header.vtg.omap_systemc.vertex_id != 0);
-        // TODO: Legacy varyings
+        info.stores.Set(IR::Attribute::FogCoordinate, header.vtg.omap_systemc.fog_coordinate != 0);
     }
 }
 } // Anonymous namespace
