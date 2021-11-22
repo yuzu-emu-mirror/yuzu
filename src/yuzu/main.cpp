@@ -978,7 +978,7 @@ void GMainWindow::InitializeHotkeys() {
     LinkActionShortcut(ui->action_TAS_Reset, QStringLiteral("TAS Reset"));
 
     static const QString main_window = QStringLiteral("Main Window");
-    const auto connect_shortcut = [&]<class Fn>(const QString& action_name, const Fn& function) {
+    const auto connect_shortcut = [&]<typename Fn>(const QString& action_name, const Fn& function) {
         const QShortcut* hotkey = hotkey_registry.GetHotkey(main_window, action_name, this);
         connect(hotkey, &QShortcut::activated, this, function);
     };
@@ -1126,69 +1126,69 @@ void GMainWindow::ConnectWidgetEvents() {
 
 void GMainWindow::ConnectMenuEvents() {
     // Add actions to this window so that hiding menus in fullscreen won't disable them
-    const auto connect_to = [&]<class Fn>(QAction* action, const Fn& event_fn) {
+    const auto connect_menu = [&]<typename Fn>(QAction* action, const Fn& event_fn) {
         connect(action, &QAction::triggered, this, event_fn);
         addAction(action);
     };
 
     // File
-    connect_to(ui->action_Load_File, &GMainWindow::OnMenuLoadFile);
-    connect_to(ui->action_Load_Folder, &GMainWindow::OnMenuLoadFolder);
-    connect_to(ui->action_Install_File_NAND, &GMainWindow::OnMenuInstallToNAND);
-    connect_to(ui->action_Exit, &QMainWindow::close);
-    connect_to(ui->action_Load_Amiibo, &GMainWindow::OnLoadAmiibo);
+    connect_menu(ui->action_Load_File, &GMainWindow::OnMenuLoadFile);
+    connect_menu(ui->action_Load_Folder, &GMainWindow::OnMenuLoadFolder);
+    connect_menu(ui->action_Install_File_NAND, &GMainWindow::OnMenuInstallToNAND);
+    connect_menu(ui->action_Exit, &QMainWindow::close);
+    connect_menu(ui->action_Load_Amiibo, &GMainWindow::OnLoadAmiibo);
 
     // Emulation
-    connect_to(ui->action_Pause, &GMainWindow::OnPauseContinueGame);
-    connect_to(ui->action_Stop, &GMainWindow::OnStopGame);
-    connect_to(ui->action_Report_Compatibility, &GMainWindow::OnMenuReportCompatibility);
-    connect_to(ui->action_Open_Mods_Page, &GMainWindow::OnOpenModsPage);
-    connect_to(ui->action_Open_Quickstart_Guide, &GMainWindow::OnOpenQuickstartGuide);
-    connect_to(ui->action_Open_FAQ, &GMainWindow::OnOpenFAQ);
-    connect_to(ui->action_Restart, &GMainWindow::OnRestartGame);
-    connect_to(ui->action_Configure, &GMainWindow::OnConfigure);
-    connect_to(ui->action_Configure_Current_Game, &GMainWindow::OnConfigurePerGame);
+    connect_menu(ui->action_Pause, &GMainWindow::OnPauseContinueGame);
+    connect_menu(ui->action_Stop, &GMainWindow::OnStopGame);
+    connect_menu(ui->action_Report_Compatibility, &GMainWindow::OnMenuReportCompatibility);
+    connect_menu(ui->action_Open_Mods_Page, &GMainWindow::OnOpenModsPage);
+    connect_menu(ui->action_Open_Quickstart_Guide, &GMainWindow::OnOpenQuickstartGuide);
+    connect_menu(ui->action_Open_FAQ, &GMainWindow::OnOpenFAQ);
+    connect_menu(ui->action_Restart, &GMainWindow::OnRestartGame);
+    connect_menu(ui->action_Configure, &GMainWindow::OnConfigure);
+    connect_menu(ui->action_Configure_Current_Game, &GMainWindow::OnConfigurePerGame);
 
     // View
-    connect_to(ui->action_Fullscreen, &GMainWindow::ToggleFullscreen);
-    connect_to(ui->action_Single_Window_Mode, &GMainWindow::ToggleWindowMode);
-    connect_to(ui->action_Display_Dock_Widget_Headers, &GMainWindow::OnDisplayTitleBars);
-    connect_to(ui->action_Show_Filter_Bar, &GMainWindow::OnToggleFilterBar);
+    connect_menu(ui->action_Fullscreen, &GMainWindow::ToggleFullscreen);
+    connect_menu(ui->action_Single_Window_Mode, &GMainWindow::ToggleWindowMode);
+    connect_menu(ui->action_Display_Dock_Widget_Headers, &GMainWindow::OnDisplayTitleBars);
+    connect_menu(ui->action_Show_Filter_Bar, &GMainWindow::OnToggleFilterBar);
 
     connect(ui->action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
 
-    connect_to(ui->action_Reset_Window_Size_720, &GMainWindow::ResetWindowSize720);
-    connect_to(ui->action_Reset_Window_Size_900, &GMainWindow::ResetWindowSize900);
-    connect_to(ui->action_Reset_Window_Size_1080, &GMainWindow::ResetWindowSize1080);
+    connect_menu(ui->action_Reset_Window_Size_720, &GMainWindow::ResetWindowSize720);
+    connect_menu(ui->action_Reset_Window_Size_900, &GMainWindow::ResetWindowSize900);
+    connect_menu(ui->action_Reset_Window_Size_1080, &GMainWindow::ResetWindowSize1080);
     ui->menu_Reset_Window_Size->addActions({ui->action_Reset_Window_Size_720,
                                             ui->action_Reset_Window_Size_900,
                                             ui->action_Reset_Window_Size_1080});
 
     // Tools
-    connect_to(ui->action_Rederive,
-               std::bind(&GMainWindow::OnReinitializeKeys, this, ReinitializeKeyBehavior::Warning));
-    connect_to(ui->action_Capture_Screenshot, &GMainWindow::OnCaptureScreenshot);
+    connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
+                                                ReinitializeKeyBehavior::Warning));
+    connect_menu(ui->action_Capture_Screenshot, &GMainWindow::OnCaptureScreenshot);
 
     // TAS
-    connect_to(ui->action_TAS_Start, &GMainWindow::OnTasStartStop);
-    connect_to(ui->action_TAS_Record, &GMainWindow::OnTasRecord);
-    connect_to(ui->action_TAS_Reset, &GMainWindow::OnTasReset);
-    connect_to(ui->action_Configure_Tas, &GMainWindow::OnConfigureTas);
+    connect_menu(ui->action_TAS_Start, &GMainWindow::OnTasStartStop);
+    connect_menu(ui->action_TAS_Record, &GMainWindow::OnTasRecord);
+    connect_menu(ui->action_TAS_Reset, &GMainWindow::OnTasReset);
+    connect_menu(ui->action_Configure_Tas, &GMainWindow::OnConfigureTas);
 
     // Help
-    connect_to(ui->action_Open_yuzu_Folder, &GMainWindow::OnOpenYuzuFolder);
-    connect_to(ui->action_About, &GMainWindow::OnAbout);
+    connect_menu(ui->action_Open_yuzu_Folder, &GMainWindow::OnOpenYuzuFolder);
+    connect_menu(ui->action_About, &GMainWindow::OnAbout);
 }
 
 void GMainWindow::UpdateMenuState() {
     const bool is_paused = emu_thread == nullptr || !emu_thread->IsRunning();
 
-    const auto running_actions = {ui->action_Stop,
-                                  ui->action_Restart,
-                                  ui->action_Configure_Current_Game,
-                                  ui->action_Report_Compatibility,
-                                  ui->action_Load_Amiibo,
-                                  ui->action_Pause};
+    const std::array running_actions{ui->action_Stop,
+                                     ui->action_Restart,
+                                     ui->action_Configure_Current_Game,
+                                     ui->action_Report_Compatibility,
+                                     ui->action_Load_Amiibo,
+                                     ui->action_Pause};
 
     for (QAction* action : running_actions) {
         action->setEnabled(emulation_running);
