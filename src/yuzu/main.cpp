@@ -1183,12 +1183,14 @@ void GMainWindow::ConnectMenuEvents() {
 void GMainWindow::UpdateMenuState() {
     const bool is_paused = emu_thread == nullptr || !emu_thread->IsRunning();
 
-    const std::array running_actions{ui->action_Stop,
-                                     ui->action_Restart,
-                                     ui->action_Configure_Current_Game,
-                                     ui->action_Report_Compatibility,
-                                     ui->action_Load_Amiibo,
-                                     ui->action_Pause};
+    const std::array running_actions{
+        ui->action_Stop,
+        ui->action_Restart,
+        ui->action_Configure_Current_Game,
+        ui->action_Report_Compatibility,
+        ui->action_Load_Amiibo,
+        ui->action_Pause,
+    };
 
     for (QAction* action : running_actions) {
         action->setEnabled(emulation_running);
