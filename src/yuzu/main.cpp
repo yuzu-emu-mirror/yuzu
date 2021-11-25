@@ -1125,10 +1125,12 @@ void GMainWindow::ConnectWidgetEvents() {
 }
 
 void GMainWindow::ConnectMenuEvents() {
-    // Add actions to this window so that hiding menus in fullscreen won't disable them
     const auto connect_menu = [&]<typename Fn>(QAction* action, const Fn& event_fn) {
         connect(action, &QAction::triggered, this, event_fn);
+        // Add actions to this window so that hiding menus in fullscreen won't disable them
         addAction(action);
+        // Add actions to the render window so that they work outside of single window mode
+        render_window->addAction(action);
     };
 
     // File
