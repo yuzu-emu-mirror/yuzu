@@ -2438,7 +2438,8 @@ void GMainWindow::OnRestartGame() {
     if (!system->IsPoweredOn()) {
         return;
     }
-    BootGame(game_path);
+    // Make a copy since BootGame edits game_path
+    BootGame(QString(game_path));
 }
 
 void GMainWindow::OnPauseGame() {
