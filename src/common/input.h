@@ -183,17 +183,31 @@ enum class ButtonNames {
     Engine,
     // This will display the button by value instead of the button name
     Value,
+
+    // Joycon button names
     ButtonLeft,
     ButtonRight,
     ButtonDown,
     ButtonUp,
-    TriggerZ,
-    TriggerR,
-    TriggerL,
     ButtonA,
     ButtonB,
     ButtonX,
     ButtonY,
+    ButtonPlus,
+    ButtonMinus,
+    ButtonHome,
+    ButtonCapture,
+    ButtonStickL,
+    ButtonStickR,
+    TriggerL,
+    TriggerZL,
+    TriggerSL,
+    TriggerR,
+    TriggerZR,
+    TriggerSR,
+
+    // GC button names
+    TriggerZ,
     ButtonStart,
 
     // DS4 button names

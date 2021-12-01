@@ -5,8 +5,6 @@ add_library(input_common STATIC
     drivers/keyboard.h
     drivers/mouse.cpp
     drivers/mouse.h
-    drivers/sdl_driver.cpp
-    drivers/sdl_driver.h
     drivers/tas_input.cpp
     drivers/tas_input.h
     drivers/touch_screen.cpp
@@ -53,11 +51,15 @@ endif()
 
 if (ENABLE_SDL2)
     target_sources(input_common PRIVATE
+        drivers/joycon.cpp
+        drivers/joycon.h
         drivers/sdl_driver.cpp
         drivers/sdl_driver.h
+        helpers/joycon_protocol.cpp
+        helpers/joycon_protocol.h
     )
-    target_link_libraries(input_common PRIVATE SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)
+    target_link_libraries(input_common PRIVATE SDL2)
 endif()
 
 target_link_libraries(input_common PRIVATE usb)

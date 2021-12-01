@@ -18,6 +18,7 @@
 #include "input_common/input_poller.h"
 #include "input_common/main.h"
 #ifdef HAVE_SDL2
+#include "input_common/drivers/joycon.h"
 #include "input_common/drivers/sdl_driver.h"
 #endif
 
@@ -87,6 +88,15 @@ struct InputSubsystem::Impl {
                                                                    sdl_input_factory);
         Common::Input::RegisterFactory<Common::Input::OutputDevice>(sdl->GetEngineName(),
                                                                     sdl_output_factory);
+
+        joycon = std::make_shared<Joycons>("joycon");
+        joycon->SetMappingCallback(mapping_callback);
+        joycon_input_factory = std::make_shared<InputFactory>(joycon);
+        joycon_output_factory = std::make_shared<OutputFactory>(joycon);
+        Common::Input::RegisterFactory<Common::Input::InputDevice>(joycon->GetEngineName(),
+                                                                   joycon_input_factory);
+        Common::Input::RegisterFactory<Common::Input::OutputDevice>(joycon->GetEngineName(),
+                                                                    joycon_output_factory);
 #endif
 
         Common::Input::RegisterFactory<Common::Input::InputDevice>(
@@ -123,6 +133,10 @@ struct InputSubsystem::Impl {
         Common::Input::UnregisterFactory<Common::Input::InputDevice>(sdl->GetEngineName());
         Common::Input::UnregisterFactory<Common::Input::OutputDevice>(sdl->GetEngineName());
         sdl.reset();
+
+        Common::Input::UnregisterFactory<Common::Input::InputDevice>(joycon->GetEngineName());
+        Common::Input::UnregisterFactory<Common::Input::OutputDevice>(joycon->GetEngineName());
+        joycon.reset();
 #endif
 
         Common::Input::UnregisterFactory<Common::Input::InputDevice>("touch_from_button");
@@ -135,14 +149,17 @@ struct InputSubsystem::Impl {
         };
 
         auto keyboard_devices = keyboard->GetInputDevices();
-        devices.insert(devices.end(), keyboard_devices.begin(), keyboard_devices.end());
         auto mouse_devices = mouse->GetInputDevices();
-        devices.insert(devices.end(), mouse_devices.begin(), mouse_devices.end());
         auto gcadapter_devices = gcadapter->GetInputDevices();
-        devices.insert(devices.end(), gcadapter_devices.begin(), gcadapter_devices.end());
         auto udp_devices = udp_client->GetInputDevices();
+
+        devices.insert(devices.end(), keyboard_devices.begin(), keyboard_devices.end());
+        devices.insert(devices.end(), mouse_devices.begin(), mouse_devices.end());
+        devices.insert(devices.end(), gcadapter_devices.begin(), gcadapter_devices.end());
         devices.insert(devices.end(), udp_devices.begin(), udp_devices.end());
 #ifdef HAVE_SDL2
+        auto joycon_devices = joycon->GetInputDevices();
+        devices.insert(devices.end(), joycon_devices.begin(), joycon_devices.end());
         auto sdl_devices = sdl->GetInputDevices();
         devices.insert(devices.end(), sdl_devices.begin(), sdl_devices.end());
 #endif
@@ -172,6 +189,9 @@ struct InputSubsystem::Impl {
         if (engine == sdl->GetEngineName()) {
             return sdl->GetAnalogMappingForDevice(params);
         }
+        if (engine == joycon->GetEngineName()) {
+            return joycon->GetAnalogMappingForDevice(params);
+        }
 #endif
         return {};
     }
@@ -195,6 +215,9 @@ struct InputSubsystem::Impl {
         if (engine == sdl->GetEngineName()) {
             return sdl->GetButtonMappingForDevice(params);
         }
+        if (engine == joycon->GetEngineName()) {
+            return joycon->GetButtonMappingForDevice(params);
+        }
 #endif
         return {};
     }
@@ -211,6 +234,9 @@ struct InputSubsystem::Impl {
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
             return sdl->GetMotionMappingForDevice(params);
+        }
+        if (engine == joycon->GetEngineName()) {
+            return joycon->GetMotionMappingForDevice(params);
         }
 #endif
         return {};
@@ -236,6 +262,9 @@ struct InputSubsystem::Impl {
 #ifdef HAVE_SDL2
         if (engine == sdl->GetEngineName()) {
             return sdl->GetUIName(params);
+        }
+        if (engine == joycon->GetEngineName()) {
+            return joycon->GetUIName(params);
         }
 #endif
         return Common::Input::ButtonNames::Invalid;
@@ -281,6 +310,9 @@ struct InputSubsystem::Impl {
         if (engine == sdl->GetEngineName()) {
             return true;
         }
+        if (engine == joycon->GetEngineName()) {
+            return true;
+        }
 #endif
         return false;
     }
@@ -292,6 +324,7 @@ struct InputSubsystem::Impl {
         udp_client->BeginConfiguration();
 #ifdef HAVE_SDL2
         sdl->BeginConfiguration();
+        joycon->BeginConfiguration();
 #endif
     }
 
@@ -302,6 +335,7 @@ struct InputSubsystem::Impl {
         udp_client->EndConfiguration();
 #ifdef HAVE_SDL2
         sdl->EndConfiguration();
+        joycon->EndConfiguration();
 #endif
     }
 
@@ -335,6 +369,9 @@ struct InputSubsystem::Impl {
     std::shared_ptr<SDLDriver> sdl;
     std::shared_ptr<InputFactory> sdl_input_factory;
     std::shared_ptr<OutputFactory> sdl_output_factory;
+    std::shared_ptr<Joycons> joycon;
+    std::shared_ptr<InputFactory> joycon_input_factory;
+    std::shared_ptr<OutputFactory> joycon_output_factory;
 #endif
 };
 
