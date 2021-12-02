@@ -44,7 +44,7 @@ f32 EncodeRumbleAmplification(f32 amplification) {
 void SetVibration(JoyconHandle& joycon_handle, VibrationValue vibration) {
     std::vector<u8> buffer(Joycon::max_resp_size);
 
-    buffer[0] = static_cast<u8>(Joycon::Output::RUMBLE_ONLY);
+    buffer[0] = static_cast<u8>(Joycon::OutputReport::RUMBLE_ONLY);
     buffer[1] = GetCounter(joycon_handle);
 
     if (vibration.high_amplitude == 0.0f && vibration.low_amplitude == 0.0f) {
@@ -87,21 +87,21 @@ void SetImuConfig(JoyconHandle& joycon_handle, GyroSensitivity gsen, GyroPerform
     const std::vector<u8> buffer{static_cast<u8>(gsen), static_cast<u8>(asen),
                                  static_cast<u8>(gfrec), static_cast<u8>(afrec)};
     SDL_hid_set_nonblocking(joycon_handle.handle, 0);
-    SendSubCommand(joycon_handle, SubCommand::SET_IMU_SENSITIVITY, buffer, 4);
+    SendSubCommand(joycon_handle, SubCommand::SET_IMU_SENSITIVITY, buffer, buffer.size());
     SDL_hid_set_nonblocking(joycon_handle.handle, 1);
 }
 
 void SetLedConfig(JoyconHandle& joycon_handle, u8 leds) {
     const std::vector<u8> buffer{leds};
     SDL_hid_set_nonblocking(joycon_handle.handle, 0);
-    SendSubCommand(joycon_handle, SubCommand::SET_PLAYER_LIGHTS, buffer, 1);
+    SendSubCommand(joycon_handle, SubCommand::SET_PLAYER_LIGHTS, buffer, buffer.size());
     SDL_hid_set_nonblocking(joycon_handle.handle, 1);
 }
 
 void SetReportMode(JoyconHandle& joycon_handle, ReportMode report_mode) {
     const std::vector<u8> buffer{static_cast<u8>(report_mode)};
     SDL_hid_set_nonblocking(joycon_handle.handle, 0);
-    SendSubCommand(joycon_handle, SubCommand::SET_REPORT_MODE, buffer, 1);
+    SendSubCommand(joycon_handle, SubCommand::SET_REPORT_MODE, buffer, buffer.size());
     SDL_hid_set_nonblocking(joycon_handle.handle, 1);
 }
 
@@ -293,14 +293,14 @@ CalibrationData GetFactoryCalibrationData(JoyconHandle& joycon_handle,
 void EnableImu(JoyconHandle& joycon_handle, bool enable) {
     SDL_hid_set_nonblocking(joycon_handle.handle, 0);
     const std::vector<u8> buffer{static_cast<u8>(enable ? 1 : 0)};
-    SendSubCommand(joycon_handle, SubCommand::ENABLE_IMU, buffer, 1);
+    SendSubCommand(joycon_handle, SubCommand::ENABLE_IMU, buffer, buffer.size());
     SDL_hid_set_nonblocking(joycon_handle.handle, 1);
 }
 
 void EnableRumble(JoyconHandle& joycon_handle, bool enable) {
     SDL_hid_set_nonblocking(joycon_handle.handle, 0);
     const std::vector<u8> buffer{static_cast<u8>(enable ? 1 : 0)};
-    SendSubCommand(joycon_handle, SubCommand::ENABLE_VIBRATION, buffer, 1);
+    SendSubCommand(joycon_handle, SubCommand::ENABLE_VIBRATION, buffer, buffer.size());
     SDL_hid_set_nonblocking(joycon_handle.handle, 1);
 }
 
@@ -309,10 +309,12 @@ void SendData(JoyconHandle& joycon_handle, std::span<const u8> buffer, std::size
 }
 
 std::vector<u8> GetResponse(JoyconHandle& joycon_handle, SubCommand sc) {
+    constexpr int timeout_mili = 100;
     int tries = 0;
     std::vector<u8> buffer(max_resp_size);
     do {
-        int result = SDL_hid_read_timeout(joycon_handle.handle, buffer.data(), max_resp_size, 100);
+        int result =
+            SDL_hid_read_timeout(joycon_handle.handle, buffer.data(), max_resp_size, timeout_time);
         if (result < 1) {
             LOG_ERROR(Input, "No response from joycon");
         }
@@ -325,7 +327,7 @@ std::vector<u8> SendSubCommand(JoyconHandle& joycon_handle, SubCommand sc,
                                std::span<const u8> buffer, std::size_t size) {
     std::vector<u8> local_buffer(size + 11);
 
-    local_buffer[0] = static_cast<u8>(Output::RUMBLE_AND_SUBCMD);
+    local_buffer[0] = static_cast<u8>(OutputReport::RUMBLE_AND_SUBCMD);
     local_buffer[1] = GetCounter(joycon_handle);
     for (std::size_t i = 0; i < 8; ++i) {
         local_buffer[i + 2] = default_buffer[i];
@@ -340,13 +342,16 @@ std::vector<u8> SendSubCommand(JoyconHandle& joycon_handle, SubCommand sc,
 }
 
 std::vector<u8> ReadSPI(JoyconHandle& joycon_handle, CalAddr addr, u8 size) {
+    constexpr std::size_t max_tries = 10;
     std::vector<u8> buffer = {0x00, 0x00, 0x00, 0x00, size};
     std::vector<u8> local_buffer(size + 20);
 
     buffer[0] = static_cast<u8>(static_cast<u16>(addr) & 0x00FF);
     buffer[1] = static_cast<u8>((static_cast<u16>(addr) & 0xFF00) >> 8);
-    for (std::size_t i = 0; i < 100; ++i) {
-        local_buffer = SendSubCommand(joycon_handle, SubCommand::SPI_FLASH_READ, buffer, 5);
+    for (std::size_t i = 0; i < max_tries; ++i) {
+        local_buffer =
+            SendSubCommand(joycon_handle, SubCommand::SPI_FLASH_READ, buffer, buffer.size());
+        // Recieved packed has to match with the requested address
         if (local_buffer[15] == buffer[0] && local_buffer[16] == buffer[1]) {
             break;
         }

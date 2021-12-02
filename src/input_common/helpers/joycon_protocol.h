@@ -2,6 +2,10 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included
 
+// Based on dkms-hid-nintendo implementation and dekuNukem reverse engineering
+// https://github.com/nicman23/dkms-hid-nintendo/blob/master/src/hid-nintendo.c
+// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering
+
 #pragma once
 
 #include <span>
@@ -46,12 +50,30 @@ enum class PadButton : u32 {
     Capture = 0x200000,
 };
 
-enum class Output {
+enum class OutputReport {
     RUMBLE_AND_SUBCMD = 0x01,
     FW_UPDATE_PKT = 0x03,
     RUMBLE_ONLY = 0x10,
     MCU_DATA = 0x11,
     USB_CMD = 0x80,
+};
+
+enum class InputReport {
+    BUTTON_EVENT = 0x3F,
+    SUBCMD_REPLY = 0x21,
+    IMU_DATA = 0x30,
+    MCU_DATA = 0x31,
+    INPUT_USB_RESPONSE = 0x81,
+};
+
+enum class FeatureReport {
+    Last_SUBCMD = 0x02,
+    OTA_GW_UPGRADE = 0x70,
+    SETUP_MEM_READ = 0x71,
+    MEM_READ = 0x72,
+    ERASE_MEM_SECTOR = 0x73,
+    MEM_WRITE = 0x74,
+    LAUNCH = 0x75,
 };
 
 enum class SubCommand {
@@ -78,6 +100,23 @@ enum class SubCommand {
     READ_IMU_REG = 0x43,
     ENABLE_VIBRATION = 0x48,
     GET_REGULATED_VOLTAGE = 0x50,
+};
+
+enum class UsbSubCommand {
+    CONN_STATUS = 0x01,
+    HADSHAKE = 0x02,
+    BAUDRATE_3M = 0x03,
+    NO_TIMEOUT = 0x04,
+    EN_TIMEOUT = 0x05,
+    RESET = 0x06,
+    PRE_HANDSHAKE = 0x91,
+    SEND_UART = 0x92,
+};
+
+enum class CalMagic {
+    USR_MAGIC_0 = 0xB2,
+    USR_MAGIC_1 = 0xA1,
+    USRR_MAGI_SIZE = 2,
 };
 
 enum class CalAddr {
@@ -111,11 +150,11 @@ enum class GyroSensitivity {
     DPS250,
     DPS500,
     DPS1000,
-    DPS2000,
+    DPS2000, // Default
 };
 
 enum class AccelerometerSensitivity {
-    G8,
+    G8, // Default
     G4,
     G2,
     G16,
@@ -123,12 +162,12 @@ enum class AccelerometerSensitivity {
 
 enum class GyroPerformance {
     HZ833,
-    HZ208,
+    HZ208, // Default
 };
 
 enum class AccelerometerPerformance {
     HZ200,
-    HZ100,
+    HZ100, // Default
 };
 
 struct ImuSensorCalibration {
