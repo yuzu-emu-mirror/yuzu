@@ -559,6 +559,7 @@ struct Values {
 
     BasicSetting<bool> enable_raw_input{false, "enable_raw_input"};
     BasicSetting<bool> controller_navigation{true, "controller_navigation"};
+    BasicSetting<bool> enable_sdl_joycons{false, "enable_sdl_joycons"};
 
     Setting<bool> vibration_enabled{true, "vibration_enabled"};
     Setting<bool> enable_accurate_vibrations{false, "enable_accurate_vibrations"};

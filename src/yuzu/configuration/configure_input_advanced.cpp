@@ -136,6 +136,7 @@ void ConfigureInputAdvanced::ApplyConfiguration() {
     Settings::values.enable_udp_controller = ui->enable_udp_controller->isChecked();
     Settings::values.controller_navigation = ui->controller_navigation->isChecked();
     Settings::values.enable_ring_controller = ui->enable_ring_controller->isChecked();
+    Settings::values.enable_sdl_joycons = ui->enable_sdl_joycons->isChecked();
 }
 
 void ConfigureInputAdvanced::LoadConfiguration() {
@@ -169,6 +170,7 @@ void ConfigureInputAdvanced::LoadConfiguration() {
     ui->enable_udp_controller->setChecked(Settings::values.enable_udp_controller.GetValue());
     ui->controller_navigation->setChecked(Settings::values.controller_navigation.GetValue());
     ui->enable_ring_controller->setChecked(Settings::values.enable_ring_controller.GetValue());
+    ui->enable_sdl_joycons->setChecked(Settings::values.enable_sdl_joycons.GetValue());
 
     UpdateUIEnabled();
 }

@@ -5,14 +5,18 @@
 #include <fmt/format.h>
 
 #include "common/param_package.h"
-#include "common/settings_input.h"
+#include "common/settings.h"
 #include "common/thread.h"
 #include "input_common/drivers/joycon.h"
 
 namespace InputCommon {
 
 Joycons::Joycons(const std::string& input_engine_) : InputEngine(input_engine_) {
-    LOG_INFO(Input, "JC Adapter Initialization started");
+    if (Settings::values.enable_sdl_joycons) {
+        // Avoid conflicting with SDL driver
+        return;
+    }
+    LOG_INFO(Input, "Joycon driver Initialization started");
     const int init_res = SDL_hid_init();
     if (init_res == 0) {
         Setup();
