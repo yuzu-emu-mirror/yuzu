@@ -8,8 +8,13 @@
 #include <cstring>
 
 #include "common/common_types.h"
+#include "core/core.h"
+#include "core/core_timing.h"
 #include "core/crypto/aes_util.h"
 #include "core/crypto/crypto.h"
+#ifdef ARCHITECTURE_x86_64
+#include "common/x64/cpu_detect.h"
+#endif
 
 constexpr static u8 msg[] = "The quick brown fox jumps over the lazy dog";
 constexpr static u8 key[] = "key";
@@ -99,4 +104,134 @@ TEST_CASE("AES-128-XTS", "[core]") {
     Core::Crypto::AESCipher cipher(aes_xts_key, Core::Crypto::Mode::XTS);
     cipher.XTSTranscode(aes_plain, 32, aes_encrypted, 0, 16, Core::Crypto::Op::Encrypt);
     REQUIRE(std::memcmp(aes_encrypted, aes_cipher, 32) == 0);
+}
+
+double RunFunctionAndReturnTime(void (*f)(), const Core::Timing::CoreTiming& timing) {
+    const u64 start = timing.GetGlobalTimeNs().count();
+    f();
+    const u64 end = timing.GetGlobalTimeNs().count();
+    return static_cast<double>(end - start);
+}
+
+void MD5SpeedTest() {
+    std::array<u8, 16> hash;
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    std::memset(msg.get(), 0, 1024 * 1024);
+    for (int i = 0; i < 1024; i++) {
+        CalculateMD5(msg.get(), 1024 * 1024, hash.data());
+    }
+}
+
+void SHA256SpeedTest() {
+    std::array<u8, 32> hash;
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    std::memset(msg.get(), 0, 1024 * 1024);
+    for (int i = 0; i < 1024; i++) {
+        CalculateSHA256(msg.get(), 1024 * 1024, hash.data());
+    }
+}
+
+void HMACSHA256SpeedTest() {
+    constexpr static u8 key[] = "0123456789abcdef";
+    std::array<u8, 32> hash;
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    std::memset(msg.get(), 0, 1024 * 1024);
+    for (int i = 0; i < 1024; i++) {
+        CalculateHMACSHA256(hash.data(), key, sizeof(key) - 1, msg.get(), 1024 * 1024);
+    }
+}
+
+void CMACAESSpeedTest() {
+    constexpr static u8 key[] = "0123456789abcdef";
+    std::array<u8, 32> hash;
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    std::memset(msg.get(), 0, 1024 * 1024);
+    for (int i = 0; i < 1024; i++) {
+        CalculateCMAC(msg.get(), 1024 * 1024, key, hash.data());
+    }
+}
+
+void AES128CTRSpeedTest() {
+    constexpr static std::array<u8, 16> key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                               0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+    constexpr static std::array<u8, 16> iv = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                              0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    const std::unique_ptr<u8[]> encrypted(new u8[1024 * 1024]);
+    Core::Crypto::AESCipher cipher(key, Core::Crypto::Mode::CTR);
+    for (int i = 0; i < 1024; i++) {
+        cipher.SetIV(iv);
+        cipher.Transcode(msg.get(), 1024 * 1024, encrypted.get(), Core::Crypto::Op::Encrypt);
+    }
+}
+
+void AES128ECBSpeedTest() {
+    constexpr static std::array<u8, 16> key = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
+                                               0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    const std::unique_ptr<u8[]> encrypted(new u8[1024 * 1024]);
+    Core::Crypto::AESCipher cipher(key, Core::Crypto::Mode::ECB);
+    for (int i = 0; i < 1024; i++) {
+        cipher.Transcode(msg.get(), 1024 * 1024, encrypted.get(), Core::Crypto::Op::Encrypt);
+    }
+}
+
+void AES128XTSSpeedTest() {
+    constexpr static std::array<u8, 32> xts_key = {
+        0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+        0xf, 0xe, 0xd, 0xc, 0xb, 0xa, 0x9, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1, 0x0};
+    const std::unique_ptr<u8[]> msg(new u8[1024 * 1024]);
+    const std::unique_ptr<u8[]> encrypted(new u8[1024 * 1024]);
+    Core::Crypto::AESCipher cipher(xts_key, Core::Crypto::Mode::XTS);
+    for (int i = 0; i < 1024; i++) {
+        cipher.XTSTranscode(msg.get(), 1024 * 1024, encrypted.get(), 0, 16,
+                            Core::Crypto::Op::Encrypt);
+    }
+}
+
+struct ScopeInit final {
+    ScopeInit() {
+        core_timing.SetMulticore(true);
+        core_timing.Initialize([]() {});
+    }
+    ~ScopeInit() {
+        core_timing.Shutdown();
+    }
+
+    Core::Timing::CoreTiming core_timing;
+};
+
+TEST_CASE("SPEED", "[core]") {
+#ifdef ARCHITECTURE_x86_64
+    const auto& caps = Common::GetCPUCaps();
+    std::string cpu_string = caps.cpu_string;
+    if (caps.avx || caps.avx2 || caps.avx512) {
+        cpu_string += " | AVX";
+        if (caps.avx512) {
+            cpu_string += "512";
+        } else if (caps.avx2) {
+            cpu_string += '2';
+        }
+        if (caps.fma || caps.fma4) {
+            cpu_string += " | FMA";
+        }
+    }
+    printf("Host CPU: %s\n", cpu_string.c_str());
+#endif
+    ScopeInit guard;
+    double time;
+    time = RunFunctionAndReturnTime(MD5SpeedTest, guard.core_timing);
+    printf("MD5 speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(SHA256SpeedTest, guard.core_timing);
+    printf("SHA256 speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(HMACSHA256SpeedTest, guard.core_timing);
+    printf("HMACSHA256 speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(CMACAESSpeedTest, guard.core_timing);
+    printf("CMAC-AES speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(AES128CTRSpeedTest, guard.core_timing);
+    printf("AES-128-CTR speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(AES128ECBSpeedTest, guard.core_timing);
+    printf("AES-128-ECB speed: %fMB/s\n", 1024e9 / time);
+    time = RunFunctionAndReturnTime(AES128XTSSpeedTest, guard.core_timing);
+    printf("AES-128-XTS speed: %fMB/s\n", 1024e9 / time);
 }
