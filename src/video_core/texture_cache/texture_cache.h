@@ -55,12 +55,10 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         const u64 possible_critical_memory = (device_memory * 7) / 10;
         expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY - 256_MiB);
         critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY - 512_MiB);
-        minimum_memory = 0;
     } else {
         // On OpenGL we can be more conservatives as the driver takes care.
         expected_memory = DEFAULT_EXPECTED_MEMORY + 512_MiB;
         critical_memory = DEFAULT_CRITICAL_MEMORY + 1_GiB;
-        minimum_memory = 0;
     }
 }
 
@@ -99,7 +97,7 @@ void TextureCache<P>::RunGarbageCollector() {
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    if (total_used_memory > minimum_memory) {
+    if (total_used_memory > expected_memory) {
         RunGarbageCollector();
     }
     sentenced_images.Tick();
