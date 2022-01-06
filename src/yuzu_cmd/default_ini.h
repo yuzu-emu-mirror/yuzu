@@ -303,9 +303,9 @@ use_asynchronous_gpu_emulation =
 # 0: Off, 1 (default): On
 use_fast_gpu_time =
 
-# Whether to use garbage collection or not for GPU caches.
+# Whether to use garbage collection or not for GPU caches up max VRAM.
 # 0 (default): Off, 1: On
-use_caches_gc =
+use_caches_gc_adv =
 
 # The clear color for the renderer. What shows up on the sides of the bottom screen.
 # Must be in range of 0-255. Defaults to 0 for all.

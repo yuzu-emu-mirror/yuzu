@@ -61,6 +61,7 @@ void LogSettings() {
     log_setting("Renderer_UseVsync", values.use_vsync.GetValue());
     log_setting("Renderer_ShaderBackend", values.shader_backend.GetValue());
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
+    log_setting("Renderer_UseGarbageCollectionAdvanced", values.use_caches_gc_adv.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
     log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
@@ -193,6 +194,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.shader_backend.SetGlobal(true);
     values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
+    values.use_caches_gc_adv.SetGlobal(true);
     values.bg_red.SetGlobal(true);
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);

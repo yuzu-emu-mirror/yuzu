@@ -28,6 +28,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
 
     ui->use_vsync->setChecked(Settings::values.use_vsync.GetValue());
     ui->use_asynchronous_shaders->setChecked(Settings::values.use_asynchronous_shaders.GetValue());
+    ui->use_caches_gc_adv->setChecked(Settings::values.use_caches_gc_adv.GetValue());
     ui->use_fast_gpu_time->setChecked(Settings::values.use_fast_gpu_time.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
@@ -54,6 +55,8 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_asynchronous_shaders,
                                              ui->use_asynchronous_shaders,
                                              use_asynchronous_shaders);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_caches_gc_adv,
+                                             ui->use_caches_gc_adv, use_caches_gc_adv);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_fast_gpu_time,
                                              ui->use_fast_gpu_time, use_fast_gpu_time);
 }
@@ -78,6 +81,7 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
         ui->use_asynchronous_shaders->setEnabled(
             Settings::values.use_asynchronous_shaders.UsingGlobal());
         ui->use_fast_gpu_time->setEnabled(Settings::values.use_fast_gpu_time.UsingGlobal());
+        ui->use_caches_gc_adv->setEnabled(Settings::values.use_caches_gc_adv.UsingGlobal());
         ui->anisotropic_filtering_combobox->setEnabled(
             Settings::values.max_anisotropy.UsingGlobal());
 
@@ -90,6 +94,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
                                             use_asynchronous_shaders);
     ConfigurationShared::SetColoredTristate(ui->use_fast_gpu_time,
                                             Settings::values.use_fast_gpu_time, use_fast_gpu_time);
+    ConfigurationShared::SetColoredTristate(ui->use_caches_gc_adv,
+                                            Settings::values.use_caches_gc_adv, use_caches_gc_adv);
     ConfigurationShared::SetColoredComboBox(
         ui->gpu_accuracy, ui->label_gpu_accuracy,
         static_cast<int>(Settings::values.gpu_accuracy.GetValue(true)));

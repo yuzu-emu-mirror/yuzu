@@ -53,12 +53,14 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
         const auto device_memory = runtime.GetDeviceLocalMemory();
         const u64 possible_expected_memory = (device_memory * 4) / 10;
         const u64 possible_critical_memory = (device_memory * 7) / 10;
+        over_4gb_memory = device_memory > 4_GiB;
         expected_memory = std::max(possible_expected_memory, DEFAULT_EXPECTED_MEMORY - 256_MiB);
         critical_memory = std::max(possible_critical_memory, DEFAULT_CRITICAL_MEMORY - 512_MiB);
     } else {
         // On OpenGL we can be more conservatives as the driver takes care.
         expected_memory = DEFAULT_EXPECTED_MEMORY + 512_MiB;
         critical_memory = DEFAULT_CRITICAL_MEMORY + 1_GiB;
+        over_4gb_memory = false;
     }
 }
 
@@ -66,8 +68,8 @@ template <class P>
 void TextureCache<P>::RunGarbageCollector() {
     const bool high_priority_mode = total_used_memory >= expected_memory;
     const bool aggressive_mode = total_used_memory >= critical_memory;
-    const u64 ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 100ULL;
-    size_t num_iterations = aggressive_mode ? 300 : (high_priority_mode ? 50 : 10);
+    const u64 ticks_to_destroy = aggressive_mode ? 240ULL : high_priority_mode ? 240ULL : 240ULL;
+    size_t num_iterations = aggressive_mode ? 2048 : (high_priority_mode ? 128 : 32);
     const auto clean_up = [this, &num_iterations, high_priority_mode](ImageId image_id) {
         if (num_iterations == 0) {
             return true;
@@ -97,7 +99,14 @@ void TextureCache<P>::RunGarbageCollector() {
 
 template <class P>
 void TextureCache<P>::TickFrame() {
-    if (total_used_memory > expected_memory) {
+    if (over_4gb_memory) {
+        if (Settings::values.use_caches_gc_adv.GetValue() && total_used_memory > critical_memory) {
+            RunGarbageCollector();
+        } else if (!Settings::values.use_caches_gc_adv.GetValue() &&
+                   total_used_memory > expected_memory) {
+            RunGarbageCollector();
+        }
+    } else {
         RunGarbageCollector();
     }
     sentenced_images.Tick();

@@ -369,6 +369,7 @@ private:
 
     bool has_deleted_images = false;
     bool is_rescaling = false;
+    bool over_4gb_memory = false;
     u64 total_used_memory = 0;
     u64 expected_memory;
     u64 critical_memory;

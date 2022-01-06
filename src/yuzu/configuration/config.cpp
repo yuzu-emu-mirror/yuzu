@@ -645,6 +645,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.shader_backend);
     ReadGlobalSetting(Settings::values.use_asynchronous_shaders);
     ReadGlobalSetting(Settings::values.use_fast_gpu_time);
+    ReadGlobalSetting(Settings::values.use_caches_gc_adv);
     ReadGlobalSetting(Settings::values.bg_red);
     ReadGlobalSetting(Settings::values.bg_green);
     ReadGlobalSetting(Settings::values.bg_blue);
@@ -1192,6 +1193,7 @@ void Config::SaveRendererValues() {
                  Settings::values.shader_backend.UsingGlobal());
     WriteGlobalSetting(Settings::values.use_asynchronous_shaders);
     WriteGlobalSetting(Settings::values.use_fast_gpu_time);
+    WriteGlobalSetting(Settings::values.use_caches_gc_adv);
     WriteGlobalSetting(Settings::values.bg_red);
     WriteGlobalSetting(Settings::values.bg_green);
     WriteGlobalSetting(Settings::values.bg_blue);

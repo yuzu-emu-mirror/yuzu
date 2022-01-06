@@ -100,6 +100,16 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="use_caches_gc_adv">
+          <property name="toolTip">
+           <string>This will try to unlock more than 4GB of VRAM with a late reset of the least used textures. More stable operation with increased video memory consumption.</string>
+          </property>
+          <property name="text">
+           <string>Advanced GPU Cache Garbage Collection Mode (Hack)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QWidget" name="af_layout" native="true">
           <layout class="QHBoxLayout" name="horizontalLayout_1">
            <property name="leftMargin">
