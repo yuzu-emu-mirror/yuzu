@@ -308,15 +308,7 @@ public:
 private:
     template <Type type>
     u64* Array() noexcept {
-        if constexpr (type == Type::CPU) {
-            return words.cpu.Pointer(IsShort());
-        } else if constexpr (type == Type::GPU) {
-            return words.gpu.Pointer(IsShort());
-        } else if constexpr (type == Type::CachedCPU) {
-            return words.cached_cpu.Pointer(IsShort());
-        } else if constexpr (type == Type::Untracked) {
-            return words.untracked.Pointer(IsShort());
-        }
+        return std::as_const(*this).Array();
     }
 
     template <Type type>
