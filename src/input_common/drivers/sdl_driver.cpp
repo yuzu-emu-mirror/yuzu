@@ -423,6 +423,13 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
         return;
     }
 
+    // TODO: Remove this patch once SDL is above 2.0.18. This fixes G-Shark702 missing Y axis
+    SDL_GameControllerAddMapping(
+        "03000000790000000600000000000000,G-Shark "
+        "GS-GP702,a:b2,b:b1,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,leftshoulder:b4,"
+        "leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,"
+        "righttrigger:b7,rightx:a2,righty:a3,start:b9,x:b3,y:b0");
+
     SDL_AddEventWatch(&SDLEventWatcher, this);
 
     initialized = true;
