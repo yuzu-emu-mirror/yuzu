@@ -33,7 +33,7 @@ public:
     ParamPackage(ParamPackage&& other) noexcept = default;
 
     ParamPackage& operator=(const ParamPackage& other) = default;
-    ParamPackage& operator=(ParamPackage&& other) = default;
+    ParamPackage& operator=(ParamPackage&& other) noexcept = default;
 
     [[nodiscard]] std::string Serialize() const;
     [[nodiscard]] std::string Get(std::string_view key, const std::string& default_value) const;
