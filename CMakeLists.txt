@@ -209,7 +209,7 @@ macro(yuzu_find_packages)
 endmacro()
 
 if (NOT YUZU_USE_BUNDLED_BOOST)
-    find_package(Boost 1.73.0 CONFIG COMPONENTS context headers QUIET)
+    find_package(Boost 1.73.0 COMPONENTS context headers)
 endif()
 if (Boost_FOUND)
     set(Boost_LIBRARIES Boost::boost)
@@ -222,7 +222,7 @@ if (Boost_FOUND)
         list(APPEND Boost_LIBRARIES Boost::context)
     endif()
 elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR YUZU_USE_BUNDLED_BOOST)
-    message(STATUS "Boost 1.73.0 or newer not found, falling back to externals")
+    message(WARNING "Boost not found or too old, falling back to externals")
     set(YUZU_USE_BUNDLED_BOOST ON CACHE BOOL "Download bundled Boost" FORCE)
 
     # Use yuzu Boost binaries
@@ -522,7 +522,7 @@ if (UNIX AND NOT APPLE)
 endif()
 if (NOT YUZU_USE_BUNDLED_FFMPEG)
     # Use system installed FFmpeg
-    find_package(FFmpeg 4.3 QUIET COMPONENTS ${FFmpeg_COMPONENTS})
+    find_package(FFmpeg 4.3 COMPONENTS ${FFmpeg_COMPONENTS})
 
     if (FFmpeg_FOUND)
         # Overwrite aggregate defines from FFmpeg module to avoid over-linking libraries.
