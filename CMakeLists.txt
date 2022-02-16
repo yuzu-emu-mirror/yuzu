@@ -209,7 +209,7 @@ macro(yuzu_find_packages)
 endmacro()
 
 if (NOT YUZU_USE_BUNDLED_BOOST)
-    find_package(Boost 1.73.0 COMPONENTS context headers)
+    find_package(Boost 1.73.0 COMPONENTS context)
 endif()
 if (Boost_FOUND)
     set(Boost_LIBRARIES Boost::boost)
