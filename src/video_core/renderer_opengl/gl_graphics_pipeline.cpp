@@ -251,9 +251,13 @@ GraphicsPipeline::GraphicsPipeline(
                 break;
             }
         }
-        built_fence.Create();
-        // Flush this context to ensure compilation commands and fence are in the GPU pipe.
-        glFlush();
+        {
+            std::lock_guard lock{built_mutex};
+            built_fence.Create();
+            // Flush this context to ensure compilation commands and fence are in the GPU pipe.
+            glFlush();
+            built_condvar.notify_one();
+        }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
         }
@@ -572,6 +576,10 @@ void GraphicsPipeline::GenerateTransformFeedbackState() {
 }
 
 void GraphicsPipeline::WaitForBuild() {
+    if (built_fence.handle == 0) {
+        std::unique_lock lock{built_mutex};
+        built_condvar.wait(lock, [this] { return built_fence.handle != 0; });
+    }
     ASSERT(glClientWaitSync(built_fence.handle, 0, GL_TIMEOUT_IGNORED) != GL_WAIT_FAILED);
     is_built = true;
 }
