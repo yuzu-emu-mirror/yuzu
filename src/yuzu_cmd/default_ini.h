@@ -314,7 +314,7 @@ use_vsync =
 # 0: GLSL, 1 (default): GLASM, 2: SPIR-V
 shader_backend =
 
-# Whether to allow asynchronous shader building.
+# (OpenGL) Whether to allow asynchronous shader building.
 # 0 (default): Off, 1: On
 use_asynchronous_shaders =
 

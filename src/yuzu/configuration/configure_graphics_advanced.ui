@@ -92,10 +92,10 @@
         <item>
          <widget class="QCheckBox" name="use_asynchronous_shaders">
           <property name="toolTip">
-           <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
+           <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental and may cause graphical issues.</string>
           </property>
           <property name="text">
-           <string>Use asynchronous shader building (Hack)</string>
+           <string>Use asynchronous shader building (Hack, OpenGL only)</string>
           </property>
          </widget>
         </item>
