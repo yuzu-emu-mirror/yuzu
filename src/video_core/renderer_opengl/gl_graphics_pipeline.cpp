@@ -229,9 +229,10 @@ GraphicsPipeline::GraphicsPipeline(
     if (key.xfb_enabled && device.UseAssemblyShaders()) {
         GenerateTransformFeedbackState();
     }
+    const bool in_parallel = thread_worker != nullptr;
     const auto backend = device.GetShaderBackend();
     auto func{[this, sources = std::move(sources), sources_spirv = std::move(sources_spirv),
-               shader_notify, backend](ShaderContext::Context*) mutable {
+               shader_notify, backend, in_parallel](ShaderContext::Context*) mutable {
         for (size_t stage = 0; stage < 5; ++stage) {
             switch (backend) {
             case Settings::ShaderBackend::GLSL:
@@ -251,12 +252,14 @@ GraphicsPipeline::GraphicsPipeline(
                 break;
             }
         }
-        {
+        if (in_parallel) {
             std::lock_guard lock{built_mutex};
             built_fence.Create();
             // Flush this context to ensure compilation commands and fence are in the GPU pipe.
             glFlush();
             built_condvar.notify_one();
+        } else {
+            is_built = true;
         }
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
