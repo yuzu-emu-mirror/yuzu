@@ -284,7 +284,6 @@ PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device
       descriptor_pool{descriptor_pool_}, update_descriptor_queue{update_descriptor_queue_},
       render_pass_cache{render_pass_cache_}, buffer_cache{buffer_cache_},
       texture_cache{texture_cache_}, shader_notify{shader_notify_},
-      use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
       use_vulkan_pipeline_cache{Settings::values.use_vulkan_driver_pipeline_cache.GetValue()},
       workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "VkPipelineBuilder"),
       serialization_thread(1, "VkPipelineSerialization") {
@@ -387,7 +386,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         GraphicsPipeline* const next{current_pipeline->Next(graphics_key)};
         if (next) {
             current_pipeline = next;
-            return BuiltPipeline(current_pipeline);
+            return current_pipeline;
         }
     }
     return CurrentGraphicsPipelineSlowPath();
@@ -535,29 +534,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipelineSlowPath() {
         current_pipeline->AddTransition(pipeline.get());
     }
     current_pipeline = pipeline.get();
-    return BuiltPipeline(current_pipeline);
-}
-
-GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const noexcept {
-    if (pipeline->IsBuilt()) {
-        return pipeline;
-    }
-    if (!use_asynchronous_shaders) {
-        return pipeline;
-    }
-    // If something is using depth, we can assume that games are not rendering anything which
-    // will be used one time.
-    if (maxwell3d->regs.zeta_enable) {
-        return nullptr;
-    }
-    // If games are using a small index count, we can assume these are full screen quads.
-    // Usually these shaders are only used once for building textures so we can assume they
-    // can't be built async
-    const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
-    if (draw_state.index_buffer.count <= 6 || draw_state.vertex_buffer.count <= 6) {
-        return pipeline;
-    }
-    return nullptr;
+    return current_pipeline;
 }
 
 std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
