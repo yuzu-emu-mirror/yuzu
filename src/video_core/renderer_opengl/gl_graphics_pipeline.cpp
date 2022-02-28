@@ -587,16 +587,18 @@ void GraphicsPipeline::WaitForBuild() {
     is_built = true;
 }
 
-bool GraphicsPipeline::IsBuilt() const noexcept {
+bool GraphicsPipeline::IsBuilt() noexcept {
     if (is_built) {
         return true;
     }
     if (built_fence.handle == 0) {
         return false;
     }
-    GLint sync_status{};
-    glGetSynciv(built_fence.handle, GL_SYNC_STATUS, 1, nullptr, &sync_status);
-    return sync_status == GL_SIGNALED;
+    // Timeout of zero means this is non-blocking
+    const auto sync_status = glClientWaitSync(built_fence.handle, 0, 0);
+    ASSERT(sync_status != GL_WAIT_FAILED);
+    is_built = sync_status != GL_TIMEOUT_EXPIRED;
+    return is_built;
 }
 
 } // namespace OpenGL

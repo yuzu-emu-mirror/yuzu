@@ -100,7 +100,7 @@ public:
         return writes_global_memory;
     }
 
-    [[nodiscard]] bool IsBuilt() const noexcept;
+    [[nodiscard]] bool IsBuilt() noexcept;
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
