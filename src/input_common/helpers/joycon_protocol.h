@@ -18,6 +18,9 @@ namespace InputCommon::Joycon {
 constexpr u32 max_resp_size = 49;
 constexpr std::array<u8, 8> default_buffer{0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40};
 
+using MacAddress = std::array<u8, 6>;
+using SerialNumber = std::array<u8, 15>;
+
 enum class ControllerType {
     None,
     Left,
@@ -170,6 +173,21 @@ enum class AccelerometerPerformance {
     HZ100, // Default
 };
 
+enum class FirmwareVersion {
+    Rev_0,
+};
+
+enum class ErrorCode {
+    Success,
+    WrongReply,
+    Timeout,
+    UnsupportedControllerType,
+    HandleInUse,
+    ErrorReadingData,
+    ErrorWritingData,
+    Unknown,
+};
+
 struct ImuSensorCalibration {
     s16 offset;
     s16 scale;
@@ -226,21 +244,10 @@ u8 GetCounter(JoyconHandle& joycon_handle);
 /**
  * Verifies and sets the joycon_handle if device is valid
  * @param joycon_handle device to send the data
- * @param device device info from the driver
+ * @param device info from the driver
  * @returns true if the device is valid
  */
-bool CheckDeviceAccess(JoyconHandle& joycon_handle, SDL_hid_device_info* device);
-
-/**
- * Sends a request to set the configuration of the motion sensor
- * @param joycon_handle device to send the data
- * @param gsen gyro sensitivity
- * @param gfrec gyro update frequency
- * @param asen accelerometer sensitivity
- * @param afrec accelerometer update frequency
- */
-void SetImuConfig(JoyconHandle& joycon_handle, GyroSensitivity gsen, GyroPerformance gfrec,
-                  AccelerometerSensitivity asen, AccelerometerPerformance afrec);
+ErrorCode CheckDeviceAccess(JoyconHandle& joycon_handle, SDL_hid_device_info* device);
 
 /**
  * Encondes the amplitude to be sended on a packet
@@ -254,63 +261,74 @@ f32 EncodeRumbleAmplification(f32 amplification);
  * @param joycon_handle device to send the data
  * @param vibration amplitude and frequency of the vibration
  */
-void SetVibration(JoyconHandle& joycon_handle, VibrationValue vibration);
+ErrorCode SetVibration(JoyconHandle& joycon_handle, VibrationValue vibration);
+
+/**
+ * Sends a request to set the configuration of the motion sensor
+ * @param joycon_handle device to send the data
+ * @param gsen gyro sensitivity
+ * @param gfrec gyro update frequency
+ * @param asen accelerometer sensitivity
+ * @param afrec accelerometer update frequency
+ */
+ErrorCode SetImuConfig(JoyconHandle& joycon_handle, GyroSensitivity gsen, GyroPerformance gfrec,
+                       AccelerometerSensitivity asen, AccelerometerPerformance afrec);
 
 /**
  * Sends a request to set the polling mode of the joycon
  * @param joycon_handle device to send the data
  * @param report_mode polling mode to be set
  */
-void SetReportMode(JoyconHandle& joycon_handle, Joycon::ReportMode report_mode);
+ErrorCode SetReportMode(JoyconHandle& joycon_handle, Joycon::ReportMode report_mode);
 
 /**
  * Sends a request to set a specific led pattern
  * @param joycon_handle device to send the data
  * @param leds led pattern to be set
  */
-void SetLedConfig(JoyconHandle& joycon_handle, u8 leds);
+ErrorCode SetLedConfig(JoyconHandle& joycon_handle, u8 leds);
 
 /**
  * Sends a request to obtain the joycon colors from memory
  * @param joycon_handle device to read the data
  * @returns color object with the colors of the joycon
  */
-Color GetColor(JoyconHandle& joycon_handle);
+ErrorCode GetColor(JoyconHandle& joycon_handle, Color& color);
 
 /**
  * Sends a request to obtain the joycon mac address from handle
  * @param joycon_handle device to read the data
  * @returns array containing the mac address
  */
-std::array<u8, 6> GetMacAddress(JoyconHandle& joycon_handle);
+ErrorCode GetMacAddress(JoyconHandle& joycon_handle, MacAddress& mac_address);
 
 /**
  * Sends a request to obtain the joycon serial number from memory
  * @param joycon_handle device to read the data
  * @returns array containing the serial number
  */
-std::array<u8, 15> GetSerialNumber(JoyconHandle& joycon_handle);
+ErrorCode GetSerialNumber(JoyconHandle& joycon_handle, SerialNumber& serial_number);
 
 /**
  * Sends a request to obtain the joycon type from handle
  * @param joycon_handle device to read the data
  * @returns controller type of the joycon
  */
-ControllerType GetDeviceType(JoyconHandle& joycon_handle);
+ErrorCode GetDeviceType(JoyconHandle& joycon_handle, ControllerType& controller_type);
 
 /**
  * Sends a request to obtain the joycon tyoe from memory
  * @param joycon_handle device to read the data
  * @returns controller type of the joycon
  */
-ControllerType GetDeviceType(SDL_hid_device_info* device_info);
+ErrorCode GetDeviceType(SDL_hid_device_info* device_info, ControllerType& controller_type);
 
 /**
  * Sends a request to obtain the joycon firmware version
  * @param joycon_handle device to read the data
  * @returns u16 with the version number
  */
-u16 GetVersionNumber(JoyconHandle& joycon_handle);
+ErrorCode GetVersionNumber(JoyconHandle& joycon_handle, FirmwareVersion& version);
 
 /**
  * Sends a request to obtain the left stick calibration from memory
@@ -318,8 +336,8 @@ u16 GetVersionNumber(JoyconHandle& joycon_handle);
  * @param is_factory_calibration if true factory values will be returned
  * @returns JoyStickCalibration of the left joystick
  */
-JoyStickCalibration GetLeftJoyStickCalibration(JoyconHandle& joycon_handle,
-                                               bool is_factory_calibration);
+ErrorCode GetLeftJoyStickCalibration(JoyconHandle& joycon_handle, JoyStickCalibration& calibration,
+                                     bool is_factory_calibration);
 
 /**
  * Sends a request to obtain the right stick calibration from memory
@@ -327,8 +345,8 @@ JoyStickCalibration GetLeftJoyStickCalibration(JoyconHandle& joycon_handle,
  * @param is_factory_calibration if true factory values will be returned
  * @returns JoyStickCalibration of the left joystick
  */
-JoyStickCalibration GetRightJoyStickCalibration(JoyconHandle& joycon_handle,
-                                                bool is_factory_calibration);
+ErrorCode GetRightJoyStickCalibration(JoyconHandle& joycon_handle, JoyStickCalibration& calibration,
+                                      bool is_factory_calibration);
 
 /**
  * Sends a request to obtain the motion calibration from memory
@@ -336,7 +354,8 @@ JoyStickCalibration GetRightJoyStickCalibration(JoyconHandle& joycon_handle,
  * @param is_factory_calibration if true factory values will be returned
  * @returns ImuCalibration of the joystick motion
  */
-ImuCalibration GetImuCalibration(JoyconHandle& joycon_handle, bool is_factory_calibration);
+ErrorCode GetImuCalibration(JoyconHandle& joycon_handle, ImuCalibration& calibration,
+                            bool is_factory_calibration);
 
 /**
  * Requests user calibration from the joystick
@@ -344,7 +363,8 @@ ImuCalibration GetImuCalibration(JoyconHandle& joycon_handle, bool is_factory_ca
  * @param controller_type type of calibration to be requested
  * @returns User CalibrationData of the joystick
  */
-CalibrationData GetUserCalibrationData(JoyconHandle& joycon_handle, ControllerType controller_type);
+ErrorCode GetUserCalibrationData(JoyconHandle& joycon_handle, CalibrationData& calibration_data,
+                                 ControllerType controller_type);
 
 /**
  * Requests factory calibration from the joystick
@@ -352,22 +372,22 @@ CalibrationData GetUserCalibrationData(JoyconHandle& joycon_handle, ControllerTy
  * @param controller_type type of calibration to be requested
  * @returns Factory CalibrationData of the joystick
  */
-CalibrationData GetFactoryCalibrationData(JoyconHandle& joycon_handle,
-                                          ControllerType controller_type);
+ErrorCode GetFactoryCalibrationData(JoyconHandle& joycon_handle, CalibrationData& calibration_data,
+                                    ControllerType controller_type);
 
 /**
  * Sends a request to enable motion
  * @param joycon_handle device to read the data
  * @param is_factory_calibration if true motion data will be enabled
  */
-void EnableImu(JoyconHandle& joycon_handle, bool enable);
+ErrorCode EnableImu(JoyconHandle& joycon_handle, bool enable);
 
 /**
  * Sends a request to enable vibrations
  * @param joycon_handle device to read the data
  * @param is_factory_calibration if true rumble will be enabled
  */
-void EnableRumble(JoyconHandle& joycon_handle, bool enable);
+ErrorCode EnableRumble(JoyconHandle& joycon_handle, bool enable);
 
 /**
  * Sends data to the joycon device
@@ -375,7 +395,7 @@ void EnableRumble(JoyconHandle& joycon_handle, bool enable);
  * @param buffer data to be send
  * @param size size in bytes of the buffer
  */
-void SendData(JoyconHandle& joycon_handle, std::span<const u8> buffer, std::size_t size);
+ErrorCode SendData(JoyconHandle& joycon_handle, std::span<const u8> buffer, std::size_t size);
 
 /**
  * Waits for incoming data of the joycon device that matchs the subcommand
@@ -383,7 +403,7 @@ void SendData(JoyconHandle& joycon_handle, std::span<const u8> buffer, std::size
  * @param sub_command type of data to be returned
  * @returns a buffer containing the responce
  */
-std::vector<u8> GetResponse(JoyconHandle& joycon_handle, SubCommand sub_command);
+ErrorCode GetResponse(JoyconHandle& joycon_handle, SubCommand sub_command, std::vector<u8>& output);
 
 /**
  * Sends data to the joycon device
@@ -391,8 +411,8 @@ std::vector<u8> GetResponse(JoyconHandle& joycon_handle, SubCommand sub_command)
  * @param buffer data to be send
  * @param size size in bytes of the buffer
  */
-std::vector<u8> SendSubCommand(JoyconHandle& joycon_handle, SubCommand sc,
-                               std::span<const u8> buffer, std::size_t size);
+ErrorCode SendSubCommand(JoyconHandle& joycon_handle, SubCommand sc, std::span<const u8> buffer,
+                         std::size_t size, std::vector<u8>& output);
 
 /**
  * Sends data to the joycon device
@@ -400,6 +420,6 @@ std::vector<u8> SendSubCommand(JoyconHandle& joycon_handle, SubCommand sc,
  * @param buffer data to be send
  * @param size size in bytes of the buffer
  */
-std::vector<u8> ReadSPI(JoyconHandle& joycon_handle, CalAddr addr, u8 size);
+ErrorCode ReadSPI(JoyconHandle& joycon_handle, CalAddr addr, std::vector<u8>& output, u8 size);
 
 } // namespace InputCommon::Joycon

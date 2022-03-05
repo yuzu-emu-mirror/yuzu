@@ -104,6 +104,7 @@ bool Joycons::IsPayloadCorrect(int status, std::span<const u8> buffer) {
     input_error_counter = 0;
     return true;
 }
+
 void Joycons::Setup() {
     // Initialize all controllers as unplugged
     for (std::size_t port = 0; port < joycon_data.size(); ++port) {
@@ -123,35 +124,39 @@ void Joycons::ScanThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("yuzu:input:JoyconScanThread");
     scan_thread_running = true;
     std::size_t port = 0;
-    while (!stop_token.stop_requested()) {
-        LOG_INFO(Input, "Scanning for devices");
-        SDL_hid_device_info* devs = SDL_hid_enumerate(0x057e, 0x0);
-        SDL_hid_device_info* cur_dev = devs;
+    // while (!stop_token.stop_requested()) {
+    LOG_INFO(Input, "Scanning for devices");
+    SDL_hid_device_info* devs = SDL_hid_enumerate(0x057e, 0x0);
+    SDL_hid_device_info* cur_dev = devs;
 
-        while (cur_dev) {
-            LOG_WARNING(Input, "Device Found");
-            LOG_WARNING(Input, "type : {:04X} {:04X}", cur_dev->vendor_id, cur_dev->product_id);
-            bool skip_device = false;
+    while (cur_dev) {
+        LOG_WARNING(Input, "Device Found");
+        LOG_WARNING(Input, "type : {:04X} {:04X}", cur_dev->vendor_id, cur_dev->product_id);
+        bool skip_device = false;
 
-            for (std::size_t i = 0; i < joycon_data.size(); ++i) {
-                if (Joycon::GetDeviceType(cur_dev) == joycon_data[i].type) {
-                    LOG_WARNING(Input, "Device already exist");
-                    skip_device = true;
-                    break;
-                }
+        for (std::size_t i = 0; i < joycon_data.size(); ++i) {
+            Joycon::ControllerType type{};
+            const auto result = Joycon::GetDeviceType(cur_dev, type);
+
+            if (result != Joycon::ErrorCode::Success || type == joycon_data[i].type) {
+                LOG_WARNING(Input, "Device already exist, result = {}, type = {}", result, type);
+                skip_device = true;
+                break;
             }
-            if (!skip_device) {
-                if (Joycon::CheckDeviceAccess(joycon_data[port].joycon_handle, cur_dev)) {
-                    LOG_WARNING(Input, "Device verified and accessible");
-                    ++port;
-                }
-            }
-            cur_dev = cur_dev->next;
         }
-        GetJCEndpoint();
-
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        if (!skip_device) {
+            const auto result = Joycon::CheckDeviceAccess(joycon_data[port].joycon_handle, cur_dev);
+            if (result == Joycon::ErrorCode::Success) {
+                LOG_WARNING(Input, "Device verified and accessible");
+                ++port;
+            }
+        }
+        cur_dev = cur_dev->next;
     }
+    GetJCEndpoint();
+
+    //    std::this_thread::sleep_for(std::chrono::seconds(2));
+    //}
     scan_thread_running = false;
 }
 
@@ -181,12 +186,12 @@ void Joycons::GetJCEndpoint() {
         }
         LOG_INFO(Input, "Initializing device {}", port);
 
-        joycon.type = Joycon::GetDeviceType(handle);
+        Joycon::GetDeviceType(handle, joycon.type);
         // joycon_data[port].mac= Joycon::GetMac();
         // SetSerialNumber(joycon_data[port]);
         // SetVersionNumber(joycon_data[port]);
         // SetDeviceType(joycon_data[port]);
-        joycon.calibration = Joycon::GetFactoryCalibrationData(handle, joycon.type);
+        Joycon::GetFactoryCalibrationData(handle, joycon.calibration, joycon.type);
         // GetColor(joycon_data[port]);
 
         joycon.rumble_enabled = true;
@@ -401,7 +406,7 @@ BasicMotion Joycons::GetMotionInput(std::span<const u8> buffer, Joycon::ImuCalib
 }
 
 Common::Input::VibrationError Joycons::SetRumble(const PadIdentifier& identifier,
-                                                 const Common::Input::VibrationStatus vibration) {
+                                                 const Common::Input::VibrationStatus& vibration) {
     const Joycon::VibrationValue native_vibration{
         .low_amplitude = vibration.low_amplitude,
         .low_frequency = vibration.low_frequency,
@@ -418,7 +423,7 @@ Joycon::JoyconHandle& Joycons::GetHandle(PadIdentifier identifier) {
 
 PadIdentifier Joycons::GetIdentifier(std::size_t port) const {
     return {
-        .guid = Common::UUID{Common::INVALID_UUID},
+        .guid = Common::UUID{Common::InvalidUUID},
         .port = port,
         .pad = 0,
     };

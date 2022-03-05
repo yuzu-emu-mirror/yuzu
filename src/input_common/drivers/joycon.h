@@ -26,7 +26,7 @@ public:
     Common::Input::ButtonNames GetUIName(const Common::ParamPackage& params) const override;
 
     Common::Input::VibrationError SetRumble(
-        const PadIdentifier& identifier, const Common::Input::VibrationStatus vibration) override;
+        const PadIdentifier& identifier, const Common::Input::VibrationStatus& vibration) override;
 
 private:
     enum class PadAxes {
