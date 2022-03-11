@@ -38,6 +38,7 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /wd4701 # potentially uninitialized local variable 'result' used
     )
 else()
     target_compile_options(input_common PRIVATE

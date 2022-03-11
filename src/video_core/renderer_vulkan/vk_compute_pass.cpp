@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <array>
 
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -292,7 +293,7 @@ std::pair<VkBuffer, VkDeviceSize> QuadIndexedPass::Assemble(
             .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_INDEX_READ_BIT,
         };
-        const std::array push_constants{base_vertex, index_shift};
+        const std::array<u32, 2> push_constants{base_vertex, index_shift};
         const VkDescriptorSet set = descriptor_allocator.Commit();
         device.GetLogical().UpdateDescriptorSet(set, *descriptor_template, descriptor_data);
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
