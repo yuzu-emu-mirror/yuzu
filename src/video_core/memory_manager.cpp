@@ -6,6 +6,7 @@
 
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/host_memory.h"
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/kernel/k_page_table.h"
@@ -184,6 +185,19 @@ std::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr gpu_addr) const {
     }
 
     return page_entry.ToAddress() + (gpu_addr & page_mask);
+}
+
+std::optional<u8*> MemoryManager::GpuToHostPointer(GPUVAddr gpu_addr) const {
+    auto cpu_addr = GpuToCpuAddress(gpu_addr);
+    if (!cpu_addr) {
+        return std::nullopt;
+    }
+    auto& device_memory = system.DeviceMemory();
+    auto base = device_memory.buffer.VirtualBasePointer();
+    if (!base) {
+        return std::nullopt;
+    }
+    return base + *cpu_addr;
 }
 
 std::optional<VAddr> MemoryManager::GpuToCpuAddress(GPUVAddr addr, std::size_t size) const {
