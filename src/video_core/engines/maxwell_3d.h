@@ -1506,6 +1506,8 @@ public:
         std::vector<u32> index_buffer_cache;
     } vertex_num_approx_state;
 
+    bool accelerated_reads{};
+
 private:
     void InitializeRegisterDefaults();
 

@@ -30,6 +30,7 @@ Maxwell3D::Maxwell3D(Core::System& system_, MemoryManager& memory_manager_)
       upload_state{memory_manager, regs.upload} {
     dirty.flags.flip();
     InitializeRegisterDefaults();
+    accelerated_reads = Settings::IsFastmemEnabled();
 }
 
 Maxwell3D::~Maxwell3D() = default;
@@ -696,7 +697,7 @@ void Maxwell3D::RecalculateVertexArrayLimit() {
 
     auto maybe_ptr = memory_manager.GpuToHostPointer(start_address + offset);
     u8* ptr;
-    if (maybe_ptr) {
+    if (accelerated_reads && maybe_ptr) {
         ptr = *maybe_ptr;
     } else {
         vn_state.index_buffer_cache.resize(Common::DivideUp(expected_size, sizeof(u32)));
