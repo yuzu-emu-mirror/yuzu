@@ -69,7 +69,12 @@ if (YUZU_USE_EXTERNAL_SDL2)
 endif()
 
 # SoundTouch
-add_subdirectory(soundtouch)
+find_package(SoundTouch MODULE)
+if (NOT SoundTouch_FOUND)
+    message(STATUS "SoundTouch not found, falling back to externals")
+    add_subdirectory(soundtouch)
+    add_library(SoundTouch::SoundTouch ALIAS SoundTouch)
+endif()
 
 # Cubeb
 if(ENABLE_CUBEB)

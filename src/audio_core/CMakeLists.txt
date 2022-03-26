@@ -63,7 +63,7 @@ if (NOT MSVC)
 endif()
 
 target_link_libraries(audio_core PUBLIC common core)
-target_link_libraries(audio_core PRIVATE SoundTouch)
+target_link_libraries(audio_core PRIVATE SoundTouch::SoundTouch)
 
 if(ENABLE_CUBEB)
     target_link_libraries(audio_core PRIVATE cubeb)
