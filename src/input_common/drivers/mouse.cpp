@@ -2,7 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <thread>
 #include <fmt/format.h>
 

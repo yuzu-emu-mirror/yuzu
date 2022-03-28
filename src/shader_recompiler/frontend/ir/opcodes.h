@@ -7,6 +7,10 @@
 #include <algorithm>
 #include <array>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
+
 #include <fmt/format.h>
 
 #include "shader_recompiler/frontend/ir/type.h"

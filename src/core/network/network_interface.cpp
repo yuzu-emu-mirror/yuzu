@@ -22,6 +22,10 @@
 #include <net/if.h>
 #endif
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
+
 namespace Network {
 
 #ifdef _WIN32

@@ -7,6 +7,9 @@
 
 #include <fmt/format.h>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"

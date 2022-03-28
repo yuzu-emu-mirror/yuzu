@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <cstring>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/bit_cast.h"
 #include "common/cityhash.h"
 #include "common/common_types.h"

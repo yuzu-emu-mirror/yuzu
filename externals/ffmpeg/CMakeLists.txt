@@ -137,6 +137,7 @@ if (NOT WIN32)
                 --disable-network
                 --disable-postproc
                 --disable-swresample
+                --disable-iconv
                 --enable-decoder=h264
                 --enable-decoder=vp8
                 --enable-decoder=vp9

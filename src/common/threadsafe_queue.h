@@ -8,6 +8,9 @@
 // single reader, single writer queue
 
 #include <atomic>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
@@ -136,7 +139,12 @@ private:
     ElementPtr* read_ptr;
     std::atomic_size_t size{0};
     std::mutex cv_mutex;
+#ifdef __APPLE__
+    std::conditional_t<with_stop_token, std::condition_variable_any_apple, std::condition_variable>
+        cv;
+#else
     std::conditional_t<with_stop_token, std::condition_variable_any, std::condition_variable> cv;
+#endif
 };
 
 // a simple thread-safe,

@@ -267,3 +267,7 @@ else()
 endif()
 
 create_target_directory_groups(shader_recompiler)
+
+if (APPLE)
+    target_link_libraries(shader_recompiler PUBLIC range_v3)
+endif()

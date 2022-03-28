@@ -533,7 +533,7 @@ private:
         const u64* const state_words = Array<type>();
         const u64 num_query_words = size / BYTES_PER_WORD + 1;
         const u64 word_begin = offset / BYTES_PER_WORD;
-        const u64 word_end = std::min(word_begin + num_query_words, NumWords());
+        const u64 word_end = std::min(word_begin + num_query_words, static_cast<u64>(NumWords()));
         const u64 page_limit = Common::DivCeil(offset + size, BYTES_PER_PAGE);
         u64 page_index = (offset / BYTES_PER_PAGE) % PAGES_PER_WORD;
         for (u64 word_index = word_begin; word_index < word_end; ++word_index, page_index = 0) {
@@ -566,7 +566,7 @@ private:
         const u64* const state_words = Array<type>();
         const u64 num_query_words = size / BYTES_PER_WORD + 1;
         const u64 word_begin = offset / BYTES_PER_WORD;
-        const u64 word_end = std::min(word_begin + num_query_words, NumWords());
+        const u64 word_end = std::min(word_begin + num_query_words, static_cast<u64>(NumWords()));
         const u64 page_base = offset / BYTES_PER_PAGE;
         const u64 page_limit = Common::DivCeil(offset + size, BYTES_PER_PAGE);
         u64 begin = std::numeric_limits<u64>::max();

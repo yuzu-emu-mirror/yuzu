@@ -4,6 +4,9 @@
 
 #include <algorithm>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/fs/fs_util.h"
 
 namespace Common::FS {
@@ -13,7 +16,11 @@ std::u8string ToU8String(std::string_view utf8_string) {
 }
 
 std::u8string BufferToU8String(std::span<const u8> buffer) {
+#ifdef __APPLE__
+    return std::u8string{buffer.begin(), ranges::find(buffer, u8{0})};
+#else
     return std::u8string{buffer.begin(), std::ranges::find(buffer, u8{0})};
+#endif
 }
 
 std::u8string_view BufferToU8StringView(std::span<const u8> buffer) {
@@ -25,7 +32,11 @@ std::string ToUTF8String(std::u8string_view u8_string) {
 }
 
 std::string BufferToUTF8String(std::span<const u8> buffer) {
+#ifdef __APPLE__
+    return std::string{buffer.begin(), ranges::find(buffer, u8{0})};
+#else
     return std::string{buffer.begin(), std::ranges::find(buffer, u8{0})};
+#endif
 }
 
 std::string_view BufferToUTF8StringView(std::span<const u8> buffer) {

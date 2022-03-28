@@ -7,7 +7,11 @@
 #include <functional>
 #include <optional>
 #include <span>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include "common/common_types.h"
 #include "video_core/engines/fermi_2d.h"
 #include "video_core/gpu.h"

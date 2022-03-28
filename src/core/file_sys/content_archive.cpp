@@ -7,6 +7,9 @@
 #include <optional>
 #include <utility>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/logging/log.h"
 #include "core/crypto/aes_util.h"
 #include "core/crypto/ctr_encryption_layer.h"

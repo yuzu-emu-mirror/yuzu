@@ -24,6 +24,9 @@
 
 #include <boost/container/static_vector.hpp>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/common_types.h"
 #include "video_core/textures/astc.h"
 

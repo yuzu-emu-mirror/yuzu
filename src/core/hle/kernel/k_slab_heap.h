@@ -6,6 +6,11 @@
 
 #include <atomic>
 
+#ifdef __APPLE__
+#include <boost/atomic/atomic_ref.hpp>
+#include <boost/atomic/capabilities.hpp>
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -70,14 +75,24 @@ class KSlabHeapBase : protected impl::KSlabHeapImpl {
 
 private:
     size_t m_obj_size{};
-    uintptr_t m_peak{};
+    uintptr_t m_peak {}
+#ifdef __APPLE
+    alignas(boost::atomic_ref<uintptr_t>::required_alignment);
+#else
+    ;
+#endif
     uintptr_t m_start{};
     uintptr_t m_end{};
 
 private:
     void UpdatePeakImpl(uintptr_t obj) {
+#ifdef __APPLE__
+        static_assert(BOOST_ATOMIC_ADDRESS_LOCK_FREE);
+        boost::atomic_ref<uintptr_t> peak_ref(m_peak);
+#else
         static_assert(std::atomic_ref<uintptr_t>::is_always_lock_free);
         std::atomic_ref<uintptr_t> peak_ref(m_peak);
+#endif
 
         const uintptr_t alloc_peak = obj + this->GetObjectSize();
         uintptr_t cur_peak = m_peak;

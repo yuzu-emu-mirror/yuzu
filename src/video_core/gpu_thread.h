@@ -11,6 +11,9 @@
 #include <thread>
 #include <variant>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 
@@ -102,7 +105,11 @@ struct SynchState final {
     CommandQueue queue;
     u64 last_fence{};
     std::atomic<u64> signaled_fence{};
+#ifdef __APPLE__
+    std::condition_variable_any_apple cv;
+#else
     std::condition_variable_any cv;
+#endif
 };
 
 /// Class used to manage the GPU thread

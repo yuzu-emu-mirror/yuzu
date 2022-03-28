@@ -11,6 +11,9 @@
 #include <utility>
 #include <vector>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/assert.h"
 #include "common/literals.h"
 #include "common/settings.h"

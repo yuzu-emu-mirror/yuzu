@@ -5,7 +5,11 @@
 #pragma once
 
 #include <filesystem>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <unordered_map>
 
 #include "common/common_types.h"

@@ -7,6 +7,9 @@
 #include <bit>
 #include <memory>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/common_types.h"
 #include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/maxwell/decode.h"
@@ -63,9 +66,16 @@ constexpr std::array UNORDERED_ENCODINGS{
 
 constexpr auto SortedEncodings() {
     std::array encodings{UNORDERED_ENCODINGS};
+#ifdef __APPLE__
+    std::sort(encodings.begin(), encodings.end(),
+              [](const InstEncoding& lhs, const InstEncoding& rhs) {
+                  return std::popcount(lhs.mask_value.mask) > std::popcount(rhs.mask_value.mask);
+              });
+#else
     std::ranges::sort(encodings, [](const InstEncoding& lhs, const InstEncoding& rhs) {
         return std::popcount(lhs.mask_value.mask) > std::popcount(rhs.mask_value.mask);
     });
+#endif
     return encodings;
 }
 constexpr auto ENCODINGS{SortedEncodings()};

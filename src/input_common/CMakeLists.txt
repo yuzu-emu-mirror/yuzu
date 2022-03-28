@@ -64,3 +64,7 @@ target_link_libraries(input_common PRIVATE usb)
 
 create_target_directory_groups(input_common)
 target_link_libraries(input_common PUBLIC core PRIVATE common Boost::boost)
+
+if (APPLE)
+    target_link_libraries(input_common PUBLIC range_v3)
+endif()

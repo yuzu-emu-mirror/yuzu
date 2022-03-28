@@ -186,3 +186,7 @@ if (MSVC)
 else()
   target_link_libraries(common PRIVATE zstd)
 endif()
+
+if (APPLE)
+  target_link_libraries(common PUBLIC range_v3)
+endif()

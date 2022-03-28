@@ -762,3 +762,7 @@ if (ARCHITECTURE_x86_64)
     )
     target_link_libraries(core PRIVATE dynarmic)
 endif()
+
+if (APPLE)
+    target_link_libraries(core PUBLIC range_v3)
+endif()

@@ -3,6 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <algorithm>
+#include <sstream>
 #include <unordered_map>
 
 #include "common/fs/fs.h"

@@ -9,6 +9,9 @@
 #include <vector>
 #include <queue>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/scope_exit.h"
 #include "common/thread.h"
 #include "core/hle/kernel/k_session.h"
@@ -29,7 +32,11 @@ private:
     std::vector<std::jthread> threads;
     std::queue<std::function<void()>> requests;
     std::mutex queue_mutex;
+#ifdef __APPLE__
+    std::condition_variable_any_apple condition;
+#else
     std::condition_variable_any condition;
+#endif
     const std::string service_name;
 };
 

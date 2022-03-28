@@ -181,8 +181,9 @@ void TranslateF2I(TranslatorVisitor& v, u64 insn, const IR::F16F32F64& src_a) {
             result = IR::U32{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm32(0x8000'0000U), result)};
         } else if (f2i.dest_format == DestFormat::I64) {
             handled_special_case = true;
-            result = IR::U64{
-                v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(0x8000'0000'0000'0000UL), result)};
+            // fix clang overload resolution on macOS by explicitly defining this
+            u64 immediate = 0x8000'0000'0000'0000UL;
+            result = IR::U64{v.ir.Select(v.ir.FPIsNan(op_a), v.ir.Imm64(immediate), result)};
         }
     }
     if (!handled_special_case && is_signed) {

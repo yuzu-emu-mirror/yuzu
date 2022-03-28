@@ -11,6 +11,9 @@
 #include <utility>
 #include <queue>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "video_core/renderer_vulkan/vk_master_semaphore.h"
@@ -229,7 +232,11 @@ private:
     std::vector<std::unique_ptr<CommandChunk>> chunk_reserve;
     std::mutex reserve_mutex;
     std::mutex work_mutex;
+#ifdef __APPLE__
+    std::condition_variable_any_apple work_cv;
+#else
     std::condition_variable_any work_cv;
+#endif
     std::condition_variable wait_cv;
     std::jthread worker_thread;
 };

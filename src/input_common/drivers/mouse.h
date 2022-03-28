@@ -4,7 +4,11 @@
 
 #pragma once
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <thread>
 
 #include "common/vector_math.h"

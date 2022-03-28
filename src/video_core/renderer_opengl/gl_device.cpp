@@ -13,6 +13,9 @@
 
 #include <glad/glad.h>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/literals.h"
 #include "common/logging/log.h"
 #include "common/settings.h"

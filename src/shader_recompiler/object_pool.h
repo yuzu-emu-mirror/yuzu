@@ -8,6 +8,10 @@
 #include <type_traits>
 #include <utility>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
+
 namespace Shader {
 
 template <typename T>

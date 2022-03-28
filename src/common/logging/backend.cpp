@@ -5,7 +5,11 @@
 #include <atomic>
 #include <chrono>
 #include <climits>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <thread>
 
 #include <fmt/format.h>

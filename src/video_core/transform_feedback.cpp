@@ -6,6 +6,9 @@
 #include <array>
 #include <vector>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "shader_recompiler/shader_info.h"

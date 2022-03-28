@@ -8,7 +8,11 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -102,7 +106,11 @@ public:
 private:
     std::queue<Task> requests;
     std::mutex queue_mutex;
+#ifdef __APPLE__
+    std::condition_variable_any_apple condition;
+#else
     std::condition_variable_any condition;
+#endif
     std::condition_variable wait_condition;
     std::atomic<size_t> work_scheduled{};
     std::atomic<size_t> work_done{};

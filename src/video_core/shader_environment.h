@@ -11,7 +11,11 @@
 #include <memory>
 #include <optional>
 #include <span>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <type_traits>
 #include <unordered_map>
 #include <vector>

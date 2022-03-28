@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <vector>
+
 #include "common/fs/file.h"
 #include "common/fs/fs.h"
 #include "common/logging/log.h"

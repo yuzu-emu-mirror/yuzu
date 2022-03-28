@@ -127,3 +127,8 @@ if (YUZU_USE_BUNDLED_FFMPEG)
     set(FFmpeg_LIBRARIES "${FFmpeg_LIBRARIES}" PARENT_SCOPE)
     set(FFmpeg_INCLUDE_DIR "${FFmpeg_INCLUDE_DIR}" PARENT_SCOPE)
 endif()
+
+if (APPLE)
+    add_library(range_v3 INTERFACE)
+    set_target_properties(range_v3 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/externals/range-v3/include)
+endif()

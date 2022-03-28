@@ -6,6 +6,10 @@
 // the Nintendo Switch. Copyright 2018-2020 Atmosphere-NX.
 
 #include <bit>
+#ifdef __APPLE__
+#include <boost/atomic/atomic_ref.hpp>
+#include <boost/atomic/capabilities.hpp>
+#endif
 
 #include "common/assert.h"
 #include "common/bit_util.h"
@@ -208,8 +212,13 @@ void KScheduler::ClearPreviousThread(KernelCore& kernel, KThread* thread) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
     for (size_t i = 0; i < Core::Hardware::NUM_CPU_CORES; ++i) {
         // Get an atomic reference to the core scheduler's previous thread.
+#ifdef __APPLE__
+        static_assert(BOOST_ATOMIC_ADDRESS_LOCK_FREE);
+        boost::atomic_ref<KThread*> prev_thread(kernel.Scheduler(static_cast<s32>(i)).prev_thread);
+#else
         std::atomic_ref<KThread*> prev_thread(kernel.Scheduler(static_cast<s32>(i)).prev_thread);
         static_assert(std::atomic_ref<KThread*>::is_always_lock_free);
+#endif
 
         // Atomically clear the previous thread if it's our target.
         KThread* compare = thread;

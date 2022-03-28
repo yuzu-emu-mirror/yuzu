@@ -277,3 +277,7 @@ else()
         $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
     )
 endif()
+
+if (APPLE)
+    target_link_libraries(video_core PUBLIC range_v3)
+endif()

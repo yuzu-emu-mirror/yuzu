@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <array>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/common_types.h"

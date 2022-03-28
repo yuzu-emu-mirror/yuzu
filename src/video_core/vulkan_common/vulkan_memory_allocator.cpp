@@ -9,6 +9,9 @@
 
 #include <glad/glad.h>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/common_types.h"

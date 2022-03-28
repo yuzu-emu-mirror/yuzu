@@ -7,6 +7,9 @@
 #include <atomic>
 #include <thread>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 

@@ -52,3 +52,7 @@ if (MSVC)
     include(CopyYuzuSDLDeps)
     copy_yuzu_SDL_deps(yuzu-cmd)
 endif()
+
+if (APPLE)
+    target_link_libraries(yuzu-cmd PUBLIC range_v3)
+endif()

@@ -6,7 +6,11 @@
 
 #include <array>
 #include <memory>
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#else
 #include <stop_token>
+#endif
 #include <string>
 #include <thread>
 

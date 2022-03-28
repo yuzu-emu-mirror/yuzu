@@ -26,6 +26,9 @@
 #error "Unimplemented platform"
 #endif
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"

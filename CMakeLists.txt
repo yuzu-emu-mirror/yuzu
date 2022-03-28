@@ -6,7 +6,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/find-module
 include(DownloadExternals)
 include(CMakeDependentOption)
 
-project(yuzu)
+if (APPLE)
+    # Hack for M1. Currently fails when compiling for arm64
+    set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "")
+    set(CMAKE_CROSSCOMPILING TRUE)
+    project(yuzu)
+else()
+    project(yuzu)
+endif()
 
 # Set bundled sdl2/qt as dependent options.
 # OFF by default, but if ENABLE_SDL2 and MSVC are true then ON
@@ -492,7 +499,7 @@ if (TARGET Boost::Boost)
     add_library(boost ALIAS Boost::Boost)
 elseif (TARGET Boost::boost)
     set_target_properties(Boost::boost PROPERTIES IMPORTED_GLOBAL TRUE)
-    add_library(boost ALIAS Boost::boost src/common/apple_compat/appleCompat.h)
+    add_library(boost ALIAS Boost::boost)
 endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)

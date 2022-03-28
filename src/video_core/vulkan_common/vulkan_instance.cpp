@@ -7,6 +7,9 @@
 #include <span>
 #include <vector>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/common_types.h"
 #include "common/dynamic_library.h"
 #include "common/logging/log.h"

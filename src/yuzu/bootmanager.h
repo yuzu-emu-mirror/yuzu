@@ -14,6 +14,9 @@
 #include <QTouchEvent>
 #include <QWidget>
 
+#ifdef __APPLE__
+#include "common/apple_compat/appleCompat.h"
+#endif
 #include "common/thread.h"
 #include "core/frontend/emu_window.h"
 
@@ -103,7 +106,11 @@ private:
     bool running = false;
     std::stop_source stop_source;
     std::mutex running_mutex;
+#ifdef __APPLE__
+    std::condition_variable_any_apple running_cv;
+#else
     std::condition_variable_any running_cv;
+#endif
     Common::Event running_wait{};
     std::atomic_bool running_guard{false};
     Core::System& system;

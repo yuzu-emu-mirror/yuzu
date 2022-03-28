@@ -43,3 +43,6 @@
 [submodule "externals/ffmpeg/ffmpeg"]
 	path = externals/ffmpeg/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "externals/range-v3"]
+	path = externals/range-v3
+	url = https://github.com/ericniebler/range-v3.git
