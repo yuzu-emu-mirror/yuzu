@@ -20,12 +20,11 @@
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"
 #include "configuration/configure_tas.h"
-#include "configuration/configure_vibration.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/general_frontend.h"
-#include "core/frontend/applets/mii.h"
+#include "core/frontend/applets/mii_edit.h"
 #include "core/frontend/applets/software_keyboard.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/hid_core.h"
@@ -54,8 +53,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDesktopWidget>
-#include <QDialogButtonBox>
-#include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -77,11 +74,9 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <fmt/format.h>
 #include "common/detached_tasks.h"
 #include "common/fs/fs.h"
-#include "common/fs/fs_paths.h"
 #include "common/fs/path_util.h"
 #include "common/literals.h"
 #include "common/logging/backend.h"
-#include "common/logging/filter.h"
 #include "common/logging/log.h"
 #include "common/memory_detect.h"
 #include "common/microprofile.h"
@@ -587,7 +582,7 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
     // Raw input breaks with the web applet, Disable web applets if enabled
-    if (disable_web_applet || Settings::values.enable_raw_input) {
+    if (UISettings::values.disable_web_applet || Settings::values.enable_raw_input) {
         emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
                               "http://localhost/");
         return;
@@ -652,12 +647,12 @@ void GMainWindow::WebBrowserOpenWebPage(const std::string& main_url,
     connect(exit_action, &QAction::triggered, this, [this, &web_browser_view] {
         const auto result = QMessageBox::warning(
             this, tr("Disable Web Applet"),
-            tr("Disabling the web applet will cause it to not be shown again for the rest of the "
-               "emulated session. This can lead to undefined behavior and should only be used with "
-               "Super Mario 3D All-Stars. Are you sure you want to disable the web applet?"),
+            tr("Disabling the web applet can lead to undefined behavior and should only be used "
+               "with Super Mario 3D All-Stars. Are you sure you want to disable the web "
+               "applet?\n(This can be re-enabled in the Debug settings.)"),
             QMessageBox::Yes | QMessageBox::No);
         if (result == QMessageBox::Yes) {
-            disable_web_applet = true;
+            UISettings::values.disable_web_applet = true;
             web_browser_view.SetFinished(true);
         }
     });
@@ -1285,8 +1280,8 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     system->SetAppletFrontendSet({
         std::make_unique<QtControllerSelector>(*this), // Controller Selector
         std::make_unique<QtErrorDisplay>(*this),       // Error Display
+        nullptr,                                       // Mii Editor
         nullptr,                                       // Parental Controls
-        nullptr,                                       // Mii editor
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
         std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard

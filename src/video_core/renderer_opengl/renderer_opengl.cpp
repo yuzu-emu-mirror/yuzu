@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
-#include <cstring>
 #include <memory>
 
 #include <glad/glad.h>
@@ -15,11 +14,9 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "common/telemetry.h"
-#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/frontend/emu_window.h"
 #include "core/memory.h"
-#include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "video_core/host_shaders/fxaa_frag.h"
 #include "video_core/host_shaders/fxaa_vert.h"
@@ -326,12 +323,12 @@ void RendererOpenGL::ConfigureFramebufferTexture(TextureInfo& texture,
 
     GLint internal_format;
     switch (framebuffer.pixel_format) {
-    case Tegra::FramebufferConfig::PixelFormat::A8B8G8R8_UNORM:
+    case Service::android::PixelFormat::Rgba8888:
         internal_format = GL_RGBA8;
         texture.gl_format = GL_RGBA;
         texture.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
         break;
-    case Tegra::FramebufferConfig::PixelFormat::RGB565_UNORM:
+    case Service::android::PixelFormat::Rgb565:
         internal_format = GL_RGB565;
         texture.gl_format = GL_RGB;
         texture.gl_type = GL_UNSIGNED_SHORT_5_6_5;
@@ -467,8 +464,8 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     const auto& texcoords = screen_info.display_texcoords;
     auto left = texcoords.left;
     auto right = texcoords.right;
-    if (framebuffer_transform_flags != Tegra::FramebufferConfig::TransformFlags::Unset) {
-        if (framebuffer_transform_flags == Tegra::FramebufferConfig::TransformFlags::FlipV) {
+    if (framebuffer_transform_flags != Service::android::BufferTransformFlags::Unset) {
+        if (framebuffer_transform_flags == Service::android::BufferTransformFlags::FlipV) {
             // Flip the framebuffer vertically
             left = texcoords.right;
             right = texcoords.left;

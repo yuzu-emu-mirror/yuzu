@@ -5,7 +5,6 @@
 #pragma once
 
 #include <atomic>
-#include <memory>
 #include <thread>
 
 #include <QObject>

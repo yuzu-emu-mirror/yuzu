@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <climits>
-#include <string_view>
 
 #include <boost/container/static_vector.hpp>
 

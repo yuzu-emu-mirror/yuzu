@@ -6,14 +6,12 @@
 
 #include <memory>
 #include <optional>
-#include <unordered_map>
 
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
 
 #include "common/common_types.h"
-#include "core/hle/service/acc/profile_manager.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
 
@@ -399,9 +397,6 @@ private:
 
     // Last game booted, used for multi-process apps
     QString last_filename_booted;
-
-    // Disables the web applet for the rest of the emulated session
-    bool disable_web_applet{};
 
     // Applets
     QtSoftwareKeyboardDialog* software_keyboard = nullptr;
