@@ -79,7 +79,7 @@ public:
             this->Finalize();
         }
         Free(kernel, static_cast<Derived*>(this));
-        if (is_initialized) {
+        if (is_initialized && !kernel.IsShuttingDown()) {
             Derived::PostDestroy(arg);
         }
     }
