@@ -90,6 +90,10 @@ void ThreadManager::FlushRegion(VAddr addr, u64 size) {
         return;
     }
     if (!Settings::IsGPULevelExtreme()) {
+        // Push a command and block here before proceeding, addresses a synchronization
+        // bug causing an SVC break in Kirby and the Forgotten Land
+        // GPUTickCommand is essentially a no-op if we don't RequestFlush()
+        PushCommand(GPUTickCommand(), true);
         return;
     }
     auto& gpu = system.GPU();
