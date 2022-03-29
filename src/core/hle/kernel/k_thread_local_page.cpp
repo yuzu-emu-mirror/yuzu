@@ -37,6 +37,11 @@ ResultCode KThreadLocalPage::Initialize(KernelCore& kernel, KProcess* process) {
 }
 
 ResultCode KThreadLocalPage::Finalize() {
+    // If we are actively shutting down, there is nothing to do here.
+    if (m_kernel->IsShuttingDown()) {
+        return ResultSuccess;
+    }
+
     // Get the physical address of the page.
     const PAddr phys_addr = m_owner->PageTable().GetPhysicalAddr(m_virt_addr);
     ASSERT(phys_addr);
