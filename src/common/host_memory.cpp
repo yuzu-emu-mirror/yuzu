@@ -10,7 +10,7 @@
 #include <windows.h>
 #include "common/dynamic_library.h"
 
-#elif defined(__linux__) || defined(__FreeBSD__) // ^^^ Windows ^^^ vvv Linux vvv
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__) // ^^^ Windows ^^^ vvv Linux vvv
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -347,13 +347,14 @@ private:
     std::unordered_map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
 };
 
-#elif defined(__linux__) || defined(__FreeBSD__) // ^^^ Windows ^^^ vvv Linux vvv
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__) // ^^^ Windows ^^^ vvv Linux vvv
 
 class HostMemory::Impl {
 public:
     explicit Impl(size_t backing_size_, size_t virtual_size_)
         : backing_size{backing_size_}, virtual_size{virtual_size_} {
         bool good = false;
+
         SCOPE_EXIT({
             if (!good) {
                 Release();
@@ -364,6 +365,10 @@ public:
 #if defined(__FreeBSD__) && __FreeBSD__ < 13
         // XXX Drop after FreeBSD 12.* reaches EOL on 2024-06-30
         fd = shm_open(SHM_ANON, O_RDWR, 0600);
+#elif defined(__APPLE__)
+        // Hack since macOS doesn't have SHM_ANON or memfd_create
+        fd = shm_open("HostMemory", O_RDWR | O_CREAT);
+        shm_unlink("HostMemory");
 #else
         fd = memfd_create("HostMemory", 0);
 #endif
