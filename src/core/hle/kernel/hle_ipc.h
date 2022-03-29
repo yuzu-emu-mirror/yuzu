@@ -134,7 +134,7 @@ public:
 
     void CloseDomainHandler(std::size_t index) {
         if (index < DomainHandlerCount()) {
-            domain_handlers[index] = nullptr;
+            domain_handlers[index].reset();
         } else {
             UNREACHABLE_MSG("Unexpected handler index {}", index);
         }
