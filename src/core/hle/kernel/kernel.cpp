@@ -176,13 +176,22 @@ struct KernelCore::Impl {
         }
 
         // Track kernel objects that were not freed on shutdown
+        std::unordered_set<KAutoObject*> registered_objects_;
         {
             std::lock_guard lk(registered_objects_lock);
+
+            // Log and clear dangling objects if necessary.
             if (registered_objects.size()) {
                 LOG_DEBUG(Kernel, "{} kernel objects were dangling on shutdown!",
                           registered_objects.size());
+                registered_objects_ = registered_objects;
                 registered_objects.clear();
             }
+        }
+
+        // Attempt to close open references.
+        for (auto* object : registered_objects_) {
+            object->Close();
         }
 
         // Ensure that the object list container is finalized and properly shutdown.
