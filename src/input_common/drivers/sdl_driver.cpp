@@ -419,7 +419,13 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_XBOX, "0");
 
     // If the frontend is going to manage the event loop, then we don't start one here
+#ifdef __APPLE__
+    // macOS will crash the application if any thread but the main one
+    // tries to interact with the UX in any way.
+    start_thread = false;
+#else
     start_thread = SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == 0;
+#endif
     if (start_thread && SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) < 0) {
         LOG_CRITICAL(Input, "SDL_Init failed with: {}", SDL_GetError());
         return;

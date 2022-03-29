@@ -296,7 +296,11 @@ GMainWindow::GMainWindow()
     ui->action_Fullscreen->setChecked(false);
 
 #if defined(HAVE_SDL2) && !defined(_WIN32)
+#ifdef __APPLE__
+    SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+#else
     SDL_InitSubSystem(SDL_INIT_VIDEO);
+#endif
     // SDL disables the screen saver by default, and setting the hint
     // SDL_HINT_VIDEO_ALLOW_SCREENSAVER doesn't seem to work, so we just enable the screen saver
     // for now.
