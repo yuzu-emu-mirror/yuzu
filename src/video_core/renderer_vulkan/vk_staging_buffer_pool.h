@@ -25,7 +25,7 @@ struct StagingBufferRef {
 
 class StagingBufferPool {
 public:
-    static constexpr size_t NUM_SYNCS = 16;
+    static constexpr size_t NUM_STREAM_REGIONS = 0x8000;
 
     explicit StagingBufferPool(const Device& device, MemoryAllocator& memory_allocator,
                                VKScheduler& scheduler);
@@ -90,7 +90,7 @@ private:
     u8* stream_pointer = nullptr;
 
     size_t next_index = 0;
-    std::array<u64, NUM_SYNCS> sync_ticks{};
+    std::array<u64, NUM_STREAM_REGIONS> sync_ticks{};
 
     StagingBuffersCache device_local_cache;
     StagingBuffersCache upload_cache;

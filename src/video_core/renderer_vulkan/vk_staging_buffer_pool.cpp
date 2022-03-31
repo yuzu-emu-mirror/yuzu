@@ -29,7 +29,10 @@ constexpr VkDeviceSize MAX_ALIGNMENT = 256;
 constexpr VkDeviceSize MAX_STREAM_BUFFER_REQUEST_SIZE = 8_MiB;
 // Stream buffer size in bytes
 constexpr VkDeviceSize STREAM_BUFFER_SIZE = 128_MiB;
-constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_SYNCS;
+
+constexpr VkDeviceSize REGION_SIZE = STREAM_BUFFER_SIZE / StagingBufferPool::NUM_STREAM_REGIONS;
+static_assert(Common::IsAligned(REGION_SIZE, MAX_ALIGNMENT),
+              "Stream buffer region size must be VK buffer aligned");
 
 constexpr VkMemoryPropertyFlags HOST_FLAGS =
     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -83,6 +86,17 @@ u32 FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& props, u32 type_
 size_t Region(size_t iterator) noexcept {
     return iterator / REGION_SIZE;
 }
+
+constexpr std::array<VkDeviceSize, StagingBufferPool::NUM_STREAM_REGIONS> MakeStreamBufferOffset() {
+    std::array<VkDeviceSize, StagingBufferPool::NUM_STREAM_REGIONS> offsets{};
+    for (size_t i = 0; i < StagingBufferPool::NUM_STREAM_REGIONS; ++i) {
+        offsets[i] = static_cast<VkDeviceSize>(i * REGION_SIZE);
+    }
+    return offsets;
+}
+
+constexpr auto STREAM_BUFFER_OFFSETS_LUT = MakeStreamBufferOffset();
+
 } // Anonymous namespace
 
 StagingBufferPool::StagingBufferPool(const Device& device_, MemoryAllocator& memory_allocator_,
@@ -169,8 +183,9 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
     const auto begin_itr = sync_ticks.begin() + *available_index;
     std::fill(begin_itr, begin_itr + num_requested_regions, current_tick);
 
-    const size_t offset = *available_index * REGION_SIZE;
-    next_index = (*available_index + num_requested_regions) % NUM_SYNCS;
+    const VkDeviceSize offset = STREAM_BUFFER_OFFSETS_LUT[*available_index];
+    ASSERT(offset + size <= STREAM_BUFFER_SIZE);
+    next_index = (*available_index + num_requested_regions) % NUM_STREAM_REGIONS;
     return StagingBufferRef{
         .buffer = *stream_buffer,
         .offset = static_cast<VkDeviceSize>(offset),
@@ -181,7 +196,7 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
 std::optional<size_t> StagingBufferPool::NextAvailableStreamIndex(size_t num_regions) const {
     const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
     const auto is_active = [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; };
-    if (next_index + num_regions <= NUM_SYNCS) {
+    if (next_index + num_regions <= NUM_STREAM_REGIONS) {
         const auto begin_itr = sync_ticks.begin() + next_index;
         const bool is_unavailable = std::any_of(begin_itr, begin_itr + num_regions, is_active);
         return is_unavailable ? std::nullopt : std::optional(next_index);
