@@ -159,31 +159,18 @@ void StagingBufferPool::TickFrame() {
 }
 
 StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
-    if (AreRegionsActive(Region(free_iterator) + 1,
-                         std::min(Region(iterator + size) + 1, NUM_SYNCS))) {
+    const auto num_requested_regions = Region(size) + 1;
+    const auto available_index = NextAvailableStreamIndex(num_requested_regions);
+    if (!available_index) {
         // Avoid waiting for the previous usages to be free
         return GetStagingBuffer(size, MemoryUsage::Upload);
     }
     const u64 current_tick = scheduler.CurrentTick();
-    std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + Region(iterator),
-              current_tick);
-    used_iterator = iterator;
-    free_iterator = std::max(free_iterator, iterator + size);
+    const auto begin_itr = sync_ticks.begin() + *available_index;
+    std::fill(begin_itr, begin_itr + num_requested_regions, current_tick);
 
-    if (iterator + size >= STREAM_BUFFER_SIZE) {
-        std::fill(sync_ticks.begin() + Region(used_iterator), sync_ticks.begin() + NUM_SYNCS,
-                  current_tick);
-        used_iterator = 0;
-        iterator = 0;
-        free_iterator = size;
-
-        if (AreRegionsActive(0, Region(size) + 1)) {
-            // Avoid waiting for the previous usages to be free
-            return GetStagingBuffer(size, MemoryUsage::Upload);
-        }
-    }
-    const size_t offset = iterator;
-    iterator = Common::AlignUp(iterator + size, MAX_ALIGNMENT);
+    const size_t offset = *available_index * REGION_SIZE;
+    next_index = (*available_index + num_requested_regions) % NUM_SYNCS;
     return StagingBufferRef{
         .buffer = *stream_buffer,
         .offset = static_cast<VkDeviceSize>(offset),
@@ -191,10 +178,18 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
     };
 }
 
-bool StagingBufferPool::AreRegionsActive(size_t region_begin, size_t region_end) const {
+std::optional<size_t> StagingBufferPool::NextAvailableStreamIndex(size_t num_regions) const {
     const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
-    return std::any_of(sync_ticks.begin() + region_begin, sync_ticks.begin() + region_end,
-                       [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; });
+    const auto is_active = [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; };
+    if (next_index + num_regions <= NUM_SYNCS) {
+        const auto begin_itr = sync_ticks.begin() + next_index;
+        const bool is_unavailable = std::any_of(begin_itr, begin_itr + num_regions, is_active);
+        return is_unavailable ? std::nullopt : std::optional(next_index);
+    }
+    // Cycle back to the front to avoid overflow
+    const bool is_unavailable =
+        std::any_of(sync_ticks.begin(), sync_ticks.begin() + num_regions, is_active);
+    return is_unavailable ? std::nullopt : std::optional(0);
 };
 
 StagingBufferRef StagingBufferPool::GetStagingBuffer(size_t size, MemoryUsage usage) {
