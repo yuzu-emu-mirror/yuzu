@@ -194,17 +194,21 @@ StagingBufferRef StagingBufferPool::GetStreamBuffer(size_t size) {
 }
 
 std::optional<size_t> StagingBufferPool::NextAvailableStreamIndex(size_t num_regions) const {
-    const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
-    const auto is_active = [gpu_tick](u64 sync_tick) { return gpu_tick < sync_tick; };
+    const auto is_index_available = [this, num_regions](size_t begin_offset) {
+        const u64 gpu_tick = scheduler.GetMasterSemaphore().KnownGpuTick();
+        const auto tick_check = [gpu_tick](u64 sync_tick) { return gpu_tick >= sync_tick; };
+
+        const auto begin_itr = sync_ticks.begin() + begin_offset;
+        const bool is_available = std::all_of(begin_itr, begin_itr + num_regions, tick_check);
+        return is_available ? std::optional(begin_offset) : std::nullopt;
+    };
+    // Avoid overflow
     if (next_index + num_regions <= NUM_STREAM_REGIONS) {
-        const auto begin_itr = sync_ticks.begin() + next_index;
-        const bool is_unavailable = std::any_of(begin_itr, begin_itr + num_regions, is_active);
-        return is_unavailable ? std::nullopt : std::optional(next_index);
+        return is_index_available(next_index);
     }
-    // Cycle back to the front to avoid overflow
-    const bool is_unavailable =
-        std::any_of(sync_ticks.begin(), sync_ticks.begin() + num_regions, is_active);
-    return is_unavailable ? std::nullopt : std::optional(0);
+    // Not enough contiguous regions at the next_index,
+    // Check if the contiguous range in the front is available
+    return is_index_available(0);
 };
 
 StagingBufferRef StagingBufferPool::GetStagingBuffer(size_t size, MemoryUsage usage) {
