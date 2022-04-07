@@ -3306,16 +3306,9 @@ void GMainWindow::ShowMouseCursor() {
 }
 
 void GMainWindow::CenterMouseCursor() {
-    static bool logged = false;
     if (emu_thread == nullptr || !Settings::values.mouse_panning) {
         mouse_center_timer.stop();
-        logged = false;
-        LOG_INFO(Debug, "Stopped centering cursor!");
         return;
-    }
-    if (!logged) {
-        LOG_INFO(Debug, "Started centering cursor!");
-        logged = true;
     }
     const int center_x = render_window->width() / 2;
     const int center_y = render_window->height() / 2;
