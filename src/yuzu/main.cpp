@@ -3595,7 +3595,15 @@ void GMainWindow::dragMoveEvent(QDragMoveEvent* event) {
 
 void GMainWindow::leaveEvent(QEvent* event) {
     if (Settings::values.mouse_panning) {
-        mouse_center_timer.start();
+        const QRect& rect = geometry();
+        QPoint position = QCursor::pos();
+
+        qint32 x = qBound(rect.left(), position.x(), rect.right());
+        qint32 y = qBound(rect.top(), position.y(), rect.bottom());
+        /* only start the timer if the mouse has left the window bound, the leave event is also triggered when the window looses focus */
+        if (x != position.x() || y != position.y()) {
+            mouse_center_timer.start();
+        }
         event->accept();
     }
 }
