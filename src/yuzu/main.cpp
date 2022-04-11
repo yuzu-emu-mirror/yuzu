@@ -3310,7 +3310,7 @@ void GMainWindow::CenterMouseCursor() {
         mouse_center_timer.stop();
         return;
     }
-   if (!this->isActiveWindow()) {
+    if (!this->isActiveWindow()) {
         mouse_center_timer.stop();
         return;
     }
