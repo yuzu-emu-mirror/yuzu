@@ -3310,6 +3310,10 @@ void GMainWindow::CenterMouseCursor() {
         mouse_center_timer.stop();
         return;
     }
+   if (!this->isActiveWindow()) {
+        mouse_center_timer.stop();
+        return;
+    }
     const int center_x = render_window->width() / 2;
     const int center_y = render_window->height() / 2;
 
