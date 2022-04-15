@@ -227,14 +227,9 @@ std::shared_ptr<Dynarmic::A32::Jit> ARM_Dynarmic_32::MakeJit(Common::PageTable* 
 }
 
 void ARM_Dynarmic_32::Run() {
-    while (true) {
-        const auto hr = jit->Run();
-        if (Has(hr, svc_call)) {
-            Kernel::Svc::Call(system, svc_swi);
-        }
-        if (Has(hr, break_loop) || !uses_wall_clock) {
-            break;
-        }
+    const auto hr = jit->Run();
+    if (Has(hr, svc_call)) {
+        Kernel::Svc::Call(system, svc_swi);
     }
 }
 
