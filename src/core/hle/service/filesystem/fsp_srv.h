@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
-// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright 2018 yuzu emulator team
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
 
 #pragma once
 
@@ -37,6 +38,7 @@ public:
 private:
     void SetCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx);
+    void OpenBisFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSdCardFileSystem(Kernel::HLERequestContext& ctx);
     void CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);

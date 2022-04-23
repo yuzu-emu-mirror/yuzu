@@ -22,6 +22,7 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/file_sys/bis_factory.h"
 #include "core/file_sys/system_archive/system_archive.h"
 #include "core/file_sys/vfs.h"
 #include "core/hle/ipc_helpers.h"
@@ -688,7 +689,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {7, &FSP_SRV::OpenFileSystemWithPatch, "OpenFileSystemWithPatch"},
         {8, nullptr, "OpenFileSystemWithId"},
         {9, nullptr, "OpenDataFileSystemByApplicationId"},
-        {11, nullptr, "OpenBisFileSystem"},
+        {11, &FSP_SRV::OpenBisFileSystem, "OpenBisFileSystem"},
         {12, nullptr, "OpenBisStorage"},
         {13, nullptr, "InvalidateBisCache"},
         {17, nullptr, "OpenHostFileSystem"},
@@ -835,6 +836,45 @@ void FSP_SRV::OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 0};
     rb.Push(ResultUnknown);
+}
+
+void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const auto input_buffer = ctx.ReadBuffer();
+    [[maybe_unused]] const std::string input = Common::StringFromBuffer(input_buffer);
+
+    const auto partition_id = static_cast<FileSys::BisPartitionId>(rp.Pop<u32>());
+
+    auto partition = fsc.OpenBISPartition(partition_id);
+    if (partition.Failed()) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    FileSys::StorageId id{};
+    switch (partition_id) {
+    case FileSys::BisPartitionId::CalibrationFile:
+    case FileSys::BisPartitionId::SafeMode:
+        id = FileSys::StorageId::Host;
+        break;
+    case FileSys::BisPartitionId::System:
+        id = FileSys::StorageId::NandSystem;
+        break;
+    case FileSys::BisPartitionId::User:
+        id = FileSys::StorageId::NandUser;
+        break;
+    default:
+        UNREACHABLE();
+    }
+
+    auto filesystem = std::make_shared<IFileSystem>(system, std::move(partition.Unwrap()),
+                                                    SizeGetter::FromStorageId(fsc, id));
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
 }
 
 void FSP_SRV::OpenSdCardFileSystem(Kernel::HLERequestContext& ctx) {
