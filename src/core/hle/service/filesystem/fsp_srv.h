@@ -39,6 +39,7 @@ private:
     void SetCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenFileSystemWithPatch(Kernel::HLERequestContext& ctx);
     void OpenBisFileSystem(Kernel::HLERequestContext& ctx);
+    void OpenBisStorage(Kernel::HLERequestContext& ctx);
     void OpenSdCardFileSystem(Kernel::HLERequestContext& ctx);
     void CreateSaveDataFileSystem(Kernel::HLERequestContext& ctx);
     void OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx);

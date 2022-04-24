@@ -846,6 +846,8 @@ void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
 
     const auto partition_id = static_cast<FileSys::BisPartitionId>(rp.Pop<u32>());
 
+    LOG_DEBUG(Service_FS, "called with partition_id={}, input_buffer={}", partition_id, input);
+
     auto partition = fsc.OpenBISPartition(partition_id);
     if (partition.Failed()) {
         IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -875,6 +877,28 @@ void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<IFileSystem>(std::move(filesystem));
+}
+
+void FSP_SRV::OpenBisStorage(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+
+    const auto partition_id = static_cast<FileSys::BisPartitionId>(rp.Pop<u32>());
+
+    LOG_DEBUG(Service_FS, "called with partition_id={}", partition_id);
+
+    auto bis_storage = fsc.OpenBISPartitionStorage(partition_id);
+    if (bis_storage.Failed()) {
+        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
+        return;
+    }
+
+    auto storage = std::make_shared<IStorage>(system, std::move(bis_storage.Unwrap()));
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(ResultSuccess);
+    rb.PushIpcInterface(std::move(storage));
+    return;
 }
 
 void FSP_SRV::OpenSdCardFileSystem(Kernel::HLERequestContext& ctx) {
