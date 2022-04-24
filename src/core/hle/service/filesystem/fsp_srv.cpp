@@ -690,7 +690,7 @@ FSP_SRV::FSP_SRV(Core::System& system_)
         {8, nullptr, "OpenFileSystemWithId"},
         {9, nullptr, "OpenDataFileSystemByApplicationId"},
         {11, &FSP_SRV::OpenBisFileSystem, "OpenBisFileSystem"},
-        {12, nullptr, "OpenBisStorage"},
+        {12, &FSP_SRV::OpenBisStorage, "OpenBisStorage"},
         {13, nullptr, "InvalidateBisCache"},
         {17, nullptr, "OpenHostFileSystem"},
         {18, &FSP_SRV::OpenSdCardFileSystem, "OpenSdCardFileSystem"},
