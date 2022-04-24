@@ -850,7 +850,7 @@ void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
 
     auto partition = fsc.OpenBISPartition(partition_id);
     if (partition.Failed()) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
         return;
     }
@@ -888,7 +888,7 @@ void FSP_SRV::OpenBisStorage(Kernel::HLERequestContext& ctx) {
 
     auto bis_storage = fsc.OpenBISPartitionStorage(partition_id);
     if (bis_storage.Failed()) {
-        IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+        IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(FileSys::ERROR_INVALID_ARGUMENT);
         return;
     }
