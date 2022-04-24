@@ -43,6 +43,7 @@ class ServiceManager;
 namespace FileSystem {
 
 enum class ContentStorageId : u32 {
+    Safe,
     System,
     User,
     SdCard,
@@ -91,11 +92,13 @@ public:
     void SetGameCard(FileSys::VirtualFile file);
     FileSys::XCI* GetGameCard() const;
 
+    FileSys::RegisteredCache* GetSafeNANDContents() const;
     FileSys::RegisteredCache* GetSystemNANDContents() const;
     FileSys::RegisteredCache* GetUserNANDContents() const;
     FileSys::RegisteredCache* GetSDMCContents() const;
     FileSys::RegisteredCache* GetGameCardContents() const;
 
+    FileSys::PlaceholderCache* GetSafeNANDPlaceholder() const;
     FileSys::PlaceholderCache* GetSystemNANDPlaceholder() const;
     FileSys::PlaceholderCache* GetUserNANDPlaceholder() const;
     FileSys::PlaceholderCache* GetSDMCPlaceholder() const;
@@ -104,6 +107,7 @@ public:
     FileSys::RegisteredCache* GetRegisteredCacheForStorage(FileSys::StorageId id) const;
     FileSys::PlaceholderCache* GetPlaceholderCacheForStorage(FileSys::StorageId id) const;
 
+    FileSys::VirtualDir GetSafeNANDContentDirectory() const;
     FileSys::VirtualDir GetSystemNANDContentDirectory() const;
     FileSys::VirtualDir GetUserNANDContentDirectory() const;
     FileSys::VirtualDir GetSDMCContentDirectory() const;

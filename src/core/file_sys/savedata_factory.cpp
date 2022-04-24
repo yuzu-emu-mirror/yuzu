@@ -122,6 +122,8 @@ VirtualDir SaveDataFactory::GetSaveDataSpaceDirectory(SaveDataSpaceId space) con
 
 std::string SaveDataFactory::GetSaveDataSpaceIdPath(SaveDataSpaceId space) {
     switch (space) {
+    case SaveDataSpaceId::SafeMode:
+        return "/safe/";
     case SaveDataSpaceId::NandSystem:
         return "/system/";
     case SaveDataSpaceId::NandUser:

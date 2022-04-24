@@ -28,9 +28,11 @@ enum class StorageId : u8 {
     None = 0,
     Host = 1,
     GameCard = 2,
-    NandSystem = 3,
-    NandUser = 4,
-    SdCard = 5,
+    NandProdinfof = 3,
+    NandSafe = 4,
+    NandSystem = 5,
+    NandUser = 6,
+    SdCard = 7,
 };
 
 /// File system interface to the RomFS archive

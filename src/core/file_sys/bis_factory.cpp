@@ -10,23 +10,33 @@
 
 namespace FileSys {
 
-constexpr u64 NAND_USER_SIZE = 0x680000000;  // 26624 MiB
-constexpr u64 NAND_SYSTEM_SIZE = 0xA0000000; // 2560 MiB
-constexpr u64 NAND_TOTAL_SIZE = 0x747C00000; // 29820 MiB
+constexpr u64 NAND_USER_SIZE = 0x680000000;     // 26624 MiB
+constexpr u64 NAND_SYSTEM_SIZE = 0xA0000000;    // 2560 MiB
+constexpr u64 NAND_PRODINFOF_SIZE = 0x00400000; // 4 MiB
+constexpr u64 NAND_SAFE_SIZE = 0x04000000;      // 64 MiB
+constexpr u64 NAND_TOTAL_SIZE = 0x747C00000;    // 29820 MiB
 
 BISFactory::BISFactory(VirtualDir nand_root_, VirtualDir load_root_, VirtualDir dump_root_)
     : nand_root(std::move(nand_root_)), load_root(std::move(load_root_)),
       dump_root(std::move(dump_root_)),
+      safnand_cache(std::make_unique<RegisteredCache>(
+          GetOrCreateDirectoryRelative(nand_root, "/safe/Contents/registered"))),
       sysnand_cache(std::make_unique<RegisteredCache>(
           GetOrCreateDirectoryRelative(nand_root, "/system/Contents/registered"))),
       usrnand_cache(std::make_unique<RegisteredCache>(
           GetOrCreateDirectoryRelative(nand_root, "/user/Contents/registered"))),
+      safnand_placeholder(std::make_unique<PlaceholderCache>(
+          GetOrCreateDirectoryRelative(nand_root, "/safe/Contents/placehld"))),
       sysnand_placeholder(std::make_unique<PlaceholderCache>(
           GetOrCreateDirectoryRelative(nand_root, "/system/Contents/placehld"))),
       usrnand_placeholder(std::make_unique<PlaceholderCache>(
           GetOrCreateDirectoryRelative(nand_root, "/user/Contents/placehld"))) {}
 
 BISFactory::~BISFactory() = default;
+
+VirtualDir BISFactory::GetSafeNANDContentDirectory() const {
+    return GetOrCreateDirectoryRelative(nand_root, "/safe/Contents");
+}
 
 VirtualDir BISFactory::GetSystemNANDContentDirectory() const {
     return GetOrCreateDirectoryRelative(nand_root, "/system/Contents");
@@ -36,12 +46,20 @@ VirtualDir BISFactory::GetUserNANDContentDirectory() const {
     return GetOrCreateDirectoryRelative(nand_root, "/user/Contents");
 }
 
+RegisteredCache* BISFactory::GetSafeNANDContents() const {
+    return safnand_cache.get();
+}
+
 RegisteredCache* BISFactory::GetSystemNANDContents() const {
     return sysnand_cache.get();
 }
 
 RegisteredCache* BISFactory::GetUserNANDContents() const {
     return usrnand_cache.get();
+}
+
+PlaceholderCache* BISFactory::GetSafeNANDPlaceholder() const {
+    return safnand_placeholder.get();
 }
 
 PlaceholderCache* BISFactory::GetSystemNANDPlaceholder() const {
@@ -108,6 +126,32 @@ VirtualFile BISFactory::OpenPartitionStorage(BisPartitionId id,
 
 VirtualDir BISFactory::GetImageDirectory() const {
     return GetOrCreateDirectoryRelative(nand_root, "/user/Album");
+}
+
+u64 BISFactory::GetProdinfofNANDFreeSpace() const {
+    const auto prodinfof_dir = GetOrCreateDirectoryRelative(nand_root, "/prodinfof");
+    if (prodinfof_dir == nullptr) {
+        return GetProdinfofNANDTotalSpace();
+    }
+
+    return GetProdinfofNANDTotalSpace() - prodinfof_dir->GetSize();
+}
+
+u64 BISFactory::GetProdinfofNANDTotalSpace() const {
+    return NAND_PRODINFOF_SIZE;
+}
+
+u64 BISFactory::GetSafeNANDFreeSpace() const {
+    const auto safe_dir = GetOrCreateDirectoryRelative(nand_root, "/safe");
+    if (safe_dir == nullptr) {
+        return GetSafeNANDTotalSpace();
+    }
+
+    return GetSafeNANDTotalSpace() - safe_dir->GetSize();
+}
+
+u64 BISFactory::GetSafeNANDTotalSpace() const {
+    return NAND_SAFE_SIZE;
 }
 
 u64 BISFactory::GetSystemNANDFreeSpace() const {

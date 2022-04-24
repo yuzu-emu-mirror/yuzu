@@ -38,12 +38,15 @@ public:
     explicit BISFactory(VirtualDir nand_root, VirtualDir load_root, VirtualDir dump_root);
     ~BISFactory();
 
+    VirtualDir GetSafeNANDContentDirectory() const;
     VirtualDir GetSystemNANDContentDirectory() const;
     VirtualDir GetUserNANDContentDirectory() const;
 
+    RegisteredCache* GetSafeNANDContents() const;
     RegisteredCache* GetSystemNANDContents() const;
     RegisteredCache* GetUserNANDContents() const;
 
+    PlaceholderCache* GetSafeNANDPlaceholder() const;
     PlaceholderCache* GetSystemNANDPlaceholder() const;
     PlaceholderCache* GetUserNANDPlaceholder() const;
 
@@ -55,6 +58,10 @@ public:
 
     VirtualDir GetImageDirectory() const;
 
+    u64 GetProdinfofNANDFreeSpace() const;
+    u64 GetProdinfofNANDTotalSpace() const;
+    u64 GetSafeNANDFreeSpace() const;
+    u64 GetSafeNANDTotalSpace() const;
     u64 GetSystemNANDFreeSpace() const;
     u64 GetSystemNANDTotalSpace() const;
     u64 GetUserNANDFreeSpace() const;
@@ -68,9 +75,11 @@ private:
     VirtualDir load_root;
     VirtualDir dump_root;
 
+    std::unique_ptr<RegisteredCache> safnand_cache;
     std::unique_ptr<RegisteredCache> sysnand_cache;
     std::unique_ptr<RegisteredCache> usrnand_cache;
 
+    std::unique_ptr<PlaceholderCache> safnand_placeholder;
     std::unique_ptr<PlaceholderCache> sysnand_placeholder;
     std::unique_ptr<PlaceholderCache> usrnand_placeholder;
 };

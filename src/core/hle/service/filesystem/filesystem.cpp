@@ -449,6 +449,14 @@ u64 FileSystemController::GetFreeSpaceSize(FileSys::StorageId id) const {
         if (bis_factory == nullptr)
             return 0;
         return bis_factory->GetSystemNANDFreeSpace() + bis_factory->GetUserNANDFreeSpace();
+    case FileSys::StorageId::NandProdinfof:
+        if (bis_factory == nullptr)
+            return 0;
+        return bis_factory->GetProdinfofNANDFreeSpace();
+    case FileSys::StorageId::NandSafe:
+        if (bis_factory == nullptr)
+            return 0;
+        return bis_factory->GetSafeNANDFreeSpace();
     case FileSys::StorageId::NandSystem:
         if (bis_factory == nullptr)
             return 0;
@@ -475,6 +483,14 @@ u64 FileSystemController::GetTotalSpaceSize(FileSys::StorageId id) const {
         if (bis_factory == nullptr)
             return 0;
         return bis_factory->GetFullNANDTotalSpace();
+    case FileSys::StorageId::NandProdinfof:
+        if (bis_factory == nullptr)
+            return 0;
+        return bis_factory->GetProdinfofNANDTotalSpace();
+    case FileSys::StorageId::NandSafe:
+        if (bis_factory == nullptr)
+            return 0;
+        return bis_factory->GetSafeNANDTotalSpace();
     case FileSys::StorageId::NandSystem:
         if (bis_factory == nullptr)
             return 0;
@@ -549,6 +565,15 @@ FileSys::PlaceholderCache* FileSystemController::GetGameCardPlaceholder() const 
     return gamecard_placeholder.get();
 }
 
+FileSys::RegisteredCache* FileSystemController::GetSafeNANDContents() const {
+    LOG_TRACE(Service_FS, "Opening Safe NAND Contents");
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
+    return bis_factory->GetSafeNANDContents();
+}
+
 FileSys::RegisteredCache* FileSystemController::GetSystemNANDContents() const {
     LOG_TRACE(Service_FS, "Opening System NAND Contents");
 
@@ -574,6 +599,15 @@ FileSys::RegisteredCache* FileSystemController::GetSDMCContents() const {
         return nullptr;
 
     return sdmc_factory->GetSDMCContents();
+}
+
+FileSys::PlaceholderCache* FileSystemController::GetSafeNANDPlaceholder() const {
+    LOG_TRACE(Service_FS, "Opening Safe NAND Placeholder");
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
+    return bis_factory->GetSafeNANDPlaceholder();
 }
 
 FileSys::PlaceholderCache* FileSystemController::GetSystemNANDPlaceholder() const {
@@ -608,10 +642,13 @@ FileSys::RegisteredCache* FileSystemController::GetRegisteredCacheForStorage(
     switch (id) {
     case FileSys::StorageId::None:
     case FileSys::StorageId::Host:
+    case FileSys::StorageId::NandProdinfof:
         UNIMPLEMENTED();
         return nullptr;
     case FileSys::StorageId::GameCard:
         return GetGameCardContents();
+    case FileSys::StorageId::NandSafe:
+        return GetSafeNANDContents();
     case FileSys::StorageId::NandSystem:
         return GetSystemNANDContents();
     case FileSys::StorageId::NandUser:
@@ -628,10 +665,13 @@ FileSys::PlaceholderCache* FileSystemController::GetPlaceholderCacheForStorage(
     switch (id) {
     case FileSys::StorageId::None:
     case FileSys::StorageId::Host:
+    case FileSys::StorageId::NandProdinfof:
         UNIMPLEMENTED();
         return nullptr;
     case FileSys::StorageId::GameCard:
         return GetGameCardPlaceholder();
+    case FileSys::StorageId::NandSafe:
+        return GetSafeNANDPlaceholder();
     case FileSys::StorageId::NandSystem:
         return GetSystemNANDPlaceholder();
     case FileSys::StorageId::NandUser:
@@ -641,6 +681,15 @@ FileSys::PlaceholderCache* FileSystemController::GetPlaceholderCacheForStorage(
     }
 
     return nullptr;
+}
+
+FileSys::VirtualDir FileSystemController::GetSafeNANDContentDirectory() const {
+    LOG_TRACE(Service_FS, "Opening safe NAND content directory");
+
+    if (bis_factory == nullptr)
+        return nullptr;
+
+    return bis_factory->GetSafeNANDContentDirectory();
 }
 
 FileSys::VirtualDir FileSystemController::GetSystemNANDContentDirectory() const {
@@ -690,6 +739,8 @@ FileSys::VirtualDir FileSystemController::GetSDMCImageDirectory() const {
 
 FileSys::VirtualDir FileSystemController::GetContentDirectory(ContentStorageId id) const {
     switch (id) {
+    case ContentStorageId::Safe:
+        return GetSafeNANDContentDirectory();
     case ContentStorageId::System:
         return GetSystemNANDContentDirectory();
     case ContentStorageId::User:

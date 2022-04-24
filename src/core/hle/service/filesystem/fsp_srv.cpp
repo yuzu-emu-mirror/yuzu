@@ -842,11 +842,11 @@ void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
 
     const auto input_buffer = ctx.ReadBuffer();
-    [[maybe_unused]] const std::string input = Common::StringFromBuffer(input_buffer);
+    [[maybe_unused]] const std::string root_path = Common::StringFromBuffer(input_buffer);
 
     const auto partition_id = static_cast<FileSys::BisPartitionId>(rp.Pop<u32>());
 
-    LOG_DEBUG(Service_FS, "called with partition_id={}, input_buffer={}", partition_id, input);
+    LOG_DEBUG(Service_FS, "called with partition_id={}, root_path={}", partition_id, root_path);
 
     auto partition = fsc.OpenBISPartition(partition_id);
     if (partition.Failed()) {
@@ -858,8 +858,10 @@ void FSP_SRV::OpenBisFileSystem(Kernel::HLERequestContext& ctx) {
     FileSys::StorageId id{};
     switch (partition_id) {
     case FileSys::BisPartitionId::CalibrationFile:
+        id = FileSys::StorageId::NandProdinfof;
+        break;
     case FileSys::BisPartitionId::SafeMode:
-        id = FileSys::StorageId::Host;
+        id = FileSys::StorageId::NandSafe;
         break;
     case FileSys::BisPartitionId::System:
         id = FileSys::StorageId::NandSystem;
@@ -960,9 +962,10 @@ void FSP_SRV::OpenSaveDataFileSystem(Kernel::HLERequestContext& ctx) {
     case FileSys::SaveDataSpaceId::NandSystem:
         id = FileSys::StorageId::NandSystem;
         break;
+    case FileSys::SaveDataSpaceId::SafeMode:
+        id = FileSys::StorageId::NandSafe;
     case FileSys::SaveDataSpaceId::TemporaryStorage:
     case FileSys::SaveDataSpaceId::ProperSystem:
-    case FileSys::SaveDataSpaceId::SafeMode:
         UNREACHABLE();
     }
 
