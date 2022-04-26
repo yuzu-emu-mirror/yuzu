@@ -11,7 +11,7 @@ namespace Service::NVFlinger {
 HosBinderDriverServer::HosBinderDriverServer(Core::System& system_)
     : service_context(system_, "HosBinderDriverServer") {}
 
-HosBinderDriverServer::~HosBinderDriverServer() {}
+HosBinderDriverServer::~HosBinderDriverServer() = default;
 
 u64 HosBinderDriverServer::RegisterProducer(std::unique_ptr<android::IBinder>&& binder) {
     std::scoped_lock lk{lock};

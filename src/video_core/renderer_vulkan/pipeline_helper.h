@@ -135,7 +135,7 @@ private:
 
 class RescalingPushConstant {
 public:
-    explicit RescalingPushConstant() noexcept {}
+    explicit RescalingPushConstant() noexcept = default;
 
     void PushTexture(bool is_rescaled) noexcept {
         *texture_ptr |= is_rescaled ? texture_bit : 0u;

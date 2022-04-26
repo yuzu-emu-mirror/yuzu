@@ -105,7 +105,7 @@ struct Client::Impl {
         httplib::Request request;
         request.method = method;
         request.path = path;
-        request.headers = params;
+        request.headers = std::move(params);
         request.body = data;
 
         httplib::Response response;

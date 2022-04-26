@@ -120,7 +120,7 @@ private:
     // and a pointer to the next ElementPtr
     class ElementPtr {
     public:
-        ElementPtr() {}
+        ElementPtr() = default;
         ~ElementPtr() {
             ElementPtr* next_ptr = next.load();
 

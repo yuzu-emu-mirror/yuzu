@@ -409,7 +409,7 @@ void DynarmicCallbacks64::InterpreterFallback(u64 pc, size_t num_instructions) {
 JITContext::JITContext(Core::Memory::Memory& memory)
     : impl{std::make_unique<JITContextImpl>(memory)} {}
 
-JITContext::~JITContext() {}
+JITContext::~JITContext() = default;
 
 bool JITContext::LoadNRO(std::span<const u8> data) {
     return impl->LoadNRO(data);

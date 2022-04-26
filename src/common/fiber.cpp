@@ -135,7 +135,7 @@ void Fiber::YieldTo(std::weak_ptr<Fiber> weak_from, Fiber& to) {
 }
 
 std::shared_ptr<Fiber> Fiber::ThreadToFiber() {
-    std::shared_ptr<Fiber> fiber = std::shared_ptr<Fiber>{new Fiber()};
+    auto fiber = std::make_shared<Fiber>();
     fiber->impl->guard.lock();
     fiber->impl->is_thread_fiber = true;
     return fiber;

@@ -159,7 +159,7 @@ void Config::ReadValues() {
             "ControlsGeneral", std::string("debug_pad_") + Settings::NativeButton::mapping[i],
             default_param);
         if (Settings::values.debug_pad_buttons[i].empty())
-            Settings::values.debug_pad_buttons[i] = default_param;
+            Settings::values.debug_pad_buttons[i] = std::move(default_param);
     }
 
     for (int i = 0; i < Settings::NativeAnalog::NumAnalogs; ++i) {
@@ -170,7 +170,7 @@ void Config::ReadValues() {
             "ControlsGeneral", std::string("debug_pad_") + Settings::NativeAnalog::mapping[i],
             default_param);
         if (Settings::values.debug_pad_analogs[i].empty())
-            Settings::values.debug_pad_analogs[i] = default_param;
+            Settings::values.debug_pad_analogs[i] = std::move(default_param);
     }
 
     ReadSetting("ControlsGeneral", Settings::values.vibration_enabled);

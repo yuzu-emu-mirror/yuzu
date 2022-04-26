@@ -131,6 +131,7 @@ std::vector<std::unique_ptr<WaitTreeItem>> WaitTreeMutexInfo::GetChildren() cons
     const bool has_waiters = (mutex_value & Kernel::Svc::HandleWaitMask) != 0;
 
     std::vector<std::unique_ptr<WaitTreeItem>> list;
+    list.reserve(3);
     list.push_back(std::make_unique<WaitTreeText>(tr("has waiters: %1").arg(has_waiters)));
     list.push_back(std::make_unique<WaitTreeText>(
         tr("owner handle: 0x%1").arg(owner_handle, 8, 16, QLatin1Char{'0'})));

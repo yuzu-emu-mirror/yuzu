@@ -392,7 +392,6 @@ QString ConfigureRingController::AnalogToText(const Common::ParamPackage& param,
         return QObject::tr("[unknown]");
     }
 
-    const auto engine_str = param.Get("engine", "");
     const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
     const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
     const bool invert_x = param.Get("invert_x", "+") == "-";

@@ -86,7 +86,7 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
                                "game_list" / fmt::format("{:016X}.pv.txt", title_id));
     }
 
-    Settings::values.disabled_addons[title_id] = disabled_addons;
+    Settings::values.disabled_addons[title_id] = std::move(disabled_addons);
 }
 
 void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file) {

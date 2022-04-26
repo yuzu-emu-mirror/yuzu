@@ -67,7 +67,7 @@ private:
 
 public:
     KAutoObjectWithSlabHeapAndContainer(KernelCore& kernel_) : Base(kernel_), kernel(kernel_) {}
-    virtual ~KAutoObjectWithSlabHeapAndContainer() {}
+    virtual ~KAutoObjectWithSlabHeapAndContainer() = default;
 
     virtual void Destroy() override {
         const bool is_initialized = this->IsInitialized();
