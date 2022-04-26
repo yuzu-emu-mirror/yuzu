@@ -19,8 +19,8 @@ public:
     virtual void ShowErrorWithTimestamp(ResultCode error, std::chrono::seconds time,
                                         std::function<void()> finished) const = 0;
 
-    virtual void ShowCustomErrorText(ResultCode error, std::string dialog_text,
-                                     std::string fullscreen_text,
+    virtual void ShowCustomErrorText(ResultCode error, std::string_view dialog_text,
+                                     std::string_view fullscreen_text,
                                      std::function<void()> finished) const = 0;
 };
 
@@ -29,7 +29,8 @@ public:
     void ShowError(ResultCode error, std::function<void()> finished) const override;
     void ShowErrorWithTimestamp(ResultCode error, std::chrono::seconds time,
                                 std::function<void()> finished) const override;
-    void ShowCustomErrorText(ResultCode error, std::string main_text, std::string detail_text,
+    void ShowCustomErrorText(ResultCode error, std::string_view main_text,
+                             std::string_view detail_text,
                              std::function<void()> finished) const override;
 };
 

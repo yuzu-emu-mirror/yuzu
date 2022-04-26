@@ -91,7 +91,6 @@ void MotionInput::UpdateOrientation(u64 elapsed_time) {
         return;
     }
 
-    const auto normal_accel = accel.Normalized();
     auto rad_gyro = gyro * Common::PI * 2;
     const f32 swap = rad_gyro.x;
     rad_gyro.x = rad_gyro.y;
@@ -107,6 +106,7 @@ void MotionInput::UpdateOrientation(u64 elapsed_time) {
 
     // Ignore drift correction if acceleration is not reliable
     if (accel.Length() >= 0.75f && accel.Length() <= 1.25f) {
+        const auto normal_accel = accel.Normalized();
         const f32 ax = -normal_accel.x;
         const f32 ay = normal_accel.y;
         const f32 az = -normal_accel.z;

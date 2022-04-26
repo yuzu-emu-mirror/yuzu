@@ -60,15 +60,14 @@ void GetCbuf(EmitContext& ctx, std::string_view ret, const IR::Value& binding,
     const auto offset_var{ctx.var_alloc.Consume(offset)};
     const auto index{is_immediate ? fmt::format("{}", offset.U32() / 16)
                                   : fmt::format("{}>>4", offset_var)};
-    const auto swizzle{is_immediate ? fmt::format(".{}", OffsetSwizzle(offset.U32()))
-                                    : fmt::format("[({}>>2)%4]", offset_var)};
-
     const auto cbuf{ChooseCbuf(ctx, binding, index)};
     const auto cbuf_cast{fmt::format("{}({}{{}})", cast, cbuf)};
     const auto extraction{num_bits == 32 ? cbuf_cast
                                          : fmt::format("bitfieldExtract({},int({}),{})", cbuf_cast,
                                                        bit_offset, num_bits)};
     if (!component_indexing_bug) {
+        const auto swizzle{is_immediate ? fmt::format(".{}", OffsetSwizzle(offset.U32()))
+                                        : fmt::format("[({}>>2)%4]", offset_var)};
         const auto result{fmt::format(fmt::runtime(extraction), swizzle)};
         ctx.Add("{}={};", ret, result);
         return;

@@ -122,7 +122,7 @@ struct PL_U::Impl {
             // Derive key withing inverse xor
             const u32 KEY = GetU32Swapped(input.data() + cur_offset) ^ EXPECTED_MAGIC;
             const u32 SIZE = GetU32Swapped(input.data() + cur_offset + 4) ^ KEY;
-            shared_font_regions.push_back(FontRegion{cur_offset + 8, SIZE});
+            shared_font_regions.emplace_back(cur_offset + 8, SIZE);
             cur_offset += SIZE + 8;
         }
     }

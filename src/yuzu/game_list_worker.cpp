@@ -150,9 +150,8 @@ bool IsExtractedNCAMain(const std::string& file_name) {
 
 QString FormatGameName(const std::string& physical_name) {
     const QString physical_name_as_qstring = QString::fromStdString(physical_name);
-    const QFileInfo file_info(physical_name_as_qstring);
-
     if (IsExtractedNCAMain(physical_name)) {
+        const QFileInfo file_info(physical_name_as_qstring);
         return file_info.dir().path();
     }
 

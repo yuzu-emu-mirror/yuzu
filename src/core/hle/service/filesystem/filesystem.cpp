@@ -187,9 +187,9 @@ ResultCode VfsDirectoryServiceWrapper::RenameDirectory(const std::string& src_pa
                                                        const std::string& dest_path_) const {
     std::string src_path(Common::FS::SanitizePath(src_path_));
     std::string dest_path(Common::FS::SanitizePath(dest_path_));
-    auto src = GetDirectoryRelativeWrapped(backing, src_path);
     if (Common::FS::GetParentPath(src_path) == Common::FS::GetParentPath(dest_path)) {
         // Use more-optimized vfs implementation rename.
+        auto src = GetDirectoryRelativeWrapped(backing, src_path);
         if (src == nullptr)
             return FileSys::ERROR_PATH_NOT_FOUND;
         if (!src->Rename(Common::FS::GetFilename(dest_path))) {
@@ -772,10 +772,10 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
         vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::LoadDir), FileSys::Mode::Read);
     auto sd_load_directory =
         vfs.OpenDirectory(Common::FS::PathToUTF8String(sdmc_load_dir_path), FileSys::Mode::Read);
-    auto dump_directory =
-        vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::DumpDir), rw_mode);
 
     if (bis_factory == nullptr) {
+        auto dump_directory =
+            vfs.OpenDirectory(Common::FS::GetYuzuPathString(YuzuPath::DumpDir), rw_mode);
         bis_factory = std::make_unique<FileSys::BISFactory>(
             nand_directory, std::move(load_directory), std::move(dump_directory));
         system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::SysNAND,

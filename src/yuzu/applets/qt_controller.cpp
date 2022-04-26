@@ -37,7 +37,7 @@ void UpdateController(Core::HID::EmulatedController* controller,
 
 // Returns true if the given controller type is compatible with the given parameters.
 bool IsControllerCompatible(Core::HID::NpadStyleIndex controller_type,
-                            Core::Frontend::ControllerParameters parameters) {
+                            const Core::Frontend::ControllerParameters& parameters) {
     switch (controller_type) {
     case Core::HID::NpadStyleIndex::ProController:
         return parameters.allow_pro_controller;

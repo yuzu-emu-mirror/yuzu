@@ -280,7 +280,7 @@ void ConfigureGraphics::RetranslateUI() {
     ui->retranslateUi(this);
 }
 
-void ConfigureGraphics::UpdateBackgroundColorButton(QColor color) {
+void ConfigureGraphics::UpdateBackgroundColorButton(const QColor& color) {
     bg_color = color;
 
     QPixmap pixmap(ui->bg_button->size());

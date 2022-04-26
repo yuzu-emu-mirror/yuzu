@@ -385,7 +385,7 @@ void QtSoftwareKeyboardDialog::ShowNormalKeyboard(QPoint pos, QSize size) {
 
 void QtSoftwareKeyboardDialog::ShowTextCheckDialog(
     Service::AM::Applets::SwkbdTextCheckResult text_check_result,
-    std::u16string text_check_message) {
+    const std::u16string& text_check_message) {
     switch (text_check_result) {
     case SwkbdTextCheckResult::Success:
     case SwkbdTextCheckResult::Silent:
@@ -422,7 +422,7 @@ void QtSoftwareKeyboardDialog::ShowTextCheckDialog(
 }
 
 void QtSoftwareKeyboardDialog::ShowInlineKeyboard(
-    Core::Frontend::InlineAppearParameters appear_parameters, QPoint pos, QSize size) {
+    const Core::Frontend::InlineAppearParameters& appear_parameters, QPoint pos, QSize size) {
     MoveAndResizeWindow(pos, size);
 
     ui->topOSK->setStyleSheet(QStringLiteral("background: rgba(0, 0, 0, 0);"));
@@ -456,7 +456,7 @@ void QtSoftwareKeyboardDialog::HideInlineKeyboard() {
 }
 
 void QtSoftwareKeyboardDialog::InlineTextChanged(
-    Core::Frontend::InlineTextParameters text_parameters) {
+    const Core::Frontend::InlineTextParameters& text_parameters) {
     current_text = text_parameters.input_text;
     cursor_position = text_parameters.cursor_position;
 

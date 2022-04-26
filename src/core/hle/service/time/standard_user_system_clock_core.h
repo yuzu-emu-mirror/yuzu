@@ -36,7 +36,7 @@ public:
         return auto_correction_enabled;
     }
 
-    void SetAutomaticCorrectionUpdatedTime(SteadyClockTimePoint steady_clock_time_point) {
+    void SetAutomaticCorrectionUpdatedTime(const SteadyClockTimePoint& steady_clock_time_point) {
         auto_correction_time = steady_clock_time_point;
     }
 

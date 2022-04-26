@@ -40,8 +40,8 @@ void QtErrorDisplay::ShowErrorWithTimestamp(ResultCode error, std::chrono::secon
             .arg(date_time.toString(QStringLiteral("h:mm:ss A"))));
 }
 
-void QtErrorDisplay::ShowCustomErrorText(ResultCode error, std::string dialog_text,
-                                         std::string fullscreen_text,
+void QtErrorDisplay::ShowCustomErrorText(ResultCode error, std::string_view dialog_text,
+                                         std::string_view fullscreen_text,
                                          std::function<void()> finished) const {
     callback = std::move(finished);
     emit MainWindowDisplayError(

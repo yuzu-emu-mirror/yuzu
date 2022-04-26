@@ -717,7 +717,6 @@ InstallResult RegisteredCache::RawInstallNCA(const NCA& nca, const VfsCopyFuncti
                                              bool overwrite_if_exists,
                                              std::optional<NcaID> override_id) {
     const auto in = nca.GetBaseFile();
-    Core::Crypto::SHA256Hash hash{};
 
     // Calculate NcaID
     // NOTE: Because computing the SHA256 of an entire NCA is quite expensive (especially if the
@@ -727,6 +726,7 @@ InstallResult RegisteredCache::RawInstallNCA(const NCA& nca, const VfsCopyFuncti
     if (override_id) {
         id = *override_id;
     } else {
+        Core::Crypto::SHA256Hash hash{};
         const auto& data = in->ReadBytes(0x100000);
         mbedtls_sha256_ret(data.data(), data.size(), hash.data(), 0);
         memcpy(id.data(), hash.data(), 16);

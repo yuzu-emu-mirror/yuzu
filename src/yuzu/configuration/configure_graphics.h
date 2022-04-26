@@ -36,7 +36,7 @@ private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
 
-    void UpdateBackgroundColorButton(QColor color);
+    void UpdateBackgroundColorButton(const QColor& color);
     void UpdateAPILayout();
     void UpdateDeviceSelection(int device);
     void UpdateShaderBackendSelection(int backend);

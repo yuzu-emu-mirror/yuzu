@@ -85,11 +85,11 @@ void KMemoryBlockManager::Update(VAddr addr, std::size_t num_pages, KMemoryState
 
             iterator new_node{node};
             if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
+                memory_block_tree.emplace(node, block->Split(addr));
             }
 
             if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
+                new_node = memory_block_tree.emplace(node, block->Split(update_end_addr));
             }
 
             new_node->Update(state, perm, attribute);
@@ -120,11 +120,11 @@ void KMemoryBlockManager::Update(VAddr addr, std::size_t num_pages, KMemoryState
             iterator new_node{node};
 
             if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
+                memory_block_tree.emplace(node, block->Split(addr));
             }
 
             if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
+                new_node = memory_block_tree.emplace(node, block->Split(update_end_addr));
             }
 
             new_node->Update(state, perm, attribute);
@@ -155,11 +155,11 @@ void KMemoryBlockManager::UpdateLock(VAddr addr, std::size_t num_pages, LockFunc
             iterator new_node{node};
 
             if (addr > cur_addr) {
-                memory_block_tree.insert(node, block->Split(addr));
+                memory_block_tree.emplace(node, block->Split(addr));
             }
 
             if (update_end_addr < cur_end_addr) {
-                new_node = memory_block_tree.insert(node, block->Split(update_end_addr));
+                new_node = memory_block_tree.emplace(node, block->Split(update_end_addr));
             }
 
             lock_func(new_node, perm);

@@ -546,7 +546,7 @@ IR::Value EvalImmediates(const IR::Inst& inst, Func&& func, std::index_sequence<
     return IR::Value{func(Arg<typename Traits::template ArgType<I>>(inst.Arg(I))...)};
 }
 
-std::optional<IR::Value> FoldCompositeExtractImpl(IR::Value inst_value, IR::Opcode insert,
+std::optional<IR::Value> FoldCompositeExtractImpl(const IR::Value& inst_value, IR::Opcode insert,
                                                   IR::Opcode construct, u32 first_index) {
     IR::Inst* const inst{inst_value.InstRecursive()};
     if (inst->GetOpcode() == construct) {
@@ -587,7 +587,7 @@ void FoldCompositeExtract(IR::Inst& inst, IR::Opcode construct, IR::Opcode inser
     inst.ReplaceUsesWith(*result);
 }
 
-IR::Value GetThroughCast(IR::Value value, IR::Opcode expected_cast) {
+IR::Value GetThroughCast(const IR::Value& value, IR::Opcode expected_cast) {
     if (value.IsImmediate()) {
         return value;
     }

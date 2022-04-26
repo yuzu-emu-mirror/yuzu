@@ -45,15 +45,15 @@ private:
     void RetranslateUI();
 
     void Configure(QModelIndex index);
-    void ConfigureController(QModelIndex index);
+    void ConfigureController(const QModelIndex& index);
     std::pair<bool, QString> IsUsedKey(QKeySequence key_sequence) const;
     std::pair<bool, QString> IsUsedControllerKey(const QString& key_sequence) const;
 
     void RestoreDefaults();
     void ClearAll();
     void PopupContextMenu(const QPoint& menu_location);
-    void RestoreControllerHotkey(QModelIndex index);
-    void RestoreHotkey(QModelIndex index);
+    void RestoreControllerHotkey(const QModelIndex& index);
+    void RestoreHotkey(const QModelIndex& index);
 
     std::unique_ptr<Ui::ConfigureHotkeys> ui;
 

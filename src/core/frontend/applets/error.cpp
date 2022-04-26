@@ -21,8 +21,8 @@ void DefaultErrorApplet::ShowErrorWithTimestamp(ResultCode error, std::chrono::s
         error.module.Value(), error.description.Value(), error.raw, time.count());
 }
 
-void DefaultErrorApplet::ShowCustomErrorText(ResultCode error, std::string main_text,
-                                             std::string detail_text,
+void DefaultErrorApplet::ShowCustomErrorText(ResultCode error, std::string_view main_text,
+                                             std::string_view detail_text,
                                              std::function<void()> finished) const {
     LOG_CRITICAL(Service_Fatal,
                  "Application requested custom error with error_code={:04X}-{:04X} (raw={:08X})",

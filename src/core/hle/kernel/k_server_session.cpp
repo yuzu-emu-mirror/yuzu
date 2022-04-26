@@ -35,7 +35,7 @@ void KServerSession::Initialize(KSession* parent_session_, std::string&& name_,
     name = std::move(name_);
 
     if (manager_) {
-        manager = manager_;
+        manager = std::move(manager_);
     } else {
         manager = std::make_shared<SessionRequestManager>(kernel);
     }

@@ -268,7 +268,6 @@ void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
     const auto info{inst.Flags<IR::TextureInstInfo>()};
     const auto sparse_inst{PrepareSparse(inst)};
     const std::string_view sparse_mod{sparse_inst ? ".SPARSE" : ""};
-    const std::string_view type{TextureType(info)};
     const std::string texture{Texture(ctx, info, index)};
     const std::string offset_vec{Offset(ctx, offset)};
     const auto [coord_vec, coord_alloc]{Coord(ctx, coord)};
@@ -277,6 +276,7 @@ void EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst& inst, const IR::Valu
         ctx.Add("TXL.F{} {},{},{},{},ARRAYCUBE{};", sparse_mod, ret, coord_vec, lod, texture,
                 offset_vec);
     } else {
+        const std::string_view type{TextureType(info)};
         ctx.Add("MOV.F {}.w,{};"
                 "TXL.F{} {},{},{},{}{};",
                 coord_vec, lod, sparse_mod, ret, coord_vec, texture, type, offset_vec);

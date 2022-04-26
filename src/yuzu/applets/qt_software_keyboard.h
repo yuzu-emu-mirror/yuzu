@@ -40,14 +40,15 @@ public:
     void ShowNormalKeyboard(QPoint pos, QSize size);
 
     void ShowTextCheckDialog(Service::AM::Applets::SwkbdTextCheckResult text_check_result,
-                             std::u16string text_check_message);
+                             const std::u16string& text_check_message);
 
-    void ShowInlineKeyboard(Core::Frontend::InlineAppearParameters appear_parameters, QPoint pos,
+    void ShowInlineKeyboard(const Core::Frontend::InlineAppearParameters& appear_parameters,
+                            QPoint pos,
                             QSize size);
 
     void HideInlineKeyboard();
 
-    void InlineTextChanged(Core::Frontend::InlineTextParameters text_parameters);
+    void InlineTextChanged(const Core::Frontend::InlineTextParameters& text_parameters);
 
     void ExitKeyboard();
 

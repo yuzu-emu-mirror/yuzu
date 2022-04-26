@@ -22,7 +22,7 @@ struct SteadyClockTimePoint {
     s64 time_point;
     Common::UUID clock_source_id;
 
-    ResultCode GetSpanBetween(SteadyClockTimePoint other, s64& span) const {
+    ResultCode GetSpanBetween(const SteadyClockTimePoint& other, s64& span) const {
         span = 0;
 
         if (clock_source_id != other.clock_source_id) {

@@ -80,7 +80,7 @@ IR::Value MakeCoords(TranslatorVisitor& v, IR::Reg reg, Type type) {
 }
 
 IR::Value ApplyAtomicOp(IR::IREmitter& ir, const IR::U32& handle, const IR::Value& coords,
-                        const IR::Value& op_b, IR::TextureInstInfo info, AtomicOp op,
+                        const IR::Value& op_b, const IR::TextureInstInfo& info, AtomicOp op,
                         bool is_signed) {
     switch (op) {
     case AtomicOp::ADD:
@@ -149,11 +149,10 @@ void ImageAtomOp(TranslatorVisitor& v, IR::Reg dest_reg, IR::Reg operand_reg, IR
     info.type.Assign(tex_type);
     info.image_format.Assign(format);
 
-    // TODO: float/64-bit operand
-    const IR::Value op_b{v.X(operand_reg)};
-    const IR::Value color{ApplyAtomicOp(v.ir, handle, coords, op_b, info, op, is_signed)};
-
     if (write_result) {
+        // TODO: float/64-bit operand
+        const IR::Value op_b{v.X(operand_reg)};
+        const IR::Value color{ApplyAtomicOp(v.ir, handle, coords, op_b, info, op, is_signed)};
         v.X(dest_reg, IR::U32{color});
     }
 }

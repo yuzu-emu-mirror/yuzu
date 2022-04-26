@@ -226,7 +226,6 @@ Id Emit(MethodPtrType sparse_ptr, MethodPtrType non_sparse_ptr, EmitContext& ctx
 }
 
 Id IsScaled(EmitContext& ctx, const IR::Value& index, Id member_index, u32 base_index) {
-    const Id push_constant_u32{ctx.TypePointer(spv::StorageClass::PushConstant, ctx.U32[1])};
     Id bit{};
     if (index.IsImmediate()) {
         // Use BitwiseAnd instead of BitfieldExtract for better codegen on Nvidia OpenGL.
@@ -234,6 +233,7 @@ Id IsScaled(EmitContext& ctx, const IR::Value& index, Id member_index, u32 base_
         const u32 index_value{index.U32() + base_index};
         const Id word_index{ctx.Const(index_value / 32)};
         const Id bit_index_mask{ctx.Const(1u << (index_value % 32))};
+        const Id push_constant_u32{ctx.TypePointer(spv::StorageClass::PushConstant, ctx.U32[1])};
         const Id pointer{ctx.OpAccessChain(push_constant_u32, ctx.rescaling_push_constants,
                                            member_index, word_index)};
         const Id word{ctx.OpLoad(ctx.U32[1], pointer)};

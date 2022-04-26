@@ -120,8 +120,8 @@ private:
     void DrawProTriggers(QPainter& p, QPointF center,
                          const Common::Input::ButtonStatus& left_pressed,
                          const Common::Input::ButtonStatus& right_pressed);
-    void DrawGCTriggers(QPainter& p, QPointF center, Common::Input::TriggerStatus left_trigger,
-                        Common::Input::TriggerStatus right_trigger);
+    void DrawGCTriggers(QPainter& p, QPointF center, const Common::Input::TriggerStatus& left_trigger,
+                        const Common::Input::TriggerStatus& right_trigger);
     void DrawHandheldTriggers(QPainter& p, QPointF center,
                               const Common::Input::ButtonStatus& left_pressed,
                               const Common::Input::ButtonStatus& right_pressed);
@@ -156,7 +156,7 @@ private:
                       const Common::Input::ButtonStatus& pressed);
     void DrawJoystickSideview(QPainter& p, QPointF center, float angle, float size,
                               const Common::Input::ButtonStatus& pressed);
-    void DrawRawJoystick(QPainter& p, QPointF center_left, QPointF center_right);
+    void DrawRawJoystick(QPainter& p, const QPointF& center_left, const QPointF& center_right);
     void DrawJoystickProperties(QPainter& p, QPointF center,
                                 const Common::Input::AnalogProperties& properties);
     void DrawJoystickDot(QPainter& p, QPointF center, const Common::Input::StickStatus& stick,
@@ -185,7 +185,7 @@ private:
                            const Common::Input::ButtonStatus& pressed);
 
     // Draw battery functions
-    void DrawBattery(QPainter& p, QPointF center, Common::Input::BatteryLevel battery);
+    void DrawBattery(QPainter& p, const QPointF& center, Common::Input::BatteryLevel battery);
 
     // Draw icon functions
     void DrawSymbol(QPainter& p, QPointF center, Symbol symbol, float icon_size);

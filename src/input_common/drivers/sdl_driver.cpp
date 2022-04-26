@@ -797,7 +797,6 @@ AnalogMapping SDLDriver::GetAnalogMappingForDevice(const Common::ParamPackage& p
         return {};
     }
     const auto joystick = GetSDLJoystickByGUID(params.Get("guid", ""), params.Get("port", 0));
-    const auto joystick2 = GetSDLJoystickByGUID(params.Get("guid2", ""), params.Get("port", 0));
     auto* controller = joystick->GetSDLGameController();
     if (controller == nullptr) {
         return {};
@@ -809,6 +808,7 @@ AnalogMapping SDLDriver::GetAnalogMappingForDevice(const Common::ParamPackage& p
     const auto& binding_left_y =
         SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
     if (params.Has("guid2")) {
+        const auto joystick2 = GetSDLJoystickByGUID(params.Get("guid2", ""), params.Get("port", 0));
         const auto identifier = joystick2->GetPadIdentifier();
         PreSetController(identifier);
         PreSetAxis(identifier, binding_left_x.value.axis);
@@ -853,7 +853,6 @@ MotionMapping SDLDriver::GetMotionMappingForDevice(const Common::ParamPackage& p
         return {};
     }
     const auto joystick = GetSDLJoystickByGUID(params.Get("guid", ""), params.Get("port", 0));
-    const auto joystick2 = GetSDLJoystickByGUID(params.Get("guid2", ""), params.Get("port", 0));
     auto* controller = joystick->GetSDLGameController();
     if (controller == nullptr) {
         return {};
@@ -867,6 +866,7 @@ MotionMapping SDLDriver::GetMotionMappingForDevice(const Common::ParamPackage& p
                                  BuildMotionParam(joystick->GetPort(), joystick->GetGUID()));
     }
     if (params.Has("guid2")) {
+        const auto joystick2 = GetSDLJoystickByGUID(params.Get("guid2", ""), params.Get("port", 0));
         joystick2->EnableMotion();
         if (joystick2->HasGyro() || joystick2->HasAccel()) {
             mapping.insert_or_assign(Settings::NativeMotion::MotionLeft,

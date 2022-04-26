@@ -50,11 +50,11 @@ public:
     }
 
     void UpdateButtonStatus(const Common::Input::CallbackStatus& button_callback) {
-        const Common::Input::CallbackStatus status{
-            .type = Common::Input::InputType::Touch,
-            .touch_status = GetStatus(button_callback.button_status.value),
-        };
         if (last_button_value != button_callback.button_status.value) {
+            const Common::Input::CallbackStatus status{
+                .type = Common::Input::InputType::Touch,
+                .touch_status = GetStatus(button_callback.button_status.value),
+            };
             last_button_value = button_callback.button_status.value;
             TriggerOnChange(status);
         }

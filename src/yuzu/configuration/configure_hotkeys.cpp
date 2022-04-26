@@ -128,7 +128,7 @@ void ConfigureHotkeys::Configure(QModelIndex index) {
         model->setData(index, key_sequence.toString(QKeySequence::NativeText));
     }
 }
-void ConfigureHotkeys::ConfigureController(QModelIndex index) {
+void ConfigureHotkeys::ConfigureController(const QModelIndex& index) {
     if (timeout_timer->isActive()) {
         return;
     }
@@ -342,7 +342,7 @@ void ConfigureHotkeys::PopupContextMenu(const QPoint& menu_location) {
     context_menu.exec(ui->hotkey_list->viewport()->mapToGlobal(menu_location));
 }
 
-void ConfigureHotkeys::RestoreControllerHotkey(QModelIndex index) {
+void ConfigureHotkeys::RestoreControllerHotkey(const QModelIndex& index) {
     const QString& default_key_sequence =
         Config::default_hotkeys[index.row()].shortcut.controller_keyseq;
     const auto [key_sequence_used, used_action] = IsUsedControllerKey(default_key_sequence);
@@ -356,7 +356,7 @@ void ConfigureHotkeys::RestoreControllerHotkey(QModelIndex index) {
     }
 }
 
-void ConfigureHotkeys::RestoreHotkey(QModelIndex index) {
+void ConfigureHotkeys::RestoreHotkey(const QModelIndex& index) {
     const QKeySequence& default_key_sequence = QKeySequence::fromString(
         Config::default_hotkeys[index.row()].shortcut.keyseq, QKeySequence::NativeText);
     const auto [key_sequence_used, used_action] = IsUsedKey(default_key_sequence);

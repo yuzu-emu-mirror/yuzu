@@ -1996,8 +1996,8 @@ void PlayerControlPreview::DrawProTriggers(QPainter& p, const QPointF center,
 }
 
 void PlayerControlPreview::DrawGCTriggers(QPainter& p, const QPointF center,
-                                          Common::Input::TriggerStatus left_trigger,
-                                          Common::Input::TriggerStatus right_trigger) {
+                                          const Common::Input::TriggerStatus& left_trigger,
+                                          const Common::Input::TriggerStatus& right_trigger) {
     std::array<QPointF, left_gc_trigger.size() / 2> qleft_trigger;
     std::array<QPointF, left_gc_trigger.size() / 2> qright_trigger;
 
@@ -2404,7 +2404,8 @@ void PlayerControlPreview::DrawGCJoystick(QPainter& p, const QPointF center,
     DrawCircle(p, center, 7.5f);
 }
 
-void PlayerControlPreview::DrawRawJoystick(QPainter& p, QPointF center_left, QPointF center_right) {
+void PlayerControlPreview::DrawRawJoystick(QPainter& p, const QPointF& center_left,
+                                           const QPointF& center_right) {
     using namespace Settings::NativeAnalog;
     if (center_right != QPointF(0, 0)) {
         DrawJoystickProperties(p, center_right, stick_values[RStick].x.properties);
@@ -2672,7 +2673,7 @@ void PlayerControlPreview::DrawTriggerButton(QPainter& p, const QPointF center,
     DrawPolygon(p, qtrigger_button);
 }
 
-void PlayerControlPreview::DrawBattery(QPainter& p, QPointF center,
+void PlayerControlPreview::DrawBattery(QPainter& p, const QPointF& center,
                                        Common::Input::BatteryLevel battery) {
     if (battery == Common::Input::BatteryLevel::None) {
         return;
