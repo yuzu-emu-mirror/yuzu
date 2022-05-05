@@ -24,8 +24,10 @@
 EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem,
                                      Core::System& system_, bool fullscreen)
     : EmuWindow_SDL2{input_subsystem, system_} {
-    const std::string window_title = fmt::format("yuzu {} | {}-{} (Vulkan)", Common::g_build_name,
-                                                 Common::g_scm_branch, Common::g_scm_desc);
+    const std::string window_title =
+        fmt::format("{} | {}-{} (Vulkan)", Common::g_title_bar_format_idle, Common::g_scm_branch,
+                    Common::g_scm_rev);
+
     render_window =
         SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                          Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
@@ -89,8 +91,8 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
     OnResize();
     OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
     SDL_PumpEvents();
-    LOG_INFO(Frontend, "yuzu Version: {} | {}-{} (Vulkan)", Common::g_build_name,
-             Common::g_scm_branch, Common::g_scm_desc);
+    LOG_INFO(Frontend, "{} | {}-{} (Vulkan)", Common::g_title_bar_format_idle, Common::g_scm_branch,
+             Common::g_scm_rev);
 }
 
 EmuWindow_SDL2_VK::~EmuWindow_SDL2_VK() = default;

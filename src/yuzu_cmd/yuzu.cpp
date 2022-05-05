@@ -67,7 +67,8 @@ static void PrintHelp(const char* argv0) {
 }
 
 static void PrintVersion() {
-    std::cout << "yuzu " << Common::g_scm_branch << " " << Common::g_scm_desc << std::endl;
+    std::cout << Common::g_title_bar_format_idle << " " << Common::g_scm_branch << "-"
+              << Common::g_scm_rev << std::endl;
 }
 
 /// Application entry point

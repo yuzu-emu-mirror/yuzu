@@ -90,8 +90,8 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsyste
     }
     SDL_GL_SetSwapInterval(0);
 
-    std::string window_title = fmt::format("yuzu {} | {}-{}", Common::g_build_fullname,
-                                           Common::g_scm_branch, Common::g_scm_desc);
+    std::string window_title = fmt::format("{} | {}-{}", Common::g_title_bar_format_idle,
+                                           Common::g_scm_branch, Common::g_scm_rev);
     render_window =
         SDL_CreateWindow(window_title.c_str(),
                          SDL_WINDOWPOS_UNDEFINED, // x position
@@ -136,8 +136,9 @@ EmuWindow_SDL2_GL::EmuWindow_SDL2_GL(InputCommon::InputSubsystem* input_subsyste
     OnResize();
     OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
     SDL_PumpEvents();
-    LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", Common::g_build_fullname, Common::g_scm_branch,
-             Common::g_scm_desc);
+
+    LOG_INFO(Frontend, "{} | {}-{}", Common::g_title_bar_format_idle, Common::g_scm_branch,
+             Common::g_scm_rev);
     Settings::LogSettings();
 }
 
