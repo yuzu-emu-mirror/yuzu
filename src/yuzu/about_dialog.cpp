@@ -19,7 +19,7 @@ AboutDialog::AboutDialog(QWidget* parent)
     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
 
     ui->setupUi(this);
-    ui->labelLogo->setPixmap(QIcon::fromTheme(QStringLiteral("yuzu")).pixmap(200));
+    ui->labelLogo->setPixmap(QIcon::fromTheme(QStringLiteral("org.yuzu_emu.yuzu")).pixmap(200));
     ui->labelBuildInfo->setText(
         ui->labelBuildInfo->text().arg(QString::fromStdString(yuzu_build_version),
                                        QString::fromUtf8(Common::g_build_date).left(10)));
