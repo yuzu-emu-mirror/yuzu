@@ -14,6 +14,7 @@ void DeadCodeEliminationPass(IR::Program& program);
 void GlobalMemoryToStorageBufferPass(IR::Program& program);
 void IdentityRemovalPass(IR::Program& program);
 void LowerFp16ToFp32(IR::Program& program);
+void LowerInt16ToInt32(IR::Program& program);
 void LowerInt64ToInt32(IR::Program& program);
 void RescalingPass(IR::Program& program);
 void SsaRewritePass(IR::Program& program);
