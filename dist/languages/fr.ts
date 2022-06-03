@@ -3616,12 +3616,12 @@ Faites glisser les points pour modifier la position ou double-cliquez sur les ce
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="91"/>
         <source>Game Icon Size:</source>
-        <translation>Taille de l&apos;icône dossier :</translation>
+        <translation>Taille de l&apos;icône jeu :</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="105"/>
         <source>Folder Icon Size:</source>
-        <translation>Taille de l&apos;icône jeu :</translation>
+        <translation>Taille de l&apos;icône dossier :</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_ui.ui" line="119"/>
