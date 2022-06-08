@@ -69,7 +69,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="50"/>
         <source>Configuration completed!</source>
-        <translation>設定完了！</translation>
+        <translation>設定が完了しました</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_motion_touch.cpp" line="58"/>
@@ -128,7 +128,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="123"/>
         <source>Bad</source>
-        <translation>ナンアリ</translation>
+        <translation>悪い</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/compatdb.ui" line="130"/>
@@ -271,7 +271,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="57"/>
         <source>Paranoid (disables most optimizations)</source>
-        <translation>Paranoid (ほとんどの最適化無効)</translation>
+        <translation>Paranoid (ほとんどの最適化を無効化)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="68"/>
@@ -314,7 +314,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="118"/>
         <source>Faster FRSQRTE and FRECPE</source>
-        <translation>Faster FRSQRTE and FRECPE</translation>
+        <translation>FRSQRTEとFRECPEの高速化</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="125"/>
@@ -342,7 +342,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="142"/>
         <source>Inaccurate NaN handling</source>
-        <translation type="unfinished"/>
+        <translation>不正確な非数値の取り扱い</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="149"/>
@@ -363,12 +363,14 @@ p, li { white-space: pre-wrap; }
         <source>
             &lt;div&gt;This option improves speed by relying only on the semantics of cmpxchg to ensure safety of exclusive access instructions. Please note this may result in deadlocks and other race conditions.&lt;/div&gt;
            </source>
-        <translation type="unfinished"/>
+       <translation>
+            &lt;div&gt;このオプションは、排他的アクセス命令の安全性を確保するために、cmpxchgの定義にのみ依存することで、速度を向上させます。デッドロックやレースコンディション等を引き起こす可能性があることに注意してください。&lt;/div&gt;
+           </translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="166"/>
         <source>Ignore global monitor</source>
-        <translation type="unfinished"/>
+        <translation>global monitorを無視する</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_cpu.ui" line="191"/>
@@ -1058,7 +1060,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="148"/>
         <source>Extended memory layout (6GB DRAM)</source>
-        <translation type="unfinished"/>
+        <translation>拡張メモリレイアウト (6GB DRAM)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_general.ui" line="155"/>
@@ -1146,7 +1148,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="169"/>
         <source>Use asynchronous GPU emulation</source>
-        <translation>Use asynchronous GPU emulation</translation>
+        <translation>非同期GPU emulationを使用</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="176"/>
@@ -1261,7 +1263,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="399"/>
         <source>Window Adapting Filter:</source>
-        <translation type="unfinished"/>
+        <translation>画面に適用するフィルター</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics.ui" line="407"/>
@@ -1370,12 +1372,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="88"/>
         <source>Use asynchronous shader building (Hack)</source>
-        <translation>Use asynchronous shader building (Hack)</translation>
+        <translation>非同期シェーダー構造を使用 (Hack)</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="95"/>
         <source>Enables Fast GPU Time. This option will force most games to run at their highest native resolution.</source>
-        <translation>Enables Fast GPU Time. This option will force most games to run at their highest native resolution.</translation>
+        <translation>Fast GPU Time を有効にします。このオプションは、ほとんどのゲームをその最高のネイティブ解像度で実行することを強制します。</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_graphics_advanced.ui" line="98"/>
@@ -1770,7 +1772,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2533"/>
         <source>Emulated Devices</source>
-        <translation type="unfinished"/>
+        <source>デバイスのエミュレート</source>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2545"/>
@@ -1832,17 +1834,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2667"/>
         <source>Enable UDP controllers (not needed for motion)</source>
-        <translation type="unfinished"/>
+        <translation>UDPコントローラを有効にする（モーションの場合は必要ありません）</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2680"/>
         <source>Controller navigation</source>
-        <translation type="unfinished"/>
+        <translation>コントローラーナビゲーション</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2693"/>
         <source>Enable mouse panning</source>
-        <translation type="unfinished"/>
+        <translation>マウスのパンニングを有効にする</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/configuration/configure_input_advanced.ui" line="2700"/>
@@ -5096,7 +5098,7 @@ any workarounds needed.</source>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="151"/>
         <source>Great</source>
-        <translation>バツグン</translation>
+        <translation>優良</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="151"/>
@@ -5107,7 +5109,7 @@ workarounds.</source>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="152"/>
         <source>Okay</source>
-        <translation>ソコソコ</translation>
+        <translation>可</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="152"/>
@@ -5118,7 +5120,7 @@ workarounds.</source>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="153"/>
         <source>Bad</source>
-        <translation>ナンアリ</translation>
+        <translation>難あり</translation>
     </message>
     <message>
         <location filename="../../src/yuzu/game_list_p.h" line="153"/>
