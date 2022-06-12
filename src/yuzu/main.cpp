@@ -2160,18 +2160,23 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 
 void GMainWindow::OnGameListOpenDirectory(const QString& directory) {
     std::filesystem::path fs_path;
-    if (directory == QStringLiteral("SDMC")) {
-        fs_path =
+    switch (directory) {
+        case QStringLiteral("SDMC"):
+            fs_path =
             Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "Nintendo/Contents/registered";
-    } else if (directory == QStringLiteral("UserNAND")) {
-        fs_path =
+            break;
+        case QStringLiteral("UserNAND"):
+            fs_path =
             Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) / "user/Contents/registered";
-    } else if (directory == QStringLiteral("SysNAND")) {
-        fs_path =
+            break;
+        case QStringLiteral("SysNAND"):
+            fs_path =
             Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) / "system/Contents/registered";
-    } else {
-        fs_path = directory.toStdString();
+            break;
+        default:
+            fs_path = directory.toStdString();
     }
+
 
     const auto qt_path = QString::fromStdString(Common::FS::PathToUTF8String(fs_path));
 
