@@ -20,17 +20,17 @@ void HLE_771BB18C62444DA0(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
     maxwell3d.regs.draw.topology.Assign(
         static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0] & 0x3ffffff));
     maxwell3d.regs.vb_base_instance = parameters[5];
-    maxwell3d.mme_draw.instance_count = instance_count;
+    maxwell3d.draw_state.instance_count = instance_count;
     maxwell3d.regs.vb_element_base = parameters[3];
     maxwell3d.regs.index_array.count = parameters[1];
     maxwell3d.regs.index_array.first = parameters[4];
 
     if (maxwell3d.ShouldExecute()) {
-        maxwell3d.Rasterizer().Draw(true, true);
+        maxwell3d.Rasterizer().Draw(true);
     }
     maxwell3d.regs.index_array.count = 0;
-    maxwell3d.mme_draw.instance_count = 0;
-    maxwell3d.mme_draw.current_mode = Engines::Maxwell3D::MMEDrawMode::Undefined;
+    maxwell3d.draw_state.instance_count = 0;
+    maxwell3d.draw_state.current_mode = Engines::Maxwell3D::DrawMode::Undefined;
 }
 
 void HLE_0D61FC9FAAC9FCAD(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters) {
@@ -41,14 +41,14 @@ void HLE_0D61FC9FAAC9FCAD(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
     maxwell3d.regs.vb_base_instance = parameters[4];
     maxwell3d.regs.draw.topology.Assign(
         static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0]));
-    maxwell3d.mme_draw.instance_count = count;
+    maxwell3d.draw_state.instance_count = count;
 
     if (maxwell3d.ShouldExecute()) {
-        maxwell3d.Rasterizer().Draw(false, true);
+        maxwell3d.Rasterizer().Draw(false);
     }
     maxwell3d.regs.vertex_buffer.count = 0;
-    maxwell3d.mme_draw.instance_count = 0;
-    maxwell3d.mme_draw.current_mode = Engines::Maxwell3D::MMEDrawMode::Undefined;
+    maxwell3d.draw_state.instance_count = 0;
+    maxwell3d.draw_state.current_mode = Engines::Maxwell3D::DrawMode::Undefined;
 }
 
 void HLE_0217920100488FF7(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters) {
@@ -60,24 +60,24 @@ void HLE_0217920100488FF7(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
     maxwell3d.regs.index_array.count = parameters[1];
     maxwell3d.regs.vb_element_base = element_base;
     maxwell3d.regs.vb_base_instance = base_instance;
-    maxwell3d.mme_draw.instance_count = instance_count;
-    maxwell3d.CallMethodFromMME(0x8e3, 0x640);
-    maxwell3d.CallMethodFromMME(0x8e4, element_base);
-    maxwell3d.CallMethodFromMME(0x8e5, base_instance);
+    maxwell3d.draw_state.instance_count = instance_count;
+    maxwell3d.CallMethod(0x8e3, 0x640, true);
+    maxwell3d.CallMethod(0x8e4, element_base, true);
+    maxwell3d.CallMethod(0x8e5, base_instance, true);
     maxwell3d.regs.draw.topology.Assign(
         static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0]));
     if (maxwell3d.ShouldExecute()) {
-        maxwell3d.Rasterizer().Draw(true, true);
+        maxwell3d.Rasterizer().Draw(true);
     }
     maxwell3d.regs.reg_array[0x446] = 0x0; // vertex id base?
     maxwell3d.regs.index_array.count = 0;
     maxwell3d.regs.vb_element_base = 0x0;
     maxwell3d.regs.vb_base_instance = 0x0;
-    maxwell3d.mme_draw.instance_count = 0;
-    maxwell3d.CallMethodFromMME(0x8e3, 0x640);
-    maxwell3d.CallMethodFromMME(0x8e4, 0x0);
-    maxwell3d.CallMethodFromMME(0x8e5, 0x0);
-    maxwell3d.mme_draw.current_mode = Engines::Maxwell3D::MMEDrawMode::Undefined;
+    maxwell3d.draw_state.instance_count = 0;
+    maxwell3d.CallMethod(0x8e3, 0x640, true);
+    maxwell3d.CallMethod(0x8e4, 0x0, true);
+    maxwell3d.CallMethod(0x8e5, 0x0, true);
+    maxwell3d.draw_state.current_mode = Engines::Maxwell3D::DrawMode::Undefined;
 }
 
 constexpr std::array<std::pair<u64, HLEFunction>, 3> hle_funcs{{
