@@ -490,7 +490,7 @@ public:
     }
 
     [[nodiscard]] bool IsDispatchTrackingDisabled() const {
-        return is_single_core || IsKernelThread();
+        return IsKernelThread();
     }
 
     [[nodiscard]] s32 GetDisableDispatchCount() const {
@@ -795,7 +795,6 @@ private:
 
     // For emulation
     std::shared_ptr<Common::Fiber> host_context{};
-    bool is_single_core{};
     ThreadType thread_type{};
     StepState step_state{};
     std::mutex dummy_wait_lock;

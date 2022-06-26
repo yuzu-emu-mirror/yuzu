@@ -166,24 +166,11 @@ public:
     }
 
     void AddTicks(u64 ticks) override {
-        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
-
-        // Divide the number of ticks by the amount of CPU cores. TODO(Subv): This yields only a
-        // rough approximation of the amount of executed ticks in the system, it may be thrown off
-        // if not all cores are doing a similar amount of work. Instead of doing this, we should
-        // device a way so that timing is consistent across all cores without increasing the ticks 4
-        // times.
-        u64 amortized_ticks = ticks / Core::Hardware::NUM_CPU_CORES;
-        // Always execute at least one tick.
-        amortized_ticks = std::max<u64>(amortized_ticks, 1);
-
-        parent.system.CoreTiming().AddTicks(amortized_ticks);
+        UNREACHABLE();
     }
 
     u64 GetTicksRemaining() override {
-        ASSERT_MSG(!parent.uses_wall_clock, "This should never happen - dynarmic ticking disabled");
-
-        return std::max<s64>(parent.system.CoreTiming().GetDowncount(), 0);
+        UNREACHABLE();
     }
 
     u64 GetCNTPCT() override {
@@ -216,7 +203,6 @@ public:
     u64 tpidrro_el0 = 0;
     u64 tpidr_el0 = 0;
     bool debugger_enabled{};
-    static constexpr u64 minimum_run_cycles = 1000U;
 };
 
 std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable* page_table,
@@ -374,9 +360,8 @@ void ARM_Dynarmic_64::RewindBreakpointInstruction() {
 }
 
 ARM_Dynarmic_64::ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_,
-                                 bool uses_wall_clock_, ExclusiveMonitor& exclusive_monitor_,
-                                 std::size_t core_index_)
-    : ARM_Interface{system_, interrupt_handlers_, uses_wall_clock_},
+                                 ExclusiveMonitor& exclusive_monitor_, std::size_t core_index_)
+    : ARM_Interface{system_, interrupt_handlers_},
       cb(std::make_unique<DynarmicCallbacks64>(*this)), core_index{core_index_},
       exclusive_monitor{dynamic_cast<DynarmicExclusiveMonitor&>(exclusive_monitor_)},
       null_jit{MakeJit(nullptr, 48)}, jit{null_jit.get()} {}

@@ -47,7 +47,6 @@ private:
     std::unique_ptr<Ui::ConfigureGeneral> ui;
 
     ConfigurationShared::CheckState use_speed_limit;
-    ConfigurationShared::CheckState use_multi_core;
     ConfigurationShared::CheckState use_extended_memory_layout;
 
     const Core::System& system;

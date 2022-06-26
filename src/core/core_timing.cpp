@@ -15,8 +15,6 @@
 
 namespace Core::Timing {
 
-constexpr s64 MAX_SLICE_LENGTH = 4000;
-
 std::shared_ptr<EventType> CreateEvent(std::string name, TimedCallback&& callback) {
     return std::make_shared<EventType>(std::move(callback), std::move(name));
 }
@@ -57,16 +55,14 @@ void CoreTiming::Initialize(std::function<void()>&& on_thread_init_) {
     on_thread_init = std::move(on_thread_init_);
     event_fifo_id = 0;
     shutting_down = false;
-    ticks = 0;
     const auto empty_timed_callback = [](std::uintptr_t, std::chrono::nanoseconds) {};
     ev_lost = CreateEvent("_lost_event", empty_timed_callback);
-    if (is_multicore) {
-        const auto hardware_concurrency = std::thread::hardware_concurrency();
-        size_t id = 0;
+
+    const auto hardware_concurrency = std::thread::hardware_concurrency();
+    size_t id = 0;
+    worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
+    if (hardware_concurrency > 8) {
         worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
-        if (hardware_concurrency > 8) {
-            worker_threads.emplace_back(ThreadEntry, std::ref(*this), id++);
-        }
     }
 }
 
@@ -90,13 +86,13 @@ void CoreTiming::Pause(bool is_paused_) {
     if (is_paused_ == paused_state.load(std::memory_order_relaxed)) {
         return;
     }
-    if (is_multicore) {
-        is_paused = is_paused_;
-        event_cv.notify_all();
-        if (!is_paused_) {
-            wait_pause_cv.notify_all();
-        }
+
+    is_paused = is_paused_;
+    event_cv.notify_all();
+    if (!is_paused_) {
+        wait_pause_cv.notify_all();
     }
+
     paused_state.store(is_paused_, std::memory_order_relaxed);
 }
 
@@ -106,20 +102,18 @@ void CoreTiming::SyncPause(bool is_paused_) {
         return;
     }
 
-    if (is_multicore) {
-        is_paused = is_paused_;
-        event_cv.notify_all();
-        if (!is_paused_) {
-            wait_pause_cv.notify_all();
-        }
+    is_paused = is_paused_;
+    event_cv.notify_all();
+    if (!is_paused_) {
+        wait_pause_cv.notify_all();
     }
+
     paused_state.store(is_paused_, std::memory_order_relaxed);
-    if (is_multicore) {
-        if (is_paused_) {
-            wait_signal_cv.wait(main_lock, [this] { return pause_count == worker_threads.size(); });
-        } else {
-            wait_signal_cv.wait(main_lock, [this] { return pause_count == 0; });
-        }
+
+    if (is_paused_) {
+        wait_signal_cv.wait(main_lock, [this] { return pause_count == worker_threads.size(); });
+    } else {
+        wait_signal_cv.wait(main_lock, [this] { return pause_count == 0; });
     }
 }
 
@@ -144,9 +138,7 @@ void CoreTiming::ScheduleEvent(std::chrono::nanoseconds ns_into_future,
 
     std::push_heap(event_queue.begin(), event_queue.end(), std::greater<>());
 
-    if (is_multicore) {
-        event_cv.notify_one();
-    }
+    event_cv.notify_one();
 }
 
 void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
@@ -164,39 +156,12 @@ void CoreTiming::UnscheduleEvent(const std::shared_ptr<EventType>& event_type,
     }
 }
 
-void CoreTiming::AddTicks(u64 ticks_to_add) {
-    ticks += ticks_to_add;
-    downcount -= static_cast<s64>(ticks);
-}
-
-void CoreTiming::Idle() {
-    if (!event_queue.empty()) {
-        const u64 next_event_time = event_queue.front().time;
-        const u64 next_ticks = nsToCycles(std::chrono::nanoseconds(next_event_time)) + 10U;
-        if (next_ticks > ticks) {
-            ticks = next_ticks;
-        }
-        return;
-    }
-    ticks += 1000U;
-}
-
-void CoreTiming::ResetTicks() {
-    downcount = MAX_SLICE_LENGTH;
-}
-
 u64 CoreTiming::GetCPUTicks() const {
-    if (is_multicore) {
-        return clock->GetCPUCycles();
-    }
-    return ticks;
+    return clock->GetCPUCycles();
 }
 
 u64 CoreTiming::GetClockTicks() const {
-    if (is_multicore) {
-        return clock->GetClockCycles();
-    }
-    return CpuCyclesToClockCycles(ticks);
+    return clock->GetClockCycles();
 }
 
 void CoreTiming::ClearPendingEvents() {
@@ -285,17 +250,11 @@ void CoreTiming::ThreadLoop() {
 }
 
 std::chrono::nanoseconds CoreTiming::GetGlobalTimeNs() const {
-    if (is_multicore) {
-        return clock->GetTimeNS();
-    }
-    return CyclesToNs(ticks);
+    return clock->GetTimeNS();
 }
 
 std::chrono::microseconds CoreTiming::GetGlobalTimeUs() const {
-    if (is_multicore) {
-        return clock->GetTimeUS();
-    }
-    return CyclesToUs(ticks);
+    return clock->GetTimeUS();
 }
 
 } // namespace Core::Timing

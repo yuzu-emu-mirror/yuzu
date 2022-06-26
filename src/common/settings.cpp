@@ -44,7 +44,6 @@ void LogSettings() {
     log_setting("System_LanguageIndex", values.language_index.GetValue());
     log_setting("System_RegionIndex", values.region_index.GetValue());
     log_setting("System_TimeZoneIndex", values.time_zone_index.GetValue());
-    log_setting("Core_UseMultiCore", values.use_multi_core.GetValue());
     log_setting("CPU_Accuracy", values.cpu_accuracy.GetValue());
     log_setting("Renderer_UseResolutionScaling", values.resolution_setup.GetValue());
     log_setting("Renderer_ScalingFilter", values.scaling_filter.GetValue());
@@ -166,7 +165,6 @@ void RestoreGlobalState(bool is_powered_on) {
     values.volume.SetGlobal(true);
 
     // Core
-    values.use_multi_core.SetGlobal(true);
     values.use_extended_memory_layout.SetGlobal(true);
 
     // CPU

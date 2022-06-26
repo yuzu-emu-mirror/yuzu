@@ -378,9 +378,6 @@ public:
     /// Exit Dynarmic Microprofile
     void ExitDynarmicProfile();
 
-    /// Tells if system is running on multicore.
-    [[nodiscard]] bool IsMulticore() const;
-
     /// Tells if the system debugger is enabled.
     [[nodiscard]] bool DebuggerEnabled() const;
 

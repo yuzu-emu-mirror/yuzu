@@ -65,16 +65,6 @@ public:
     /// Tears down all timing related functionality.
     void Shutdown();
 
-    /// Sets if emulation is multicore or single core, must be set before Initialize
-    void SetMulticore(bool is_multicore_) {
-        is_multicore = is_multicore_;
-    }
-
-    /// Check if it's using host timing.
-    bool IsHostTiming() const {
-        return is_multicore;
-    }
-
     /// Pauses/Unpauses the execution of the timer thread.
     void Pause(bool is_paused);
 
@@ -101,16 +91,6 @@ public:
     /// We only permit one event of each type in the queue at a time.
     void RemoveEvent(const std::shared_ptr<EventType>& event_type);
 
-    void AddTicks(u64 ticks_to_add);
-
-    void ResetTicks();
-
-    void Idle();
-
-    s64 GetDowncount() const {
-        return downcount;
-    }
-
     /// Returns current time in emulated CPU cycles
     u64 GetCPUTicks() const;
 
@@ -123,9 +103,6 @@ public:
     /// Returns current time in nanoseconds.
     std::chrono::nanoseconds GetGlobalTimeNs() const;
 
-    /// Checks for events manually and returns time in nanoseconds for next event, threadsafe.
-    std::optional<s64> Advance();
-
 private:
     struct Event;
 
@@ -134,6 +111,9 @@ private:
 
     static void ThreadEntry(CoreTiming& instance, size_t id);
     void ThreadLoop();
+
+    /// Checks for events manually and returns time in nanoseconds for next event, threadsafe.
+    std::optional<s64> Advance();
 
     std::unique_ptr<Common::WallClock> clock;
 
@@ -162,12 +142,7 @@ private:
     std::atomic<bool> paused_state{};
     bool is_paused{};
     bool shutting_down{};
-    bool is_multicore{};
     size_t pause_count{};
-
-    /// Cycle timing
-    u64 ticks{};
-    s64 downcount{};
 };
 
 /// Creates a core timing event with the given name and callback.

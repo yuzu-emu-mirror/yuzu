@@ -37,8 +37,6 @@ ConfigureGeneral::~ConfigureGeneral() = default;
 void ConfigureGeneral::SetConfiguration() {
     const bool runtime_lock = !system.IsPoweredOn();
 
-    ui->use_multi_core->setEnabled(runtime_lock);
-    ui->use_multi_core->setChecked(Settings::values.use_multi_core.GetValue());
     ui->use_extended_memory_layout->setEnabled(runtime_lock);
     ui->use_extended_memory_layout->setChecked(
         Settings::values.use_extended_memory_layout.GetValue());
@@ -89,8 +87,6 @@ void ConfigureGeneral::ResetDefaults() {
 }
 
 void ConfigureGeneral::ApplyConfiguration() {
-    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_multi_core, ui->use_multi_core,
-                                             use_multi_core);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_extended_memory_layout,
                                              ui->use_extended_memory_layout,
                                              use_extended_memory_layout);
@@ -161,8 +157,6 @@ void ConfigureGeneral::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredTristate(ui->toggle_speed_limit,
                                             Settings::values.use_speed_limit, use_speed_limit);
-    ConfigurationShared::SetColoredTristate(ui->use_multi_core, Settings::values.use_multi_core,
-                                            use_multi_core);
     ConfigurationShared::SetColoredTristate(ui->use_extended_memory_layout,
                                             Settings::values.use_extended_memory_layout,
                                             use_extended_memory_layout);

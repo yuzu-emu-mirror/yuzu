@@ -465,7 +465,6 @@ struct Values {
     RangedSetting<u8> volume{100, 0, 100, "volume"};
 
     // Core
-    Setting<bool> use_multi_core{true, "use_multi_core"};
     Setting<bool> use_extended_memory_layout{false, "use_extended_memory_layout"};
 
     // Cpu

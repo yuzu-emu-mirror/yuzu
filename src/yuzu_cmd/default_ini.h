@@ -121,11 +121,6 @@ mouse_enabled =
 # 0 (default): Disabled, 1: Enabled
 keyboard_enabled =
 
-[Core]
-# Whether to use multi-core for CPU emulation
-# 0: Disabled, 1 (default): Enabled
-use_multi_core =
-
 # Enable extended guest system memory layout (6GB DRAM)
 # 0 (default): Disabled, 1: Enabled
 use_extended_memory_layout =

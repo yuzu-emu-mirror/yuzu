@@ -125,9 +125,9 @@ void KScheduler::RescheduleCurrentCoreImpl() {
     }
 }
 
-void KScheduler::Initialize(KThread* idle_thread) {
+void KScheduler::Initialize(KThread* main_thread, KThread* idle_thread, s32 core_id) {
     // Set core ID/idle thread/interrupt task manager.
-    m_core_id = GetCurrentCoreId(kernel);
+    m_core_id = core_id;
     m_idle_thread = idle_thread;
     // m_state.idle_thread_stack = m_idle_thread->GetStackTop();
     // m_state.interrupt_task_manager = &kernel.GetInterruptTaskManager();
@@ -145,7 +145,7 @@ void KScheduler::Initialize(KThread* idle_thread) {
     //     KInterruptController::PriorityLevel_Scheduler, false, false);
 
     // Set the current thread.
-    m_current_thread = GetCurrentThreadPointer(kernel);
+    m_current_thread = main_thread;
 }
 
 void KScheduler::Activate() {
@@ -389,8 +389,7 @@ void KScheduler::ScheduleImplOffStack() {
 
     // Save the original thread context.
     {
-        auto& physical_core = kernel.System().CurrentPhysicalCore();
-        auto& cpu_core = physical_core.ArmInterface();
+        auto& cpu_core = kernel.System().CurrentArmInterface();
         cpu_core.SaveContext(cur_thread->GetContext32());
         cpu_core.SaveContext(cur_thread->GetContext64());
         // Save the TPIDR_EL0 system register in case it was modified.

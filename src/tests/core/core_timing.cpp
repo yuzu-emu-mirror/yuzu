@@ -36,7 +36,6 @@ void HostCallbackTemplate(std::uintptr_t user_data, std::chrono::nanoseconds ns_
 
 struct ScopeInit final {
     ScopeInit() {
-        core_timing.SetMulticore(true);
         core_timing.Initialize([]() {});
     }
     ~ScopeInit() {

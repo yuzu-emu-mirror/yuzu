@@ -252,7 +252,6 @@ Result KThread::InitializeThread(KThread* thread, KThreadFunction func, uintptr_
 
     // Initialize emulation parameters.
     thread->host_context = std::make_shared<Common::Fiber>(std::move(init_func));
-    thread->is_single_core = !Settings::values.use_multi_core.GetValue();
 
     return ResultSuccess;
 }
@@ -1189,17 +1188,12 @@ KThread& GetCurrentThread(KernelCore& kernel) {
 }
 
 s32 GetCurrentCoreId(KernelCore& kernel) {
-    return GetCurrentThread(kernel).GetCurrentCore();
+    return static_cast<s32>(kernel.CurrentPhysicalCoreIndex());
 }
 
 KScopedDisableDispatch::~KScopedDisableDispatch() {
     // If we are shutting down the kernel, none of this is relevant anymore.
     if (kernel.IsShuttingDown()) {
-        return;
-    }
-
-    // Skip the reschedule if single-core, as dispatch tracking is disabled here.
-    if (!Settings::values.use_multi_core.GetValue()) {
         return;
     }
 

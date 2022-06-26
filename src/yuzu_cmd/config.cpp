@@ -266,7 +266,6 @@ void Config::ReadValues() {
     ReadSetting("System", Settings::values.sound_index);
 
     // Core
-    ReadSetting("Core", Settings::values.use_multi_core);
     ReadSetting("Core", Settings::values.use_extended_memory_layout);
 
     // Cpu

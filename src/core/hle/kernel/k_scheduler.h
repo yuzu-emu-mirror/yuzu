@@ -41,11 +41,15 @@ public:
     explicit KScheduler(KernelCore& kernel);
     ~KScheduler();
 
-    void Initialize(KThread* idle_thread);
+    void Initialize(KThread* main_thread, KThread* idle_thread, s32 core_id);
     void Activate();
 
     void SetInterruptTaskRunnable();
     void RequestScheduleOnInterrupt();
+
+    void ScheduleOnPreemption() {
+        ScheduleOnInterrupt();
+    }
 
     u64 GetIdleCount() {
         return m_state.idle_count;

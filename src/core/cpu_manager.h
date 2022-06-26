@@ -34,16 +34,6 @@ public:
     CpuManager& operator=(const CpuManager&) = delete;
     CpuManager& operator=(CpuManager&&) = delete;
 
-    /// Sets if emulation is multicore or single core, must be set before Initialize
-    void SetMulticore(bool is_multi) {
-        is_multicore = is_multi;
-    }
-
-    /// Sets if emulation is using an asynchronous GPU.
-    void SetAsyncGpu(bool is_async) {
-        is_async_gpu = is_async;
-    }
-
     void OnGpuReady() {
         gpu_barrier->Sync();
     }
@@ -53,42 +43,23 @@ public:
     void Shutdown();
 
     std::function<void()> GetGuestActivateFunc() {
-        return [this] { GuestActivateFunction(); };
+        return [this] { GuestActivate(); };
     }
     std::function<void()> GetGuestThreadFunc() {
-        return [this] { GuestThreadFunction(); };
-    }
-    std::function<void()> GetIdleThreadStartFunc() {
-        return [this] { IdleThreadFunction(); };
+        return [this] { RunGuestThread(); };
     }
     std::function<void()> GetShutdownThreadStartFunc() {
-        return [this] { ShutdownThreadFunction(); };
-    }
-
-    void PreemptSingleCore(bool from_running_enviroment = true);
-
-    std::size_t CurrentCore() const {
-        return current_core.load();
+        return [this] { ShutdownThread(); };
     }
 
 private:
-    void GuestActivateFunction();
-    void GuestThreadFunction();
-    void IdleThreadFunction();
-    void ShutdownThreadFunction();
-
-    void MultiCoreGuestActivate();
-    void MultiCoreRunGuestThread();
-    void MultiCoreRunGuestLoop();
-
-    void SingleCoreGuestActivate();
-    void SingleCoreRunGuestThread();
-    void SingleCoreRunGuestLoop();
-
     static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
+    void GuestActivate();
+    void RunGuestThread();
     void HandleInterrupt();
     void ShutdownThread();
+
     void RunThread(std::size_t core);
 
     struct CoreData {
@@ -98,14 +69,6 @@ private:
 
     std::unique_ptr<Common::Barrier> gpu_barrier{};
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
-
-    bool is_async_gpu{};
-    bool is_multicore{};
-    std::atomic<std::size_t> current_core{};
-    std::size_t idle_count{};
-    std::size_t num_cores{};
-    static constexpr std::size_t max_cycle_runs = 5;
-
     System& system;
 };
 

@@ -97,9 +97,6 @@ public:
     KernelCore(KernelCore&&) = delete;
     KernelCore& operator=(KernelCore&&) = delete;
 
-    /// Sets if emulation is multicore or single core, must be set before Initialize
-    void SetMulticore(bool is_multicore);
-
     /// Resets the kernel to a clean slate for use.
     void Initialize();
 
@@ -283,8 +280,6 @@ public:
     /// Notify emulated CPU cores to shut down.
     void ShutdownCores();
 
-    bool IsMulticore() const;
-
     bool IsShuttingDown() const;
 
     void EnterSVCProfile();
@@ -317,10 +312,6 @@ public:
      * @param service_thread Service thread to release.
      */
     void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread);
-
-    /// Workaround for single-core mode when preempting threads while idle.
-    bool IsPhantomModeForSingleCore() const;
-    void SetIsPhantomModeForSingleCore(bool value);
 
     Core::System& System();
     const Core::System& System() const;

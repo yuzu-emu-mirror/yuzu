@@ -51,20 +51,12 @@ struct KernelCore::Impl {
         : time_manager{system_},
           service_threads_manager{1, "yuzu:ServiceThreadsManager"}, system{system_} {}
 
-    void SetMulticore(bool is_multi) {
-        is_multicore = is_multi;
-    }
-
     void Initialize(KernelCore& kernel) {
         global_object_list_container = std::make_unique<KAutoObjectWithListContainer>(kernel);
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
         global_handle_table->Initialize(KHandleTable::MaxTableSize);
         default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
-
-        is_phantom_mode_for_singlecore = false;
-
-        InitializePhysicalCores();
 
         // Derive the initial memory layout from the emulated board
         Init::InitializeSlabResourceCounts(kernel);
@@ -76,6 +68,7 @@ struct KernelCore::Impl {
         InitializeMemoryLayout();
         Init::InitializeKPageBufferSlabHeap(system);
         InitializeShutdownThreads();
+        InitializePhysicalCores();
         InitializePreemption(kernel);
 
         RegisterHostThread();
@@ -195,6 +188,18 @@ struct KernelCore::Impl {
         for (u32 i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
             schedulers[i] = std::make_unique<Kernel::KScheduler>(system.Kernel());
             cores.emplace_back(i, system, *schedulers[i], interrupts);
+
+            auto* main_thread = KThread::Create(system.Kernel());
+            main_thread->SetName(fmt::format("MainThread:{}", i));
+            main_thread->SetCurrentCore(static_cast<s32>(i));
+            ASSERT(KThread::InitializeMainThread(system, main_thread, static_cast<s32>(i))
+                       .IsSuccess());
+
+            auto* idle_thread = KThread::Create(system.Kernel());
+            ASSERT(Kernel::KThread::InitializeIdleThread(system, idle_thread, static_cast<s32>(i))
+                       .IsSuccess());
+
+            schedulers[i]->Initialize(main_thread, idle_thread, i);
         }
     }
 
@@ -290,10 +295,7 @@ struct KernelCore::Impl {
     /// Registers a CPU core thread by allocating a host thread ID for it
     void RegisterCoreThread(std::size_t core_id) {
         ASSERT(core_id < Core::Hardware::NUM_CPU_CORES);
-        const auto this_id = GetHostThreadId(core_id);
-        if (!is_multicore) {
-            single_core_thread_id = this_id;
-        }
+        [[maybe_unused]] const auto this_id = GetHostThreadId(core_id);
     }
 
     /// Registers a new host thread by allocating a host thread ID for it
@@ -303,20 +305,7 @@ struct KernelCore::Impl {
     }
 
     [[nodiscard]] u32 GetCurrentHostThreadID() {
-        const auto this_id = GetHostThreadId();
-        if (!is_multicore && single_core_thread_id == this_id) {
-            return static_cast<u32>(system.GetCpuManager().CurrentCore());
-        }
-        return this_id;
-    }
-
-    bool IsPhantomModeForSingleCore() const {
-        return is_phantom_mode_for_singlecore;
-    }
-
-    void SetIsPhantomModeForSingleCore(bool value) {
-        ASSERT(!is_multicore);
-        is_phantom_mode_for_singlecore = value;
+        return GetHostThreadId();
     }
 
     bool IsShuttingDown() const {
@@ -771,10 +760,7 @@ struct KernelCore::Impl {
     std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES> interrupts{};
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
 
-    bool is_multicore{};
     std::atomic_bool is_shutting_down{};
-    bool is_phantom_mode_for_singlecore{};
-    u32 single_core_thread_id{};
 
     std::array<u64, Core::Hardware::NUM_CPU_CORES> svc_ticks{};
 
@@ -786,10 +772,6 @@ struct KernelCore::Impl {
 
 KernelCore::KernelCore(Core::System& system) : impl{std::make_unique<Impl>(system, *this)} {}
 KernelCore::~KernelCore() = default;
-
-void KernelCore::SetMulticore(bool is_multicore) {
-    impl->SetMulticore(is_multicore);
-}
 
 void KernelCore::Initialize() {
     slab_heap_container = std::make_unique<SlabHeapContainer>();
@@ -1098,10 +1080,6 @@ void KernelCore::ShutdownCores() {
     InterruptAllPhysicalCores();
 }
 
-bool KernelCore::IsMulticore() const {
-    return impl->is_multicore;
-}
-
 bool KernelCore::IsShuttingDown() const {
     return impl->IsShuttingDown();
 }
@@ -1149,14 +1127,6 @@ const KWorkerTaskManager& KernelCore::WorkerTaskManager() const {
 
 const KMemoryLayout& KernelCore::MemoryLayout() const {
     return *impl->memory_layout;
-}
-
-bool KernelCore::IsPhantomModeForSingleCore() const {
-    return impl->IsPhantomModeForSingleCore();
-}
-
-void KernelCore::SetIsPhantomModeForSingleCore(bool value) {
-    impl->SetIsPhantomModeForSingleCore(value);
 }
 
 Core::System& KernelCore::System() {

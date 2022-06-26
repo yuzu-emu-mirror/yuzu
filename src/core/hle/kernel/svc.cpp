@@ -2102,16 +2102,8 @@ static void ChangeKernelTraceState([[maybe_unused]] Core::System& system,
 static u64 GetSystemTick(Core::System& system) {
     LOG_TRACE(Kernel_SVC, "called");
 
-    auto& core_timing = system.CoreTiming();
-
     // Returns the value of cntpct_el0 (https://switchbrew.org/wiki/SVC#svcGetSystemTick)
-    const u64 result{system.CoreTiming().GetClockTicks()};
-
-    if (!system.Kernel().IsMulticore()) {
-        core_timing.AddTicks(400U);
-    }
-
-    return result;
+    return system.CoreTiming().GetClockTicks();
 }
 
 static void GetSystemTick32(Core::System& system, u32* time_low, u32* time_high) {

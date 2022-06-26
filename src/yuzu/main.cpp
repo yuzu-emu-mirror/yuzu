@@ -3286,7 +3286,7 @@ void GMainWindow::UpdateStatusBar() {
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
     res_scale_label->setVisible(true);
-    emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
+    emu_speed_label->setVisible(false);
     game_fps_label->setVisible(true);
     emu_frametime_label->setVisible(true);
 }

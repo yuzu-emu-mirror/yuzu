@@ -26,8 +26,6 @@
 
 namespace Service::NVFlinger {
 
-constexpr auto frame_ns = std::chrono::nanoseconds{1000000000 / 60};
-
 void NVFlinger::SplitVSync(std::stop_token stop_token) {
     system.RegisterHostThread();
     std::string name = "yuzu:VSyncThread";
@@ -78,18 +76,10 @@ NVFlinger::NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_dr
             this->system.CoreTiming().ScheduleEvent(future_ns, composition_event);
         });
 
-    if (system.IsMulticore()) {
-        vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
-    } else {
-        system.CoreTiming().ScheduleEvent(frame_ns, composition_event);
-    }
+    vsync_thread = std::jthread([this](std::stop_token token) { SplitVSync(token); });
 }
 
 NVFlinger::~NVFlinger() {
-    if (!system.IsMulticore()) {
-        system.CoreTiming().UnscheduleEvent(composition_event, 0);
-    }
-
     for (auto& display : displays) {
         for (size_t layer = 0; layer < display.GetNumLayers(); ++layer) {
             display.GetLayer(layer).Core().NotifyShutdown();

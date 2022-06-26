@@ -177,13 +177,7 @@ struct System::Impl {
 
         device_memory = std::make_unique<Core::DeviceMemory>();
 
-        is_multicore = Settings::values.use_multi_core.GetValue();
         is_async_gpu = Settings::values.use_asynchronous_gpu_emulation.GetValue();
-
-        kernel.SetMulticore(is_multicore);
-        cpu_manager.SetMulticore(is_multicore);
-        cpu_manager.SetAsyncGpu(is_async_gpu);
-        core_timing.SetMulticore(is_multicore);
 
         kernel.Initialize();
         cpu_manager.Initialize();
@@ -449,7 +443,6 @@ struct System::Impl {
     std::unique_ptr<Core::PerfStats> perf_stats;
     Core::SpeedLimiter speed_limiter;
 
-    bool is_multicore{};
     bool is_async_gpu{};
 
     ExecuteProgramCallback execute_program_callback;
@@ -816,10 +809,6 @@ void System::EnterDynarmicProfile() {
 void System::ExitDynarmicProfile() {
     std::size_t core = impl->kernel.GetCurrentHostThreadID();
     MicroProfileLeave(impl->microprofile_dynarmic[core], impl->dynarmic_ticks[core]);
-}
-
-bool System::IsMulticore() const {
-    return impl->is_multicore;
 }
 
 bool System::DebuggerEnabled() const {

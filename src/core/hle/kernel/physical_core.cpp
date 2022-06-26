@@ -20,7 +20,7 @@ PhysicalCore::PhysicalCore(std::size_t core_index_, Core::System& system_, KSche
     // a 32-bit instance of Dynarmic. This should be abstracted out to a CPU manager.
     auto& kernel = system.Kernel();
     arm_interface = std::make_unique<Core::ARM_Dynarmic_64>(
-        system, interrupts, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
+        system, interrupts, kernel.GetExclusiveMonitor(), core_index);
 #else
 #error Platform not supported yet.
 #endif
@@ -34,7 +34,7 @@ void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
     if (!is_64_bit) {
         // We already initialized a 64-bit core, replace with a 32-bit one.
         arm_interface = std::make_unique<Core::ARM_Dynarmic_32>(
-            system, interrupts, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
+            system, interrupts, kernel.GetExclusiveMonitor(), core_index);
     }
 #else
 #error Platform not supported yet.
