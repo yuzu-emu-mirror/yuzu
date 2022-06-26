@@ -14,7 +14,7 @@
 #include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
 #include "core/hle/service/nvflinger/buffer_queue_producer.h"
 #include "core/hle/service/nvflinger/consumer_listener.h"
@@ -530,6 +530,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
         item.swap_interval = swap_interval;
 
+        nvmap->IncrementObjectRefCount(item.graphic_buffer->BufferId());
+
         sticky_transform = sticky_transform_;
 
         if (core->queue.empty()) {
@@ -918,6 +920,11 @@ void BufferQueueProducer::Transact(Kernel::HLERequestContext& ctx, TransactionId
 
 Kernel::KReadableEvent& BufferQueueProducer::GetNativeHandle() {
     return buffer_wait_event->GetReadableEvent();
+}
+
+void BufferQueueProducer::SetNVMapInstance(
+    std::shared_ptr<Service::Nvidia::Devices::nvmap> instance) {
+    nvmap = instance;
 }
 
 } // namespace Service::android

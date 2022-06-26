@@ -63,10 +63,13 @@ void Display::SignalVSyncEvent() {
     vsync_event->GetWritableEvent().Signal();
 }
 
-void Display::CreateLayer(u64 layer_id, u32 binder_id) {
+void Display::CreateLayer(u64 layer_id, u32 binder_id,
+                          std::shared_ptr<Service::Nvidia::Devices::nvmap> instance) {
     ASSERT_MSG(layers.empty(), "Only one layer is supported per display at the moment");
 
     auto [core, producer, consumer] = CreateBufferQueue(service_context);
+    producer->SetNVMapInstance(instance);
+    consumer->SetNVMapInstance(instance);
 
     auto buffer_item_consumer = std::make_shared<android::BufferItemConsumer>(std::move(consumer));
     buffer_item_consumer->Connect(false);

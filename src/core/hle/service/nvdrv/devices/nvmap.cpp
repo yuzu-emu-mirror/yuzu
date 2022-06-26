@@ -69,13 +69,41 @@ VAddr nvmap::GetObjectAddress(u32 handle) const {
     return object->addr;
 }
 
+std::shared_ptr<nvmap::Object> nvmap::GetObject(u32 handle) const {
+    auto itr = handles.find(handle);
+    if (itr != handles.end()) {
+        return itr->second;
+    }
+    return {};
+}
+
+u32 nvmap::IncrementObjectRefCount(u32 handle) {
+    auto object = GetObject(handle);
+    ASSERT(object);
+    auto ref_count = ++object->ref_count;
+    return ref_count;
+}
+
+u32 nvmap::DecrementObjectRefCount(u32 handle) {
+    auto itr = handles.find(handle);
+    if (itr != handles.end()) {
+        auto ref_count = --itr->second->ref_count;
+        if (ref_count == 0) {
+            handles.erase(itr);
+        }
+        return ref_count;
+    }
+
+    UNREACHABLE();
+}
+
 u32 nvmap::CreateObject(u32 size) {
     // Create a new nvmap object and obtain a handle to it.
     auto object = std::make_shared<Object>();
     object->id = next_id++;
     object->size = size;
     object->status = Object::Status::Created;
-    object->refcount = 1;
+    object->ref_count = 1;
 
     const u32 handle = next_handle++;
 
@@ -183,7 +211,7 @@ NvResult nvmap::IocFromId(const std::vector<u8>& input, std::vector<u8>& output)
         return NvResult::BadValue;
     }
 
-    itr->second->refcount++;
+    itr->second->ref_count++;
 
     // Return the existing handle instead of creating a new one.
     params.handle = itr->first;
@@ -250,7 +278,7 @@ NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
         LOG_ERROR(Service_NVDRV, "Object does not exist, handle={:08X}", params.handle);
         return NvResult::BadValue;
     }
-    if (!itr->second->refcount) {
+    if (!itr->second->ref_count) {
         LOG_ERROR(
             Service_NVDRV,
             "There is no references to this object. The object is already freed. handle={:08X}",
@@ -258,11 +286,9 @@ NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
         return NvResult::BadValue;
     }
 
-    itr->second->refcount--;
-
     params.size = itr->second->size;
 
-    if (itr->second->refcount == 0) {
+    if (DecrementObjectRefCount(params.handle) == 0) {
         params.flags = Freed;
         // The address of the nvmap is written to the output if we're finally freeing it, otherwise
         // 0 is written.
@@ -271,8 +297,6 @@ NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
         params.flags = NotFreedYet;
         params.address = 0;
     }
-
-    handles.erase(params.handle);
 
     std::memcpy(output.data(), &params, sizeof(params));
     return NvResult::Success;

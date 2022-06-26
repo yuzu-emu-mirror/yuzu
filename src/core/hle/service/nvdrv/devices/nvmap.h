@@ -41,17 +41,14 @@ public:
         u8 kind;
         VAddr addr;
         Status status;
-        u32 refcount;
+        u32 ref_count;
         u32 dma_map_addr;
     };
 
-    std::shared_ptr<Object> GetObject(u32 handle) const {
-        auto itr = handles.find(handle);
-        if (itr != handles.end()) {
-            return itr->second;
-        }
-        return {};
-    }
+    std::shared_ptr<Object> GetObject(u32 handle) const;
+
+    u32 IncrementObjectRefCount(u32 handle);
+    u32 DecrementObjectRefCount(u32 handle);
 
 private:
     /// Id to use for the next handle that is created.

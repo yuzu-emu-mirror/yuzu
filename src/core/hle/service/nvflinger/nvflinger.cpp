@@ -14,6 +14,7 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/service/nvdrv/devices/nvdisp_disp0.h"
+#include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/hle/service/nvdrv/nvdrv.h"
 #include "core/hle/service/nvflinger/buffer_item_consumer.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
@@ -132,7 +133,9 @@ std::optional<u64> NVFlinger::CreateLayer(u64 display_id) {
 
 void NVFlinger::CreateLayerAtId(VI::Display& display, u64 layer_id) {
     const auto buffer_id = next_buffer_queue_id++;
-    display.CreateLayer(layer_id, buffer_id);
+    auto nvmap = nvdrv->GetDevice<Nvidia::Devices::nvmap>("/dev/nvmap");
+    ASSERT(nvmap);
+    display.CreateLayer(layer_id, buffer_id, nvmap);
 }
 
 void NVFlinger::CloseLayer(u64 layer_id) {

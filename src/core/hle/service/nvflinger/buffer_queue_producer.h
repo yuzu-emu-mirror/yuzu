@@ -31,6 +31,10 @@ namespace Service::KernelHelpers {
 class ServiceContext;
 } // namespace Service::KernelHelpers
 
+namespace Service::Nvidia::Devices {
+class nvmap;
+} // namespace Service::Nvidia::Devices
+
 namespace Service::android {
 
 class BufferQueueCore;
@@ -45,6 +49,8 @@ public:
     void Transact(Kernel::HLERequestContext& ctx, android::TransactionId code, u32 flags) override;
 
     Kernel::KReadableEvent& GetNativeHandle() override;
+
+    void SetNVMapInstance(std::shared_ptr<Service::Nvidia::Devices::nvmap> instance);
 
 public:
     Status RequestBuffer(s32 slot, std::shared_ptr<GraphicBuffer>* buf);
@@ -70,6 +76,7 @@ private:
 
     Kernel::KEvent* buffer_wait_event{};
     Service::KernelHelpers::ServiceContext& service_context;
+    std::shared_ptr<Service::Nvidia::Devices::nvmap> nvmap;
 
     std::shared_ptr<BufferQueueCore> core;
     BufferQueueDefs::SlotsType& slots;

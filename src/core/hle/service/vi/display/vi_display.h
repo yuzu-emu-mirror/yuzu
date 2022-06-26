@@ -26,6 +26,10 @@ namespace Service::NVFlinger {
 class HosBinderDriverServer;
 }
 
+namespace Service::Nvidia::Devices {
+class nvmap;
+}
+
 namespace Service::VI {
 
 class Layer;
@@ -84,7 +88,8 @@ public:
     /// @param layer_id The ID to assign to the created layer.
     /// @param binder_id The ID assigned to the buffer queue.
     ///
-    void CreateLayer(u64 layer_id, u32 binder_id);
+    void CreateLayer(u64 layer_id, u32 binder_id,
+                     std::shared_ptr<Service::Nvidia::Devices::nvmap> instance);
 
     /// Closes and removes a layer from this display with the given ID.
     ///
