@@ -261,9 +261,14 @@ Result KThread::InitializeDummyThread(KThread* thread) {
     return thread->Initialize({}, {}, {}, DummyThreadPriority, 3, {}, ThreadType::Dummy);
 }
 
+Result KThread::InitializeMainThread(Core::System& system, KThread* thread, s32 virt_core) {
+    return InitializeThread(thread, {}, {}, {}, IdleThreadPriority, virt_core, {}, ThreadType::Main,
+                            system.GetCpuManager().GetGuestActivateFunc());
+}
+
 Result KThread::InitializeIdleThread(Core::System& system, KThread* thread, s32 virt_core) {
     return InitializeThread(thread, {}, {}, {}, IdleThreadPriority, virt_core, {}, ThreadType::Main,
-                            system.GetCpuManager().GetIdleThreadStartFunc());
+                            abort);
 }
 
 Result KThread::InitializeHighPriorityThread(Core::System& system, KThread* thread,
@@ -277,7 +282,7 @@ Result KThread::InitializeUserThread(Core::System& system, KThread* thread, KThr
                                      KProcess* owner) {
     system.Kernel().GlobalSchedulerContext().AddThread(thread);
     return InitializeThread(thread, func, arg, user_stack_top, prio, virt_core, owner,
-                            ThreadType::User, system.GetCpuManager().GetGuestThreadStartFunc());
+                            ThreadType::User, system.GetCpuManager().GetGuestThreadFunc());
 }
 
 void KThread::PostDestroy(uintptr_t arg) {
@@ -480,9 +485,7 @@ void KThread::Unpin() {
 
     // Resume any threads that began waiting on us while we were pinned.
     for (auto it = pinned_waiter_list.begin(); it != pinned_waiter_list.end(); ++it) {
-        if (it->GetState() == ThreadState::Waiting) {
-            it->SetState(ThreadState::Runnable);
-        }
+        it->EndWait(ResultSuccess);
     }
 }
 
@@ -877,6 +880,7 @@ void KThread::AddWaiterImpl(KThread* thread) {
     // Keep track of how many kernel waiters we have.
     if (IsKernelAddressKey(thread->GetAddressKey())) {
         ASSERT((num_kernel_waiters++) >= 0);
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
     // Insert the waiter.
@@ -890,6 +894,7 @@ void KThread::RemoveWaiterImpl(KThread* thread) {
     // Keep track of how many kernel waiters we have.
     if (IsKernelAddressKey(thread->GetAddressKey())) {
         ASSERT((num_kernel_waiters--) > 0);
+        KScheduler::SetSchedulerUpdateNeeded(kernel);
     }
 
     // Remove the waiter.
@@ -965,6 +970,7 @@ KThread* KThread::RemoveWaiterByKey(s32* out_num_waiters, VAddr key) {
             // Keep track of how many kernel waiters we have.
             if (IsKernelAddressKey(thread->GetAddressKey())) {
                 ASSERT((num_kernel_waiters--) > 0);
+                KScheduler::SetSchedulerUpdateNeeded(kernel);
             }
             it = waiter_list.erase(it);
 
@@ -1051,6 +1057,8 @@ void KThread::Exit() {
         // Register the thread as a work task.
         KWorkerTaskManager::AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
     }
+
+    UNREACHABLE_MSG("KThread::Exit() would return");
 }
 
 Result KThread::Sleep(s64 timeout) {
