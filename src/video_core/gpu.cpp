@@ -107,14 +107,6 @@ struct GPU::Impl {
         rasterizer->SyncGuestHost();
     }
 
-    /// Signal the ending of command list.
-    void OnCommandListEnd() {
-        if (is_async) {
-            // This command only applies to asynchronous GPU mode
-            gpu_thread.OnCommandListEnd();
-        }
-    }
-
     /// Request a host GPU memory flush from the CPU.
     [[nodiscard]] u64 RequestFlush(VAddr addr, std::size_t size) {
         std::unique_lock lck{flush_request_mutex};
@@ -763,10 +755,6 @@ void GPU::FlushCommands() {
 
 void GPU::SyncGuestHost() {
     impl->SyncGuestHost();
-}
-
-void GPU::OnCommandListEnd() {
-    impl->OnCommandListEnd();
 }
 
 u64 GPU::RequestFlush(VAddr addr, std::size_t size) {

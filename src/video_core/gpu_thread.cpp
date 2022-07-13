@@ -77,6 +77,9 @@ void ThreadManager::StartThread(VideoCore::RendererBase& renderer,
 
 void ThreadManager::SubmitList(Tegra::CommandList&& entries) {
     PushCommand(SubmitListCommand(std::move(entries)));
+    if (is_async) {
+        PushCommand(OnCommandListEndCommand());
+    }
 }
 
 void ThreadManager::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
@@ -105,10 +108,6 @@ void ThreadManager::InvalidateRegion(VAddr addr, u64 size) {
 void ThreadManager::FlushAndInvalidateRegion(VAddr addr, u64 size) {
     // Skip flush on asynch mode, as FlushAndInvalidateRegion is not used for anything too important
     rasterizer->OnCPUWrite(addr, size);
-}
-
-void ThreadManager::OnCommandListEnd() {
-    PushCommand(OnCommandListEndCommand());
 }
 
 u64 ThreadManager::PushCommand(CommandData&& command_data, bool block) {
