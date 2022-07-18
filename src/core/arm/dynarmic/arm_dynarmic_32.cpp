@@ -17,6 +17,7 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/debugger/debugger.h"
+#include "core/hle/kernel/arch/arm64/exception_handlers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
@@ -104,11 +105,11 @@ public:
         case Dynarmic::A32::Exception::NoExecuteFault:
             LOG_CRITICAL(Core_ARM, "Cannot execute instruction at unmapped address {:#08x}", pc);
             ReturnException(pc, ARM_Interface::no_execute);
-            return;
+            break;
         default:
             if (debugger_enabled) {
                 ReturnException(pc, ARM_Interface::breakpoint);
-                return;
+                break;
             }
 
             parent.LogBacktrace();
@@ -116,6 +117,21 @@ public:
                          "ExceptionRaised(exception = {}, pc = {:08X}, code = {:08X}, thumb = {})",
                          exception, pc, memory.Read32(pc), parent.IsInThumbMode());
         }
+
+        // Load KExceptionContext
+        Kernel::Arch::Arm64::KExceptionContext exception_context{};
+        Core::ARM_Interface::ThreadContext32 thread_context{};
+        parent.LoadContext(thread_context);
+        for (size_t index = 0; index < thread_context.cpu_registers.size(); ++index) {
+            exception_context.x[index] = thread_context.cpu_registers[index];
+        }
+        exception_context.sp = thread_context.cpu_registers[13];
+        exception_context.pc = thread_context.cpu_registers[15];
+        exception_context.psr = thread_context.cpsr;
+        exception_context.tpidr = thread_context.tpidr;
+
+        // Kernel to handle exception
+        Kernel::Arch::Arm64::HandleException(parent.system.Kernel(), exception_context);
     }
 
     void CallSVC(u32 swi) override {
