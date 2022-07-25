@@ -1368,14 +1368,16 @@ void GMainWindow::HandleSigInterrupt(int sig) {
     // Calling into Qt directly from a signal handler is not safe,
     // so wake up a QSocketNotifier with this hacky write call instead.
     char a = 1;
-    (void)write(sig_interrupt_fds[0], &a, sizeof(a));
+    int ret = write(sig_interrupt_fds[0], &a, sizeof(a));
+    (void)ret;
 }
 
 void GMainWindow::OnSigInterruptNotifierActivated() {
     sig_interrupt_notifier->setEnabled(false);
 
     char a;
-    (void)read(sig_interrupt_fds[1], &a, sizeof(a));
+    int ret = read(sig_interrupt_fds[1], &a, sizeof(a));
+    (void)ret;
 
     sig_interrupt_notifier->setEnabled(true);
 
