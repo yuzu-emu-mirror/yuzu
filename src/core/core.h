@@ -81,6 +81,10 @@ namespace VideoCore {
 class RendererBase;
 } // namespace VideoCore
 
+namespace AudioCore {
+class AudioCore;
+} // namespace AudioCore
+
 namespace Core::Timing {
 class CoreTiming;
 }
@@ -91,6 +95,10 @@ class InterruptManager;
 
 namespace Core::HID {
 class HIDCore;
+}
+
+namespace Network {
+class RoomNetwork;
 }
 
 namespace Core {
@@ -148,6 +156,9 @@ public:
      */
     [[nodiscard]] SystemResultStatus Pause();
 
+    /// Check if the core is currently paused.
+    [[nodiscard]] bool IsPaused() const;
+
     /**
      * Invalidate the CPU instruction caches
      * This function should only be used by GDB Stub to support breakpoints, memory updates and
@@ -159,6 +170,12 @@ public:
 
     /// Shutdown the emulated system.
     void Shutdown();
+
+    /// Check if the core is shutting down.
+    [[nodiscard]] bool IsShuttingDown() const;
+
+    /// Set the shutting down state.
+    void SetShuttingDown(bool shutting_down);
 
     /// Forcibly detach the debugger if it is running.
     void DetachDebugger();
@@ -249,6 +266,12 @@ public:
 
     /// Gets an immutable reference to the renderer.
     [[nodiscard]] const VideoCore::RendererBase& Renderer() const;
+
+    /// Gets a mutable reference to the audio interface
+    [[nodiscard]] AudioCore::AudioCore& AudioCore();
+
+    /// Gets an immutable reference to the audio interface.
+    [[nodiscard]] const AudioCore::AudioCore& AudioCore() const;
 
     /// Gets the global scheduler
     [[nodiscard]] Kernel::GlobalSchedulerContext& GlobalSchedulerContext();
@@ -359,6 +382,12 @@ public:
 
     [[nodiscard]] Core::Debugger& GetDebugger();
     [[nodiscard]] const Core::Debugger& GetDebugger() const;
+
+    /// Gets a mutable reference to the Room Network.
+    [[nodiscard]] Network::RoomNetwork& GetRoomNetwork();
+
+    /// Gets an immutable reference to the Room Network.
+    [[nodiscard]] const Network::RoomNetwork& GetRoomNetwork() const;
 
     void SetExitLock(bool locked);
     [[nodiscard]] bool GetExitLock() const;

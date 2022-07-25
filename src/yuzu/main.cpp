@@ -32,6 +32,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "yuzu/multiplayer/state.h"
 #include "yuzu/util/controller_navigation.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
@@ -115,7 +116,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
-#include "yuzu/check_vulkan.h"
 #include "yuzu/compatdb.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/configuration/config.h"
@@ -131,7 +131,9 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
+#include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
+#include "yuzu/util/clickable_label.h"
 
 using namespace Common::Literals;
 
@@ -252,7 +254,7 @@ static QString PrettyProductName() {
     return QSysInfo::prettyProductName();
 }
 
-GMainWindow::GMainWindow()
+GMainWindow::GMainWindow(bool has_broken_vulkan)
     : ui{std::make_unique<Ui::MainWindow>()}, system{std::make_unique<Core::System>()},
       input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
       config{std::make_unique<Config>(*system)},
@@ -270,6 +272,8 @@ GMainWindow::GMainWindow()
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
+
+    system->GetRoomNetwork().Init();
 
     RegisterMetaTypes();
 
@@ -352,17 +356,15 @@ GMainWindow::GMainWindow()
 
     MigrateConfigFiles();
 
-    if (!CheckVulkan()) {
-        config->Save();
+    if (has_broken_vulkan) {
+        UISettings::values.has_broken_vulkan = true;
 
-        QMessageBox::warning(
-            this, tr("Broken Vulkan Installation Detected"),
-            tr("Vulkan initialization failed on the previous boot.<br><br>Click <a "
-               "href='https://yuzu-emu.org/wiki/faq/"
-               "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>here for "
-               "instructions to fix the issue</a>."));
-    }
-    if (UISettings::values.has_broken_vulkan) {
+        QMessageBox::warning(this, tr("Broken Vulkan Installation Detected"),
+                             tr("Vulkan initialization failed during boot.<br><br>Click <a "
+                                "href='https://yuzu-emu.org/wiki/faq/"
+                                "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>"
+                                "here for instructions to fix the issue</a>."));
+
         Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
 
         renderer_status_button->setDisabled(true);
@@ -463,6 +465,7 @@ GMainWindow::~GMainWindow() {
     if (render_window->parent() == nullptr) {
         delete render_window;
     }
+    system->GetRoomNetwork().Shutdown();
 }
 
 void GMainWindow::RegisterMetaTypes() {
@@ -826,6 +829,10 @@ void GMainWindow::InitializeWidgets() {
         }
     });
 
+    multiplayer_state = new MultiplayerState(this, game_list->GetModel(), ui->action_Leave_Room,
+                                             ui->action_Show_Room, system->GetRoomNetwork());
+    multiplayer_state->setVisible(false);
+
     // Create status bar
     message_label = new QLabel();
     // Configured separately for left alignment
@@ -857,6 +864,10 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label);
     }
+
+    // TODO (flTobi): Add the widget when multiplayer is fully implemented
+    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
+    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
 
     tas_label = new QLabel();
     tas_label->setObjectName(QStringLiteral("TASlabel"));
@@ -1167,6 +1178,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list_placeholder, &GameListPlaceholder::AddDirectory, this,
             &GMainWindow::OnGameListAddDirectory);
     connect(game_list, &GameList::ShowList, this, &GMainWindow::OnGameListShowList);
+    connect(game_list, &GameList::PopulatingCompleted,
+            [this] { multiplayer_state->UpdateGameList(game_list->GetModel()); });
 
     connect(game_list, &GameList::OpenPerGameGeneralRequested, this,
             &GMainWindow::OnGameListOpenPerGameProperties);
@@ -1184,6 +1197,9 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(this, &GMainWindow::EmulationStopping, this, &GMainWindow::SoftwareKeyboardExit);
 
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
+
+    connect(this, &GMainWindow::UpdateThemedIcons, multiplayer_state,
+            &MultiplayerState::UpdateThemedIcons);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1226,6 +1242,18 @@ void GMainWindow::ConnectMenuEvents() {
     ui->menu_Reset_Window_Size->addActions({ui->action_Reset_Window_Size_720,
                                             ui->action_Reset_Window_Size_900,
                                             ui->action_Reset_Window_Size_1080});
+
+    // Multiplayer
+    connect(ui->action_View_Lobby, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnViewLobby);
+    connect(ui->action_Start_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCreateRoom);
+    connect(ui->action_Leave_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCloseRoom);
+    connect(ui->action_Connect_To_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnDirectConnectToRoom);
+    connect(ui->action_Show_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnOpenNetworkRoom);
 
     // Tools
     connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
@@ -1537,6 +1565,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (!LoadROM(filename, program_id, program_index))
         return;
 
+    system->SetShuttingDown(false);
+
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>(*system);
     emit EmulationStarting(emu_thread.get());
@@ -1578,6 +1608,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (UISettings::values.hide_mouse) {
         mouse_hide_timer.start();
     }
+
+    render_window->InitializeCamera();
 
     std::string title_name;
     std::string title_version;
@@ -1627,6 +1659,7 @@ void GMainWindow::ShutdownGame() {
 
     AllowOSSleep();
 
+    system->SetShuttingDown(true);
     system->DetachDebugger();
     discord_rpc->Pause();
     emu_thread->RequestStop();
@@ -1659,6 +1692,7 @@ void GMainWindow::ShutdownGame() {
     tas_label->clear();
     input_subsystem->GetTas()->Stop();
     OnTasStateChanged();
+    render_window->FinalizeCamera();
 
     // Enable all controllers
     system->HIDCore().SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
@@ -2818,7 +2852,8 @@ void GMainWindow::OnConfigure() {
     const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
 
     Settings::SetConfiguringGlobal(true);
-    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system);
+    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system,
+                                     !multiplayer_state->IsHostingPublicRoom());
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
             &GMainWindow::OnLanguageChanged);
 
@@ -2875,6 +2910,11 @@ void GMainWindow::OnConfigure() {
     if (UISettings::values.enable_discord_presence.GetValue() != old_discord_presence) {
         SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     }
+
+    if (!multiplayer_state->IsHostingPublicRoom()) {
+        multiplayer_state->UpdateCredentials();
+    }
+
     emit UpdateThemedIcons();
 
     const auto reload = UISettings::values.is_game_list_reload_pending.exchange(false);
@@ -2896,6 +2936,12 @@ void GMainWindow::OnConfigure() {
 
     if (UISettings::values.hide_mouse) {
         mouse_hide_timer.start();
+    }
+
+    // Restart camera config
+    if (emulation_running) {
+        render_window->FinalizeCamera();
+        render_window->InitializeCamera();
     }
 
     if (!UISettings::values.has_broken_vulkan) {
@@ -3689,6 +3735,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     }
 
     render_window->close();
+    multiplayer_state->Close();
 
     QWidget::closeEvent(event);
 }
@@ -3885,6 +3932,7 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     UISettings::values.language = locale;
     LoadTranslation();
     ui->retranslateUi(this);
+    multiplayer_state->retranslateUi();
     UpdateWindowTitle();
 }
 
@@ -3906,6 +3954,11 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
 #endif
 
 int main(int argc, char* argv[]) {
+    bool has_broken_vulkan = false;
+    if (StartupChecks(argv[0], &has_broken_vulkan)) {
+        return 0;
+    }
+
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -3945,7 +3998,7 @@ int main(int argc, char* argv[]) {
     // generating shaders
     setlocale(LC_ALL, "C");
 
-    GMainWindow main_window{};
+    GMainWindow main_window{has_broken_vulkan};
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 

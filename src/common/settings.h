@@ -370,10 +370,12 @@ struct TouchFromButtonMap {
 
 struct Values {
     // Audio
-    Setting<std::string> audio_device_id{"auto", "output_device"};
     Setting<std::string> sink_id{"auto", "output_engine"};
+    Setting<std::string> audio_output_device_id{"auto", "output_device"};
+    Setting<std::string> audio_input_device_id{"auto", "input_device"};
     Setting<bool> audio_muted{false, "audio_muted"};
     SwitchableSetting<u8, true> volume{100, 0, 100, "volume"};
+    Setting<bool> dump_audio_commands{false, "dump_audio_commands"};
 
     // Core
     SwitchableSetting<bool> use_multi_core{true, "use_multi_core"};
@@ -500,6 +502,9 @@ struct Values {
 
     Setting<bool> enable_ring_controller{true, "enable_ring_controller"};
     RingconRaw ringcon_analogs;
+
+    Setting<bool> enable_ir_sensor{false, "enable_ir_sensor"};
+    Setting<std::string> ir_sensor_device{"auto", "ir_sensor_device"};
 
     // Data Storage
     Setting<bool> use_virtual_sd{true, "use_virtual_sd"};

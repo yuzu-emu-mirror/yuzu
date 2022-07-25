@@ -11,6 +11,7 @@
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "input_common/main.h"
+#include "network/network.h"
 #include "yuzu/configuration/config.h"
 
 namespace FS = Common::FS;
@@ -368,12 +369,18 @@ void Config::ReadHidbusValues() {
     }
 }
 
+void Config::ReadIrCameraValues() {
+    ReadBasicSetting(Settings::values.enable_ir_sensor);
+    ReadBasicSetting(Settings::values.ir_sensor_device);
+}
+
 void Config::ReadAudioValues() {
     qt_config->beginGroup(QStringLiteral("Audio"));
 
     if (global) {
-        ReadBasicSetting(Settings::values.audio_device_id);
         ReadBasicSetting(Settings::values.sink_id);
+        ReadBasicSetting(Settings::values.audio_output_device_id);
+        ReadBasicSetting(Settings::values.audio_input_device_id);
     }
     ReadGlobalSetting(Settings::values.volume);
 
@@ -392,6 +399,7 @@ void Config::ReadControlValues() {
     ReadTouchscreenValues();
     ReadMotionTouchValues();
     ReadHidbusValues();
+    ReadIrCameraValues();
 
 #ifdef _WIN32
     ReadBasicSetting(Settings::values.enable_raw_input);
@@ -681,12 +689,6 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.bg_green);
     ReadGlobalSetting(Settings::values.bg_blue);
 
-    if (!global && UISettings::values.has_broken_vulkan &&
-        Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::Vulkan &&
-        !Settings::values.renderer_backend.UsingGlobal()) {
-        Settings::values.renderer_backend.SetGlobal(true);
-    }
-
     if (global) {
         ReadBasicSetting(Settings::values.renderer_debug);
         ReadBasicSetting(Settings::values.renderer_shader_feedback);
@@ -793,6 +795,7 @@ void Config::ReadUIValues() {
     ReadPathValues();
     ReadScreenshotValues();
     ReadShortcutValues();
+    ReadMultiplayerValues();
 
     ReadBasicSetting(UISettings::values.single_window_mode);
     ReadBasicSetting(UISettings::values.fullscreen);
@@ -806,7 +809,6 @@ void Config::ReadUIValues() {
     ReadBasicSetting(UISettings::values.pause_when_in_background);
     ReadBasicSetting(UISettings::values.mute_when_in_background);
     ReadBasicSetting(UISettings::values.hide_mouse);
-    ReadBasicSetting(UISettings::values.has_broken_vulkan);
     ReadBasicSetting(UISettings::values.disable_web_applet);
 
     qt_config->endGroup();
@@ -860,6 +862,42 @@ void Config::ReadWebServiceValues() {
     qt_config->endGroup();
 }
 
+void Config::ReadMultiplayerValues() {
+    qt_config->beginGroup(QStringLiteral("Multiplayer"));
+
+    ReadBasicSetting(UISettings::values.multiplayer_nickname);
+    ReadBasicSetting(UISettings::values.multiplayer_ip);
+    ReadBasicSetting(UISettings::values.multiplayer_port);
+    ReadBasicSetting(UISettings::values.multiplayer_room_nickname);
+    ReadBasicSetting(UISettings::values.multiplayer_room_name);
+    ReadBasicSetting(UISettings::values.multiplayer_room_port);
+    ReadBasicSetting(UISettings::values.multiplayer_host_type);
+    ReadBasicSetting(UISettings::values.multiplayer_port);
+    ReadBasicSetting(UISettings::values.multiplayer_max_player);
+    ReadBasicSetting(UISettings::values.multiplayer_game_id);
+    ReadBasicSetting(UISettings::values.multiplayer_room_description);
+
+    // Read ban list back
+    int size = qt_config->beginReadArray(QStringLiteral("username_ban_list"));
+    UISettings::values.multiplayer_ban_list.first.resize(size);
+    for (int i = 0; i < size; ++i) {
+        qt_config->setArrayIndex(i);
+        UISettings::values.multiplayer_ban_list.first[i] =
+            ReadSetting(QStringLiteral("username")).toString().toStdString();
+    }
+    qt_config->endArray();
+    size = qt_config->beginReadArray(QStringLiteral("ip_ban_list"));
+    UISettings::values.multiplayer_ban_list.second.resize(size);
+    for (int i = 0; i < size; ++i) {
+        qt_config->setArrayIndex(i);
+        UISettings::values.multiplayer_ban_list.second[i] =
+            ReadSetting(QStringLiteral("ip")).toString().toStdString();
+    }
+    qt_config->endArray();
+
+    qt_config->endGroup();
+}
+
 void Config::ReadValues() {
     if (global) {
         ReadControlValues();
@@ -876,6 +914,7 @@ void Config::ReadValues() {
     ReadRendererValues();
     ReadAudioValues();
     ReadSystemValues();
+    ReadMultiplayerValues();
 }
 
 void Config::SavePlayerValue(std::size_t player_index) {
@@ -1004,6 +1043,11 @@ void Config::SaveHidbusValues() {
                  QString::fromStdString(default_param));
 }
 
+void Config::SaveIrCameraValues() {
+    WriteBasicSetting(Settings::values.enable_ir_sensor);
+    WriteBasicSetting(Settings::values.ir_sensor_device);
+}
+
 void Config::SaveValues() {
     if (global) {
         SaveControlValues();
@@ -1020,6 +1064,7 @@ void Config::SaveValues() {
     SaveRendererValues();
     SaveAudioValues();
     SaveSystemValues();
+    SaveMultiplayerValues();
 }
 
 void Config::SaveAudioValues() {
@@ -1027,7 +1072,8 @@ void Config::SaveAudioValues() {
 
     if (global) {
         WriteBasicSetting(Settings::values.sink_id);
-        WriteBasicSetting(Settings::values.audio_device_id);
+        WriteBasicSetting(Settings::values.audio_output_device_id);
+        WriteBasicSetting(Settings::values.audio_input_device_id);
     }
     WriteGlobalSetting(Settings::values.volume);
 
@@ -1045,6 +1091,7 @@ void Config::SaveControlValues() {
     SaveTouchscreenValues();
     SaveMotionTouchValues();
     SaveHidbusValues();
+    SaveIrCameraValues();
 
     WriteGlobalSetting(Settings::values.use_docked_mode);
     WriteGlobalSetting(Settings::values.vibration_enabled);
@@ -1340,6 +1387,7 @@ void Config::SaveUIValues() {
     SavePathValues();
     SaveScreenshotValues();
     SaveShortcutValues();
+    SaveMultiplayerValues();
 
     WriteBasicSetting(UISettings::values.single_window_mode);
     WriteBasicSetting(UISettings::values.fullscreen);
@@ -1353,7 +1401,6 @@ void Config::SaveUIValues() {
     WriteBasicSetting(UISettings::values.pause_when_in_background);
     WriteBasicSetting(UISettings::values.mute_when_in_background);
     WriteBasicSetting(UISettings::values.hide_mouse);
-    WriteBasicSetting(UISettings::values.has_broken_vulkan);
     WriteBasicSetting(UISettings::values.disable_web_applet);
 
     qt_config->endGroup();
@@ -1401,6 +1448,40 @@ void Config::SaveWebServiceValues() {
     WriteBasicSetting(Settings::values.web_api_url);
     WriteBasicSetting(Settings::values.yuzu_username);
     WriteBasicSetting(Settings::values.yuzu_token);
+
+    qt_config->endGroup();
+}
+
+void Config::SaveMultiplayerValues() {
+    qt_config->beginGroup(QStringLiteral("Multiplayer"));
+
+    WriteBasicSetting(UISettings::values.multiplayer_nickname);
+    WriteBasicSetting(UISettings::values.multiplayer_ip);
+    WriteBasicSetting(UISettings::values.multiplayer_port);
+    WriteBasicSetting(UISettings::values.multiplayer_room_nickname);
+    WriteBasicSetting(UISettings::values.multiplayer_room_name);
+    WriteBasicSetting(UISettings::values.multiplayer_room_port);
+    WriteBasicSetting(UISettings::values.multiplayer_host_type);
+    WriteBasicSetting(UISettings::values.multiplayer_port);
+    WriteBasicSetting(UISettings::values.multiplayer_max_player);
+    WriteBasicSetting(UISettings::values.multiplayer_game_id);
+    WriteBasicSetting(UISettings::values.multiplayer_room_description);
+
+    // Write ban list
+    qt_config->beginWriteArray(QStringLiteral("username_ban_list"));
+    for (std::size_t i = 0; i < UISettings::values.multiplayer_ban_list.first.size(); ++i) {
+        qt_config->setArrayIndex(static_cast<int>(i));
+        WriteSetting(QStringLiteral("username"),
+                     QString::fromStdString(UISettings::values.multiplayer_ban_list.first[i]));
+    }
+    qt_config->endArray();
+    qt_config->beginWriteArray(QStringLiteral("ip_ban_list"));
+    for (std::size_t i = 0; i < UISettings::values.multiplayer_ban_list.second.size(); ++i) {
+        qt_config->setArrayIndex(static_cast<int>(i));
+        WriteSetting(QStringLiteral("ip"),
+                     QString::fromStdString(UISettings::values.multiplayer_ban_list.second[i]));
+    }
+    qt_config->endArray();
 
     qt_config->endGroup();
 }
