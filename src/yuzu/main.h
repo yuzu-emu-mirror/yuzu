@@ -348,7 +348,7 @@ private:
     std::unique_ptr<Core::System> system;
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
-    
+
     MultiplayerState* multiplayer_state = nullptr;
 
     GRenderWindow* render_window;
