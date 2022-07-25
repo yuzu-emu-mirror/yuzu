@@ -41,8 +41,10 @@ add_custom_command(OUTPUT scm_rev.cpp
 add_library(common STATIC
     algorithm.h
     alignment.h
+    announce_multiplayer_room.h
     assert.cpp
     assert.h
+    atomic_helpers.h
     atomic_ops.h
     detached_tasks.cpp
     detached_tasks.h
@@ -64,6 +66,7 @@ add_library(common STATIC
     expected.h
     fiber.cpp
     fiber.h
+    fixed_point.h
     fs/file.cpp
     fs/file.h
     fs/fs.cpp
@@ -109,6 +112,7 @@ add_library(common STATIC
     parent_of_member.h
     point.h
     quaternion.h
+    reader_writer_queue.h
     ring_buffer.h
     scm_rev.cpp
     scm_rev.h
@@ -182,8 +186,9 @@ create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
 target_link_libraries(common PRIVATE lz4::lz4 xbyak)
-if (MSVC)
+if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()
-  target_link_libraries(common PRIVATE zstd)
+  target_link_libraries(common PRIVATE
+    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
 endif()

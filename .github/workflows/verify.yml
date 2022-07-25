@@ -3,6 +3,8 @@ name: 'yuzu verify'
 on:
   pull_request:
     branches: [ master ]
+env:
+  PR_NUMBER: pr${{ github.event.number }}
 
 jobs:
   format:
@@ -80,7 +82,6 @@ jobs:
         shell: cmd
         run: |
           choco install vulkan-sdk wget
-          python -m pip install --upgrade pip conan
           call refreshenv
           wget https://github.com/mbitsnbites/buildcache/releases/download/v0.27.6/buildcache-windows.zip
           7z x buildcache-windows.zip
@@ -100,7 +101,7 @@ jobs:
         run: |
           glslangValidator --version
           mkdir build
-          cmake . -B build -GNinja -DCMAKE_TOOLCHAIN_FILE="CMakeModules/MSVCCache.cmake" -DUSE_CCACHE=ON -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DYUZU_ENABLE_COMPATIBILITY_REPORTING=ON -DUSE_DISCORD_PRESENCE=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          cmake . -B build -GNinja -DCMAKE_TOOLCHAIN_FILE="CMakeModules/MSVCCache.cmake" -DUSE_CCACHE=ON -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DYUZU_ENABLE_COMPATIBILITY_REPORTING=ON -DUSE_DISCORD_PRESENCE=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release -DGIT_BRANCH=pr-verify -DCLANG_FORMAT_SUFFIX=discordplzdontclang -DYUZU_TESTS=OFF -DYUZU_USE_BUNDLED_VCPKG=ON
       - name: Build
         run: cmake --build build
       - name: Cache Summary
@@ -113,3 +114,8 @@ jobs:
         with:
           name: msvc
           path: artifacts/
+      - name: Upload EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.INDIVIDUAL_EXE }}
+          path: ${{ env.INDIVIDUAL_EXE }}

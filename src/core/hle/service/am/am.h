@@ -90,6 +90,7 @@ public:
     AppletMessage PopMessage();
     std::size_t GetMessageCount() const;
     void RequestExit();
+    void RequestResume();
     void FocusStateChanged();
     void OperationModeChanged();
 
@@ -174,6 +175,7 @@ private:
     void SetHandlesRequestToDisplay(Kernel::HLERequestContext& ctx);
     void SetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
     void GetIdleTimeDetectionExtension(Kernel::HLERequestContext& ctx);
+    void ReportUserIsActive(Kernel::HLERequestContext& ctx);
     void SetAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void IsAutoSleepDisabled(Kernel::HLERequestContext& ctx);
     void GetAccumulatedSuspendedTickValue(Kernel::HLERequestContext& ctx);

@@ -68,6 +68,7 @@ private:
     void ReadTouchscreenValues();
     void ReadMotionTouchValues();
     void ReadHidbusValues();
+    void ReadIrCameraValues();
 
     // Read functions bases off the respective config section names.
     void ReadAudioValues();
@@ -88,6 +89,7 @@ private:
     void ReadUIGamelistValues();
     void ReadUILayoutValues();
     void ReadWebServiceValues();
+    void ReadMultiplayerValues();
 
     void SaveValues();
     void SavePlayerValue(std::size_t player_index);
@@ -96,6 +98,7 @@ private:
     void SaveTouchscreenValues();
     void SaveMotionTouchValues();
     void SaveHidbusValues();
+    void SaveIrCameraValues();
 
     // Save functions based off the respective config section names.
     void SaveAudioValues();
@@ -116,6 +119,7 @@ private:
     void SaveUIGamelistValues();
     void SaveUILayoutValues();
     void SaveWebServiceValues();
+    void SaveMultiplayerValues();
 
     /**
      * Reads a setting from the qt_config.
