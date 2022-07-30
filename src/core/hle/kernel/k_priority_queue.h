@@ -19,11 +19,11 @@ class KThread;
 template <typename T>
 concept KPriorityQueueAffinityMask = !std::is_reference_v<T> && requires(T & t) {
     { t.GetAffinityMask() } -> Common::ConvertibleTo<u64>;
-    {t.SetAffinityMask(0)};
+    { t.SetAffinityMask(0) };
 
     { t.GetAffinity(0) } -> std::same_as<bool>;
-    {t.SetAffinity(0, false)};
-    {t.SetAll()};
+    { t.SetAffinity(0, false) };
+    { t.SetAll() };
 };
 
 template <typename T>
@@ -36,7 +36,7 @@ concept KPriorityQueueMember = !std::is_reference_v<T> && requires(T & t) {
     { (typename T::QueueEntry()).GetPrev() } -> std::same_as<T*>;
     { t.GetPriorityQueueEntry(0) } -> std::same_as<typename T::QueueEntry&>;
 
-    {t.GetAffinityMask()};
+    { t.GetAffinityMask() };
     { std::remove_cvref_t<decltype(t.GetAffinityMask())>() } -> KPriorityQueueAffinityMask;
 
     { t.GetActiveCore() } -> Common::ConvertibleTo<s32>;
