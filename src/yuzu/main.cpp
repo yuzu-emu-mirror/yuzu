@@ -1633,12 +1633,14 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     Settings::LogSettings();
 
     if (UISettings::values.select_user_on_boot) {
-        if (SelectAndSetCurrentUser() == false)
+        if (SelectAndSetCurrentUser() == false) {
             return;
+        }
     }
 
-    if (!LoadROM(filename, program_id, program_index))
+    if (!LoadROM(filename, program_id, program_index)) {
         return;
+    }
 
     system->SetShuttingDown(false);
 
