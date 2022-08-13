@@ -4,9 +4,9 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <span>
 #include <vector>
-#include <optional>
 
 #include <dynarmic/interface/halt_reason.h>
 
