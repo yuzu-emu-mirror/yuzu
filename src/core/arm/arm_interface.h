@@ -6,12 +6,14 @@
 #include <array>
 #include <span>
 #include <vector>
+#include <optional>
 
 #include <dynarmic/interface/halt_reason.h>
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "core/hardware_properties.h"
+#include "core/hle/kernel/arch/arm64/exception_handlers.h"
 
 namespace Common {
 struct PageTable;
@@ -210,6 +212,7 @@ protected:
     System& system;
     const WatchpointArray* watchpoints;
     bool uses_wall_clock;
+    std::optional<Kernel::Arch::Arm64::KExceptionContext> exception_context;
 
     static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
     const Kernel::DebugWatchpoint* MatchingWatchpoint(

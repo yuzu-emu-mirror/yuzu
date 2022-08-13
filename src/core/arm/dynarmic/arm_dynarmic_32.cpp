@@ -17,7 +17,6 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/debugger/debugger.h"
-#include "core/hle/kernel/arch/arm64/exception_handlers.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
@@ -130,8 +129,8 @@ public:
         exception_context.psr = thread_context.cpsr;
         exception_context.tpidr = thread_context.tpidr;
 
-        // Kernel to handle exception
-        Kernel::Arch::Arm64::HandleException(parent.system.Kernel(), exception_context);
+        // Kernel to handle exception on exit
+        parent.exception_context = exception_context;
     }
 
     void CallSVC(u32 swi) override {

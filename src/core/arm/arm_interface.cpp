@@ -134,6 +134,13 @@ void ARM_Interface::Run() {
         }
         system.ExitDynarmicProfile();
 
+        // Exception occurred, pass on to kernel to handle it.
+        if (exception_context != std::nullopt) {
+            const auto exception_context_ = *exception_context;
+            exception_context.reset();
+            Kernel::Arch::Arm64::HandleException(system.Kernel(), exception_context_);
+        }
+
         // Notify the debugger and go to sleep if a breakpoint was hit,
         // or if the thread is unable to continue for any reason.
         if (Has(hr, breakpoint) || Has(hr, no_execute)) {
