@@ -528,6 +528,11 @@ if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
     )
 endif()
 
+# Set __FILE__ macro value to a relative path for reproducible builds
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    add_compile_options("-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
+endif()
+
 enable_testing()
 add_subdirectory(externals)
 add_subdirectory(src)
