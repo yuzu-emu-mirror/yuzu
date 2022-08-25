@@ -811,7 +811,7 @@ bool BufferCache<P>::HasUncommittedFlushes() const noexcept {
 
 template <class P>
 void BufferCache<P>::AccumulateFlushes() {
-    if (Settings::values.gpu_accuracy.GetValue() != Settings::GPUAccuracy::High) {
+    if (!Settings::IsGPULevelHigh()) {
         uncommitted_ranges.clear();
         return;
     }
@@ -833,8 +833,7 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
         return;
     }
     MICROPROFILE_SCOPE(GPU_DownloadMemory);
-    const bool is_accuracy_normal =
-        Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::Normal;
+    const bool is_accuracy_normal = !Settings::IsGPULevelHigh();
 
     boost::container::small_vector<std::pair<BufferCopy, BufferId>, 1> downloads;
     u64 total_size_bytes = 0;
@@ -913,7 +912,7 @@ void BufferCache<P>::CommitAsyncFlushesHigh() {
 
 template <class P>
 void BufferCache<P>::CommitAsyncFlushes() {
-    if (Settings::values.gpu_accuracy.GetValue() == Settings::GPUAccuracy::High) {
+    if (Settings::IsGPULevelHigh()) {
         CommitAsyncFlushesHigh();
     } else {
         uncommitted_ranges.clear();
