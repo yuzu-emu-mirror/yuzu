@@ -33,6 +33,14 @@ enum class GPUAccuracy : u32 {
     Extreme = 2,
 };
 
+enum class StagingBufferSize : u32 {
+    Size_128MiB = 0,
+    Size_256MiB = 1,
+    Size_512MiB = 2,
+    Size_1024MiB = 3,
+    Size_2048MiB = 4,
+};
+
 enum class CPUAccuracy : u32 {
     Auto = 0,
     Accurate = 1,
@@ -447,6 +455,9 @@ struct Values {
     SwitchableSetting<bool> use_asynchronous_shaders{false, "use_asynchronous_shaders"};
     SwitchableSetting<bool> use_fast_gpu_time{true, "use_fast_gpu_time"};
     SwitchableSetting<bool> use_pessimistic_flushes{false, "use_pessimistic_flushes"};
+    SwitchableSetting<StagingBufferSize, true> staging_buffer_size{
+        StagingBufferSize::Size_128MiB, StagingBufferSize::Size_128MiB,
+        StagingBufferSize::Size_2048MiB, "staging_buffer_size"};
 
     SwitchableSetting<u8> bg_red{0, "bg_red"};
     SwitchableSetting<u8> bg_green{0, "bg_green"};

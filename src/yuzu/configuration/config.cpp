@@ -673,6 +673,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.scaling_filter);
     ReadGlobalSetting(Settings::values.anti_aliasing);
     ReadGlobalSetting(Settings::values.max_anisotropy);
+    ReadGlobalSetting(Settings::values.staging_buffer_size);
     ReadGlobalSetting(Settings::values.use_speed_limit);
     ReadGlobalSetting(Settings::values.speed_limit);
     ReadGlobalSetting(Settings::values.use_disk_shader_cache);
@@ -1281,6 +1282,10 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.anti_aliasing.GetDefault()),
                  Settings::values.anti_aliasing.UsingGlobal());
     WriteGlobalSetting(Settings::values.max_anisotropy);
+    WriteSetting(QString::fromStdString(Settings::values.staging_buffer_size.GetLabel()),
+                 static_cast<u32>(Settings::values.staging_buffer_size.GetValue(global)),
+                 static_cast<u32>(Settings::values.staging_buffer_size.GetDefault()),
+                 Settings::values.staging_buffer_size.UsingGlobal());
     WriteGlobalSetting(Settings::values.use_speed_limit);
     WriteGlobalSetting(Settings::values.speed_limit);
     WriteGlobalSetting(Settings::values.use_disk_shader_cache);

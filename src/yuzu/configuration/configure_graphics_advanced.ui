@@ -168,6 +168,60 @@
           </layout>
          </widget>
         </item>
+        <item>
+         <widget class="QWidget" name="staging_buffer_size_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_staging_buffer_size">
+             <property name="text">
+              <string>Vulkan staging buffer size:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="staging_buffer_size">
+             <item>
+              <property name="text">
+               <string>128 MiB</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>256 MiB</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>512 MiB</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>1024 MiB</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2048 MiB</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>

@@ -35,14 +35,20 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
             static_cast<int>(Settings::values.gpu_accuracy.GetValue()));
         ui->anisotropic_filtering_combobox->setCurrentIndex(
             Settings::values.max_anisotropy.GetValue());
+        ui->staging_buffer_size->setCurrentIndex(
+            static_cast<u32>(Settings::values.staging_buffer_size.GetValue()));
     } else {
         ConfigurationShared::SetPerGameSetting(ui->gpu_accuracy, &Settings::values.gpu_accuracy);
         ConfigurationShared::SetPerGameSetting(ui->anisotropic_filtering_combobox,
                                                &Settings::values.max_anisotropy);
+        ConfigurationShared::SetPerGameSetting(ui->staging_buffer_size,
+                                               &Settings::values.staging_buffer_size);
         ConfigurationShared::SetHighlight(ui->label_gpu_accuracy,
                                           !Settings::values.gpu_accuracy.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->af_label,
                                           !Settings::values.max_anisotropy.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->label_staging_buffer_size,
+                                          !Settings::values.staging_buffer_size.UsingGlobal());
     }
 }
 
@@ -58,6 +64,8 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
                                              ui->use_fast_gpu_time, use_fast_gpu_time);
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_pessimistic_flushes,
                                              ui->use_pessimistic_flushes, use_pessimistic_flushes);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.staging_buffer_size,
+                                             ui->staging_buffer_size);
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -84,6 +92,7 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
             Settings::values.use_pessimistic_flushes.UsingGlobal());
         ui->anisotropic_filtering_combobox->setEnabled(
             Settings::values.max_anisotropy.UsingGlobal());
+        ui->staging_buffer_size->setEnabled(Settings::values.staging_buffer_size.UsingGlobal());
 
         return;
     }
@@ -103,4 +112,7 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     ConfigurationShared::SetColoredComboBox(
         ui->anisotropic_filtering_combobox, ui->af_label,
         static_cast<int>(Settings::values.max_anisotropy.GetValue(true)));
+    ConfigurationShared::SetColoredComboBox(
+        ui->staging_buffer_size, ui->label_staging_buffer_size,
+        static_cast<u32>(Settings::values.staging_buffer_size.GetValue(true)));
 }
