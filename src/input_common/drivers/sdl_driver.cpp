@@ -109,7 +109,7 @@ public:
     bool HasHDRumble() const {
         if (sdl_controller) {
             const auto type = SDL_GameControllerGetType(sdl_controller.get());
-            return (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO)  || 
+            return (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO) || 
                    (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_LEFT) ||
                    (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT) ||
                    (type == SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_JOYCON_PAIR) ||
