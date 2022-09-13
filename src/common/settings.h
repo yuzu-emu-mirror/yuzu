@@ -529,6 +529,7 @@ struct Values {
     Setting<bool> extended_logging{false, "extended_logging"};
     Setting<bool> use_debug_asserts{false, "use_debug_asserts"};
     Setting<bool> use_auto_stub{false, "use_auto_stub"};
+    Setting<bool> accept_any_net{false, "accept_any_net"};
     Setting<bool> enable_all_controllers{false, "enable_all_controllers"};
 
     // Miscellaneous

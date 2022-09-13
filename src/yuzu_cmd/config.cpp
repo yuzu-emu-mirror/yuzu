@@ -341,6 +341,7 @@ void Config::ReadValues() {
     ReadSetting("Debugging", Settings::values.quest_flag);
     ReadSetting("Debugging", Settings::values.use_debug_asserts);
     ReadSetting("Debugging", Settings::values.use_auto_stub);
+    ReadSetting("Debugging", Settings::values.accept_any_net);
     ReadSetting("Debugging", Settings::values.disable_macro_jit);
     ReadSetting("Debugging", Settings::values.use_gdbstub);
     ReadSetting("Debugging", Settings::values.gdbstub_port);

@@ -545,6 +545,7 @@ void Config::ReadDebuggingValues() {
     ReadBasicSetting(Settings::values.extended_logging);
     ReadBasicSetting(Settings::values.use_debug_asserts);
     ReadBasicSetting(Settings::values.use_auto_stub);
+    ReadBasicSetting(Settings::values.accept_any_net);
     ReadBasicSetting(Settings::values.enable_all_controllers);
 
     qt_config->endGroup();

@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
+#include "common/settings.h"
 
 namespace {
 
@@ -483,7 +484,7 @@ void IGeneralService::IsAnyInternetRequestAccepted(Kernel::HLERequestContext& ct
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
-    if (Network::GetHostIPv4Address().has_value()) {
+    if (Network::GetHostIPv4Address().has_value() && Settings::values.accept_any_net) {
         rb.Push<u8>(1);
     } else {
         rb.Push<u8>(0);

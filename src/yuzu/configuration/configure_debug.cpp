@@ -47,6 +47,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->quest_flag->setChecked(Settings::values.quest_flag.GetValue());
     ui->use_debug_asserts->setChecked(Settings::values.use_debug_asserts.GetValue());
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
+    ui->accept_any_net->setChecked(Settings::values.accept_any_net.GetValue());
     ui->enable_all_controllers->setChecked(Settings::values.enable_all_controllers.GetValue());
     ui->enable_graphics_debugging->setEnabled(runtime_lock);
     ui->enable_graphics_debugging->setChecked(Settings::values.renderer_debug.GetValue());

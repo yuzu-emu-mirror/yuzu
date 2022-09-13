@@ -431,6 +431,8 @@ use_debug_asserts =
 # Determines whether unimplemented HLE service calls should be automatically stubbed.
 # false: Disabled (default), true: Enabled
 use_auto_stub =
+# false: Disabled, true: Enabled (default)
+accept_any_net=true
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
 # Determines whether to enable the GDB stub and wait for the debugger to attach before running.
