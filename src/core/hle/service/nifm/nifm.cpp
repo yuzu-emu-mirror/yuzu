@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nifm/nifm.h"
-#include "common/settings.h"
 
 namespace {
 
