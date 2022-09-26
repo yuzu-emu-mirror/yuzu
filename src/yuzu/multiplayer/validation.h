@@ -36,11 +36,9 @@ private:
     QRegExp nickname_regex = QRegExp(QStringLiteral("^[a-zA-Z0-9._- ]{4,20}$"));
     QRegExpValidator nickname;
 
-    /// ipv4 address only
-    // TODO remove this when we support hostnames in direct connect
+    /// ipv4 address and hostname
     QRegExp ip_regex = QRegExp(QStringLiteral(
-        "(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|"
-        "2[0-4][0-9]|25[0-5])"));
+        "[a-zA-Z0-9.-]{2,253}$"));
     QRegExpValidator ip;
 
     /// port must be between 0 and 65535
