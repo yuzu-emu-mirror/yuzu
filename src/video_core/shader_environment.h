@@ -63,14 +63,15 @@ public:
 protected:
     std::optional<u64> TryFindSize();
 
-    Shader::TextureType ReadTextureTypeImpl(GPUVAddr tic_addr, u32 tic_limit, bool via_header_index,
-                                            u32 raw);
+    Tegra::Texture::TICEntry ReadTextureInfo(GPUVAddr tic_addr, u32 tic_limit,
+                                             bool via_header_index, u32 raw);
 
     Tegra::MemoryManager* gpu_memory{};
     GPUVAddr program_base{};
 
     std::vector<u64> code;
     std::unordered_map<u32, Shader::TextureType> texture_types;
+    std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
     std::unordered_map<u64, u32> cbuf_values;
 
     u32 local_memory_size{};
@@ -102,6 +103,8 @@ public:
 
     Shader::TextureType ReadTextureType(u32 handle) override;
 
+    Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
+
 private:
     Tegra::Engines::Maxwell3D* maxwell3d{};
     size_t stage_index{};
@@ -119,6 +122,8 @@ public:
     u32 ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) override;
 
     Shader::TextureType ReadTextureType(u32 handle) override;
+
+    Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
 
 private:
     Tegra::Engines::KeplerCompute* kepler_compute{};
@@ -143,6 +148,8 @@ public:
 
     [[nodiscard]] Shader::TextureType ReadTextureType(u32 handle) override;
 
+    [[nodiscard]] Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
+
     [[nodiscard]] u32 LocalMemorySize() const override;
 
     [[nodiscard]] u32 SharedMemorySize() const override;
@@ -156,6 +163,7 @@ public:
 private:
     std::unique_ptr<u64[]> code;
     std::unordered_map<u32, Shader::TextureType> texture_types;
+    std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
     std::unordered_map<u64, u32> cbuf_values;
     std::array<u32, 3> workgroup_size{};
     u32 local_memory_size{};
