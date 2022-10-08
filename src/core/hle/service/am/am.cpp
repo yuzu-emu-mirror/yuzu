@@ -5,7 +5,6 @@
 #include <array>
 #include <cinttypes>
 #include <cstring>
-#include "audio_core/audio_renderer.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
@@ -40,9 +39,9 @@
 
 namespace Service::AM {
 
-constexpr ResultCode ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
-constexpr ResultCode ERR_NO_MESSAGES{ErrorModule::AM, 3};
-constexpr ResultCode ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
+constexpr Result ERR_NO_DATA_IN_CHANNEL{ErrorModule::AM, 2};
+constexpr Result ERR_NO_MESSAGES{ErrorModule::AM, 3};
+constexpr Result ERR_SIZE_OUT_OF_BOUNDS{ErrorModule::AM, 503};
 
 enum class LaunchParameterKind : u32 {
     ApplicationSpecific = 1,
@@ -238,6 +237,7 @@ IDebugFunctions::IDebugFunctions(Core::System& system_)
         {130, nullptr, "FriendInvitationSetApplicationParameter"},
         {131, nullptr, "FriendInvitationClearApplicationParameter"},
         {132, nullptr, "FriendInvitationPushApplicationParameter"},
+        {140, nullptr, "RestrictPowerOperationForSecureLaunchModeForDebug"},
         {900, nullptr, "GetGrcProcessLaunchedSystemEvent"},
     };
     // clang-format on
@@ -285,7 +285,7 @@ ISelfController::ISelfController(Core::System& system_, NVFlinger::NVFlinger& nv
         {62, &ISelfController::SetIdleTimeDetectionExtension, "SetIdleTimeDetectionExtension"},
         {63, &ISelfController::GetIdleTimeDetectionExtension, "GetIdleTimeDetectionExtension"},
         {64, nullptr, "SetInputDetectionSourceSet"},
-        {65, nullptr, "ReportUserIsActive"},
+        {65, &ISelfController::ReportUserIsActive, "ReportUserIsActive"},
         {66, nullptr, "GetCurrentIlluminance"},
         {67, nullptr, "IsIlluminanceAvailable"},
         {68, &ISelfController::SetAutoSleepDisabled, "SetAutoSleepDisabled"},
@@ -365,7 +365,7 @@ void ISelfController::LeaveFatalSection(Kernel::HLERequestContext& ctx) {
     // Entry and exit of fatal sections must be balanced.
     if (num_fatal_sections_entered == 0) {
         IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(ResultCode{ErrorModule::AM, 512});
+        rb.Push(Result{ErrorModule::AM, 512});
         return;
     }
 
@@ -517,6 +517,13 @@ void ISelfController::GetIdleTimeDetectionExtension(Kernel::HLERequestContext& c
     rb.Push<u32>(idle_time_detection_extension);
 }
 
+void ISelfController::ReportUserIsActive(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
+}
+
 void ISelfController::SetAutoSleepDisabled(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     is_auto_sleep_disabled = rp.Pop<bool>();
@@ -635,6 +642,10 @@ void AppletMessageQueue::RequestExit() {
     PushMessage(AppletMessage::Exit);
 }
 
+void AppletMessageQueue::RequestResume() {
+    PushMessage(AppletMessage::Resume);
+}
+
 void AppletMessageQueue::FocusStateChanged() {
     PushMessage(AppletMessage::FocusStateChanged);
 }
@@ -686,7 +697,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_,
         {66, &ICommonStateGetter::SetCpuBoostMode, "SetCpuBoostMode"},
         {67, nullptr, "CancelCpuBoostMode"},
         {68, nullptr, "GetBuiltInDisplayType"},
-        {80, nullptr, "PerformSystemButtonPressingIfInFocus"},
+        {80, &ICommonStateGetter::PerformSystemButtonPressingIfInFocus, "PerformSystemButtonPressingIfInFocus"},
         {90, nullptr, "SetPerformanceConfigurationChangedNotification"},
         {91, nullptr, "GetCurrentPerformanceConfiguration"},
         {100, nullptr, "SetHandlingHomeButtonShortPressedEnabled"},
@@ -743,7 +754,7 @@ void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
 }
 
 void ICommonStateGetter::GetCurrentFocusState(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_AM, "(STUBBED) called");
+    LOG_DEBUG(Service_AM, "(STUBBED) called");
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
@@ -824,6 +835,16 @@ void ICommonStateGetter::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
     ASSERT(apm_sys != nullptr);
 
     apm_sys->SetCpuBoostMode(ctx);
+}
+
+void ICommonStateGetter::PerformSystemButtonPressingIfInFocus(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto system_button{rp.PopEnum<SystemButtonType>()};
+
+    LOG_WARNING(Service_AM, "(STUBBED) called, system_button={}", system_button);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(ResultSuccess);
 }
 
 void ICommonStateGetter::SetRequestExitToLibraryAppletAtExecuteNextProgramEnabled(
@@ -1300,6 +1321,8 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {33, &IApplicationFunctions::EndBlockingHomeButton, "EndBlockingHomeButton"},
         {34, nullptr, "SelectApplicationLicense"},
         {35, nullptr, "GetDeviceSaveDataSizeMax"},
+        {36, nullptr, "GetLimitedApplicationLicense"},
+        {37, nullptr, "GetLimitedApplicationLicenseUpgradableEvent"},
         {40, &IApplicationFunctions::NotifyRunning, "NotifyRunning"},
         {50, &IApplicationFunctions::GetPseudoDeviceId, "GetPseudoDeviceId"},
         {60, nullptr, "SetMediaPlaybackStateForApplication"},

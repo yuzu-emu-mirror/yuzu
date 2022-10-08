@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2019 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 cmake_minimum_required(VERSION 3.8)
 
 project(opus)
@@ -253,4 +256,4 @@ PRIVATE
     opus/src
 )
 
-add_library(Opus::Opus ALIAS opus)
+add_library(Opus::opus ALIAS opus)

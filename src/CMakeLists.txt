@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Enable modules to include each other's files
 include_directories(.)
 
@@ -36,7 +39,6 @@ if (MSVC)
     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
     add_compile_options(
         /MP
-        /Zi
         /Zm200
         /Zo
         /permissive-
@@ -79,6 +81,13 @@ if (MSVC)
         /we5245 # 'function': unreferenced function with internal linkage has been removed
     )
 
+    if (USE_CCACHE)
+    # when caching, we need to use /Z7 to downgrade debug info to use an older but more cachable format
+        add_compile_options(/Z7)
+    else()
+        add_compile_options(/Zi)
+    endif()
+
     if (ARCHITECTURE_x86_64)
         add_compile_options(/QIntel-jcc-erratum)
     endif()
@@ -112,6 +121,7 @@ else()
 
     if (ARCHITECTURE_x86_64)
         add_compile_options("-mcx16")
+        add_compile_options("-fwrapv")
     endif()
 
     if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL Clang)
@@ -150,8 +160,10 @@ add_subdirectory(common)
 add_subdirectory(core)
 add_subdirectory(audio_core)
 add_subdirectory(video_core)
+add_subdirectory(network)
 add_subdirectory(input_common)
 add_subdirectory(shader_recompiler)
+add_subdirectory(dedicated_room)
 
 if (YUZU_TESTS)
     add_subdirectory(tests)

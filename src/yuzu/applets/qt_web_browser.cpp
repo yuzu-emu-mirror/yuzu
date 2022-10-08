@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifdef YUZU_USE_QT_WEB_ENGINE
+#include <bit>
+
 #include <QApplication>
 #include <QKeyEvent>
 
@@ -52,8 +54,8 @@ QtNXWebEngineView::QtNXWebEngineView(QWidget* parent, Core::System& system,
     : QWebEngineView(parent), input_subsystem{input_subsystem_},
       url_interceptor(std::make_unique<UrlRequestInterceptor>()),
       input_interpreter(std::make_unique<InputInterpreter>(system)),
-      default_profile{QWebEngineProfile::defaultProfile()},
-      global_settings{QWebEngineSettings::globalSettings()} {
+      default_profile{QWebEngineProfile::defaultProfile()}, global_settings{
+                                                                default_profile->settings()} {
     default_profile->setPersistentStoragePath(QString::fromStdString(Common::FS::PathToUTF8String(
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::YuzuDir) / "qtwebengine")));
 
@@ -78,7 +80,7 @@ QtNXWebEngineView::QtNXWebEngineView(QWidget* parent, Core::System& system,
     default_profile->scripts()->insert(gamepad);
     default_profile->scripts()->insert(window_nx);
 
-    default_profile->setRequestInterceptor(url_interceptor.get());
+    default_profile->setUrlRequestInterceptor(url_interceptor.get());
 
     global_settings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
     global_settings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
@@ -211,8 +213,10 @@ template <Core::HID::NpadButton... T>
 void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
     const auto f = [this](Core::HID::NpadButton button) {
         if (input_interpreter->IsButtonPressedOnce(button)) {
+            const auto button_index = std::countr_zero(static_cast<u64>(button));
+
             page()->runJavaScript(
-                QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(static_cast<u8>(button)),
+                QStringLiteral("yuzu_key_callbacks[%1] == null;").arg(button_index),
                 [this, button](const QVariant& variant) {
                     if (variant.toBool()) {
                         switch (button) {
@@ -236,7 +240,7 @@ void QtNXWebEngineView::HandleWindowFooterButtonPressedOnce() {
 
             page()->runJavaScript(
                 QStringLiteral("if (yuzu_key_callbacks[%1] != null) { yuzu_key_callbacks[%1](); }")
-                    .arg(static_cast<u8>(button)));
+                    .arg(button_index));
         }
     };
 

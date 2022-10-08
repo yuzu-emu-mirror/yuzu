@@ -63,7 +63,7 @@ QtControllerSelectorDialog::QtControllerSelectorDialog(
     InputCommon::InputSubsystem* input_subsystem_, Core::System& system_)
     : QDialog(parent), ui(std::make_unique<Ui::QtControllerSelectorDialog>()),
       parameters(std::move(parameters_)), input_subsystem{input_subsystem_},
-      input_profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
+      input_profiles(std::make_unique<InputProfiles>()), system{system_} {
     ui->setupUi(this);
 
     player_widgets = {
@@ -291,7 +291,7 @@ bool QtControllerSelectorDialog::CheckIfParametersMet() {
     // Here, we check and validate the current configuration against all applicable parameters.
     const auto num_connected_players = static_cast<int>(
         std::count_if(player_groupboxes.begin(), player_groupboxes.end(),
-                      [this](const QGroupBox* player) { return player->isChecked(); }));
+                      [](const QGroupBox* player) { return player->isChecked(); }));
 
     const auto min_supported_players = parameters.enable_single_mode ? 1 : parameters.min_players;
     const auto max_supported_players = parameters.enable_single_mode ? 1 : parameters.max_players;

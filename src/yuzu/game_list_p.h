@@ -1,6 +1,5 @@
-// Copyright 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -295,7 +294,7 @@ public:
 
         const int icon_size = UISettings::values.folder_icon_size.GetValue();
 
-        setData(QIcon::fromTheme(QStringLiteral("plus"))
+        setData(QIcon::fromTheme(QStringLiteral("list-add"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
@@ -354,6 +353,9 @@ public:
     void setFocus();
 
 private:
+    void changeEvent(QEvent*) override;
+    void RetranslateUI();
+
     class KeyReleaseEater : public QObject {
     public:
         explicit KeyReleaseEater(GameList* gamelist_, QObject* parent = nullptr);

@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -28,11 +27,11 @@ public:
 
 private:
     /**
-     * Applies a value read from the sdl2_config to a BasicSetting.
+     * Applies a value read from the sdl2_config to a Setting.
      *
      * @param group The name of the INI group
      * @param setting The yuzu setting to modify
      */
-    template <typename Type>
-    void ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting);
 };

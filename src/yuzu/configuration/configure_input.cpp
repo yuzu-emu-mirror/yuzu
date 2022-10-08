@@ -1,6 +1,5 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 #include <thread>
@@ -15,6 +14,7 @@
 #include "ui_configure_input.h"
 #include "ui_configure_input_advanced.h"
 #include "ui_configure_input_player.h"
+#include "yuzu/configuration/configure_camera.h"
 #include "yuzu/configuration/configure_debug_controller.h"
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_input_advanced.h"
@@ -65,7 +65,7 @@ void OnDockedModeChanged(bool last_state, bool new_state, Core::System& system) 
 
 ConfigureInput::ConfigureInput(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui(std::make_unique<Ui::ConfigureInput>()),
-      profiles(std::make_unique<InputProfiles>(system_)), system{system_} {
+      profiles(std::make_unique<InputProfiles>()), system{system_} {
     ui->setupUi(this);
 }
 
@@ -163,6 +163,9 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
             [this, input_subsystem, &hid_core] {
                 CallConfigureDialog<ConfigureRingController>(*this, input_subsystem, hid_core);
             });
+    connect(advanced, &ConfigureInputAdvanced::CallCameraDialog, [this, input_subsystem] {
+        CallConfigureDialog<ConfigureCamera>(*this, input_subsystem);
+    });
 
     connect(ui->vibrationButton, &QPushButton::clicked,
             [this, &hid_core] { CallConfigureDialog<ConfigureVibration>(*this, hid_core); });

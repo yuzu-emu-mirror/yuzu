@@ -1,10 +1,10 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <array>
+#include <span>
 #include <vector>
 
 #include <dynarmic/interface/halt_reason.h>
@@ -19,13 +19,15 @@ struct PageTable;
 
 namespace Kernel {
 enum class VMAPermission : u8;
-}
+enum class DebugWatchpointType : u8;
+struct DebugWatchpoint;
+} // namespace Kernel
 
 namespace Core {
 class System;
 class CPUInterruptHandler;
 
-using CPUInterrupts = std::array<CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>;
+using WatchpointArray = std::array<Kernel::DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>;
 
 /// Generic ARMv8 CPU interface
 class ARM_Interface {
@@ -33,10 +35,8 @@ public:
     YUZU_NON_COPYABLE(ARM_Interface);
     YUZU_NON_MOVEABLE(ARM_Interface);
 
-    explicit ARM_Interface(System& system_, CPUInterrupts& interrupt_handlers_,
-                           bool uses_wall_clock_)
-        : system{system_}, interrupt_handlers{interrupt_handlers_}, uses_wall_clock{
-                                                                        uses_wall_clock_} {}
+    explicit ARM_Interface(System& system_, bool uses_wall_clock_)
+        : system{system_}, uses_wall_clock{uses_wall_clock_} {}
     virtual ~ARM_Interface() = default;
 
     struct ThreadContext32 {
@@ -170,12 +170,16 @@ public:
     virtual void SaveContext(ThreadContext64& ctx) = 0;
     virtual void LoadContext(const ThreadContext32& ctx) = 0;
     virtual void LoadContext(const ThreadContext64& ctx) = 0;
+    void LoadWatchpointArray(const WatchpointArray& wp);
 
     /// Clears the exclusive monitor's state.
     virtual void ClearExclusiveState() = 0;
 
     /// Signal an interrupt and ask the core to halt as soon as possible.
     virtual void SignalInterrupt() = 0;
+
+    /// Clear a previous interrupt.
+    virtual void ClearInterrupt() = 0;
 
     struct BacktraceEntry {
         std::string module;
@@ -198,18 +202,24 @@ public:
     static constexpr Dynarmic::HaltReason break_loop = Dynarmic::HaltReason::UserDefined2;
     static constexpr Dynarmic::HaltReason svc_call = Dynarmic::HaltReason::UserDefined3;
     static constexpr Dynarmic::HaltReason breakpoint = Dynarmic::HaltReason::UserDefined4;
+    static constexpr Dynarmic::HaltReason watchpoint = Dynarmic::HaltReason::MemoryAbort;
+    static constexpr Dynarmic::HaltReason no_execute = Dynarmic::HaltReason::UserDefined6;
 
 protected:
     /// System context that this ARM interface is running under.
     System& system;
-    CPUInterrupts& interrupt_handlers;
+    const WatchpointArray* watchpoints;
     bool uses_wall_clock;
 
     static void SymbolicateBacktrace(Core::System& system, std::vector<BacktraceEntry>& out);
+    const Kernel::DebugWatchpoint* MatchingWatchpoint(
+        VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const;
 
     virtual Dynarmic::HaltReason RunJit() = 0;
     virtual Dynarmic::HaltReason StepJit() = 0;
     virtual u32 GetSvcNumber() const = 0;
+    virtual const Kernel::DebugWatchpoint* HaltedWatchpoint() const = 0;
+    virtual void RewindBreakpointInstruction() = 0;
 };
 
 } // namespace Core

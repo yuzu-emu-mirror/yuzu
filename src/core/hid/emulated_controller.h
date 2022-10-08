@@ -15,10 +15,12 @@
 #include "common/settings.h"
 #include "common/vector_math.h"
 #include "core/hid/hid_types.h"
+#include "core/hid/irs_types.h"
 #include "core/hid/motion_input.h"
 
 namespace Core::HID {
 const std::size_t max_emulated_controllers = 2;
+const std::size_t output_devices_size = 4;
 struct ControllerMotionInfo {
     Common::Input::MotionStatus raw_status{};
     MotionInput emulated{};
@@ -34,15 +36,18 @@ using TriggerDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, Settings::NativeTrigger::NumTriggers>;
 using BatteryDevices =
     std::array<std::unique_ptr<Common::Input::InputDevice>, max_emulated_controllers>;
-using OutputDevices =
-    std::array<std::unique_ptr<Common::Input::OutputDevice>, max_emulated_controllers>;
+using CameraDevices = std::unique_ptr<Common::Input::InputDevice>;
+using NfcDevices = std::unique_ptr<Common::Input::InputDevice>;
+using OutputDevices = std::array<std::unique_ptr<Common::Input::OutputDevice>, output_devices_size>;
 
 using ButtonParams = std::array<Common::ParamPackage, Settings::NativeButton::NumButtons>;
 using StickParams = std::array<Common::ParamPackage, Settings::NativeAnalog::NumAnalogs>;
 using ControllerMotionParams = std::array<Common::ParamPackage, Settings::NativeMotion::NumMotions>;
 using TriggerParams = std::array<Common::ParamPackage, Settings::NativeTrigger::NumTriggers>;
 using BatteryParams = std::array<Common::ParamPackage, max_emulated_controllers>;
-using OutputParams = std::array<Common::ParamPackage, max_emulated_controllers>;
+using CameraParams = Common::ParamPackage;
+using NfcParams = Common::ParamPackage;
+using OutputParams = std::array<Common::ParamPackage, output_devices_size>;
 
 using ButtonValues = std::array<Common::Input::ButtonStatus, Settings::NativeButton::NumButtons>;
 using SticksValues = std::array<Common::Input::StickStatus, Settings::NativeAnalog::NumAnalogs>;
@@ -51,6 +56,8 @@ using TriggerValues =
 using ControllerMotionValues = std::array<ControllerMotionInfo, Settings::NativeMotion::NumMotions>;
 using ColorValues = std::array<Common::Input::BodyColorStatus, max_emulated_controllers>;
 using BatteryValues = std::array<Common::Input::BatteryStatus, max_emulated_controllers>;
+using CameraValues = Common::Input::CameraStatus;
+using NfcValues = Common::Input::NfcStatus;
 using VibrationValues = std::array<Common::Input::VibrationStatus, max_emulated_controllers>;
 
 struct AnalogSticks {
@@ -68,6 +75,17 @@ struct BatteryLevelState {
     NpadPowerInfo dual{};
     NpadPowerInfo left{};
     NpadPowerInfo right{};
+};
+
+struct CameraState {
+    Core::IrSensor::ImageTransferProcessorFormat format{};
+    std::vector<u8> data{};
+    std::size_t sample{};
+};
+
+struct NfcState {
+    Common::Input::NfcState state{};
+    std::vector<u8> data{};
 };
 
 struct ControllerMotion {
@@ -96,6 +114,8 @@ struct ControllerStatus {
     ColorValues color_values{};
     BatteryValues battery_values{};
     VibrationValues vibration_values{};
+    CameraValues camera_values{};
+    NfcValues nfc_values{};
 
     // Data for HID serices
     HomeButtonState home_button_state{};
@@ -107,6 +127,8 @@ struct ControllerStatus {
     NpadGcTriggerState gc_trigger_state{};
     ControllerColors colors_state{};
     BatteryLevelState battery_state{};
+    CameraState camera_state{};
+    NfcState nfc_state{};
 };
 
 enum class ControllerTriggerType {
@@ -117,6 +139,8 @@ enum class ControllerTriggerType {
     Color,
     Battery,
     Vibration,
+    IrSensor,
+    Nfc,
     Connected,
     Disconnected,
     Type,
@@ -269,6 +293,9 @@ public:
     /// Returns the latest battery status from the controller with parameters
     BatteryValues GetBatteryValues() const;
 
+    /// Returns the latest camera status from the controller with parameters
+    CameraValues GetCameraValues() const;
+
     /// Returns the latest status of button input for the hid::HomeButton service
     HomeButtonState GetHomeButtons() const;
 
@@ -296,6 +323,12 @@ public:
     /// Returns the latest battery status from the controller
     BatteryLevelState GetBattery() const;
 
+    /// Returns the latest camera status from the controller
+    const CameraState& GetCamera() const;
+
+    /// Returns the latest ntag status from the controller
+    const NfcState& GetNfc() const;
+
     /**
      * Sends a specific vibration to the output device
      * @return true if vibration had no errors
@@ -314,6 +347,19 @@ public:
      * @return true if SetPollingMode was successfull
      */
     bool SetPollingMode(Common::Input::PollingMode polling_mode);
+
+    /**
+     * Sets the desired camera format to be polled from a controller
+     * @param camera_format size of each frame
+     * @return true if SetCameraFormat was successfull
+     */
+    bool SetCameraFormat(Core::IrSensor::ImageTransferProcessorFormat camera_format);
+
+    /// Returns true if the device has nfc support
+    bool HasNfc() const;
+
+    /// Returns true if the nfc tag was written
+    bool WriteNfc(const std::vector<u8>& data);
 
     /// Returns the led pattern corresponding to this emulated controller
     LedPattern GetLedPattern() const;
@@ -393,6 +439,25 @@ private:
     void SetBattery(const Common::Input::CallbackStatus& callback, std::size_t index);
 
     /**
+     * Updates the camera status of the controller
+     * @param callback A CallbackStatus containing the camera status
+     */
+    void SetCamera(const Common::Input::CallbackStatus& callback);
+
+    /**
+     * Updates the nfc status of the controller
+     * @param callback A CallbackStatus containing the nfc status
+     */
+    void SetNfc(const Common::Input::CallbackStatus& callback);
+
+    /**
+     * Converts a color format from bgra to rgba
+     * @param color in bgra format
+     * @return NpadColor in rgba format
+     */
+    NpadColor GetNpadColor(u32 color);
+
+    /**
      * Triggers a callback that something has changed on the controller status
      * @param type Input type of the event to trigger
      * @param is_service_update indicates if this event should only be sent to HID services
@@ -401,6 +466,7 @@ private:
 
     const NpadIdType npad_id_type;
     NpadStyleIndex npad_type{NpadStyleIndex::None};
+    NpadStyleIndex original_npad_type{NpadStyleIndex::None};
     NpadStyleTag supported_style_tag{NpadStyleSet::All};
     bool is_connected{false};
     bool is_configuring{false};
@@ -417,6 +483,8 @@ private:
     ControllerMotionParams motion_params;
     TriggerParams trigger_params;
     BatteryParams battery_params;
+    CameraParams camera_params;
+    NfcParams nfc_params;
     OutputParams output_params;
 
     ButtonDevices button_devices;
@@ -424,6 +492,8 @@ private:
     ControllerMotionDevices motion_devices;
     TriggerDevices trigger_devices;
     BatteryDevices battery_devices;
+    CameraDevices camera_devices;
+    NfcDevices nfc_devices;
     OutputDevices output_devices;
 
     // TAS related variables

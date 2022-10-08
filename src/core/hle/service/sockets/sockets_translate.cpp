@@ -7,7 +7,7 @@
 #include "common/common_types.h"
 #include "core/hle/service/sockets/sockets.h"
 #include "core/hle/service/sockets/sockets_translate.h"
-#include "core/network/network.h"
+#include "core/internal_network/network.h"
 
 namespace Service::Sockets {
 
@@ -25,6 +25,8 @@ Errno Translate(Network::Errno value) {
         return Errno::MFILE;
     case Network::Errno::NOTCONN:
         return Errno::NOTCONN;
+    case Network::Errno::TIMEDOUT:
+        return Errno::TIMEDOUT;
     default:
         UNIMPLEMENTED_MSG("Unimplemented errno={}", value);
         return Errno::SUCCESS;

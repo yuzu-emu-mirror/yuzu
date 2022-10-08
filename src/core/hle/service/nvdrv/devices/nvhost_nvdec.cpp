@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "audio_core/audio_core.h"
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "core/core.h"
+#include "core/hle/service/nvdrv/core/container.h"
 #include "core/hle/service/nvdrv/devices/nvhost_nvdec.h"
 #include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
 
-nvhost_nvdec::nvhost_nvdec(Core::System& system_, std::shared_ptr<nvmap> nvmap_dev_,
-                           SyncpointManager& syncpoint_manager_)
-    : nvhost_nvdec_common{system_, std::move(nvmap_dev_), syncpoint_manager_} {}
+nvhost_nvdec::nvhost_nvdec(Core::System& system_, NvCore::Container& core_)
+    : nvhost_nvdec_common{system_, core_, NvCore::ChannelType::NvDec} {}
 nvhost_nvdec::~nvhost_nvdec() = default;
 
 NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>& input,
@@ -20,8 +21,9 @@ NvResult nvhost_nvdec::Ioctl1(DeviceFD fd, Ioctl command, const std::vector<u8>&
     case 0x0:
         switch (command.cmd) {
         case 0x1: {
-            if (!fd_to_id.contains(fd)) {
-                fd_to_id[fd] = next_id++;
+            auto& host1x_file = core.Host1xDeviceFile();
+            if (!host1x_file.fd_to_id.contains(fd)) {
+                host1x_file.fd_to_id[fd] = host1x_file.nvdec_next_id++;
             }
             return Submit(fd, input, output);
         }
@@ -65,14 +67,19 @@ NvResult nvhost_nvdec::Ioctl3(DeviceFD fd, Ioctl command, const std::vector<u8>&
     return NvResult::NotImplemented;
 }
 
-void nvhost_nvdec::OnOpen(DeviceFD fd) {}
+void nvhost_nvdec::OnOpen(DeviceFD fd) {
+    LOG_INFO(Service_NVDRV, "NVDEC video stream started");
+    system.AudioCore().SetNVDECActive(true);
+}
 
 void nvhost_nvdec::OnClose(DeviceFD fd) {
     LOG_INFO(Service_NVDRV, "NVDEC video stream ended");
-    const auto iter = fd_to_id.find(fd);
-    if (iter != fd_to_id.end()) {
+    auto& host1x_file = core.Host1xDeviceFile();
+    const auto iter = host1x_file.fd_to_id.find(fd);
+    if (iter != host1x_file.fd_to_id.end()) {
         system.GPU().ClearCdmaInstance(iter->second);
     }
+    system.AudioCore().SetNVDECActive(false);
 }
 
 } // namespace Service::Nvidia::Devices

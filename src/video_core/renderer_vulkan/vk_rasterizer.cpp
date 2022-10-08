@@ -11,6 +11,7 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/blit_image.h"
@@ -69,10 +70,17 @@ VkViewport GetViewportState(const Device& device, const Maxwell& regs, size_t in
     const float width = conv(src.scale_x * 2.0f);
     float y = conv(src.translate_y - src.scale_y);
     float height = conv(src.scale_y * 2.0f);
-    if (regs.screen_y_control.y_negate) {
+    bool y_negate = regs.screen_y_control.y_negate;
+
+    if (!device.IsNvViewportSwizzleSupported()) {
+        y_negate = y_negate != (src.swizzle.y == Maxwell::ViewportSwizzle::NegativeY);
+    }
+
+    if (y_negate) {
         y += height;
         height = -height;
     }
+
     const float reduce_z = regs.depth_mode == Maxwell::DepthMode::MinusOneToOne ? 1.0f : 0.0f;
     VkViewport viewport{
         .x = x,
@@ -140,14 +148,11 @@ DrawParams MakeDrawParams(const Maxwell& regs, u32 num_instances, bool is_indexe
 } // Anonymous namespace
 
 RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
-                                   Tegra::MemoryManager& gpu_memory_,
-                                   Core::Memory::Memory& cpu_memory_, VKScreenInfo& screen_info_,
+                                   Core::Memory::Memory& cpu_memory_, ScreenInfo& screen_info_,
                                    const Device& device_, MemoryAllocator& memory_allocator_,
-                                   StateTracker& state_tracker_, VKScheduler& scheduler_)
-    : RasterizerAccelerated{cpu_memory_}, gpu{gpu_},
-      gpu_memory{gpu_memory_}, maxwell3d{gpu.Maxwell3D()}, kepler_compute{gpu.KeplerCompute()},
-      screen_info{screen_info_}, device{device_}, memory_allocator{memory_allocator_},
-      state_tracker{state_tracker_}, scheduler{scheduler_},
+                                   StateTracker& state_tracker_, Scheduler& scheduler_)
+    : RasterizerAccelerated{cpu_memory_}, gpu{gpu_}, screen_info{screen_info_}, device{device_},
+      memory_allocator{memory_allocator_}, state_tracker{state_tracker_}, scheduler{scheduler_},
       staging_pool(device, memory_allocator, scheduler), descriptor_pool(device, scheduler),
       update_descriptor_queue(device, scheduler),
       blit_image(device, scheduler, state_tracker, descriptor_pool),
@@ -157,14 +162,13 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
                                                        memory_allocator, staging_pool,
                                                        blit_image,       astc_decoder_pass,
                                                        render_pass_cache},
-      texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
+      texture_cache(texture_cache_runtime, *this),
       buffer_cache_runtime(device, memory_allocator, scheduler, staging_pool,
                            update_descriptor_queue, descriptor_pool),
-      buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
-      pipeline_cache(*this, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
-                     descriptor_pool, update_descriptor_queue, render_pass_cache, buffer_cache,
-                     texture_cache, gpu.ShaderNotify()),
-      query_cache{*this, maxwell3d, gpu_memory, device, scheduler}, accelerate_dma{buffer_cache},
+      buffer_cache(*this, cpu_memory_, buffer_cache_runtime),
+      pipeline_cache(*this, device, scheduler, descriptor_pool, update_descriptor_queue,
+                     render_pass_cache, buffer_cache, texture_cache, gpu.ShaderNotify()),
+      query_cache{*this, device, scheduler}, accelerate_dma{buffer_cache},
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {
     scheduler.SetQueryCache(query_cache);
@@ -185,6 +189,8 @@ void RasterizerVulkan::Draw(bool is_indexed) {
         return;
     }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    // update engine as channel may be different.
+    pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
 
     BeginTransformFeedback();
@@ -210,14 +216,14 @@ void RasterizerVulkan::Draw(bool is_indexed) {
 void RasterizerVulkan::Clear() {
     MICROPROFILE_SCOPE(Vulkan_Clearing);
 
-    if (!maxwell3d.ShouldExecute()) {
+    if (!maxwell3d->ShouldExecute()) {
         return;
     }
     FlushWork();
 
     query_cache.UpdateCounters();
 
-    auto& regs = maxwell3d.regs;
+    auto& regs = maxwell3d->regs;
     const bool use_color = regs.clear_buffers.R || regs.clear_buffers.G || regs.clear_buffers.B ||
                            regs.clear_buffers.A;
     const bool use_depth = regs.clear_buffers.Z;
@@ -240,8 +246,15 @@ void RasterizerVulkan::Clear() {
     }
     UpdateViewportsState(regs);
 
+    VkRect2D default_scissor;
+    default_scissor.offset.x = 0;
+    default_scissor.offset.y = 0;
+    default_scissor.extent.width = std::numeric_limits<s32>::max();
+    default_scissor.extent.height = std::numeric_limits<s32>::max();
+
     VkClearRect clear_rect{
-        .rect = GetScissorState(regs, 0, up_scale, down_shift),
+        .rect = regs.clear_flags.scissor ? GetScissorState(regs, 0, up_scale, down_shift)
+                                         : default_scissor,
         .baseArrayLayer = regs.clear_buffers.layer,
         .layerCount = 1,
     };
@@ -331,9 +344,9 @@ void RasterizerVulkan::DispatchCompute() {
         return;
     }
     std::scoped_lock lock{texture_cache.mutex, buffer_cache.mutex};
-    pipeline->Configure(kepler_compute, gpu_memory, scheduler, buffer_cache, texture_cache);
+    pipeline->Configure(*kepler_compute, *gpu_memory, scheduler, buffer_cache, texture_cache);
 
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const std::array<u32, 3> dim{qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z};
     scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([dim](vk::CommandBuffer cmdbuf) { cmdbuf.Dispatch(dim[0], dim[1], dim[2]); });
@@ -414,7 +427,7 @@ void RasterizerVulkan::OnCPUWrite(VAddr addr, u64 size) {
     }
 }
 
-void RasterizerVulkan::SyncGuestHost() {
+void RasterizerVulkan::InvalidateGPUCache() {
     pipeline_cache.SyncGuestHost();
     {
         std::scoped_lock lock{buffer_cache.mutex};
@@ -434,40 +447,30 @@ void RasterizerVulkan::UnmapMemory(VAddr addr, u64 size) {
     pipeline_cache.OnCPUWrite(addr, size);
 }
 
-void RasterizerVulkan::ModifyGPUMemory(GPUVAddr addr, u64 size) {
+void RasterizerVulkan::ModifyGPUMemory(size_t as_id, GPUVAddr addr, u64 size) {
     {
         std::scoped_lock lock{texture_cache.mutex};
-        texture_cache.UnmapGPUMemory(addr, size);
+        texture_cache.UnmapGPUMemory(as_id, addr, size);
     }
 }
 
-void RasterizerVulkan::SignalSemaphore(GPUVAddr addr, u32 value) {
-    if (!gpu.IsAsync()) {
-        gpu_memory.Write<u32>(addr, value);
-        return;
-    }
-    fence_manager.SignalSemaphore(addr, value);
+void RasterizerVulkan::SignalFence(std::function<void()>&& func) {
+    fence_manager.SignalFence(std::move(func));
+}
+
+void RasterizerVulkan::SyncOperation(std::function<void()>&& func) {
+    fence_manager.SyncOperation(std::move(func));
 }
 
 void RasterizerVulkan::SignalSyncPoint(u32 value) {
-    if (!gpu.IsAsync()) {
-        gpu.IncrementSyncPoint(value);
-        return;
-    }
     fence_manager.SignalSyncPoint(value);
 }
 
 void RasterizerVulkan::SignalReference() {
-    if (!gpu.IsAsync()) {
-        return;
-    }
     fence_manager.SignalOrdering();
 }
 
 void RasterizerVulkan::ReleaseFences() {
-    if (!gpu.IsAsync()) {
-        return;
-    }
     fence_manager.WaitPendingFences();
 }
 
@@ -544,13 +547,13 @@ Tegra::Engines::AccelerateDMAInterface& RasterizerVulkan::AccessAccelerateDMA() 
 }
 
 void RasterizerVulkan::AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
-                                                std::span<u8> memory) {
-    auto cpu_addr = gpu_memory.GpuToCpuAddress(address);
+                                                std::span<const u8> memory) {
+    auto cpu_addr = gpu_memory->GpuToCpuAddress(address);
     if (!cpu_addr) [[unlikely]] {
-        gpu_memory.WriteBlock(address, memory.data(), copy_size);
+        gpu_memory->WriteBlock(address, memory.data(), copy_size);
         return;
     }
-    gpu_memory.WriteBlockUnsafe(address, memory.data(), copy_size);
+    gpu_memory->WriteBlockUnsafe(address, memory.data(), copy_size);
     {
         std::unique_lock<std::mutex> lock{buffer_cache.mutex};
         if (!buffer_cache.InlineMemory(*cpu_addr, copy_size, memory)) {
@@ -619,7 +622,7 @@ bool AccelerateDMA::BufferCopy(GPUVAddr src_address, GPUVAddr dest_address, u64 
 }
 
 void RasterizerVulkan::UpdateDynamicStates() {
-    auto& regs = maxwell3d.regs;
+    auto& regs = maxwell3d->regs;
     UpdateViewportsState(regs);
     UpdateScissorsState(regs);
     UpdateDepthBias(regs);
@@ -643,7 +646,7 @@ void RasterizerVulkan::UpdateDynamicStates() {
 }
 
 void RasterizerVulkan::BeginTransformFeedback() {
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     if (regs.tfb_enabled == 0) {
         return;
     }
@@ -659,7 +662,7 @@ void RasterizerVulkan::BeginTransformFeedback() {
 }
 
 void RasterizerVulkan::EndTransformFeedback() {
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     if (regs.tfb_enabled == 0) {
         return;
     }
@@ -909,7 +912,7 @@ void RasterizerVulkan::UpdateStencilTestEnable(Tegra::Engines::Maxwell3D::Regs& 
 }
 
 void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) {
-    auto& dirty{maxwell3d.dirty.flags};
+    auto& dirty{maxwell3d->dirty.flags};
     if (!dirty[Dirty::VertexInput]) {
         return;
     }
@@ -938,7 +941,7 @@ void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) 
                 .pNext = nullptr,
                 .location = static_cast<u32>(index),
                 .binding = binding,
-                .format = MaxwellToVK::VertexFormat(attribute.type, attribute.size),
+                .format = MaxwellToVK::VertexFormat(device, attribute.type, attribute.size),
                 .offset = attribute.offset,
             });
         }
@@ -964,6 +967,43 @@ void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) 
     scheduler.Record([bindings, attributes](vk::CommandBuffer cmdbuf) {
         cmdbuf.SetVertexInputEXT(bindings, attributes);
     });
+}
+
+void RasterizerVulkan::InitializeChannel(Tegra::Control::ChannelState& channel) {
+    CreateChannel(channel);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.CreateChannel(channel);
+        buffer_cache.CreateChannel(channel);
+    }
+    pipeline_cache.CreateChannel(channel);
+    query_cache.CreateChannel(channel);
+    state_tracker.SetupTables(channel);
+}
+
+void RasterizerVulkan::BindChannel(Tegra::Control::ChannelState& channel) {
+    const s32 channel_id = channel.bind_id;
+    BindToChannel(channel_id);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.BindToChannel(channel_id);
+        buffer_cache.BindToChannel(channel_id);
+    }
+    pipeline_cache.BindToChannel(channel_id);
+    query_cache.BindToChannel(channel_id);
+    state_tracker.ChangeChannel(channel);
+    state_tracker.InvalidateState();
+}
+
+void RasterizerVulkan::ReleaseChannel(s32 channel_id) {
+    EraseChannel(channel_id);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.EraseChannel(channel_id);
+        buffer_cache.EraseChannel(channel_id);
+    }
+    pipeline_cache.EraseChannel(channel_id);
+    query_cache.EraseChannel(channel_id);
 }
 
 } // namespace Vulkan

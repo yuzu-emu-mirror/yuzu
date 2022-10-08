@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -36,6 +35,8 @@ public:
     ARM_Dynarmic_32& parent;
     u32 uprw = 0;
     u32 uro = 0;
+
+    friend class ARM_Dynarmic_32;
 };
 
 } // namespace Core

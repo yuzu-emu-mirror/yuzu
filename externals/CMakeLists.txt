@@ -1,4 +1,5 @@
-# Definitions for all external bundled libraries
+# SPDX-FileCopyrightText: 2016 Citra Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/find-modules")
@@ -15,7 +16,6 @@ endif()
 
 # Dynarmic
 if (ARCHITECTURE_x86_64)
-    set(DYNARMIC_TESTS OFF)
     set(DYNARMIC_NO_BUNDLED_FMT ON)
     set(DYNARMIC_IGNORE_ASSERTS ON CACHE BOOL "" FORCE)
     add_subdirectory(dynarmic)
@@ -73,6 +73,10 @@ if (YUZU_USE_EXTERNAL_SDL2)
     add_library(SDL2 ALIAS SDL2-static)
 endif()
 
+# ENet
+add_subdirectory(enet)
+target_include_directories(enet INTERFACE ./enet/include)
+
 # Cubeb
 if(ENABLE_CUBEB)
     set(BUILD_TESTS OFF CACHE BOOL "")
@@ -112,13 +116,18 @@ if (ENABLE_WEB_SERVICE)
     if (WIN32)
         target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
     endif()
+	
+    # cpp-jwt
+    add_library(cpp-jwt INTERFACE)
+    target_include_directories(cpp-jwt INTERFACE ./cpp-jwt/include)
+    target_compile_definitions(cpp-jwt INTERFACE CPP_JWT_USE_VENDORED_NLOHMANN_JSON)
 endif()
 
 # Opus
 if (YUZU_USE_BUNDLED_OPUS)
     add_subdirectory(opus EXCLUDE_FROM_ALL)
 else()
-    find_package(opus 1.3 REQUIRED)
+    find_package(Opus 1.3 REQUIRED)
 endif()
 
 # FFMpeg

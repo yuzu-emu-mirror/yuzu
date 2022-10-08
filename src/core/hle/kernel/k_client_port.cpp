@@ -1,6 +1,5 @@
-// Copyright 2021 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2021 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/scope_exit.h"
 #include "core/hle/kernel/hle_ipc.h"
@@ -59,8 +58,8 @@ bool KClientPort::IsSignaled() const {
     return num_sessions < max_sessions;
 }
 
-ResultCode KClientPort::CreateSession(KClientSession** out,
-                                      std::shared_ptr<SessionRequestManager> session_manager) {
+Result KClientPort::CreateSession(KClientSession** out,
+                                  std::shared_ptr<SessionRequestManager> session_manager) {
     // Reserve a new session from the resource limit.
     KScopedResourceReservation session_reservation(kernel.CurrentProcess()->GetResourceLimit(),
                                                    LimitableResource::Sessions);

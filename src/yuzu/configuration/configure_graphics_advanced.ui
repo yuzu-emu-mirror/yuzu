@@ -75,7 +75,7 @@
            <string>VSync prevents the screen from tearing, but some graphics cards have lower performance with VSync enabled. Keep it enabled if you don't notice a performance difference.</string>
           </property>
           <property name="text">
-           <string>Use VSync (OpenGL only)</string>
+           <string>Use VSync</string>
           </property>
          </widget>
         </item>
@@ -96,6 +96,16 @@
           </property>
           <property name="text">
            <string>Use Fast GPU Time (Hack)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="use_pessimistic_flushes">
+          <property name="toolTip">
+            <string>Enables pessimistic buffer flushes. This option will force unmodified buffers to be flushed, which can cost performance.</string>
+          </property>
+          <property name="text">
+           <string>Use pessimistic buffer flushes (Hack)</string>
           </property>
          </widget>
         </item>

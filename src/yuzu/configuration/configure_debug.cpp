@@ -1,8 +1,8 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <QDesktopServices>
+#include <QMessageBox>
 #include <QUrl>
 #include "common/fs/path_util.h"
 #include "common/logging/backend.h"
@@ -15,7 +15,7 @@
 #include "yuzu/uisettings.h"
 
 ConfigureDebug::ConfigureDebug(const Core::System& system_, QWidget* parent)
-    : QWidget(parent), ui{std::make_unique<Ui::ConfigureDebug>()}, system{system_} {
+    : QScrollArea(parent), ui{std::make_unique<Ui::ConfigureDebug>()}, system{system_} {
     ui->setupUi(this);
     SetConfiguration();
 
@@ -27,6 +27,16 @@ ConfigureDebug::ConfigureDebug(const Core::System& system_, QWidget* parent)
 
     connect(ui->toggle_gdbstub, &QCheckBox::toggled,
             [&]() { ui->gdbport_spinbox->setEnabled(ui->toggle_gdbstub->isChecked()); });
+
+    connect(ui->create_crash_dumps, &QCheckBox::stateChanged, [&](int) {
+        if (crash_dump_warning_shown) {
+            return;
+        }
+        QMessageBox::warning(this, tr("Restart Required"),
+                             tr("yuzu is required to restart in order to apply this setting."),
+                             QMessageBox::Ok, QMessageBox::Ok);
+        crash_dump_warning_shown = true;
+    });
 }
 
 ConfigureDebug::~ConfigureDebug() = default;
@@ -44,6 +54,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->fs_access_log->setEnabled(runtime_lock);
     ui->fs_access_log->setChecked(Settings::values.enable_fs_access_log.GetValue());
     ui->reporting_services->setChecked(Settings::values.reporting_services.GetValue());
+    ui->dump_audio_commands->setChecked(Settings::values.dump_audio_commands.GetValue());
     ui->quest_flag->setChecked(Settings::values.quest_flag.GetValue());
     ui->use_debug_asserts->setChecked(Settings::values.use_debug_asserts.GetValue());
     ui->use_auto_stub->setChecked(Settings::values.use_auto_stub.GetValue());
@@ -66,12 +77,20 @@ void ConfigureDebug::SetConfiguration() {
     ui->disable_loop_safety_checks->setChecked(
         Settings::values.disable_shader_loop_safety_checks.GetValue());
     ui->extended_logging->setChecked(Settings::values.extended_logging.GetValue());
+    ui->perform_vulkan_check->setChecked(Settings::values.perform_vulkan_check.GetValue());
 
 #ifdef YUZU_USE_QT_WEB_ENGINE
     ui->disable_web_applet->setChecked(UISettings::values.disable_web_applet.GetValue());
 #else
     ui->disable_web_applet->setEnabled(false);
-    ui->disable_web_applet->setText(QString::fromUtf8("Web applet not compiled"));
+    ui->disable_web_applet->setText(tr("Web applet not compiled"));
+#endif
+
+#ifdef YUZU_DBGHELP
+    ui->create_crash_dumps->setChecked(Settings::values.create_crash_dumps.GetValue());
+#else
+    ui->create_crash_dumps->setEnabled(false);
+    ui->create_crash_dumps->setText(tr("MiniDump creation not compiled"));
 #endif
 }
 
@@ -83,6 +102,8 @@ void ConfigureDebug::ApplyConfiguration() {
     Settings::values.program_args = ui->homebrew_args_edit->text().toStdString();
     Settings::values.enable_fs_access_log = ui->fs_access_log->isChecked();
     Settings::values.reporting_services = ui->reporting_services->isChecked();
+    Settings::values.dump_audio_commands = ui->dump_audio_commands->isChecked();
+    Settings::values.create_crash_dumps = ui->create_crash_dumps->isChecked();
     Settings::values.quest_flag = ui->quest_flag->isChecked();
     Settings::values.use_debug_asserts = ui->use_debug_asserts->isChecked();
     Settings::values.use_auto_stub = ui->use_auto_stub->isChecked();
@@ -97,6 +118,7 @@ void ConfigureDebug::ApplyConfiguration() {
         ui->disable_loop_safety_checks->isChecked();
     Settings::values.disable_macro_jit = ui->disable_macro_jit->isChecked();
     Settings::values.extended_logging = ui->extended_logging->isChecked();
+    Settings::values.perform_vulkan_check = ui->perform_vulkan_check->isChecked();
     UISettings::values.disable_web_applet = ui->disable_web_applet->isChecked();
     Debugger::ToggleConsole();
     Common::Log::Filter filter;

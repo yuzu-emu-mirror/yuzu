@@ -54,6 +54,10 @@ public:
         is_set = false;
     }
 
+    [[nodiscard]] bool IsSet() {
+        return is_set;
+    }
+
 private:
     std::condition_variable condvar;
     std::mutex mutex;
@@ -92,6 +96,7 @@ enum class ThreadPriority : u32 {
     Normal = 1,
     High = 2,
     VeryHigh = 3,
+    Critical = 4,
 };
 
 void SetCurrentThreadPriority(ThreadPriority new_priority);

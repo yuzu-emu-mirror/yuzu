@@ -1,6 +1,5 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 #include <utility>
@@ -220,6 +219,7 @@ void ConfigureUi::InitializeLanguageComboBox() {
     for (const auto& lang : languages) {
         if (QString::fromLatin1(lang.id) == QStringLiteral("en")) {
             ui->language_combobox->addItem(lang.name, QStringLiteral("en"));
+            language_files.removeOne(QStringLiteral("en.qm"));
             continue;
         }
         for (int i = 0; i < language_files.size(); ++i) {

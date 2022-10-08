@@ -89,8 +89,7 @@ u64 NativeClock::GetRTSC() {
         new_time_point.inner.accumulated_ticks = current_time_point.inner.accumulated_ticks + diff;
     } while (!Common::AtomicCompareAndSwap(time_point.pack.data(), new_time_point.pack,
                                            current_time_point.pack, current_time_point.pack));
-    /// The clock cannot be more precise than the guest timer, remove the lower bits
-    return new_time_point.inner.accumulated_ticks & inaccuracy_mask;
+    return new_time_point.inner.accumulated_ticks;
 }
 
 void NativeClock::Pause(bool is_paused) {

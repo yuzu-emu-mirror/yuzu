@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "core/hle/result.h"
 #include "core/hle/service/kernel_helpers.h"
 
 namespace Common {
@@ -71,8 +72,9 @@ public:
 
     /// Gets the vsync event for the specified display.
     ///
-    /// If an invalid display ID is provided, then nullptr is returned.
-    [[nodiscard]] Kernel::KReadableEvent* FindVsyncEvent(u64 display_id);
+    /// If an invalid display ID is provided, then VI::ResultNotFound is returned.
+    /// If the vsync event has already been retrieved, then VI::ResultPermissionDenied is returned.
+    [[nodiscard]] ResultVal<Kernel::KReadableEvent*> FindVsyncEvent(u64 display_id);
 
     /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
     /// finished.
@@ -114,6 +116,7 @@ private:
     void SplitVSync(std::stop_token stop_token);
 
     std::shared_ptr<Nvidia::Module> nvdrv;
+    s32 disp_fd;
 
     std::list<VI::Display> displays;
 
@@ -126,11 +129,14 @@ private:
     u32 swap_interval = 1;
 
     /// Event that handles screen composition.
-    std::shared_ptr<Core::Timing::EventType> composition_event;
+    std::shared_ptr<Core::Timing::EventType> multi_composition_event;
+    std::shared_ptr<Core::Timing::EventType> single_composition_event;
 
     std::shared_ptr<std::mutex> guard;
 
     Core::System& system;
+
+    std::atomic<bool> vsync_signal;
 
     std::jthread vsync_thread;
 

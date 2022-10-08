@@ -41,6 +41,7 @@ Id ImageType(EmitContext& ctx, const TextureDescriptor& desc) {
     case TextureType::ColorArray1D:
         return ctx.TypeImage(type, spv::Dim::Dim1D, depth, true, false, 1, format);
     case TextureType::Color2D:
+    case TextureType::Color2DRect:
         return ctx.TypeImage(type, spv::Dim::Dim2D, depth, false, false, 1, format);
     case TextureType::ColorArray2D:
         return ctx.TypeImage(type, spv::Dim::Dim2D, depth, true, false, 1, format);
@@ -1306,7 +1307,7 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         subgroup_mask_gt = DefineInput(*this, U32[4], false, spv::BuiltIn::SubgroupGtMaskKHR);
         subgroup_mask_ge = DefineInput(*this, U32[4], false, spv::BuiltIn::SubgroupGeMaskKHR);
     }
-    if (info.uses_subgroup_invocation_id || info.uses_subgroup_shuffles ||
+    if (info.uses_fswzadd || info.uses_subgroup_invocation_id || info.uses_subgroup_shuffles ||
         (profile.warp_size_potentially_larger_than_guest &&
          (info.uses_subgroup_vote || info.uses_subgroup_mask))) {
         subgroup_local_invocation_id =
@@ -1411,7 +1412,8 @@ void EmitContext::DefineInputs(const IR::Program& program) {
 void EmitContext::DefineOutputs(const IR::Program& program) {
     const Info& info{program.info};
     const std::optional<u32> invocations{program.invocations};
-    if (info.stores.AnyComponent(IR::Attribute::PositionX) || stage == Stage::VertexB) {
+    if (runtime_info.convert_depth_mode || info.stores.AnyComponent(IR::Attribute::PositionX) ||
+        stage == Stage::VertexB) {
         output_position = DefineOutput(*this, F32[4], invocations, spv::BuiltIn::Position);
     }
     if (info.stores[IR::Attribute::PointSize] || runtime_info.fixed_state_point_size) {

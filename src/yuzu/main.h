@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -11,6 +10,7 @@
 #include <QTimer>
 #include <QTranslator>
 
+#include "common/announce_multiplayer_room.h"
 #include "common/common_types.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/hotkeys.h"
@@ -22,6 +22,7 @@
 #endif
 
 class Config;
+class ClickableLabel;
 class EmuThread;
 class GameList;
 class GImageInfo;
@@ -31,6 +32,7 @@ class MicroProfileDialog;
 class ProfilerWidget;
 class ControllerDialog;
 class QLabel;
+class MultiplayerState;
 class QPushButton;
 class QProgressDialog;
 class WaitTreeWidget;
@@ -118,7 +120,7 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
-    explicit GMainWindow();
+    explicit GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan);
     ~GMainWindow() override;
 
     bool DropAction(QDropEvent* event);
@@ -161,10 +163,13 @@ signals:
     void WebBrowserExtractOfflineRomFS();
     void WebBrowserClosed(Service::AM::Applets::WebExitReason exit_reason, std::string last_url);
 
+    void SigInterrupt();
+
 public slots:
     void OnLoadComplete();
     void OnExecuteProgram(std::size_t program_index);
     void OnExit();
+    void OnSaveConfig();
     void ControllerSelectorReconfigureControllers(
         const Core::Frontend::ControllerParameters& parameters);
     void SoftwareKeyboardInitialize(
@@ -200,6 +205,8 @@ private:
     void ConnectMenuEvents();
     void UpdateMenuState();
 
+    void SetupPrepareForSleep();
+
     void PreventOSSleep();
     void AllowOSSleep();
 
@@ -212,7 +219,7 @@ private:
     void SetDiscordEnabled(bool state);
     void LoadAmiibo(const QString& filename);
 
-    void SelectAndSetCurrentUser();
+    bool SelectAndSetCurrentUser();
 
     /**
      * Stores the filename in the recently loaded files list.
@@ -244,7 +251,15 @@ private:
     bool ConfirmChangeGame();
     bool ConfirmForceLockedExit();
     void RequestGameExit();
+    void RequestGameResume();
+    void changeEvent(QEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
+
+#ifdef __linux__
+    void SetupSigInterrupts();
+    static void HandleSigInterrupt(int);
+    void OnSigInterruptNotifierActivated();
+#endif
 
 private slots:
     void OnStartGame();
@@ -252,6 +267,7 @@ private slots:
     void OnPauseGame();
     void OnPauseContinueGame();
     void OnStopGame();
+    void OnPrepareForSleep(bool prepare_sleep);
     void OnMenuReportCompatibility();
     void OnOpenModsPage();
     void OnOpenQuickstartGuide();
@@ -333,6 +349,7 @@ private:
     void OpenURL(const QUrl& url);
     void LoadTranslation();
     void OpenPerGameConfiguration(u64 title_id, const std::string& file_name);
+    bool CheckDarkMode();
 
     QString GetTasStateDescription() const;
 
@@ -341,6 +358,8 @@ private:
     std::unique_ptr<Core::System> system;
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
+
+    MultiplayerState* multiplayer_state = nullptr;
 
     GRenderWindow* render_window;
     GameList* game_list;
@@ -375,6 +394,9 @@ private:
     bool auto_muted = false;
     QTimer mouse_hide_timer;
     QTimer mouse_center_timer;
+
+    QString startup_icon_theme;
+    bool os_dark_mode = false;
 
     // FS
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
@@ -414,6 +436,9 @@ private:
     bool is_tas_recording_dialog_active{};
 
 #ifdef __linux__
+    QSocketNotifier* sig_interrupt_notifier;
+    static std::array<int, 3> sig_interrupt_fds;
+
     QDBusObjectPath wake_lock{};
 #endif
 

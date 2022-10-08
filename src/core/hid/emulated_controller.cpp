@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/thread.h"
 #include "core/hid/emulated_controller.h"
 #include "core/hid/input_converter.h"
 
@@ -84,23 +85,26 @@ void EmulatedController::ReloadFromSettings() {
         motion_params[index] = Common::ParamPackage(player.motions[index]);
     }
 
+    controller.colors_state.fullkey = {
+        .body = GetNpadColor(player.body_color_left),
+        .button = GetNpadColor(player.button_color_left),
+    };
     controller.colors_state.left = {
-        .body = player.body_color_left,
-        .button = player.button_color_left,
+        .body = GetNpadColor(player.body_color_left),
+        .button = GetNpadColor(player.button_color_left),
     };
-
     controller.colors_state.right = {
-        .body = player.body_color_right,
-        .button = player.button_color_right,
+        .body = GetNpadColor(player.body_color_right),
+        .button = GetNpadColor(player.button_color_right),
     };
-
-    controller.colors_state.fullkey = controller.colors_state.left;
 
     // Other or debug controller should always be a pro controller
     if (npad_id_type != NpadIdType::Other) {
         SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
+        original_npad_type = npad_type;
     } else {
         SetNpadStyleIndex(NpadStyleIndex::ProController);
+        original_npad_type = npad_type;
     }
 
     if (player.connected) {
@@ -126,10 +130,17 @@ void EmulatedController::LoadDevices() {
     battery_params[LeftIndex].Set("battery", true);
     battery_params[RightIndex].Set("battery", true);
 
+    camera_params = Common::ParamPackage{"engine:camera,camera:1"};
+    nfc_params = Common::ParamPackage{"engine:virtual_amiibo,nfc:1"};
+
     output_params[LeftIndex] = left_joycon;
     output_params[RightIndex] = right_joycon;
+    output_params[2] = camera_params;
+    output_params[3] = nfc_params;
     output_params[LeftIndex].Set("output", true);
     output_params[RightIndex].Set("output", true);
+    output_params[2].Set("output", true);
+    output_params[3].Set("output", true);
 
     LoadTASParams();
 
@@ -146,6 +157,8 @@ void EmulatedController::LoadDevices() {
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
     std::transform(battery_params.begin(), battery_params.end(), battery_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::InputDevice>);
+    camera_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(camera_params);
+    nfc_devices = Common::Input::CreateDevice<Common::Input::InputDevice>(nfc_params);
     std::transform(output_params.begin(), output_params.end(), output_devices.begin(),
                    Common::Input::CreateDevice<Common::Input::OutputDevice>);
 
@@ -267,6 +280,24 @@ void EmulatedController::ReloadInput() {
         motion_devices[index]->ForceUpdate();
     }
 
+    if (camera_devices) {
+        camera_devices->SetCallback({
+            .on_change =
+                [this](const Common::Input::CallbackStatus& callback) { SetCamera(callback); },
+        });
+        camera_devices->ForceUpdate();
+    }
+
+    if (nfc_devices) {
+        if (npad_id_type == NpadIdType::Handheld || npad_id_type == NpadIdType::Player1) {
+            nfc_devices->SetCallback({
+                .on_change =
+                    [this](const Common::Input::CallbackStatus& callback) { SetNfc(callback); },
+            });
+            nfc_devices->ForceUpdate();
+        }
+    }
+
     // Use a common UUID for TAS
     static constexpr Common::UUID TAS_UUID = Common::UUID{
         {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x7, 0xA5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}};
@@ -322,6 +353,8 @@ void EmulatedController::UnloadInput() {
     for (auto& stick : tas_stick_devices) {
         stick.reset();
     }
+    camera_devices.reset();
+    nfc_devices.reset();
 }
 
 void EmulatedController::EnableConfiguration() {
@@ -339,6 +372,7 @@ void EmulatedController::DisableConfiguration() {
             Disconnect();
         }
         SetNpadStyleIndex(tmp_npad_type);
+        original_npad_type = tmp_npad_type;
     }
 
     // Apply temporary connected status to the real controller
@@ -544,6 +578,16 @@ void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback
         return;
     }
 
+    // GC controllers have triggers not buttons
+    if (npad_type == NpadStyleIndex::GameCube) {
+        if (index == Settings::NativeButton::ZR) {
+            return;
+        }
+        if (index == Settings::NativeButton::ZL) {
+            return;
+        }
+    }
+
     switch (index) {
     case Settings::NativeButton::A:
         controller.npad_button_state.a.Assign(current_status.value);
@@ -720,6 +764,11 @@ void EmulatedController::SetTrigger(const Common::Input::CallbackStatus& callbac
         return;
     }
 
+    // Only GC controllers have analog triggers
+    if (npad_type != NpadStyleIndex::GameCube) {
+        return;
+    }
+
     const auto& trigger = controller.trigger_values[index];
 
     switch (index) {
@@ -851,6 +900,44 @@ void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callbac
     TriggerOnChange(ControllerTriggerType::Battery, true);
 }
 
+void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback) {
+    std::unique_lock lock{mutex};
+    controller.camera_values = TransformToCamera(callback);
+
+    if (is_configuring) {
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::IrSensor, false);
+        return;
+    }
+
+    controller.camera_state.sample++;
+    controller.camera_state.format =
+        static_cast<Core::IrSensor::ImageTransferProcessorFormat>(controller.camera_values.format);
+    controller.camera_state.data = controller.camera_values.data;
+
+    lock.unlock();
+    TriggerOnChange(ControllerTriggerType::IrSensor, true);
+}
+
+void EmulatedController::SetNfc(const Common::Input::CallbackStatus& callback) {
+    std::unique_lock lock{mutex};
+    controller.nfc_values = TransformToNfc(callback);
+
+    if (is_configuring) {
+        lock.unlock();
+        TriggerOnChange(ControllerTriggerType::Nfc, false);
+        return;
+    }
+
+    controller.nfc_state = {
+        controller.nfc_values.state,
+        controller.nfc_values.data,
+    };
+
+    lock.unlock();
+    TriggerOnChange(ControllerTriggerType::Nfc, true);
+}
+
 bool EmulatedController::SetVibration(std::size_t device_index, VibrationValue vibration) {
     if (device_index >= output_devices.size()) {
         return false;
@@ -917,6 +1004,9 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
     // Send a slight vibration to test for rumble support
     output_devices[device_index]->SetVibration(test_vibration);
 
+    // Wait for about 15ms to ensure the controller is ready for the stop command
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+
     // Stop any vibration and return the result
     return output_devices[device_index]->SetVibration(zero_vibration) ==
            Common::Input::VibrationError::None;
@@ -925,7 +1015,56 @@ bool EmulatedController::TestVibration(std::size_t device_index) {
 bool EmulatedController::SetPollingMode(Common::Input::PollingMode polling_mode) {
     LOG_INFO(Service_HID, "Set polling mode {}", polling_mode);
     auto& output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
-    return output_device->SetPollingMode(polling_mode) == Common::Input::PollingError::None;
+    auto& nfc_output_device = output_devices[3];
+
+    const auto virtual_nfc_result = nfc_output_device->SetPollingMode(polling_mode);
+    const auto mapped_nfc_result = output_device->SetPollingMode(polling_mode);
+
+    return virtual_nfc_result == Common::Input::PollingError::None ||
+           mapped_nfc_result == Common::Input::PollingError::None;
+}
+
+bool EmulatedController::SetCameraFormat(
+    Core::IrSensor::ImageTransferProcessorFormat camera_format) {
+    LOG_INFO(Service_HID, "Set camera format {}", camera_format);
+
+    auto& right_output_device = output_devices[static_cast<std::size_t>(DeviceIndex::Right)];
+    auto& camera_output_device = output_devices[2];
+
+    if (right_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
+            camera_format)) == Common::Input::CameraError::None) {
+        return true;
+    }
+
+    // Fallback to Qt camera if native device doesn't have support
+    return camera_output_device->SetCameraFormat(static_cast<Common::Input::CameraFormat>(
+               camera_format)) == Common::Input::CameraError::None;
+}
+
+bool EmulatedController::HasNfc() const {
+    const auto& nfc_output_device = output_devices[3];
+
+    switch (npad_type) {
+    case NpadStyleIndex::JoyconRight:
+    case NpadStyleIndex::JoyconDual:
+    case NpadStyleIndex::ProController:
+        break;
+    default:
+        return false;
+    }
+
+    const bool has_virtual_nfc =
+        npad_id_type == NpadIdType::Player1 || npad_id_type == NpadIdType::Handheld;
+    const bool is_virtual_nfc_supported =
+        nfc_output_device->SupportsNfc() != Common::Input::NfcState::NotSupported;
+
+    return is_connected && (has_virtual_nfc && is_virtual_nfc_supported);
+}
+
+bool EmulatedController::WriteNfc(const std::vector<u8>& data) {
+    auto& nfc_output_device = output_devices[3];
+
+    return nfc_output_device->WriteNfcData(data) == Common::Input::NfcState::Success;
 }
 
 void EmulatedController::SetLedPattern() {
@@ -950,16 +1089,46 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
     if (!is_connected) {
         return;
     }
+
+    // Attempt to reconnect with the original type
+    if (npad_type != original_npad_type) {
+        Disconnect();
+        const auto current_npad_type = npad_type;
+        SetNpadStyleIndex(original_npad_type);
+        if (IsControllerSupported()) {
+            Connect();
+            return;
+        }
+        SetNpadStyleIndex(current_npad_type);
+        Connect();
+    }
+
     if (IsControllerSupported()) {
         return;
     }
 
     Disconnect();
 
-    // Fallback fullkey controllers to Pro controllers
+    // Fallback Fullkey controllers to Pro controllers
     if (IsControllerFullkey() && supported_style_tag.fullkey) {
         LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type);
         SetNpadStyleIndex(NpadStyleIndex::ProController);
+        Connect();
+        return;
+    }
+
+    // Fallback Dual joycon controllers to Pro controllers
+    if (npad_type == NpadStyleIndex::JoyconDual && supported_style_tag.fullkey) {
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type);
+        SetNpadStyleIndex(NpadStyleIndex::ProController);
+        Connect();
+        return;
+    }
+
+    // Fallback Pro controllers to Dual joycon
+    if (npad_type == NpadStyleIndex::ProController && supported_style_tag.joycon_dual) {
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Dual Joycons", npad_type);
+        SetNpadStyleIndex(NpadStyleIndex::JoyconDual);
         Connect();
         return;
     }
@@ -1163,6 +1332,11 @@ BatteryValues EmulatedController::GetBatteryValues() const {
     return controller.battery_values;
 }
 
+CameraValues EmulatedController::GetCameraValues() const {
+    std::scoped_lock lock{mutex};
+    return controller.camera_values;
+}
+
 HomeButtonState EmulatedController::GetHomeButtons() const {
     std::scoped_lock lock{mutex};
     if (is_configuring) {
@@ -1249,6 +1423,25 @@ ControllerColors EmulatedController::GetColors() const {
 BatteryLevelState EmulatedController::GetBattery() const {
     std::scoped_lock lock{mutex};
     return controller.battery_state;
+}
+
+const CameraState& EmulatedController::GetCamera() const {
+    std::scoped_lock lock{mutex};
+    return controller.camera_state;
+}
+
+const NfcState& EmulatedController::GetNfc() const {
+    std::scoped_lock lock{mutex};
+    return controller.nfc_state;
+}
+
+NpadColor EmulatedController::GetNpadColor(u32 color) {
+    return {
+        .r = static_cast<u8>((color >> 16) & 0xFF),
+        .g = static_cast<u8>((color >> 8) & 0xFF),
+        .b = static_cast<u8>(color & 0xFF),
+        .a = 0xff,
+    };
 }
 
 void EmulatedController::TriggerOnChange(ControllerTriggerType type, bool is_npad_service_update) {

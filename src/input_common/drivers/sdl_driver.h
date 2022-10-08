@@ -1,6 +1,5 @@
-// Copyright 2018 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2018 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -128,5 +127,6 @@ private:
     std::atomic<bool> initialized = false;
 
     std::thread poll_thread;
+    std::thread vibration_thread;
 };
 } // namespace InputCommon

@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include "common/logging/filter.h"
@@ -128,7 +127,7 @@ bool ParseFilterRule(Filter& instance, Iterator begin, Iterator end) {
     SUB(Service, PM)                                                                               \
     SUB(Service, PREPO)                                                                            \
     SUB(Service, PSC)                                                                              \
-    SUB(Service, PSM)                                                                              \
+    SUB(Service, PTM)                                                                              \
     SUB(Service, SET)                                                                              \
     SUB(Service, SM)                                                                               \
     SUB(Service, SPL)                                                                              \

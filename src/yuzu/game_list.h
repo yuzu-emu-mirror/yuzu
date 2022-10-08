@@ -1,6 +1,5 @@
-// Copyright 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -16,8 +15,13 @@
 #include <QWidget>
 
 #include "common/common_types.h"
+#include "core/core.h"
 #include "uisettings.h"
 #include "yuzu/compatibility_list.h"
+
+namespace Core {
+class System;
+}
 
 class ControllerNavigation;
 class GameListWorker;
@@ -84,6 +88,8 @@ public:
     void SaveInterfaceLayout();
     void LoadInterfaceLayout();
 
+    QStandardItemModel* GetModel() const;
+
     /// Disables events from the emulated controller
     void UnloadController();
 
@@ -108,6 +114,7 @@ signals:
     void OpenDirectory(const QString& directory);
     void AddDirectory();
     void ShowList(bool show);
+    void PopulatingCompleted();
 
 private slots:
     void OnItemExpanded(const QModelIndex& item);
@@ -132,6 +139,9 @@ private:
     void AddCustomDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddPermDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddFavoritesPopup(QMenu& context_menu);
+
+    void changeEvent(QEvent*) override;
+    void RetranslateUI();
 
     std::shared_ptr<FileSys::VfsFilesystem> vfs;
     FileSys::ManualContentProvider* provider;

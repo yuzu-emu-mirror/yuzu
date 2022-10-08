@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -30,8 +33,6 @@ add_executable(yuzu
     applets/qt_web_browser_scripts.h
     bootmanager.cpp
     bootmanager.h
-    check_vulkan.cpp
-    check_vulkan.h
     compatdb.ui
     compatibility_list.cpp
     compatibility_list.h
@@ -43,6 +44,9 @@ add_executable(yuzu
     configuration/configure_audio.cpp
     configuration/configure_audio.h
     configuration/configure_audio.ui
+    configuration/configure_camera.cpp
+    configuration/configure_camera.h
+    configuration/configure_camera.ui
     configuration/configure_cpu.cpp
     configuration/configure_cpu.h
     configuration/configure_cpu.ui
@@ -155,8 +159,36 @@ add_executable(yuzu
     main.cpp
     main.h
     main.ui
+    multiplayer/chat_room.cpp
+    multiplayer/chat_room.h
+    multiplayer/chat_room.ui
+    multiplayer/client_room.h
+    multiplayer/client_room.cpp
+    multiplayer/client_room.ui
+    multiplayer/direct_connect.cpp
+    multiplayer/direct_connect.h
+    multiplayer/direct_connect.ui
+    multiplayer/host_room.cpp
+    multiplayer/host_room.h
+    multiplayer/host_room.ui
+    multiplayer/lobby.cpp
+    multiplayer/lobby.h
+    multiplayer/lobby.ui
+    multiplayer/lobby_p.h
+    multiplayer/message.cpp
+    multiplayer/message.h
+    multiplayer/moderation_dialog.cpp
+    multiplayer/moderation_dialog.h
+    multiplayer/moderation_dialog.ui
+    multiplayer/state.cpp
+    multiplayer/state.h
+    multiplayer/validation.h
+    startup_checks.cpp
+    startup_checks.h
     uisettings.cpp
     uisettings.h
+    util/clickable_label.cpp
+    util/clickable_label.h
     util/controller_navigation.cpp
     util/controller_navigation.h
     util/limitable_input_dialog.cpp
@@ -176,6 +208,16 @@ add_executable(yuzu
     yuzu.rc
 )
 
+if (WIN32 AND YUZU_CRASH_DUMPS)
+    target_sources(yuzu PRIVATE
+        mini_dump.cpp
+        mini_dump.h
+    )
+
+    target_link_libraries(yuzu PRIVATE ${DBGHELP_LIBRARY})
+    target_compile_definitions(yuzu PRIVATE -DYUZU_DBGHELP)
+endif()
+
 file(GLOB COMPAT_LIST
      ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.qrc
      ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.json)
@@ -189,6 +231,9 @@ if (ENABLE_QT_TRANSLATION)
     # Update source TS file if enabled
     if (GENERATE_QT_TRANSLATION)
         get_target_property(SRCS yuzu SOURCES)
+        # these calls to qt_create_translation also creates a rule to generate en.qm which conflicts with providing english plurals
+        # so we have to set a OUTPUT_LOCATION so that we don't have multiple rules to generate en.qm
+        set_source_files_properties(${YUZU_QT_LANGUAGES}/en.ts PROPERTIES OUTPUT_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/translations")
         qt_create_translation(QM_FILES
             ${SRCS}
             ${UIS}
@@ -197,7 +242,13 @@ if (ENABLE_QT_TRANSLATION)
             -source-language en_US
             -target-language en_US
         )
-        add_custom_target(translation ALL DEPENDS ${YUZU_QT_LANGUAGES}/en.ts)
+
+        # Generate plurals into dist/english_plurals/generated_en.ts so it can be used to revise dist/english_plurals/en.ts
+        set(GENERATED_PLURALS_FILE ${PROJECT_SOURCE_DIR}/dist/english_plurals/generated_en.ts)
+        set_source_files_properties(${GENERATED_PLURALS_FILE} PROPERTIES OUTPUT_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/plurals")
+        qt_create_translation(QM_FILES ${SRCS} ${UIS} ${GENERATED_PLURALS_FILE} OPTIONS -pluralonly -source-language en_US -target-language en_US)
+
+        add_custom_target(translation ALL DEPENDS ${YUZU_QT_LANGUAGES}/en.ts ${GENERATED_PLURALS_FILE})
     endif()
 
     # Find all TS files except en.ts
@@ -206,6 +257,9 @@ if (ENABLE_QT_TRANSLATION)
 
     # Compile TS files to QM files
     qt_add_translation(LANGUAGES_QM ${LANGUAGES_TS})
+
+    # Compile english plurals TS file to en.qm
+    qt_add_translation(LANGUAGES_QM ${PROJECT_SOURCE_DIR}/dist/english_plurals/en.ts)
 
     # Build a QRC file from the QM file list
     set(LANGUAGES_QRC ${CMAKE_CURRENT_BINARY_DIR}/languages.qrc)
@@ -253,8 +307,8 @@ endif()
 
 create_target_directory_groups(yuzu)
 
-target_link_libraries(yuzu PRIVATE common core input_common video_core)
-target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets)
+target_link_libraries(yuzu PRIVATE common core input_common network video_core)
+target_link_libraries(yuzu PRIVATE Boost::boost glad Qt::Widgets Qt::Multimedia)
 target_link_libraries(yuzu PRIVATE ${PLATFORM_LIBRARIES} Threads::Threads)
 
 target_include_directories(yuzu PRIVATE ../../externals/Vulkan-Headers/include)
@@ -295,6 +349,10 @@ if (USE_DISCORD_PRESENCE)
     )
     target_link_libraries(yuzu PRIVATE discord-rpc)
     target_compile_definitions(yuzu PRIVATE -DUSE_DISCORD_PRESENCE)
+endif()
+
+if (ENABLE_WEB_SERVICE)
+    target_compile_definitions(yuzu PRIVATE -DENABLE_WEB_SERVICE)
 endif()
 
 if (YUZU_USE_QT_WEB_ENGINE)

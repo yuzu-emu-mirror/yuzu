@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -320,6 +319,10 @@ use_asynchronous_gpu_emulation =
 # 0: Off, 1 (default): On
 use_fast_gpu_time =
 
+# Force unmodified buffers to be flushed, which can cost performance.
+# 0: Off (default), 1: On
+use_pessimistic_flushes =
+
 # Whether to use garbage collection or not for GPU caches.
 # 0 (default): Off, 1: On
 use_caches_gc =
@@ -329,10 +332,6 @@ use_caches_gc =
 bg_red =
 bg_blue =
 bg_green =
-
-# Caps the unlocked framerate to a multiple of the title's target FPS.
-# 1 - 1000: Target FPS multiple cap. 1000 (default)
-fps_cap =
 
 [Audio]
 # Which audio output engine to use.
@@ -434,9 +433,6 @@ use_debug_asserts =
 use_auto_stub =
 # Enables/Disables the macro JIT compiler
 disable_macro_jit=false
-# Presents guest frames as they become available. Experimental.
-# false: Disabled (default), true: Enabled
-disable_fps_limit=false
 # Determines whether to enable the GDB stub and wait for the debugger to attach before running.
 # false: Disabled (default), true: Enabled
 use_gdbstub=false

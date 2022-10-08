@@ -1,6 +1,5 @@
-// Copyright 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <bitset>
@@ -57,23 +56,18 @@ void SetupMainThread(Core::System& system, KProcess& owner_process, u32 priority
     thread->GetContext64().cpu_registers[0] = 0;
     thread->GetContext32().cpu_registers[1] = thread_handle;
     thread->GetContext64().cpu_registers[1] = thread_handle;
-    thread->DisableDispatch();
 
-    auto& kernel = system.Kernel();
-    // Threads by default are dormant, wake up the main thread so it runs when the scheduler fires
-    {
-        KScopedSchedulerLock lock{kernel};
-        thread->SetState(ThreadState::Runnable);
-
-        if (system.DebuggerEnabled()) {
-            thread->RequestSuspend(SuspendType::Debug);
-        }
+    if (system.DebuggerEnabled()) {
+        thread->RequestSuspend(SuspendType::Debug);
     }
+
+    // Run our thread.
+    void(thread->Run());
 }
 } // Anonymous namespace
 
-ResultCode KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
-                                ProcessType type, KResourceLimit* res_limit) {
+Result KProcess::Initialize(KProcess* process, Core::System& system, std::string process_name,
+                            ProcessType type, KResourceLimit* res_limit) {
     auto& kernel = system.Kernel();
 
     process->name = std::move(process_name);
@@ -166,7 +160,7 @@ bool KProcess::ReleaseUserException(KThread* thread) {
                 std::addressof(num_waiters),
                 reinterpret_cast<uintptr_t>(std::addressof(exception_thread)));
             next != nullptr) {
-            next->SetState(ThreadState::Runnable);
+            next->EndWait(ResultSuccess);
         }
 
         KScheduler::SetSchedulerUpdateNeeded(kernel);
@@ -181,7 +175,8 @@ void KProcess::PinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // If the thread isn't terminated, pin it.
     if (!cur_thread->IsTerminationRequested()) {
@@ -198,7 +193,8 @@ void KProcess::UnpinCurrentThread(s32 core_id) {
     ASSERT(kernel.GlobalSchedulerContext().IsLocked());
 
     // Get the current thread.
-    KThread* cur_thread = kernel.Scheduler(static_cast<std::size_t>(core_id)).GetCurrentThread();
+    KThread* cur_thread =
+        kernel.Scheduler(static_cast<std::size_t>(core_id)).GetSchedulerCurrentThread();
 
     // Unpin it.
     cur_thread->Unpin();
@@ -222,8 +218,8 @@ void KProcess::UnpinThread(KThread* thread) {
     KScheduler::SetSchedulerUpdateNeeded(kernel);
 }
 
-ResultCode KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
-                                     [[maybe_unused]] size_t size) {
+Result KProcess::AddSharedMemory(KSharedMemory* shmem, [[maybe_unused]] VAddr address,
+                                 [[maybe_unused]] size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(state_lock);
 
@@ -287,7 +283,7 @@ void KProcess::UnregisterThread(KThread* thread) {
     thread_list.remove(thread);
 }
 
-ResultCode KProcess::Reset() {
+Result KProcess::Reset() {
     // Lock the process and the scheduler.
     KScopedLightLock lk(state_lock);
     KScopedSchedulerLock sl{kernel};
@@ -301,7 +297,7 @@ ResultCode KProcess::Reset() {
     return ResultSuccess;
 }
 
-ResultCode KProcess::SetActivity(ProcessActivity activity) {
+Result KProcess::SetActivity(ProcessActivity activity) {
     // Lock ourselves and the scheduler.
     KScopedLightLock lk{state_lock};
     KScopedLightLock list_lk{list_lock};
@@ -345,8 +341,7 @@ ResultCode KProcess::SetActivity(ProcessActivity activity) {
     return ResultSuccess;
 }
 
-ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
-                                      std::size_t code_size) {
+Result KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata, std::size_t code_size) {
     program_id = metadata.GetTitleID();
     ideal_core = metadata.GetMainThreadCore();
     is_64bit_process = metadata.Is64BitProgram();
@@ -361,24 +356,24 @@ ResultCode KProcess::LoadFromMetadata(const FileSys::ProgramMetadata& metadata,
         return ResultLimitReached;
     }
     // Initialize proces address space
-    if (const ResultCode result{
-            page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false, 0x8000000,
-                                             code_size, KMemoryManager::Pool::Application)};
+    if (const Result result{page_table->InitializeForProcess(metadata.GetAddressSpaceType(), false,
+                                                             0x8000000, code_size,
+                                                             KMemoryManager::Pool::Application)};
         result.IsError()) {
         return result;
     }
 
     // Map process code region
-    if (const ResultCode result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
-                                                           code_size / PageSize, KMemoryState::Code,
-                                                           KMemoryPermission::None)};
+    if (const Result result{page_table->MapProcessCode(page_table->GetCodeRegionStart(),
+                                                       code_size / PageSize, KMemoryState::Code,
+                                                       KMemoryPermission::None)};
         result.IsError()) {
         return result;
     }
 
     // Initialize process capabilities
     const auto& caps{metadata.GetKernelCapabilities()};
-    if (const ResultCode result{
+    if (const Result result{
             capabilities.InitializeForUserProcess(caps.data(), caps.size(), *page_table)};
         result.IsError()) {
         return result;
@@ -425,11 +420,11 @@ void KProcess::PrepareForTermination() {
     ChangeStatus(ProcessStatus::Exiting);
 
     const auto stop_threads = [this](const std::vector<KThread*>& in_thread_list) {
-        for (auto& thread : in_thread_list) {
+        for (auto* thread : in_thread_list) {
             if (thread->GetOwnerProcess() != this)
                 continue;
 
-            if (thread == kernel.CurrentScheduler()->GetCurrentThread())
+            if (thread == GetCurrentThreadPointer(kernel))
                 continue;
 
             // TODO(Subv): When are the other running/ready threads terminated?
@@ -485,7 +480,7 @@ void KProcess::Finalize() {
     KAutoObjectWithSlabHeapAndContainer<KProcess, KWorkerTask>::Finalize();
 }
 
-ResultCode KProcess::CreateThreadLocalRegion(VAddr* out) {
+Result KProcess::CreateThreadLocalRegion(VAddr* out) {
     KThreadLocalPage* tlp = nullptr;
     VAddr tlr = 0;
 
@@ -536,7 +531,7 @@ ResultCode KProcess::CreateThreadLocalRegion(VAddr* out) {
     return ResultSuccess;
 }
 
-ResultCode KProcess::DeleteThreadLocalRegion(VAddr addr) {
+Result KProcess::DeleteThreadLocalRegion(VAddr addr) {
     KThreadLocalPage* page_to_free = nullptr;
 
     // Release the region.
@@ -584,6 +579,52 @@ ResultCode KProcess::DeleteThreadLocalRegion(VAddr addr) {
     return ResultSuccess;
 }
 
+bool KProcess::InsertWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.type == DebugWatchpointType::None;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = addr;
+    watch->end_address = addr + size;
+    watch->type = type;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]++;
+        system.Memory().MarkRegionDebug(page, PageSize, true);
+    }
+
+    return true;
+}
+
+bool KProcess::RemoveWatchpoint(Core::System& system, VAddr addr, u64 size,
+                                DebugWatchpointType type) {
+    const auto watch{std::find_if(watchpoints.begin(), watchpoints.end(), [&](const auto& wp) {
+        return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
+    })};
+
+    if (watch == watchpoints.end()) {
+        return false;
+    }
+
+    watch->start_address = 0;
+    watch->end_address = 0;
+    watch->type = DebugWatchpointType::None;
+
+    for (VAddr page = Common::AlignDown(addr, PageSize); page < addr + size; page += PageSize) {
+        debug_page_refcounts[page]--;
+        if (!debug_page_refcounts[page]) {
+            system.Memory().MarkRegionDebug(page, PageSize, false);
+        }
+    }
+
+    return true;
+}
+
 void KProcess::LoadModule(CodeSet code_set, VAddr base_addr) {
     const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
                                       Svc::MemoryPermission permission) {
@@ -621,7 +662,7 @@ void KProcess::ChangeStatus(ProcessStatus new_status) {
     NotifyAvailable();
 }
 
-ResultCode KProcess::AllocateMainThreadStack(std::size_t stack_size) {
+Result KProcess::AllocateMainThreadStack(std::size_t stack_size) {
     ASSERT(stack_size);
 
     // The kernel always ensures that the given stack size is page aligned.

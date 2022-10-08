@@ -1,6 +1,5 @@
-// Copyright 2018 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2018 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "common/logging/log.h"
 #include "common/math_util.h"
@@ -41,13 +40,13 @@ public:
     void EnableMotion() {
         if (sdl_controller) {
             SDL_GameController* controller = sdl_controller.get();
-            if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL) && !has_accel) {
+            has_accel = SDL_GameControllerHasSensor(controller, SDL_SENSOR_ACCEL);
+            has_gyro = SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO);
+            if (has_accel) {
                 SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_ACCEL, SDL_TRUE);
-                has_accel = true;
             }
-            if (SDL_GameControllerHasSensor(controller, SDL_SENSOR_GYRO) && !has_gyro) {
+            if (has_gyro) {
                 SDL_GameControllerSetSensorEnabled(controller, SDL_SENSOR_GYRO, SDL_TRUE);
-                has_gyro = true;
             }
         }
     }
@@ -306,6 +305,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
         auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_gamecontroller);
         PreSetController(joystick->GetPadIdentifier());
         SetBattery(joystick->GetPadIdentifier(), joystick->GetBatteryLevel());
+        joystick->EnableMotion();
         joystick_map[guid].emplace_back(std::move(joystick));
         return;
     }
@@ -317,6 +317,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
 
     if (joystick_it != joystick_guid_list.end()) {
         (*joystick_it)->SetSDLJoystick(sdl_joystick, sdl_gamecontroller);
+        (*joystick_it)->EnableMotion();
         return;
     }
 
@@ -324,6 +325,7 @@ void SDLDriver::InitJoystick(int joystick_index) {
     auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, sdl_gamecontroller);
     PreSetController(joystick->GetPadIdentifier());
     SetBattery(joystick->GetPadIdentifier(), joystick->GetBatteryLevel());
+    joystick->EnableMotion();
     joystick_guid_list.emplace_back(std::move(joystick));
 }
 
@@ -434,12 +436,19 @@ SDLDriver::SDLDriver(std::string input_engine_) : InputEngine(std::move(input_en
     initialized = true;
     if (start_thread) {
         poll_thread = std::thread([this] {
-            Common::SetCurrentThreadName("yuzu:input:SDL");
+            Common::SetCurrentThreadName("SDL_MainLoop");
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();
-                SendVibrations();
                 std::this_thread::sleep_for(1ms);
+            }
+        });
+        vibration_thread = std::thread([this] {
+            Common::SetCurrentThreadName("SDL_Vibration");
+            using namespace std::chrono_literals;
+            while (initialized) {
+                SendVibrations();
+                std::this_thread::sleep_for(10ms);
             }
         });
     }
@@ -457,6 +466,7 @@ SDLDriver::~SDLDriver() {
     initialized = false;
     if (start_thread) {
         poll_thread.join();
+        vibration_thread.join();
         SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
     }
 }

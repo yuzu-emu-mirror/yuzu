@@ -24,8 +24,9 @@ enum class TextureType : u32 {
     ColorCube,
     ColorArrayCube,
     Buffer,
+    Color2DRect,
 };
-constexpr u32 NUM_TEXTURE_TYPES = 8;
+constexpr u32 NUM_TEXTURE_TYPES = 9;
 
 enum class ImageFormat : u32 {
     Typeless,
@@ -60,8 +61,10 @@ struct TextureBufferDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };
@@ -84,8 +87,10 @@ struct TextureDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };

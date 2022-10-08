@@ -188,8 +188,8 @@ void HLERequestContext::ParseCommandBuffer(const KHandleTable& handle_table, u32
     rp.Skip(1, false); // The command is actually an u64, but we don't use the high part.
 }
 
-ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
-                                                                u32_le* src_cmdbuf) {
+Result HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
+                                                            u32_le* src_cmdbuf) {
     ParseCommandBuffer(handle_table, src_cmdbuf, true);
 
     if (command_header->IsCloseCommand()) {
@@ -202,7 +202,7 @@ ResultCode HLERequestContext::PopulateFromIncomingCommandBuffer(const KHandleTab
     return ResultSuccess;
 }
 
-ResultCode HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
+Result HLERequestContext::WriteToOutgoingCommandBuffer(KThread& requesting_thread) {
     auto current_offset = handles_offset;
     auto& owner_process = *requesting_thread.GetOwnerProcess();
     auto& handle_table = owner_process.GetHandleTable();
@@ -287,15 +287,49 @@ std::size_t HLERequestContext::WriteBuffer(const void* buffer, std::size_t size,
             BufferDescriptorB().size() > buffer_index &&
                 BufferDescriptorB()[buffer_index].Size() >= size,
             { return 0; }, "BufferDescriptorB is invalid, index={}, size={}", buffer_index, size);
-        memory.WriteBlock(BufferDescriptorB()[buffer_index].Address(), buffer, size);
+        WriteBufferB(buffer, size, buffer_index);
     } else {
         ASSERT_OR_EXECUTE_MSG(
             BufferDescriptorC().size() > buffer_index &&
                 BufferDescriptorC()[buffer_index].Size() >= size,
             { return 0; }, "BufferDescriptorC is invalid, index={}, size={}", buffer_index, size);
-        memory.WriteBlock(BufferDescriptorC()[buffer_index].Address(), buffer, size);
+        WriteBufferC(buffer, size, buffer_index);
     }
 
+    return size;
+}
+
+std::size_t HLERequestContext::WriteBufferB(const void* buffer, std::size_t size,
+                                            std::size_t buffer_index) const {
+    if (buffer_index >= BufferDescriptorB().size() || size == 0) {
+        return 0;
+    }
+
+    const auto buffer_size{BufferDescriptorB()[buffer_index].Size()};
+    if (size > buffer_size) {
+        LOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
+                     buffer_size);
+        size = buffer_size; // TODO(bunnei): This needs to be HW tested
+    }
+
+    memory.WriteBlock(BufferDescriptorB()[buffer_index].Address(), buffer, size);
+    return size;
+}
+
+std::size_t HLERequestContext::WriteBufferC(const void* buffer, std::size_t size,
+                                            std::size_t buffer_index) const {
+    if (buffer_index >= BufferDescriptorC().size() || size == 0) {
+        return 0;
+    }
+
+    const auto buffer_size{BufferDescriptorC()[buffer_index].Size()};
+    if (size > buffer_size) {
+        LOG_CRITICAL(Core, "size ({:016X}) is greater than buffer_size ({:016X})", size,
+                     buffer_size);
+        size = buffer_size; // TODO(bunnei): This needs to be HW tested
+    }
+
+    memory.WriteBlock(BufferDescriptorC()[buffer_index].Address(), buffer, size);
     return size;
 }
 

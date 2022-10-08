@@ -10,12 +10,14 @@
 #include <thread>
 #include <variant>
 
-#include "common/bounded_threadsafe_queue.h"
+#include "common/threadsafe_queue.h"
 #include "video_core/framebuffer_config.h"
 
 namespace Tegra {
 struct FramebufferConfig;
-class DmaPusher;
+namespace Control {
+class Scheduler;
+}
 } // namespace Tegra
 
 namespace Core {
@@ -34,8 +36,10 @@ namespace VideoCommon::GPUThread {
 
 /// Command to signal to the GPU thread that a command list is ready for processing
 struct SubmitListCommand final {
-    explicit SubmitListCommand(Tegra::CommandList&& entries_) : entries{std::move(entries_)} {}
+    explicit SubmitListCommand(s32 channel_, Tegra::CommandList&& entries_)
+        : channel{channel_}, entries{std::move(entries_)} {}
 
+    s32 channel;
     Tegra::CommandList entries;
 };
 
@@ -96,7 +100,7 @@ struct CommandDataContainer {
 
 /// Struct used to synchronize the GPU thread
 struct SynchState final {
-    using CommandQueue = Common::MPSCQueue<CommandDataContainer>;
+    using CommandQueue = Common::MPSCQueue<CommandDataContainer, true>;
     std::mutex write_lock;
     CommandQueue queue;
     u64 last_fence{};
@@ -112,10 +116,10 @@ public:
 
     /// Creates and starts the GPU thread.
     void StartThread(VideoCore::RendererBase& renderer, Core::Frontend::GraphicsContext& context,
-                     Tegra::DmaPusher& dma_pusher);
+                     Tegra::Control::Scheduler& scheduler);
 
     /// Push GPU command entries to be processed
-    void SubmitList(Tegra::CommandList&& entries);
+    void SubmitList(s32 channel, Tegra::CommandList&& entries);
 
     /// Swap buffers (render frame)
     void SwapBuffers(const Tegra::FramebufferConfig* framebuffer);
@@ -130,6 +134,8 @@ public:
     void FlushAndInvalidateRegion(VAddr addr, u64 size);
 
     void OnCommandListEnd();
+
+    void TickGPU();
 
 private:
     /// Pushes a command to be executed by the GPU thread

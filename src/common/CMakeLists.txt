@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 if (DEFINED ENV{AZURECIREPO})
   set(BUILD_REPOSITORY $ENV{AZURECIREPO})
 endif()
@@ -11,38 +14,17 @@ if (DEFINED ENV{DISPLAYVERSION})
   set(DISPLAY_VERSION $ENV{DISPLAYVERSION})
 endif ()
 
-# Pass the path to git to the GenerateSCMRev.cmake as well
-find_package(Git QUIET)
-
-add_custom_command(OUTPUT scm_rev.cpp
-    COMMAND ${CMAKE_COMMAND}
-      -DSRC_DIR=${CMAKE_SOURCE_DIR}
-      -DBUILD_REPOSITORY=${BUILD_REPOSITORY}
-      -DTITLE_BAR_FORMAT_IDLE=${TITLE_BAR_FORMAT_IDLE}
-      -DTITLE_BAR_FORMAT_RUNNING=${TITLE_BAR_FORMAT_RUNNING}
-      -DBUILD_TAG=${BUILD_TAG}
-      -DBUILD_ID=${DISPLAY_VERSION}
-      -DGIT_REF_SPEC=${GIT_REF_SPEC}
-      -DGIT_REV=${GIT_REV}
-      -DGIT_DESC=${GIT_DESC}
-      -DGIT_BRANCH=${GIT_BRANCH}
-      -DBUILD_FULLNAME=${BUILD_FULLNAME}
-      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
-      -P ${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake
-    DEPENDS
-      # Check that the scm_rev files haven't changed
-      "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.cpp.in"
-      "${CMAKE_CURRENT_SOURCE_DIR}/scm_rev.h"
-      # technically we should regenerate if the git version changed, but its not worth the effort imo
-      "${CMAKE_SOURCE_DIR}/CMakeModules/GenerateSCMRev.cmake"
-    VERBATIM
-)
+include(GenerateSCMRev)
 
 add_library(common STATIC
+    address_space.cpp
+    address_space.h
     algorithm.h
     alignment.h
+    announce_multiplayer_room.h
     assert.cpp
     assert.h
+    atomic_helpers.h
     atomic_ops.h
     detached_tasks.cpp
     detached_tasks.h
@@ -64,6 +46,7 @@ add_library(common STATIC
     expected.h
     fiber.cpp
     fiber.h
+    fixed_point.h
     fs/file.cpp
     fs/file.h
     fs/fs.cpp
@@ -100,6 +83,8 @@ add_library(common STATIC
     microprofile.cpp
     microprofile.h
     microprofileui.h
+    multi_level_page_table.cpp
+    multi_level_page_table.h
     nvidia_flags.cpp
     nvidia_flags.h
     page_table.cpp
@@ -109,14 +94,16 @@ add_library(common STATIC
     parent_of_member.h
     point.h
     quaternion.h
+    reader_writer_queue.h
     ring_buffer.h
-    scm_rev.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/scm_rev.cpp
     scm_rev.h
     scope_exit.h
     settings.cpp
     settings.h
     settings_input.cpp
     settings_input.h
+    socket_types.h
     spin_lock.cpp
     spin_lock.h
     stream.cpp
@@ -158,6 +145,7 @@ if(ARCHITECTURE_x86_64)
             x64/xbyak_abi.h
             x64/xbyak_util.h
     )
+    target_link_libraries(common PRIVATE xbyak)
 endif()
 
 if (MSVC)
@@ -181,9 +169,10 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
-target_link_libraries(common PRIVATE lz4::lz4 xbyak)
-if (MSVC)
+target_link_libraries(common PRIVATE lz4::lz4)
+if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()
-  target_link_libraries(common PRIVATE zstd)
+  target_link_libraries(common PRIVATE
+    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>)
 endif()

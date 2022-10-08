@@ -106,6 +106,7 @@ enum class StepState : u32 {
     StepPerformed, ///< Thread has stepped, waiting to be scheduled again
 };
 
+void SetCurrentThread(KernelCore& kernel, KThread* thread);
 [[nodiscard]] KThread* GetCurrentThreadPointer(KernelCore& kernel);
 [[nodiscard]] KThread& GetCurrentThread(KernelCore& kernel);
 [[nodiscard]] s32 GetCurrentCoreId(KernelCore& kernel);
@@ -175,7 +176,7 @@ public:
 
     void SetBasePriority(s32 value);
 
-    [[nodiscard]] ResultCode Run();
+    [[nodiscard]] Result Run();
 
     void Exit();
 
@@ -207,6 +208,8 @@ public:
 
     void Continue();
 
+    void WaitUntilSuspended();
+
     constexpr void SetSyncedIndex(s32 index) {
         synced_index = index;
     }
@@ -215,11 +218,11 @@ public:
         return synced_index;
     }
 
-    constexpr void SetWaitResult(ResultCode wait_res) {
+    constexpr void SetWaitResult(Result wait_res) {
         wait_result = wait_res;
     }
 
-    [[nodiscard]] constexpr ResultCode GetWaitResult() const {
+    [[nodiscard]] constexpr Result GetWaitResult() const {
         return wait_result;
     }
 
@@ -342,15 +345,15 @@ public:
         return physical_affinity_mask;
     }
 
-    [[nodiscard]] ResultCode GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    [[nodiscard]] Result GetCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] ResultCode GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
+    [[nodiscard]] Result GetPhysicalCoreMask(s32* out_ideal_core, u64* out_affinity_mask);
 
-    [[nodiscard]] ResultCode SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
+    [[nodiscard]] Result SetCoreMask(s32 cpu_core_id, u64 v_affinity_mask);
 
-    [[nodiscard]] ResultCode SetActivity(Svc::ThreadActivity activity);
+    [[nodiscard]] Result SetActivity(Svc::ThreadActivity activity);
 
-    [[nodiscard]] ResultCode Sleep(s64 timeout);
+    [[nodiscard]] Result Sleep(s64 timeout);
 
     [[nodiscard]] s64 GetYieldScheduleCount() const {
         return schedule_count;
@@ -408,20 +411,22 @@ public:
 
     static void PostDestroy(uintptr_t arg);
 
-    [[nodiscard]] static ResultCode InitializeDummyThread(KThread* thread);
+    [[nodiscard]] static Result InitializeDummyThread(KThread* thread);
 
-    [[nodiscard]] static ResultCode InitializeIdleThread(Core::System& system, KThread* thread,
-                                                         s32 virt_core);
+    [[nodiscard]] static Result InitializeMainThread(Core::System& system, KThread* thread,
+                                                     s32 virt_core);
 
-    [[nodiscard]] static ResultCode InitializeHighPriorityThread(Core::System& system,
-                                                                 KThread* thread,
-                                                                 KThreadFunction func,
-                                                                 uintptr_t arg, s32 virt_core);
+    [[nodiscard]] static Result InitializeIdleThread(Core::System& system, KThread* thread,
+                                                     s32 virt_core);
 
-    [[nodiscard]] static ResultCode InitializeUserThread(Core::System& system, KThread* thread,
-                                                         KThreadFunction func, uintptr_t arg,
-                                                         VAddr user_stack_top, s32 prio,
-                                                         s32 virt_core, KProcess* owner);
+    [[nodiscard]] static Result InitializeHighPriorityThread(Core::System& system, KThread* thread,
+                                                             KThreadFunction func, uintptr_t arg,
+                                                             s32 virt_core);
+
+    [[nodiscard]] static Result InitializeUserThread(Core::System& system, KThread* thread,
+                                                     KThreadFunction func, uintptr_t arg,
+                                                     VAddr user_stack_top, s32 prio, s32 virt_core,
+                                                     KProcess* owner);
 
 public:
     struct StackParameters {
@@ -478,39 +483,16 @@ public:
         return per_core_priority_queue_entry[core];
     }
 
-    [[nodiscard]] bool IsKernelThread() const {
-        return GetActiveCore() == 3;
-    }
-
-    [[nodiscard]] bool IsDispatchTrackingDisabled() const {
-        return is_single_core || IsKernelThread();
-    }
-
     [[nodiscard]] s32 GetDisableDispatchCount() const {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return 1;
-        }
-
         return this->GetStackParameters().disable_count;
     }
 
     void DisableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() >= 0);
         this->GetStackParameters().disable_count++;
     }
 
     void EnableDispatch() {
-        if (IsDispatchTrackingDisabled()) {
-            // TODO(bunnei): Until kernel threads are emulated, we cannot enable/disable dispatch.
-            return;
-        }
-
         ASSERT(GetCurrentThread(kernel).GetDisableDispatchCount() > 0);
         this->GetStackParameters().disable_count--;
     }
@@ -607,7 +589,7 @@ public:
 
     void RemoveWaiter(KThread* thread);
 
-    [[nodiscard]] ResultCode GetThreadContext3(std::vector<u8>& out);
+    [[nodiscard]] Result GetThreadContext3(std::vector<u8>& out);
 
     [[nodiscard]] KThread* RemoveWaiterByKey(s32* out_num_waiters, VAddr key);
 
@@ -633,9 +615,9 @@ public:
     }
 
     void BeginWait(KThreadQueue* queue);
-    void NotifyAvailable(KSynchronizationObject* signaled_object, ResultCode wait_result_);
-    void EndWait(ResultCode wait_result_);
-    void CancelWait(ResultCode wait_result_, bool cancel_timer_task);
+    void NotifyAvailable(KSynchronizationObject* signaled_object, Result wait_result_);
+    void EndWait(Result wait_result_);
+    void CancelWait(Result wait_result_, bool cancel_timer_task);
 
     [[nodiscard]] bool HasWaiters() const {
         return !waiter_list.empty();
@@ -721,14 +703,13 @@ private:
 
     void FinishTermination();
 
-    [[nodiscard]] ResultCode Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
-                                        s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
+    [[nodiscard]] Result Initialize(KThreadFunction func, uintptr_t arg, VAddr user_stack_top,
+                                    s32 prio, s32 virt_core, KProcess* owner, ThreadType type);
 
-    [[nodiscard]] static ResultCode InitializeThread(KThread* thread, KThreadFunction func,
-                                                     uintptr_t arg, VAddr user_stack_top, s32 prio,
-                                                     s32 core, KProcess* owner, ThreadType type,
-                                                     std::function<void(void*)>&& init_func,
-                                                     void* init_func_parameter);
+    [[nodiscard]] static Result InitializeThread(KThread* thread, KThreadFunction func,
+                                                 uintptr_t arg, VAddr user_stack_top, s32 prio,
+                                                 s32 core, KProcess* owner, ThreadType type,
+                                                 std::function<void()>&& init_func);
 
     static void RestorePriority(KernelCore& kernel_ctx, KThread* thread);
 
@@ -765,7 +746,7 @@ private:
     u32 suspend_request_flags{};
     u32 suspend_allowed_flags{};
     s32 synced_index{};
-    ResultCode wait_result{ResultSuccess};
+    Result wait_result{ResultSuccess};
     s32 base_priority{};
     s32 physical_ideal_core_id{};
     s32 virtual_ideal_core_id{};

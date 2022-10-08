@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -30,9 +29,11 @@ enum Values : int;
 }
 
 namespace InputCommon {
+class Camera;
 class Keyboard;
 class Mouse;
 class TouchScreen;
+class VirtualAmiibo;
 struct MappingData;
 } // namespace InputCommon
 
@@ -92,8 +93,20 @@ public:
     /// Retrieves the underlying tas input device.
     [[nodiscard]] TasInput::Tas* GetTas();
 
-    /// Retrieves the underlying  tas input  device.
+    /// Retrieves the underlying tas input device.
     [[nodiscard]] const TasInput::Tas* GetTas() const;
+
+    /// Retrieves the underlying camera input device.
+    [[nodiscard]] Camera* GetCamera();
+
+    /// Retrieves the underlying camera input device.
+    [[nodiscard]] const Camera* GetCamera() const;
+
+    /// Retrieves the underlying virtual amiibo input device.
+    [[nodiscard]] VirtualAmiibo* GetVirtualAmiibo();
+
+    /// Retrieves the underlying virtual amiibo input device.
+    [[nodiscard]] const VirtualAmiibo* GetVirtualAmiibo() const;
 
     /**
      * Returns all available input devices that this Factory can create a new device with.

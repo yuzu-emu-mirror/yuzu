@@ -1,6 +1,5 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 // Include this early to include Vulkan headers how we want to
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -58,24 +57,10 @@ ConfigureGraphics::ConfigureGraphics(const Core::System& system_, QWidget* paren
         UpdateBackgroundColorButton(new_bg_color);
     });
 
-    connect(ui->button_check_vulkan, &QAbstractButton::clicked, this, [this] {
-        UISettings::values.has_broken_vulkan = false;
-
-        if (RetrieveVulkanDevices()) {
-            ui->api->setEnabled(true);
-            ui->button_check_vulkan->hide();
-
-            for (const auto& device : vulkan_devices) {
-                ui->device->addItem(device);
-            }
-        } else {
-            UISettings::values.has_broken_vulkan = true;
-        }
-    });
-
-    ui->api->setEnabled(!UISettings::values.has_broken_vulkan.GetValue());
-    ui->button_check_vulkan->setVisible(UISettings::values.has_broken_vulkan.GetValue());
-
+    ui->api->setEnabled(!UISettings::values.has_broken_vulkan && ui->api->isEnabled());
+    ui->api_widget->setEnabled(
+        (!UISettings::values.has_broken_vulkan || Settings::IsConfiguringGlobal()) &&
+        ui->api_widget->isEnabled());
     ui->bg_label->setVisible(Settings::IsConfiguringGlobal());
     ui->bg_combobox->setVisible(!Settings::IsConfiguringGlobal());
 }
@@ -315,7 +300,7 @@ void ConfigureGraphics::UpdateAPILayout() {
         vulkan_device = Settings::values.vulkan_device.GetValue(true);
         shader_backend = Settings::values.shader_backend.GetValue(true);
         ui->device_widget->setEnabled(false);
-        ui->backend_widget->setEnabled(UISettings::values.has_broken_vulkan.GetValue());
+        ui->backend_widget->setEnabled(false);
     } else {
         vulkan_device = Settings::values.vulkan_device.GetValue();
         shader_backend = Settings::values.shader_backend.GetValue();
@@ -337,9 +322,9 @@ void ConfigureGraphics::UpdateAPILayout() {
     }
 }
 
-bool ConfigureGraphics::RetrieveVulkanDevices() try {
+void ConfigureGraphics::RetrieveVulkanDevices() try {
     if (UISettings::values.has_broken_vulkan) {
-        return false;
+        return;
     }
 
     using namespace Vulkan;
@@ -355,11 +340,8 @@ bool ConfigureGraphics::RetrieveVulkanDevices() try {
         const std::string name = vk::PhysicalDevice(device, dld).GetProperties().deviceName;
         vulkan_devices.push_back(QString::fromStdString(name));
     }
-
-    return true;
 } catch (const Vulkan::vk::Exception& exception) {
     LOG_ERROR(Frontend, "Failed to enumerate devices with error: {}", exception.what());
-    return false;
 }
 
 Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
@@ -440,11 +422,4 @@ void ConfigureGraphics::SetupPerGameUI() {
         ui->api, static_cast<int>(Settings::values.renderer_backend.GetValue(true)));
     ConfigurationShared::InsertGlobalItem(
         ui->nvdec_emulation, static_cast<int>(Settings::values.nvdec_emulation.GetValue(true)));
-
-    if (UISettings::values.has_broken_vulkan) {
-        ui->backend_widget->setEnabled(true);
-        ConfigurationShared::SetColoredComboBox(
-            ui->backend, ui->backend_widget,
-            static_cast<int>(Settings::values.shader_backend.GetValue(true)));
-    }
 }

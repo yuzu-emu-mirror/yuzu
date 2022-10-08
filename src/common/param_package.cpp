@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 #include <stdexcept>
@@ -76,7 +75,7 @@ std::string ParamPackage::Serialize() const {
 std::string ParamPackage::Get(const std::string& key, const std::string& default_value) const {
     auto pair = data.find(key);
     if (pair == data.end()) {
-        LOG_DEBUG(Common, "key '{}' not found", key);
+        LOG_TRACE(Common, "key '{}' not found", key);
         return default_value;
     }
 
@@ -86,7 +85,7 @@ std::string ParamPackage::Get(const std::string& key, const std::string& default
 int ParamPackage::Get(const std::string& key, int default_value) const {
     auto pair = data.find(key);
     if (pair == data.end()) {
-        LOG_DEBUG(Common, "key '{}' not found", key);
+        LOG_TRACE(Common, "key '{}' not found", key);
         return default_value;
     }
 
@@ -101,7 +100,7 @@ int ParamPackage::Get(const std::string& key, int default_value) const {
 float ParamPackage::Get(const std::string& key, float default_value) const {
     auto pair = data.find(key);
     if (pair == data.end()) {
-        LOG_DEBUG(Common, "key {} not found", key);
+        LOG_TRACE(Common, "key {} not found", key);
         return default_value;
     }
 

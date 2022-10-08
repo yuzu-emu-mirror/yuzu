@@ -1,6 +1,5 @@
-// Copyright 2016 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2016 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -41,7 +40,8 @@ class ConfigureDialog : public QDialog {
 
 public:
     explicit ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
-                             InputCommon::InputSubsystem* input_subsystem, Core::System& system_);
+                             InputCommon::InputSubsystem* input_subsystem, Core::System& system_,
+                             bool enable_web_config = true);
     ~ConfigureDialog() override;
 
     void ApplyConfiguration();

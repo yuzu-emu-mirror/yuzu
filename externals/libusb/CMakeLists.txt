@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
     set(LIBUSB_FOUND ON CACHE BOOL "libusb is present" FORCE)
     set(LIBUSB_VERSION "1.0.24" CACHE STRING "libusb version string" FORCE)
@@ -105,7 +108,7 @@ if (MINGW OR (${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR APPLE)
     target_include_directories(usb INTERFACE "${LIBUSB_INCLUDE_DIRS}")
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-        Include(FindPkgConfig)
+        find_package(PkgConfig)
         pkg_check_modules(LIBUDEV REQUIRED libudev)
 
         if (LIBUDEV_FOUND)

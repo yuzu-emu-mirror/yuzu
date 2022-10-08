@@ -43,13 +43,25 @@ public:
         is_async_gpu = is_async;
     }
 
+    void OnGpuReady() {
+        gpu_barrier->Sync();
+    }
+
     void Initialize();
     void Shutdown();
 
-    static std::function<void(void*)> GetGuestThreadStartFunc();
-    static std::function<void(void*)> GetIdleThreadStartFunc();
-    static std::function<void(void*)> GetShutdownThreadStartFunc();
-    void* GetStartFuncParameter();
+    std::function<void()> GetGuestActivateFunc() {
+        return [this] { GuestActivate(); };
+    }
+    std::function<void()> GetGuestThreadFunc() {
+        return [this] { GuestThreadFunction(); };
+    }
+    std::function<void()> GetIdleThreadStartFunc() {
+        return [this] { IdleThreadFunction(); };
+    }
+    std::function<void()> GetShutdownThreadStartFunc() {
+        return [this] { ShutdownThreadFunction(); };
+    }
 
     void PreemptSingleCore(bool from_running_enviroment = true);
 
@@ -58,21 +70,20 @@ public:
     }
 
 private:
-    static void GuestThreadFunction(void* cpu_manager);
-    static void GuestRewindFunction(void* cpu_manager);
-    static void IdleThreadFunction(void* cpu_manager);
-    static void ShutdownThreadFunction(void* cpu_manager);
+    void GuestThreadFunction();
+    void IdleThreadFunction();
+    void ShutdownThreadFunction();
 
     void MultiCoreRunGuestThread();
-    void MultiCoreRunGuestLoop();
     void MultiCoreRunIdleThread();
 
     void SingleCoreRunGuestThread();
-    void SingleCoreRunGuestLoop();
     void SingleCoreRunIdleThread();
 
     static void ThreadStart(std::stop_token stop_token, CpuManager& cpu_manager, std::size_t core);
 
+    void GuestActivate();
+    void HandleInterrupt();
     void ShutdownThread();
     void RunThread(std::size_t core);
 
@@ -81,6 +92,7 @@ private:
         std::jthread host_thread;
     };
 
+    std::unique_ptr<Common::Barrier> gpu_barrier{};
     std::array<CoreData, Core::Hardware::NUM_CPU_CORES> core_data{};
 
     bool is_async_gpu{};

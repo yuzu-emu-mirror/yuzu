@@ -1,10 +1,11 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <glad/glad.h>
 
 #include <QApplication>
+#include <QCameraImageCapture>
+#include <QCameraInfo>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPainter>
@@ -29,7 +30,9 @@
 #include "common/scm_rev.h"
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/cpu_manager.h"
 #include "core/frontend/framebuffer_layout.h"
+#include "input_common/drivers/camera.h"
 #include "input_common/drivers/keyboard.h"
 #include "input_common/drivers/mouse.h"
 #include "input_common/drivers/tas_input.h"
@@ -44,7 +47,7 @@ EmuThread::EmuThread(Core::System& system_) : system{system_} {}
 EmuThread::~EmuThread() = default;
 
 void EmuThread::run() {
-    std::string name = "yuzu:EmuControlThread";
+    std::string name = "EmuControlThread";
     MicroProfileOnThreadCreate(name.c_str());
     Common::SetCurrentThreadName(name.c_str());
 
@@ -72,6 +75,8 @@ void EmuThread::run() {
     emit LoadProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     gpu.ReleaseContext();
+
+    system.GetCpuManager().OnGpuReady();
 
     // Holds whether the cpu was running during the last iteration,
     // so that the DebugModeLeft signal can be emitted before the
@@ -798,6 +803,104 @@ void GRenderWindow::TouchEndEvent() {
     input_subsystem->GetTouchScreen()->ReleaseAllTouch();
 }
 
+void GRenderWindow::InitializeCamera() {
+    constexpr auto camera_update_ms = std::chrono::milliseconds{50}; // (50ms, 20Hz)
+    if (!Settings::values.enable_ir_sensor) {
+        return;
+    }
+
+    bool camera_found = false;
+    const QList<QCameraInfo> cameras = QCameraInfo::availableCameras();
+    for (const QCameraInfo& cameraInfo : cameras) {
+        if (Settings::values.ir_sensor_device.GetValue() == cameraInfo.deviceName().toStdString() ||
+            Settings::values.ir_sensor_device.GetValue() == "Auto") {
+            camera = std::make_unique<QCamera>(cameraInfo);
+            if (!camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureViewfinder) &&
+                !camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureStillImage)) {
+                LOG_ERROR(Frontend,
+                          "Camera doesn't support CaptureViewfinder or CaptureStillImage");
+                continue;
+            }
+            camera_found = true;
+            break;
+        }
+    }
+
+    if (!camera_found) {
+        return;
+    }
+
+    camera_capture = std::make_unique<QCameraImageCapture>(camera.get());
+
+    if (!camera_capture->isCaptureDestinationSupported(
+            QCameraImageCapture::CaptureDestination::CaptureToBuffer)) {
+        LOG_ERROR(Frontend, "Camera doesn't support saving to buffer");
+        return;
+    }
+
+    camera_capture->setCaptureDestination(QCameraImageCapture::CaptureDestination::CaptureToBuffer);
+    connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
+            &GRenderWindow::OnCameraCapture);
+    camera->unload();
+    if (camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureViewfinder)) {
+        camera->setCaptureMode(QCamera::CaptureViewfinder);
+    } else if (camera->isCaptureModeSupported(QCamera::CaptureMode::CaptureStillImage)) {
+        camera->setCaptureMode(QCamera::CaptureStillImage);
+    }
+    camera->load();
+    camera->start();
+
+    pending_camera_snapshots = 0;
+    is_virtual_camera = false;
+
+    camera_timer = std::make_unique<QTimer>();
+    connect(camera_timer.get(), &QTimer::timeout, [this] { RequestCameraCapture(); });
+    // This timer should be dependent of camera resolution 5ms for every 100 pixels
+    camera_timer->start(camera_update_ms);
+}
+
+void GRenderWindow::FinalizeCamera() {
+    if (camera_timer) {
+        camera_timer->stop();
+    }
+    if (camera) {
+        camera->unload();
+    }
+}
+
+void GRenderWindow::RequestCameraCapture() {
+    if (!Settings::values.enable_ir_sensor) {
+        return;
+    }
+
+    // If the camera doesn't capture, test for virtual cameras
+    if (pending_camera_snapshots > 5) {
+        is_virtual_camera = true;
+    }
+    // Virtual cameras like obs need to reset the camera every capture
+    if (is_virtual_camera) {
+        camera->stop();
+        camera->start();
+    }
+
+    pending_camera_snapshots++;
+    camera_capture->capture();
+}
+
+void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {
+    constexpr std::size_t camera_width = 320;
+    constexpr std::size_t camera_height = 240;
+    const auto converted =
+        img.scaled(camera_width, camera_height, Qt::AspectRatioMode::IgnoreAspectRatio,
+                   Qt::TransformationMode::SmoothTransformation)
+            .mirrored(false, true);
+    std::vector<u32> camera_data{};
+    camera_data.resize(camera_width * camera_height);
+    std::memcpy(camera_data.data(), converted.bits(), camera_width * camera_height * sizeof(u32));
+    input_subsystem->GetCamera()->SetCameraData(camera_width, camera_height, camera_data);
+    pending_camera_snapshots = 0;
+}
+
 bool GRenderWindow::event(QEvent* event) {
     if (event->type() == QEvent::TouchBegin) {
         TouchBeginEvent(static_cast<QTouchEvent*>(event));
@@ -1004,8 +1107,8 @@ QStringList GRenderWindow::GetUnsupportedGLExtensions() const {
     }
 
     if (!unsupported_ext.empty()) {
-        LOG_ERROR(Frontend, "GPU does not support all required extensions: {}",
-                  glGetString(GL_RENDERER));
+        const std::string gl_renderer{reinterpret_cast<const char*>(glGetString(GL_RENDERER))};
+        LOG_ERROR(Frontend, "GPU does not support all required extensions: {}", gl_renderer);
     }
     for (const QString& ext : unsupported_ext) {
         LOG_ERROR(Frontend, "Unsupported GL extension: {}", ext.toStdString());

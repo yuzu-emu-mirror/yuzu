@@ -19,11 +19,14 @@ public:
     bool CheckAndResetUpdateCounter(SourceFlag source_flag, u64& current_update_counter);
     bool IsFullDatabase() const;
     u32 GetCount(SourceFlag source_flag) const;
-    ResultVal<MiiInfo> UpdateLatest(const MiiInfo& info, SourceFlag source_flag);
-    MiiInfo BuildRandom(Age age, Gender gender, Race race);
-    MiiInfo BuildDefault(std::size_t index);
+    ResultVal<CharInfo> UpdateLatest(const CharInfo& info, SourceFlag source_flag);
+    CharInfo BuildRandom(Age age, Gender gender, Race race);
+    CharInfo BuildDefault(std::size_t index);
+    CharInfo ConvertV3ToCharInfo(const Ver3StoreData& mii_v3) const;
+    Ver3StoreData ConvertCharInfoToV3(const CharInfo& mii) const;
+    bool ValidateV3Info(const Ver3StoreData& mii_v3) const;
     ResultVal<std::vector<MiiInfoElement>> GetDefault(SourceFlag source_flag);
-    ResultCode GetIndex(const MiiInfo& info, u32& index);
+    Result GetIndex(const CharInfo& info, u32& index);
 
 private:
     const Common::UUID user_id{};

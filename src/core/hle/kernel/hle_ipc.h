@@ -18,7 +18,7 @@
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/svc_common.h"
 
-union ResultCode;
+union Result;
 
 namespace Core::Memory {
 class Memory;
@@ -71,10 +71,10 @@ public:
      * it should be used to differentiate which client (As in ClientSession) we're answering to.
      * TODO(Subv): Use a wrapper structure to hold all the information relevant to
      * this request (ServerSession, Originator thread, Translated command buffer, etc).
-     * @returns ResultCode the result code of the translate operation.
+     * @returns Result the result code of the translate operation.
      */
-    virtual ResultCode HandleSyncRequest(Kernel::KServerSession& session,
-                                         Kernel::HLERequestContext& context) = 0;
+    virtual Result HandleSyncRequest(Kernel::KServerSession& session,
+                                     Kernel::HLERequestContext& context) = 0;
 
     /**
      * Signals that a client has just connected to this HLE handler and keeps the
@@ -212,11 +212,10 @@ public:
     }
 
     /// Populates this context with data from the requesting process/thread.
-    ResultCode PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table,
-                                                 u32_le* src_cmdbuf);
+    Result PopulateFromIncomingCommandBuffer(const KHandleTable& handle_table, u32_le* src_cmdbuf);
 
     /// Writes data from this context back to the requesting process/thread.
-    ResultCode WriteToOutgoingCommandBuffer(KThread& requesting_thread);
+    Result WriteToOutgoingCommandBuffer(KThread& requesting_thread);
 
     u32_le GetHipcCommand() const {
         return command;
@@ -277,6 +276,14 @@ public:
     /// Helper function to write a buffer using the appropriate buffer descriptor
     std::size_t WriteBuffer(const void* buffer, std::size_t size,
                             std::size_t buffer_index = 0) const;
+
+    /// Helper function to write buffer B
+    std::size_t WriteBufferB(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
+
+    /// Helper function to write buffer C
+    std::size_t WriteBufferC(const void* buffer, std::size_t size,
+                             std::size_t buffer_index = 0) const;
 
     /* Helper function to write a buffer using the appropriate buffer descriptor
      *

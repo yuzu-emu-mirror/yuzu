@@ -9,14 +9,12 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "core/arm/cpu_interrupt_handler.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"
 #include "core/hle/kernel/k_slab_heap.h"
 #include "core/hle/kernel/svc_common.h"
 
 namespace Core {
-class CPUInterruptHandler;
 class ExclusiveMonitor;
 class System;
 } // namespace Core
@@ -109,6 +107,9 @@ public:
     /// Clears all resources in use by the kernel instance.
     void Shutdown();
 
+    /// Close all active services in use by the kernel instance.
+    void CloseServices();
+
     /// Retrieves a shared pointer to the system resource limit instance.
     const KResourceLimit* GetSystemResourceLimit() const;
 
@@ -180,12 +181,6 @@ public:
 
     const KAutoObjectWithListContainer& ObjectListContainer() const;
 
-    std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts();
-
-    const std::array<Core::CPUInterruptHandler, Core::Hardware::NUM_CPU_CORES>& Interrupts() const;
-
-    void InterruptAllPhysicalCores();
-
     void InvalidateAllInstructionCaches();
 
     void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
@@ -225,6 +220,9 @@ public:
 
     /// Gets the current host_thread/guest_thread pointer.
     KThread* GetCurrentEmuThread() const;
+
+    /// Sets the current guest_thread pointer.
+    void SetCurrentEmuThread(KThread* thread);
 
     /// Gets the current host_thread handle.
     u32 GetCurrentHostThreadID() const;

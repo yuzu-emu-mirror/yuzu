@@ -1,14 +1,34 @@
 #!/bin/bash -ex
 
-cd /yuzu
+# SPDX-FileCopyrightText: 2019 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
 
-ccache -s
+set -e
 
-mkdir build || true && cd build
-cmake .. -G Ninja -DDISPLAY_VERSION=$1 -DCMAKE_TOOLCHAIN_FILE="$(pwd)/../CMakeModules/MinGWCross.cmake" -DUSE_CCACHE=ON -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DCMAKE_BUILD_TYPE=Release -DENABLE_QT_TRANSLATION=ON
-ninja
+#cd /yuzu
 
-ccache -s
+ccache -sv
+
+mkdir -p build && cd build
+export LDFLAGS="-fuse-ld=lld"
+# -femulated-tls required due to an incompatibility between GCC and Clang
+# TODO(lat9nq): If this is widespread, we probably need to add this to CMakeLists where appropriate
+export CXXFLAGS="-femulated-tls"
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE="${PWD}/../CMakeModules/MinGWClangCross.cmake" \
+    -DDISPLAY_VERSION="$1" \
+    -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON \
+    -DENABLE_QT_TRANSLATION=ON \
+    -DUSE_CCACHE=ON \
+    -DYUZU_CRASH_DUMPS=ON \
+    -DYUZU_USE_BUNDLED_SDL2=OFF \
+    -DYUZU_USE_EXTERNAL_SDL2=OFF \
+    -DYUZU_TESTS=OFF \
+    -GNinja
+ninja yuzu yuzu-cmd
+
+ccache -sv
 
 echo "Tests skipped"
 #ctest -VV -C Release
@@ -46,7 +66,7 @@ python3 .ci/scripts/windows/scan_dll.py package/*.exe package/imageformats/*.dll
 # copy FFmpeg libraries
 EXTERNALS_PATH="$(pwd)/build/externals"
 FFMPEG_DLL_PATH="$(find "${EXTERNALS_PATH}" -maxdepth 1 -type d | grep 'ffmpeg-')/bin"
-find ${FFMPEG_DLL_PATH} -type f -regex ".*\.dll" -exec cp -v {} package/ ';'
+find ${FFMPEG_DLL_PATH} -type f -regex ".*\.dll" -exec cp -nv {} package/ ';'
 
 # copy libraries from yuzu.exe path
 find "$(pwd)/build/bin/" -type f -regex ".*\.dll" -exec cp -v {} package/ ';'

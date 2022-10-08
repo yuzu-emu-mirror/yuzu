@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
 #include <mutex>
@@ -112,7 +111,8 @@ struct Client::Impl {
         httplib::Error error;
 
         if (!cli->send(request, response, error)) {
-            LOG_ERROR(WebService, "{} to {} returned null", method, host + path);
+            LOG_ERROR(WebService, "{} to {} returned null (httplib Error: {})", method, host + path,
+                      httplib::to_string(error));
             return WebResult{WebResult::Code::LibError, "Null response", ""};
         }
 

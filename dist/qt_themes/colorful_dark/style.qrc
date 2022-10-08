@@ -1,14 +1,13 @@
+<!--
+SPDX-FileCopyrightText: 2019 yuzu Emulator Project
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 <RCC>
     <qresource prefix="icons/colorful_dark">
         <file alias="index.theme">icons/index.theme</file>
         <file alias="16x16/lock.png">icons/16x16/lock.png</file>
         <file alias="16x16/view-refresh.png">icons/16x16/view-refresh.png</file>
-        <file alias="48x48/bad_folder.png">../colorful/icons/48x48/bad_folder.png</file>
-        <file alias="48x48/chip.png">../colorful/icons/48x48/chip.png</file>
-        <file alias="48x48/folder.png">../colorful/icons/48x48/folder.png</file>
-        <file alias="48x48/plus.png">../colorful/icons/48x48/plus.png</file>
-        <file alias="48x48/sd_card.png">../colorful/icons/48x48/sd_card.png</file>
-        <file alias="256x256/plus_folder.png">../colorful/icons/256x256/plus_folder.png</file>
     </qresource>
 
     <qresource prefix="qss_icons">

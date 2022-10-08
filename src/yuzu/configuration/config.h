@@ -1,6 +1,5 @@
-﻿// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+﻿// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -26,7 +25,7 @@ public:
         InputProfile,
     };
 
-    explicit Config(Core::System& system_, const std::string& config_name = "qt-config",
+    explicit Config(const std::string& config_name = "qt-config",
                     ConfigType config_type = ConfigType::GlobalConfig);
     ~Config();
 
@@ -68,6 +67,7 @@ private:
     void ReadTouchscreenValues();
     void ReadMotionTouchValues();
     void ReadHidbusValues();
+    void ReadIrCameraValues();
 
     // Read functions bases off the respective config section names.
     void ReadAudioValues();
@@ -88,6 +88,7 @@ private:
     void ReadUIGamelistValues();
     void ReadUILayoutValues();
     void ReadWebServiceValues();
+    void ReadMultiplayerValues();
 
     void SaveValues();
     void SavePlayerValue(std::size_t player_index);
@@ -96,6 +97,7 @@ private:
     void SaveTouchscreenValues();
     void SaveMotionTouchValues();
     void SaveHidbusValues();
+    void SaveIrCameraValues();
 
     // Save functions based off the respective config section names.
     void SaveAudioValues();
@@ -116,6 +118,7 @@ private:
     void SaveUIGamelistValues();
     void SaveUILayoutValues();
     void SaveWebServiceValues();
+    void SaveMultiplayerValues();
 
     /**
      * Reads a setting from the qt_config.
@@ -159,8 +162,8 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void ReadGlobalSetting(Settings::Setting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadGlobalSetting(Settings::SwitchableSetting<Type, ranged>& setting);
 
     /**
      * Sets a value to the qt_config using the setting's label and default value. If the config is a
@@ -168,8 +171,8 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void WriteGlobalSetting(const Settings::Setting<Type>& setting);
+    template <typename Type, bool ranged>
+    void WriteGlobalSetting(const Settings::SwitchableSetting<Type, ranged>& setting);
 
     /**
      * Reads a value from the qt_config using the setting's label and default value and applies the
@@ -177,22 +180,20 @@ private:
      *
      * @param The setting
      */
-    template <typename Type>
-    void ReadBasicSetting(Settings::BasicSetting<Type>& setting);
+    template <typename Type, bool ranged>
+    void ReadBasicSetting(Settings::Setting<Type, ranged>& setting);
 
     /** Sets a value from the setting in the qt_config using the setting's label and default value.
      *
      * @param The setting
      */
-    template <typename Type>
-    void WriteBasicSetting(const Settings::BasicSetting<Type>& setting);
+    template <typename Type, bool ranged>
+    void WriteBasicSetting(const Settings::Setting<Type, ranged>& setting);
 
     ConfigType type;
     std::unique_ptr<QSettings> qt_config;
     std::string qt_config_loc;
     bool global;
-
-    Core::System& system;
 };
 
 // These metatype declarations cannot be in common/settings.h because core is devoid of QT

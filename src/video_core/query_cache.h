@@ -17,6 +17,7 @@
 
 #include "common/assert.h"
 #include "common/settings.h"
+#include "video_core/control/channel_state_cache.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
@@ -90,13 +91,10 @@ private:
 };
 
 template <class QueryCache, class CachedQuery, class CounterStream, class HostCounter>
-class QueryCacheBase {
+class QueryCacheBase : public VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
 public:
-    explicit QueryCacheBase(VideoCore::RasterizerInterface& rasterizer_,
-                            Tegra::Engines::Maxwell3D& maxwell3d_,
-                            Tegra::MemoryManager& gpu_memory_)
-        : rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
-          gpu_memory{gpu_memory_}, streams{{CounterStream{static_cast<QueryCache&>(*this),
+    explicit QueryCacheBase(VideoCore::RasterizerInterface& rasterizer_)
+        : rasterizer{rasterizer_}, streams{{CounterStream{static_cast<QueryCache&>(*this),
                                                           VideoCore::QueryType::SamplesPassed}}} {}
 
     void InvalidateRegion(VAddr addr, std::size_t size) {
@@ -117,13 +115,13 @@ public:
      */
     void Query(GPUVAddr gpu_addr, VideoCore::QueryType type, std::optional<u64> timestamp) {
         std::unique_lock lock{mutex};
-        const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
+        const std::optional<VAddr> cpu_addr = gpu_memory->GpuToCpuAddress(gpu_addr);
         ASSERT(cpu_addr);
 
         CachedQuery* query = TryGet(*cpu_addr);
         if (!query) {
             ASSERT_OR_EXECUTE(cpu_addr, return;);
-            u8* const host_ptr = gpu_memory.GetPointer(gpu_addr);
+            u8* const host_ptr = gpu_memory->GetPointer(gpu_addr);
 
             query = Register(type, *cpu_addr, host_ptr, timestamp.has_value());
         }
@@ -137,8 +135,10 @@ public:
     /// Updates counters from GPU state. Expected to be called once per draw, clear or dispatch.
     void UpdateCounters() {
         std::unique_lock lock{mutex};
-        const auto& regs = maxwell3d.regs;
-        Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
+        if (maxwell3d) {
+            const auto& regs = maxwell3d->regs;
+            Stream(VideoCore::QueryType::SamplesPassed).Update(regs.samplecnt_enable);
+        }
     }
 
     /// Resets a counter to zero. It doesn't disable the query after resetting.
@@ -214,8 +214,8 @@ private:
             return cache_begin < addr_end && addr_begin < cache_end;
         };
 
-        const u64 page_end = addr_end >> PAGE_BITS;
-        for (u64 page = addr_begin >> PAGE_BITS; page <= page_end; ++page) {
+        const u64 page_end = addr_end >> YUZU_PAGEBITS;
+        for (u64 page = addr_begin >> YUZU_PAGEBITS; page <= page_end; ++page) {
             const auto& it = cached_queries.find(page);
             if (it == std::end(cached_queries)) {
                 continue;
@@ -235,14 +235,14 @@ private:
     /// Registers the passed parameters as cached and returns a pointer to the stored cached query.
     CachedQuery* Register(VideoCore::QueryType type, VAddr cpu_addr, u8* host_ptr, bool timestamp) {
         rasterizer.UpdatePagesCachedCount(cpu_addr, CachedQuery::SizeInBytes(timestamp), 1);
-        const u64 page = static_cast<u64>(cpu_addr) >> PAGE_BITS;
+        const u64 page = static_cast<u64>(cpu_addr) >> YUZU_PAGEBITS;
         return &cached_queries[page].emplace_back(static_cast<QueryCache&>(*this), type, cpu_addr,
                                                   host_ptr);
     }
 
     /// Tries to a get a cached query. Returns nullptr on failure.
     CachedQuery* TryGet(VAddr addr) {
-        const u64 page = static_cast<u64>(addr) >> PAGE_BITS;
+        const u64 page = static_cast<u64>(addr) >> YUZU_PAGEBITS;
         const auto it = cached_queries.find(page);
         if (it == std::end(cached_queries)) {
             return nullptr;
@@ -260,12 +260,10 @@ private:
         uncommitted_flushes->push_back(addr);
     }
 
-    static constexpr std::uintptr_t PAGE_SIZE = 4096;
-    static constexpr unsigned PAGE_BITS = 12;
+    static constexpr std::uintptr_t YUZU_PAGESIZE = 4096;
+    static constexpr unsigned YUZU_PAGEBITS = 12;
 
     VideoCore::RasterizerInterface& rasterizer;
-    Tegra::Engines::Maxwell3D& maxwell3d;
-    Tegra::MemoryManager& gpu_memory;
 
     std::recursive_mutex mutex;
 

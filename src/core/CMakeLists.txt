@@ -1,14 +1,9 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 add_library(core STATIC
     arm/arm_interface.h
     arm/arm_interface.cpp
-    arm/cpu_interrupt_handler.cpp
-    arm/cpu_interrupt_handler.h
-    arm/dynarmic/arm_dynarmic_32.cpp
-    arm/dynarmic/arm_dynarmic_32.h
-    arm/dynarmic/arm_dynarmic_64.cpp
-    arm/dynarmic/arm_dynarmic_64.h
-    arm/dynarmic/arm_dynarmic_cp15.cpp
-    arm/dynarmic/arm_dynarmic_cp15.h
     arm/dynarmic/arm_exclusive_monitor.cpp
     arm/dynarmic/arm_exclusive_monitor.h
     arm/exclusive_monitor.cpp
@@ -143,8 +138,6 @@ add_library(core STATIC
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
-    hardware_interrupt_manager.cpp
-    hardware_interrupt_manager.h
     hid/emulated_console.cpp
     hid/emulated_console.h
     hid/emulated_controller.cpp
@@ -158,6 +151,7 @@ add_library(core STATIC
     hid/input_converter.h
     hid/input_interpreter.cpp
     hid/input_interpreter.h
+    hid/irs_types.h
     hid/motion_input.cpp
     hid/motion_input.h
     hle/api_version.h
@@ -222,7 +216,7 @@ add_library(core STATIC
     hle/kernel/k_page_buffer.h
     hle/kernel/k_page_heap.cpp
     hle/kernel/k_page_heap.h
-    hle/kernel/k_page_linked_list.h
+    hle/kernel/k_page_group.h
     hle/kernel/k_page_table.cpp
     hle/kernel/k_page_table.h
     hle/kernel/k_port.cpp
@@ -445,6 +439,7 @@ add_library(core STATIC
     hle/service/hid/hidbus.h
     hle/service/hid/irs.cpp
     hle/service/hid/irs.h
+    hle/service/hid/irs_ring_lifo.h
     hle/service/hid/ring_lifo.h
     hle/service/hid/xcd.cpp
     hle/service/hid/xcd.h
@@ -463,6 +458,8 @@ add_library(core STATIC
     hle/service/hid/controllers/mouse.h
     hle/service/hid/controllers/npad.cpp
     hle/service/hid/controllers/npad.h
+    hle/service/hid/controllers/palma.cpp
+    hle/service/hid/controllers/palma.h
     hle/service/hid/controllers/stubbed.cpp
     hle/service/hid/controllers/stubbed.h
     hle/service/hid/controllers/touchscreen.cpp
@@ -477,15 +474,32 @@ add_library(core STATIC
     hle/service/hid/hidbus/starlink.h
     hle/service/hid/hidbus/stubbed.cpp
     hle/service/hid/hidbus/stubbed.h
+    hle/service/hid/irsensor/clustering_processor.cpp
+    hle/service/hid/irsensor/clustering_processor.h
+    hle/service/hid/irsensor/image_transfer_processor.cpp
+    hle/service/hid/irsensor/image_transfer_processor.h
+    hle/service/hid/irsensor/ir_led_processor.cpp
+    hle/service/hid/irsensor/ir_led_processor.h
+    hle/service/hid/irsensor/moment_processor.cpp
+    hle/service/hid/irsensor/moment_processor.h
+    hle/service/hid/irsensor/pointing_processor.cpp
+    hle/service/hid/irsensor/pointing_processor.h
+    hle/service/hid/irsensor/processor_base.cpp
+    hle/service/hid/irsensor/processor_base.h
+    hle/service/hid/irsensor/tera_plugin_processor.cpp
+    hle/service/hid/irsensor/tera_plugin_processor.h
     hle/service/jit/jit_context.cpp
     hle/service/jit/jit_context.h
     hle/service/jit/jit.cpp
     hle/service/jit/jit.h
     hle/service/lbl/lbl.cpp
     hle/service/lbl/lbl.h
-    hle/service/ldn/errors.h
+    hle/service/ldn/lan_discovery.cpp
+    hle/service/ldn/lan_discovery.h
+    hle/service/ldn/ldn_results.h
     hle/service/ldn/ldn.cpp
     hle/service/ldn/ldn.h
+    hle/service/ldn/ldn_types.h
     hle/service/ldr/ldr.cpp
     hle/service/ldr/ldr.h
     hle/service/lm/lm.cpp
@@ -507,8 +521,14 @@ add_library(core STATIC
     hle/service/ncm/ncm.h
     hle/service/nfc/nfc.cpp
     hle/service/nfc/nfc.h
+    hle/service/nfp/amiibo_crypto.cpp
+    hle/service/nfp/amiibo_crypto.h
     hle/service/nfp/nfp.cpp
     hle/service/nfp/nfp.h
+    hle/service/nfp/nfp_device.cpp
+    hle/service/nfp/nfp_device.h
+    hle/service/nfp/nfp_result.h
+    hle/service/nfp/nfp_types.h
     hle/service/nfp/nfp_user.cpp
     hle/service/nfp/nfp_user.h
     hle/service/ngct/ngct.cpp
@@ -520,14 +540,20 @@ add_library(core STATIC
     hle/service/npns/npns.cpp
     hle/service/npns/npns.h
     hle/service/ns/errors.h
+    hle/service/ns/iplatform_service_manager.cpp
+    hle/service/ns/iplatform_service_manager.h
     hle/service/ns/language.cpp
     hle/service/ns/language.h
     hle/service/ns/ns.cpp
     hle/service/ns/ns.h
     hle/service/ns/pdm_qry.cpp
     hle/service/ns/pdm_qry.h
-    hle/service/ns/pl_u.cpp
-    hle/service/ns/pl_u.h
+    hle/service/nvdrv/core/container.cpp
+    hle/service/nvdrv/core/container.h
+    hle/service/nvdrv/core/nvmap.cpp
+    hle/service/nvdrv/core/nvmap.h
+    hle/service/nvdrv/core/syncpoint_manager.cpp
+    hle/service/nvdrv/core/syncpoint_manager.h
     hle/service/nvdrv/devices/nvdevice.h
     hle/service/nvdrv/devices/nvdisp_disp0.cpp
     hle/service/nvdrv/devices/nvdisp_disp0.h
@@ -556,8 +582,6 @@ add_library(core STATIC
     hle/service/nvdrv/nvdrv_interface.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
-    hle/service/nvdrv/syncpoint_manager.cpp
-    hle/service/nvdrv/syncpoint_manager.h
     hle/service/nvflinger/binder.h
     hle/service/nvflinger/buffer_item.h
     hle/service/nvflinger/buffer_item_consumer.cpp
@@ -605,6 +629,10 @@ add_library(core STATIC
     hle/service/psc/psc.h
     hle/service/ptm/psm.cpp
     hle/service/ptm/psm.h
+    hle/service/ptm/ptm.cpp
+    hle/service/ptm/ptm.h
+    hle/service/ptm/ts.cpp
+    hle/service/ptm/ts.h
     hle/service/kernel_helpers.cpp
     hle/service/kernel_helpers.h
     hle/service/service.cpp
@@ -695,10 +723,15 @@ add_library(core STATIC
     hle/service/vi/vi_u.h
     hle/service/wlan/wlan.cpp
     hle/service/wlan/wlan.h
+    internal_network/network.cpp
+    internal_network/network.h
+    internal_network/network_interface.cpp
+    internal_network/network_interface.h
+    internal_network/sockets.h
+    internal_network/socket_proxy.cpp
+    internal_network/socket_proxy.h
     loader/deconstructed_rom_directory.cpp
     loader/deconstructed_rom_directory.h
-    loader/elf.cpp
-    loader/elf.h
     loader/kip.cpp
     loader/kip.h
     loader/loader.cpp
@@ -722,11 +755,6 @@ add_library(core STATIC
     memory/dmnt_cheat_vm.h
     memory.cpp
     memory.h
-    network/network.cpp
-    network/network.h
-    network/network_interface.cpp
-    network/network_interface.h
-    network/sockets.h
     perf_stats.cpp
     perf_stats.h
     reporter.cpp
@@ -761,8 +789,8 @@ endif()
 
 create_target_directory_groups(core)
 
-target_link_libraries(core PUBLIC common PRIVATE audio_core video_core)
-target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::Opus)
+target_link_libraries(core PUBLIC common PRIVATE audio_core network video_core)
+target_link_libraries(core PUBLIC Boost::boost PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::opus)
 if (MINGW)
     target_link_libraries(core PRIVATE ${MSWSOCK_LIBRARY})
 endif()

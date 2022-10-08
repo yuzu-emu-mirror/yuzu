@@ -230,6 +230,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case Shader::TextureType::Color1D:
         return VK_IMAGE_VIEW_TYPE_1D;
     case Shader::TextureType::Color2D:
+    case Shader::TextureType::Color2DRect:
         return VK_IMAGE_VIEW_TYPE_2D;
     case Shader::TextureType::ColorCube:
         return VK_IMAGE_VIEW_TYPE_CUBE;
@@ -254,6 +255,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case VideoCommon::ImageViewType::e1D:
         return VK_IMAGE_VIEW_TYPE_1D;
     case VideoCommon::ImageViewType::e2D:
+    case VideoCommon::ImageViewType::Rect:
         return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Cube:
         return VK_IMAGE_VIEW_TYPE_CUBE;
@@ -265,9 +267,6 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     case VideoCommon::ImageViewType::CubeArray:
         return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-    case VideoCommon::ImageViewType::Rect:
-        UNIMPLEMENTED_MSG("Rect image view");
-        return VK_IMAGE_VIEW_TYPE_2D;
     case VideoCommon::ImageViewType::Buffer:
         ASSERT_MSG(false, "Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
@@ -593,7 +592,7 @@ void TryTransformSwizzleIfNeeded(PixelFormat format, std::array<SwizzleSource, 4
     case PixelFormat::A5B5G5R1_UNORM:
         std::ranges::transform(swizzle, swizzle.begin(), SwapSpecial);
         break;
-    case PixelFormat::R4G4_UNORM:
+    case PixelFormat::G4R4_UNORM:
         std::ranges::transform(swizzle, swizzle.begin(), SwapGreenRed);
         break;
     default:
@@ -648,7 +647,7 @@ struct RangedBarrierRange {
     return VK_FORMAT_R32_UINT;
 }
 
-void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
+void BlitScale(Scheduler& scheduler, VkImage src_image, VkImage dst_image, const ImageInfo& info,
                VkImageAspectFlags aspect_mask, const Settings::ResolutionScalingInfo& resolution,
                bool up_scaling = true) {
     const bool is_2d = info.type == ImageType::e2D;
@@ -788,7 +787,7 @@ void BlitScale(VKScheduler& scheduler, VkImage src_image, VkImage dst_image, con
 }
 } // Anonymous namespace
 
-TextureCacheRuntime::TextureCacheRuntime(const Device& device_, VKScheduler& scheduler_,
+TextureCacheRuntime::TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
                                          MemoryAllocator& memory_allocator_,
                                          StagingBufferPool& staging_buffer_pool_,
                                          BlitImageHelper& blit_image_helper_,
@@ -1475,13 +1474,14 @@ bool Image::BlitScaleHelper(bool scale_up) {
     };
     const VkExtent2D extent{
         .width = std::max(scaled_width, info.size.width),
-        .height = std::max(scaled_height, info.size.width),
+        .height = std::max(scaled_height, info.size.height),
     };
 
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, view_ptr, nullptr, extent, scale_up);
         }
         const auto color_view = blit_view->Handle(Shader::TextureType::Color2D);
 
@@ -1489,7 +1489,8 @@ bool Image::BlitScaleHelper(bool scale_up) {
                                              src_region, operation, BLIT_OPERATION);
     } else if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
         if (!blit_framebuffer) {
-            blit_framebuffer = std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent);
+            blit_framebuffer =
+                std::make_unique<Framebuffer>(*runtime, nullptr, view_ptr, extent, scale_up);
         }
         runtime->blit_image_helper.BlitDepthStencil(blit_framebuffer.get(), blit_view->DepthView(),
                                                     blit_view->StencilView(), dst_region,
@@ -1579,6 +1580,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         break;
     case VideoCommon::ImageViewType::e2D:
     case VideoCommon::ImageViewType::e2DArray:
+    case VideoCommon::ImageViewType::Rect:
         create(TextureType::Color2D, 1);
         create(TextureType::ColorArray2D, std::nullopt);
         render_target = Handle(Shader::TextureType::ColorArray2D);
@@ -1591,9 +1593,6 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
     case VideoCommon::ImageViewType::CubeArray:
         create(TextureType::ColorCube, 6);
         create(TextureType::ColorArrayCube, std::nullopt);
-        break;
-    case VideoCommon::ImageViewType::Rect:
-        UNIMPLEMENTED();
         break;
     case VideoCommon::ImageViewType::Buffer:
         ASSERT(false);
@@ -1618,6 +1617,9 @@ ImageView::ImageView(TextureCacheRuntime&, const VideoCommon::NullImageViewParam
 ImageView::~ImageView() = default;
 
 VkImageView ImageView::DepthView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (depth_view) {
         return *depth_view;
     }
@@ -1627,6 +1629,9 @@ VkImageView ImageView::DepthView() {
 }
 
 VkImageView ImageView::StencilView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (stencil_view) {
         return *stencil_view;
     }
@@ -1636,6 +1641,9 @@ VkImageView ImageView::StencilView() {
 }
 
 VkImageView ImageView::ColorView() {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (color_view) {
         return *color_view;
     }
@@ -1645,6 +1653,9 @@ VkImageView ImageView::ColorView() {
 
 VkImageView ImageView::StorageView(Shader::TextureType texture_type,
                                    Shader::ImageFormat image_format) {
+    if (!image_handle) {
+        return VK_NULL_HANDLE;
+    }
     if (image_format == Shader::ImageFormat::Typeless) {
         return Handle(texture_type);
     }
@@ -1747,34 +1758,42 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM
           .width = key.size.width,
           .height = key.size.height,
       }} {
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, key.is_rescaled);
     if (runtime.device.HasDebuggingToolAttached()) {
         framebuffer.SetObjectNameEXT(VideoCommon::Name(key).c_str());
     }
 }
 
 Framebuffer::Framebuffer(TextureCacheRuntime& runtime, ImageView* color_buffer,
-                         ImageView* depth_buffer, VkExtent2D extent)
+                         ImageView* depth_buffer, VkExtent2D extent, bool is_rescaled)
     : render_area{extent} {
     std::array<ImageView*, NUM_RT> color_buffers{color_buffer};
-    CreateFramebuffer(runtime, color_buffers, depth_buffer);
+    CreateFramebuffer(runtime, color_buffers, depth_buffer, is_rescaled);
 }
 
 Framebuffer::~Framebuffer() = default;
 
 void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
                                     std::span<ImageView*, NUM_RT> color_buffers,
-                                    ImageView* depth_buffer) {
+                                    ImageView* depth_buffer, bool is_rescaled) {
     std::vector<VkImageView> attachments;
     RenderPassKey renderpass_key{};
     s32 num_layers = 1;
 
+    const auto& resolution = runtime.resolution;
+
+    u32 width = 0;
+    u32 height = 0;
     for (size_t index = 0; index < NUM_RT; ++index) {
         const ImageView* const color_buffer = color_buffers[index];
         if (!color_buffer) {
             renderpass_key.color_formats[index] = PixelFormat::Invalid;
             continue;
         }
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(color_buffer->size.width)
+                                            : color_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(color_buffer->size.height)
+                                              : color_buffer->size.height);
         attachments.push_back(color_buffer->RenderTarget());
         renderpass_key.color_formats[index] = color_buffer->format;
         num_layers = std::max(num_layers, color_buffer->range.extent.layers);
@@ -1785,6 +1804,10 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     }
     const size_t num_colors = attachments.size();
     if (depth_buffer) {
+        width = std::max(width, is_rescaled ? resolution.ScaleUp(depth_buffer->size.width)
+                                            : depth_buffer->size.width);
+        height = std::max(height, is_rescaled ? resolution.ScaleUp(depth_buffer->size.height)
+                                              : depth_buffer->size.height);
         attachments.push_back(depth_buffer->RenderTarget());
         renderpass_key.depth_format = depth_buffer->format;
         num_layers = std::max(num_layers, depth_buffer->range.extent.layers);
@@ -1801,6 +1824,8 @@ void Framebuffer::CreateFramebuffer(TextureCacheRuntime& runtime,
     renderpass_key.samples = samples;
 
     renderpass = runtime.render_pass_cache.Get(renderpass_key);
+    render_area.width = std::min(render_area.width, width);
+    render_area.height = std::min(render_area.height, height);
 
     num_color_buffers = static_cast<u32>(num_colors);
     framebuffer = runtime.device.GetLogical().CreateFramebuffer({

@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <fmt/format.h>
 #include "common/logging/log.h"
@@ -8,6 +7,10 @@
 #include "core/arm/dynarmic/arm_dynarmic_cp15.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 using Callback = Dynarmic::A32::Coprocessor::Callback;
 using CallbackOrAccessOneWord = Dynarmic::A32::Coprocessor::CallbackOrAccessOneWord;
@@ -48,12 +51,31 @@ CallbackOrAccessOneWord DynarmicCP15::CompileSendOneWord(bool two, unsigned opc1
         switch (opc2) {
         case 4:
             // CP15_DATA_SYNC_BARRIER
-            // This is a dummy write, we ignore the value written here.
-            return &dummy_value;
+            return Callback{
+                [](Dynarmic::A32::Jit*, void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
+#ifdef _MSC_VER
+                    _mm_mfence();
+                    _mm_lfence();
+#else
+                    asm volatile("mfence\n\tlfence\n\t" : : : "memory");
+#endif
+                    return 0;
+                },
+                std::nullopt,
+            };
         case 5:
             // CP15_DATA_MEMORY_BARRIER
-            // This is a dummy write, we ignore the value written here.
-            return &dummy_value;
+            return Callback{
+                [](Dynarmic::A32::Jit*, void*, std::uint32_t, std::uint32_t) -> std::uint64_t {
+#ifdef _MSC_VER
+                    _mm_mfence();
+#else
+                    asm volatile("mfence\n\t" : : : "memory");
+#endif
+                    return 0;
+                },
+                std::nullopt,
+            };
         }
     }
 

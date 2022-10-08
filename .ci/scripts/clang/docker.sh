@@ -1,16 +1,27 @@
 #!/bin/bash -ex
 
+# SPDX-FileCopyrightText: 2021 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # Exit on error, rather than continuing with the rest of the script.
 set -e
-
-cd /yuzu
 
 ccache -s
 
 mkdir build || true && cd build
-cmake .. -DDISPLAY_VERSION=$1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/lib/ccache/clang -DCMAKE_CXX_COMPILER=/usr/lib/ccache/clang++ -DYUZU_ENABLE_COMPATIBILITY_REPORTING=${ENABLE_COMPATIBILITY_REPORTING:-"OFF"} -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DUSE_DISCORD_PRESENCE=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_INSTALL_PREFIX="/usr"
+cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CXX_COMPILER=/usr/lib/ccache/clang++ \
+      -DCMAKE_C_COMPILER=/usr/lib/ccache/clang \
+      -DCMAKE_INSTALL_PREFIX="/usr" \
+      -DDISPLAY_VERSION=$1 \
+      -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON \
+      -DENABLE_QT_TRANSLATION=ON \
+      -DUSE_DISCORD_PRESENCE=ON \
+      -DYUZU_ENABLE_COMPATIBILITY_REPORTING=${ENABLE_COMPATIBILITY_REPORTING:-"OFF"} \
+      -GNinja
 
-make -j$(nproc)
+ninja
 
 ccache -s
 

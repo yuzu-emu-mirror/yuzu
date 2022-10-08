@@ -22,7 +22,7 @@ struct UserRaw {
     UUID uuid2{};
     u64 timestamp{};
     ProfileUsername username{};
-    ProfileData extra_data{};
+    UserData extra_data{};
 };
 static_assert(sizeof(UserRaw) == 0xC8, "UserRaw has incorrect size.");
 
@@ -33,9 +33,9 @@ struct ProfileDataRaw {
 static_assert(sizeof(ProfileDataRaw) == 0x650, "ProfileDataRaw has incorrect size.");
 
 // TODO(ogniK): Get actual error codes
-constexpr ResultCode ERROR_TOO_MANY_USERS(ErrorModule::Account, u32(-1));
-constexpr ResultCode ERROR_USER_ALREADY_EXISTS(ErrorModule::Account, u32(-2));
-constexpr ResultCode ERROR_ARGUMENT_IS_NULL(ErrorModule::Account, 20);
+constexpr Result ERROR_TOO_MANY_USERS(ErrorModule::Account, u32(-1));
+constexpr Result ERROR_USER_ALREADY_EXISTS(ErrorModule::Account, u32(-2));
+constexpr Result ERROR_ARGUMENT_IS_NULL(ErrorModule::Account, 20);
 
 constexpr char ACC_SAVE_AVATORS_BASE_PATH[] = "system/save/8000000000000010/su/avators";
 
@@ -87,7 +87,7 @@ bool ProfileManager::RemoveProfileAtIndex(std::size_t index) {
 }
 
 /// Helper function to register a user to the system
-ResultCode ProfileManager::AddUser(const ProfileInfo& user) {
+Result ProfileManager::AddUser(const ProfileInfo& user) {
     if (!AddToProfiles(user)) {
         return ERROR_TOO_MANY_USERS;
     }
@@ -96,7 +96,7 @@ ResultCode ProfileManager::AddUser(const ProfileInfo& user) {
 
 /// Create a new user on the system. If the uuid of the user already exists, the user is not
 /// created.
-ResultCode ProfileManager::CreateNewUser(UUID uuid, const ProfileUsername& username) {
+Result ProfileManager::CreateNewUser(UUID uuid, const ProfileUsername& username) {
     if (user_count == MAX_USERS) {
         return ERROR_TOO_MANY_USERS;
     }
@@ -123,7 +123,7 @@ ResultCode ProfileManager::CreateNewUser(UUID uuid, const ProfileUsername& usern
 /// Creates a new user on the system. This function allows a much simpler method of registration
 /// specifically by allowing an std::string for the username. This is required specifically since
 /// we're loading a string straight from the config
-ResultCode ProfileManager::CreateNewUser(UUID uuid, const std::string& username) {
+Result ProfileManager::CreateNewUser(UUID uuid, const std::string& username) {
     ProfileUsername username_output{};
 
     if (username.size() > username_output.size()) {
@@ -263,7 +263,7 @@ UUID ProfileManager::GetLastOpenedUser() const {
 
 /// Return the users profile base and the unknown arbitary data.
 bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, ProfileBase& profile,
-                                           ProfileData& data) const {
+                                           UserData& data) const {
     if (GetProfileBase(index, profile)) {
         data = profiles[*index].data;
         return true;
@@ -272,15 +272,14 @@ bool ProfileManager::GetProfileBaseAndData(std::optional<std::size_t> index, Pro
 }
 
 /// Return the users profile base and the unknown arbitary data.
-bool ProfileManager::GetProfileBaseAndData(UUID uuid, ProfileBase& profile,
-                                           ProfileData& data) const {
+bool ProfileManager::GetProfileBaseAndData(UUID uuid, ProfileBase& profile, UserData& data) const {
     const auto idx = GetUserIndex(uuid);
     return GetProfileBaseAndData(idx, profile, data);
 }
 
 /// Return the users profile base and the unknown arbitary data.
 bool ProfileManager::GetProfileBaseAndData(const ProfileInfo& user, ProfileBase& profile,
-                                           ProfileData& data) const {
+                                           UserData& data) const {
     return GetProfileBaseAndData(user.user_uuid, profile, data);
 }
 
@@ -318,7 +317,7 @@ bool ProfileManager::SetProfileBase(UUID uuid, const ProfileBase& profile_new) {
 }
 
 bool ProfileManager::SetProfileBaseAndData(Common::UUID uuid, const ProfileBase& profile_new,
-                                           const ProfileData& data_new) {
+                                           const UserData& data_new) {
     const auto index = GetUserIndex(uuid);
     if (index.has_value() && SetProfileBase(uuid, profile_new)) {
         profiles[*index].data = data_new;

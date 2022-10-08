@@ -1,6 +1,5 @@
-// Copyright 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <regex>
 #include <QApplication>
@@ -127,10 +126,8 @@ GameListSearchField::GameListSearchField(GameList* parent) : QWidget{parent} {
     layout_filter = new QHBoxLayout;
     layout_filter->setContentsMargins(8, 8, 8, 8);
     label_filter = new QLabel;
-    label_filter->setText(tr("Filter:"));
     edit_filter = new QLineEdit;
     edit_filter->clear();
-    edit_filter->setPlaceholderText(tr("Enter pattern to filter"));
     edit_filter->installEventFilter(key_release_eater);
     edit_filter->setClearButtonEnabled(true);
     connect(edit_filter, &QLineEdit::textChanged, parent, &GameList::OnTextChanged);
@@ -150,6 +147,7 @@ GameListSearchField::GameListSearchField(GameList* parent) : QWidget{parent} {
     layout_filter->addWidget(label_filter_result);
     layout_filter->addWidget(button_filter_close);
     setLayout(layout_filter);
+    RetranslateUI();
 }
 
 /**
@@ -287,7 +285,7 @@ void GameList::OnUpdateThemedIcons() {
         }
         case GameListItemType::AddDir:
             child->setData(
-                QIcon::fromTheme(QStringLiteral("plus"))
+                QIcon::fromTheme(QStringLiteral("list-add"))
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
@@ -334,13 +332,9 @@ GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvid
     tree_view->setStyleSheet(QStringLiteral("QTreeView{ border: none; }"));
 
     item_model->insertColumns(0, COLUMN_COUNT);
-    item_model->setHeaderData(COLUMN_NAME, Qt::Horizontal, tr("Name"));
-    item_model->setHeaderData(COLUMN_COMPATIBILITY, Qt::Horizontal, tr("Compatibility"));
+    RetranslateUI();
 
-    item_model->setHeaderData(COLUMN_ADD_ONS, Qt::Horizontal, tr("Add-ons"));
     tree_view->setColumnHidden(COLUMN_ADD_ONS, !UISettings::values.show_add_ons);
-    item_model->setHeaderData(COLUMN_FILE_TYPE, Qt::Horizontal, tr("File type"));
-    item_model->setHeaderData(COLUMN_SIZE, Qt::Horizontal, tr("Size"));
     item_model->setSortRole(GameListItemPath::SortRole);
 
     connect(main_window, &GMainWindow::UpdateThemedIcons, this, &GameList::OnUpdateThemedIcons);
@@ -499,6 +493,8 @@ void GameList::DonePopulating(const QStringList& watch_list) {
     }
     item_model->sort(tree_view->header()->sortIndicatorSection(),
                      tree_view->header()->sortIndicatorOrder());
+
+    emit PopulatingCompleted();
 }
 
 void GameList::PopupContextMenu(const QPoint& menu_location) {
@@ -750,6 +746,39 @@ void GameList::LoadCompatibilityList() {
                                        std::make_pair(QString::number(compatibility), directory));
         }
     }
+}
+
+void GameList::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void GameList::RetranslateUI() {
+    item_model->setHeaderData(COLUMN_NAME, Qt::Horizontal, tr("Name"));
+    item_model->setHeaderData(COLUMN_COMPATIBILITY, Qt::Horizontal, tr("Compatibility"));
+    item_model->setHeaderData(COLUMN_ADD_ONS, Qt::Horizontal, tr("Add-ons"));
+    item_model->setHeaderData(COLUMN_FILE_TYPE, Qt::Horizontal, tr("File type"));
+    item_model->setHeaderData(COLUMN_SIZE, Qt::Horizontal, tr("Size"));
+}
+
+void GameListSearchField::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslateUI();
+    }
+
+    QWidget::changeEvent(event);
+}
+
+void GameListSearchField::RetranslateUI() {
+    label_filter->setText(tr("Filter:"));
+    edit_filter->setPlaceholderText(tr("Enter pattern to filter"));
+}
+
+QStandardItemModel* GameList::GetModel() const {
+    return item_model;
 }
 
 void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {

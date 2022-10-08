@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#ifndef _MSC_VER
+#include <cxxabi.h>
+#endif
+
 #include <map>
 #include <optional>
 #include "common/bit_field.h"
@@ -68,8 +72,19 @@ void ARM_Interface::SymbolicateBacktrace(Core::System& system, std::vector<Backt
         if (symbol_set != symbols.end()) {
             const auto symbol = Symbols::GetSymbolName(symbol_set->second, entry.offset);
             if (symbol.has_value()) {
+#ifdef _MSC_VER
                 // TODO(DarkLordZach): Add demangling of symbol names.
                 entry.name = *symbol;
+#else
+                int status{-1};
+                char* demangled{abi::__cxa_demangle(symbol->c_str(), nullptr, nullptr, &status)};
+                if (status == 0 && demangled != nullptr) {
+                    entry.name = demangled;
+                    std::free(demangled);
+                } else {
+                    entry.name = *symbol;
+                }
+#endif
             }
         }
     }
@@ -95,7 +110,7 @@ void ARM_Interface::Run() {
     using Kernel::SuspendType;
 
     while (true) {
-        Kernel::KThread* current_thread{system.Kernel().CurrentScheduler()->GetCurrentThread()};
+        Kernel::KThread* current_thread{Kernel::GetCurrentThreadPointer(system.Kernel())};
         Dynarmic::HaltReason hr{};
 
         // Notify the debugger and go to sleep if a step was performed
@@ -119,21 +134,67 @@ void ARM_Interface::Run() {
         }
         system.ExitDynarmicProfile();
 
-        // Notify the debugger and go to sleep if a breakpoint was hit.
-        if (Has(hr, breakpoint)) {
-            system.GetDebugger().NotifyThreadStopped(current_thread);
+        // Notify the debugger and go to sleep if a breakpoint was hit,
+        // or if the thread is unable to continue for any reason.
+        if (Has(hr, breakpoint) || Has(hr, no_execute)) {
+            RewindBreakpointInstruction();
+            if (system.DebuggerEnabled()) {
+                system.GetDebugger().NotifyThreadStopped(current_thread);
+            }
             current_thread->RequestSuspend(Kernel::SuspendType::Debug);
             break;
         }
 
-        // Handle syscalls and scheduling (this may change the current thread)
+        // Notify the debugger and go to sleep if a watchpoint was hit.
+        if (Has(hr, watchpoint)) {
+            if (system.DebuggerEnabled()) {
+                system.GetDebugger().NotifyThreadWatchpoint(current_thread, *HaltedWatchpoint());
+            }
+            current_thread->RequestSuspend(SuspendType::Debug);
+            break;
+        }
+
+        // Handle syscalls and scheduling (this may change the current thread/core)
         if (Has(hr, svc_call)) {
             Kernel::Svc::Call(system, GetSvcNumber());
+            break;
         }
         if (Has(hr, break_loop) || !uses_wall_clock) {
             break;
         }
     }
+}
+
+void ARM_Interface::LoadWatchpointArray(const WatchpointArray& wp) {
+    watchpoints = &wp;
+}
+
+const Kernel::DebugWatchpoint* ARM_Interface::MatchingWatchpoint(
+    VAddr addr, u64 size, Kernel::DebugWatchpointType access_type) const {
+    if (!watchpoints) {
+        return nullptr;
+    }
+
+    const VAddr start_address{addr};
+    const VAddr end_address{addr + size};
+
+    for (size_t i = 0; i < Core::Hardware::NUM_WATCHPOINTS; i++) {
+        const auto& watch{(*watchpoints)[i]};
+
+        if (end_address <= watch.start_address) {
+            continue;
+        }
+        if (start_address >= watch.end_address) {
+            continue;
+        }
+        if ((access_type & watch.type) == Kernel::DebugWatchpointType::None) {
+            continue;
+        }
+
+        return &watch;
+    }
+
+    return nullptr;
 }
 
 } // namespace Core

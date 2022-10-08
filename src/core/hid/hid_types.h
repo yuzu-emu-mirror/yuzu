@@ -272,6 +272,7 @@ enum class VibrationDeviceType : u32 {
     Unknown = 0,
     LinearResonantActuator = 1,
     GcErm = 2,
+    N64 = 3,
 };
 
 // This is nn::hid::VibrationGcErmCommand
@@ -326,10 +327,18 @@ struct TouchState {
 };
 static_assert(sizeof(TouchState) == 0x28, "Touchstate is an invalid size");
 
+struct NpadColor {
+    u8 r{};
+    u8 g{};
+    u8 b{};
+    u8 a{};
+};
+static_assert(sizeof(NpadColor) == 4, "NpadColor is an invalid size");
+
 // This is nn::hid::NpadControllerColor
 struct NpadControllerColor {
-    u32 body{};
-    u32 button{};
+    NpadColor body{};
+    NpadColor button{};
 };
 static_assert(sizeof(NpadControllerColor) == 8, "NpadControllerColor is an invalid size");
 

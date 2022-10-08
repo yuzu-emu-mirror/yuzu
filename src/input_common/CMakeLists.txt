@@ -1,4 +1,9 @@
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 add_library(input_common STATIC
+    drivers/camera.cpp
+    drivers/camera.h
     drivers/gc_adapter.cpp
     drivers/gc_adapter.h
     drivers/keyboard.cpp
@@ -13,6 +18,8 @@ add_library(input_common STATIC
     drivers/touch_screen.h
     drivers/udp_client.cpp
     drivers/udp_client.h
+    drivers/virtual_amiibo.cpp
+    drivers/virtual_amiibo.h
     helpers/stick_from_buttons.cpp
     helpers/stick_from_buttons.h
     helpers/touch_from_buttons.cpp

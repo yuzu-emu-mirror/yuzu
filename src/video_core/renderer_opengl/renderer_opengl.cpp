@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
 #include <cstddef>
@@ -132,7 +131,7 @@ RendererOpenGL::RendererOpenGL(Core::TelemetrySession& telemetry_session_,
                                Core::Memory::Memory& cpu_memory_, Tegra::GPU& gpu_,
                                std::unique_ptr<Core::Frontend::GraphicsContext> context_)
     : RendererBase{emu_window_, std::move(context_)}, telemetry_session{telemetry_session_},
-      emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{gpu},
+      emu_window{emu_window_}, cpu_memory{cpu_memory_}, gpu{gpu_}, state_tracker{},
       program_manager{device},
       rasterizer(emu_window, gpu, cpu_memory, device, screen_info, program_manager, state_tracker) {
     if (Settings::values.renderer_debug && GLAD_GL_KHR_debug) {
@@ -479,13 +478,16 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
         }
     }
 
-    ASSERT_MSG(framebuffer_crop_rect.top == 0, "Unimplemented");
     ASSERT_MSG(framebuffer_crop_rect.left == 0, "Unimplemented");
 
+    f32 left_start{};
+    if (framebuffer_crop_rect.Top() > 0) {
+        left_start = static_cast<f32>(framebuffer_crop_rect.Top()) /
+                     static_cast<f32>(framebuffer_crop_rect.Bottom());
+    }
     f32 scale_u = static_cast<f32>(framebuffer_width) / static_cast<f32>(screen_info.texture.width);
     f32 scale_v =
         static_cast<f32>(framebuffer_height) / static_cast<f32>(screen_info.texture.height);
-
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
     if (framebuffer_crop_rect.GetWidth() > 0) {
@@ -504,10 +506,14 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
 
     const auto& screen = layout.screen;
     const std::array vertices = {
-        ScreenRectVertex(screen.left, screen.top, texcoords.top * scale_u, left * scale_v),
-        ScreenRectVertex(screen.right, screen.top, texcoords.bottom * scale_u, left * scale_v),
-        ScreenRectVertex(screen.left, screen.bottom, texcoords.top * scale_u, right * scale_v),
-        ScreenRectVertex(screen.right, screen.bottom, texcoords.bottom * scale_u, right * scale_v),
+        ScreenRectVertex(screen.left, screen.top, texcoords.top * scale_u,
+                         left_start + left * scale_v),
+        ScreenRectVertex(screen.right, screen.top, texcoords.bottom * scale_u,
+                         left_start + left * scale_v),
+        ScreenRectVertex(screen.left, screen.bottom, texcoords.top * scale_u,
+                         left_start + right * scale_v),
+        ScreenRectVertex(screen.right, screen.bottom, texcoords.bottom * scale_u,
+                         left_start + right * scale_v),
     };
     glNamedBufferSubData(vertex_buffer.handle, 0, sizeof(vertices), std::data(vertices));
 

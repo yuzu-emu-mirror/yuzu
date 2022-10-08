@@ -108,7 +108,7 @@ VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
 
 } // Anonymous namespace
 
-struct VKBlitScreen::BufferData {
+struct BlitScreen::BufferData {
     struct {
         std::array<f32, 4 * 4> modelview_matrix;
     } uniform;
@@ -118,10 +118,9 @@ struct VKBlitScreen::BufferData {
     // Unaligned image data goes here
 };
 
-VKBlitScreen::VKBlitScreen(Core::Memory::Memory& cpu_memory_,
-                           Core::Frontend::EmuWindow& render_window_, const Device& device_,
-                           MemoryAllocator& memory_allocator_, VKSwapchain& swapchain_,
-                           VKScheduler& scheduler_, const VKScreenInfo& screen_info_)
+BlitScreen::BlitScreen(Core::Memory::Memory& cpu_memory_, Core::Frontend::EmuWindow& render_window_,
+                       const Device& device_, MemoryAllocator& memory_allocator_,
+                       Swapchain& swapchain_, Scheduler& scheduler_, const ScreenInfo& screen_info_)
     : cpu_memory{cpu_memory_}, render_window{render_window_}, device{device_},
       memory_allocator{memory_allocator_}, swapchain{swapchain_}, scheduler{scheduler_},
       image_count{swapchain.GetImageCount()}, screen_info{screen_info_} {
@@ -131,20 +130,25 @@ VKBlitScreen::VKBlitScreen(Core::Memory::Memory& cpu_memory_,
     CreateDynamicResources();
 }
 
-VKBlitScreen::~VKBlitScreen() = default;
+BlitScreen::~BlitScreen() = default;
 
-void VKBlitScreen::Recreate() {
+void BlitScreen::Recreate() {
     CreateDynamicResources();
 }
 
-VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
-                               const VkFramebuffer& host_framebuffer,
-                               const Layout::FramebufferLayout layout, VkExtent2D render_area,
-                               bool use_accelerated) {
+VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
+                             const VkFramebuffer& host_framebuffer,
+                             const Layout::FramebufferLayout layout, VkExtent2D render_area,
+                             bool use_accelerated) {
     RefreshResources(framebuffer);
 
     // Finish any pending renderpass
     scheduler.RequestOutsideRenderPassOperationContext();
+
+    if (const auto swapchain_images = swapchain.GetImageCount(); swapchain_images != image_count) {
+        image_count = swapchain_images;
+        Recreate();
+    }
 
     const std::size_t image_index = swapchain.GetImageIndex();
 
@@ -170,11 +174,12 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
         // TODO(Rodrigo): Read this from HLE
         constexpr u32 block_height_log2 = 4;
         const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
-        const u64 size_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+        const u64 linear_size{GetSizeInBytes(framebuffer)};
+        const u64 tiled_size{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
                                                            framebuffer.stride, framebuffer.height,
                                                            1, block_height_log2, 0)};
         Tegra::Texture::UnswizzleTexture(
-            mapped_span.subspan(image_offset, size_bytes), std::span(host_ptr, size_bytes),
+            mapped_span.subspan(image_offset, linear_size), std::span(host_ptr, tiled_size),
             bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0);
 
         const VkBufferImageCopy copy{
@@ -419,20 +424,20 @@ VkSemaphore VKBlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     return *semaphores[image_index];
 }
 
-VkSemaphore VKBlitScreen::DrawToSwapchain(const Tegra::FramebufferConfig& framebuffer,
-                                          bool use_accelerated) {
+VkSemaphore BlitScreen::DrawToSwapchain(const Tegra::FramebufferConfig& framebuffer,
+                                        bool use_accelerated) {
     const std::size_t image_index = swapchain.GetImageIndex();
     const VkExtent2D render_area = swapchain.GetSize();
     const Layout::FramebufferLayout layout = render_window.GetFramebufferLayout();
     return Draw(framebuffer, *framebuffers[image_index], layout, render_area, use_accelerated);
 }
 
-vk::Framebuffer VKBlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent) {
+vk::Framebuffer BlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent) {
     return CreateFramebuffer(image_view, extent, renderpass);
 }
 
-vk::Framebuffer VKBlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent,
-                                                vk::RenderPass& rd) {
+vk::Framebuffer BlitScreen::CreateFramebuffer(const VkImageView& image_view, VkExtent2D extent,
+                                              vk::RenderPass& rd) {
     return device.GetLogical().CreateFramebuffer(VkFramebufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
@@ -446,17 +451,17 @@ vk::Framebuffer VKBlitScreen::CreateFramebuffer(const VkImageView& image_view, V
     });
 }
 
-void VKBlitScreen::CreateStaticResources() {
+void BlitScreen::CreateStaticResources() {
     CreateShaders();
+    CreateSampler();
+}
+
+void BlitScreen::CreateDynamicResources() {
     CreateSemaphores();
     CreateDescriptorPool();
     CreateDescriptorSetLayout();
     CreateDescriptorSets();
     CreatePipelineLayout();
-    CreateSampler();
-}
-
-void VKBlitScreen::CreateDynamicResources() {
     CreateRenderPass();
     CreateFramebuffers();
     CreateGraphicsPipeline();
@@ -466,7 +471,7 @@ void VKBlitScreen::CreateDynamicResources() {
     }
 }
 
-void VKBlitScreen::RefreshResources(const Tegra::FramebufferConfig& framebuffer) {
+void BlitScreen::RefreshResources(const Tegra::FramebufferConfig& framebuffer) {
     if (Settings::values.scaling_filter.GetValue() == Settings::ScalingFilter::Fsr) {
         if (!fsr) {
             CreateFSR();
@@ -486,7 +491,7 @@ void VKBlitScreen::RefreshResources(const Tegra::FramebufferConfig& framebuffer)
     CreateRawImages(framebuffer);
 }
 
-void VKBlitScreen::CreateShaders() {
+void BlitScreen::CreateShaders() {
     vertex_shader = BuildShader(device, VULKAN_PRESENT_VERT_SPV);
     fxaa_vertex_shader = BuildShader(device, FXAA_VERT_SPV);
     fxaa_fragment_shader = BuildShader(device, FXAA_FRAG_SPV);
@@ -500,12 +505,12 @@ void VKBlitScreen::CreateShaders() {
     }
 }
 
-void VKBlitScreen::CreateSemaphores() {
+void BlitScreen::CreateSemaphores() {
     semaphores.resize(image_count);
     std::ranges::generate(semaphores, [this] { return device.GetLogical().CreateSemaphore(); });
 }
 
-void VKBlitScreen::CreateDescriptorPool() {
+void BlitScreen::CreateDescriptorPool() {
     const std::array<VkDescriptorPoolSize, 2> pool_sizes{{
         {
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -545,11 +550,11 @@ void VKBlitScreen::CreateDescriptorPool() {
     aa_descriptor_pool = device.GetLogical().CreateDescriptorPool(ci_aa);
 }
 
-void VKBlitScreen::CreateRenderPass() {
+void BlitScreen::CreateRenderPass() {
     renderpass = CreateRenderPassImpl(swapchain.GetImageViewFormat());
 }
 
-vk::RenderPass VKBlitScreen::CreateRenderPassImpl(VkFormat format, bool is_present) {
+vk::RenderPass BlitScreen::CreateRenderPassImpl(VkFormat format, bool is_present) {
     const VkAttachmentDescription color_attachment{
         .flags = 0,
         .format = format,
@@ -605,7 +610,7 @@ vk::RenderPass VKBlitScreen::CreateRenderPassImpl(VkFormat format, bool is_prese
     return device.GetLogical().CreateRenderPass(renderpass_ci);
 }
 
-void VKBlitScreen::CreateDescriptorSetLayout() {
+void BlitScreen::CreateDescriptorSetLayout() {
     const std::array<VkDescriptorSetLayoutBinding, 2> layout_bindings{{
         {
             .binding = 0,
@@ -660,7 +665,7 @@ void VKBlitScreen::CreateDescriptorSetLayout() {
     aa_descriptor_set_layout = device.GetLogical().CreateDescriptorSetLayout(ci_aa);
 }
 
-void VKBlitScreen::CreateDescriptorSets() {
+void BlitScreen::CreateDescriptorSets() {
     const std::vector layouts(image_count, *descriptor_set_layout);
     const std::vector layouts_aa(image_count, *aa_descriptor_set_layout);
 
@@ -684,7 +689,7 @@ void VKBlitScreen::CreateDescriptorSets() {
     aa_descriptor_sets = aa_descriptor_pool.Allocate(ai_aa);
 }
 
-void VKBlitScreen::CreatePipelineLayout() {
+void BlitScreen::CreatePipelineLayout() {
     const VkPipelineLayoutCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
@@ -707,7 +712,7 @@ void VKBlitScreen::CreatePipelineLayout() {
     aa_pipeline_layout = device.GetLogical().CreatePipelineLayout(ci_aa);
 }
 
-void VKBlitScreen::CreateGraphicsPipeline() {
+void BlitScreen::CreateGraphicsPipeline() {
     const std::array<VkPipelineShaderStageCreateInfo, 2> bilinear_shader_stages{{
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -980,7 +985,7 @@ void VKBlitScreen::CreateGraphicsPipeline() {
     scaleforce_pipeline = device.GetLogical().CreateGraphicsPipeline(scaleforce_pipeline_ci);
 }
 
-void VKBlitScreen::CreateSampler() {
+void BlitScreen::CreateSampler() {
     const VkSamplerCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
         .pNext = nullptr,
@@ -1027,7 +1032,7 @@ void VKBlitScreen::CreateSampler() {
     nn_sampler = device.GetLogical().CreateSampler(ci_nn);
 }
 
-void VKBlitScreen::CreateFramebuffers() {
+void BlitScreen::CreateFramebuffers() {
     const VkExtent2D size{swapchain.GetSize()};
     framebuffers.resize(image_count);
 
@@ -1037,7 +1042,7 @@ void VKBlitScreen::CreateFramebuffers() {
     }
 }
 
-void VKBlitScreen::ReleaseRawImages() {
+void BlitScreen::ReleaseRawImages() {
     for (const u64 tick : resource_ticks) {
         scheduler.Wait(tick);
     }
@@ -1052,7 +1057,7 @@ void VKBlitScreen::ReleaseRawImages() {
     buffer_commit = MemoryCommit{};
 }
 
-void VKBlitScreen::CreateStagingBuffer(const Tegra::FramebufferConfig& framebuffer) {
+void BlitScreen::CreateStagingBuffer(const Tegra::FramebufferConfig& framebuffer) {
     const VkBufferCreateInfo ci{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
@@ -1069,7 +1074,7 @@ void VKBlitScreen::CreateStagingBuffer(const Tegra::FramebufferConfig& framebuff
     buffer_commit = memory_allocator.Commit(buffer, MemoryUsage::Upload);
 }
 
-void VKBlitScreen::CreateRawImages(const Tegra::FramebufferConfig& framebuffer) {
+void BlitScreen::CreateRawImages(const Tegra::FramebufferConfig& framebuffer) {
     raw_images.resize(image_count);
     raw_image_views.resize(image_count);
     raw_buffer_commits.resize(image_count);
@@ -1294,8 +1299,8 @@ void VKBlitScreen::CreateRawImages(const Tegra::FramebufferConfig& framebuffer) 
     aa_pipeline = device.GetLogical().CreateGraphicsPipeline(fxaa_pipeline_ci);
 }
 
-void VKBlitScreen::UpdateAADescriptorSet(std::size_t image_index, VkImageView image_view,
-                                         bool nn) const {
+void BlitScreen::UpdateAADescriptorSet(std::size_t image_index, VkImageView image_view,
+                                       bool nn) const {
     const VkDescriptorImageInfo image_info{
         .sampler = nn ? *nn_sampler : *sampler,
         .imageView = image_view,
@@ -1331,8 +1336,8 @@ void VKBlitScreen::UpdateAADescriptorSet(std::size_t image_index, VkImageView im
     device.GetLogical().UpdateDescriptorSets(std::array{sampler_write, sampler_write_2}, {});
 }
 
-void VKBlitScreen::UpdateDescriptorSet(std::size_t image_index, VkImageView image_view,
-                                       bool nn) const {
+void BlitScreen::UpdateDescriptorSet(std::size_t image_index, VkImageView image_view,
+                                     bool nn) const {
     const VkDescriptorBufferInfo buffer_info{
         .buffer = *buffer,
         .offset = offsetof(BufferData, uniform),
@@ -1374,13 +1379,13 @@ void VKBlitScreen::UpdateDescriptorSet(std::size_t image_index, VkImageView imag
     device.GetLogical().UpdateDescriptorSets(std::array{ubo_write, sampler_write}, {});
 }
 
-void VKBlitScreen::SetUniformData(BufferData& data, const Layout::FramebufferLayout layout) const {
+void BlitScreen::SetUniformData(BufferData& data, const Layout::FramebufferLayout layout) const {
     data.uniform.modelview_matrix =
         MakeOrthographicMatrix(static_cast<f32>(layout.width), static_cast<f32>(layout.height));
 }
 
-void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
-                                 const Layout::FramebufferLayout layout) const {
+void BlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfig& framebuffer,
+                               const Layout::FramebufferLayout layout) const {
     const auto& framebuffer_transform_flags = framebuffer.transform_flags;
     const auto& framebuffer_crop_rect = framebuffer.crop_rect;
 
@@ -1402,12 +1407,15 @@ void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfi
         break;
     }
 
-    UNIMPLEMENTED_IF(framebuffer_crop_rect.top != 0);
     UNIMPLEMENTED_IF(framebuffer_crop_rect.left != 0);
 
+    f32 left_start{};
+    if (framebuffer_crop_rect.Top() > 0) {
+        left_start = static_cast<f32>(framebuffer_crop_rect.Top()) /
+                     static_cast<f32>(framebuffer_crop_rect.Bottom());
+    }
     f32 scale_u = static_cast<f32>(framebuffer.width) / static_cast<f32>(screen_info.width);
     f32 scale_v = static_cast<f32>(framebuffer.height) / static_cast<f32>(screen_info.height);
-
     // Scale the output by the crop width/height. This is commonly used with 1280x720 rendering
     // (e.g. handheld mode) on a 1920x1080 framebuffer.
     if (!fsr) {
@@ -1426,13 +1434,16 @@ void VKBlitScreen::SetVertexData(BufferData& data, const Tegra::FramebufferConfi
     const auto y = static_cast<f32>(screen.top);
     const auto w = static_cast<f32>(screen.GetWidth());
     const auto h = static_cast<f32>(screen.GetHeight());
-    data.vertices[0] = ScreenRectVertex(x, y, texcoords.top * scale_u, left * scale_v);
-    data.vertices[1] = ScreenRectVertex(x + w, y, texcoords.bottom * scale_u, left * scale_v);
-    data.vertices[2] = ScreenRectVertex(x, y + h, texcoords.top * scale_u, right * scale_v);
-    data.vertices[3] = ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, right * scale_v);
+    data.vertices[0] = ScreenRectVertex(x, y, texcoords.top * scale_u, left_start + left * scale_v);
+    data.vertices[1] =
+        ScreenRectVertex(x + w, y, texcoords.bottom * scale_u, left_start + left * scale_v);
+    data.vertices[2] =
+        ScreenRectVertex(x, y + h, texcoords.top * scale_u, left_start + right * scale_v);
+    data.vertices[3] =
+        ScreenRectVertex(x + w, y + h, texcoords.bottom * scale_u, left_start + right * scale_v);
 }
 
-void VKBlitScreen::CreateFSR() {
+void BlitScreen::CreateFSR() {
     const auto& layout = render_window.GetFramebufferLayout();
     const VkExtent2D fsr_size{
         .width = layout.screen.GetWidth(),
@@ -1441,12 +1452,12 @@ void VKBlitScreen::CreateFSR() {
     fsr = std::make_unique<FSR>(device, memory_allocator, image_count, fsr_size);
 }
 
-u64 VKBlitScreen::CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const {
+u64 BlitScreen::CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const {
     return sizeof(BufferData) + GetSizeInBytes(framebuffer) * image_count;
 }
 
-u64 VKBlitScreen::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
-                                    std::size_t image_index) const {
+u64 BlitScreen::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
+                                  std::size_t image_index) const {
     constexpr auto first_image_offset = static_cast<u64>(sizeof(BufferData));
     return first_image_offset + GetSizeInBytes(framebuffer) * image_index;
 }

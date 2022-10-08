@@ -1,6 +1,5 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
 #include <optional>
@@ -90,17 +89,17 @@ static const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> 
 }};
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<std::string>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<std::string>& setting) {
     setting = sdl2_config->Get(group, setting.GetLabel(), setting.GetDefault());
 }
 
 template <>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<bool>& setting) {
+void Config::ReadSetting(const std::string& group, Settings::Setting<bool>& setting) {
     setting = sdl2_config->GetBoolean(group, setting.GetLabel(), setting.GetDefault());
 }
 
-template <typename Type>
-void Config::ReadSetting(const std::string& group, Settings::BasicSetting<Type>& setting) {
+template <typename Type, bool ranged>
+void Config::ReadSetting(const std::string& group, Settings::Setting<Type, ranged>& setting) {
     setting = static_cast<Type>(sdl2_config->GetInteger(group, setting.GetLabel(),
                                                         static_cast<long>(setting.GetDefault())));
 }
@@ -310,13 +309,12 @@ void Config::ReadValues() {
     ReadSetting("Renderer", Settings::values.gpu_accuracy);
     ReadSetting("Renderer", Settings::values.use_asynchronous_gpu_emulation);
     ReadSetting("Renderer", Settings::values.use_vsync);
-    ReadSetting("Renderer", Settings::values.fps_cap);
-    ReadSetting("Renderer", Settings::values.disable_fps_limit);
     ReadSetting("Renderer", Settings::values.shader_backend);
     ReadSetting("Renderer", Settings::values.use_asynchronous_shaders);
     ReadSetting("Renderer", Settings::values.nvdec_emulation);
     ReadSetting("Renderer", Settings::values.accelerate_astc);
     ReadSetting("Renderer", Settings::values.use_fast_gpu_time);
+    ReadSetting("Renderer", Settings::values.use_pessimistic_flushes);
 
     ReadSetting("Renderer", Settings::values.bg_red);
     ReadSetting("Renderer", Settings::values.bg_green);
@@ -324,7 +322,7 @@ void Config::ReadValues() {
 
     // Audio
     ReadSetting("Audio", Settings::values.sink_id);
-    ReadSetting("Audio", Settings::values.audio_device_id);
+    ReadSetting("Audio", Settings::values.audio_output_device_id);
     ReadSetting("Audio", Settings::values.volume);
 
     // Miscellaneous

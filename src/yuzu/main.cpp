@@ -1,13 +1,17 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cinttypes>
 #include <clocale>
+#include <cmath>
 #include <memory>
 #include <thread>
 #ifdef __APPLE__
 #include <unistd.h> // for chdir
+#endif
+#ifdef __linux__
+#include <csignal>
+#include <sys/socket.h>
 #endif
 
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
@@ -32,6 +36,7 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
+#include "yuzu/multiplayer/state.h"
 #include "yuzu/util/controller_navigation.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
@@ -101,12 +106,12 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/filesystem/filesystem.h"
-#include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "input_common/drivers/tas_input.h"
+#include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/main.h"
 #include "ui_main.h"
 #include "util/overlay_dialog.h"
@@ -115,7 +120,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
-#include "yuzu/check_vulkan.h"
 #include "yuzu/compatdb.h"
 #include "yuzu/compatibility_list.h"
 #include "yuzu/configuration/config.h"
@@ -131,7 +135,13 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
+#include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
+#include "yuzu/util/clickable_label.h"
+
+#ifdef YUZU_DBGHELP
+#include "yuzu/mini_dump.h"
+#endif
 
 using namespace Common::Literals;
 
@@ -252,12 +262,39 @@ static QString PrettyProductName() {
     return QSysInfo::prettyProductName();
 }
 
-GMainWindow::GMainWindow()
+#ifdef _WIN32
+static void OverrideWindowsFont() {
+    // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrllic characters
+    // Asking to use "MS Shell Dlg 2" gives better other chars while leaving the Chinese Characters.
+    const QString startup_font = QApplication::font().family();
+    const QStringList ugly_fonts = {QStringLiteral("SimSun"), QStringLiteral("PMingLiU")};
+    if (ugly_fonts.contains(startup_font)) {
+        QApplication::setFont(QFont(QStringLiteral("MS Shell Dlg 2"), 9, QFont::Normal));
+    }
+}
+#endif
+
+bool GMainWindow::CheckDarkMode() {
+#ifdef __linux__
+    const QPalette test_palette(qApp->palette());
+    const QColor text_color = test_palette.color(QPalette::Active, QPalette::Text);
+    const QColor window_color = test_palette.color(QPalette::Active, QPalette::Window);
+    return (text_color.value() > window_color.value());
+#else
+    // TODO: Windows
+    return false;
+#endif // __linux__
+}
+
+GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan)
     : ui{std::make_unique<Ui::MainWindow>()}, system{std::make_unique<Core::System>()},
-      input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
-      config{std::make_unique<Config>(*system)},
+      input_subsystem{std::make_shared<InputCommon::InputSubsystem>()}, config{std::move(config_)},
       vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
       provider{std::make_unique<FileSys::ManualContentProvider>()} {
+#ifdef __linux__
+    SetupSigInterrupts();
+#endif
+
     Common::Log::Initialize();
     LoadTranslation();
 
@@ -265,11 +302,20 @@ GMainWindow::GMainWindow()
     ui->setupUi(this);
     statusBar()->hide();
 
+    // Check dark mode before a theme is loaded
+    os_dark_mode = CheckDarkMode();
+    startup_icon_theme = QIcon::themeName();
+    // fallback can only be set once, colorful theme icons are okay on both light/dark
+    QIcon::setFallbackThemeName(QStringLiteral("colorful"));
+    QIcon::setFallbackSearchPaths(QStringList(QStringLiteral(":/icons")));
+
     default_theme_paths = QIcon::themeSearchPaths();
     UpdateUITheme();
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
+
+    system->GetRoomNetwork().Init();
 
     RegisterMetaTypes();
 
@@ -352,17 +398,15 @@ GMainWindow::GMainWindow()
 
     MigrateConfigFiles();
 
-    if (!CheckVulkan()) {
-        config->Save();
+    if (has_broken_vulkan) {
+        UISettings::values.has_broken_vulkan = true;
 
-        QMessageBox::warning(
-            this, tr("Broken Vulkan Installation Detected"),
-            tr("Vulkan initialization failed on the previous boot.<br><br>Click <a "
-               "href='https://yuzu-emu.org/wiki/faq/"
-               "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>here for "
-               "instructions to fix the issue</a>."));
-    }
-    if (UISettings::values.has_broken_vulkan) {
+        QMessageBox::warning(this, tr("Broken Vulkan Installation Detected"),
+                             tr("Vulkan initialization failed during boot.<br><br>Click <a "
+                                "href='https://yuzu-emu.org/wiki/faq/"
+                                "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>"
+                                "here for instructions to fix the issue</a>."));
+
         Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
 
         renderer_status_button->setDisabled(true);
@@ -376,6 +420,8 @@ GMainWindow::GMainWindow()
     // for now.
     SDL_EnableScreenSaver();
 #endif
+
+    SetupPrepareForSleep();
 
     Common::Log::Start();
 
@@ -461,6 +507,11 @@ GMainWindow::~GMainWindow() {
     if (render_window->parent() == nullptr) {
         delete render_window;
     }
+
+#ifdef __linux__
+    ::close(sig_interrupt_fds[0]);
+    ::close(sig_interrupt_fds[1]);
+#endif
 }
 
 void GMainWindow::RegisterMetaTypes() {
@@ -824,6 +875,10 @@ void GMainWindow::InitializeWidgets() {
         }
     });
 
+    multiplayer_state = new MultiplayerState(this, game_list->GetModel(), ui->action_Leave_Room,
+                                             ui->action_Show_Room, *system);
+    multiplayer_state->setVisible(false);
+
     // Create status bar
     message_label = new QLabel();
     // Configured separately for left alignment
@@ -855,6 +910,10 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label);
     }
+
+    // TODO (flTobi): Add the widget when multiplayer is fully implemented
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
 
     tas_label = new QLabel();
     tas_label->setObjectName(QStringLiteral("TASlabel"));
@@ -1049,17 +1108,29 @@ void GMainWindow::InitializeHotkeys() {
     connect_shortcut(QStringLiteral("Audio Mute/Unmute"),
                      [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
     connect_shortcut(QStringLiteral("Audio Volume Down"), [] {
-        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
-        const auto new_volume = std::max(current_volume - 5, 0);
-        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+        const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
+        int step = 5;
+        if (current_volume <= 30) {
+            step = 2;
+        }
+        if (current_volume <= 6) {
+            step = 1;
+        }
+        Settings::values.volume.SetValue(std::max(current_volume - step, 0));
     });
     connect_shortcut(QStringLiteral("Audio Volume Up"), [] {
-        const auto current_volume = static_cast<int>(Settings::values.volume.GetValue());
-        const auto new_volume = std::min(current_volume + 5, 100);
-        Settings::values.volume.SetValue(static_cast<u8>(new_volume));
+        const auto current_volume = static_cast<s32>(Settings::values.volume.GetValue());
+        int step = 5;
+        if (current_volume < 30) {
+            step = 2;
+        }
+        if (current_volume < 6) {
+            step = 1;
+        }
+        Settings::values.volume.SetValue(current_volume + step);
     });
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
-        Settings::values.disable_fps_limit.SetValue(!Settings::values.disable_fps_limit.GetValue());
+        Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
     connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
         Settings::values.mouse_panning = !Settings::values.mouse_panning;
@@ -1131,6 +1202,7 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
             OnPauseGame();
         } else if (!emu_thread->IsRunning() && auto_paused && state == Qt::ApplicationActive) {
             auto_paused = false;
+            RequestGameResume();
             OnStartGame();
         }
     }
@@ -1164,6 +1236,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list_placeholder, &GameListPlaceholder::AddDirectory, this,
             &GMainWindow::OnGameListAddDirectory);
     connect(game_list, &GameList::ShowList, this, &GMainWindow::OnGameListShowList);
+    connect(game_list, &GameList::PopulatingCompleted,
+            [this] { multiplayer_state->UpdateGameList(game_list->GetModel()); });
 
     connect(game_list, &GameList::OpenPerGameGeneralRequested, this,
             &GMainWindow::OnGameListOpenPerGameProperties);
@@ -1181,6 +1255,9 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(this, &GMainWindow::EmulationStopping, this, &GMainWindow::SoftwareKeyboardExit);
 
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
+
+    connect(this, &GMainWindow::UpdateThemedIcons, multiplayer_state,
+            &MultiplayerState::UpdateThemedIcons);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -1224,6 +1301,19 @@ void GMainWindow::ConnectMenuEvents() {
                                             ui->action_Reset_Window_Size_900,
                                             ui->action_Reset_Window_Size_1080});
 
+    // Multiplayer
+    connect(ui->action_View_Lobby, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnViewLobby);
+    connect(ui->action_Start_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCreateRoom);
+    connect(ui->action_Leave_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCloseRoom);
+    connect(ui->action_Connect_To_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnDirectConnectToRoom);
+    connect(ui->action_Show_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnOpenNetworkRoom);
+    connect(multiplayer_state, &MultiplayerState::SaveConfig, this, &GMainWindow::OnSaveConfig);
+
     // Tools
     connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
                                                 ReinitializeKeyBehavior::Warning));
@@ -1263,6 +1353,8 @@ void GMainWindow::UpdateMenuState() {
     } else {
         ui->action_Pause->setText(tr("&Pause"));
     }
+
+    multiplayer_state->UpdateNotificationStatus();
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -1281,6 +1373,43 @@ void GMainWindow::OnDisplayTitleBars(bool show) {
             widget->setTitleBarWidget(new QWidget());
             if (old != nullptr)
                 delete old;
+        }
+    }
+}
+
+void GMainWindow::SetupPrepareForSleep() {
+#ifdef __linux__
+    auto bus = QDBusConnection::systemBus();
+    if (bus.isConnected()) {
+        const bool success = bus.connect(
+            QStringLiteral("org.freedesktop.login1"), QStringLiteral("/org/freedesktop/login1"),
+            QStringLiteral("org.freedesktop.login1.Manager"), QStringLiteral("PrepareForSleep"),
+            QStringLiteral("b"), this, SLOT(OnPrepareForSleep(bool)));
+
+        if (!success) {
+            LOG_WARNING(Frontend, "Couldn't register PrepareForSleep signal");
+        }
+    } else {
+        LOG_WARNING(Frontend, "QDBusConnection system bus is not connected");
+    }
+#endif // __linux__
+}
+
+void GMainWindow::OnPrepareForSleep(bool prepare_sleep) {
+    if (emu_thread == nullptr) {
+        return;
+    }
+
+    if (prepare_sleep) {
+        if (emu_thread->IsRunning()) {
+            auto_paused = true;
+            OnPauseGame();
+        }
+    } else {
+        if (!emu_thread->IsRunning() && auto_paused) {
+            auto_paused = false;
+            RequestGameResume();
+            OnStartGame();
         }
     }
 }
@@ -1323,6 +1452,52 @@ static void ReleaseWakeLockLinux(QDBusObjectPath lock) {
     QDBusInterface unlocker(QString::fromLatin1("org.freedesktop.portal.Desktop"), lock.path(),
                             QString::fromLatin1("org.freedesktop.portal.Request"));
     unlocker.call(QString::fromLatin1("Close"));
+}
+
+std::array<int, 3> GMainWindow::sig_interrupt_fds{0, 0, 0};
+
+void GMainWindow::SetupSigInterrupts() {
+    if (sig_interrupt_fds[2] == 1) {
+        return;
+    }
+    socketpair(AF_UNIX, SOCK_STREAM, 0, sig_interrupt_fds.data());
+    sig_interrupt_fds[2] = 1;
+
+    struct sigaction sa;
+    sa.sa_handler = &GMainWindow::HandleSigInterrupt;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESETHAND;
+    sigaction(SIGINT, &sa, nullptr);
+    sigaction(SIGTERM, &sa, nullptr);
+
+    sig_interrupt_notifier = new QSocketNotifier(sig_interrupt_fds[1], QSocketNotifier::Read, this);
+    connect(sig_interrupt_notifier, &QSocketNotifier::activated, this,
+            &GMainWindow::OnSigInterruptNotifierActivated);
+    connect(this, &GMainWindow::SigInterrupt, this, &GMainWindow::close);
+}
+
+void GMainWindow::HandleSigInterrupt(int sig) {
+    if (sig == SIGINT) {
+        exit(1);
+    }
+
+    // Calling into Qt directly from a signal handler is not safe,
+    // so wake up a QSocketNotifier with this hacky write call instead.
+    char a = 1;
+    int ret = write(sig_interrupt_fds[0], &a, sizeof(a));
+    (void)ret;
+}
+
+void GMainWindow::OnSigInterruptNotifierActivated() {
+    sig_interrupt_notifier->setEnabled(false);
+
+    char a;
+    int ret = read(sig_interrupt_fds[1], &a, sizeof(a));
+    (void)ret;
+
+    sig_interrupt_notifier->setEnabled(true);
+
+    emit SigInterrupt();
 }
 #endif // __linux__
 
@@ -1447,17 +1622,18 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     return true;
 }
 
-void GMainWindow::SelectAndSetCurrentUser() {
+bool GMainWindow::SelectAndSetCurrentUser() {
     QtProfileSelectionDialog dialog(system->HIDCore(), this);
     dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                           Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
     dialog.setWindowModality(Qt::WindowModal);
 
     if (dialog.exec() == QDialog::Rejected) {
-        return;
+        return false;
     }
 
     Settings::values.current_user = dialog.GetIndex();
+    return true;
 }
 
 void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t program_index,
@@ -1480,11 +1656,9 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         const auto config_file_name = title_id == 0
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
-        Config per_game_config(*system, config_file_name, Config::ConfigType::PerGameConfig);
+        Config per_game_config(config_file_name, Config::ConfigType::PerGameConfig);
+        system->ApplySettings();
     }
-
-    // Disable fps limit toggle when booting a new title
-    Settings::values.disable_fps_limit.SetValue(false);
 
     // Save configurations
     UpdateUISettings();
@@ -1494,11 +1668,16 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     Settings::LogSettings();
 
     if (UISettings::values.select_user_on_boot) {
-        SelectAndSetCurrentUser();
+        if (SelectAndSetCurrentUser() == false) {
+            return;
+        }
     }
 
-    if (!LoadROM(filename, program_id, program_index))
+    if (!LoadROM(filename, program_id, program_index)) {
         return;
+    }
+
+    system->SetShuttingDown(false);
 
     // Create and start the emulation thread
     emu_thread = std::make_unique<EmuThread>(*system);
@@ -1541,6 +1720,8 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
     if (UISettings::values.hide_mouse) {
         mouse_hide_timer.start();
     }
+
+    render_window->InitializeCamera();
 
     std::string title_name;
     std::string title_version;
@@ -1590,6 +1771,7 @@ void GMainWindow::ShutdownGame() {
 
     AllowOSSleep();
 
+    system->SetShuttingDown(true);
     system->DetachDebugger();
     discord_rpc->Pause();
     emu_thread->RequestStop();
@@ -1622,6 +1804,7 @@ void GMainWindow::ShutdownGame() {
     tas_label->clear();
     input_subsystem->GetTas()->Stop();
     OnTasStateChanged();
+    render_window->FinalizeCamera();
 
     // Enable all controllers
     system->HIDCore().SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
@@ -1833,7 +2016,7 @@ static bool RomFSRawCopy(QProgressDialog& dialog, const FileSys::VirtualDir& src
 }
 
 void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type) {
-    const QString entry_type = [this, type] {
+    const QString entry_type = [type] {
         switch (type) {
         case InstalledEntryType::Game:
             return tr("Contents");
@@ -1930,7 +2113,7 @@ void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) 
 
 void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                                        const std::string& game_path) {
-    const QString question = [this, target] {
+    const QString question = [target] {
         switch (target) {
         case GameListRemoveTarget::GlShaderCache:
             return tr("Delete OpenGL Transferable Shader Cache?");
@@ -2573,6 +2756,7 @@ void GMainWindow::OnPauseContinueGame() {
         if (emu_thread->IsRunning()) {
             OnPauseGame();
         } else {
+            RequestGameResume();
             OnStartGame();
         }
     }
@@ -2600,6 +2784,11 @@ void GMainWindow::OnExecuteProgram(std::size_t program_index) {
 
 void GMainWindow::OnExit() {
     OnStopGame();
+}
+
+void GMainWindow::OnSaveConfig() {
+    system->ApplySettings();
+    config->Save();
 }
 
 void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_text) {
@@ -2780,7 +2969,8 @@ void GMainWindow::OnConfigure() {
     const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
 
     Settings::SetConfiguringGlobal(true);
-    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system);
+    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system,
+                                     !multiplayer_state->IsHostingPublicRoom());
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
             &GMainWindow::OnLanguageChanged);
 
@@ -2816,7 +3006,7 @@ void GMainWindow::OnConfigure() {
 
         Settings::values.disabled_addons.clear();
 
-        config = std::make_unique<Config>(*system);
+        config = std::make_unique<Config>();
         UISettings::values.reset_to_defaults = false;
 
         UISettings::values.game_dirs = std::move(old_game_dirs);
@@ -2837,6 +3027,11 @@ void GMainWindow::OnConfigure() {
     if (UISettings::values.enable_discord_presence.GetValue() != old_discord_presence) {
         SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     }
+
+    if (!multiplayer_state->IsHostingPublicRoom()) {
+        multiplayer_state->UpdateCredentials();
+    }
+
     emit UpdateThemedIcons();
 
     const auto reload = UISettings::values.is_game_list_reload_pending.exchange(false);
@@ -2860,12 +3055,19 @@ void GMainWindow::OnConfigure() {
         mouse_hide_timer.start();
     }
 
+    // Restart camera config
+    if (emulation_running) {
+        render_window->FinalizeCamera();
+        render_window->InitializeCamera();
+    }
+
     if (!UISettings::values.has_broken_vulkan) {
         renderer_status_button->setEnabled(!emulation_running);
     }
 
     UpdateStatusButtons();
     controller_dialog->refreshConfiguration();
+    system->ApplySettings();
 }
 
 void GMainWindow::OnConfigureTas() {
@@ -3030,21 +3232,16 @@ void GMainWindow::OnLoadAmiibo() {
         return;
     }
 
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
-        return;
-    }
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+
+    // Remove amiibo if one is connected
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    if (nfc_state != Service::NFP::DeviceState::SearchingForTag) {
+    if (virtual_amiibo->GetCurrentState() != InputCommon::VirtualAmiibo::State::WaitingForAmiibo) {
         QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
         return;
     }
@@ -3063,43 +3260,30 @@ void GMainWindow::OnLoadAmiibo() {
 }
 
 void GMainWindow::LoadAmiibo(const QString& filename) {
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        return;
-    }
-
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+    const QString title = tr("Error loading Amiibo data");
     // Remove amiibo if one is connected
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    QFile nfc_file{filename};
-    if (!nfc_file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, tr("Error opening Amiibo data file"),
-                             tr("Unable to open Amiibo file \"%1\" for reading.").arg(filename));
-        return;
-    }
-
-    const u64 nfc_file_size = nfc_file.size();
-    std::vector<u8> buffer(nfc_file_size);
-    const u64 read_size = nfc_file.read(reinterpret_cast<char*>(buffer.data()), nfc_file_size);
-    if (nfc_file_size != read_size) {
-        QMessageBox::warning(this, tr("Error reading Amiibo data file"),
-                             tr("Unable to fully read Amiibo data. Expected to read %1 bytes, but "
-                                "was only able to read %2 bytes.")
-                                 .arg(nfc_file_size)
-                                 .arg(read_size));
-        return;
-    }
-
-    if (!nfc->LoadAmiibo(buffer)) {
-        QMessageBox::warning(this, tr("Error loading Amiibo data"),
-                             tr("Unable to load Amiibo data."));
+    switch (virtual_amiibo->LoadAmiibo(filename.toStdString())) {
+    case InputCommon::VirtualAmiibo::Info::NotAnAmiibo:
+        QMessageBox::warning(this, title, tr("The selected file is not a valid amiibo"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::UnableToLoad:
+        QMessageBox::warning(this, title, tr("The selected file is already on use"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::WrongDeviceState:
+        QMessageBox::warning(this, title, tr("The current game is not looking for amiibos"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::Unknown:
+        QMessageBox::warning(this, title, tr("An unkown error occured"));
+        break;
+    default:
+        break;
     }
 }
 
@@ -3177,7 +3361,8 @@ void GMainWindow::MigrateConfigFiles() {
         }
         const auto origin = config_dir_fs_path / filename;
         const auto destination = config_dir_fs_path / "custom" / filename;
-        LOG_INFO(Frontend, "Migrating config file from {} to {}", origin, destination);
+        LOG_INFO(Frontend, "Migrating config file from {} to {}", origin.string(),
+                 destination.string());
         if (!Common::FS::RenameFile(origin, destination)) {
             // Delete the old config file if one already exists in the new location.
             Common::FS::RemoveFile(origin);
@@ -3277,11 +3462,12 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    if (Settings::values.disable_fps_limit) {
+    if (!Settings::values.use_speed_limit) {
         game_fps_label->setText(
-            tr("Game: %1 FPS (Unlocked)").arg(results.average_game_fps, 0, 'f', 0));
+            tr("Game: %1 FPS (Unlocked)").arg(std::round(results.average_game_fps), 0, 'f', 0));
     } else {
-        game_fps_label->setText(tr("Game: %1 FPS").arg(results.average_game_fps, 0, 'f', 0));
+        game_fps_label->setText(
+            tr("Game: %1 FPS").arg(std::round(results.average_game_fps), 0, 'f', 0));
     }
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
@@ -3651,6 +3837,8 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     }
 
     render_window->close();
+    multiplayer_state->Close();
+    system->GetRoomNetwork().Shutdown();
 
     QWidget::closeEvent(event);
 }
@@ -3752,13 +3940,41 @@ void GMainWindow::RequestGameExit() {
     }
 }
 
+void GMainWindow::RequestGameResume() {
+    auto& sm{system->ServiceManager()};
+    auto applet_oe = sm.GetService<Service::AM::AppletOE>("appletOE");
+    auto applet_ae = sm.GetService<Service::AM::AppletAE>("appletAE");
+
+    if (applet_oe != nullptr) {
+        applet_oe->GetMessageQueue()->RequestResume();
+        return;
+    }
+
+    if (applet_ae != nullptr) {
+        applet_ae->GetMessageQueue()->RequestResume();
+    }
+}
+
 void GMainWindow::filterBarSetChecked(bool state) {
     ui->action_Show_Filter_Bar->setChecked(state);
     emit(OnToggleFilterBar());
 }
 
+static void AdjustLinkColor() {
+    QPalette new_pal(qApp->palette());
+    if (UISettings::IsDarkTheme()) {
+        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
+    } else {
+        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
+    }
+    if (qApp->palette().color(QPalette::Link) != new_pal.color(QPalette::Link)) {
+        qApp->setPalette(new_pal);
+    }
+}
+
 void GMainWindow::UpdateUITheme() {
-    const QString default_theme = QStringLiteral("default");
+    const QString default_theme =
+        QString::fromUtf8(UISettings::themes[static_cast<size_t>(Config::default_theme)].second);
     QString current_theme = UISettings::values.theme;
     QStringList theme_paths(default_theme_paths);
 
@@ -3766,6 +3982,23 @@ void GMainWindow::UpdateUITheme() {
         current_theme = default_theme;
     }
 
+#ifdef _WIN32
+    QIcon::setThemeName(current_theme);
+    AdjustLinkColor();
+#else
+    if (current_theme == QStringLiteral("default") || current_theme == QStringLiteral("colorful")) {
+        QIcon::setThemeName(current_theme == QStringLiteral("colorful") ? current_theme
+                                                                        : startup_icon_theme);
+        QIcon::setThemeSearchPaths(theme_paths);
+        if (CheckDarkMode()) {
+            current_theme = QStringLiteral("default_dark");
+        }
+    } else {
+        QIcon::setThemeName(current_theme);
+        QIcon::setThemeSearchPaths(QStringList(QStringLiteral(":/icons")));
+        AdjustLinkColor();
+    }
+#endif
     if (current_theme != default_theme) {
         QString theme_uri{QStringLiteral(":%1/style.qss").arg(current_theme)};
         QFile f(theme_uri);
@@ -3788,25 +4021,9 @@ void GMainWindow::UpdateUITheme() {
         qApp->setStyleSheet({});
         setStyleSheet({});
     }
-
-    QPalette new_pal(qApp->palette());
-    if (UISettings::IsDarkTheme()) {
-        new_pal.setColor(QPalette::Link, QColor(0, 190, 255, 255));
-    } else {
-        new_pal.setColor(QPalette::Link, QColor(0, 140, 200, 255));
-    }
-    qApp->setPalette(new_pal);
-
-    QIcon::setThemeName(current_theme);
-    QIcon::setThemeSearchPaths(theme_paths);
 }
 
 void GMainWindow::LoadTranslation() {
-    // If the selected language is English, no need to install any translation
-    if (UISettings::values.language == QStringLiteral("en")) {
-        return;
-    }
-
     bool loaded;
 
     if (UISettings::values.language.isEmpty()) {
@@ -3832,6 +4049,7 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     UISettings::values.language = locale;
     LoadTranslation();
     ui->retranslateUi(this);
+    multiplayer_state->retranslateUi();
     UpdateWindowTitle();
 }
 
@@ -3848,11 +4066,54 @@ void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
     discord_rpc->Update();
 }
 
+void GMainWindow::changeEvent(QEvent* event) {
+#ifdef __linux__
+    // PaletteChange event appears to only reach so far into the GUI, explicitly asking to
+    // UpdateUITheme is a decent work around
+    if (event->type() == QEvent::PaletteChange) {
+        const QPalette test_palette(qApp->palette());
+        const QString current_theme = UISettings::values.theme;
+        // Keeping eye on QPalette::Window to avoid looping. QPalette::Text might be useful too
+        static QColor last_window_color;
+        const QColor window_color = test_palette.color(QPalette::Active, QPalette::Window);
+        if (last_window_color != window_color && (current_theme == QStringLiteral("default") ||
+                                                  current_theme == QStringLiteral("colorful"))) {
+            UpdateUITheme();
+        }
+        last_window_color = window_color;
+    }
+#endif // __linux__
+    QWidget::changeEvent(event);
+}
+
 #ifdef main
 #undef main
 #endif
 
 int main(int argc, char* argv[]) {
+    std::unique_ptr<Config> config = std::make_unique<Config>();
+    bool has_broken_vulkan = false;
+    bool is_child = false;
+    if (CheckEnvVars(&is_child)) {
+        return 0;
+    }
+
+#ifdef YUZU_DBGHELP
+    PROCESS_INFORMATION pi;
+    if (!is_child && Settings::values.create_crash_dumps.GetValue() &&
+        MiniDump::SpawnDebuggee(argv[0], pi)) {
+        // Delete the config object so that it doesn't save when the program exits
+        config.reset(nullptr);
+        MiniDump::DebugDebuggee(pi);
+        return 0;
+    }
+#endif
+
+    if (StartupChecks(argv[0], &has_broken_vulkan,
+                      Settings::values.perform_vulkan_check.GetValue())) {
+        return 0;
+    }
+
     Common::DetachedTasks detached_tasks;
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -3888,11 +4149,24 @@ int main(int argc, char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
     QApplication app(argc, argv);
 
+#ifdef _WIN32
+    OverrideWindowsFont();
+#endif
+
+    // Workaround for QTBUG-85409, for Suzhou numerals the number 1 is actually \u3021
+    // so we can see if we get \u3008 instead
+    // TL;DR all other number formats are consecutive in unicode code points
+    // This bug is fixed in Qt6, specifically 6.0.0-alpha1
+    const QLocale locale = QLocale::system();
+    if (QStringLiteral("\u3008") == locale.toString(1)) {
+        QLocale::setDefault(QLocale::system().name());
+    }
+
     // Qt changes the locale and causes issues in float conversion using std::to_string() when
     // generating shaders
     setlocale(LC_ALL, "C");
 
-    GMainWindow main_window{};
+    GMainWindow main_window{std::move(config), has_broken_vulkan};
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 

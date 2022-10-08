@@ -1,10 +1,10 @@
-// Copyright 2014 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2014 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <string>
 #include <thread>
 
@@ -21,6 +21,7 @@
 #include "common/string_util.h"
 #include "common/telemetry.h"
 #include "core/core.h"
+#include "core/cpu_manager.h"
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/vfs_real.h"
@@ -28,6 +29,7 @@
 #include "core/loader/loader.h"
 #include "core/telemetry_session.h"
 #include "input_common/main.h"
+#include "network/network.h"
 #include "video_core/renderer_base.h"
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
@@ -59,6 +61,8 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"
+                 "-m, --multiplayer=nick:password@address:port"
+                 " Nickname, password, address and port for multiplayer\n"
                  "-f, --fullscreen      Start in fullscreen mode\n"
                  "-h, --help            Display this help and exit\n"
                  "-v, --version         Output version information and exit\n"
@@ -68,6 +72,103 @@ static void PrintHelp(const char* argv0) {
 
 static void PrintVersion() {
     std::cout << "yuzu " << Common::g_scm_branch << " " << Common::g_scm_desc << std::endl;
+}
+
+static void OnStateChanged(const Network::RoomMember::State& state) {
+    switch (state) {
+    case Network::RoomMember::State::Idle:
+        LOG_DEBUG(Network, "Network is idle");
+        break;
+    case Network::RoomMember::State::Joining:
+        LOG_DEBUG(Network, "Connection sequence to room started");
+        break;
+    case Network::RoomMember::State::Joined:
+        LOG_DEBUG(Network, "Successfully joined to the room");
+        break;
+    case Network::RoomMember::State::Moderator:
+        LOG_DEBUG(Network, "Successfully joined the room as a moderator");
+        break;
+    default:
+        break;
+    }
+}
+
+static void OnNetworkError(const Network::RoomMember::Error& error) {
+    switch (error) {
+    case Network::RoomMember::Error::LostConnection:
+        LOG_DEBUG(Network, "Lost connection to the room");
+        break;
+    case Network::RoomMember::Error::CouldNotConnect:
+        LOG_ERROR(Network, "Error: Could not connect");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::NameCollision:
+        LOG_ERROR(
+            Network,
+            "You tried to use the same nickname as another user that is connected to the Room");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::IpCollision:
+        LOG_ERROR(Network, "You tried to use the same fake IP-Address as another user that is "
+                           "connected to the Room");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::WrongPassword:
+        LOG_ERROR(Network, "Room replied with: Wrong password");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::WrongVersion:
+        LOG_ERROR(Network,
+                  "You are using a different version than the room you are trying to connect to");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::RoomIsFull:
+        LOG_ERROR(Network, "The room is full");
+        exit(1);
+        break;
+    case Network::RoomMember::Error::HostKicked:
+        LOG_ERROR(Network, "You have been kicked by the host");
+        break;
+    case Network::RoomMember::Error::HostBanned:
+        LOG_ERROR(Network, "You have been banned by the host");
+        break;
+    case Network::RoomMember::Error::UnknownError:
+        LOG_ERROR(Network, "UnknownError");
+        break;
+    case Network::RoomMember::Error::PermissionDenied:
+        LOG_ERROR(Network, "PermissionDenied");
+        break;
+    case Network::RoomMember::Error::NoSuchUser:
+        LOG_ERROR(Network, "NoSuchUser");
+        break;
+    }
+}
+
+static void OnMessageReceived(const Network::ChatEntry& msg) {
+    std::cout << std::endl << msg.nickname << ": " << msg.message << std::endl << std::endl;
+}
+
+static void OnStatusMessageReceived(const Network::StatusMessageEntry& msg) {
+    std::string message;
+    switch (msg.type) {
+    case Network::IdMemberJoin:
+        message = fmt::format("{} has joined", msg.nickname);
+        break;
+    case Network::IdMemberLeave:
+        message = fmt::format("{} has left", msg.nickname);
+        break;
+    case Network::IdMemberKicked:
+        message = fmt::format("{} has been kicked", msg.nickname);
+        break;
+    case Network::IdMemberBanned:
+        message = fmt::format("{} has been banned", msg.nickname);
+        break;
+    case Network::IdAddressUnbanned:
+        message = fmt::format("{} has been unbanned", msg.nickname);
+        break;
+    }
+    if (!message.empty())
+        std::cout << std::endl << "* " << message << std::endl << std::endl;
 }
 
 /// Application entry point
@@ -91,10 +192,16 @@ int main(int argc, char** argv) {
     std::optional<std::string> config_path;
     std::string program_args;
 
+    bool use_multiplayer = false;
     bool fullscreen = false;
+    std::string nickname{};
+    std::string password{};
+    std::string address{};
+    u16 port = Network::DefaultRoomPort;
 
     static struct option long_options[] = {
         // clang-format off
+        {"multiplayer", required_argument, 0, 'm'},
         {"fullscreen", no_argument, 0, 'f'},
         {"help", no_argument, 0, 'h'},
         {"version", no_argument, 0, 'v'},
@@ -108,6 +215,38 @@ int main(int argc, char** argv) {
         int arg = getopt_long(argc, argv, "g:fhvp::c:", long_options, &option_index);
         if (arg != -1) {
             switch (static_cast<char>(arg)) {
+            case 'm': {
+                use_multiplayer = true;
+                const std::string str_arg(optarg);
+                // regex to check if the format is nickname:password@ip:port
+                // with optional :password
+                const std::regex re("^([^:]+)(?::(.+))?@([^:]+)(?::([0-9]+))?$");
+                if (!std::regex_match(str_arg, re)) {
+                    std::cout << "Wrong format for option --multiplayer\n";
+                    PrintHelp(argv[0]);
+                    return 0;
+                }
+
+                std::smatch match;
+                std::regex_search(str_arg, match, re);
+                ASSERT(match.size() == 5);
+                nickname = match[1];
+                password = match[2];
+                address = match[3];
+                if (!match[4].str().empty())
+                    port = std::stoi(match[4]);
+                std::regex nickname_re("^[a-zA-Z0-9._\\- ]+$");
+                if (!std::regex_match(nickname, nickname_re)) {
+                    std::cout
+                        << "Nickname is not valid. Must be 4 to 20 alphanumeric characters.\n";
+                    return 0;
+                }
+                if (address.empty()) {
+                    std::cout << "Address to room must not be empty.\n";
+                    return 0;
+                }
+                break;
+            }
             case 'f':
                 fullscreen = true;
                 LOG_INFO(Frontend, "Starting in fullscreen mode...");
@@ -137,6 +276,12 @@ int main(int argc, char** argv) {
     }
 
     Config config{config_path};
+
+    // apply the log_filter setting
+    // the logger was initialized before and doesn't pick up the filter on its own
+    Common::Log::Filter filter;
+    filter.ParseFilterString(Settings::values.log_filter.GetValue());
+    Common::Log::SetGlobalFilter(filter);
 
     if (!program_args.empty()) {
         Settings::values.program_args = program_args;
@@ -208,8 +353,24 @@ int main(int argc, char** argv) {
 
     system.TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "SDL");
 
+    if (use_multiplayer) {
+        if (auto member = system.GetRoomNetwork().GetRoomMember().lock()) {
+            member->BindOnChatMessageRecieved(OnMessageReceived);
+            member->BindOnStatusMessageReceived(OnStatusMessageReceived);
+            member->BindOnStateChanged(OnStateChanged);
+            member->BindOnError(OnNetworkError);
+            LOG_DEBUG(Network, "Start connection to {}:{} with nickname {}", address, port,
+                      nickname);
+            member->Join(nickname, address.c_str(), port, 0, Network::NoPreferredIP, password);
+        } else {
+            LOG_ERROR(Network, "Could not access RoomMember");
+            return 0;
+        }
+    }
+
     // Core is loaded, start the GPU (makes the GPU contexts current to this thread)
     system.GPU().Start();
+    system.GetCpuManager().OnGpuReady();
 
     if (Settings::values.use_disk_shader_cache.GetValue()) {
         system.Renderer().ReadRasterizer()->LoadDiskResources(

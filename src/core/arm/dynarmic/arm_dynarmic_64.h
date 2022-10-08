@@ -20,14 +20,13 @@ class Memory;
 namespace Core {
 
 class DynarmicCallbacks64;
-class CPUInterruptHandler;
 class DynarmicExclusiveMonitor;
 class System;
 
 class ARM_Dynarmic_64 final : public ARM_Interface {
 public:
-    ARM_Dynarmic_64(System& system_, CPUInterrupts& interrupt_handlers_, bool uses_wall_clock_,
-                    ExclusiveMonitor& exclusive_monitor_, std::size_t core_index_);
+    ARM_Dynarmic_64(System& system_, bool uses_wall_clock_, ExclusiveMonitor& exclusive_monitor_,
+                    std::size_t core_index_);
     ~ARM_Dynarmic_64() override;
 
     void SetPC(u64 pc) override;
@@ -50,6 +49,7 @@ public:
     void LoadContext(const ThreadContext64& ctx) override;
 
     void SignalInterrupt() override;
+    void ClearInterrupt() override;
     void ClearExclusiveState() override;
 
     void ClearInstructionCache() override;
@@ -66,12 +66,14 @@ protected:
     Dynarmic::HaltReason RunJit() override;
     Dynarmic::HaltReason StepJit() override;
     u32 GetSvcNumber() const override;
+    const Kernel::DebugWatchpoint* HaltedWatchpoint() const override;
+    void RewindBreakpointInstruction() override;
 
 private:
     std::shared_ptr<Dynarmic::A64::Jit> MakeJit(Common::PageTable* page_table,
                                                 std::size_t address_space_bits) const;
 
-    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr);
+    static std::vector<BacktraceEntry> GetBacktrace(Core::System& system, u64 fp, u64 lr, u64 pc);
 
     using JitCacheKey = std::pair<Common::PageTable*, std::size_t>;
     using JitCacheType =
@@ -91,6 +93,10 @@ private:
 
     // SVC callback
     u32 svc_swi{};
+
+    // Breakpoint info
+    const Kernel::DebugWatchpoint* halted_watchpoint;
+    ThreadContext64 breakpoint_context;
 };
 
 } // namespace Core

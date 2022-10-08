@@ -28,11 +28,11 @@
 
 namespace Service::Account {
 
-constexpr ResultCode ERR_INVALID_USER_ID{ErrorModule::Account, 20};
-constexpr ResultCode ERR_INVALID_APPLICATION_ID{ErrorModule::Account, 22};
-constexpr ResultCode ERR_INVALID_BUFFER{ErrorModule::Account, 30};
-constexpr ResultCode ERR_INVALID_BUFFER_SIZE{ErrorModule::Account, 31};
-constexpr ResultCode ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
+constexpr Result ERR_INVALID_USER_ID{ErrorModule::Account, 20};
+constexpr Result ERR_INVALID_APPLICATION_ID{ErrorModule::Account, 22};
+constexpr Result ERR_INVALID_BUFFER{ErrorModule::Account, 30};
+constexpr Result ERR_INVALID_BUFFER_SIZE{ErrorModule::Account, 31};
+constexpr Result ERR_FAILED_SAVE_DATA{ErrorModule::Account, 100};
 
 // Thumbnails are hard coded to be at least this size
 constexpr std::size_t THUMBNAIL_SIZE = 0x24000;
@@ -290,7 +290,7 @@ protected:
     void Get(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_ACC, "called user_id=0x{}", user_id.RawString());
         ProfileBase profile_base{};
-        ProfileData data{};
+        UserData data{};
         if (profile_manager.GetProfileBaseAndData(user_id, profile_base, data)) {
             ctx.WriteBuffer(data);
             IPC::ResponseBuilder rb{ctx, 16};
@@ -373,18 +373,18 @@ protected:
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.RawString());
 
-        if (user_data.size() < sizeof(ProfileData)) {
-            LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
+        if (user_data.size() < sizeof(UserData)) {
+            LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_INVALID_BUFFER);
             return;
         }
 
-        ProfileData data;
-        std::memcpy(&data, user_data.data(), sizeof(ProfileData));
+        UserData data;
+        std::memcpy(&data, user_data.data(), sizeof(UserData));
 
         if (!profile_manager.SetProfileBaseAndData(user_id, base, data)) {
-            LOG_ERROR(Service_ACC, "Failed to update profile data and base!");
+            LOG_ERROR(Service_ACC, "Failed to update user data and base!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_FAILED_SAVE_DATA);
             return;
@@ -406,15 +406,15 @@ protected:
                       reinterpret_cast<const char*>(base.username.data()), base.username.size()),
                   base.timestamp, base.user_uuid.RawString());
 
-        if (user_data.size() < sizeof(ProfileData)) {
-            LOG_ERROR(Service_ACC, "ProfileData buffer too small!");
+        if (user_data.size() < sizeof(UserData)) {
+            LOG_ERROR(Service_ACC, "UserData buffer too small!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERR_INVALID_BUFFER);
             return;
         }
 
-        ProfileData data;
-        std::memcpy(&data, user_data.data(), sizeof(ProfileData));
+        UserData data;
+        std::memcpy(&data, user_data.data(), sizeof(UserData));
 
         Common::FS::IOFile image(GetImagePath(user_id), Common::FS::FileAccessMode::Write,
                                  Common::FS::FileType::BinaryFile);
@@ -505,7 +505,7 @@ protected:
 
     void Cancel() override {}
 
-    ResultCode GetResult() const override {
+    Result GetResult() const override {
         return ResultSuccess;
     }
 };
@@ -534,7 +534,7 @@ public:
 
 private:
     void CheckAvailability(Kernel::HLERequestContext& ctx) {
-        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        LOG_DEBUG(Service_ACC, "(STUBBED) called");
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(ResultSuccess);
         rb.Push(false); // TODO: Check when this is supposed to return true and when not
@@ -747,7 +747,7 @@ void Module::Interface::InitializeApplicationInfoRestricted(Kernel::HLERequestCo
     rb.Push(InitializeApplicationInfoBase());
 }
 
-ResultCode Module::Interface::InitializeApplicationInfoBase() {
+Result Module::Interface::InitializeApplicationInfoBase() {
     if (application_info) {
         LOG_ERROR(Service_ACC, "Application already initialized");
         return ERR_ACCOUNTINFO_ALREADY_INITIALIZED;

@@ -1,6 +1,5 @@
-// Copyright 2017 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2017 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -28,7 +27,7 @@ enum class InputType {
     Color,
     Vibration,
     Nfc,
-    Ir,
+    IrSensor,
 };
 
 // Internal battery charge level
@@ -53,6 +52,15 @@ enum class PollingMode {
     IR,
 };
 
+enum class CameraFormat {
+    Size320x240,
+    Size160x120,
+    Size80x60,
+    Size40x30,
+    Size20x15,
+    None,
+};
+
 // Vibration reply from the controller
 enum class VibrationError {
     None,
@@ -63,6 +71,26 @@ enum class VibrationError {
 
 // Polling mode reply from the controller
 enum class PollingError {
+    None,
+    NotSupported,
+    Unknown,
+};
+
+// Nfc reply from the controller
+enum class NfcState {
+    Success,
+    NewAmiibo,
+    WaitingForAmiibo,
+    AmiiboRemoved,
+    NotAnAmiibo,
+    NotSupported,
+    WrongDeviceState,
+    WriteFailed,
+    Unknown,
+};
+
+// Ir camera reply from the controller
+enum class CameraError {
     None,
     NotSupported,
     Unknown,
@@ -87,6 +115,8 @@ struct AnalogProperties {
     float offset{};
     // Invert direction of the sensor data
     bool inverted{};
+    // Press once to activate, press again to release
+    bool toggle{};
 };
 
 // Single analog sensor data
@@ -100,8 +130,11 @@ struct AnalogStatus {
 struct ButtonStatus {
     Common::UUID uuid{};
     bool value{};
+    // Invert value of the button
     bool inverted{};
+    // Press once to activate, press again to release
     bool toggle{};
+    // Internal lock for the toggle status
     bool locked{};
 };
 
@@ -176,6 +209,17 @@ struct LedStatus {
     bool led_4{};
 };
 
+// Raw data fom camera
+struct CameraStatus {
+    CameraFormat format{CameraFormat::None};
+    std::vector<u8> data{};
+};
+
+struct NfcStatus {
+    NfcState state{};
+    std::vector<u8> data{};
+};
+
 // List of buttons to be passed to Qt that can be translated
 enum class ButtonNames {
     Undefined,
@@ -233,6 +277,8 @@ struct CallbackStatus {
     BodyColorStatus color_status{};
     BatteryStatus battery_status{};
     VibrationStatus vibration_status{};
+    CameraStatus camera_status{};
+    NfcStatus nfc_status{};
 };
 
 // Triggered once every input change
@@ -280,6 +326,18 @@ public:
 
     virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
         return PollingError::NotSupported;
+    }
+
+    virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
+        return CameraError::NotSupported;
+    }
+
+    virtual NfcState SupportsNfc() const {
+        return NfcState::NotSupported;
+    }
+
+    virtual NfcState WriteNfcData([[maybe_unused]] const std::vector<u8>& data) {
+        return NfcState::NotSupported;
     }
 };
 

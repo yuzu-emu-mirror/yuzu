@@ -62,7 +62,8 @@ void LogSettings() {
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
-    log_setting("Audio_OutputDevice", values.audio_device_id.GetValue());
+    log_setting("Audio_OutputDevice", values.audio_output_device_id.GetValue());
+    log_setting("Audio_InputDevice", values.audio_input_device_id.GetValue());
     log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd.GetValue());
     log_path("DataStorage_CacheDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::CacheDir));
     log_path("DataStorage_ConfigDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::ConfigDir));
@@ -104,7 +105,7 @@ float Volume() {
     if (values.audio_muted) {
         return 0.0f;
     }
-    return values.volume.GetValue() / 100.0f;
+    return values.volume.GetValue() / static_cast<f32>(values.volume.GetDefault());
 }
 
 void UpdateRescalingInfo() {
@@ -185,7 +186,6 @@ void RestoreGlobalState(bool is_powered_on) {
     values.max_anisotropy.SetGlobal(true);
     values.use_speed_limit.SetGlobal(true);
     values.speed_limit.SetGlobal(true);
-    values.fps_cap.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
@@ -195,6 +195,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.shader_backend.SetGlobal(true);
     values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
+    values.use_pessimistic_flushes.SetGlobal(true);
     values.bg_red.SetGlobal(true);
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);

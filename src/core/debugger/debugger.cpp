@@ -15,6 +15,7 @@
 #include "core/debugger/debugger_interface.h"
 #include "core/debugger/gdbstub.h"
 #include "core/hle/kernel/global_scheduler_context.h"
+#include "core/hle/kernel/k_scheduler.h"
 
 template <typename Readable, typename Buffer, typename Callback>
 static void AsyncReceiveInto(Readable& r, Buffer& buffer, Callback&& c) {
@@ -44,12 +45,14 @@ static std::span<const u8> ReceiveInto(Readable& r, Buffer& buffer) {
 
 enum class SignalType {
     Stopped,
+    Watchpoint,
     ShuttingDown,
 };
 
 struct SignalInfo {
     SignalType type;
     Kernel::KThread* thread;
+    const Kernel::DebugWatchpoint* watchpoint;
 };
 
 namespace Core {
@@ -137,7 +140,7 @@ private:
     }
 
     void ThreadLoop(std::stop_token stop_token) {
-        Common::SetCurrentThreadName("yuzu:Debugger");
+        Common::SetCurrentThreadName("Debugger");
 
         // Set up the client signals for new data.
         AsyncReceiveInto(signal_pipe, pipe_data, [&](auto d) { PipeData(d); });
@@ -157,13 +160,19 @@ private:
     void PipeData(std::span<const u8> data) {
         switch (info.type) {
         case SignalType::Stopped:
+        case SignalType::Watchpoint:
             // Stop emulation.
             PauseEmulation();
 
             // Notify the client.
             active_thread = info.thread;
             UpdateActiveThread();
-            frontend->Stopped(active_thread);
+
+            if (info.type == SignalType::Watchpoint) {
+                frontend->Watchpoint(active_thread, *info.watchpoint);
+            } else {
+                frontend->Stopped(active_thread);
+            }
 
             break;
         case SignalType::ShuttingDown:
@@ -222,13 +231,12 @@ private:
     }
 
     void PauseEmulation() {
+        Kernel::KScopedSchedulerLock sl{system.Kernel()};
+
         // Put all threads to sleep on next scheduler round.
         for (auto* thread : ThreadList()) {
             thread->RequestSuspend(Kernel::SuspendType::Debug);
         }
-
-        // Signal an interrupt so that scheduler will fire.
-        system.Kernel().InterruptAllPhysicalCores();
     }
 
     void ResumeEmulation(Kernel::KThread* except = nullptr) {
@@ -245,7 +253,8 @@ private:
 
     template <typename Callback>
     void MarkResumed(Callback&& cb) {
-        std::scoped_lock lk{connection_lock};
+        Kernel::KScopedSchedulerLock sl{system.Kernel()};
+        std::scoped_lock cl{connection_lock};
         stopped = false;
         cb();
     }
@@ -290,12 +299,17 @@ Debugger::Debugger(Core::System& system, u16 port) {
 Debugger::~Debugger() = default;
 
 bool Debugger::NotifyThreadStopped(Kernel::KThread* thread) {
-    return impl && impl->SignalDebugger(SignalInfo{SignalType::Stopped, thread});
+    return impl && impl->SignalDebugger(SignalInfo{SignalType::Stopped, thread, nullptr});
+}
+
+bool Debugger::NotifyThreadWatchpoint(Kernel::KThread* thread,
+                                      const Kernel::DebugWatchpoint& watch) {
+    return impl && impl->SignalDebugger(SignalInfo{SignalType::Watchpoint, thread, &watch});
 }
 
 void Debugger::NotifyShutdown() {
     if (impl) {
-        impl->SignalDebugger(SignalInfo{SignalType::ShuttingDown, nullptr});
+        impl->SignalDebugger(SignalInfo{SignalType::ShuttingDown, nullptr, nullptr});
     }
 }
 

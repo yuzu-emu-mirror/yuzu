@@ -1,6 +1,5 @@
-// Copyright 2015 Citra Emulator Project
-// Licensed under GPLv2 or any later version
-// Refer to the license.txt file included.
+// SPDX-FileCopyrightText: 2015 Citra Emulator Project
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -16,6 +15,13 @@ struct PairHash {
         std::size_t seed = std::hash<T1>()(pair.first);
         boost::hash_combine(seed, std::hash<T2>()(pair.second));
         return seed;
+    }
+};
+
+template <typename T>
+struct IdentityHash {
+    [[nodiscard]] size_t operator()(T value) const noexcept {
+        return static_cast<size_t>(value);
     }
 };
 

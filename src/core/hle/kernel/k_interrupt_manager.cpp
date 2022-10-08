@@ -6,6 +6,7 @@
 #include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/physical_core.h"
 
 namespace Kernel::KInterruptManager {
 
@@ -15,8 +16,10 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
         return;
     }
 
-    auto& scheduler = kernel.Scheduler(core_id);
-    auto& current_thread = *scheduler.GetCurrentThread();
+    // Acknowledge the interrupt.
+    kernel.PhysicalCore(core_id).ClearInterrupt();
+
+    auto& current_thread = GetCurrentThread(kernel);
 
     // If the user disable count is set, we may need to pin the current thread.
     if (current_thread.GetUserDisableCount() && !process->GetPinnedThread(core_id)) {
@@ -26,8 +29,11 @@ void HandleInterrupt(KernelCore& kernel, s32 core_id) {
         process->PinCurrentThread(core_id);
 
         // Set the interrupt flag for the thread.
-        scheduler.GetCurrentThread()->SetInterruptFlag();
+        GetCurrentThread(kernel).SetInterruptFlag();
     }
+
+    // Request interrupt scheduling.
+    kernel.CurrentScheduler()->RequestScheduleOnInterrupt();
 }
 
 } // namespace Kernel::KInterruptManager
