@@ -197,8 +197,8 @@ void RasterizerVulkan::Draw(bool is_indexed) {
 
     UpdateDynamicStates();
 
-    const auto& regs{maxwell3d.regs};
-    const u32 num_instances{maxwell3d.draw_state.instance_count};
+    const auto& regs{maxwell3d->regs};
+    const u32 num_instances{maxwell3d->draw_state.instance_count};
     const DrawParams draw_params{MakeDrawParams(regs, num_instances, is_indexed)};
     scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
         if (draw_params.is_indexed) {

@@ -91,11 +91,11 @@ void HLE_3F5E74B9C9A50164(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
         maxwell3d.regs.index_array.count = 0;
         maxwell3d.regs.vb_element_base = 0x0;
         maxwell3d.regs.vb_base_instance = 0x0;
-        maxwell3d.mme_draw.instance_count = 0;
-        maxwell3d.CallMethodFromMME(0x8e3, 0x640);
-        maxwell3d.CallMethodFromMME(0x8e4, 0x0);
-        maxwell3d.CallMethodFromMME(0x8e5, 0x0);
-        maxwell3d.mme_draw.current_mode = Engines::Maxwell3D::MMEDrawMode::Undefined;
+        maxwell3d.draw_state.instance_count = 0;
+        maxwell3d.CallMethod(0x8e3, 0x640, true);
+        maxwell3d.CallMethod(0x8e4, 0x0, true);
+        maxwell3d.CallMethod(0x8e5, 0x0, true);
+        maxwell3d.draw_state.current_mode = Engines::Maxwell3D::DrawMode::Undefined;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
     });
     const u32 start_indirect = parameters[0];
@@ -127,15 +127,15 @@ void HLE_3F5E74B9C9A50164(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
         maxwell3d.regs.index_array.count = num_vertices;
         maxwell3d.regs.vb_element_base = base_vertex;
         maxwell3d.regs.vb_base_instance = base_instance;
-        maxwell3d.mme_draw.instance_count = instance_count;
-        maxwell3d.CallMethodFromMME(0x8e3, 0x640);
-        maxwell3d.CallMethodFromMME(0x8e4, base_vertex);
-        maxwell3d.CallMethodFromMME(0x8e5, base_instance);
+        maxwell3d.draw_state.instance_count = instance_count;
+        maxwell3d.CallMethod(0x8e3, 0x640, true);
+        maxwell3d.CallMethod(0x8e4, base_vertex, true);
+        maxwell3d.CallMethod(0x8e5, base_instance, true);
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         if (maxwell3d.ShouldExecute()) {
-            maxwell3d.Rasterizer().Draw(true, true);
+            maxwell3d.Rasterizer().Draw(true);
         }
-        maxwell3d.mme_draw.current_mode = Engines::Maxwell3D::MMEDrawMode::Undefined;
+        maxwell3d.draw_state.current_mode = Engines::Maxwell3D::DrawMode::Undefined;
     }
 }
 
