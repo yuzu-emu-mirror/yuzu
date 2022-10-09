@@ -22,7 +22,7 @@ void HLE_771BB18C62444DA0(Engines::Maxwell3D& maxwell3d, const std::vector<u32>&
     maxwell3d.regs.draw.topology.Assign(
         static_cast<Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology>(parameters[0] & 0x3ffffff));
     maxwell3d.regs.global_base_instance_index = parameters[5];
-    maxwell3d.mme_draw.instance_count = instance_count;
+    maxwell3d.draw_state.instance_count = instance_count;
     maxwell3d.regs.global_base_vertex_index = parameters[3];
     maxwell3d.regs.index_buffer.count = parameters[1];
     maxwell3d.regs.index_buffer.first = parameters[4];

@@ -285,23 +285,24 @@ void Maxwell3D::CallMethod(u32 method, u32 method_argument, bool is_last_call) {
         regs.reg_array[method] = method_argument;
         switch (method) {
         case MAXWELL3D_REG_INDEX(vertex_buffer.count):
-        case MAXWELL3D_REG_INDEX(index_array.count): {
+        case MAXWELL3D_REG_INDEX(index_buffer.count): {
             const DrawMode expected_mode = method == MAXWELL3D_REG_INDEX(vertex_buffer.count)
                                                ? DrawMode::Array
                                                : DrawMode::Indexed;
             StepInstance(expected_mode, method_argument);
             break;
         }
-        case MAXWELL3D_REG_INDEX(draw.vertex_begin_gl):
+        case MAXWELL3D_REG_INDEX(draw.begin):
             draw_state.instance_mode =
-                (regs.draw.instance_next != 0) || (regs.draw.instance_cont != 0);
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
+                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged);
             draw_state.gl_begin_consume = true;
             break;
-        case MAXWELL3D_REG_INDEX(draw.vertex_end_gl):
+        case MAXWELL3D_REG_INDEX(draw.end):
             draw_state.gl_end_count++;
             break;
         case MAXWELL3D_REG_INDEX(vertex_buffer.first):
-        case MAXWELL3D_REG_INDEX(index_array.first):
+        case MAXWELL3D_REG_INDEX(index_buffer.first):
             break;
         }
     } else {
@@ -375,31 +376,6 @@ void Maxwell3D::StepInstance(const DrawMode expected_mode, const u32 count) {
     }
     // Tail call in case it needs to retry.
     StepInstance(expected_mode, count);
-}
-
-void Maxwell3D::CallMethodFromMME(u32 method, u32 method_argument) {
-    if (mme_inline[method]) {
-        regs.reg_array[method] = method_argument;
-        if (method == MAXWELL3D_REG_INDEX(vertex_buffer.count) ||
-            method == MAXWELL3D_REG_INDEX(index_buffer.count)) {
-            const MMEDrawMode expected_mode = method == MAXWELL3D_REG_INDEX(vertex_buffer.count)
-                                                  ? MMEDrawMode::Array
-                                                  : MMEDrawMode::Indexed;
-            StepInstance(expected_mode, method_argument);
-        } else if (method == MAXWELL3D_REG_INDEX(draw.begin)) {
-            mme_draw.instance_mode =
-                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) ||
-                (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Unchanged);
-            mme_draw.gl_begin_consume = true;
-        } else {
-            mme_draw.gl_end_count++;
-        }
-    } else {
-        if (mme_draw.current_mode != MMEDrawMode::Undefined) {
-            FlushMMEInlineDraw();
-        }
-        CallMethod(method, method_argument, true);
-    }
 }
 
 void Maxwell3D::ProcessTopologyOverride() {
@@ -601,42 +577,6 @@ void Maxwell3D::ProcessSyncPoint() {
     [[maybe_unused]] const u32 cache_flush = regs.sync_info.clean_l2.Value();
     if (condition == Regs::SyncInfo::Condition::RopWritesDone) {
         rasterizer->SignalSyncPoint(sync_point);
-    }
-}
-
-void Maxwell3D::DrawArrays() {
-    LOG_TRACE(HW_GPU, "called, topology={}, count={}", regs.draw.topology.Value(),
-              regs.vertex_buffer.count);
-    ASSERT_MSG(!(regs.index_buffer.count && regs.vertex_buffer.count), "Both indexed and direct?");
-
-    // Both instance configuration registers can not be set at the same time.
-    ASSERT_MSG(regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::First ||
-                   regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged,
-               "Illegal combination of instancing parameters");
-
-    ProcessTopologyOverride();
-
-    if (regs.draw.instance_id == Maxwell3D::Regs::Draw::InstanceId::Subsequent) {
-        // Increment the current instance *before* drawing.
-        state.current_instance++;
-    } else if (regs.draw.instance_id != Maxwell3D::Regs::Draw::InstanceId::Unchanged) {
-        // Reset the current instance to 0.
-        state.current_instance = 0;
-    }
-
-    const bool is_indexed{regs.index_buffer.count && !regs.vertex_buffer.count};
-    if (ShouldExecute()) {
-        rasterizer->Draw(is_indexed, false);
-    }
-
-    // TODO(bunnei): Below, we reset vertex count so that we can use these registers to determine if
-    // the game is trying to draw indexed or direct mode. This needs to be verified on HW still -
-    // it's possible that it is incorrect and that there is some other register used to specify the
-    // drawing mode.
-    if (is_indexed) {
-        regs.index_buffer.count = 0;
-    } else {
-        regs.vertex_buffer.count = 0;
     }
 }
 
