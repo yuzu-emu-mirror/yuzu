@@ -4,6 +4,7 @@
 #include <chrono>
 #include <string>
 #include <discord_rpc.h>
+#include <fmt/format.h>
 #include "common/common_types.h"
 #include "core/core.h"
 #include "core/loader/loader.h"
@@ -34,16 +35,31 @@ void DiscordImpl::Update() {
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
     std::string title;
+    u64 titleId;
+
     if (system.IsPoweredOn()) {
         system.GetAppLoader().ReadTitle(title);
+        system.GetAppLoader().ReadProgramId(titleId);
     }
+
     DiscordRichPresence presence{};
-    presence.largeImageKey = "yuzu_logo";
-    presence.largeImageText = "yuzu is an emulator for the Nintendo Switch";
+
     if (system.IsPoweredOn()) {
+        std::string gameCoverUrl = "https://tinfoil.media/ti/";
+        gameCoverUrl += QString::fromStdString(fmt::format("{:016X}", titleId)).toStdString();
+        gameCoverUrl += "/512/512";
+
+        presence.largeImageKey = gameCoverUrl.c_str();
+        presence.largeImageText = title.c_str();
+
+        presence.smallImageKey = "yuzu_logo";
+        presence.smallImageText = "yuzu is an emulator for the Nintendo Switch";
+
         presence.state = title.c_str();
         presence.details = "Currently in game";
     } else {
+        presence.largeImageKey = "yuzu_logo";
+        presence.largeImageText = "yuzu is an emulator for the Nintendo Switch";
         presence.details = "Not in game";
     }
     presence.startTimestamp = start_time;
