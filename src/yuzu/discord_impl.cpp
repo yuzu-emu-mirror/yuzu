@@ -34,32 +34,33 @@ void DiscordImpl::Update() {
     s64 start_time = std::chrono::duration_cast<std::chrono::seconds>(
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
+    std::string default_text = "yuzu is an emulator for the Nintendo Switch";
+    std::string game_cover_url = "https://tinfoil.media/ti/";
     std::string title;
-    u64 titleId;
+    u64 title_id;
 
     if (system.IsPoweredOn()) {
         system.GetAppLoader().ReadTitle(title);
-        system.GetAppLoader().ReadProgramId(titleId);
+        system.GetAppLoader().ReadProgramId(title_id);
     }
 
     DiscordRichPresence presence{};
 
     if (system.IsPoweredOn()) {
-        std::string gameCoverUrl = "https://tinfoil.media/ti/";
-        gameCoverUrl += QString::fromStdString(fmt::format("{:016X}", titleId)).toStdString();
-        gameCoverUrl += "/512/512";
+        game_cover_url += fmt::format("{:016X}", title_id);
+        game_cover_url += "/512/512";
 
-        presence.largeImageKey = gameCoverUrl.c_str();
+        presence.largeImageKey = game_cover_url.c_str();
         presence.largeImageText = title.c_str();
 
         presence.smallImageKey = "yuzu_logo";
-        presence.smallImageText = "yuzu is an emulator for the Nintendo Switch";
+        presence.smallImageText = default_text.c_str();
 
         presence.state = title.c_str();
         presence.details = "Currently in game";
     } else {
         presence.largeImageKey = "yuzu_logo";
-        presence.largeImageText = "yuzu is an emulator for the Nintendo Switch";
+        presence.largeImageText = default_text.c_str();
         presence.details = "Not in game";
     }
     presence.startTimestamp = start_time;
