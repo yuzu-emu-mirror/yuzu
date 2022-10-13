@@ -17,12 +17,15 @@ public:
     const QValidator* GetRoomName() const {
         return &room_name;
     }
+
     const QValidator* GetNickname() const {
         return &nickname;
     }
+
     const QValidator* GetIP() const {
         return &ip;
     }
+
     const QValidator* GetPort() const {
         return &port;
     }
@@ -36,9 +39,11 @@ private:
     QRegExp nickname_regex = QRegExp(QStringLiteral("^[a-zA-Z0-9._- ]{4,20}$"));
     QRegExpValidator nickname;
 
-    /// ipv4 address and hostname
-    QRegExp ip_regex = QRegExp(QStringLiteral(
-        "[a-zA-Z0-9.-]{2,253}$"));
+    /// Allow ip address and hostname
+    QRegExp ip_regex =
+        QRegExp(QStringLiteral("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4]"
+                               "[0-9]|[01]?[0-9][0-9]?)$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*["
+                               "a-zA-Z0-9])\.)+([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"));
     QRegExpValidator ip;
 
     /// port must be between 0 and 65535
