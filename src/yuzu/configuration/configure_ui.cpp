@@ -72,10 +72,10 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
 
     // Force game list reload if any of the relevant settings are changed.
     connect(ui->show_add_ons, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
-    connect(ui->game_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &ConfigureUi::RequestGameListUpdate);
     connect(ui->show_size, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->show_types, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
+    connect(ui->game_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &ConfigureUi::RequestGameListUpdate);
     connect(ui->folder_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->row_1_text_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,

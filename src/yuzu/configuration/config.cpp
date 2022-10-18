@@ -819,9 +819,9 @@ void Config::ReadUIGamelistValues() {
     qt_config->beginGroup(QStringLiteral("UIGameList"));
 
     ReadBasicSetting(UISettings::values.show_add_ons);
-    ReadBasicSetting(UISettings::values.game_icon_size);
     ReadBasicSetting(UISettings::values.show_size);
     ReadBasicSetting(UISettings::values.show_types);
+    ReadBasicSetting(UISettings::values.game_icon_size);
     ReadBasicSetting(UISettings::values.folder_icon_size);
     ReadBasicSetting(UISettings::values.row_1_text_id);
     ReadBasicSetting(UISettings::values.row_2_text_id);
