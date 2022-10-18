@@ -129,6 +129,10 @@ struct Values {
     Settings::Setting<bool> favorites_expanded{true, "favorites_expanded"};
     QVector<u64> favorited_ids;
 
+    //Size & File Types Column
+    Settings::Setting<bool> show_size{true, "show_size"};
+    Settings::Setting<bool> show_types{true, "show_types"};
+
     bool configuration_applied;
     bool reset_to_defaults;
     Settings::Setting<bool> disable_web_applet{true, "disable_web_applet"};

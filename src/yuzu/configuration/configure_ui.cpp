@@ -74,6 +74,8 @@ ConfigureUi::ConfigureUi(Core::System& system_, QWidget* parent)
     connect(ui->show_add_ons, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->game_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &ConfigureUi::RequestGameListUpdate);
+    connect(ui->show_size, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
+    connect(ui->show_types, &QCheckBox::stateChanged, this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->folder_icon_size_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ConfigureUi::RequestGameListUpdate);
     connect(ui->row_1_text_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
@@ -109,6 +111,8 @@ void ConfigureUi::ApplyConfiguration() {
     UISettings::values.theme =
         ui->theme_combobox->itemData(ui->theme_combobox->currentIndex()).toString();
     UISettings::values.show_add_ons = ui->show_add_ons->isChecked();
+    UISettings::values.show_size = ui->show_size->isChecked();
+    UISettings::values.show_types = ui->show_types->isChecked();
     UISettings::values.game_icon_size = ui->game_icon_size_combobox->currentData().toUInt();
     UISettings::values.folder_icon_size = ui->folder_icon_size_combobox->currentData().toUInt();
     UISettings::values.row_1_text_id = ui->row_1_text_combobox->currentData().toUInt();
@@ -129,6 +133,8 @@ void ConfigureUi::SetConfiguration() {
     ui->language_combobox->setCurrentIndex(
         ui->language_combobox->findData(UISettings::values.language));
     ui->show_add_ons->setChecked(UISettings::values.show_add_ons.GetValue());
+    ui->show_size->setChecked(UISettings::values.show_size.GetValue());
+    ui->show_types->setChecked(UISettings::values.show_types.GetValue());
     ui->game_icon_size_combobox->setCurrentIndex(
         ui->game_icon_size_combobox->findData(UISettings::values.game_icon_size.GetValue()));
     ui->folder_icon_size_combobox->setCurrentIndex(

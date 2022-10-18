@@ -84,6 +84,20 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="show_size">
+          <property name="text">
+           <string>Show Size Column</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_types">
+          <property name="text">
+           <string>Show File Types Column</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="game_icon_size_qhbox_layout_2">
           <item>
            <widget class="QLabel" name="game_icon_size_label">
