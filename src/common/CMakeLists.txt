@@ -156,12 +156,13 @@ if (MSVC)
   )
   target_compile_options(common PRIVATE
     /W4
-    /WX
+
+    /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
+    /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+    /we4800 # Implicit conversion from 'type' to bool. Possible information loss
   )
 else()
   target_compile_options(common PRIVATE
-    -Werror
-
     $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
   )
 endif()
@@ -169,7 +170,11 @@ endif()
 create_target_directory_groups(common)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile Threads::Threads)
-target_link_libraries(common PRIVATE lz4::lz4)
+if (TARGET lz4::lz4)
+  target_link_libraries(common PRIVATE lz4::lz4)
+else()
+  target_link_libraries(common PRIVATE LZ4::lz4_shared)
+endif()
 if (TARGET zstd::zstd)
   target_link_libraries(common PRIVATE zstd::zstd)
 else()

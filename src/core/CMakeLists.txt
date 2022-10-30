@@ -190,6 +190,9 @@ add_library(core STATIC
     hle/kernel/k_code_memory.h
     hle/kernel/k_condition_variable.cpp
     hle/kernel/k_condition_variable.h
+    hle/kernel/k_dynamic_page_manager.h
+    hle/kernel/k_dynamic_resource_manager.h
+    hle/kernel/k_dynamic_slab_heap.h
     hle/kernel/k_event.cpp
     hle/kernel/k_event.h
     hle/kernel/k_handle_table.cpp
@@ -240,6 +243,8 @@ add_library(core STATIC
     hle/kernel/k_server_session.h
     hle/kernel/k_session.cpp
     hle/kernel/k_session.h
+    hle/kernel/k_session_request.cpp
+    hle/kernel/k_session_request.h
     hle/kernel/k_shared_memory.cpp
     hle/kernel/k_shared_memory.h
     hle/kernel/k_shared_memory_info.h
@@ -769,19 +774,15 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /we4800 # Implicit conversion from 'type' to bool. Possible information loss
     )
 else()
     target_compile_options(core PRIVATE
         -Werror=conversion
-        -Werror=ignored-qualifiers
-
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
-
-        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
 
         -Wno-sign-conversion
+
+        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
     )
 endif()
 

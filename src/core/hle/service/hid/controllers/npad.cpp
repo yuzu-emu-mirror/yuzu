@@ -745,8 +745,9 @@ void Controller_NPad::SetSupportedNpadIdTypes(u8* data, std::size_t length) {
 }
 
 void Controller_NPad::GetSupportedNpadIdTypes(u32* data, std::size_t max_length) {
-    ASSERT(max_length < supported_npad_id_types.size());
-    std::memcpy(data, supported_npad_id_types.data(), supported_npad_id_types.size());
+    const auto copy_amount = supported_npad_id_types.size() * sizeof(u32);
+    ASSERT(max_length <= copy_amount);
+    std::memcpy(data, supported_npad_id_types.data(), copy_amount);
 }
 
 std::size_t Controller_NPad::GetSupportedNpadIdTypesSize() const {
@@ -867,7 +868,7 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
         return false;
     }
 
-    if (!controller.device->IsVibrationEnabled()) {
+    if (!controller.device->IsVibrationEnabled(device_index)) {
         if (controller.vibration[device_index].latest_vibration_value.low_amplitude != 0.0f ||
             controller.vibration[device_index].latest_vibration_value.high_amplitude != 0.0f) {
             // Send an empty vibration to stop any vibrations.
@@ -1000,7 +1001,7 @@ void Controller_NPad::InitializeVibrationDeviceAtIndex(Core::HID::NpadIdType npa
     }
 
     controller.vibration[device_index].device_mounted =
-        controller.device->TestVibration(device_index);
+        controller.device->IsVibrationEnabled(device_index);
 }
 
 void Controller_NPad::SetPermitVibrationSession(bool permit_vibration_session) {
@@ -1501,25 +1502,25 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
         Core::HID::NpadStyleTag style = GetSupportedStyleSet();
         switch (controller) {
         case Core::HID::NpadStyleIndex::ProController:
-            return style.fullkey;
+            return style.fullkey.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconDual:
-            return style.joycon_dual;
+            return style.joycon_dual.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconLeft:
-            return style.joycon_left;
+            return style.joycon_left.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconRight:
-            return style.joycon_right;
+            return style.joycon_right.As<bool>();
         case Core::HID::NpadStyleIndex::GameCube:
-            return style.gamecube;
+            return style.gamecube.As<bool>();
         case Core::HID::NpadStyleIndex::Pokeball:
-            return style.palma;
+            return style.palma.As<bool>();
         case Core::HID::NpadStyleIndex::NES:
-            return style.lark;
+            return style.lark.As<bool>();
         case Core::HID::NpadStyleIndex::SNES:
-            return style.lucia;
+            return style.lucia.As<bool>();
         case Core::HID::NpadStyleIndex::N64:
-            return style.lagoon;
+            return style.lagoon.As<bool>();
         case Core::HID::NpadStyleIndex::SegaGenesis:
-            return style.lager;
+            return style.lager.As<bool>();
         default:
             return false;
         }

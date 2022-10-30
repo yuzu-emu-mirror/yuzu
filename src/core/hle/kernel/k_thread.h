@@ -180,6 +180,10 @@ public:
 
     void Exit();
 
+    Result Terminate();
+
+    ThreadState RequestTerminate();
+
     [[nodiscard]] u32 GetSuspendFlags() const {
         return suspend_allowed_flags & suspend_request_flags;
     }
@@ -639,8 +643,9 @@ public:
     // therefore will not block on guest kernel synchronization primitives. These methods handle
     // blocking as needed.
 
-    void IfDummyThreadTryWait();
-    void IfDummyThreadEndWait();
+    void RequestDummyThreadWait();
+    void DummyThreadBeginWait();
+    void DummyThreadEndWait();
 
     [[nodiscard]] uintptr_t GetArgument() const {
         return argument;
@@ -773,8 +778,7 @@ private:
     bool is_single_core{};
     ThreadType thread_type{};
     StepState step_state{};
-    std::mutex dummy_wait_lock;
-    std::condition_variable dummy_wait_cv;
+    std::atomic<bool> dummy_thread_runnable{true};
 
     // For debugging
     std::vector<KSynchronizationObject*> wait_objects_for_debugging;

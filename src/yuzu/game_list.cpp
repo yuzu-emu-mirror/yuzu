@@ -335,6 +335,7 @@ GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvid
     RetranslateUI();
 
     tree_view->setColumnHidden(COLUMN_ADD_ONS, !UISettings::values.show_add_ons);
+    tree_view->setColumnHidden(COLUMN_COMPATIBILITY, !UISettings::values.show_compat);
     item_model->setSortRole(GameListItemPath::SortRole);
 
     connect(main_window, &GMainWindow::UpdateThemedIcons, this, &GameList::OnUpdateThemedIcons);

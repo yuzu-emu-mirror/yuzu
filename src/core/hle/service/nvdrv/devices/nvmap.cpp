@@ -128,7 +128,8 @@ NvResult nvmap::IocAlloc(const std::vector<u8>& input, std::vector<u8>& output) 
     }
     ASSERT(system.CurrentProcess()
                ->PageTable()
-               .LockForDeviceAddressSpace(handle_description->address, handle_description->size)
+               .LockForMapDeviceAddressSpace(handle_description->address, handle_description->size,
+                                             Kernel::KMemoryPermission::None, true)
                .IsSuccess());
     std::memcpy(output.data(), &params, sizeof(params));
     return result;
@@ -250,10 +251,12 @@ NvResult nvmap::IocFree(const std::vector<u8>& input, std::vector<u8>& output) {
     }
 
     if (auto freeInfo{file.FreeHandle(params.handle, false)}) {
-        ASSERT(system.CurrentProcess()
-                   ->PageTable()
-                   .UnlockForDeviceAddressSpace(freeInfo->address, freeInfo->size)
-                   .IsSuccess());
+        if (freeInfo->can_unlock) {
+            ASSERT(system.CurrentProcess()
+                       ->PageTable()
+                       .UnlockForDeviceAddressSpace(freeInfo->address, freeInfo->size)
+                       .IsSuccess());
+        }
         params.address = freeInfo->address;
         params.size = static_cast<u32>(freeInfo->size);
         params.flags.raw = 0;

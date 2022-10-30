@@ -48,6 +48,8 @@ public:
     explicit NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_);
     ~NVFlinger();
 
+    void ShutdownLayers();
+
     /// Sets the NVDrv module instance to use to send buffers to the GPU.
     void SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance);
 
@@ -55,6 +57,11 @@ public:
     ///
     /// If an invalid display name is provided, then an empty optional is returned.
     [[nodiscard]] std::optional<u64> OpenDisplay(std::string_view name);
+
+    /// Closes the specified display by its ID.
+    ///
+    /// Returns false if an invalid display ID is provided.
+    [[nodiscard]] bool CloseDisplay(u64 display_id);
 
     /// Creates a layer on the specified display and returns the layer ID.
     ///

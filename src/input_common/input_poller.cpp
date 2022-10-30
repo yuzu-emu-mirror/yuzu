@@ -763,7 +763,11 @@ public:
 
     Common::Input::VibrationError SetVibration(
         const Common::Input::VibrationStatus& vibration_status) override {
-        return input_engine->SetRumble(identifier, vibration_status);
+        return input_engine->SetVibration(identifier, vibration_status);
+    }
+
+    bool IsVibrationEnabled() override {
+        return input_engine->IsVibrationEnabled(identifier);
     }
 
     Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {
@@ -797,8 +801,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateButtonDevice(
 
     const auto button_id = params.Get("button", 0);
     const auto keyboard_key = params.Get("code", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
     input_engine->PreSetController(identifier);
     input_engine->PreSetButton(identifier, button_id);
     input_engine->PreSetButton(identifier, keyboard_key);
@@ -820,8 +824,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateHatButtonDevice(
 
     const auto button_id = params.Get("hat", 0);
     const auto direction = input_engine->GetHatButtonId(params.Get("direction", ""));
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     input_engine->PreSetController(identifier);
     input_engine->PreSetHatButton(identifier, button_id);
@@ -879,7 +883,7 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateAnalogDevice(
         .threshold = std::clamp(params.Get("threshold", 0.5f), 0.0f, 1.0f),
         .offset = std::clamp(params.Get("offset", 0.0f), -1.0f, 1.0f),
         .inverted = params.Get("invert", "+") == "-",
-        .toggle = static_cast<bool>(params.Get("toggle", false)),
+        .toggle = params.Get("toggle", false) != 0,
     };
     input_engine->PreSetController(identifier);
     input_engine->PreSetAxis(identifier, axis);
@@ -895,8 +899,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTriggerDevice(
     };
 
     const auto button = params.Get("button", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     const auto axis = params.Get("axis", 0);
     const Common::Input::AnalogProperties properties = {
@@ -926,8 +930,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTouchDevice(
     };
 
     const auto button = params.Get("button", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     const auto axis_x = params.Get("axis_x", 0);
     const Common::Input::AnalogProperties properties_x = {

@@ -751,8 +751,8 @@ static void Break(Core::System& system, u32 reason, u64 info1, u64 info2) {
     }
 
     system.GetReporter().SaveSvcBreakReport(
-        static_cast<u32>(break_reason.break_type.Value()), break_reason.signal_debugger, info1,
-        info2, has_dumped_buffer ? std::make_optional(debug_buffer) : std::nullopt);
+        static_cast<u32>(break_reason.break_type.Value()), break_reason.signal_debugger.As<bool>(),
+        info1, info2, has_dumped_buffer ? std::make_optional(debug_buffer) : std::nullopt);
 
     if (!break_reason.signal_debugger) {
         LOG_CRITICAL(
@@ -933,7 +933,7 @@ static Result GetInfo(Core::System& system, u64* result, u64 info_id, Handle han
             return ResultSuccess;
 
         case GetInfoType::UserExceptionContextAddr:
-            *result = process->GetTLSRegionAddress();
+            *result = process->GetProcessLocalRegionAddress();
             return ResultSuccess;
 
         case GetInfoType::TotalPhysicalMemoryAvailableWithoutSystemResource:
@@ -1888,7 +1888,7 @@ static void ExitProcess(Core::System& system) {
     auto* current_process = system.Kernel().CurrentProcess();
 
     LOG_INFO(Kernel_SVC, "Process {} exiting", current_process->GetProcessID());
-    ASSERT_MSG(current_process->GetStatus() == ProcessStatus::Running,
+    ASSERT_MSG(current_process->GetState() == KProcess::State::Running,
                "Process has already exited");
 
     system.Exit();
@@ -2557,7 +2557,7 @@ static Result GetProcessInfo(Core::System& system, u64* out, Handle process_hand
         return ResultInvalidEnumValue;
     }
 
-    *out = static_cast<u64>(process->GetStatus());
+    *out = static_cast<u64>(process->GetState());
     return ResultSuccess;
 }
 

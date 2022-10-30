@@ -86,13 +86,13 @@ public:
         u32 num_domain_objects{};
         const bool always_move_handles{
             (static_cast<u32>(flags) & static_cast<u32>(Flags::AlwaysMoveHandles)) != 0};
-        if (!ctx.Session()->IsDomain() || always_move_handles) {
+        if (!ctx.Session()->GetSessionRequestManager()->IsDomain() || always_move_handles) {
             num_handles_to_move = num_objects_to_move;
         } else {
             num_domain_objects = num_objects_to_move;
         }
 
-        if (ctx.Session()->IsDomain()) {
+        if (ctx.Session()->GetSessionRequestManager()->IsDomain()) {
             raw_data_size +=
                 static_cast<u32>(sizeof(DomainMessageHeader) / sizeof(u32) + num_domain_objects);
             ctx.write_size += num_domain_objects;
@@ -125,7 +125,8 @@ public:
         if (!ctx.IsTipc()) {
             AlignWithPadding();
 
-            if (ctx.Session()->IsDomain() && ctx.HasDomainMessageHeader()) {
+            if (ctx.Session()->GetSessionRequestManager()->IsDomain() &&
+                ctx.HasDomainMessageHeader()) {
                 IPC::DomainMessageHeader domain_header{};
                 domain_header.num_objects = num_domain_objects;
                 PushRaw(domain_header);
@@ -145,7 +146,7 @@ public:
 
     template <class T>
     void PushIpcInterface(std::shared_ptr<T> iface) {
-        if (context->Session()->IsDomain()) {
+        if (context->Session()->GetSessionRequestManager()->IsDomain()) {
             context->AddDomainObject(std::move(iface));
         } else {
             kernel.CurrentProcess()->GetResourceLimit()->Reserve(
@@ -386,7 +387,7 @@ public:
 
     template <class T>
     std::weak_ptr<T> PopIpcInterface() {
-        ASSERT(context->Session()->IsDomain());
+        ASSERT(context->Session()->GetSessionRequestManager()->IsDomain());
         ASSERT(context->GetDomainMessageHeader().input_object_count > 0);
         return context->GetDomainHandler<T>(Pop<u32>() - 1);
     }
@@ -405,7 +406,7 @@ inline s32 RequestParser::Pop() {
 }
 
 // Ignore the -Wclass-memaccess warning on memcpy for non-trivially default constructible objects.
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
@@ -416,7 +417,7 @@ void RequestParser::PopRaw(T& value) {
     std::memcpy(&value, cmdbuf + index, sizeof(T));
     index += (sizeof(T) + 3) / 4; // round up to word length
 }
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic pop
 #endif
 
