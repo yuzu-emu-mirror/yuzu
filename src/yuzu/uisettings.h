@@ -129,7 +129,10 @@ struct Values {
     Settings::Setting<bool> favorites_expanded{true, "favorites_expanded"};
     QVector<u64> favorited_ids;
 
-    //Size & File Types Column
+    // Compatibility List
+    Settings::Setting<bool> show_compat{false, "show_compat"};
+
+    // Size & File Types Column
     Settings::Setting<bool> show_size{true, "show_size"};
     Settings::Setting<bool> show_types{true, "show_types"};
 
