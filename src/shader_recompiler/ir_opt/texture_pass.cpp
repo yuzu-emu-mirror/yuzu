@@ -461,7 +461,7 @@ void PatchImageSampleImplicitLod(IR::Block& block, IR::Inst& inst) {
                         ir.FPRecip(ir.ConvertUToF(32, 32, ir.CompositeExtract(texture_size, 1))))));
 }
 
-void PathTexelFetch(IR::Block& block, IR::Inst& inst, TexturePixelFormat pixel_format) {
+void PatchTexelFetch(IR::Block& block, IR::Inst& inst, TexturePixelFormat pixel_format) {
     const auto it{IR::Block::InstructionList::s_iterator_to(inst)};
     IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
     auto get_max_value = [pixel_format]() -> float {
@@ -643,7 +643,7 @@ void TexturePass(Environment& env, IR::Program& program, const HostTranslateInfo
             flags.type == TextureType::Buffer) {
             const auto pixel_format = ReadTexturePixelFormat(env, cbuf);
             if (pixel_format != TexturePixelFormat::OTHER) {
-                PathTexelFetch(*texture_inst.block, *texture_inst.inst, pixel_format);
+                PatchTexelFetch(*texture_inst.block, *texture_inst.inst, pixel_format);
             }
         }
     }
