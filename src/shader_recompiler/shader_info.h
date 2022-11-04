@@ -29,16 +29,6 @@ enum class TextureType : u32 {
 };
 constexpr u32 NUM_TEXTURE_TYPES = 9;
 
-enum class TexturePixelFormat : u32 {
-    A8B8G8R8_SNORM,
-    R8_SNORM,
-    R8G8_SNORM,
-    R16G16B16A16_SNORM,
-    R16G16_SNORM,
-    R16_SNORM,
-    OTHER
-};
-
 enum class ImageFormat : u32 {
     Typeless,
     R8_UINT,
