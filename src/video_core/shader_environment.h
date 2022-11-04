@@ -131,7 +131,6 @@ public:
 
     u32 ReadViewportTransformState() override;
 
-
 private:
     Tegra::Engines::KeplerCompute* kepler_compute{};
 };
@@ -156,7 +155,7 @@ public:
     [[nodiscard]] Shader::TextureType ReadTextureType(u32 handle) override;
 
     [[nodiscard]] Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
-    
+
     [[nodiscard]] u32 ReadViewportTransformState() override;
 
     [[nodiscard]] u32 LocalMemorySize() const override;

@@ -332,8 +332,9 @@ u32 GraphicsEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
 
 Shader::TextureType GraphicsEnvironment::ReadTextureType(u32 handle) {
     const auto& regs{maxwell3d->regs};
-    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-    auto entry = ReadTextureInfo(regs.tic.Address(), regs.tic.limit, via_header_index, handle);
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
+    auto entry =
+        ReadTextureInfo(regs.tex_header.Address(), regs.tex_header.limit, via_header_index, handle);
     const Shader::TextureType result{ConvertTextureType(entry)};
     texture_types.emplace(handle, result);
     return result;
@@ -341,8 +342,9 @@ Shader::TextureType GraphicsEnvironment::ReadTextureType(u32 handle) {
 
 Shader::TexturePixelFormat GraphicsEnvironment::ReadTexturePixelFormat(u32 handle) {
     const auto& regs{maxwell3d->regs};
-    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
-    auto entry = ReadTextureInfo(regs.tic.Address(), regs.tic.limit, via_header_index, handle);
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
+    auto entry =
+        ReadTextureInfo(regs.tex_header.Address(), regs.tex_header.limit, via_header_index, handle);
     const Shader::TexturePixelFormat result(ConvertTexturePixelFormat(entry));
     texture_pixel_formats.emplace(handle, result);
     return result;
@@ -350,7 +352,7 @@ Shader::TexturePixelFormat GraphicsEnvironment::ReadTexturePixelFormat(u32 handl
 
 u32 GraphicsEnvironment::ReadViewportTransformState() {
     const auto& regs{maxwell3d->regs};
-    viewport_transform_state = regs.viewport_transform_enabled;
+    viewport_transform_state = regs.viewport_scale_offset_enbled;
     return viewport_transform_state;
 }
 
