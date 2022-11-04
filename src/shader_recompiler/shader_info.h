@@ -182,7 +182,6 @@ struct Info {
     bool uses_shadow_lod{};
     bool uses_rescaling_uniform{};
     bool uses_cbuf_indirect{};
-    bool uses_render_area{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};
