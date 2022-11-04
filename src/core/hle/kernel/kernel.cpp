@@ -24,6 +24,7 @@
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/init/init_slab_setup.h"
 #include "core/hle/kernel/k_client_port.h"
+#include "core/hle/kernel/k_dynamic_resource_manager.h"
 #include "core/hle/kernel/k_handle_table.h"
 #include "core/hle/kernel/k_memory_layout.h"
 #include "core/hle/kernel/k_memory_manager.h"
@@ -47,8 +48,8 @@ namespace Kernel {
 
 struct KernelCore::Impl {
     explicit Impl(Core::System& system_, KernelCore& kernel_)
-        : time_manager{system_},
-          service_threads_manager{1, "yuzu:ServiceThreadsManager"}, system{system_} {}
+        : time_manager{system_}, service_threads_manager{1, "ServiceThreadsManager"},
+          service_thread_barrier{2}, system{system_} {}
 
     void SetMulticore(bool is_multi) {
         is_multicore = is_multi;
@@ -59,7 +60,6 @@ struct KernelCore::Impl {
         global_scheduler_context = std::make_unique<Kernel::GlobalSchedulerContext>(kernel);
         global_handle_table = std::make_unique<Kernel::KHandleTable>(kernel);
         global_handle_table->Initialize(KHandleTable::MaxTableSize);
-        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
 
         is_phantom_mode_for_singlecore = false;
 
@@ -73,10 +73,20 @@ struct KernelCore::Impl {
         InitializeMemoryLayout();
         Init::InitializeKPageBufferSlabHeap(system);
         InitializeShutdownThreads();
-        InitializePreemption(kernel);
         InitializePhysicalCores();
+        InitializePreemption(kernel);
+
+        // Initialize the Dynamic Slab Heaps.
+        {
+            const auto& pt_heap_region = memory_layout->GetPageTableHeapRegion();
+            ASSERT(pt_heap_region.GetEndAddress() != 0);
+
+            InitializeResourceManagers(pt_heap_region.GetAddress(), pt_heap_region.GetSize());
+        }
 
         RegisterHostThread();
+
+        default_service_thread = CreateServiceThread(kernel, "DefaultServiceThread");
     }
 
     void InitializeCores() {
@@ -84,6 +94,15 @@ struct KernelCore::Impl {
             cores[core_id]->Initialize((*current_process).Is64BitProcess());
             system.Memory().SetCurrentPageTable(*current_process, core_id);
         }
+    }
+
+    void CloseCurrentProcess() {
+        (*current_process).Finalize();
+        // current_process->Close();
+        // TODO: The current process should be destroyed based on accurate ref counting after
+        // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
+        (*current_process).Destroy();
+        current_process = nullptr;
     }
 
     void Shutdown() {
@@ -98,10 +117,6 @@ struct KernelCore::Impl {
         next_kernel_process_id = KProcess::InitialKIPIDMin;
         next_user_process_id = KProcess::ProcessIDMin;
         next_thread_id = 1;
-
-        for (auto& core : cores) {
-            core = nullptr;
-        }
 
         global_handle_table->Finalize();
         global_handle_table.reset();
@@ -152,15 +167,7 @@ struct KernelCore::Impl {
             }
         }
 
-        // Shutdown all processes.
-        if (current_process) {
-            (*current_process).Finalize();
-            // current_process->Close();
-            // TODO: The current process should be destroyed based on accurate ref counting after
-            // calling Close(). Adding a manual Destroy() call instead to avoid a memory leak.
-            (*current_process).Destroy();
-            current_process = nullptr;
-        }
+        CloseCurrentProcess();
 
         // Track kernel objects that were not freed on shutdown
         {
@@ -178,17 +185,6 @@ struct KernelCore::Impl {
     }
 
     void CloseServices() {
-        // Close all open server sessions and ports.
-        std::unordered_set<KAutoObject*> server_objects_;
-        {
-            std::scoped_lock lk(server_objects_lock);
-            server_objects_ = server_objects;
-            server_objects.clear();
-        }
-        for (auto* server_object : server_objects_) {
-            server_object->Close();
-        }
-
         // Ensures all service threads gracefully shutdown.
         ClearServiceThreads();
     }
@@ -255,6 +251,18 @@ struct KernelCore::Impl {
 
         const auto time_interval = std::chrono::nanoseconds{std::chrono::milliseconds(10)};
         system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
+    }
+
+    void InitializeResourceManagers(VAddr address, size_t size) {
+        dynamic_page_manager = std::make_unique<KDynamicPageManager>();
+        memory_block_heap = std::make_unique<KMemoryBlockSlabHeap>();
+        app_memory_block_manager = std::make_unique<KMemoryBlockSlabManager>();
+
+        dynamic_page_manager->Initialize(address, size);
+        static constexpr size_t ApplicationMemoryBlockSlabHeapSize = 20000;
+        memory_block_heap->Initialize(dynamic_page_manager.get(),
+                                      ApplicationMemoryBlockSlabHeapSize);
+        app_memory_block_manager->Initialize(nullptr, memory_block_heap.get());
     }
 
     void InitializeShutdownThreads() {
@@ -328,6 +336,8 @@ struct KernelCore::Impl {
         return this_id;
     }
 
+    static inline thread_local bool is_phantom_mode_for_singlecore{false};
+
     bool IsPhantomModeForSingleCore() const {
         return is_phantom_mode_for_singlecore;
     }
@@ -344,11 +354,6 @@ struct KernelCore::Impl {
     static inline thread_local KThread* current_thread{nullptr};
 
     KThread* GetCurrentEmuThread() {
-        // If we are shutting down the kernel, none of this is relevant anymore.
-        if (IsShuttingDown()) {
-            return {};
-        }
-
         const auto thread_id = GetCurrentHostThreadID();
         if (thread_id >= Core::Hardware::NUM_CPU_CORES) {
             return GetHostDummyThread();
@@ -685,24 +690,21 @@ struct KernelCore::Impl {
             return {};
         }
 
-        KClientPort* port = &search->second(system.ServiceManager(), system);
-        RegisterServerObject(&port->GetParent()->GetServerPort());
-        return port;
+        return &search->second(system.ServiceManager(), system);
     }
 
-    void RegisterServerObject(KAutoObject* server_object) {
-        std::scoped_lock lk(server_objects_lock);
-        server_objects.insert(server_object);
-    }
+    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
+        auto search = service_interface_handlers.find(name);
+        if (search == service_interface_handlers.end()) {
+            return;
+        }
 
-    void UnregisterServerObject(KAutoObject* server_object) {
-        std::scoped_lock lk(server_objects_lock);
-        server_objects.erase(server_object);
+        search->second(system.ServiceManager(), server_port);
     }
 
     std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(KernelCore& kernel,
                                                              const std::string& name) {
-        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, 1, name);
+        auto service_thread = std::make_shared<Kernel::ServiceThread>(kernel, name);
 
         service_threads_manager.QueueWork(
             [this, service_thread]() { service_threads.emplace(service_thread); });
@@ -724,10 +726,14 @@ struct KernelCore::Impl {
     }
 
     void ClearServiceThreads() {
-        service_threads_manager.QueueWork([this]() { service_threads.clear(); });
+        service_threads_manager.QueueWork([this] {
+            service_threads.clear();
+            default_service_thread.reset();
+            service_thread_barrier.Sync();
+        });
+        service_thread_barrier.Sync();
     }
 
-    std::mutex server_objects_lock;
     std::mutex registered_objects_lock;
     std::mutex registered_in_use_objects_lock;
 
@@ -756,8 +762,8 @@ struct KernelCore::Impl {
     /// Map of named ports managed by the kernel, which can be retrieved using
     /// the ConnectToPort SVC.
     std::unordered_map<std::string, ServiceInterfaceFactory> service_interface_factory;
+    std::unordered_map<std::string, ServiceInterfaceHandlerFn> service_interface_handlers;
     NamedPortTable named_ports;
-    std::unordered_set<KAutoObject*> server_objects;
     std::unordered_set<KAutoObject*> registered_objects;
     std::unordered_set<KAutoObject*> registered_in_use_objects;
 
@@ -769,6 +775,11 @@ struct KernelCore::Impl {
 
     // Kernel memory management
     std::unique_ptr<KMemoryManager> memory_manager;
+
+    // Dynamic slab managers
+    std::unique_ptr<KDynamicPageManager> dynamic_page_manager;
+    std::unique_ptr<KMemoryBlockSlabHeap> memory_block_heap;
+    std::unique_ptr<KMemoryBlockSlabManager> app_memory_block_manager;
 
     // Shared memory for services
     Kernel::KSharedMemory* hid_shared_mem{};
@@ -784,13 +795,13 @@ struct KernelCore::Impl {
     std::unordered_set<std::shared_ptr<ServiceThread>> service_threads;
     std::weak_ptr<ServiceThread> default_service_thread;
     Common::ThreadWorker service_threads_manager;
+    Common::Barrier service_thread_barrier;
 
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> shutdown_threads;
     std::array<std::unique_ptr<Kernel::KScheduler>, Core::Hardware::NUM_CPU_CORES> schedulers{};
 
     bool is_multicore{};
     std::atomic_bool is_shutting_down{};
-    bool is_phantom_mode_for_singlecore{};
     u32 single_core_thread_id{};
 
     std::array<u64, Core::Hardware::NUM_CPU_CORES> svc_ticks{};
@@ -851,6 +862,10 @@ KProcess* KernelCore::CurrentProcess() {
 
 const KProcess* KernelCore::CurrentProcess() const {
     return impl->current_process;
+}
+
+void KernelCore::CloseCurrentProcess() {
+    impl->CloseCurrentProcess();
 }
 
 const std::vector<KProcess*>& KernelCore::GetProcessList() const {
@@ -953,16 +968,17 @@ void KernelCore::RegisterNamedService(std::string name, ServiceInterfaceFactory&
     impl->service_interface_factory.emplace(std::move(name), factory);
 }
 
+void KernelCore::RegisterInterfaceForNamedService(std::string name,
+                                                  ServiceInterfaceHandlerFn&& handler) {
+    impl->service_interface_handlers.emplace(std::move(name), handler);
+}
+
 KClientPort* KernelCore::CreateNamedServicePort(std::string name) {
     return impl->CreateNamedServicePort(std::move(name));
 }
 
-void KernelCore::RegisterServerObject(KAutoObject* server_object) {
-    impl->RegisterServerObject(server_object);
-}
-
-void KernelCore::UnregisterServerObject(KAutoObject* server_object) {
-    impl->UnregisterServerObject(server_object);
+void KernelCore::RegisterNamedServiceHandler(std::string name, KServerPort* server_port) {
+    impl->RegisterNamedServiceHandler(std::move(name), server_port);
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {
@@ -1039,6 +1055,14 @@ KMemoryManager& KernelCore::MemoryManager() {
 
 const KMemoryManager& KernelCore::MemoryManager() const {
     return *impl->memory_manager;
+}
+
+KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() {
+    return *impl->app_memory_block_manager;
+}
+
+const KMemoryBlockSlabManager& KernelCore::GetApplicationMemoryBlockManager() const {
+    return *impl->app_memory_block_manager;
 }
 
 Kernel::KSharedMemory& KernelCore::GetHidSharedMem() {

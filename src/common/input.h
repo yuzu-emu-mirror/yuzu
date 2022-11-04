@@ -76,6 +76,19 @@ enum class PollingError {
     Unknown,
 };
 
+// Nfc reply from the controller
+enum class NfcState {
+    Success,
+    NewAmiibo,
+    WaitingForAmiibo,
+    AmiiboRemoved,
+    NotAnAmiibo,
+    NotSupported,
+    WrongDeviceState,
+    WriteFailed,
+    Unknown,
+};
+
 // Ir camera reply from the controller
 enum class CameraError {
     None,
@@ -87,7 +100,6 @@ enum class CameraError {
 enum class VibrationAmplificationType {
     Linear,
     Exponential,
-    Test,
 };
 
 // Analog properties for calibration
@@ -202,6 +214,11 @@ struct CameraStatus {
     std::vector<u8> data{};
 };
 
+struct NfcStatus {
+    NfcState state{};
+    std::vector<u8> data{};
+};
+
 // List of buttons to be passed to Qt that can be translated
 enum class ButtonNames {
     Undefined,
@@ -259,7 +276,9 @@ struct CallbackStatus {
     BodyColorStatus color_status{};
     BatteryStatus battery_status{};
     VibrationStatus vibration_status{};
-    CameraStatus camera_status{};
+    CameraFormat camera_status{CameraFormat::None};
+    NfcState nfc_status{NfcState::Unknown};
+    std::vector<u8> raw_data{};
 };
 
 // Triggered once every input change
@@ -305,12 +324,24 @@ public:
         return VibrationError::NotSupported;
     }
 
+    virtual bool IsVibrationEnabled() {
+        return false;
+    }
+
     virtual PollingError SetPollingMode([[maybe_unused]] PollingMode polling_mode) {
         return PollingError::NotSupported;
     }
 
     virtual CameraError SetCameraFormat([[maybe_unused]] CameraFormat camera_format) {
         return CameraError::NotSupported;
+    }
+
+    virtual NfcState SupportsNfc() const {
+        return NfcState::NotSupported;
+    }
+
+    virtual NfcState WriteNfcData([[maybe_unused]] const std::vector<u8>& data) {
+        return NfcState::NotSupported;
     }
 };
 

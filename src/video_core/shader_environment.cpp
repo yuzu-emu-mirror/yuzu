@@ -212,6 +212,8 @@ void GenericEnvironment::Serialize(std::ofstream& file) const {
         .write(reinterpret_cast<const char*>(&start_address), sizeof(start_address))
         .write(reinterpret_cast<const char*>(&cached_lowest), sizeof(cached_lowest))
         .write(reinterpret_cast<const char*>(&cached_highest), sizeof(cached_highest))
+        .write(reinterpret_cast<const char*>(&viewport_transform_state),
+               sizeof(viewport_transform_state))
         .write(reinterpret_cast<const char*>(&stage), sizeof(stage))
         .write(reinterpret_cast<const char*>(code.data()), code_size);
     for (const auto& [key, type] : texture_types) {
@@ -276,34 +278,34 @@ Tegra::Texture::TICEntry GenericEnvironment::ReadTextureInfo(GPUVAddr tic_addr, 
 
 GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                          Tegra::MemoryManager& gpu_memory_,
-                                         Maxwell::ShaderProgram program, GPUVAddr program_base_,
+                                         Maxwell::ShaderType program, GPUVAddr program_base_,
                                          u32 start_address_)
     : GenericEnvironment{gpu_memory_, program_base_, start_address_}, maxwell3d{&maxwell3d_} {
     gpu_memory->ReadBlock(program_base + start_address, &sph, sizeof(sph));
     initial_offset = sizeof(sph);
-    gp_passthrough_mask = maxwell3d->regs.gp_passthrough_mask;
+    gp_passthrough_mask = maxwell3d->regs.post_vtg_shader_attrib_skip_mask;
     switch (program) {
-    case Maxwell::ShaderProgram::VertexA:
+    case Maxwell::ShaderType::VertexA:
         stage = Shader::Stage::VertexA;
         stage_index = 0;
         break;
-    case Maxwell::ShaderProgram::VertexB:
+    case Maxwell::ShaderType::VertexB:
         stage = Shader::Stage::VertexB;
         stage_index = 0;
         break;
-    case Maxwell::ShaderProgram::TesselationControl:
+    case Maxwell::ShaderType::TessellationInit:
         stage = Shader::Stage::TessellationControl;
         stage_index = 1;
         break;
-    case Maxwell::ShaderProgram::TesselationEval:
+    case Maxwell::ShaderType::Tessellation:
         stage = Shader::Stage::TessellationEval;
         stage_index = 2;
         break;
-    case Maxwell::ShaderProgram::Geometry:
+    case Maxwell::ShaderType::Geometry:
         stage = Shader::Stage::Geometry;
         stage_index = 3;
         break;
-    case Maxwell::ShaderProgram::Fragment:
+    case Maxwell::ShaderType::Pixel:
         stage = Shader::Stage::Fragment;
         stage_index = 4;
         break;
@@ -314,7 +316,7 @@ GraphicsEnvironment::GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
     const u64 local_size{sph.LocalMemorySize()};
     ASSERT(local_size <= std::numeric_limits<u32>::max());
     local_memory_size = static_cast<u32>(local_size) + sph.common3.shader_local_memory_crs_size;
-    texture_bound = maxwell3d->regs.tex_cb_index;
+    texture_bound = maxwell3d->regs.bindless_texture_const_buffer_slot;
 }
 
 u32 GraphicsEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
@@ -344,6 +346,12 @@ Shader::TexturePixelFormat GraphicsEnvironment::ReadTexturePixelFormat(u32 handl
     const Shader::TexturePixelFormat result(ConvertTexturePixelFormat(entry));
     texture_pixel_formats.emplace(handle, result);
     return result;
+}
+
+u32 GraphicsEnvironment::ReadViewportTransformState() {
+    const auto& regs{maxwell3d->regs};
+    viewport_transform_state = regs.viewport_transform_enabled;
+    return viewport_transform_state;
 }
 
 ComputeEnvironment::ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_compute_,
@@ -389,6 +397,10 @@ Shader::TexturePixelFormat ComputeEnvironment::ReadTexturePixelFormat(u32 handle
     return result;
 }
 
+u32 ComputeEnvironment::ReadViewportTransformState() {
+    return viewport_transform_state;
+}
+
 void FileEnvironment::Deserialize(std::ifstream& file) {
     u64 code_size{};
     u64 num_texture_types{};
@@ -404,6 +416,7 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
         .read(reinterpret_cast<char*>(&start_address), sizeof(start_address))
         .read(reinterpret_cast<char*>(&read_lowest), sizeof(read_lowest))
         .read(reinterpret_cast<char*>(&read_highest), sizeof(read_highest))
+        .read(reinterpret_cast<char*>(&viewport_transform_state), sizeof(viewport_transform_state))
         .read(reinterpret_cast<char*>(&stage), sizeof(stage));
     code = std::make_unique<u64[]>(Common::DivCeil(code_size, sizeof(u64)));
     file.read(reinterpret_cast<char*>(code.get()), code_size);
@@ -474,6 +487,10 @@ Shader::TexturePixelFormat FileEnvironment::ReadTexturePixelFormat(u32 handle) {
         throw Shader::LogicError("Uncached read texture pixel format");
     }
     return it->second;
+}
+
+u32 FileEnvironment::ReadViewportTransformState() {
+    return viewport_transform_state;
 }
 
 u32 FileEnvironment::LocalMemorySize() const {

@@ -4,7 +4,7 @@
 add_subdirectory(host_shaders)
 
 if(LIBVA_FOUND)
-    set_source_files_properties(command_classes/codecs/codec.cpp
+    set_source_files_properties(host1x/codecs/codec.cpp
         PROPERTIES COMPILE_DEFINITIONS LIBVA_FOUND=1)
     list(APPEND FFmpeg_LIBRARIES ${LIBVA_LIBRARIES})
 endif()
@@ -15,26 +15,14 @@ add_library(video_core STATIC
     buffer_cache/buffer_cache.h
     cdma_pusher.cpp
     cdma_pusher.h
-    command_classes/codecs/codec.cpp
-    command_classes/codecs/codec.h
-    command_classes/codecs/h264.cpp
-    command_classes/codecs/h264.h
-    command_classes/codecs/vp8.cpp
-    command_classes/codecs/vp8.h
-    command_classes/codecs/vp9.cpp
-    command_classes/codecs/vp9.h
-    command_classes/codecs/vp9_types.h
-    command_classes/host1x.cpp
-    command_classes/host1x.h
-    command_classes/nvdec.cpp
-    command_classes/nvdec.h
-    command_classes/nvdec_common.h
-    command_classes/sync_manager.cpp
-    command_classes/sync_manager.h
-    command_classes/vic.cpp
-    command_classes/vic.h
     compatible_formats.cpp
     compatible_formats.h
+    control/channel_state.cpp
+    control/channel_state.h
+    control/channel_state_cache.cpp
+    control/channel_state_cache.h
+    control/scheduler.cpp
+    control/scheduler.h
     delayed_destruction_ring.h
     dirty_flags.cpp
     dirty_flags.h
@@ -54,7 +42,31 @@ add_library(video_core STATIC
     engines/maxwell_3d.h
     engines/maxwell_dma.cpp
     engines/maxwell_dma.h
+    engines/puller.cpp
+    engines/puller.h
     framebuffer_config.h
+    host1x/codecs/codec.cpp
+    host1x/codecs/codec.h
+    host1x/codecs/h264.cpp
+    host1x/codecs/h264.h
+    host1x/codecs/vp8.cpp
+    host1x/codecs/vp8.h
+    host1x/codecs/vp9.cpp
+    host1x/codecs/vp9.h
+    host1x/codecs/vp9_types.h
+    host1x/control.cpp
+    host1x/control.h
+    host1x/host1x.cpp
+    host1x/host1x.h
+    host1x/nvdec.cpp
+    host1x/nvdec.h
+    host1x/nvdec_common.h
+    host1x/sync_manager.cpp
+    host1x/sync_manager.h
+    host1x/syncpoint_manager.cpp
+    host1x/syncpoint_manager.h
+    host1x/vic.cpp
+    host1x/vic.h
     macro/macro.cpp
     macro/macro.h
     macro/macro_hle.cpp
@@ -70,6 +82,7 @@ add_library(video_core STATIC
     gpu_thread.h
     memory_manager.cpp
     memory_manager.h
+    pte_kind.h
     query_cache.h
     rasterizer_accelerated.cpp
     rasterizer_accelerated.h
@@ -195,6 +208,7 @@ add_library(video_core STATIC
     texture_cache/render_targets.h
     texture_cache/samples_helper.h
     texture_cache/slot_vector.h
+    texture_cache/texture_cache.cpp
     texture_cache/texture_cache.h
     texture_cache/texture_cache_base.h
     texture_cache/types.h
@@ -265,14 +279,8 @@ if (MSVC)
 else()
     target_compile_options(video_core PRIVATE
         -Werror=conversion
-        -Wno-error=sign-conversion
-        -Werror=pessimizing-move
-        -Werror=redundant-move
-        -Werror=type-limits
 
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
+        -Wno-sign-conversion
     )
 endif()
 

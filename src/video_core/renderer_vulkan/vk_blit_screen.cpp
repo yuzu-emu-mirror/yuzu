@@ -145,6 +145,11 @@ VkSemaphore BlitScreen::Draw(const Tegra::FramebufferConfig& framebuffer,
     // Finish any pending renderpass
     scheduler.RequestOutsideRenderPassOperationContext();
 
+    if (const auto swapchain_images = swapchain.GetImageCount(); swapchain_images != image_count) {
+        image_count = swapchain_images;
+        Recreate();
+    }
+
     const std::size_t image_index = swapchain.GetImageIndex();
 
     scheduler.Wait(resource_ticks[image_index]);
@@ -448,15 +453,15 @@ vk::Framebuffer BlitScreen::CreateFramebuffer(const VkImageView& image_view, VkE
 
 void BlitScreen::CreateStaticResources() {
     CreateShaders();
+    CreateSampler();
+}
+
+void BlitScreen::CreateDynamicResources() {
     CreateSemaphores();
     CreateDescriptorPool();
     CreateDescriptorSetLayout();
     CreateDescriptorSets();
     CreatePipelineLayout();
-    CreateSampler();
-}
-
-void BlitScreen::CreateDynamicResources() {
     CreateRenderPass();
     CreateFramebuffers();
     CreateGraphicsPipeline();
@@ -475,11 +480,15 @@ void BlitScreen::RefreshResources(const Tegra::FramebufferConfig& framebuffer) {
         fsr.reset();
     }
 
-    if (framebuffer.width == raw_width && framebuffer.height == raw_height && !raw_images.empty()) {
+    if (framebuffer.width == raw_width && framebuffer.height == raw_height &&
+        framebuffer.pixel_format == pixel_format && !raw_images.empty()) {
         return;
     }
+
     raw_width = framebuffer.width;
     raw_height = framebuffer.height;
+    pixel_format = framebuffer.pixel_format;
+
     ReleaseRawImages();
 
     CreateStagingBuffer(framebuffer);

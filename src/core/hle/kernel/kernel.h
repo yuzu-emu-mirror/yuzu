@@ -37,6 +37,7 @@ class KClientSession;
 class KEvent;
 class KHandleTable;
 class KLinkedListNode;
+class KMemoryBlockSlabManager;
 class KMemoryLayout;
 class KMemoryManager;
 class KPageBuffer;
@@ -44,15 +45,16 @@ class KPort;
 class KProcess;
 class KResourceLimit;
 class KScheduler;
+class KServerPort;
 class KServerSession;
 class KSession;
+class KSessionRequest;
 class KSharedMemory;
 class KSharedMemoryInfo;
 class KThread;
 class KThreadLocalPage;
 class KTransferMemory;
 class KWorkerTaskManager;
-class KWritableEvent;
 class KCodeMemory;
 class PhysicalCore;
 class ServiceThread;
@@ -61,6 +63,8 @@ class TimeManager;
 
 using ServiceInterfaceFactory =
     std::function<KClientPort&(Service::SM::ServiceManager&, Core::System&)>;
+
+using ServiceInterfaceHandlerFn = std::function<void(Service::SM::ServiceManager&, KServerPort*)>;
 
 namespace Init {
 struct KSlabResourceCounts;
@@ -131,6 +135,9 @@ public:
     /// Retrieves a const pointer to the current process.
     const KProcess* CurrentProcess() const;
 
+    /// Closes the current process.
+    void CloseCurrentProcess();
+
     /// Retrieves the list of processes.
     const std::vector<KProcess*>& GetProcessList() const;
 
@@ -188,16 +195,14 @@ public:
     /// Registers a named HLE service, passing a factory used to open a port to that service.
     void RegisterNamedService(std::string name, ServiceInterfaceFactory&& factory);
 
+    /// Registers a setup function for the named HLE service.
+    void RegisterInterfaceForNamedService(std::string name, ServiceInterfaceHandlerFn&& handler);
+
     /// Opens a port to a service previously registered with RegisterNamedService.
     KClientPort* CreateNamedServicePort(std::string name);
 
-    /// Registers a server session or port with the gobal emulation state, to be freed on shutdown.
-    /// This is necessary because we do not emulate processes for HLE sessions and ports.
-    void RegisterServerObject(KAutoObject* server_object);
-
-    /// Unregisters a server session or port previously registered with RegisterServerSession when
-    /// it was destroyed during the current emulation session.
-    void UnregisterServerObject(KAutoObject* server_object);
+    /// Accepts a session on a port created by CreateNamedServicePort.
+    void RegisterNamedServiceHandler(std::string name, KServerPort* server_port);
 
     /// Registers all kernel objects with the global emulation state, this is purely for tracking
     /// leaks after emulation has been shutdown.
@@ -238,6 +243,12 @@ public:
 
     /// Gets the virtual memory manager for the kernel.
     const KMemoryManager& MemoryManager() const;
+
+    /// Gets the application memory block manager for the kernel.
+    KMemoryBlockSlabManager& GetApplicationMemoryBlockManager();
+
+    /// Gets the application memory block manager for the kernel.
+    const KMemoryBlockSlabManager& GetApplicationMemoryBlockManager() const;
 
     /// Gets the shared memory object for HID services.
     Kernel::KSharedMemory& GetHidSharedMem();
@@ -345,14 +356,14 @@ public:
             return slab_heap_container->thread;
         } else if constexpr (std::is_same_v<T, KTransferMemory>) {
             return slab_heap_container->transfer_memory;
-        } else if constexpr (std::is_same_v<T, KWritableEvent>) {
-            return slab_heap_container->writeable_event;
         } else if constexpr (std::is_same_v<T, KCodeMemory>) {
             return slab_heap_container->code_memory;
         } else if constexpr (std::is_same_v<T, KPageBuffer>) {
             return slab_heap_container->page_buffer;
         } else if constexpr (std::is_same_v<T, KThreadLocalPage>) {
             return slab_heap_container->thread_local_page;
+        } else if constexpr (std::is_same_v<T, KSessionRequest>) {
+            return slab_heap_container->session_request;
         }
     }
 
@@ -412,10 +423,10 @@ private:
         KSlabHeap<KSharedMemoryInfo> shared_memory_info;
         KSlabHeap<KThread> thread;
         KSlabHeap<KTransferMemory> transfer_memory;
-        KSlabHeap<KWritableEvent> writeable_event;
         KSlabHeap<KCodeMemory> code_memory;
         KSlabHeap<KPageBuffer> page_buffer;
         KSlabHeap<KThreadLocalPage> thread_local_page;
+        KSlabHeap<KSessionRequest> session_request;
     };
 
     std::unique_ptr<SlabHeapContainer> slab_heap_container;

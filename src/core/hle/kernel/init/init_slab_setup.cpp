@@ -18,6 +18,7 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_resource_limit.h"
 #include "core/hle/kernel/k_session.h"
+#include "core/hle/kernel/k_session_request.h"
 #include "core/hle/kernel/k_shared_memory.h"
 #include "core/hle/kernel/k_shared_memory_info.h"
 #include "core/hle/kernel/k_system_control.h"
@@ -34,6 +35,7 @@ namespace Kernel::Init {
     HANDLER(KThread, (SLAB_COUNT(KThread)), ##__VA_ARGS__)                                         \
     HANDLER(KEvent, (SLAB_COUNT(KEvent)), ##__VA_ARGS__)                                           \
     HANDLER(KPort, (SLAB_COUNT(KPort)), ##__VA_ARGS__)                                             \
+    HANDLER(KSessionRequest, (SLAB_COUNT(KSession) * 2), ##__VA_ARGS__)                            \
     HANDLER(KSharedMemory, (SLAB_COUNT(KSharedMemory)), ##__VA_ARGS__)                             \
     HANDLER(KSharedMemoryInfo, (SLAB_COUNT(KSharedMemory) * 8), ##__VA_ARGS__)                     \
     HANDLER(KTransferMemory, (SLAB_COUNT(KTransferMemory)), ##__VA_ARGS__)                         \
@@ -94,8 +96,8 @@ VAddr InitializeSlabHeap(Core::System& system, KMemoryLayout& memory_layout, VAd
     // TODO(bunnei): Fix this once we support the kernel virtual memory layout.
 
     if (size > 0) {
-        void* backing_kernel_memory{
-            system.DeviceMemory().GetPointer(TranslateSlabAddrToPhysical(memory_layout, start))};
+        void* backing_kernel_memory{system.DeviceMemory().GetPointer<void>(
+            TranslateSlabAddrToPhysical(memory_layout, start))};
 
         const KMemoryRegion* region = memory_layout.FindVirtual(start + size - 1);
         ASSERT(region != nullptr);
@@ -181,7 +183,7 @@ void InitializeKPageBufferSlabHeap(Core::System& system) {
     ASSERT(slab_address != 0);
 
     // Initialize the slabheap.
-    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer(slab_address),
+    KPageBuffer::InitializeSlabHeap(kernel, system.DeviceMemory().GetPointer<void>(slab_address),
                                     slab_size);
 }
 

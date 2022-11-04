@@ -31,6 +31,7 @@ namespace {
 using boost::container::small_vector;
 using boost::container::static_vector;
 using Shader::ImageBufferDescriptor;
+using Shader::Backend::SPIRV::RENDERAREA_LAYOUT_OFFSET;
 using Shader::Backend::SPIRV::RESCALING_LAYOUT_DOWN_FACTOR_OFFSET;
 using Shader::Backend::SPIRV::RESCALING_LAYOUT_WORDS_OFFSET;
 using Tegra::Texture::TexturePair;
@@ -215,15 +216,14 @@ ConfigureFuncPtr ConfigureFunc(const std::array<vk::ShaderModule, NUM_STAGES>& m
 } // Anonymous namespace
 
 GraphicsPipeline::GraphicsPipeline(
-    Tegra::Engines::Maxwell3D& maxwell3d_, Tegra::MemoryManager& gpu_memory_, Scheduler& scheduler_,
-    BufferCache& buffer_cache_, TextureCache& texture_cache_,
+    Scheduler& scheduler_, BufferCache& buffer_cache_, TextureCache& texture_cache_,
     VideoCore::ShaderNotify* shader_notify, const Device& device_, DescriptorPool& descriptor_pool,
     UpdateDescriptorQueue& update_descriptor_queue_, Common::ThreadWorker* worker_thread,
     PipelineStatistics* pipeline_statistics, RenderPassCache& render_pass_cache,
     const GraphicsPipelineCacheKey& key_, std::array<vk::ShaderModule, NUM_STAGES> stages,
     const std::array<const Shader::Info*, NUM_STAGES>& infos)
-    : key{key_}, maxwell3d{maxwell3d_}, gpu_memory{gpu_memory_}, device{device_},
-      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, scheduler{scheduler_},
+    : key{key_}, device{device_}, texture_cache{texture_cache_},
+      buffer_cache{buffer_cache_}, scheduler{scheduler_},
       update_descriptor_queue{update_descriptor_queue_}, spv_modules{std::move(stages)} {
     if (shader_notify) {
         shader_notify->MarkShaderBuilding();
@@ -288,8 +288,8 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
 
     buffer_cache.SetUniformBuffersState(enabled_uniform_buffer_masks, &uniform_buffer_sizes);
 
-    const auto& regs{maxwell3d.regs};
-    const bool via_header_index{regs.sampler_index == Maxwell::SamplerIndex::ViaHeaderIndex};
+    const auto& regs{maxwell3d->regs};
+    const bool via_header_index{regs.sampler_binding == Maxwell::SamplerBinding::ViaHeaderBinding};
     const auto config_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         const Shader::Info& info{stage_infos[stage]};
         buffer_cache.UnbindGraphicsStorageBuffers(stage);
@@ -302,7 +302,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                 ++ssbo_index;
             }
         }
-        const auto& cbufs{maxwell3d.state.shader_stages[stage].const_buffers};
+        const auto& cbufs{maxwell3d->state.shader_stages[stage].const_buffers};
         const auto read_handle{[&](const auto& desc, u32 index) {
             ASSERT(cbufs[desc.cbuf_index].enabled);
             const u32 index_offset{index << desc.size_shift};
@@ -315,13 +315,14 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                     const u32 second_offset{desc.secondary_cbuf_offset + index_offset};
                     const GPUVAddr separate_addr{cbufs[desc.secondary_cbuf_index].address +
                                                  second_offset};
-                    const u32 lhs_raw{gpu_memory.Read<u32>(addr)};
-                    const u32 rhs_raw{gpu_memory.Read<u32>(separate_addr)};
+                    const u32 lhs_raw{gpu_memory->Read<u32>(addr) << desc.shift_left};
+                    const u32 rhs_raw{gpu_memory->Read<u32>(separate_addr)
+                                      << desc.secondary_shift_left};
                     const u32 raw{lhs_raw | rhs_raw};
                     return TexturePair(raw, via_header_index);
                 }
             }
-            return TexturePair(gpu_memory.Read<u32>(addr), via_header_index);
+            return TexturePair(gpu_memory->Read<u32>(addr), via_header_index);
         }};
         const auto add_image{[&](const auto& desc, bool blacklist) LAMBDA_FORCEINLINE {
             for (u32 index = 0; index < desc.count; ++index) {
@@ -433,12 +434,19 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     update_descriptor_queue.Acquire();
 
     RescalingPushConstant rescaling;
+    RenderAreaPushConstant render_area;
     const VkSampler* samplers_it{samplers.data()};
     const VideoCommon::ImageViewInOut* views_it{views.data()};
     const auto prepare_stage{[&](size_t stage) LAMBDA_FORCEINLINE {
         buffer_cache.BindHostStageBuffers(stage);
         PushImageDescriptors(texture_cache, update_descriptor_queue, stage_infos[stage], rescaling,
                              samplers_it, views_it);
+        const auto& info{stage_infos[0]};
+        if (info.uses_render_area) {
+            render_area.uses_render_area = true;
+            render_area.words = {static_cast<float>(regs.render_area.width),
+                                 static_cast<float>(regs.render_area.height)};
+        }
     }};
     if constexpr (Spec::enabled_stages[0]) {
         prepare_stage(0);
@@ -455,10 +463,11 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
     if constexpr (Spec::enabled_stages[4]) {
         prepare_stage(4);
     }
-    ConfigureDraw(rescaling);
+    ConfigureDraw(rescaling, render_area);
 }
 
-void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
+void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
+                                     const RenderAreaPushConstant& render_are) {
     texture_cache.UpdateRenderTargets(false);
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
 
@@ -474,7 +483,9 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
     const bool bind_pipeline{scheduler.UpdateGraphicsPipeline(this)};
     const void* const descriptor_data{update_descriptor_queue.UpdateData()};
     scheduler.Record([this, descriptor_data, bind_pipeline, rescaling_data = rescaling.Data(),
-                      is_rescaling, update_rescaling](vk::CommandBuffer cmdbuf) {
+                      is_rescaling, update_rescaling,
+                      uses_render_area = render_are.uses_render_area,
+                      render_area_data = render_are.words](vk::CommandBuffer cmdbuf) {
         if (bind_pipeline) {
             cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
         }
@@ -483,10 +494,15 @@ void GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling) {
                              rescaling_data.data());
         if (update_rescaling) {
             const f32 config_down_factor{Settings::values.resolution_info.down_factor};
-            const f32 scale_down_factor{is_rescaling ? config_down_factor : 1.0f};
+            const f32 scale_down_factor{is_rescaling ? config_down_factor : 2.0f};
             cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
                                  RESCALING_LAYOUT_DOWN_FACTOR_OFFSET, sizeof(scale_down_factor),
                                  &scale_down_factor);
+        }
+        if (uses_render_area) {
+            cmdbuf.PushConstants(*pipeline_layout, VK_SHADER_STAGE_ALL_GRAPHICS,
+                                 RENDERAREA_LAYOUT_OFFSET, sizeof(render_area_data),
+                                 &render_area_data);
         }
         if (!descriptor_set_layout) {
             return;
@@ -664,15 +680,6 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .lineStippleFactor = 0,
         .lineStipplePattern = 0,
     };
-    VkPipelineRasterizationConservativeStateCreateInfoEXT conservative_raster{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT,
-        .pNext = nullptr,
-        .flags = 0,
-        .conservativeRasterizationMode = key.state.conservative_raster_enable != 0
-                                             ? VK_CONSERVATIVE_RASTERIZATION_MODE_OVERESTIMATE_EXT
-                                             : VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT,
-        .extraPrimitiveOverestimationSize = 0.0f,
-    };
     VkPipelineRasterizationProvokingVertexStateCreateInfoEXT provoking_vertex{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_PROVOKING_VERTEX_STATE_CREATE_INFO_EXT,
         .pNext = nullptr,
@@ -682,9 +689,6 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     };
     if (IsLine(input_assembly_topology) && device.IsExtLineRasterizationSupported()) {
         line_state.pNext = std::exchange(rasterization_ci.pNext, &line_state);
-    }
-    if (device.IsExtConservativeRasterizationSupported()) {
-        conservative_raster.pNext = std::exchange(rasterization_ci.pNext, &conservative_raster);
     }
     if (device.IsExtProvokingVertexSupported()) {
         provoking_vertex.pNext = std::exchange(rasterization_ci.pNext, &provoking_vertex);

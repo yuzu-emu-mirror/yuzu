@@ -252,7 +252,7 @@ if(ENABLE_QT)
             endif()
 
             # Check for headers
-            Include(FindPkgConfig REQUIRED)
+            find_package(PkgConfig REQUIRED)
             pkg_check_modules(QT_DEP_GLU QUIET glu>=9.0.0)
             if (NOT QT_DEP_GLU_FOUND)
                 message(FATAL_ERROR "Qt bundled pacakge dependency `glu` not found. \
@@ -386,7 +386,7 @@ endif()
 
 # Ensure libusb is properly configured (based on dolphin libusb include)
 if(NOT APPLE AND NOT YUZU_USE_BUNDLED_LIBUSB)
-    include(FindPkgConfig)
+    find_package(PkgConfig)
     if (PKG_CONFIG_FOUND AND NOT CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD")
         pkg_check_modules(LIBUSB QUIET libusb-1.0>=1.0.24)
     else()
@@ -410,7 +410,7 @@ set(FFmpeg_COMPONENTS
     swscale)
 
 if (UNIX AND NOT APPLE)
-    Include(FindPkgConfig REQUIRED)
+    find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBVA libva)
 endif()
 if (NOT YUZU_USE_BUNDLED_FFMPEG)
@@ -541,9 +541,9 @@ add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY
 # Adjustments for MSVC + Ninja
 if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
     add_compile_options(
-        /wd4711 # function 'function' selected for automatic inline expansion
         /wd4464 # relative include path contains '..'
-        /wd4820 # 'identifier1': '4' bytes padding added after data member 'identifier2'
+        /wd4711 # function 'function' selected for automatic inline expansion
+        /wd4820 # 'bytes' bytes padding added after construct 'member_name'
     )
 endif()
 

@@ -24,11 +24,15 @@ namespace Tegra {
 class DmaPusher;
 struct CommandList;
 
+// TODO: Implement the commented ones
 enum class RenderTargetFormat : u32 {
     NONE = 0x0,
     R32B32G32A32_FLOAT = 0xC0,
     R32G32B32A32_SINT = 0xC1,
     R32G32B32A32_UINT = 0xC2,
+    // R32G32B32X32_FLOAT = 0xC3,
+    // R32G32B32X32_SINT = 0xC4,
+    // R32G32B32X32_UINT = 0xC5,
     R16G16B16A16_UNORM = 0xC6,
     R16G16B16A16_SNORM = 0xC7,
     R16G16B16A16_SINT = 0xC8,
@@ -38,8 +42,8 @@ enum class RenderTargetFormat : u32 {
     R32G32_SINT = 0xCC,
     R32G32_UINT = 0xCD,
     R16G16B16X16_FLOAT = 0xCE,
-    B8G8R8A8_UNORM = 0xCF,
-    B8G8R8A8_SRGB = 0xD0,
+    A8R8G8B8_UNORM = 0xCF,
+    A8R8G8B8_SRGB = 0xD0,
     A2B10G10R10_UNORM = 0xD1,
     A2B10G10R10_UINT = 0xD2,
     A8B8G8R8_UNORM = 0xD5,
@@ -52,10 +56,13 @@ enum class RenderTargetFormat : u32 {
     R16G16_SINT = 0xDC,
     R16G16_UINT = 0xDD,
     R16G16_FLOAT = 0xDE,
+    // A2R10G10B10_UNORM = 0xDF,
     B10G11R11_FLOAT = 0xE0,
     R32_SINT = 0xE3,
     R32_UINT = 0xE4,
     R32_FLOAT = 0xE5,
+    // X8R8G8B8_UNORM = 0xE6,
+    // X8R8G8B8_SRGB = 0xE7,
     R5G6B5_UNORM = 0xE8,
     A1R5G5B5_UNORM = 0xE9,
     R8G8_UNORM = 0xEA,
@@ -71,17 +78,42 @@ enum class RenderTargetFormat : u32 {
     R8_SNORM = 0xF4,
     R8_SINT = 0xF5,
     R8_UINT = 0xF6,
+
+    /*
+    A8_UNORM = 0xF7,
+    X1R5G5B5_UNORM = 0xF8,
+    X8B8G8R8_UNORM = 0xF9,
+    X8B8G8R8_SRGB = 0xFA,
+    Z1R5G5B5_UNORM = 0xFB,
+    O1R5G5B5_UNORM = 0xFC,
+    Z8R8G8B8_UNORM = 0xFD,
+    O8R8G8B8_UNORM = 0xFE,
+    R32_UNORM = 0xFF,
+    A16_UNORM = 0x40,
+    A16_FLOAT = 0x41,
+    A32_FLOAT = 0x42,
+    A8R8_UNORM = 0x43,
+    R16A16_UNORM = 0x44,
+    R16A16_FLOAT = 0x45,
+    R32A32_FLOAT = 0x46,
+    B8G8R8A8_UNORM = 0x47,
+    */
 };
 
 enum class DepthFormat : u32 {
-    D32_FLOAT = 0xA,
-    D16_UNORM = 0x13,
-    S8_UINT_Z24_UNORM = 0x14,
-    D24X8_UNORM = 0x15,
-    D24S8_UNORM = 0x16,
+    Z32_FLOAT = 0xA,
+    Z16_UNORM = 0x13,
+    Z24_UNORM_S8_UINT = 0x14,
+    X8Z24_UNORM = 0x15,
+    S8Z24_UNORM = 0x16,
     S8_UINT = 0x17,
-    D24C8_UNORM = 0x18,
-    D32_FLOAT_S8X24_UINT = 0x19,
+    V8Z24_UNORM = 0x18,
+    Z32_FLOAT_X24S8_UINT = 0x19,
+    /*
+    X8Z24_UNORM_X16V8S8_UINT = 0x1D,
+    Z32_FLOAT_X16V8X8_UINT = 0x1E,
+    Z32_FLOAT_X16V8S8_UINT = 0x1F,
+    */
 };
 
 namespace Engines {
@@ -89,72 +121,57 @@ class Maxwell3D;
 class KeplerCompute;
 } // namespace Engines
 
-enum class EngineID {
-    FERMI_TWOD_A = 0x902D, // 2D Engine
-    MAXWELL_B = 0xB197,    // 3D Engine
-    KEPLER_COMPUTE_B = 0xB1C0,
-    KEPLER_INLINE_TO_MEMORY_B = 0xA140,
-    MAXWELL_DMA_COPY_A = 0xB0B5,
-};
+namespace Control {
+struct ChannelState;
+}
+
+namespace Host1x {
+class Host1x;
+} // namespace Host1x
 
 class MemoryManager;
 
 class GPU final {
 public:
-    struct MethodCall {
-        u32 method{};
-        u32 argument{};
-        u32 subchannel{};
-        u32 method_count{};
-
-        explicit MethodCall(u32 method_, u32 argument_, u32 subchannel_ = 0, u32 method_count_ = 0)
-            : method(method_), argument(argument_), subchannel(subchannel_),
-              method_count(method_count_) {}
-
-        [[nodiscard]] bool IsLastCall() const {
-            return method_count <= 1;
-        }
-    };
-
-    enum class FenceOperation : u32 {
-        Acquire = 0,
-        Increment = 1,
-    };
-
-    union FenceAction {
-        u32 raw;
-        BitField<0, 1, FenceOperation> op;
-        BitField<8, 24, u32> syncpoint_id;
-    };
-
     explicit GPU(Core::System& system, bool is_async, bool use_nvdec);
     ~GPU();
 
     /// Binds a renderer to the GPU.
     void BindRenderer(std::unique_ptr<VideoCore::RendererBase> renderer);
 
-    /// Calls a GPU method.
-    void CallMethod(const MethodCall& method_call);
-
-    /// Calls a GPU multivalue method.
-    void CallMultiMethod(u32 method, u32 subchannel, const u32* base_start, u32 amount,
-                         u32 methods_pending);
-
     /// Flush all current written commands into the host GPU for execution.
     void FlushCommands();
     /// Synchronizes CPU writes with Host GPU memory.
-    void SyncGuestHost();
+    void InvalidateGPUCache();
     /// Signal the ending of command list.
     void OnCommandListEnd();
+
+    std::shared_ptr<Control::ChannelState> AllocateChannel();
+
+    void InitChannel(Control::ChannelState& to_init);
+
+    void BindChannel(s32 channel_id);
+
+    void ReleaseChannel(Control::ChannelState& to_release);
+
+    void InitAddressSpace(Tegra::MemoryManager& memory_manager);
 
     /// Request a host GPU memory flush from the CPU.
     [[nodiscard]] u64 RequestFlush(VAddr addr, std::size_t size);
 
     /// Obtains current flush request fence id.
-    [[nodiscard]] u64 CurrentFlushRequestFence() const;
+    [[nodiscard]] u64 CurrentSyncRequestFence() const;
+
+    void WaitForSyncOperation(u64 fence);
 
     /// Tick pending requests within the GPU.
     void TickWork();
+
+    /// Gets a mutable reference to the Host1x interface
+    [[nodiscard]] Host1x::Host1x& Host1x();
+
+    /// Gets an immutable reference to the Host1x interface.
+    [[nodiscard]] const Host1x::Host1x& Host1x() const;
 
     /// Returns a reference to the Maxwell3D GPU engine.
     [[nodiscard]] Engines::Maxwell3D& Maxwell3D();
@@ -167,12 +184,6 @@ public:
 
     /// Returns a reference to the KeplerCompute GPU engine.
     [[nodiscard]] const Engines::KeplerCompute& KeplerCompute() const;
-
-    /// Returns a reference to the GPU memory manager.
-    [[nodiscard]] Tegra::MemoryManager& MemoryManager();
-
-    /// Returns a const reference to the GPU memory manager.
-    [[nodiscard]] const Tegra::MemoryManager& MemoryManager() const;
 
     /// Returns a reference to the GPU DMA pusher.
     [[nodiscard]] Tegra::DmaPusher& DmaPusher();
@@ -192,17 +203,6 @@ public:
     /// Returns a const reference to the shader notifier.
     [[nodiscard]] const VideoCore::ShaderNotify& ShaderNotify() const;
 
-    /// Allows the CPU/NvFlinger to wait on the GPU before presenting a frame.
-    void WaitFence(u32 syncpoint_id, u32 value);
-
-    void IncrementSyncPoint(u32 syncpoint_id);
-
-    [[nodiscard]] u32 GetSyncpointValue(u32 syncpoint_id) const;
-
-    void RegisterSyncptInterrupt(u32 syncpoint_id, u32 value);
-
-    [[nodiscard]] bool CancelSyncptInterrupt(u32 syncpoint_id, u32 value);
-
     [[nodiscard]] u64 GetTicks() const;
 
     [[nodiscard]] bool IsAsync() const;
@@ -210,6 +210,9 @@ public:
     [[nodiscard]] bool UseNvdec() const;
 
     void RendererFrameEndNotify();
+
+    void RequestSwapBuffers(const Tegra::FramebufferConfig* framebuffer,
+                            std::array<Service::Nvidia::NvFence, 4>& fences, size_t num_fences);
 
     /// Performs any additional setup necessary in order to begin GPU emulation.
     /// This can be used to launch any necessary threads and register any necessary
@@ -226,7 +229,7 @@ public:
     void ReleaseContext();
 
     /// Push GPU command entries to be processed
-    void PushGPUEntries(Tegra::CommandList&& entries);
+    void PushGPUEntries(s32 channel, Tegra::CommandList&& entries);
 
     /// Push GPU command buffer entries to be processed
     void PushCommandBuffer(u32 id, Tegra::ChCommandHeaderList& entries);
@@ -248,7 +251,7 @@ public:
 
 private:
     struct Impl;
-    std::unique_ptr<Impl> impl;
+    mutable std::unique_ptr<Impl> impl;
 };
 
 } // namespace Tegra

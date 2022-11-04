@@ -18,6 +18,8 @@ add_library(input_common STATIC
     drivers/touch_screen.h
     drivers/udp_client.cpp
     drivers/udp_client.h
+    drivers/virtual_amiibo.cpp
+    drivers/virtual_amiibo.h
     helpers/stick_from_buttons.cpp
     helpers/stick_from_buttons.h
     helpers/touch_from_buttons.cpp
@@ -37,21 +39,14 @@ add_library(input_common STATIC
 if (MSVC)
     target_compile_options(input_common PRIVATE
         /W4
-        /WX
 
         /we4242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
-        /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
-        /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /we4800 # Implicit conversion from 'type' to bool. Possible information loss
     )
 else()
     target_compile_options(input_common PRIVATE
-        -Werror
         -Werror=conversion
-        -Werror=ignored-qualifiers
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
-        -Werror=unused-variable
     )
 endif()
 

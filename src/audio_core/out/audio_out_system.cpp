@@ -24,7 +24,7 @@ System::~System() {
 void System::Finalize() {
     Stop();
     session->Finalize();
-    buffer_event->GetWritableEvent().Signal();
+    buffer_event->Signal();
 }
 
 std::string_view System::GetDefaultOutputDeviceName() const {
@@ -49,8 +49,8 @@ Result System::IsConfigValid(std::string_view device_name,
     return Service::Audio::ERR_INVALID_CHANNEL_COUNT;
 }
 
-Result System::Initialize(std::string& device_name, const AudioOutParameter& in_params, u32 handle_,
-                          u64& applet_resource_user_id_) {
+Result System::Initialize(std::string device_name, const AudioOutParameter& in_params, u32 handle_,
+                          u64 applet_resource_user_id_) {
     auto result = IsConfigValid(device_name, in_params);
     if (result.IsError()) {
         return result;
@@ -141,7 +141,7 @@ void System::ReleaseBuffers() {
     bool signal{buffers.ReleaseBuffers(system.CoreTiming(), *session)};
     if (signal) {
         // Signal if any buffer was released, or if none are registered, we need more.
-        buffer_event->GetWritableEvent().Signal();
+        buffer_event->Signal();
     }
 }
 
@@ -158,7 +158,7 @@ bool System::FlushAudioOutBuffers() {
     buffers.FlushBuffers(buffers_released);
 
     if (buffers_released > 0) {
-        buffer_event->GetWritableEvent().Signal();
+        buffer_event->Signal();
     }
     return true;
 }

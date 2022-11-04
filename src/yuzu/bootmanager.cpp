@@ -47,7 +47,7 @@ EmuThread::EmuThread(Core::System& system_) : system{system_} {}
 EmuThread::~EmuThread() = default;
 
 void EmuThread::run() {
-    std::string name = "yuzu:EmuControlThread";
+    std::string name = "EmuControlThread";
     MicroProfileOnThreadCreate(name.c_str());
     Common::SetCurrentThreadName(name.c_str());
 
@@ -120,8 +120,8 @@ void EmuThread::run() {
         }
     }
 
-    // Shutdown the core emulation
-    system.Shutdown();
+    // Shutdown the main emulated process
+    system.ShutdownMainProcess();
 
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();

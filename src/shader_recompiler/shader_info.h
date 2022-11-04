@@ -5,6 +5,7 @@
 
 #include <array>
 #include <bitset>
+#include <map>
 
 #include "common/common_types.h"
 #include "shader_recompiler/frontend/ir/type.h"
@@ -71,8 +72,10 @@ struct TextureBufferDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };
@@ -95,8 +98,10 @@ struct TextureDescriptor {
     bool has_secondary;
     u32 cbuf_index;
     u32 cbuf_offset;
+    u32 shift_left;
     u32 secondary_cbuf_index;
     u32 secondary_cbuf_offset;
+    u32 secondary_shift_left;
     u32 count;
     u32 size_shift;
 };
@@ -132,6 +137,8 @@ struct Info {
     VaryingState loads;
     VaryingState stores;
     VaryingState passthrough;
+
+    std::map<IR::Attribute, IR::Attribute> legacy_stores_mapping;
 
     bool loads_indexed_attributes{};
 
@@ -185,6 +192,7 @@ struct Info {
     bool uses_shadow_lod{};
     bool uses_rescaling_uniform{};
     bool uses_cbuf_indirect{};
+    bool uses_render_area{};
 
     IR::Type used_constant_buffer_types{};
     IR::Type used_storage_buffer_types{};

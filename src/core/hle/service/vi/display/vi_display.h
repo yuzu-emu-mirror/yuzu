@@ -9,6 +9,7 @@
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "core/hle/result.h"
 
 namespace Kernel {
 class KEvent;
@@ -25,6 +26,11 @@ class ServiceContext;
 namespace Service::NVFlinger {
 class HosBinderDriverServer;
 }
+
+namespace Service::Nvidia::NvCore {
+class Container;
+class NvMap;
+} // namespace Service::Nvidia::NvCore
 
 namespace Service::VI {
 
@@ -73,8 +79,16 @@ public:
         return layers.size();
     }
 
-    /// Gets the readable vsync event.
-    Kernel::KReadableEvent& GetVSyncEvent();
+    /**
+     * Gets the internal vsync event.
+     *
+     * @returns The internal Vsync event if it has not yet been retrieved,
+     *          VI::ResultPermissionDenied otherwise.
+     */
+    [[nodiscard]] ResultVal<Kernel::KReadableEvent*> GetVSyncEvent();
+
+    /// Gets the internal vsync event.
+    Kernel::KReadableEvent* GetVSyncEventUnchecked();
 
     /// Signals the internal vsync event.
     void SignalVSyncEvent();
@@ -84,13 +98,19 @@ public:
     /// @param layer_id The ID to assign to the created layer.
     /// @param binder_id The ID assigned to the buffer queue.
     ///
-    void CreateLayer(u64 layer_id, u32 binder_id);
+    void CreateLayer(u64 layer_id, u32 binder_id, Service::Nvidia::NvCore::Container& core);
 
     /// Closes and removes a layer from this display with the given ID.
     ///
     /// @param layer_id The ID assigned to the layer to close.
     ///
     void CloseLayer(u64 layer_id);
+
+    /// Resets the display for a new connection.
+    void Reset() {
+        layers.clear();
+        got_vsync_event = false;
+    }
 
     /// Attempts to find a layer with the given ID.
     ///
@@ -118,6 +138,7 @@ private:
 
     std::vector<std::unique_ptr<Layer>> layers;
     Kernel::KEvent* vsync_event{};
+    bool got_vsync_event{false};
 };
 
 } // namespace Service::VI

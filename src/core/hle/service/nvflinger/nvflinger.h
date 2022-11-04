@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "common/common_types.h"
+#include "core/hle/result.h"
 #include "core/hle/service/kernel_helpers.h"
 
 namespace Common {
@@ -24,7 +25,6 @@ struct EventType;
 
 namespace Kernel {
 class KReadableEvent;
-class KWritableEvent;
 } // namespace Kernel
 
 namespace Service::Nvidia {
@@ -48,6 +48,8 @@ public:
     explicit NVFlinger(Core::System& system_, HosBinderDriverServer& hos_binder_driver_server_);
     ~NVFlinger();
 
+    void ShutdownLayers();
+
     /// Sets the NVDrv module instance to use to send buffers to the GPU.
     void SetNVDrvInstance(std::shared_ptr<Nvidia::Module> instance);
 
@@ -55,6 +57,11 @@ public:
     ///
     /// If an invalid display name is provided, then an empty optional is returned.
     [[nodiscard]] std::optional<u64> OpenDisplay(std::string_view name);
+
+    /// Closes the specified display by its ID.
+    ///
+    /// Returns false if an invalid display ID is provided.
+    [[nodiscard]] bool CloseDisplay(u64 display_id);
 
     /// Creates a layer on the specified display and returns the layer ID.
     ///
@@ -71,8 +78,9 @@ public:
 
     /// Gets the vsync event for the specified display.
     ///
-    /// If an invalid display ID is provided, then nullptr is returned.
-    [[nodiscard]] Kernel::KReadableEvent* FindVsyncEvent(u64 display_id);
+    /// If an invalid display ID is provided, then VI::ResultNotFound is returned.
+    /// If the vsync event has already been retrieved, then VI::ResultPermissionDenied is returned.
+    [[nodiscard]] ResultVal<Kernel::KReadableEvent*> FindVsyncEvent(u64 display_id);
 
     /// Performs a composition request to the emulated nvidia GPU and triggers the vsync events when
     /// finished.
@@ -114,6 +122,7 @@ private:
     void SplitVSync(std::stop_token stop_token);
 
     std::shared_ptr<Nvidia::Module> nvdrv;
+    s32 disp_fd;
 
     std::list<VI::Display> displays;
 

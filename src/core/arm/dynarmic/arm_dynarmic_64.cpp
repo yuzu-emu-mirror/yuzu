@@ -111,6 +111,7 @@ public:
         LOG_ERROR(Core_ARM,
                   "Unimplemented instruction @ 0x{:X} for {} instructions (instr = {:08X})", pc,
                   num_instructions, memory.Read32(pc));
+        ReturnException(pc, ARM_Interface::no_execute);
     }
 
     void InstructionCacheOperationRaised(Dynarmic::A64::InstructionCacheOperation op,
@@ -516,7 +517,7 @@ std::vector<ARM_Interface::BacktraceEntry> ARM_Dynarmic_64::GetBacktrace(Core::S
     // Frame records are two words long:
     // fp+0 : pointer to previous frame record
     // fp+8 : value of lr for frame
-    while (true) {
+    for (size_t i = 0; i < 256; i++) {
         out.push_back({"", 0, lr, 0, ""});
         if (!fp || (fp % 4 != 0) || !memory.IsValidVirtualAddressRange(fp, 16)) {
             break;

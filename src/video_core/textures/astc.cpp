@@ -1413,7 +1413,7 @@ static void FillVoidExtentLDR(InputBitStream& strm, std::span<u32> outBuf, u32 b
 static void FillError(std::span<u32> outBuf, u32 blockWidth, u32 blockHeight) {
     for (u32 j = 0; j < blockHeight; j++) {
         for (u32 i = 0; i < blockWidth; i++) {
-            outBuf[j * blockWidth + i] = 0xFFFF00FF;
+            outBuf[j * blockWidth + i] = 0x00000000;
         }
     }
 }
@@ -1656,13 +1656,13 @@ void Decompress(std::span<const uint8_t> data, uint32_t width, uint32_t height, 
     const u32 cols = Common::DivideUp(width, block_width);
 
     Common::ThreadWorker workers{std::max(std::thread::hardware_concurrency(), 2U) / 2,
-                                 "yuzu:ASTCDecompress"};
+                                 "ASTCDecompress"};
 
     for (u32 z = 0; z < depth; ++z) {
         const u32 depth_offset = z * height * width * 4;
         for (u32 y_index = 0; y_index < rows; ++y_index) {
-            auto decompress_stride = [data, width, height, depth, block_width, block_height, output,
-                                      rows, cols, z, depth_offset, y_index] {
+            auto decompress_stride = [data, width, height, block_width, block_height, output, rows,
+                                      cols, z, depth_offset, y_index] {
                 const u32 y = y_index * block_height;
                 for (u32 x_index = 0; x_index < cols; ++x_index) {
                     const u32 block_index = (z * rows * cols) + (y_index * cols) + x_index;

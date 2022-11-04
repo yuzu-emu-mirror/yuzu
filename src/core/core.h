@@ -74,6 +74,9 @@ class TimeManager;
 namespace Tegra {
 class DebugContext;
 class GPU;
+namespace Host1x {
+class Host1x;
+} // namespace Host1x
 } // namespace Tegra
 
 namespace VideoCore {
@@ -86,10 +89,6 @@ class AudioCore;
 
 namespace Core::Timing {
 class CoreTiming;
-}
-
-namespace Core::Hardware {
-class InterruptManager;
 }
 
 namespace Core::HID {
@@ -144,6 +143,12 @@ public:
     System& operator=(System&&) = delete;
 
     /**
+     * Initializes the system
+     * This function will initialize core functionaility used for system emulation
+     */
+    void Initialize();
+
+    /**
      * Run the OS and Application
      * This function will start emulation and run the relevant devices
      */
@@ -167,8 +172,8 @@ public:
 
     void InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size);
 
-    /// Shutdown the emulated system.
-    void Shutdown();
+    /// Shutdown the main emulated process.
+    void ShutdownMainProcess();
 
     /// Check if the core is shutting down.
     [[nodiscard]] bool IsShuttingDown() const;
@@ -260,6 +265,12 @@ public:
     /// Gets an immutable reference to the GPU interface.
     [[nodiscard]] const Tegra::GPU& GPU() const;
 
+    /// Gets a mutable reference to the Host1x interface
+    [[nodiscard]] Tegra::Host1x::Host1x& Host1x();
+
+    /// Gets an immutable reference to the Host1x interface.
+    [[nodiscard]] const Tegra::Host1x::Host1x& Host1x() const;
+
     /// Gets a mutable reference to the renderer.
     [[nodiscard]] VideoCore::RendererBase& Renderer();
 
@@ -295,12 +306,6 @@ public:
 
     /// Provides a constant reference to the core timing instance.
     [[nodiscard]] const Timing::CoreTiming& CoreTiming() const;
-
-    /// Provides a reference to the interrupt manager instance.
-    [[nodiscard]] Core::Hardware::InterruptManager& InterruptManager();
-
-    /// Provides a constant reference to the interrupt manager instance.
-    [[nodiscard]] const Core::Hardware::InterruptManager& InterruptManager() const;
 
     /// Provides a reference to the kernel instance.
     [[nodiscard]] Kernel::KernelCore& Kernel();

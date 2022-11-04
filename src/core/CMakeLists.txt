@@ -138,8 +138,6 @@ add_library(core STATIC
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
-    hardware_interrupt_manager.cpp
-    hardware_interrupt_manager.h
     hid/emulated_console.cpp
     hid/emulated_console.h
     hid/emulated_controller.cpp
@@ -192,6 +190,9 @@ add_library(core STATIC
     hle/kernel/k_code_memory.h
     hle/kernel/k_condition_variable.cpp
     hle/kernel/k_condition_variable.h
+    hle/kernel/k_dynamic_page_manager.h
+    hle/kernel/k_dynamic_resource_manager.h
+    hle/kernel/k_dynamic_slab_heap.h
     hle/kernel/k_event.cpp
     hle/kernel/k_event.h
     hle/kernel/k_handle_table.cpp
@@ -242,6 +243,8 @@ add_library(core STATIC
     hle/kernel/k_server_session.h
     hle/kernel/k_session.cpp
     hle/kernel/k_session.h
+    hle/kernel/k_session_request.cpp
+    hle/kernel/k_session_request.h
     hle/kernel/k_shared_memory.cpp
     hle/kernel/k_shared_memory.h
     hle/kernel/k_shared_memory_info.h
@@ -263,8 +266,6 @@ add_library(core STATIC
     hle/kernel/k_worker_task.h
     hle/kernel/k_worker_task_manager.cpp
     hle/kernel/k_worker_task_manager.h
-    hle/kernel/k_writable_event.cpp
-    hle/kernel/k_writable_event.h
     hle/kernel/kernel.cpp
     hle/kernel/kernel.h
     hle/kernel/memory_types.h
@@ -460,6 +461,8 @@ add_library(core STATIC
     hle/service/hid/controllers/mouse.h
     hle/service/hid/controllers/npad.cpp
     hle/service/hid/controllers/npad.h
+    hle/service/hid/controllers/palma.cpp
+    hle/service/hid/controllers/palma.h
     hle/service/hid/controllers/stubbed.cpp
     hle/service/hid/controllers/stubbed.h
     hle/service/hid/controllers/touchscreen.cpp
@@ -494,6 +497,8 @@ add_library(core STATIC
     hle/service/jit/jit.h
     hle/service/lbl/lbl.cpp
     hle/service/lbl/lbl.h
+    hle/service/ldn/lan_discovery.cpp
+    hle/service/ldn/lan_discovery.h
     hle/service/ldn/ldn_results.h
     hle/service/ldn/ldn.cpp
     hle/service/ldn/ldn.h
@@ -521,9 +526,12 @@ add_library(core STATIC
     hle/service/nfc/nfc.h
     hle/service/nfp/amiibo_crypto.cpp
     hle/service/nfp/amiibo_crypto.h
-    hle/service/nfp/amiibo_types.h
     hle/service/nfp/nfp.cpp
     hle/service/nfp/nfp.h
+    hle/service/nfp/nfp_device.cpp
+    hle/service/nfp/nfp_device.h
+    hle/service/nfp/nfp_result.h
+    hle/service/nfp/nfp_types.h
     hle/service/nfp/nfp_user.cpp
     hle/service/nfp/nfp_user.h
     hle/service/ngct/ngct.cpp
@@ -543,6 +551,12 @@ add_library(core STATIC
     hle/service/ns/ns.h
     hle/service/ns/pdm_qry.cpp
     hle/service/ns/pdm_qry.h
+    hle/service/nvdrv/core/container.cpp
+    hle/service/nvdrv/core/container.h
+    hle/service/nvdrv/core/nvmap.cpp
+    hle/service/nvdrv/core/nvmap.h
+    hle/service/nvdrv/core/syncpoint_manager.cpp
+    hle/service/nvdrv/core/syncpoint_manager.h
     hle/service/nvdrv/devices/nvdevice.h
     hle/service/nvdrv/devices/nvdisp_disp0.cpp
     hle/service/nvdrv/devices/nvdisp_disp0.h
@@ -571,8 +585,6 @@ add_library(core STATIC
     hle/service/nvdrv/nvdrv_interface.h
     hle/service/nvdrv/nvmemp.cpp
     hle/service/nvdrv/nvmemp.h
-    hle/service/nvdrv/syncpoint_manager.cpp
-    hle/service/nvdrv/syncpoint_manager.h
     hle/service/nvflinger/binder.h
     hle/service/nvflinger/buffer_item.h
     hle/service/nvflinger/buffer_item_consumer.cpp
@@ -762,19 +774,15 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
         /we4245 # 'conversion': conversion from 'type1' to 'type2', signed/unsigned mismatch
         /we4254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
+        /we4800 # Implicit conversion from 'type' to bool. Possible information loss
     )
 else()
     target_compile_options(core PRIVATE
         -Werror=conversion
-        -Werror=ignored-qualifiers
-
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
-        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
-
-        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
 
         -Wno-sign-conversion
+
+        $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
     )
 endif()
 

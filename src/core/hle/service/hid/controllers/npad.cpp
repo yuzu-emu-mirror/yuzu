@@ -16,7 +16,6 @@
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "core/hle/service/hid/errors.h"
 #include "core/hle/service/kernel_helpers.h"
@@ -167,7 +166,7 @@ void Controller_NPad::InitNewlyAddedController(Core::HID::NpadIdType npad_id) {
     const auto& battery_level = controller.device->GetBattery();
     auto* shared_memory = controller.shared_memory;
     if (controller_type == Core::HID::NpadStyleIndex::None) {
-        controller.styleset_changed_event->GetWritableEvent().Signal();
+        controller.styleset_changed_event->Signal();
         return;
     }
 
@@ -660,7 +659,6 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             ASSERT(false);
             break;
         case Core::HID::NpadStyleIndex::ProController:
-        case Core::HID::NpadStyleIndex::Pokeball:
             set_motion_state(sixaxis_fullkey_state, motion_state[0]);
             break;
         case Core::HID::NpadStyleIndex::Handheld:
@@ -675,6 +673,11 @@ void Controller_NPad::OnMotionUpdate(const Core::Timing::CoreTiming& core_timing
             break;
         case Core::HID::NpadStyleIndex::JoyconRight:
             set_motion_state(sixaxis_right_lifo_state, motion_state[1]);
+            break;
+        case Core::HID::NpadStyleIndex::Pokeball:
+            using namespace std::literals::chrono_literals;
+            set_motion_state(sixaxis_fullkey_state, motion_state[0]);
+            sixaxis_fullkey_state.delta_time = std::chrono::nanoseconds(15ms).count();
             break;
         default:
             break;
@@ -742,8 +745,9 @@ void Controller_NPad::SetSupportedNpadIdTypes(u8* data, std::size_t length) {
 }
 
 void Controller_NPad::GetSupportedNpadIdTypes(u32* data, std::size_t max_length) {
-    ASSERT(max_length < supported_npad_id_types.size());
-    std::memcpy(data, supported_npad_id_types.data(), supported_npad_id_types.size());
+    const auto copy_amount = supported_npad_id_types.size() * sizeof(u32);
+    ASSERT(max_length <= copy_amount);
+    std::memcpy(data, supported_npad_id_types.data(), copy_amount);
 }
 
 std::size_t Controller_NPad::GetSupportedNpadIdTypesSize() const {
@@ -864,7 +868,7 @@ bool Controller_NPad::VibrateControllerAtIndex(Core::HID::NpadIdType npad_id,
         return false;
     }
 
-    if (!controller.device->IsVibrationEnabled()) {
+    if (!controller.device->IsVibrationEnabled(device_index)) {
         if (controller.vibration[device_index].latest_vibration_value.low_amplitude != 0.0f ||
             controller.vibration[device_index].latest_vibration_value.high_amplitude != 0.0f) {
             // Send an empty vibration to stop any vibrations.
@@ -997,7 +1001,7 @@ void Controller_NPad::InitializeVibrationDeviceAtIndex(Core::HID::NpadIdType npa
     }
 
     controller.vibration[device_index].device_mounted =
-        controller.device->TestVibration(device_index);
+        controller.device->IsVibrationEnabled(device_index);
 }
 
 void Controller_NPad::SetPermitVibrationSession(bool permit_vibration_session) {
@@ -1029,7 +1033,7 @@ Kernel::KReadableEvent& Controller_NPad::GetStyleSetChangedEvent(Core::HID::Npad
 
 void Controller_NPad::SignalStyleSetChangedEvent(Core::HID::NpadIdType npad_id) const {
     const auto& controller = GetControllerFromNpadIdType(npad_id);
-    controller.styleset_changed_event->GetWritableEvent().Signal();
+    controller.styleset_changed_event->Signal();
 }
 
 void Controller_NPad::AddNewControllerAt(Core::HID::NpadStyleIndex controller,
@@ -1498,25 +1502,25 @@ bool Controller_NPad::IsControllerSupported(Core::HID::NpadStyleIndex controller
         Core::HID::NpadStyleTag style = GetSupportedStyleSet();
         switch (controller) {
         case Core::HID::NpadStyleIndex::ProController:
-            return style.fullkey;
+            return style.fullkey.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconDual:
-            return style.joycon_dual;
+            return style.joycon_dual.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconLeft:
-            return style.joycon_left;
+            return style.joycon_left.As<bool>();
         case Core::HID::NpadStyleIndex::JoyconRight:
-            return style.joycon_right;
+            return style.joycon_right.As<bool>();
         case Core::HID::NpadStyleIndex::GameCube:
-            return style.gamecube;
+            return style.gamecube.As<bool>();
         case Core::HID::NpadStyleIndex::Pokeball:
-            return style.palma;
+            return style.palma.As<bool>();
         case Core::HID::NpadStyleIndex::NES:
-            return style.lark;
+            return style.lark.As<bool>();
         case Core::HID::NpadStyleIndex::SNES:
-            return style.lucia;
+            return style.lucia.As<bool>();
         case Core::HID::NpadStyleIndex::N64:
-            return style.lagoon;
+            return style.lagoon.As<bool>();
         case Core::HID::NpadStyleIndex::SegaGenesis:
-            return style.lager;
+            return style.lager.As<bool>();
         default:
             return false;
         }

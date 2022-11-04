@@ -27,7 +27,6 @@
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
-#include "core/hardware_interrupt_manager.h"
 #include "core/hid/hid_core.h"
 #include "core/hle/kernel/k_memory_manager.h"
 #include "core/hle/kernel/k_process.h"
@@ -51,6 +50,7 @@
 #include "core/telemetry_session.h"
 #include "core/tools/freezer.h"
 #include "network/network.h"
+#include "video_core/host1x/host1x.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -133,6 +133,56 @@ struct System::Impl {
         : kernel{system}, fs_controller{system}, memory{system}, hid_core{}, room_network{},
           cpu_manager{system}, reporter{system}, applet_manager{system}, time_manager{system} {}
 
+    void Initialize(System& system) {
+        device_memory = std::make_unique<Core::DeviceMemory>();
+
+        is_multicore = Settings::values.use_multi_core.GetValue();
+        extended_memory_layout = Settings::values.use_extended_memory_layout.GetValue();
+
+        core_timing.SetMulticore(is_multicore);
+        core_timing.Initialize([&system]() { system.RegisterHostThread(); });
+
+        const auto posix_time = std::chrono::system_clock::now().time_since_epoch();
+        const auto current_time =
+            std::chrono::duration_cast<std::chrono::seconds>(posix_time).count();
+        Settings::values.custom_rtc_differential =
+            Settings::values.custom_rtc.value_or(current_time) - current_time;
+
+        // Create a default fs if one doesn't already exist.
+        if (virtual_filesystem == nullptr) {
+            virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
+        }
+        if (content_provider == nullptr) {
+            content_provider = std::make_unique<FileSys::ContentProviderUnion>();
+        }
+
+        // Create default implementations of applets if one is not provided.
+        applet_manager.SetDefaultAppletsIfMissing();
+
+        is_async_gpu = Settings::values.use_asynchronous_gpu_emulation.GetValue();
+
+        kernel.SetMulticore(is_multicore);
+        cpu_manager.SetMulticore(is_multicore);
+        cpu_manager.SetAsyncGpu(is_async_gpu);
+    }
+
+    void ReinitializeIfNecessary(System& system) {
+        const bool must_reinitialize =
+            is_multicore != Settings::values.use_multi_core.GetValue() ||
+            extended_memory_layout != Settings::values.use_extended_memory_layout.GetValue();
+
+        if (!must_reinitialize) {
+            return;
+        }
+
+        LOG_DEBUG(Kernel, "Re-initializing");
+
+        is_multicore = Settings::values.use_multi_core.GetValue();
+        extended_memory_layout = Settings::values.use_extended_memory_layout.GetValue();
+
+        Initialize(system);
+    }
+
     SystemResultStatus Run() {
         std::unique_lock<std::mutex> lk(suspend_guard);
         status = SystemResultStatus::Success;
@@ -178,43 +228,21 @@ struct System::Impl {
         debugger = std::make_unique<Debugger>(system, port);
     }
 
-    SystemResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
+    SystemResultStatus SetupForMainProcess(System& system, Frontend::EmuWindow& emu_window) {
         LOG_DEBUG(Core, "initialized OK");
 
-        device_memory = std::make_unique<Core::DeviceMemory>();
-
-        is_multicore = Settings::values.use_multi_core.GetValue();
-        is_async_gpu = Settings::values.use_asynchronous_gpu_emulation.GetValue();
-
-        kernel.SetMulticore(is_multicore);
-        cpu_manager.SetMulticore(is_multicore);
-        cpu_manager.SetAsyncGpu(is_async_gpu);
-        core_timing.SetMulticore(is_multicore);
+        // Setting changes may require a full system reinitialization (e.g., disabling multicore).
+        ReinitializeIfNecessary(system);
 
         kernel.Initialize();
         cpu_manager.Initialize();
-        core_timing.Initialize([&system]() { system.RegisterHostThread(); });
-
-        const auto posix_time = std::chrono::system_clock::now().time_since_epoch();
-        const auto current_time =
-            std::chrono::duration_cast<std::chrono::seconds>(posix_time).count();
-        Settings::values.custom_rtc_differential =
-            Settings::values.custom_rtc.value_or(current_time) - current_time;
-
-        // Create a default fs if one doesn't already exist.
-        if (virtual_filesystem == nullptr)
-            virtual_filesystem = std::make_shared<FileSys::RealVfsFilesystem>();
-        if (content_provider == nullptr)
-            content_provider = std::make_unique<FileSys::ContentProviderUnion>();
-
-        /// Create default implementations of applets if one is not provided.
-        applet_manager.SetDefaultAppletsIfMissing();
 
         /// Reset all glue registrations
         arp_manager.ResetAll();
 
         telemetry_session = std::make_unique<Core::TelemetrySession>();
 
+        host1x_core = std::make_unique<Tegra::Host1x::Host1x>(system);
         gpu_core = VideoCore::CreateGPU(emu_window, system);
         if (!gpu_core) {
             return SystemResultStatus::ErrorVideoCore;
@@ -224,7 +252,6 @@ struct System::Impl {
 
         service_manager = std::make_shared<Service::SM::ServiceManager>(kernel);
         services = std::make_unique<Service::Services>(service_manager, system);
-        interrupt_manager = std::make_unique<Hardware::InterruptManager>(system);
 
         // Initialize time manager, which must happen after kernel is created
         time_manager.Initialize();
@@ -253,11 +280,11 @@ struct System::Impl {
             return SystemResultStatus::ErrorGetLoader;
         }
 
-        SystemResultStatus init_result{Init(system, emu_window)};
+        SystemResultStatus init_result{SetupForMainProcess(system, emu_window)};
         if (init_result != SystemResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to initialize system (Error {})!",
                          static_cast<int>(init_result));
-            Shutdown();
+            ShutdownMainProcess();
             return init_result;
         }
 
@@ -276,7 +303,7 @@ struct System::Impl {
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", load_result);
-            Shutdown();
+            ShutdownMainProcess();
 
             return static_cast<SystemResultStatus>(
                 static_cast<u32>(SystemResultStatus::ErrorLoader) + static_cast<u32>(load_result));
@@ -335,7 +362,7 @@ struct System::Impl {
         return status;
     }
 
-    void Shutdown() {
+    void ShutdownMainProcess() {
         SetShuttingDown(true);
 
         // Log last frame performance stats if game was loded
@@ -363,20 +390,21 @@ struct System::Impl {
         kernel.ShutdownCores();
         cpu_manager.Shutdown();
         debugger.reset();
+        services->KillNVNFlinger();
         kernel.CloseServices();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
         telemetry_session.reset();
         time_manager.Shutdown();
-        core_timing.Shutdown();
+        core_timing.ClearPendingEvents();
         app_loader.reset();
         audio_core.reset();
         gpu_core.reset();
+        host1x_core.reset();
         perf_stats.reset();
         kernel.Shutdown();
         memory.Reset();
-        applet_manager.ClearAll();
 
         if (auto room_member = room_network.GetRoomMember().lock()) {
             Network::GameInfo game_info{};
@@ -450,7 +478,7 @@ struct System::Impl {
     /// AppLoader used to load the current executing application
     std::unique_ptr<Loader::AppLoader> app_loader;
     std::unique_ptr<Tegra::GPU> gpu_core;
-    std::unique_ptr<Hardware::InterruptManager> interrupt_manager;
+    std::unique_ptr<Tegra::Host1x::Host1x> host1x_core;
     std::unique_ptr<Core::DeviceMemory> device_memory;
     std::unique_ptr<AudioCore::AudioCore> audio_core;
     Core::Memory::Memory memory;
@@ -499,6 +527,7 @@ struct System::Impl {
 
     bool is_multicore{};
     bool is_async_gpu{};
+    bool extended_memory_layout{};
 
     ExecuteProgramCallback execute_program_callback;
     ExitCallback exit_callback;
@@ -517,6 +546,10 @@ CpuManager& System::GetCpuManager() {
 
 const CpuManager& System::GetCpuManager() const {
     return impl->cpu_manager;
+}
+
+void System::Initialize() {
+    impl->Initialize(*this);
 }
 
 SystemResultStatus System::Run() {
@@ -539,8 +572,8 @@ void System::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
     impl->kernel.InvalidateCpuInstructionCacheRange(addr, size);
 }
 
-void System::Shutdown() {
-    impl->Shutdown();
+void System::ShutdownMainProcess() {
+    impl->ShutdownMainProcess();
 }
 
 bool System::IsShuttingDown() const {
@@ -668,12 +701,12 @@ const Tegra::GPU& System::GPU() const {
     return *impl->gpu_core;
 }
 
-Core::Hardware::InterruptManager& System::InterruptManager() {
-    return *impl->interrupt_manager;
+Tegra::Host1x::Host1x& System::Host1x() {
+    return *impl->host1x_core;
 }
 
-const Core::Hardware::InterruptManager& System::InterruptManager() const {
-    return *impl->interrupt_manager;
+const Tegra::Host1x::Host1x& System::Host1x() const {
+    return *impl->host1x_core;
 }
 
 VideoCore::RendererBase& System::Renderer() {

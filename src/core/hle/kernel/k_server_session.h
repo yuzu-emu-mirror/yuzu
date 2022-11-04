@@ -1,8 +1,9 @@
-// SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2022 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -10,24 +11,16 @@
 #include <boost/intrusive/list.hpp>
 
 #include "core/hle/kernel/hle_ipc.h"
+#include "core/hle/kernel/k_light_lock.h"
+#include "core/hle/kernel/k_session_request.h"
 #include "core/hle/kernel/k_synchronization_object.h"
 #include "core/hle/result.h"
-
-namespace Core::Memory {
-class Memory;
-}
-
-namespace Core::Timing {
-class CoreTiming;
-struct EventType;
-} // namespace Core::Timing
 
 namespace Kernel {
 
 class HLERequestContext;
 class KernelCore;
 class KSession;
-class SessionRequestHandler;
 class SessionRequestManager;
 class KThread;
 
@@ -43,8 +36,7 @@ public:
 
     void Destroy() override;
 
-    void Initialize(KSession* parent_session_, std::string&& name_,
-                    std::shared_ptr<SessionRequestManager> manager_);
+    void Initialize(KSession* parent_session_, std::string&& name_);
 
     KSession* GetParent() {
         return parent;
@@ -55,71 +47,30 @@ public:
     }
 
     bool IsSignaled() const override;
-
     void OnClientClosed();
 
-    void ClientConnected(SessionRequestHandlerPtr handler) {
-        manager->SetSessionHandler(std::move(handler));
-    }
+    /// TODO: flesh these out to match the real kernel
+    Result OnRequest(KSessionRequest* request);
+    Result SendReply(bool is_hle = false);
+    Result ReceiveRequest(std::shared_ptr<HLERequestContext>* out_context = nullptr,
+                          std::weak_ptr<SessionRequestManager> manager = {});
 
-    void ClientDisconnected() {
-        manager = nullptr;
-    }
-
-    /**
-     * Handle a sync request from the emulated application.
-     *
-     * @param thread      Thread that initiated the request.
-     * @param memory      Memory context to handle the sync request under.
-     * @param core_timing Core timing context to schedule the request event under.
-     *
-     * @returns Result from the operation.
-     */
-    Result HandleSyncRequest(KThread* thread, Core::Memory::Memory& memory,
-                             Core::Timing::CoreTiming& core_timing);
-
-    /// Adds a new domain request handler to the collection of request handlers within
-    /// this ServerSession instance.
-    void AppendDomainHandler(SessionRequestHandlerPtr handler);
-
-    /// Retrieves the total number of domain request handlers that have been
-    /// appended to this ServerSession instance.
-    std::size_t NumDomainRequestHandlers() const;
-
-    /// Returns true if the session has been converted to a domain, otherwise False
-    bool IsDomain() const {
-        return manager->IsDomain();
-    }
-
-    /// Converts the session to a domain at the end of the current command
-    void ConvertToDomain() {
-        convert_to_domain = true;
-    }
-
-    /// Gets the session request manager, which forwards requests to the underlying service
-    std::shared_ptr<SessionRequestManager>& GetSessionRequestManager() {
-        return manager;
+    Result SendReplyHLE() {
+        return SendReply(true);
     }
 
 private:
-    /// Queues a sync request from the emulated application.
-    Result QueueSyncRequest(KThread* thread, Core::Memory::Memory& memory);
-
-    /// Completes a sync request from the emulated application.
-    Result CompleteSyncRequest(HLERequestContext& context);
-
-    /// Handles a SyncRequest to a domain, forwarding the request to the proper object or closing an
-    /// object handle.
-    Result HandleDomainSyncRequest(Kernel::HLERequestContext& context);
-
-    /// This session's HLE request handlers
-    std::shared_ptr<SessionRequestManager> manager;
-
-    /// When set to True, converts the session to a domain at the end of the command
-    bool convert_to_domain{};
+    /// Frees up waiting client sessions when this server session is about to die
+    void CleanupRequests();
 
     /// KSession that owns this KServerSession
     KSession* parent{};
+
+    /// List of threads which are pending a reply.
+    boost::intrusive::list<KSessionRequest> m_request_list;
+    KSessionRequest* m_current_request{};
+
+    KLightLock m_lock;
 };
 
 } // namespace Kernel

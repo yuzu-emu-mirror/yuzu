@@ -52,6 +52,8 @@ public:
             {9, &IAudioRenderer::GetRenderingTimeLimit, "GetRenderingTimeLimit"},
             {10, &IAudioRenderer::RequestUpdate, "RequestUpdateAuto"},
             {11, nullptr, "ExecuteAudioRendererRendering"},
+            {12, &IAudioRenderer::SetVoiceDropParameter, "SetVoiceDropParameter"},
+            {13, &IAudioRenderer::GetVoiceDropParameter, "GetVoiceDropParameter"},
         };
         // clang-format on
         RegisterHandlers(functions);
@@ -205,6 +207,30 @@ private:
         LOG_DEBUG(Service_Audio, "called");
     }
 
+    void SetVoiceDropParameter(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_Audio, "called");
+
+        IPC::RequestParser rp{ctx};
+        auto voice_drop_param{rp.Pop<f32>()};
+
+        auto& system_ = impl->GetSystem();
+        system_.SetVoiceDropParameter(voice_drop_param);
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(ResultSuccess);
+    }
+
+    void GetVoiceDropParameter(Kernel::HLERequestContext& ctx) {
+        LOG_DEBUG(Service_Audio, "called");
+
+        auto& system_ = impl->GetSystem();
+        auto voice_drop_param{system_.GetVoiceDropParameter()};
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(ResultSuccess);
+        rb.Push(voice_drop_param);
+    }
+
     KernelHelpers::ServiceContext service_context;
     Kernel::KEvent* rendered_event;
     Manager& manager;
@@ -239,7 +265,7 @@ public:
         };
         RegisterHandlers(functions);
 
-        event->GetWritableEvent().Signal();
+        event->Signal();
     }
 
     ~IAudioDevice() override {
@@ -325,7 +351,7 @@ private:
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_Audio, "(STUBBED) called");
 
-        event->GetWritableEvent().Signal();
+        event->Signal();
 
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);

@@ -3,24 +3,14 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 
 namespace Common {
 
-// Check if type is like an STL container
+// Check if type satisfies the ContiguousContainer named requirement.
 template <typename T>
-concept IsSTLContainer = requires(T t) {
-    typename T::value_type;
-    typename T::iterator;
-    typename T::const_iterator;
-    // TODO(ogniK): Replace below is std::same_as<void> when MSVC supports it.
-    t.begin();
-    t.end();
-    t.cbegin();
-    t.cend();
-    t.data();
-    t.size();
-};
+concept IsContiguousContainer = std::contiguous_iterator<typename T::iterator>;
 
 // TODO: Replace with std::derived_from when the <concepts> header
 //       is available on all supported platforms.
@@ -33,5 +23,13 @@ concept DerivedFrom = requires {
 // TODO: Replace with std::convertible_to when libc++ implements it.
 template <typename From, typename To>
 concept ConvertibleTo = std::is_convertible_v<From, To>;
+
+// No equivalents in the stdlib
+
+template <typename T>
+concept IsArithmetic = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept IsIntegral = std::is_integral_v<T>;
 
 } // namespace Common

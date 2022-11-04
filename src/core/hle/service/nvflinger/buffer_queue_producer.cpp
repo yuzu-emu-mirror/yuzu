@@ -11,10 +11,9 @@
 #include "core/hle/kernel/hle_ipc.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
-#include "core/hle/kernel/k_writable_event.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/kernel_helpers.h"
-#include "core/hle/service/nvdrv/nvdrv.h"
+#include "core/hle/service/nvdrv/core/nvmap.h"
 #include "core/hle/service/nvflinger/buffer_queue_core.h"
 #include "core/hle/service/nvflinger/buffer_queue_producer.h"
 #include "core/hle/service/nvflinger/consumer_listener.h"
@@ -26,8 +25,10 @@
 namespace Service::android {
 
 BufferQueueProducer::BufferQueueProducer(Service::KernelHelpers::ServiceContext& service_context_,
-                                         std::shared_ptr<BufferQueueCore> buffer_queue_core_)
-    : service_context{service_context_}, core{std::move(buffer_queue_core_)}, slots(core->slots) {
+                                         std::shared_ptr<BufferQueueCore> buffer_queue_core_,
+                                         Service::Nvidia::NvCore::NvMap& nvmap_)
+    : service_context{service_context_}, core{std::move(buffer_queue_core_)}, slots(core->slots),
+      nvmap(nvmap_) {
     buffer_wait_event = service_context.CreateEvent("BufferQueue:WaitEvent");
 }
 
@@ -108,7 +109,7 @@ Status BufferQueueProducer::SetBufferCount(s32 buffer_count) {
 
         core->override_max_buffer_count = buffer_count;
         core->SignalDequeueCondition();
-        buffer_wait_event->GetWritableEvent().Signal();
+        buffer_wait_event->Signal();
         listener = core->consumer_listener;
     }
 
@@ -530,6 +531,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
         item.swap_interval = swap_interval;
 
+        nvmap.DuplicateHandle(item.graphic_buffer->BufferId(), true);
+
         sticky_transform = sticky_transform_;
 
         if (core->queue.empty()) {
@@ -619,7 +622,7 @@ void BufferQueueProducer::CancelBuffer(s32 slot, const Fence& fence) {
     slots[slot].fence = fence;
 
     core->SignalDequeueCondition();
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event->Signal();
 }
 
 Status BufferQueueProducer::Query(NativeWindow what, s32* out_value) {
@@ -739,6 +742,13 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
             return Status::NoError;
         }
 
+        // HACK: We are not Android. Remove handle for items in queue, and clear queue.
+        // Allows synchronous destruction of nvmap handles.
+        for (auto& item : core->queue) {
+            nvmap.FreeHandle(item.graphic_buffer->BufferId(), true);
+        }
+        core->queue.clear();
+
         switch (api) {
         case NativeWindowApi::Egl:
         case NativeWindowApi::Cpu:
@@ -749,7 +759,7 @@ Status BufferQueueProducer::Disconnect(NativeWindowApi api) {
                 core->connected_producer_listener = nullptr;
                 core->connected_api = NativeWindowApi::NoConnectedApi;
                 core->SignalDequeueCondition();
-                buffer_wait_event->GetWritableEvent().Signal();
+                buffer_wait_event->Signal();
                 listener = core->consumer_listener;
             } else {
                 LOG_ERROR(Service_NVFlinger, "still connected to another api (cur = {} req = {})",
@@ -798,7 +808,7 @@ Status BufferQueueProducer::SetPreallocatedBuffer(s32 slot,
     }
 
     core->SignalDequeueCondition();
-    buffer_wait_event->GetWritableEvent().Signal();
+    buffer_wait_event->Signal();
 
     return Status::NoError;
 }

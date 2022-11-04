@@ -86,6 +86,8 @@ protected:
     u32 cached_highest = 0;
     u32 initial_offset = 0;
 
+    u32 viewport_transform_state = 1;
+
     bool has_unbound_instructions = false;
 };
 
@@ -94,7 +96,7 @@ public:
     explicit GraphicsEnvironment() = default;
     explicit GraphicsEnvironment(Tegra::Engines::Maxwell3D& maxwell3d_,
                                  Tegra::MemoryManager& gpu_memory_,
-                                 Tegra::Engines::Maxwell3D::Regs::ShaderProgram program,
+                                 Tegra::Engines::Maxwell3D::Regs::ShaderType program,
                                  GPUVAddr program_base_, u32 start_address_);
 
     ~GraphicsEnvironment() override = default;
@@ -104,6 +106,8 @@ public:
     Shader::TextureType ReadTextureType(u32 handle) override;
 
     Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
+
+    u32 ReadViewportTransformState() override;
 
 private:
     Tegra::Engines::Maxwell3D* maxwell3d{};
@@ -124,6 +128,9 @@ public:
     Shader::TextureType ReadTextureType(u32 handle) override;
 
     Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
+
+    u32 ReadViewportTransformState() override;
+
 
 private:
     Tegra::Engines::KeplerCompute* kepler_compute{};
@@ -149,6 +156,8 @@ public:
     [[nodiscard]] Shader::TextureType ReadTextureType(u32 handle) override;
 
     [[nodiscard]] Shader::TexturePixelFormat ReadTexturePixelFormat(u32 handle) override;
+    
+    [[nodiscard]] u32 ReadViewportTransformState() override;
 
     [[nodiscard]] u32 LocalMemorySize() const override;
 
@@ -172,6 +181,7 @@ private:
     u32 read_lowest{};
     u32 read_highest{};
     u32 initial_offset{};
+    u32 viewport_transform_state = 1;
 };
 
 void SerializePipeline(std::span<const char> key, std::span<const GenericEnvironment* const> envs,

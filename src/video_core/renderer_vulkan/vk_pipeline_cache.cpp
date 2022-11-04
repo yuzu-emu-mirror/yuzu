@@ -62,29 +62,29 @@ auto MakeSpan(Container& container) {
 
 Shader::CompareFunction MaxwellToCompareFunction(Maxwell::ComparisonOp comparison) {
     switch (comparison) {
-    case Maxwell::ComparisonOp::Never:
-    case Maxwell::ComparisonOp::NeverOld:
+    case Maxwell::ComparisonOp::Never_D3D:
+    case Maxwell::ComparisonOp::Never_GL:
         return Shader::CompareFunction::Never;
-    case Maxwell::ComparisonOp::Less:
-    case Maxwell::ComparisonOp::LessOld:
+    case Maxwell::ComparisonOp::Less_D3D:
+    case Maxwell::ComparisonOp::Less_GL:
         return Shader::CompareFunction::Less;
-    case Maxwell::ComparisonOp::Equal:
-    case Maxwell::ComparisonOp::EqualOld:
+    case Maxwell::ComparisonOp::Equal_D3D:
+    case Maxwell::ComparisonOp::Equal_GL:
         return Shader::CompareFunction::Equal;
-    case Maxwell::ComparisonOp::LessEqual:
-    case Maxwell::ComparisonOp::LessEqualOld:
+    case Maxwell::ComparisonOp::LessEqual_D3D:
+    case Maxwell::ComparisonOp::LessEqual_GL:
         return Shader::CompareFunction::LessThanEqual;
-    case Maxwell::ComparisonOp::Greater:
-    case Maxwell::ComparisonOp::GreaterOld:
+    case Maxwell::ComparisonOp::Greater_D3D:
+    case Maxwell::ComparisonOp::Greater_GL:
         return Shader::CompareFunction::Greater;
-    case Maxwell::ComparisonOp::NotEqual:
-    case Maxwell::ComparisonOp::NotEqualOld:
+    case Maxwell::ComparisonOp::NotEqual_D3D:
+    case Maxwell::ComparisonOp::NotEqual_GL:
         return Shader::CompareFunction::NotEqual;
-    case Maxwell::ComparisonOp::GreaterEqual:
-    case Maxwell::ComparisonOp::GreaterEqualOld:
+    case Maxwell::ComparisonOp::GreaterEqual_D3D:
+    case Maxwell::ComparisonOp::GreaterEqual_GL:
         return Shader::CompareFunction::GreaterThanEqual;
-    case Maxwell::ComparisonOp::Always:
-    case Maxwell::ComparisonOp::AlwaysOld:
+    case Maxwell::ComparisonOp::Always_D3D:
+    case Maxwell::ComparisonOp::Always_GL:
         return Shader::CompareFunction::Always;
     }
     UNIMPLEMENTED_MSG("Unimplemented comparison op={}", comparison);
@@ -96,15 +96,18 @@ Shader::AttributeType CastAttributeType(const FixedPipelineState::VertexAttribut
         return Shader::AttributeType::Disabled;
     }
     switch (attr.Type()) {
-    case Maxwell::VertexAttribute::Type::SignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedNorm:
-    case Maxwell::VertexAttribute::Type::UnsignedScaled:
-    case Maxwell::VertexAttribute::Type::SignedScaled:
+    case Maxwell::VertexAttribute::Type::UnusedEnumDoNotUseBecauseItWillGoAway:
+        ASSERT_MSG(false, "Invalid vertex attribute type!");
+        return Shader::AttributeType::Disabled;
+    case Maxwell::VertexAttribute::Type::SNorm:
+    case Maxwell::VertexAttribute::Type::UNorm:
+    case Maxwell::VertexAttribute::Type::UScaled:
+    case Maxwell::VertexAttribute::Type::SScaled:
     case Maxwell::VertexAttribute::Type::Float:
         return Shader::AttributeType::Float;
-    case Maxwell::VertexAttribute::Type::SignedInt:
+    case Maxwell::VertexAttribute::Type::SInt:
         return Shader::AttributeType::SignedInt;
-    case Maxwell::VertexAttribute::Type::UnsignedInt:
+    case Maxwell::VertexAttribute::Type::UInt:
         return Shader::AttributeType::UnsignedInt;
     }
     return Shader::AttributeType::Float;
@@ -131,6 +134,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
     Shader::RuntimeInfo info;
     if (previous_program) {
         info.previous_stage_stores = previous_program->info.stores;
+        info.previous_stage_legacy_stores_mapping = previous_program->info.legacy_stores_mapping;
         if (previous_program->is_geometry_passthrough) {
             info.previous_stage_stores.mask |= previous_program->info.passthrough.mask;
         }
@@ -162,16 +166,14 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
         }
         break;
     case Shader::Stage::TessellationEval:
-        // We have to flip tessellation clockwise for some reason...
-        info.tess_clockwise = key.state.tessellation_clockwise == 0;
         info.tess_primitive = [&key] {
             const u32 raw{key.state.tessellation_primitive.Value()};
-            switch (static_cast<Maxwell::TessellationPrimitive>(raw)) {
-            case Maxwell::TessellationPrimitive::Isolines:
+            switch (static_cast<Maxwell::Tessellation::DomainType>(raw)) {
+            case Maxwell::Tessellation::DomainType::Isolines:
                 return Shader::TessPrimitive::Isolines;
-            case Maxwell::TessellationPrimitive::Triangles:
+            case Maxwell::Tessellation::DomainType::Triangles:
                 return Shader::TessPrimitive::Triangles;
-            case Maxwell::TessellationPrimitive::Quads:
+            case Maxwell::Tessellation::DomainType::Quads:
                 return Shader::TessPrimitive::Quads;
             }
             ASSERT(false);
@@ -179,12 +181,12 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
         }();
         info.tess_spacing = [&] {
             const u32 raw{key.state.tessellation_spacing};
-            switch (static_cast<Maxwell::TessellationSpacing>(raw)) {
-            case Maxwell::TessellationSpacing::Equal:
+            switch (static_cast<Maxwell::Tessellation::Spacing>(raw)) {
+            case Maxwell::Tessellation::Spacing::Integer:
                 return Shader::TessSpacing::Equal;
-            case Maxwell::TessellationSpacing::FractionalOdd:
+            case Maxwell::Tessellation::Spacing::FractionalOdd:
                 return Shader::TessSpacing::FractionalOdd;
-            case Maxwell::TessellationSpacing::FractionalEven:
+            case Maxwell::Tessellation::Spacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
             ASSERT(false);
@@ -259,20 +261,18 @@ bool GraphicsPipelineCacheKey::operator==(const GraphicsPipelineCacheKey& rhs) c
     return std::memcmp(&rhs, this, Size()) == 0;
 }
 
-PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, Tegra::Engines::Maxwell3D& maxwell3d_,
-                             Tegra::Engines::KeplerCompute& kepler_compute_,
-                             Tegra::MemoryManager& gpu_memory_, const Device& device_,
+PipelineCache::PipelineCache(RasterizerVulkan& rasterizer_, const Device& device_,
                              Scheduler& scheduler_, DescriptorPool& descriptor_pool_,
                              UpdateDescriptorQueue& update_descriptor_queue_,
                              RenderPassCache& render_pass_cache_, BufferCache& buffer_cache_,
                              TextureCache& texture_cache_, VideoCore::ShaderNotify& shader_notify_)
-    : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
-      device{device_}, scheduler{scheduler_}, descriptor_pool{descriptor_pool_},
-      update_descriptor_queue{update_descriptor_queue_}, render_pass_cache{render_pass_cache_},
-      buffer_cache{buffer_cache_}, texture_cache{texture_cache_}, shader_notify{shader_notify_},
+    : VideoCommon::ShaderCache{rasterizer_}, device{device_}, scheduler{scheduler_},
+      descriptor_pool{descriptor_pool_}, update_descriptor_queue{update_descriptor_queue_},
+      render_pass_cache{render_pass_cache_}, buffer_cache{buffer_cache_},
+      texture_cache{texture_cache_}, shader_notify{shader_notify_},
       use_asynchronous_shaders{Settings::values.use_asynchronous_shaders.GetValue()},
-      workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "yuzu:PipelineBuilder"),
-      serialization_thread(1, "yuzu:PipelineSerialization") {
+      workers(std::max(std::thread::hardware_concurrency(), 2U) - 1, "VkPipelineBuilder"),
+      serialization_thread(1, "VkPipelineSerialization") {
     const auto& float_control{device.FloatControlProperties()};
     const VkDriverIdKHR driver_id{device.GetDriverID()};
     profile = Shader::Profile{
@@ -337,7 +337,7 @@ GraphicsPipeline* PipelineCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    graphics_key.state.Refresh(maxwell3d, device.IsExtExtendedDynamicStateSupported(),
+    graphics_key.state.Refresh(*maxwell3d, device.IsExtExtendedDynamicStateSupported(),
                                device.IsExtVertexInputDynamicStateSupported());
 
     if (current_pipeline) {
@@ -357,7 +357,7 @@ ComputePipeline* PipelineCache::CurrentComputePipeline() {
     if (!shader) {
         return nullptr;
     }
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const ComputePipelineCacheKey key{
         .unique_hash = shader->unique_hash,
         .shared_memory_size = qmd.shared_alloc,
@@ -486,13 +486,13 @@ GraphicsPipeline* PipelineCache::BuiltPipeline(GraphicsPipeline* pipeline) const
     }
     // If something is using depth, we can assume that games are not rendering anything which
     // will be used one time.
-    if (maxwell3d.regs.zeta_enable) {
+    if (maxwell3d->regs.zeta_enable) {
         return nullptr;
     }
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;
@@ -557,10 +557,10 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
         previous_stage = &program;
     }
     Common::ThreadWorker* const thread_worker{build_in_parallel ? &workers : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        maxwell3d, gpu_memory, scheduler, buffer_cache, texture_cache, &shader_notify, device,
-        descriptor_pool, update_descriptor_queue, thread_worker, statistics, render_pass_cache, key,
-        std::move(modules), infos);
+    return std::make_unique<GraphicsPipeline>(scheduler, buffer_cache, texture_cache,
+                                              &shader_notify, device, descriptor_pool,
+                                              update_descriptor_queue, thread_worker, statistics,
+                                              render_pass_cache, key, std::move(modules), infos);
 
 } catch (const Shader::Exception& exception) {
     LOG_ERROR(Render_Vulkan, "{}", exception.what());
@@ -592,9 +592,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline() {
 
 std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     const ComputePipelineCacheKey& key, const ShaderInfo* shader) {
-    const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
-    const auto& qmd{kepler_compute.launch_description};
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
+    const auto& qmd{kepler_compute->launch_description};
+    ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();

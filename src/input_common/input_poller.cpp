@@ -691,9 +691,56 @@ public:
     }
 
     void OnChange() {
+        const auto camera_status = GetStatus();
+
         const Common::Input::CallbackStatus status{
             .type = Common::Input::InputType::IrSensor,
-            .camera_status = GetStatus(),
+            .camera_status = camera_status.format,
+            .raw_data = camera_status.data,
+        };
+
+        TriggerOnChange(status);
+    }
+
+private:
+    const PadIdentifier identifier;
+    int callback_key;
+    InputEngine* input_engine;
+};
+
+class InputFromNfc final : public Common::Input::InputDevice {
+public:
+    explicit InputFromNfc(PadIdentifier identifier_, InputEngine* input_engine_)
+        : identifier(identifier_), input_engine(input_engine_) {
+        UpdateCallback engine_callback{[this]() { OnChange(); }};
+        const InputIdentifier input_identifier{
+            .identifier = identifier,
+            .type = EngineInputType::Nfc,
+            .index = 0,
+            .callback = engine_callback,
+        };
+        callback_key = input_engine->SetCallback(input_identifier);
+    }
+
+    ~InputFromNfc() override {
+        input_engine->DeleteCallback(callback_key);
+    }
+
+    Common::Input::NfcStatus GetStatus() const {
+        return input_engine->GetNfc(identifier);
+    }
+
+    void ForceUpdate() override {
+        OnChange();
+    }
+
+    void OnChange() {
+        const auto nfc_status = GetStatus();
+
+        const Common::Input::CallbackStatus status{
+            .type = Common::Input::InputType::Nfc,
+            .nfc_status = nfc_status.state,
+            .raw_data = nfc_status.data,
         };
 
         TriggerOnChange(status);
@@ -716,7 +763,11 @@ public:
 
     Common::Input::VibrationError SetVibration(
         const Common::Input::VibrationStatus& vibration_status) override {
-        return input_engine->SetRumble(identifier, vibration_status);
+        return input_engine->SetVibration(identifier, vibration_status);
+    }
+
+    bool IsVibrationEnabled() override {
+        return input_engine->IsVibrationEnabled(identifier);
     }
 
     Common::Input::PollingError SetPollingMode(Common::Input::PollingMode polling_mode) override {
@@ -725,6 +776,14 @@ public:
 
     Common::Input::CameraError SetCameraFormat(Common::Input::CameraFormat camera_format) override {
         return input_engine->SetCameraFormat(identifier, camera_format);
+    }
+
+    Common::Input::NfcState SupportsNfc() const override {
+        return input_engine->SupportsNfc(identifier);
+    }
+
+    Common::Input::NfcState WriteNfcData(const std::vector<u8>& data) override {
+        return input_engine->WriteNfcData(identifier, data);
     }
 
 private:
@@ -742,8 +801,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateButtonDevice(
 
     const auto button_id = params.Get("button", 0);
     const auto keyboard_key = params.Get("code", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
     input_engine->PreSetController(identifier);
     input_engine->PreSetButton(identifier, button_id);
     input_engine->PreSetButton(identifier, keyboard_key);
@@ -765,8 +824,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateHatButtonDevice(
 
     const auto button_id = params.Get("hat", 0);
     const auto direction = input_engine->GetHatButtonId(params.Get("direction", ""));
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     input_engine->PreSetController(identifier);
     input_engine->PreSetHatButton(identifier, button_id);
@@ -824,7 +883,7 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateAnalogDevice(
         .threshold = std::clamp(params.Get("threshold", 0.5f), 0.0f, 1.0f),
         .offset = std::clamp(params.Get("offset", 0.0f), -1.0f, 1.0f),
         .inverted = params.Get("invert", "+") == "-",
-        .toggle = static_cast<bool>(params.Get("toggle", false)),
+        .toggle = params.Get("toggle", false) != 0,
     };
     input_engine->PreSetController(identifier);
     input_engine->PreSetAxis(identifier, axis);
@@ -840,8 +899,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTriggerDevice(
     };
 
     const auto button = params.Get("button", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     const auto axis = params.Get("axis", 0);
     const Common::Input::AnalogProperties properties = {
@@ -871,8 +930,8 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateTouchDevice(
     };
 
     const auto button = params.Get("button", 0);
-    const auto toggle = params.Get("toggle", false);
-    const auto inverted = params.Get("inverted", false);
+    const auto toggle = params.Get("toggle", false) != 0;
+    const auto inverted = params.Get("inverted", false) != 0;
 
     const auto axis_x = params.Get("axis_x", 0);
     const Common::Input::AnalogProperties properties_x = {
@@ -978,6 +1037,18 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateCameraDevice(
     return std::make_unique<InputFromCamera>(identifier, input_engine.get());
 }
 
+std::unique_ptr<Common::Input::InputDevice> InputFactory::CreateNfcDevice(
+    const Common::ParamPackage& params) {
+    const PadIdentifier identifier = {
+        .guid = Common::UUID{params.Get("guid", "")},
+        .port = static_cast<std::size_t>(params.Get("port", 0)),
+        .pad = static_cast<std::size_t>(params.Get("pad", 0)),
+    };
+
+    input_engine->PreSetController(identifier);
+    return std::make_unique<InputFromNfc>(identifier, input_engine.get());
+}
+
 InputFactory::InputFactory(std::shared_ptr<InputEngine> input_engine_)
     : input_engine(std::move(input_engine_)) {}
 
@@ -988,6 +1059,9 @@ std::unique_ptr<Common::Input::InputDevice> InputFactory::Create(
     }
     if (params.Has("camera")) {
         return CreateCameraDevice(params);
+    }
+    if (params.Has("nfc")) {
+        return CreateNfcDevice(params);
     }
     if (params.Has("button") && params.Has("axis")) {
         return CreateTriggerDevice(params);

@@ -37,8 +37,8 @@ struct GraphicsPipelineKey {
         BitField<0, 1, u32> xfb_enabled;
         BitField<1, 1, u32> early_z;
         BitField<2, 4, Maxwell::PrimitiveTopology> gs_input_topology;
-        BitField<6, 2, Maxwell::TessellationPrimitive> tessellation_primitive;
-        BitField<8, 2, Maxwell::TessellationSpacing> tessellation_spacing;
+        BitField<6, 2, Maxwell::Tessellation::DomainType> tessellation_primitive;
+        BitField<8, 2, Maxwell::Tessellation::Spacing> tessellation_spacing;
         BitField<10, 1, u32> tessellation_clockwise;
     };
     std::array<u32, 3> padding;
@@ -71,10 +71,9 @@ static_assert(std::is_trivially_constructible_v<GraphicsPipelineKey>);
 class GraphicsPipeline {
 public:
     explicit GraphicsPipeline(const Device& device, TextureCache& texture_cache_,
-                              BufferCache& buffer_cache_, Tegra::MemoryManager& gpu_memory_,
-                              Tegra::Engines::Maxwell3D& maxwell3d_,
-                              ProgramManager& program_manager_, StateTracker& state_tracker_,
-                              ShaderWorker* thread_worker, VideoCore::ShaderNotify* shader_notify,
+                              BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                              StateTracker& state_tracker_, ShaderWorker* thread_worker,
+                              VideoCore::ShaderNotify* shader_notify,
                               std::array<std::string, 5> sources,
                               std::array<std::vector<u32>, 5> sources_spirv,
                               const std::array<const Shader::Info*, 5>& infos,
@@ -107,6 +106,11 @@ public:
         };
     }
 
+    void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
+        maxwell3d = maxwell3d_;
+        gpu_memory = gpu_memory_;
+    }
+
 private:
     template <typename Spec>
     void ConfigureImpl(bool is_indexed);
@@ -119,8 +123,8 @@ private:
 
     TextureCache& texture_cache;
     BufferCache& buffer_cache;
-    Tegra::MemoryManager& gpu_memory;
-    Tegra::Engines::Maxwell3D& maxwell3d;
+    Tegra::MemoryManager* gpu_memory;
+    Tegra::Engines::Maxwell3D* maxwell3d;
     ProgramManager& program_manager;
     StateTracker& state_tracker;
     const GraphicsPipelineKey key;

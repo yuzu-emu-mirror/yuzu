@@ -43,13 +43,15 @@ class Domain;
 class HLERequestContext;
 class KAutoObject;
 class KernelCore;
+class KEvent;
 class KHandleTable;
+class KServerPort;
 class KProcess;
 class KServerSession;
 class KThread;
 class KReadableEvent;
 class KSession;
-class KWritableEvent;
+class SessionRequestManager;
 class ServiceThread;
 
 enum class ThreadWakeupReason;
@@ -76,19 +78,9 @@ public:
     virtual Result HandleSyncRequest(Kernel::KServerSession& session,
                                      Kernel::HLERequestContext& context) = 0;
 
-    /**
-     * Signals that a client has just connected to this HLE handler and keeps the
-     * associated ServerSession alive for the duration of the connection.
-     * @param server_session Owning pointer to the ServerSession associated with the connection.
-     */
-    void ClientConnected(KServerSession* session);
-
-    /**
-     * Signals that a client has just disconnected from this HLE handler and releases the
-     * associated ServerSession.
-     * @param server_session ServerSession associated with the connection.
-     */
-    void ClientDisconnected(KServerSession* session);
+    void AcceptSession(KServerPort* server_port);
+    void RegisterSession(KServerSession* server_session,
+                         std::shared_ptr<SessionRequestManager> manager);
 
     std::weak_ptr<ServiceThread> GetServiceThread() const {
         return service_thread;
@@ -119,6 +111,10 @@ public:
     void ConvertToDomain() {
         domain_handlers = {session_handler};
         is_domain = true;
+    }
+
+    void ConvertToDomainOnRequestEnd() {
+        convert_to_domain = true;
     }
 
     std::size_t DomainHandlerCount() const {
@@ -164,7 +160,11 @@ public:
 
     bool HasSessionRequestHandler(const HLERequestContext& context) const;
 
+    Result HandleDomainSyncRequest(KServerSession* server_session, HLERequestContext& context);
+    Result CompleteSyncRequest(KServerSession* server_session, HLERequestContext& context);
+
 private:
+    bool convert_to_domain{};
     bool is_domain{};
     SessionRequestHandlerPtr session_handler;
     std::vector<SessionRequestHandlerPtr> domain_handlers;
@@ -295,7 +295,7 @@ public:
      */
     template <typename T, typename = std::enable_if_t<!std::is_pointer_v<T>>>
     std::size_t WriteBuffer(const T& data, std::size_t buffer_index = 0) const {
-        if constexpr (Common::IsSTLContainer<T>) {
+        if constexpr (Common::IsContiguousContainer<T>) {
             using ContiguousType = typename T::value_type;
             static_assert(std::is_trivially_copyable_v<ContiguousType>,
                           "Container to WriteBuffer must contain trivially copyable objects");
@@ -341,17 +341,21 @@ public:
 
     template <typename T>
     std::shared_ptr<T> GetDomainHandler(std::size_t index) const {
-        return std::static_pointer_cast<T>(manager.lock()->DomainHandler(index).lock());
+        return std::static_pointer_cast<T>(GetManager()->DomainHandler(index).lock());
     }
 
     void SetSessionRequestManager(std::weak_ptr<SessionRequestManager> manager_) {
-        manager = std::move(manager_);
+        manager = manager_;
     }
 
     std::string Description() const;
 
     KThread& GetThread() {
         return *thread;
+    }
+
+    std::shared_ptr<SessionRequestManager> GetManager() const {
+        return manager.lock();
     }
 
 private:
@@ -387,7 +391,7 @@ private:
     u32 handles_offset{};
     u32 domain_offset{};
 
-    std::weak_ptr<SessionRequestManager> manager;
+    std::weak_ptr<SessionRequestManager> manager{};
 
     KernelCore& kernel;
     Core::Memory::Memory& memory;

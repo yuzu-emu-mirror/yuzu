@@ -16,7 +16,7 @@
 #include "common/microprofile.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
-
+#include "video_core/control/channel_state.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -56,22 +56,20 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
                                    Core::Memory::Memory& cpu_memory_, const Device& device_,
                                    ScreenInfo& screen_info_, ProgramManager& program_manager_,
                                    StateTracker& state_tracker_)
-    : RasterizerAccelerated(cpu_memory_), gpu(gpu_), maxwell3d(gpu.Maxwell3D()),
-      kepler_compute(gpu.KeplerCompute()), gpu_memory(gpu.MemoryManager()), device(device_),
-      screen_info(screen_info_), program_manager(program_manager_), state_tracker(state_tracker_),
+    : RasterizerAccelerated(cpu_memory_), gpu(gpu_), device(device_), screen_info(screen_info_),
+      program_manager(program_manager_), state_tracker(state_tracker_),
       texture_cache_runtime(device, program_manager, state_tracker),
-      texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
-      buffer_cache_runtime(device),
-      buffer_cache(*this, maxwell3d, kepler_compute, gpu_memory, cpu_memory_, buffer_cache_runtime),
-      shader_cache(*this, emu_window_, maxwell3d, kepler_compute, gpu_memory, device, texture_cache,
-                   buffer_cache, program_manager, state_tracker, gpu.ShaderNotify()),
-      query_cache(*this, maxwell3d, gpu_memory), accelerate_dma(buffer_cache),
+      texture_cache(texture_cache_runtime, *this), buffer_cache_runtime(device),
+      buffer_cache(*this, cpu_memory_, buffer_cache_runtime),
+      shader_cache(*this, emu_window_, device, texture_cache, buffer_cache, program_manager,
+                   state_tracker, gpu.ShaderNotify()),
+      query_cache(*this), accelerate_dma(buffer_cache),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache) {}
 
 RasterizerOpenGL::~RasterizerOpenGL() = default;
 
 void RasterizerOpenGL::SyncVertexFormats() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::VertexFormats]) {
         return;
     }
@@ -89,7 +87,7 @@ void RasterizerOpenGL::SyncVertexFormats() {
         }
         flags[Dirty::VertexFormat0 + index] = false;
 
-        const auto attrib = maxwell3d.regs.vertex_attrib_format[index];
+        const auto& attrib = maxwell3d->regs.vertex_attrib_format[index];
         const auto gl_index = static_cast<GLuint>(index);
 
         // Disable constant attributes.
@@ -99,8 +97,8 @@ void RasterizerOpenGL::SyncVertexFormats() {
         }
         glEnableVertexAttribArray(gl_index);
 
-        if (attrib.type == Maxwell::VertexAttribute::Type::SignedInt ||
-            attrib.type == Maxwell::VertexAttribute::Type::UnsignedInt) {
+        if (attrib.type == Maxwell::VertexAttribute::Type::SInt ||
+            attrib.type == Maxwell::VertexAttribute::Type::UInt) {
             glVertexAttribIFormat(gl_index, attrib.ComponentCount(),
                                   MaxwellToGL::VertexFormat(attrib), attrib.offset);
         } else {
@@ -113,13 +111,13 @@ void RasterizerOpenGL::SyncVertexFormats() {
 }
 
 void RasterizerOpenGL::SyncVertexInstances() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::VertexInstances]) {
         return;
     }
     flags[Dirty::VertexInstances] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     for (std::size_t index = 0; index < NUM_SUPPORTED_VERTEX_ATTRIBUTES; ++index) {
         if (!flags[Dirty::VertexInstance0 + index]) {
             continue;
@@ -127,8 +125,8 @@ void RasterizerOpenGL::SyncVertexInstances() {
         flags[Dirty::VertexInstance0 + index] = false;
 
         const auto gl_index = static_cast<GLuint>(index);
-        const bool instancing_enabled = regs.instanced_arrays.IsInstancingEnabled(gl_index);
-        const GLuint divisor = instancing_enabled ? regs.vertex_array[index].divisor : 0;
+        const bool instancing_enabled = regs.vertex_stream_instances.IsInstancingEnabled(gl_index);
+        const GLuint divisor = instancing_enabled ? regs.vertex_streams[index].frequency : 0;
         glVertexBindingDivisor(gl_index, divisor);
     }
 }
@@ -140,36 +138,36 @@ void RasterizerOpenGL::LoadDiskResources(u64 title_id, std::stop_token stop_load
 
 void RasterizerOpenGL::Clear() {
     MICROPROFILE_SCOPE(OpenGL_Clears);
-    if (!maxwell3d.ShouldExecute()) {
+    if (!maxwell3d->ShouldExecute()) {
         return;
     }
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     bool use_color{};
     bool use_depth{};
     bool use_stencil{};
 
-    if (regs.clear_buffers.R || regs.clear_buffers.G || regs.clear_buffers.B ||
-        regs.clear_buffers.A) {
+    if (regs.clear_surface.R || regs.clear_surface.G || regs.clear_surface.B ||
+        regs.clear_surface.A) {
         use_color = true;
 
-        const GLuint index = regs.clear_buffers.RT;
+        const GLuint index = regs.clear_surface.RT;
         state_tracker.NotifyColorMask(index);
-        glColorMaski(index, regs.clear_buffers.R != 0, regs.clear_buffers.G != 0,
-                     regs.clear_buffers.B != 0, regs.clear_buffers.A != 0);
+        glColorMaski(index, regs.clear_surface.R != 0, regs.clear_surface.G != 0,
+                     regs.clear_surface.B != 0, regs.clear_surface.A != 0);
 
         // TODO(Rodrigo): Determine if clamping is used on clears
         SyncFragmentColorClampState();
         SyncFramebufferSRGB();
     }
-    if (regs.clear_buffers.Z) {
+    if (regs.clear_surface.Z) {
         ASSERT_MSG(regs.zeta_enable != 0, "Tried to clear Z but buffer is not enabled!");
         use_depth = true;
 
         state_tracker.NotifyDepthMask();
         glDepthMask(GL_TRUE);
     }
-    if (regs.clear_buffers.S) {
+    if (regs.clear_surface.S) {
         ASSERT_MSG(regs.zeta_enable, "Tried to clear stencil but buffer is not enabled!");
         use_stencil = true;
     }
@@ -186,16 +184,16 @@ void RasterizerOpenGL::Clear() {
     texture_cache.UpdateRenderTargets(true);
     state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
     SyncViewport();
-    if (regs.clear_flags.scissor) {
+    if (regs.clear_control.use_scissor) {
         SyncScissorTest();
     } else {
         state_tracker.NotifyScissor0();
         glDisablei(GL_SCISSOR_TEST, 0);
     }
-    UNIMPLEMENTED_IF(regs.clear_flags.viewport);
+    UNIMPLEMENTED_IF(regs.clear_control.use_viewport_clip0);
 
     if (use_color) {
-        glClearBufferfv(GL_COLOR, regs.clear_buffers.RT, regs.clear_color);
+        glClearBufferfv(GL_COLOR, regs.clear_surface.RT, regs.clear_color.data());
     }
     if (use_depth && use_stencil) {
         glClearBufferfi(GL_DEPTH_STENCIL, 0, regs.clear_depth, regs.clear_stencil);
@@ -207,7 +205,7 @@ void RasterizerOpenGL::Clear() {
     ++num_queued_commands;
 }
 
-void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
+void RasterizerOpenGL::Draw(bool is_indexed, u32 instance_count) {
     MICROPROFILE_SCOPE(OpenGL_Drawing);
 
     SCOPE_EXIT({ gpu.TickWork(); });
@@ -217,22 +215,27 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
     if (!pipeline) {
         return;
     }
+
+    gpu.TickWork();
+
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
+
+    BindInlineIndexBuffer();
 
     SyncState();
 
-    const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d.regs.draw.topology);
+    const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(maxwell3d->regs.draw.topology);
     BeginTransformFeedback(pipeline, primitive_mode);
 
-    const GLuint base_instance = static_cast<GLuint>(maxwell3d.regs.vb_base_instance);
-    const GLsizei num_instances =
-        static_cast<GLsizei>(is_instanced ? maxwell3d.mme_draw.instance_count : 1);
+    const GLuint base_instance = static_cast<GLuint>(maxwell3d->regs.global_base_instance_index);
+    const GLsizei num_instances = static_cast<GLsizei>(instance_count);
     if (is_indexed) {
-        const GLint base_vertex = static_cast<GLint>(maxwell3d.regs.vb_element_base);
-        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d.regs.index_array.count);
+        const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.global_base_vertex_index);
+        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.index_buffer.count);
         const GLvoid* const offset = buffer_cache_runtime.IndexOffset();
-        const GLenum format = MaxwellToGL::IndexFormat(maxwell3d.regs.index_array.format);
+        const GLenum format = MaxwellToGL::IndexFormat(maxwell3d->regs.index_buffer.format);
         if (num_instances == 1 && base_instance == 0 && base_vertex == 0) {
             glDrawElements(primitive_mode, num_vertices, format, offset);
         } else if (num_instances == 1 && base_instance == 0) {
@@ -251,8 +254,8 @@ void RasterizerOpenGL::Draw(bool is_indexed, bool is_instanced) {
                                                           base_instance);
         }
     } else {
-        const GLint base_vertex = static_cast<GLint>(maxwell3d.regs.vertex_buffer.first);
-        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d.regs.vertex_buffer.count);
+        const GLint base_vertex = static_cast<GLint>(maxwell3d->regs.vertex_buffer.first);
+        const GLsizei num_vertices = static_cast<GLsizei>(maxwell3d->regs.vertex_buffer.count);
         if (num_instances == 1 && base_instance == 0) {
             glDrawArrays(primitive_mode, base_vertex, num_vertices);
         } else if (base_instance == 0) {
@@ -273,8 +276,9 @@ void RasterizerOpenGL::DispatchCompute() {
     if (!pipeline) {
         return;
     }
+    pipeline->SetEngine(kepler_compute, gpu_memory);
     pipeline->Configure();
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     glDispatchCompute(qmd.grid_dim_x, qmd.grid_dim_y, qmd.grid_dim_z);
     ++num_queued_commands;
     has_written_global_memory |= pipeline->WritesGlobalMemory();
@@ -359,7 +363,7 @@ void RasterizerOpenGL::OnCPUWrite(VAddr addr, u64 size) {
     }
 }
 
-void RasterizerOpenGL::SyncGuestHost() {
+void RasterizerOpenGL::InvalidateGPUCache() {
     MICROPROFILE_SCOPE(OpenGL_CacheManagement);
     shader_cache.SyncGuestHost();
     {
@@ -380,40 +384,30 @@ void RasterizerOpenGL::UnmapMemory(VAddr addr, u64 size) {
     shader_cache.OnCPUWrite(addr, size);
 }
 
-void RasterizerOpenGL::ModifyGPUMemory(GPUVAddr addr, u64 size) {
+void RasterizerOpenGL::ModifyGPUMemory(size_t as_id, GPUVAddr addr, u64 size) {
     {
         std::scoped_lock lock{texture_cache.mutex};
-        texture_cache.UnmapGPUMemory(addr, size);
+        texture_cache.UnmapGPUMemory(as_id, addr, size);
     }
 }
 
-void RasterizerOpenGL::SignalSemaphore(GPUVAddr addr, u32 value) {
-    if (!gpu.IsAsync()) {
-        gpu_memory.Write<u32>(addr, value);
-        return;
-    }
-    fence_manager.SignalSemaphore(addr, value);
+void RasterizerOpenGL::SignalFence(std::function<void()>&& func) {
+    fence_manager.SignalFence(std::move(func));
+}
+
+void RasterizerOpenGL::SyncOperation(std::function<void()>&& func) {
+    fence_manager.SyncOperation(std::move(func));
 }
 
 void RasterizerOpenGL::SignalSyncPoint(u32 value) {
-    if (!gpu.IsAsync()) {
-        gpu.IncrementSyncPoint(value);
-        return;
-    }
     fence_manager.SignalSyncPoint(value);
 }
 
 void RasterizerOpenGL::SignalReference() {
-    if (!gpu.IsAsync()) {
-        return;
-    }
     fence_manager.SignalOrdering();
 }
 
 void RasterizerOpenGL::ReleaseFences() {
-    if (!gpu.IsAsync()) {
-        return;
-    }
     fence_manager.WaitPendingFences();
 }
 
@@ -430,6 +424,7 @@ void RasterizerOpenGL::WaitForIdle() {
 }
 
 void RasterizerOpenGL::FragmentBarrier() {
+    glTextureBarrier();
     glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 }
 
@@ -482,13 +477,13 @@ Tegra::Engines::AccelerateDMAInterface& RasterizerOpenGL::AccessAccelerateDMA() 
 }
 
 void RasterizerOpenGL::AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
-                                                std::span<u8> memory) {
-    auto cpu_addr = gpu_memory.GpuToCpuAddress(address);
+                                                std::span<const u8> memory) {
+    auto cpu_addr = gpu_memory->GpuToCpuAddress(address);
     if (!cpu_addr) [[unlikely]] {
-        gpu_memory.WriteBlock(address, memory.data(), copy_size);
+        gpu_memory->WriteBlock(address, memory.data(), copy_size);
         return;
     }
-    gpu_memory.WriteBlockUnsafe(address, memory.data(), copy_size);
+    gpu_memory->WriteBlockUnsafe(address, memory.data(), copy_size);
     {
         std::unique_lock<std::mutex> lock{buffer_cache.mutex};
         if (!buffer_cache.InlineMemory(*cpu_addr, copy_size, memory)) {
@@ -551,8 +546,8 @@ void RasterizerOpenGL::SyncState() {
 }
 
 void RasterizerOpenGL::SyncViewport() {
-    auto& flags = maxwell3d.dirty.flags;
-    const auto& regs = maxwell3d.regs;
+    auto& flags = maxwell3d->dirty.flags;
+    const auto& regs = maxwell3d->regs;
 
     const bool rescale_viewports = flags[VideoCommon::Dirty::RescaleViewports];
     const bool dirty_viewport = flags[Dirty::Viewports] || rescale_viewports;
@@ -561,9 +556,9 @@ void RasterizerOpenGL::SyncViewport() {
     if (dirty_viewport || dirty_clip_control || flags[Dirty::FrontFace]) {
         flags[Dirty::FrontFace] = false;
 
-        GLenum mode = MaxwellToGL::FrontFace(regs.front_face);
+        GLenum mode = MaxwellToGL::FrontFace(regs.gl_front_face);
         bool flip_faces = true;
-        if (regs.screen_y_control.triangle_rast_flip != 0) {
+        if (regs.window_origin.flip_y != 0) {
             flip_faces = !flip_faces;
         }
         if (regs.viewport_transform[0].scale_y < 0.0f) {
@@ -588,14 +583,15 @@ void RasterizerOpenGL::SyncViewport() {
         if (regs.viewport_transform[0].scale_y < 0.0f) {
             flip_y = !flip_y;
         }
-        if (regs.screen_y_control.y_negate != 0) {
+        const bool lower_left{regs.window_origin.mode != Maxwell::WindowOrigin::Mode::UpperLeft};
+        if (lower_left) {
             flip_y = !flip_y;
         }
         const bool is_zero_to_one = regs.depth_mode == Maxwell::DepthMode::ZeroToOne;
         const GLenum origin = flip_y ? GL_UPPER_LEFT : GL_LOWER_LEFT;
         const GLenum depth = is_zero_to_one ? GL_ZERO_TO_ONE : GL_NEGATIVE_ONE_TO_ONE;
         state_tracker.ClipControl(origin, depth);
-        state_tracker.SetYNegate(regs.screen_y_control.y_negate != 0);
+        state_tracker.SetYNegate(lower_left);
     }
     const bool is_rescaling{texture_cache.IsRescaling()};
     const float scale = is_rescaling ? Settings::values.resolution_info.up_factor : 1.0f;
@@ -621,6 +617,16 @@ void RasterizerOpenGL::SyncViewport() {
                 continue;
             }
             flags[Dirty::Viewport0 + index] = false;
+
+            if (!regs.viewport_transform_enabled) {
+                const auto x = static_cast<GLfloat>(regs.render_area.x);
+                const auto y = static_cast<GLfloat>(regs.render_area.y);
+                const auto width = static_cast<GLfloat>(regs.render_area.width);
+                const auto height = static_cast<GLfloat>(regs.render_area.height);
+                glViewportIndexedf(static_cast<GLuint>(index), x, y, width != 0.0f ? width : 1.0f,
+                                   height != 0.0f ? height : 1.0f);
+                continue;
+            }
 
             const auto& src = regs.viewport_transform[index];
             GLfloat x = conv(src.translate_x - src.scale_x);
@@ -657,23 +663,29 @@ void RasterizerOpenGL::SyncViewport() {
 }
 
 void RasterizerOpenGL::SyncDepthClamp() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::DepthClampEnabled]) {
         return;
     }
     flags[Dirty::DepthClampEnabled] = false;
 
-    oglEnable(GL_DEPTH_CLAMP, maxwell3d.regs.view_volume_clip_control.depth_clamp_disabled == 0);
+    bool depth_clamp_disabled{maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::Passthrough ||
+                              maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::FrustumXYZ ||
+                              maxwell3d->regs.viewport_clip_control.geometry_clip ==
+                                  Maxwell::ViewportClipControl::GeometryClip::FrustumZ};
+    oglEnable(GL_DEPTH_CLAMP, !depth_clamp_disabled);
 }
 
 void RasterizerOpenGL::SyncClipEnabled(u32 clip_mask) {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::ClipDistances] && !flags[VideoCommon::Dirty::Shaders]) {
         return;
     }
     flags[Dirty::ClipDistances] = false;
 
-    clip_mask &= maxwell3d.regs.clip_distance_enabled;
+    clip_mask &= maxwell3d->regs.user_clip_enable.raw;
     if (clip_mask == last_clip_distance_mask) {
         return;
     }
@@ -689,15 +701,15 @@ void RasterizerOpenGL::SyncClipCoef() {
 }
 
 void RasterizerOpenGL::SyncCullMode() {
-    auto& flags = maxwell3d.dirty.flags;
-    const auto& regs = maxwell3d.regs;
+    auto& flags = maxwell3d->dirty.flags;
+    const auto& regs = maxwell3d->regs;
 
     if (flags[Dirty::CullTest]) {
         flags[Dirty::CullTest] = false;
 
-        if (regs.cull_test_enabled) {
+        if (regs.gl_cull_test_enabled) {
             glEnable(GL_CULL_FACE);
-            glCullFace(MaxwellToGL::CullFace(regs.cull_face));
+            glCullFace(MaxwellToGL::CullFace(regs.gl_cull_face));
         } else {
             glDisable(GL_CULL_FACE);
         }
@@ -705,23 +717,23 @@ void RasterizerOpenGL::SyncCullMode() {
 }
 
 void RasterizerOpenGL::SyncPrimitiveRestart() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::PrimitiveRestart]) {
         return;
     }
     flags[Dirty::PrimitiveRestart] = false;
 
-    if (maxwell3d.regs.primitive_restart.enabled) {
+    if (maxwell3d->regs.primitive_restart.enabled) {
         glEnable(GL_PRIMITIVE_RESTART);
-        glPrimitiveRestartIndex(maxwell3d.regs.primitive_restart.index);
+        glPrimitiveRestartIndex(maxwell3d->regs.primitive_restart.index);
     } else {
         glDisable(GL_PRIMITIVE_RESTART);
     }
 }
 
 void RasterizerOpenGL::SyncDepthTestState() {
-    auto& flags = maxwell3d.dirty.flags;
-    const auto& regs = maxwell3d.regs;
+    auto& flags = maxwell3d->dirty.flags;
+    const auto& regs = maxwell3d->regs;
 
     if (flags[Dirty::DepthMask]) {
         flags[Dirty::DepthMask] = false;
@@ -740,28 +752,28 @@ void RasterizerOpenGL::SyncDepthTestState() {
 }
 
 void RasterizerOpenGL::SyncStencilTestState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::StencilTest]) {
         return;
     }
     flags[Dirty::StencilTest] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     oglEnable(GL_STENCIL_TEST, regs.stencil_enable);
 
-    glStencilFuncSeparate(GL_FRONT, MaxwellToGL::ComparisonOp(regs.stencil_front_func_func),
-                          regs.stencil_front_func_ref, regs.stencil_front_func_mask);
-    glStencilOpSeparate(GL_FRONT, MaxwellToGL::StencilOp(regs.stencil_front_op_fail),
-                        MaxwellToGL::StencilOp(regs.stencil_front_op_zfail),
-                        MaxwellToGL::StencilOp(regs.stencil_front_op_zpass));
+    glStencilFuncSeparate(GL_FRONT, MaxwellToGL::ComparisonOp(regs.stencil_front_op.func),
+                          regs.stencil_front_ref, regs.stencil_front_func_mask);
+    glStencilOpSeparate(GL_FRONT, MaxwellToGL::StencilOp(regs.stencil_front_op.fail),
+                        MaxwellToGL::StencilOp(regs.stencil_front_op.zfail),
+                        MaxwellToGL::StencilOp(regs.stencil_front_op.zpass));
     glStencilMaskSeparate(GL_FRONT, regs.stencil_front_mask);
 
     if (regs.stencil_two_side_enable) {
-        glStencilFuncSeparate(GL_BACK, MaxwellToGL::ComparisonOp(regs.stencil_back_func_func),
-                              regs.stencil_back_func_ref, regs.stencil_back_func_mask);
-        glStencilOpSeparate(GL_BACK, MaxwellToGL::StencilOp(regs.stencil_back_op_fail),
-                            MaxwellToGL::StencilOp(regs.stencil_back_op_zfail),
-                            MaxwellToGL::StencilOp(regs.stencil_back_op_zpass));
+        glStencilFuncSeparate(GL_BACK, MaxwellToGL::ComparisonOp(regs.stencil_back_op.func),
+                              regs.stencil_back_ref, regs.stencil_back_mask);
+        glStencilOpSeparate(GL_BACK, MaxwellToGL::StencilOp(regs.stencil_back_op.fail),
+                            MaxwellToGL::StencilOp(regs.stencil_back_op.zfail),
+                            MaxwellToGL::StencilOp(regs.stencil_back_op.zpass));
         glStencilMaskSeparate(GL_BACK, regs.stencil_back_mask);
     } else {
         glStencilFuncSeparate(GL_BACK, GL_ALWAYS, 0, 0xFFFFFFFF);
@@ -771,24 +783,24 @@ void RasterizerOpenGL::SyncStencilTestState() {
 }
 
 void RasterizerOpenGL::SyncRasterizeEnable() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::RasterizeEnable]) {
         return;
     }
     flags[Dirty::RasterizeEnable] = false;
 
-    oglEnable(GL_RASTERIZER_DISCARD, maxwell3d.regs.rasterize_enable == 0);
+    oglEnable(GL_RASTERIZER_DISCARD, maxwell3d->regs.rasterize_enable == 0);
 }
 
 void RasterizerOpenGL::SyncPolygonModes() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::PolygonModes]) {
         return;
     }
     flags[Dirty::PolygonModes] = false;
 
-    const auto& regs = maxwell3d.regs;
-    if (regs.fill_rectangle) {
+    const auto& regs = maxwell3d->regs;
+    if (regs.fill_via_triangle_mode != Maxwell::FillViaTriangleMode::Disabled) {
         if (!GLAD_GL_NV_fill_rectangle) {
             LOG_ERROR(Render_OpenGL, "GL_NV_fill_rectangle used and not supported");
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -820,7 +832,7 @@ void RasterizerOpenGL::SyncPolygonModes() {
 }
 
 void RasterizerOpenGL::SyncColorMask() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::ColorMasks]) {
         return;
     }
@@ -829,7 +841,7 @@ void RasterizerOpenGL::SyncColorMask() {
     const bool force = flags[Dirty::ColorMaskCommon];
     flags[Dirty::ColorMaskCommon] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     if (regs.color_mask_common) {
         if (!force && !flags[Dirty::ColorMask0]) {
             return;
@@ -854,30 +866,31 @@ void RasterizerOpenGL::SyncColorMask() {
 }
 
 void RasterizerOpenGL::SyncMultiSampleState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::MultisampleControl]) {
         return;
     }
     flags[Dirty::MultisampleControl] = false;
 
-    const auto& regs = maxwell3d.regs;
-    oglEnable(GL_SAMPLE_ALPHA_TO_COVERAGE, regs.multisample_control.alpha_to_coverage);
-    oglEnable(GL_SAMPLE_ALPHA_TO_ONE, regs.multisample_control.alpha_to_one);
+    const auto& regs = maxwell3d->regs;
+    oglEnable(GL_SAMPLE_ALPHA_TO_COVERAGE, regs.anti_alias_alpha_control.alpha_to_coverage);
+    oglEnable(GL_SAMPLE_ALPHA_TO_ONE, regs.anti_alias_alpha_control.alpha_to_one);
 }
 
 void RasterizerOpenGL::SyncFragmentColorClampState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::FragmentClampColor]) {
         return;
     }
     flags[Dirty::FragmentClampColor] = false;
 
-    glClampColor(GL_CLAMP_FRAGMENT_COLOR, maxwell3d.regs.frag_color_clamp ? GL_TRUE : GL_FALSE);
+    glClampColor(GL_CLAMP_FRAGMENT_COLOR,
+                 maxwell3d->regs.frag_color_clamp.AnyEnabled() ? GL_TRUE : GL_FALSE);
 }
 
 void RasterizerOpenGL::SyncBlendState() {
-    auto& flags = maxwell3d.dirty.flags;
-    const auto& regs = maxwell3d.regs;
+    auto& flags = maxwell3d->dirty.flags;
+    const auto& regs = maxwell3d->regs;
 
     if (flags[Dirty::BlendColor]) {
         flags[Dirty::BlendColor] = false;
@@ -892,18 +905,18 @@ void RasterizerOpenGL::SyncBlendState() {
     }
     flags[Dirty::BlendStates] = false;
 
-    if (!regs.independent_blend_enable) {
+    if (!regs.blend_per_target_enabled) {
         if (!regs.blend.enable[0]) {
             glDisable(GL_BLEND);
             return;
         }
         glEnable(GL_BLEND);
-        glBlendFuncSeparate(MaxwellToGL::BlendFunc(regs.blend.factor_source_rgb),
-                            MaxwellToGL::BlendFunc(regs.blend.factor_dest_rgb),
-                            MaxwellToGL::BlendFunc(regs.blend.factor_source_a),
-                            MaxwellToGL::BlendFunc(regs.blend.factor_dest_a));
-        glBlendEquationSeparate(MaxwellToGL::BlendEquation(regs.blend.equation_rgb),
-                                MaxwellToGL::BlendEquation(regs.blend.equation_a));
+        glBlendFuncSeparate(MaxwellToGL::BlendFunc(regs.blend.color_source),
+                            MaxwellToGL::BlendFunc(regs.blend.color_dest),
+                            MaxwellToGL::BlendFunc(regs.blend.alpha_source),
+                            MaxwellToGL::BlendFunc(regs.blend.alpha_dest));
+        glBlendEquationSeparate(MaxwellToGL::BlendEquation(regs.blend.color_op),
+                                MaxwellToGL::BlendEquation(regs.blend.alpha_op));
         return;
     }
 
@@ -922,35 +935,34 @@ void RasterizerOpenGL::SyncBlendState() {
         }
         glEnablei(GL_BLEND, static_cast<GLuint>(i));
 
-        const auto& src = regs.independent_blend[i];
-        glBlendFuncSeparatei(static_cast<GLuint>(i), MaxwellToGL::BlendFunc(src.factor_source_rgb),
-                             MaxwellToGL::BlendFunc(src.factor_dest_rgb),
-                             MaxwellToGL::BlendFunc(src.factor_source_a),
-                             MaxwellToGL::BlendFunc(src.factor_dest_a));
-        glBlendEquationSeparatei(static_cast<GLuint>(i),
-                                 MaxwellToGL::BlendEquation(src.equation_rgb),
-                                 MaxwellToGL::BlendEquation(src.equation_a));
+        const auto& src = regs.blend_per_target[i];
+        glBlendFuncSeparatei(static_cast<GLuint>(i), MaxwellToGL::BlendFunc(src.color_source),
+                             MaxwellToGL::BlendFunc(src.color_dest),
+                             MaxwellToGL::BlendFunc(src.alpha_source),
+                             MaxwellToGL::BlendFunc(src.alpha_dest));
+        glBlendEquationSeparatei(static_cast<GLuint>(i), MaxwellToGL::BlendEquation(src.color_op),
+                                 MaxwellToGL::BlendEquation(src.alpha_op));
     }
 }
 
 void RasterizerOpenGL::SyncLogicOpState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::LogicOp]) {
         return;
     }
     flags[Dirty::LogicOp] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     if (regs.logic_op.enable) {
         glEnable(GL_COLOR_LOGIC_OP);
-        glLogicOp(MaxwellToGL::LogicOp(regs.logic_op.operation));
+        glLogicOp(MaxwellToGL::LogicOp(regs.logic_op.op));
     } else {
         glDisable(GL_COLOR_LOGIC_OP);
     }
 }
 
 void RasterizerOpenGL::SyncScissorTest() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::Scissors] && !flags[VideoCommon::Dirty::RescaleScissors]) {
         return;
     }
@@ -959,7 +971,7 @@ void RasterizerOpenGL::SyncScissorTest() {
     const bool force = flags[VideoCommon::Dirty::RescaleScissors];
     flags[VideoCommon::Dirty::RescaleScissors] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
 
     const auto& resolution = Settings::values.resolution_info;
     const bool is_rescaling{texture_cache.IsRescaling()};
@@ -995,39 +1007,39 @@ void RasterizerOpenGL::SyncScissorTest() {
 }
 
 void RasterizerOpenGL::SyncPointState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::PointSize]) {
         return;
     }
     flags[Dirty::PointSize] = false;
 
-    oglEnable(GL_POINT_SPRITE, maxwell3d.regs.point_sprite_enable);
-    oglEnable(GL_PROGRAM_POINT_SIZE, maxwell3d.regs.vp_point_size.enable);
+    oglEnable(GL_POINT_SPRITE, maxwell3d->regs.point_sprite_enable);
+    oglEnable(GL_PROGRAM_POINT_SIZE, maxwell3d->regs.point_size_attribute.enabled);
     const bool is_rescaling{texture_cache.IsRescaling()};
     const float scale = is_rescaling ? Settings::values.resolution_info.up_factor : 1.0f;
-    glPointSize(std::max(1.0f, maxwell3d.regs.point_size * scale));
+    glPointSize(std::max(1.0f, maxwell3d->regs.point_size * scale));
 }
 
 void RasterizerOpenGL::SyncLineState() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::LineWidth]) {
         return;
     }
     flags[Dirty::LineWidth] = false;
 
-    const auto& regs = maxwell3d.regs;
-    oglEnable(GL_LINE_SMOOTH, regs.line_smooth_enable);
-    glLineWidth(regs.line_smooth_enable ? regs.line_width_smooth : regs.line_width_aliased);
+    const auto& regs = maxwell3d->regs;
+    oglEnable(GL_LINE_SMOOTH, regs.line_anti_alias_enable);
+    glLineWidth(regs.line_anti_alias_enable ? regs.line_width_smooth : regs.line_width_aliased);
 }
 
 void RasterizerOpenGL::SyncPolygonOffset() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::PolygonOffset]) {
         return;
     }
     flags[Dirty::PolygonOffset] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     oglEnable(GL_POLYGON_OFFSET_FILL, regs.polygon_offset_fill_enable);
     oglEnable(GL_POLYGON_OFFSET_LINE, regs.polygon_offset_line_enable);
     oglEnable(GL_POLYGON_OFFSET_POINT, regs.polygon_offset_point_enable);
@@ -1035,19 +1047,19 @@ void RasterizerOpenGL::SyncPolygonOffset() {
     if (regs.polygon_offset_fill_enable || regs.polygon_offset_line_enable ||
         regs.polygon_offset_point_enable) {
         // Hardware divides polygon offset units by two
-        glPolygonOffsetClamp(regs.polygon_offset_factor, regs.polygon_offset_units / 2.0f,
-                             regs.polygon_offset_clamp);
+        glPolygonOffsetClamp(regs.slope_scale_depth_bias, regs.depth_bias / 2.0f,
+                             regs.depth_bias_clamp);
     }
 }
 
 void RasterizerOpenGL::SyncAlphaTest() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::AlphaTest]) {
         return;
     }
     flags[Dirty::AlphaTest] = false;
 
-    const auto& regs = maxwell3d.regs;
+    const auto& regs = maxwell3d->regs;
     if (regs.alpha_test_enabled) {
         glEnable(GL_ALPHA_TEST);
         glAlphaFunc(MaxwellToGL::ComparisonOp(regs.alpha_test_func), regs.alpha_test_ref);
@@ -1057,25 +1069,25 @@ void RasterizerOpenGL::SyncAlphaTest() {
 }
 
 void RasterizerOpenGL::SyncFramebufferSRGB() {
-    auto& flags = maxwell3d.dirty.flags;
+    auto& flags = maxwell3d->dirty.flags;
     if (!flags[Dirty::FramebufferSRGB]) {
         return;
     }
     flags[Dirty::FramebufferSRGB] = false;
 
-    oglEnable(GL_FRAMEBUFFER_SRGB, maxwell3d.regs.framebuffer_srgb);
+    oglEnable(GL_FRAMEBUFFER_SRGB, maxwell3d->regs.framebuffer_srgb);
 }
 
 void RasterizerOpenGL::BeginTransformFeedback(GraphicsPipeline* program, GLenum primitive_mode) {
-    const auto& regs = maxwell3d.regs;
-    if (regs.tfb_enabled == 0) {
+    const auto& regs = maxwell3d->regs;
+    if (regs.transform_feedback_enabled == 0) {
         return;
     }
     program->ConfigureTransformFeedback();
 
-    UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::TesselationControl) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::TesselationEval) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderProgram::Geometry));
+    UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
+                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation) ||
+                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Geometry));
     UNIMPLEMENTED_IF(primitive_mode != GL_POINTS);
 
     // We may have to call BeginTransformFeedbackNV here since they seem to call different
@@ -1086,9 +1098,56 @@ void RasterizerOpenGL::BeginTransformFeedback(GraphicsPipeline* program, GLenum 
 }
 
 void RasterizerOpenGL::EndTransformFeedback() {
-    if (maxwell3d.regs.tfb_enabled != 0) {
+    if (maxwell3d->regs.transform_feedback_enabled != 0) {
         glEndTransformFeedback();
     }
+}
+
+void RasterizerOpenGL::InitializeChannel(Tegra::Control::ChannelState& channel) {
+    CreateChannel(channel);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.CreateChannel(channel);
+        buffer_cache.CreateChannel(channel);
+    }
+    shader_cache.CreateChannel(channel);
+    query_cache.CreateChannel(channel);
+    state_tracker.SetupTables(channel);
+}
+
+void RasterizerOpenGL::BindChannel(Tegra::Control::ChannelState& channel) {
+    const s32 channel_id = channel.bind_id;
+    BindToChannel(channel_id);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.BindToChannel(channel_id);
+        buffer_cache.BindToChannel(channel_id);
+    }
+    shader_cache.BindToChannel(channel_id);
+    query_cache.BindToChannel(channel_id);
+    state_tracker.ChangeChannel(channel);
+    state_tracker.InvalidateState();
+}
+
+void RasterizerOpenGL::ReleaseChannel(s32 channel_id) {
+    EraseChannel(channel_id);
+    {
+        std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+        texture_cache.EraseChannel(channel_id);
+        buffer_cache.EraseChannel(channel_id);
+    }
+    shader_cache.EraseChannel(channel_id);
+    query_cache.EraseChannel(channel_id);
+}
+
+void RasterizerOpenGL::BindInlineIndexBuffer() {
+    if (maxwell3d->inline_index_draw_indexes.empty()) {
+        return;
+    }
+    const auto data_count = static_cast<u32>(maxwell3d->inline_index_draw_indexes.size());
+    auto buffer = Buffer(buffer_cache_runtime, *this, 0, data_count);
+    buffer.ImmediateUpload(0, maxwell3d->inline_index_draw_indexes);
+    buffer_cache_runtime.BindIndexBuffer(buffer, 0, data_count);
 }
 
 AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_) : buffer_cache{buffer_cache_} {}

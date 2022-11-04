@@ -47,11 +47,7 @@ public:
         spec.freq = TargetSampleRate;
         spec.channels = static_cast<u8>(device_channels);
         spec.format = AUDIO_S16SYS;
-        if (type == StreamType::Render) {
-            spec.samples = TargetSampleCount;
-        } else {
-            spec.samples = 1024;
-        }
+        spec.samples = TargetSampleCount * 2;
         spec.callback = &SDLSinkStream::DataCallback;
         spec.userdata = this;
 
@@ -234,10 +230,16 @@ std::vector<std::string> ListSDLSinkDevices(bool capture) {
 
     const int device_count = SDL_GetNumAudioDevices(capture);
     for (int i = 0; i < device_count; ++i) {
-        device_list.emplace_back(SDL_GetAudioDeviceName(i, 0));
+        if (const char* name = SDL_GetAudioDeviceName(i, capture)) {
+            device_list.emplace_back(name);
+        }
     }
 
     return device_list;
+}
+
+u32 GetSDLLatency() {
+    return TargetSampleCount * 2;
 }
 
 } // namespace AudioCore::Sink

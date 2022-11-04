@@ -136,9 +136,10 @@ bool Scheduler::UpdateRescaling(bool is_rescaling) {
 }
 
 void Scheduler::WorkerThread(std::stop_token stop_token) {
-    Common::SetCurrentThreadName("yuzu:VulkanWorker");
+    Common::SetCurrentThreadName("VulkanWorker");
     do {
         std::unique_ptr<CommandChunk> work;
+        bool has_submit{false};
         {
             std::unique_lock lock{work_mutex};
             if (work_queue.empty()) {
@@ -150,9 +151,10 @@ void Scheduler::WorkerThread(std::stop_token stop_token) {
             }
             work = std::move(work_queue.front());
             work_queue.pop();
+
+            has_submit = work->HasSubmit();
+            work->ExecuteAll(current_cmdbuf);
         }
-        const bool has_submit = work->HasSubmit();
-        work->ExecuteAll(current_cmdbuf);
         if (has_submit) {
             AllocateWorkerCommandBuffer();
         }

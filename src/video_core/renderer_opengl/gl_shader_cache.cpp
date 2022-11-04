@@ -49,7 +49,7 @@ using VideoCommon::LoadPipelines;
 using VideoCommon::SerializePipeline;
 using Context = ShaderContext::Context;
 
-constexpr u32 CACHE_VERSION = 6;
+constexpr u32 CACHE_VERSION = 7;
 
 template <typename Container>
 auto MakeSpan(Container& container) {
@@ -63,6 +63,7 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
     Shader::RuntimeInfo info;
     if (previous_program) {
         info.previous_stage_stores = previous_program->info.stores;
+        info.previous_stage_legacy_stores_mapping = previous_program->info.legacy_stores_mapping;
     } else {
         // Mark all stores as available for vertex shaders
         info.previous_stage_stores.mask.set();
@@ -78,11 +79,11 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         info.tess_clockwise = key.tessellation_clockwise != 0;
         info.tess_primitive = [&key] {
             switch (key.tessellation_primitive) {
-            case Maxwell::TessellationPrimitive::Isolines:
+            case Maxwell::Tessellation::DomainType::Isolines:
                 return Shader::TessPrimitive::Isolines;
-            case Maxwell::TessellationPrimitive::Triangles:
+            case Maxwell::Tessellation::DomainType::Triangles:
                 return Shader::TessPrimitive::Triangles;
-            case Maxwell::TessellationPrimitive::Quads:
+            case Maxwell::Tessellation::DomainType::Quads:
                 return Shader::TessPrimitive::Quads;
             }
             ASSERT(false);
@@ -90,11 +91,11 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
         }();
         info.tess_spacing = [&] {
             switch (key.tessellation_spacing) {
-            case Maxwell::TessellationSpacing::Equal:
+            case Maxwell::Tessellation::Spacing::Integer:
                 return Shader::TessSpacing::Equal;
-            case Maxwell::TessellationSpacing::FractionalOdd:
+            case Maxwell::Tessellation::Spacing::FractionalOdd:
                 return Shader::TessSpacing::FractionalOdd;
-            case Maxwell::TessellationSpacing::FractionalEven:
+            case Maxwell::Tessellation::Spacing::FractionalEven:
                 return Shader::TessSpacing::FractionalEven;
             }
             ASSERT(false);
@@ -139,28 +140,26 @@ Shader::RuntimeInfo MakeRuntimeInfo(const GraphicsPipelineKey& key,
 }
 
 void SetXfbState(VideoCommon::TransformFeedbackState& state, const Maxwell& regs) {
-    std::ranges::transform(regs.tfb_layouts, state.layouts.begin(), [](const auto& layout) {
-        return VideoCommon::TransformFeedbackState::Layout{
-            .stream = layout.stream,
-            .varying_count = layout.varying_count,
-            .stride = layout.stride,
-        };
-    });
-    state.varyings = regs.tfb_varying_locs;
+    std::ranges::transform(regs.transform_feedback.controls, state.layouts.begin(),
+                           [](const auto& layout) {
+                               return VideoCommon::TransformFeedbackState::Layout{
+                                   .stream = layout.stream,
+                                   .varying_count = layout.varying_count,
+                                   .stride = layout.stride,
+                               };
+                           });
+    state.varyings = regs.stream_out_layout;
 }
 } // Anonymous namespace
 
 ShaderCache::ShaderCache(RasterizerOpenGL& rasterizer_, Core::Frontend::EmuWindow& emu_window_,
-                         Tegra::Engines::Maxwell3D& maxwell3d_,
-                         Tegra::Engines::KeplerCompute& kepler_compute_,
-                         Tegra::MemoryManager& gpu_memory_, const Device& device_,
-                         TextureCache& texture_cache_, BufferCache& buffer_cache_,
-                         ProgramManager& program_manager_, StateTracker& state_tracker_,
-                         VideoCore::ShaderNotify& shader_notify_)
-    : VideoCommon::ShaderCache{rasterizer_, gpu_memory_, maxwell3d_, kepler_compute_},
-      emu_window{emu_window_}, device{device_}, texture_cache{texture_cache_},
-      buffer_cache{buffer_cache_}, program_manager{program_manager_}, state_tracker{state_tracker_},
-      shader_notify{shader_notify_}, use_asynchronous_shaders{device.UseAsynchronousShaders()},
+                         const Device& device_, TextureCache& texture_cache_,
+                         BufferCache& buffer_cache_, ProgramManager& program_manager_,
+                         StateTracker& state_tracker_, VideoCore::ShaderNotify& shader_notify_)
+    : VideoCommon::ShaderCache{rasterizer_}, emu_window{emu_window_}, device{device_},
+      texture_cache{texture_cache_}, buffer_cache{buffer_cache_}, program_manager{program_manager_},
+      state_tracker{state_tracker_}, shader_notify{shader_notify_},
+      use_asynchronous_shaders{device.UseAsynchronousShaders()},
       profile{
           .supported_spirv = 0x00010000,
 
@@ -310,16 +309,18 @@ GraphicsPipeline* ShaderCache::CurrentGraphicsPipeline() {
         current_pipeline = nullptr;
         return nullptr;
     }
-    const auto& regs{maxwell3d.regs};
+    const auto& regs{maxwell3d->regs};
     graphics_key.raw = 0;
-    graphics_key.early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
+    graphics_key.early_z.Assign(regs.mandated_early_z != 0 ? 1 : 0);
     graphics_key.gs_input_topology.Assign(graphics_key.unique_hashes[4] != 0
                                               ? regs.draw.topology.Value()
                                               : Maxwell::PrimitiveTopology{});
-    graphics_key.tessellation_primitive.Assign(regs.tess_mode.prim.Value());
-    graphics_key.tessellation_spacing.Assign(regs.tess_mode.spacing.Value());
-    graphics_key.tessellation_clockwise.Assign(regs.tess_mode.cw.Value());
-    graphics_key.xfb_enabled.Assign(regs.tfb_enabled != 0 ? 1 : 0);
+    graphics_key.tessellation_primitive.Assign(regs.tessellation.params.domain_type.Value());
+    graphics_key.tessellation_spacing.Assign(regs.tessellation.params.spacing.Value());
+    graphics_key.tessellation_clockwise.Assign(
+        regs.tessellation.params.output_primitives.Value() ==
+        Maxwell::Tessellation::OutputPrimitives::Triangles_CW);
+    graphics_key.xfb_enabled.Assign(regs.transform_feedback_enabled != 0 ? 1 : 0);
     if (graphics_key.xfb_enabled) {
         SetXfbState(graphics_key.xfb_state, regs);
     }
@@ -351,13 +352,13 @@ GraphicsPipeline* ShaderCache::BuiltPipeline(GraphicsPipeline* pipeline) const n
     }
     // If something is using depth, we can assume that games are not rendering anything which
     // will be used one time.
-    if (maxwell3d.regs.zeta_enable) {
+    if (maxwell3d->regs.zeta_enable) {
         return nullptr;
     }
     // If games are using a small index count, we can assume these are full screen quads.
     // Usually these shaders are only used once for building textures so we can assume they
     // can't be built async
-    if (maxwell3d.regs.index_array.count <= 6 || maxwell3d.regs.vertex_buffer.count <= 6) {
+    if (maxwell3d->regs.index_buffer.count <= 6 || maxwell3d->regs.vertex_buffer.count <= 6) {
         return pipeline;
     }
     return nullptr;
@@ -368,7 +369,7 @@ ComputePipeline* ShaderCache::CurrentComputePipeline() {
     if (!shader) {
         return nullptr;
     }
-    const auto& qmd{kepler_compute.launch_description};
+    const auto& qmd{kepler_compute->launch_description};
     const ComputePipelineKey key{
         .unique_hash = shader->unique_hash,
         .shared_memory_size = qmd.shared_alloc,
@@ -480,9 +481,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         previous_program = &program;
     }
     auto* const thread_worker{build_in_parallel ? workers.get() : nullptr};
-    return std::make_unique<GraphicsPipeline>(
-        device, texture_cache, buffer_cache, gpu_memory, maxwell3d, program_manager, state_tracker,
-        thread_worker, &shader_notify, sources, sources_spirv, infos, key);
+    return std::make_unique<GraphicsPipeline>(device, texture_cache, buffer_cache, program_manager,
+                                              state_tracker, thread_worker, &shader_notify, sources,
+                                              sources_spirv, infos, key);
 
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
@@ -491,9 +492,9 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
 
 std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     const ComputePipelineKey& key, const VideoCommon::ShaderInfo* shader) {
-    const GPUVAddr program_base{kepler_compute.regs.code_loc.Address()};
-    const auto& qmd{kepler_compute.launch_description};
-    ComputeEnvironment env{kepler_compute, gpu_memory, program_base, qmd.program_start};
+    const GPUVAddr program_base{kepler_compute->regs.code_loc.Address()};
+    const auto& qmd{kepler_compute->launch_description};
+    ComputeEnvironment env{*kepler_compute, *gpu_memory, program_base, qmd.program_start};
     env.SetCachedSize(shader->size_bytes);
 
     main_pools.ReleaseContents();
@@ -536,9 +537,8 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
         break;
     }
 
-    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, gpu_memory,
-                                             kepler_compute, program_manager, program.info, code,
-                                             code_spirv);
+    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, program_manager,
+                                             program.info, code, code_spirv);
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;
@@ -546,7 +546,7 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
 
 std::unique_ptr<ShaderWorker> ShaderCache::CreateWorkers() const {
     return std::make_unique<ShaderWorker>(std::max(std::thread::hardware_concurrency(), 2U) - 1,
-                                          "yuzu:ShaderBuilder",
+                                          "GlShaderBuilder",
                                           [this] { return Context{emu_window}; });
 }
 

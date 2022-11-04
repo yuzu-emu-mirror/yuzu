@@ -3,6 +3,7 @@
 
 #include <cinttypes>
 #include <clocale>
+#include <cmath>
 #include <memory>
 #include <thread>
 #ifdef __APPLE__
@@ -105,12 +106,12 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/filesystem/filesystem.h"
-#include "core/hle/service/nfp/nfp.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
 #include "core/telemetry_session.h"
 #include "input_common/drivers/tas_input.h"
+#include "input_common/drivers/virtual_amiibo.h"
 #include "input_common/main.h"
 #include "ui_main.h"
 #include "util/overlay_dialog.h"
@@ -261,6 +262,18 @@ static QString PrettyProductName() {
     return QSysInfo::prettyProductName();
 }
 
+#ifdef _WIN32
+static void OverrideWindowsFont() {
+    // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrllic characters
+    // Asking to use "MS Shell Dlg 2" gives better other chars while leaving the Chinese Characters.
+    const QString startup_font = QApplication::font().family();
+    const QStringList ugly_fonts = {QStringLiteral("SimSun"), QStringLiteral("PMingLiU")};
+    if (ugly_fonts.contains(startup_font)) {
+        QApplication::setFont(QFont(QStringLiteral("MS Shell Dlg 2"), 9, QFont::Normal));
+    }
+}
+#endif
+
 bool GMainWindow::CheckDarkMode() {
 #ifdef __linux__
     const QPalette test_palette(qApp->palette());
@@ -281,6 +294,7 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
 #ifdef __linux__
     SetupSigInterrupts();
 #endif
+    system->Initialize();
 
     Common::Log::Initialize();
     LoadTranslation();
@@ -899,8 +913,8 @@ void GMainWindow::InitializeWidgets() {
     }
 
     // TODO (flTobi): Add the widget when multiplayer is fully implemented
-    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
-    // statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
 
     tas_label = new QLabel();
     tas_label->setObjectName(QStringLiteral("TASlabel"));
@@ -1299,6 +1313,7 @@ void GMainWindow::ConnectMenuEvents() {
             &MultiplayerState::OnDirectConnectToRoom);
     connect(ui->action_Show_Room, &QAction::triggered, multiplayer_state,
             &MultiplayerState::OnOpenNetworkRoom);
+    connect(multiplayer_state, &MultiplayerState::SaveConfig, this, &GMainWindow::OnSaveConfig);
 
     // Tools
     connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
@@ -1339,6 +1354,8 @@ void GMainWindow::UpdateMenuState() {
     } else {
         ui->action_Pause->setText(tr("&Pause"));
     }
+
+    multiplayer_state->UpdateNotificationStatus();
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -1879,6 +1896,8 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     case GameListOpenTarget::SaveData: {
         open_target = tr("Save Data");
         const auto nand_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir);
+        auto vfs_nand_dir =
+            vfs->OpenDirectory(Common::FS::PathToUTF8String(nand_dir), FileSys::Mode::Read);
 
         if (has_user_save) {
             // User save data
@@ -1905,15 +1924,15 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
             ASSERT(user_id);
 
             const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, user_id->AsU128(), 0);
+                *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+                FileSys::SaveDataType::SaveData, program_id, user_id->AsU128(), 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
         } else {
             // Device save data
             const auto device_save_data_path = FileSys::SaveDataFactory::GetFullPath(
-                *system, FileSys::SaveDataSpaceId::NandUser, FileSys::SaveDataType::SaveData,
-                program_id, {}, 0);
+                *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+                FileSys::SaveDataType::SaveData, program_id, {}, 0);
 
             path = Common::FS::ConcatPathSafe(nand_dir, device_save_data_path);
         }
@@ -2000,7 +2019,7 @@ static bool RomFSRawCopy(QProgressDialog& dialog, const FileSys::VirtualDir& src
 }
 
 void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type) {
-    const QString entry_type = [this, type] {
+    const QString entry_type = [type] {
         switch (type) {
         case InstalledEntryType::Game:
             return tr("Contents");
@@ -2097,7 +2116,7 @@ void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) 
 
 void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                                        const std::string& game_path) {
-    const QString question = [this, target] {
+    const QString question = [target] {
         switch (target) {
         case GameListRemoveTarget::GlShaderCache:
             return tr("Delete OpenGL Transferable Shader Cache?");
@@ -2770,6 +2789,11 @@ void GMainWindow::OnExit() {
     OnStopGame();
 }
 
+void GMainWindow::OnSaveConfig() {
+    system->ApplySettings();
+    config->Save();
+}
+
 void GMainWindow::ErrorDisplayDisplayError(QString error_code, QString error_text) {
     OverlayDialog dialog(render_window, *system, error_code, error_text, QString{}, tr("OK"),
                          Qt::AlignLeft | Qt::AlignVCenter);
@@ -3211,21 +3235,16 @@ void GMainWindow::OnLoadAmiibo() {
         return;
     }
 
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
-        return;
-    }
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+
+    // Remove amiibo if one is connected
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    if (nfc_state != Service::NFP::DeviceState::SearchingForTag) {
+    if (virtual_amiibo->GetCurrentState() != InputCommon::VirtualAmiibo::State::WaitingForAmiibo) {
         QMessageBox::warning(this, tr("Error"), tr("The current game is not looking for amiibos"));
         return;
     }
@@ -3244,24 +3263,30 @@ void GMainWindow::OnLoadAmiibo() {
 }
 
 void GMainWindow::LoadAmiibo(const QString& filename) {
-    Service::SM::ServiceManager& sm = system->ServiceManager();
-    auto nfc = sm.GetService<Service::NFP::Module::Interface>("nfp:user");
-    if (nfc == nullptr) {
-        return;
-    }
-
+    auto* virtual_amiibo = input_subsystem->GetVirtualAmiibo();
+    const QString title = tr("Error loading Amiibo data");
     // Remove amiibo if one is connected
-    const auto nfc_state = nfc->GetCurrentState();
-    if (nfc_state == Service::NFP::DeviceState::TagFound ||
-        nfc_state == Service::NFP::DeviceState::TagMounted) {
-        nfc->CloseAmiibo();
+    if (virtual_amiibo->GetCurrentState() == InputCommon::VirtualAmiibo::State::AmiiboIsOpen) {
+        virtual_amiibo->CloseAmiibo();
         QMessageBox::warning(this, tr("Amiibo"), tr("The current amiibo has been removed"));
         return;
     }
 
-    if (!nfc->LoadAmiibo(filename.toStdString())) {
-        QMessageBox::warning(this, tr("Error loading Amiibo data"),
-                             tr("Unable to load Amiibo data."));
+    switch (virtual_amiibo->LoadAmiibo(filename.toStdString())) {
+    case InputCommon::VirtualAmiibo::Info::NotAnAmiibo:
+        QMessageBox::warning(this, title, tr("The selected file is not a valid amiibo"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::UnableToLoad:
+        QMessageBox::warning(this, title, tr("The selected file is already on use"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::WrongDeviceState:
+        QMessageBox::warning(this, title, tr("The current game is not looking for amiibos"));
+        break;
+    case InputCommon::VirtualAmiibo::Info::Unknown:
+        QMessageBox::warning(this, title, tr("An unknown error occurred"));
+        break;
+    default:
+        break;
     }
 }
 
@@ -3442,9 +3467,10 @@ void GMainWindow::UpdateStatusBar() {
     }
     if (!Settings::values.use_speed_limit) {
         game_fps_label->setText(
-            tr("Game: %1 FPS (Unlocked)").arg(results.average_game_fps, 0, 'f', 0));
+            tr("Game: %1 FPS (Unlocked)").arg(std::round(results.average_game_fps), 0, 'f', 0));
     } else {
-        game_fps_label->setText(tr("Game: %1 FPS").arg(results.average_game_fps, 0, 'f', 0));
+        game_fps_label->setText(
+            tr("Game: %1 FPS").arg(std::round(results.average_game_fps), 0, 'f', 0));
     }
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
@@ -4125,6 +4151,10 @@ int main(int argc, char* argv[]) {
     // Enables the core to make the qt created contexts current on std::threads
     QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
     QApplication app(argc, argv);
+
+#ifdef _WIN32
+    OverrideWindowsFont();
+#endif
 
     // Workaround for QTBUG-85409, for Suzhou numerals the number 1 is actually \u3021
     // so we can see if we get \u3008 instead

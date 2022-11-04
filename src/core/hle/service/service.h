@@ -20,6 +20,7 @@ class System;
 namespace Kernel {
 class HLERequestContext;
 class KClientPort;
+class KPort;
 class KServerSession;
 class ServiceThread;
 } // namespace Kernel
@@ -97,6 +98,9 @@ protected:
 
     /// Identifier string used to connect to the service.
     std::string service_name;
+
+    /// Port used by ManageNamedPort.
+    Kernel::KPort* named_port{};
 
 private:
     template <typename T>
@@ -237,6 +241,8 @@ class Services final {
 public:
     explicit Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system);
     ~Services();
+
+    void KillNVNFlinger();
 
 private:
     std::unique_ptr<NVFlinger::HosBinderDriverServer> hos_binder_driver_server;
