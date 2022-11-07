@@ -539,6 +539,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QAction* open_mod_location = context_menu.addAction(tr("Open Mod Data Location"));
     QAction* open_transferable_shader_cache =
         context_menu.addAction(tr("Open Transferable Pipeline Cache"));
+    QAction* export_save_file = context_menu.addAction(tr("Export Game Save File"));
+    QAction* import_save_file = context_menu.addAction(tr("Import Game Save File"));
     context_menu.addSeparator();
     QMenu* remove_menu = context_menu.addMenu(tr("Remove"));
     QAction* remove_update = remove_menu->addAction(tr("Remove Installed Update"));
@@ -563,6 +565,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     open_save_location->setVisible(program_id != 0);
     open_mod_location->setVisible(program_id != 0);
     open_transferable_shader_cache->setVisible(program_id != 0);
+    export_save_file->setVisible(program_id != 0);
+    import_save_file->setVisible(program_id != 0);
     remove_update->setVisible(program_id != 0);
     remove_dlc->setVisible(program_id != 0);
     remove_gl_shader_cache->setVisible(program_id != 0);
@@ -587,6 +591,12 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     });
     connect(open_transferable_shader_cache, &QAction::triggered,
             [this, program_id]() { emit OpenTransferableShaderCacheRequested(program_id); });
+    connect(export_save_file, &QAction::triggered, [this, program_id, path]() {
+        emit HandleSaveFile(SaveFileOperation::Import, program_id, path);
+    });
+    connect(import_save_file, &QAction::triggered, [this, program_id, path]() {
+        emit HandleSaveFile(SaveFileOperation::Export, program_id, path);
+    });
     connect(remove_all_content, &QAction::triggered, [this, program_id]() {
         emit RemoveInstalledEntryRequested(program_id, InstalledEntryType::Game);
     });

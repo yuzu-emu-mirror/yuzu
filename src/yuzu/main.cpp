@@ -6,6 +6,7 @@
 #include <cmath>
 #include <memory>
 #include <thread>
+#include <zip.h>
 #ifdef __APPLE__
 #include <unistd.h> // for chdir
 #endif
@@ -1226,6 +1227,7 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
     connect(game_list, &GameList::OpenTransferableShaderCacheRequested, this,
             &GMainWindow::OnTransferableShaderCacheOpenFile);
+    connect(game_list, &GameList::HandleSaveFile, this, &GMainWindow::OnHandleSaveFile);
     connect(game_list, &GameList::RemoveInstalledEntryRequested, this,
             &GMainWindow::OnGameListRemoveInstalledEntry);
     connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
@@ -1963,6 +1965,200 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     LOG_INFO(Frontend, "Opening {} path for program_id={:016x}", open_target.toStdString(),
              program_id);
     QDesktopServices::openUrl(QUrl::fromLocalFile(qpath));
+}
+
+void GMainWindow::OnHandleSaveFile(SaveFileOperation operation, u64 program_id,
+                                   const std::string& game_path) {
+    std::filesystem::path path;
+    QString open_target;
+
+    const auto [user_save_size, device_save_size] = [this, &game_path, &program_id] {
+        const FileSys::PatchManager pm{program_id, system->GetFileSystemController(),
+                                       system->GetContentProvider()};
+        const auto control = pm.GetControlMetadata().first;
+        if (control != nullptr) {
+            return std::make_pair(control->GetDefaultNormalSaveSize(),
+                                  control->GetDeviceSaveDataSize());
+        } else {
+            const auto file = Core::GetGameFileFromPath(vfs, game_path);
+            const auto loader = Loader::GetLoader(*system, file);
+
+            FileSys::NACP nacp{};
+            loader->ReadControlData(nacp);
+            return std::make_pair(nacp.GetDefaultNormalSaveSize(), nacp.GetDeviceSaveDataSize());
+        }
+    }();
+
+    const bool has_user_save{user_save_size > 0};
+    const bool has_device_save{device_save_size > 0};
+
+    ASSERT_MSG(has_user_save != has_device_save, "Game uses both user and device savedata?");
+
+    open_target = tr("Save Data");
+    const auto nand_dir = Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir);
+    auto vfs_nand_dir =
+        vfs->OpenDirectory(Common::FS::PathToUTF8String(nand_dir), FileSys::Mode::Read);
+
+    if (has_user_save) {
+        // User save data
+        const auto select_profile = [this] {
+            QtProfileSelectionDialog dialog(system->HIDCore(), this);
+            dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                                  Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+            dialog.setWindowModality(Qt::WindowModal);
+
+            if (dialog.exec() == QDialog::Rejected) {
+                return -1;
+            }
+
+            return dialog.GetIndex();
+        };
+
+        const auto index = select_profile();
+        if (index == -1) {
+            return;
+        }
+
+        Service::Account::ProfileManager manager;
+        const auto user_id = manager.GetUser(static_cast<std::size_t>(index));
+        ASSERT(user_id);
+
+        const auto user_save_data_path = FileSys::SaveDataFactory::GetFullPath(
+            *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+            FileSys::SaveDataType::SaveData, program_id, user_id->AsU128(), 0);
+
+        path = Common::FS::ConcatPathSafe(nand_dir, user_save_data_path);
+    } else {
+        // Device save data
+        const auto device_save_data_path = FileSys::SaveDataFactory::GetFullPath(
+            *system, vfs_nand_dir, FileSys::SaveDataSpaceId::NandUser,
+            FileSys::SaveDataType::SaveData, program_id, {}, 0);
+
+        path = Common::FS::ConcatPathSafe(nand_dir, device_save_data_path);
+    }
+
+    const QString qpath =
+        QString::fromStdString(Common::FS::PathToUTF8String(path)) + QString::fromUtf8("/../");
+
+    if (operation == SaveFileOperation::Import) {
+        const QDir dir(qpath);
+        if (!dir.exists()) {
+            QMessageBox::warning(this, tr("Error Opening %1 Folder").arg(open_target),
+                                 tr("Folder does not exist!"));
+            return;
+        }
+
+        QString destination_file =
+            QFileDialog::getSaveFileName(this, tr("Save Game Files"),
+                                         QStringLiteral("%1").arg(QStandardPaths::writableLocation(
+                                             QStandardPaths::DocumentsLocation)),
+                                         tr("ZIP Archive (*.zip)"));
+
+        if (destination_file.isEmpty()) {
+            return;
+        }
+
+        zip_t* zip = zip_open(destination_file.toStdString().c_str(), ZIP_CREATE, nullptr);
+        if (zip == nullptr) {
+            QMessageBox::warning(this, tr("Error Opening %1 Folder").arg(open_target),
+                                 tr("Failed to open ZIP archive!"));
+            return;
+        }
+
+        QDirIterator file(qpath, QDirIterator::Subdirectories);
+        while (file.hasNext()) {
+            const auto file_path = file.next();
+            const auto file_name = file.fileName();
+            const auto file_info = file.fileInfo();
+            QString relative_path = file_path;
+            relative_path.remove(qpath);
+
+            if (file_info.isDir() &&
+                relative_path.contains(QString::fromStdString(fmt::format("{:016x}", program_id)),
+                                       Qt::CaseInsensitive)) {
+                if (!relative_path.endsWith(QString::fromUtf8(".."))) {
+                    zip_dir_add(zip, file_name.toStdString().c_str(), ZIP_FL_ENC_UTF_8);
+                }
+                continue;
+            }
+
+            if (!relative_path.contains(QString::fromStdString(fmt::format("{:016x}", program_id)),
+                                        Qt::CaseInsensitive)) {
+                continue;
+            }
+
+            zip_source_t* source = zip_source_file(zip, file_path.toStdString().c_str(), 0, -1);
+            zip_add(zip, relative_path.toStdString().c_str(), source);
+        }
+
+        const auto error = zip_close(zip);
+        if (error != 0) {
+            QMessageBox::warning(this, tr("Error Opening %1 Folder").arg(open_target),
+                                 tr("Failed to close ZIP archive!"));
+            return;
+        }
+    } else if (operation == SaveFileOperation::Export) {
+        QString source_file =
+            QFileDialog::getOpenFileName(this, tr("Choose Game Save File"),
+                                         QStringLiteral("%1").arg(QStandardPaths::writableLocation(
+                                             QStandardPaths::DocumentsLocation)),
+                                         tr("ZIP archive (*.zip)"));
+
+        if (source_file.isEmpty()) {
+            return;
+        }
+
+        zip_t* zip = zip_open(source_file.toStdString().c_str(), ZIP_RDONLY, nullptr);
+        if (zip == nullptr) {
+            QMessageBox::warning(this, tr("Error Opening %1").arg(source_file),
+                                 tr("Failed to open ZIP archive!"));
+            return;
+        }
+
+        for (int i = 0; i < zip_get_num_files(zip); i++) {
+            const auto file_name = zip_get_name(zip, i, ZIP_FL_ENC_UTF_8);
+            QString file_path = qpath + QString::fromStdString(file_name);
+
+            if (!file_path.contains(QString::fromStdString(fmt::format("{:016x}", program_id)),
+                                    Qt::CaseInsensitive)) {
+                continue;
+            }
+
+            if (file_name[strlen(file_name) - 1] == '/') {
+                QDir dir(file_path);
+                if (!dir.exists()) {
+                    dir.mkpath(file_path);
+                }
+                continue;
+            }
+
+            zip_file_t* file = zip_fopen_index(zip, i, ZIP_FL_ENC_UTF_8);
+            if (file == nullptr) {
+                QMessageBox::warning(this,
+                                     tr("Error Opening %1").arg(QString::fromStdString(file_name)),
+                                     tr("Failed to open file!"));
+                return;
+            }
+
+            FILE* out = fopen(file_path.toStdString().c_str(), "wb");
+            if (out == nullptr) {
+                QMessageBox::warning(this, tr("Error Opening %1").arg(file_path),
+                                     tr("Failed to open file!"));
+                return;
+            }
+
+            char buffer[4096];
+            int len = 0;
+            while ((len = zip_fread(file, buffer, sizeof(buffer))) > 0) {
+                fwrite(buffer, 1, len, out);
+            }
+
+            fclose(out);
+            zip_fclose(file);
+        }
+
+        zip_close(zip);
+    }
 }
 
 void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {

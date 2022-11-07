@@ -40,6 +40,7 @@ enum class GameListOpenTarget;
 enum class GameListRemoveTarget;
 enum class DumpRomFSTarget;
 enum class InstalledEntryType;
+enum class SaveFileOperation;
 class GameListPlaceholder;
 
 class QtSoftwareKeyboardDialog;
@@ -288,6 +289,8 @@ private slots:
     void OnGameListAddDirectory();
     void OnGameListShowList(bool show);
     void OnGameListOpenPerGameProperties(const std::string& file);
+    void OnHandleSaveFile(SaveFileOperation operation, u64 program_id,
+                          const std::string& game_path);
     void OnMenuLoadFile();
     void OnMenuLoadFolder();
     void IncrementInstallProgress();

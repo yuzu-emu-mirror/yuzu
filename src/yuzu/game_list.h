@@ -58,6 +58,11 @@ enum class InstalledEntryType {
     AddOnContent,
 };
 
+enum class SaveFileOperation {
+    Export,
+    Import,
+};
+
 class GameList : public QWidget {
     Q_OBJECT
 
@@ -103,6 +108,7 @@ signals:
     void OpenFolderRequested(u64 program_id, GameListOpenTarget target,
                              const std::string& game_path);
     void OpenTransferableShaderCacheRequested(u64 program_id);
+    void HandleSaveFile(SaveFileOperation operation, u64 program_id, const std::string& game_path);
     void RemoveInstalledEntryRequested(u64 program_id, InstalledEntryType type);
     void RemoveFileRequested(u64 program_id, GameListRemoveTarget target,
                              const std::string& game_path);
