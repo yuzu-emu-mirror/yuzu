@@ -14,6 +14,8 @@ add_library(network STATIC
     room_member.h
     verify_user.cpp
     verify_user.h
+    room_post_office.cpp
+    room_post_office.h
 )
 
 create_target_directory_groups(network)

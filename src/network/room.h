@@ -140,6 +140,16 @@ public:
      */
     void Destroy();
 
+    /**
+     * Config post office room's address and port, and connect it.
+     */
+    bool SetupMailBox(std::string server_address, u16 server_port);
+
+    /**
+     * Checks this room should send packets to post office room or not.
+     */
+    bool HasMailBox() const;
+
 private:
     class RoomImpl;
     std::unique_ptr<RoomImpl> room_impl;
