@@ -140,6 +140,13 @@ public:
      */
     void Destroy();
 
+    /**
+     *
+     */
+    bool SetupMailBox(const std::string& server_address, u16 server_port);
+
+    bool HasMailBox();
+
 private:
     class RoomImpl;
     std::unique_ptr<RoomImpl> room_impl;

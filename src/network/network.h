@@ -6,6 +6,7 @@
 #include <memory>
 #include "network/room.h"
 #include "network/room_member.h"
+#include "network/room_post_office.h"
 
 namespace Network {
 
@@ -15,6 +16,9 @@ public:
 
     /// Initializes and registers the network device, the room, and the room member.
     bool Init();
+
+    /// Returns a pointer to the room post office handle
+    std::weak_ptr<RoomPostOffice> GetRoomPostOffice();
 
     /// Returns a pointer to the room handle
     std::weak_ptr<Room> GetRoom();
@@ -28,6 +32,7 @@ public:
 private:
     std::shared_ptr<RoomMember> m_room_member; ///< RoomMember (Client) for network games
     std::shared_ptr<Room> m_room;              ///< Room (Server) for network games
+    std::shared_ptr<RoomPostOffice> m_room_post_office; ///< Room (Relay Server) for rooms
 };
 
 } // namespace Network

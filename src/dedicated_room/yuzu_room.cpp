@@ -61,7 +61,10 @@ static void PrintHelp(const char* argv0) {
              "--log-file          The file for storing the room log\n"
              "--enable-yuzu-mods Allow yuzu Community Moderators to moderate on your room\n"
              "-h, --help          Display this help and exit\n"
-             "-v, --version       Output version information and exit\n",
+             "-v, --version       Output version information and exit\n"
+             "--room-post-office  Open server as a room post office\n"
+             "--room-post-host    Room post office host\n"
+             "--room-post-port    Room post office port\n",
              argv0);
 }
 
@@ -180,6 +183,35 @@ static void InitializeLogging(const std::string& log_file) {
     Common::Log::Start();
 }
 
+static int RunRoomPostOffice(Common::DetachedTasks& detached_tasks,
+                             u32 port) {
+    if (port > UINT16_MAX) {
+        LOG_ERROR(Network, "Port needs to be in the range 0 - 65535!");
+        return -1;
+    }
+
+    Network::RoomNetwork network{};
+    network.Init();
+    if (auto post_office = network.GetRoomPostOffice().lock()) {
+        if (!post_office->Create("", port)) {
+            LOG_INFO(Network, "Failed to create room post office: ");
+            return -1;
+        }
+        LOG_INFO(Network, "Room post office is open. Close with Q+Enter...");
+        while (true) {
+            std::string in;
+            std::cin >> in;
+            if (in.size() > 0) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    network.Shutdown();
+    detached_tasks.WaitForAllTasks();
+    return 0;
+}
+
 /// Application entry point
 int main(int argc, char** argv) {
     Common::DetachedTasks detached_tasks;
@@ -195,10 +227,14 @@ int main(int argc, char** argv) {
     std::string web_api_url;
     std::string ban_list_file;
     std::string log_file = "yuzu-room.log";
+    std::string room_post_host = "127.0.0.1";
     u64 preferred_game_id = 0;
     u32 port = Network::DefaultRoomPort;
+    u32 room_post_port = Network::DefaultRoomPort;
     u32 max_members = 16;
     bool enable_yuzu_mods = false;
+    bool room_post_office = false;
+
 
     static struct option long_options[] = {
         {"room-name", required_argument, 0, 'n'},
@@ -216,6 +252,9 @@ int main(int argc, char** argv) {
         {"enable-yuzu-mods", no_argument, 0, 'e'},
         {"help", no_argument, 0, 'h'},
         {"version", no_argument, 0, 'v'},
+        {"room-post-office", no_argument, 0, 'c'},
+        {"room-post-host", required_argument, 0, 'f'},
+        {"room-post-port", required_argument, 0, 'j'},
         {0, 0, 0, 0},
     };
 
@@ -270,8 +309,21 @@ int main(int argc, char** argv) {
             case 'v':
                 PrintVersion();
                 return 0;
+            case 'c':
+                room_post_office = true;
+                break;
+            case 'f':
+                room_post_host.assign(optarg);
+                break;
+            case 'j':
+                room_post_port = strtoul(optarg, &endarg, 0);
+                break;
             }
         }
+    }
+
+    if (room_post_office) {
+        return RunRoomPostOffice(detached_tasks, room_post_port);
     }
 
     if (room_name.empty()) {
@@ -353,6 +405,10 @@ int main(int argc, char** argv) {
         verify_backend = std::make_unique<Network::VerifyUser::NullBackend>();
     }
 
+    if (!room_post_host.empty()) {
+        room_post_office = true;
+    }
+
     Network::RoomNetwork network{};
     network.Init();
     if (auto room = network.GetRoom().lock()) {
@@ -368,6 +424,9 @@ int main(int argc, char** argv) {
         auto announce_session = std::make_unique<Core::AnnounceMultiplayerSession>(network);
         if (announce) {
             announce_session->Start();
+        }
+        if (room_post_office && !room->HasMailBox()) {
+            room->SetupMailBox(room_post_host, room_post_port);
         }
         while (room->GetState() == Network::Room::State::Open) {
             std::string in;

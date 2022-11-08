@@ -48,6 +48,16 @@ public:
     IPBanList ip_ban_list;             ///< List of banned IP addresses
     mutable std::mutex ban_list_mutex; ///< Mutex for the ban lists
 
+    struct PostOffice {
+        const u8 WaitPacket = 10;      ///< Wait post office's reply max times.
+        ENetPeer* peer = nullptr;      ///< post office's peer
+        std::string address;           ///< post office's address. Will skip if this is empty.
+        u16 port;                      ///< post office's port
+        u8 wait = 0;                   ///< Wait post office's reply times.
+    };
+    PostOffice post_office;
+
+
     RoomImpl() : random_gen(std::random_device()()) {}
 
     /// Thread that receives and dispatches network packets
@@ -234,6 +244,26 @@ public:
      * to all other clients.
      */
     void HandleClientDisconnection(ENetPeer* client);
+
+    /**
+     * Post recived packet to room post office.
+     */
+    void HandlePostMail(const ENetEvent* event);
+
+    /**
+     * Check connection between this and room post office.
+     */
+    void HandlePostOfficeConnection(const ENetEvent* event);
+
+    /**
+     * Connect to room post office.
+     */
+    bool ConnectPostOffice();
+
+    /**
+     * Disconnect room post office
+     */
+    void DisconnectPostOffice();
 };
 
 // RoomImpl
@@ -251,9 +281,11 @@ void Room::RoomImpl::ServerLoop() {
                     HandleGameInfoPacket(&event);
                     break;
                 case IdProxyPacket:
+                    HandlePostMail(&event);
                     HandleProxyPacket(&event);
                     break;
                 case IdLdnPacket:
+                    HandlePostMail(&event);
                     HandleLdnPacket(&event);
                     break;
                 case IdChatMessage:
@@ -283,9 +315,11 @@ void Room::RoomImpl::ServerLoop() {
                 break;
             }
         }
+        HandlePostOfficeConnection(&event);
     }
     // Close the connection to all members:
     SendCloseMessage();
+    DisconnectPostOffice();
 }
 
 void Room::RoomImpl::StartLoop() {
@@ -858,6 +892,8 @@ void Room::RoomImpl::HandleProxyPacket(const ENetEvent* event) {
                                    });
         if (member != members.end()) {
             enet_peer_send(member->peer, 0, enet_packet);
+        } else if (event->peer == post_office.peer) {
+            enet_packet_destroy(enet_packet);
         } else {
             LOG_ERROR(Network,
                       "Attempting to send to unknown IP address: "
@@ -912,7 +948,9 @@ void Room::RoomImpl::HandleLdnPacket(const ENetEvent* event) {
                                    });
         if (member != members.end()) {
             enet_peer_send(member->peer, 0, enet_packet);
-        } else {
+        } else if (event->peer == post_office.peer) {
+            enet_packet_destroy(enet_packet);
+        }  else {
             LOG_ERROR(Network,
                       "Attempting to send to unknown IP address: "
                       "{}.{}.{}.{}",
@@ -1037,6 +1075,76 @@ void Room::RoomImpl::HandleClientDisconnection(ENetPeer* client) {
     BroadcastRoomInformation();
 }
 
+void Room::RoomImpl::HandlePostMail(const ENetEvent* event) {
+    if (!post_office.peer) {
+        ConnectPostOffice();
+    }
+    if (post_office.peer && event->peer != post_office.peer) {
+        enet_peer_send(post_office.peer, 0, event->packet);
+    }
+}
+
+bool Room::RoomImpl::ConnectPostOffice() {
+
+    if (post_office.address.empty()) {
+        return false;
+    }
+
+    LOG_INFO(Network,
+                "Try to Connecting room post office {}:{} ...",
+                post_office.address, post_office.port);
+
+    ENetAddress address{};
+    enet_address_set_host(&address, post_office.address.c_str());
+    address.port = post_office.port;
+    post_office.peer =
+          enet_host_connect(server, &address, NumChannels, 0);
+    if (!post_office.peer) {
+      LOG_ERROR(Network,
+                "Connect to room post office {}:{} failed!",
+                post_office.address, post_office.port);
+      return false;
+    }
+    post_office.wait = post_office.WaitPacket - 1;
+
+    // LOG_INFO(Network,
+    //            "Connect to room post office {}:{} success!",
+    //            post_office.address, post_office.port);
+
+    return true;
+}
+
+inline
+void Room::RoomImpl::DisconnectPostOffice() {
+    post_office.address = "";
+    if (post_office.peer) {
+        enet_peer_disconnect(post_office.peer, 0);
+        post_office.peer = nullptr;
+    }
+}
+
+inline
+void Room::RoomImpl::HandlePostOfficeConnection(const ENetEvent* event) {
+    if (post_office.address.empty() || post_office.wait == post_office.WaitPacket) {
+        return;
+    } else if (event->peer == post_office.peer) {
+        post_office.wait = post_office.WaitPacket;
+        LOG_INFO(Network,
+                "Connect to room post office {}:{} success!",
+                post_office.address, post_office.port);
+        return;
+    }
+    --post_office.wait;
+    if (post_office.wait == 0) {
+        post_office.wait = 0xFF;
+        LOG_ERROR(Network,
+                "Room post office {}:{} have not response!",
+                post_office.address, post_office.port);
+    } else if (post_office.wait == post_office.WaitPacket + 1) {
+        ConnectPostOffice();
+    }
+}
+
 // Room
 Room::Room() : room_impl{std::make_unique<RoomImpl>()} {}
 
@@ -1138,6 +1246,17 @@ void Room::Destroy() {
     }
     room_impl->room_information.member_slots = 0;
     room_impl->room_information.name.clear();
+}
+
+bool Room::SetupMailBox(const std::string& server_address, u16 server_port) {
+    room_impl->post_office.address = server_address;
+    room_impl->post_office.port = server_port;
+
+    return room_impl->ConnectPostOffice();
+}
+
+bool Room::HasMailBox() {
+    return room_impl->post_office.peer;
 }
 
 } // namespace Network

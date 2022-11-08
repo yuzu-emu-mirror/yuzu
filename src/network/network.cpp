@@ -11,6 +11,7 @@ namespace Network {
 RoomNetwork::RoomNetwork() {
     m_room = std::make_shared<Room>();
     m_room_member = std::make_shared<RoomMember>();
+    m_room_post_office = std::make_shared<RoomPostOffice>();
 }
 
 bool RoomNetwork::Init() {
@@ -20,8 +21,13 @@ bool RoomNetwork::Init() {
     }
     m_room = std::make_shared<Room>();
     m_room_member = std::make_shared<RoomMember>();
+    m_room_post_office = std::make_shared<RoomPostOffice>();
     LOG_DEBUG(Network, "initialized OK");
     return true;
+}
+
+std::weak_ptr<RoomPostOffice> RoomNetwork::GetRoomPostOffice() {
+    return m_room_post_office;
 }
 
 std::weak_ptr<Room> RoomNetwork::GetRoom() {
@@ -42,6 +48,11 @@ void RoomNetwork::Shutdown() {
         if (m_room->GetState() == Room::State::Open)
             m_room->Destroy();
         m_room.reset();
+    }
+    if (m_room_post_office) {
+        if (m_room_post_office->GetState() == RoomPostOffice::State::Open)
+            m_room_post_office->Destroy();
+        m_room_post_office.reset();
     }
     enet_deinitialize();
     LOG_DEBUG(Network, "shutdown OK");
