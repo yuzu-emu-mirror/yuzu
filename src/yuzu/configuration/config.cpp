@@ -195,27 +195,16 @@ void Config::ReadPlayerValue(std::size_t player_index) {
 
     auto& player = Settings::values.players.GetValue()[player_index];
 
-    if (player_prefix.isEmpty()) {
-        const auto controller = static_cast<Settings::ControllerType>(
-            qt_config
-                ->value(QStringLiteral("%1type").arg(player_prefix),
-                        static_cast<u8>(Settings::ControllerType::ProController))
-                .toUInt());
+    player.controller_type = static_cast<Settings::ControllerType>(
+        qt_config
+            ->value(QStringLiteral("%1type").arg(player_prefix),
+                    static_cast<u8>(Settings::ControllerType::ProController))
+            .toUInt());
 
-        if (controller == Settings::ControllerType::LeftJoycon ||
-            controller == Settings::ControllerType::RightJoycon) {
-            player.controller_type = controller;
-        }
-    } else {
+    if (!player_prefix.isEmpty()) {
         player.connected =
             ReadSetting(QStringLiteral("%1connected").arg(player_prefix), player_index == 0)
                 .toBool();
-
-        player.controller_type = static_cast<Settings::ControllerType>(
-            qt_config
-                ->value(QStringLiteral("%1type").arg(player_prefix),
-                        static_cast<u8>(Settings::ControllerType::ProController))
-                .toUInt());
 
         player.vibration_enabled =
             qt_config->value(QStringLiteral("%1vibration_enabled").arg(player_prefix), true)
