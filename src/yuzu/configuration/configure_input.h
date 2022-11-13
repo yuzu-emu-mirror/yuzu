@@ -68,7 +68,7 @@ private:
 
     std::unique_ptr<InputProfiles> profiles;
 
-    std::array<ConfigureInputPlayer*, 8> player_controllers;
+    std::array<std::unique_ptr<ConfigureInputPlayer>, 8> player_controllers;
     std::array<QWidget*, 8> player_tabs;
     std::array<QCheckBox*, 8> player_connected;
     ConfigureInputAdvanced* advanced;

@@ -76,22 +76,22 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     const bool is_powered_on = system.IsPoweredOn();
     auto& hid_core = system.HIDCore();
     player_controllers = {
-        new ConfigureInputPlayer(this, 0, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 1, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 2, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 3, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 4, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 5, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 6, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
-        new ConfigureInputPlayer(this, 7, ui->consoleInputSettings, input_subsystem, profiles.get(),
-                                 hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 0, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 1, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 2, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 3, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 4, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 5, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 6, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
+        std::make_unique<ConfigureInputPlayer>(this, 7, ui->consoleInputSettings, input_subsystem,
+                                               profiles.get(), hid_core, is_powered_on),
     };
 
     player_tabs = {
@@ -111,9 +111,10 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     };
 
     for (std::size_t i = 0; i < player_tabs.size(); ++i) {
+        auto* player_controller_ptr = player_controllers[i].get();
         player_tabs[i]->setLayout(new QHBoxLayout(player_tabs[i]));
-        player_tabs[i]->layout()->addWidget(player_controllers[i]);
-        connect(player_controllers[i], &ConfigureInputPlayer::Connected, [&, i](bool is_connected) {
+        player_tabs[i]->layout()->addWidget(player_controller_ptr);
+        connect(player_controller_ptr, &ConfigureInputPlayer::Connected, [&, i](bool is_connected) {
             // Ensures that the controllers are always connected in sequential order
             if (is_connected) {
                 for (std::size_t index = 0; index <= i; ++index) {
@@ -125,9 +126,9 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
                 }
             }
         });
-        connect(player_controllers[i], &ConfigureInputPlayer::RefreshInputDevices, this,
+        connect(player_controller_ptr, &ConfigureInputPlayer::RefreshInputDevices, this,
                 &ConfigureInput::UpdateAllInputDevices);
-        connect(player_controllers[i], &ConfigureInputPlayer::RefreshInputProfiles, this,
+        connect(player_controller_ptr, &ConfigureInputPlayer::RefreshInputProfiles, this,
                 &ConfigureInput::UpdateAllInputProfiles, Qt::QueuedConnection);
         connect(player_connected[i], &QCheckBox::stateChanged, [this, i](int state) {
             player_controllers[i]->ConnectPlayer(state == Qt::Checked);
@@ -141,7 +142,7 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
         }
     }
     // Only the first player can choose handheld mode so connect the signal just to player 1
-    connect(player_controllers[0], &ConfigureInputPlayer::HandheldStateChanged,
+    connect(player_controllers[0].get(), &ConfigureInputPlayer::HandheldStateChanged,
             [this](bool is_handheld) { UpdateDockedState(is_handheld); });
 
     advanced = new ConfigureInputAdvanced(this);
@@ -189,7 +190,7 @@ QList<QWidget*> ConfigureInput::GetSubTabs() const {
 }
 
 void ConfigureInput::ApplyConfiguration() {
-    for (auto* controller : player_controllers) {
+    for (const auto& controller : player_controllers) {
         controller->ApplyConfiguration();
     }
 
