@@ -736,9 +736,6 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         emulated_controller->SetNpadStyleIndex(type);
     });
 
-    connect(ui->comboDevices, qOverload<int>(&QComboBox::activated), this,
-            &ConfigureInputPlayer::UpdateMappingWithDefaults);
-
     ui->comboDevices->setCurrentIndex(-1);
 
     ui->buttonRefreshDevices->setIcon(QIcon::fromTheme(QStringLiteral("view-refresh")));
