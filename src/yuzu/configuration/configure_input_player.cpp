@@ -274,26 +274,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
       is_powered_on{is_powered_on_}, input_subsystem{input_subsystem_}, profiles(profiles_),
       timeout_timer(std::make_unique<QTimer>()),
       poll_timer(std::make_unique<QTimer>()), bottom_row{bottom_row_}, hid_core{hid_core_} {
-    if (player_index == 0) {
-        auto* emulated_controller_p1 =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* emulated_controller_handheld =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-        emulated_controller_p1->SaveCurrentConfig();
-        emulated_controller_p1->EnableConfiguration();
-        emulated_controller_handheld->SaveCurrentConfig();
-        emulated_controller_handheld->EnableConfiguration();
-        if (emulated_controller_handheld->IsConnected(true)) {
-            emulated_controller_p1->Disconnect();
-            emulated_controller = emulated_controller_handheld;
-        } else {
-            emulated_controller = emulated_controller_p1;
-        }
-    } else {
-        emulated_controller = hid_core.GetEmulatedControllerByIndex(player_index);
-        emulated_controller->SaveCurrentConfig();
-        emulated_controller->EnableConfiguration();
-    }
+    EnableConfiguration();
     ui->setupUi(this);
 
     setFocusPolicy(Qt::ClickFocus);
@@ -771,6 +752,33 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 }
 
 ConfigureInputPlayer::~ConfigureInputPlayer() {
+    DisableConfiguration();
+}
+
+void ConfigureInputPlayer::EnableConfiguration() {
+    if (player_index == 0) {
+        auto* emulated_controller_p1 =
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
+        auto* emulated_controller_handheld =
+            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
+        emulated_controller_p1->SaveCurrentConfig();
+        emulated_controller_p1->EnableConfiguration();
+        emulated_controller_handheld->SaveCurrentConfig();
+        emulated_controller_handheld->EnableConfiguration();
+        if (emulated_controller_handheld->IsConnected(true)) {
+            emulated_controller_p1->Disconnect();
+            emulated_controller = emulated_controller_handheld;
+        } else {
+            emulated_controller = emulated_controller_p1;
+        }
+    } else {
+        emulated_controller = hid_core.GetEmulatedControllerByIndex(player_index);
+        emulated_controller->SaveCurrentConfig();
+        emulated_controller->EnableConfiguration();
+    }
+}
+
+void ConfigureInputPlayer::DisableConfiguration() {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
             hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);

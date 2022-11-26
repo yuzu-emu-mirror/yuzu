@@ -46,6 +46,10 @@ public:
 
     void ApplyConfiguration();
 
+public slots:
+    void MainWindowFocusIn();
+    void MainWindowFocusOut();
+
 private slots:
     void OnLanguageChanged(const QString& locale);
 

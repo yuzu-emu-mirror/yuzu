@@ -117,6 +117,14 @@ void ConfigureDialog::ApplyConfiguration() {
     Settings::LogSettings();
 }
 
+void ConfigureDialog::MainWindowFocusIn() {
+    input_tab->DisableConfiguration();
+}
+
+void ConfigureDialog::MainWindowFocusOut() {
+    input_tab->EnableConfiguration();
+}
+
 void ConfigureDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();

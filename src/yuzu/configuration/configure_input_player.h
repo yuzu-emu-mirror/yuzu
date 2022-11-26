@@ -56,6 +56,12 @@ public:
                                   bool is_powered_on_, bool debug = false);
     ~ConfigureInputPlayer() override;
 
+    /// Enables configuration on controllers
+    void EnableConfiguration();
+
+    /// Disables configuration on controllers
+    void DisableConfiguration();
+
     /// Save all button configurations to settings file.
     void ApplyConfiguration();
 

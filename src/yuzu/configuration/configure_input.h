@@ -43,6 +43,12 @@ public:
     /// Initializes the input dialog with the given input subsystem.
     void Initialize(InputCommon::InputSubsystem* input_subsystem_, std::size_t max_players = 8);
 
+    /// Enables configuration on controllers
+    void EnableConfiguration();
+
+    /// Disables configuration on controllers
+    void DisableConfiguration();
+
     /// Save all button configurations to settings file.
     void ApplyConfiguration();
 
