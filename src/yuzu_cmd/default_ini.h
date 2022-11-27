@@ -308,7 +308,7 @@ speed_limit =
 use_disk_shader_cache =
 
 # Which gpu accuracy level to use
-# 0: Normal, 1 (default): High, 2: Extreme (Very slow)
+# 0: Low, 1 (default): High, 2: Extreme (Very slow)
 gpu_accuracy =
 
 # Whether to use asynchronous GPU emulation
