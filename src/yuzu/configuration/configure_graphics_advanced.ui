@@ -51,7 +51,7 @@
             <widget class="QComboBox" name="gpu_accuracy">
              <item>
               <property name="text">
-               <string notr="true">Normal</string>
+               <string notr="true">Low</string>
               </property>
              </item>
              <item>
