@@ -3539,7 +3539,7 @@ void GMainWindow::UpdateStatusBar() {
 void GMainWindow::UpdateGPUAccuracyButton() {
     switch (Settings::values.gpu_accuracy.GetValue()) {
     case Settings::GPUAccuracy::Normal: {
-        gpu_accuracy_button->setText(tr("GPU NORMAL"));
+        gpu_accuracy_button->setText(tr("GPU LOW"));
         gpu_accuracy_button->setChecked(false);
         break;
     }
