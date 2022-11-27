@@ -70,4 +70,55 @@ bool DynarmicExclusiveMonitor::ExclusiveWrite128(std::size_t core_index, VAddr v
     });
 }
 
+DynarmicExclusiveMonitorNoLocking::DynarmicExclusiveMonitorNoLocking(Memory::Memory& memory,
+                                                                     std::size_t num_cores)
+    : monitor{core_count_}, memory{memory_} {}
+
+DynarmicExclusiveMonitorNoLocking::~DynarmicExclusiveMonitorNoLocking() = default;
+
+u8 DynarmicExclusiveMonitorNoLocking::ExclusiveRead8(std::size_t, VAddr addr) {
+    return memory.Read8(addr);
+}
+
+u16 DynarmicExclusiveMonitorNoLocking::ExclusiveRead16(std::size_t, VAddr addr) {
+    return memory.Read16(addr);
+}
+
+u32 DynarmicExclusiveMonitorNoLocking::ExclusiveRead32(std::size_t, VAddr addr) {
+    return memory.Read32(addr);
+}
+
+u64 DynarmicExclusiveMonitorNoLocking::ExclusiveRead64(std::size_t, VAddr addr) {
+    return memory.Read64(addr);
+}
+
+u128 DynarmicExclusiveMonitorNoLocking::ExclusiveRead128(std::size_t, VAddr addr) {
+    u128 result;
+    result[0] = memory.Read64(addr);
+    result[1] = memory.Read64(addr + 8);
+    return result;
+}
+
+void DynarmicExclusiveMonitorNoLocking::ClearExclusive(std::size_t) {}
+
+bool DynarmicExclusiveMonitorNoLocking::ExclusiveWrite8(std::size_t, VAddr vaddr, u8 value) {
+    return memory.WriteExclusive8(vaddr, value, expected);
+}
+
+bool DynarmicExclusiveMonitorNoLocking::ExclusiveWrite16(std::size_t, VAddr vaddr, u16 value) {
+    return memory.WriteExclusive16(vaddr, value, expected);
+}
+
+bool DynarmicExclusiveMonitorNoLocking::ExclusiveWrite32(std::size_t, VAddr vaddr, u32 value) {
+    return memory.WriteExclusive32(vaddr, value, expected);
+}
+
+bool DynarmicExclusiveMonitorNoLocking::ExclusiveWrite64(std::size_t, VAddr vaddr, u64 value) {
+    return memory.WriteExclusive64(vaddr, value, expected);
+}
+
+bool DynarmicExclusiveMonitorNoLocking::ExclusiveWrite128(std::size_t, VAddr vaddr, u128 value) {
+    return memory.WriteExclusive128(vaddr, value, expected);
+}
+
 } // namespace Core
