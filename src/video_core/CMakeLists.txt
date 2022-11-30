@@ -253,8 +253,8 @@ if (YUZU_USE_BUNDLED_FFMPEG AND NOT WIN32)
     add_dependencies(video_core ffmpeg-build)
 endif()
 
-target_include_directories(video_core PRIVATE ${FFmpeg_INCLUDE_DIR})
-target_link_libraries(video_core PRIVATE ${FFmpeg_LIBRARIES})
+target_include_directories(video_core PRIVATE ${FFmpeg_INCLUDE_avcodec} ${FFmpeg_INCLUDE_avutil} ${FFmpeg_INCLUDE_swscale})
+target_link_libraries(video_core PRIVATE ${FFmpeg_LIBRARY_avcodec} ${FFmpeg_LIBRARY_avutil} ${FFmpeg_LIBRARY_swscale})
 target_link_options(video_core PRIVATE ${FFmpeg_LDFLAGS})
 
 add_dependencies(video_core host_shaders)
