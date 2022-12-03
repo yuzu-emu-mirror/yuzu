@@ -15,7 +15,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #endif
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif

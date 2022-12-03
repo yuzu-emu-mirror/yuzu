@@ -13,13 +13,13 @@
 #include "yuzu_cmd/emu_window/emu_window_sdl2_vk.h"
 
 #ifdef YUZU_USE_EXTERNAL_SDL2
-// Include this before SDL.h to prevent the external from including a dummy
+// Include this before SDL2/SDL.h to prevent the external from including a dummy
 #define USING_GENERATED_CONFIG_H
-#include <SDL_config.h>
+#include <SDL2/SDL_config.h>
 #endif
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
 EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsystem_,
                                      Core::System& system_, bool fullscreen)

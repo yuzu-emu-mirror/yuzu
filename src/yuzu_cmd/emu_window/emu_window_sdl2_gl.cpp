@@ -6,7 +6,7 @@
 #include <string>
 
 #define SDL_MAIN_HANDLED
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include <fmt/format.h>
 #include <glad/glad.h>

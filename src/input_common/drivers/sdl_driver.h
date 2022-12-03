@@ -8,7 +8,7 @@
 #include <thread>
 #include <unordered_map>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
