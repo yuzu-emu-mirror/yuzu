@@ -40,6 +40,8 @@ It is written in C++ with portability in mind, and we actively maintain builds f
 
 The emulator is capable of running most commercial games at full speed, provided you meet the [necessary hardware requirements](https://yuzu-emu.org/help/quickstart/#hardware-requirements).
 
+Windows users should note that only Windows 10 v1803 or newer is supported because of the [Fastmem technology](https://yuzu-emu.org/entry/yuzu-fastmem/). However, the emulator might still work for older systems like Windows 7 when Fastmem is disabled. In Windows, Fastmem is disabled by default if the emulator fails to allocate 4GB of memory.
+
 For a full list of games yuzu support, please visit our [Compatibility page](https://yuzu-emu.org/game/)
 
 Check out our [website](https://yuzu-emu.org/) for the latest news on exciting features, monthly progress reports, and more!
