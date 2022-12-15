@@ -12,6 +12,7 @@ mkdir build || true && cd build
 cmake .. \
       -DBoost_USE_STATIC_LIBS=ON \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
       -DCMAKE_CXX_COMPILER=/usr/lib/ccache/g++ \
       -DCMAKE_C_COMPILER=/usr/lib/ccache/gcc \
       -DCMAKE_INSTALL_PREFIX="/usr" \

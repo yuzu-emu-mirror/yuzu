@@ -11,6 +11,7 @@ ccache -s
 mkdir build || true && cd build
 cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
       -DCMAKE_CXX_COMPILER=/usr/lib/ccache/clang++ \
       -DCMAKE_C_COMPILER=/usr/lib/ccache/clang \
       -DCMAKE_INSTALL_PREFIX="/usr" \
