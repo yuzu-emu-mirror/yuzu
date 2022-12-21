@@ -44,30 +44,30 @@
 #include "yuzu/bootmanager.h"
 #include "yuzu/main.h"
 
-EmuThread::EmuThread(Core::System& system_) : system{system_} {}
+static Core::Frontend::WindowSystemType GetWindowSystemType();
+
+EmuThread::EmuThread(Core::System& system) : m_system{system} {}
 
 EmuThread::~EmuThread() = default;
 
 void EmuThread::run() {
-    std::string name = "EmuControlThread";
-    MicroProfileOnThreadCreate(name.c_str());
-    Common::SetCurrentThreadName(name.c_str());
+    const char* name = "EmuControlThread";
+    MicroProfileOnThreadCreate(name);
+    Common::SetCurrentThreadName(name);
 
-    auto& gpu = system.GPU();
-    auto stop_token = stop_source.get_token();
-    bool debugger_should_start = system.DebuggerEnabled();
+    auto& gpu = m_system.GPU();
+    auto stop_token = m_stop_source.get_token();
 
-    system.RegisterHostThread();
+    m_system.RegisterHostThread();
 
     // Main process has been loaded. Make the context current to this thread and begin GPU and CPU
     // execution.
     gpu.ObtainContext();
 
     emit LoadProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
-
     if (Settings::values.use_disk_shader_cache.GetValue()) {
-        system.Renderer().ReadRasterizer()->LoadDiskResources(
-            system.GetCurrentProcessProgramID(), stop_token,
+        m_system.Renderer().ReadRasterizer()->LoadDiskResources(
+            m_system.GetCurrentProcessProgramID(), stop_token,
             [this](VideoCore::LoadCallbackStage stage, std::size_t value, std::size_t total) {
                 emit LoadProgress(stage, value, total);
             });
@@ -77,57 +77,35 @@ void EmuThread::run() {
     gpu.ReleaseContext();
     gpu.Start();
 
-    system.GetCpuManager().OnGpuReady();
+    m_system.GetCpuManager().OnGpuReady();
+    m_system.RegisterExitCallback([this] { m_stop_source.request_stop(); });
 
-    system.RegisterExitCallback([this]() {
-        stop_source.request_stop();
-        SetRunning(false);
-    });
+    if (m_system.DebuggerEnabled()) {
+        m_system.InitializeDebugger();
+    }
 
-    // Holds whether the cpu was running during the last iteration,
-    // so that the DebugModeLeft signal can be emitted before the
-    // next execution step
-    bool was_active = false;
     while (!stop_token.stop_requested()) {
-        if (running) {
-            if (was_active) {
-                emit DebugModeLeft();
-            }
+        std::unique_lock lk{m_should_run_mutex};
+        if (m_should_run) {
+            m_system.Run();
+            m_is_running.store(true);
+            m_is_running.notify_all();
 
-            running_guard = true;
-            Core::SystemResultStatus result = system.Run();
-            if (result != Core::SystemResultStatus::Success) {
-                running_guard = false;
-                this->SetRunning(false);
-                emit ErrorThrown(result, system.GetStatusDetails());
-            }
-
-            if (debugger_should_start) {
-                system.InitializeDebugger();
-                debugger_should_start = false;
-            }
-
-            running_wait.Wait();
-            result = system.Pause();
-            if (result != Core::SystemResultStatus::Success) {
-                running_guard = false;
-                this->SetRunning(false);
-                emit ErrorThrown(result, system.GetStatusDetails());
-            }
-            running_guard = false;
-
-            if (!stop_token.stop_requested()) {
-                was_active = true;
-                emit DebugModeEntered();
-            }
+            Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return !m_should_run; });
         } else {
-            std::unique_lock lock{running_mutex};
-            Common::CondvarWait(running_cv, lock, stop_token, [&] { return IsRunning(); });
+            m_system.Pause();
+            m_is_running.store(false);
+            m_is_running.notify_all();
+
+            emit DebugModeEntered();
+            Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return m_should_run; });
+            emit DebugModeLeft();
         }
     }
 
     // Shutdown the main emulated process
-    system.ShutdownMainProcess();
+    m_system.DetachDebugger();
+    m_system.ShutdownMainProcess();
 
 #if MICROPROFILE_ENABLED
     MicroProfileOnThreadExit();
@@ -228,8 +206,10 @@ class RenderWidget : public QWidget {
 public:
     explicit RenderWidget(GRenderWindow* parent) : QWidget(parent), render_window(parent) {
         setAttribute(Qt::WA_NativeWindow);
-        setAttribute(Qt::WA_DontCreateNativeAncestors);
         setAttribute(Qt::WA_PaintOnScreen);
+        if (GetWindowSystemType() == Core::Frontend::WindowSystemType::Wayland) {
+            setAttribute(Qt::WA_DontCreateNativeAncestors);
+        }
     }
 
     virtual ~RenderWidget() = default;
@@ -274,12 +254,14 @@ static Core::Frontend::WindowSystemType GetWindowSystemType() {
         return Core::Frontend::WindowSystemType::X11;
     else if (platform_name == QStringLiteral("wayland"))
         return Core::Frontend::WindowSystemType::Wayland;
+    else if (platform_name == QStringLiteral("wayland-egl"))
+        return Core::Frontend::WindowSystemType::Wayland;
     else if (platform_name == QStringLiteral("cocoa"))
         return Core::Frontend::WindowSystemType::Cocoa;
     else if (platform_name == QStringLiteral("android"))
         return Core::Frontend::WindowSystemType::Android;
 
-    LOG_CRITICAL(Frontend, "Unknown Qt platform!");
+    LOG_CRITICAL(Frontend, "Unknown Qt platform {}!", platform_name.toStdString());
     return Core::Frontend::WindowSystemType::Windows;
 }
 
@@ -319,7 +301,8 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     input_subsystem->Initialize();
     this->setMouseTracking(true);
 
-    strict_context_required = QGuiApplication::platformName() == QStringLiteral("wayland");
+    strict_context_required = QGuiApplication::platformName() == QStringLiteral("wayland") ||
+                              QGuiApplication::platformName() == QStringLiteral("wayland-egl");
 
     connect(this, &GRenderWindow::FirstFrameDisplayed, parent, &GMainWindow::OnLoadComplete);
     connect(this, &GRenderWindow::ExecuteProgramSignal, parent, &GMainWindow::OnExecuteProgram,
@@ -757,6 +740,9 @@ void GRenderWindow::InitializeCamera() {
         return;
     }
 
+    const auto camera_width = input_subsystem->GetCamera()->getImageWidth();
+    const auto camera_height = input_subsystem->GetCamera()->getImageHeight();
+    camera_data.resize(camera_width * camera_height);
     camera_capture->setCaptureDestination(QCameraImageCapture::CaptureDestination::CaptureToBuffer);
     connect(camera_capture.get(), &QCameraImageCapture::imageCaptured, this,
             &GRenderWindow::OnCameraCapture);
@@ -812,17 +798,22 @@ void GRenderWindow::RequestCameraCapture() {
 }
 
 void GRenderWindow::OnCameraCapture(int requestId, const QImage& img) {
-    constexpr std::size_t camera_width = 320;
-    constexpr std::size_t camera_height = 240;
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && YUZU_USE_QT_MULTIMEDIA
+    // TODO: Capture directly in the format and resolution needed
+    const auto camera_width = input_subsystem->GetCamera()->getImageWidth();
+    const auto camera_height = input_subsystem->GetCamera()->getImageHeight();
     const auto converted =
-        img.scaled(camera_width, camera_height, Qt::AspectRatioMode::IgnoreAspectRatio,
+        img.scaled(static_cast<int>(camera_width), static_cast<int>(camera_height),
+                   Qt::AspectRatioMode::IgnoreAspectRatio,
                    Qt::TransformationMode::SmoothTransformation)
             .mirrored(false, true);
-    std::vector<u32> camera_data{};
-    camera_data.resize(camera_width * camera_height);
+    if (camera_data.size() != camera_width * camera_height) {
+        camera_data.resize(camera_width * camera_height);
+    }
     std::memcpy(camera_data.data(), converted.bits(), camera_width * camera_height * sizeof(u32));
     input_subsystem->GetCamera()->SetCameraData(camera_width, camera_height, camera_data);
     pending_camera_snapshots = 0;
+#endif
 }
 
 bool GRenderWindow::event(QEvent* event) {
