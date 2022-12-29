@@ -265,6 +265,10 @@ void RasterizerVulkan::DrawIndirect() {
     buffer_cache.SetDrawIndirect(nullptr);
 }
 
+void RasterizerVulkan::DrawTexture() {
+
+}
+
 void RasterizerVulkan::Clear(u32 layer_count) {
     MICROPROFILE_SCOPE(Vulkan_Clearing);
 

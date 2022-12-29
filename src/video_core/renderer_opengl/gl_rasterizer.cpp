@@ -318,6 +318,40 @@ void RasterizerOpenGL::DrawIndirect() {
     buffer_cache.SetDrawIndirect(nullptr);
 }
 
+void RasterizerOpenGL::DrawTexture() {
+    MICROPROFILE_SCOPE(OpenGL_Drawing);
+
+    SCOPE_EXIT({ gpu.TickWork(); });
+    query_cache.UpdateCounters();
+
+    texture_cache.SynchronizeGraphicsDescriptors();
+    texture_cache.UpdateRenderTargets(false);
+
+    state_tracker.BindFramebuffer(texture_cache.GetFramebuffer()->Handle());
+
+    SyncState();
+
+    const auto& draw_texture_state = maxwell3d->draw_manager->GetDrawTextureState();
+    const auto& sampler = texture_cache.GetGraphicsSampler(draw_texture_state.src_sampler);
+    const auto& texture = texture_cache.GetImageView(draw_texture_state.src_texture);
+
+    if (device.HasDrawTexture()) {
+        glDrawTextureNV(texture.DefaultHandle(), sampler->Handle(),
+                        static_cast<float>(draw_texture_state.dst_x0),
+                        static_cast<float>(draw_texture_state.dst_y0),
+                        static_cast<float>(draw_texture_state.dst_x1),
+                        static_cast<float>(draw_texture_state.dst_y1), 0,
+                        static_cast<float>(draw_texture_state.src_x0) / texture.size.width,
+                        static_cast<float>(draw_texture_state.src_y0) / texture.size.height,
+                        static_cast<float>(draw_texture_state.src_x1) / texture.size.width,
+                        static_cast<float>(draw_texture_state.src_y1) / texture.size.height);
+    } else {
+        UNIMPLEMENTED();
+    }
+
+    ++num_queued_commands;
+}
+
 void RasterizerOpenGL::DispatchCompute() {
     ComputePipeline* const pipeline{shader_cache.CurrentComputePipeline()};
     if (!pipeline) {
