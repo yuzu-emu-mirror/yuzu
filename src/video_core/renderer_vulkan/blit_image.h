@@ -11,6 +11,7 @@
 namespace Vulkan {
 
 using VideoCommon::Extent3D;
+using VideoCommon::Offset2D;
 using VideoCommon::Region2D;
 
 class Device;

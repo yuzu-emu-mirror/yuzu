@@ -16,6 +16,7 @@
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/rasterizer_accelerated.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/renderer_opengl/blit_image.h"
 #include "video_core/renderer_opengl/gl_buffer_cache.h"
 #include "video_core/renderer_opengl/gl_device.h"
 #include "video_core/renderer_opengl/gl_fence_manager.h"
@@ -224,6 +225,8 @@ private:
     QueryCache query_cache;
     AccelerateDMA accelerate_dma;
     FenceManagerOpenGL fence_manager;
+
+    BlitImageHelper blit_image;
 
     boost::container::static_vector<u32, MAX_IMAGE_VIEWS> image_view_indices;
     std::array<ImageViewId, MAX_IMAGE_VIEWS> image_view_ids;
