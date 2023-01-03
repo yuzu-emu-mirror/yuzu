@@ -266,7 +266,29 @@ void RasterizerVulkan::DrawIndirect() {
 }
 
 void RasterizerVulkan::DrawTexture() {
+    MICROPROFILE_SCOPE(Vulkan_Drawing);
 
+    SCOPE_EXIT({ gpu.TickWork(); });
+    FlushWork();
+
+    query_cache.UpdateCounters();
+
+    texture_cache.SynchronizeGraphicsDescriptors();
+    texture_cache.UpdateRenderTargets(false);
+
+    UpdateDynamicStates();
+
+    const auto& draw_texture_state = maxwell3d->draw_manager->GetDrawTextureState();
+    const auto& sampler = texture_cache.GetGraphicsSampler(draw_texture_state.src_sampler);
+    const auto& texture = texture_cache.GetImageView(draw_texture_state.src_texture);
+    Region2D dst_region = {
+        static_cast<s32>(draw_texture_state.dst_x0), static_cast<s32>(draw_texture_state.dst_y0),
+        static_cast<s32>(draw_texture_state.dst_x1), static_cast<s32>(draw_texture_state.dst_y1)};
+    Region2D src_region = {
+        static_cast<s32>(draw_texture_state.src_x0), static_cast<s32>(draw_texture_state.src_y0),
+        static_cast<s32>(draw_texture_state.src_x1), static_cast<s32>(draw_texture_state.src_y1)};
+    blit_image.BlitColor(texture_cache.GetFramebuffer(), texture.RenderTarget(), sampler->Handle(),
+                         dst_region, src_region, texture.size);
 }
 
 void RasterizerVulkan::Clear(u32 layer_count) {

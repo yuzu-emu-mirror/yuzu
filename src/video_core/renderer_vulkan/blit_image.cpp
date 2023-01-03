@@ -303,7 +303,7 @@ void UpdateTwoTexturesDescriptorSet(const Device& device, VkDescriptorSet descri
 }
 
 void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Region2D& dst_region,
-                   const Region2D& src_region) {
+                   const Region2D& src_region, const Extent3D& src_size = {1, 1, 1}) {
     const VkOffset2D offset{
         .x = std::min(dst_region.start.x, dst_region.end.x),
         .y = std::min(dst_region.start.y, dst_region.end.y),
@@ -325,12 +325,15 @@ void BindBlitState(vk::CommandBuffer cmdbuf, VkPipelineLayout layout, const Regi
         .offset = offset,
         .extent = extent,
     };
-    const float scale_x = static_cast<float>(src_region.end.x - src_region.start.x);
-    const float scale_y = static_cast<float>(src_region.end.y - src_region.start.y);
+    const float scale_x = static_cast<float>(src_region.end.x - src_region.start.x) /
+                          static_cast<float>(src_size.width);
+    const float scale_y = static_cast<float>(src_region.end.y - src_region.start.y) /
+                          static_cast<float>(src_size.height);
     const PushConstants push_constants{
         .tex_scale = {scale_x, scale_y},
-        .tex_offset = {static_cast<float>(src_region.start.x),
-                       static_cast<float>(src_region.start.y)},
+        .tex_offset = {static_cast<float>(src_region.start.x) / static_cast<float>(src_size.width),
+                       static_cast<float>(src_region.start.y) /
+                           static_cast<float>(src_size.height)},
     };
     cmdbuf.SetViewport(0, viewport);
     cmdbuf.SetScissor(0, scissor);
@@ -399,6 +402,30 @@ void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView 
         cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
                                   nullptr);
         BindBlitState(cmdbuf, layout, dst_region, src_region);
+        cmdbuf.Draw(3, 1, 0, 0);
+    });
+    scheduler.InvalidateState();
+}
+
+void BlitImageHelper::BlitColor(const Framebuffer* dst_framebuffer, VkImageView src_image_view,
+                                VkSampler src_sampler, const Region2D& dst_region,
+                                const Region2D& src_region, const Extent3D& src_size) {
+    const BlitImagePipelineKey key{
+        .renderpass = dst_framebuffer->RenderPass(),
+        .operation = Tegra::Engines::Fermi2D::Operation::SrcCopy,
+    };
+    const VkPipelineLayout layout = *one_texture_pipeline_layout;
+    const VkPipeline pipeline = FindOrEmplaceColorPipeline(key);
+    scheduler.RequestRenderpass(dst_framebuffer);
+    scheduler.Record([this, dst_region, src_region, src_size, pipeline, layout, src_sampler,
+                      src_image_view](vk::CommandBuffer cmdbuf) {
+        // TODO: Barriers
+        const VkDescriptorSet descriptor_set = one_texture_descriptor_allocator.Commit();
+        UpdateOneTextureDescriptorSet(device, descriptor_set, src_sampler, src_image_view);
+        cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptor_set,
+                                  nullptr);
+        BindBlitState(cmdbuf, layout, dst_region, src_region, src_size);
         cmdbuf.Draw(3, 1, 0, 0);
     });
     scheduler.InvalidateState();
