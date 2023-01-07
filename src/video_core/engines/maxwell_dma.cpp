@@ -99,9 +99,10 @@ void MaxwellDMA::Launch() {
         if (regs.launch_dma.remap_enable != 0 && is_const_a_dst) {
             ASSERT(regs.remap_const.component_size_minus_one == 3);
             accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_consta_value);
-            std::vector<u32> tmp_buffer(regs.line_length_in, regs.remap_consta_value);
-            memory_manager.WriteBlockUnsafe(regs.offset_out,
-                                            reinterpret_cast<u8*>(tmp_buffer.data()),
+            read_buffer.resize_destructive(regs.line_length_in * sizeof(u32));
+            std::fill(reinterpret_cast<u32*>(read_buffer.begin()),
+                      reinterpret_cast<u32*>(read_buffer.end()), regs.remap_consta_value);
+            memory_manager.WriteBlockUnsafe(regs.offset_out, read_buffer.data(),
                                             regs.line_length_in * sizeof(u32));
         } else {
             memory_manager.FlushCaching();
@@ -117,7 +118,7 @@ void MaxwellDMA::Launch() {
                 UNIMPLEMENTED_IF(regs.line_length_in % 16 != 0);
                 UNIMPLEMENTED_IF(regs.offset_in % 16 != 0);
                 UNIMPLEMENTED_IF(regs.offset_out % 16 != 0);
-                std::vector<u8> tmp_buffer(16);
+                std::array<u8, 16> tmp_buffer;
                 for (u32 offset = 0; offset < regs.line_length_in; offset += 16) {
                     memory_manager.ReadBlockUnsafe(
                         convert_linear_2_blocklinear_addr(regs.offset_in + offset),
@@ -129,7 +130,7 @@ void MaxwellDMA::Launch() {
                 UNIMPLEMENTED_IF(regs.line_length_in % 16 != 0);
                 UNIMPLEMENTED_IF(regs.offset_in % 16 != 0);
                 UNIMPLEMENTED_IF(regs.offset_out % 16 != 0);
-                std::vector<u8> tmp_buffer(16);
+                std::array<u8, 16> tmp_buffer;
                 for (u32 offset = 0; offset < regs.line_length_in; offset += 16) {
                     memory_manager.ReadBlockUnsafe(regs.offset_in + offset, tmp_buffer.data(),
                                                    tmp_buffer.size());
@@ -139,10 +140,10 @@ void MaxwellDMA::Launch() {
                 }
             } else {
                 if (!accelerate.BufferCopy(regs.offset_in, regs.offset_out, regs.line_length_in)) {
-                    std::vector<u8> tmp_buffer(regs.line_length_in);
-                    memory_manager.ReadBlockUnsafe(regs.offset_in, tmp_buffer.data(),
+                    read_buffer.resize_destructive(regs.line_length_in);
+                    memory_manager.ReadBlockUnsafe(regs.offset_in, read_buffer.data(),
                                                    regs.line_length_in);
-                    memory_manager.WriteBlockCached(regs.offset_out, tmp_buffer.data(),
+                    memory_manager.WriteBlockCached(regs.offset_out, read_buffer.data(),
                                                     regs.line_length_in);
                 }
             }
