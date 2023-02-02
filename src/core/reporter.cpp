@@ -15,6 +15,7 @@
 #include "common/hex_util.h"
 #include "common/scm_rev.h"
 #include "common/settings.h"
+#include "common/threadsafe_queue.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
 #include "core/hle/kernel/hle_ipc.h"
@@ -192,8 +193,45 @@ json GetHLERequestContextData(Kernel::HLERequestContext& ctx, Core::Memory::Memo
 
 namespace Core {
 
+class FSAccessLogger {
+public:
+    FSAccessLogger(const std::filesystem::path& filename) {
+        auto old_filename = filename;
+        old_filename += ".old.txt";
+
+        static_cast<void>(Common::FS::RemoveFile(old_filename));
+        static_cast<void>(Common::FS::RenameFile(filename, old_filename));
+
+        io_file = std::make_unique<Common::FS::IOFile>(filename, Common::FS::FileAccessMode::Write,
+                                                       Common::FS::FileType::TextFile);
+
+        StartBackendThread();
+    }
+
+    void PushMessage(std::string_view message) {
+        message_queue.Push(message);
+    }
+
+private:
+    void StartBackendThread() {
+        backend_thread = std::jthread([this](std::stop_token stop_token) {
+            std::string message;
+            while (!stop_token.stop_requested()) {
+                message = message_queue.PopWait(stop_token);
+                void(io_file->WriteString(message));
+            }
+        });
+    }
+
+    std::unique_ptr<Common::FS::IOFile> io_file;
+
+    Common::MPSCQueue<std::string_view, true> message_queue{};
+    std::jthread backend_thread;
+};
+
 Reporter::Reporter(System& system_) : system(system_) {
-    ClearFSAccessLog();
+    fs_access_logger = std::make_unique<FSAccessLogger>(
+        Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt");
 }
 
 Reporter::~Reporter() = default;
@@ -363,11 +401,7 @@ void Reporter::SaveErrorReport(u64 title_id, Result result,
 }
 
 void Reporter::SaveFSAccessLog(std::string_view log_message) const {
-    const auto access_log_path =
-        Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
-
-    void(Common::FS::AppendStringToFile(access_log_path, Common::FS::FileType::TextFile,
-                                        log_message));
+    fs_access_logger->PushMessage(log_message);
 }
 
 void Reporter::SaveUserReport() const {
@@ -380,18 +414,6 @@ void Reporter::SaveUserReport() const {
 
     SaveToFile(GetFullDataAuto(timestamp, title_id, system),
                GetPath("user_report", title_id, timestamp));
-}
-
-void Reporter::ClearFSAccessLog() const {
-    const auto access_log_path =
-        Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir) / "FsAccessLog.txt";
-
-    Common::FS::IOFile access_log_file{access_log_path, Common::FS::FileAccessMode::Write,
-                                       Common::FS::FileType::TextFile};
-
-    if (!access_log_file.IsOpen()) {
-        LOG_ERROR(Common_Filesystem, "Failed to clear the filesystem access log.");
-    }
 }
 
 bool Reporter::IsReportingEnabled() const {

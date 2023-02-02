@@ -23,6 +23,7 @@ struct LogMessage;
 namespace Core {
 
 class System;
+class FSAccessLogger;
 
 class Reporter {
 public:
@@ -78,6 +79,8 @@ private:
     bool IsReportingEnabled() const;
 
     System& system;
+
+    std::unique_ptr<FSAccessLogger> fs_access_logger;
 };
 
 } // namespace Core
