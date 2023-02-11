@@ -285,23 +285,19 @@ void RasterizerOpenGL::DrawIndirect() {
     const auto& params = maxwell3d->draw_manager->GetIndirectParams();
     buffer_cache.SetDrawIndirect(&params);
     PrepareDraw(params.is_indexed, [this, &params](GLenum primitive_mode) {
-        const auto [buffer, offset] = buffer_cache.GetDrawIndirectBuffer();
-        const GLvoid* const gl_offset =
-            reinterpret_cast<const GLvoid*>(static_cast<uintptr_t>(offset));
+        const auto buffer = buffer_cache.GetDrawIndirectBuffer();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->Handle());
         if (params.include_count) {
-            const auto [draw_buffer, offset_base] = buffer_cache.GetDrawIndirectCount();
+            const auto draw_buffer = buffer_cache.GetDrawIndirectCount();
             glBindBuffer(GL_PARAMETER_BUFFER, draw_buffer->Handle());
 
             if (params.is_indexed) {
                 const GLenum format = MaxwellToGL::IndexFormat(maxwell3d->regs.index_buffer.format);
-                glMultiDrawElementsIndirectCount(primitive_mode, format, gl_offset,
-                                                 static_cast<GLintptr>(offset_base),
+                glMultiDrawElementsIndirectCount(primitive_mode, format, nullptr, 0,
                                                  static_cast<GLsizei>(params.max_draw_counts),
                                                  static_cast<GLsizei>(params.stride));
             } else {
-                glMultiDrawArraysIndirectCount(primitive_mode, gl_offset,
-                                               static_cast<GLintptr>(offset_base),
+                glMultiDrawArraysIndirectCount(primitive_mode, nullptr, 0,
                                                static_cast<GLsizei>(params.max_draw_counts),
                                                static_cast<GLsizei>(params.stride));
             }
@@ -309,11 +305,11 @@ void RasterizerOpenGL::DrawIndirect() {
         }
         if (params.is_indexed) {
             const GLenum format = MaxwellToGL::IndexFormat(maxwell3d->regs.index_buffer.format);
-            glMultiDrawElementsIndirect(primitive_mode, format, gl_offset,
+            glMultiDrawElementsIndirect(primitive_mode, format, nullptr,
                                         static_cast<GLsizei>(params.max_draw_counts),
                                         static_cast<GLsizei>(params.stride));
         } else {
-            glMultiDrawArraysIndirect(primitive_mode, gl_offset,
+            glMultiDrawArraysIndirect(primitive_mode, nullptr,
                                       static_cast<GLsizei>(params.max_draw_counts),
                                       static_cast<GLsizei>(params.stride));
         }

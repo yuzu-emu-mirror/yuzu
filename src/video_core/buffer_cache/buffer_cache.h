@@ -205,9 +205,9 @@ public:
         current_draw_indirect = current_draw_indirect_;
     }
 
-    [[nodiscard]] std::pair<Buffer*, u32> GetDrawIndirectCount();
+    [[nodiscard]] typename BufferCache<P>::Buffer* GetDrawIndirectCount();
 
-    [[nodiscard]] std::pair<Buffer*, u32> GetDrawIndirectBuffer();
+    [[nodiscard]] typename BufferCache<P>::Buffer* GetDrawIndirectBuffer();
 
     std::recursive_mutex mutex;
     Runtime& runtime;
@@ -385,6 +385,9 @@ private:
     SlotVector<Buffer> slot_buffers;
     DelayedDestructionRing<Buffer, 8> delayed_destruction_ring;
 
+    Buffer indirect_buffer;
+    Buffer indirect_count_buffer;
+
     const Tegra::Engines::DrawManager::IndirectParams* current_draw_indirect{};
 
     u32 last_index_count = 0;
@@ -458,7 +461,9 @@ private:
 template <class P>
 BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
                             Core::Memory::Memory& cpu_memory_, Runtime& runtime_)
-    : runtime{runtime_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_} {
+    : runtime{runtime_}, rasterizer{rasterizer_}, cpu_memory{cpu_memory_},
+      indirect_buffer(runtime, rasterizer, 0, 0x1000),
+      indirect_count_buffer(runtime, rasterizer, 0, 0x1000) {
     // Ensure the first slot is used for the null buffer
     void(slot_buffers.insert(runtime, NullBufferParams{}));
     common_ranges.clear();
@@ -1064,15 +1069,13 @@ void BufferCache<P>::BindHostVertexBuffers() {
 
 template <class P>
 void BufferCache<P>::BindHostDrawIndirectBuffers() {
-    const auto bind_buffer = [this](const Binding& binding) {
-        Buffer& buffer = slot_buffers[binding.buffer_id];
-        TouchBuffer(buffer, binding.buffer_id);
+    const auto bind_buffer = [this](const Binding& binding, Buffer& buffer) {
         SynchronizeBuffer(buffer, binding.cpu_addr, binding.size);
     };
     if (current_draw_indirect->include_count) {
-        bind_buffer(count_buffer_binding);
+        bind_buffer(count_buffer_binding, indirect_count_buffer);
     }
-    bind_buffer(indirect_buffer_binding);
+    bind_buffer(indirect_buffer_binding, indirect_buffer);
 }
 
 template <class P>
@@ -1409,14 +1412,16 @@ void BufferCache<P>::UpdateDrawIndirect() {
         binding = Binding{
             .cpu_addr = *cpu_addr,
             .size = static_cast<u32>(size),
-            .buffer_id = FindBuffer(*cpu_addr, static_cast<u32>(size)),
+            .buffer_id = NULL_BUFFER_ID,
         };
     };
     if (current_draw_indirect->include_count) {
         update(current_draw_indirect->count_start_address, sizeof(u32), count_buffer_binding);
+        indirect_count_buffer.UpdateCpuAddr(count_buffer_binding.cpu_addr);
     }
     update(current_draw_indirect->indirect_start_address, current_draw_indirect->buffer_size,
            indirect_buffer_binding);
+    indirect_buffer.UpdateCpuAddr(indirect_buffer_binding.cpu_addr);
 }
 
 template <class P>
@@ -2007,15 +2012,13 @@ bool BufferCache<P>::HasFastUniformBufferBound(size_t stage, u32 binding_index) 
 }
 
 template <class P>
-std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirectCount() {
-    auto& buffer = slot_buffers[count_buffer_binding.buffer_id];
-    return std::make_pair(&buffer, buffer.Offset(count_buffer_binding.cpu_addr));
+typename BufferCache<P>::Buffer* BufferCache<P>::GetDrawIndirectCount() {
+    return &indirect_count_buffer;
 }
 
 template <class P>
-std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirectBuffer() {
-    auto& buffer = slot_buffers[indirect_buffer_binding.buffer_id];
-    return std::make_pair(&buffer, buffer.Offset(indirect_buffer_binding.cpu_addr));
+typename BufferCache<P>::Buffer* BufferCache<P>::GetDrawIndirectBuffer() {
+    return &indirect_buffer;
 }
 
 } // namespace VideoCommon

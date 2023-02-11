@@ -230,35 +230,29 @@ void RasterizerVulkan::DrawIndirect() {
     const auto& params = maxwell3d->draw_manager->GetIndirectParams();
     buffer_cache.SetDrawIndirect(&params);
     PrepareDraw(params.is_indexed, [this, &params] {
-        const auto indirect_buffer = buffer_cache.GetDrawIndirectBuffer();
-        const auto& buffer = indirect_buffer.first;
-        const auto& offset = indirect_buffer.second;
+        const auto buffer = buffer_cache.GetDrawIndirectBuffer();
         if (params.include_count) {
-            const auto count = buffer_cache.GetDrawIndirectCount();
-            const auto& draw_buffer = count.first;
-            const auto& offset_base = count.second;
+            const auto draw_buffer = buffer_cache.GetDrawIndirectCount();
             scheduler.Record([draw_buffer_obj = draw_buffer->Handle(),
-                              buffer_obj = buffer->Handle(), offset_base, offset,
-                              params](vk::CommandBuffer cmdbuf) {
+                              buffer_obj = buffer->Handle(), params](vk::CommandBuffer cmdbuf) {
                 if (params.is_indexed) {
-                    cmdbuf.DrawIndexedIndirectCount(
-                        buffer_obj, offset, draw_buffer_obj, offset_base,
-                        static_cast<u32>(params.max_draw_counts), static_cast<u32>(params.stride));
+                    cmdbuf.DrawIndexedIndirectCount(buffer_obj, 0, draw_buffer_obj, 0,
+                                                    static_cast<u32>(params.max_draw_counts),
+                                                    static_cast<u32>(params.stride));
                 } else {
-                    cmdbuf.DrawIndirectCount(buffer_obj, offset, draw_buffer_obj, offset_base,
+                    cmdbuf.DrawIndirectCount(buffer_obj, 0, draw_buffer_obj, 0,
                                              static_cast<u32>(params.max_draw_counts),
                                              static_cast<u32>(params.stride));
                 }
             });
             return;
         }
-        scheduler.Record([buffer_obj = buffer->Handle(), offset, params](vk::CommandBuffer cmdbuf) {
+        scheduler.Record([buffer_obj = buffer->Handle(), params](vk::CommandBuffer cmdbuf) {
             if (params.is_indexed) {
-                cmdbuf.DrawIndexedIndirect(buffer_obj, offset,
-                                           static_cast<u32>(params.max_draw_counts),
+                cmdbuf.DrawIndexedIndirect(buffer_obj, 0, static_cast<u32>(params.max_draw_counts),
                                            static_cast<u32>(params.stride));
             } else {
-                cmdbuf.DrawIndirect(buffer_obj, offset, static_cast<u32>(params.max_draw_counts),
+                cmdbuf.DrawIndirect(buffer_obj, 0, static_cast<u32>(params.max_draw_counts),
                                     static_cast<u32>(params.stride));
             }
         });

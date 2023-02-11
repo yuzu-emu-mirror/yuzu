@@ -289,6 +289,11 @@ public:
         return cpu_addr;
     }
 
+    /// Update the base CPU address of the buffer
+    void UpdateCpuAddr(VAddr cpu_addr_) noexcept {
+        cpu_addr = cpu_addr_;
+    }
+
     /// Returns the offset relative to the given CPU address
     /// @pre IsInBounds returns true
     [[nodiscard]] u32 Offset(VAddr other_cpu_addr) const noexcept {
