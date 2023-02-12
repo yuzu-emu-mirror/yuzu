@@ -3168,7 +3168,7 @@ void GMainWindow::ShowFullscreen() {
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
         const auto screen_geometry = GuessCurrentScreen(window)->geometry();
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),
-                            screen_geometry.height() + 1);
+                            screen_geometry.height());
         window->raise();
         window->showNormal();
     };
