@@ -33,16 +33,12 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
     return found != formats.end() ? *found : formats[0];
 }
 
-VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes, VkDriverIdKHR driver_id) {
+VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes) {
     // Mailbox (triple buffering) doesn't lock the application like fifo (vsync),
-    // prefer it if vsync option is not selected.
-    // FIFO present mode locks the framerate to the monitor's refresh rate,
-    // find an alternative to surpass this limitation if FPS is unlocked.
-    // AMD proprietary drivers can't render past the screen's refresh rate,
-    // immediate wil be enforced instead.
+    // prefer it if vsync option is not selected
+    // AMD proprietary drivers can't render past the screen's refresh rate
     const auto found_mailbox = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR);
     const auto found_imm = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
-    const bool is_amd = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY_KHR;
     if (!Settings::values.use_speed_limit.GetValue() && found_imm != modes.end()) {
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
@@ -51,7 +47,7 @@ VkPresentModeKHR ChooseSwapPresentMode(vk::Span<VkPresentModeKHR> modes, VkDrive
             return VK_PRESENT_MODE_MAILBOX_KHR;
         }
     } else {
-        if (is_amd && found_imm != modes.end()) {
+        if (found_imm != modes.end()) {
             return VK_PRESENT_MODE_IMMEDIATE_KHR;
         }
         if (found_mailbox != modes.end()) {
@@ -165,7 +161,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, bo
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};
 
     const VkSurfaceFormatKHR surface_format{ChooseSwapSurfaceFormat(formats)};
-    present_mode = ChooseSwapPresentMode(present_modes, device.GetDriverID());
+    present_mode = ChooseSwapPresentMode(present_modes);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
     // Ensure Tripple buffering if possible.
