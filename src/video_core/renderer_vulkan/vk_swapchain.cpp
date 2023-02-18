@@ -165,7 +165,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities, bo
     const auto present_modes{physical_device.GetSurfacePresentModesKHR(surface)};
 
     const VkSurfaceFormatKHR surface_format{ChooseSwapSurfaceFormat(formats)};
-    present_mode = ChooseSwapPresentMode(present_modes);
+    present_mode = ChooseSwapPresentMode(present_modes, device.GetDriverID());
 
     u32 requested_image_count{capabilities.minImageCount + 1};
     // Ensure Tripple buffering if possible.
