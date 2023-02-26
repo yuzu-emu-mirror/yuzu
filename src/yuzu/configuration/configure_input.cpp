@@ -194,6 +194,7 @@ void ConfigureInput::ApplyConfiguration() {
     }
 
     advanced->ApplyConfiguration();
+    system.HIDCore().ReloadInputDevices();
 
     const bool pre_docked_mode = Settings::values.use_docked_mode.GetValue();
     Settings::values.use_docked_mode.SetValue(ui->radioDocked->isChecked());

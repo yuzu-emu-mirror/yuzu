@@ -86,17 +86,12 @@ void ConfigureInputPerGame::LoadConfiguration() {
 
         emulated_controller->ReloadFromSettings();
 
-        if (player_index > 0) {
+        if (player_index != HANDHELD_INDEX) {
             continue;
         }
+
         // Handle Handheld cases
-        auto& handheld_player = Settings::values.players.GetValue()[HANDHELD_INDEX];
-        auto* handheld_controller = hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-        if (player.controller_type == Settings::ControllerType::Handheld) {
-            handheld_player = player;
-        } else {
-            handheld_player = {};
-        }
+        auto handheld_controller = hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
         handheld_controller->ReloadFromSettings();
     }
 }

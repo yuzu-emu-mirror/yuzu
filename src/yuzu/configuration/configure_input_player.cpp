@@ -295,26 +295,11 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
       is_powered_on{is_powered_on_}, input_subsystem{input_subsystem_}, profiles(profiles_),
       timeout_timer(std::make_unique<QTimer>()),
       poll_timer(std::make_unique<QTimer>()), bottom_row{bottom_row_}, hid_core{hid_core_} {
-    if (player_index == 0) {
-        auto* emulated_controller_p1 =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* emulated_controller_handheld =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-        emulated_controller_p1->SaveCurrentConfig();
-        emulated_controller_p1->EnableConfiguration();
-        emulated_controller_handheld->SaveCurrentConfig();
-        emulated_controller_handheld->EnableConfiguration();
-        if (emulated_controller_handheld->IsConnected(true)) {
-            emulated_controller_p1->Disconnect();
-            emulated_controller = emulated_controller_handheld;
-        } else {
-            emulated_controller = emulated_controller_p1;
-        }
-    } else {
-        emulated_controller = hid_core.GetEmulatedControllerByIndex(player_index);
-        emulated_controller->SaveCurrentConfig();
-        emulated_controller->EnableConfiguration();
-    }
+
+    emulated_controller = hid_core.GetEmulatedControllerByIndex(player_index);
+    emulated_controller->SaveCurrentConfig();
+    emulated_controller->EnableConfiguration();
+
     ui->setupUi(this);
 
     setFocusPolicy(Qt::ClickFocus);
@@ -737,29 +722,6 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         UpdateMotionButtons();
         const Core::HID::NpadStyleIndex type =
             GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
-
-        if (player_index == 0) {
-            auto* emulated_controller_p1 =
-                hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-            auto* emulated_controller_handheld =
-                hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-            bool is_connected = emulated_controller->IsConnected(true);
-
-            emulated_controller_p1->SetNpadStyleIndex(type);
-            emulated_controller_handheld->SetNpadStyleIndex(type);
-            if (is_connected) {
-                if (type == Core::HID::NpadStyleIndex::Handheld) {
-                    emulated_controller_p1->Disconnect();
-                    emulated_controller_handheld->Connect(true);
-                    emulated_controller = emulated_controller_handheld;
-                } else {
-                    emulated_controller_handheld->Disconnect();
-                    emulated_controller_p1->Connect(true);
-                    emulated_controller = emulated_controller_p1;
-                }
-            }
-            ui->controllerFrame->SetController(emulated_controller);
-        }
         emulated_controller->SetNpadStyleIndex(type);
     });
 
@@ -795,32 +757,10 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 }
 
 ConfigureInputPlayer::~ConfigureInputPlayer() {
-    if (player_index == 0) {
-        auto* emulated_controller_p1 =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* emulated_controller_handheld =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-        emulated_controller_p1->DisableConfiguration();
-        emulated_controller_handheld->DisableConfiguration();
-    } else {
-        emulated_controller->DisableConfiguration();
-    }
+    emulated_controller->DisableConfiguration();
 }
 
 void ConfigureInputPlayer::ApplyConfiguration() {
-    if (player_index == 0) {
-        auto* emulated_controller_p1 =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
-        auto* emulated_controller_handheld =
-            hid_core.GetEmulatedController(Core::HID::NpadIdType::Handheld);
-        emulated_controller_p1->DisableConfiguration();
-        emulated_controller_p1->SaveCurrentConfig();
-        emulated_controller_p1->EnableConfiguration();
-        emulated_controller_handheld->DisableConfiguration();
-        emulated_controller_handheld->SaveCurrentConfig();
-        emulated_controller_handheld->EnableConfiguration();
-        return;
-    }
     emulated_controller->DisableConfiguration();
     emulated_controller->SaveCurrentConfig();
     emulated_controller->EnableConfiguration();

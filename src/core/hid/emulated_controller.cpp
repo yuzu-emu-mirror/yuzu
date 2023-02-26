@@ -116,15 +116,12 @@ void EmulatedController::ReloadFromSettings() {
 
     ring_params[0] = Common::ParamPackage(Settings::values.ringcon_analogs);
 
-    SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
-    original_npad_type = npad_type;
-
     // Player 1 shares config with handheld. Disable controller when handheld is selected
-    if (npad_id_type == NpadIdType::Player1 && npad_type == NpadStyleIndex::Handheld) {
-        Disconnect();
-        ReloadInput();
-        return;
-    }
+    // if (npad_id_type == NpadIdType::Player1 && npad_type == NpadStyleIndex::Handheld) {
+    //    Disconnect();
+    //    ReloadInput();
+    //    return;
+    //}
 
     // Handheld shares config with player 1. Disable controller when handheld isn't selected
     if (npad_id_type == NpadIdType::Handheld && npad_type != NpadStyleIndex::Handheld) {
@@ -134,6 +131,10 @@ void EmulatedController::ReloadFromSettings() {
     }
 
     Disconnect();
+
+    SetNpadStyleIndex(MapSettingsTypeToNPad(player.controller_type));
+    original_npad_type = npad_type;
+
     if (player.connected) {
         Connect();
     }
@@ -600,23 +601,15 @@ bool EmulatedController::IsConfiguring() const {
 }
 
 void EmulatedController::SaveCurrentConfig() {
-    // Other can't alter the config from here
-    if (npad_id_type == NpadIdType::Other) {
+    // Other and Handheld can't alter the config from here
+    if (npad_id_type == NpadIdType::Other || npad_id_type == NpadIdType::Handheld) {
         return;
     }
 
     const auto player_index = NpadIdTypeToConfigIndex(npad_id_type);
     auto& player = Settings::values.players.GetValue()[player_index];
 
-    // Only save the connected status when handheld is connected
-    if (npad_id_type == NpadIdType::Handheld && npad_type == NpadStyleIndex::Handheld) {
-        player.connected = is_connected;
-    }
-
-    if (npad_id_type != NpadIdType::Handheld && npad_type != NpadStyleIndex::Handheld) {
-        player.connected = is_connected;
-    }
-
+    player.connected = is_connected;
     player.controller_type = MapNPadToSettingsType(npad_type);
     for (std::size_t index = 0; index < player.buttons.size(); ++index) {
         player.buttons[index] = button_params[index].Serialize();
