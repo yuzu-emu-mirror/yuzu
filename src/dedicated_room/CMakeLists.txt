@@ -15,7 +15,7 @@ if (ENABLE_WEB_SERVICE)
     target_link_libraries(yuzu-room PRIVATE web_service)
 endif()
 
-target_link_libraries(yuzu-room PRIVATE mbedtls mbedcrypto)
+target_link_libraries(yuzu-room PRIVATE MbedTLS::mbedcrypto)
 if (MSVC)
     target_link_libraries(yuzu-room PRIVATE getopt)
 endif()

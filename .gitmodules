@@ -30,7 +30,7 @@
     url = https://github.com/yuzu-emu/sirit
 [submodule "mbedtls"]
     path = externals/mbedtls
-    url = https://github.com/yuzu-emu/mbedtls
+    url = https://github.com/Mbed-TLS/mbedtls
 [submodule "xbyak"]
     path = externals/xbyak
     url = https://github.com/herumi/xbyak.git
