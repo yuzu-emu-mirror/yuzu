@@ -74,6 +74,12 @@ ImageViewInfo::ImageViewInfo(const TICEntry& config, s32 base_layer) noexcept
         ASSERT_MSG(false, "Invalid texture_type={}", static_cast<int>(config.texture_type.Value()));
         break;
     }
+
+    // S8_UINT_D24_UNORM is not supported directly, and we use D24S8 instead.
+    // To make sure shaders grab the right channels, swap R and G.
+    if (format == PixelFormat::S8_UINT_D24_UNORM) {
+        y_source = std::exchange(x_source, y_source);
+    }
 }
 
 ImageViewInfo::ImageViewInfo(ImageViewType type_, PixelFormat format_,

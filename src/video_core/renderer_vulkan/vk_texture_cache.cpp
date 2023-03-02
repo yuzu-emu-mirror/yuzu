@@ -1763,7 +1763,7 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
         .minLod = tsc.mipmap_filter == TextureMipmapFilter::None ? 0.0f : tsc.MinLod(),
         .maxLod = tsc.mipmap_filter == TextureMipmapFilter::None ? 0.25f : tsc.MaxLod(),
         .borderColor =
-            arbitrary_borders ? VK_BORDER_COLOR_INT_CUSTOM_EXT : ConvertBorderColor(color),
+            arbitrary_borders ? VK_BORDER_COLOR_FLOAT_CUSTOM_EXT : ConvertBorderColor(color),
         .unnormalizedCoordinates = VK_FALSE,
     });
 }
