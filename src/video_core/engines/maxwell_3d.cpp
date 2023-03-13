@@ -631,6 +631,22 @@ std::optional<u64> Maxwell3D::GetQueryResult() {
         rasterizer->Query(regs.report_semaphore.Address(), QueryType::SamplesPassed,
                           system.GPU().GetTicks());
         return std::nullopt;
+    case Regs::ReportSemaphore::Report::StreamingPrimitivesSucceeded:
+        if (Settings::values.transform_feedback_query) {
+            if (regs.report_semaphore.query.sub_report == 0) {
+                ASSERT(regs.transform_feedback.controls[0].stride != 0);
+                return rasterizer->GetTransformFeedbackByteCount() /
+                       regs.transform_feedback.controls[0].stride;
+            }
+        }
+        return 0;
+    case Regs::ReportSemaphore::Report::StreamingByteCount:
+        if (Settings::values.transform_feedback_query) {
+            if (regs.report_semaphore.query.sub_report == 0) {
+                return rasterizer->GetTransformFeedbackByteCount();
+            }
+        }
+        return 0;
     default:
         LOG_DEBUG(HW_GPU, "Unimplemented query report type {}",
                   regs.report_semaphore.query.report.Value());

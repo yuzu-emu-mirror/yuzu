@@ -764,6 +764,7 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.use_asynchronous_gpu_emulation);
     ReadGlobalSetting(Settings::values.nvdec_emulation);
     ReadGlobalSetting(Settings::values.accelerate_astc);
+    ReadGlobalSetting(Settings::values.transform_feedback_query);
     ReadGlobalSetting(Settings::values.async_astc);
     ReadGlobalSetting(Settings::values.astc_recompression);
     ReadGlobalSetting(Settings::values.use_reactive_flushing);
@@ -1429,6 +1430,7 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.nvdec_emulation.GetDefault()),
                  Settings::values.nvdec_emulation.UsingGlobal());
     WriteGlobalSetting(Settings::values.accelerate_astc);
+    WriteGlobalSetting(Settings::values.transform_feedback_query);
     WriteGlobalSetting(Settings::values.async_astc);
     WriteSetting(QString::fromStdString(Settings::values.astc_recompression.GetLabel()),
                  static_cast<u32>(Settings::values.astc_recompression.GetValue(global)),

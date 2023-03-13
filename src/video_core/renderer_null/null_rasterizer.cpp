@@ -100,5 +100,8 @@ void RasterizerNull::LoadDiskResources(u64 title_id, std::stop_token stop_loadin
 void RasterizerNull::InitializeChannel(Tegra::Control::ChannelState& channel) {}
 void RasterizerNull::BindChannel(Tegra::Control::ChannelState& channel) {}
 void RasterizerNull::ReleaseChannel(s32 channel_id) {}
+u32 RasterizerNull::GetTransformFeedbackByteCount() {
+    return 0;
+}
 
 } // namespace Null

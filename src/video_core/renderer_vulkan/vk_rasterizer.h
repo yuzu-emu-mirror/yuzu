@@ -131,6 +131,8 @@ public:
 
     void ReleaseChannel(s32 channel_id) override;
 
+    u32 GetTransformFeedbackByteCount() override;
+
 private:
     static constexpr size_t MAX_TEXTURES = 192;
     static constexpr size_t MAX_IMAGES = 48;
@@ -206,6 +208,9 @@ private:
     boost::container::static_vector<VkSampler, MAX_TEXTURES> sampler_handles;
 
     u32 draw_counter = 0;
+    bool host_tfb_enabled{};
+    bool prev_tfb_enabled{};
+    vk::Buffer transform_counter;
 };
 
 } // namespace Vulkan

@@ -224,6 +224,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdDrawIndexedIndirect vkCmdDrawIndexedIndirect{};
     PFN_vkCmdDrawIndirectCount vkCmdDrawIndirectCount{};
     PFN_vkCmdDrawIndexedIndirectCount vkCmdDrawIndexedIndirectCount{};
+    PFN_vkCmdDrawIndirectByteCountEXT vkCmdDrawIndirectByteCountEXT{};
     PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT{};
     PFN_vkCmdEndQuery vkCmdEndQuery{};
     PFN_vkCmdEndRenderPass vkCmdEndRenderPass{};
@@ -1194,6 +1195,13 @@ public:
                                   u32 stride) const noexcept {
         dld->vkCmdDrawIndexedIndirectCount(handle, src_buffer, src_offset, count_buffer,
                                            count_offset, draw_count, stride);
+    }
+
+    void DrawIndirectByteCountEXT(u32 instance_count, u32 first_instance, VkBuffer counter_buffer,
+                                  VkDeviceSize counter_buffer_offset, u32 counter_offset,
+                                  u32 vertex_stride) const noexcept {
+        dld->vkCmdDrawIndirectByteCountEXT(handle, instance_count, first_instance, counter_buffer,
+                                           counter_buffer_offset, counter_offset, vertex_stride);
     }
 
     void ClearAttachments(Span<VkClearAttachment> attachments,

@@ -255,6 +255,8 @@ void TelemetrySession::AddInitialInfo(Loader::AppLoader& app_loader,
     AddField(field_type, "Renderer_NvdecEmulation",
              TranslateNvdecEmulation(Settings::values.nvdec_emulation.GetValue()));
     AddField(field_type, "Renderer_AccelerateASTC", Settings::values.accelerate_astc.GetValue());
+    AddField(field_type, "Renderer_TransformFeedbackQuery",
+             Settings::values.transform_feedback_query.GetValue());
     AddField(field_type, "Renderer_UseVsync",
              TranslateVSyncMode(Settings::values.vsync_mode.GetValue()));
     AddField(field_type, "Renderer_ShaderBackend",

@@ -138,6 +138,8 @@ public:
 
     void ReleaseChannel(s32 channel_id) override;
 
+    u32 GetTransformFeedbackByteCount() override;
+
 private:
     static constexpr size_t MAX_TEXTURES = 192;
     static constexpr size_t MAX_IMAGES = 48;
@@ -222,7 +224,7 @@ private:
     void BeginTransformFeedback(GraphicsPipeline* pipeline, GLenum primitive_mode);
 
     /// End a transform feedback
-    void EndTransformFeedback();
+    void EndTransformFeedback(bool force = false);
 
     Tegra::GPU& gpu;
 
@@ -254,6 +256,9 @@ private:
     bool has_written_global_memory = false;
 
     u32 last_clip_distance_mask = 0;
+    bool host_tfb_enabled{};
+    bool prev_tfb_enabled{};
+    GLuint transform_query{};
 };
 
 } // namespace OpenGL

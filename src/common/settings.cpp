@@ -82,6 +82,7 @@ void LogSettings() {
                 values.use_asynchronous_gpu_emulation.GetValue());
     log_setting("Renderer_NvdecEmulation", values.nvdec_emulation.GetValue());
     log_setting("Renderer_AccelerateASTC", values.accelerate_astc.GetValue());
+    log_setting("Renderer_TransformFeedbackQuery", values.transform_feedback_query.GetValue());
     log_setting("Renderer_AsyncASTC", values.async_astc.GetValue());
     log_setting("Renderer_AstcRecompression", values.astc_recompression.GetValue());
     log_setting("Renderer_UseVsync", values.vsync_mode.GetValue());
@@ -246,6 +247,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
     values.nvdec_emulation.SetGlobal(true);
     values.accelerate_astc.SetGlobal(true);
+    values.transform_feedback_query.SetGlobal(true);
     values.async_astc.SetGlobal(true);
     values.astc_recompression.SetGlobal(true);
     values.use_reactive_flushing.SetGlobal(true);

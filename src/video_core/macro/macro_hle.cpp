@@ -462,6 +462,25 @@ public:
     }
 };
 
+class HLE_B5F74EDB717278EC final : public HLEMacroImpl {
+public:
+    explicit HLE_B5F74EDB717278EC(Maxwell3D& maxwell3d_) : HLEMacroImpl(maxwell3d_) {}
+
+    void Execute(const std::vector<u32>& parameters, [[maybe_unused]] u32 method) override {
+        maxwell3d.RefreshParameters();
+
+        maxwell3d.regs.draw.begin = parameters[0];
+        maxwell3d.regs.draw_auto_stride = parameters[1];
+        maxwell3d.regs.draw_auto_byte_count = parameters[2];
+
+        if (maxwell3d.ShouldExecute()) {
+            maxwell3d.draw_manager->DrawArray(
+                maxwell3d.regs.draw.topology, 0,
+                maxwell3d.regs.draw_auto_byte_count / maxwell3d.regs.draw_auto_stride, 0, 1);
+        }
+    }
+};
+
 } // Anonymous namespace
 
 HLEMacro::HLEMacro(Maxwell3D& maxwell3d_) : maxwell3d{maxwell3d_} {
@@ -535,6 +554,11 @@ HLEMacro::HLEMacro(Maxwell3D& maxwell3d_) : maxwell3d{maxwell3d_} {
                      std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
                          [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
                              return std::make_unique<HLE_TransformFeedbackSetup>(maxwell3d__);
+                         }));
+    builders.emplace(0xB5F74EDB717278ECULL,
+                     std::function<std::unique_ptr<CachedMacro>(Maxwell3D&)>(
+                         [](Maxwell3D& maxwell3d__) -> std::unique_ptr<CachedMacro> {
+                             return std::make_unique<HLE_B5F74EDB717278EC>(maxwell3d__);
                          }));
 }
 

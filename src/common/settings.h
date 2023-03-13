@@ -468,6 +468,7 @@ struct Values {
     SwitchableSetting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
     SwitchableSetting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
     SwitchableSetting<bool> accelerate_astc{true, "accelerate_astc"};
+    SwitchableSetting<bool> transform_feedback_query{false, "transform_feedback_query"};
     SwitchableSetting<bool> async_astc{false, "async_astc"};
     Setting<VSyncMode, true> vsync_mode{VSyncMode::FIFO, VSyncMode::Immediate,
                                         VSyncMode::FIFORelaxed, "use_vsync"};

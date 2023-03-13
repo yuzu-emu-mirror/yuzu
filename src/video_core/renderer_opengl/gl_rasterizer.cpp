@@ -67,9 +67,13 @@ RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra
                    state_tracker, gpu.ShaderNotify()),
       query_cache(*this, cpu_memory_), accelerate_dma(buffer_cache, texture_cache),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache),
-      blit_image(program_manager_) {}
+      blit_image(program_manager_) {
+    glGenQueries(1, &transform_query);
+}
 
-RasterizerOpenGL::~RasterizerOpenGL() = default;
+RasterizerOpenGL::~RasterizerOpenGL() {
+    glDeleteQueries(1, &transform_query);
+}
 
 void RasterizerOpenGL::SyncVertexFormats() {
     auto& flags = maxwell3d->dirty.flags;
@@ -233,11 +237,14 @@ void RasterizerOpenGL::PrepareDraw(bool is_indexed, Func&& draw_func) {
     const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
 
     const GLenum primitive_mode = MaxwellToGL::PrimitiveTopology(draw_state.topology);
-    BeginTransformFeedback(pipeline, primitive_mode);
+
+    if (host_tfb_enabled && !maxwell3d->regs.transform_feedback_enabled) {
+        EndTransformFeedback();
+    } else {
+        BeginTransformFeedback(pipeline, primitive_mode);
+    }
 
     draw_func(primitive_mode);
-
-    EndTransformFeedback();
 
     ++num_queued_commands;
     has_written_global_memory |= pipeline->WritesGlobalMemory();
@@ -1251,27 +1258,44 @@ void RasterizerOpenGL::SyncFramebufferSRGB() {
 
 void RasterizerOpenGL::BeginTransformFeedback(GraphicsPipeline* program, GLenum primitive_mode) {
     const auto& regs = maxwell3d->regs;
-    if (regs.transform_feedback_enabled == 0) {
+    UNIMPLEMENTED_IF(maxwell3d->regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
+                     maxwell3d->regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation));
+
+    if (host_tfb_enabled) {
+        prev_tfb_enabled = regs.transform_feedback_enabled;
         return;
     }
+
     program->ConfigureTransformFeedback();
 
-    UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation) ||
-                     regs.IsShaderConfigEnabled(Maxwell::ShaderType::Geometry));
-    UNIMPLEMENTED_IF(primitive_mode != GL_POINTS);
-
-    // We may have to call BeginTransformFeedbackNV here since they seem to call different
-    // implementations on Nvidia's driver (the pointer is different) but we are using
-    // ARB_transform_feedback3 features with NV_transform_feedback interactions and the ARB
-    // extension doesn't define BeginTransformFeedback (without NV) interactions. It just works.
-    glBeginTransformFeedback(GL_POINTS);
+    if (regs.transform_feedback_enabled && prev_tfb_enabled) {
+        // if current and previous tfbs are enabled, we're resuming.
+        glResumeTransformFeedback();
+        host_tfb_enabled = true;
+    } else if (regs.transform_feedback_enabled) {
+        UNIMPLEMENTED_IF(primitive_mode != GL_POINTS);
+        // We may have to call BeginTransformFeedbackNV here since they seem to call different
+        // implementations on Nvidia's driver (the pointer is different) but we are using
+        // ARB_transform_feedback3 features with NV_transform_feedback interactions and the ARB
+        // extension doesn't define BeginTransformFeedback (without NV) interactions. It just works.
+        glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, transform_query);
+        glBeginTransformFeedback(GL_POINTS);
+        host_tfb_enabled = true;
+    }
+    prev_tfb_enabled = regs.transform_feedback_enabled;
 }
 
-void RasterizerOpenGL::EndTransformFeedback() {
-    if (maxwell3d->regs.transform_feedback_enabled != 0) {
+void RasterizerOpenGL::EndTransformFeedback(bool force) {
+    if (!force && host_tfb_enabled && maxwell3d->regs.transform_feedback_enabled) {
+        // guest is still active, so pause
+        glPauseTransformFeedback();
+        host_tfb_enabled = false;
+    } else if (host_tfb_enabled) {
         glEndTransformFeedback();
+        glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+        host_tfb_enabled = false;
     }
+    prev_tfb_enabled = maxwell3d->regs.transform_feedback_enabled;
 }
 
 void RasterizerOpenGL::InitializeChannel(Tegra::Control::ChannelState& channel) {
@@ -1309,6 +1333,15 @@ void RasterizerOpenGL::ReleaseChannel(s32 channel_id) {
     }
     shader_cache.EraseChannel(channel_id);
     query_cache.EraseChannel(channel_id);
+}
+
+u32 RasterizerOpenGL::GetTransformFeedbackByteCount() {
+    EndTransformFeedback(true);
+
+    GLuint count{};
+    glGetQueryObjectuiv(transform_query, GL_QUERY_RESULT, &count);
+
+    return count * maxwell3d->regs.transform_feedback.controls[0].stride;
 }
 
 AccelerateDMA::AccelerateDMA(BufferCache& buffer_cache_, TextureCache& texture_cache_)

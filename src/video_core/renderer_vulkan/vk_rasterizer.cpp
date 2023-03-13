@@ -176,6 +176,7 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
       wfi_event(device.GetLogical().CreateEvent()) {
     scheduler.SetQueryCache(query_cache);
+    transform_counter = buffer_cache_runtime.CreateTransformCounterBuffer();
 }
 
 RasterizerVulkan::~RasterizerVulkan() = default;
@@ -206,13 +207,15 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func) {
     pipeline->SetEngine(maxwell3d, gpu_memory);
     pipeline->Configure(is_indexed);
 
-    BeginTransformFeedback();
+    if (host_tfb_enabled && !maxwell3d->regs.transform_feedback_enabled) {
+        EndTransformFeedback();
+    } else {
+        BeginTransformFeedback();
+    }
 
     UpdateDynamicStates();
 
     draw_func();
-
-    EndTransformFeedback();
 }
 
 void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
@@ -902,30 +905,46 @@ void RasterizerVulkan::UpdateDynamicStates() {
 }
 
 void RasterizerVulkan::BeginTransformFeedback() {
-    const auto& regs = maxwell3d->regs;
-    if (regs.transform_feedback_enabled == 0) {
-        return;
-    }
     if (!device.IsExtTransformFeedbackSupported()) {
         LOG_ERROR(Render_Vulkan, "Transform feedbacks used but not supported");
         return;
     }
+    const auto& regs = maxwell3d->regs;
     UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
                      regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation));
-    scheduler.Record(
-        [](vk::CommandBuffer cmdbuf) { cmdbuf.BeginTransformFeedbackEXT(0, 0, nullptr, nullptr); });
+
+    if (host_tfb_enabled) {
+        prev_tfb_enabled = regs.transform_feedback_enabled;
+        return;
+    }
+
+    if (regs.transform_feedback_enabled && prev_tfb_enabled) {
+        // if current and previous tfbs are enabled, we're resuming.
+        scheduler.Record([buffer = *transform_counter](vk::CommandBuffer cmdbuf) {
+            cmdbuf.BeginTransformFeedbackEXT(0, 1, &buffer, nullptr);
+        });
+        host_tfb_enabled = true;
+    } else if (regs.transform_feedback_enabled) {
+        scheduler.Record([](vk::CommandBuffer cmdbuf) {
+            cmdbuf.BeginTransformFeedbackEXT(0, 0, nullptr, nullptr);
+        });
+        host_tfb_enabled = true;
+    }
+    prev_tfb_enabled = regs.transform_feedback_enabled;
 }
 
 void RasterizerVulkan::EndTransformFeedback() {
-    const auto& regs = maxwell3d->regs;
-    if (regs.transform_feedback_enabled == 0) {
-        return;
-    }
     if (!device.IsExtTransformFeedbackSupported()) {
         return;
     }
-    scheduler.Record(
-        [](vk::CommandBuffer cmdbuf) { cmdbuf.EndTransformFeedbackEXT(0, 0, nullptr, nullptr); });
+
+    if (host_tfb_enabled) {
+        scheduler.Record([buffer = *transform_counter](vk::CommandBuffer cmdbuf) {
+            cmdbuf.EndTransformFeedbackEXT(0, 1, &buffer, nullptr);
+        });
+        host_tfb_enabled = false;
+    }
+    prev_tfb_enabled = maxwell3d->regs.transform_feedback_enabled;
 }
 
 void RasterizerVulkan::UpdateViewportsState(Tegra::Engines::Maxwell3D::Regs& regs) {
@@ -1492,6 +1511,24 @@ void RasterizerVulkan::ReleaseChannel(s32 channel_id) {
     }
     pipeline_cache.EraseChannel(channel_id);
     query_cache.EraseChannel(channel_id);
+}
+
+u32 RasterizerVulkan::GetTransformFeedbackByteCount() {
+    EndTransformFeedback();
+
+    auto download_staging = buffer_cache_runtime.DownloadStagingBuffer(4);
+    std::array copy{VideoCommon::BufferCopy{
+        0,
+        download_staging.offset,
+        4,
+    }};
+    buffer_cache_runtime.CopyBuffer(download_staging.buffer, *transform_counter,
+                                    std::span<VideoCommon::BufferCopy>(copy));
+    scheduler.Finish();
+
+    u32 count{};
+    std::memcpy(&count, download_staging.mapped_span.data(), 4);
+    return count;
 }
 
 } // namespace Vulkan

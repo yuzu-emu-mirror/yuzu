@@ -176,5 +176,7 @@ public:
     virtual void BindChannel(Tegra::Control::ChannelState& channel) {}
 
     virtual void ReleaseChannel(s32 channel_id) {}
+
+    virtual u32 GetTransformFeedbackByteCount() = 0;
 };
 } // namespace VideoCore

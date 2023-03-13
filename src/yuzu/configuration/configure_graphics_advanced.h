@@ -49,6 +49,7 @@ private:
     ConfigurationShared::CheckState enable_compute_pipelines;
     ConfigurationShared::CheckState use_video_framerate;
     ConfigurationShared::CheckState barrier_feedback_loops;
+    ConfigurationShared::CheckState transform_feedback_query;
 
     const Core::System& system;
 };

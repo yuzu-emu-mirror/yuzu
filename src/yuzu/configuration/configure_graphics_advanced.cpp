@@ -45,6 +45,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->use_video_framerate_checkbox->setChecked(Settings::values.use_video_framerate.GetValue());
     ui->barrier_feedback_loops_checkbox->setChecked(
         Settings::values.barrier_feedback_loops.GetValue());
+    ui->transform_feedback_query->setChecked(Settings::values.transform_feedback_query.GetValue());
 
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setCurrentIndex(
@@ -99,6 +100,9 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.barrier_feedback_loops,
                                              ui->barrier_feedback_loops_checkbox,
                                              barrier_feedback_loops);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.transform_feedback_query,
+                                             ui->transform_feedback_query,
+                                             transform_feedback_query);
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -137,6 +141,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
             Settings::values.use_video_framerate.UsingGlobal());
         ui->barrier_feedback_loops_checkbox->setEnabled(
             Settings::values.barrier_feedback_loops.UsingGlobal());
+        ui->transform_feedback_query->setEnabled(
+            Settings::values.transform_feedback_query.UsingGlobal());
 
         return;
     }
@@ -167,6 +173,10 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     ConfigurationShared::SetColoredTristate(ui->barrier_feedback_loops_checkbox,
                                             Settings::values.barrier_feedback_loops,
                                             barrier_feedback_loops);
+    ConfigurationShared::SetColoredTristate(ui->transform_feedback_query,
+                                            Settings::values.transform_feedback_query,
+                                            transform_feedback_query);
+
     ConfigurationShared::SetColoredComboBox(
         ui->gpu_accuracy, ui->label_gpu_accuracy,
         static_cast<int>(Settings::values.gpu_accuracy.GetValue(true)));

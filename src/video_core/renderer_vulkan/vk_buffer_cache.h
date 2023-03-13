@@ -83,7 +83,7 @@ public:
 
     void PreCopyBarrier();
 
-    void CopyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer,
+    void CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
                     std::span<const VideoCommon::BufferCopy> copies, bool barrier = true);
 
     void PostCopyBarrier();
@@ -123,6 +123,8 @@ public:
                            VideoCore::Surface::PixelFormat format) {
         guest_descriptor_queue.AddTexelBuffer(buffer.View(offset, size, format));
     }
+
+    vk::Buffer CreateTransformCounterBuffer();
 
 private:
     void BindBuffer(VkBuffer buffer, u32 offset, u32 size) {
