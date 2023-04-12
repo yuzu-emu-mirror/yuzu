@@ -210,6 +210,36 @@ Ticket Ticket::SynthesizeCommon(Key128 title_key, const std::array<u8, 16>& righ
     return Ticket{out};
 }
 
+bool Ticket::Read(Ticket& ticket_out, const FileSys::VirtualFile& file) {
+    SignatureType sig_type;
+    if (file->Read(reinterpret_cast<u8*>(&sig_type), sizeof(sig_type), 0) < sizeof(sig_type)) {
+        return false;
+    }
+
+    switch (sig_type) {
+    case SignatureType::RSA_4096_SHA1:
+    case SignatureType::RSA_4096_SHA256: {
+        ticket_out.data.emplace<RSA4096Ticket>();
+        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(RSA4096Ticket), 0);
+        return true;
+    }
+    case SignatureType::RSA_2048_SHA1:
+    case SignatureType::RSA_2048_SHA256: {
+        ticket_out.data.emplace<RSA2048Ticket>();
+        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(RSA2048Ticket), 0);
+        return true;
+    }
+    case SignatureType::ECDSA_SHA1:
+    case SignatureType::ECDSA_SHA256: {
+        ticket_out.data.emplace<ECDSATicket>();
+        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(ECDSATicket), 0);
+        return true;
+    }
+    default:
+        return false;
+    }
+}
+
 Key128 GenerateKeyEncryptionKey(Key128 source, Key128 master, Key128 kek_seed, Key128 key_seed) {
     Key128 out{};
 
@@ -290,9 +320,9 @@ void KeyManager::DeriveGeneralPurposeKeys(std::size_t crypto_revision) {
     }
 }
 
-RSAKeyPair<2048> KeyManager::GetETicketRSAKey() const {
+void KeyManager::DeriveETicketRSAKey() {
     if (IsAllZeroArray(eticket_extended_kek) || !HasKey(S128KeyType::ETicketRSAKek)) {
-        return {};
+        return;
     }
 
     const auto eticket_final = GetKey(S128KeyType::ETicketRSAKek);
@@ -304,12 +334,12 @@ RSAKeyPair<2048> KeyManager::GetETicketRSAKey() const {
     rsa_1.Transcode(eticket_extended_kek.data() + 0x10, eticket_extended_kek.size() - 0x10,
                     extended_dec.data(), Op::Decrypt);
 
-    RSAKeyPair<2048> rsa_key{};
-    std::memcpy(rsa_key.decryption_key.data(), extended_dec.data(), rsa_key.decryption_key.size());
-    std::memcpy(rsa_key.modulus.data(), extended_dec.data() + 0x100, rsa_key.modulus.size());
-    std::memcpy(rsa_key.exponent.data(), extended_dec.data() + 0x200, rsa_key.exponent.size());
-
-    return rsa_key;
+    std::memcpy(eticket_rsa_keypair.decryption_key.data(), extended_dec.data(),
+                eticket_rsa_keypair.decryption_key.size());
+    std::memcpy(eticket_rsa_keypair.modulus.data(), extended_dec.data() + 0x100,
+                eticket_rsa_keypair.modulus.size());
+    std::memcpy(eticket_rsa_keypair.exponent.data(), extended_dec.data() + 0x200,
+                eticket_rsa_keypair.exponent.size());
 }
 
 Key128 DeriveKeyblobMACKey(const Key128& keyblob_key, const Key128& mac_source) {
@@ -519,8 +549,7 @@ std::optional<std::pair<Key128, Key128>> ParseTicket(const Ticket& ticket,
         return std::nullopt;
     }
 
-    if (!std::any_of(ticket.GetData().title_key_common_pad.begin(),
-                     ticket.GetData().title_key_common_pad.end(), [](u8 b) { return b != 0; })) {
+    if (ticket.GetData().type == TitleKeyType::Common) {
         return std::make_pair(rights_id, ticket.GetData().title_key_common);
     }
 
@@ -669,6 +698,14 @@ void KeyManager::LoadFromFile(const std::filesystem::path& file_path, bool is_ti
                 encrypted_keyblobs[index] = Common::HexStringToArray<0xB0>(out[1]);
             } else if (out[0].compare(0, 20, "eticket_extended_kek") == 0) {
                 eticket_extended_kek = Common::HexStringToArray<576>(out[1]);
+            } else if (out[0].compare(0, 19, "eticket_rsa_keypair") == 0) {
+                const auto key_data = Common::HexStringToArray<528>(out[1]);
+                std::memcpy(eticket_rsa_keypair.decryption_key.data(), key_data.data(),
+                            eticket_rsa_keypair.decryption_key.size());
+                std::memcpy(eticket_rsa_keypair.modulus.data(), key_data.data() + 0x100,
+                            eticket_rsa_keypair.modulus.size());
+                std::memcpy(eticket_rsa_keypair.exponent.data(), key_data.data() + 0x200,
+                            eticket_rsa_keypair.exponent.size());
             } else {
                 for (const auto& kv : KEYS_VARIABLE_LENGTH) {
                     if (!ValidCryptoRevisionString(out[0], kv.second.size(), 2)) {
@@ -1110,13 +1147,12 @@ void KeyManager::DeriveETicket(PartitionDataManager& data,
 
     eticket_extended_kek = data.GetETicketExtendedKek();
     WriteKeyToFile(KeyCategory::Console, "eticket_extended_kek", eticket_extended_kek);
+    DeriveETicketRSAKey();
     PopulateTickets();
 }
 
 void KeyManager::PopulateTickets() {
-    const auto rsa_key = GetETicketRSAKey();
-
-    if (rsa_key == RSAKeyPair<2048>{}) {
+    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
         return;
     }
 
@@ -1144,7 +1180,7 @@ void KeyManager::PopulateTickets() {
 
     for (std::size_t i = 0; i < res.size(); ++i) {
         const auto common = i < idx;
-        const auto pair = ParseTicket(res[i], rsa_key);
+        const auto pair = ParseTicket(res[i], eticket_rsa_keypair);
         if (!pair) {
             continue;
         }
@@ -1292,12 +1328,11 @@ const std::map<u128, Ticket>& KeyManager::GetPersonalizedTickets() const {
 }
 
 bool KeyManager::AddTicketCommon(Ticket raw) {
-    const auto rsa_key = GetETicketRSAKey();
-    if (rsa_key == RSAKeyPair<2048>{}) {
+    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
         return false;
     }
 
-    const auto pair = ParseTicket(raw, rsa_key);
+    const auto pair = ParseTicket(raw, eticket_rsa_keypair);
     if (!pair) {
         return false;
     }
@@ -1311,12 +1346,11 @@ bool KeyManager::AddTicketCommon(Ticket raw) {
 }
 
 bool KeyManager::AddTicketPersonalized(Ticket raw) {
-    const auto rsa_key = GetETicketRSAKey();
-    if (rsa_key == RSAKeyPair<2048>{}) {
+    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
         return false;
     }
 
-    const auto pair = ParseTicket(raw, rsa_key);
+    const auto pair = ParseTicket(raw, eticket_rsa_keypair);
     if (!pair) {
         return false;
     }
@@ -1324,7 +1358,7 @@ bool KeyManager::AddTicketPersonalized(Ticket raw) {
     const auto& [rid, key] = *pair;
     u128 rights_id;
     std::memcpy(rights_id.data(), rid.data(), rid.size());
-    common_tickets[rights_id] = raw;
+    personal_tickets[rights_id] = raw;
     SetKey(S128KeyType::Titlekey, key, rights_id[1], rights_id[0]);
     return true;
 }

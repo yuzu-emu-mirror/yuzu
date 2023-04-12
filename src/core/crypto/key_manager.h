@@ -29,8 +29,6 @@ enum class ResultStatus : u16;
 
 namespace Core::Crypto {
 
-constexpr u64 TICKET_FILE_TITLEKEY_OFFSET = 0x180;
-
 using Key128 = std::array<u8, 0x10>;
 using Key256 = std::array<u8, 0x20>;
 using SHA256Hash = std::array<u8, 0x20>;
@@ -106,6 +104,7 @@ struct Ticket {
     u64 GetSize() const;
 
     static Ticket SynthesizeCommon(Key128 title_key, const std::array<u8, 0x10>& rights_id);
+    static bool Read(Ticket& ticket_out, const FileSys::VirtualFile& file);
 };
 
 static_assert(sizeof(Key128) == 16, "Key128 must be 128 bytes big.");
@@ -283,6 +282,7 @@ private:
     std::array<std::array<u8, 0xB0>, 0x20> encrypted_keyblobs{};
     std::array<std::array<u8, 0x90>, 0x20> keyblobs{};
     std::array<u8, 576> eticket_extended_kek{};
+    RSAKeyPair<2048> eticket_rsa_keypair{};
 
     bool dev_mode;
     void LoadFromFile(const std::filesystem::path& file_path, bool is_title_keys);
@@ -293,7 +293,7 @@ private:
 
     void DeriveGeneralPurposeKeys(std::size_t crypto_revision);
 
-    RSAKeyPair<2048> GetETicketRSAKey() const;
+    void DeriveETicketRSAKey();
 
     void SetKeyWrapped(S128KeyType id, Key128 key, u64 field1 = 0, u64 field2 = 0);
     void SetKeyWrapped(S256KeyType id, Key256 key, u64 field1 = 0, u64 field2 = 0);
