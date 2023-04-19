@@ -156,6 +156,10 @@ u64 GetSignatureTypePaddingSize(SignatureType type) {
     UNREACHABLE();
 }
 
+bool Ticket::IsValid() const {
+    return !std::holds_alternative<std::monostate>(data);
+}
+
 SignatureType Ticket::GetSignatureType() const {
     if (const auto* ticket = std::get_if<RSA4096Ticket>(&data)) {
         return ticket->sig_type;
@@ -236,6 +240,7 @@ bool Ticket::Read(Ticket& ticket_out, const FileSys::VirtualFile& file) {
         return true;
     }
     default:
+        ticket_out.data.emplace<std::monostate>();
         return false;
     }
 }
@@ -535,66 +540,75 @@ static std::optional<u64> FindTicketOffset(const std::array<u8, size>& data) {
 
 std::optional<std::pair<Key128, Key128>> ParseTicket(const Ticket& ticket,
                                                      const RSAKeyPair<2048>& key) {
-    const auto issuer = ticket.GetData().issuer;
-    if (IsAllZeroArray(issuer)) {
-        return std::nullopt;
-    }
-    if (issuer[0] != 'R' || issuer[1] != 'o' || issuer[2] != 'o' || issuer[3] != 't') {
-        LOG_INFO(Crypto, "Attempting to parse ticket with non-standard certificate authority.");
-    }
-
-    Key128 rights_id = ticket.GetData().rights_id;
-
-    if (rights_id == Key128{}) {
+    if (!ticket.IsValid()) {
         return std::nullopt;
     }
 
-    if (ticket.GetData().type == TitleKeyType::Common) {
-        return std::make_pair(rights_id, ticket.GetData().title_key_common);
-    }
+    // Dirty hack, figure out why ticket.data variant is invalid
+    try {
+        const auto issuer = ticket.GetData().issuer;
+        if (IsAllZeroArray(issuer)) {
+            return std::nullopt;
+        }
+        if (issuer[0] != 'R' || issuer[1] != 'o' || issuer[2] != 'o' || issuer[3] != 't') {
+            LOG_INFO(Crypto, "Attempting to parse ticket with non-standard certificate authority.");
+        }
 
-    mbedtls_mpi D; // RSA Private Exponent
-    mbedtls_mpi N; // RSA Modulus
-    mbedtls_mpi S; // Input
-    mbedtls_mpi M; // Output
+        Key128 rights_id = ticket.GetData().rights_id;
 
-    mbedtls_mpi_init(&D);
-    mbedtls_mpi_init(&N);
-    mbedtls_mpi_init(&S);
-    mbedtls_mpi_init(&M);
+        if (rights_id == Key128{}) {
+            return std::nullopt;
+        }
 
-    mbedtls_mpi_read_binary(&D, key.decryption_key.data(), key.decryption_key.size());
-    mbedtls_mpi_read_binary(&N, key.modulus.data(), key.modulus.size());
-    mbedtls_mpi_read_binary(&S, ticket.GetData().title_key_block.data(), 0x100);
+        if (ticket.GetData().type == TitleKeyType::Common) {
+            return std::make_pair(rights_id, ticket.GetData().title_key_common);
+        }
 
-    mbedtls_mpi_exp_mod(&M, &S, &D, &N, nullptr);
+        mbedtls_mpi D; // RSA Private Exponent
+        mbedtls_mpi N; // RSA Modulus
+        mbedtls_mpi S; // Input
+        mbedtls_mpi M; // Output
 
-    std::array<u8, 0x100> rsa_step;
-    mbedtls_mpi_write_binary(&M, rsa_step.data(), rsa_step.size());
+        mbedtls_mpi_init(&D);
+        mbedtls_mpi_init(&N);
+        mbedtls_mpi_init(&S);
+        mbedtls_mpi_init(&M);
 
-    u8 m_0 = rsa_step[0];
-    std::array<u8, 0x20> m_1;
-    std::memcpy(m_1.data(), rsa_step.data() + 0x01, m_1.size());
-    std::array<u8, 0xDF> m_2;
-    std::memcpy(m_2.data(), rsa_step.data() + 0x21, m_2.size());
+        mbedtls_mpi_read_binary(&D, key.decryption_key.data(), key.decryption_key.size());
+        mbedtls_mpi_read_binary(&N, key.modulus.data(), key.modulus.size());
+        mbedtls_mpi_read_binary(&S, ticket.GetData().title_key_block.data(), 0x100);
 
-    if (m_0 != 0) {
+        mbedtls_mpi_exp_mod(&M, &S, &D, &N, nullptr);
+
+        std::array<u8, 0x100> rsa_step;
+        mbedtls_mpi_write_binary(&M, rsa_step.data(), rsa_step.size());
+
+        u8 m_0 = rsa_step[0];
+        std::array<u8, 0x20> m_1;
+        std::memcpy(m_1.data(), rsa_step.data() + 0x01, m_1.size());
+        std::array<u8, 0xDF> m_2;
+        std::memcpy(m_2.data(), rsa_step.data() + 0x21, m_2.size());
+
+        if (m_0 != 0) {
+            return std::nullopt;
+        }
+
+        m_1 = m_1 ^ MGF1<0x20>(m_2);
+        m_2 = m_2 ^ MGF1<0xDF>(m_1);
+
+        const auto offset = FindTicketOffset(m_2);
+        if (!offset) {
+            return std::nullopt;
+        }
+        ASSERT(*offset > 0);
+
+        Key128 key_temp{};
+        std::memcpy(key_temp.data(), m_2.data() + *offset, key_temp.size());
+
+        return std::make_pair(rights_id, key_temp);
+    } catch (const std::bad_variant_access&) {
         return std::nullopt;
     }
-
-    m_1 = m_1 ^ MGF1<0x20>(m_2);
-    m_2 = m_2 ^ MGF1<0xDF>(m_1);
-
-    const auto offset = FindTicketOffset(m_2);
-    if (!offset) {
-        return std::nullopt;
-    }
-    ASSERT(*offset > 0);
-
-    Key128 key_temp{};
-    std::memcpy(key_temp.data(), m_2.data() + *offset, key_temp.size());
-
-    return std::make_pair(rights_id, key_temp);
 }
 
 KeyManager::KeyManager() {

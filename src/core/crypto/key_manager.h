@@ -96,8 +96,9 @@ struct ECDSATicket {
 };
 
 struct Ticket {
-    std::variant<RSA4096Ticket, RSA2048Ticket, ECDSATicket> data;
+    std::variant<std::monostate, RSA4096Ticket, RSA2048Ticket, ECDSATicket> data;
 
+    bool IsValid() const;
     SignatureType GetSignatureType() const;
     TicketData& GetData();
     const TicketData& GetData() const;
