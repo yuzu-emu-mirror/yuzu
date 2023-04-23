@@ -778,11 +778,12 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
     const u32 size = std::min(binding.size, (*uniform_buffer_sizes)[stage][index]);
     Buffer& buffer = slot_buffers[binding.buffer_id];
     TouchBuffer(buffer, binding.buffer_id);
-    const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
-                                 size <= uniform_buffer_skip_cache_size &&
-                                 !memory_tracker.IsRegionGpuModified(cpu_addr, size);
-    if (use_fast_buffer) {
-        if constexpr (IS_OPENGL) {
+
+    if constexpr (IS_OPENGL) {
+        const bool use_fast_buffer = binding.buffer_id != NULL_BUFFER_ID &&
+                                     size <= uniform_buffer_skip_cache_size &&
+                                     !memory_tracker.IsRegionGpuModified(cpu_addr, size);
+        if (use_fast_buffer) {
             if (runtime.HasFastBufferSubData()) {
                 // Fast path for Nvidia
                 const bool should_fast_bind =
@@ -796,18 +797,18 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32 
                 }
                 const auto span = ImmediateBufferWithData(cpu_addr, size);
                 runtime.PushFastUniformBuffer(stage, binding_index, span);
-                return;
+            } else {
+                fast_bound_uniform_buffers[stage] |= 1U << binding_index;
+                uniform_buffer_binding_sizes[stage][binding_index] = size;
+                // Stream buffer path to avoid stalling on non-Nvidia drivers
+                const std::span<u8> span =
+                    runtime.BindMappedUniformBuffer(stage, binding_index, size);
+                cpu_memory.ReadBlockUnsafe(cpu_addr, span.data(), size);
             }
+            return;
         }
-        if constexpr (IS_OPENGL) {
-            fast_bound_uniform_buffers[stage] |= 1U << binding_index;
-            uniform_buffer_binding_sizes[stage][binding_index] = size;
-        }
-        // Stream buffer path to avoid stalling on non-Nvidia drivers or Vulkan
-        const std::span<u8> span = runtime.BindMappedUniformBuffer(stage, binding_index, size);
-        cpu_memory.ReadBlockUnsafe(cpu_addr, span.data(), size);
-        return;
     }
+
     // Classic cached path
     const bool sync_cached = SynchronizeBuffer(buffer, cpu_addr, size);
     if (sync_cached) {
