@@ -70,13 +70,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="async_present">
-          <property name="text">
-           <string>Enable asynchronous presentation (Vulkan only)</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QCheckBox" name="renderer_force_max_clock">
           <property name="toolTip">
            <string>Runs work in the background while waiting for graphics commands to keep the GPU from lowering its clock speed.</string>

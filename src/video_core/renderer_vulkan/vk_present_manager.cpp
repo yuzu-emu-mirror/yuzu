@@ -98,7 +98,7 @@ PresentManager::PresentManager(Core::Frontend::EmuWindow& render_window_, const 
     : render_window{render_window_}, device{device_},
       memory_allocator{memory_allocator_}, scheduler{scheduler_}, swapchain{swapchain_},
       blit_supported{CanBlitToSwapchain(device.GetPhysical(), swapchain.GetImageViewFormat())},
-      use_present_thread{Settings::values.async_presentation.GetValue()},
+      use_present_thread{/*Settings::values.async_presentation.GetValue()*/ true},
       image_count{swapchain.GetImageCount()} {
 
     auto& dld = device.GetLogical();
