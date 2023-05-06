@@ -74,6 +74,7 @@ void LogSettings() {
     log_path("DataStorage_LoadDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::LoadDir));
     log_path("DataStorage_NANDDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir));
     log_path("DataStorage_SDMCDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::SDMCDir));
+    log_path("DataStorage_ShaderDir", Common::FS::GetYuzuPath(Common::FS::YuzuPath::ShaderDir));
     log_setting("Debugging_ProgramArgs", values.program_args.GetValue());
     log_setting("Debugging_GDBStub", values.use_gdbstub.GetValue());
     log_setting("Input_EnableMotion", values.motion_enabled.GetValue());
