@@ -450,7 +450,7 @@ struct Values {
     SwitchableSetting<bool> use_speed_limit{true, "use_speed_limit"};
     SwitchableSetting<u16, true> speed_limit{100, 0, 9999, "speed_limit"};
     SwitchableSetting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
-    SwitchableSetting<GPUAccuracy, true> gpu_accuracy{GPUAccuracy::High, GPUAccuracy::Normal,
+    SwitchableSetting<GPUAccuracy, true> gpu_accuracy{GPUAccuracy::Normal, GPUAccuracy::Normal,
                                                       GPUAccuracy::Extreme, "gpu_accuracy"};
     SwitchableSetting<bool> use_asynchronous_gpu_emulation{true, "use_asynchronous_gpu_emulation"};
     SwitchableSetting<NvdecEmulation> nvdec_emulation{NvdecEmulation::GPU, "nvdec_emulation"};
