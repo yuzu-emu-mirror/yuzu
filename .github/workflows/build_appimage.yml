@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2022 yuzu Emulator Project
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: 'yuzu AppImage'
+
+on: 
+  workflow_dispatch:
+jobs:
+  build:
+    name: 'build'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - type: linux
+            image: linux-fresh
+    container:
+      image: yuzuemu/build-environments:${{ matrix.image }}
+      options: -u 1001
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Set up cache
+        uses: actions/cache@v3
+        id: ccache-restore
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-${{ matrix.type }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.type }}-
+      - name: Create ccache directory
+        if: steps.ccache-restore.outputs.cache-hit != 'true'
+        run: mkdir -p ~/.ccache
+      - name: Build
+        run: ./.ci/scripts/${{ matrix.type }}/docker.sh
+        env:
+          ENABLE_COMPATIBILITY_REPORTING: "ON"
+      - name: Pack
+        run: ./.ci/scripts/${{ matrix.type }}/upload.sh
+        env:
+          NO_SOURCE_PACK: "YES"
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.type }}
+          path: artifacts/
