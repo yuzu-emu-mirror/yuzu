@@ -57,8 +57,6 @@ MICROPROFILE_DECLARE(GPU_PrepareBuffers);
 MICROPROFILE_DECLARE(GPU_BindUploadBuffers);
 MICROPROFILE_DECLARE(GPU_DownloadMemory);
 
-using BufferId = SlotId;
-
 using VideoCore::Surface::PixelFormat;
 using namespace Common::Literals;
 
@@ -466,6 +464,9 @@ private:
 
     void MappedUploadMemory(Buffer& buffer, u64 total_size_bytes, std::span<BufferCopy> copies);
 
+    [[nodiscard]] VideoCommon::BufferCopies FullDownloadCopies(Buffer& buffer, VAddr cpu_addr,
+                                                               u64 size, bool clear = true);
+
     void DownloadBufferMemory(Buffer& buffer_id);
 
     void DownloadBufferMemory(Buffer& buffer_id, VAddr cpu_addr, u64 size);
@@ -569,6 +570,7 @@ private:
     u64 frame_tick = 0;
     u64 total_used_memory = 0;
     u64 minimum_memory = 0;
+    u64 expected_memory = 0;
     u64 critical_memory = 0;
     BufferId inline_buffer_id;
 

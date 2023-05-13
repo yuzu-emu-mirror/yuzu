@@ -914,7 +914,7 @@ void ConvertImage(std::span<const u8> input, const ImageInfo& info, std::span<u8
     }
 }
 
-std::vector<BufferImageCopy> FullDownloadCopies(const ImageInfo& info) {
+boost::container::small_vector<BufferImageCopy, 16> FullDownloadCopies(const ImageInfo& info) {
     const Extent3D size = info.size;
     const u32 bytes_per_block = BytesPerBlock(info.format);
     if (info.type == ImageType::Linear) {
@@ -942,7 +942,7 @@ std::vector<BufferImageCopy> FullDownloadCopies(const ImageInfo& info) {
 
     u32 host_offset = 0;
 
-    std::vector<BufferImageCopy> copies(num_levels);
+    boost::container::small_vector<BufferImageCopy, 16> copies(num_levels);
     for (s32 level = 0; level < num_levels; ++level) {
         const Extent3D level_size = AdjustMipSize(size, level);
         const u32 num_blocks_per_layer = NumBlocks(level_size, tile_size);

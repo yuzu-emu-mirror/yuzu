@@ -47,35 +47,31 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
     void(slot_image_views.insert(runtime, NullImageViewParams{}));
     void(slot_samplers.insert(runtime, sampler_descriptor));
 
-    if constexpr (HAS_DEVICE_MEMORY_INFO) {
-        const s64 device_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
-        const s64 min_spacing_expected = device_memory - 1_GiB - 512_MiB;
-        const s64 min_spacing_critical = device_memory - 1_GiB;
-        const s64 mem_threshold = std::min(device_memory, TARGET_THRESHOLD);
-        const s64 min_vacancy_expected = (6 * mem_threshold) / 10;
-        const s64 min_vacancy_critical = (3 * mem_threshold) / 10;
-        expected_memory = static_cast<u64>(
-            std::max(std::min(device_memory - min_vacancy_expected, min_spacing_expected),
-                     DEFAULT_EXPECTED_MEMORY));
-        critical_memory = static_cast<u64>(
-            std::max(std::min(device_memory - min_vacancy_critical, min_spacing_critical),
-                     DEFAULT_CRITICAL_MEMORY));
-        minimum_memory = static_cast<u64>((device_memory - mem_threshold) / 2);
-    } else {
-        expected_memory = DEFAULT_EXPECTED_MEMORY + 512_MiB;
-        critical_memory = DEFAULT_CRITICAL_MEMORY + 1_GiB;
-        minimum_memory = 0;
-    }
+    const s64 device_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
+    const u64 device_mem_per = device_memory / 100;
+    minimum_memory = device_mem_per * 25;
+    expected_memory = device_mem_per * 50;
+    critical_memory = device_mem_per * 80;
+    LOG_INFO(HW_GPU, "Texture cache device memory limits: min {} expected {} critical {}",
+             minimum_memory, expected_memory, critical_memory);
 }
 
 template <class P>
 void TextureCache<P>::RunGarbageCollector() {
-    bool high_priority_mode = total_used_memory >= expected_memory;
-    bool aggressive_mode = total_used_memory >= critical_memory;
-    const u64 ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 50ULL;
-    size_t num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
-    const auto clean_up = [this, &num_iterations, &high_priority_mode,
-                           &aggressive_mode](ImageId image_id) {
+    if (total_used_memory < minimum_memory) {
+        return;
+    }
+    bool is_expected = total_used_memory >= expected_memory;
+    bool is_critical = total_used_memory >= critical_memory;
+    const u64 ticks_to_destroy = is_critical ? 10ULL : is_expected ? 25ULL : 50ULL;
+    size_t num_iterations = is_critical ? 40 : (is_expected ? 20 : 10);
+    boost::container::small_vector<
+        std::tuple<ImageId, bool, boost::container::small_vector<BufferImageCopy, 16>>, 40>
+        to_delete;
+    u64 total_download_size{0};
+    u32 largest_download_size{0};
+
+    const auto clean_up = [&](ImageId image_id) {
         if (num_iterations == 0) {
             return true;
         }
@@ -86,51 +82,70 @@ void TextureCache<P>::RunGarbageCollector() {
             // used by the async decoder thread.
             return false;
         }
-        const bool must_download =
-            image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
-        if (!high_priority_mode &&
-            (must_download || True(image.flags & ImageFlagBits::CostlyLoad))) {
-            return false;
+
+        const bool do_download = image.IsSafeDownload() &&
+                                 False(image.flags & ImageFlagBits::BadOverlap) &&
+                                 (False(image.flags & ImageFlagBits::CostlyLoad) || is_critical);
+        if (do_download) {
+            total_download_size += image.unswizzled_size_bytes;
+            largest_download_size = std::max(largest_download_size, image.unswizzled_size_bytes);
         }
-        if (must_download) {
-            auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
-            const auto copies = FullDownloadCopies(image.info);
-            image.DownloadMemory(map, copies);
-            runtime.Finish();
-            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
-                         swizzle_data_buffer);
-        }
-        if (True(image.flags & ImageFlagBits::Tracked)) {
-            UntrackImage(image, image_id);
-        }
-        UnregisterImage(image_id);
-        DeleteImage(image_id, image.scale_tick > frame_tick + 5);
-        if (total_used_memory < critical_memory) {
-            if (aggressive_mode) {
-                // Sink the aggresiveness.
-                num_iterations >>= 2;
-                aggressive_mode = false;
-                return false;
-            }
-            if (high_priority_mode && total_used_memory < expected_memory) {
-                num_iterations >>= 1;
-                high_priority_mode = false;
-            }
-        }
+        to_delete.push_back({image_id, do_download, {}});
         return false;
     };
     lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, clean_up);
+
+    if (total_download_size > 0) {
+        auto map = runtime.DownloadStagingBuffer(total_download_size);
+        for (auto& [image_id, do_download, copies] : to_delete) {
+            if (!do_download) {
+                continue;
+            }
+            Image& image = slot_images[image_id];
+            copies = FullDownloadCopies(image.info);
+            image.DownloadMemory(map, copies);
+            map.offset += Common::AlignUp(image.unswizzled_size_bytes, 64);
+        }
+
+        runtime.Finish();
+        swizzle_data_buffer.resize_destructive(Common::AlignUp(largest_download_size, 1024));
+
+        u64 offset{0};
+        for (auto& [image_id, do_download, copies] : to_delete) {
+            Image& image = slot_images[image_id];
+            if (do_download) {
+                for (auto& copy : copies) {
+                    copy.buffer_offset += offset;
+                }
+                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
+                             swizzle_data_buffer);
+                offset += Common::AlignUp(image.unswizzled_size_bytes, 64);
+            }
+            if (True(image.flags & ImageFlagBits::Tracked)) {
+                UntrackImage(image, image_id);
+            }
+            UnregisterImage(image_id);
+            DeleteImage(image_id, image.scale_tick > frame_tick + 5);
+        }
+    } else {
+        for (auto& [image_id, do_download, copies] : to_delete) {
+            Image& image = slot_images[image_id];
+            if (True(image.flags & ImageFlagBits::Tracked)) {
+                UntrackImage(image, image_id);
+            }
+            UnregisterImage(image_id);
+            DeleteImage(image_id, image.scale_tick > frame_tick + 5);
+        }
+    }
 }
 
 template <class P>
 void TextureCache<P>::TickFrame() {
     // If we can obtain the memory info, use it instead of the estimate.
-    if (runtime.CanReportMemoryUsage()) {
+    if (runtime.CanReportMemoryUsage() && frame_tick % 60 == 0) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
-    if (total_used_memory > minimum_memory) {
-        RunGarbageCollector();
-    }
+    RunGarbageCollector();
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();

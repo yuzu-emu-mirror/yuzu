@@ -23,42 +23,94 @@ BufferCache<P>::BufferCache(VideoCore::RasterizerInterface& rasterizer_,
     common_ranges.clear();
     inline_buffer_id = NULL_BUFFER_ID;
 
-    if (!runtime.CanReportMemoryUsage()) {
-        minimum_memory = DEFAULT_EXPECTED_MEMORY;
-        critical_memory = DEFAULT_CRITICAL_MEMORY;
-        return;
-    }
-
     const s64 device_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
-    const s64 min_spacing_expected = device_memory - 1_GiB - 512_MiB;
-    const s64 min_spacing_critical = device_memory - 1_GiB;
-    const s64 mem_threshold = std::min(device_memory, TARGET_THRESHOLD);
-    const s64 min_vacancy_expected = (6 * mem_threshold) / 10;
-    const s64 min_vacancy_critical = (3 * mem_threshold) / 10;
-    minimum_memory = static_cast<u64>(
-        std::max(std::min(device_memory - min_vacancy_expected, min_spacing_expected),
-                 DEFAULT_EXPECTED_MEMORY));
-    critical_memory = static_cast<u64>(
-        std::max(std::min(device_memory - min_vacancy_critical, min_spacing_critical),
-                 DEFAULT_CRITICAL_MEMORY));
+    const u64 device_mem_per = device_memory / 100;
+    minimum_memory = device_mem_per * 25;
+    expected_memory = device_mem_per * 50;
+    critical_memory = device_mem_per * 80;
+    LOG_INFO(HW_GPU, "Buffer cache device memory limits: min {} expected {} critical {}",
+             minimum_memory, expected_memory, critical_memory);
 }
 
 template <class P>
 void BufferCache<P>::RunGarbageCollector() {
-    const bool aggressive_gc = total_used_memory >= critical_memory;
-    const u64 ticks_to_destroy = aggressive_gc ? 60 : 120;
-    int num_iterations = aggressive_gc ? 64 : 32;
-    const auto clean_up = [this, &num_iterations](BufferId buffer_id) {
+    if (total_used_memory < minimum_memory) {
+        return;
+    }
+    bool is_expected = total_used_memory >= expected_memory;
+    bool is_critical = total_used_memory >= critical_memory;
+    const u64 ticks_to_destroy = is_critical ? 60ULL : is_expected ? 120ULL : 240ULL;
+    size_t num_iterations = is_critical ? 40 : (is_expected ? 20 : 10);
+    boost::container::small_vector<std::pair<BufferId, VideoCommon::BufferCopies>, 40> to_delete;
+    u64 total_size{0};
+
+    const auto clean_up = [&](BufferId buffer_id) {
         if (num_iterations == 0) {
             return true;
         }
         --num_iterations;
         auto& buffer = slot_buffers[buffer_id];
-        DownloadBufferMemory(buffer);
-        DeleteBuffer(buffer_id);
+        auto buffer_copies = FullDownloadCopies(buffer, buffer.CpuAddr(), buffer.SizeBytes());
+        total_size += buffer_copies.total_size;
+        to_delete.push_back({buffer_id, std::move(buffer_copies)});
         return false;
     };
     lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, clean_up);
+
+    if (total_size > 0) {
+        if constexpr (USE_MEMORY_MAPS) {
+            auto map = runtime.DownloadStagingBuffer(Common::AlignUp(total_size, 1024));
+            auto base_offset = map.offset;
+
+            for (auto& [buffer_id, buffer_copies] : to_delete) {
+                if (buffer_copies.total_size == 0) {
+                    continue;
+                }
+
+                for (auto& copy : buffer_copies.copies) {
+                    copy.dst_offset += map.offset;
+                }
+
+                auto& buffer = slot_buffers[buffer_id];
+                runtime.CopyBuffer(map.buffer, buffer, buffer_copies.copies);
+                map.offset += buffer_copies.total_size;
+            }
+
+            runtime.Finish();
+
+            for (auto& [buffer_id, buffer_copies] : to_delete) {
+                if (buffer_copies.total_size > 0) {
+                    auto& buffer = slot_buffers[buffer_id];
+                    for (const auto& copy : buffer_copies.copies) {
+                        const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
+                        const u8* copy_mapped_memory =
+                            map.mapped_span.data() + copy.dst_offset - base_offset;
+                        cpu_memory.WriteBlockUnsafe(copy_cpu_addr, copy_mapped_memory, copy.size);
+                    }
+                }
+                DeleteBuffer(buffer_id);
+            }
+        } else {
+            for (auto& [buffer_id, buffer_copies] : to_delete) {
+                if (buffer_copies.total_size == 0) {
+                    continue;
+                }
+                const std::span<u8> immediate_buffer = ImmediateBuffer(buffer_copies.total_size);
+                auto& buffer = slot_buffers[buffer_id];
+                for (const BufferCopy& copy : buffer_copies.copies) {
+                    buffer.ImmediateDownload(copy.src_offset,
+                                             immediate_buffer.subspan(0, copy.size));
+                    const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
+                    cpu_memory.WriteBlockUnsafe(copy_cpu_addr, immediate_buffer.data(), copy.size);
+                }
+                DeleteBuffer(buffer_id);
+            }
+        }
+    } else {
+        for (auto& [buffer_id, buffer_copies] : to_delete) {
+            DeleteBuffer(buffer_id);
+        }
+    }
 }
 
 template <class P>
@@ -77,12 +129,10 @@ void BufferCache<P>::TickFrame() {
     uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
     // If we can obtain the memory info, use it instead of the estimate.
-    if (runtime.CanReportMemoryUsage()) {
+    if (runtime.CanReportMemoryUsage() && frame_tick % 60 == 0) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
-    if (total_used_memory >= minimum_memory) {
-        RunGarbageCollector();
-    }
+    RunGarbageCollector();
     ++frame_tick;
     delayed_destruction_ring.Tick();
 
@@ -1556,17 +1606,13 @@ bool BufferCache<P>::InlineMemory(VAddr dest_address, size_t copy_size,
 }
 
 template <class P>
-void BufferCache<P>::DownloadBufferMemory(Buffer& buffer) {
-    DownloadBufferMemory(buffer, buffer.CpuAddr(), buffer.SizeBytes());
-}
-
-template <class P>
-void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 size) {
-    boost::container::small_vector<BufferCopy, 1> copies;
+VideoCommon::BufferCopies BufferCache<P>::FullDownloadCopies(Buffer& buffer, VAddr cpu_addr,
+                                                             u64 size, bool clear) {
+    boost::container::small_vector<BufferCopy, 16> copies;
     u64 total_size_bytes = 0;
     u64 largest_copy = 0;
-    memory_tracker.ForEachDownloadRangeAndClear(
-        cpu_addr, size, [&](u64 cpu_addr_out, u64 range_size) {
+    memory_tracker.ForEachDownloadRange(
+        cpu_addr, size, clear, [&](u64 cpu_addr_out, u64 range_size) {
             const VAddr buffer_addr = buffer.CpuAddr();
             const auto add_download = [&](VAddr start, VAddr end) {
                 const u64 new_offset = start - buffer_addr;
@@ -1590,22 +1636,35 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
             ClearDownload(subtract_interval);
             common_ranges.subtract(subtract_interval);
         });
-    if (total_size_bytes == 0) {
+    return {total_size_bytes, largest_copy, std::move(copies)};
+}
+
+template <class P>
+void BufferCache<P>::DownloadBufferMemory(Buffer& buffer) {
+    DownloadBufferMemory(buffer, buffer.CpuAddr(), buffer.SizeBytes());
+}
+
+template <class P>
+void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 size) {
+    auto buffer_copies = FullDownloadCopies(buffer, cpu_addr, size);
+    if (buffer_copies.total_size == 0) {
         return;
     }
+
     MICROPROFILE_SCOPE(GPU_DownloadMemory);
 
     if constexpr (USE_MEMORY_MAPS) {
-        auto download_staging = runtime.DownloadStagingBuffer(total_size_bytes);
+        auto download_staging = runtime.DownloadStagingBuffer(buffer_copies.total_size);
         const u8* const mapped_memory = download_staging.mapped_span.data();
-        const std::span<BufferCopy> copies_span(copies.data(), copies.data() + copies.size());
-        for (BufferCopy& copy : copies) {
+        const std::span<BufferCopy> copies_span(buffer_copies.copies.data(),
+                                                buffer_copies.copies.size());
+        for (BufferCopy& copy : buffer_copies.copies) {
             // Modify copies to have the staging offset in mind
             copy.dst_offset += download_staging.offset;
         }
         runtime.CopyBuffer(download_staging.buffer, buffer, copies_span);
         runtime.Finish();
-        for (const BufferCopy& copy : copies) {
+        for (const BufferCopy& copy : buffer_copies.copies) {
             const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
             // Undo the modified offset
             const u64 dst_offset = copy.dst_offset - download_staging.offset;
@@ -1613,8 +1672,8 @@ void BufferCache<P>::DownloadBufferMemory(Buffer& buffer, VAddr cpu_addr, u64 si
             cpu_memory.WriteBlockUnsafe(copy_cpu_addr, copy_mapped_memory, copy.size);
         }
     } else {
-        const std::span<u8> immediate_buffer = ImmediateBuffer(largest_copy);
-        for (const BufferCopy& copy : copies) {
+        const std::span<u8> immediate_buffer = ImmediateBuffer(buffer_copies.largest_copy);
+        for (const BufferCopy& copy : buffer_copies.copies) {
             buffer.ImmediateDownload(copy.src_offset, immediate_buffer.subspan(0, copy.size));
             const VAddr copy_cpu_addr = buffer.CpuAddr() + copy.src_offset;
             cpu_memory.WriteBlockUnsafe(copy_cpu_addr, immediate_buffer.data(), copy.size);

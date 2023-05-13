@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <boost/container/small_vector.hpp>
+
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "video_core/texture_cache/slot_vector.h"
@@ -14,6 +16,7 @@ constexpr size_t MAX_MIP_LEVELS = 14;
 
 constexpr SlotId CORRUPT_ID{0xfffffffe};
 
+using BufferId = SlotId;
 using ImageId = SlotId;
 using ImageMapId = SlotId;
 using ImageViewId = SlotId;
@@ -144,6 +147,12 @@ struct BufferCopy {
     u64 src_offset;
     u64 dst_offset;
     size_t size;
+};
+
+struct BufferCopies {
+    u64 total_size;
+    u64 largest_copy;
+    boost::container::small_vector<BufferCopy, 16> copies;
 };
 
 struct SwizzleParameters {
