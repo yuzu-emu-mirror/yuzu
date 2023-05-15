@@ -279,7 +279,7 @@ void Codec::Decode() {
 }
 
 std::chrono::steady_clock::time_point last_frame_time = std::chrono::steady_clock::now();
-std::chrono::microseconds min_call_interval = std::chrono::microseconds(1000/Settings::values.video_framerate.GetValue()*1000);
+
 AVFramePtr Codec::GetCurrentFrame() {
     // Sometimes VIC will request more frames than have been decoded.
     // in this case, return a nullptr and don't overwrite previous frame data
@@ -294,9 +294,11 @@ AVFramePtr Codec::GetCurrentFrame() {
         std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
         std::chrono::microseconds elapsed =
             std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time);
+        std::chrono::microseconds min_frame_interval =
+            std::chrono::microseconds(1000 / Settings::values.video_framerate.GetValue() * 1000);
 
-        if (elapsed < min_call_interval) {
-            std::this_thread::sleep_for(min_call_interval - elapsed);
+        if (elapsed < min_frame_interval) {
+            std::this_thread::sleep_for(min_frame_interval - elapsed);
             now = std::chrono::steady_clock::now();
             elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time);
         }
