@@ -20,6 +20,9 @@ ConfigureGeneral::ConfigureGeneral(const Core::System& system_, QWidget* parent)
     SetConfiguration();
 
     if (Settings::IsConfiguringGlobal()) {
+        connect(ui->toggle_video_framerate, &QCheckBox::clicked, ui->video_framerate, [this]() {
+            ui->video_framerate->setEnabled(ui->toggle_video_framerate->isChecked());
+        });
         connect(ui->toggle_speed_limit, &QCheckBox::clicked, ui->speed_limit,
                 [this]() { ui->speed_limit->setEnabled(ui->toggle_speed_limit->isChecked()); });
     }
@@ -41,14 +44,19 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_background_pause->setChecked(UISettings::values.pause_when_in_background.GetValue());
     ui->toggle_hide_mouse->setChecked(UISettings::values.hide_mouse.GetValue());
 
+    ui->toggle_video_framerate->setChecked(Settings::values.use_video_framerate.GetValue());
+    ui->video_framerate->setValue(Settings::values.video_framerate.GetValue());
+
     ui->toggle_speed_limit->setChecked(Settings::values.use_speed_limit.GetValue());
     ui->speed_limit->setValue(Settings::values.speed_limit.GetValue());
 
     ui->button_reset_defaults->setEnabled(runtime_lock);
 
     if (Settings::IsConfiguringGlobal()) {
+        ui->video_framerate->setEnabled(Settings::values.use_video_framerate.GetValue());
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue());
     } else {
+        ui->video_framerate->setEnabled(Settings::values.use_video_framerate.GetValue() && use_video_framerate != ConfigurationShared::CheckState::Global);
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue() &&
                                     use_speed_limit != ConfigurationShared::CheckState::Global);
     }
@@ -83,6 +91,12 @@ void ConfigureGeneral::ApplyConfiguration() {
         UISettings::values.pause_when_in_background = ui->toggle_background_pause->isChecked();
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
 
+        if (Settings::values.use_video_framerate.UsingGlobal()) {
+            Settings::values.use_video_framerate.SetValue(
+                ui->toggle_video_framerate->checkState() ==
+                                                      Qt::Checked);
+            Settings::values.video_framerate.SetValue(ui->video_framerate->value());
+        }
         // Guard if during game and set to game-specific value
         if (Settings::values.use_speed_limit.UsingGlobal()) {
             Settings::values.use_speed_limit.SetValue(ui->toggle_speed_limit->checkState() ==
@@ -118,6 +132,8 @@ void ConfigureGeneral::SetupPerGameUI() {
         // Disables each setting if:
         //  - A game is running (thus settings in use), and
         //  - A non-global setting is applied.
+        ui->toggle_video_framerate->setEnabled(Settings::values.use_video_framerate.UsingGlobal());
+        ui->video_framerate->setEnabled(Settings::values.video_framerate.UsingGlobal());
         ui->toggle_speed_limit->setEnabled(Settings::values.use_speed_limit.UsingGlobal());
         ui->speed_limit->setEnabled(Settings::values.speed_limit.UsingGlobal());
 
@@ -131,11 +147,16 @@ void ConfigureGeneral::SetupPerGameUI() {
 
     ui->button_reset_defaults->setVisible(false);
 
+    ConfigurationShared::SetColoredTristate(ui->toggle_video_framerate, Settings::values.use_video_framerate, use_video_framerate);
     ConfigurationShared::SetColoredTristate(ui->toggle_speed_limit,
                                             Settings::values.use_speed_limit, use_speed_limit);
     ConfigurationShared::SetColoredTristate(ui->use_multi_core, Settings::values.use_multi_core,
                                             use_multi_core);
 
+    connect(ui->toggle_video_framerate, &QCheckBox::clicked, ui->video_framerate, [this]() {
+        ui->video_framerate->setEnabled(ui->toggle_video_framerate->isChecked() &&
+                                    (use_video_framerate != ConfigurationShared::CheckState::Global));
+    });
     connect(ui->toggle_speed_limit, &QCheckBox::clicked, ui->speed_limit, [this]() {
         ui->speed_limit->setEnabled(ui->toggle_speed_limit->isChecked() &&
                                     (use_speed_limit != ConfigurationShared::CheckState::Global));

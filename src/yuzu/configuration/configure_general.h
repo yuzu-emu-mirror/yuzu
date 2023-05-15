@@ -46,6 +46,7 @@ private:
     std::unique_ptr<Ui::ConfigureGeneral> ui;
 
     ConfigurationShared::CheckState use_speed_limit;
+    ConfigurationShared::CheckState use_video_framerate;
     ConfigurationShared::CheckState use_multi_core;
 
     const Core::System& system;

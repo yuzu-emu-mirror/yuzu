@@ -456,6 +456,8 @@ struct Values {
     SwitchableSetting<int, true> max_anisotropy{0, 0, 5, "max_anisotropy"};
     SwitchableSetting<bool> use_speed_limit{true, "use_speed_limit"};
     SwitchableSetting<u16, true> speed_limit{100, 0, 9999, "speed_limit"};
+    SwitchableSetting<bool> use_video_framerate{false, "use_video_framerate"};
+    SwitchableSetting<u16, true> video_framerate{30, 1, 240, "video_framerate"};
     SwitchableSetting<bool> use_disk_shader_cache{true, "use_disk_shader_cache"};
     SwitchableSetting<GPUAccuracy, true> gpu_accuracy{GPUAccuracy::High, GPUAccuracy::Normal,
                                                       GPUAccuracy::Extreme, "gpu_accuracy"};

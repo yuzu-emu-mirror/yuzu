@@ -54,6 +54,7 @@ void LogSettings() {
     log_setting("Renderer_AntiAliasing", values.anti_aliasing.GetValue());
     log_setting("Renderer_UseSpeedLimit", values.use_speed_limit.GetValue());
     log_setting("Renderer_SpeedLimit", values.speed_limit.GetValue());
+    log_setting("Renderer_VideoFramerate", values.video_framerate.GetValue());
     log_setting("Renderer_UseDiskShaderCache", values.use_disk_shader_cache.GetValue());
     log_setting("Renderer_GPUAccuracyLevel", values.gpu_accuracy.GetValue());
     log_setting("Renderer_UseAsynchronousGpuEmulation",
@@ -218,6 +219,8 @@ void RestoreGlobalState(bool is_powered_on) {
     values.max_anisotropy.SetGlobal(true);
     values.use_speed_limit.SetGlobal(true);
     values.speed_limit.SetGlobal(true);
+    values.use_video_framerate.SetGlobal(true);
+    values.video_framerate.SetGlobal(true);
     values.use_disk_shader_cache.SetGlobal(true);
     values.gpu_accuracy.SetGlobal(true);
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
