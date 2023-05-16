@@ -58,6 +58,8 @@ public:
     /// Return name of the current codec
     [[nodiscard]] std::string_view GetCurrentCodecName() const;
 
+    std::chrono::steady_clock::time_point last_frame_time = std::chrono::steady_clock::now();
+
 private:
     void InitializeAvCodecContext();
 
