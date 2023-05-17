@@ -360,6 +360,8 @@ private slots:
     void OnShutdownBeginDialog();
     void OnEmulationStopped();
     void OnEmulationStopTimeExpired();
+    void OnDecreaseSpeed();
+    void OnIncreaseSpeed();
 
 private:
     QString GetGameListErrorRemoving(InstalledEntryType type) const;

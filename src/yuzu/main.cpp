@@ -1247,6 +1247,8 @@ void GMainWindow::InitializeHotkeys() {
             render_window->setAttribute(Qt::WA_Hover, true);
         }
     });
+    connect_shortcut(QStringLiteral("Speed Percent Decrease"), &GMainWindow::OnDecreaseSpeed);
+    connect_shortcut(QStringLiteral("Speed Percent Increase"), &GMainWindow::OnIncreaseSpeed);
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -4553,6 +4555,16 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     ui->retranslateUi(this);
     multiplayer_state->retranslateUi();
     UpdateWindowTitle();
+}
+
+void GMainWindow::OnDecreaseSpeed() {
+    int step = 50;
+    Settings::values.speed_limit.SetValue(std::max(Settings::values.speed_limit.GetValue() - step, 0));
+}
+
+void GMainWindow::OnIncreaseSpeed() {
+    int step = 50;
+    Settings::values.speed_limit.SetValue(Settings::values.speed_limit.GetValue() + step);
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
