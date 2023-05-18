@@ -4559,7 +4559,8 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
 
 void GMainWindow::OnDecreaseSpeed() {
     int step = 50;
-    Settings::values.speed_limit.SetValue(std::max(Settings::values.speed_limit.GetValue() - step, 0));
+    Settings::values.speed_limit.SetValue(
+        std::max(Settings::values.speed_limit.GetValue() - step, 0));
 }
 
 void GMainWindow::OnIncreaseSpeed() {
