@@ -56,7 +56,9 @@ void ConfigureGeneral::SetConfiguration() {
         ui->video_framerate->setEnabled(Settings::values.use_video_framerate.GetValue());
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue());
     } else {
-        ui->video_framerate->setEnabled(Settings::values.use_video_framerate.GetValue() && use_video_framerate != ConfigurationShared::CheckState::Global);
+        ui->video_framerate->setEnabled(Settings::values.use_video_framerate.GetValue() &&
+            use_video_framerate !=
+                ConfigurationShared::CheckState::Global);
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue() &&
                                     use_speed_limit != ConfigurationShared::CheckState::Global);
     }
@@ -93,8 +95,7 @@ void ConfigureGeneral::ApplyConfiguration() {
 
         if (Settings::values.use_video_framerate.UsingGlobal()) {
             Settings::values.use_video_framerate.SetValue(
-                ui->toggle_video_framerate->checkState() ==
-                                                      Qt::Checked);
+                ui->toggle_video_framerate->checkState() == Qt::Checked);
             Settings::values.video_framerate.SetValue(ui->video_framerate->value());
         }
         // Guard if during game and set to game-specific value
@@ -147,15 +148,17 @@ void ConfigureGeneral::SetupPerGameUI() {
 
     ui->button_reset_defaults->setVisible(false);
 
-    ConfigurationShared::SetColoredTristate(ui->toggle_video_framerate, Settings::values.use_video_framerate, use_video_framerate);
+    ConfigurationShared::SetColoredTristate(
+        ui->toggle_video_framerate, Settings::values.use_video_framerate, use_video_framerate);
     ConfigurationShared::SetColoredTristate(ui->toggle_speed_limit,
                                             Settings::values.use_speed_limit, use_speed_limit);
     ConfigurationShared::SetColoredTristate(ui->use_multi_core, Settings::values.use_multi_core,
                                             use_multi_core);
 
     connect(ui->toggle_video_framerate, &QCheckBox::clicked, ui->video_framerate, [this]() {
-        ui->video_framerate->setEnabled(ui->toggle_video_framerate->isChecked() &&
-                                    (use_video_framerate != ConfigurationShared::CheckState::Global));
+        ui->video_framerate->setEnabled(
+            ui->toggle_video_framerate->isChecked() &&
+                (use_video_framerate != ConfigurationShared::CheckState::Global));
     });
     connect(ui->toggle_speed_limit, &QCheckBox::clicked, ui->speed_limit, [this]() {
         ui->speed_limit->setEnabled(ui->toggle_speed_limit->isChecked() &&

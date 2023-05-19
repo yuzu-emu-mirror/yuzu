@@ -290,8 +290,10 @@ AVFramePtr Codec::GetCurrentFrame() {
 
     if (Settings::values.use_video_framerate.GetValue()) {
         std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-        std::chrono::microseconds elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time);
-        std::chrono::microseconds min_frame_interval = std::chrono::microseconds(1000 / Settings::values.video_framerate.GetValue() * 1000);
+        std::chrono::microseconds elapsed =
+            std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time);
+        std::chrono::microseconds min_frame_interval =
+            std::chrono::microseconds(1000 / Settings::values.video_framerate.GetValue() * 1000);
 
         if (elapsed < min_frame_interval) {
             std::this_thread::sleep_for(min_frame_interval - elapsed);
