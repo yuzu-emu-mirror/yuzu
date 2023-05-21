@@ -1,6 +1,12 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#if __cpp_lib_chrono >= 201907L
+#include <chrono>
+#else
+#include <ctime>
+#include <limits>
+#endif
 #include <string_view>
 
 #include "common/assert.h"
@@ -15,7 +21,7 @@ static bool configuring_global = true;
 
 std::string GetTimeZoneString() {
     static constexpr std::array timezones{
-        "auto",      "default",   "CET", "CST6CDT", "Cuba",    "EET",    "Egypt",     "Eire",
+        "GMT",       "GMT",       "CET", "CST6CDT", "Cuba",    "EET",    "Egypt",     "Eire",
         "EST",       "EST5EDT",   "GB",  "GB-Eire", "GMT",     "GMT+0",  "GMT-0",     "GMT0",
         "Greenwich", "Hongkong",  "HST", "Iceland", "Iran",    "Israel", "Jamaica",   "Japan",
         "Kwajalein", "Libya",     "MET", "MST",     "MST7MDT", "Navajo", "NZ",        "NZ-CHAT",
@@ -25,7 +31,60 @@ std::string GetTimeZoneString() {
 
     const auto time_zone_index = static_cast<std::size_t>(values.time_zone_index.GetValue());
     ASSERT(time_zone_index < timezones.size());
-    return timezones[time_zone_index];
+    std::string location_name;
+    switch (time_zone_index) {
+    case 0: { // Auto
+#if __cpp_lib_chrono >= 201907L
+        const struct std::chrono::tzdb& time_zone_data = std::chrono::get_tzdb();
+        const std::chrono::time_zone* current_zone = time_zone_data.current_zone();
+        std::string_view current_zone_name = current_zone->name();
+        location_name = current_zone_name;
+#else
+        static constexpr std::array offsets{
+            0,     0,     3600,   -21600, -19768, 7200,   7509,  -1521,  -18000, -18000,
+            -75,   -75,   0,      0,      0,      0,      0,     27402,  -36000, -968,
+            12344, 8454,  -18430, 33539,  40160,  3164,   3600,  -25200, -25200, -25196,
+            41944, 44028, 5040,   -2205,  29143,  -28800, 29160, 30472,  24925,  6952,
+            0,     0,     0,      9017,   0,      0,
+        };
+
+        static constexpr std::array dst{
+            false, false, true,  true,  true,  true,  true,  true,  false, true,  true, true,
+            false, false, false, false, false, true,  false, false, true,  true,  true, true,
+            false, true,  true,  false, true,  true,  true,  true,  true,  true,  true, true,
+            true,  true,  true,  true,  false, false, false, true,  true,  false,
+        };
+
+        const auto now = std::time(nullptr);
+        const struct std::tm local = *std::localtime(&now);
+        const int system_offset = local.tm_gmtoff - (local.tm_isdst ? 3600 : 0);
+
+        int min = std::numeric_limits<int>::max();
+        int min_index = -1;
+        for (u32 i = 2; i < offsets.size(); i++) {
+            // Skip if system is celebrating DST but considered time zone does not
+            if (local.tm_isdst && !dst[i]) {
+                continue;
+            }
+
+            const auto offset = offsets[i];
+            const int difference = std::abs(std::abs(offset) - std::abs(system_offset));
+            if (difference < min) {
+                min = difference;
+                min_index = i;
+            }
+        }
+
+        location_name = timezones[min_index];
+#endif
+        break;
+    }
+    default:
+        location_name = timezones[time_zone_index];
+        break;
+    }
+
+    return location_name;
 }
 
 void LogSettings() {
