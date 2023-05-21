@@ -4,6 +4,8 @@
 add_library(web_service STATIC
     announce_room_json.cpp
     announce_room_json.h
+    cookie.cpp
+    cookie.h
     precompiled_headers.h
     telemetry_json.cpp
     telemetry_json.h
