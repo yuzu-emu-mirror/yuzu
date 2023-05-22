@@ -8,6 +8,8 @@
 #include <limits>
 #endif
 #include <string_view>
+#include <fmt/chrono.h>
+#include <fmt/core.h>
 
 #include "common/assert.h"
 #include "common/fs/path_util.h"
@@ -39,6 +41,11 @@ std::string GetTimeZoneString() {
         const std::chrono::time_zone* current_zone = time_zone_data.current_zone();
         std::string_view current_zone_name = current_zone->name();
         location_name = current_zone_name;
+#elif defined(MINGW)
+        // MinGW has broken strftime -- https://sourceforge.net/p/mingw-w64/bugs/793/
+        // e.g. fmt::format("{:%z}") -- returns "Eastern Daylight Time" when it should be "-0400"
+        location_name = timezones[0];
+        break;
 #else
         static constexpr std::array offsets{
             0,     0,     3600,   -21600, -19768, 7200,   7509,  -1521,  -18000, -18000,
@@ -56,8 +63,16 @@ std::string GetTimeZoneString() {
         };
 
         const auto now = std::time(nullptr);
-        const struct std::tm local = *std::localtime(&now);
-        const int system_offset = local.tm_gmtoff - (local.tm_isdst ? 3600 : 0);
+        const struct std::tm& local = *std::localtime(&now);
+        const std::string clock_offset_s = fmt::format("{:%z}", local);
+        if (clock_offset_s.empty()) {
+            location_name = timezones[0];
+            break;
+        }
+        const int hours_offset = std::stoi(clock_offset_s) / 100;
+        const int minutes_offset = std::stoi(clock_offset_s) - hours_offset * 100;
+        const int system_offset =
+            hours_offset * 3600 + minutes_offset * 60 - (local.tm_isdst ? 3600 : 0);
 
         int min = std::numeric_limits<int>::max();
         int min_index = -1;
