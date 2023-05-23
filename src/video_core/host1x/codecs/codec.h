@@ -60,9 +60,6 @@ public:
 
     std::chrono::steady_clock::time_point last_frame_time = std::chrono::steady_clock::now();
 
-    const std::chrono::microseconds watchdog_waitFrameTimeout =
-        std::chrono::microseconds(1000000); // 1 second
-
 private:
     void InitializeAvCodecContext();
 

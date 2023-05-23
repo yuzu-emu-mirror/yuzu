@@ -295,7 +295,7 @@ AVFramePtr Codec::GetCurrentFrame() {
         std::chrono::microseconds min_frame_interval =
             std::chrono::microseconds(1000 / Settings::values.video_framerate.GetValue() * 1000);
 
-        if (elapsed < min_frame_interval || elapsed > watchdog_waitFrameTimeout) {
+        if (elapsed < min_frame_interval) {
             std::this_thread::sleep_for(min_frame_interval - elapsed);
             now = std::chrono::steady_clock::now();
         }
