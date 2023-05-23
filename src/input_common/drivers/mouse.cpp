@@ -88,13 +88,26 @@ void Mouse::UpdateStickInput() {
         return;
     }
 
-    const float sensitivity =
-        Settings::values.mouse_panning_sensitivity.GetValue() * default_stick_sensitivity;
+    auto mouse_change = last_mouse_change;
+    auto move_distance = mouse_change.Length();
 
-    // Slow movement by 4%
-    last_mouse_change *= 0.96f;
-    SetAxis(identifier, mouse_axis_x, last_mouse_change.x * sensitivity);
-    SetAxis(identifier, mouse_axis_y, -last_mouse_change.y * sensitivity);
+    // Perform at most 1 unit of buffered mouse movement
+    if (move_distance > 1.0f) {
+        mouse_change *= 1.0f / move_distance;
+        move_distance = mouse_change.Length();
+    }
+
+    last_mouse_change -= mouse_change;
+
+    // Decay remaining buffered movement by 5%
+    last_mouse_change *= 0.95f;
+
+    // Stick response is nonlinear, and is not sensitive enough to fine changes
+    const auto sqrt_distance = sqrt(move_distance);
+    mouse_change *= sqrt_distance / move_distance;
+
+    SetAxis(identifier, mouse_axis_x, mouse_change.x);
+    SetAxis(identifier, mouse_axis_y, -mouse_change.y);
 }
 
 void Mouse::UpdateMotionInput() {
@@ -130,48 +143,20 @@ void Mouse::UpdateMotionInput() {
 }
 
 void Mouse::Move(int x, int y, int center_x, int center_y) {
+    const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue() * 0.0012f;
     if (Settings::values.mouse_panning) {
         mouse_panning_timeout = 0;
 
         auto mouse_change =
             (Common::MakeVec(x, y) - Common::MakeVec(center_x, center_y)).Cast<float>();
         last_motion_change += {-mouse_change.y, -mouse_change.x, 0};
-
-        const auto move_distance = mouse_change.Length();
-        if (move_distance == 0) {
-            return;
-        }
-
-        // Make slow movements at least 3 units on length
-        if (move_distance < 3.0f) {
-            // Normalize value
-            mouse_change /= move_distance;
-            mouse_change *= 3.0f;
-        }
-
-        // Average mouse movements
-        last_mouse_change = (last_mouse_change * 0.91f) + (mouse_change * 0.09f);
-
-        const auto last_move_distance = last_mouse_change.Length();
-
-        // Make fast movements clamp to 8 units on length
-        if (last_move_distance > 8.0f) {
-            // Normalize value
-            last_mouse_change /= last_move_distance;
-            last_mouse_change *= 8.0f;
-        }
-
-        // Ignore average if it's less than 1 unit and use current movement value
-        if (last_move_distance < 1.0f) {
-            last_mouse_change = mouse_change / mouse_change.Length();
-        }
+        last_mouse_change += mouse_change * sensitivity * 0.1f;
 
         return;
     }
 
     if (button_pressed) {
         const auto mouse_move = Common::MakeVec<int>(x, y) - mouse_origin;
-        const float sensitivity = Settings::values.mouse_panning_sensitivity.GetValue() * 0.0012f;
         SetAxis(identifier, mouse_axis_x, static_cast<float>(mouse_move.x) * sensitivity);
         SetAxis(identifier, mouse_axis_y, static_cast<float>(-mouse_move.y) * sensitivity);
 
