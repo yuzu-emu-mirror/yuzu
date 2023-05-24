@@ -19,20 +19,22 @@ static bool configuring_global = true;
 
 std::string GetTimeZoneString() {
     const auto time_zone_index = static_cast<std::size_t>(values.time_zone_index.GetValue());
-    ASSERT(time_zone_index < Common::TimeZone::timezones.size());
+    ASSERT(time_zone_index < Common::TimeZone::GetTimeZoneStrings().size());
 
+    std::string location_name;
     if (time_zone_index == 0) { // Auto
 #if __cpp_lib_chrono >= 201907L
         const struct std::chrono::tzdb& time_zone_data = std::chrono::get_tzdb();
         const std::chrono::time_zone* current_zone = time_zone_data.current_zone();
         std::string_view current_zone_name = current_zone->name();
-        return current_zone_name;
+        location_name = current_zone_name;
 #else
-        return Common::TimeZone::FindSystemTimeZone();
+        location_name = Common::TimeZone::FindSystemTimeZone();
 #endif
     } else {
-        return Common::TimeZone::timezones[time_zone_index];
+        location_name = Common::TimeZone::GetTimeZoneStrings()[time_zone_index];
     }
+    return location_name;
 }
 
 void LogSettings() {
