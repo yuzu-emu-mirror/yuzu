@@ -142,6 +142,9 @@ static constexpr bool GetInteger(const char* name, int& offset, int& value, int 
     if (!IsDigit(temp)) {
         return {};
     }
+    if (temp == '0') {
+        return {};
+    }
     do {
         value = value * 10 + (temp - '0');
         if (value > max) {
