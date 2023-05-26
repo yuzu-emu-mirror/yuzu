@@ -44,7 +44,7 @@ u64 GetCurrentBuildID(const Core::System::CurrentBuildProcessID& id) {
 BCATDigest DigestFile(const FileSys::VirtualFile& file) {
     BCATDigest out{};
     const auto bytes = file->ReadAllBytes();
-    mbedtls_md5_ret(bytes.data(), bytes.size(), out.data());
+    mbedtls_md5(bytes.data(), bytes.size(), out.data());
     return out;
 }
 
