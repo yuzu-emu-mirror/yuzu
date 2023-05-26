@@ -100,8 +100,7 @@ std::string FindSystemTimeZone() {
         }
 
         const auto offset = offsets[i];
-        const int difference =
-            static_cast<int>(std::abs(std::abs(offset) - std::abs(system_offset)));
+        const int difference = static_cast<int>(std::abs(offset - system_offset));
         if (difference < min) {
             min = difference;
             min_index = i;
