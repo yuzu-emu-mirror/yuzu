@@ -128,8 +128,9 @@ void JoyconDriver::InputThread(std::stop_token stop_token) {
     Common::SetCurrentThreadName("JoyconInput");
     input_thread_running = true;
 
-    // Max update rate is 5ms, ensure we are always able to read a bit faster
-    constexpr int ThreadDelay = 2;
+    // Max update rate is 5ms, but in normal the console asks Joy-Con for an update
+    // every 15ms, this can help reducing CPU pressure on some weak platform
+    constexpr int ThreadDelay = 15;
     std::vector<u8> buffer(MaxBufferSize);
 
     while (!stop_token.stop_requested()) {
