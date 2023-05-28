@@ -227,7 +227,7 @@ int main(int argc, char** argv) {
     };
 
     while (optind < argc) {
-        int arg = getopt_long(argc, argv, "g:fhvp::c:", long_options, &option_index);
+        int arg = getopt_long(argc, argv, "g:fhvp::c:u:", long_options, &option_index);
         if (arg != -1) {
             switch (static_cast<char>(arg)) {
             case 'c':
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
                 break;
             case 'u':
                 selected_user = atoi(optarg);
-                return 0;
+                break;
             case 'v':
                 PrintVersion();
                 return 0;

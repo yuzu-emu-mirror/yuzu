@@ -473,11 +473,12 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
     }
     if (extensions.push_descriptor && is_intel_anv) {
         const u32 version = (properties.properties.driverVersion << 3) >> 3;
-        if (version >= VK_MAKE_API_VERSION(0, 22, 3, 0)) {
+        if (version >= VK_MAKE_API_VERSION(0, 22, 3, 0) &&
+            version < VK_MAKE_API_VERSION(0, 23, 2, 0)) {
             // Disable VK_KHR_push_descriptor due to
             // mesa/mesa/-/commit/ff91c5ca42bc80aa411cb3fd8f550aa6fdd16bdc
             LOG_WARNING(Render_Vulkan,
-                        "ANV drivers 22.3.0 and later have broken VK_KHR_push_descriptor");
+                        "ANV drivers 22.3.0 to 23.1.0 have broken VK_KHR_push_descriptor");
             extensions.push_descriptor = false;
             loaded_extensions.erase(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         }
@@ -1001,6 +1002,11 @@ u64 Device::GetDeviceMemoryUsage() const {
 }
 
 void Device::CollectPhysicalMemoryInfo() {
+    // Account for resolution scaling in memory limits
+    const size_t normal_memory = 6_GiB;
+    const size_t scaler_memory = 1_GiB * Settings::values.resolution_info.ScaleUp(1);
+
+    // Calculate limits using memory budget
     VkPhysicalDeviceMemoryBudgetPropertiesEXT budget{};
     budget.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
     const auto mem_info =
@@ -1030,6 +1036,7 @@ void Device::CollectPhysicalMemoryInfo() {
     if (!is_integrated) {
         const u64 reserve_memory = std::min<u64>(device_access_memory / 8, 1_GiB);
         device_access_memory -= reserve_memory;
+        device_access_memory = std::min<u64>(device_access_memory, normal_memory + scaler_memory);
         return;
     }
     const s64 available_memory = static_cast<s64>(device_access_memory - device_initial_usage);
