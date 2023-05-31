@@ -695,6 +695,7 @@ void Config::ReadRendererValues() {
 
     ReadGlobalSetting(Settings::values.renderer_backend);
     ReadGlobalSetting(Settings::values.async_presentation);
+    ReadGlobalSetting(Settings::values.use_dxgi_swapchain);
     ReadGlobalSetting(Settings::values.renderer_force_max_clock);
     ReadGlobalSetting(Settings::values.vulkan_device);
     ReadGlobalSetting(Settings::values.fullscreen_mode);
@@ -1323,6 +1324,7 @@ void Config::SaveRendererValues() {
                  static_cast<u32>(Settings::values.renderer_backend.GetDefault()),
                  Settings::values.renderer_backend.UsingGlobal());
     WriteGlobalSetting(Settings::values.async_presentation);
+    WriteGlobalSetting(Settings::values.use_dxgi_swapchain);
     WriteGlobalSetting(Settings::values.renderer_force_max_clock);
     WriteGlobalSetting(Settings::values.vulkan_device);
     WriteSetting(QString::fromStdString(Settings::values.fullscreen_mode.GetLabel()),

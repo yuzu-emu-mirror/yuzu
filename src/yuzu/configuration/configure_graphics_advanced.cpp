@@ -14,6 +14,13 @@ ConfigureGraphicsAdvanced::ConfigureGraphicsAdvanced(const Core::System& system_
 
     SetupPerGameUI();
 
+#ifdef WIN32
+    static constexpr bool is_win32 = true;
+#else
+    static constexpr bool is_win32 = false;
+#endif
+    ui->dxgi_swapchain->setVisible(is_win32);
+
     SetConfiguration();
 
     ui->enable_compute_pipelines_checkbox->setVisible(false);
@@ -33,6 +40,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->enable_compute_pipelines_checkbox->setEnabled(runtime_lock);
 
     ui->async_present->setChecked(Settings::values.async_presentation.GetValue());
+    ui->dxgi_swapchain->setChecked(Settings::values.use_dxgi_swapchain.GetValue());
     ui->renderer_force_max_clock->setChecked(Settings::values.renderer_force_max_clock.GetValue());
     ui->use_reactive_flushing->setChecked(Settings::values.use_reactive_flushing.GetValue());
     ui->async_astc->setChecked(Settings::values.async_astc.GetValue());
@@ -91,6 +99,8 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_compute_pipelines,
                                              ui->enable_compute_pipelines_checkbox,
                                              enable_compute_pipelines);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_dxgi_swapchain,
+                                             ui->dxgi_swapchain, dxgi_swapchain);
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -110,6 +120,7 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setEnabled(Settings::values.gpu_accuracy.UsingGlobal());
         ui->async_present->setEnabled(Settings::values.async_presentation.UsingGlobal());
+        ui->dxgi_swapchain->setEnabled(Settings::values.use_dxgi_swapchain.UsingGlobal());
         ui->renderer_force_max_clock->setEnabled(
             Settings::values.renderer_force_max_clock.UsingGlobal());
         ui->use_reactive_flushing->setEnabled(Settings::values.use_reactive_flushing.UsingGlobal());
@@ -131,6 +142,8 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
 
     ConfigurationShared::SetColoredTristate(ui->async_present, Settings::values.async_presentation,
                                             async_present);
+    ConfigurationShared::SetColoredTristate(ui->dxgi_swapchain, Settings::values.use_dxgi_swapchain,
+                                            dxgi_swapchain);
     ConfigurationShared::SetColoredTristate(ui->renderer_force_max_clock,
                                             Settings::values.renderer_force_max_clock,
                                             renderer_force_max_clock);

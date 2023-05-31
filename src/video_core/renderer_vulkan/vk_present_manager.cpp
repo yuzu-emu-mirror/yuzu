@@ -415,7 +415,7 @@ void PresentManager::CopyToSwapchain(Frame* frame) {
 
     const VkSemaphore present_semaphore = swapchain.CurrentPresentSemaphore();
     const VkSemaphore render_semaphore = swapchain.CurrentRenderSemaphore();
-    const std::array wait_semaphores = {present_semaphore, *frame->render_ready};
+    const std::array wait_semaphores = {*frame->render_ready, present_semaphore};
 
     static constexpr std::array<VkPipelineStageFlags, 2> wait_stage_masks{
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -425,7 +425,7 @@ void PresentManager::CopyToSwapchain(Frame* frame) {
     const VkSubmitInfo submit_info{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .pNext = nullptr,
-        .waitSemaphoreCount = 2U,
+        .waitSemaphoreCount = swapchain.IsDXGI() ? 1U : 2U,
         .pWaitSemaphores = wait_semaphores.data(),
         .pWaitDstStageMask = wait_stage_masks.data(),
         .commandBufferCount = 1,
