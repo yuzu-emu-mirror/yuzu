@@ -4,11 +4,8 @@
 name: 'yuzu verify'
 
 on:
-  push:
-#    branches: [ main ]
-    tags: [ "*" ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 env:
   PR_NUMBER: pr${{ github.event.number }}
 
