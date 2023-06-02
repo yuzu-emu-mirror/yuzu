@@ -166,6 +166,15 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                     IntSetting.CPU_ACCURACY.defaultValue
                 )
             )
+            add(
+                SwitchSetting(
+                    BooleanSetting.PICTURE_IN_PICTURE,
+                    R.string.picture_in_picture,
+                    R.string.picture_in_picture_description,
+                    BooleanSetting.PICTURE_IN_PICTURE.key,
+                    BooleanSetting.PICTURE_IN_PICTURE.defaultValue
+                )
+            )
         }
     }
 

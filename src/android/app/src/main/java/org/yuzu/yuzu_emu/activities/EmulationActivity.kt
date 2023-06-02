@@ -42,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
+import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.SettingsViewModel
 import org.yuzu.yuzu_emu.fragments.EmulationFragment
 import org.yuzu.yuzu_emu.model.Game
@@ -98,9 +99,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
         // Set these options now so that the SurfaceView the game renders into is the right size.
         enableFullscreenImmersive()
-
-        pictureInPictureParamsBuilder = getPictureInPictureBuilder()
-        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
 
         setContentView(R.layout.activity_emulation)
         window.decorView.setBackgroundColor(getColor(android.R.color.black))
@@ -167,6 +165,11 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             EmulationMenuSettings.landscapeScreenLayout,
             getAdjustedRotation()
         )
+
+        if (BooleanSetting.PICTURE_IN_PICTURE.boolean) {
+            pictureInPictureParamsBuilder = getPictureInPictureBuilder()
+            setPictureInPictureParams(pictureInPictureParamsBuilder.build())
+        }
     }
 
     override fun onPause() {
@@ -176,8 +179,10 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onUserLeaveHint() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && !isInPictureInPictureMode) {
-            enterPictureInPictureMode(pictureInPictureParamsBuilder.build())
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            if (BooleanSetting.PICTURE_IN_PICTURE.boolean && !isInPictureInPictureMode) {
+                enterPictureInPictureMode(pictureInPictureParamsBuilder.build())
+            }
         }
     }
 
