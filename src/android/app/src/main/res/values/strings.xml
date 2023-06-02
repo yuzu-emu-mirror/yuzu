@@ -356,6 +356,10 @@
     <string name="use_black_backgrounds">Black backgrounds</string>
     <string name="use_black_backgrounds_description">When using the dark theme, apply black backgrounds.</string>
 
+    <!-- Picture-In-Picture -->
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+
     <!-- Licenses screen strings -->
     <string name="licenses">Licenses</string>
     <string name="license_fidelityfx_fsr" translatable="false">FidelityFX-FSR</string>

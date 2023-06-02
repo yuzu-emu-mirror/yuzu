@@ -4,15 +4,22 @@
 package org.yuzu.yuzu_emu.activities
 
 import android.app.Activity
+import android.app.PendingIntent
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.drawable.Icon
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Display
 import android.view.InputDevice
@@ -60,6 +67,10 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
     private var motionTimestamp: Long = 0
     private var flipMotionOrientation: Boolean = false
 
+    private val actionPause = "ACTION_EMULATOR_PAUSE"
+    private val actionPlay = "ACTION_EMULATOR_PLAY"
+    private lateinit var pictureInPictureParamsBuilder : PictureInPictureParams.Builder
+
     private lateinit var game: Game
 
     private val settingsViewModel: SettingsViewModel by viewModels()
@@ -87,6 +98,9 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
         // Set these options now so that the SurfaceView the game renders into is the right size.
         enableFullscreenImmersive()
+
+        pictureInPictureParamsBuilder = getPictureInPictureBuilder()
+        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
 
         setContentView(R.layout.activity_emulation)
         window.decorView.setBackgroundColor(getColor(android.R.color.black))
@@ -159,6 +173,12 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         super.onPause()
         nfcReader.stopScanning()
         stopMotionSensorListener()
+    }
+
+    override fun onUserLeaveHint() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && !isInPictureInPictureMode) {
+            enterPictureInPictureMode(pictureInPictureParamsBuilder.build())
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -286,6 +306,61 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             controller.hide(WindowInsetsCompat.Type.systemBars())
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    private fun getPictureInPictureBuilder() : PictureInPictureParams.Builder {
+        val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
+
+        val pictureInPictureActions : MutableList<RemoteAction> = mutableListOf()
+        val pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+
+        val pauseIcon = Icon.createWithResource(this, R.drawable.ic_pause)
+        val pausePendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pause, Intent(actionPause), pendingFlags)
+        val pauseRemoteAction = RemoteAction(pauseIcon, getString(R.string.pause), getString(R.string.pause), pausePendingIntent)
+        pictureInPictureActions.add(pauseRemoteAction)
+
+        val playIcon = Icon.createWithResource(this, R.drawable.ic_play)
+        val playPendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_play, Intent(actionPlay), pendingFlags)
+        val playRemoteAction = RemoteAction(playIcon, getString(R.string.play), getString(R.string.play), playPendingIntent)
+        pictureInPictureActions.add(playRemoteAction)
+
+        pictureInPictureParamsBuilder.setActions(pictureInPictureActions)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pictureInPictureParamsBuilder.setAutoEnterEnabled(true)
+        }
+
+        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
+
+        return pictureInPictureParamsBuilder
+    }
+
+    private var pictureInPictureReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context : Context?, intent : Intent) {
+            if (intent.action == actionPause) {
+                emulationFragment?.onPictureInPicturePause()
+            }
+            if (intent.action == actionPlay) {
+                emulationFragment?.onPictureInPicturePlay()
+            }
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        if (isInPictureInPictureMode) {
+            IntentFilter().apply {
+                addAction(actionPause)
+                addAction(actionPlay)
+            }.also {
+                registerReceiver(pictureInPictureReceiver, it)
+            }
+            emulationFragment?.onPictureInPictureEnter()
+        } else {
+            try {
+                unregisterReceiver(pictureInPictureReceiver)
+            } catch (ignored : Exception) { }
+            emulationFragment?.onPictureInPictureLeave()
         }
     }
 
