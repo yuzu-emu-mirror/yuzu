@@ -86,8 +86,8 @@ public:
 
     void AddTransition(GraphicsPipeline* transition);
 
-    void Configure(bool is_indexed) {
-        configure_func(this, is_indexed);
+    void Configure(bool is_indexed, bool& out_has_feedback_loop) {
+        configure_func(this, is_indexed, out_has_feedback_loop);
     }
 
     [[nodiscard]] GraphicsPipeline* Next(const GraphicsPipelineCacheKey& current_key) noexcept {
@@ -105,7 +105,9 @@ public:
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
-        return [](GraphicsPipeline* pl, bool is_indexed) { pl->ConfigureImpl<Spec>(is_indexed); };
+        return [](GraphicsPipeline* pl, bool is_indexed, bool& out_has_feedback_loop) {
+            pl->ConfigureImpl<Spec>(is_indexed, out_has_feedback_loop);
+        };
     }
 
     void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {
@@ -115,7 +117,7 @@ public:
 
 private:
     template <typename Spec>
-    void ConfigureImpl(bool is_indexed);
+    void ConfigureImpl(bool is_indexed, bool& out_has_feedback_loop);
 
     void ConfigureDraw(const RescalingPushConstant& rescaling,
                        const RenderAreaPushConstant& render_are);
@@ -134,7 +136,7 @@ private:
     Scheduler& scheduler;
     GuestDescriptorQueue& guest_descriptor_queue;
 
-    void (*configure_func)(GraphicsPipeline*, bool){};
+    void (*configure_func)(GraphicsPipeline*, bool, bool&){};
 
     std::vector<GraphicsPipelineCacheKey> transition_keys;
     std::vector<GraphicsPipeline*> transitions;

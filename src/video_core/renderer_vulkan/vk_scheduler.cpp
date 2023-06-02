@@ -304,4 +304,23 @@ void Scheduler::AcquireNewChunk() {
     }
 }
 
+void Scheduler::GetFeedbackLoopBarrier(std::array<VkImageMemoryBarrier, 9>& out_barriers,
+                                       u32& out_num_barriers) {
+    out_num_barriers = num_renderpass_images;
+    for (u32 i = 0; i < num_renderpass_images; i++) {
+        out_barriers[i] = VkImageMemoryBarrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = renderpass_images[i],
+            .subresourceRange = renderpass_image_ranges[i],
+        };
+    }
+}
+
 } // namespace Vulkan

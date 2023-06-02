@@ -172,7 +172,7 @@ bool Passes(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
     return true;
 }
 
-using ConfigureFuncPtr = void (*)(GraphicsPipeline*, bool);
+using ConfigureFuncPtr = void (*)(GraphicsPipeline*, bool, bool&);
 
 template <typename Spec, typename... Specs>
 ConfigureFuncPtr FindSpec(const std::array<vk::ShaderModule, NUM_STAGES>& modules,
@@ -296,7 +296,7 @@ void GraphicsPipeline::AddTransition(GraphicsPipeline* transition) {
 }
 
 template <typename Spec>
-void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
+void GraphicsPipeline::ConfigureImpl(bool is_indexed, bool& out_has_feedback_loop) {
     std::array<VideoCommon::ImageViewInOut, MAX_IMAGE_ELEMENTS> views;
     std::array<VkSampler, MAX_IMAGE_ELEMENTS> samplers;
     size_t sampler_index{};
@@ -482,7 +482,7 @@ void GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         prepare_stage(4);
     }
     texture_cache.UpdateRenderTargets(false);
-    texture_cache.CheckFeedbackLoop(views);
+    out_has_feedback_loop = texture_cache.CheckFeedbackLoop(views);
     ConfigureDraw(rescaling, render_area);
 }
 
