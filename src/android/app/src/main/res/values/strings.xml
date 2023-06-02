@@ -64,8 +64,15 @@
     <string name="install_amiibo_keys_description">Required to use Amiibo in game</string>
     <string name="invalid_keys_file">Invalid keys file selected</string>
     <string name="install_keys_success">Keys successfully installed</string>
-    <string name="install_keys_failure">Keys file (prod.keys) is invalid</string>
-    <string name="install_amiibo_keys_failure">Keys file (key_retail.bin) is invalid</string>
+    <string name="reading_keys_failure">Error reading encryption keys</string>
+    <string name="install_keys_failure_extension_description">
+        1. Verify your keys have the .keys extension.\n\n
+        2. Keys must not be stored in the Downloads folder.\n\n
+        Resolve the issue(s) and try again.
+    </string>
+    <string name="invalid_keys_error">Invalid encryption keys</string>
+    <string name="dumping_keys_quickstart_link">https://yuzu-emu.org/help/quickstart/#dumping-decryption-keys</string>
+    <string name="install_keys_failure_description">The selected file is incorrect or corrupt. Please redump your keys.</string>
     <string name="install_gpu_driver">Install GPU driver</string>
     <string name="install_gpu_driver_description">Install alternative drivers for potentially better performance or accuracy</string>
     <string name="advanced_settings">Advanced settings</string>
@@ -80,11 +87,13 @@
     <string name="no_file_manager">No file manager found</string>
     <string name="notification_no_directory_link">Could not open yuzu directory</string>
     <string name="notification_no_directory_link_description">Please locate the user folder with the file manager\'s side panel manually.</string>
-    <string name="import_export_saves">Import/export saves</string>
+    <string name="manage_save_data">Manage save data</string>
+    <string name="manage_save_data_description">Save data found. Please select an option below.</string>
     <string name="import_export_saves_description">Import or export save files</string>
-    <string name="import_export_saves_no_profile">No user profile found. Please launch a game first and retry.</string>
-    <string name="save_file_imported_success">Save files were imported successfully</string>
-    <string name="save_file_invalid_zip_structure">Invalid save directory structure: The first subfolder name must be the title ID of the game.</string>
+    <string name="import_export_saves_no_profile">No save data found. Please launch a game and retry.</string>
+    <string name="save_file_imported_success">Imported successfully</string>
+    <string name="save_file_invalid_zip_structure">Invalid save directory structure</string>
+    <string name="save_file_invalid_zip_structure_description">The first subfolder name must be the title ID of the game.</string>
     <string name="import_saves">Import</string>
     <string name="export_saves">Export</string>
 
@@ -164,6 +173,8 @@
     <string name="reset_all_settings">Reset all settings?</string>
     <string name="reset_all_settings_description">All Advanced Settings will be reset to their default configuration. This can not be undone.</string>
     <string name="settings_reset">Settings reset</string>
+    <string name="close">Close</string>
+    <string name="learn_more">Learn More</string>
 
     <!-- GPU driver installation -->
     <string name="select_gpu_driver">Select GPU driver</string>
@@ -211,7 +222,7 @@
     <string name="emulation_touch_overlay_edit">Edit Overlay</string>
     <string name="emulation_pause">Pause Emulation</string>
     <string name="emulation_unpause">Unpause Emulation</string>
-    <string name="emulation_input_overlay">Input Overlay</string>
+    <string name="emulation_input_overlay">Overlay Options</string>
     <string name="emulation_game_loading">Game loading…</string>
 
     <string name="load_settings">Loading Settings…</string>
