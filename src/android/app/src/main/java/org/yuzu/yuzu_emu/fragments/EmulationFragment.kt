@@ -180,6 +180,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     fun onPictureInPictureEnter() {
+        if (binding.drawerLayout.isOpen) {
+            binding.drawerLayout.close()
+        }
         if (EmulationMenuSettings.showOverlay) {
             binding.surfaceInputOverlay.post { binding.surfaceInputOverlay.isVisible = false }
         }
