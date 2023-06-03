@@ -70,7 +70,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
     private val actionPause = "ACTION_EMULATOR_PAUSE"
     private val actionPlay = "ACTION_EMULATOR_PLAY"
-    private lateinit var pictureInPictureParamsBuilder : PictureInPictureParams.Builder
 
     private lateinit var game: Game
 
@@ -99,8 +98,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
         // Set these options now so that the SurfaceView the game renders into is the right size.
         enableFullscreenImmersive()
-
-        pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
 
         setContentView(R.layout.activity_emulation)
         window.decorView.setBackgroundColor(getColor(android.R.color.black))
@@ -168,10 +165,11 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             getAdjustedRotation()
         )
 
+        val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
-            setPictureInPictureParams(pictureInPictureParamsBuilder.build())
         }
+        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
     }
 
     override fun onPause() {
@@ -183,6 +181,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
     override fun onUserLeaveHint() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             if (BooleanSetting.PICTURE_IN_PICTURE.boolean && !isInPictureInPictureMode) {
+                val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
                 enterPictureInPictureMode(pictureInPictureParamsBuilder.build())
             }
         }
@@ -320,15 +319,18 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         val pictureInPictureActions : MutableList<RemoteAction> = mutableListOf()
         val pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
-        val pauseIcon = Icon.createWithResource(this, R.drawable.ic_pip_pause)
-        val pausePendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_pause, Intent(actionPause), pendingFlags)
-        val pauseRemoteAction = RemoteAction(pauseIcon, getString(R.string.pause), getString(R.string.pause), pausePendingIntent)
-        pictureInPictureActions.add(pauseRemoteAction)
-
-        val playIcon = Icon.createWithResource(this, R.drawable.ic_pip_play)
-        val playPendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_play, Intent(actionPlay), pendingFlags)
-        val playRemoteAction = RemoteAction(playIcon, getString(R.string.play), getString(R.string.play), playPendingIntent)
-        pictureInPictureActions.add(playRemoteAction)
+        val isEmulationPaused = emulationFragment?.isEmulationStatePaused() ?: false
+        if (isEmulationPaused) {
+            val playIcon = Icon.createWithResource(this, R.drawable.ic_pip_play)
+            val playPendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_play, Intent(actionPlay), pendingFlags)
+            val playRemoteAction = RemoteAction(playIcon, getString(R.string.play), getString(R.string.play), playPendingIntent)
+            pictureInPictureActions.add(playRemoteAction)
+        } else {
+            val pauseIcon = Icon.createWithResource(this, R.drawable.ic_pip_pause)
+            val pausePendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_pause, Intent(actionPause), pendingFlags)
+            val pauseRemoteAction = RemoteAction(pauseIcon, getString(R.string.pause), getString(R.string.pause), pausePendingIntent)
+            pictureInPictureActions.add(pauseRemoteAction)
+        }
 
         return PictureInPictureParams.Builder().apply {
             setActions(pictureInPictureActions)
@@ -337,12 +339,16 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
     private var pictureInPictureReceiver = object : BroadcastReceiver() {
         override fun onReceive(context : Context?, intent : Intent) {
-            if (intent.action == actionPause) {
-                emulationFragment?.onPictureInPicturePause()
-            }
             if (intent.action == actionPlay) {
                 emulationFragment?.onPictureInPicturePlay()
+            } else if (intent.action == actionPause) {
+                emulationFragment?.onPictureInPicturePause()
             }
+            val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
+            }
+            setPictureInPictureParams(pictureInPictureParamsBuilder.build())
         }
     }
 

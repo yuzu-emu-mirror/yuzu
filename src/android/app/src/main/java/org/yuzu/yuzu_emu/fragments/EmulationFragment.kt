@@ -179,6 +179,10 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
         super.onDetach()
     }
 
+    fun isEmulationStatePaused() : Boolean {
+        return this::emulationState.isInitialized && emulationState.isPaused
+    }
+
     fun onPictureInPictureEnter() {
         if (binding.drawerLayout.isOpen) {
             binding.drawerLayout.close()
