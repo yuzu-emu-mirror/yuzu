@@ -286,7 +286,8 @@ void main() {
 
 u64 Device::GetCurrentDedicatedVideoMemory() const {
     GLint cur_avail_mem_kb = 0;
-    // this should report the correct size of the VRAM, on integrated devices it shows the size of the UMA Framebuffer
+    // this should report the correct size of the VRAM, on integrated devices it shows the size of
+    // the UMA Framebuffer
     glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &cur_avail_mem_kb);
     return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
 }
