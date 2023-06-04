@@ -22,6 +22,8 @@ public:
 
     [[nodiscard]] std::string GetVendorName() const;
 
+    u64 GetTotalDedicatedVideoMemory() const;
+
     u64 GetCurrentDedicatedVideoMemory() const;
 
     u32 GetMaxUniformBuffers(Shader::Stage stage) const noexcept {

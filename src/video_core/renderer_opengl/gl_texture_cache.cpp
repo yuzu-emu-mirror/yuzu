@@ -568,7 +568,7 @@ ImageBufferMap TextureCacheRuntime::DownloadStagingBuffer(size_t size) {
 
 u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
     if (device.CanReportMemoryUsage()) {
-        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
+        return device.GetTotalDedicatedVideoMemory() - device.GetCurrentDedicatedVideoMemory();
     }
     return 2_GiB;
 }

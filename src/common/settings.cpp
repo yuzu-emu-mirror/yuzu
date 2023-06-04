@@ -238,8 +238,8 @@ void RestoreGlobalState(bool is_powered_on) {
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);
     values.enable_compute_pipelines.SetGlobal(true);
-    values.use_vram_percentage(true);
-    values.vram_percentage(25);
+    values.use_vram_percentage.SetGlobal(true);
+    values.vram_percentage.SetGlobal(true);
 
     // System
     values.language_index.SetGlobal(true);

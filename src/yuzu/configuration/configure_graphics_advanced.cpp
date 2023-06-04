@@ -31,6 +31,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->use_asynchronous_shaders->setEnabled(runtime_lock);
     ui->anisotropic_filtering_combobox->setEnabled(runtime_lock);
     ui->enable_compute_pipelines_checkbox->setEnabled(runtime_lock);
+    ui->use_vram_percentage->setEnabled(runtime_lock);
 
     ui->async_present->setChecked(Settings::values.async_presentation.GetValue());
     ui->renderer_force_max_clock->setChecked(Settings::values.renderer_force_max_clock.GetValue());
@@ -43,7 +44,15 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
     ui->enable_compute_pipelines_checkbox->setChecked(
         Settings::values.enable_compute_pipelines.GetValue());
     ui->use_vram_percentage->setChecked(Settings::values.use_vram_percentage.GetValue());
-    ui->vram_percentage->setVisible(Settings::values.use_vram_percentage.GetValue());
+
+    if (Settings::IsConfiguringGlobal()) {
+        ui->vram_percentage->setEnabled(Settings::values.use_vram_percentage.GetValue() && runtime_lock);
+    } else {
+        ui->vram_percentage->setEnabled(Settings::values.use_vram_percentage.GetValue() &&
+                                    use_vram_percentage != ConfigurationShared::CheckState::Global && runtime_lock);
+    }
+
+    ui->vram_percentage->setValue(Settings::values.vram_percentage.GetValue());
 
 
     if (Settings::IsConfiguringGlobal()) {
@@ -65,6 +74,7 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
                                           !Settings::values.max_anisotropy.UsingGlobal());
         ConfigurationShared::SetHighlight(ui->label_astc_recompression,
                                           !Settings::values.astc_recompression.UsingGlobal());
+        ConfigurationShared::SetHighlight(ui->vram_percentage, !Settings::values.vram_percentage.UsingGlobal());
     }
 }
 
@@ -97,9 +107,7 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vram_percentage,
                                              ui->use_vram_percentage,
                                              use_vram_percentage);
-    ConfigurationShared::ApplyPerGameSetting(&Settings::values.vram_percentage,
-                                             ui->vram_percentage,
-                                             vram_percentage);
+    Settings::values.vram_percentage.SetValue(ui->vram_percentage->value());
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -170,9 +178,11 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     ConfigurationShared::SetColoredTristate(ui->use_vram_percentage,
                                             Settings::values.use_vram_percentage,
                                             use_vram_percentage);
-    ConfigurationShared::SetColoredTristate(ui->vram_percentage,
-                                            Settings::values.vram_percentage,
-                                            vram_percentage);
+
+    connect(ui->use_vram_percentage, &QCheckBox::clicked, ui->vram_percentage, [this]() {
+        ui->vram_percentage->setEnabled(ui->use_vram_percentage->isChecked() &&
+                                    (use_vram_percentage != ConfigurationShared::CheckState::Global));
+    });
 }
 
 void ConfigureGraphicsAdvanced::ExposeComputeOption() {

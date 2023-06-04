@@ -142,7 +142,7 @@ BufferCacheRuntime::BufferCacheRuntime(const Device& device_)
 
 u64 BufferCacheRuntime::GetDeviceMemoryUsage() const {
     if (device.CanReportMemoryUsage()) {
-        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
+        return device.GetTotalDedicatedVideoMemory() - device.GetCurrentDedicatedVideoMemory();
     }
     return 2_GiB;
 }

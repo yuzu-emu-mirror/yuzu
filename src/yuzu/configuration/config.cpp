@@ -757,6 +757,8 @@ void Config::ReadRendererValues() {
     ReadGlobalSetting(Settings::values.bg_red);
     ReadGlobalSetting(Settings::values.bg_green);
     ReadGlobalSetting(Settings::values.bg_blue);
+    ReadGlobalSetting(Settings::values.use_vram_percentage);
+    ReadGlobalSetting(Settings::values.vram_percentage);
 
     if (global) {
         Settings::values.vsync_mode.SetValue(static_cast<Settings::VSyncMode>(
@@ -1412,6 +1414,8 @@ void Config::SaveRendererValues() {
     WriteGlobalSetting(Settings::values.bg_red);
     WriteGlobalSetting(Settings::values.bg_green);
     WriteGlobalSetting(Settings::values.bg_blue);
+    WriteGlobalSetting(Settings::values.use_vram_percentage);
+    WriteGlobalSetting(Settings::values.vram_percentage);
 
     if (global) {
         WriteSetting(QString::fromStdString(Settings::values.vsync_mode.GetLabel()),

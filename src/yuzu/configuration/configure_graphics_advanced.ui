@@ -247,14 +247,19 @@ Compute pipelines are always enabled on all other drivers.</string>
              </item>
             </widget>
            </item>
-           <item>
-            <widget class="QCheckBox" name="use_vram_percentage">
-             <property name="toolTip">
-              <string>Assign the given percentage of the total shared RAM as VRAM</string>
-             </property>
-             <property name="text">
-              <string>Assign RAM percentage as VRAM (Integrated devices only)</string>
-             </property>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_vram">
+          <item>
+           <widget class="QCheckBox" name="use_vram_percentage">
+            <property name="toolTip">
+             <string>Assign the given % of the total shared RAM as VRAM</string>
+            </property>
+            <property name="text">
+             <string>Assign % of RAM as VRAM (Integrated devices only)</string>
+            </property>
             </widget>
            </item>
            <item>
@@ -265,7 +270,7 @@ Compute pipelines are always enabled on all other drivers.</string>
              <property name="minimum">
               <number>10</number>
              </property>
-              <property name="maximum">
+             <property name="maximum">
               <number>90</number>
              </property>
              <property name="value">
@@ -274,13 +279,12 @@ Compute pipelines are always enabled on all other drivers.</string>
             </widget>
            </item>
           </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </item>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">

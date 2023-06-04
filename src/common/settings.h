@@ -487,7 +487,7 @@ struct Values {
     SwitchableSetting<u8> bg_green{0, "bg_green"};
     SwitchableSetting<u8> bg_blue{0, "bg_blue"};
 
-    SwitchableSetting<bool, true> use_vram_percentage{true, "use_vram_percentage"};
+    SwitchableSetting<bool> use_vram_percentage{true, "use_vram_percentage"};
     SwitchableSetting<u8, true> vram_percentage{25, 10, 90, "vram_percentage"};
 
     // System
@@ -614,5 +614,7 @@ void UpdateRescalingInfo();
 
 // Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState(bool is_powered_on);
+
+u64 RAM_Percent_to_Byte(u8 percent);
 
 } // namespace Settings
