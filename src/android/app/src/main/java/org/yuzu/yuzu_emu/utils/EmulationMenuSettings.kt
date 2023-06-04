@@ -41,14 +41,14 @@ object EmulationMenuSettings {
                 .apply()
         }
 
-    var landscapeScreenLayout: Int
+    var screenLayout: Int
         get() = preferences.getInt(
-            Settings.PREF_MENU_SETTINGS_LANDSCAPE,
+            Settings.PREF_MENU_SETTINGS_SCREEN_LAYOUT,
             LayoutOption_MobileLandscape
         )
         set(value) {
             preferences.edit()
-                .putInt(Settings.PREF_MENU_SETTINGS_LANDSCAPE, value)
+                .putInt(Settings.PREF_MENU_SETTINGS_SCREEN_LAYOUT, value)
                 .apply()
         }
     var showFps: Boolean

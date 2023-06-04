@@ -7,6 +7,26 @@
         android:checkable="true" />
 
     <item
+        android:id="@+id/menu_screen_layout"
+        android:title="@string/emulation_screen_rotation">
+        <menu>
+            <group
+                android:id="@+id/menu_screen_layout_group"
+                android:checkableBehavior="single">
+            <item
+                android:id="@+id/menu_screen_layout_landscape"
+                android:title="@string/emulation_screen_rotation_landscape"/>
+            <item
+                android:id="@+id/menu_screen_layout_portrait"
+                android:title="@string/emulation_screen_rotation_portrait"/>
+            <item
+                android:id="@+id/menu_screen_layout_auto"
+                android:title="@string/emulation_screen_rotation_auto"/>
+            </group>
+        </menu>
+    </item>
+
+    <item
         android:id="@+id/menu_edit_overlay"
         android:title="@string/emulation_touch_overlay_edit" />
 

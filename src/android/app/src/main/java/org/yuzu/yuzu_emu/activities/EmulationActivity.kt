@@ -144,7 +144,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         startMotionSensorListener()
 
         NativeLibrary.notifyOrientationChange(
-            EmulationMenuSettings.landscapeScreenLayout,
+            EmulationMenuSettings.screenLayout,
             getAdjustedRotation()
         )
     }
