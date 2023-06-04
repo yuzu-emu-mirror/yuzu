@@ -487,6 +487,9 @@ struct Values {
     SwitchableSetting<u8> bg_green{0, "bg_green"};
     SwitchableSetting<u8> bg_blue{0, "bg_blue"};
 
+    SwitchableSetting<bool, true> use_vram_percentage{true, "use_vram_percentage"};
+    SwitchableSetting<u8, true> vram_percentage{25, 10, 90, "vram_percentage"};
+
     // System
     SwitchableSetting<std::optional<u32>> rng_seed{std::optional<u32>(), "rng_seed"};
     Setting<std::string> device_name{"Yuzu", "device_name"};

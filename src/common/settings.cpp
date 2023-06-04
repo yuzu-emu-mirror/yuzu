@@ -7,6 +7,7 @@
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "common/settings.h"
+#include "common/memory_detect.h"
 
 namespace Settings {
 
@@ -67,6 +68,8 @@ void LogSettings() {
     log_setting("Renderer_ShaderBackend", values.shader_backend.GetValue());
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
+    log_setting("Renderer_UseVRAMPercentage", values.use_vram_percentage.GetValue());
+    log_setting("Renderer_VRAMPercentage", values.vram_percentage.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
     log_setting("Audio_OutputDevice", values.audio_output_device_id.GetValue());
     log_setting("Audio_InputDevice", values.audio_input_device_id.GetValue());
@@ -235,6 +238,8 @@ void RestoreGlobalState(bool is_powered_on) {
     values.bg_green.SetGlobal(true);
     values.bg_blue.SetGlobal(true);
     values.enable_compute_pipelines.SetGlobal(true);
+    values.use_vram_percentage(true);
+    values.vram_percentage(25);
 
     // System
     values.language_index.SetGlobal(true);
@@ -248,6 +253,25 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_docked_mode.SetGlobal(true);
     values.vibration_enabled.SetGlobal(true);
     values.motion_enabled.SetGlobal(true);
+}
+
+// this function only makes sense with integrated devices
+
+u64 RAM_Percent_to_Byte(u8 percent) {
+    // total RAM in byte
+    u64 total_ram = Common::GetMemInfo().TotalPhysicalMemory;
+
+    // clamp percentage between 10 and 90, so we dont run out of either RAM or VRAM
+    if (percent < 10) {
+        percent = 10;
+    }
+
+    if (percent > 90) {
+        percent = 90;
+    }
+
+    // percentage of total RAM in byte
+    return (total_ram * percent) / 100;
 }
 
 } // namespace Settings

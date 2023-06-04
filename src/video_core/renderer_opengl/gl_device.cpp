@@ -284,9 +284,23 @@ void main() {
 })");
 }
 
+u64 Device::GetTotalDedicatedVideoMemory() const {
+    GLint tot_avail_mem_kb = 0;
+    // this should report the correct size of the VRAM, on integrated devices it shows the size of
+    // the UMA Framebuffer
+    glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &tot_avail_mem_kb);
+    // LOG_INFO(Render_OpenGL, "total VRAM: {} GB", tot_avail_mem_kb / f64{1_MiB});
+    f64 percent = Settings::values.vram_percentage.GetValue();
+    u64 vram = Settings::RAM_Percent_to_Byte(percent);
+    return static_cast<u64>(tot_avail_mem_kb) * 1_KiB + vram;
+}
+
+
 u64 Device::GetCurrentDedicatedVideoMemory() const {
     GLint cur_avail_mem_kb = 0;
-    glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &cur_avail_mem_kb);
+    // this should report the currently available video memory
+    glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);
+    // LOG_INFO(Render_OpenGL, "current VRAM: {} GB", cur_avail_mem_kb / f64{1_MiB});
     return static_cast<u64>(cur_avail_mem_kb) * 1_KiB;
 }
 

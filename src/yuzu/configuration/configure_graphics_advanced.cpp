@@ -42,6 +42,9 @@ void ConfigureGraphicsAdvanced::SetConfiguration() {
         Settings::values.use_vulkan_driver_pipeline_cache.GetValue());
     ui->enable_compute_pipelines_checkbox->setChecked(
         Settings::values.enable_compute_pipelines.GetValue());
+    ui->use_vram_percentage->setChecked(Settings::values.use_vram_percentage.GetValue());
+    ui->vram_percentage->setVisible(Settings::values.use_vram_percentage.GetValue());
+
 
     if (Settings::IsConfiguringGlobal()) {
         ui->gpu_accuracy->setCurrentIndex(
@@ -91,6 +94,12 @@ void ConfigureGraphicsAdvanced::ApplyConfiguration() {
     ConfigurationShared::ApplyPerGameSetting(&Settings::values.enable_compute_pipelines,
                                              ui->enable_compute_pipelines_checkbox,
                                              enable_compute_pipelines);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.use_vram_percentage,
+                                             ui->use_vram_percentage,
+                                             use_vram_percentage);
+    ConfigurationShared::ApplyPerGameSetting(&Settings::values.vram_percentage,
+                                             ui->vram_percentage,
+                                             vram_percentage);
 }
 
 void ConfigureGraphicsAdvanced::changeEvent(QEvent* event) {
@@ -158,6 +167,12 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
     ConfigurationShared::SetColoredComboBox(
         ui->astc_recompression_combobox, ui->label_astc_recompression,
         static_cast<int>(Settings::values.astc_recompression.GetValue(true)));
+    ConfigurationShared::SetColoredTristate(ui->use_vram_percentage,
+                                            Settings::values.use_vram_percentage,
+                                            use_vram_percentage);
+    ConfigurationShared::SetColoredTristate(ui->vram_percentage,
+                                            Settings::values.vram_percentage,
+                                            vram_percentage);
 }
 
 void ConfigureGraphicsAdvanced::ExposeComputeOption() {

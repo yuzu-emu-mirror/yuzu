@@ -247,6 +247,32 @@ Compute pipelines are always enabled on all other drivers.</string>
              </item>
             </widget>
            </item>
+           <item>
+            <widget class="QCheckBox" name="use_vram_percentage">
+             <property name="toolTip">
+              <string>Assign the given percentage of the total shared RAM as VRAM</string>
+             </property>
+             <property name="text">
+              <string>Assign RAM percentage as VRAM (Integrated devices only)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="vram_percentage">
+             <property name="suffix">
+              <string>%</string>
+             </property>
+             <property name="minimum">
+              <number>10</number>
+             </property>
+              <property name="maximum">
+              <number>90</number>
+             </property>
+             <property name="value">
+              <number>25</number>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

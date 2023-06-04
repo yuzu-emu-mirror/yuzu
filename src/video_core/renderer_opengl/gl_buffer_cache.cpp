@@ -134,7 +134,7 @@ BufferCacheRuntime::BufferCacheRuntime(const Device& device_)
 
     device_access_memory = [this]() -> u64 {
         if (device.CanReportMemoryUsage()) {
-            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
+            return device.GetTotalDedicatedVideoMemory();
         }
         return 2_GiB; // Return minimum requirements
     }();

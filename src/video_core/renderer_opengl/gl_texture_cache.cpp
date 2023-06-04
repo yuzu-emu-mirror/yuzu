@@ -546,7 +546,7 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
 
     device_access_memory = [this]() -> u64 {
         if (device.CanReportMemoryUsage()) {
-            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
+            return device.GetTotalDedicatedVideoMemory();
         }
         return 2_GiB; // Return minimum requirements
     }();
