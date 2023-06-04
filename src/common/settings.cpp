@@ -6,8 +6,8 @@
 #include "common/assert.h"
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
-#include "common/settings.h"
 #include "common/memory_detect.h"
+#include "common/settings.h"
 
 namespace Settings {
 
@@ -257,7 +257,7 @@ void RestoreGlobalState(bool is_powered_on) {
 
 // this function only makes sense with integrated devices
 
-u64 RAM_Percent_to_Byte(u8 percent) {
+u64 RamPercentToByte(u8 percent) {
     // total RAM in byte
     u64 total_ram = Common::GetMemInfo().TotalPhysicalMemory;
 

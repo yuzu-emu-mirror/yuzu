@@ -292,9 +292,8 @@ u64 Device::GetTotalDedicatedVideoMemory() const {
 
     if (Settings::values.use_vram_percentage.GetValue()) {
         u8 percent = Settings::values.vram_percentage.GetValue();
-        return Settings::RAM_Percent_to_Byte(percent);
-    }
-    else {
+        return Settings::RamPercentToByte(percent);
+    } else {
         // this is according to both former settings in the gl_buffer_cache
         // and gl_texture_cache, regarding device_access_memory
         return static_cast<u64>(tot_avail_mem_kb) * 1_KiB + 512_MiB;
