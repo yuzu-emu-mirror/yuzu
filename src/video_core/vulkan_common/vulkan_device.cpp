@@ -1042,7 +1042,7 @@ void Device::CollectPhysicalMemoryInfo() {
     const u8 percent = Settings::values.vram_percentage.GetValue();
     const s64 available_memory = static_cast<s64>(device_access_memory - device_initial_usage);
     const s64 limit = Settings::values.use_vram_percentage.GetValue()
-                          ? Settings::RamPercentToByte(percent)
+                          ? Settings::RamPercentToBytes(percent)
                           : 4_GiB;
     device_access_memory = static_cast<u64>(std::max<s64>(
         std::min<s64>(available_memory - 8_GiB, 4_GiB), std::min<s64>(local_memory, limit)));

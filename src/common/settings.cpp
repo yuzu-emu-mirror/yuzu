@@ -257,8 +257,8 @@ void RestoreGlobalState(bool is_powered_on) {
 
 // this function only makes sense with integrated devices
 
-u64 RamPercentToByte(u8 percent) {
-    // total RAM in byte
+u64 RamPercentToBytes(u8 percent) {
+    // total RAM in bytes
     u64 total_ram = Common::GetMemInfo().TotalPhysicalMemory;
 
     // clamp percentage between 10 and 90, so we dont run out of either RAM or VRAM
