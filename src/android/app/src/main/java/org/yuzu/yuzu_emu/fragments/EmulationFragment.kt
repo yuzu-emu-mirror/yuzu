@@ -187,16 +187,13 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
         val emulatorLayout = when (newConfig.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
             Configuration.ORIENTATION_PORTRAIT -> { EmulationMenuSettings.LayoutOption_MobilePortrait }
-            Configuration.ORIENTATION_UNDEFINED -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
             else -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
         }
 
         emulationActivity?.let {
             var rotation = it.getSystemService<DisplayManager>()!!
                 .getDisplay(Display.DEFAULT_DISPLAY).rotation
-            if ((newConfig.screenLayout and Configuration.SCREENLAYOUT_LONG_YES) == 0 ||
-                (newConfig.screenLayout and Configuration.SCREENLAYOUT_LONG_NO) != 0
-            ) {
+            if (newConfig.orientation != Configuration.ORIENTATION_PORTRAIT) {
                 rotation = when (rotation) {
                     Surface.ROTATION_0 -> Surface.ROTATION_90
                     Surface.ROTATION_90 -> Surface.ROTATION_0
@@ -205,7 +202,13 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                     else -> { rotation }
                 }
             }
-            NativeLibrary.notifyOrientationChange(emulatorLayout, rotation)
+            if (it.isInPictureInPictureMode) {
+                NativeLibrary.notifyOrientationChange(
+                    EmulationMenuSettings.LayoutOption_MobileLandscape, rotation
+                )
+            } else {
+                NativeLibrary.notifyOrientationChange(emulatorLayout, rotation)
+            }
         }
     }
 

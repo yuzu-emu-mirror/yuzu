@@ -6,15 +6,12 @@ package org.yuzu.yuzu_emu.activities
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.graphics.Rect
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.hardware.display.DisplayManager
 import android.os.Bundle
-import android.view.Display
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -22,7 +19,6 @@ import android.view.Surface
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.getSystemService
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -144,8 +140,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         startMotionSensorListener()
 
         NativeLibrary.notifyOrientationChange(
-            EmulationMenuSettings.screenLayout,
-            getAdjustedRotation()
+            EmulationMenuSettings.LayoutOption_MobileLandscape,
+            Surface.ROTATION_90
         )
     }
 
@@ -251,23 +247,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor, i: Int) {}
-
-    private fun getAdjustedRotation():Int {
-        val rotation = getSystemService<DisplayManager>()!!.getDisplay(Display.DEFAULT_DISPLAY).rotation
-        val config: Configuration = resources.configuration
-
-        if ((config.screenLayout and Configuration.SCREENLAYOUT_LONG_YES) != 0 ||
-            (config.screenLayout and Configuration.SCREENLAYOUT_LONG_NO) == 0) {
-            return rotation
-        }
-        when (rotation) {
-            Surface.ROTATION_0 -> return Surface.ROTATION_90
-            Surface.ROTATION_90 -> return Surface.ROTATION_0
-            Surface.ROTATION_180 -> return Surface.ROTATION_270
-            Surface.ROTATION_270 -> return Surface.ROTATION_180
-        }
-        return rotation
-    }
 
     private fun restoreState(savedInstanceState: Bundle) {
         game = savedInstanceState.parcelable(EXTRA_SELECTED_GAME)!!
