@@ -615,6 +615,6 @@ void UpdateRescalingInfo();
 // Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState(bool is_powered_on);
 
-u64 RamPercentToBytes(u8 percent);
+u64 RamPercentageToBytes(u8 percent);
 
 } // namespace Settings

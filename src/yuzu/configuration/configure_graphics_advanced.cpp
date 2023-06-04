@@ -180,8 +180,9 @@ void ConfigureGraphicsAdvanced::SetupPerGameUI() {
         ui->use_vram_percentage, Settings::values.use_vram_percentage, use_vram_percentage);
 
     connect(ui->use_vram_percentage, &QCheckBox::clicked, ui->vram_percentage, [this]() {
-        ui->vram_percentage->setEnabled(ui->use_vram_percentage->isChecked() &&
-                                    (use_vram_percentage != ConfigurationShared::CheckState::Global));
+        ui->vram_percentage->setEnabled(
+            ui->use_vram_percentage->isChecked() &&
+            (use_vram_percentage != ConfigurationShared::CheckState::Global));
     });
 }
 
