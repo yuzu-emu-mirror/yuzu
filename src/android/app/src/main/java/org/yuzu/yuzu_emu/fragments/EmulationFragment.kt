@@ -184,12 +184,11 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        var emulatorLayout = 5
-        when (newConfig.orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> { emulatorLayout = 5 }
-            Configuration.ORIENTATION_PORTRAIT -> { emulatorLayout = 4 }
-            Configuration.ORIENTATION_UNDEFINED -> { emulatorLayout = 5 }
-            else -> {}
+        val emulatorLayout = when (newConfig.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
+            Configuration.ORIENTATION_PORTRAIT -> { EmulationMenuSettings.LayoutOption_MobilePortrait }
+            Configuration.ORIENTATION_UNDEFINED -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
+            else -> { EmulationMenuSettings.LayoutOption_MobileLandscape }
         }
 
         emulationActivity?.let {
@@ -253,9 +252,15 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
     private fun updateScreenLayout() {
         emulationActivity?.let {
             when (EmulationMenuSettings.screenLayout) {
-                5 -> { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE }
-                4 -> { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT }
-                0 -> { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+                EmulationMenuSettings.LayoutOption_MobileLandscape -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+                }
+                EmulationMenuSettings.LayoutOption_MobilePortrait -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
+                }
+                EmulationMenuSettings.LayoutOption_Default -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
                 else -> { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE }
             }
         }
@@ -312,9 +317,15 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
             findItem(R.id.menu_toggle_fps).isChecked = EmulationMenuSettings.showFps
             findItem(R.id.menu_screen_layout).subMenu?.let { subMenu ->
                 when (EmulationMenuSettings.screenLayout) {
-                    5 -> { subMenu.findItem(R.id.menu_screen_layout_landscape).isChecked = true }
-                    4 -> { subMenu.findItem(R.id.menu_screen_layout_portrait).isChecked = true }
-                    0 -> { subMenu.findItem(R.id.menu_screen_layout_auto).isChecked = true }
+                    EmulationMenuSettings.LayoutOption_MobileLandscape -> {
+                        subMenu.findItem(R.id.menu_screen_layout_landscape).isChecked = true
+                    }
+                    EmulationMenuSettings.LayoutOption_MobilePortrait -> {
+                        subMenu.findItem(R.id.menu_screen_layout_portrait).isChecked = true
+                    }
+                    EmulationMenuSettings.LayoutOption_Default -> {
+                        subMenu.findItem(R.id.menu_screen_layout_auto).isChecked = true
+                    }
                     else -> { subMenu.findItem(R.id.menu_screen_layout_landscape).isChecked = true }
                 }
             }
@@ -334,19 +345,19 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                 }
 
                 R.id.menu_screen_layout_landscape -> {
-                    EmulationMenuSettings.screenLayout = 5
+                    EmulationMenuSettings.screenLayout = EmulationMenuSettings.LayoutOption_MobileLandscape
                     updateScreenLayout()
                     false
                 }
 
                 R.id.menu_screen_layout_portrait -> {
-                    EmulationMenuSettings.screenLayout = 4
+                    EmulationMenuSettings.screenLayout = EmulationMenuSettings.LayoutOption_MobilePortrait
                     updateScreenLayout()
                     false
                 }
 
                 R.id.menu_screen_layout_auto -> {
-                    EmulationMenuSettings.screenLayout = 0
+                    EmulationMenuSettings.screenLayout = EmulationMenuSettings.LayoutOption_Default
                     updateScreenLayout()
                     false
                 }
