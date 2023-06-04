@@ -300,7 +300,6 @@ u64 Device::GetTotalDedicatedVideoMemory() const {
     }
 }
 
-
 u64 Device::GetCurrentDedicatedVideoMemory() const {
     GLint cur_avail_mem_kb = 0;
     // this should report the currently available video memory
