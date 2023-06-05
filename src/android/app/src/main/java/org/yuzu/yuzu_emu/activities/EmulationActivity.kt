@@ -21,6 +21,7 @@ import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.view.Display
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
+import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.features.settings.model.SettingsViewModel
 import org.yuzu.yuzu_emu.fragments.EmulationFragment
 import org.yuzu.yuzu_emu.model.Game
@@ -165,7 +167,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             getAdjustedRotation()
         )
 
-        val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
+        val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
+            .getPictureInPictureActionsBuilder().getPictureInPictureAspectBuilder()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
         }
@@ -181,7 +184,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
     override fun onUserLeaveHint() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             if (BooleanSetting.PICTURE_IN_PICTURE.boolean && !isInPictureInPictureMode) {
-                val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
+                val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
+                    .getPictureInPictureActionsBuilder().getPictureInPictureAspectBuilder()
                 enterPictureInPictureMode(pictureInPictureParamsBuilder.build())
             }
         }
@@ -315,26 +319,48 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
-    private fun getPictureInPictureActionsBuilder() : PictureInPictureParams.Builder {
+    private fun PictureInPictureParams.Builder.getPictureInPictureAspectBuilder() : PictureInPictureParams.Builder {
+        val aspectRatio = when (IntSetting.RENDERER_ASPECT_RATIO.int) {
+            0 -> Rational(16, 9)
+            1 -> Rational(4, 3)
+            2 -> Rational(21, 9)
+            3 -> Rational(16, 10)
+            else -> null
+        }
+        return this.apply { aspectRatio?.let { setAspectRatio(it) } }
+    }
+
+    private fun PictureInPictureParams.Builder.getPictureInPictureActionsBuilder() : PictureInPictureParams.Builder {
         val pictureInPictureActions : MutableList<RemoteAction> = mutableListOf()
         val pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
         val isEmulationPaused = emulationFragment?.isEmulationStatePaused() ?: false
         if (isEmulationPaused) {
-            val playIcon = Icon.createWithResource(this, R.drawable.ic_pip_play)
-            val playPendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_play, Intent(actionPlay), pendingFlags)
+            val playIcon = Icon.createWithResource(this@EmulationActivity, R.drawable.ic_pip_play)
+            val playPendingIntent = PendingIntent.getBroadcast(
+                this@EmulationActivity, R.drawable.ic_pip_play, Intent(actionPlay), pendingFlags
+            )
             val playRemoteAction = RemoteAction(playIcon, getString(R.string.play), getString(R.string.play), playPendingIntent)
             pictureInPictureActions.add(playRemoteAction)
         } else {
-            val pauseIcon = Icon.createWithResource(this, R.drawable.ic_pip_pause)
-            val pausePendingIntent = PendingIntent.getBroadcast(this, R.drawable.ic_pip_pause, Intent(actionPause), pendingFlags)
+            val pauseIcon = Icon.createWithResource(this@EmulationActivity, R.drawable.ic_pip_pause)
+            val pausePendingIntent = PendingIntent.getBroadcast(
+                this@EmulationActivity, R.drawable.ic_pip_pause, Intent(actionPause), pendingFlags
+            )
             val pauseRemoteAction = RemoteAction(pauseIcon, getString(R.string.pause), getString(R.string.pause), pausePendingIntent)
             pictureInPictureActions.add(pauseRemoteAction)
         }
 
-        return PictureInPictureParams.Builder().apply {
-            setActions(pictureInPictureActions)
+        return this.apply { setActions(pictureInPictureActions) }
+    }
+
+    fun setPictureInPictureParamsExternal() {
+        val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
+            .getPictureInPictureActionsBuilder().getPictureInPictureAspectBuilder()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
         }
+        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
     }
 
     private var pictureInPictureReceiver = object : BroadcastReceiver() {
@@ -344,7 +370,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             } else if (intent.action == actionPause) {
                 emulationFragment?.onPictureInPicturePause()
             }
-            val pictureInPictureParamsBuilder = getPictureInPictureActionsBuilder()
+            val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
+                .getPictureInPictureActionsBuilder().getPictureInPictureAspectBuilder()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
             }
