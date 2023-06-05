@@ -7,10 +7,13 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Color
+import android.hardware.display.DisplayManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -18,7 +21,10 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.getSystemService
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
@@ -37,6 +43,7 @@ import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.activities.EmulationActivity
 import org.yuzu.yuzu_emu.databinding.DialogOverlayAdjustBinding
 import org.yuzu.yuzu_emu.databinding.FragmentEmulationBinding
+import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.features.settings.model.Settings
 import org.yuzu.yuzu_emu.features.settings.ui.SettingsActivity
 import org.yuzu.yuzu_emu.features.settings.utils.SettingsFile
@@ -55,11 +62,19 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
 
     private lateinit var game: Game
 
+    private lateinit var onReturnFromSettings: ActivityResultLauncher<Intent>
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is EmulationActivity) {
             emulationActivity = context
             NativeLibrary.setEmulationActivity(context)
+
+            onReturnFromSettings = context.activityResultRegistry.register(
+                "SettingsResult", ActivityResultContracts.StartActivityForResult()
+            ) {
+                updateScreenLayout()
+            }
         } else {
             throw IllegalStateException("EmulationFragment must have EmulationActivity parent")
         }
@@ -124,7 +139,9 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                 }
 
                 R.id.menu_settings -> {
-                    SettingsActivity.launch(requireContext(), SettingsFile.FILE_NAME_CONFIG, "")
+                    SettingsActivity.launch(
+                        requireContext(), onReturnFromSettings, SettingsFile.FILE_NAME_CONFIG, ""
+                    )
                     true
                 }
 
@@ -177,6 +194,38 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
     override fun onDetach() {
         NativeLibrary.clearEmulationActivity()
         super.onDetach()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        val emulatorLayout = when (newConfig.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> { Settings.LayoutOption_MobileLandscape }
+            Configuration.ORIENTATION_PORTRAIT -> { Settings.LayoutOption_MobilePortrait }
+            else -> { Settings.LayoutOption_MobilePortrait }
+        }
+
+        emulationActivity?.let {
+            var rotation = it.getSystemService<DisplayManager>()!!
+                .getDisplay(Display.DEFAULT_DISPLAY).rotation
+            if (it.isInPictureInPictureMode) {
+                NativeLibrary.notifyOrientationChange(
+                    Settings.LayoutOption_MobileLandscape,
+                    Surface.ROTATION_90
+                )
+            } else {
+                if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    rotation = when (rotation) {
+                        Surface.ROTATION_0 -> Surface.ROTATION_90
+                        Surface.ROTATION_90 -> Surface.ROTATION_0
+                        Surface.ROTATION_180 -> Surface.ROTATION_270
+                        Surface.ROTATION_270 -> Surface.ROTATION_180
+                        else -> { rotation }
+                    }
+                }
+                NativeLibrary.notifyOrientationChange(emulatorLayout, rotation)
+            }
+        }
     }
 
     fun isEmulationStatePaused() : Boolean {
@@ -249,6 +298,25 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
         }
     }
 
+    @SuppressLint("SourceLockedOrientationActivity")
+    private fun updateScreenLayout() {
+        emulationActivity?.let {
+            when (IntSetting.RENDERER_SCREEN_LAYOUT.int) {
+                Settings.LayoutOption_MobileLandscape -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+                }
+                Settings.LayoutOption_MobilePortrait -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
+                }
+                Settings.LayoutOption_Default -> {
+                    it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+                else -> { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE }
+            }
+            onConfigurationChanged(resources.configuration)
+        }
+    }
+
     private val Number.toPx get() = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), Resources.getSystem().displayMetrics).toInt()
 
     fun updateCurrentLayout(emulationActivity: EmulationActivity, newLayoutInfo: WindowLayoutInfo) {
@@ -269,7 +337,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
             binding.inGameMenu.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
             binding.overlayContainer.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
             binding.overlayContainer.updatePadding(0, 0, 0, 0)
-            emulationActivity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            updateScreenLayout()
         }
         binding.surfaceInputOverlay.requestLayout()
         binding.inGameMenu.requestLayout()

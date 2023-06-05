@@ -31,7 +31,6 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.getSystemService
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -45,11 +44,11 @@ import org.yuzu.yuzu_emu.NativeLibrary
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.IntSetting
+import org.yuzu.yuzu_emu.features.settings.model.Settings
 import org.yuzu.yuzu_emu.features.settings.model.SettingsViewModel
 import org.yuzu.yuzu_emu.fragments.EmulationFragment
 import org.yuzu.yuzu_emu.model.Game
 import org.yuzu.yuzu_emu.utils.ControllerMappingHelper
-import org.yuzu.yuzu_emu.utils.EmulationMenuSettings
 import org.yuzu.yuzu_emu.utils.ForegroundService
 import org.yuzu.yuzu_emu.utils.InputHandler
 import org.yuzu.yuzu_emu.utils.NfcReader
@@ -163,8 +162,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         startMotionSensorListener()
 
         NativeLibrary.notifyOrientationChange(
-            EmulationMenuSettings.landscapeScreenLayout,
-            getAdjustedRotation()
+            Settings.LayoutOption_MobileLandscape,
+            Surface.ROTATION_90
         )
 
         val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
@@ -288,23 +287,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor, i: Int) {}
 
-    private fun getAdjustedRotation():Int {
-        val rotation = getSystemService<DisplayManager>()!!.getDisplay(Display.DEFAULT_DISPLAY).rotation
-        val config: Configuration = resources.configuration
-
-        if ((config.screenLayout and Configuration.SCREENLAYOUT_LONG_YES) != 0 ||
-            (config.screenLayout and Configuration.SCREENLAYOUT_LONG_NO) == 0) {
-            return rotation
-        }
-        when (rotation) {
-            Surface.ROTATION_0 -> return Surface.ROTATION_90
-            Surface.ROTATION_90 -> return Surface.ROTATION_0
-            Surface.ROTATION_180 -> return Surface.ROTATION_270
-            Surface.ROTATION_270 -> return Surface.ROTATION_180
-        }
-        return rotation
-    }
-
     private fun restoreState(savedInstanceState: Bundle) {
         game = savedInstanceState.parcelable(EXTRA_SELECTED_GAME)!!
     }
@@ -352,15 +334,6 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         }
 
         return this.apply { setActions(pictureInPictureActions) }
-    }
-
-    fun setPictureInPictureParamsExternal() {
-        val pictureInPictureParamsBuilder = PictureInPictureParams.Builder()
-            .getPictureInPictureActionsBuilder().getPictureInPictureAspectBuilder()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            pictureInPictureParamsBuilder.setAutoEnterEnabled(BooleanSetting.PICTURE_IN_PICTURE.boolean)
-        }
-        setPictureInPictureParams(pictureInPictureParamsBuilder.build())
     }
 
     private var pictureInPictureReceiver = object : BroadcastReceiver() {
