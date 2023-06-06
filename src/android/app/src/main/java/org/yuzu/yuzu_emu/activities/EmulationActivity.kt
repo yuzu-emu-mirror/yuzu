@@ -21,6 +21,7 @@ import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Rational
 import android.view.Display
 import android.view.InputDevice
@@ -28,6 +29,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.View
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -76,6 +78,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
 
     private val settingsViewModel: SettingsViewModel by viewModels()
 
+    var screenDimensions : IntArray = intArrayOf()
+
     override fun onDestroy() {
         stopForegroundService(this)
         super.onDestroy()
@@ -103,6 +107,8 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
         setContentView(R.layout.activity_emulation)
         window.decorView.setBackgroundColor(getColor(android.R.color.black))
 
+        screenDimensions = getDisplayParams()
+
         // Find or create the EmulationFragment
         emulationFragment =
             supportFragmentManager.findFragmentById(R.id.frame_emulation_fragment) as EmulationFragment?
@@ -124,7 +130,7 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 WindowInfoTracker.getOrCreate(this@EmulationActivity)
                     .windowLayoutInfo(this@EmulationActivity)
-                    .collect { emulationFragment?.updateCurrentLayout(this@EmulationActivity, it) }
+                    .collect { emulationFragment?.updateFoldableLayout(this@EmulationActivity, it) }
             }
         }
 
@@ -310,6 +316,13 @@ class EmulationActivity : AppCompatActivity(), SensorEventListener {
             else -> null
         }
         return this.apply { aspectRatio?.let { setAspectRatio(it) } }
+    }
+
+    private fun getDisplayParams(): IntArray {
+        return with (getSystemService(WINDOW_SERVICE) as WindowManager) {
+            val metrics = maximumWindowMetrics.bounds
+            intArrayOf(metrics.width(), metrics.height())
+        }
     }
 
     private fun PictureInPictureParams.Builder.getPictureInPictureActionsBuilder() : PictureInPictureParams.Builder {

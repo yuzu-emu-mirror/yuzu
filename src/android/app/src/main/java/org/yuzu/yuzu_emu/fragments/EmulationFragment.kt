@@ -223,8 +223,30 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
                         else -> { rotation }
                     }
                 }
+                getScaledOrDefaultView(newConfig)
                 NativeLibrary.notifyOrientationChange(emulatorLayout, rotation)
             }
+        }
+    }
+
+    private fun getScaledOrDefaultView(config: Configuration?) {
+        emulationActivity?.let {
+            val orientation = config?.orientation ?: resources.configuration.orientation
+            if (orientation == Configuration.ORIENTATION_PORTRAIT && !it.isInPictureInPictureMode) {
+                if (it.screenDimensions.isNotEmpty()) {
+                    binding.surfaceEmulation.layoutParams.width = it.screenDimensions[0]
+                    binding.overlayContainer.layoutParams.width = it.screenDimensions[0]
+                    binding.surfaceEmulation.layoutParams.height = it.screenDimensions[1]
+                    binding.overlayContainer.layoutParams.height = it.screenDimensions[1]
+                }
+            } else {
+                binding.surfaceEmulation.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+                binding.overlayContainer.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+                binding.surfaceEmulation.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+                binding.overlayContainer.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+            }
+            binding.surfaceEmulation.requestLayout()
+            binding.overlayContainer.requestLayout()
         }
     }
 
@@ -233,6 +255,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
     }
 
     fun onPictureInPictureEnter() {
+        getScaledOrDefaultView(null)
         if (binding.drawerLayout.isOpen) {
             binding.drawerLayout.close()
         }
@@ -257,6 +280,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
         if (EmulationMenuSettings.showOverlay) {
             binding.surfaceInputOverlay.post { binding.surfaceInputOverlay.isVisible = true }
         }
+        getScaledOrDefaultView(null)
     }
 
     private fun refreshInputOverlay() {
@@ -319,7 +343,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
 
     private val Number.toPx get() = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), Resources.getSystem().displayMetrics).toInt()
 
-    fun updateCurrentLayout(emulationActivity: EmulationActivity, newLayoutInfo: WindowLayoutInfo) {
+    fun updateFoldableLayout(emulationActivity: EmulationActivity, newLayoutInfo: WindowLayoutInfo) {
         val isFolding = (newLayoutInfo.displayFeatures.find { it is FoldingFeature } as? FoldingFeature)?.let {
             if (it.isSeparating) {
                 emulationActivity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -339,7 +363,7 @@ class EmulationFragment : Fragment(), SurfaceHolder.Callback {
             binding.overlayContainer.updatePadding(0, 0, 0, 0)
             updateScreenLayout()
         }
-        binding.surfaceInputOverlay.requestLayout()
+        binding.surfaceEmulation.requestLayout()
         binding.inGameMenu.requestLayout()
         binding.overlayContainer.requestLayout()
     }
