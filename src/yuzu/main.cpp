@@ -75,6 +75,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QString>
 #include <QSysInfo>
 #include <QUrl>
+#include <QWindow>
 #include <QtConcurrent/QtConcurrent>
 
 #ifdef HAVE_SDL2
@@ -1418,6 +1419,16 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
             Settings::values.audio_muted = false;
             auto_muted = false;
         }
+    }
+}
+
+void GMainWindow::FocusWindowChanged(QWindow* focusWindow) {
+    if (focusWindow && focusWindow->winId() == winId() && !main_window_in_focus) {
+        emit FocusIn();
+        main_window_in_focus = true;
+    } else if (main_window_in_focus) {
+        emit FocusOut();
+        main_window_in_focus = false;
     }
 }
 
@@ -3489,16 +3500,33 @@ void GMainWindow::ResetWindowSize1080() {
 }
 
 void GMainWindow::OnConfigure() {
-    const auto old_theme = UISettings::values.theme;
-    const bool old_discord_presence = UISettings::values.enable_discord_presence.GetValue();
+    old_configure_value = {UISettings::values.theme,
+                           UISettings::values.enable_discord_presence.GetValue()};
 
     Settings::SetConfiguringGlobal(true);
-    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get(), *system,
-                                     !multiplayer_state->IsHostingPublicRoom());
-    connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
-            &GMainWindow::OnLanguageChanged);
 
-    const auto result = configure_dialog.exec();
+    configure_dialog.reset(); // The destructor must run first
+    configure_dialog =
+        std::make_unique<ConfigureDialog>(this, hotkey_registry, input_subsystem.get(), *system,
+                                          !multiplayer_state->IsHostingPublicRoom());
+    connect(configure_dialog.get(), &ConfigureDialog::LanguageChanged, this,
+            &GMainWindow::OnLanguageChanged);
+    connect(configure_dialog.get(), &ConfigureDialog::finished, this,
+            &GMainWindow::OnConfigureFinished);
+
+    configure_dialog->show();
+
+    connect(this, &GMainWindow::FocusIn, configure_dialog.get(),
+            &ConfigureDialog::MainWindowFocusIn);
+    connect(this, &GMainWindow::FocusOut, configure_dialog.get(),
+            &ConfigureDialog::MainWindowFocusOut);
+}
+
+void GMainWindow::OnConfigureFinished(int result) {
+    // Configure dialog needs to be deleted after this function finishes to run the appropriate
+    // destructors
+    std::unique_ptr<ConfigureDialog> config_dialog(std::move(configure_dialog));
+
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied &&
         !UISettings::values.reset_to_defaults) {
         // Runs if the user hit Cancel or closed the window, and did not ever press the Apply button
@@ -3508,7 +3536,7 @@ void GMainWindow::OnConfigure() {
         // Only apply new changes if user hit Okay
         // This is here to avoid applying changes if the user hit Apply, made some changes, then hit
         // Cancel
-        configure_dialog.ApplyConfiguration();
+        config_dialog->ApplyConfiguration();
     } else if (UISettings::values.reset_to_defaults) {
         LOG_INFO(Frontend, "Resetting all settings to defaults");
         if (!Common::FS::RemoveFile(config->GetConfigFilePath())) {
@@ -3545,10 +3573,11 @@ void GMainWindow::OnConfigure() {
     }
     InitializeHotkeys();
 
-    if (UISettings::values.theme != old_theme) {
+    if (UISettings::values.theme != old_configure_value.theme) {
         UpdateUITheme();
     }
-    if (UISettings::values.enable_discord_presence.GetValue() != old_discord_presence) {
+    if (UISettings::values.enable_discord_presence.GetValue() !=
+        old_configure_value.discord_presence) {
         SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     }
 
@@ -4796,6 +4825,8 @@ int main(int argc, char* argv[]) {
 
     QObject::connect(&app, &QGuiApplication::applicationStateChanged, &main_window,
                      &GMainWindow::OnAppFocusStateChanged);
+    QObject::connect(&app, &QGuiApplication::focusWindowChanged, &main_window,
+                     &GMainWindow::FocusWindowChanged);
 
     int result = app.exec();
     detached_tasks.WaitForAllTasks();

@@ -181,6 +181,18 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
     LoadConfiguration();
 }
 
+void ConfigureInput::EnableConfiguration() {
+    for (auto controller : player_controllers) {
+        controller->EnableConfiguration();
+    }
+}
+
+void ConfigureInput::DisableConfiguration() {
+    for (auto controller : player_controllers) {
+        controller->DisableConfiguration();
+    }
+}
+
 QList<QWidget*> ConfigureInput::GetSubTabs() const {
     return {
         ui->tabPlayer1, ui->tabPlayer2, ui->tabPlayer3, ui->tabPlayer4,  ui->tabPlayer5,

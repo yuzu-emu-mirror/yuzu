@@ -24,6 +24,7 @@
 
 class Config;
 class ClickableLabel;
+class ConfigureDialog;
 class EmuThread;
 class GameList;
 class GImageInfo;
@@ -132,6 +133,12 @@ class GMainWindow : public QMainWindow {
         UI_EMU_STOPPING,
     };
 
+    // Used to save previous configure values to check for changes
+    struct OldConfigureValue {
+        QString theme;
+        bool discord_presence;
+    };
+
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
@@ -142,6 +149,11 @@ public:
     void AcceptDropEvent(QDropEvent* event);
 
 signals:
+    /// Emitted when this main window receives focus
+    void FocusIn();
+
+    /// Emitted when this main window loses focus
+    void FocusOut();
 
     /**
      * Signal that is emitted when a new EmuThread has been created and an emulation session is
@@ -210,6 +222,7 @@ public slots:
                                bool is_local);
     void WebBrowserRequestExit();
     void OnAppFocusStateChanged(Qt::ApplicationState state);
+    void FocusWindowChanged(QWindow* focusWindow);
     void OnTasStateChanged();
 
 private:
@@ -324,6 +337,7 @@ private slots:
     void OnMenuInstallToNAND();
     void OnMenuRecentFile();
     void OnConfigure();
+    void OnConfigureFinished(int result);
     void OnConfigureTas();
     void OnDecreaseVolume();
     void OnIncreaseVolume();
@@ -475,6 +489,11 @@ private:
     // Install progress dialog
     QProgressDialog* install_progress;
 
+    // Configuration dialog, use unique_ptr as it is possible for the user to open the configure
+    // menu multiple times, thus we must delete the old menu
+    std::unique_ptr<ConfigureDialog> configure_dialog;
+    OldConfigureValue old_configure_value;
+
     // Last game booted, used for multi-process apps
     QString last_filename_booted;
 
@@ -494,6 +513,8 @@ private:
 
     // True if TAS recording dialog is visible
     bool is_tas_recording_dialog_active{};
+
+    bool main_window_in_focus = false;
 
 #ifdef __unix__
     QSocketNotifier* sig_interrupt_notifier;
