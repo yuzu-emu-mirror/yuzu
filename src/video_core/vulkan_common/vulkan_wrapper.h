@@ -312,6 +312,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR{};
 #ifdef _WIN32
     PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR{};
+    PFN_vkGetMemoryWin32HandlePropertiesKHR vkGetMemoryWin32HandlePropertiesKHR{};
 #endif
     PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR{};
     PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR{};
@@ -930,6 +931,15 @@ public:
         return dld->vkGetQueryPoolResults(handle, query_pool, first, count, data_size, data, stride,
                                           flags);
     }
+
+#ifdef _WIN32
+    VkResult GetMemoryWin32HandlePropertiesKHR(
+        VkExternalMemoryHandleTypeFlagBits handle_type, HANDLE w_handle,
+        VkMemoryWin32HandlePropertiesKHR& handle_properties) const {
+        return dld->vkGetMemoryWin32HandlePropertiesKHR(handle, handle_type, w_handle,
+                                                        &handle_properties);
+    }
+#endif
 };
 
 class PhysicalDevice {

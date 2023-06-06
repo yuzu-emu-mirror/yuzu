@@ -194,6 +194,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkGetMemoryFdKHR);
 #ifdef _WIN32
     X(vkGetMemoryWin32HandleKHR);
+    X(vkGetMemoryWin32HandlePropertiesKHR);
 #endif
     X(vkGetQueryPoolResults);
     X(vkGetPipelineExecutablePropertiesKHR);

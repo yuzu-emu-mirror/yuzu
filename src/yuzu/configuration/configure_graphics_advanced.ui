@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>404</width>
-    <height>376</height>
+    <width>418</width>
+    <height>444</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,44 +72,44 @@
         <item>
          <widget class="QWidget" name="astc_recompression_layout" native="true">
           <layout class="QHBoxLayout" name="horizontalLayout_3">
-            <property name="leftMargin">
-              <number>0</number>
-            </property>
-            <property name="topMargin">
-              <number>0</number>
-            </property>
-            <property name="rightMargin">
-              <number>0</number>
-            </property>
-            <property name="bottomMargin">
-              <number>0</number>
-            </property>
-            <item>
-              <widget class="QLabel" name="label_astc_recompression">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_astc_recompression">
+             <property name="text">
+              <string>ASTC recompression:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="astc_recompression_combobox">
+             <item>
               <property name="text">
-                <string>ASTC recompression:</string>
+               <string>Uncompressed (Best quality)</string>
               </property>
-              </widget>
-            </item>
-            <item>
-              <widget class="QComboBox" name="astc_recompression_combobox">
-                <item>
-                <property name="text">
-                  <string>Uncompressed (Best quality)</string>
-                </property>
-                </item>
-                <item>
-                <property name="text">
-                  <string>BC1 (Low quality)</string>
-                </property>
-                </item>
-                <item>
-                <property name="text">
-                  <string>BC3 (Medium quality)</string>
-                </property>
-                </item>
-              </widget>
-            </item>
+             </item>
+             <item>
+              <property name="text">
+               <string>BC1 (Low quality)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>BC3 (Medium quality)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -188,6 +188,16 @@ Compute pipelines are always enabled on all other drivers.</string>
           </property>
           <property name="text">
            <string>Enable Compute Pipelines (Intel Vulkan only)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="dxgi_swapchain">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Presents frames with a D3D12 swapchain when using Vulkan.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="text">
+           <string>Use DXGI swapchain (Vulkan only)</string>
           </property>
          </widget>
         </item>

@@ -39,6 +39,7 @@ private:
     std::unique_ptr<Ui::ConfigureGraphicsAdvanced> ui;
 
     ConfigurationShared::CheckState async_present;
+    ConfigurationShared::CheckState dxgi_swapchain;
     ConfigurationShared::CheckState renderer_force_max_clock;
     ConfigurationShared::CheckState use_vsync;
     ConfigurationShared::CheckState async_astc;

@@ -5,11 +5,23 @@
 
 #include <vector>
 
+#ifdef WIN32
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <windows.h>
+#include <wrl.h>
+using namespace Microsoft::WRL;
+#endif
+
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Layout {
 struct FramebufferLayout;
+}
+
+namespace Core::Frontend {
+class EmuWindow;
 }
 
 namespace Vulkan {
@@ -19,8 +31,9 @@ class Scheduler;
 
 class Swapchain {
 public:
-    explicit Swapchain(VkSurfaceKHR surface, const Device& device, Scheduler& scheduler, u32 width,
-                       u32 height, bool srgb);
+    explicit Swapchain(VkSurfaceKHR surface, const Core::Frontend::EmuWindow& emu_window,
+                       const Device& device, Scheduler& scheduler, u32 width, u32 height,
+                       bool srgb);
     ~Swapchain();
 
     /// Creates (or recreates) the swapchain with a given size.
@@ -55,6 +68,11 @@ public:
     /// Returns true when the swapchain format is in the srgb color space
     bool IsSrgb() const {
         return current_srgb;
+    }
+
+    /// Returns true when images are presented to DXGI swapchain.
+    bool IsDXGI() const {
+        return use_dxgi;
     }
 
     VkExtent2D GetSize() const {
@@ -118,7 +136,14 @@ private:
 
     bool NeedsPresentModeUpdate() const;
 
+#ifdef WIN32
+    void CreateDXGIFactory();
+    void ImportDXGIImages();
+    void PresentDXGI(VkSemaphore render_semaphore);
+#endif
+
     const VkSurfaceKHR surface;
+    const Core::Frontend::EmuWindow& emu_window;
     const Device& device;
     Scheduler& scheduler;
 
@@ -129,6 +154,19 @@ private:
     std::vector<u64> resource_ticks;
     std::vector<vk::Semaphore> present_semaphores;
     std::vector<vk::Semaphore> render_semaphores;
+
+#ifdef WIN32
+    ComPtr<IDXGIFactory7> dxgi_factory;
+    ComPtr<IDXGIAdapter4> dxgi_adapter;
+    ComPtr<ID3D12Device5> dx_device;
+    ComPtr<ID3D12CommandQueue> dx_command_queue;
+    ComPtr<IDXGISwapChain1> dxgi_swapchain1;
+    ComPtr<IDXGISwapChain4> dxgi_swapchain;
+    std::vector<vk::DeviceMemory> imported_memories;
+    std::vector<HANDLE> shared_handles;
+    std::vector<vk::Image> dx_vk_images;
+    vk::Fence present_fence;
+#endif
 
     u32 width;
     u32 height;
@@ -147,6 +185,7 @@ private:
     bool current_srgb{};
     bool is_outdated{};
     bool is_suboptimal{};
+    bool use_dxgi{};
 };
 
 } // namespace Vulkan

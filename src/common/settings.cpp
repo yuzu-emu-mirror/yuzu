@@ -66,6 +66,8 @@ void LogSettings() {
     log_setting("Renderer_UseReactiveFlushing", values.use_reactive_flushing.GetValue());
     log_setting("Renderer_ShaderBackend", values.shader_backend.GetValue());
     log_setting("Renderer_UseAsynchronousShaders", values.use_asynchronous_shaders.GetValue());
+    log_setting("Renderer_AsyncPresentation", values.async_presentation.GetValue());
+    log_setting("Renderer_UseDXGISwapchain", values.use_dxgi_swapchain.GetValue());
     log_setting("Renderer_AnisotropicFilteringLevel", values.max_anisotropy.GetValue());
     log_setting("Audio_OutputEngine", values.sink_id.GetValue());
     log_setting("Audio_OutputDevice", values.audio_output_device_id.GetValue());
@@ -209,6 +211,7 @@ void RestoreGlobalState(bool is_powered_on) {
     values.fsr_sharpening_slider.SetGlobal(true);
     values.renderer_backend.SetGlobal(true);
     values.async_presentation.SetGlobal(true);
+    values.use_dxgi_swapchain.SetGlobal(true);
     values.renderer_force_max_clock.SetGlobal(true);
     values.vulkan_device.SetGlobal(true);
     values.fullscreen_mode.SetGlobal(true);
