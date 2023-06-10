@@ -350,17 +350,11 @@ std::string_view RemoveTrailingSlash(std::string_view path) {
 }
 
 std::vector<std::string> SplitPathComponents(std::string_view filename) {
-    std::string copy(filename);
-    std::replace(copy.begin(), copy.end(), '\\', '/');
-    std::vector<std::string> out;
-
-    std::stringstream stream(copy);
-    std::string item;
-    while (std::getline(stream, item, '/')) {
-        out.push_back(std::move(item));
+    std::vector<std::string> copied_components;
+    for (std::string_view component : filename | split_path_components_view) {
+        copied_components.emplace_back(component);
     }
-
-    return out;
+    return copied_components;
 }
 
 std::string SanitizePath(std::string_view path_, DirectorySeparator directory_separator) {

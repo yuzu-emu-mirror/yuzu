@@ -200,31 +200,32 @@ std::string VfsFile::GetFullPath() const {
 }
 
 VirtualFile VfsDirectory::GetFileRelative(std::string_view path) const {
-    auto vec = Common::FS::SplitPathComponents(path);
-    vec.erase(std::remove_if(vec.begin(), vec.end(), [](const auto& str) { return str.empty(); }),
-              vec.end());
-    if (vec.empty()) {
+    auto&& component_view = path | Common::FS::split_path_components_view;
+    auto next_component = component_view.begin();
+    if (next_component == component_view.end()) {
         return nullptr;
     }
 
-    if (vec.size() == 1) {
-        return GetFile(vec[0]);
+    std::string_view component = *next_component;
+    if (++next_component == component_view.end()) {
+        return GetFile(component);
     }
 
-    auto dir = GetSubdirectory(vec[0]);
-    for (std::size_t component = 1; component < vec.size() - 1; ++component) {
-        if (dir == nullptr) {
-            return nullptr;
-        }
-
-        dir = dir->GetSubdirectory(vec[component]);
-    }
-
+    auto dir = GetSubdirectory(component);
     if (dir == nullptr) {
         return nullptr;
     }
+    component = *next_component;
 
-    return dir->GetFile(vec.back());
+    while (++next_component != component_view.end()) {
+        dir = dir->GetSubdirectory(component);
+        if (dir == nullptr) {
+            return nullptr;
+        }
+        component = *next_component;
+    }
+
+    return dir->GetFile(component);
 }
 
 VirtualFile VfsDirectory::GetFileAbsolute(std::string_view path) const {

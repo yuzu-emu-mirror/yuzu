@@ -24,6 +24,7 @@
         "fmt",
         "lz4",
         "nlohmann-json",
+        "range-v3",
         "zlib",
         "zstd"
     ],

@@ -6,6 +6,10 @@
 #include <filesystem>
 #include <vector>
 
+#include <range/v3/view/remove_if.hpp>
+#include <range/v3/view/split_when.hpp>
+#include <range/v3/view/transform.hpp>
+
 #include "common/fs/fs_util.h"
 
 namespace Common::FS {
@@ -283,6 +287,23 @@ enum class DirectorySeparator {
     BackwardSlash,
     PlatformDefault,
 };
+
+// A range adaptor closure which splits the path on '/' or '\'
+// i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
+constexpr auto split_path_components_view =
+    // Somehow split_when never made it into the standard
+    ranges::views::split_when([](auto cur, auto end) {
+        const char c = *cur;
+        bool do_split = c == '\\' || c == '/';
+        return std::make_pair(do_split, cur + (do_split ? 1 : 0));
+    }) |
+    // Convert from opaque range to std::string_view
+    ranges::views::transform([](auto&& chunk) {
+        return std::string_view{&*ranges::begin(chunk),
+                                static_cast<std::size_t>(ranges::distance(chunk))};
+    }) |
+    // Skip any empty segments like at the beginning and end of "/root/directory/"
+    ranges::views::remove_if(&std::string_view::empty);
 
 // Splits the path on '/' or '\' and put the components into a vector
 // i.e. "C:\Users\Yuzu\Documents\save.bin" becomes {"C:", "Users", "Yuzu", "Documents", "save.bin" }
