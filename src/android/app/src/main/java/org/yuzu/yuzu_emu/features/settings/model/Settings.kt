@@ -107,6 +107,7 @@ class Settings {
         const val SECTION_RENDERER = "Renderer"
         const val SECTION_AUDIO = "Audio"
         const val SECTION_CPU = "Cpu"
+        const val SECTION_NETWORK = "Network"
         const val SECTION_THEME = "Theme"
         const val SECTION_DEBUG = "Debug"
 
@@ -151,6 +152,7 @@ class Settings {
                     SECTION_SYSTEM,
                     SECTION_RENDERER,
                     SECTION_AUDIO,
+                    SECTION_NETWORK,
                     SECTION_CPU
                 )
         }

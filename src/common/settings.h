@@ -581,6 +581,7 @@ struct Values {
 
     // Network
     Setting<std::string> network_interface{std::string(), "network_interface"};
+    Setting<std::string> network_route{std::string(), "network_route"};
 
     // WebService
     Setting<bool> enable_telemetry{true, "enable_telemetry"};

@@ -35,5 +35,6 @@ abstract class SettingsItem(
         const val TYPE_STRING_SINGLE_CHOICE = 5
         const val TYPE_DATETIME_SETTING = 6
         const val TYPE_RUNNABLE = 7
+        const val TYPE_TEXT_SETTING = 8
     }
 }

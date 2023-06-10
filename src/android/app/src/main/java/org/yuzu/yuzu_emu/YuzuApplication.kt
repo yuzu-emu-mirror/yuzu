@@ -10,6 +10,7 @@ import android.content.Context
 import org.yuzu.yuzu_emu.utils.DirectoryInitialization
 import org.yuzu.yuzu_emu.utils.DocumentsTree
 import org.yuzu.yuzu_emu.utils.GpuDriverHelper
+import org.yuzu.yuzu_emu.utils.NetworkHelper
 import java.io.File
 
 fun Context.getPublicFilesDir() : File = getExternalFilesDir(null) ?: filesDir
@@ -46,6 +47,7 @@ class YuzuApplication : Application() {
         documentsTree = DocumentsTree()
         DirectoryInitialization.start(applicationContext)
         GpuDriverHelper.initializeDriverParameters(applicationContext)
+        NetworkHelper.setRoutes(applicationContext)
         NativeLibrary.logDeviceInfo()
 
         createNotificationChannels();

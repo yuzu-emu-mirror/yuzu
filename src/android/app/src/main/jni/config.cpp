@@ -244,6 +244,11 @@ void Config::ReadValues() {
     ReadSetting("Audio", Settings::values.audio_output_device_id);
     ReadSetting("Audio", Settings::values.volume);
 
+    // Network
+
+    Settings::values.network_route =
+            config->GetString("Network", "network_route", "");
+
     // Miscellaneous
     // log_filter has a different default here than from common
     Settings::values.log_filter = "*:Info";

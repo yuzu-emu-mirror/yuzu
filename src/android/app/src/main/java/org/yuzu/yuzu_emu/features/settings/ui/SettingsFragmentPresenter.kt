@@ -7,7 +7,6 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.text.TextUtils
 import androidx.preference.PreferenceManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.features.settings.model.AbstractBooleanSetting
@@ -67,6 +66,7 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
             Settings.SECTION_SYSTEM -> addSystemSettings(sl)
             Settings.SECTION_RENDERER -> addGraphicsSettings(sl)
             Settings.SECTION_AUDIO -> addAudioSettings(sl)
+            Settings.SECTION_NETWORK -> addNetworkSettings(sl)
             Settings.SECTION_THEME -> addThemeSettings(sl)
             Settings.SECTION_DEBUG -> addDebugSettings(sl)
             else -> {
@@ -100,6 +100,13 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                     R.string.preferences_graphics,
                     0,
                     Settings.SECTION_RENDERER
+                )
+            )
+            add(
+                SubmenuSetting(
+                    R.string.preferences_network,
+                    0,
+                    Settings.SECTION_NETWORK
                 )
             )
             add(
@@ -432,6 +439,22 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                     blackBackgrounds,
                     R.string.use_black_backgrounds,
                     R.string.use_black_backgrounds_description
+                )
+            )
+        }
+    }
+
+    private fun addNetworkSettings(sl: ArrayList<SettingsItem>) {
+        settingsActivity.setToolbarTitle(settingsActivity.getString(R.string.preferences_network))
+
+        sl.apply {
+            add(
+                TextSetting(
+                    StringSetting.NETWORK_ROUTE,
+                    R.string.set_network_route,
+                    R.string.network_route_desc,
+                    StringSetting.NETWORK_ROUTE.key,
+                    StringSetting.NETWORK_ROUTE.defaultValue
                 )
             )
         }
