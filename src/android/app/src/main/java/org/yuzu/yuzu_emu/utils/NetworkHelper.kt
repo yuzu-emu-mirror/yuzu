@@ -7,11 +7,11 @@ import android.content.Context
 import android.net.ConnectivityManager
 
 object NetworkHelper {
-    fun setRoutes(context: Context) {
+    fun getRoutes(context: Context): String {
         val connectivity =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        val lp = connectivity.getLinkProperties(connectivity.activeNetwork) ?: return
+        val lp = connectivity.getLinkProperties(connectivity.activeNetwork) ?: return ""
 
         val ifName = lp.interfaceName
         val addr = lp.linkAddresses[0]
@@ -28,8 +28,6 @@ object NetworkHelper {
 
         val gw = lp.routes.last { it.isDefaultRoute }.gateway?.hostAddress
 
-        val settingFormattedRoute = "$ifName;$addr;$mask;$gw"
-
-        // TODO set this value to settings
+        return "$ifName;$addr;$mask;$gw"
     }
 }
