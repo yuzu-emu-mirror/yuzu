@@ -84,6 +84,7 @@
     <string name="open_user_folder">Open yuzu folder</string>
     <string name="open_user_folder_description">Manage yuzu\'s internal files</string>
     <string name="theme_and_color_description">Modify the look of the app</string>
+    <string name="multiplayer_description">Play with your friends!</string>
     <string name="no_file_manager">No file manager found</string>
     <string name="notification_no_directory_link">Could not open yuzu directory</string>
     <string name="notification_no_directory_link_description">Please locate the user folder with the file manager\'s side panel manually.</string>
@@ -155,6 +156,13 @@
     <string name="network_route_desc">Sets the default network route</string>
     <string name="set_network_route">Set network route</string>
 
+    <!-- Multiplayer settings strings -->
+    <string name="multiplayer_room_server_address">Server address</string>
+    <string name="multiplayer_room_server_port">Port</string>
+    <string name="multiplayer_room_nickname">Nickname</string>
+    <string name="multiplayer_room_password">Password</string>
+    <string name="multiplayer_room_connect_on_start">Connect on start</string>
+
     <!-- Graphics settings strings -->
     <string name="renderer_api">API</string>
     <string name="renderer_accuracy">Accuracy level</string>
@@ -211,6 +219,7 @@
     <string name="preferences_graphics">Graphics</string>
     <string name="preferences_audio">Audio</string>
     <string name="preferences_theme">Theme and color</string>
+    <string name="preferences_multiplayer">Multiplayer</string>
     <string name="preferences_debug">Debug</string>
 
     <!-- ROM loading errors -->

@@ -5,7 +5,6 @@ package org.yuzu.yuzu_emu.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
-import androidx.preference.PreferenceManager
 
 object NetworkHelper {
     fun setRoutes(context: Context) {

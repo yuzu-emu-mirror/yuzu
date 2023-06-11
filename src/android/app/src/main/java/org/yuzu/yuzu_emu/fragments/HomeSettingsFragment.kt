@@ -85,6 +85,11 @@ class HomeSettingsFragment : Fragment() {
                 R.drawable.ic_palette
             ) { SettingsActivity.launch(requireContext(), Settings.SECTION_THEME, "") },
             HomeSetting(
+                R.string.preferences_multiplayer,
+                R.string.multiplayer_description,
+                R.drawable.ic_multiplayer
+            ) { SettingsActivity.launch(requireContext(), Settings.SECTION_MULTIPLAYER, "") },
+            HomeSetting(
                 R.string.install_gpu_driver,
                 R.string.install_gpu_driver_description,
                 R.drawable.ic_exit

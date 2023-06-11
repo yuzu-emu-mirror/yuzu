@@ -12,6 +12,7 @@ import org.yuzu.yuzu_emu.YuzuApplication
 import org.yuzu.yuzu_emu.features.settings.model.AbstractBooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.AbstractIntSetting
 import org.yuzu.yuzu_emu.features.settings.model.AbstractSetting
+import org.yuzu.yuzu_emu.features.settings.model.AbstractStringSetting
 import org.yuzu.yuzu_emu.features.settings.model.BooleanSetting
 import org.yuzu.yuzu_emu.features.settings.model.IntSetting
 import org.yuzu.yuzu_emu.features.settings.model.Settings
@@ -67,6 +68,7 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
             Settings.SECTION_RENDERER -> addGraphicsSettings(sl)
             Settings.SECTION_AUDIO -> addAudioSettings(sl)
             Settings.SECTION_NETWORK -> addNetworkSettings(sl)
+            Settings.SECTION_MULTIPLAYER -> addMultiplayerSettings(sl)
             Settings.SECTION_THEME -> addThemeSettings(sl)
             Settings.SECTION_DEBUG -> addDebugSettings(sl)
             else -> {
@@ -455,6 +457,138 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
                     R.string.network_route_desc,
                     StringSetting.NETWORK_ROUTE.key,
                     StringSetting.NETWORK_ROUTE.defaultValue
+                )
+            )
+        }
+    }
+
+    private fun addMultiplayerSettings(sl: ArrayList<SettingsItem>) {
+        settingsActivity.setToolbarTitle(settingsActivity.getString(R.string.preferences_multiplayer))
+
+        sl.apply {
+            val serverAddress: AbstractStringSetting = object : AbstractStringSetting {
+                override var string: String
+                    get() = preferences.getString(Settings.PREF_ROOM_ADDRESS, "") ?: ""
+                    set(value) {
+                        preferences.edit()
+                            .putString(Settings.PREF_ROOM_ADDRESS, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getString(Settings.PREF_ROOM_ADDRESS, "") ?: ""
+                override val defaultValue: Any = -1
+            }
+
+            val serverPort: AbstractStringSetting = object : AbstractStringSetting {
+                override var string: String
+                    get() = preferences.getString(Settings.PREF_ROOM_PORT, "24872") ?: "24872"
+                    set(value) {
+                        preferences.edit()
+                            .putString(Settings.PREF_ROOM_PORT, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getString(Settings.PREF_ROOM_PORT, "24872") ?: "24872"
+                override val defaultValue: Any = "24872"
+            }
+
+            val nickname: AbstractStringSetting = object : AbstractStringSetting {
+                override var string: String
+                    get() = preferences.getString(Settings.PREF_ROOM_NICKNAME, "") ?: ""
+                    set(value) {
+                        preferences.edit()
+                            .putString(Settings.PREF_ROOM_NICKNAME, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getString(Settings.PREF_ROOM_NICKNAME, "") ?: ""
+                override val defaultValue: Any = -1
+            }
+
+            val password: AbstractStringSetting = object : AbstractStringSetting {
+                override var string: String
+                    get() = preferences.getString(Settings.PREF_ROOM_PASSWORD, "") ?: ""
+                    set(value) {
+                        preferences.edit()
+                            .putString(Settings.PREF_ROOM_PASSWORD, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getString(Settings.PREF_ROOM_PASSWORD, "") ?: ""
+                override val defaultValue: Any = -1
+            }
+
+            val connectOnStart: AbstractBooleanSetting = object : AbstractBooleanSetting {
+                override var boolean: Boolean
+                    get() = preferences.getBoolean(Settings.PREF_ROOM_CONNECT_ON_START, false)
+                    set(value) {
+                        preferences.edit()
+                            .putBoolean(Settings.PREF_ROOM_CONNECT_ON_START, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getBoolean(Settings.PREF_ROOM_CONNECT_ON_START, false).toString()
+                override val defaultValue: Any = -1
+            }
+
+            add(
+                TextSetting(
+                    serverAddress,
+                    R.string.multiplayer_room_server_address,
+                    0,
+                    "",
+                    ""
+                )
+            )
+            add(
+                TextSetting(
+                    serverPort,
+                    R.string.multiplayer_room_server_port,
+                    0,
+                    "",
+                    ""
+                )
+            )
+            add(
+                TextSetting(
+                    nickname,
+                    R.string.multiplayer_room_nickname,
+                    0,
+                    "",
+                    ""
+                )
+            )
+            add(
+                TextSetting(
+                    password,
+                    R.string.multiplayer_room_password,
+                    0,
+                    "",
+                    ""
+                )
+            )
+            add(
+                SwitchSetting(
+                    connectOnStart,
+                    R.string.multiplayer_room_connect_on_start,
+                    0,
+                    "",
+                    false
                 )
             )
         }
