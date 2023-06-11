@@ -13,6 +13,8 @@
 
 #include <android/api-level.h>
 #include <android/native_window_jni.h>
+#include <network/room_member.h>
+#include <network/network.h>
 #include <core/loader/nro.h>
 
 #include "common/detached_tasks.h"
@@ -339,6 +341,29 @@ namespace {
 
         SoftwareKeyboard::AndroidKeyboard* SoftwareKeyboard() {
             return m_software_keyboard;
+        }
+
+        void DirectConnectToRoom(const std::string& nickname, const char* server_addr = "127.0.0.1",
+                                 u16 server_port = Network::DefaultRoomPort,
+                                 const std::string& password = "") {
+            auto room_network = m_system.GetRoomNetwork();
+            a
+            if (const auto member = room_network.GetRoomMember().lock()) {
+                // Prevent the user from trying to join a room while they are already joining.
+                if (member->GetState() == Network::RoomMember::State::Joining || member->IsConnected()) {
+                    return;
+                } else {
+                    member->Join(nickname, server_addr, server_port);
+                }
+            }
+        }
+
+        Network::RoomMember::State GetRoomMemberState() {
+            if (const auto member = m_system.GetRoomNetwork().GetRoomMember().lock()) {
+                return member->GetState();
+            } else {
+                return Network::RoomMember::State::Idle;
+            }
         }
 
     private:
@@ -767,6 +792,47 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_submitInlineKeyboardText(JNIEnv* env,
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_submitInlineKeyboardInput(JNIEnv* env, jclass clazz,
                                                                      jint j_key_code) {
     EmulationSession::GetInstance().SoftwareKeyboard()->SubmitInlineKeyboardInput(j_key_code);
+}
+
+void Java_org_yuzu_yuzu_1emu_NativeLibrary_connectToRoom(JNIEnv* env, jclass clazz,
+                                                         jstring nickname,
+                                                         jstring server_addr,
+                                                         jint server_port,
+                                                         jstring password) {
+    EmulationSession::GetInstance().DirectConnectToRoom(
+            GetJString(env, nickname),
+            GetJString(env, server_addr).c_str(),
+            server_port,
+            GetJString(env, password)
+    );
+}
+
+jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_getRoomMemberState(JNIEnv* env, jclass clazz) {
+    auto state = EmulationSession::GetInstance().GetRoomMemberState();
+
+    std::string state_str{};
+
+    switch(state) {
+        using State = Network::RoomMember::State;
+
+        case State::Uninitialized:
+            state_str = "Uninitialized";
+            break;
+        case State::Idle:
+            state_str = "Idle";
+            break;
+        case State::Joining:
+            state_str = "Joining";
+            break;
+        case State::Joined:
+            state_str = "Joined";
+            break;
+        case State::Moderator:
+            state_str = "Moderator";
+            break;
+    }
+
+    return env->NewStringUTF(state_str.c_str());
 }
 
 } // extern "C"
