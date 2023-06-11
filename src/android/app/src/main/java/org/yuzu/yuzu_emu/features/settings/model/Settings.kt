@@ -132,6 +132,8 @@ class Settings {
         const val PREF_BUTTON_TOGGLE_13 = "buttonToggle13"
         const val PREF_BUTTON_TOGGLE_14 = "buttonToggle14"
 
+        const val PREF_FORCE_WIFI = "Network_ForceWifi"
+
         const val PREF_ROOM_ADDRESS = "MultiplayerRoom_ServerAddress"
         const val PREF_ROOM_PORT = "MultiplayerRoom_ServerPort"
         const val PREF_ROOM_NICKNAME = "MultiplayerRoom_Nickname"

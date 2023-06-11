@@ -347,7 +347,7 @@ namespace {
                                  u16 server_port = Network::DefaultRoomPort,
                                  const std::string& password = "") {
             auto room_network = m_system.GetRoomNetwork();
-            a
+
             if (const auto member = room_network.GetRoomMember().lock()) {
                 // Prevent the user from trying to join a room while they are already joining.
                 if (member->GetState() == Network::RoomMember::State::Joining || member->IsConnected()) {

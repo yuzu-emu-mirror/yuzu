@@ -48,7 +48,7 @@ class YuzuApplication : Application() {
         documentsTree = DocumentsTree()
         DirectoryInitialization.start(applicationContext)
         GpuDriverHelper.initializeDriverParameters(applicationContext)
-        NetworkHelper.setRoutes(applicationContext)
+        NetworkHelper.getRoute(applicationContext)
         MultiplayerHelper.initRoom(applicationContext)
         NativeLibrary.logDeviceInfo()
 

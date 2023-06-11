@@ -450,6 +450,31 @@ class SettingsFragmentPresenter(private val fragmentView: SettingsFragmentView) 
         settingsActivity.setToolbarTitle(settingsActivity.getString(R.string.preferences_network))
 
         sl.apply {
+            val forceWifi: AbstractBooleanSetting = object : AbstractBooleanSetting {
+                override var boolean: Boolean
+                    get() = preferences.getBoolean(Settings.PREF_FORCE_WIFI, false)
+                    set(value) {
+                        preferences.edit()
+                            .putBoolean(Settings.PREF_FORCE_WIFI, value)
+                            .apply()
+                    }
+                override val key: String? = null
+                override val section: String? = null
+                override val isRuntimeEditable: Boolean = false
+                override val valueAsString: String
+                    get() = preferences.getBoolean(Settings.PREF_FORCE_WIFI, false).toString()
+                override val defaultValue: Any = false
+            }
+
+            add(
+                SwitchSetting(
+                    forceWifi,
+                    R.string.set_force_wifi,
+                    R.string.force_wifi_desc,
+                    "",
+                    false
+                )
+            )
             add(
                 TextSetting(
                     StringSetting.NETWORK_ROUTE,

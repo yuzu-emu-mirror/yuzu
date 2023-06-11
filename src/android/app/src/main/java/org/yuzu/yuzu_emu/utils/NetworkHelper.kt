@@ -5,13 +5,24 @@ package org.yuzu.yuzu_emu.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
+import androidx.preference.PreferenceManager
+import org.yuzu.yuzu_emu.features.settings.model.Settings
 
 object NetworkHelper {
-    fun getRoutes(context: Context): String {
+    /**
+     * Gets available network interface info/route info - currently the active network info.
+     * @return The route info separated by semicolons (interface, address, netmask, gateway), or null if no networks are available.
+     */
+    fun getRoute(context: Context): String? {
         val connectivity =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        val lp = connectivity.getLinkProperties(connectivity.activeNetwork) ?: return ""
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+
+        if(connectivity.isActiveNetworkMetered && preferences.getBoolean(Settings.PREF_FORCE_WIFI, false))
+            return null
+
+        val lp = connectivity.getLinkProperties(connectivity.activeNetwork) ?: return null
 
         val ifName = lp.interfaceName
         val addr = lp.linkAddresses[0]
