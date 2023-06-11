@@ -20,9 +20,9 @@
 #include <iphlpapi.h>
 #else
 #include <cerrno>
+#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <net/if.h>
-#include <arpa/inet.h>
 
 #endif
 
@@ -103,18 +103,15 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
 
     boost::split(route_parts, Settings::values.network_route.GetValue(), boost::is_any_of(";"));
 
-    struct in_addr ip{}, sm{}, gw{};
+    struct in_addr ip {
+    }, sm{}, gw{};
 
     inet_pton(AF_INET, route_parts[1].c_str(), &ip);
     inet_pton(AF_INET, route_parts[2].c_str(), &sm);
     inet_pton(AF_INET, route_parts[3].c_str(), &gw);
 
-    result.emplace_back(NetworkInterface{
-            .name{route_parts[0]},
-            .ip_address{ip},
-            .subnet_mask{sm},
-            .gateway{gw}
-    });
+    result.emplace_back(
+        NetworkInterface{.name{route_parts[0]}, .ip_address{ip}, .subnet_mask{sm}, .gateway{gw}});
 
     return result;
 }

@@ -246,8 +246,7 @@ void Config::ReadValues() {
 
     // Network
 
-    Settings::values.network_route =
-            config->GetString("Network", "network_route", "");
+    Settings::values.network_route = config->GetString("Network", "network_route", "");
 
     // Miscellaneous
     // log_filter has a different default here than from common
