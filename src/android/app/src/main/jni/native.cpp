@@ -13,8 +13,7 @@
 
 #include <android/api-level.h>
 #include <android/native_window_jni.h>
-#include <network/room_member.h>
-#include <network/network.h>
+#include <core/loader/nro.h>
 
 #include "common/detached_tasks.h"
 #include "common/dynamic_library.h"
@@ -59,389 +58,364 @@
 
 namespace {
 
-class EmulationSession final {
-public:
-    EmulationSession() {
-        m_vfs = std::make_shared<FileSys::RealVfsFilesystem>();
-    }
+    class EmulationSession final {
+    public:
+        EmulationSession() {
+            m_vfs = std::make_shared<FileSys::RealVfsFilesystem>();
+        }
 
-    ~EmulationSession() = default;
+        ~EmulationSession() = default;
 
-    static EmulationSession& GetInstance() {
-        return s_instance;
-    }
+        static EmulationSession& GetInstance() {
+            return s_instance;
+        }
 
-    const Core::System& System() const {
-        return m_system;
-    }
+        const Core::System& System() const {
+            return m_system;
+        }
 
-    Core::System& System() {
-        return m_system;
-    }
+        Core::System& System() {
+            return m_system;
+        }
 
-    const EmuWindow_Android& Window() const {
-        return *m_window;
-    }
+        const EmuWindow_Android& Window() const {
+            return *m_window;
+        }
 
-    EmuWindow_Android& Window() {
-        return *m_window;
-    }
+        EmuWindow_Android& Window() {
+            return *m_window;
+        }
 
-    ANativeWindow* NativeWindow() const {
-        return m_native_window;
-    }
+        ANativeWindow* NativeWindow() const {
+            return m_native_window;
+        }
 
-    void SetNativeWindow(ANativeWindow* native_window) {
-        m_native_window = native_window;
-    }
+        void SetNativeWindow(ANativeWindow* native_window) {
+            m_native_window = native_window;
+        }
 
-    u32 ScreenRotation() const {
-        return m_screen_rotation;
-    }
-
-    void SetScreenRotation(u32 screen_rotation) {
-        m_screen_rotation = screen_rotation;
-    }
-
-    void InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& custom_driver_dir,
-                             const std::string& custom_driver_name,
-                             const std::string& file_redirect_dir) {
+        void InitializeGpuDriver(const std::string& hook_lib_dir, const std::string& custom_driver_dir,
+                                 const std::string& custom_driver_name,
+                                 const std::string& file_redirect_dir) {
 #ifdef ARCHITECTURE_arm64
-        void* handle{};
-        const char* file_redirect_dir_{};
-        int featureFlags{};
+            void* handle{};
+            const char* file_redirect_dir_{};
+            int featureFlags{};
 
-        // Enable driver file redirection when renderer debugging is enabled.
-        if (Settings::values.renderer_debug && file_redirect_dir.size()) {
-            featureFlags |= ADRENOTOOLS_DRIVER_FILE_REDIRECT;
-            file_redirect_dir_ = file_redirect_dir.c_str();
-        }
+            // Enable driver file redirection when renderer debugging is enabled.
+            if (Settings::values.renderer_debug && file_redirect_dir.size()) {
+                featureFlags |= ADRENOTOOLS_DRIVER_FILE_REDIRECT;
+                file_redirect_dir_ = file_redirect_dir.c_str();
+            }
 
-        // Try to load a custom driver.
-        if (custom_driver_name.size()) {
-            handle = adrenotools_open_libvulkan(
-                RTLD_NOW, featureFlags | ADRENOTOOLS_DRIVER_CUSTOM, nullptr, hook_lib_dir.c_str(),
-                custom_driver_dir.c_str(), custom_driver_name.c_str(), file_redirect_dir_, nullptr);
-        }
+            // Try to load a custom driver.
+            if (custom_driver_name.size()) {
+                handle = adrenotools_open_libvulkan(
+                        RTLD_NOW, featureFlags | ADRENOTOOLS_DRIVER_CUSTOM, nullptr, hook_lib_dir.c_str(),
+                        custom_driver_dir.c_str(), custom_driver_name.c_str(), file_redirect_dir_, nullptr);
+            }
 
-        // Try to load the system driver.
-        if (!handle) {
-            handle =
-                adrenotools_open_libvulkan(RTLD_NOW, featureFlags, nullptr, hook_lib_dir.c_str(),
-                                           nullptr, nullptr, file_redirect_dir_, nullptr);
-        }
+            // Try to load the system driver.
+            if (!handle) {
+                handle =
+                        adrenotools_open_libvulkan(RTLD_NOW, featureFlags, nullptr, hook_lib_dir.c_str(),
+                                                   nullptr, nullptr, file_redirect_dir_, nullptr);
+            }
 
-        m_vulkan_library = std::make_shared<Common::DynamicLibrary>(handle);
+            m_vulkan_library = std::make_shared<Common::DynamicLibrary>(handle);
 #endif
-    }
-
-    bool IsRunning() const {
-        std::scoped_lock lock(m_mutex);
-        return m_is_running;
-    }
-
-    const Core::PerfStatsResults& PerfStats() const {
-        std::scoped_lock m_perf_stats_lock(m_perf_stats_mutex);
-        return m_perf_stats;
-    }
-
-    void SurfaceChanged() {
-        if (!IsRunning()) {
-            return;
-        }
-        m_window->OnSurfaceChanged(m_native_window);
-        m_system.Renderer().NotifySurfaceChanged();
-    }
-
-    Core::SystemResultStatus InitializeEmulation(const std::string& filepath) {
-        std::scoped_lock lock(m_mutex);
-
-        // Loads the configuration.
-        Config{};
-
-        // Create the render window.
-        m_window = std::make_unique<EmuWindow_Android>(&m_input_subsystem, m_native_window,
-                                                       m_vulkan_library);
-
-        // Initialize system.
-        auto android_keyboard = std::make_unique<SoftwareKeyboard::AndroidKeyboard>();
-        m_software_keyboard = android_keyboard.get();
-        m_system.SetShuttingDown(false);
-        m_system.ApplySettings();
-        m_system.HIDCore().ReloadInputDevices();
-        m_system.SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
-        m_system.SetFilesystem(std::make_shared<FileSys::RealVfsFilesystem>());
-        m_system.SetAppletFrontendSet({
-            nullptr,                     // Amiibo Settings
-            nullptr,                     // Controller Selector
-            nullptr,                     // Error Display
-            nullptr,                     // Mii Editor
-            nullptr,                     // Parental Controls
-            nullptr,                     // Photo Viewer
-            nullptr,                     // Profile Selector
-            std::move(android_keyboard), // Software Keyboard
-            nullptr,                     // Web Browser
-        });
-        m_system.GetFileSystemController().CreateFactories(*m_system.GetFilesystem());
-
-        // Initialize account manager
-        m_profile_manager = std::make_unique<Service::Account::ProfileManager>();
-
-        // Load the ROM.
-        m_load_result = m_system.Load(EmulationSession::GetInstance().Window(), filepath);
-        if (m_load_result != Core::SystemResultStatus::Success) {
-            return m_load_result;
         }
 
-        // Complete initialization.
-        m_system.GPU().Start();
-        m_system.GetCpuManager().OnGpuReady();
-        m_system.RegisterExitCallback([&] { HaltEmulation(); });
-
-        return Core::SystemResultStatus::Success;
-    }
-
-    void ShutdownEmulation() {
-        std::scoped_lock lock(m_mutex);
-
-        m_is_running = false;
-
-        // Unload user input.
-        m_system.HIDCore().UnloadInputDevices();
-
-        // Shutdown the main emulated process
-        if (m_load_result == Core::SystemResultStatus::Success) {
-            m_system.DetachDebugger();
-            m_system.ShutdownMainProcess();
-            m_detached_tasks.WaitForAllTasks();
-            m_load_result = Core::SystemResultStatus::ErrorNotInitialized;
-        }
-
-        // Tear down the render window.
-        m_window.reset();
-    }
-
-    void PauseEmulation() {
-        std::scoped_lock lock(m_mutex);
-        m_system.Pause();
-    }
-
-    void UnPauseEmulation() {
-        std::scoped_lock lock(m_mutex);
-        m_system.Run();
-    }
-
-    void HaltEmulation() {
-        std::scoped_lock lock(m_mutex);
-        m_is_running = false;
-        m_cv.notify_one();
-    }
-
-    void RunEmulation() {
-        {
+        bool IsRunning() const {
             std::scoped_lock lock(m_mutex);
-            m_is_running = true;
+            return m_is_running;
         }
 
-        // Load the disk shader cache.
-        if (Settings::values.use_disk_shader_cache.GetValue()) {
-            LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
-            m_system.Renderer().ReadRasterizer()->LoadDiskResources(
-                m_system.GetApplicationProcessProgramID(), std::stop_token{},
-                LoadDiskCacheProgress);
-            LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
+        const Core::PerfStatsResults& PerfStats() const {
+            std::scoped_lock m_perf_stats_lock(m_perf_stats_mutex);
+            return m_perf_stats;
         }
 
-        void(m_system.Run());
-
-        if (m_system.DebuggerEnabled()) {
-            m_system.InitializeDebugger();
+        void SurfaceChanged() {
+            if (!IsRunning()) {
+                return;
+            }
+            m_window->OnSurfaceChanged(m_native_window);
+            m_system.Renderer().NotifySurfaceChanged();
         }
 
-        while (true) {
+        Core::SystemResultStatus InitializeEmulation(const std::string& filepath) {
+            std::scoped_lock lock(m_mutex);
+
+            // Loads the configuration.
+            Config{};
+
+            // Create the render window.
+            m_window = std::make_unique<EmuWindow_Android>(&m_input_subsystem, m_native_window,
+                                                           m_vulkan_library);
+
+            // Initialize system.
+            auto android_keyboard = std::make_unique<SoftwareKeyboard::AndroidKeyboard>();
+            m_software_keyboard = android_keyboard.get();
+            m_system.SetShuttingDown(false);
+            m_system.ApplySettings();
+            m_system.HIDCore().ReloadInputDevices();
+            m_system.SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
+            m_system.SetFilesystem(std::make_shared<FileSys::RealVfsFilesystem>());
+            m_system.SetAppletFrontendSet({
+                                                  nullptr,                     // Amiibo Settings
+                                                  nullptr,                     // Controller Selector
+                                                  nullptr,                     // Error Display
+                                                  nullptr,                     // Mii Editor
+                                                  nullptr,                     // Parental Controls
+                                                  nullptr,                     // Photo Viewer
+                                                  nullptr,                     // Profile Selector
+                                                  std::move(android_keyboard), // Software Keyboard
+                                                  nullptr,                     // Web Browser
+                                          });
+            m_system.GetFileSystemController().CreateFactories(*m_system.GetFilesystem());
+
+            // Initialize account manager
+            m_profile_manager = std::make_unique<Service::Account::ProfileManager>();
+
+            // Load the ROM.
+            m_load_result = m_system.Load(EmulationSession::GetInstance().Window(), filepath);
+            if (m_load_result != Core::SystemResultStatus::Success) {
+                return m_load_result;
+            }
+
+            // Complete initialization.
+            m_system.GPU().Start();
+            m_system.GetCpuManager().OnGpuReady();
+            m_system.RegisterExitCallback([&] { HaltEmulation(); });
+
+            return Core::SystemResultStatus::Success;
+        }
+
+        void ShutdownEmulation() {
+            std::scoped_lock lock(m_mutex);
+
+            m_is_running = false;
+
+            // Unload user input.
+            m_system.HIDCore().UnloadInputDevices();
+
+            // Shutdown the main emulated process
+            if (m_load_result == Core::SystemResultStatus::Success) {
+                m_system.DetachDebugger();
+                m_system.ShutdownMainProcess();
+                m_detached_tasks.WaitForAllTasks();
+                m_load_result = Core::SystemResultStatus::ErrorNotInitialized;
+            }
+
+            // Tear down the render window.
+            m_window.reset();
+        }
+
+        void PauseEmulation() {
+            std::scoped_lock lock(m_mutex);
+            m_system.Pause();
+        }
+
+        void UnPauseEmulation() {
+            std::scoped_lock lock(m_mutex);
+            m_system.Run();
+        }
+
+        void HaltEmulation() {
+            std::scoped_lock lock(m_mutex);
+            m_is_running = false;
+            m_cv.notify_one();
+        }
+
+        void RunEmulation() {
             {
-                std::unique_lock lock(m_mutex);
-                if (m_cv.wait_for(lock, std::chrono::milliseconds(800),
-                                  [&]() { return !m_is_running; })) {
-                    // Emulation halted.
-                    break;
+                std::scoped_lock lock(m_mutex);
+                m_is_running = true;
+            }
+
+            // Load the disk shader cache.
+            if (Settings::values.use_disk_shader_cache.GetValue()) {
+                LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
+                m_system.Renderer().ReadRasterizer()->LoadDiskResources(
+                        m_system.GetApplicationProcessProgramID(), std::stop_token{},
+                        LoadDiskCacheProgress);
+                LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
+            }
+
+            void(m_system.Run());
+
+            if (m_system.DebuggerEnabled()) {
+                m_system.InitializeDebugger();
+            }
+
+            while (true) {
+                {
+                    std::unique_lock lock(m_mutex);
+                    if (m_cv.wait_for(lock, std::chrono::milliseconds(800),
+                                      [&]() { return !m_is_running; })) {
+                        // Emulation halted.
+                        break;
+                    }
+                }
+                {
+                    // Refresh performance stats.
+                    std::scoped_lock m_perf_stats_lock(m_perf_stats_mutex);
+                    m_perf_stats = m_system.GetAndResetPerfStats();
                 }
             }
-            {
-                // Refresh performance stats.
-                std::scoped_lock m_perf_stats_lock(m_perf_stats_mutex);
-                m_perf_stats = m_system.GetAndResetPerfStats();
+        }
+
+        std::string GetRomTitle(const std::string& path) {
+            return GetRomMetadata(path).title;
+        }
+
+        std::vector<u8> GetRomIcon(const std::string& path) {
+            return GetRomMetadata(path).icon;
+        }
+
+        bool GetIsHomebrew(const std::string& path) {
+            return GetRomMetadata(path).isHomebrew;
+        }
+
+        void ResetRomMetadata() {
+            m_rom_metadata_cache.clear();
+        }
+
+        bool IsHandheldOnly() {
+            const auto npad_style_set = m_system.HIDCore().GetSupportedStyleTag();
+
+            if (npad_style_set.fullkey == 1) {
+                return false;
+            }
+
+            if (npad_style_set.handheld == 0) {
+                return false;
+            }
+
+            return !Settings::values.use_docked_mode.GetValue();
+        }
+
+        void SetDeviceType(int index, int type) {
+            auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
+            controller->SetNpadStyleIndex(static_cast<Core::HID::NpadStyleIndex>(type));
+        }
+
+        void OnGamepadConnectEvent(int index) {
+            auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
+
+            // Ensure that player1 is configured correctly and handheld disconnected
+            if (controller->GetNpadIdType() == Core::HID::NpadIdType::Player1) {
+                auto handheld =
+                        m_system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
+
+                if (controller->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::Handheld) {
+                    handheld->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
+                    controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
+                    handheld->Disconnect();
+                }
+            }
+
+            // Ensure that handheld is configured correctly and player 1 disconnected
+            if (controller->GetNpadIdType() == Core::HID::NpadIdType::Handheld) {
+                auto player1 = m_system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+
+                if (controller->GetNpadStyleIndex() != Core::HID::NpadStyleIndex::Handheld) {
+                    player1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
+                    controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
+                    player1->Disconnect();
+                }
+            }
+
+            if (!controller->IsConnected()) {
+                controller->Connect();
             }
         }
-    }
 
-    std::string GetRomTitle(const std::string& path) {
-        return GetRomMetadata(path).title;
-    }
-
-    std::vector<u8> GetRomIcon(const std::string& path) {
-        return GetRomMetadata(path).icon;
-    }
-
-    void ResetRomMetadata() {
-        m_rom_metadata_cache.clear();
-    }
-
-    bool IsHandheldOnly() {
-        const auto npad_style_set = m_system.HIDCore().GetSupportedStyleTag();
-
-        if (npad_style_set.fullkey == 1) {
-            return false;
+        void OnGamepadDisconnectEvent(int index) {
+            auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
+            controller->Disconnect();
         }
 
-        if (npad_style_set.handheld == 0) {
-            return false;
+        SoftwareKeyboard::AndroidKeyboard* SoftwareKeyboard() {
+            return m_software_keyboard;
         }
 
-        return !Settings::values.use_docked_mode.GetValue();
-    }
+    private:
+        struct RomMetadata {
+            std::string title;
+            std::vector<u8> icon;
+            bool isHomebrew;
+        };
 
-    void SetDeviceType(int index, int type) {
-        auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
-        controller->SetNpadStyleIndex(static_cast<Core::HID::NpadStyleIndex>(type));
-    }
-
-    void OnGamepadConnectEvent(int index) {
-        auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
-
-        // Ensure that player1 is configured correctly and handheld disconnected
-        if (controller->GetNpadIdType() == Core::HID::NpadIdType::Player1) {
-            auto handheld =
-                m_system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Handheld);
-
-            if (controller->GetNpadStyleIndex() == Core::HID::NpadStyleIndex::Handheld) {
-                handheld->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
-                controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::ProController);
-                handheld->Disconnect();
+        RomMetadata GetRomMetadata(const std::string& path) {
+            if (auto search = m_rom_metadata_cache.find(path); search != m_rom_metadata_cache.end()) {
+                return search->second;
             }
+
+            return CacheRomMetadata(path);
         }
 
-        // Ensure that handheld is configured correctly and player 1 disconnected
-        if (controller->GetNpadIdType() == Core::HID::NpadIdType::Handheld) {
-            auto player1 = m_system.HIDCore().GetEmulatedController(Core::HID::NpadIdType::Player1);
+        RomMetadata CacheRomMetadata(const std::string& path) {
+            const auto file = Core::GetGameFileFromPath(m_vfs, path);
+            auto loader = Loader::GetLoader(EmulationSession::GetInstance().System(), file, 0, 0);
 
-            if (controller->GetNpadStyleIndex() != Core::HID::NpadStyleIndex::Handheld) {
-                player1->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
-                controller->SetNpadStyleIndex(Core::HID::NpadStyleIndex::Handheld);
-                player1->Disconnect();
-            }
-        }
-
-        if (!controller->IsConnected()) {
-            controller->Connect();
-        }
-    }
-
-    void OnGamepadDisconnectEvent(int index) {
-        auto controller = m_system.HIDCore().GetEmulatedControllerByIndex(index);
-        controller->Disconnect();
-    }
-
-    SoftwareKeyboard::AndroidKeyboard* SoftwareKeyboard() {
-        return m_software_keyboard;
-    }
-
-    void DirectConnectToRoom(const std::string& nickname, const char* server_addr = "127.0.0.1",
-                             u16 server_port = Network::DefaultRoomPort,
-                             const std::string& password = "") {
-        auto room_network = m_system.GetRoomNetwork();
-
-        if (const auto member = room_network.GetRoomMember().lock()) {
-            // Prevent the user from trying to join a room while they are already joining.
-            if (member->GetState() == Network::RoomMember::State::Joining || member->IsConnected()) {
-                return;
+            RomMetadata entry;
+            loader->ReadTitle(entry.title);
+            loader->ReadIcon(entry.icon);
+            if (loader->GetFileType() == Loader::FileType::NRO) {
+                auto loader_nro = dynamic_cast<Loader::AppLoader_NRO*>(loader.get());
+                entry.isHomebrew = loader_nro->IsHomebrew();
             } else {
-                member->Join(nickname, server_addr, server_port);
+                entry.isHomebrew = false;
             }
-        }
-    }
 
-    Network::RoomMember::State GetRoomMemberState() {
-        if (const auto member = m_system.GetRoomNetwork().GetRoomMember().lock()) {
-            return member->GetState();
-        } else {
-            return Network::RoomMember::State::Idle;
-        }
-    }
+            m_rom_metadata_cache[path] = entry;
 
-private:
-    struct RomMetadata {
-        std::string title;
-        std::vector<u8> icon;
+            return entry;
+        }
+
+    private:
+        static void LoadDiskCacheProgress(VideoCore::LoadCallbackStage stage, int progress, int max) {
+            JNIEnv* env = IDCache::GetEnvForThread();
+            env->CallStaticVoidMethod(IDCache::GetDiskCacheProgressClass(),
+                                      IDCache::GetDiskCacheLoadProgress(), static_cast<jint>(stage),
+                                      static_cast<jint>(progress), static_cast<jint>(max));
+        }
+
+    private:
+        static EmulationSession s_instance;
+
+        // Frontend management
+        std::unordered_map<std::string, RomMetadata> m_rom_metadata_cache;
+
+        // Window management
+        std::unique_ptr<EmuWindow_Android> m_window;
+        ANativeWindow* m_native_window{};
+
+        // Core emulation
+        Core::System m_system;
+        InputCommon::InputSubsystem m_input_subsystem;
+        Common::DetachedTasks m_detached_tasks;
+        Core::PerfStatsResults m_perf_stats{};
+        std::shared_ptr<FileSys::RealVfsFilesystem> m_vfs;
+        Core::SystemResultStatus m_load_result{Core::SystemResultStatus::ErrorNotInitialized};
+        bool m_is_running{};
+        SoftwareKeyboard::AndroidKeyboard* m_software_keyboard{};
+        std::unique_ptr<Service::Account::ProfileManager> m_profile_manager;
+
+        // GPU driver parameters
+        std::shared_ptr<Common::DynamicLibrary> m_vulkan_library;
+
+        // Synchronization
+        std::condition_variable_any m_cv;
+        mutable std::mutex m_perf_stats_mutex;
+        mutable std::mutex m_mutex;
     };
-
-    RomMetadata GetRomMetadata(const std::string& path) {
-        if (auto search = m_rom_metadata_cache.find(path); search != m_rom_metadata_cache.end()) {
-            return search->second;
-        }
-
-        return CacheRomMetadata(path);
-    }
-
-    RomMetadata CacheRomMetadata(const std::string& path) {
-        const auto file = Core::GetGameFileFromPath(m_vfs, path);
-        const auto loader = Loader::GetLoader(EmulationSession::GetInstance().System(), file, 0, 0);
-
-        RomMetadata entry;
-        loader->ReadTitle(entry.title);
-        loader->ReadIcon(entry.icon);
-
-        m_rom_metadata_cache[path] = entry;
-
-        return entry;
-    }
-
-private:
-    static void LoadDiskCacheProgress(VideoCore::LoadCallbackStage stage, int progress, int max) {
-        JNIEnv* env = IDCache::GetEnvForThread();
-        env->CallStaticVoidMethod(IDCache::GetDiskCacheProgressClass(),
-                                  IDCache::GetDiskCacheLoadProgress(), static_cast<jint>(stage),
-                                  static_cast<jint>(progress), static_cast<jint>(max));
-    }
-
-private:
-    static EmulationSession s_instance;
-
-    // Frontend management
-    std::unordered_map<std::string, RomMetadata> m_rom_metadata_cache;
-
-    // Window management
-    std::unique_ptr<EmuWindow_Android> m_window;
-    ANativeWindow* m_native_window{};
-    u32 m_screen_rotation{};
-
-    // Core emulation
-    Core::System m_system;
-    InputCommon::InputSubsystem m_input_subsystem;
-    Common::DetachedTasks m_detached_tasks;
-    Core::PerfStatsResults m_perf_stats{};
-    std::shared_ptr<FileSys::RealVfsFilesystem> m_vfs;
-    Core::SystemResultStatus m_load_result{Core::SystemResultStatus::ErrorNotInitialized};
-    bool m_is_running{};
-    SoftwareKeyboard::AndroidKeyboard* m_software_keyboard{};
-    std::unique_ptr<Service::Account::ProfileManager> m_profile_manager;
-
-    // GPU driver parameters
-    std::shared_ptr<Common::DynamicLibrary> m_vulkan_library;
-
-    // Synchronization
-    std::condition_variable_any m_cv;
-    mutable std::mutex m_perf_stats_mutex;
-    mutable std::mutex m_mutex;
-};
 
 /*static*/ EmulationSession EmulationSession::s_instance;
 
 } // Anonymous namespace
-
-u32 GetAndroidScreenRotation() {
-    return EmulationSession::GetInstance().ScreenRotation();
-}
 
 static Core::SystemResultStatus RunEmulation(const std::string& filepath) {
     Common::Log::Initialize();
@@ -486,13 +460,6 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_surfaceDestroyed(JNIEnv* env,
     EmulationSession::GetInstance().SurfaceChanged();
 }
 
-void Java_org_yuzu_yuzu_1emu_NativeLibrary_notifyOrientationChange(JNIEnv* env,
-                                                                   [[maybe_unused]] jclass clazz,
-                                                                   jint layout_option,
-                                                                   jint rotation) {
-    return EmulationSession::GetInstance().SetScreenRotation(static_cast<u32>(rotation));
-}
-
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_setAppDirectory(JNIEnv* env,
                                                            [[maybe_unused]] jclass clazz,
                                                            jstring j_directory) {
@@ -500,11 +467,11 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_setAppDirectory(JNIEnv* env,
 }
 
 void JNICALL Java_org_yuzu_yuzu_1emu_NativeLibrary_initializeGpuDriver(
-    JNIEnv* env, [[maybe_unused]] jclass clazz, jstring hook_lib_dir, jstring custom_driver_dir,
-    jstring custom_driver_name, jstring file_redirect_dir) {
+        JNIEnv* env, [[maybe_unused]] jclass clazz, jstring hook_lib_dir, jstring custom_driver_dir,
+        jstring custom_driver_name, jstring file_redirect_dir) {
     EmulationSession::GetInstance().InitializeGpuDriver(
-        GetJString(env, hook_lib_dir), GetJString(env, custom_driver_dir),
-        GetJString(env, custom_driver_name), GetJString(env, file_redirect_dir));
+            GetJString(env, hook_lib_dir), GetJString(env, custom_driver_dir),
+            GetJString(env, custom_driver_name), GetJString(env, file_redirect_dir));
 }
 
 jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_reloadKeys(JNIEnv* env,
@@ -562,7 +529,7 @@ jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_onGamePadConnectEvent([[maybe_unu
 }
 
 jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_onGamePadDisconnectEvent(
-    [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jint j_device) {
+        [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jint j_device) {
     if (EmulationSession::GetInstance().IsRunning()) {
         EmulationSession::GetInstance().OnGamepadDisconnectEvent(j_device);
     }
@@ -592,12 +559,12 @@ jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_onGamePadJoystickEvent([[maybe_un
 }
 
 jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_onGamePadMotionEvent(
-    [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jint j_device,
-    jlong delta_timestamp, jfloat gyro_x, jfloat gyro_y, jfloat gyro_z, jfloat accel_x,
-    jfloat accel_y, jfloat accel_z) {
+        [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jint j_device,
+        jlong delta_timestamp, jfloat gyro_x, jfloat gyro_y, jfloat gyro_z, jfloat accel_x,
+        jfloat accel_y, jfloat accel_z) {
     if (EmulationSession::GetInstance().IsRunning()) {
         EmulationSession::GetInstance().Window().OnGamepadMotionEvent(
-            j_device, delta_timestamp, gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z);
+                j_device, delta_timestamp, gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z);
     }
     return static_cast<jboolean>(true);
 }
@@ -687,8 +654,14 @@ jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_getCompany([[maybe_unused]] JNIEnv
     return env->NewStringUTF("");
 }
 
+jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isHomebrew([[maybe_unused]] JNIEnv* env,
+                                                          [[maybe_unused]] jclass clazz,
+                                                          [[maybe_unused]] jstring j_filename) {
+    return EmulationSession::GetInstance().GetIsHomebrew(GetJString(env, j_filename));
+}
+
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_initializeEmulation
-    [[maybe_unused]] (JNIEnv* env, [[maybe_unused]] jclass clazz) {
+[[maybe_unused]] (JNIEnv* env, [[maybe_unused]] jclass clazz) {
     // Create the default config.ini.
     Config{};
     // Initialize the emulated system.
@@ -701,8 +674,8 @@ jint Java_org_yuzu_yuzu_1emu_NativeLibrary_defaultCPUCore([[maybe_unused]] JNIEn
 }
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_run__Ljava_lang_String_2Ljava_lang_String_2Z(
-    [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, [[maybe_unused]] jstring j_file,
-    [[maybe_unused]] jstring j_savestate, [[maybe_unused]] jboolean j_delete_savestate) {}
+        [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, [[maybe_unused]] jstring j_file,
+        [[maybe_unused]] jstring j_savestate, [[maybe_unused]] jboolean j_delete_savestate) {}
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_reloadSettings([[maybe_unused]] JNIEnv* env,
                                                           [[maybe_unused]] jclass clazz) {
@@ -765,7 +738,7 @@ jdoubleArray Java_org_yuzu_yuzu_1emu_NativeLibrary_getPerfStats([[maybe_unused]]
 }
 
 void Java_org_yuzu_yuzu_1emu_utils_DirectoryInitialization_setSysDirectory(
-    [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jstring j_path) {}
+        [[maybe_unused]] JNIEnv* env, [[maybe_unused]] jclass clazz, jstring j_path) {}
 
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_run__Ljava_lang_String_2([[maybe_unused]] JNIEnv* env,
                                                                     [[maybe_unused]] jclass clazz,
@@ -794,47 +767,6 @@ void Java_org_yuzu_yuzu_1emu_NativeLibrary_submitInlineKeyboardText(JNIEnv* env,
 void Java_org_yuzu_yuzu_1emu_NativeLibrary_submitInlineKeyboardInput(JNIEnv* env, jclass clazz,
                                                                      jint j_key_code) {
     EmulationSession::GetInstance().SoftwareKeyboard()->SubmitInlineKeyboardInput(j_key_code);
-}
-
-void Java_org_yuzu_yuzu_1emu_NativeLibrary_connectToRoom(JNIEnv* env, jclass clazz,
-                                                                     jstring nickname,
-                                                                     jstring server_addr,
-                                                                     jint server_port,
-                                                                     jstring password) {
-    EmulationSession::GetInstance().DirectConnectToRoom(
-            GetJString(env, nickname),
-            GetJString(env, server_addr).c_str(),
-            server_port,
-            GetJString(env, password)
-            );
-}
-
-jstring Java_org_yuzu_yuzu_1emu_NativeLibrary_getRoomMemberState(JNIEnv* env, jclass clazz) {
-    auto state = EmulationSession::GetInstance().GetRoomMemberState();
-
-    std::string state_str{};
-
-    switch(state) {
-        using State = Network::RoomMember::State;
-
-        case State::Uninitialized:
-            state_str = "Uninitialized";
-            break;
-        case State::Idle:
-            state_str = "Idle";
-            break;
-        case State::Joining:
-            state_str = "Joining";
-            break;
-        case State::Joined:
-            state_str = "Joined";
-            break;
-        case State::Moderator:
-            state_str = "Moderator";
-            break;
-    }
-
-    return env->NewStringUTF(state_str.c_str());
 }
 
 } // extern "C"
