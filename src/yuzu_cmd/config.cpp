@@ -227,6 +227,9 @@ void Config::ReadValues() {
     FS::SetYuzuPath(FS::YuzuPath::SDMCDir,
                     sdl2_config->Get("Data Storage", "sdmc_directory",
                                      FS::GetYuzuPathString(FS::YuzuPath::SDMCDir)));
+    FS::SetYuzuPath(FS::YuzuPath::AmiiboDir,
+                    sdl2_config->Get("Data Storage", "amiibo_directory",
+                                     FS::GetYuzuPathString(FS::YuzuPath::AmiiboDir)));
     FS::SetYuzuPath(FS::YuzuPath::LoadDir,
                     sdl2_config->Get("Data Storage", "load_directory",
                                      FS::GetYuzuPathString(FS::YuzuPath::LoadDir)));

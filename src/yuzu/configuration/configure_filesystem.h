@@ -30,6 +30,7 @@ private:
     enum class DirectoryTarget {
         NAND,
         SD,
+        Amiibo,
         Gamecard,
         Dump,
         Load,
