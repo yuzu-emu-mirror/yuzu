@@ -6,6 +6,8 @@
 #include <sstream>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
+
 #include "common/bit_cast.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -18,8 +20,10 @@
 #include <iphlpapi.h>
 #else
 #include <cerrno>
+#include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <net/if.h>
+
 #endif
 
 namespace Network {
@@ -91,8 +95,28 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
     return result;
 }
 
-#else
+#elif defined(__ANDROID__)
+std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
+    std::vector<NetworkInterface> result;
 
+    std::vector<std::string> route_parts;
+
+    boost::split(route_parts, Settings::values.network_route.GetValue(), boost::is_any_of(";"));
+
+    struct in_addr ip {
+    }, sm{}, gw{};
+
+    inet_pton(AF_INET, route_parts[1].c_str(), &ip);
+    inet_pton(AF_INET, route_parts[2].c_str(), &sm);
+    inet_pton(AF_INET, route_parts[3].c_str(), &gw);
+
+    result.emplace_back(
+        NetworkInterface{.name{route_parts[0]}, .ip_address{ip}, .subnet_mask{sm}, .gateway{gw}});
+
+    return result;
+}
+
+#else
 std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
     struct ifaddrs* ifaddr = nullptr;
 
@@ -187,6 +211,10 @@ std::vector<NetworkInterface> GetAvailableNetworkInterfaces() {
 #endif
 
 std::optional<NetworkInterface> GetSelectedNetworkInterface() {
+#ifdef __ANDROID__
+    Network::SelectFirstNetworkInterface(); // TODO ANDROID
+#endif
+
     const auto& selected_network_interface = Settings::values.network_interface.GetValue();
     const auto network_interfaces = Network::GetAvailableNetworkInterfaces();
     if (network_interfaces.empty()) {

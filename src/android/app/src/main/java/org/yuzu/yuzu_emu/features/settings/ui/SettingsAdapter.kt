@@ -7,13 +7,14 @@ import android.content.Context
 import android.content.DialogInterface
 import android.icu.util.Calendar
 import android.icu.util.TimeZone
+import android.text.TextWatcher
 import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.setFragmentResultListener
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -21,6 +22,7 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import org.yuzu.yuzu_emu.R
+import org.yuzu.yuzu_emu.databinding.DialogEditTextBinding
 import org.yuzu.yuzu_emu.databinding.DialogSliderBinding
 import org.yuzu.yuzu_emu.databinding.ListItemSettingBinding
 import org.yuzu.yuzu_emu.databinding.ListItemSettingSwitchBinding
@@ -81,6 +83,10 @@ class SettingsAdapter(
 
             SettingsItem.TYPE_RUNNABLE -> {
                 RunnableViewHolder(ListItemSettingBinding.inflate(inflater), this)
+            }
+
+            SettingsItem.TYPE_TEXT_SETTING -> {
+                TextSettingViewHolder(ListItemSettingBinding.inflate(inflater), this)
             }
 
             else -> {
@@ -167,6 +173,7 @@ class SettingsAdapter(
             .setSelection(storedTime)
             .setTitleText(R.string.select_rtc_date)
             .build()
+
         val timePicker: MaterialTimePicker = MaterialTimePicker.Builder()
             .setTimeFormat(timeFormat)
             .setHour(calendar.get(Calendar.HOUR_OF_DAY))
@@ -197,6 +204,38 @@ class SettingsAdapter(
             (fragmentView.activityView as AppCompatActivity).supportFragmentManager,
             "DatePicker"
         )
+    }
+
+    fun onTextSettingClick(item: TextSetting, position: Int) {
+        clickedItem = item
+        clickedPosition = position
+        var value = item.value
+
+        val inflater = LayoutInflater.from(context)
+        val editTextBinding = DialogEditTextBinding.inflate(inflater)
+
+        editTextBinding.editText.setText(value)
+
+        editTextBinding.editText.doAfterTextChanged {
+            value = it.toString()
+        }
+
+        dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(item.nameId)
+            .setView(editTextBinding.root)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                if (item.value != value) {
+                    fragmentView.onSettingChanged()
+                }
+                notifyItemChanged(clickedPosition)
+
+                val setting = item.setSelectedValue(value)
+                fragmentView.putSetting(setting)
+                clickedItem = null
+            }
+            .setNegativeButton(android.R.string.cancel, defaultCancelListener)
+            .show()
+
     }
 
     fun onSliderClick(item: SliderSetting, position: Int) {

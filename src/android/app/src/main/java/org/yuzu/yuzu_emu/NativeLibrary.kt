@@ -492,6 +492,17 @@ object NativeLibrary {
     external fun submitInlineKeyboardInput(key_code: Int)
 
     /**
+     * Connects to a room (similar with desktop version's "direct connect")
+     */
+    external fun connectToRoom(nickname: String, server_addr: String, server_port: Int, password: String)
+
+    /**
+     * Returns the state of the room member (client)
+     * @return The state as a string
+     */
+    external fun getRoomMemberState(): String
+
+    /**
      * Button type for use in onTouchEvent
      */
     object ButtonType {

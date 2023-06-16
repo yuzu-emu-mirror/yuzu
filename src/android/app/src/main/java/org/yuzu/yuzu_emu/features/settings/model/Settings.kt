@@ -107,7 +107,9 @@ class Settings {
         const val SECTION_RENDERER = "Renderer"
         const val SECTION_AUDIO = "Audio"
         const val SECTION_CPU = "Cpu"
+        const val SECTION_NETWORK = "Network"
         const val SECTION_THEME = "Theme"
+        const val SECTION_MULTIPLAYER = "Multiplayer"
         const val SECTION_DEBUG = "Debug"
 
         const val PREF_OVERLAY_INIT = "OverlayInit"
@@ -129,6 +131,14 @@ class Settings {
         const val PREF_BUTTON_TOGGLE_12 = "buttonToggle12"
         const val PREF_BUTTON_TOGGLE_13 = "buttonToggle13"
         const val PREF_BUTTON_TOGGLE_14 = "buttonToggle14"
+
+        const val PREF_FORCE_WIFI = "Network_ForceWifi"
+
+        const val PREF_ROOM_ADDRESS = "MultiplayerRoom_ServerAddress"
+        const val PREF_ROOM_PORT = "MultiplayerRoom_ServerPort"
+        const val PREF_ROOM_NICKNAME = "MultiplayerRoom_Nickname"
+        const val PREF_ROOM_PASSWORD = "MultiplayerRoom_Password"
+        const val PREF_ROOM_CONNECT_ON_START = "MultiplayerRoom_ConnectOnStart"
 
         const val PREF_MENU_SETTINGS_JOYSTICK_REL_CENTER = "EmulationMenuSettings_JoystickRelCenter"
         const val PREF_MENU_SETTINGS_DPAD_SLIDE = "EmulationMenuSettings_DpadSlideEnable"
@@ -154,6 +164,7 @@ class Settings {
                     SECTION_SYSTEM,
                     SECTION_RENDERER,
                     SECTION_AUDIO,
+                    SECTION_NETWORK,
                     SECTION_CPU
                 )
         }

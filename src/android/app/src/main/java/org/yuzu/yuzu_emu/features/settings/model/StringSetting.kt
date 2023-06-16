@@ -8,7 +8,8 @@ enum class StringSetting(
     override val section: String,
     override val defaultValue: String
 ) : AbstractStringSetting {
-    CUSTOM_RTC("custom_rtc", Settings.SECTION_SYSTEM, "0");
+    CUSTOM_RTC("custom_rtc", Settings.SECTION_SYSTEM, "0"),
+    NETWORK_ROUTE("network_route", Settings.SECTION_NETWORK, ";;;;");
 
     override var string: String = defaultValue
 
@@ -27,7 +28,8 @@ enum class StringSetting(
 
     companion object {
         private val NOT_RUNTIME_EDITABLE = listOf(
-            CUSTOM_RTC
+            CUSTOM_RTC,
+            NETWORK_ROUTE
         )
 
         fun from(key: String): StringSetting? = StringSetting.values().firstOrNull { it.key == key }
