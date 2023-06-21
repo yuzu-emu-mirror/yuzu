@@ -151,6 +151,17 @@ DrawParams MakeDrawParams(const MaxwellDrawState& draw_state, u32 num_instances,
     }
     return params;
 }
+
+u32 FeedbackLoopVerticesPerPrimitive(const MaxwellDrawState& draw_state, const DrawParams& params) {
+    switch (draw_state.topology) {
+    case Maxwell::PrimitiveTopology::Triangles:
+        return 3;
+    default:
+        ASSERT(false);
+        return params.num_vertices;
+    }
+}
+
 } // Anonymous namespace
 
 RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
@@ -202,24 +213,58 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func) {
         return;
     }
     std::scoped_lock lock{buffer_cache.mutex, texture_cache.mutex};
+    bool has_feedback_loop{};
+
     // update engine as channel may be different.
     pipeline->SetEngine(maxwell3d, gpu_memory);
-    pipeline->Configure(is_indexed);
+    pipeline->Configure(is_indexed, has_feedback_loop);
 
     BeginTransformFeedback();
 
     UpdateDynamicStates();
 
-    draw_func();
+    draw_func(has_feedback_loop);
 
     EndTransformFeedback();
 }
 
 void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
-    PrepareDraw(is_indexed, [this, is_indexed, instance_count] {
+    PrepareDraw(is_indexed, [this, is_indexed, instance_count](bool has_feedback_loop) {
         const auto& draw_state = maxwell3d->draw_manager->GetDrawState();
         const u32 num_instances{instance_count};
         const DrawParams draw_params{MakeDrawParams(draw_state, num_instances, is_indexed)};
+
+        if (has_feedback_loop && draw_params.num_vertices > 6 && draw_params.num_instances == 1) {
+            u32 vertices_per_primitive = FeedbackLoopVerticesPerPrimitive(draw_state, draw_params);
+
+            std::array<VkImageMemoryBarrier, 9> barriers{};
+            u32 num_barriers{};
+            scheduler.GetFeedbackLoopBarrier(barriers, num_barriers);
+            scheduler.Record([draw_params, barriers, num_barriers,
+                              vertices_per_primitive](vk::CommandBuffer cmdbuf) {
+                if (draw_params.is_indexed) {
+                    for (u32 i = 0; i < draw_params.num_vertices; i += vertices_per_primitive) {
+                        cmdbuf.DrawIndexed(vertices_per_primitive, draw_params.num_instances, i,
+                                           draw_params.base_vertex, draw_params.base_instance);
+                        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                               VK_DEPENDENCY_BY_REGION_BIT, {}, {},
+                                               vk::Span(barriers.data(), num_barriers));
+                    }
+                } else {
+                    for (u32 i = 0; i < draw_params.num_vertices; i += vertices_per_primitive) {
+                        cmdbuf.Draw(vertices_per_primitive, draw_params.num_instances, i,
+                                    draw_params.base_instance);
+                        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                               VK_DEPENDENCY_BY_REGION_BIT, {}, {},
+                                               vk::Span(barriers.data(), num_barriers));
+                    }
+                }
+            });
+            return;
+        }
+
         scheduler.Record([draw_params](vk::CommandBuffer cmdbuf) {
             if (draw_params.is_indexed) {
                 cmdbuf.DrawIndexed(draw_params.num_vertices, draw_params.num_instances,
@@ -236,7 +281,7 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
 void RasterizerVulkan::DrawIndirect() {
     const auto& params = maxwell3d->draw_manager->GetIndirectParams();
     buffer_cache.SetDrawIndirect(&params);
-    PrepareDraw(params.is_indexed, [this, &params] {
+    PrepareDraw(params.is_indexed, [this, &params](bool) {
         const auto indirect_buffer = buffer_cache.GetDrawIndirectBuffer();
         const auto& buffer = indirect_buffer.first;
         const auto& offset = indirect_buffer.second;

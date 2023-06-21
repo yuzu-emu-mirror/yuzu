@@ -16,6 +16,7 @@
 #include "common/polyfill_thread.h"
 #include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
+#include "vulkan/vulkan_core.h"
 
 namespace Vulkan {
 
@@ -107,6 +108,9 @@ public:
     }
 
     std::mutex submit_mutex;
+
+    void GetFeedbackLoopBarrier(std::array<VkImageMemoryBarrier, 9>& out_barriers,
+                                u32& out_num_barriers);
 
 private:
     class Command {
