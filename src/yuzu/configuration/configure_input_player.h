@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <QWidget>
+#include <QScrollArea>
 
 #include "common/param_package.h"
 #include "common/settings.h"
@@ -46,7 +46,7 @@ class EmulatedController;
 enum class NpadStyleIndex : u8;
 } // namespace Core::HID
 
-class ConfigureInputPlayer : public QWidget {
+class ConfigureInputPlayer : public QScrollArea {
     Q_OBJECT
 
 public:
