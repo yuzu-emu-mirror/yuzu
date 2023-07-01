@@ -35,7 +35,6 @@ namespace Core::Crypto {
 namespace {
 
 constexpr u64 CURRENT_CRYPTO_REVISION = 0x5;
-constexpr u64 FULL_TICKET_SIZE = 0x400;
 
 using Common::AsArray;
 
@@ -214,34 +213,51 @@ Ticket Ticket::SynthesizeCommon(Key128 title_key, const std::array<u8, 16>& righ
     return Ticket{out};
 }
 
-bool Ticket::Read(Ticket& ticket_out, const FileSys::VirtualFile& file) {
-    SignatureType sig_type;
-    if (file->Read(reinterpret_cast<u8*>(&sig_type), sizeof(sig_type), 0) < sizeof(sig_type)) {
-        return false;
+Ticket Ticket::Read(const FileSys::VirtualFile& file) {
+    // Attempt to read up to the largest ticket size, and make sure we read at least a signature
+    // type.
+    std::array<u8, sizeof(RSA4096Ticket)> raw_data{};
+    auto read_size = file->Read(raw_data.data(), raw_data.size(), 0);
+    if (read_size < sizeof(SignatureType)) {
+        LOG_WARNING(Crypto, "Attempted to read ticket file with invalid size {}.", read_size);
+        return Ticket{std::monostate()};
     }
+    return Read(std::span{raw_data});
+}
+
+Ticket Ticket::Read(std::span<const u8> raw_data) {
+    // Some tools read only 0x180 bytes of ticket data instead of 0x2C0, so
+    // just make sure we have at least the bare minimum of data to work with.
+    SignatureType sig_type;
+    if (raw_data.size() < sizeof(SignatureType)) {
+        LOG_WARNING(Crypto, "Attempted to parse ticket buffer with invalid size {}.",
+                    raw_data.size());
+        return Ticket{std::monostate()};
+    }
+    std::memcpy(&sig_type, raw_data.data(), sizeof(sig_type));
 
     switch (sig_type) {
     case SignatureType::RSA_4096_SHA1:
     case SignatureType::RSA_4096_SHA256: {
-        ticket_out.data.emplace<RSA4096Ticket>();
-        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(RSA4096Ticket), 0);
-        return true;
+        RSA4096Ticket ticket{};
+        std::memcpy(&ticket, raw_data.data(), sizeof(ticket));
+        return Ticket{ticket};
     }
     case SignatureType::RSA_2048_SHA1:
     case SignatureType::RSA_2048_SHA256: {
-        ticket_out.data.emplace<RSA2048Ticket>();
-        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(RSA2048Ticket), 0);
-        return true;
+        RSA2048Ticket ticket{};
+        std::memcpy(&ticket, raw_data.data(), sizeof(ticket));
+        return Ticket{ticket};
     }
     case SignatureType::ECDSA_SHA1:
     case SignatureType::ECDSA_SHA256: {
-        ticket_out.data.emplace<ECDSATicket>();
-        file->Read(reinterpret_cast<u8*>(&ticket_out.data), sizeof(ECDSATicket), 0);
-        return true;
+        ECDSATicket ticket{};
+        std::memcpy(&ticket, raw_data.data(), sizeof(ticket));
+        return Ticket{ticket};
     }
     default:
-        ticket_out.data.emplace<std::monostate>();
-        return false;
+        LOG_WARNING(Crypto, "Attempted to parse ticket buffer with invalid type {}.", sig_type);
+        return Ticket{std::monostate()};
     }
 }
 
@@ -482,10 +498,12 @@ std::vector<Ticket> GetTicketblob(const Common::FS::IOFile& ticket_save) {
     for (std::size_t offset = 0; offset + 0x4 < buffer.size(); ++offset) {
         if (buffer[offset] == 0x4 && buffer[offset + 1] == 0x0 && buffer[offset + 2] == 0x1 &&
             buffer[offset + 3] == 0x0) {
-            out.emplace_back();
-            auto& next = out.back();
-            std::memcpy(&next, buffer.data() + offset, sizeof(Ticket));
-            offset += FULL_TICKET_SIZE;
+            // NOTE: Assumes ticket blob will only contain RSA-2048 tickets.
+            auto ticket = Ticket::Read(std::span{buffer.data() + offset, sizeof(RSA2048Ticket)});
+            offset += sizeof(RSA2048Ticket);
+            if (ticket.IsValid()) {
+                out.push_back(ticket);
+            }
         }
     }
 
@@ -544,71 +562,66 @@ std::optional<std::pair<Key128, Key128>> ParseTicket(const Ticket& ticket,
         return std::nullopt;
     }
 
-    // Dirty hack, figure out why ticket.data variant is invalid
-    try {
-        const auto issuer = ticket.GetData().issuer;
-        if (IsAllZeroArray(issuer)) {
-            return std::nullopt;
-        }
-        if (issuer[0] != 'R' || issuer[1] != 'o' || issuer[2] != 'o' || issuer[3] != 't') {
-            LOG_INFO(Crypto, "Attempting to parse ticket with non-standard certificate authority.");
-        }
-
-        Key128 rights_id = ticket.GetData().rights_id;
-
-        if (rights_id == Key128{}) {
-            return std::nullopt;
-        }
-
-        if (ticket.GetData().type == TitleKeyType::Common) {
-            return std::make_pair(rights_id, ticket.GetData().title_key_common);
-        }
-
-        mbedtls_mpi D; // RSA Private Exponent
-        mbedtls_mpi N; // RSA Modulus
-        mbedtls_mpi S; // Input
-        mbedtls_mpi M; // Output
-
-        mbedtls_mpi_init(&D);
-        mbedtls_mpi_init(&N);
-        mbedtls_mpi_init(&S);
-        mbedtls_mpi_init(&M);
-
-        mbedtls_mpi_read_binary(&D, key.decryption_key.data(), key.decryption_key.size());
-        mbedtls_mpi_read_binary(&N, key.modulus.data(), key.modulus.size());
-        mbedtls_mpi_read_binary(&S, ticket.GetData().title_key_block.data(), 0x100);
-
-        mbedtls_mpi_exp_mod(&M, &S, &D, &N, nullptr);
-
-        std::array<u8, 0x100> rsa_step;
-        mbedtls_mpi_write_binary(&M, rsa_step.data(), rsa_step.size());
-
-        u8 m_0 = rsa_step[0];
-        std::array<u8, 0x20> m_1;
-        std::memcpy(m_1.data(), rsa_step.data() + 0x01, m_1.size());
-        std::array<u8, 0xDF> m_2;
-        std::memcpy(m_2.data(), rsa_step.data() + 0x21, m_2.size());
-
-        if (m_0 != 0) {
-            return std::nullopt;
-        }
-
-        m_1 = m_1 ^ MGF1<0x20>(m_2);
-        m_2 = m_2 ^ MGF1<0xDF>(m_1);
-
-        const auto offset = FindTicketOffset(m_2);
-        if (!offset) {
-            return std::nullopt;
-        }
-        ASSERT(*offset > 0);
-
-        Key128 key_temp{};
-        std::memcpy(key_temp.data(), m_2.data() + *offset, key_temp.size());
-
-        return std::make_pair(rights_id, key_temp);
-    } catch (const std::bad_variant_access&) {
+    const auto issuer = ticket.GetData().issuer;
+    if (IsAllZeroArray(issuer)) {
         return std::nullopt;
     }
+    if (issuer[0] != 'R' || issuer[1] != 'o' || issuer[2] != 'o' || issuer[3] != 't') {
+        LOG_INFO(Crypto, "Attempting to parse ticket with non-standard certificate authority.");
+    }
+
+    Key128 rights_id = ticket.GetData().rights_id;
+
+    if (rights_id == Key128{}) {
+        return std::nullopt;
+    }
+
+    if (ticket.GetData().type == TitleKeyType::Common) {
+        return std::make_pair(rights_id, ticket.GetData().title_key_common);
+    }
+
+    mbedtls_mpi D; // RSA Private Exponent
+    mbedtls_mpi N; // RSA Modulus
+    mbedtls_mpi S; // Input
+    mbedtls_mpi M; // Output
+
+    mbedtls_mpi_init(&D);
+    mbedtls_mpi_init(&N);
+    mbedtls_mpi_init(&S);
+    mbedtls_mpi_init(&M);
+
+    mbedtls_mpi_read_binary(&D, key.decryption_key.data(), key.decryption_key.size());
+    mbedtls_mpi_read_binary(&N, key.modulus.data(), key.modulus.size());
+    mbedtls_mpi_read_binary(&S, ticket.GetData().title_key_block.data(), 0x100);
+
+    mbedtls_mpi_exp_mod(&M, &S, &D, &N, nullptr);
+
+    std::array<u8, 0x100> rsa_step;
+    mbedtls_mpi_write_binary(&M, rsa_step.data(), rsa_step.size());
+
+    u8 m_0 = rsa_step[0];
+    std::array<u8, 0x20> m_1;
+    std::memcpy(m_1.data(), rsa_step.data() + 0x01, m_1.size());
+    std::array<u8, 0xDF> m_2;
+    std::memcpy(m_2.data(), rsa_step.data() + 0x21, m_2.size());
+
+    if (m_0 != 0) {
+        return std::nullopt;
+    }
+
+    m_1 = m_1 ^ MGF1<0x20>(m_2);
+    m_2 = m_2 ^ MGF1<0xDF>(m_1);
+
+    const auto offset = FindTicketOffset(m_2);
+    if (!offset) {
+        return std::nullopt;
+    }
+    ASSERT(*offset > 0);
+
+    Key128 key_temp{};
+    std::memcpy(key_temp.data(), m_2.data() + *offset, key_temp.size());
+
+    return std::make_pair(rights_id, key_temp);
 }
 
 KeyManager::KeyManager() {

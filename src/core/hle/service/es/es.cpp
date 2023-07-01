@@ -122,20 +122,25 @@ private:
     }
 
     void ImportTicket(HLERequestContext& ctx) {
-        const auto ticket = ctx.ReadBuffer();
+        const auto raw_ticket = ctx.ReadBuffer();
         [[maybe_unused]] const auto cert = ctx.ReadBuffer(1);
 
-        if (ticket.size() < sizeof(Core::Crypto::Ticket)) {
+        if (raw_ticket.size() < sizeof(Core::Crypto::Ticket)) {
             LOG_ERROR(Service_ETicket, "The input buffer is not large enough!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERROR_INVALID_ARGUMENT);
             return;
         }
 
-        Core::Crypto::Ticket raw{};
-        std::memcpy(&raw, ticket.data(), sizeof(Core::Crypto::Ticket));
+        Core::Crypto::Ticket ticket = Core::Crypto::Ticket::Read(raw_ticket);
+        if (!ticket.IsValid()) {
+            LOG_ERROR(Service_ETicket, "The ticket is invalid!");
+            IPC::ResponseBuilder rb{ctx, 2};
+            rb.Push(ERROR_INVALID_ARGUMENT);
+            return;
+        }
 
-        if (!keys.AddTicketPersonalized(raw)) {
+        if (!keys.AddTicketPersonalized(ticket)) {
             LOG_ERROR(Service_ETicket, "The ticket could not be imported!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERROR_INVALID_ARGUMENT);

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 
 #include <variant>
@@ -80,6 +81,7 @@ struct RSA4096Ticket {
     INSERT_PADDING_BYTES(0x3C);
     TicketData data;
 };
+static_assert(sizeof(RSA4096Ticket) == 0x500, "RSA4096Ticket has incorrect size.");
 
 struct RSA2048Ticket {
     SignatureType sig_type;
@@ -87,6 +89,7 @@ struct RSA2048Ticket {
     INSERT_PADDING_BYTES(0x3C);
     TicketData data;
 };
+static_assert(sizeof(RSA2048Ticket) == 0x400, "RSA2048Ticket has incorrect size.");
 
 struct ECDSATicket {
     SignatureType sig_type;
@@ -94,18 +97,41 @@ struct ECDSATicket {
     INSERT_PADDING_BYTES(0x40);
     TicketData data;
 };
+static_assert(sizeof(ECDSATicket) == 0x340, "ECDSATicket has incorrect size.");
 
 struct Ticket {
     std::variant<std::monostate, RSA4096Ticket, RSA2048Ticket, ECDSATicket> data;
 
-    bool IsValid() const;
-    SignatureType GetSignatureType() const;
-    TicketData& GetData();
-    const TicketData& GetData() const;
-    u64 GetSize() const;
+    [[nodiscard]] bool IsValid() const;
+    [[nodiscard]] SignatureType GetSignatureType() const;
+    [[nodiscard]] TicketData& GetData();
+    [[nodiscard]] const TicketData& GetData() const;
+    [[nodiscard]] u64 GetSize() const;
 
+    /**
+     * Synthesizes a common ticket given a title key and rights ID.
+     *
+     * @param title_key Title key to store in the ticket.
+     * @param rights_id Rights ID the ticket is for.
+     * @return The synthesized common ticket.
+     */
     static Ticket SynthesizeCommon(Key128 title_key, const std::array<u8, 0x10>& rights_id);
-    static bool Read(Ticket& ticket_out, const FileSys::VirtualFile& file);
+
+    /**
+     * Reads a ticket from a file.
+     *
+     * @param file File to read the ticket from.
+     * @return The read ticket. If the ticket data is invalid, Ticket::IsValid() will be false.
+     */
+    static Ticket Read(const FileSys::VirtualFile& file);
+
+    /**
+     * Reads a ticket from a memory buffer.
+     *
+     * @param raw_data Buffer to read the ticket from.
+     * @return The read ticket. If the ticket data is invalid, Ticket::IsValid() will be false.
+     */
+    static Ticket Read(std::span<const u8> raw_data);
 };
 
 static_assert(sizeof(Key128) == 16, "Key128 must be 128 bytes big.");

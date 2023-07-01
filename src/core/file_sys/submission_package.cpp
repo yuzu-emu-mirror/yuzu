@@ -190,8 +190,8 @@ void NSP::SetTicketKeys(const std::vector<VirtualFile>& files) {
             continue;
         }
 
-        Core::Crypto::Ticket ticket{};
-        if (!Core::Crypto::Ticket::Read(ticket, ticket_file)) {
+        auto ticket = Core::Crypto::Ticket::Read(ticket_file);
+        if (!ticket.IsValid()) {
             LOG_WARNING(Common_Filesystem, "Could not read NSP ticket {}", ticket_file->GetName());
             continue;
         }
