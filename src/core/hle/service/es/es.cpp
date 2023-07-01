@@ -133,14 +133,7 @@ private:
         }
 
         Core::Crypto::Ticket ticket = Core::Crypto::Ticket::Read(raw_ticket);
-        if (!ticket.IsValid()) {
-            LOG_ERROR(Service_ETicket, "The ticket is invalid!");
-            IPC::ResponseBuilder rb{ctx, 2};
-            rb.Push(ERROR_INVALID_ARGUMENT);
-            return;
-        }
-
-        if (!keys.AddTicketPersonalized(ticket)) {
+        if (!keys.AddTicket(ticket)) {
             LOG_ERROR(Service_ETicket, "The ticket could not be imported!");
             IPC::ResponseBuilder rb{ctx, 2};
             rb.Push(ERROR_INVALID_ARGUMENT);
