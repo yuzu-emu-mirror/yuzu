@@ -610,7 +610,7 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
             UntrackImage(image, id);
         }
     }
-}        
+}
 
 template <class P>
 bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
