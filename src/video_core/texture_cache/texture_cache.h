@@ -599,12 +599,9 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
     for (const ImageId id : deleted_images) {
         Image& image = slot_images[id];
         if (True(image.flags & ImageFlagBits::CpuModified)) {
-            return;
+            continue;
         }
         image.flags |= ImageFlagBits::CpuModified;
-        if (True(image.flags & ImageFlagBits::Tracked)) {
-            UntrackImage(image, id);
-        }
         if (True(image.flags & ImageFlagBits::Remapped)) {
             continue;
         }
@@ -613,7 +610,7 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
             UntrackImage(image, id);
         }
     }
-}
+}        
 
 template <class P>
 bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
