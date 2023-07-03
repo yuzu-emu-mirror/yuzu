@@ -598,6 +598,13 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
                             [&](ImageId id, Image&) { deleted_images.push_back(id); });
     for (const ImageId id : deleted_images) {
         Image& image = slot_images[id];
+        if (True(image.flags & ImageFlagBits::CpuModified)) {
+            return;
+        }
+        image.flags |= ImageFlagBits::CpuModified;
+        if (True(image.flags & ImageFlagBits::Tracked)) {
+            UntrackImage(image, id);
+        }
         if (True(image.flags & ImageFlagBits::Remapped)) {
             continue;
         }
