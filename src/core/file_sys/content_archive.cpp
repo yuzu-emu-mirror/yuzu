@@ -57,10 +57,23 @@ struct NCASectionHeaderBlock {
 };
 static_assert(sizeof(NCASectionHeaderBlock) == 0x8, "NCASectionHeaderBlock has incorrect size.");
 
-struct NCACompressionInfo {
+struct NCABucketInfo {
     u64 table_offset;
     u64 table_size;
     std::array<u8, 0x10> table_header;
+};
+static_assert(sizeof(NCABucketInfo) == 0x20, "NCABucketInfo has incorrect size.");
+
+struct NCASparseInfo {
+    NCABucketInfo bucket;
+    u64 physical_offset;
+    u16 generation;
+    INSERT_PADDING_BYTES_NOINIT(0x6);
+};
+static_assert(sizeof(NCASparseInfo) == 0x30, "NCASparseInfo has incorrect size.");
+
+struct NCACompressionInfo {
+    NCABucketInfo bucket;
     INSERT_PADDING_BYTES_NOINIT(0x8);
 };
 static_assert(sizeof(NCACompressionInfo) == 0x28, "NCACompressionInfo has incorrect size.");
@@ -69,8 +82,8 @@ struct NCASectionRaw {
     NCASectionHeaderBlock header;
     std::array<u8, 0x138> block_data;
     std::array<u8, 0x8> section_ctr;
-    INSERT_PADDING_BYTES_NOINIT(0x30);
-    NCACompressionInfo compression;
+    NCASparseInfo sparse_info;
+    NCACompressionInfo compression_info;
     INSERT_PADDING_BYTES_NOINIT(0x60);
 };
 static_assert(sizeof(NCASectionRaw) == 0x200, "NCASectionRaw has incorrect size.");
@@ -235,7 +248,15 @@ bool NCA::ReadSections(const std::vector<NCASectionHeader>& sections, u64 bktr_b
     for (std::size_t i = 0; i < sections.size(); ++i) {
         const auto& section = sections[i];
 
-        if (section.raw.compression.table_offset != 0 && section.raw.compression.table_size != 0) {
+        if (section.raw.sparse_info.bucket.table_offset != 0 &&
+            section.raw.sparse_info.bucket.table_size != 0) {
+            LOG_ERROR(Loader, "Sparse NCAs are not supported.");
+            status = Loader::ResultStatus::ErrorSparseNCA;
+            return false;
+        }
+
+        if (section.raw.compression_info.bucket.table_offset != 0 &&
+            section.raw.compression_info.bucket.table_size != 0) {
             LOG_ERROR(Loader, "Compressed NCAs are not supported.");
             status = Loader::ResultStatus::ErrorCompressedNCA;
             return false;

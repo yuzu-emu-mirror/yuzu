@@ -80,6 +80,7 @@ enum class ResultStatus : u16 {
     ErrorIncorrectPFSFileSize,
     ErrorBadNCAHeader,
     ErrorCompressedNCA,
+    ErrorSparseNCA,
     ErrorMissingProductionKeyFile,
     ErrorMissingHeaderKey,
     ErrorIncorrectHeaderKey,
