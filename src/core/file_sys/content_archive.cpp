@@ -57,11 +57,21 @@ struct NCASectionHeaderBlock {
 };
 static_assert(sizeof(NCASectionHeaderBlock) == 0x8, "NCASectionHeaderBlock has incorrect size.");
 
+struct NCACompressionInfo {
+    u64 table_offset;
+    u64 table_size;
+    std::array<u8, 0x10> table_header;
+    INSERT_PADDING_BYTES_NOINIT(0x8);
+};
+static_assert(sizeof(NCACompressionInfo) == 0x28, "NCACompressionInfo has incorrect size.");
+
 struct NCASectionRaw {
     NCASectionHeaderBlock header;
     std::array<u8, 0x138> block_data;
     std::array<u8, 0x8> section_ctr;
-    INSERT_PADDING_BYTES_NOINIT(0xB8);
+    INSERT_PADDING_BYTES_NOINIT(0x30);
+    NCACompressionInfo compression;
+    INSERT_PADDING_BYTES_NOINIT(0x60);
 };
 static_assert(sizeof(NCASectionRaw) == 0x200, "NCASectionRaw has incorrect size.");
 
@@ -224,6 +234,12 @@ std::vector<NCASectionHeader> NCA::ReadSectionHeaders() const {
 bool NCA::ReadSections(const std::vector<NCASectionHeader>& sections, u64 bktr_base_ivfc_offset) {
     for (std::size_t i = 0; i < sections.size(); ++i) {
         const auto& section = sections[i];
+
+        if (section.raw.compression.table_offset != 0 && section.raw.compression.table_size != 0) {
+            LOG_ERROR(Loader, "Compressed NCAs are not supported.");
+            status = Loader::ResultStatus::ErrorCompressedNCA;
+            return false;
+        }
 
         if (section.raw.header.filesystem_type == NCASectionFilesystemType::ROMFS) {
             if (!ReadRomFSSection(section, header.section_tables[i], bktr_base_ivfc_offset)) {
