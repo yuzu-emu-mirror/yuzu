@@ -165,3 +165,9 @@ if (ANDROID)
        add_subdirectory(libadrenotools)
    endif()
 endif()
+
+# Gamemode
+if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+    add_subdirectory(gamemode)
+    target_include_directories(gamemode PUBLIC gamemode/include)
+endif()

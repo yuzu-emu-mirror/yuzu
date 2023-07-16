@@ -26,6 +26,10 @@ ConfigureGeneral::ConfigureGeneral(const Core::System& system_, QWidget* parent)
 
     connect(ui->button_reset_defaults, &QPushButton::clicked, this,
             &ConfigureGeneral::ResetDefaults);
+
+#ifndef __linux__
+    ui->toggle_gamemode->setVisible(false);
+#endif
 }
 
 ConfigureGeneral::~ConfigureGeneral() = default;
@@ -43,11 +47,13 @@ void ConfigureGeneral::SetConfiguration() {
     ui->toggle_controller_applet_disabled->setEnabled(runtime_lock);
     ui->toggle_controller_applet_disabled->setChecked(
         UISettings::values.controller_applet_disabled.GetValue());
+    ui->toggle_gamemode->setChecked(UISettings::values.enable_gamemode.GetValue());
 
     ui->toggle_speed_limit->setChecked(Settings::values.use_speed_limit.GetValue());
     ui->speed_limit->setValue(Settings::values.speed_limit.GetValue());
 
     ui->button_reset_defaults->setEnabled(runtime_lock);
+    ui->toggle_gamemode->setEnabled(runtime_lock);
 
     if (Settings::IsConfiguringGlobal()) {
         ui->speed_limit->setEnabled(Settings::values.use_speed_limit.GetValue());
@@ -87,6 +93,7 @@ void ConfigureGeneral::ApplyConfiguration() {
         UISettings::values.hide_mouse = ui->toggle_hide_mouse->isChecked();
         UISettings::values.controller_applet_disabled =
             ui->toggle_controller_applet_disabled->isChecked();
+        UISettings::values.enable_gamemode = ui->toggle_gamemode->isChecked();
 
         // Guard if during game and set to game-specific value
         if (Settings::values.use_speed_limit.UsingGlobal()) {

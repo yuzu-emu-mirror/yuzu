@@ -174,6 +174,10 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 #endif
 
+#ifdef __linux__
+#include <gamemode_client.h>
+#endif
+
 constexpr int default_mouse_hide_timeout = 2500;
 constexpr int default_mouse_center_timeout = 10;
 constexpr int default_input_update_timeout = 1;
@@ -2014,6 +2018,16 @@ void GMainWindow::OnEmulationStopped() {
 
     discord_rpc->Update();
 
+#ifdef __linux__
+    if (UISettings::values.enable_gamemode) {
+        if (gamemode_request_end() < 0) {
+            LOG_WARNING(Frontend, "Failed to stop gamemode: {}", gamemode_error_string());
+        } else {
+            LOG_INFO(Frontend, "Stopped gamemode");
+        }
+    }
+#endif
+
     // The emulation is stopped, so closing the window or not does not matter anymore
     disconnect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
 
@@ -3186,6 +3200,16 @@ void GMainWindow::OnStartGame() {
     UpdateMenuState();
     OnTasStateChanged();
 
+#ifdef __linux__
+    if (UISettings::values.enable_gamemode) {
+        if (gamemode_request_start() < 0) {
+            LOG_WARNING(Frontend, "Failed to start gamemode: {}", gamemode_error_string());
+        } else {
+            LOG_INFO(Frontend, "Started gamemode");
+        }
+    }
+#endif
+
     discord_rpc->Update();
 }
 
@@ -3203,6 +3227,16 @@ void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
     UpdateMenuState();
     AllowOSSleep();
+
+#ifdef __linux__
+    if (UISettings::values.enable_gamemode) {
+        if (gamemode_request_end() < 0) {
+            LOG_WARNING(Frontend, "Failed to stop gamemode: {}", gamemode_error_string());
+        } else {
+            LOG_INFO(Frontend, "Stopped gamemode");
+        }
+    }
+#endif
 }
 
 void GMainWindow::OnPauseContinueGame() {

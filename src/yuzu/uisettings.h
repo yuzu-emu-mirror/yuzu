@@ -87,6 +87,9 @@ struct Values {
     // Discord RPC
     Settings::Setting<bool> enable_discord_presence{true, "enable_discord_presence"};
 
+    // Gamemode
+    Settings::Setting<bool> enable_gamemode{false, "enable_gamemode"};
+
     Settings::Setting<bool> enable_screenshot_save_as{true, "enable_screenshot_save_as"};
 
     QString roms_path;
