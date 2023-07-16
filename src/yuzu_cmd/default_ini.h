@@ -498,6 +498,10 @@ log_filter = *:Trace
 # 0 (default): Disabled, 1: Enabled
 use_dev_keys =
 
+# Use gamemode
+# 0 (default): Disabled, 1: Enabled
+use_gamemode =
+
 [Debugging]
 # Record frame time data, can be found in the log directory. Boolean value
 record_frame_times =

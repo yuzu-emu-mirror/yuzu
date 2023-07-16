@@ -584,6 +584,7 @@ struct Values {
     // Miscellaneous
     Setting<std::string> log_filter{"*:Info", "log_filter"};
     Setting<bool> use_dev_keys{false, "use_dev_keys"};
+    Setting<bool> use_gamemode{false, "use_gamemode"};
 
     // Network
     Setting<std::string> network_interface{std::string(), "network_interface"};
