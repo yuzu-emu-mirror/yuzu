@@ -154,6 +154,9 @@ android {
                     "-DYUZU_ENABLE_LTO=ON"
                 )
 
+                cFlags("-O3", "-march=armv8.7a", "-pipe", "-flto=thin")
+                cppFlags("-O3", "-march=armv8.7a", "-pipe", "-flto=thin")
+
                 abiFilters("arm64-v8a", "x86_64")
             }
         }
