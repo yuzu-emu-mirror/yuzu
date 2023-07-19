@@ -175,6 +175,10 @@ constexpr OutputType ExtractBits(const RawType& raw) {
         static_assert(sizeof(RawType) == sizeof(SignedType));
         constexpr auto RightShift = BitSize<RawType>() - NumBits;
         constexpr auto LeftShift = RightShift - Position;
+        // C++20: Signed Integers are Two’s Complement
+        // Left-shift on signed integer types produces the same results as
+        // left-shift on the corresponding unsigned integer type.
+        // Right-shift is an arithmetic right shift which performs sign-extension.
         return AutoBitCast<OutputType>((AutoBitCast<SignedType>(raw) << LeftShift) >> RightShift);
     } else {
         using UnsignedType = SmallestUIntType<BitSize<RawType>()>;
