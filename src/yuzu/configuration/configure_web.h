@@ -32,6 +32,8 @@ private:
 
     void SetConfiguration();
 
+    void ChangeURL();
+
     bool user_verified = true;
     QFutureWatcher<bool> verify_watcher;
 

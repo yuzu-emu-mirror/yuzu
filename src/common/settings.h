@@ -572,6 +572,10 @@ struct Values {
     Setting<std::string> yuzu_username{linkage, std::string(), "yuzu_username",
                                        Category::WebService};
     Setting<std::string> yuzu_token{linkage, std::string(), "yuzu_token", Category::WebService};
+    Setting<std::string> report_api_url{linkage, "https://yuzu-cms.ddev.site", "report_api_url",
+                                        Category::WebService};
+    Setting<std::string> yuzu_cookie{linkage, std::string(), "yuzu_cookie", Category::WebService};
+    Setting<std::string> report_user{linkage, std::string(), "report_user", Category::WebService};
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;

@@ -44,6 +44,10 @@ public:
 
     [[nodiscard]] virtual std::string GetDeviceVendor() const = 0;
 
+    [[nodiscard]] virtual std::string GetDeviceModel() const = 0;
+
+    [[nodiscard]] virtual std::string GetDeviceDriverVersion() const = 0;
+
     // Getter/setter functions:
     // ------------------------
 

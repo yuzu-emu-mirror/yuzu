@@ -116,6 +116,16 @@ RendererVulkan::~RendererVulkan() {
     void(device.GetLogical().WaitIdle());
 }
 
+std::string RendererVulkan::GetDeviceModel() const {
+    return std::string{device.GetModelName()};
+}
+
+std::string RendererVulkan::GetDeviceDriverVersion() const {
+    std::string tmp{"Vulkan: "};
+    tmp += GetReadableVersion(device.ApiVersion());
+    return tmp;
+}
+
 void RendererVulkan::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
     if (!framebuffer) {
         return;

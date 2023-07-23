@@ -3617,6 +3617,12 @@ void GMainWindow::ErrorDisplayRequestExit() {
     }
 }
 
+void GMainWindow::OnReportUserChange(QString cookie_, QString user_) {
+    Settings::values.yuzu_cookie = cookie_.toStdString();
+    Settings::values.report_user = user_.toStdString();
+    config->SaveAllValues();
+}
+
 void GMainWindow::OnMenuReportCompatibility() {
 #if defined(ARCHITECTURE_x86_64) && !defined(__APPLE__)
     const auto& caps = Common::GetCPUCaps();
@@ -3635,7 +3641,64 @@ void GMainWindow::OnMenuReportCompatibility() {
 
     if (!Settings::values.yuzu_token.GetValue().empty() &&
         !Settings::values.yuzu_username.GetValue().empty()) {
-        CompatDB compatdb{system->TelemetrySession(), this};
+        Loader::AppLoader& app_loader = system->GetAppLoader();
+        FileSys::ContentProvider& content_provider = system->GetContentProvider();
+        Service::FileSystem::FileSystemController& fsc = system->GetFileSystemController();
+        u64 program_id{};
+        std::string game_version;
+        std::string formatted_program_id;
+        const Loader::ResultStatus res{app_loader.ReadProgramId(program_id)};
+        if (res == Loader::ResultStatus::Success) {
+            formatted_program_id = fmt::format("{:016X}", program_id);
+
+            FileSys::NACP control;
+            app_loader.ReadControlData(control);
+            game_version = control.GetVersionString();
+
+            if (game_version.empty()) {
+                const auto metadata = [&content_provider, &fsc, program_id] {
+                    const FileSys::PatchManager pm{program_id, fsc, content_provider};
+                    return pm.GetControlMetadata();
+                }();
+                if (auto meta = metadata.first.get(); meta != nullptr) {
+                    game_version = meta->GetVersionString();
+                }
+            }
+        }
+
+        std::string yuzu_version = std::string{Common::g_build_name};
+        if (yuzu_version.empty()) {
+            yuzu_version = std::string{Common::g_scm_branch};
+        }
+
+        std::string cpu_model{caps.cpu_string};
+        std::string cpu_brand_string{caps.brand_string};
+        std::string ram =
+            fmt::format("{:.2f} GiB", Common::GetMemInfo().TotalPhysicalMemory / f64{1_GiB});
+        std::string swap =
+            fmt::format("{:.2f} GiB", Common::GetMemInfo().TotalSwapMemory / f64{1_GiB});
+        std::string os = PrettyProductName().toStdString();
+
+        const auto& renderer = system->GPU().Renderer();
+        const auto gpu_vendor = renderer.GetDeviceVendor();
+        const auto gpu_model = renderer.GetDeviceModel();
+        const auto gpu_version = renderer.GetDeviceDriverVersion();
+
+        CompatDB compatdb{yuzu_version,
+                          game_version,
+                          formatted_program_id,
+                          cpu_model,
+                          cpu_brand_string,
+                          ram,
+                          swap,
+                          gpu_vendor,
+                          gpu_model,
+                          gpu_version,
+                          os,
+                          Settings::values,
+                          Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ScreenshotsDir),
+                          this};
+        connect(&compatdb, &CompatDB::UserChange, this, &GMainWindow::OnReportUserChange);
         compatdb.exec();
     } else {
         QMessageBox::critical(

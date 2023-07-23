@@ -56,6 +56,10 @@ public:
         return device.GetDriverName();
     }
 
+    [[nodiscard]] std::string GetDeviceModel() const override;
+
+    [[nodiscard]] std::string GetDeviceDriverVersion() const override;
+
 private:
     void Report() const;
 

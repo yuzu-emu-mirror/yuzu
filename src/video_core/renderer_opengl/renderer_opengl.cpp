@@ -687,6 +687,16 @@ void RendererOpenGL::DrawScreen(const Layout::FramebufferLayout& layout) {
     // program_manager.RestoreGuestPipeline();
 }
 
+std::string RendererOpenGL::GetDeviceModel() const {
+    return reinterpret_cast<char const*>(glGetString(GL_RENDERER));
+}
+
+std::string RendererOpenGL::GetDeviceDriverVersion() const {
+    std::string tmp{"OpenGL: "};
+    tmp += reinterpret_cast<char const*>(glGetString(GL_VERSION));
+    return tmp;
+}
+
 void RendererOpenGL::RenderScreenshot() {
     if (!renderer_settings.screenshot_requested) {
         return;
