@@ -3096,11 +3096,6 @@ To invert the axes, first move your joystick vertically, and then horizontally.<
         <translation type="unfinished"/>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.ui" line="379"/>
-        <source>Taiwanese</source>
-        <translation type="unfinished"/>
-    </message>
-    <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="384"/>
         <source>British English</source>
         <translation type="unfinished"/>

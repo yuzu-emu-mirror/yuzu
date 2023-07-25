@@ -3946,11 +3946,6 @@ UUID: %2</source>
         <translation>Ruština (Русский)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.ui" line="379"/>
-        <source>Taiwanese</source>
-        <translation>Tajwanština</translation>
-    </message>
-    <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="384"/>
         <source>British English</source>
         <translation>Britská Angličtina</translation>

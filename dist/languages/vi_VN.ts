@@ -3936,11 +3936,6 @@ UUID: %2</source>
         <translation>Tiếng Nga (Russian)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.ui" line="379"/>
-        <source>Taiwanese</source>
-        <translation>Tiếng Đài Loan</translation>
-    </message>
-    <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="384"/>
         <source>British English</source>
         <translation>Tiếng Anh UK</translation>

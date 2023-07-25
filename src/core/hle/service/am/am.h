@@ -35,15 +35,14 @@ enum SystemLanguage {
     Dutch = 8,
     Portuguese = 9,
     Russian = 10,
-    Taiwanese = 11,
-    BritishEnglish = 12, // en-GB
-    CanadianFrench = 13,
-    LatinAmericanSpanish = 14, // es-419
+    BritishEnglish = 11, // en-GB
+    CanadianFrench = 12,
+    LatinAmericanSpanish = 13, // es-419
     // 4.0.0+
-    SimplifiedChinese = 15,
-    TraditionalChinese = 16,
+    SimplifiedChinese (Chinese mainland) = 14,
+    TraditionalChinese (Taiwan region) = 15,
     // 10.1.0+
-    BrazilianPortuguese = 17,
+    BrazilianPortuguese = 16,
 };
 
 class AppletMessageQueue {

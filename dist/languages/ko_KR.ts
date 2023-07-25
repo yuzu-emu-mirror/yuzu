@@ -3971,11 +3971,6 @@ UUID: %2</translation>
         <translation>러시아어(Русский)</translation>
     </message>
     <message>
-        <location filename="../../src/yuzu/configuration/configure_system.ui" line="379"/>
-        <source>Taiwanese</source>
-        <translation>대만어</translation>
-    </message>
-    <message>
         <location filename="../../src/yuzu/configuration/configure_system.ui" line="384"/>
         <source>British English</source>
         <translation>영어(영국)</translation>

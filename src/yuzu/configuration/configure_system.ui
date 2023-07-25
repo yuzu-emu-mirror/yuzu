@@ -376,11 +376,6 @@
             </item>
             <item>
              <property name="text">
-              <string>Taiwanese</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
               <string>British English</string>
              </property>
             </item>

@@ -40,7 +40,6 @@
         <item>@string/language_russian</item>
         <item>@string/language_simplified_chinese</item>
         <item>@string/language_spanish</item>
-        <item>@string/language_taiwanese</item>
         <item>@string/language_traditional_chinese</item>
     </string-array>
 
