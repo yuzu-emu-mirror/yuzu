@@ -93,8 +93,6 @@ Result StartThread(Core::System& system, Handle thread_handle) {
 
 /// Called when a thread exits
 void ExitThread(Core::System& system) {
-    LOG_DEBUG(Kernel_SVC, "called, pc=0x{:08X}", system.CurrentArmInterface().GetPC());
-
     auto* const current_thread = GetCurrentThreadPointer(system.Kernel());
     system.GlobalSchedulerContext().RemoveThread(current_thread);
     current_thread->Exit();

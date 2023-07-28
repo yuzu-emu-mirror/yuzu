@@ -13,19 +13,19 @@
 namespace Kernel::Svc {
 
 static uint32_t GetReg32(Core::System& system, int n) {
-    return static_cast<uint32_t>(system.CurrentArmInterface().GetReg(n));
+    return static_cast<uint32_t>(system.GetCurrentArmInterface().GetReg(n));
 }
 
 static void SetReg32(Core::System& system, int n, uint32_t result) {
-    system.CurrentArmInterface().SetReg(n, static_cast<uint64_t>(result));
+    system.GetCurrentArmInterface().SetReg(n, static_cast<uint64_t>(result));
 }
 
 static uint64_t GetReg64(Core::System& system, int n) {
-    return system.CurrentArmInterface().GetReg(n);
+    return system.GetCurrentArmInterface().GetReg(n);
 }
 
 static void SetReg64(Core::System& system, int n, uint64_t result) {
-    system.CurrentArmInterface().SetReg(n, result);
+    system.GetCurrentArmInterface().SetReg(n, result);
 }
 
 // Like bit_cast, but handles the case when the source and dest

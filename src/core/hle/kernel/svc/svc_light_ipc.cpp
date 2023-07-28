@@ -38,7 +38,7 @@ Result ReplyAndReceiveLight64From32(Core::System& system, Handle session_handle,
 
 template <typename F>
 static void SvcWrap_LightIpc(Core::System& system, F&& cb) {
-    auto& core = system.CurrentArmInterface();
+    auto& core = system.GetCurrentArmInterface();
     std::array<u32, 7> arguments{};
 
     Handle session_handle = static_cast<Handle>(core.GetReg(0));

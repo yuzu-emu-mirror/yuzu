@@ -188,7 +188,7 @@ public:
     }
 
     bool IsInterrupted() {
-        return parent.system.Kernel().PhysicalCore(parent.core_index).IsInterrupted();
+        return parent.system.Kernel().PhysicalCore(parent.core_index).GetIsInterrupted();
     }
 
     ARM_Dynarmic_32& parent;

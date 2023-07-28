@@ -36,7 +36,8 @@ struct Memory::Impl {
 
         const std::size_t address_space_width = process.GetPageTable().GetAddressSpaceWidth();
 
-        system.ArmInterface(core_id).PageTableChanged(*current_page_table, address_space_width);
+        process.GetArmInterface(core_id)->PageTableChanged(*current_page_table,
+                                                           address_space_width);
     }
 
     void MapMemoryRegion(Common::PageTable& page_table, Common::ProcessAddress base, u64 size,

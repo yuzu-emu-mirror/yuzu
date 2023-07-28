@@ -494,12 +494,15 @@ void KScheduler::ScheduleImplFiber() {
 }
 
 void KScheduler::Unload(KThread* thread) {
-    auto& cpu_core = m_kernel.System().ArmInterface(m_core_id);
-    cpu_core.SaveContext(thread->GetContext32());
-    cpu_core.SaveContext(thread->GetContext64());
-    // Save the TPIDR_EL0 system register in case it was modified.
-    thread->SetTpidrEl0(cpu_core.GetTPIDR_EL0());
-    cpu_core.ClearExclusiveState();
+    if (thread->GetThreadType() == ThreadType::User) {
+        auto* process = thread->GetOwnerProcess();
+        auto& cpu_core = *process->GetArmInterface(m_core_id);
+        cpu_core.SaveContext(thread->GetContext32());
+        cpu_core.SaveContext(thread->GetContext64());
+        // Save the TPIDR_EL0 system register in case it was modified.
+        thread->SetTpidrEl0(cpu_core.GetTPIDR_EL0());
+        cpu_core.ClearExclusiveState();
+    }
 
     // Check if the thread is terminated by checking the DPC flags.
     if ((thread->GetStackParameters().dpc_flags & static_cast<u32>(DpcFlag::Terminated)) == 0) {
@@ -509,14 +512,16 @@ void KScheduler::Unload(KThread* thread) {
 }
 
 void KScheduler::Reload(KThread* thread) {
-    auto& cpu_core = m_kernel.System().ArmInterface(m_core_id);
-    auto* process = thread->GetOwnerProcess();
-    cpu_core.LoadContext(thread->GetContext32());
-    cpu_core.LoadContext(thread->GetContext64());
-    cpu_core.SetTlsAddress(GetInteger(thread->GetTlsAddress()));
-    cpu_core.SetTPIDR_EL0(thread->GetTpidrEl0());
-    cpu_core.LoadWatchpointArray(process ? &process->GetWatchpoints() : nullptr);
-    cpu_core.ClearExclusiveState();
+    if (thread->GetThreadType() == ThreadType::User) {
+        auto* process = thread->GetOwnerProcess();
+        auto& cpu_core = *process->GetArmInterface(m_core_id);
+        cpu_core.LoadContext(thread->GetContext32());
+        cpu_core.LoadContext(thread->GetContext64());
+        cpu_core.SetTlsAddress(GetInteger(thread->GetTlsAddress()));
+        cpu_core.SetTPIDR_EL0(thread->GetTpidrEl0());
+        cpu_core.LoadWatchpointArray(&process->GetWatchpoints());
+        cpu_core.ClearExclusiveState();
+    }
 }
 
 void KScheduler::ClearPreviousThread(KernelCore& kernel, KThread* thread) {

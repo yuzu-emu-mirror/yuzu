@@ -407,6 +407,14 @@ public:
         return name;
     }
 
+    Core::ExclusiveMonitor* GetExclusiveMonitor() {
+        return m_exclusive_monitor.get();
+    }
+
+    Core::ARM_Interface* GetArmInterface(size_t i) {
+        return m_arm_interfaces[i].get();
+    }
+
 private:
     void PinThread(s32 core_id, KThread* thread) {
         ASSERT(0 <= core_id && core_id < static_cast<s32>(Core::Hardware::NUM_CPU_CORES));
@@ -537,6 +545,11 @@ private:
     using TLPIterator = TLPTree::iterator;
     TLPTree m_fully_used_tlp_tree;
     TLPTree m_partially_used_tlp_tree;
+
+private:
+    std::unique_ptr<Core::ExclusiveMonitor> m_exclusive_monitor{};
+    std::array<std::unique_ptr<Core::ARM_Interface>, Core::Hardware::NUM_CPU_CORES>
+        m_arm_interfaces{};
 };
 
 } // namespace Kernel

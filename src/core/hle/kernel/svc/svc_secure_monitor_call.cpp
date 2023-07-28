@@ -23,7 +23,7 @@ void CallSecureMonitor64From32(Core::System& system, ilp32::SecureMonitorArgumen
 // Custom ABI for CallSecureMonitor.
 
 void SvcWrap_CallSecureMonitor64(Core::System& system) {
-    auto& core = system.CurrentPhysicalCore().ArmInterface();
+    auto& core = system.GetCurrentArmInterface();
     lp64::SecureMonitorArguments args{};
     for (int i = 0; i < 8; i++) {
         args.r[i] = core.GetReg(i);
@@ -37,7 +37,7 @@ void SvcWrap_CallSecureMonitor64(Core::System& system) {
 }
 
 void SvcWrap_CallSecureMonitor64From32(Core::System& system) {
-    auto& core = system.CurrentPhysicalCore().ArmInterface();
+    auto& core = system.GetCurrentArmInterface();
     ilp32::SecureMonitorArguments args{};
     for (int i = 0; i < 8; i++) {
         args.r[i] = static_cast<u32>(core.GetReg(i));

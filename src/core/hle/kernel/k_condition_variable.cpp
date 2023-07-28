@@ -30,7 +30,7 @@ bool WriteToUser(KernelCore& kernel, KProcessAddress address, const u32* p) {
 
 bool UpdateLockAtomic(Core::System& system, u32* out, KProcessAddress address, u32 if_zero,
                       u32 new_orr_mask) {
-    auto& monitor = system.Monitor();
+    auto& monitor = system.GetCurrentExclusiveMonitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     u32 expected{};

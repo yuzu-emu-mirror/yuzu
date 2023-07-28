@@ -99,13 +99,6 @@ struct KernelCore::Impl {
         RegisterHostThread(nullptr);
     }
 
-    void InitializeCores() {
-        for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
-            cores[core_id]->Initialize((*application_process).Is64BitProcess());
-            system.ApplicationMemory().SetCurrentPageTable(*application_process, core_id);
-        }
-    }
-
     void CloseApplicationProcess() {
         KProcess* old_process = application_process.exchange(nullptr);
         if (old_process == nullptr) {
@@ -136,8 +129,6 @@ struct KernelCore::Impl {
         global_handle_table.reset();
 
         preemption_event = nullptr;
-
-        exclusive_monitor.reset();
 
         // Cleanup persistent kernel objects
         auto CleanupObject = [](KAutoObject* obj) {
@@ -205,13 +196,11 @@ struct KernelCore::Impl {
     }
 
     void InitializePhysicalCores() {
-        exclusive_monitor =
-            Core::MakeExclusiveMonitor(system.ApplicationMemory(), Core::Hardware::NUM_CPU_CORES);
         for (u32 i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
             const s32 core{static_cast<s32>(i)};
 
             schedulers[i] = std::make_unique<Kernel::KScheduler>(system.Kernel());
-            cores[i] = std::make_unique<Kernel::PhysicalCore>(i, system, *schedulers[i]);
+            cores[i] = std::make_unique<Kernel::PhysicalCore>(i, system);
 
             auto* main_thread{Kernel::KThread::Create(system.Kernel())};
             main_thread->SetCurrentCore(core);
@@ -804,7 +793,6 @@ struct KernelCore::Impl {
     std::mutex server_lock;
     std::vector<std::unique_ptr<Service::ServerManager>> server_managers;
 
-    std::unique_ptr<Core::ExclusiveMonitor> exclusive_monitor;
     std::array<std::unique_ptr<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
 
     // Next host thead ID to use, 0-3 IDs represent core threads, >3 represent others
@@ -863,10 +851,6 @@ void KernelCore::SetMulticore(bool is_multicore) {
 void KernelCore::Initialize() {
     slab_heap_container = std::make_unique<SlabHeapContainer>();
     impl->Initialize(*this);
-}
-
-void KernelCore::InitializeCores() {
-    impl->InitializeCores();
 }
 
 void KernelCore::Shutdown() {
@@ -966,12 +950,12 @@ Kernel::KHardwareTimer& KernelCore::HardwareTimer() {
     return *impl->hardware_timer;
 }
 
-Core::ExclusiveMonitor& KernelCore::GetExclusiveMonitor() {
-    return *impl->exclusive_monitor;
+Core::ExclusiveMonitor& KernelCore::GetCurrentExclusiveMonitor() {
+    return *GetCurrentProcess(*this).GetExclusiveMonitor();
 }
 
-const Core::ExclusiveMonitor& KernelCore::GetExclusiveMonitor() const {
-    return *impl->exclusive_monitor;
+Core::ARM_Interface& KernelCore::GetCurrentArmInterface() {
+    return *GetCurrentProcess(*this).GetArmInterface(this->CurrentPhysicalCoreIndex());
 }
 
 KAutoObjectWithListContainer& KernelCore::ObjectListContainer() {
@@ -983,22 +967,33 @@ const KAutoObjectWithListContainer& KernelCore::ObjectListContainer() const {
 }
 
 void KernelCore::InvalidateAllInstructionCaches() {
-    for (auto& physical_core : impl->cores) {
-        physical_core->ArmInterface().ClearInstructionCache();
+    // TODO: we need to make sure the JIT is not running during this
+    auto process = this->ApplicationProcess();
+    if (process == nullptr) {
+        return;
+    }
+
+    for (size_t i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
+        auto* arm_interface = process->GetArmInterface(i);
+        if (arm_interface) {
+            arm_interface->ClearInstructionCache();
+        }
     }
 }
 
 void KernelCore::InvalidateCpuInstructionCacheRange(KProcessAddress addr, std::size_t size) {
-    for (auto& physical_core : impl->cores) {
-        if (!physical_core->IsInitialized()) {
-            continue;
-        }
-        physical_core->ArmInterface().InvalidateCacheRange(GetInteger(addr), size);
+    // TODO: we need to make sure the JIT is not running during this
+    auto process = this->ApplicationProcess();
+    if (process == nullptr) {
+        return;
     }
-}
 
-void KernelCore::PrepareReschedule(std::size_t id) {
-    // TODO: Reimplement, this
+    for (size_t i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
+        auto* arm_interface = process->GetArmInterface(i);
+        if (arm_interface) {
+            arm_interface->InvalidateCacheRange(GetInteger(addr), size);
+        }
+    }
 }
 
 void KernelCore::RegisterKernelObject(KAutoObject* object) {

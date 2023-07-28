@@ -27,7 +27,7 @@ bool ReadFromUser(KernelCore& kernel, s32* out, KProcessAddress address) {
 }
 
 bool DecrementIfLessThan(Core::System& system, s32* out, KProcessAddress address, s32 value) {
-    auto& monitor = system.Monitor();
+    auto& monitor = system.GetCurrentExclusiveMonitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // NOTE: If scheduler lock is not held here, interrupt disable is required.
@@ -68,7 +68,7 @@ bool DecrementIfLessThan(Core::System& system, s32* out, KProcessAddress address
 
 bool UpdateIfEqual(Core::System& system, s32* out, KProcessAddress address, s32 value,
                    s32 new_value) {
-    auto& monitor = system.Monitor();
+    auto& monitor = system.GetCurrentExclusiveMonitor();
     const auto current_core = system.Kernel().CurrentPhysicalCoreIndex();
 
     // NOTE: If scheduler lock is not held here, interrupt disable is required.

@@ -11,6 +11,9 @@
 #include "common/logging/log.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
+#include "core/arm/dynarmic/arm_dynarmic_32.h"
+#include "core/arm/dynarmic/arm_dynarmic_64.h"
+#include "core/arm/dynarmic/dynarmic_exclusive_monitor.h"
 #include "core/core.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/code_set.h"
@@ -425,6 +428,22 @@ void KProcess::Run(s32 main_thread_priority, u64 stack_size) {
     ASSERT(!m_page_table.SetMaxHeapSize(heap_capacity).IsError());
 
     this->ChangeState(State::Running);
+
+    auto exclusive_monitor = std::make_unique<Core::DynarmicExclusiveMonitor>(
+        m_kernel.System().ApplicationMemory(), Core::Hardware::NUM_CPU_CORES);
+    for (size_t i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
+        if (m_is_64bit_process) {
+            m_arm_interfaces[i] = std::make_unique<Core::ARM_Dynarmic_64>(
+                m_kernel.System(), m_kernel.IsMulticore(), *exclusive_monitor, i);
+        } else {
+            m_arm_interfaces[i] = std::make_unique<Core::ARM_Dynarmic_32>(
+                m_kernel.System(), m_kernel.IsMulticore(), *exclusive_monitor, i);
+        }
+
+        this->GetMemory().SetCurrentPageTable(*this, static_cast<u32>(i));
+    }
+
+    m_exclusive_monitor = std::move(exclusive_monitor);
 
     SetupMainThread(m_kernel.System(), *this, main_thread_priority, m_main_thread_stack_top);
 }

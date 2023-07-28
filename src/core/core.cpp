@@ -13,7 +13,6 @@
 #include "common/microprofile.h"
 #include "common/settings.h"
 #include "common/string_util.h"
-#include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
@@ -317,7 +316,6 @@ struct System::Impl {
                 static_cast<u32>(SystemResultStatus::ErrorLoader) + static_cast<u32>(load_result));
         }
         AddGlueRegistrationForProcess(*app_loader, *main_process);
-        kernel.InitializeCores();
 
         // Initialize cheat engine
         if (cheat_engine) {
@@ -634,10 +632,6 @@ bool System::IsPoweredOn() const {
     return impl->is_powered_on.load(std::memory_order::relaxed);
 }
 
-void System::PrepareReschedule(const u32 core_index) {
-    impl->kernel.PrepareReschedule(core_index);
-}
-
 Core::GPUDirtyMemoryManager& System::CurrentGPUDirtyMemoryManager() {
     const std::size_t core = impl->kernel.GetCurrentHostThreadID();
     return impl->gpu_dirty_memory_write_manager[core < Core::Hardware::NUM_CPU_CORES
@@ -675,20 +669,20 @@ const TelemetrySession& System::TelemetrySession() const {
     return *impl->telemetry_session;
 }
 
-ARM_Interface& System::CurrentArmInterface() {
-    return impl->kernel.CurrentPhysicalCore().ArmInterface();
-}
-
-const ARM_Interface& System::CurrentArmInterface() const {
-    return impl->kernel.CurrentPhysicalCore().ArmInterface();
-}
-
 Kernel::PhysicalCore& System::CurrentPhysicalCore() {
     return impl->kernel.CurrentPhysicalCore();
 }
 
 const Kernel::PhysicalCore& System::CurrentPhysicalCore() const {
     return impl->kernel.CurrentPhysicalCore();
+}
+
+Core::ExclusiveMonitor& System::GetCurrentExclusiveMonitor() {
+    return impl->kernel.GetCurrentExclusiveMonitor();
+}
+
+Core::ARM_Interface& System::GetCurrentArmInterface() {
+    return impl->kernel.GetCurrentArmInterface();
 }
 
 /// Gets the global scheduler
@@ -715,22 +709,6 @@ const Core::DeviceMemory& System::DeviceMemory() const {
 
 const Kernel::KProcess* System::ApplicationProcess() const {
     return impl->kernel.ApplicationProcess();
-}
-
-ARM_Interface& System::ArmInterface(std::size_t core_index) {
-    return impl->kernel.PhysicalCore(core_index).ArmInterface();
-}
-
-const ARM_Interface& System::ArmInterface(std::size_t core_index) const {
-    return impl->kernel.PhysicalCore(core_index).ArmInterface();
-}
-
-ExclusiveMonitor& System::Monitor() {
-    return impl->kernel.GetExclusiveMonitor();
-}
-
-const ExclusiveMonitor& System::Monitor() const {
-    return impl->kernel.GetExclusiveMonitor();
 }
 
 Memory::Memory& System::ApplicationMemory() {

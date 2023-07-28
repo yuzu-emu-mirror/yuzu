@@ -223,9 +223,6 @@ public:
     /// Gets a reference to the telemetry session for this emulation session.
     [[nodiscard]] const Core::TelemetrySession& TelemetrySession() const;
 
-    /// Prepare the core emulation for a reschedule
-    void PrepareReschedule(u32 core_index);
-
     /// Provides a reference to the gou dirty memory manager.
     [[nodiscard]] Core::GPUDirtyMemoryManager& CurrentGPUDirtyMemoryManager();
 
@@ -239,35 +236,23 @@ public:
     /// Gets and resets core performance statistics
     [[nodiscard]] PerfStatsResults GetAndResetPerfStats();
 
-    /// Gets an ARM interface to the CPU core that is currently running
-    [[nodiscard]] ARM_Interface& CurrentArmInterface();
-
-    /// Gets an ARM interface to the CPU core that is currently running
-    [[nodiscard]] const ARM_Interface& CurrentArmInterface() const;
-
     /// Gets the physical core for the CPU core that is currently running
     [[nodiscard]] Kernel::PhysicalCore& CurrentPhysicalCore();
 
     /// Gets the physical core for the CPU core that is currently running
     [[nodiscard]] const Kernel::PhysicalCore& CurrentPhysicalCore() const;
 
-    /// Gets a reference to an ARM interface for the CPU core with the specified index
-    [[nodiscard]] ARM_Interface& ArmInterface(std::size_t core_index);
+    /// Gets the exclusive monitor for the process on the current core
+    Core::ExclusiveMonitor& GetCurrentExclusiveMonitor();
 
-    /// Gets a const reference to an ARM interface from the CPU core with the specified index
-    [[nodiscard]] const ARM_Interface& ArmInterface(std::size_t core_index) const;
+    /// Gets the JIT instance for the process on the current core
+    Core::ARM_Interface& GetCurrentArmInterface();
 
     /// Gets a reference to the underlying CPU manager.
     [[nodiscard]] CpuManager& GetCpuManager();
 
     /// Gets a const reference to the underlying CPU manager
     [[nodiscard]] const CpuManager& GetCpuManager() const;
-
-    /// Gets a reference to the exclusive monitor
-    [[nodiscard]] ExclusiveMonitor& Monitor();
-
-    /// Gets a constant reference to the exclusive monitor
-    [[nodiscard]] const ExclusiveMonitor& Monitor() const;
 
     /// Gets a mutable reference to the system memory instance.
     [[nodiscard]] Core::Memory::Memory& ApplicationMemory();

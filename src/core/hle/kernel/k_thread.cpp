@@ -823,14 +823,14 @@ void KThread::CloneFpuStatus() {
     if (this->GetOwnerProcess()->Is64BitProcess()) {
         // Clone FPSR and FPCR.
         ThreadContext64 cur_ctx{};
-        m_kernel.System().CurrentArmInterface().SaveContext(cur_ctx);
+        m_kernel.GetCurrentArmInterface().SaveContext(cur_ctx);
 
         this->GetContext64().fpcr = cur_ctx.fpcr;
         this->GetContext64().fpsr = cur_ctx.fpsr;
     } else {
         // Clone FPSCR.
         ThreadContext32 cur_ctx{};
-        m_kernel.System().CurrentArmInterface().SaveContext(cur_ctx);
+        m_kernel.GetCurrentArmInterface().SaveContext(cur_ctx);
 
         this->GetContext32().fpscr = cur_ctx.fpscr;
     }
