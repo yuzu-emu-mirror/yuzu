@@ -19,6 +19,8 @@ ConfigureFilesystem::ConfigureFilesystem(QWidget* parent)
             [this] { SetDirectory(DirectoryTarget::NAND, ui->nand_directory_edit); });
     connect(ui->sdmc_directory_button, &QToolButton::pressed, this,
             [this] { SetDirectory(DirectoryTarget::SD, ui->sdmc_directory_edit); });
+    connect(ui->shader_directory_button, &QToolButton::pressed, this,
+            [this] { SetDirectory(DirectoryTarget::Shader, ui->shader_directory_edit); });
     connect(ui->gamecard_path_button, &QToolButton::pressed, this,
             [this] { SetDirectory(DirectoryTarget::Gamecard, ui->gamecard_path_edit); });
     connect(ui->dump_path_button, &QToolButton::pressed, this,
@@ -50,6 +52,8 @@ void ConfigureFilesystem::SetConfiguration() {
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::NANDDir)));
     ui->sdmc_directory_edit->setText(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::SDMCDir)));
+    ui->shader_directory_edit->setText(
+        QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::ShaderDir)));
     ui->gamecard_path_edit->setText(
         QString::fromStdString(Settings::values.gamecard_path.GetValue()));
     ui->dump_path_edit->setText(
@@ -72,6 +76,8 @@ void ConfigureFilesystem::ApplyConfiguration() {
                             ui->nand_directory_edit->text().toStdString());
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::SDMCDir,
                             ui->sdmc_directory_edit->text().toStdString());
+    Common::FS::SetYuzuPath(Common::FS::YuzuPath::ShaderDir,
+                            ui->shader_directory_edit->text().toStdString());
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::DumpDir,
                             ui->dump_path_edit->text().toStdString());
     Common::FS::SetYuzuPath(Common::FS::YuzuPath::LoadDir,
@@ -94,6 +100,9 @@ void ConfigureFilesystem::SetDirectory(DirectoryTarget target, QLineEdit* edit) 
         break;
     case DirectoryTarget::SD:
         caption = tr("Select Emulated SD Directory...");
+        break;
+    case DirectoryTarget::Shader:
+        caption = tr("Select Shader Directory...");
         break;
     case DirectoryTarget::Gamecard:
         caption = tr("Select Gamecard Path...");

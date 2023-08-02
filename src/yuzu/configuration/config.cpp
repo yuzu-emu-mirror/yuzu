@@ -577,6 +577,13 @@ void Config::ReadDataStorageValues() {
             .toString()
             .toStdString());
     FS::SetYuzuPath(
+        FS::YuzuPath::ShaderDir,
+        qt_config
+            ->value(QStringLiteral("shader_directory"),
+                    QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::ShaderDir)))
+            .toString()
+            .toStdString());
+    FS::SetYuzuPath(
         FS::YuzuPath::LoadDir,
         qt_config
             ->value(QStringLiteral("load_directory"),
@@ -1255,6 +1262,9 @@ void Config::SaveDataStorageValues() {
     WriteSetting(QStringLiteral("sdmc_directory"),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::SDMCDir)),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::SDMCDir)));
+    WriteSetting(QStringLiteral("shader_directory"),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::ShaderDir)),
+                 QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::ShaderDir)));
     WriteSetting(QStringLiteral("load_directory"),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::LoadDir)),
                  QString::fromStdString(FS::GetYuzuPathString(FS::YuzuPath::LoadDir)));
