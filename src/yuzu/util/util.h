@@ -18,3 +18,5 @@ QString ReadableByteSize(qulonglong size);
  * @return QPixmap circle pixmap
  */
 QPixmap CreateCirclePixmapFromColor(const QColor& color);
+
+bool SaveIconToFile(const char* path, QImage image);
