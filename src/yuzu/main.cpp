@@ -2677,7 +2677,11 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     std::filesystem::path target_directory{};
     // Determine target directory for shortcut
+#if defined(WIN32)
+    const char* home = std::getenv("USERPROFILE");
+#else
     const char* home = std::getenv("HOME");
+#endif
     const std::filesystem::path home_path = (home == nullptr ? "~" : home);
     const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
 
