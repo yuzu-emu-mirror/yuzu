@@ -112,8 +112,7 @@ bool SaveIconToFile(const char* path, QImage image) {
     return true;
 }
 #else
-
 bool SaveAsIco(QImage image) {
     return false;
-    }
+}
 #endif

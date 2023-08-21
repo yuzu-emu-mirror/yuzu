@@ -2761,7 +2761,8 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 #endif
     std::filesystem::path icon_path =
             icons_path / ((program_id == 0 ? fmt::format("yuzu-{}", game_file_name)
-                                           : fmt::format("yuzu-{:016X}", program_id)) + icon_extension);
+                                           : fmt::format("yuzu-{:016X}", program_id)) +
+                          icon_extension);
 
     // Get icon from game file
     std::vector<u8> icon_image_file{};
