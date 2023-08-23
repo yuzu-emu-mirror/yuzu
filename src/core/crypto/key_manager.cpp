@@ -557,12 +557,6 @@ static std::optional<u64> FindTicketOffset(const std::array<u8, size>& data) {
 }
 
 std::optional<Key128> KeyManager::ParseTicketTitleKey(const Ticket& ticket) {
-    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
-        LOG_WARNING(Crypto,
-                    "Skipping ticket title key parsing due to missing ETicket RSA key-pair.");
-        return std::nullopt;
-    }
-
     if (!ticket.IsValid()) {
         LOG_WARNING(Crypto, "Attempted to parse title key of invalid ticket.");
         return std::nullopt;
@@ -585,6 +579,13 @@ std::optional<Key128> KeyManager::ParseTicketTitleKey(const Ticket& ticket) {
 
     if (ticket.GetData().type == TitleKeyType::Common) {
         return ticket.GetData().title_key_common;
+    }
+
+    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
+        LOG_WARNING(
+            Crypto,
+            "Skipping personalized ticket title key parsing due to missing ETicket RSA key-pair.");
+        return std::nullopt;
     }
 
     mbedtls_mpi D; // RSA Private Exponent
@@ -1188,10 +1189,6 @@ void KeyManager::DeriveETicket(PartitionDataManager& data,
 }
 
 void KeyManager::PopulateTickets() {
-    if (eticket_rsa_keypair == RSAKeyPair<2048>{}) {
-        return;
-    }
-
     if (!common_tickets.empty() && !personal_tickets.empty()) {
         return;
     }
