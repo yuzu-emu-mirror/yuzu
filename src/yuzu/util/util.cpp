@@ -5,7 +5,10 @@
 #include <cmath>
 #include <QPainter>
 #include "yuzu/util/util.h"
+#if defined(WIN32)
 #include <fstream>
+#include <Windows.h>
+#endif
 
 QFont GetMonospaceFont() {
     QFont font(QStringLiteral("monospace"));
@@ -40,16 +43,14 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color) {
 }
 
 #if defined(WIN32)
-#include <Windows.h>
-
 #pragma pack(push, 2)
-struct ICONDIR {
-    WORD idReserved;
-    WORD idType;
-    WORD idCount;
+struct IconDir {
+    WORD id_reserved;
+    WORD id_type;
+    WORD id_count;
 };
 
-struct ICONDIRENTRY {
+struct IconDirEntry {
     BYTE bWidth;
     BYTE bHeight;
     BYTE bColorCount;
@@ -59,7 +60,6 @@ struct ICONDIRENTRY {
     DWORD dwBytesInRes;
     DWORD dwImageOffset;
 };
-
 #pragma pack(pop)
 
 bool SaveIconToFile(const char* path, QImage image) {
@@ -74,37 +74,37 @@ bool SaveIconToFile(const char* path, QImage image) {
     bmih.biWidth = sourceImage.width();
     bmih.biHeight = sourceImage.height() * 2;
     bmih.biPlanes = 1;
-    bmih.biBitCount = 32;
+    bmih.biBitCount = bytesPerPixel * 8;
     bmih.biCompression = BI_RGB;
 
     // Create an ICO header
-    ICONDIR iconDir;
-    iconDir.idReserved = 0;
-    iconDir.idType = 1;
-    iconDir.idCount = 1;
+    IconDir iconDir;
+    iconDir.id_reserved = 0;
+    iconDir.id_type = 1;
+    iconDir.id_count = 1;
 
     // Create an ICONDIRENTRY
-    ICONDIRENTRY iconEntry;
+    IconDirEntry iconEntry;
     iconEntry.bWidth = sourceImage.width();
     iconEntry.bHeight = sourceImage.height() * 2;
     iconEntry.bColorCount = 0;
     iconEntry.bReserved = 0;
     iconEntry.wPlanes = 1;
-    iconEntry.wBitCount = 32;
+    iconEntry.wBitCount = bytesPerPixel * 8;
     iconEntry.dwBytesInRes = sizeof(BITMAPINFOHEADER) + imageSize;
-    iconEntry.dwImageOffset = sizeof(ICONDIR) + sizeof(ICONDIRENTRY);
+    iconEntry.dwImageOffset = sizeof(IconDir) + sizeof(IconDirEntry);
 
     // Save the icon data to a file
     std::ofstream iconFile(path, std::ios::binary);
     if (iconFile.fail())
         return false;
-    iconFile.write(reinterpret_cast<const char*>(&iconDir), sizeof(ICONDIR));
-    iconFile.write(reinterpret_cast<const char*>(&iconEntry), sizeof(ICONDIRENTRY));
+    iconFile.write(reinterpret_cast<const char*>(&iconDir), sizeof(IconDir));
+    iconFile.write(reinterpret_cast<const char*>(&iconEntry), sizeof(IconDirEntry));
     iconFile.write(reinterpret_cast<const char*>(&bmih), sizeof(BITMAPINFOHEADER));
 
     for (int y = 0; y < image.height(); y++) {
-        auto line = (char*)sourceImage.scanLine(sourceImage.height() - 1 - y);
-        iconFile.write(line, sourceImage.width() * 4);
+        auto line = reinterpret_cast<const char*>(sourceImage.scanLine(sourceImage.height() - 1 - y));
+        iconFile.write(line, sourceImage.width() * bytesPerPixel);
     }
 
     iconFile.close();

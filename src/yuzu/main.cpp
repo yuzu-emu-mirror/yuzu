@@ -2750,23 +2750,20 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         target_directory / (program_id == 0 ? fmt::format("yuzu-{}.desktop", game_file_name)
                                             : fmt::format("yuzu-{:016X}.desktop", program_id));
 #elif defined(WIN32)
-
     // replace colons, which are illegal in windows filenames, by a dash.
-    for (auto& c : title)
-        if (c == ':')
-            c = '-';
+    std::replace(title.begin(), title.end(), ':', '-');
     const std::filesystem::path shortcut_path = target_directory / (title + ".lnk").c_str();
 #else
     const std::filesystem::path shortcut_path{};
 #endif
     std::filesystem::path icon_path =
-            icons_path / ((program_id == 0 ? fmt::format("yuzu-{}", game_file_name)
-                                           : fmt::format("yuzu-{:016X}", program_id)) +
-                          icon_extension);
+        icons_path / ((program_id == 0 ? fmt::format("yuzu-{}", game_file_name)
+                                       : fmt::format("yuzu-{:016X}", program_id)) +
+                      icon_extension);
 
     // Get icon from game file
     std::vector<u8> icon_image_file{};
-    if (control.second != nullptr) {
+    if (control.second) {
         icon_image_file = control.second->ReadAllBytes();
     } else if (loader->ReadIcon(icon_image_file) != Loader::ResultStatus::Success) {
         LOG_WARNING(Frontend, "Could not read icon from {:s}", game_path);
@@ -2774,7 +2771,6 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     QImage icon_data =
         QImage::fromData(icon_image_file.data(), static_cast<int>(icon_image_file.size()));
-
 
 #if defined(__linux__) || defined(__FreeBSD__)
     // Convert and write the icon
@@ -3806,17 +3802,18 @@ bool GMainWindow::CreateShortcut(const std::string& shortcut_path, const std::st
     return true;
 #endif
 #if defined(WIN32)
-    auto wcommand = std::wstring(command.begin(), command.end());
-    auto warguments = std::wstring(arguments.begin(), arguments.end());
-    auto wcomment = std::wstring(comment.begin(), comment.end());
-    auto wshortcut_path = std::wstring(shortcut_path.begin(), shortcut_path.end());
-    auto wicon_path = std::wstring(icon_path.begin(), icon_path.end());
+    auto wcommand = Common::UTF8ToUTF16W(command);
+    auto warguments = Common::UTF8ToUTF16W(arguments);
+    auto wcomment = Common::UTF8ToUTF16W(comment);
+    auto wshortcut_path = Common::UTF8ToUTF16W(shortcut_path);
+    auto wicon_path = Common::UTF8ToUTF16W(icon_path);
 
     IShellLink* pShellLink;
     auto hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink,
                                  (void**)&pShellLink);
-    if (FAILED(hres))
+    if (FAILED(hres)) {
         return false;
+    }
     pShellLink->SetPath(wcommand.data()); // Path to the object we are referring to
     pShellLink->SetArguments(warguments.data());
     pShellLink->SetDescription(wcomment.data());
@@ -3824,12 +3821,14 @@ bool GMainWindow::CreateShortcut(const std::string& shortcut_path, const std::st
 
     IPersistFile* pPersistFile;
     hres = pShellLink->QueryInterface(IID_IPersistFile, (void**)&pPersistFile);
-    if (FAILED(hres))
+    if (FAILED(hres)) {
         return false;
+    }
 
     hres = pPersistFile->Save(wshortcut_path.data(), TRUE);
-    if (FAILED(hres))
+    if (FAILED(hres)) {
         return false;
+    }
 
     pPersistFile->Release();
     pShellLink->Release();
