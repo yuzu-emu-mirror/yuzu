@@ -103,7 +103,8 @@ bool SaveIconToFile(const char* path, QImage image) {
     iconFile.write(reinterpret_cast<const char*>(&bmih), sizeof(BITMAPINFOHEADER));
 
     for (int y = 0; y < image.height(); y++) {
-        auto line = reinterpret_cast<const char*>(sourceImage.scanLine(sourceImage.height() - 1 - y));
+        auto line =
+            reinterpret_cast<const char*>(sourceImage.scanLine(sourceImage.height() - 1 - y));
         iconFile.write(line, sourceImage.width() * bytesPerPixel);
     }
 
