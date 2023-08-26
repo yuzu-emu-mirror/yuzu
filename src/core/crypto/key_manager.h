@@ -304,6 +304,7 @@ private:
     // Map from rights ID to ticket
     std::map<u128, Ticket> common_tickets;
     std::map<u128, Ticket> personal_tickets;
+    bool ticket_databases_loaded = false;
 
     std::array<std::array<u8, 0xB0>, 0x20> encrypted_keyblobs{};
     std::array<std::array<u8, 0x90>, 0x20> keyblobs{};

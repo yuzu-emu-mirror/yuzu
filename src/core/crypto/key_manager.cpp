@@ -1189,25 +1189,30 @@ void KeyManager::DeriveETicket(PartitionDataManager& data,
 }
 
 void KeyManager::PopulateTickets() {
-    if (!common_tickets.empty() && !personal_tickets.empty()) {
+    if (ticket_databases_loaded) {
         return;
     }
+    ticket_databases_loaded = true;
+
+    std::vector<Ticket> tickets;
 
     const auto system_save_e1_path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) / "system/save/80000000000000e1";
-
-    const Common::FS::IOFile save_e1{system_save_e1_path, Common::FS::FileAccessMode::Read,
-                                     Common::FS::FileType::BinaryFile};
+    if (Common::FS::Exists(system_save_e1_path)) {
+        const Common::FS::IOFile save_e1{system_save_e1_path, Common::FS::FileAccessMode::Read,
+                                         Common::FS::FileType::BinaryFile};
+        const auto blob1 = GetTicketblob(save_e1);
+        tickets.insert(tickets.end(), blob1.begin(), blob1.end());
+    }
 
     const auto system_save_e2_path =
         Common::FS::GetYuzuPath(Common::FS::YuzuPath::NANDDir) / "system/save/80000000000000e2";
-
-    const Common::FS::IOFile save_e2{system_save_e2_path, Common::FS::FileAccessMode::Read,
-                                     Common::FS::FileType::BinaryFile};
-
-    auto tickets = GetTicketblob(save_e1);
-    const auto blob2 = GetTicketblob(save_e2);
-    tickets.insert(tickets.end(), blob2.begin(), blob2.end());
+    if (Common::FS::Exists(system_save_e2_path)) {
+        const Common::FS::IOFile save_e2{system_save_e2_path, Common::FS::FileAccessMode::Read,
+                                         Common::FS::FileType::BinaryFile};
+        const auto blob2 = GetTicketblob(save_e2);
+        tickets.insert(tickets.end(), blob2.begin(), blob2.end());
+    }
 
     for (const auto& ticket : tickets) {
         AddTicket(ticket);
