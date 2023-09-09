@@ -362,6 +362,8 @@ if(ENABLE_QT6 AND Qt6_LOCATION)
     list(APPEND CMAKE_PREFIX_PATH "${Qt6_LOCATION}")
 endif()
 
+add_subdirectory(externals)
+
 function(set_yuzu_qt_components)
     # Best practice is to ask for all components at once, so they are from the same version
     set(YUZU_QT_COMPONENTS2 Core Widgets Concurrent)
@@ -689,7 +691,6 @@ if (YUZU_USE_FASTER_LD AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-add_subdirectory(externals)
 add_subdirectory(src)
 
 # Set yuzu project or yuzu-cmd project as default StartUp Project in Visual Studio depending on whether QT is enabled or not
