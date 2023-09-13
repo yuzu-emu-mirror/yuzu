@@ -538,6 +538,13 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QAction* start_game = context_menu.addAction(tr("Start Game"));
     QAction* start_game_global =
         context_menu.addAction(tr("Start Game without Custom Configuration"));
+    QAction* create_desktop_shortcut = context_menu.addAction(tr("Create Shortcut"));
+#ifndef WIN32
+    QMenu* shortcut_menu = context_menu.addMenu(tr("Create Shortcut"));
+    QAction* create_desktop_shortcut = shortcut_menu->addAction(tr("Add to Desktop"));
+    QAction* create_applications_menu_shortcut =
+        shortcut_menu->addAction(tr("Add to Applications Menu"));
+#endif
     context_menu.addSeparator();
     QAction* open_save_location = context_menu.addAction(tr("Open Save Data Location"));
     QAction* open_mod_location = context_menu.addAction(tr("Open Mod Data Location"));
@@ -560,12 +567,6 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QAction* verify_integrity = context_menu.addAction(tr("Verify Integrity"));
     QAction* copy_tid = context_menu.addAction(tr("Copy Title ID to Clipboard"));
     QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("Navigate to GameDB entry"));
-#ifndef WIN32
-    QMenu* shortcut_menu = context_menu.addMenu(tr("Create Shortcut"));
-    QAction* create_desktop_shortcut = shortcut_menu->addAction(tr("Add to Desktop"));
-    QAction* create_applications_menu_shortcut =
-        shortcut_menu->addAction(tr("Add to Applications Menu"));
-#endif
     context_menu.addSeparator();
     QAction* properties = context_menu.addAction(tr("Properties"));
 
@@ -636,10 +637,10 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     connect(navigate_to_gamedb_entry, &QAction::triggered, [this, program_id]() {
         emit NavigateToGamedbEntryRequested(program_id, compatibility_list);
     });
-#ifndef WIN32
     connect(create_desktop_shortcut, &QAction::triggered, [this, program_id, path]() {
         emit CreateShortcut(program_id, path, GameListShortcutTarget::Desktop);
     });
+#ifndef WIN32
     connect(create_applications_menu_shortcut, &QAction::triggered, [this, program_id, path]() {
         emit CreateShortcut(program_id, path, GameListShortcutTarget::Applications);
     });
