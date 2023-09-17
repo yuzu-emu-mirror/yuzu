@@ -1293,7 +1293,7 @@ u32 MapSizeBytes(const ImageBase& image) {
     }
 }
 
-static_assert(CalculateLevelSize(LevelInfo{{1920, 1080, 1}, {0, 2, 0}, {1, 1}, 2, 0}, 0) ==
+static_assert(CalculateLevelSize(LevelInfo{{1920, 1080, 1}, {0, 2, 0}, {1, 1}, 2, 0, 1}, 0) ==
               0x7f8000);
 static_assert(CalculateLevelSize(LevelInfo{{32, 32, 1}, {0, 0, 4}, {1, 1}, 4, 0, 1}, 0) == 0x40000);
 
