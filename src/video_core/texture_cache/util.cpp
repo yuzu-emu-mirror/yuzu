@@ -68,7 +68,7 @@ struct LevelInfo {
     Extent2D tile_size;
     u32 bpp_log2;
     u32 tile_width_spacing;
-    u32 num_levels;
+    s32 num_levels;
 };
 
 [[nodiscard]] constexpr u32 AdjustTileSize(u32 shift, u32 unit_factor, u32 dimension) {
@@ -258,7 +258,7 @@ template <u32 GOB_EXTENT>
 }
 
 [[nodiscard]] constexpr LevelInfo MakeLevelInfo(PixelFormat format, Extent3D size, Extent3D block,
-                                                u32 tile_width_spacing) {
+                                                u32 tile_width_spacing, const ImageInfo& info) {
     const u32 bytes_per_block = BytesPerBlock(format);
     return {
         .size =
@@ -271,16 +271,18 @@ template <u32 GOB_EXTENT>
         .tile_size = DefaultBlockSize(format),
         .bpp_log2 = BytesPerBlockLog2(bytes_per_block),
         .tile_width_spacing = tile_width_spacing,
+        .num_levels = info.resources.levels,
     };
 }
 
 [[nodiscard]] constexpr LevelInfo MakeLevelInfo(const ImageInfo& info) {
-    return MakeLevelInfo(info.format, info.size, info.block, info.tile_width_spacing);
+    return MakeLevelInfo(info.format, info.size, info.block, info.tile_width_spacing, info);
 }
 
 [[nodiscard]] constexpr u32 CalculateLevelOffset(PixelFormat format, Extent3D size, Extent3D block,
                                                  u32 tile_width_spacing, u32 level) {
-    const LevelInfo info = MakeLevelInfo(format, size, block, tile_width_spacing);
+    ImageInfo image_info{/* initialize fields here */};
+    const LevelInfo info = MakeLevelInfo(format, size, block, tile_width_spacing, image_info);
     u32 offset = 0;
     for (u32 current_level = 0; current_level < level; ++current_level) {
         offset += CalculateLevelSize(info, current_level);
