@@ -2691,7 +2691,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
             QMessageBox::critical(
                 this, tr("Create Shortcut"),
                 tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
-                    .arg(target_directory.c_str()),
+                    .arg(QString::fromStdString(target_directory.generic_string())),
                 QMessageBox::StandardButton::Ok);
             return;
         }
@@ -2699,11 +2699,12 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         target_directory = (xdg_data_home == nullptr ? home_path / ".local/share" : xdg_data_home) /
                            "applications";
         if (!Common::FS::CreateDirs(target_directory)) {
-            QMessageBox::critical(this, tr("Create Shortcut"),
-                                  tr("Cannot create shortcut in applications menu. Path \"%1\" "
-                                     "does not exist and cannot be created.")
-                                      .arg(target_directory.c_str()),
-                                  QMessageBox::StandardButton::Ok);
+            QMessageBox::critical(
+                this, tr("Create Shortcut"),
+                tr("Cannot create shortcut in applications menu. Path \"%1\" "
+                   "does not exist and cannot be created.")
+                    .arg(QString::fromStdString(target_directory.generic_string())),
+                QMessageBox::StandardButton::Ok);
             return;
         }
     }
@@ -2742,7 +2743,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         QMessageBox::critical(
             this, tr("Create Icon"),
             tr("Cannot create icon file. Path \"%1\" does not exist and cannot be created.")
-                .arg(QString::fromStdString(system_icons_path)),
+                .arg(QString::fromStdString(icons_path)),
             QMessageBox::StandardButton::Ok);
         return;
     }
