@@ -26,7 +26,7 @@ public:
 
 private:
     Engines::Maxwell3D& maxwell3d;
-        tsl::robin_map<u64, std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>> builders;
- };
+    tsl::robin_map<u64, std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>> builders;
+};
 
 } // namespace Tegra
