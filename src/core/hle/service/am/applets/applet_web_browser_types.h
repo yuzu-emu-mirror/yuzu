@@ -4,9 +4,9 @@
 #pragma once
 
 #include <array>
-#include <tsl/robin_map.h>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/swap.h"

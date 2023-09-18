@@ -8,9 +8,9 @@
 #include <deque>
 #include <limits>
 #include <type_traits>
-#include <tsl/robin_set.h>
 #include <utility>
 
+#include <tsl/robin_set.h>
 #include "common/alignment.h"
 #include "common/common_types.h"
 #include "video_core/buffer_cache/word_manager.h"

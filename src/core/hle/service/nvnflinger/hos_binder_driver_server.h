@@ -5,8 +5,8 @@
 
 #include <memory>
 #include <mutex>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/nvnflinger/binder.h"

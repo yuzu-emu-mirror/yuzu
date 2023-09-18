@@ -6,8 +6,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "common/concepts.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/result.h"

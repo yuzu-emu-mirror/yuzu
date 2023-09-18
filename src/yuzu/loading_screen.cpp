@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <tsl/robin_map.h>
 #include <QBuffer>
 #include <QByteArray>
 #include <QGraphicsOpacityEffect>
@@ -11,6 +10,7 @@
 #include <QPixmap>
 #include <QPropertyAnimation>
 #include <QStyleOption>
+#include <tsl/robin_map.h>
 #include "core/frontend/framebuffer_layout.h"
 #include "core/loader/loader.h"
 #include "ui_loading_screen.h"

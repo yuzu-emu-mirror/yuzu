@@ -8,9 +8,9 @@
 #include <filesystem>
 #include <memory>
 #include <type_traits>
-#include <tsl/robin_map.h>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/frontend/ir/basic_block.h"

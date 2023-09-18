@@ -6,9 +6,9 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
-#include <tsl/robin_map.h>
 #include <SDL.h>
 
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
 #include "input_common/input_engine.h"

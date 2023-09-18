@@ -4,12 +4,12 @@
 #pragma once
 
 #include <memory>
-#include <tsl/robin_map.h>
-#include <tsl/robin_set.h>
 #include <QDialog>
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QVariant>
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 #include "network/network.h"
 
 namespace Ui {

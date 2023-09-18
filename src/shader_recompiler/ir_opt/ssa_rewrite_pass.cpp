@@ -16,10 +16,10 @@
 #include <deque>
 #include <map>
 #include <span>
-#include <tsl/robin_map.h>
 #include <variant>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"
 #include "shader_recompiler/frontend/ir/pred.h"

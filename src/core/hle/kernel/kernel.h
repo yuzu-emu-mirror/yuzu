@@ -7,9 +7,9 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <tsl/robin_map.h>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include "common/polyfill_thread.h"
 #include "core/hardware_properties.h"
 #include "core/hle/kernel/k_auto_object.h"

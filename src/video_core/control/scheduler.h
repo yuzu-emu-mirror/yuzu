@@ -5,8 +5,8 @@
 
 #include <memory>
 #include <mutex>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "video_core/dma_pusher.h"
 
 namespace Tegra {

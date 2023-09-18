@@ -7,10 +7,10 @@
 #include <memory>
 #include <mutex>
 #include <span>
-#include <tsl/robin_map.h>
 #include <utility>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "common/polyfill_ranges.h"
 #include "video_core/control/channel_state_cache.h"

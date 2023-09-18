@@ -4,8 +4,8 @@
 #include <array>
 #include <cmath>
 #include <span>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "common/assert.h"
 #include "common/bit_cast.h"
 #include "video_core/engines/sw_blitter/converter.h"

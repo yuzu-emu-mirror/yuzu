@@ -4,9 +4,8 @@
 #pragma once
 
 #include <mutex>
-#include <unordered_map>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "video_core/surface.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 

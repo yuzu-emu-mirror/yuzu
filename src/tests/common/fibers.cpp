@@ -8,9 +8,9 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <tsl/robin_map.h>
 #include <vector>
 
+#include <tsl/robin_map.h>
 #include <catch2/catch_test_macros.hpp>
 
 #include "common/common_types.h"

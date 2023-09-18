@@ -12,8 +12,8 @@
 #include <random>
 #include <span>
 #include <thread>
-#include <tsl/robin_map.h>
 
+#include <tsl/robin_map.h>
 #include "common/logging/log.h"
 #include "common/socket_types.h"
 #include "core/hle/result.h"

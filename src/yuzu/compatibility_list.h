@@ -4,8 +4,8 @@
 #pragma once
 
 #include <string>
-#include <tsl/robin_map.h>
 #include <QString>
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 
