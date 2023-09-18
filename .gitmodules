@@ -60,4 +60,4 @@
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 [submodule "robin-map"]
 	path = externals/robin-map
-	url = https://github.com/Tessil/robin-map
+	url = https://github.com/Tessil/robin-map.git
