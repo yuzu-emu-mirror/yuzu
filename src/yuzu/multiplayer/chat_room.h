@@ -4,8 +4,8 @@
 #pragma once
 
 #include <memory>
-#include <unordered_map>
-#include <unordered_set>
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 #include <QDialog>
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
@@ -64,8 +64,8 @@ private:
     bool has_mod_perms = false;
     QStandardItemModel* player_list;
     std::unique_ptr<Ui::ChatRoom> ui;
-    std::unordered_set<std::string> block_list;
-    std::unordered_map<std::string, QPixmap> icon_cache;
+    tsl::robin_set<std::string> block_list;
+    tsl::robin_map<std::string, QPixmap> icon_cache;
     Network::RoomNetwork* room_network;
 };
 

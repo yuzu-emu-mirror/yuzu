@@ -8,7 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -190,7 +190,7 @@ private:
 
     mutable std::mutex mutex;
     mutable std::mutex callback_mutex;
-    std::unordered_map<int, ConsoleUpdateCallback> callback_list;
+    tsl::robin_map<int, ConsoleUpdateCallback> callback_list;
     int last_callback_key = 0;
 
     // Stores the current status of all console input

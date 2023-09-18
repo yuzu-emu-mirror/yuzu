@@ -6,8 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
-
+#include <tsl/robin_map.h>
 #include <SDL.h>
 
 #include "common/common_types.h"
@@ -121,7 +120,7 @@ private:
     Common::SPSCQueue<VibrationRequest> vibration_queue;
 
     /// Map of GUID of a list of corresponding virtual Joysticks
-    std::unordered_map<Common::UUID, std::vector<std::shared_ptr<SDLJoystick>>> joystick_map;
+    tsl::robin_map<Common::UUID, std::vector<std::shared_ptr<SDLJoystick>>> joystick_map;
     std::mutex joystick_map_mutex;
 
     bool start_thread = false;

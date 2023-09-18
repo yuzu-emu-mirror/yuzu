@@ -12,7 +12,7 @@
 #include <random>
 #include <span>
 #include <thread>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/logging/log.h"
 #include "common/socket_types.h"
@@ -117,7 +117,7 @@ protected:
     std::array<LanStation, StationCountMax> stations;
     std::array<NodeLatestUpdate, NodeCountMax> node_changes{};
     std::array<u8, NodeCountMax> node_last_states{};
-    std::unordered_map<MacAddress, NetworkInfo, MACAddressHash> scan_results{};
+    tsl::robin_map<MacAddress, NetworkInfo, MACAddressHash> scan_results{};
     NodeInfo node_info{};
     NetworkInfo network_info{};
     State state{State::None};

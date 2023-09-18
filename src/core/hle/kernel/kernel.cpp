@@ -7,7 +7,7 @@
 #include <functional>
 #include <memory>
 #include <thread>
-#include <unordered_set>
+#include <tsl/robin_set.h>
 #include <utility>
 
 #include "common/assert.h"
@@ -798,8 +798,8 @@ struct KernelCore::Impl {
 
     std::unique_ptr<KObjectNameGlobalData> object_name_global_data;
 
-    std::unordered_set<KAutoObject*> registered_objects;
-    std::unordered_set<KAutoObject*> registered_in_use_objects;
+    tsl::robin_set<KAutoObject*> registered_objects;
+    tsl::robin_set<KAutoObject*> registered_in_use_objects;
 
     std::mutex server_lock;
     std::vector<std::unique_ptr<Service::ServerManager>> server_managers;

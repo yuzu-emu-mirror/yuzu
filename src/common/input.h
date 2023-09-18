@@ -6,9 +6,10 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <utility>
 #include <vector>
+
 #include "common/logging/log.h"
 #include "common/param_package.h"
 #include "common/uuid.h"
@@ -409,7 +410,7 @@ public:
 namespace Impl {
 
 template <typename InputDeviceType>
-using FactoryListType = std::unordered_map<std::string, std::shared_ptr<Factory<InputDeviceType>>>;
+using FactoryListType = tsl::robin_map<std::string, std::shared_ptr<Factory<InputDeviceType>>>;
 
 template <typename InputDeviceType>
 struct FactoryList {

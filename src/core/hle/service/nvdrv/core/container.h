@@ -6,7 +6,7 @@
 
 #include <deque>
 #include <memory>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "core/hle/service/nvdrv/nvdata.h"
 
@@ -35,7 +35,7 @@ public:
     const SyncpointManager& GetSyncpointManager() const;
 
     struct Host1xDeviceFileData {
-        std::unordered_map<DeviceFD, u32> fd_to_id{};
+        tsl::robin_map<DeviceFD, u32> fd_to_id{};
         std::deque<u32> syncpts_accumulated{};
         u32 nvdec_next_id{};
         u32 vic_next_id{};

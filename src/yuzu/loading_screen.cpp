@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2019 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <QBuffer>
 #include <QByteArray>
 #include <QGraphicsOpacityEffect>

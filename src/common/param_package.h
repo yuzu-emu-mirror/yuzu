@@ -5,14 +5,14 @@
 
 #include <initializer_list>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 namespace Common {
 
 /// A string-based key-value container supporting serializing to and deserializing from a string
 class ParamPackage {
 public:
-    using DataType = std::unordered_map<std::string, std::string>;
+    using DataType = tsl::robin_map<std::string, std::string>;
 
     ParamPackage() = default;
     explicit ParamPackage(const std::string& serialized);

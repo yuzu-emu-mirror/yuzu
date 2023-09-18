@@ -9,7 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <assert.h>
 
 #include "common/bit_field.h"
@@ -149,7 +149,7 @@ private:
     std::list<std::shared_ptr<Handle>> unmap_queue{};
     std::mutex unmap_queue_lock{}; //!< Protects access to `unmap_queue`
 
-    std::unordered_map<Handle::Id, std::shared_ptr<Handle>>
+    tsl::robin_map<Handle::Id, std::shared_ptr<Handle>>
         handles{};           //!< Main owning map of handles
     std::mutex handles_lock; //!< Protects access to `handles`
 

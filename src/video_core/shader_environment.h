@@ -11,7 +11,7 @@
 #include <optional>
 #include <span>
 #include <type_traits>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include "common/common_types.h"
@@ -76,10 +76,10 @@ protected:
     GPUVAddr program_base{};
 
     std::vector<u64> code;
-    std::unordered_map<u32, Shader::TextureType> texture_types;
-    std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
-    std::unordered_map<u64, u32> cbuf_values;
-    std::unordered_map<u64, Shader::ReplaceConstant> cbuf_replacements;
+    tsl::robin_map<u32, Shader::TextureType> texture_types;
+    tsl::robin_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
+    tsl::robin_map<u64, u32> cbuf_values;
+    tsl::robin_map<u64, Shader::ReplaceConstant> cbuf_replacements;
 
     u32 local_memory_size{};
     u32 texture_bound{};
@@ -192,10 +192,10 @@ public:
 
 private:
     std::vector<u64> code;
-    std::unordered_map<u32, Shader::TextureType> texture_types;
-    std::unordered_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
-    std::unordered_map<u64, u32> cbuf_values;
-    std::unordered_map<u64, Shader::ReplaceConstant> cbuf_replacements;
+    tsl::robin_map<u32, Shader::TextureType> texture_types;
+    tsl::robin_map<u32, Shader::TexturePixelFormat> texture_pixel_formats;
+    tsl::robin_map<u64, u32> cbuf_values;
+    tsl::robin_map<u64, Shader::ReplaceConstant> cbuf_replacements;
     std::array<u32, 3> workgroup_size{};
     u32 local_memory_size{};
     u32 shared_memory_size{};

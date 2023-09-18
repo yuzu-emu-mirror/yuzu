@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 namespace Common {
@@ -52,9 +52,9 @@ enum class InputType { None, Button, Stick, Motion, Touch };
  * Given a ParamPackage for a Device returned from `GetInputDevices`, attempt to get the default
  * mapping for the device.
  */
-using AnalogMapping = std::unordered_map<Settings::NativeAnalog::Values, Common::ParamPackage>;
-using ButtonMapping = std::unordered_map<Settings::NativeButton::Values, Common::ParamPackage>;
-using MotionMapping = std::unordered_map<Settings::NativeMotion::Values, Common::ParamPackage>;
+using AnalogMapping = tsl::robin_map<Settings::NativeAnalog::Values, Common::ParamPackage>;
+using ButtonMapping = tsl::robin_map<Settings::NativeButton::Values, Common::ParamPackage>;
+using MotionMapping = tsl::robin_map<Settings::NativeMotion::Values, Common::ParamPackage>;
 
 class InputSubsystem {
 public:

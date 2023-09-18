@@ -4,7 +4,7 @@
 #pragma once
 
 #include <array>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include "common/common_funcs.h"
@@ -172,6 +172,6 @@ struct WebCommonReturnValue {
 };
 static_assert(sizeof(WebCommonReturnValue) == 0x1010, "WebCommonReturnValue has incorrect size.");
 
-using WebArgInputTLVMap = std::unordered_map<WebArgInputTLVType, std::vector<u8>>;
+using WebArgInputTLVMap = tsl::robin_map<WebArgInputTLVType, std::vector<u8>>;
 
 } // namespace Service::AM::Applets

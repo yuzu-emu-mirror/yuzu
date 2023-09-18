@@ -8,7 +8,7 @@
 #include <deque>
 #include <limits>
 #include <type_traits>
-#include <unordered_set>
+#include <tsl/robin_set.h>
 #include <utility>
 
 #include "common/alignment.h"
@@ -291,7 +291,7 @@ private:
 
     std::array<Manager*, NUM_HIGH_PAGES> top_tier{};
 
-    std::unordered_set<u32> cached_pages;
+    tsl::robin_set<u32> cached_pages;
 
     RasterizerInterface* rasterizer = nullptr;
 };

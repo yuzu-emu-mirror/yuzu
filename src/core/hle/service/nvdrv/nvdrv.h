@@ -9,7 +9,7 @@
 #include <memory>
 #include <span>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include "common/common_types.h"
@@ -103,7 +103,7 @@ private:
     /// Id to use for the next open file descriptor.
     DeviceFD next_fd = 1;
 
-    using FilesContainerType = std::unordered_map<DeviceFD, std::shared_ptr<Devices::nvdevice>>;
+    using FilesContainerType = tsl::robin_map<DeviceFD, std::shared_ptr<Devices::nvdevice>>;
     /// Mapping of file descriptors to the devices they reference.
     FilesContainerType open_files;
 
@@ -111,7 +111,7 @@ private:
 
     EventInterface events_interface;
 
-    std::unordered_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
+    tsl::robin_map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
 };
 
 void LoopProcess(Nvnflinger::Nvnflinger& nvnflinger, Core::System& system);

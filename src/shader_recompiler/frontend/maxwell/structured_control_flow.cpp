@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <utility>
 #include <vector>
 
@@ -387,7 +387,7 @@ private:
                    std::optional<Node> return_label) {
         Statement* const false_stmt{pool.Create(Identity{}, IR::Condition{false}, &root_stmt)};
         Tree& root{root_stmt.children};
-        std::unordered_map<Flow::Block*, Node> local_labels;
+        tsl::robin_map<Flow::Block*, Node> local_labels;
         local_labels.reserve(function.blocks.size());
 
         for (Flow::Block& block : function.blocks) {

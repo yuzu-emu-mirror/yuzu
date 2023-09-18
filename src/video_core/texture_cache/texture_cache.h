@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <tsl/robin_set.h>
 #include <boost/container/small_vector.hpp>
 
 #include "common/alignment.h"
@@ -1970,7 +1970,7 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
     lru_cache.Free(image.lru_index);
     const auto& clear_page_table =
         [image_id](u64 page,
-                   std::unordered_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>&
+                   tsl::robin_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>&
                        selected_page_table) {
             const auto page_it = selected_page_table.find(page);
             if (page_it == selected_page_table.end()) {

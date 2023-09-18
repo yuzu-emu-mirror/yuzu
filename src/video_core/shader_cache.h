@@ -7,7 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <span>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <utility>
 #include <vector>
 
@@ -150,8 +150,8 @@ private:
     mutable std::mutex lookup_mutex;
     std::mutex invalidation_mutex;
 
-    std::unordered_map<u64, std::unique_ptr<Entry>> lookup_cache;
-    std::unordered_map<u64, std::vector<Entry*>> invalidation_cache;
+    tsl::robin_map<u64, std::unique_ptr<Entry>> lookup_cache;
+    tsl::robin_map<u64, std::vector<Entry*>> invalidation_cache;
     std::vector<std::unique_ptr<ShaderInfo>> storage;
     std::vector<Entry*> marked_for_removal;
 };

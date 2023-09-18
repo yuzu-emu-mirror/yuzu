@@ -12,8 +12,8 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <unordered_map>
-#include <unordered_set>
+#include <tsl/robin_map.h>
+#include <tsl/robin_set.h>
 #include <vector>
 
 #include "common/assert.h"
@@ -340,7 +340,7 @@ private:
 
     mutable std::recursive_mutex mutex;
 
-    std::unordered_map<u64, std::vector<CachedQuery>> cached_queries;
+    tsl::robin_map<u64, std::vector<CachedQuery>> cached_queries;
 
     std::array<CounterStream, VideoCore::NumQueryTypes> streams;
 

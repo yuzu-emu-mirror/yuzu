@@ -385,7 +385,7 @@ struct GPU::Impl {
     std::unique_ptr<Core::Frontend::GraphicsContext> cpu_context;
 
     std::unique_ptr<Tegra::Control::Scheduler> scheduler;
-    std::unordered_map<s32, std::shared_ptr<Tegra::Control::ChannelState>> channels;
+    tsl::robin_map<s32, std::shared_ptr<Tegra::Control::ChannelState>> channels;
     Tegra::Control::ChannelState* current_channel;
     s32 bound_channel{-1};
 

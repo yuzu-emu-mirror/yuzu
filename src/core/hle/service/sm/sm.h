@@ -6,7 +6,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/concepts.h"
 #include "core/hle/kernel/k_port.h"
@@ -79,8 +79,8 @@ private:
 
     /// Map of registered services, retrieved using GetServicePort.
     std::mutex lock;
-    std::unordered_map<std::string, SessionRequestHandlerPtr> registered_services;
-    std::unordered_map<std::string, Kernel::KPort*> service_ports;
+    tsl::robin_map<std::string, SessionRequestHandlerPtr> registered_services;
+    tsl::robin_map<std::string, Kernel::KPort*> service_ports;
 
     /// Kernel context
     Kernel::KernelCore& kernel;

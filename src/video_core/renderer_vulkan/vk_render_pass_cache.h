@@ -5,6 +5,7 @@
 
 #include <mutex>
 #include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "video_core/surface.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
@@ -47,7 +48,7 @@ public:
 
 private:
     const Device* device{};
-    std::unordered_map<RenderPassKey, vk::RenderPass> cache;
+    tsl::robin_map<RenderPassKey, vk::RenderPass> cache;
     std::mutex mutex;
 };
 

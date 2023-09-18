@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <mutex>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "core/hle/service/kernel_helpers.h"
@@ -29,7 +29,7 @@ public:
 private:
     KernelHelpers::ServiceContext service_context;
 
-    std::unordered_map<u64, std::unique_ptr<android::IBinder>> producers;
+    tsl::robin_map<u64, std::unique_ptr<android::IBinder>> producers;
     std::mutex lock;
     u64 last_id{};
 };

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 namespace Core {
 class System;
@@ -30,5 +30,5 @@ public:
 private:
     bool ProfileExistsInMap(const std::string& profile_name) const;
 
-    std::unordered_map<std::string, std::unique_ptr<Config>> map_profiles;
+    tsl::robin_map<std::string, std::unique_ptr<Config>> map_profiles;
 };

@@ -4,8 +4,9 @@
 #include <string>
 
 #include <optional>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <boost/container_hash/hash.hpp>
+
 #include "common/logging/log.h"
 #include "core/core.h"
 #include "core/hle/service/ipc_helpers.h"
@@ -326,7 +327,7 @@ private:
     };
     static_assert(sizeof(LogPacketHeader) == 0x18, "LogPacketHeader is an invalid size");
 
-    std::unordered_map<LogPacketHeaderEntry, std::vector<u8>> entries{};
+    tsl::robin_map<LogPacketHeaderEntry, std::vector<u8>> entries{};
     LogDestination destination{LogDestination::All};
 };
 

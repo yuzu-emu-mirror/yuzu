@@ -529,7 +529,7 @@ private:
     static EmulationSession s_instance;
 
     // Frontend management
-    std::unordered_map<std::string, RomMetadata> m_rom_metadata_cache;
+    tsl::robin_map<std::string, RomMetadata> m_rom_metadata_cache;
 
     // Window management
     std::unique_ptr<EmuWindow_Android> m_window;

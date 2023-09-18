@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <memory>
 #include <type_traits>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include "common/common_types.h"
@@ -154,8 +154,8 @@ private:
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
 
-    std::unordered_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
-    std::unordered_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
+    tsl::robin_map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
+    tsl::robin_map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
 
     ShaderPools main_pools;
 

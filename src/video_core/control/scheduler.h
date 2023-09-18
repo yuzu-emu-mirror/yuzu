@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <mutex>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "video_core/dma_pusher.h"
 
@@ -27,7 +27,7 @@ public:
     void DeclareChannel(std::shared_ptr<ChannelState> new_channel);
 
 private:
-    std::unordered_map<s32, std::shared_ptr<ChannelState>> channels;
+    tsl::robin_map<s32, std::shared_ptr<ChannelState>> channels;
     std::mutex scheduling_guard;
     GPU& gpu;
 };

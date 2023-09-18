@@ -4,8 +4,9 @@
 #ifdef _WIN32
 
 #include <iterator>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <boost/icl/separate_interval_set.hpp>
+
 #include <windows.h>
 #include "common/dynamic_library.h"
 
@@ -348,7 +349,7 @@ private:
 
     std::mutex placeholder_mutex;                                 ///< Mutex for placeholders
     boost::icl::separate_interval_set<size_t> placeholders;       ///< Mapped placeholders
-    std::unordered_map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
+    tsl::robin_map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
 };
 
 #elif defined(__linux__) || defined(__FreeBSD__) // ^^^ Windows ^^^ vvv Linux vvv

@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <unordered_map>
-
+#include <tsl/robin_map.h>
 #include <boost/container/static_vector.hpp>
 
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"

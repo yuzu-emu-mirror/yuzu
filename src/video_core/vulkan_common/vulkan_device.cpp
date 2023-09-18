@@ -6,7 +6,7 @@
 #include <chrono>
 #include <optional>
 #include <thread>
-#include <unordered_set>
+#include <tsl/robin_set.h>
 #include <utility>
 #include <vector>
 
@@ -128,7 +128,7 @@ VkFormatFeatureFlags GetFormatFeatures(VkFormatProperties properties, FormatType
     }
 }
 
-std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::PhysicalDevice physical) {
+tsl::robin_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::PhysicalDevice physical) {
     static constexpr std::array formats{
         VK_FORMAT_A1R5G5B5_UNORM_PACK16,
         VK_FORMAT_A2B10G10R10_SINT_PACK32,
@@ -268,7 +268,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
         VK_FORMAT_R8_USCALED,
         VK_FORMAT_S8_UINT,
     };
-    std::unordered_map<VkFormat, VkFormatProperties> format_properties;
+    tsl::robin_map<VkFormat, VkFormatProperties> format_properties;
     for (const auto format : formats) {
         format_properties.emplace(format, physical.GetFormatProperties(format));
     }
@@ -276,7 +276,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(vk::Physica
 }
 
 #if defined(ANDROID) && defined(ARCHITECTURE_arm64)
-void OverrideBcnFormats(std::unordered_map<VkFormat, VkFormatProperties>& format_properties) {
+void OverrideBcnFormats(tsl::robin_map<VkFormat, VkFormatProperties>& format_properties) {
     // These properties are extracted from Adreno driver 512.687.0
     constexpr VkFormatFeatureFlags tiling_features{
         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT |
@@ -1262,7 +1262,7 @@ void Device::CollectToolingInfo() {
 std::vector<VkDeviceQueueCreateInfo> Device::GetDeviceQueueCreateInfos() const {
     static constexpr float QUEUE_PRIORITY = 1.0f;
 
-    std::unordered_set<u32> unique_queue_families{graphics_family, present_family};
+    tsl::robin_set<u32> unique_queue_families{graphics_family, present_family};
     std::vector<VkDeviceQueueCreateInfo> queue_cis;
     queue_cis.reserve(unique_queue_families.size());
 

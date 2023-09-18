@@ -5,7 +5,7 @@
 
 #include <atomic>
 #include <memory>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include <dynarmic/interface/A64/a64.h>
 #include "common/common_types.h"
@@ -73,7 +73,7 @@ private:
 
     using JitCacheKey = std::pair<Common::PageTable*, std::size_t>;
     using JitCacheType =
-        std::unordered_map<JitCacheKey, std::shared_ptr<Dynarmic::A64::Jit>, Common::PairHash>;
+        tsl::robin_map<JitCacheKey, std::shared_ptr<Dynarmic::A64::Jit>, Common::PairHash>;
 
     friend class DynarmicCallbacks64;
     std::unique_ptr<DynarmicCallbacks64> cb;

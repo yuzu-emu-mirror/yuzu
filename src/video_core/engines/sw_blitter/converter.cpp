@@ -4,7 +4,7 @@
 #include <array>
 #include <cmath>
 #include <span>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/assert.h"
 #include "common/bit_cast.h"
@@ -921,7 +921,7 @@ public:
 };
 
 struct ConverterFactory::ConverterFactoryImpl {
-    std::unordered_map<RenderTargetFormat, std::unique_ptr<Converter>> converters_cache;
+    tsl::robin_map<RenderTargetFormat, std::unique_ptr<Converter>> converters_cache;
 };
 
 ConverterFactory::ConverterFactory() {

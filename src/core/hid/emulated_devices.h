@@ -7,7 +7,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include "common/common_types.h"
@@ -202,7 +202,7 @@ private:
 
     mutable std::mutex mutex;
     mutable std::mutex callback_mutex;
-    std::unordered_map<int, InterfaceUpdateCallback> callback_list;
+    tsl::robin_map<int, InterfaceUpdateCallback> callback_list;
     int last_callback_key = 0;
 
     // Stores the current status of all external device input

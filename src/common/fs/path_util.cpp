@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <sstream>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/fs/fs.h"
 #ifdef ANDROID
@@ -141,7 +141,7 @@ private:
         SetYuzuPathImpl(yuzu_path, new_path);
     }
 
-    std::unordered_map<YuzuPath, fs::path> yuzu_paths;
+    tsl::robin_map<YuzuPath, fs::path> yuzu_paths;
 };
 
 bool ValidatePath(const fs::path& path) {

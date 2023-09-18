@@ -149,7 +149,7 @@ private:
     UtilShaders util_shaders;
     FormatConversionPass format_conversion_pass;
 
-    std::array<std::unordered_map<GLenum, FormatProperties>, 3> format_properties;
+    std::array<tsl::robin_map<GLenum, FormatProperties>, 3> format_properties;
     bool has_broken_texture_view_formats = false;
 
     OGLTexture null_image_1d_array;

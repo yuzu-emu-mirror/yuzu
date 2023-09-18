@@ -77,8 +77,8 @@ private:
     std::unique_ptr<QPropertyAnimation> fadeout_animation;
 
     // Definitions for the differences in text and styling for each stage
-    std::unordered_map<VideoCore::LoadCallbackStage, const char*> progressbar_style;
-    std::unordered_map<VideoCore::LoadCallbackStage, QString> stage_translations;
+    tsl::robin_map<VideoCore::LoadCallbackStage, const char*> progressbar_style;
+    tsl::robin_map<VideoCore::LoadCallbackStage, QString> stage_translations;
 
     // newly generated shaders are added to the end of the file, so when loading and compiling
     // shaders, it will start quickly but end slow if new shaders were added since previous launch.

@@ -3,8 +3,7 @@
 
 #include <memory>
 #include <stdexcept>
-#include <unordered_map>
-
+#include <tsl/robin_map.h>
 #include <catch2/catch_test_macros.hpp>
 
 #include "common/alignment.h"
@@ -53,7 +52,7 @@ public:
     }
 
 private:
-    std::unordered_map<u64, int> page_table;
+    tsl::robin_map<u64, int> page_table;
 };
 } // Anonymous namespace
 

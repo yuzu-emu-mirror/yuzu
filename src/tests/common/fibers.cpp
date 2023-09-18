@@ -8,7 +8,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -36,7 +36,7 @@ public:
 
 private:
     mutable std::mutex mutex;
-    std::unordered_map<std::thread::id, u32> ids;
+    tsl::robin_map<std::thread::id, u32> ids;
 };
 
 class TestControl1 {

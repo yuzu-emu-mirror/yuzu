@@ -4,7 +4,7 @@
 #pragma once
 
 #include <filesystem>
-#include <unordered_map>
+#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "common/thread_worker.h"
@@ -77,8 +77,8 @@ private:
     GraphicsPipeline* current_pipeline{};
 
     ShaderContext::ShaderPools main_pools;
-    std::unordered_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
-    std::unordered_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
+    tsl::robin_map<GraphicsPipelineKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
+    tsl::robin_map<ComputePipelineKey, std::unique_ptr<ComputePipeline>> compute_cache;
 
     Shader::Profile profile;
     Shader::HostTranslateInfo host_info;
