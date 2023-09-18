@@ -15,7 +15,9 @@ set(BUILD_SHARED_LIBS OFF)
 set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL ON)
 
 # Robin-map
-add_subdirectory(robin-map)
+if (NOT TARGET tsl::robin_map)
+    add_subdirectory(robin-map)
+endif()
 
 # xbyak
 if ((ARCHITECTURE_x86 OR ARCHITECTURE_x86_64) AND NOT TARGET xbyak::xbyak)
