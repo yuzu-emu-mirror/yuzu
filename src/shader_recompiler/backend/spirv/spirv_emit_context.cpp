@@ -74,6 +74,11 @@ spv::ImageFormat GetImageFormat(ImageFormat format) {
     throw InvalidArgument("Invalid image format {}", format);
 }
 
+spv::ImageFormat GetImageFormatForBuffer(ImageFormat format) {
+    const auto spv_format = GetImageFormat(format);
+    return spv_format == spv::ImageFormat::Unknown ? spv::ImageFormat::R32ui : spv_format;
+}
+
 Id ImageType(EmitContext& ctx, const ImageDescriptor& desc) {
     const spv::ImageFormat format{GetImageFormat(desc.format)};
     const Id type{ctx.U32[1]};
@@ -1242,9 +1247,8 @@ void EmitContext::DefineTextureBuffers(const Info& info, u32& binding) {
     }
     const spv::ImageFormat format{spv::ImageFormat::Unknown};
     image_buffer_type = TypeImage(F32[1], spv::Dim::Buffer, 0U, false, false, 1, format);
-    sampled_texture_buffer_type = TypeSampledImage(image_buffer_type);
 
-    const Id type{TypePointer(spv::StorageClass::UniformConstant, sampled_texture_buffer_type)};
+    const Id type{TypePointer(spv::StorageClass::UniformConstant, image_buffer_type)};
     texture_buffers.reserve(info.texture_buffer_descriptors.size());
     for (const TextureBufferDescriptor& desc : info.texture_buffer_descriptors) {
         if (desc.count != 1) {
@@ -1271,7 +1275,7 @@ void EmitContext::DefineImageBuffers(const Info& info, u32& binding) {
         if (desc.count != 1) {
             throw NotImplementedException("Array of image buffers");
         }
-        const spv::ImageFormat format{GetImageFormat(desc.format)};
+        const spv::ImageFormat format{GetImageFormatForBuffer(desc.format)};
         const Id image_type{TypeImage(U32[1], spv::Dim::Buffer, false, false, false, 2, format)};
         const Id pointer_type{TypePointer(spv::StorageClass::UniformConstant, image_type)};
         const Id id{AddGlobalVariable(pointer_type, spv::StorageClass::UniformConstant)};

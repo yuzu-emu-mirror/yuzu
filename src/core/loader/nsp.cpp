@@ -30,7 +30,8 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
     }
 
     if (nsp->IsExtractedType()) {
-        secondary_loader = std::make_unique<AppLoader_DeconstructedRomDirectory>(nsp->GetExeFS());
+        secondary_loader = std::make_unique<AppLoader_DeconstructedRomDirectory>(
+            nsp->GetExeFS(), false, file->GetName() == "hbl.nsp");
     } else {
         const auto control_nca =
             nsp->GetNCA(nsp->GetProgramTitleID(), FileSys::ContentRecordType::Control);
@@ -115,6 +116,42 @@ AppLoader_NSP::LoadResult AppLoader_NSP::Load(Kernel::KProcess& process, Core::S
 
     is_loaded = true;
     return result;
+}
+
+ResultStatus AppLoader_NSP::VerifyIntegrity(std::function<bool(size_t, size_t)> progress_callback) {
+    // Extracted-type NSPs can't be verified.
+    if (nsp->IsExtractedType()) {
+        return ResultStatus::ErrorIntegrityVerificationNotImplemented;
+    }
+
+    // Get list of all NCAs.
+    const auto ncas = nsp->GetNCAsCollapsed();
+
+    size_t total_size = 0;
+    size_t processed_size = 0;
+
+    // Loop over NCAs, collecting the total size to verify.
+    for (const auto& nca : ncas) {
+        total_size += nca->GetBaseFile()->GetSize();
+    }
+
+    // Loop over NCAs again, verifying each.
+    for (const auto& nca : ncas) {
+        AppLoader_NCA loader_nca(nca->GetBaseFile());
+
+        const auto NcaProgressCallback = [&](size_t nca_processed_size, size_t nca_total_size) {
+            return progress_callback(processed_size + nca_processed_size, total_size);
+        };
+
+        const auto verification_result = loader_nca.VerifyIntegrity(NcaProgressCallback);
+        if (verification_result != ResultStatus::Success) {
+            return verification_result;
+        }
+
+        processed_size += nca->GetBaseFile()->GetSize();
+    }
+
+    return ResultStatus::Success;
 }
 
 ResultStatus AppLoader_NSP::ReadRomFS(FileSys::VirtualFile& out_file) {

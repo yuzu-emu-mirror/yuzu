@@ -264,8 +264,9 @@ int main(int argc, char** argv) {
                 nickname = match[1];
                 password = match[2];
                 address = match[3];
-                if (!match[4].str().empty())
-                    port = static_cast<u16>(std::stoi(match[4]));
+                if (!match[4].str().empty()) {
+                    port = static_cast<u16>(std::strtoul(match[4].str().c_str(), nullptr, 0));
+                }
                 std::regex nickname_re("^[a-zA-Z0-9._\\- ]+$");
                 if (!std::regex_match(nickname, nickname_re)) {
                     std::cout
@@ -358,6 +359,7 @@ int main(int argc, char** argv) {
     system.SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
     system.SetFilesystem(std::make_shared<FileSys::RealVfsFilesystem>());
     system.GetFileSystemController().CreateFactories(*system.GetFilesystem());
+    system.GetUserChannel().clear();
 
     const Core::SystemResultStatus load_result{system.Load(*emu_window, filepath)};
 

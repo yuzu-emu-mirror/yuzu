@@ -557,6 +557,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     QMenu* dump_romfs_menu = context_menu.addMenu(tr("Dump RomFS"));
     QAction* dump_romfs = dump_romfs_menu->addAction(tr("Dump RomFS"));
     QAction* dump_romfs_sdmc = dump_romfs_menu->addAction(tr("Dump RomFS to SDMC"));
+    QAction* verify_integrity = context_menu.addAction(tr("Verify Integrity"));
     QAction* copy_tid = context_menu.addAction(tr("Copy Title ID to Clipboard"));
     QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("Navigate to GameDB entry"));
 #ifndef WIN32
@@ -588,10 +589,12 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
         emit OpenFolderRequested(program_id, GameListOpenTarget::SaveData, path);
     });
     connect(start_game, &QAction::triggered, [this, path]() {
-        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Normal);
+        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Normal,
+                      AmLaunchType::UserInitiated);
     });
     connect(start_game_global, &QAction::triggered, [this, path]() {
-        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Global);
+        emit BootGame(QString::fromStdString(path), 0, 0, StartGameType::Global,
+                      AmLaunchType::UserInitiated);
     });
     connect(open_mod_location, &QAction::triggered, [this, program_id, path]() {
         emit OpenFolderRequested(program_id, GameListOpenTarget::ModData, path);
@@ -628,6 +631,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     connect(dump_romfs_sdmc, &QAction::triggered, [this, program_id, path]() {
         emit DumpRomFSRequested(program_id, path, DumpRomFSTarget::SDMC);
     });
+    connect(verify_integrity, &QAction::triggered,
+            [this, path]() { emit VerifyIntegrityRequested(path); });
     connect(copy_tid, &QAction::triggered,
             [this, program_id]() { emit CopyTIDRequested(program_id); });
     connect(navigate_to_gamedb_entry, &QAction::triggered, [this, program_id]() {

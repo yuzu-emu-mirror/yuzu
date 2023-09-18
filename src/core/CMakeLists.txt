@@ -584,13 +584,23 @@ add_library(core STATIC
     hle/service/lm/lm.h
     hle/service/mig/mig.cpp
     hle/service/mig/mig.h
+    hle/service/mii/types/char_info.cpp
+    hle/service/mii/types/char_info.h
+    hle/service/mii/types/core_data.cpp
+    hle/service/mii/types/core_data.h
+    hle/service/mii/types/raw_data.cpp
+    hle/service/mii/types/raw_data.h
+    hle/service/mii/types/store_data.cpp
+    hle/service/mii/types/store_data.h
+    hle/service/mii/types/ver3_store_data.cpp
+    hle/service/mii/types/ver3_store_data.h
     hle/service/mii/mii.cpp
     hle/service/mii/mii.h
     hle/service/mii/mii_manager.cpp
     hle/service/mii/mii_manager.h
-    hle/service/mii/raw_data.cpp
-    hle/service/mii/raw_data.h
-    hle/service/mii/types.h
+    hle/service/mii/mii_result.h
+    hle/service/mii/mii_types.h
+    hle/service/mii/mii_util.h
     hle/service/mm/mm_u.cpp
     hle/service/mm/mm_u.h
     hle/service/mnpp/mnpp_app.cpp
@@ -617,8 +627,8 @@ add_library(core STATIC
     hle/service/nfp/nfp_interface.h
     hle/service/nfp/nfp_result.h
     hle/service/nfp/nfp_types.h
-    hle/service/ngct/ngct.cpp
-    hle/service/ngct/ngct.h
+    hle/service/ngc/ngc.cpp
+    hle/service/ngc/ngc.h
     hle/service/nifm/nifm.cpp
     hle/service/nifm/nifm.h
     hle/service/nim/nim.cpp
@@ -854,6 +864,8 @@ add_library(core STATIC
     telemetry_session.h
     tools/freezer.cpp
     tools/freezer.h
+    tools/renderdoc.cpp
+    tools/renderdoc.h
 )
 
 if (MSVC)
@@ -869,6 +881,7 @@ else()
         -Werror=conversion
 
         -Wno-sign-conversion
+        -Wno-cast-function-type
 
         $<$<CXX_COMPILER_ID:Clang>:-fsized-deallocation>
     )
@@ -877,7 +890,7 @@ endif()
 create_target_directory_groups(core)
 
 target_link_libraries(core PUBLIC common PRIVATE audio_core network video_core nx_tzdb)
-target_link_libraries(core PUBLIC Boost::headers PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls Opus::opus)
+target_link_libraries(core PUBLIC Boost::headers PRIVATE fmt::fmt nlohmann_json::nlohmann_json mbedtls renderdoc)
 if (MINGW)
     target_link_libraries(core PRIVATE ${MSWSOCK_LIBRARY})
 endif()

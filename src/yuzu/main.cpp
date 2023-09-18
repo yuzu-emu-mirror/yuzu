@@ -8,6 +8,8 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include "core/loader/nca.h"
+#include "core/tools/renderdoc.h"
 #ifdef __APPLE__
 #include <unistd.h> // for chdir
 #endif
@@ -442,8 +444,13 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
                                 "#yuzu-starts-with-the-error-broken-vulkan-installation-detected'>"
                                 "here for instructions to fix the issue</a>."));
 
+#ifdef HAS_OPENGL
         Settings::values.renderer_backend = Settings::RendererBackend::OpenGL;
+#else
+        Settings::values.renderer_backend = Settings::RendererBackend::Null;
+#endif
 
+        UpdateAPIText();
         renderer_status_button->setDisabled(true);
         renderer_status_button->setChecked(false);
     } else {
@@ -1342,6 +1349,11 @@ void GMainWindow::InitializeHotkeys() {
     connect_shortcut(QStringLiteral("Toggle Framerate Limit"), [] {
         Settings::values.use_speed_limit.SetValue(!Settings::values.use_speed_limit.GetValue());
     });
+    connect_shortcut(QStringLiteral("Toggle Renderdoc Capture"), [this] {
+        if (Settings::values.enable_renderdoc_hotkey) {
+            system->GetRenderdocAPI().ToggleCapture();
+        }
+    });
     connect_shortcut(QStringLiteral("Toggle Mouse Panning"), [&] {
         if (Settings::values.mouse_enabled) {
             Settings::values.mouse_panning = false;
@@ -1447,6 +1459,8 @@ void GMainWindow::ConnectWidgetEvents() {
             &GMainWindow::OnGameListRemoveInstalledEntry);
     connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
+    connect(game_list, &GameList::VerifyIntegrityRequested, this,
+            &GMainWindow::OnGameListVerifyIntegrity);
     connect(game_list, &GameList::CopyTIDRequested, this, &GMainWindow::OnGameListCopyTID);
     connect(game_list, &GameList::NavigateToGamedbEntryRequested, this,
             &GMainWindow::OnGameListNavigateToGamedbEntry);
@@ -1547,6 +1561,7 @@ void GMainWindow::ConnectMenuEvents() {
 
     // Help
     connect_menu(ui->action_Open_yuzu_Folder, &GMainWindow::OnOpenYuzuFolder);
+    connect_menu(ui->action_Verify_installed_contents, &GMainWindow::OnVerifyInstalledContents);
     connect_menu(ui->action_About, &GMainWindow::OnAbout);
 }
 
@@ -1698,7 +1713,8 @@ void GMainWindow::AllowOSSleep() {
 #endif
 }
 
-bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t program_index) {
+bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t program_index,
+                          AmLaunchType launch_type) {
     // Shutdown previous session if the emu thread is still active...
     if (emu_thread != nullptr) {
         ShutdownGame();
@@ -1709,6 +1725,10 @@ bool GMainWindow::LoadROM(const QString& filename, u64 program_id, std::size_t p
     }
 
     system->SetFilesystem(vfs);
+
+    if (launch_type == AmLaunchType::UserInitiated) {
+        system->GetUserChannel().clear();
+    }
 
     system->SetAppletFrontendSet({
         std::make_unique<QtAmiiboSettings>(*this), // Amiibo Settings
@@ -1849,7 +1869,7 @@ void GMainWindow::ConfigureFilesystemProvider(const std::string& filepath) {
 }
 
 void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t program_index,
-                           StartGameType type) {
+                           StartGameType type, AmLaunchType launch_type) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
@@ -1893,7 +1913,7 @@ void GMainWindow::BootGame(const QString& filename, u64 program_id, std::size_t 
         }
     }
 
-    if (!LoadROM(filename, program_id, program_index)) {
+    if (!LoadROM(filename, program_id, program_index, launch_type)) {
         return;
     }
 
@@ -2708,6 +2728,54 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     }
 }
 
+void GMainWindow::OnGameListVerifyIntegrity(const std::string& game_path) {
+    const auto NotImplemented = [this] {
+        QMessageBox::warning(this, tr("Integrity verification couldn't be performed!"),
+                             tr("File contents were not checked for validity."));
+    };
+    const auto Failed = [this] {
+        QMessageBox::critical(this, tr("Integrity verification failed!"),
+                              tr("File contents may be corrupt."));
+    };
+
+    const auto loader = Loader::GetLoader(*system, vfs->OpenFile(game_path, FileSys::Mode::Read));
+    if (loader == nullptr) {
+        NotImplemented();
+        return;
+    }
+
+    QProgressDialog progress(tr("Verifying integrity..."), tr("Cancel"), 0, 100, this);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMinimumDuration(100);
+    progress.setAutoClose(false);
+    progress.setAutoReset(false);
+
+    const auto QtProgressCallback = [&](size_t processed_size, size_t total_size) {
+        if (progress.wasCanceled()) {
+            return false;
+        }
+
+        progress.setValue(static_cast<int>((processed_size * 100) / total_size));
+        return true;
+    };
+
+    const auto status = loader->VerifyIntegrity(QtProgressCallback);
+    if (progress.wasCanceled() ||
+        status == Loader::ResultStatus::ErrorIntegrityVerificationNotImplemented) {
+        NotImplemented();
+        return;
+    }
+
+    if (status == Loader::ResultStatus::ErrorIntegrityVerificationFailed) {
+        Failed();
+        return;
+    }
+
+    progress.close();
+    QMessageBox::information(this, tr("Integrity verification succeeded!"),
+                             tr("The operation completed successfully."));
+}
+
 void GMainWindow::OnGameListCopyTID(u64 program_id) {
     QClipboard* clipboard = QGuiApplication::clipboard();
     clipboard->setText(QString::fromStdString(fmt::format("{:016X}", program_id)));
@@ -3314,7 +3382,8 @@ void GMainWindow::OnLoadComplete() {
 
 void GMainWindow::OnExecuteProgram(std::size_t program_index) {
     ShutdownGame();
-    BootGame(last_filename_booted, 0, program_index);
+    BootGame(last_filename_booted, 0, program_index, StartGameType::Normal,
+             AmLaunchType::ApplicationInitiated);
 }
 
 void GMainWindow::OnExit() {
@@ -3794,10 +3863,14 @@ void GMainWindow::OnToggleAdaptingFilter() {
 
 void GMainWindow::OnToggleGraphicsAPI() {
     auto api = Settings::values.renderer_backend.GetValue();
-    if (api == Settings::RendererBackend::OpenGL) {
+    if (api != Settings::RendererBackend::Vulkan) {
         api = Settings::RendererBackend::Vulkan;
     } else {
+#ifdef HAS_OPENGL
         api = Settings::RendererBackend::OpenGL;
+#else
+        api = Settings::RendererBackend::Null;
+#endif
     }
     Settings::values.renderer_backend.SetValue(api);
     renderer_status_button->setChecked(api == Settings::RendererBackend::Vulkan);
@@ -3939,6 +4012,108 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
 void GMainWindow::OnOpenYuzuFolder() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(
         QString::fromStdString(Common::FS::GetYuzuPathString(Common::FS::YuzuPath::YuzuDir))));
+}
+
+void GMainWindow::OnVerifyInstalledContents() {
+    // Declare sizes.
+    size_t total_size = 0;
+    size_t processed_size = 0;
+
+    // Initialize a progress dialog.
+    QProgressDialog progress(tr("Verifying integrity..."), tr("Cancel"), 0, 100, this);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setMinimumDuration(100);
+    progress.setAutoClose(false);
+    progress.setAutoReset(false);
+
+    // Declare a list of file names which failed to verify.
+    std::vector<std::string> failed;
+
+    // Declare progress callback.
+    auto QtProgressCallback = [&](size_t nca_processed, size_t nca_total) {
+        if (progress.wasCanceled()) {
+            return false;
+        }
+        progress.setValue(static_cast<int>(((processed_size + nca_processed) * 100) / total_size));
+        return true;
+    };
+
+    // Get content registries.
+    auto bis_contents = system->GetFileSystemController().GetSystemNANDContents();
+    auto user_contents = system->GetFileSystemController().GetUserNANDContents();
+
+    std::vector<FileSys::RegisteredCache*> content_providers;
+    if (bis_contents) {
+        content_providers.push_back(bis_contents);
+    }
+    if (user_contents) {
+        content_providers.push_back(user_contents);
+    }
+
+    // Get associated NCA files.
+    std::vector<FileSys::VirtualFile> nca_files;
+
+    // Get all installed IDs.
+    for (auto nca_provider : content_providers) {
+        const auto entries = nca_provider->ListEntriesFilter();
+
+        for (const auto& entry : entries) {
+            auto nca_file = nca_provider->GetEntryRaw(entry.title_id, entry.type);
+            if (!nca_file) {
+                continue;
+            }
+
+            total_size += nca_file->GetSize();
+            nca_files.push_back(std::move(nca_file));
+        }
+    }
+
+    // Using the NCA loader, determine if all NCAs are valid.
+    for (auto& nca_file : nca_files) {
+        Loader::AppLoader_NCA nca_loader(nca_file);
+
+        auto status = nca_loader.VerifyIntegrity(QtProgressCallback);
+        if (progress.wasCanceled()) {
+            break;
+        }
+        if (status != Loader::ResultStatus::Success) {
+            FileSys::NCA nca(nca_file);
+            const auto title_id = nca.GetTitleId();
+            std::string title_name = "unknown";
+
+            const auto control = provider->GetEntry(FileSys::GetBaseTitleID(title_id),
+                                                    FileSys::ContentRecordType::Control);
+            if (control && control->GetStatus() == Loader::ResultStatus::Success) {
+                const FileSys::PatchManager pm{title_id, system->GetFileSystemController(),
+                                               *provider};
+                const auto [nacp, logo] = pm.ParseControlNCA(*control);
+                if (nacp) {
+                    title_name = nacp->GetApplicationName();
+                }
+            }
+
+            if (title_id > 0) {
+                failed.push_back(
+                    fmt::format("{} ({:016X}) ({})", nca_file->GetName(), title_id, title_name));
+            } else {
+                failed.push_back(fmt::format("{} (unknown)", nca_file->GetName()));
+            }
+        }
+
+        processed_size += nca_file->GetSize();
+    }
+
+    progress.close();
+
+    if (failed.size() > 0) {
+        auto failed_names = QString::fromStdString(fmt::format("{}", fmt::join(failed, "\n")));
+        QMessageBox::critical(
+            this, tr("Integrity verification failed!"),
+            tr("Verification failed for the following files:\n\n%1").arg(failed_names));
+    } else {
+        QMessageBox::information(this, tr("Integrity verification succeeded!"),
+                                 tr("The operation completed successfully."));
+    }
 }
 
 void GMainWindow::OnAbout() {

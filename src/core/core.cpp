@@ -51,6 +51,7 @@
 #include "core/reporter.h"
 #include "core/telemetry_session.h"
 #include "core/tools/freezer.h"
+#include "core/tools/renderdoc.h"
 #include "network/network.h"
 #include "video_core/host1x/host1x.h"
 #include "video_core/renderer_base.h"
@@ -281,6 +282,10 @@ struct System::Impl {
         microprofile_cpu[2] = MICROPROFILE_TOKEN(ARM_CPU2);
         microprofile_cpu[3] = MICROPROFILE_TOKEN(ARM_CPU3);
 
+        if (Settings::values.enable_renderdoc_hotkey) {
+            renderdoc_api = std::make_unique<Tools::RenderdocAPI>();
+        }
+
         LOG_DEBUG(Core, "Initialized OK");
 
         return SystemResultStatus::Success;
@@ -406,6 +411,7 @@ struct System::Impl {
             gpu_core->NotifyShutdown();
         }
 
+        Network::CancelPendingSocketOperations();
         kernel.SuspendApplication(true);
         if (services) {
             services->KillNVNFlinger();
@@ -427,6 +433,7 @@ struct System::Impl {
         debugger.reset();
         kernel.Shutdown();
         memory.Reset();
+        Network::RestartSocketOperations();
 
         if (auto room_member = room_network.GetRoomMember().lock()) {
             Network::GameInfo game_info{};
@@ -519,6 +526,8 @@ struct System::Impl {
     std::unique_ptr<Tools::Freezer> memory_freezer;
     std::array<u8, 0x20> build_id{};
 
+    std::unique_ptr<Tools::RenderdocAPI> renderdoc_api;
+
     /// Frontend applets
     Service::AM::Applets::AppletManager applet_manager;
 
@@ -562,6 +571,8 @@ struct System::Impl {
 
     std::array<Core::GPUDirtyMemoryManager, Core::Hardware::NUM_CPU_CORES>
         gpu_dirty_memory_write_manager{};
+
+    std::deque<std::vector<u8>> user_channel;
 };
 
 System::System() : impl{std::make_unique<Impl>(*this)} {}
@@ -1020,6 +1031,10 @@ const Network::RoomNetwork& System::GetRoomNetwork() const {
     return impl->room_network;
 }
 
+Tools::RenderdocAPI& System::GetRenderdocAPI() {
+    return *impl->renderdoc_api;
+}
+
 void System::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager) {
     return impl->kernel.RunServer(std::move(server_manager));
 }
@@ -1034,6 +1049,10 @@ void System::ExecuteProgram(std::size_t program_index) {
     } else {
         LOG_CRITICAL(Core, "execute_program_callback must be initialized by the frontend");
     }
+}
+
+std::deque<std::vector<u8>>& System::GetUserChannel() {
+    return impl->user_channel;
 }
 
 void System::RegisterExitCallback(ExitCallback&& callback) {

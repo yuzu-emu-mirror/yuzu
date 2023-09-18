@@ -58,6 +58,11 @@ enum class StartGameType {
     Global, // Only uses global configuration
 };
 
+enum class AmLaunchType {
+    UserInitiated,
+    ApplicationInitiated,
+};
+
 namespace Core {
 enum class SystemResultStatus : u32;
 class System;
@@ -239,9 +244,11 @@ private:
     void PreventOSSleep();
     void AllowOSSleep();
 
-    bool LoadROM(const QString& filename, u64 program_id, std::size_t program_index);
+    bool LoadROM(const QString& filename, u64 program_id, std::size_t program_index,
+                 AmLaunchType launch_type);
     void BootGame(const QString& filename, u64 program_id = 0, std::size_t program_index = 0,
-                  StartGameType with_config = StartGameType::Normal);
+                  StartGameType with_config = StartGameType::Normal,
+                  AmLaunchType launch_type = AmLaunchType::UserInitiated);
     void ShutdownGame();
 
     void ShowTelemetryCallout();
@@ -313,6 +320,7 @@ private slots:
     void OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                               const std::string& game_path);
     void OnGameListDumpRomFS(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
+    void OnGameListVerifyIntegrity(const std::string& game_path);
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
@@ -342,6 +350,7 @@ private slots:
     void OnConfigurePerGame();
     void OnLoadAmiibo();
     void OnOpenYuzuFolder();
+    void OnVerifyInstalledContents();
     void OnAbout();
     void OnToggleFilterBar();
     void OnToggleStatusBar();

@@ -262,14 +262,12 @@ public:
     Core::SystemResultStatus InitializeEmulation(const std::string& filepath) {
         std::scoped_lock lock(m_mutex);
 
-        // Loads the configuration.
-        Config{};
-
         // Create the render window.
         m_window = std::make_unique<EmuWindow_Android>(&m_input_subsystem, m_native_window,
                                                        m_vulkan_library);
 
         m_system.SetFilesystem(m_vfs);
+        m_system.GetUserChannel().clear();
 
         // Initialize system.
         jauto android_keyboard = std::make_unique<SoftwareKeyboard::AndroidKeyboard>();
@@ -329,12 +327,13 @@ public:
             m_system.ShutdownMainProcess();
             m_detached_tasks.WaitForAllTasks();
             m_load_result = Core::SystemResultStatus::ErrorNotInitialized;
+            m_window.reset();
+            OnEmulationStopped(Core::SystemResultStatus::Success);
+            return;
         }
 
         // Tear down the render window.
         m_window.reset();
-
-        OnEmulationStopped(m_load_result);
     }
 
     void PauseEmulation() {
@@ -669,18 +668,6 @@ jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isRunning(JNIEnv* env, jclass cla
 
 jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isPaused(JNIEnv* env, jclass clazz) {
     return static_cast<jboolean>(EmulationSession::GetInstance().IsPaused());
-}
-
-void Java_org_yuzu_yuzu_1emu_NativeLibrary_muteAduio(JNIEnv* env, jclass clazz) {
-    Settings::values.audio_muted = true;
-}
-
-void Java_org_yuzu_yuzu_1emu_NativeLibrary_unmuteAudio(JNIEnv* env, jclass clazz) {
-    Settings::values.audio_muted = false;
-}
-
-jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isMuted(JNIEnv* env, jclass clazz) {
-    return static_cast<jboolean>(Settings::values.audio_muted.GetValue());
 }
 
 jboolean Java_org_yuzu_yuzu_1emu_NativeLibrary_isHandheldOnly(JNIEnv* env, jclass clazz) {
