@@ -14,10 +14,6 @@ set(BUILD_SHARED_LIBS OFF)
 # Skip install rules for all externals
 set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL ON)
 
-# Robin-map
-if (NOT TARGET tsl::robin_map)
-    add_subdirectory(robin-map)
-endif()
 
 # xbyak
 if ((ARCHITECTURE_x86 OR ARCHITECTURE_x86_64) AND NOT TARGET xbyak::xbyak)
@@ -29,6 +25,12 @@ if ((ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64) AND NOT TARGET dynarmic::dynarmi
     set(DYNARMIC_IGNORE_ASSERTS ON)
     add_subdirectory(dynarmic)
     add_library(dynarmic::dynarmic ALIAS dynarmic)
+endif()
+
+# robin-map
+
+if (NOT TARGET tsl::robin_map)
+    add_subdirectory(robin-map)
 endif()
 
 # getopt
