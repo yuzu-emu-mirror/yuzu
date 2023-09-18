@@ -61,3 +61,6 @@
 [submodule "robin-map"]
 	path = externals/robin-map
 	url = https://github.com/Tessil/robin-map.git
+[submodule "externals/robin-map"]
+	path = externals/robin-map
+	url = https://github.com/Tessil/robin-map.git
