@@ -4,8 +4,8 @@
 #include <memory>
 #include <stdexcept>
 
-#include <tsl/robin_map.h>
 #include <catch2/catch_test_macros.hpp>
+#include <tsl/robin_map.h>
 
 #include "common/alignment.h"
 #include "common/common_types.h"

@@ -1982,9 +1982,8 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
     image.flags &= ~ImageFlagBits::BadOverlap;
     lru_cache.Free(image.lru_index);
     const auto& clear_page_table =
-        [image_id](u64 page,
-                   tsl::robin_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>&
-                       selected_page_table) {
+        [image_id](u64 page, tsl::robin_map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>&
+                                 selected_page_table) {
             const auto page_it = selected_page_table.find(page);
             if (page_it == selected_page_table.end()) {
                 ASSERT_MSG(false, "Unregistering unregistered page=0x{:x}", page << YUZU_PAGEBITS);

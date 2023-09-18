@@ -150,9 +150,8 @@ private:
     std::list<std::shared_ptr<Handle>> unmap_queue{};
     std::mutex unmap_queue_lock{}; //!< Protects access to `unmap_queue`
 
-    tsl::robin_map<Handle::Id, std::shared_ptr<Handle>>
-        handles{};           //!< Main owning map of handles
-    std::mutex handles_lock; //!< Protects access to `handles`
+    tsl::robin_map<Handle::Id, std::shared_ptr<Handle>> handles{}; //!< Main owning map of handles
+    std::mutex handles_lock;                                       //!< Protects access to `handles`
 
     static constexpr u32 HandleIdIncrement{
         4}; //!< Each new handle ID is an increment of 4 from the previous

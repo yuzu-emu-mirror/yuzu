@@ -10,9 +10,9 @@
 #include <thread>
 #include <vector>
 
-#include <tsl/robin_map.h>
 #include <catch2/catch_test_macros.hpp>
 
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "common/fiber.h"
 

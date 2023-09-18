@@ -5,7 +5,6 @@
 
 #include <functional>
 #include <memory>
-#include <unordered_map>
 #include <tsl/robin_map.h>
 
 #include "common/common_types.h"
@@ -27,8 +26,7 @@ public:
 
 private:
     Engines::Maxwell3D& maxwell3d;
-    tsl::robin_map<u64, std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>>
-        builders;
-};
+        tsl::robin_map<u64, std::function<std::unique_ptr<CachedMacro>(Engines::Maxwell3D&)>> builders;
+ };
 
 } // namespace Tegra

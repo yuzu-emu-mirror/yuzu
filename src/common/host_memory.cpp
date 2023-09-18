@@ -4,8 +4,8 @@
 #ifdef _WIN32
 
 #include <iterator>
-#include <tsl/robin_map.h>
 #include <boost/icl/separate_interval_set.hpp>
+#include <tsl/robin_map.h>
 
 #include <windows.h>
 #include "common/dynamic_library.h"
@@ -347,8 +347,8 @@ private:
     PFN_MapViewOfFile3 pfn_MapViewOfFile3{};
     PFN_UnmapViewOfFile2 pfn_UnmapViewOfFile2{};
 
-    std::mutex placeholder_mutex;                                 ///< Mutex for placeholders
-    boost::icl::separate_interval_set<size_t> placeholders;       ///< Mapped placeholders
+    std::mutex placeholder_mutex;                             ///< Mutex for placeholders
+    boost::icl::separate_interval_set<size_t> placeholders;   ///< Mapped placeholders
     tsl::robin_map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
 };
 

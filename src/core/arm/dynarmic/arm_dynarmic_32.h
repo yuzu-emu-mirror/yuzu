@@ -6,9 +6,9 @@
 #include <atomic>
 #include <memory>
 
-#include <tsl/robin_map.h>
 #include <dynarmic/interface/A32/a32.h>
 #include <dynarmic/interface/A64/a64.h>
+#include <tsl/robin_map.h>
 #include "common/common_types.h"
 #include "common/hash.h"
 #include "core/arm/arm_interface.h"
