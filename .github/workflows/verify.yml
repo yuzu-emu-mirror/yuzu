@@ -4,6 +4,9 @@
 name: 'yuzu verify'
 
 on:
+  push:
+    branches: [master]
+    tags: ["*"]
   pull_request:
     branches: [ master ]
 env:
