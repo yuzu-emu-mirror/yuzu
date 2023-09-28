@@ -23,7 +23,7 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::SurfaceType;
 
 constexpr u32 RescaleHeightThreshold = 288;
-constexpr u32 DownscaleHeightThreshold = 512;
+constexpr u32 DownscaleHeightThreshold = 128;
 
 ImageInfo::ImageInfo(const TICEntry& config) noexcept {
     forced_flushed = config.IsPitchLinear() && !Settings::values.use_reactive_flushing.GetValue();
@@ -193,16 +193,14 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::Zeta& zt, const Maxwell3D::Regs::Zet
         size.depth = zt_size.depth;
     } else {
         rescaleable = block.depth == 0;
-        // TODO: Check if this is correct
-        // downscaleable = size.height > DownscaleHeightThreshold;
         type = ImageType::e2D;
-        switch (zt_size.dim_control) {
-        case Maxwell3D::Regs::ZetaSize::DimensionControl::DefineArraySize:
+        if (zt_size.dim_control == Maxwell3D::Regs::ZetaSize::DimensionControl::DefineArraySize) {
             resources.layers = zt_size.depth;
-            break;
-        case Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeIsOne:
+            downscaleable = size.height > DownscaleHeightThreshold;
+        } else if (zt_size.dim_control ==
+                   Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeIsOne) {
             resources.layers = 1;
-            break;
+            downscaleable = size.height > DownscaleHeightThreshold;
         }
     }
 }
