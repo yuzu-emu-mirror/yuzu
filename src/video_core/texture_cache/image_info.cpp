@@ -61,6 +61,7 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         resources.layers = config.Depth();
         break;
     case TextureType::Texture2D:
+        [[fallthrough]];
     case TextureType::Texture2DNoMipmap:
         ASSERT(config.Depth() == 1);
         type = config.IsPitchLinear() ? ImageType::Linear : ImageType::e2D;
@@ -155,8 +156,7 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::RenderTargetConfig& ct,
         type = ImageType::e3D;
         size.depth = ct.depth;
     } else {
-        rescaleable = block.depth == 0;
-        rescaleable &= size.height > RescaleHeightThreshold;
+        rescaleable = block.depth == 0 && size.height > RescaleHeightThreshold;
         downscaleable = size.height > DownscaleHeightThreshold;
         type = ImageType::e2D;
         resources.layers = ct.depth;
@@ -193,7 +193,8 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::Zeta& zt, const Maxwell3D::Regs::Zet
         size.depth = zt_size.depth;
     } else {
         rescaleable = block.depth == 0;
-        downscaleable = size.height > 512;
+        // TODO: Check if this is correct
+        // downscaleable = size.height > DownscaleHeightThreshold;
         type = ImageType::e2D;
         switch (zt_size.dim_control) {
         case Maxwell3D::Regs::ZetaSize::DimensionControl::DefineArraySize:
