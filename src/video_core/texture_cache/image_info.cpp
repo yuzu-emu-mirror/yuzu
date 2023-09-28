@@ -24,6 +24,7 @@ using VideoCore::Surface::SurfaceType;
 
 constexpr u32 RescaleHeightThreshold = 288;
 constexpr u32 DownscaleHeightThreshold = 128;
+constexpr u32 DownscaleHeightThresholdTwo = 1024;
 
 ImageInfo::ImageInfo(const TICEntry& config) noexcept {
     forced_flushed = config.IsPitchLinear() && !Settings::values.use_reactive_flushing.GetValue();
@@ -197,7 +198,7 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::Zeta& zt, const Maxwell3D::Regs::Zet
         if (zt_size.dim_control == Maxwell3D::Regs::ZetaSize::DimensionControl::DefineArraySize) {
             resources.layers = zt_size.depth;
             // TODO: Problematic downscaling here, check if it is possible add more "filters" for avoid bugs.
-            // downscaleable = size.height > DownscaleHeightThreshold;
+            downscaleable = size.height > DownscaleHeightThresholdTwo;
         } else if (zt_size.dim_control ==
                    Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeIsOne) {
             resources.layers = 1;
