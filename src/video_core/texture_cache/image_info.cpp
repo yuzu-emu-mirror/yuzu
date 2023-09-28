@@ -196,7 +196,8 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::Zeta& zt, const Maxwell3D::Regs::Zet
         type = ImageType::e2D;
         if (zt_size.dim_control == Maxwell3D::Regs::ZetaSize::DimensionControl::DefineArraySize) {
             resources.layers = zt_size.depth;
-            downscaleable = size.height > DownscaleHeightThreshold;
+            // TODO: Problematic downscaling here, check if it is possible add more "filters" for avoid bugs.
+            // downscaleable = size.height > DownscaleHeightThreshold;
         } else if (zt_size.dim_control ==
                    Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeIsOne) {
             resources.layers = 1;
