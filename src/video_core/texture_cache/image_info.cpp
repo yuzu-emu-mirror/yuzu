@@ -23,8 +23,8 @@ using VideoCore::Surface::PixelFormat;
 using VideoCore::Surface::SurfaceType;
 
 constexpr u32 RescaleHeightThreshold = 288;
-constexpr u32 DownscaleHeightThreshold = 128;
-constexpr u32 DownscaleHeightThresholdTwo = 1024;
+constexpr u32 DownscaleHeightThresholdNormal = 128;
+constexpr u32 DownscaleHeightThresholdArray = 1024;
 
 ImageInfo::ImageInfo(const TICEntry& config) noexcept {
     forced_flushed = config.IsPitchLinear() && !Settings::values.use_reactive_flushing.GetValue();
@@ -120,7 +120,7 @@ ImageInfo::ImageInfo(const TICEntry& config) noexcept {
         rescaleable &= (block.depth == 0) && resources.levels == 1;
         rescaleable &= size.height > RescaleHeightThreshold ||
                        GetFormatType(format) != SurfaceType::ColorTexture;
-        downscaleable = size.height > DownscaleHeightThreshold;
+        downscaleable = size.height > DownscaleHeightThresholdNormal;
     }
 }
 
@@ -158,7 +158,7 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::RenderTargetConfig& ct,
         size.depth = ct.depth;
     } else {
         rescaleable = block.depth == 0 && size.height > RescaleHeightThreshold;
-        downscaleable = size.height > DownscaleHeightThreshold;
+        downscaleable = size.height > DownscaleHeightThresholdNormal;
         type = ImageType::e2D;
         resources.layers = ct.depth;
     }
@@ -199,11 +199,11 @@ ImageInfo::ImageInfo(const Maxwell3D::Regs::Zeta& zt, const Maxwell3D::Regs::Zet
             resources.layers = zt_size.depth;
             // TODO: Problematic downscaling here, check if it is possible add more "filters" for
             // avoid bugs.
-            downscaleable = size.height > DownscaleHeightThresholdTwo;
+            downscaleable = size.height > DownscaleHeightThresholdArray;
         } else if (zt_size.dim_control ==
                    Maxwell3D::Regs::ZetaSize::DimensionControl::ArraySizeIsOne) {
             resources.layers = 1;
-            downscaleable = size.height > DownscaleHeightThreshold;
+            downscaleable = size.height > DownscaleHeightThresholdNormal;
         }
     }
 }
@@ -239,7 +239,7 @@ ImageInfo::ImageInfo(const Fermi2D::Surface& config) noexcept {
             .depth = 1,
         };
         rescaleable = block.depth == 0 && size.height > RescaleHeightThreshold;
-        downscaleable = size.height > DownscaleHeightThreshold;
+        downscaleable = size.height > DownscaleHeightThresholdNormal;
     }
 }
 
@@ -282,7 +282,7 @@ ImageInfo::ImageInfo(const Tegra::DMA::ImageOperand& config) noexcept {
     layer_stride = CalculateLayerStride(*this);
     maybe_unaligned_layer_stride = CalculateLayerSize(*this);
     rescaleable = block.depth == 0 && size.height > RescaleHeightThreshold;
-    downscaleable = size.height > DownscaleHeightThreshold;
+    downscaleable = size.height > DownscaleHeightThresholdNormal;
 }
 
 } // namespace VideoCommon
