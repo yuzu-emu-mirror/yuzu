@@ -2717,7 +2717,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
 
     std::string title{fmt::format("{:016X}", program_id)};
 
-    if (control.first != nullptr) {
+    if (control.first) {
         title = control.first->GetApplicationName();
     } else {
         loader->ReadTitle(title);
