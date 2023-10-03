@@ -6,6 +6,9 @@
 #include <memory>
 #include <optional>
 
+#include <filesystem>
+#include <iostream>
+
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
@@ -328,7 +331,7 @@ private slots:
     void OnGameListCopyTID(u64 program_id);
     void OnGameListNavigateToGamedbEntry(u64 program_id,
                                          const CompatibilityList& compatibility_list);
-    void OnGameListCreateShortcut(u64 program_id, const std::string& game_path,
+    void OnGameListCreateShortcut(u64 program_id, const QString& game_path,
                                   GameListShortcutTarget target);
     void OnGameListOpenDirectory(const QString& directory);
     void OnGameListAddDirectory();
@@ -419,10 +422,17 @@ private:
     void ConfigureFilesystemProvider(const std::string& filepath);
 
     QString GetTasStateDescription() const;
+
+#if defined(_WIN32)
+    bool CreateShortcut(const std::filesystem::path& shortcut_path, const std::u8string& comment,
+                        const std::filesystem::path& icon_path = {},
+                        const std::u8string& command = u8"", const std::u8string& arguments = u8"");
+#else
     bool CreateShortcut(const std::string& shortcut_path, const std::string& title,
                         const std::string& comment, const std::string& icon_path,
                         const std::string& command, const std::string& arguments,
                         const std::string& categories, const std::string& keywords);
+#endif
 
     std::unique_ptr<Ui::MainWindow> ui;
 

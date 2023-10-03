@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <QFont>
 #include <QString>
 
@@ -14,7 +15,20 @@ QString ReadableByteSize(qulonglong size);
 
 /**
  * Creates a circle pixmap from a specified color
+ *
  * @param color The color the pixmap shall have
+ *
  * @return QPixmap circle pixmap
  */
+
 QPixmap CreateCirclePixmapFromColor(const QColor& color);
+
+/**
+ * Creates a circle pixmap from a specified color
+ *
+ * @param color The color the pixmap shall have
+ *
+ * @return QPixmap circle pixmap
+ */
+
+bool SaveIconToFile(const std::filesystem::path IconPath, QImage image);

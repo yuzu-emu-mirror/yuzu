@@ -18,11 +18,28 @@ concept IsChar = std::same_as<T, char>;
 /**
  * Converts a UTF-8 encoded std::string or std::string_view to a std::u8string.
  *
- * @param utf8_string UTF-8 encoded string
+ * @param string
  *
  * @returns UTF-8 encoded std::u8string.
  */
-[[nodiscard]] std::u8string ToU8String(std::string_view utf8_string);
+[[nodiscard]] std::u8string ToU8String(std::string_view string);
+
+/**
+ * Converts a std::wstring or std::wstring_view to a std::u8string.
+ *
+ * @param wide encoded string
+ *
+ * @returns UTF-8 encoded std::u8string.
+ */
+[[nodiscard]] std::u8string ToU8String(std::wstring_view w_string);
+
+/** Converts a UTF-8 encoded std::u8string or std::u8string_view to a std::wstring.
+ *
+ * @param utf8_string UTF-8 encoded string
+ *
+ * @returns UTF-8 encoded std::wstring.
+ */
+[[nodiscard]] std::wstring ToWString(std::u8string_view utf8_string);
 
 /**
  * Converts a buffer of bytes to a UTF8-encoded std::u8string.
@@ -81,5 +98,14 @@ concept IsChar = std::same_as<T, char>;
  * @returns UTF-8 encoded std::string.
  */
 [[nodiscard]] std::string PathToUTF8String(const std::filesystem::path& path);
+
+/**
+ * Fix filename (remove invalid characters)
+ * @param dirty UTF-8 encoded
+ *
+ * @returns UTF-8 encoded fixed
+ *
+ */
+// [[nodiscard]] std::u8string UTF8FilenameSantizer(std::u8string &u8filename);
 
 } // namespace Common::FS

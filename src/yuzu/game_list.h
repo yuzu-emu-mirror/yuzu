@@ -116,7 +116,7 @@ signals:
     void DumpRomFSRequested(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void VerifyIntegrityRequested(const std::string& game_path);
     void CopyTIDRequested(u64 program_id);
-    void CreateShortcut(u64 program_id, const std::string& game_path,
+    void CreateShortcut(u64 program_id, const QString& game_path,
                         GameListShortcutTarget target);
     void NavigateToGamedbEntryRequested(u64 program_id,
                                         const CompatibilityList& compatibility_list);
@@ -146,7 +146,7 @@ private:
     void RemoveFavorite(u64 program_id);
 
     void PopupContextMenu(const QPoint& menu_location);
-    void AddGamePopup(QMenu& context_menu, u64 program_id, const std::string& path);
+    void AddGamePopup(QMenu& context_menu, u64 program_id, const QString& path);
     void AddCustomDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddPermDirPopup(QMenu& context_menu, QModelIndex selected);
     void AddFavoritesPopup(QMenu& context_menu);

@@ -14,7 +14,7 @@
 #include "common/logging/log.h"
 
 #ifdef _WIN32
-#include <shlobj.h> // Used in GetExeDirectory()
+#include <shlobj.h> // Used in GetExeDirectory() and GetWindowsDesktop()
 #else
 #include <cstdlib>     // Used in Get(Home/Data)Directory()
 #include <pwd.h>       // Used in GetHomeDirectory()
@@ -128,6 +128,7 @@ public:
         GenerateYuzuPath(YuzuPath::SDMCDir, yuzu_path / SDMC_DIR);
         GenerateYuzuPath(YuzuPath::ShaderDir, yuzu_path / SHADER_DIR);
         GenerateYuzuPath(YuzuPath::TASDir, yuzu_path / TAS_DIR);
+        GenerateYuzuPath(YuzuPath::IconsDir, yuzu_path / ICONS_DIR);
     }
 
 private:
@@ -272,6 +273,39 @@ fs::path GetAppDataRoamingDirectory() {
     }
 
     return fs_appdata_roaming_path;
+}
+
+fs::path GetWindowsDesktopPath() {
+    PWSTR DesktopPath = nullptr;
+
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &DesktopPath))) {
+        std::wstring wideDesktopPath(DesktopPath);
+        CoTaskMemFree(DesktopPath);
+
+        return fs::path{wideDesktopPath};
+    } else {
+        LOG_ERROR(Common_Filesystem,
+                  "[GetWindowsDesktopPath] Failed to get the path to the desktop directory");
+    }
+
+    return fs::path{};
+}
+
+fs::path GetWindowsAppShortcutsPath() {
+    PWSTR AppShortcutsPath = nullptr;
+
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_CommonPrograms, 0, NULL, &AppShortcutsPath))) {
+        std::wstring wideAppShortcutsPath(AppShortcutsPath);
+        CoTaskMemFree(AppShortcutsPath);
+
+        return fs::path{wideAppShortcutsPath};
+    } else {
+        LOG_ERROR(
+            Common_Filesystem,
+            "[GetWindowsAppShortcutsPath] Failed to get the path to the App Shortcuts directory");
+    }
+
+    return fs::path{};
 }
 
 #else

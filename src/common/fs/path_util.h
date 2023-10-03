@@ -24,6 +24,7 @@ enum class YuzuPath {
     SDMCDir,        // Where the emulated SDMC is stored.
     ShaderDir,      // Where shaders are stored.
     TASDir,         // Where TAS scripts are stored.
+    IconsDir,       // Where Icons for windows shortcuts are stored.
 };
 
 /**
@@ -242,6 +243,20 @@ void SetYuzuPath(YuzuPath yuzu_path, const Path& new_path) {
  * @returns The path of the current user's %APPDATA% directory.
  */
 [[nodiscard]] std::filesystem::path GetAppDataRoamingDirectory();
+
+/**
+ * Gets the path of the current user's desktop directory.
+ *
+ * @returns The path of the current user's desktop directory.
+ */
+[[nodiscard]] std::filesystem::path GetWindowsDesktopPath();
+
+/**
+ * Gets FOLDERID_ApplicationShortcuts directory path on Windows.
+ *
+ * @returns The path of the current user's FOLDERID_ApplicationShortcuts directory.
+ */
+[[nodiscard]] std::filesystem::path GetWindowsAppShortcutsPath();
 
 #else
 
