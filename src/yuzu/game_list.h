@@ -116,8 +116,7 @@ signals:
     void DumpRomFSRequested(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void VerifyIntegrityRequested(const std::string& game_path);
     void CopyTIDRequested(u64 program_id);
-    void CreateShortcut(u64 program_id, const QString& game_path,
-                        GameListShortcutTarget target);
+    void CreateShortcut(u64 program_id, const QString& game_path, GameListShortcutTarget target);
     void NavigateToGamedbEntryRequested(u64 program_id,
                                         const CompatibilityList& compatibility_list);
     void OpenPerGameGeneralRequested(const std::string& file);

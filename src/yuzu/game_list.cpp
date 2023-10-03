@@ -532,7 +532,7 @@ void GameList::PopupContextMenu(const QPoint& menu_location) {
     context_menu.exec(tree_view->viewport()->mapToGlobal(menu_location));
 }
 
-void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const QString & qpath) {
+void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const QString& qpath) {
     const std::string path = qpath.toStdString();
     QAction* favorite = context_menu.addAction(tr("Favorite"));
     context_menu.addSeparator();
