@@ -3025,12 +3025,8 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
 #endif // __linux__ || __FreeBSD__ || _WIN32
 
 #if defined(__linux__) || defined(__FreeBSD__)
-
-    if (result == QMessageBox::Yes) {
-        const std::string arguments = fmt::format("-f -g \"{:s}\"", game_path);
-    } else {
-        const std::string arguments = fmt::format("-g \"{:s}\"", game_path);
-    }
+    std::string arguments =
+        fmt::format("{}-g \"{:s}\"", (result == QMessageBox::Yes) ? "-f " : "", game_path);
 
     const std::string comment =
         tr("Start %1 with the yuzu Emulator").arg(QString::fromStdString(title)).toStdString();
@@ -4117,8 +4113,8 @@ bool GMainWindow::CreateShortcut(const std::string& shortcut_path, const std::st
 #elif defined(_WIN32)
 #include <filesystem>
 #include <iostream>
-#include <ShlObj.h>
 #include <Windows.h>
+#include <shobjidl.h>
 
 bool GMainWindow::CreateShortcut(const std::filesystem::path& shortcut_path,
                                  const std::u8string& comment,
