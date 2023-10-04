@@ -3025,9 +3025,14 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
 #endif // __linux__ || __FreeBSD__ || _WIN32
 
 #if defined(__linux__) || defined(__FreeBSD__)
-    std::string arguments =
-        fmt::format("{}-g \"{:s}\"", (result == QMessageBox::Yes) ? "-f " : "", game_path);
 
+    std::string arguments;
+    if (result == QMessageBox::Yes) {
+        arguments = fmt::format("-f -g \"{:s}\"", game_path);
+
+    } else {
+        arguments = fmt::format("-g \"{:s}\"", game_path);
+    }
     const std::string comment =
         tr("Start %1 with the yuzu Emulator").arg(QString::fromStdString(title)).toStdString();
 
