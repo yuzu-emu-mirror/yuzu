@@ -2958,7 +2958,7 @@ bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path, c
         if (!wcomment.empty())
             pShellLink->SetDescription(wcomment.c_str());
 
-        if (!std::filesystem::exists(icon_path) && std::filesystem::is_regular_file(icon_path))
+        if (std::filesystem::exists(icon_path) && std::filesystem::is_regular_file(icon_path))
             pShellLink->SetIconLocation(Common::FS::ToWString(icon_path.u8string()).c_str(), 0);
 
         hres = pShellLink->QueryInterface(IID_IPersistFile, (void**)&pPersistFile);
