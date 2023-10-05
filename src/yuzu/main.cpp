@@ -170,8 +170,8 @@ Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
 #include <shobjidl.h>
+#include <windows.h>
 
 extern "C" {
 // tells Nvidia and AMD drivers to use the dedicated GPU by default on laptops with switchable

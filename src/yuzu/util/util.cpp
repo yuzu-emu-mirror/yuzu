@@ -45,7 +45,7 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color) {
 
 #if defined(WIN32)
 #pragma pack(push, 2)
-    struct ICONDIR {
+struct ICONDIR {
     WORD idReserved;
     WORD idType;
     WORD idCount;
