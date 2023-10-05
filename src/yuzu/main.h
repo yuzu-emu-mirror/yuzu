@@ -423,16 +423,10 @@ private:
 
     QString GetTasStateDescription() const;
 
-#if defined(_WIN32)
-    bool CreateShortcut(const std::filesystem::path& shortcut_path, const std::u8string& comment,
-                        const std::filesystem::path& icon_path = {},
-                        const std::u8string& command = u8"", const std::u8string& arguments = u8"");
-#else
-    bool CreateShortcut(const std::string& shortcut_path, const std::string& title,
-                        const std::string& comment, const std::string& icon_path,
-                        const std::string& command, const std::string& arguments,
-                        const std::string& categories, const std::string& keywords);
-#endif
+    bool SaveShortcutLink(const std::filesystem::path& shortcut_path, const auto& comment,
+                          const std::filesystem::path& icon_path,
+                          const std::filesystem::path& command, const auto& arguments,
+                          const auto& categories, const auto& keywords);
 
     std::unique_ptr<Ui::MainWindow> ui;
 

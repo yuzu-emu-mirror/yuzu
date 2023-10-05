@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2015 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#if defined(WIN32)
+#include <windows.h>
+#endif
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -41,18 +44,6 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color) {
 }
 
 #if defined(WIN32)
-#define MATHFIX 0
-#ifndef NOMINMAX
-#define NOMINMAX
-MATHFIX = 1
-#endif
-
-#include <Windows.h>
-
-#if MATHFIX
-#undef NOMINMAX
-#endif
-
 #pragma pack(push, 2)
     struct ICONDIR {
     WORD idReserved;
