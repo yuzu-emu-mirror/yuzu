@@ -31,4 +31,4 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color);
  * @return QPixmap circle pixmap
  */
 
-bool SaveIconToFile(const std::filesystem::path IconPath, QImage image);
+bool savePixmapsToICO(const QList<QPixmap>& pixmaps, const QString& path);

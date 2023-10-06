@@ -1,14 +1,19 @@
 // SPDX-FileCopyrightText: 2015 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#if defined(WIN32)
-#include <windows.h>
-#endif
 #include <array>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <QPainter>
+#include <QFile>
+#include <QFileInfo>
+#include <QTemporaryFile>
+#include <QImage>
+#include <QPixmap>
+#include <QList>
+#include <QString>
+
 #include "yuzu/util/util.h"
 
 QFont GetMonospaceFont() {
@@ -44,79 +49,84 @@ QPixmap CreateCirclePixmapFromColor(const QColor& color) {
 }
 
 #if defined(WIN32)
-#pragma pack(push, 2)
-struct ICONDIR {
-    WORD idReserved;
-    WORD idType;
-    WORD idCount;
-};
+template <typename T>
+void write(QFile& f, const T t) {
+    f.write((const char*)&t, sizeof(t));
+}
 
-struct ICONDIRENTRY {
-    BYTE bWidth;
-    BYTE bHeight;
-    BYTE bColorCount;
-    BYTE bReserved;
-    WORD wPlanes;
-    WORD wBitCount;
-    DWORD dwBytesInRes;
-    DWORD dwImageOffset;
-};
+bool savePixmapsToICO(const QList<QPixmap>& pixmaps, const QString& path) {
+    static_assert(sizeof(short) == 2, "short int is not 2 bytes");
+    static_assert(sizeof(int) == 4, "int is not 4 bytes");
 
-#pragma pack(pop)
-
-bool SaveIconToFile(const std::filesystem::path IconPath, const QImage image) {
-
-    QImage sourceImage = image.convertToFormat(QImage::Format_RGB32);
-
-    const int bytesPerPixel = 4;
-    const int imageSize = sourceImage.width() * sourceImage.height() * bytesPerPixel;
-
-    BITMAPINFOHEADER bmih = {};
-    bmih.biSize = sizeof(BITMAPINFOHEADER);
-    bmih.biWidth = sourceImage.width();
-    bmih.biHeight = sourceImage.height() * 2;
-    bmih.biPlanes = 1;
-    bmih.biBitCount = 32;
-    bmih.biCompression = BI_RGB;
-
-    // Create an ICO header
-    ICONDIR iconDir;
-    iconDir.idReserved = 0;
-    iconDir.idType = 1;
-    iconDir.idCount = 1;
-
-    // Create an ICONDIRENTRY
-    ICONDIRENTRY iconEntry;
-    iconEntry.bWidth = sourceImage.width();
-    iconEntry.bHeight = sourceImage.height() * 2;
-    iconEntry.bColorCount = 0;
-    iconEntry.bReserved = 0;
-    iconEntry.wPlanes = 1;
-    iconEntry.wBitCount = 32;
-    iconEntry.dwBytesInRes = sizeof(BITMAPINFOHEADER) + imageSize;
-    iconEntry.dwImageOffset = sizeof(ICONDIR) + sizeof(ICONDIRENTRY);
-
-    // Save the icon data to a file
-    std::ofstream iconFile(IconPath, std::ios::binary | std::ios::trunc);
-    if (iconFile.fail())
+    QFile f(path);
+    if (!f.open(QFile::OpenModeFlag::WriteOnly))
         return false;
 
-    iconFile.write((char*)&iconDir, sizeof(ICONDIR));
-    iconFile.write((char*)&iconEntry, sizeof(ICONDIRENTRY));
-    iconFile.write((char*)&bmih, sizeof(BITMAPINFOHEADER));
+    // Header
+    write<short>(f, 0);
+    write<short>(f, 1);
+    write<short>(f, pixmaps.count());
 
-    for (int y = 0; y < image.height(); y++) {
-        auto line = (char*)sourceImage.scanLine(sourceImage.height() - 1 - y);
-        iconFile.write(line, sourceImage.width() * 4);
+    QList<int> images_size;
+    for (int ii = 0; ii < pixmaps.count(); ++ii) {
+        QTemporaryFile temp;
+        temp.setAutoRemove(true);
+        if (!temp.open())
+            return false;
+
+        const auto& pixmap = pixmaps[ii];
+        pixmap.save(&temp, "PNG");
+
+
+        temp.close();
+
+        images_size.push_back(QFileInfo(temp).size());
     }
 
-    iconFile.close();
+    // Images directory
+    constexpr unsigned int entry_size = sizeof(char) + sizeof(char) + sizeof(char) + sizeof(char) +
+                                        sizeof(short) + sizeof(short) + sizeof(unsigned int) +
+                                        sizeof(unsigned int);
+    static_assert(entry_size == 16, "wrong entry size");
+
+    unsigned int offset = 3 * sizeof(short) + pixmaps.count() * entry_size;
+    for (int ii = 0; ii < pixmaps.count(); ++ii) {
+        const auto& pixmap = pixmaps[ii];
+        if (pixmap.width() > 256 || pixmap.height() > 256)
+            continue;
+
+        write<char>(f, pixmap.width() == 256 ? 0 : pixmap.width());
+        write<char>(f, pixmap.height() == 256 ? 0 : pixmap.height());
+        write<char>(f, 0);                       // palette size
+        write<char>(f, 0);                       // reserved
+        write<short>(f, 1);                      // color planes
+        write<short>(f, pixmap.depth());         // bits-per-pixel
+        write<unsigned int>(f, images_size[ii]); // size of image in bytes
+        write<unsigned int>(f, offset);          // offset
+        offset += images_size[ii];
+    }
+
+    for (int ii = 0; ii < pixmaps.count(); ++ii) {
+        const auto& pixmap = pixmaps[ii];
+        if (pixmap.width() > 256 || pixmap.height() > 256)
+            continue;
+        pixmap.save(&f, "PNG");
+    }
+
+    // Close the file before renaming it
+    f.close();
+
+    // Remove the .png extension Add the .ico extension and Rename the file
+    QString qPath = path;
+    qPath.chop(3);
+    qPath = qPath % QString::fromStdString("ico");
+    QFile::rename(path, qPath);
 
     return true;
 }
 #else
 
-bool SaveAsIco(QImage image) {
+bool SaveAsIco(const QList<QPixmap>& pixmaps, const QString& path) {
     return false;
 }
 #endif

@@ -3128,7 +3128,21 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     } else {
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
     }
-#endif // __linux__
+#elif defined(_WIN32)
+    // ICO is only for Windows
+
+    // Convert QImage to QPixmap
+    QPixmap pixmap = QPixmap::fromImage(icon_jpeg);
+
+    // Save the QPixmap as an .ico file
+    QList<QPixmap> pixmaps;
+    pixmaps.append(pixmap);
+    if (!savePixmapsToICO(pixmaps, QString::fromStdWString(Common::FS::ToWString(icon_path.u8string())))) {
+        LOG_ERROR(Frontend, "Could not write icon as ICO to file");
+    } else {
+        LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
+    }
+#endif
 
 #if defined(__linux__) || defined(__FreeBSD__)
     QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No;
@@ -3177,10 +3191,6 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
 
     const std::filesystem::path shortcut_path = target_directory / (sanitized_title);
 
-    bool is_icon_ok = SaveIconToFile(icon_path, icon_jpeg);
-    if (!is_icon_ok) {
-        LOG_ERROR(Frontend, "Could not write icon as ICO to file");
-    }
     const std::u8string keywords = u8"Switch;Nintendo;";
     const std::u8string categories = u8"Game;Emulator;Qt;";
 #else
