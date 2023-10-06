@@ -5,14 +5,14 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
-#include <QPainter>
 #include <QFile>
 #include <QFileInfo>
-#include <QTemporaryFile>
 #include <QImage>
-#include <QPixmap>
 #include <QList>
+#include <QPainter>
+#include <QPixmap>
 #include <QString>
+#include <QTemporaryFile>
 
 #include "yuzu/util/util.h"
 
@@ -76,7 +76,6 @@ bool savePixmapsToICO(const QList<QPixmap>& pixmaps, const QString& path) {
 
         const auto& pixmap = pixmaps[ii];
         pixmap.save(&temp, "PNG");
-
 
         temp.close();
 

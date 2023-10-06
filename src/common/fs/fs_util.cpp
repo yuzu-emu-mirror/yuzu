@@ -35,9 +35,11 @@ std::u8string_view BufferToU8StringView(std::span<const u8> buffer) {
 
 std::wstring ToWString(std::u8string_view utf8_string) {
 #ifdef _WIN32
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, NULL, 0);
+    int size_needed = MultiByteToWideChar(
+        CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, NULL, 0);
     std::wstring wstr(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, &wstr[0], size_needed);
+    MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, &wstr[0],
+                        size_needed);
     return wstr;
 #else
     return std::wstring{utf8_string.begin(), utf8_string.end()};

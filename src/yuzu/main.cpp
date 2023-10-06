@@ -3137,7 +3137,8 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     // Save the QPixmap as an .ico file
     QList<QPixmap> pixmaps;
     pixmaps.append(pixmap);
-    if (!savePixmapsToICO(pixmaps, QString::fromStdWString(Common::FS::ToWString(icon_path.u8string())))) {
+    if (!savePixmapsToICO(pixmaps,
+                          QString::fromStdWString(Common::FS::ToWString(icon_path.u8string())))) {
         LOG_ERROR(Frontend, "Could not write icon as ICO to file");
     } else {
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
