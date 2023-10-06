@@ -1234,6 +1234,33 @@ bool IsSubresource(const ImageInfo& candidate, const ImageBase& image, GPUVAddr 
         .has_value();
 }
 
+bool IsSubLevel(const ImageBase& image, const ImageBase& overlap) {
+    const std::optional<SubresourceBase> base = image.TryFindBase(overlap.gpu_addr);
+    if (!base) {
+        return false;
+    }
+    if (!IsViewCompatible(image.info.format, overlap.info.format, false, true)) {
+        return false;
+    }
+    if (AdjustMipSize(image.info.size, base->level) != overlap.info.size) {
+        return false;
+    }
+
+    const auto level_info = MakeLevelInfo(image.info);
+    auto level_sizes = CalculateLevelSizes(level_info, image.info.resources.levels);
+    auto total_size{0};
+    auto level = base->level;
+    while (level) {
+        total_size += level_sizes[level - 1];
+        level--;
+    }
+
+    if (overlap.gpu_addr - total_size != image.gpu_addr) {
+        return false;
+    }
+    return true;
+}
+
 bool IsSubCopy(const ImageInfo& candidate, const ImageBase& image, GPUVAddr candidate_addr) {
     const std::optional<SubresourceBase> base = image.TryFindBase(candidate_addr);
     if (!base) {

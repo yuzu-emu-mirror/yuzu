@@ -111,6 +111,8 @@ void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const Ima
                                  GPUVAddr candidate_addr, RelaxedOptions options, bool broken_views,
                                  bool native_bgr);
 
+[[nodiscard]] bool IsSubLevel(const ImageBase& image, const ImageBase& overlap);
+
 [[nodiscard]] bool IsSubCopy(const ImageInfo& candidate, const ImageBase& image,
                              GPUVAddr candidate_addr);
 

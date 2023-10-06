@@ -1357,6 +1357,8 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     join_bad_overlap_ids.clear();
     join_copies_to_do.clear();
     join_alias_indices.clear();
+    boost::container::small_vector<ImageId, 8> merge_mips;
+    ImageId merge_with_existing_id{};
     const bool this_is_linear = info.type == ImageType::Linear;
     const auto region_check = [&](ImageId overlap_id, ImageBase& overlap) {
         if (True(overlap.flags & ImageFlagBits::Remapped)) {
@@ -1397,6 +1399,12 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
             join_right_aliased_ids.push_back(overlap_id);
             overlap.flags |= ImageFlagBits::Alias;
             join_copies_to_do.emplace_back(JoinCopy{true, overlap_id});
+        } else if (IsSubLevel(new_image_base, overlap)) {
+            if (new_image_base.info.resources.levels > overlap.info.resources.levels) {
+                merge_mips.push_back(overlap_id);
+            } else {
+                merge_with_existing_id = overlap_id;
+            }
         } else {
             join_bad_overlap_ids.push_back(overlap_id);
         }
@@ -1439,6 +1447,10 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         }
     }
 
+    if (merge_with_existing_id) {
+        return merge_with_existing_id;
+    }
+
     const ImageId new_image_id = slot_images.insert(runtime, new_info, gpu_addr, cpu_addr);
     Image& new_image = slot_images[new_image_id];
 
@@ -1465,6 +1477,32 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         ScaleUp(new_image);
     } else {
         ScaleDown(new_image);
+    }
+
+    const auto& resolution = Settings::values.resolution_info;
+    const u32 up_scale = can_rescale ? resolution.up_scale : 1;
+    const u32 down_shift = can_rescale ? resolution.down_shift : 0;
+
+    for (auto overlap_id : merge_mips) {
+        auto& overlap = slot_images[overlap_id];
+        if (True(overlap.flags & ImageFlagBits::GpuModified)) {
+            new_image.flags |= ImageFlagBits::GpuModified;
+            new_image.modification_tick = overlap.modification_tick;
+
+            const SubresourceBase base = new_image.TryFindBase(overlap.gpu_addr).value();
+            auto copies =
+                MakeShrinkImageCopies(new_image.info, overlap.info, base, up_scale, down_shift);
+            if (new_image.info.num_samples != overlap.info.num_samples) {
+                runtime.CopyImageMSAA(new_image, overlap, std::move(copies));
+            } else {
+                runtime.CopyImage(new_image, overlap, std::move(copies));
+            }
+        }
+        if (True(overlap.flags & ImageFlagBits::Tracked)) {
+            UntrackImage(overlap, overlap_id);
+        }
+        UnregisterImage(overlap_id);
+        DeleteImage(overlap_id);
     }
 
     std::ranges::sort(join_copies_to_do, [this](const JoinCopy& lhs, const JoinCopy& rhs) {
@@ -1523,10 +1561,7 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
         }
         if (True(overlap.flags & ImageFlagBits::GpuModified)) {
             new_image.flags |= ImageFlagBits::GpuModified;
-            const auto& resolution = Settings::values.resolution_info;
             const SubresourceBase base = new_image.TryFindBase(overlap.gpu_addr).value();
-            const u32 up_scale = can_rescale ? resolution.up_scale : 1;
-            const u32 down_shift = can_rescale ? resolution.down_shift : 0;
             auto copies = MakeShrinkImageCopies(new_info, overlap.info, base, up_scale, down_shift);
             if (overlap.info.num_samples != new_image.info.num_samples) {
                 runtime.CopyImageMSAA(new_image, overlap, std::move(copies));
