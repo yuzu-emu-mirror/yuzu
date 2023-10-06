@@ -62,4 +62,62 @@ std::string PathToUTF8String(const std::filesystem::path& path) {
     return ToUTF8String(path.u8string());
 }
 
+std::u8string UTF8FilenameSantizer(std::u8string u8filename) {
+
+    std::u8string u8path_santized(u8filename);
+
+    size_t eSizeSanitized = u8path_santized.size();
+
+    /* Special case for ":", for example: 'Example: The Test' --> 'Example - The Test' or 'Example :
+     * The Test' --> 'Example - The Test'. */
+    for (size_t i = 0; i < eSizeSanitized; i++) {
+
+        switch (u8path_santized[i]) {
+        case u8':':
+            if (i == 0 || i == eSizeSanitized - 1) {
+                u8path_santized.replace(i, 1, u8"_");
+            } else if (u8path_santized[i - 1] == u8' ') {
+                u8path_santized.replace(i, 1, u8"-");
+            } else {
+                u8path_santized.replace(i, 1, u8" -");
+                eSizeSanitized++;
+            }
+            break;
+        case u8'\\':
+        case u8'/':
+        case u8'*':
+        case u8'?':
+        case u8'\"':
+        case u8'<':
+        case u8'>':
+        case u8'|':
+        case u8'\0':
+            u8path_santized.replace(i, 1, u8"_");
+            break;
+        default:
+            break;
+        }
+    }
+
+    // Delete duplicated spaces || Delete duplicated dots (MacOS i think)
+    for (size_t i = 0; i < eSizeSanitized; i++) {
+        if ((u8path_santized[i] == u8' ' && u8path_santized[i + 1] == u8' ') ||
+            (u8path_santized[i] == u8'.' && u8path_santized[i + 1] == u8'.')) {
+            u8path_santized.erase(i, 1);
+            i--;
+        }
+    }
+
+    // Delete all spaces and dots at the end (Windows almost)
+    while (u8path_santized.back() == u8' ' || u8path_santized.back() == u8'.') {
+        u8path_santized.pop_back();
+    }
+
+    if (u8path_santized.empty()) {
+        return u8"";
+    }
+
+    return u8path_santized;
+}
+
 } // namespace Common::FS

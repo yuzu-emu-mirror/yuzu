@@ -99,4 +99,13 @@ concept IsChar = std::same_as<T, char>;
  */
 [[nodiscard]] std::string PathToUTF8String(const std::filesystem::path& path);
 
+/**
+ * Sanitizes a UTF-8 encoded filename.
+ *
+ * @param u8filename u8string_view encoded filename
+ *
+ * @returns Sanitized u8string encoded filename.
+ */
+[[nodiscard]] std::u8string UTF8FilenameSantizer(std::u8string u8filename);
+
 } // namespace Common::FS
