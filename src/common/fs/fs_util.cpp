@@ -13,7 +13,8 @@ namespace Common::FS {
 
 std::u8string ToU8String(std::wstring_view w_string) {
     try {
-        auto utf8_string = boost::locale::conv::utf_to_utf<char>(w_string.data(), w_string.data() + w_string.size());
+        auto utf8_string = boost::locale::conv::utf_to_utf<char>(w_string.data(),
+                                                                 w_string.data() + w_string.size());
         return std::u8string(utf8_string.begin(), utf8_string.end());
     } catch (const boost::locale::conv::conversion_error) {
         return std::u8string{reinterpret_cast<const char8_t*>(w_string.data())};
@@ -36,7 +37,8 @@ std::u8string_view BufferToU8StringView(std::span<const u8> buffer) {
 
 std::wstring ToWString(std::u8string_view utf8_string) {
     try {
-        return boost::locale::conv::utf_to_utf<wchar_t>(utf8_string.data(), utf8_string.data() + utf8_string.size());
+        return boost::locale::conv::utf_to_utf<wchar_t>(utf8_string.data(),
+                                                        utf8_string.data() + utf8_string.size());
     } catch (const boost::locale::conv::conversion_error) {
         return std::wstring(utf8_string.begin(), utf8_string.end());
     } catch (const boost::locale::conv::invalid_charset_error) {

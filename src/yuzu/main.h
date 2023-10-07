@@ -426,7 +426,7 @@ private:
     bool SaveShortcutLink(const std::filesystem::path& shortcut_path, const auto& comment,
                           const std::filesystem::path& icon_path,
                           const std::filesystem::path& command, const auto& arguments,
-                          const auto& categories, const auto& keywords);
+                          const auto& categories, const auto& keywords, const auto& name);
 
     std::unique_ptr<Ui::MainWindow> ui;
 

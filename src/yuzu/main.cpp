@@ -2825,11 +2825,12 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, const auto& comment,
                                    const std::filesystem::path& icon_path_,
                                    const std::filesystem::path& command_, const auto& arguments,
-                                   const auto& categories, const auto& keywords) {
+                                   const auto& categories, const auto& keywords, const auto& name_) {
 
     const auto shortcut_path = shortcut_path_.string();
     const auto icon_path = icon_path_.string();
     const auto command = command_.string();
+    const auto name = name_.string();
 
     // This desktop file template was writing referencing
     // https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
@@ -2837,7 +2838,7 @@ bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, 
     shortcut_contents.append("[Desktop Entry]\n");
     shortcut_contents.append("Type=Application\n");
     shortcut_contents.append("Version=1.0\n");
-    shortcut_contents.append(fmt::format("Name={:s}\n", title));
+    shortcut_contents.append(fmt::format("Name={:s}\n", name));
     shortcut_contents.append(fmt::format("Comment={:s}\n", comment));
     shortcut_contents.append(fmt::format("Icon={:s}\n", icon_path));
     shortcut_contents.append(fmt::format("TryExec={:s}\n", command));
@@ -2860,7 +2861,7 @@ bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, 
 bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path, const auto& comment,
                                    const std::filesystem::path& icon_path,
                                    const std::filesystem::path& command, const auto& arguments,
-                                   const auto& categories, const auto& keywords) {
+                                   const auto& categories, const auto& keywords, const auto& name) {
 
     // Initialize COM
     CoInitialize(NULL);
@@ -2920,12 +2921,10 @@ bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path, c
     return shortcut_success;
 }
 #else
-bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_,
-                                   const std::string& comment,
+bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, const auto& comment,
                                    const std::filesystem::path& icon_path_,
-                                   const std::filesystem::path& command_,
-                                   const std::string& arguments, const std::string& categories,
-                                   const std::string& keywords) {
+                                   const std::filesystem::path& command_, const auto& arguments,
+                                   const auto& categories, const auto& keywords, const auto& name) {
 
     return false;
 }
@@ -3054,12 +3053,15 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     QImage icon_jpeg =
         QImage::fromData(icon_image_file.data(), static_cast<int>(icon_image_file.size()));
 #if defined(__linux__) || defined(__FreeBSD__)
+
     // Convert and write the icon as a PNG
     if (!icon_jpeg.save(QString::fromStdString(icon_path.string()))) {
         LOG_ERROR(Frontend, "Could not write icon as PNG to file");
     } else {
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
     }
+
+    const auto name = title;
 #elif defined(_WIN32)
     // ICO is only for Windows
 
@@ -3092,6 +3094,9 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     const std::string comment =
         tr("Start %1 with the yuzu Emulator").arg(QString::fromStdString(title)).toStdString();
 
+    const std::string keywords = u8"Switch;Nintendo;";
+    const std::string categories = u8"Game;Emulator;Qt;";
+
 #elif defined(_WIN32)
     QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No;
     int result = QMessageBox::information(
@@ -3121,20 +3126,20 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     }
 
     const std::filesystem::path sanitized_title = title_u8 + u8".lnk";
-
     const std::filesystem::path shortcut_path = target_directory / (sanitized_title);
-
     const std::u8string keywords = u8"Switch;Nintendo;";
     const std::u8string categories = u8"Game;Emulator;Qt;";
+    const auto name = title_u8;
 #else
     const std::string comment{};
     const std::string arguments{};
     const std::string categories{};
     const std::string keywords{};
+    const auto name = title;
 #endif
 
     if (GMainWindow::SaveShortcutLink(shortcut_path, comment, icon_path, yuzu_command, arguments,
-                                      categories, keywords)) {
+                                      categories, keywords, name)) {
 
         LOG_INFO(Frontend, "Wrote a shortcut to {}", shortcut_path.string());
         QMessageBox::information(
