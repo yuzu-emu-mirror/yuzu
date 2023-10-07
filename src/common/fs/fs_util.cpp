@@ -4,9 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
-#ifdef _WIN32
-#include <windows.h> // For MultiByteToWideChar (cannon UTF-8 with Windows)
-#endif
+#include <boost/locale.hpp>
 
 #include "common/fs/fs_util.h"
 #include "common/polyfill_ranges.h"
@@ -14,7 +12,14 @@
 namespace Common::FS {
 
 std::u8string ToU8String(std::wstring_view w_string) {
-    return std::u8string{reinterpret_cast<const char8_t*>(w_string.data())};
+    try {
+        auto utf8_string = boost::locale::conv::utf_to_utf<char>(w_string.data(), w_string.data() + w_string.size());
+        return std::u8string(utf8_string.begin(), utf8_string.end());
+    } catch (const boost::locale::conv::conversion_error) {
+        return std::u8string{reinterpret_cast<const char8_t*>(w_string.data())};
+    } catch (const boost::locale::conv::invalid_charset_error) {
+        return std::u8string{reinterpret_cast<const char8_t*>(w_string.data())};
+    }
 }
 
 std::u8string ToU8String(std::string_view string) {
@@ -30,16 +35,13 @@ std::u8string_view BufferToU8StringView(std::span<const u8> buffer) {
 }
 
 std::wstring ToWString(std::u8string_view utf8_string) {
-#ifdef _WIN32
-    int size_needed = MultiByteToWideChar(
-        CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, NULL, 0);
-    std::wstring wstr(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(utf8_string.data()), -1, &wstr[0],
-                        size_needed);
-    return wstr;
-#else
-    return std::wstring{utf8_string.begin(), utf8_string.end()};
-#endif
+    try {
+        return boost::locale::conv::utf_to_utf<wchar_t>(utf8_string.data(), utf8_string.data() + utf8_string.size());
+    } catch (const boost::locale::conv::conversion_error) {
+        return std::wstring(utf8_string.begin(), utf8_string.end());
+    } catch (const boost::locale::conv::invalid_charset_error) {
+        return std::wstring(utf8_string.begin(), utf8_string.end());
+    }
 }
 
 std::string ToUTF8String(std::u8string_view u8_string) {

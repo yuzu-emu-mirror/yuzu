@@ -22,6 +22,7 @@
         "boost-test",
         "boost-timer",
         "boost-variant",
+        "boost-locale",
         "fmt",
         "lz4",
         "nlohmann-json",
