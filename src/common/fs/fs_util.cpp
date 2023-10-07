@@ -8,10 +8,6 @@
 #include <windows.h> // For MultiByteToWideChar (cannon UTF-8 with Windows)
 #endif
 
-/* TODO: Add support for 'https://github.com/unicode-org/icu' to handle UTF-8.
- *      This will be necessary for support UTF-8 cannon on Linux and macOS conversions.
- */
-
 #include "common/fs/fs_util.h"
 #include "common/polyfill_ranges.h"
 
