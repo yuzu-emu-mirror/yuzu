@@ -2825,7 +2825,8 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, const auto& comment,
                                    const std::filesystem::path& icon_path_,
                                    const std::filesystem::path& command_, const auto& arguments,
-                                   const auto& categories, const auto& keywords, const auto& name_) {
+                                   const auto& categories, const auto& keywords,
+                                   const auto& name_) {
 
     const auto shortcut_path = shortcut_path_.string();
     const auto icon_path = icon_path_.string();
