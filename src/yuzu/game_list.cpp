@@ -312,8 +312,10 @@ void GameList::OnFilterCloseClicked() {
 }
 
 GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvider* provider_,
-                   Core::System& system_, GMainWindow* parent)
-    : QWidget{parent}, vfs{std::move(vfs_)}, provider{provider_}, system{system_} {
+                   PlayTime::PlayTimeManager& play_time_manager_, Core::System& system_,
+                   GMainWindow* parent)
+    : QWidget{parent}, vfs{std::move(vfs_)}, provider{provider_},
+      play_time_manager{play_time_manager_}, system{system_} {
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::directoryChanged, this, &GameList::RefreshGameDirectory);
 
@@ -340,6 +342,7 @@ GameList::GameList(FileSys::VirtualFilesystem vfs_, FileSys::ManualContentProvid
 
     tree_view->setColumnHidden(COLUMN_ADD_ONS, !UISettings::values.show_add_ons);
     tree_view->setColumnHidden(COLUMN_COMPATIBILITY, !UISettings::values.show_compat);
+    tree_view->setColumnHidden(COLUMN_PLAY_TIME, !UISettings::values.show_play_time);
     item_model->setSortRole(GameListItemPath::SortRole);
 
     connect(main_window, &GMainWindow::UpdateThemedIcons, this, &GameList::OnUpdateThemedIcons);
@@ -549,6 +552,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const QString& 
     QAction* remove_update = remove_menu->addAction(tr("Remove Installed Update"));
     QAction* remove_dlc = remove_menu->addAction(tr("Remove All Installed DLC"));
     QAction* remove_custom_config = remove_menu->addAction(tr("Remove Custom Configuration"));
+    QAction* remove_play_time_data = remove_menu->addAction(tr("Remove Play Time Data"));
     QAction* remove_cache_storage = remove_menu->addAction(tr("Remove Cache Storage"));
     QAction* remove_gl_shader_cache = remove_menu->addAction(tr("Remove OpenGL Pipeline Cache"));
     QAction* remove_vk_shader_cache = remove_menu->addAction(tr("Remove Vulkan Pipeline Cache"));
@@ -563,6 +567,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const QString& 
     QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("Navigate to GameDB entry"));
     QMenu* shortcut_menu = context_menu.addMenu(tr("Create Shortcut"));
     QAction* create_desktop_shortcut = shortcut_menu->addAction(tr("Add to Desktop"));
+#ifndef WIN32
     QAction* create_applications_menu_shortcut =
         shortcut_menu->addAction(tr("Add to Applications Menu"));
     context_menu.addSeparator();
@@ -621,6 +626,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const QString& 
     connect(remove_custom_config, &QAction::triggered, [this, program_id, path]() {
         emit RemoveFileRequested(program_id, GameListRemoveTarget::CustomConfiguration, path);
     });
+    connect(remove_play_time_data, &QAction::triggered,
+            [this, program_id]() { emit RemovePlayTimeRequested(program_id); });
     connect(remove_cache_storage, &QAction::triggered, [this, program_id, path] {
         emit RemoveFileRequested(program_id, GameListRemoveTarget::CacheStorage, path);
     });
@@ -787,6 +794,7 @@ void GameList::RetranslateUI() {
     item_model->setHeaderData(COLUMN_ADD_ONS, Qt::Horizontal, tr("Add-ons"));
     item_model->setHeaderData(COLUMN_FILE_TYPE, Qt::Horizontal, tr("File type"));
     item_model->setHeaderData(COLUMN_SIZE, Qt::Horizontal, tr("Size"));
+    item_model->setHeaderData(COLUMN_PLAY_TIME, Qt::Horizontal, tr("Play time"));
 }
 
 void GameListSearchField::changeEvent(QEvent* event) {
@@ -814,6 +822,7 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
     tree_view->setColumnHidden(COLUMN_COMPATIBILITY, !UISettings::values.show_compat);
     tree_view->setColumnHidden(COLUMN_FILE_TYPE, !UISettings::values.show_types);
     tree_view->setColumnHidden(COLUMN_SIZE, !UISettings::values.show_size);
+    tree_view->setColumnHidden(COLUMN_PLAY_TIME, !UISettings::values.show_play_time);
 
     // Delete any rows that might already exist if we're repopulating
     item_model->removeRows(0, item_model->rowCount());
@@ -822,7 +831,7 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
     emit ShouldCancelWorker();
 
     GameListWorker* worker =
-        new GameListWorker(vfs, provider, game_dirs, compatibility_list, system);
+        new GameListWorker(vfs, provider, game_dirs, compatibility_list, play_time_manager, system);
 
     connect(worker, &GameListWorker::EntryReady, this, &GameList::AddEntry, Qt::QueuedConnection);
     connect(worker, &GameListWorker::DirEntryReady, this, &GameList::AddDirEntry,

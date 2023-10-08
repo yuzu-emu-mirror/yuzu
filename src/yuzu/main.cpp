@@ -98,6 +98,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "common/scm_rev.h"
 #include "common/scope_exit.h"
 #ifdef _WIN32
+#include <shlobj.h>
 #include "common/windows/timer_resolution.h"
 #endif
 #ifdef ARCHITECTURE_x86_64
@@ -150,6 +151,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
+#include "yuzu/play_time_manager.h"
 #include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
 #include "yuzu/util/clickable_label.h"
@@ -339,6 +341,8 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
+
+    play_time_manager = std::make_unique<PlayTime::PlayTimeManager>();
 
     system->GetRoomNetwork().Init();
 
@@ -988,7 +992,7 @@ void GMainWindow::InitializeWidgets() {
     render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem, *system);
     render_window->hide();
 
-    game_list = new GameList(vfs, provider.get(), *system, this);
+    game_list = new GameList(vfs, provider.get(), *play_time_manager, *system, this);
     ui->horizontalLayout->addWidget(game_list);
 
     game_list_placeholder = new GameListPlaceholder(this);
@@ -1449,6 +1453,7 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
             Settings::values.audio_muted = false;
             auto_muted = false;
         }
+        UpdateVolumeUI();
     }
 }
 
@@ -1462,6 +1467,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::RemoveInstalledEntryRequested, this,
             &GMainWindow::OnGameListRemoveInstalledEntry);
     connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
+    connect(game_list, &GameList::RemovePlayTimeRequested, this,
+            &GMainWindow::OnGameListRemovePlayTimeData);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
     connect(game_list, &GameList::VerifyIntegrityRequested, this,
             &GMainWindow::OnGameListVerifyIntegrity);
@@ -2536,6 +2543,17 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
     }
 }
 
+void GMainWindow::OnGameListRemovePlayTimeData(u64 program_id) {
+    if (QMessageBox::question(this, tr("Remove Play Time Data"), tr("Reset play time?"),
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    play_time_manager->ResetProgramPlayTime(program_id);
+    game_list->PopulateAsync(UISettings::values.game_dirs);
+}
+
 void GMainWindow::RemoveTransferableShaderCache(u64 program_id, GameListRemoveTarget target) {
     const auto target_file_name = [target] {
         switch (target) {
@@ -3000,8 +3018,11 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
     std::filesystem::path target_directory{};
 
     // Determine target directory for shortcut
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(WIN32)
+    const char* home = std::getenv("USERPROFILE");
+#else
     const char* home = std::getenv("HOME");
+#endif
     const std::filesystem::path home_path = (home == nullptr ? "~" : home);
     const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
 
@@ -3011,7 +3032,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
             QMessageBox::critical(
                 this, tr("Create Shortcut"),
                 tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
-                    .arg(QString::fromStdString(target_directory)),
+                    .arg(QString::fromStdString(target_directory.generic_string())),
                 QMessageBox::StandardButton::Ok);
             return;
         }
@@ -3019,15 +3040,15 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
         target_directory = (xdg_data_home == nullptr ? home_path / ".local/share" : xdg_data_home) /
                            "applications";
         if (!Common::FS::CreateDirs(target_directory)) {
-            QMessageBox::critical(this, tr("Create Shortcut"),
-                                  tr("Cannot create shortcut in applications menu. Path \"%1\" "
-                                     "does not exist and cannot be created.")
-                                      .arg(QString::fromStdString(target_directory)),
-                                  QMessageBox::StandardButton::Ok);
+            QMessageBox::critical(
+                this, tr("Create Shortcut"),
+                tr("Cannot create shortcut in applications menu. Path \"%1\" "
+                   "does not exist and cannot be created.")
+                    .arg(QString::fromStdString(target_directory.generic_string())),
+                QMessageBox::StandardButton::Ok);
             return;
         }
     }
-#endif
 
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
@@ -3060,8 +3081,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
 
     const std::filesystem::path icon_path = IconYuzuPath / (u8game_ico);
 #else
-    const std::filesystem::path icon_path{};
-    const std::filesystem::path shortcut_path{};
+    std::string icon_extension;
 #endif
 
     // Get title from game file
@@ -3086,18 +3106,18 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
         LOG_WARNING(Frontend, "Could not read icon from {:s}", game_path);
     }
 
-    QImage icon_jpeg =
+    QImage icon_data =
         QImage::fromData(icon_image_file.data(), static_cast<int>(icon_image_file.size()));
 #if defined(__linux__) || defined(__FreeBSD__)
 
     // Convert and write the icon as a PNG
-    if (!icon_jpeg.save(QString::fromStdString(icon_path.string()))) {
+    if (!icon_data.save(QString::fromStdString(icon_path.string()))) {
         LOG_ERROR(Frontend, "Could not write icon as PNG to file");
     } else {
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
     }
 
-    const auto name = title;
+  const auto name = title;
 #elif defined(_WIN32)
     // ICO is only for Windows
 
@@ -3589,6 +3609,9 @@ void GMainWindow::OnStartGame() {
     UpdateMenuState();
     OnTasStateChanged();
 
+    play_time_manager->SetProgramId(system->GetApplicationProcessProgramID());
+    play_time_manager->Start();
+
     discord_rpc->Update();
 }
 
@@ -3604,6 +3627,7 @@ void GMainWindow::OnRestartGame() {
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
+    play_time_manager->Stop();
     UpdateMenuState();
     AllowOSSleep();
 }
@@ -3624,6 +3648,9 @@ void GMainWindow::OnStopGame() {
         return;
     }
 
+    play_time_manager->Stop();
+    // Update game list to show new play time
+    game_list->PopulateAsync(UISettings::values.game_dirs);
     if (OnShutdownBegin()) {
         OnShutdownBeginDialog();
     } else {

@@ -103,7 +103,7 @@ struct Values {
                                            true,
                                            true};
     Setting<bool> mute_when_in_background{
-        linkage, false, "muteWhenInBackground", Category::Ui, Settings::Specialization::Default,
+        linkage, false, "muteWhenInBackground", Category::Audio, Settings::Specialization::Default,
         true,    true};
     Setting<bool> hide_mouse{
         linkage, true, "hideInactiveMouse", Category::UiGeneral, Settings::Specialization::Default,
@@ -182,6 +182,9 @@ struct Values {
     // Size & File Types Column
     Setting<bool> show_size{linkage, true, "show_size", Category::UiGameList};
     Setting<bool> show_types{linkage, true, "show_types", Category::UiGameList};
+
+    // Play time
+    Setting<bool> show_play_time{linkage, true, "show_play_time", Category::UiGameList};
 
     bool configuration_applied;
     bool reset_to_defaults;

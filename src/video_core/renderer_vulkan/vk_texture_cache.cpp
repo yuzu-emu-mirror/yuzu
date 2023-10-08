@@ -238,6 +238,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         return any_r ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT;
     case PixelFormat::D16_UNORM:
     case PixelFormat::D32_FLOAT:
+    case PixelFormat::X8_D24_UNORM:
         return VK_IMAGE_ASPECT_DEPTH_BIT;
     case PixelFormat::S8_UINT:
         return VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -1199,6 +1200,9 @@ void TextureCacheRuntime::ConvertImage(Framebuffer* dst, ImageView& dst_view, Im
         }
         if (src_view.format == PixelFormat::D24_UNORM_S8_UINT) {
             return blit_image_helper.ConvertS8D24ToABGR8(dst, src_view);
+        }
+        if (src_view.format == PixelFormat::D32_FLOAT) {
+            return blit_image_helper.ConvertD32FToABGR8(dst, src_view);
         }
         break;
     case PixelFormat::R32_FLOAT:
