@@ -2822,41 +2822,76 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 }
 
 #if defined(__linux__) || defined(__FreeBSD__)
-bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path_, const auto& comment,
-                                   const std::filesystem::path& icon_path_,
-                                   const std::filesystem::path& command_, const auto& arguments,
-                                   const auto& categories, const auto& keywords,
-                                   const auto& name_) {
+// This desktop file template was writing referencing
+// https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
+bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path,
+                                   const std::string& comment,
+                                   const std::filesystem::path& icon_path,
+                                   const std::filesystem::path& command,
+                                   const std::string& arguments, const std::string& categories,
+                                   const std::string& keywords, const std::string& name) {
 
-    const auto shortcut_path = shortcut_path_.string();
-    const auto icon_path = icon_path_.string();
-    const auto command = command_.string();
-    const auto name = name_.string();
+    bool shortcut_success = false;
+    try {
 
-    // This desktop file template was writing referencing
-    // https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.0.html
-    std::string shortcut_contents{};
-    shortcut_contents.append("[Desktop Entry]\n");
-    shortcut_contents.append("Type=Application\n");
-    shortcut_contents.append("Version=1.0\n");
-    shortcut_contents.append(fmt::format("Name={:s}\n", name));
-    shortcut_contents.append(fmt::format("Comment={:s}\n", comment));
-    shortcut_contents.append(fmt::format("Icon={:s}\n", icon_path));
-    shortcut_contents.append(fmt::format("TryExec={:s}\n", command));
-    shortcut_contents.append(fmt::format("Exec={:s} {:s}\n", command, arguments));
-    shortcut_contents.append(fmt::format("Categories={:s}\n", categories));
-    shortcut_contents.append(fmt::format("Keywords={:s}\n", keywords));
+        // Plus 'Type' is required
+        if (name.empty()) {
+            LOG_ERROR(Common, "[GMainWindow::SaveShortcutLink] Name is empty");
+            return shortcut_success;
+        }
 
-    std::ofstream shortcut_stream(shortcut_path);
-    if (!shortcut_stream.is_open()) {
-        LOG_WARNING(Common, "[GMainWindow::SaveShortcutLink] Failed to create file {:s}",
-                    shortcut_path);
-        return false;
+        std::ofstream shortcut_stream(shortcut_path, std::ios::binary | std::ios::trunc);
+
+        if (shortcut_stream.is_open()) {
+
+            shortcut_stream << "[Desktop Entry]" << std::endl;
+            shortcut_stream << "Type=Application" << std::endl;
+            shortcut_stream << "Version=1.0" << std::endl;
+            shortcut_stream << "Name=" << name << std::endl;
+
+            if (!comment.empty()) {
+                shortcut_stream << "Comment=" << comment << std::endl;
+            }
+
+            if (std::filesystem::is_regular_file(icon_path)) {
+                shortcut_stream << "Icon=" << icon_path.string() << std::endl;
+            }
+
+            shortcut_stream << "TryExec=" << command.string() << std::endl;
+            shortcut_stream << "Exec=" << command.string();
+
+            if (!arguments.empty()) {
+                shortcut_stream << " " << arguments;
+            }
+
+            shortcut_stream << std::endl;
+
+            if (!categories.empty()) {
+                shortcut_stream << "Categories=" << categories << std::endl;
+            }
+
+            if (!keywords.empty()) {
+                shortcut_stream << "Keywords=" << keywords << std::endl;
+            }
+
+            if (std::filesystem::is_regular_file(shortcut_path)) {
+                LOG_INFO(Common, "[GMainWindow::SaveShortcutLink] Shortcut created");
+                shortcut_success = true;
+            } else {
+                LOG_ERROR(Common, "[GMainWindow::SaveShortcutLink] Shortcut created but icon dont "
+                                  "exists, please check if the icon path is correct");
+            }
+
+        } else {
+            LOG_ERROR(Common, "[GMainWindow::SaveShortcutLink] Failed to create shortcut");
+        }
+
+        shortcut_stream.close();
+    } catch (const std::exception& e) {
+        LOG_ERROR(Common, "[GMainWindow::SaveShortcutLink] Failed to create shortcut: {}",
+                  e.what());
     }
-    shortcut_stream << shortcut_contents;
-    shortcut_stream.close();
-
-    return true;
+    return shortcut_success;
 }
 #elif defined(_WIN32)
 bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path, const auto& comment,
@@ -2900,7 +2935,7 @@ bool GMainWindow::SaveShortcutLink(const std::filesystem::path& shortcut_path, c
             if (FAILED(hres)) {
                 LOG_ERROR(Common, "[GMainWindow::SaveShortcutLink] Failed to save shortcut");
             } else {
-                if (std::filesystem::exists(shortcut_path)) {
+                if (std::filesystem::is_regular_file(shortcut_path)) {
                     LOG_INFO(Common, "[GMainWindow::SaveShortcutLink] Shortcut created");
                     shortcut_success = true;
                 } else {
