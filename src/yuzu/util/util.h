@@ -8,9 +8,11 @@
 #include <QString>
 
 /// Returns a QFont object appropriate to use as a monospace font for debugging widgets, etc.
+
 [[nodiscard]] QFont GetMonospaceFont();
 
 /// Convert a size in bytes into a readable format (KiB, MiB, etc.)
+
 [[nodiscard]] QString ReadableByteSize(qulonglong size);
 
 /**
@@ -20,6 +22,7 @@
  *
  * @return QPixmap circle pixmap
  */
+
 [[nodiscard]] QPixmap CreateCirclePixmapFromColor(const QColor& color);
 
 /**
@@ -31,4 +34,5 @@
  *
  * @return bool If the operation succeeded
  */
+
 [[nodiscard]] bool savePixmapsToICO(const QList<QPixmap>& pixmaps, const QString& path);

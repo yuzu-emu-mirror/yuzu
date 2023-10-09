@@ -3117,7 +3117,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const QString& game_p
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
     }
 
-  const auto name = title;
+    const auto name = title;
 #elif defined(_WIN32)
     // ICO is only for Windows
 
