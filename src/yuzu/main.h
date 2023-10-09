@@ -81,6 +81,10 @@ namespace DiscordRPC {
 class DiscordInterface;
 }
 
+namespace PlayTime {
+class PlayTimeManager;
+}
+
 namespace FileSys {
 class ContentProvider;
 class ManualContentProvider;
@@ -101,6 +105,10 @@ enum class WebExitReason : u32;
 namespace Service::NFC {
 class NfcDevice;
 } // namespace Service::NFC
+
+namespace Service::NFP {
+enum class CabinetMode : u8;
+} // namespace Service::NFP
 
 namespace Ui {
 class MainWindow;
@@ -319,6 +327,7 @@ private slots:
     void OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type);
     void OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target,
                               const std::string& game_path);
+    void OnGameListRemovePlayTimeData(u64 program_id);
     void OnGameListDumpRomFS(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void OnGameListVerifyIntegrity(const std::string& game_path);
     void OnGameListCopyTID(u64 program_id);
@@ -365,6 +374,7 @@ private slots:
     void ResetWindowSize720();
     void ResetWindowSize900();
     void ResetWindowSize1080();
+    void OnCabinet(Service::NFP::CabinetMode mode);
     void OnMiiEdit();
     void OnCaptureScreenshot();
     void OnReinitializeKeys(ReinitializeKeyBehavior behavior);
@@ -384,6 +394,7 @@ private:
     void RemoveVulkanDriverPipelineCache(u64 program_id);
     void RemoveAllTransferableShaderCaches(u64 program_id);
     void RemoveCustomConfiguration(u64 program_id, const std::string& game_path);
+    void RemovePlayTimeData(u64 program_id);
     void RemoveCacheStorage(u64 program_id);
     bool SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id,
                                u64* selected_title_id, u8* selected_content_record_type);
@@ -423,6 +434,7 @@ private:
 
     std::unique_ptr<Core::System> system;
     std::unique_ptr<DiscordRPC::DiscordInterface> discord_rpc;
+    std::unique_ptr<PlayTime::PlayTimeManager> play_time_manager;
     std::shared_ptr<InputCommon::InputSubsystem> input_subsystem;
 
     MultiplayerState* multiplayer_state = nullptr;

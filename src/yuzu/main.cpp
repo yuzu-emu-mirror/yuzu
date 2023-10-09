@@ -18,6 +18,8 @@
 #include <sys/socket.h>
 #endif
 
+#include <boost/container/flat_set.hpp>
+
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
 #include "applets/qt_amiibo_settings.h"
 #include "applets/qt_controller.h"
@@ -96,6 +98,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "common/scm_rev.h"
 #include "common/scope_exit.h"
 #ifdef _WIN32
+#include <shlobj.h>
 #include "common/windows/timer_resolution.h"
 #endif
 #ifdef ARCHITECTURE_x86_64
@@ -148,6 +151,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
+#include "yuzu/play_time_manager.h"
 #include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
 #include "yuzu/util/clickable_label.h"
@@ -335,6 +339,8 @@ GMainWindow::GMainWindow(std::unique_ptr<Config> config_, bool has_broken_vulkan
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
+
+    play_time_manager = std::make_unique<PlayTime::PlayTimeManager>();
 
     system->GetRoomNetwork().Init();
 
@@ -984,7 +990,7 @@ void GMainWindow::InitializeWidgets() {
     render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem, *system);
     render_window->hide();
 
-    game_list = new GameList(vfs, provider.get(), *system, this);
+    game_list = new GameList(vfs, provider.get(), *play_time_manager, *system, this);
     ui->horizontalLayout->addWidget(game_list);
 
     game_list_placeholder = new GameListPlaceholder(this);
@@ -1445,6 +1451,7 @@ void GMainWindow::OnAppFocusStateChanged(Qt::ApplicationState state) {
             Settings::values.audio_muted = false;
             auto_muted = false;
         }
+        UpdateVolumeUI();
     }
 }
 
@@ -1458,6 +1465,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::RemoveInstalledEntryRequested, this,
             &GMainWindow::OnGameListRemoveInstalledEntry);
     connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
+    connect(game_list, &GameList::RemovePlayTimeRequested, this,
+            &GMainWindow::OnGameListRemovePlayTimeData);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
     connect(game_list, &GameList::VerifyIntegrityRequested, this,
             &GMainWindow::OnGameListVerifyIntegrity);
@@ -1551,6 +1560,14 @@ void GMainWindow::ConnectMenuEvents() {
     // Tools
     connect_menu(ui->action_Rederive, std::bind(&GMainWindow::OnReinitializeKeys, this,
                                                 ReinitializeKeyBehavior::Warning));
+    connect_menu(ui->action_Load_Cabinet_Nickname_Owner,
+                 [this]() { OnCabinet(Service::NFP::CabinetMode::StartNicknameAndOwnerSettings); });
+    connect_menu(ui->action_Load_Cabinet_Eraser,
+                 [this]() { OnCabinet(Service::NFP::CabinetMode::StartGameDataEraser); });
+    connect_menu(ui->action_Load_Cabinet_Restorer,
+                 [this]() { OnCabinet(Service::NFP::CabinetMode::StartRestorer); });
+    connect_menu(ui->action_Load_Cabinet_Formatter,
+                 [this]() { OnCabinet(Service::NFP::CabinetMode::StartFormatter); });
     connect_menu(ui->action_Load_Mii_Edit, &GMainWindow::OnMiiEdit);
     connect_menu(ui->action_Capture_Screenshot, &GMainWindow::OnCaptureScreenshot);
 
@@ -1568,6 +1585,7 @@ void GMainWindow::ConnectMenuEvents() {
 
 void GMainWindow::UpdateMenuState() {
     const bool is_paused = emu_thread == nullptr || !emu_thread->IsRunning();
+    const bool is_firmware_available = CheckFirmwarePresence();
 
     const std::array running_actions{
         ui->action_Stop,
@@ -1578,8 +1596,20 @@ void GMainWindow::UpdateMenuState() {
         ui->action_Pause,
     };
 
+    const std::array applet_actions{
+        ui->action_Load_Cabinet_Nickname_Owner,
+        ui->action_Load_Cabinet_Eraser,
+        ui->action_Load_Cabinet_Restorer,
+        ui->action_Load_Cabinet_Formatter,
+        ui->action_Load_Mii_Edit,
+    };
+
     for (QAction* action : running_actions) {
         action->setEnabled(emulation_running);
+    }
+
+    for (QAction* action : applet_actions) {
+        action->setEnabled(is_firmware_available && !emulation_running);
     }
 
     ui->action_Capture_Screenshot->setEnabled(emulation_running && !is_paused);
@@ -1591,8 +1621,6 @@ void GMainWindow::UpdateMenuState() {
     }
 
     multiplayer_state->UpdateNotificationStatus();
-
-    ui->action_Load_Mii_Edit->setEnabled(CheckFirmwarePresence());
 }
 
 void GMainWindow::OnDisplayTitleBars(bool show) {
@@ -2103,6 +2131,8 @@ void GMainWindow::OnEmulationStopped() {
     OnTasStateChanged();
     render_window->FinalizeCamera();
 
+    system->GetAppletManager().SetCurrentAppletId(Service::AM::Applets::AppletId::None);
+
     // Enable all controllers
     system->HIDCore().SetSupportedStyleTag({Core::HID::NpadStyleSet::All});
 
@@ -2511,6 +2541,17 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
     }
 }
 
+void GMainWindow::OnGameListRemovePlayTimeData(u64 program_id) {
+    if (QMessageBox::question(this, tr("Remove Play Time Data"), tr("Reset play time?"),
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    play_time_manager->ResetProgramPlayTime(program_id);
+    game_list->PopulateAsync(UISettings::values.game_dirs);
+}
+
 void GMainWindow::RemoveTransferableShaderCache(u64 program_id, GameListRemoveTarget target) {
     const auto target_file_name = [target] {
         switch (target) {
@@ -2802,7 +2843,6 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     const QStringList args = QApplication::arguments();
     std::filesystem::path yuzu_command = args[0].toStdString();
 
-#if defined(__linux__) || defined(__FreeBSD__)
     // If relative path, make it an absolute path
     if (yuzu_command.c_str()[0] == '.') {
         yuzu_command = Common::FS::GetCurrentDir() / yuzu_command;
@@ -2825,12 +2865,14 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         UISettings::values.shortcut_already_warned = true;
     }
 #endif // __linux__
-#endif // __linux__ || __FreeBSD__
 
     std::filesystem::path target_directory{};
     // Determine target directory for shortcut
-#if defined(__linux__) || defined(__FreeBSD__)
+#if defined(WIN32)
+    const char* home = std::getenv("USERPROFILE");
+#else
     const char* home = std::getenv("HOME");
+#endif
     const std::filesystem::path home_path = (home == nullptr ? "~" : home);
     const char* xdg_data_home = std::getenv("XDG_DATA_HOME");
 
@@ -2840,7 +2882,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
             QMessageBox::critical(
                 this, tr("Create Shortcut"),
                 tr("Cannot create shortcut on desktop. Path \"%1\" does not exist.")
-                    .arg(QString::fromStdString(target_directory)),
+                    .arg(QString::fromStdString(target_directory.generic_string())),
                 QMessageBox::StandardButton::Ok);
             return;
         }
@@ -2848,15 +2890,15 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         target_directory = (xdg_data_home == nullptr ? home_path / ".local/share" : xdg_data_home) /
                            "applications";
         if (!Common::FS::CreateDirs(target_directory)) {
-            QMessageBox::critical(this, tr("Create Shortcut"),
-                                  tr("Cannot create shortcut in applications menu. Path \"%1\" "
-                                     "does not exist and cannot be created.")
-                                      .arg(QString::fromStdString(target_directory)),
-                                  QMessageBox::StandardButton::Ok);
+            QMessageBox::critical(
+                this, tr("Create Shortcut"),
+                tr("Cannot create shortcut in applications menu. Path \"%1\" "
+                   "does not exist and cannot be created.")
+                    .arg(QString::fromStdString(target_directory.generic_string())),
+                QMessageBox::StandardButton::Ok);
             return;
         }
     }
-#endif
 
     const std::string game_file_name = std::filesystem::path(game_path).filename().string();
     // Determine full paths for icon and shortcut
@@ -2878,9 +2920,14 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     const std::filesystem::path shortcut_path =
         target_directory / (program_id == 0 ? fmt::format("yuzu-{}.desktop", game_file_name)
                                             : fmt::format("yuzu-{:016X}.desktop", program_id));
+#elif defined(WIN32)
+    std::filesystem::path icons_path =
+        Common::FS::GetYuzuPathString(Common::FS::YuzuPath::IconsDir);
+    std::filesystem::path icon_path =
+        icons_path / ((program_id == 0 ? fmt::format("yuzu-{}.ico", game_file_name)
+                                       : fmt::format("yuzu-{:016X}.ico", program_id)));
 #else
-    const std::filesystem::path icon_path{};
-    const std::filesystem::path shortcut_path{};
+    std::string icon_extension;
 #endif
 
     // Get title from game file
@@ -2905,29 +2952,37 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
         LOG_WARNING(Frontend, "Could not read icon from {:s}", game_path);
     }
 
-    QImage icon_jpeg =
+    QImage icon_data =
         QImage::fromData(icon_image_file.data(), static_cast<int>(icon_image_file.size()));
 #if defined(__linux__) || defined(__FreeBSD__)
     // Convert and write the icon as a PNG
-    if (!icon_jpeg.save(QString::fromStdString(icon_path.string()))) {
+    if (!icon_data.save(QString::fromStdString(icon_path.string()))) {
         LOG_ERROR(Frontend, "Could not write icon as PNG to file");
     } else {
         LOG_INFO(Frontend, "Wrote an icon to {}", icon_path.string());
     }
+#elif defined(WIN32)
+    if (!SaveIconToFile(icon_path.string(), icon_data)) {
+        LOG_ERROR(Frontend, "Could not write icon to file");
+        return;
+    }
 #endif // __linux__
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#ifdef _WIN32
+    // Replace characters that are illegal in Windows filenames by a dash
+    const std::string illegal_chars = "<>:\"/\\|?*";
+    for (char c : illegal_chars) {
+        std::replace(title.begin(), title.end(), c, '_');
+    }
+    const std::filesystem::path shortcut_path = target_directory / (title + ".lnk").c_str();
+#endif
+
     const std::string comment =
         tr("Start %1 with the yuzu Emulator").arg(QString::fromStdString(title)).toStdString();
     const std::string arguments = fmt::format("-g \"{:s}\"", game_path);
     const std::string categories = "Game;Emulator;Qt;";
     const std::string keywords = "Switch;Nintendo;";
-#else
-    const std::string comment{};
-    const std::string arguments{};
-    const std::string categories{};
-    const std::string keywords{};
-#endif
+
     if (!CreateShortcut(shortcut_path.string(), title, comment, icon_path.string(),
                         yuzu_command.string(), arguments, categories, keywords)) {
         QMessageBox::critical(this, tr("Create Shortcut"),
@@ -3334,6 +3389,9 @@ void GMainWindow::OnStartGame() {
     UpdateMenuState();
     OnTasStateChanged();
 
+    play_time_manager->SetProgramId(system->GetApplicationProcessProgramID());
+    play_time_manager->Start();
+
     discord_rpc->Update();
 }
 
@@ -3349,6 +3407,7 @@ void GMainWindow::OnRestartGame() {
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
+    play_time_manager->Stop();
     UpdateMenuState();
     AllowOSSleep();
 }
@@ -3369,6 +3428,9 @@ void GMainWindow::OnStopGame() {
         return;
     }
 
+    play_time_manager->Stop();
+    // Update game list to show new play time
+    game_list->PopulateAsync(UISettings::values.game_dirs);
     if (OnShutdownBegin()) {
         OnShutdownBeginDialog();
     } else {
@@ -3942,6 +4004,34 @@ bool GMainWindow::CreateShortcut(const std::string& shortcut_path, const std::st
     shortcut_stream.close();
 
     return true;
+#elif defined(WIN32)
+    IShellLinkW* shell_link;
+    auto hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW,
+                                 (void**)&shell_link);
+    if (FAILED(hres)) {
+        return false;
+    }
+    shell_link->SetPath(
+        Common::UTF8ToUTF16W(command).data()); // Path to the object we are referring to
+    shell_link->SetArguments(Common::UTF8ToUTF16W(arguments).data());
+    shell_link->SetDescription(Common::UTF8ToUTF16W(comment).data());
+    shell_link->SetIconLocation(Common::UTF8ToUTF16W(icon_path).data(), 0);
+
+    IPersistFile* persist_file;
+    hres = shell_link->QueryInterface(IID_IPersistFile, (void**)&persist_file);
+    if (FAILED(hres)) {
+        return false;
+    }
+
+    hres = persist_file->Save(Common::UTF8ToUTF16W(shortcut_path).data(), TRUE);
+    if (FAILED(hres)) {
+        return false;
+    }
+
+    persist_file->Release();
+    shell_link->Release();
+
+    return true;
 #endif
     return false;
 }
@@ -4134,6 +4224,30 @@ void GMainWindow::OnToggleStatusBar() {
     statusBar()->setVisible(ui->action_Show_Status_Bar->isChecked());
 }
 
+void GMainWindow::OnCabinet(Service::NFP::CabinetMode mode) {
+    constexpr u64 CabinetId = 0x0100000000001002ull;
+    auto bis_system = system->GetFileSystemController().GetSystemNANDContents();
+    if (!bis_system) {
+        QMessageBox::warning(this, tr("No firmware available"),
+                             tr("Please install the firmware to use the Cabinet applet."));
+        return;
+    }
+
+    auto cabinet_nca = bis_system->GetEntry(CabinetId, FileSys::ContentRecordType::Program);
+    if (!cabinet_nca) {
+        QMessageBox::warning(this, tr("Cabinet Applet"),
+                             tr("Cabinet applet is not available. Please reinstall firmware."));
+        return;
+    }
+
+    system->GetAppletManager().SetCurrentAppletId(Service::AM::Applets::AppletId::Cabinet);
+    system->GetAppletManager().SetCabinetMode(mode);
+
+    const auto filename = QString::fromStdString(cabinet_nca->GetFullPath());
+    UISettings::values.roms_path = QFileInfo(filename).path();
+    BootGame(filename);
+}
+
 void GMainWindow::OnMiiEdit() {
     constexpr u64 MiiEditId = 0x0100000000001009ull;
     auto bis_system = system->GetFileSystemController().GetSystemNANDContents();
@@ -4149,6 +4263,8 @@ void GMainWindow::OnMiiEdit() {
                              tr("Mii editor is not available. Please reinstall firmware."));
         return;
     }
+
+    system->GetAppletManager().SetCurrentAppletId(Service::AM::Applets::AppletId::MiiEdit);
 
     const auto filename = QString::fromStdString((mii_applet_nca->GetFullPath()));
     UISettings::values.roms_path = QFileInfo(filename).path();
@@ -4602,8 +4718,8 @@ bool GMainWindow::CheckFirmwarePresence() {
 
 bool GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed, u64 program_id,
                                         u64* selected_title_id, u8* selected_content_record_type) {
-    using ContentInfo = std::pair<FileSys::TitleType, FileSys::ContentRecordType>;
-    boost::container::flat_map<u64, ContentInfo> available_title_ids;
+    using ContentInfo = std::tuple<u64, FileSys::TitleType, FileSys::ContentRecordType>;
+    boost::container::flat_set<ContentInfo> available_title_ids;
 
     const auto RetrieveEntries = [&](FileSys::TitleType title_type,
                                      FileSys::ContentRecordType record_type) {
@@ -4611,12 +4727,14 @@ bool GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installe
         for (const auto& entry : entries) {
             if (FileSys::GetBaseTitleID(entry.title_id) == program_id &&
                 installed.GetEntry(entry)->GetStatus() == Loader::ResultStatus::Success) {
-                available_title_ids[entry.title_id] = {title_type, record_type};
+                available_title_ids.insert({entry.title_id, title_type, record_type});
             }
         }
     };
 
     RetrieveEntries(FileSys::TitleType::Application, FileSys::ContentRecordType::Program);
+    RetrieveEntries(FileSys::TitleType::Application, FileSys::ContentRecordType::HtmlDocument);
+    RetrieveEntries(FileSys::TitleType::Application, FileSys::ContentRecordType::LegalInformation);
     RetrieveEntries(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
 
     if (available_title_ids.empty()) {
@@ -4627,10 +4745,14 @@ bool GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installe
 
     if (available_title_ids.size() > 1) {
         QStringList list;
-        for (auto& [title_id, content_info] : available_title_ids) {
+        for (auto& [title_id, title_type, record_type] : available_title_ids) {
             const auto hex_title_id = QString::fromStdString(fmt::format("{:X}", title_id));
-            if (content_info.first == FileSys::TitleType::Application) {
-                list.push_back(QStringLiteral("Application [%1]").arg(hex_title_id));
+            if (record_type == FileSys::ContentRecordType::Program) {
+                list.push_back(QStringLiteral("Program [%1]").arg(hex_title_id));
+            } else if (record_type == FileSys::ContentRecordType::HtmlDocument) {
+                list.push_back(QStringLiteral("HTML document [%1]").arg(hex_title_id));
+            } else if (record_type == FileSys::ContentRecordType::LegalInformation) {
+                list.push_back(QStringLiteral("Legal information [%1]").arg(hex_title_id));
             } else {
                 list.push_back(
                     QStringLiteral("DLC %1 [%2]").arg(title_id & 0x7FF).arg(hex_title_id));
@@ -4648,9 +4770,9 @@ bool GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installe
         title_index = list.indexOf(res);
     }
 
-    const auto selected_info = available_title_ids.nth(title_index);
-    *selected_title_id = selected_info->first;
-    *selected_content_record_type = static_cast<u8>(selected_info->second.second);
+    const auto& [title_id, title_type, record_type] = *available_title_ids.nth(title_index);
+    *selected_title_id = title_id;
+    *selected_content_record_type = static_cast<u8>(record_type);
     return true;
 }
 

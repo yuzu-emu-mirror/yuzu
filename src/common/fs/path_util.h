@@ -20,10 +20,12 @@ enum class YuzuPath {
     LoadDir,        // Where cheat/mod files are stored.
     LogDir,         // Where log files are stored.
     NANDDir,        // Where the emulated NAND is stored.
+    PlayTimeDir,    // Where play time data is stored.
     ScreenshotsDir, // Where yuzu screenshots are stored.
     SDMCDir,        // Where the emulated SDMC is stored.
     ShaderDir,      // Where shaders are stored.
     TASDir,         // Where TAS scripts are stored.
+    IconsDir,       // Where Icons for Windows shortcuts are stored.
 };
 
 /**
