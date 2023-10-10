@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <thread>
+#include <QScrollArea>
 
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -114,7 +115,13 @@ void ConfigureInput::Initialize(InputCommon::InputSubsystem* input_subsystem,
 
     for (std::size_t i = 0; i < player_tabs.size(); ++i) {
         player_tabs[i]->setLayout(new QHBoxLayout(player_tabs[i]));
-        player_tabs[i]->layout()->addWidget(player_controllers[i]);
+
+        auto scroll_area = new QScrollArea(player_tabs[i]);
+        player_tabs[i]->layout()->addWidget(scroll_area);
+        scroll_area->setWidget(player_controllers[i]);
+        scroll_area->setWidgetResizable(true);
+        scroll_area->setFrameShape(QFrame::Shape::NoFrame);
+
         connect(player_controllers[i], &ConfigureInputPlayer::Connected, [&, i](bool is_connected) {
             // Ensures that the controllers are always connected in sequential order
             if (is_connected) {
