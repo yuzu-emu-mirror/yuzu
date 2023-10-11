@@ -2876,7 +2876,7 @@ void GMainWindow::OnGameListCreateShortcut(u64 program_id, const std::string& ga
     if (target == GameListShortcutTarget::Desktop) {
         const auto desktop_path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         target_directory = desktopPath.toUtf8().toStdString();
-        QDir dir(QString::fromStdString(target_directory.generic_string()));
+        const QDir dir(QString::fromStdString(target_directory.generic_string()));
         if (!dir.exists()) {
             QMessageBox::critical(
                 this, tr("Create Shortcut"),
