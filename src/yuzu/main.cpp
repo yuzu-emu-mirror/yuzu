@@ -2884,7 +2884,7 @@ if (target == GameListShortcutTarget::Desktop) {
                 .arg(QString::fromStdString(target_directory.generic_string())),
             QMessageBox::StandardButton::Ok);
         return;
-     }
+    }
 } else if (target == GameListShortcutTarget::Applications) {
  #if defined(__linux__)
     QString applicationsPath =
